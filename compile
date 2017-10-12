@@ -1,0 +1,2 @@
+cd $phoenix_dir/app
+npm run build

@@ -1,0 +1,23 @@
+{
+  "name": "sanbase",
+  "version": "1.0.0",
+  "description": "NextJS app with server side rendering and Phoenix API",
+  "main": "index.js",
+  "author": "Valentin Mihov",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node node_modules/exit_on_eof/index.js node_modules/next/dist/bin/next",
+    "build": "next build",
+    "start": "next start",
+    "test-server": "WEBSITE_URL=http://localhost:4001 node node_modules/exit_on_eof/index.js 'node_modules/next/dist/bin/next -p 3001' > /dev/null"
+  },
+  "dependencies": {
+    "isomorphic-unfetch": "^2.0.0",
+    "next": "^3.2.1",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1"
+  },
+  "devDependencies": {
+    "exit_on_eof": "^1.0.4"
+  }
+}

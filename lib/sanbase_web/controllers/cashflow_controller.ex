@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.CashflowController do
   use SanbaseWeb, :controller
-  alias Sanbase.Cashflow
-
-  require IEx
+  alias Sanbase.{Cashflow, ExternalServices}
 
   def index(conn, _params) do
     data = Cashflow.get_project_data
@@ -31,12 +29,9 @@ defmodule SanbaseWeb.CashflowController do
         }
       end)
 
-    # TODO: fetch eth_price
-    eth_price = 3.14
+    eth_price = ExternalServices.get_eth_price
 
     data = %{eth_price: eth_price, projects: data}
-
-    # IEx.pry
 
     render conn, "index.json", project_data: data
   end

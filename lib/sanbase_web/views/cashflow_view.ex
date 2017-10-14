@@ -59,7 +59,7 @@ defmodule SanbaseWeb.CashflowView do
   defp construct_wallet_data(wallets) do
     wallets
     |> Enum.filter(&(&1 !== nil))
-    |> Enum.map(&(%{address: &1.address, balance: &1.balance, last_outgoing: &1.last_outgoing, tx_out: &1.tx_out}))
+    |> Enum.map(&Map.take(&1, [:address, :balance, :last_outgoing, :tx_out]))
   end
 
 end

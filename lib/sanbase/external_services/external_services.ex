@@ -8,9 +8,9 @@ defmodule Sanbase.ExternalServices do
     response = get("https://api.coinbase.com/v2/prices/ETH-USD/sell")
 
     case response do
-      {:ok, env} ->
-        if env.status >= 200 and env.status < 300 do
-          case Float.parse(env.body["data"]["amount"]) do
+      {:ok, resp} ->
+        if resp.status >= 200 and resp.status < 300 do
+          case Float.parse(resp.body["data"]["amount"]) do
             {eth_price, _} -> eth_price
             _ -> nil
           end

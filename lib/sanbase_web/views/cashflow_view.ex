@@ -1,9 +1,13 @@
 defmodule SanbaseWeb.CashflowView do
   use SanbaseWeb, :view
 
-  def render("index.json", %{project_data: project_data}) do
+  def render("index.json", %{eth_price: eth_price, projects: projects}) do
 
-    project_data
+    projects = projects
+    |> Enum.group_by(&Map.take(&1, [:project, :coinmarketcap]), &(&1.wallet_data))
+    |> Enum.map(&construct_project_data(&1))
+
+    %{eth_price: eth_price, projects: projects}
 
     # %{
     #   eth_price: 123.456,
@@ -34,4 +38,28 @@ defmodule SanbaseWeb.CashflowView do
     #   ]
     # }
   end
+
+  defp construct_project_data({%{project: project, coinmarketcap: coinmarketcap}, wallets}) do
+    market_cap_usd = if (coinmarketcap !== nil), do: coinmarketcap.market_cap_usd, else: nil
+
+    wallets = construct_wallet_data(wallets)
+
+    balance = Enum.reduce(wallets, 0, fn(x, acc) -> x.balance + acc end)
+
+    %{
+      name: project.name,
+      ticker: project.ticker,
+      logo_url: project.logo_url,
+      market_cap_usd: market_cap_usd,
+      balance: balance,
+      wallets: wallets
+    }
+  end
+
+  defp construct_wallet_data(wallets) do
+    wallets
+    |> Enum.filter(&(&1 !== nil))
+    |> Enum.map(&(%{address: &1.address, balance: &1.balance, last_outgoing: &1.last_outgoing, tx_out: &1.tx_out}))
+  end
+
 end

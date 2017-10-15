@@ -100,7 +100,8 @@ config :arc,
   storage_dir: "/tmp/sanbase/filestore/"
 
 config :sanbase, Sanbase.Prices.Store,
-  database:  "prices"
+  host: "localhost",
+  database: "prices"
 
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"

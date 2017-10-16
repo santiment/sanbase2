@@ -47,6 +47,14 @@ config :sanbase, Sanbase.Repo,
   hostname: "localhost",
   pool_size: 10
 
+config :ex_admin,
+  basic_auth: [
+    username: "admin",
+    password: "admin",
+    realm: "Admin Area"
+  ]
+
+
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

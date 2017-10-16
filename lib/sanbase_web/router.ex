@@ -9,6 +9,10 @@ defmodule SanbaseWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  pipeline :basic_auth do
+    plug BasicAuth, use_config: {:ex_admin, :basic_auth}
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -20,7 +24,7 @@ defmodule SanbaseWeb.Router do
 
   use ExAdmin.Router
   scope "/admin", ExAdmin do
-    pipe_through :browser
+    pipe_through [:browser, :basic_auth]
     admin_routes()
   end
 

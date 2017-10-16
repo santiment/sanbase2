@@ -37,6 +37,11 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.ProjectEthAddress,
     Sanbase.ExAdmin.Model.TrackedBtc,
     Sanbase.ExAdmin.Model.TrackedEth,
+  ],
+  basic_auth: [
+    username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},
+    password: {:system, "ADMIN_BASIC_AUTH_PASSWORD"},
+    realm:    {:system, "ADMIN_BASIC_AUTH_REALM"}
   ]
 
 # Import environment specific config. This must remain at the bottom

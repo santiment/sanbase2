@@ -29,6 +29,7 @@ config :ex_admin,
   module: SanbaseWeb,    # MyProject.Web for phoenix >= 1.3.0-rc
   modules: [
     Sanbase.ExAdmin.Dashboard,
+    Sanbase.ExAdmin.Model.Project
   ]
 
 # Import environment specific config. This must remain at the bottom

@@ -19,7 +19,8 @@ To start the app:
 
   * Go in the folder of the app `cd <PROJECT_NAME>`
   * Install dependencies with `mix deps.get`
-  * Install JS dependencies with `cd app && yarn && cd ..`
+  * Install JS dependencies for the static frontend with `cd assets && yarn && cd ..`
+  * Install JS dependencies for the next.js frontend with `cd app && yarn && cd ..`
   * Update your Postgres setup in `config/dev.exs`
   * Create and migrate your database with `mix ecto.setup`
   * Start Phoenix endpoint with `mix phx.server`

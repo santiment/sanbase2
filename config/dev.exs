@@ -99,10 +99,6 @@ config :arc,
   storage: Arc.Storage.Local,
   storage_dir: "/tmp/sanbase/filestore/"
 
-config :sanbase, Sanbase.Prices.Store,
-  host: "localhost",
-  database: "prices"
-
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

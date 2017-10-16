@@ -29,7 +29,14 @@ config :ex_admin,
   module: SanbaseWeb,    # MyProject.Web for phoenix >= 1.3.0-rc
   modules: [
     Sanbase.ExAdmin.Dashboard,
-    Sanbase.ExAdmin.Model.Project
+    Sanbase.ExAdmin.Model.Project,
+    Sanbase.ExAdmin.Model.LatestCoinmarketcapData,
+    Sanbase.ExAdmin.Model.LatestEthWalletData,
+    Sanbase.ExAdmin.Model.LatestBtcWalletData,
+    Sanbase.ExAdmin.Model.ProjectBtcAddress,
+    Sanbase.ExAdmin.Model.ProjectEthAddress,
+    Sanbase.ExAdmin.Model.TrackedBtc,
+    Sanbase.ExAdmin.Model.TrackedEth,
   ]
 
 # Import environment specific config. This must remain at the bottom

@@ -45,10 +45,6 @@ config :sanbase, Sanbase.Repo,
   hostname: "localhost",
   pool_size: 10
 
-config :sanbase, Sanbase.Prices.Store,
-  host: "localhost",
-  database: "prices"
-
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

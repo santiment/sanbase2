@@ -1,4 +1,12 @@
 defmodule Sanbase.Prices.Store do
+  # A module for storing and fetching pricing data from a time series data store
+  #
+  # Currently using InfluxDB for the time series data.
+  #
+  # There is a single database at the moment, which contains simple average
+  # price data for a given currency pair within a given interval. The current
+  # interval is about 5 mins (+/- 3 seconds). The timestamps are stores as
+  # nanoseconds
   use Instream.Connection, otp_app: :sanbase
 
   alias Sanbase.Prices.Store

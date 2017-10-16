@@ -17,6 +17,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   pubsub: [name: Sanbase.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
+
 config :sanbase, node_server: "http://localhost:3000"
 
 # Configures Elixir's Logger

@@ -43,7 +43,8 @@ defmodule Sanbase.Mixfile do
       {:corsica, "~> 1.0", only: [:dev]},
       {:hound, "~> 1.0", only: [:test]},
       {:tesla, "~> 0.9.0"},
-      {:poison, ">= 1.0.0"}
+      {:poison, ">= 1.0.0"},
+      {:instream, "~> 0.16"}
     ]
   end
 
@@ -55,8 +56,9 @@ defmodule Sanbase.Mixfile do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.setup": ["ecto.create", "ecto.load", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "ecto.migrate": ["ecto.migrate", "ecto.dump"],
       "test": ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end

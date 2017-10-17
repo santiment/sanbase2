@@ -10,7 +10,7 @@ defmodule Sanbase.Model.TrackedBtc do
   end
 
   @doc false
-  def changeset(%TrackedBtc{} = tracked_btc, attrs) do
+  def changeset(%TrackedBtc{} = tracked_btc, attrs \\ %{}) do
     tracked_btc
     |> cast(attrs, [:address])
     |> validate_required([:address])

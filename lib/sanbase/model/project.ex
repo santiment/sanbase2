@@ -14,7 +14,7 @@ defmodule Sanbase.Model.Project do
   end
 
   @doc false
-  def changeset(%Project{} = project, attrs) do
+  def changeset(%Project{} = project, attrs \\ %{}) do
     project
     |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id])
     |> validate_required([:name, :ticker, :logo_url, :coinmarketcap_id])

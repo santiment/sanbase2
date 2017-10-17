@@ -43,7 +43,9 @@ defmodule Sanbase.Mixfile do
       {:corsica, "~> 1.0", only: [:dev]},
       {:hound, "~> 1.0", only: [:test]},
       {:tesla, "~> 0.9.0"},
-      {:poison, ">= 1.0.0"}
+      {:poison, ">= 1.0.0"},
+      {:ex_admin, github: "smpallen99/ex_admin", branch: "phx-1.3"},
+      {:basic_auth, "~> 2.2"},
     ]
   end
 

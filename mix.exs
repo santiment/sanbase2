@@ -20,7 +20,7 @@ defmodule Sanbase.Mixfile do
   def application do
     [
       mod: {Sanbase.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools],
     ]
   end
 
@@ -46,6 +46,7 @@ defmodule Sanbase.Mixfile do
       {:poison, ">= 1.0.0"},
       {:ex_admin, github: "smpallen99/ex_admin", branch: "phx-1.3"},
       {:basic_auth, "~> 2.2"},
+      {:distillery, "~> 1.5", runtime: false}
     ]
   end
 

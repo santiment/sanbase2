@@ -12,7 +12,7 @@ defmodule Sanbase.Model.LatestBtcWalletData do
   end
 
   @doc false
-  def changeset(%LatestBtcWalletData{} = latest_btc_wallet_data, attrs) do
+  def changeset(%LatestBtcWalletData{} = latest_btc_wallet_data, attrs \\ %{}) do
     latest_btc_wallet_data
     |> cast(attrs, [:address, :satoshi_balance, :update_time])
     |> validate_required([:address, :satoshi_balance, :update_time])

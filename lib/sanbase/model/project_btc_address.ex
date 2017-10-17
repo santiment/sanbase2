@@ -11,7 +11,7 @@ defmodule Sanbase.Model.ProjectBtcAddress do
   end
 
   @doc false
-  def changeset(%ProjectBtcAddress{} = project_btc_address, attrs) do
+  def changeset(%ProjectBtcAddress{} = project_btc_address, attrs \\ %{}) do
     project_btc_address
     |> cast(attrs, [:address])
     |> validate_required([:address])

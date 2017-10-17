@@ -16,7 +16,7 @@ defmodule Sanbase.Model.LatestEthWalletData do
   end
 
   @doc false
-  def changeset(%LatestEthWalletData{} = latest_eth_wallet_data, attrs) do
+  def changeset(%LatestEthWalletData{} = latest_eth_wallet_data, attrs \\ %{}) do
     latest_eth_wallet_data
     |> cast(attrs, [:address, :balance, :update_time])
     |> validate_required([:address, :balance, :update_time])

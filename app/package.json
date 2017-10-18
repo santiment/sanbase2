@@ -7,8 +7,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "node node_modules/exit_on_eof/index.js node_modules/next/dist/bin/next",
-    "build": "next build",
-    "start": "next start",
+    "build": "node_modules/next/dist/bin/next build",
+    "start": "node_modules/next/dist/bin/next start",
     "test-server": "WEBSITE_URL=http://localhost:4001 node node_modules/exit_on_eof/index.js 'node_modules/next/dist/bin/next -p 3001' > /dev/null"
   },
   "dependencies": {

@@ -4,9 +4,8 @@ defmodule Sanbase.Model.ProjectEthAddress do
   alias Sanbase.Model.{ProjectEthAddress, Project}
 
 
-  @primary_key{:address, :string, []}
   schema "project_eth_address" do
-    # field :address, :string
+    field :address, :string
     belongs_to :project, Project
   end
 

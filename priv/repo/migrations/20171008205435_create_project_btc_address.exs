@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreateProjectBtcAddress do
   def change do
     create table(:project_btc_address) do
       add :address, :string, unique: true
-      add :project_id, references(:project, type: :serial, on_delete: :nothing)
+      add :project_id, references(:project, on_delete: :delete_all)
     end
 
     create index(:project_btc_address, [:project_id])

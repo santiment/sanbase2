@@ -3,8 +3,8 @@ defmodule Sanbase.Repo.Migrations.CreateTeamMembers do
 
   def change do
     create table(:team_members) do
-      add :team_id, references(:teams, on_delete: :nothing), null: false
-      add :country_code, references(:countries, type: :text, column: :code, on_delete: :nothing)
+      add :team_id, references(:teams), null: false
+      add :country_code, references(:countries)
     end
 
     create index(:team_members, [:team_id])

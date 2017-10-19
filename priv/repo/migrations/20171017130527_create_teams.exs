@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateTeams do
 
   def change do
     create table(:teams) do
-      add :project_id, references(:project, type: :serial, on_delete: :nothing), null: false
+      add :project_id, references(:project, on_delete: :delete_all), null: false
       add :team_website, :integer
       add :avno_linkedin_network_team, :decimal
       add :dev_people, :integer

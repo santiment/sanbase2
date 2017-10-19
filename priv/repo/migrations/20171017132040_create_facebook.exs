@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateFacebook do
 
   def change do
     create table(:facebook) do
-      add :project_id, references(:project, type: :serial, on_delete: :nothing), null: false
+      add :project_id, references(:project, on_delete: :delete_all), null: false
       add :link, :text
       add :likes, :integer
     end

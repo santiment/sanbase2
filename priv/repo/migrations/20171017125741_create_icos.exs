@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateIcos do
 
   def change do
     create table(:icos) do
-      add :project_id, references(:project, type: :serial, on_delete: :nothing), null: false
+      add :project_id, references(:project, on_delete: :delete_all), null: false
       add :start_date, :date
       add :end_date, :date
       add :tokens_issued_at_ico, :integer

@@ -15,7 +15,7 @@ defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
 
   def fetch_prices(token, from_datetime, to_datetime) do
     daily_ranges(from_datetime, to_datetime)
-    |> Stream.flat_map(&extract_prices_for_rate_limited(token, &1, &1 + @seconds_in_day))
+    |> Stream.flat_map(&extract_prices_for_interval_with_rate_limit(token, &1, &1 + @seconds_in_day))
   end
 
   def parse_json(json) do
@@ -35,19 +35,19 @@ defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
     end)
   end
 
-  defp extract_prices_for_rate_limited(token, start_interval, end_interval) do
+  defp extract_prices_for_interval_with_rate_limit(token, start_interval, end_interval) do
     {:ok, {_, remaining, wait_period, _, _}} = Hammer.inspect_bucket("Coinmarketmap API Rate Limit", 60_000, 10)
     if remaining > 0 do
       Process.sleep(@time_between_requests)
       {:allow, _} = Hammer.check_rate("Coinmarketmap API Rate Limit", 60_000, 10)
-      extract_prices_for(token, start_interval, end_interval)
+      extract_prices_for_interval(token, start_interval, end_interval)
     else
       Process.sleep(wait_period)
-      extract_prices_for_rate_limited(token, start_interval, end_interval)
+      extract_prices_for_interval_with_rate_limit(token, start_interval, end_interval)
     end
   end
 
-  defp extract_prices_for(token, start_interval, end_interval) do
+  defp extract_prices_for_interval(token, start_interval, end_interval) do
     graph_data_url(token, start_interval * 1000, end_interval * 1000)
     |> get()
     |> case do

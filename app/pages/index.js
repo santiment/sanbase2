@@ -3,12 +3,7 @@ import TodoList from '../components/TodoList.js'
 import fetch from 'isomorphic-unfetch'
 import { WEBSITE_URL } from '../config'
 
-const Index = (props) => (
-  <Layout>
-    <p>Your current shopping list:</p>
-    <TodoList items={props.items}/>
-  </Layout>
-)
+const Index = (props) => {}
 
 Index.getInitialProps = function({ res }) {
   if (res) {

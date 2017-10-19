@@ -44,7 +44,8 @@ defmodule Sanbase.Mixfile do
       {:hound, "~> 1.0", only: [:test]},
       {:tesla, "~> 0.9.0"},
       {:poison, ">= 1.0.0"},
-      {:instream, "~> 0.16"}
+      {:instream, "~> 0.16"},
+      {:hammer, "~> 2.0.0"},
     ]
   end
 

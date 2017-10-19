@@ -14,10 +14,11 @@ defmodule Sanbase.Prices.Store do
 
   @price_database "prices"
 
-  def import_price_points(price_points, pair, tags) when is_list(price_points) do
+  def import_price_points(price_points, pair, tags) do
     price_points
-    |> Enum.map(&convert_to_price_series(&1, pair, tags))
-    |> Store.write(database: @price_database)
+    |> Stream.map(&convert_to_price_series(&1, pair, tags))
+    |> Stream.chunk_every(100)
+    |> Enum.map(&Store.write(&1, database: @price_database))
   end
 
   def fetch_price_points(pair, from, to) do

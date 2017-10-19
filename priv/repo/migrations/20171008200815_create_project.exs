@@ -2,8 +2,7 @@ defmodule Sanbase.Repo.Migrations.CreateProject do
   use Ecto.Migration
 
   def change do
-    create table(:project, primary_key: false) do
-      add :id, :serial, primary_key: true
+    create table(:project) do
       add :name, :text, null: false
       add :ticker, :text, null: false
       add :logo_url, :text

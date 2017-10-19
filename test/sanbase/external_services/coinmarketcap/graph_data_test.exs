@@ -1,7 +1,7 @@
-defmodule Sanbase.ExternalServices.Coinbase.GraphDataTest do
+defmodule Sanbase.ExternalServices.Coinmarketmap.GraphDataTest do
   use ExUnit.Case, async: true
 
-  alias Sanbase.ExternalServices.Coinbase.GraphData
+  alias Sanbase.ExternalServices.Coinmarketmap.GraphData
 
   test "parsing the coinbase json graph data" do
     points = File.read!(Path.join(__DIR__, "btc_graph_data.json"))

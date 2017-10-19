@@ -83,7 +83,7 @@ CREATE TABLE project (
     name text NOT NULL,
     ticker text NOT NULL,
     logo_url text,
-    coinmarketcap_id text NOT NULL
+    coinmarketcap_id text
 );
 
 
@@ -281,5 +281,5 @@ ALTER TABLE ONLY project_eth_address
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439);
+INSERT INTO "schema_migrations" (version) VALUES (20170911162322), (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171018120438), (20171018141238);
 

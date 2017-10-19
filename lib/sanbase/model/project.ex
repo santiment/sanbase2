@@ -34,6 +34,5 @@ defmodule Sanbase.Model.Project do
     |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :geolocation_city, :website_link, :open_source])
     |> validate_required([:name, :ticker, :logo_url, :coinmarketcap_id, :geolocation_city, :website_link, :open_source])
     |> unique_constraint(:name)
-    |> unique_constraint(:coinmarketcap_id)
   end
 end

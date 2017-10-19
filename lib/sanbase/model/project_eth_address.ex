@@ -11,7 +11,7 @@ defmodule Sanbase.Model.ProjectEthAddress do
   end
 
   @doc false
-  def changeset(%ProjectEthAddress{} = project_eth_address, attrs) do
+  def changeset(%ProjectEthAddress{} = project_eth_address, attrs \\ %{}) do
     project_eth_address
     |> cast(attrs, [:address])
     |> validate_required([:address])

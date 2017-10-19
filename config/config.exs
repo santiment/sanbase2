@@ -17,6 +17,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   pubsub: [name: Sanbase.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
+
 config :sanbase, node_server: "http://localhost:3000"
 
 # Configures Elixir's Logger
@@ -32,6 +33,28 @@ config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
                                  cleanup_interval_ms: 60_000 * 10]}
 
+config :ex_admin,
+  repo: Sanbase.Repo,
+  module: SanbaseWeb,    # MyProject.Web for phoenix >= 1.3.0-rc
+  modules: [
+    Sanbase.ExAdmin.Dashboard,
+    Sanbase.ExAdmin.Model.Project,
+    Sanbase.ExAdmin.Model.LatestCoinmarketcapData,
+    Sanbase.ExAdmin.Model.LatestEthWalletData,
+    Sanbase.ExAdmin.Model.LatestBtcWalletData,
+    Sanbase.ExAdmin.Model.ProjectBtcAddress,
+    Sanbase.ExAdmin.Model.ProjectEthAddress,
+    Sanbase.ExAdmin.Model.TrackedBtc,
+    Sanbase.ExAdmin.Model.TrackedEth,
+  ],
+  basic_auth: [
+    username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},
+    password: {:system, "ADMIN_BASIC_AUTH_PASSWORD"},
+    realm:    {:system, "ADMIN_BASIC_AUTH_REALM"}
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"
+
+config :xain, :after_callback, {Phoenix.HTML, :raw}

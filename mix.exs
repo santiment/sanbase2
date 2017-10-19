@@ -20,7 +20,7 @@ defmodule Sanbase.Mixfile do
   def application do
     [
       mod: {Sanbase.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools],
     ]
   end
 
@@ -46,6 +46,9 @@ defmodule Sanbase.Mixfile do
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
       {:hammer, "~> 2.0.0"},
+      {:ex_admin, github: "smpallen99/ex_admin", branch: "phx-1.3"},
+      {:basic_auth, "~> 2.2"},
+      {:distillery, "~> 1.5", runtime: false}
     ]
   end
 
@@ -60,7 +63,6 @@ defmodule Sanbase.Mixfile do
       "ecto.setup": ["ecto.create", "ecto.load", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "ecto.migrate": ["ecto.migrate", "ecto.dump"],
-      "test": ["ecto.create --quiet", "ecto.migrate", "test"]
-    ]
+      "test": ["ecto.create --quiet", "ecto.load", "test"]    ]
   end
 end

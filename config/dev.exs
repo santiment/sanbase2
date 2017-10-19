@@ -11,7 +11,16 @@ config :sanbase, SanbaseWeb.Endpoint,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
-  watchers: [yarn: ["dev", cd: Path.expand("../app", __DIR__)]]
+  watchers: [
+    yarn: [
+      "dev",
+      cd: Path.expand("../app", __DIR__)
+    ],
+    node: [
+      "node_modules/brunch/bin/brunch", "watch", "--stdin",
+      cd: Path.expand("../assets", __DIR__)
+    ]
+  ]
 
 # ## SSL Support
 #
@@ -44,6 +53,14 @@ config :sanbase, Sanbase.Repo,
   database: "sanbase_dev",
   hostname: "localhost",
   pool_size: 10
+
+config :ex_admin,
+  basic_auth: [
+    username: "admin",
+    password: "admin",
+    realm: "Admin Area"
+  ]
+
 
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"

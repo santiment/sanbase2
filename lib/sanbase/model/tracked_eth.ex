@@ -10,7 +10,7 @@ defmodule Sanbase.Model.TrackedEth do
   end
 
   @doc false
-  def changeset(%TrackedEth{} = tracked_eth, attrs) do
+  def changeset(%TrackedEth{} = tracked_eth, attrs \\ %{}) do
     tracked_eth
     |> cast(attrs, [:address])
     |> validate_required([:address])

@@ -1,0 +1,25 @@
+version: '2'
+services:
+  db:
+    image: postgres
+    ports:
+      - "5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: db
+      POSTGRES_DB: sanbase-db
+  sanbase:
+    build:
+      context: .
+      args:
+        SECRET_KEY_BASE: L7FsGz/B9uMfwziD6qTcnMpVLti00E1mHMA/PvwAcsA2YMlB2TEJXmIB8iHafhX+
+    ports:
+      - "4000:4000"
+    links:
+      - db
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgres://postgres:password@db:5432/sanbase-db
+      ADMIN_BASIC_AUTH_USERNAME: admin
+      ADMIN_BASIC_AUTH_PASSWORD: admin

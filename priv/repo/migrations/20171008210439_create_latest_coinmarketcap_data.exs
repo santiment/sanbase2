@@ -11,5 +11,6 @@ defmodule Sanbase.Repo.Migrations.CreateLatestCoinmarketcapData do
       add :update_time, :timestamp, null: false
     end
 
+    create unique_index(:latest_coinmarketcap_data, [:coinmaketcap_id])
   end
 end

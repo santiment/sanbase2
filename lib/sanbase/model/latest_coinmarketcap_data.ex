@@ -17,5 +17,6 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
     latest_coinmarketcap_data
     |> cast(attrs, [:coinmaketcap_id, :name, :symbol, :price_usd, :market_cap_usd, :update_time])
     |> validate_required([:coinmaketcap_id, :name, :symbol, :price_usd, :market_cap_usd, :update_time])
+    |> unique_constraint(:coinmaketcap_id)
   end
 end

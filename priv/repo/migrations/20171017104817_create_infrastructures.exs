@@ -3,8 +3,9 @@ defmodule Sanbase.Repo.Migrations.CreateInfrastructures do
 
   def change do
     create table(:infrastructures) do
-      add :code, :string, unique: true
+      add :code, :string, null: false
     end
 
+    create unique_index(:infrastructures, [:code])
   end
 end

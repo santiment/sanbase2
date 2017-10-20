@@ -75,7 +75,7 @@ ALTER SEQUENCE btt_id_seq OWNED BY btt.id;
 
 CREATE TABLE countries (
     id bigint NOT NULL,
-    code character varying(255),
+    code character varying(255) NOT NULL,
     western boolean,
     orthodox boolean,
     sinic boolean
@@ -107,7 +107,7 @@ ALTER SEQUENCE countries_id_seq OWNED BY countries.id;
 
 CREATE TABLE currencies (
     id bigint NOT NULL,
-    code character varying(255)
+    code character varying(255) NOT NULL
 );
 
 
@@ -274,7 +274,7 @@ ALTER SEQUENCE icos_id_seq OWNED BY icos.id;
 
 CREATE TABLE infrastructures (
     id bigint NOT NULL,
-    code character varying(255)
+    code character varying(255) NOT NULL
 );
 
 
@@ -303,7 +303,7 @@ ALTER SEQUENCE infrastructures_id_seq OWNED BY infrastructures.id;
 
 CREATE TABLE latest_btc_wallet_data (
     id bigint NOT NULL,
-    address character varying(255),
+    address character varying(255) NOT NULL,
     satoshi_balance real NOT NULL,
     update_time timestamp without time zone NOT NULL
 );
@@ -376,7 +376,7 @@ ALTER SEQUENCE latest_coinmarketcap_data_id_seq OWNED BY latest_coinmarketcap_da
 
 CREATE TABLE latest_eth_wallet_data (
     id bigint NOT NULL,
-    address character varying(255),
+    address character varying(255) NOT NULL,
     balance real NOT NULL,
     last_incoming timestamp without time zone,
     last_outgoing timestamp without time zone,
@@ -491,7 +491,7 @@ CREATE TABLE project (
 
 CREATE TABLE project_btc_address (
     id bigint NOT NULL,
-    address character varying(255),
+    address character varying(255) NOT NULL,
     project_id bigint
 );
 
@@ -521,7 +521,7 @@ ALTER SEQUENCE project_btc_address_id_seq OWNED BY project_btc_address.id;
 
 CREATE TABLE project_eth_address (
     id bigint NOT NULL,
-    address character varying(255),
+    address character varying(255) NOT NULL,
     project_id bigint
 );
 
@@ -680,7 +680,7 @@ ALTER SEQUENCE teams_id_seq OWNED BY teams.id;
 
 CREATE TABLE tracked_btc (
     id bigint NOT NULL,
-    address character varying(255)
+    address character varying(255) NOT NULL
 );
 
 
@@ -709,7 +709,7 @@ ALTER SEQUENCE tracked_btc_id_seq OWNED BY tracked_btc.id;
 
 CREATE TABLE tracked_eth (
     id bigint NOT NULL,
-    address character varying(255)
+    address character varying(255) NOT NULL
 );
 
 
@@ -1162,6 +1162,20 @@ CREATE UNIQUE INDEX btt_project_id_index ON btt USING btree (project_id);
 
 
 --
+-- Name: countries_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX countries_code_index ON countries USING btree (code);
+
+
+--
+-- Name: currencies_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX currencies_code_index ON currencies USING btree (code);
+
+
+--
 -- Name: facebook_project_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1197,6 +1211,34 @@ CREATE UNIQUE INDEX icos_project_id_index ON icos USING btree (project_id);
 
 
 --
+-- Name: infrastructures_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX infrastructures_code_index ON infrastructures USING btree (code);
+
+
+--
+-- Name: latest_btc_wallet_data_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_btc_wallet_data_address_index ON latest_btc_wallet_data USING btree (address);
+
+
+--
+-- Name: latest_coinmarketcap_data_coinmaketcap_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmaketcap_id_index ON latest_coinmarketcap_data USING btree (coinmaketcap_id);
+
+
+--
+-- Name: latest_eth_wallet_data_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_eth_wallet_data_address_index ON latest_eth_wallet_data USING btree (address);
+
+
+--
 -- Name: market_segments_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1211,6 +1253,13 @@ CREATE UNIQUE INDEX prices_project_id_index ON prices USING btree (project_id);
 
 
 --
+-- Name: project_btc_address_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_btc_address_address_index ON project_btc_address USING btree (address);
+
+
+--
 -- Name: project_btc_address_project_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1222,6 +1271,13 @@ CREATE INDEX project_btc_address_project_id_index ON project_btc_address USING b
 --
 
 CREATE UNIQUE INDEX project_coinmarketcap_id_index ON project USING btree (coinmarketcap_id);
+
+
+--
+-- Name: project_eth_address_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_eth_address_address_index ON project_eth_address USING btree (address);
 
 
 --
@@ -1285,6 +1341,20 @@ CREATE INDEX team_members_team_id_index ON team_members USING btree (team_id);
 --
 
 CREATE UNIQUE INDEX teams_project_id_index ON teams USING btree (project_id);
+
+
+--
+-- Name: tracked_btc_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX tracked_btc_address_index ON tracked_btc USING btree (address);
+
+
+--
+-- Name: tracked_eth_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX tracked_eth_address_index ON tracked_eth USING btree (address);
 
 
 --

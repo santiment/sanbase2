@@ -14,5 +14,6 @@ defmodule Sanbase.Model.LatestBtcWalletData do
     latest_btc_wallet_data
     |> cast(attrs, [:address, :satoshi_balance, :update_time])
     |> validate_required([:address, :satoshi_balance, :update_time])
+    |> unique_constraint(:address)
   end
 end

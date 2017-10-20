@@ -15,5 +15,6 @@ defmodule Sanbase.Model.Country do
     country
     |> cast(attrs, [:code, :western, :orthodox, :sinic])
     |> validate_required([:code, :western, :orthodox, :sinic])
+    |> unique_constraint(:code)
   end
 end

@@ -3,8 +3,10 @@ defmodule Sanbase.Repo.Migrations.CreateTrackedEth do
 
   def change do
     create table(:tracked_eth) do
-      add :address, :string, unique: true
+      add :address, :string, null: false
     end
+
+    create unique_index(:tracked_eth, [:address])
 
   end
 end

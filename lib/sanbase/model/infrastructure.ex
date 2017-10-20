@@ -14,5 +14,6 @@ defmodule Sanbase.Model.Infrastructure do
     infrastructure
     |> cast(attrs, [:code])
     |> validate_required([:code])
+    |> unique_constraint(:code)
   end
 end

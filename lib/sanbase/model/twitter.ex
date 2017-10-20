@@ -8,7 +8,7 @@ defmodule Sanbase.Model.Twitter do
   schema "twitter" do
     field :followers, :integer
     field :following, :integer
-    field :joindate, Timex.Ecto.Date
+    field :joindate, Ecto.Date
     field :likes, :integer
     field :link, :string
     field :tweets, :integer

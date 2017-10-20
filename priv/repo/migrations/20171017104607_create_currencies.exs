@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateCurrencies do
 
   def change do
     create table(:currencies) do
-      add :code, :text, unique: true
+      add :code, :string, unique: true
     end
 
   end

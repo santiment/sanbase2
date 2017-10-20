@@ -3,10 +3,8 @@ defmodule Sanbase.Model.LatestBtcWalletData do
   import Ecto.Changeset
   alias Sanbase.Model.LatestBtcWalletData
 
-
-  @primary_key{:address, :string, []}
   schema "latest_btc_wallet_data" do
-    # field :address, :string
+    field :address, :string
     field :satoshi_balance, :float
     field :update_time, :naive_datetime
   end

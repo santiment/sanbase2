@@ -4,9 +4,8 @@ defmodule Sanbase.Model.TrackedBtc do
   alias Sanbase.Model.TrackedBtc
 
 
-  @primary_key{:address, :string, []}
   schema "tracked_btc" do
-    # field :address, :string
+    field :address, :string
   end
 
   @doc false

@@ -3,10 +3,8 @@ defmodule Sanbase.Model.Country do
   import Ecto.Changeset
   alias Sanbase.Model.Country
 
-
-  @primary_key{:code, :string, []}
   schema "countries" do
-    # field :code, :string
+    field :code, :string
     field :orthodox, :boolean
     field :sinic, :boolean
     field :western, :boolean

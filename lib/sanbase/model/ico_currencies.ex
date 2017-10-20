@@ -6,10 +6,9 @@ defmodule Sanbase.Model.IcoCurrencies do
   alias Sanbase.Model.Currency
 
 
-  @primary_key false
   schema "ico_currencies" do
     belongs_to :ico, Ico
-    belongs_to :currency, Currency, foreign_key: :currency_code, references: :code
+    belongs_to :currency, Currency
   end
 
   @doc false

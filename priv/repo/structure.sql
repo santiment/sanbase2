@@ -304,7 +304,7 @@ ALTER SEQUENCE infrastructures_id_seq OWNED BY infrastructures.id;
 CREATE TABLE latest_btc_wallet_data (
     id bigint NOT NULL,
     address character varying(255) NOT NULL,
-    satoshi_balance real NOT NULL,
+    satoshi_balance numeric NOT NULL,
     update_time timestamp without time zone NOT NULL
 );
 
@@ -377,11 +377,11 @@ ALTER SEQUENCE latest_coinmarketcap_data_id_seq OWNED BY latest_coinmarketcap_da
 CREATE TABLE latest_eth_wallet_data (
     id bigint NOT NULL,
     address character varying(255) NOT NULL,
-    balance real NOT NULL,
+    balance numeric NOT NULL,
     last_incoming timestamp without time zone,
     last_outgoing timestamp without time zone,
-    tx_in real,
-    tx_out real,
+    tx_in numeric,
+    tx_out numeric,
     update_time timestamp without time zone NOT NULL
 );
 

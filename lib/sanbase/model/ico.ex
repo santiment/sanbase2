@@ -8,7 +8,7 @@ defmodule Sanbase.Model.Ico do
 
   schema "icos" do
     field :bounty_compaign, :boolean, default: false
-    field :end_date, :date
+    field :end_date, Timex.Ecto.Date
     field :funds_raised_btc, :decimal
     field :highest_bonus_percent_for_ico, :decimal
     field :ico_contributors, :integer
@@ -17,7 +17,7 @@ defmodule Sanbase.Model.Ico do
     field :minimal_cap_amount, :decimal
     field :minimal_cap_archived, :boolean, default: false
     field :percent_tokens_for_bounties, :decimal
-    field :start_date, :date
+    field :start_date, Timex.Ecto.Date
     field :tokens_issued_at_ico, :integer
     field :tokens_sold_at_ico, :integer
     field :tokens_team, :integer
@@ -30,8 +30,8 @@ defmodule Sanbase.Model.Ico do
   @doc false
   def changeset(%Ico{} = ico, attrs \\ %{}) do
     ico
-    |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :tokens_team, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :ico_contributors, :highest_bonus_percent_for_ico, :bounty_compaign, :percent_tokens_for_bounties, :minimal_cap_amount, :minimal_cap_archived, :maximal_cap_amount, :maximal_cap_archived])
-    |> validate_required([:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :tokens_team, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :ico_contributors, :highest_bonus_percent_for_ico, :bounty_compaign, :percent_tokens_for_bounties, :minimal_cap_amount, :minimal_cap_archived, :maximal_cap_amount, :maximal_cap_archived])
+    |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :tokens_team, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :ico_contributors, :highest_bonus_percent_for_ico, :bounty_compaign, :percent_tokens_for_bounties, :minimal_cap_amount, :minimal_cap_archived, :maximal_cap_amount, :maximal_cap_archived, :project_id])
+    |> validate_required([:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :tokens_team, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :ico_contributors, :highest_bonus_percent_for_ico, :bounty_compaign, :percent_tokens_for_bounties, :minimal_cap_amount, :minimal_cap_archived, :maximal_cap_amount, :maximal_cap_archived, :project_id])
     |> unique_constraint(:project_id)
   end
 end

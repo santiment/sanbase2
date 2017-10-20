@@ -14,7 +14,7 @@ defmodule Sanbase.Model.IcoCurrencies do
   @doc false
   def changeset(%IcoCurrencies{} = ico_currencies, attrs \\ %{}) do
     ico_currencies
-    |> cast(attrs, [])
-    |> validate_required([])
+    |> cast(attrs, [:ico_id, :currency_id])
+    |> validate_required([:ico_id, :currency_id])
   end
 end

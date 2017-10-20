@@ -1,4 +1,4 @@
-defmodule Sanbase.ExternalServices do
+defmodule Sanbase.ExternalServices.Coinbase do
   use Tesla
 
   plug Tesla.Middleware.Tuples

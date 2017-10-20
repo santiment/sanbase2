@@ -58,3 +58,7 @@ config :ex_admin,
 import_config "#{Mix.env}.exs"
 
 config :xain, :after_callback, {Phoenix.HTML, :raw}
+
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
+  update_interval: 5 * 1000 * 60, # 5 minutes
+  sync_enabled: true

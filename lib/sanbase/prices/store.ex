@@ -26,6 +26,27 @@ defmodule Sanbase.Prices.Store do
     |> Store.query(database: @price_database)
   end
 
+  def last_price_datetime(pair) do
+    "SELECT time, price FROM #{pair} ORDER BY time DESC LIMIT 1"
+    |> Store.query(database: @price_database)
+    |> parse_last_price_datetime
+  end
+
+  defp parse_last_price_datetime(%{
+    results: [%{
+      series: [%{
+        values: [[iso8601_datetime, _price]]
+      }]
+    }]
+  }) do
+
+    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+
+    datetime
+  end
+
+  defp parse_last_price_datetime(result), do: IO.inspect(result)
+
   defp fetch_query(pair, from, to) do
     "SELECT time, price, volume, marketcap
     FROM #{pair}

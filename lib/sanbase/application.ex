@@ -13,7 +13,8 @@ defmodule Sanbase.Application do
       # Start the endpoint when the application starts
       supervisor(SanbaseWeb.Endpoint, []),
       # Time series DB connection
-      Sanbase.Prices.Store.child_spec
+      Sanbase.Prices.Store.child_spec,
+      Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
       # Start your own worker by calling: Sanbase.Worker.start_link(arg1, arg2, arg3)
       # worker(Sanbase.Worker, [arg1, arg2, arg3]),
     ]

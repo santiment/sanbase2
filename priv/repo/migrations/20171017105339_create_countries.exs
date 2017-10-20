@@ -3,11 +3,12 @@ defmodule Sanbase.Repo.Migrations.CreateCountries do
 
   def change do
     create table(:countries) do
-      add :code, :string, unique: true
+      add :code, :string, null: false
       add :western, :boolean
       add :orthodox, :boolean
       add :sinic, :boolean
     end
 
+    create unique_index(:countries, [:code])
   end
 end

@@ -1432,6 +1432,34 @@ CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON public.l
 
 
 --
+-- Name: infrastructures_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX infrastructures_code_index ON infrastructures USING btree (code);
+
+
+--
+-- Name: latest_btc_wallet_data_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_btc_wallet_data_address_index ON latest_btc_wallet_data USING btree (address);
+
+
+--
+-- Name: latest_coinmarketcap_data_coinmaketcap_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmaketcap_id_index ON latest_coinmarketcap_data USING btree (coinmaketcap_id);
+
+
+--
+-- Name: latest_eth_wallet_data_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_eth_wallet_data_address_index ON latest_eth_wallet_data USING btree (address);
+
+
+--
 -- Name: market_segments_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1492,6 +1520,13 @@ CREATE UNIQUE INDEX processed_github_archives_project_id_archive_index ON public
 --
 
 CREATE UNIQUE INDEX project_btc_address_address_index ON public.project_btc_address USING btree (address);
+
+
+--
+-- Name: project_btc_address_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_btc_address_address_index ON project_btc_address USING btree (address);
 
 
 --

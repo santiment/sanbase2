@@ -13,5 +13,6 @@ defmodule Sanbase.Model.TrackedEth do
     tracked_eth
     |> cast(attrs, [:address])
     |> validate_required([:address])
+    |> unique_constraint(:address)
   end
 end

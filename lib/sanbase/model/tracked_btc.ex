@@ -13,5 +13,6 @@ defmodule Sanbase.Model.TrackedBtc do
     tracked_btc
     |> cast(attrs, [:address])
     |> validate_required([:address])
+    |> unique_constraint(:address)
   end
 end

@@ -25,3 +25,7 @@ config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :hound, driver: "chrome_driver"
+
+if File.exists?("config/test.secret.exs") do
+  import_config "test.secret.exs"
+end

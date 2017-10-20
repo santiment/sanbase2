@@ -19,7 +19,7 @@ defmodule Sanbase.Model.Btt do
   def changeset(%Btt{} = btt, attrs \\ %{}) do
     btt
     |> cast(attrs, [:link, :date, :total_reads, :post_until_icostart, :post_until_icoend, :posts_total, :project_id])
-    |> validate_required([:link, :date, :total_reads, :post_until_icostart, :post_until_icoend, :posts_total, :project_id])
+    |> validate_required([:project_id])
     |> unique_constraint(:project_id)
   end
 end

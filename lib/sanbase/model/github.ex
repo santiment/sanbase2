@@ -16,7 +16,7 @@ defmodule Sanbase.Model.Github do
   def changeset(%Github{} = github, attrs \\ %{}) do
     github
     |> cast(attrs, [:link, :commits, :contributors, :project_id])
-    |> validate_required([:link, :commits, :contributors, :project_id])
+    |> validate_required([:project_id])
     |> unique_constraint(:project_id)
   end
 end

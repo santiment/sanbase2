@@ -15,7 +15,7 @@ defmodule Sanbase.Model.Reddit do
   def changeset(%Reddit{} = reddit, attrs \\ %{}) do
     reddit
     |> cast(attrs, [:link, :subscribers, :project_id])
-    |> validate_required([:link, :subscribers, :project_id])
+    |> validate_required([:project_id])
     |> unique_constraint(:project_id)
   end
 end

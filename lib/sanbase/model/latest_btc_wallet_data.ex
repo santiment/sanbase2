@@ -6,7 +6,7 @@ defmodule Sanbase.Model.LatestBtcWalletData do
   schema "latest_btc_wallet_data" do
     field :address, :string
     field :satoshi_balance, :decimal
-    field :update_time, Timex.Ecto.DateTime
+    field :update_time, Ecto.DateTime
   end
 
   @doc false

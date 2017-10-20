@@ -19,7 +19,7 @@ defmodule Sanbase.Model.Twitter do
   def changeset(%Twitter{} = twitter, attrs \\ %{}) do
     twitter
     |> cast(attrs, [:link, :joindate, :tweets, :followers, :following, :likes, :project_id])
-    |> validate_required([:link, :joindate, :tweets, :followers, :following, :likes, :project_id])
+    |> validate_required([:project_id])
     |> unique_constraint(:project_id)
   end
 end

@@ -31,7 +31,7 @@ defmodule Sanbase.Model.Ico do
   def changeset(%Ico{} = ico, attrs \\ %{}) do
     ico
     |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :tokens_team, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :ico_contributors, :highest_bonus_percent_for_ico, :bounty_compaign, :percent_tokens_for_bounties, :minimal_cap_amount, :minimal_cap_archived, :maximal_cap_amount, :maximal_cap_archived, :project_id])
-    |> validate_required([:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :tokens_team, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :ico_contributors, :highest_bonus_percent_for_ico, :bounty_compaign, :percent_tokens_for_bounties, :minimal_cap_amount, :minimal_cap_archived, :maximal_cap_amount, :maximal_cap_archived, :project_id])
+    |> validate_required([:project_id])
     |> unique_constraint(:project_id)
   end
 end

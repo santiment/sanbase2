@@ -58,11 +58,7 @@ config :ex_admin,
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},
     password: {:system, "ADMIN_BASIC_AUTH_PASSWORD"},
     realm:    {:system, "ADMIN_BASIC_AUTH_REALM"}
-  ],
-  field_type_matching: %{
-    Timex.Ecto.DateTime => Ecto.DateTime,
-    Timex.Ecto.Date => Ecto.Date,
-  }
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

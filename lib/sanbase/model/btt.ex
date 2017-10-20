@@ -6,7 +6,7 @@ defmodule Sanbase.Model.Btt do
 
 
   schema "btt" do
-    field :date, Timex.Ecto.Date
+    field :date, Ecto.Date
     field :link, :string
     field :post_until_icoend, :integer
     field :post_until_icostart, :integer

@@ -6,11 +6,11 @@ defmodule Sanbase.Model.LatestEthWalletData do
 
   schema "latest_eth_wallet_data" do
     field :address, :string
-    field :balance, :float
+    field :balance, :decimal
     field :last_incoming, Timex.Ecto.DateTime
     field :last_outgoing, Timex.Ecto.DateTime
-    field :tx_in, :float
-    field :tx_out, :float
+    field :tx_in, :decimal
+    field :tx_out, :decimal
     field :update_time, Timex.Ecto.DateTime
   end
 

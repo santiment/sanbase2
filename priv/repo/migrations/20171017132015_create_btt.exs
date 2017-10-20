@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreateBtt do
   def change do
     create table(:btt) do
       add :project_id, references(:project, on_delete: :delete_all), null: false
-      add :link, :text
+      add :link, :string
       add :date, :date
       add :total_reads, :integer
       add :post_until_icostart, :integer

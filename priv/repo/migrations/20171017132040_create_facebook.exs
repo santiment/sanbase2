@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreateFacebook do
   def change do
     create table(:facebook) do
       add :project_id, references(:project, on_delete: :delete_all), null: false
-      add :link, :text
+      add :link, :string
       add :likes, :integer
     end
     create unique_index(:facebook, [:project_id])

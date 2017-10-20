@@ -4,9 +4,8 @@ defmodule Sanbase.Model.TrackedEth do
   alias Sanbase.Model.TrackedEth
 
 
-  @primary_key{:address, :string, []}
   schema "tracked_eth" do
-    # field :address, :string
+    field :address, :string
   end
 
   @doc false

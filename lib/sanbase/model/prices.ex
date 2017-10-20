@@ -15,8 +15,8 @@ defmodule Sanbase.Model.Prices do
   @doc false
   def changeset(%Prices{} = prices, attrs \\ %{}) do
     prices
-    |> cast(attrs, [:price_usd, :price_btc, :price_eth])
-    |> validate_required([:price_usd, :price_btc, :price_eth])
+    |> cast(attrs, [:price_usd, :price_btc, :price_eth, :project_id])
+    |> validate_required([:price_usd, :price_btc, :price_eth, :project_id])
     |> unique_constraint(:project_id)
   end
 end

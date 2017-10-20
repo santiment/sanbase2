@@ -6,7 +6,7 @@ defmodule Sanbase.Model.Btt do
 
 
   schema "btt" do
-    field :date, :date
+    field :date, Timex.Ecto.Date
     field :link, :string
     field :post_until_icoend, :integer
     field :post_until_icostart, :integer
@@ -18,8 +18,8 @@ defmodule Sanbase.Model.Btt do
   @doc false
   def changeset(%Btt{} = btt, attrs \\ %{}) do
     btt
-    |> cast(attrs, [:link, :date, :total_reads, :post_until_icostart, :post_until_icoend, :posts_total])
-    |> validate_required([:link, :date, :total_reads, :post_until_icostart, :post_until_icoend, :posts_total])
+    |> cast(attrs, [:link, :date, :total_reads, :post_until_icostart, :post_until_icoend, :posts_total, :project_id])
+    |> validate_required([:link, :date, :total_reads, :post_until_icostart, :post_until_icoend, :posts_total, :project_id])
     |> unique_constraint(:project_id)
   end
 end

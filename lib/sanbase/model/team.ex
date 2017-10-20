@@ -25,7 +25,7 @@ defmodule Sanbase.Model.Team do
   def changeset(%Team{} = team, attrs \\ %{}) do
     team
     |> cast(attrs, [:team_website, :avno_linkedin_network_team, :dev_people, :business_people, :real_names, :pics_available, :linkedin_profiles_project, :advisors, :advisor_linkedin_available, :av_no_linkedin_network_advisors, :project_id])
-    |> validate_required([:team_website, :avno_linkedin_network_team, :dev_people, :business_people, :real_names, :pics_available, :linkedin_profiles_project, :advisors, :advisor_linkedin_available, :av_no_linkedin_network_advisors, :project_id])
+    |> validate_required([:project_id])
     |> unique_constraint(:project_id)
   end
 end

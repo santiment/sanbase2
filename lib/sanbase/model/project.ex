@@ -32,7 +32,7 @@ defmodule Sanbase.Model.Project do
   def changeset(%Project{} = project, attrs \\ %{}) do
     project
     |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :geolocation_city, :website_link, :open_source, :market_segment_id, :infrastructure_id, :geolocation_country_id])
-    |> validate_required([:name, :ticker, :logo_url, :coinmarketcap_id, :geolocation_city, :website_link, :open_source, :market_segment_id, :infrastructure_id, :geolocation_country_id])
+    |> validate_required([:name, :ticker])
     |> unique_constraint(:name)
   end
 end

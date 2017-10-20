@@ -8,7 +8,7 @@ defmodule Sanbase.Model.TeamMember do
 
   schema "team_members" do
     belongs_to :team, Team
-    belongs_to :country, Country, foreign_key: :country_code, references: :code
+    belongs_to :country, Country
   end
 
   @doc false

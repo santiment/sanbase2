@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreateTwitter do
   def change do
     create table(:twitter) do
       add :project_id, references(:project, on_delete: :delete_all), null: false
-      add :link, :text
+      add :link, :string
       add :joindate, :date
       add :tweets, :integer
       add :followers, :integer

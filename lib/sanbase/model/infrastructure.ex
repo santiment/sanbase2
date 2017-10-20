@@ -4,10 +4,8 @@ defmodule Sanbase.Model.Infrastructure do
   alias Sanbase.Model.Infrastructure
   alias Sanbase.Model.Project
 
-
-  @primary_key{:code, :string, []}
   schema "infrastructures" do
-    # field :code, :string
+    field :code, :string
     has_many :projects, Project
   end
 

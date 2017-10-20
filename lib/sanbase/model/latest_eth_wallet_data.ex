@@ -4,9 +4,8 @@ defmodule Sanbase.Model.LatestEthWalletData do
   alias Sanbase.Model.LatestEthWalletData
 
 
-  @primary_key{:address, :string, []}
   schema "latest_eth_wallet_data" do
-    # field :address, :string
+    field :address, :string
     field :balance, :float
     field :last_incoming, :naive_datetime
     field :last_outgoing, :naive_datetime

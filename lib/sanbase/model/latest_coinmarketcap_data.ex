@@ -4,8 +4,8 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
   alias Sanbase.Model.LatestCoinmarketcapData
 
   schema "latest_coinmarketcap_data" do
-    field :market_cap_usd, :decimal
     field :name, :string
+    field :market_cap_usd, :decimal
     field :price_usd, :decimal
     field :symbol, :string
     field :update_time, Timex.Ecto.DateTime

@@ -3,10 +3,8 @@ defmodule Sanbase.Model.ProjectBtcAddress do
   import Ecto.Changeset
   alias Sanbase.Model.{ProjectBtcAddress, Project}
 
-
-  @primary_key{:address, :string, []}
   schema "project_btc_address" do
-    # field :address, :string
+    field :address, :string
     belongs_to :project, Project
   end
 

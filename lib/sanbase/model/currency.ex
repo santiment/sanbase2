@@ -4,9 +4,8 @@ defmodule Sanbase.Model.Currency do
   alias Sanbase.Model.Currency
 
 
-  @primary_key{:code, :string, []}
   schema "currencies" do
-    # field :code, :string
+    field :code, :string
   end
 
   @doc false

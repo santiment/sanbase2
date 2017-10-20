@@ -15,8 +15,8 @@ defmodule Sanbase.Model.Project do
     has_many :eth_addresses, ProjectEthAddress
     has_many :btc_addresses, ProjectBtcAddress
     belongs_to :market_segment, MarketSegment
-    belongs_to :infrastructure, Infrastructure, foreign_key: :infrastructure_code, references: :code
-    belongs_to :geolocation_country, Country, foreign_key: :geolocation_country_code, references: :code
+    belongs_to :infrastructure, Infrastructure
+    belongs_to :geolocation_country, Country
     has_one :btt, Btt
     has_one :facebook, Facebook
     has_one :github, Github

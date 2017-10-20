@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateInfrastructures do
 
   def change do
     create table(:infrastructures) do
-      add :code, :text, unique: true
+      add :code, :string, unique: true
     end
 
   end

@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateLatestCoinmarketcapData do
 
   def change do
     create table(:latest_coinmarketcap_data) do
-      add :coinmaketcap_id, :text
+      add :coinmaketcap_id, :string, null: false
       add :name, :string
       add :symbol, :string
       add :price_usd, :numeric

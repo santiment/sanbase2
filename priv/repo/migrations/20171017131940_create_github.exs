@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreateGithub do
   def change do
     create table(:github) do
       add :project_id, references(:project, on_delete: :delete_all), null: false
-      add :link, :text
+      add :link, :string
       add :commits, :integer
       add :contributors, :integer
     end

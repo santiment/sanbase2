@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.RemoveNonnullConstraintForCoinmarketcapId do
 
   def up do
     alter table("project") do
-      modify :coinmarketcap_id, :text, null: true
+      modify :coinmarketcap_id, :string, null: true
     end
   end
 

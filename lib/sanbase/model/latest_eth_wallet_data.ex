@@ -19,5 +19,6 @@ defmodule Sanbase.Model.LatestEthWalletData do
     latest_eth_wallet_data
     |> cast(attrs, [:address, :balance, :update_time])
     |> validate_required([:address, :balance, :update_time])
+    |> unique_constraint(:address)
   end
 end

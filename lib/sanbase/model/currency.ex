@@ -13,5 +13,6 @@ defmodule Sanbase.Model.Currency do
     currency
     |> cast(attrs, [:code])
     |> validate_required([:code])
+    |> unique_constraint(:code)
   end
 end

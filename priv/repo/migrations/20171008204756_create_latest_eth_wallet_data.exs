@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateLatestEthWalletData do
 
   def change do
     create table(:latest_eth_wallet_data) do
-      add :address, :string, unique: true
+      add :address, :string, null: false
       add :balance, :real, null: false
       add :last_incoming, :timestamp
       add :last_outgoing, :timestamp
@@ -11,6 +11,8 @@ defmodule Sanbase.Repo.Migrations.CreateLatestEthWalletData do
       add :tx_out, :real
       add :update_time, :timestamp, null: false
     end
+
+    create unique_index(:latest_eth_wallet_data, [:address])
 
   end
 end

@@ -8,7 +8,7 @@ defmodule Sanbase.Model.Twitter do
   schema "twitter" do
     field :followers, :integer
     field :following, :integer
-    field :joindate, :date
+    field :joindate, Timex.Ecto.Date
     field :likes, :integer
     field :link, :string
     field :tweets, :integer
@@ -18,8 +18,8 @@ defmodule Sanbase.Model.Twitter do
   @doc false
   def changeset(%Twitter{} = twitter, attrs \\ %{}) do
     twitter
-    |> cast(attrs, [:link, :joindate, :tweets, :followers, :following, :likes])
-    |> validate_required([:link, :joindate, :tweets, :followers, :following, :likes])
+    |> cast(attrs, [:link, :joindate, :tweets, :followers, :following, :likes, :project_id])
+    |> validate_required([:link, :joindate, :tweets, :followers, :following, :likes, :project_id])
     |> unique_constraint(:project_id)
   end
 end

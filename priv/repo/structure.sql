@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.1
--- Dumped by pg_dump version 9.6.1
+-- Dumped from database version 9.6.4
+-- Dumped by pg_dump version 9.6.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -612,7 +612,7 @@ CREATE TABLE schema_migrations (
 CREATE TABLE team_members (
     id bigint NOT NULL,
     team_id bigint NOT NULL,
-    country_code bigint
+    country_id bigint
 );
 
 
@@ -1267,10 +1267,10 @@ CREATE UNIQUE INDEX reddit_project_id_index ON reddit USING btree (project_id);
 
 
 --
--- Name: team_members_country_code_index; Type: INDEX; Schema: public; Owner: -
+-- Name: team_members_country_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX team_members_country_code_index ON team_members USING btree (country_code);
+CREATE INDEX team_members_country_id_index ON team_members USING btree (country_id);
 
 
 --
@@ -1406,11 +1406,11 @@ ALTER TABLE ONLY reddit
 
 
 --
--- Name: team_members team_members_country_code_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: team_members team_members_country_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY team_members
-    ADD CONSTRAINT team_members_country_code_fkey FOREIGN KEY (country_code) REFERENCES countries(id);
+    ADD CONSTRAINT team_members_country_id_fkey FOREIGN KEY (country_id) REFERENCES countries(id);
 
 
 --

@@ -14,7 +14,7 @@ defmodule Sanbase.Model.TeamMember do
   @doc false
   def changeset(%TeamMember{} = team_member, attrs \\ %{}) do
     team_member
-    |> cast(attrs, [])
-    |> validate_required([])
+    |> cast(attrs, [:team_id, :country_id])
+    |> validate_required([:team_id, :country_id])
   end
 end

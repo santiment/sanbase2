@@ -17,8 +17,8 @@ defmodule Sanbase.Model.Whitepaper do
   @doc false
   def changeset(%Whitepaper{} = whitepaper, attrs \\ %{}) do
     whitepaper
-    |> cast(attrs, [:link, :authors, :pages, :citations, :score])
-    |> validate_required([:link, :authors, :pages, :citations, :score])
+    |> cast(attrs, [:link, :authors, :pages, :citations, :score, :project_id])
+    |> validate_required([:link, :authors, :pages, :citations, :score, :project_id])
     |> unique_constraint(:project_id)
   end
 end

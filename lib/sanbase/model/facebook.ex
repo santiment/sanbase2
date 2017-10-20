@@ -14,8 +14,8 @@ defmodule Sanbase.Model.Facebook do
   @doc false
   def changeset(%Facebook{} = facebook, attrs \\ %{}) do
     facebook
-    |> cast(attrs, [:link, :likes])
-    |> validate_required([:link, :likes])
+    |> cast(attrs, [:link, :likes, :project_id])
+    |> validate_required([:link, :likes, :project_id])
     |> unique_constraint(:project_id)
   end
 end

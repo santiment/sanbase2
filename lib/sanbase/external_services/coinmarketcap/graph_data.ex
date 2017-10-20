@@ -13,6 +13,15 @@ defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
   @seconds_in_day 24 * 60 * 60 # Number of seconds in a day
   @time_between_requests 4000 # milliseconds
 
+  def fetch_all_time_prices(token) do
+    graph_data_all_time_url(token)
+    |> get()
+    |> case do
+      %{status: 200, body: body} ->
+        parse_json(body)
+    end
+  end
+
   def fetch_prices(token, from_datetime, to_datetime) do
     daily_ranges(from_datetime, to_datetime)
     |> Stream.flat_map(&extract_prices_for_interval_with_rate_limit(token, &1, &1 + @seconds_in_day))
@@ -48,7 +57,7 @@ defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
   end
 
   defp extract_prices_for_interval(token, start_interval, end_interval) do
-    graph_data_url(token, start_interval * 1000, end_interval * 1000)
+    graph_data_interval_url(token, start_interval * 1000, end_interval * 1000)
     |> get()
     |> case do
       %{status: 200, body: body} ->
@@ -72,7 +81,11 @@ defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
       end)
   end
 
-  defp graph_data_url(ticker, from_timestamp, to_timestamp) do
+  defp graph_data_all_time_url(ticker) do
+    "/currencies/#{ticker}/"
+  end
+
+  defp graph_data_interval_url(ticker, from_timestamp, to_timestamp) do
     "/currencies/#{ticker}/#{from_timestamp}/#{to_timestamp}/"
   end
 end

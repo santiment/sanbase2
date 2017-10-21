@@ -45,32 +45,32 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   defp fetch_price_data(%Project{coinmarketcap_id: nil}), do: :ok
 
-  defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id}) do
+  defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
     GraphData.fetch_prices(
       coinmarketcap_id,
-      last_price_datetime(coinmarketcap_id),
+      last_price_datetime(project),
       DateTime.utc_now
     )
-    |> Store.import_price_points(table_name(coinmarketcap_id), source: "coinmarketcap")
+    |> Store.import_price_points(table_name(project), source: "coinmarketcap")
   end
 
-  defp last_price_datetime(coinmarketcap_id) do
-    case Store.last_price_datetime(table_name(coinmarketcap_id)) do
+  defp last_price_datetime(project) do
+    case Store.last_price_datetime(table_name(project)) do
       nil ->
-        fetch_first_price_datetime(coinmarketcap_id)
+        fetch_first_price_datetime(project)
       datetime ->
         datetime
     end
   end
 
-  defp fetch_first_price_datetime(coinmarketcap_id) do
+  defp fetch_first_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id}) do
     GraphData.fetch_all_time_prices(coinmarketcap_id)
     |> Enum.take(1)
     |> hd
     |> Map.get(:datetime)
   end
 
-  defp table_name(coinmarketcap_id) do
-    coinmarketcap_id <> "_USD"
+  defp table_name(%Project{ticker: ticker}) do
+    ticker <> "_USD"
   end
 end

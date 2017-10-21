@@ -27,7 +27,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   def last_price_datetime(pair) do
-    "SELECT time, price FROM #{pair} ORDER BY time DESC LIMIT 1"
+    ~s/SELECT time, price FROM "#{pair}" ORDER BY time DESC LIMIT 1/
     |> Store.query(database: @price_database)
     |> parse_last_price_datetime
   end
@@ -44,12 +44,12 @@ defmodule Sanbase.Prices.Store do
     datetime
   end
 
-  defp parse_last_price_datetime(result), do: IO.inspect(result)
+  defp parse_last_price_datetime(%{results: [%{ statement_id: 0 }]}), do: nil
 
   defp fetch_query(pair, from, to) do
-    "SELECT time, price, volume, marketcap
-    FROM #{pair}
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{DateTime.to_unix(to, :nanoseconds)}"
+    ~s/SELECT time, price, volume, marketcap
+    FROM "#{pair}"
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   defp convert_to_price_series(%Point{datetime: datetime, price: price, volume: volume, marketcap: marketcap}, pair, tags) do

@@ -21,7 +21,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     update_interval = Keyword.get(config(), :update_interval, @default_update_interval)
 
     if Keyword.get(config(), :sync_enabled, false) do
-      Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
+      GenServer.cast(self(), :sync)
+
       {:ok, %{update_interval: update_interval}}
     else
       :ignore

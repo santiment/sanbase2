@@ -39,7 +39,6 @@ defmodule Sanbase.Prices.Store do
       }]
     }]
   }) do
-
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
     datetime

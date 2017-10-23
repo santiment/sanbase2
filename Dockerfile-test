@@ -1,0 +1,20 @@
+# Elixir and phoenix assets build image
+FROM elixir:1.5.2-alpine
+
+RUN apk add --update git postgresql-client
+
+ENV MIX_ENV test
+
+RUN mix local.hex --force
+RUN mix local.rebar --force
+
+WORKDIR /app
+
+COPY mix.lock /app/mix.lock
+COPY mix.exs /app/mix.exs
+RUN mix deps.get
+RUN mix deps.compile
+
+COPY . /app
+
+CMD mix test

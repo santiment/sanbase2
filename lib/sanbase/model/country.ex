@@ -8,12 +8,13 @@ defmodule Sanbase.Model.Country do
     field :orthodox, :boolean
     field :sinic, :boolean
     field :western, :boolean
+    field :eastern, :boolean
   end
 
   @doc false
   def changeset(%Country{} = country, attrs \\ %{}) do
     country
-    |> cast(attrs, [:code, :western, :orthodox, :sinic])
+    |> cast(attrs, [:code, :eastern, :western, :orthodox, :sinic])
     |> validate_required([:code])
     |> unique_constraint(:code)
   end

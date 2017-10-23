@@ -44,7 +44,7 @@ Config properties:
 
 - `charset = utf-8` - use utf-8 encoding,
 - `indent_style = space` - indent with spaces,
-- `indent_size = 4` - indent size 4,
+- `indent_size = 2` - indent size 2,
 - `trim_trailing_whitespace = true` - will trim any useless trailing whitespaces,
 - `insert_final_newline = true` - add new line at the end of the file;
 

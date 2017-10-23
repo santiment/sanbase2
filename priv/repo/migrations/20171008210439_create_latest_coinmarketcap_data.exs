@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.CreateLatestCoinmarketcapData do
 
   def change do
     create table(:latest_coinmarketcap_data) do
-      add :coinmaketcap_id, :string, null: false
+      add :coinmarketcap_id, :string, null: false
       add :name, :string
       add :symbol, :string
       add :price_usd, :decimal
@@ -11,6 +11,6 @@ defmodule Sanbase.Repo.Migrations.CreateLatestCoinmarketcapData do
       add :update_time, :timestamp, null: false
     end
 
-    create unique_index(:latest_coinmarketcap_data, [:coinmaketcap_id])
+    create unique_index(:latest_coinmarketcap_data, [:coinmarketcap_id])
   end
 end

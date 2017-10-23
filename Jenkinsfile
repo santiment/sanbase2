@@ -24,9 +24,9 @@ podTemplate(label: 'sanbase-builder', containers: [
         ]) {
           sh "docker -H tcp://docker-host-docker-host:2375 build -t sanbase-test:${env.BRANCH_NAME} -f Dockerfile-test ."
 
-          sh "docker -H tcp://docker-host-docker-host:2375 run --name postgres_${env.BRANCH_NAME} -d postgres:9.6-alpine"
+          sh "docker -H tcp://docker-host-docker-host:2375 run --rm --name postgres_${env.BRANCH_NAME} -d postgres:9.6-alpine"
           try {
-            sh "docker -H tcp://docker-host-docker-host:2375 run --link postgres_${env.BRANCH_NAME}:db --env DATABASE_URL=postgres://postgres:password@db:5432/postgres -t sanbase-test:${env.BRANCH_NAME}"
+            sh "docker -H tcp://docker-host-docker-host:2375 run --rm --link postgres_${env.BRANCH_NAME}:db --env DATABASE_URL=postgres://postgres:password@db:5432/postgres -t sanbase-test:${env.BRANCH_NAME}"
           } finally {
             sh "docker -H tcp://docker-host-docker-host:2375 kill postgres_${env.BRANCH_NAME}"
           }

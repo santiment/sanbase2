@@ -36,6 +36,18 @@ All the JS code is in `app/`. The API code is in `lib/` and follows the phoenix 
 directory structure. You can find more info on how the JS side works on [Learning Next.js](https://learnnextjs.com). You can read more about how to define the API
 endpoints from the [Phoenix docs](https://hexdocs.pm/phoenix/overview.html) or from the excellent [Thoughtbot JSON API guide](https://robots.thoughtbot.com/building-a-phoenix-json-api)
 
+## .editorconfig
+
+We have .editorconfig file in our root.
+
+Config properties:
+
+- `charset = utf-8` - use utf-8 encoding,
+- `indent_style = space` - indent with spaces,
+- `indent_size = 4` - indent size 4,
+- `trim_trailing_whitespace = true` - will trim any useless trailing whitespaces,
+- `insert_final_newline = true` - add new line at the end of the file;
+
 ## Integration tests
 
 It is possible to write high level integration tests for the JS app using the `Hound`

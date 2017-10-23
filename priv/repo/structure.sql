@@ -76,6 +76,7 @@ ALTER SEQUENCE btt_id_seq OWNED BY btt.id;
 CREATE TABLE countries (
     id bigint NOT NULL,
     code character varying(255) NOT NULL,
+    eastern boolean,
     western boolean,
     orthodox boolean,
     sinic boolean

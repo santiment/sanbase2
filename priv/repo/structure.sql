@@ -1446,10 +1446,10 @@ CREATE UNIQUE INDEX latest_btc_wallet_data_address_index ON latest_btc_wallet_da
 
 
 --
--- Name: latest_coinmarketcap_data_coinmaketcap_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: latest_coinmarketcap_data_coinmarketcap_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmaketcap_id_index ON latest_coinmarketcap_data USING btree (coinmaketcap_id);
+CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON latest_coinmarketcap_data USING btree (coinmarketcap_id);
 
 
 --

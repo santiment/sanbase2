@@ -1,6 +1,6 @@
 import fetch from 'isomorphic-unfetch'
 import { WEBSITE_URL } from '../config'
-import Layout from '../components/Layout'
+import Layout from '../components/main-layout'
 
 const Index = (props) => (
 <Layout>

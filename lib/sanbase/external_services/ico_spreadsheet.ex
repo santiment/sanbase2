@@ -23,6 +23,10 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     end
   end
 
+  defp ico_data_url do
+    "#{@spreadsheet_id}/values/ICOs?valueRenderOption=UNFORMATTED_VALUE&key=#{@api_key}"
+  end
+
   # TODO: get column indices from the header row
   defp parse_header_row(header_row) do
     %{
@@ -114,10 +118,6 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     end
   end
 
-  defp ico_data_url do
-    "#{@spreadsheet_id}/values/ICOs?valueRenderOption=UNFORMATTED_VALUE&key=#{@api_key}"
-  end
-
   defp parse_value(value_row, {column, index}) do
     value = get_value!(value_row, index)
     value =
@@ -161,9 +161,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   end
 
   defp parse_boolean(value) do
-    if(is_binary(value)) do
-      value = String.downcase(value)
-    end
+    value = if(is_binary(value)) do String.downcase(value) else value end
 
     case value do
       v when v in ["yes", "true", 1] -> true

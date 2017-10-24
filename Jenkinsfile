@@ -23,9 +23,7 @@ podTemplate(label: 'sanbase-builder', containers: [
             variable: 'aws_account_id'
           )
         ]) {
-          docker.build("sanbase-test:${env.BRANCH_NAME}", '-f Dockerfile-test .').inside("--link ${dbImage.id}:db") {
-            "sh mix test"
-          }
+          docker.build("sanbase-test:${env.BRANCH_NAME}", '-f Dockerfile-test .').run()
 
 //            if (env.BRANCH_NAME == "master") {
             docker.withRegistry("${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com", "ecr:eu-central-1:ecr-credentials") {

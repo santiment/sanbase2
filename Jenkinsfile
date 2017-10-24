@@ -23,7 +23,7 @@ podTemplate(label: 'sanbase-builder', containers: [
             variable: 'aws_account_id'
           )
         ]) {
-          docker.withRegistry("${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com", "ecr:eu-central-1:ecr-credentials") {
+          docker.withRegistry("https://${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com", "ecr:eu-central-1:ecr-credentials") {
             def image = docker.build("sanbase", '.')
 
             image.push(env.BRANCH_NAME)

@@ -1,12 +1,16 @@
 podTemplate(label: 'sanbase-builder', containers: [
   containerTemplate(name: 'docker', image: 'docker', ttyEnabled: true, command: 'cat', envVars: [
     envVar(key: 'DOCKER_HOST', value: 'tcp://docker-host-docker-host:2375')
-  ])
+  ]),
+  containerTemplate(
+    name: 'db',
+    image: 'postgres:9.6-alpine',
+    ttyEnabled: true,
+    ports: [portMapping(name: 'postgres', containerPort: 5432, hostPort: 5432)])
 ]) {
   node('sanbase-builder') {
     stage('Run Tests') {
       container('docker') {
-        stage 'Checkout'
         checkout scm
 
         withCredentials([
@@ -19,10 +23,8 @@ podTemplate(label: 'sanbase-builder', containers: [
             variable: 'aws_account_id'
           )
         ]) {
-          docker.image("postgres:9.6-alpine").withRun { dbImage ->
-            docker.build("sanbase-test:${env.BRANCH_NAME}", '-f Dockerfile-test .').inside("--link ${dbImage.id}:db") {
-              "sh mix test"
-            }
+          docker.build("sanbase-test:${env.BRANCH_NAME}", '-f Dockerfile-test .').inside("--link ${dbImage.id}:db") {
+            "sh mix test"
           }
 
 //            if (env.BRANCH_NAME == "master") {

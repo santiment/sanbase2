@@ -6,7 +6,7 @@ podTemplate(label: 'sanbase-builder', containers: [
   node('sanbase-builder') {
     stage('Run Tests') {
       container('docker') {
-        checkout scm
+        def scmVars = checkout scm
 
         sh "docker build -t sanbase-test:${env.BRANCH_NAME} -f Dockerfile-test ."
         sh "docker run --rm --name postgres_${env.BRANCH_NAME} -d postgres:9.6-alpine"
@@ -29,11 +29,10 @@ podTemplate(label: 'sanbase-builder', containers: [
           ]) {
 
             def awsRegistry = "${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com"
-            def GIT_COMMIT = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
             docker.withRegistry("https://${awsRegistry}", "ecr:eu-central-1:ecr-credentials") {
-              sh "docker build -t ${awsRegistry}/sanbase:${env.BRANCH_NAME} -t ${awsRegistry}/sanbase:${GIT_COMMIT} --build-arg SECRET_KEY_BASE=${env.SECRET_KEY_BASE} ."
+              sh "docker build -t ${awsRegistry}/sanbase:${env.BRANCH_NAME} -t ${awsRegistry}/sanbase:${scmVars.GIT_COMMIT} --build-arg SECRET_KEY_BASE=${env.SECRET_KEY_BASE} ."
               sh "docker push ${awsRegistry}/sanbase:${env.BRANCH_NAME}"
-              sh "docker push ${awsRegistry}/sanbase:${GIT_COMMIT}"
+              sh "docker push ${awsRegistry}/sanbase:${scmVars.GIT_COMMIT}"
             }
 
           }

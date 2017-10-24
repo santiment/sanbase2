@@ -23,13 +23,15 @@ podTemplate(label: 'sanbase-builder', containers: [
             variable: 'aws_account_id'
           )
         ]) {
-          docker.withRegistry("https://${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com", "ecr:eu-central-1:ecr-credentials") {
-            def image = docker.build("sanbase", '.')
-
-            image.push(env.BRANCH_NAME)
-            image.push(env.GIT_COMMIT)
+          def awsRegistry = "${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com"
+          docker.withRegistry("https://${awsRegistry}", "ecr:eu-central-1:ecr-credentials") {
+            sh "docker build -t ${awsRegistry}/sanbase:${env.BRANCH_NAME} -t ${awsRegistry}/sanbase:${env.GIT_COMMIT} ."
+            sh "docker push ${awsRegistry}/sanbase:${env.BRANCH_NAME}"
+            sh "docker push ${awsRegistry}/sanbase:${env.GIT_COMMIT}"
           }
-          docker.build("sanbase-test:${env.BRANCH_NAME}", '-f Dockerfile-test .').run()
+
+          sh "docker build -t sanbase-test:${env.BRANCH_NAME} -f Dockerfile-test ."
+          sh "docker run --rm --env DATABASE_URL=postgres://postgres:password@db:5432/postgres -t sanbase-test:${env.BRANCH_NAME}"
         }
       }
     }

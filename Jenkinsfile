@@ -32,11 +32,12 @@ podTemplate(label: 'sanbase-builder', containers: [
           }
 
           if (env.BRANCH_NAME == "master") {
-            sh "docker -H tcp://docker-host-docker-host:2375 build -t ${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com/sanbase:${env.BRANCH_NAME} --build-arg SECRET_KEY_BASE=${env.SECRET_KEY_BASE} ."
+            sh "docker -H tcp://docker-host-docker-host:2375 build -t ${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com/sanbase:${env.BRANCH_NAME},${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com/sanbase:${env.GIT_COMMIT} --build-arg SECRET_KEY_BASE=${env.SECRET_KEY_BASE} ."
 
             sh "docker -H tcp://docker-host-docker-host:2375 login -u ${env.DOCKER_HUB_USERNAME} -p ${env.DOCKER_HUB_PASSWORD} https://${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com"
 
             sh "docker -H tcp://docker-host-docker-host:2375 push ${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com/sanbase:${env.BRANCH_NAME}"
+            sh "docker -H tcp://docker-host-docker-host:2375 push ${env.aws_account_id}.dkr.ecr.eu-central-1.amazonaws.com/sanbase:${env.GIT_COMMIT}"
           }
         }
       }

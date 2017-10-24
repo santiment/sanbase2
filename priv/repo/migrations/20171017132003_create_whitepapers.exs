@@ -8,7 +8,6 @@ defmodule Sanbase.Repo.Migrations.CreateWhitepapers do
       add :authors, :integer
       add :pages, :integer
       add :citations, :integer
-      add :score, :integer
     end
 
     create unique_index(:whitepapers, [:project_id])

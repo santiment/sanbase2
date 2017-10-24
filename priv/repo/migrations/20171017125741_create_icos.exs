@@ -14,7 +14,7 @@ defmodule Sanbase.Repo.Migrations.CreateIcos do
       add :usd_eth_icoend, :decimal
       add :ico_contributors, :integer
       add :highest_bonus_percent_for_ico, :decimal
-      add :bounty_compaign, :boolean
+      add :bounty_campaign, :boolean
       add :percent_tokens_for_bounties, :decimal
       add :minimal_cap_amount, :decimal
       add :minimal_cap_archived, :boolean

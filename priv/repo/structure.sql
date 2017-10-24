@@ -241,7 +241,7 @@ CREATE TABLE icos (
     usd_eth_icoend numeric,
     ico_contributors integer,
     highest_bonus_percent_for_ico numeric,
-    bounty_compaign boolean,
+    bounty_campaign boolean,
     percent_tokens_for_bounties numeric,
     minimal_cap_amount numeric,
     minimal_cap_archived boolean,
@@ -778,8 +778,7 @@ CREATE TABLE whitepapers (
     link character varying(255),
     authors integer,
     pages integer,
-    citations integer,
-    score integer
+    citations integer
 );
 
 

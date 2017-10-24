@@ -1,12 +1,7 @@
 podTemplate(label: 'sanbase-builder', containers: [
   containerTemplate(name: 'docker', image: 'docker', ttyEnabled: true, command: 'cat', envVars: [
     envVar(key: 'DOCKER_HOST', value: 'tcp://docker-host-docker-host:2375')
-  ]),
-  containerTemplate(
-    name: 'db',
-    image: 'postgres:9.6-alpine',
-    ttyEnabled: true,
-    ports: [portMapping(name: 'postgres', containerPort: 5432, hostPort: 5432)])
+  ])
 ]) {
   node('sanbase-builder') {
     stage('Run Tests') {

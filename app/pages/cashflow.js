@@ -42,8 +42,28 @@ const Index = ({projects, eth_price}) =>  {
 }
 
 Index.getInitialProps = async function() {
-  const res = await fetch(WEBSITE_URL + '/api/cashflow')
-  const data = await res.json()
+  //const res = await fetch(WEBSITE_URL + '/api/cashflow')
+  //const data = await res.json()
+
+  const data = {
+    projects: [
+      {
+        market_cap_usd: 1,
+        balance: 45,
+        name: 'EOS',
+        ticker: 'EOS',
+        logo_url: 'eos.png',
+        wallets: [
+          {
+            last_outgoing: null,
+            balance: null,
+            tx_out: null
+          }
+        ]
+      }
+    ],
+    eth_price: 2
+  };
 
   return {
     projects: data.projects,

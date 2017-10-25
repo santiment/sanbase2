@@ -13,7 +13,6 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
   * `--api-key`, `-a` - Google api key
   * `["project1" "project2" ...]` - Project names to import. If missing will import everything
 
-
   To obtain an api key:
   1. Go to https://console.cloud.google.com/
   2. Create a new project
@@ -42,7 +41,7 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
   defp run_impl(document_id, api_key, project_names) do
     {:ok, _started} = Application.ensure_all_started(:sanbase)
 
-    res = IcoSpreadsheet.get_project_data!(document_id, api_key, project_names)
+    res = IcoSpreadsheet.get_project_data(document_id, api_key, project_names)
 
     IO.inspect res
   end

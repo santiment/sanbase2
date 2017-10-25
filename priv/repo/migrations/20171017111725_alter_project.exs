@@ -9,6 +9,7 @@ defmodule Sanbase.Repo.Migrations.AlterProject do
       add :geolocation_city, :string
       add :website_link, :string
       add :open_source, :boolean
+      add :cryptocompare_id, :string
     end
 
     create index(:project, [:market_segment_id])

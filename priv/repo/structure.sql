@@ -474,7 +474,7 @@ ALTER SEQUENCE prices_id_seq OWNED BY prices.id;
 CREATE TABLE project (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
-    ticker character varying(255) NOT NULL,
+    ticker character varying(255),
     logo_url character varying(255),
     coinmarketcap_id character varying(255),
     market_segment_id bigint,
@@ -1267,13 +1267,6 @@ CREATE INDEX project_btc_address_project_id_index ON project_btc_address USING b
 
 
 --
--- Name: project_coinmarketcap_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX project_coinmarketcap_id_index ON project USING btree (coinmarketcap_id);
-
-
---
 -- Name: project_eth_address_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1519,5 +1512,5 @@ ALTER TABLE ONLY whitepapers
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017105339), (20171017111725), (20171017125741), (20171017130527), (20171017130741), (20171017131940), (20171017132003), (20171017132015), (20171017132031), (20171017132040), (20171017132049), (20171017132729), (20171017143803), (20171017144834), (20171018120438);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017105339), (20171017111725), (20171017125741), (20171017130527), (20171017130741), (20171017131940), (20171017132003), (20171017132015), (20171017132031), (20171017132040), (20171017132049), (20171017132729), (20171017143803), (20171017144834), (20171018120438), (20171025082707);
 

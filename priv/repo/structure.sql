@@ -476,13 +476,13 @@ CREATE TABLE project (
     ticker character varying(255),
     logo_url character varying(255),
     coinmarketcap_id character varying(255),
+    cryptocompare_id character varying(255),
     market_segment_id bigint,
     infrastructure_id bigint,
     geolocation_country_id bigint,
     geolocation_city character varying(255),
     website_link character varying(255),
-    open_source boolean,
-    cryptocompare_id character varying(255)
+    open_source boolean
 );
 
 

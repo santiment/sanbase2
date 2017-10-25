@@ -1393,7 +1393,7 @@ ALTER TABLE ONLY github
 --
 
 ALTER TABLE ONLY ico_currencies
-    ADD CONSTRAINT ico_currencies_currency_id_fkey FOREIGN KEY (currency_id) REFERENCES currencies(id);
+    ADD CONSTRAINT ico_currencies_currency_id_fkey FOREIGN KEY (currency_id) REFERENCES currencies(id) ON DELETE CASCADE;
 
 
 --
@@ -1401,7 +1401,7 @@ ALTER TABLE ONLY ico_currencies
 --
 
 ALTER TABLE ONLY ico_currencies
-    ADD CONSTRAINT ico_currencies_ico_id_fkey FOREIGN KEY (ico_id) REFERENCES icos(id);
+    ADD CONSTRAINT ico_currencies_ico_id_fkey FOREIGN KEY (ico_id) REFERENCES icos(id) ON DELETE CASCADE;
 
 
 --

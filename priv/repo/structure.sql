@@ -63,6 +63,37 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: cryptocompare_prices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE cryptocompare_prices (
+    id bigint NOT NULL,
+    id_from character varying(255) NOT NULL,
+    id_to character varying(255) NOT NULL,
+    price numeric
+);
+
+
+--
+-- Name: cryptocompare_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE cryptocompare_prices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cryptocompare_prices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE cryptocompare_prices_id_seq OWNED BY cryptocompare_prices.id;
+
+
+--
 -- Name: currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -963,6 +994,13 @@ ALTER SEQUENCE public.votes_id_seq OWNED BY public.votes.id;
 
 
 --
+-- Name: cryptocompare_prices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY cryptocompare_prices ALTER COLUMN id SET DEFAULT nextval('cryptocompare_prices_id_seq'::regclass);
+
+
+--
 -- Name: currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1142,6 +1180,14 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_id_seq'::regclass);
+
+
+--
+-- Name: cryptocompare_prices cryptocompare_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY cryptocompare_prices
+    ADD CONSTRAINT cryptocompare_prices_pkey PRIMARY KEY (id);
 
 
 --

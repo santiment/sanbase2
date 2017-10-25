@@ -3,13 +3,13 @@ defmodule Sanbase.Repo.Migrations.AlterProject do
 
   def change do
     alter table(:project) do
+      add :cryptocompare_id, :string
       add :market_segment_id, references(:market_segments)
       add :infrastructure_id, references(:infrastructures)
       add :geolocation_country_id, references(:countries)
       add :geolocation_city, :string
       add :website_link, :string
       add :open_source, :boolean
-      add :cryptocompare_id, :string
     end
 
     create index(:project, [:market_segment_id])

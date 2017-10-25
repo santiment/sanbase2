@@ -6,7 +6,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger
 
-  def get_project_data!(document_id, api_key, project_names) when is_list(project_names) do
+  def get_project_data(document_id, api_key, project_names) when is_list(project_names) do
     ico_data_url(document_id, api_key)
     |> get()
     |> case do

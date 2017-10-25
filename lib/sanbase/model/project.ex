@@ -9,10 +9,10 @@ defmodule Sanbase.Model.Project do
     field :ticker, :string
     field :logo_url, :string
     field :coinmarketcap_id, :string
+    field :cryptocompare_id, :string
     field :geolocation_city, :string
     field :website_link, :string
     field :open_source, :boolean
-    field :cryptocompare_id, :string
     has_many :eth_addresses, ProjectEthAddress
     has_many :btc_addresses, ProjectBtcAddress
     belongs_to :market_segment, MarketSegment

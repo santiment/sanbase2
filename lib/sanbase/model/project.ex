@@ -12,6 +12,7 @@ defmodule Sanbase.Model.Project do
     field :geolocation_city, :string
     field :website_link, :string
     field :open_source, :boolean
+    field :cryptocompare_id, :string
     has_many :eth_addresses, ProjectEthAddress
     has_many :btc_addresses, ProjectBtcAddress
     belongs_to :market_segment, MarketSegment
@@ -25,13 +26,12 @@ defmodule Sanbase.Model.Project do
     has_one :team, Team
     has_one :twitter, Twitter
     has_one :whitepaper, Whitepaper
-    has_one :prices, Prices
   end
 
   @doc false
   def changeset(%Project{} = project, attrs \\ %{}) do
     project
-    |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :geolocation_city, :website_link, :open_source, :market_segment_id, :infrastructure_id, :geolocation_country_id])
+    |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :geolocation_city, :website_link, :open_source, :cryptocompare_id, :market_segment_id, :infrastructure_id, :geolocation_country_id])
     |> validate_required([:name])
     |> unique_constraint(:name)
   end

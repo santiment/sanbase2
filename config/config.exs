@@ -52,7 +52,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.Team,
     Sanbase.ExAdmin.Model.Twitter,
     Sanbase.ExAdmin.Model.Whitepaper,
-    Sanbase.ExAdmin.Model.Prices
+    Sanbase.ExAdmin.Model.CryptocomparePrices
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

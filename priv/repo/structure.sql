@@ -103,6 +103,37 @@ ALTER SEQUENCE countries_id_seq OWNED BY countries.id;
 
 
 --
+-- Name: cryptocompare_prices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE cryptocompare_prices (
+    id bigint NOT NULL,
+    id_from character varying(255) NOT NULL,
+    id_to character varying(255) NOT NULL,
+    price numeric
+);
+
+
+--
+-- Name: cryptocompare_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE cryptocompare_prices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cryptocompare_prices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE cryptocompare_prices_id_seq OWNED BY cryptocompare_prices.id;
+
+
+--
 -- Name: currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -436,38 +467,6 @@ ALTER SEQUENCE market_segments_id_seq OWNED BY market_segments.id;
 
 
 --
--- Name: prices; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE prices (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    price_usd numeric,
-    price_btc numeric,
-    price_eth numeric
-);
-
-
---
--- Name: prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE prices_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: prices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE prices_id_seq OWNED BY prices.id;
-
-
---
 -- Name: project; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -482,7 +481,8 @@ CREATE TABLE project (
     geolocation_country_id bigint,
     geolocation_city character varying(255),
     website_link character varying(255),
-    open_source boolean
+    open_source boolean,
+    cryptocompare_id character varying(255)
 );
 
 
@@ -816,6 +816,13 @@ ALTER TABLE ONLY countries ALTER COLUMN id SET DEFAULT nextval('countries_id_seq
 
 
 --
+-- Name: cryptocompare_prices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY cryptocompare_prices ALTER COLUMN id SET DEFAULT nextval('cryptocompare_prices_id_seq'::regclass);
+
+
+--
 -- Name: currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -883,13 +890,6 @@ ALTER TABLE ONLY latest_eth_wallet_data ALTER COLUMN id SET DEFAULT nextval('lat
 --
 
 ALTER TABLE ONLY market_segments ALTER COLUMN id SET DEFAULT nextval('market_segments_id_seq'::regclass);
-
-
---
--- Name: prices id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY prices ALTER COLUMN id SET DEFAULT nextval('prices_id_seq'::regclass);
 
 
 --
@@ -979,6 +979,14 @@ ALTER TABLE ONLY countries
 
 
 --
+-- Name: cryptocompare_prices cryptocompare_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY cryptocompare_prices
+    ADD CONSTRAINT cryptocompare_prices_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: currencies currencies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1056,14 +1064,6 @@ ALTER TABLE ONLY latest_eth_wallet_data
 
 ALTER TABLE ONLY market_segments
     ADD CONSTRAINT market_segments_pkey PRIMARY KEY (id);
-
-
---
--- Name: prices prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY prices
-    ADD CONSTRAINT prices_pkey PRIMARY KEY (id);
 
 
 --
@@ -1169,6 +1169,13 @@ CREATE UNIQUE INDEX countries_code_index ON countries USING btree (code);
 
 
 --
+-- Name: cryptocompare_id_from_to_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX cryptocompare_id_from_to_index ON cryptocompare_prices USING btree (id_from, id_to);
+
+
+--
 -- Name: currencies_code_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1243,13 +1250,6 @@ CREATE UNIQUE INDEX latest_eth_wallet_data_address_index ON latest_eth_wallet_da
 --
 
 CREATE UNIQUE INDEX market_segments_name_index ON market_segments USING btree (name);
-
-
---
--- Name: prices_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX prices_project_id_index ON prices USING btree (project_id);
 
 
 --
@@ -1410,14 +1410,6 @@ ALTER TABLE ONLY ico_currencies
 
 ALTER TABLE ONLY icos
     ADD CONSTRAINT icos_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
-
-
---
--- Name: prices prices_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY prices
-    ADD CONSTRAINT prices_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
 
 
 --

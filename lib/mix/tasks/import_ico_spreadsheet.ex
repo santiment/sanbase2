@@ -30,7 +30,7 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
     case parsed_args do
       {[document_id: document_id, api_key: api_key], project_names, errors} ->
         cond do
-          Enum.empty?(errors) -> run_impl(document_id, api_key, project_names)
+          Enum.empty?(errors) -> import(document_id, api_key, project_names)
           true ->
             IO.puts("Missing or invalid arguments")
         end
@@ -38,11 +38,15 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
     end
   end
 
-  defp run_impl(document_id, api_key, project_names) do
+  defp import(document_id, api_key, project_names) do
     {:ok, _started} = Application.ensure_all_started(:sanbase)
 
     res = IcoSpreadsheet.get_project_data(document_id, api_key, project_names)
+    |> Enum.uniq_by(fn row -> row.project_name end)
 
     IO.inspect res
+
+    Sanbase.DbScripts.ImportIcoSpreadsheet.import(res)
+
   end
 end

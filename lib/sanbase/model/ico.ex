@@ -7,15 +7,15 @@ defmodule Sanbase.Model.Ico do
 
 
   schema "icos" do
-    field :bounty_campaign, :boolean, default: false
+    field :bounty_campaign, :boolean
     field :end_date, Ecto.Date
     field :funds_raised_btc, :decimal
     field :highest_bonus_percent_for_ico, :decimal
     field :ico_contributors, :integer
     field :maximal_cap_amount, :decimal
-    field :maximal_cap_archived, :boolean, default: false
+    field :maximal_cap_archived, :boolean
     field :minimal_cap_amount, :decimal
-    field :minimal_cap_archived, :boolean, default: false
+    field :minimal_cap_archived, :boolean
     field :percent_tokens_for_bounties, :decimal
     field :start_date, Ecto.Date
     field :tokens_issued_at_ico, :integer
@@ -24,7 +24,7 @@ defmodule Sanbase.Model.Ico do
     field :usd_btc_icoend, :decimal
     field :usd_eth_icoend, :decimal
     belongs_to :project, Project
-    many_to_many :currencies, Currency, join_through: "ico_currencies"
+    many_to_many :currencies, Currency, join_through: "ico_currencies", on_replace: :delete
   end
 
   @doc false

@@ -6,6 +6,8 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger
 
+  alias Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow
+
   def get_project_data(document_id, api_key, project_names) when is_list(project_names) do
     ico_data_url(document_id, api_key)
     |> get()
@@ -25,73 +27,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
 
   # TODO: get column indices from the header row
   defp parse_header_row(header_row) do
-    %{
-      project_name: 1,
-      ico_start_date: 15,
-      ico_end_date: 16,
-      tokens_issued_at_ico: 22,
-      tokens_sold_at_ico: 23,
-      tokens_team: 24,
-      usd_btc_icoend: 28,
-      funds_raised_btc: 29,
-      usd_eth_icoend: 30,
-      ico_currencies: 32,
-      ico_contributors: 35,
-      highest_bonus_percent_for_ico: 36,
-      bounty_campaign: 37,
-      percent_tokens_for_bounties: 38,
-      minimal_cap_amount: 40,
-      minimal_cap_archived: 41,
-      maximal_cap_amount: 43,
-      maximal_cap_archived: 44,
-      market_segment: 45,
-      infrastructure: 52,
-      team_website: 63,
-      team_linkedin_available: 64,
-      avno_linkedin_network_team: 65,
-      team_country_origins: 67,
-      team_dev_people: 71,
-      team_business_people: 73,
-      team_real_names: 75,
-      team_pics_availabe: 76,
-      team_advisors: 78,
-      advisor_linkedin_available: 79,
-      av_no_linkedin_network_advisors: 80,
-      geolocation: 81,
-      geolocation_city: 85,
-      website_link: 86,
-      open_source: 95,
-      github_link: 96,
-      github_commits: 97,
-      github_contributors: 98,
-      wp_available: 99,
-      wp_link: 100,
-      wp_authors: 101,
-      wp_pages: 102,
-      wp_citations: 103,
-      btt_link: 105,
-      btt_date: 106,
-      btt_total_reads: 108,
-      btt_post_until_icostart: 110,
-      btt_post_until_icoend: 111,
-      btt_posts_total: 112,
-      twitter_link: 115,
-      twitter_joindate: 116,
-      twitter_tweets: 117,
-      twitter_follower: 119,
-      twitter_following: 121,
-      twitter_likes: 124,
-      facebook_link: 126,
-      facebook_likes: 127,
-      reddit_link: 129,
-      eth_wallet: 137,
-      btc_wallet: 138,
-      btc_wallet2: 139,
-      btc_wallet3: 140,
-      btc_wallet4: 141,
-      btc_wallet5: 142,
-      reddit_subscribers: 147
-    }
+    IcoSpreadsheetRow.get_column_indices
   end
 
   defp filter_value_rows(value_rows, column_indices, project_names) do
@@ -109,10 +45,12 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   end
 
   defp parse_value_row(value_row, column_indices) do
-    column_indices
+    res = column_indices
     |> Enum.map(&parse_value(value_row, &1))
     |> Enum.into(%{})
     |> handle_wallets()
+
+    struct!(IcoSpreadsheetRow, res)
   end
 
   defp get_value!(value_row, column_index) do

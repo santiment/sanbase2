@@ -6,7 +6,6 @@ defmodule Sanbase.Model.TrackedEth do
 
   @primary_key{:address, :string, []}
   schema "tracked_eth" do
-    # field :address, :string
   end
 
   @doc false

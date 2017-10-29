@@ -27,6 +27,9 @@ spec:
                 name: sanbase-env
                 key: databaseUrl
 
+          - name: INFLUXDB_HOST
+            value: "influxdb-influxdb"
+
           - name: PORT
             value: "4000"
 

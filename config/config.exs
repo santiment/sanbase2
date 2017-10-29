@@ -26,8 +26,7 @@ config :logger, :console,
   metadata: [:request_id]
 
 config :sanbase, Sanbase.Prices.Store,
-  host: "localhost",
-  database: "prices"
+  host: "localhost"
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,

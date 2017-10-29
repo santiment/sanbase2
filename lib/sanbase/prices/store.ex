@@ -18,7 +18,9 @@ defmodule Sanbase.Prices.Store do
     price_points
     |> Stream.map(&convert_to_price_series(&1, pair, tags))
     |> Stream.chunk_every(300) # About 1 day of 5 min resolution data
-    |> Enum.map(&Store.write(&1, database: @price_database))
+    |> Enum.map(fn points ->
+      :ok = Store.write(points, database: @price_database)
+    end)
   end
 
   def fetch_price_points(pair, from, to) do

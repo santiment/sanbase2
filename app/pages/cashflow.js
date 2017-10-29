@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import fetch from 'isomorphic-unfetch'
-import { WEBSITE_URL } from '../../config'
+import { WEBSITE_URL } from '../config'
 
 const Index = (props) => (
   <div>
@@ -80,7 +80,7 @@ const Index = (props) => (
           <div className="col-12">
               <div className="panel">
                   <div className="sortable table-responsive">
-                      <table id="projects" className="table table-condensed table-hover" cellspacing="0" width="100%">
+                      <table id="projects" className="table table-condensed table-hover" cellSpacing="0" width="100%">
                           <thead>
                           <tr>
                               <th>Project</th>

@@ -103,7 +103,7 @@ const Index = (props) => (
             <div class="col-12">
                 <div class="panel">
                     <div class="sortable">
-                        <!-- <table id="projects" class="table table-condensed table-hover" cellspacing="0" width="100%">
+                        <!-- <table id="projects" class="table table-condensed table-hover" cellSpacing="0" width="100%">
                             <thead>
                             <tr>
                                 <th>Project</th>
@@ -389,7 +389,7 @@ const Index = (props) => (
                             </tr>
                             </tbody>
                         </table> -->
-                        <!-- <table id="projects" class="table table-condensed table-hover" cellspacing="0" width="100%">
+                        <!-- <table id="projects" class="table table-condensed table-hover" cellSpacing="0" width="100%">
                             <thead>
                             <tr>
                                 <th>Project</th>
@@ -675,7 +675,7 @@ const Index = (props) => (
                             </tr>
                             </tbody>
                         </table> -->
-                        <!-- <table id="projects" class="table table-condensed table-hover" cellspacing="0" width="100%">
+                        <!-- <table id="projects" class="table table-condensed table-hover" cellSpacing="0" width="100%">
                             <thead>
                             <tr>
                                 <th>Project</th>
@@ -1157,7 +1157,7 @@ const Index = (props) => (
                             </tbody>
                         </table> -->
 
-                        <table id="projects" class="table table-condensed table-hover" cellspacing="0" width="100%">
+                        <table id="projects" class="table table-condensed table-hover" cellSpacing="0" width="100%">
                             <thead>
                             <tr>
                                 <th>Project</th>

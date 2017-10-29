@@ -5,11 +5,14 @@ defmodule Mix.Tasks.Influx.Setup do
 
   alias Sanbase.Prices.Store
 
-  def run(_args) do
+  def run(databases_to_create) do
     {:ok, _started} = Application.ensure_all_started(:sanbase)
 
-    Store.config[:database]
-    |> Instream.Admin.Database.create()
-    |> Store.execute()
+    databases_to_create
+    |> Enum.each(fn database ->
+      database
+      |> Instream.Admin.Database.create()
+      |> Store.execute()
+    end)
   end
 end

@@ -145,8 +145,7 @@ import_config "notifications_config.exs"
 import_config "elasticsearch_config.exs"
 
 config :sanbase, Sanbase.Prices.Store,
-  host: "localhost",
-  database: "prices"
+  host: "localhost"
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,

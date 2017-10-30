@@ -49,6 +49,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     |> Enum.map(&parse_value(value_row, &1))
     |> Enum.into(%{})
     |> handle_wallets()
+    |> handle_infrastructure()
 
     struct!(IcoSpreadsheetRow, res)
   end
@@ -66,15 +67,15 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     value = get_value!(value_row, index)
     value =
     case column do
-      c when c in [:ico_start_date, :ico_end_date, :btt_date, :twitter_joindate] ->
+      c when c in [:ico_start_date, :ico_end_date] ->
         parse_date(value)
-      c when c in [:tokens_issued_at_ico, :tokens_sold_at_ico, :tokens_team, :ico_contributors, :team_website, :team_linkedin_available, :team_dev_people, :team_business_people, :team_advisors, :advisor_linkedin_available, :github_commits, :github_contributors, :wp_authors, :wp_pages, :wp_citations, :btt_total_reads, :btt_post_until_icostart, :btt_post_until_icoend, :btt_posts_total, :twitter_tweets, :twitter_follower, :twitter_following, :twitter_likes, :facebook_likes, :reddit_subscribers] ->
+      c when c in [:tokens_issued_at_ico, :tokens_sold_at_ico] ->
         parse_int(value)
-      c when c in [:usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :highest_bonus_percent_for_ico, :percent_tokens_for_bounties, :minimal_cap_amount, :maximal_cap_amount, :avno_linkedin_network_team, :av_no_linkedin_network_advisors] ->
+      c when c in [:usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount] ->
         parse_decimal(value)
-      c when c in [:bounty_campaign, :minimal_cap_archived, :maximal_cap_archived, :team_real_names, :team_pics_availabe, :open_source, :wp_available] ->
-        parse_boolean(value)
-      c when c in [:ico_currencies, :team_country_origins] ->
+      # c when c in [] ->
+      #   parse_boolean(value)
+      c when c in [:ico_currencies] ->
         parse_comma_delimited(value)
       _ -> value
     end
@@ -144,7 +145,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     if(!is_nil(value)) do
       if(is_binary(value)) do
         value
-        |> String.split(",")
+        |> String.split([",", ";"])
         |> Enum.map(&String.trim(&1))
         |> Enum.filter(&(String.length(&1) > 0))
       else
@@ -163,6 +164,15 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     |> Map.put(:eth_wallets, remove_nils([parsed_value_row.eth_wallet]))
     |> Map.put(:btc_wallets, remove_nils([parsed_value_row.btc_wallet, parsed_value_row.btc_wallet2, parsed_value_row.btc_wallet3, parsed_value_row.btc_wallet4, parsed_value_row.btc_wallet5]))
     |> Map.drop([:eth_wallet, :btc_wallet, :btc_wallet2, :btc_wallet3, :btc_wallet4, :btc_wallet5])
+  end
+
+  defp handle_infrastructure(parsed_value_row) do
+    if is_nil(parsed_value_row.infrastructure) do
+      Map.put(parsed_value_row, :infrastructure, parsed_value_row.blockchain)
+    else
+      parsed_value_row
+    end
+    |> Map.drop([:blockchain])
   end
 
   defp remove_nils(list) when is_list(list) do

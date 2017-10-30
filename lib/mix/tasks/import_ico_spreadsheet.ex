@@ -22,6 +22,7 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
 
   alias Sanbase.ExternalServices.IcoSpreadsheet
 
+  # TODO: don't take the first occurence but the last one
   def run(args) do
     parsed_args = OptionParser.parse(args,
       strict: [document_id: :string, api_key: :string],

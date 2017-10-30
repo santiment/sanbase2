@@ -4,7 +4,7 @@ import ProjectsTable from '../components/projects-table'
 import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
 
-const Index = (props) => (
+const Index = ({projects, eth_price}) => (
   <div>
     <MainHead>
       <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.1.1/css/responsive.dataTables.min.css"/>
@@ -25,7 +25,7 @@ const Index = (props) => (
               NOTE: This app is a prototype. We give no guarantee data is correct as we are in active development.</span>
           </div>
       </div>
-      <ProjectsTable data={ props.data }/>
+      <ProjectsTable projects={projects} eth_price={eth_price}/>
     </div>
     <script dangerouslySetInnerHTML={{ __html: `
       $(document).ready(function () {
@@ -58,28 +58,8 @@ const Index = (props) => (
 )
 
 Index.getInitialProps = async function() {
-  //const res = await fetch(WEBSITE_URL + '/api/cashflow')
-  //const data = await res.json()
-
-  const data = {
-    projects: [
-      {
-        market_cap_usd: 1,
-        balance: 45,
-        name: 'EOS',
-        ticker: 'EOS',
-        logo_url: 'eos.png',
-        wallets: [
-          {
-            last_outgoing: null,
-            balance: null,
-            tx_out: null
-          }
-        ]
-      }
-    ],
-    eth_price: 2
-  };
+  const res = await fetch(WEBSITE_URL + '/api/cashflow')
+  const data = await res.json()
 
   return {
     projects: data.projects,

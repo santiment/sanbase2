@@ -14,6 +14,8 @@ defmodule Sanbase.Repo.Migrations.CreateIcos do
       add :minimal_cap_amount, :decimal
       add :maximal_cap_amount, :decimal
       add :cap_currency_id, references(:currencies)
+      add :main_contract_address, :string
+      add :comments, :string
     end
 
     create unique_index(:icos, [:project_id])

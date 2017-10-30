@@ -109,7 +109,9 @@ CREATE TABLE icos (
     usd_eth_icoend numeric,
     minimal_cap_amount numeric,
     maximal_cap_amount numeric,
-    cap_currency_id bigint
+    cap_currency_id bigint,
+    main_contract_address character varying(255),
+    comments character varying(255)
 );
 
 
@@ -307,6 +309,12 @@ CREATE TABLE project (
     reddit_link character varying(255),
     twitter_link character varying(255),
     whitepaper_link character varying(255),
+    blog_link character varying(255),
+    slack_link character varying(255),
+    linkedin_link character varying(255),
+    telegram_link character varying(255),
+    project_transparency character varying(255),
+    team_token_wallet character varying(255),
     market_segment_id bigint,
     infrastructure_id bigint
 );

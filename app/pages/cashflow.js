@@ -13,7 +13,7 @@ const Index = (props) => (
       <script src="https://cdn.datatables.net/responsive/2.1.1/js/responsive.bootstrap.min.js"></script>
       <script src="https://cdn.datatables.net/fixedheader/3.1.2/js/dataTables.fixedHeader.min.js"></script>
     </MainHead>
-    <SideMenu />
+    <SideMenu activeItem="cashflow"/>
     <div className="container" id="main">
       <div className="row">
           <div className="col-lg-5">

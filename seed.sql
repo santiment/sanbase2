@@ -106,27 +106,27 @@ ON CONFLICT (address) DO NOTHING;
 
 /* Data taken from projecttransparency */
 /* Populate database with projecttransparency data */
-INSERT INTO project (ticker, name, coinmarketcap_id) VALUES
-  ('ANT', 'Aragon', 'aragon'),
+INSERT INTO project (ticker, name, coinmarketcap_id, logo_url) VALUES
+  ('ANT', 'Aragon', 'aragon', 'aragon.png'),
   /* ('', 'Attores'), */
-  ('CFI', 'Cofound.it', 'cofound-it'),
-  ('DAP', 'Dappbase', null),
-  ('DNT', 'district0x', 'district0x'  ),
-  ('DNA', 'Encrypgen', null),
-  ('RSC', 'Etherisc', null),
-  ('EXP/LAB', 'Expanse/Tokenlab', null),
-  ('GAT', 'Gatcoin.io', null),
-  ('HSR', 'Hshare', 'hshare'),
-  ('ICN', 'Iconomi', 'iconomi'),
-  ('IND', 'Indorse', 'indorse-token'),
+  ('CFI', 'Cofound.it', 'cofound-it', 'cofound-it.png'),
+  ('DAP', 'Dappbase', null, null),
+  ('DNT', 'district0x', 'district0x', 'district0x.png' ),
+  ('DNA', 'Encrypgen', null, null),
+  ('RSC', 'Etherisc', null, null),
+  ('EXP/LAB', 'Expanse/Tokenlab', null, ),
+  ('GAT', 'Gatcoin.io', null, null),
+  ('HSR', 'Hshare', 'hshare', null),
+  ('ICN', 'Iconomi', 'iconomi', 'iconomi.png'),
+  ('IND', 'Indorse', 'indorse-token', null),
   /* ('', 'IconiqLab'), */
   /* ('KPMG', 'KPMG'), */
-  ('LKK', 'Lykke', 'lykke'),
-  ('ART', 'Maecenas', null),
-  ('MCI', 'Musiconomi', null),
-  ('SAN', 'Santiment', 'santiment'),
+  ('LKK', 'Lykke', 'lykke', null),
+  ('ART', 'Maecenas', null, null),
+  ('MCI', 'Musiconomi', null, null),
+  ('SAN', 'Santiment', 'santiment', 'santiment.png'),
   /* ('SNT', 'Status.im', 'status'), */
-  ('VIC', 'Virgil Capital', null)
+  ('VIC', 'Virgil Capital', null, null)
 
 ON CONFLICT (name) DO NOTHING;
 
@@ -153,7 +153,7 @@ INSERT INTO project_eth_address (project_id, address)
       ('Maecenas', '0x9B60874D7bc4e4fBDd142e0F5a12002e4F7715a6'),
       ('Musiconomi', '0xc7CD9d874F93F2409F39A95987b3E3C738313925'),
       ('Santiment', '0x6dd5a9f47cfbc44c04a0a4452f0ba792ebfbcc9a'),
-      ('Status.im', '0xA646E29877d52B9e2De457ECa09C724fF16D0a2B')
+      ('Status', '0xA646E29877d52B9e2De457ECa09C724fF16D0a2B')
     ) AS t (name, address)
   WHERE
     project.name = t.name

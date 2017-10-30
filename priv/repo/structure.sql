@@ -35,105 +35,6 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: btt; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE btt (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    link character varying(255),
-    date date,
-    total_reads integer,
-    post_until_icostart integer,
-    post_until_icoend integer,
-    posts_total integer
-);
-
-
---
--- Name: btt_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE btt_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: btt_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE btt_id_seq OWNED BY btt.id;
-
-
---
--- Name: countries; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE countries (
-    id bigint NOT NULL,
-    code character varying(255) NOT NULL,
-    eastern boolean,
-    western boolean,
-    orthodox boolean,
-    sinic boolean
-);
-
-
---
--- Name: countries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE countries_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: countries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE countries_id_seq OWNED BY countries.id;
-
-
---
--- Name: cryptocompare_prices; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE cryptocompare_prices (
-    id bigint NOT NULL,
-    id_from character varying(255) NOT NULL,
-    id_to character varying(255) NOT NULL,
-    price numeric
-);
-
-
---
--- Name: cryptocompare_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE cryptocompare_prices_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: cryptocompare_prices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE cryptocompare_prices_id_seq OWNED BY cryptocompare_prices.id;
-
-
---
 -- Name: currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -160,69 +61,6 @@ CREATE SEQUENCE currencies_id_seq
 --
 
 ALTER SEQUENCE currencies_id_seq OWNED BY currencies.id;
-
-
---
--- Name: facebook; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE facebook (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    link character varying(255),
-    likes integer
-);
-
-
---
--- Name: facebook_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE facebook_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: facebook_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE facebook_id_seq OWNED BY facebook.id;
-
-
---
--- Name: github; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE github (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    link character varying(255),
-    commits integer,
-    contributors integer
-);
-
-
---
--- Name: github_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE github_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: github_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE github_id_seq OWNED BY github.id;
 
 
 --
@@ -266,18 +104,12 @@ CREATE TABLE icos (
     end_date date,
     tokens_issued_at_ico integer,
     tokens_sold_at_ico integer,
-    tokens_team integer,
-    usd_btc_icoend numeric,
     funds_raised_btc numeric,
+    usd_btc_icoend numeric,
     usd_eth_icoend numeric,
-    ico_contributors integer,
-    highest_bonus_percent_for_ico numeric,
-    bounty_campaign boolean,
-    percent_tokens_for_bounties numeric,
     minimal_cap_amount numeric,
-    minimal_cap_archived boolean,
     maximal_cap_amount numeric,
-    maximal_cap_archived boolean
+    cap_currency_id bigint
 );
 
 
@@ -371,15 +203,7 @@ CREATE TABLE latest_coinmarketcap_data (
     symbol character varying(255),
     price_usd numeric,
     market_cap_usd numeric,
-    update_time timestamp without time zone NOT NULL,
-    rank integer,
-    price_btc numeric,
-    volume_usd_24h numeric,
-    available_supply numeric,
-    total_supply numeric,
-    percent_change_1h numeric,
-    percent_change_24h numeric,
-    percent_change_7d numeric
+    update_time timestamp without time zone NOT NULL
 );
 
 
@@ -476,13 +300,15 @@ CREATE TABLE project (
     ticker character varying(255),
     logo_url character varying(255),
     coinmarketcap_id character varying(255),
-    cryptocompare_id character varying(255),
-    market_segment_id bigint,
-    infrastructure_id bigint,
-    geolocation_country_id bigint,
-    geolocation_city character varying(255),
     website_link character varying(255),
-    open_source boolean
+    btt_link character varying(255),
+    facebook_link character varying(255),
+    github_link character varying(255),
+    reddit_link character varying(255),
+    twitter_link character varying(255),
+    whitepaper_link character varying(255),
+    market_segment_id bigint,
+    infrastructure_id bigint
 );
 
 
@@ -566,37 +392,6 @@ ALTER SEQUENCE project_id_seq OWNED BY project.id;
 
 
 --
--- Name: reddit; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE reddit (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    link character varying(255),
-    subscribers integer
-);
-
-
---
--- Name: reddit_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE reddit_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: reddit_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE reddit_id_seq OWNED BY reddit.id;
-
-
---
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -604,75 +399,6 @@ CREATE TABLE schema_migrations (
     version bigint NOT NULL,
     inserted_at timestamp without time zone
 );
-
-
---
--- Name: team_members; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE team_members (
-    id bigint NOT NULL,
-    team_id bigint NOT NULL,
-    country_id bigint
-);
-
-
---
--- Name: team_members_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE team_members_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: team_members_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE team_members_id_seq OWNED BY team_members.id;
-
-
---
--- Name: teams; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE teams (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    team_website integer,
-    avno_linkedin_network_team numeric,
-    dev_people integer,
-    business_people integer,
-    real_names boolean,
-    pics_available boolean,
-    linkedin_profiles_project integer,
-    advisors integer,
-    advisor_linkedin_available integer,
-    av_no_linkedin_network_advisors integer
-);
-
-
---
--- Name: teams_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE teams_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: teams_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE teams_id_seq OWNED BY teams.id;
 
 
 --
@@ -734,113 +460,10 @@ ALTER SEQUENCE tracked_eth_id_seq OWNED BY tracked_eth.id;
 
 
 --
--- Name: twitter; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE twitter (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    link character varying(255),
-    joindate date,
-    tweets integer,
-    followers integer,
-    following integer,
-    likes integer
-);
-
-
---
--- Name: twitter_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE twitter_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: twitter_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE twitter_id_seq OWNED BY twitter.id;
-
-
---
--- Name: whitepapers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE whitepapers (
-    id bigint NOT NULL,
-    project_id bigint NOT NULL,
-    link character varying(255),
-    authors integer,
-    pages integer,
-    citations integer
-);
-
-
---
--- Name: whitepapers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE whitepapers_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: whitepapers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE whitepapers_id_seq OWNED BY whitepapers.id;
-
-
---
--- Name: btt id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY btt ALTER COLUMN id SET DEFAULT nextval('btt_id_seq'::regclass);
-
-
---
--- Name: countries id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY countries ALTER COLUMN id SET DEFAULT nextval('countries_id_seq'::regclass);
-
-
---
--- Name: cryptocompare_prices id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY cryptocompare_prices ALTER COLUMN id SET DEFAULT nextval('cryptocompare_prices_id_seq'::regclass);
-
-
---
 -- Name: currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY currencies ALTER COLUMN id SET DEFAULT nextval('currencies_id_seq'::regclass);
-
-
---
--- Name: facebook id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY facebook ALTER COLUMN id SET DEFAULT nextval('facebook_id_seq'::regclass);
-
-
---
--- Name: github id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY github ALTER COLUMN id SET DEFAULT nextval('github_id_seq'::regclass);
 
 
 --
@@ -914,27 +537,6 @@ ALTER TABLE ONLY project_eth_address ALTER COLUMN id SET DEFAULT nextval('projec
 
 
 --
--- Name: reddit id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY reddit ALTER COLUMN id SET DEFAULT nextval('reddit_id_seq'::regclass);
-
-
---
--- Name: team_members id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY team_members ALTER COLUMN id SET DEFAULT nextval('team_members_id_seq'::regclass);
-
-
---
--- Name: teams id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY teams ALTER COLUMN id SET DEFAULT nextval('teams_id_seq'::regclass);
-
-
---
 -- Name: tracked_btc id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -949,65 +551,11 @@ ALTER TABLE ONLY tracked_eth ALTER COLUMN id SET DEFAULT nextval('tracked_eth_id
 
 
 --
--- Name: twitter id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY twitter ALTER COLUMN id SET DEFAULT nextval('twitter_id_seq'::regclass);
-
-
---
--- Name: whitepapers id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY whitepapers ALTER COLUMN id SET DEFAULT nextval('whitepapers_id_seq'::regclass);
-
-
---
--- Name: btt btt_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY btt
-    ADD CONSTRAINT btt_pkey PRIMARY KEY (id);
-
-
---
--- Name: countries countries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY countries
-    ADD CONSTRAINT countries_pkey PRIMARY KEY (id);
-
-
---
--- Name: cryptocompare_prices cryptocompare_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY cryptocompare_prices
-    ADD CONSTRAINT cryptocompare_prices_pkey PRIMARY KEY (id);
-
-
---
 -- Name: currencies currencies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
-
-
---
--- Name: facebook facebook_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY facebook
-    ADD CONSTRAINT facebook_pkey PRIMARY KEY (id);
-
-
---
--- Name: github github_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY github
-    ADD CONSTRAINT github_pkey PRIMARY KEY (id);
 
 
 --
@@ -1091,35 +639,11 @@ ALTER TABLE ONLY project
 
 
 --
--- Name: reddit reddit_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY reddit
-    ADD CONSTRAINT reddit_pkey PRIMARY KEY (id);
-
-
---
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
-
-
---
--- Name: team_members team_members_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY team_members
-    ADD CONSTRAINT team_members_pkey PRIMARY KEY (id);
-
-
---
--- Name: teams teams_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY teams
-    ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
 
 
 --
@@ -1139,61 +663,10 @@ ALTER TABLE ONLY tracked_eth
 
 
 --
--- Name: twitter twitter_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY twitter
-    ADD CONSTRAINT twitter_pkey PRIMARY KEY (id);
-
-
---
--- Name: whitepapers whitepapers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY whitepapers
-    ADD CONSTRAINT whitepapers_pkey PRIMARY KEY (id);
-
-
---
--- Name: btt_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX btt_project_id_index ON btt USING btree (project_id);
-
-
---
--- Name: countries_code_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX countries_code_index ON countries USING btree (code);
-
-
---
--- Name: cryptocompare_id_from_to_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX cryptocompare_id_from_to_index ON cryptocompare_prices USING btree (id_from, id_to);
-
-
---
 -- Name: currencies_code_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX currencies_code_index ON currencies USING btree (code);
-
-
---
--- Name: facebook_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX facebook_project_id_index ON facebook USING btree (project_id);
-
-
---
--- Name: github_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX github_project_id_index ON github USING btree (project_id);
 
 
 --
@@ -1281,13 +754,6 @@ CREATE INDEX project_eth_address_project_id_index ON project_eth_address USING b
 
 
 --
--- Name: project_geolocation_country_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX project_geolocation_country_id_index ON project USING btree (geolocation_country_id);
-
-
---
 -- Name: project_infrastructure_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1309,34 +775,6 @@ CREATE UNIQUE INDEX project_name_index ON project USING btree (name);
 
 
 --
--- Name: reddit_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX reddit_project_id_index ON reddit USING btree (project_id);
-
-
---
--- Name: team_members_country_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX team_members_country_id_index ON team_members USING btree (country_id);
-
-
---
--- Name: team_members_team_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX team_members_team_id_index ON team_members USING btree (team_id);
-
-
---
--- Name: teams_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX teams_project_id_index ON teams USING btree (project_id);
-
-
---
 -- Name: tracked_btc_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1348,44 +786,6 @@ CREATE UNIQUE INDEX tracked_btc_address_index ON tracked_btc USING btree (addres
 --
 
 CREATE UNIQUE INDEX tracked_eth_address_index ON tracked_eth USING btree (address);
-
-
---
--- Name: twitter_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX twitter_project_id_index ON twitter USING btree (project_id);
-
-
---
--- Name: whitepapers_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX whitepapers_project_id_index ON whitepapers USING btree (project_id);
-
-
---
--- Name: btt btt_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY btt
-    ADD CONSTRAINT btt_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
-
-
---
--- Name: facebook facebook_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY facebook
-    ADD CONSTRAINT facebook_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
-
-
---
--- Name: github github_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY github
-    ADD CONSTRAINT github_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
 
 
 --
@@ -1402,6 +802,14 @@ ALTER TABLE ONLY ico_currencies
 
 ALTER TABLE ONLY ico_currencies
     ADD CONSTRAINT ico_currencies_ico_id_fkey FOREIGN KEY (ico_id) REFERENCES icos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: icos icos_cap_currency_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY icos
+    ADD CONSTRAINT icos_cap_currency_id_fkey FOREIGN KEY (cap_currency_id) REFERENCES currencies(id);
 
 
 --
@@ -1429,14 +837,6 @@ ALTER TABLE ONLY project_eth_address
 
 
 --
--- Name: project project_geolocation_country_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY project
-    ADD CONSTRAINT project_geolocation_country_id_fkey FOREIGN KEY (geolocation_country_id) REFERENCES countries(id);
-
-
---
 -- Name: project project_infrastructure_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1453,56 +853,8 @@ ALTER TABLE ONLY project
 
 
 --
--- Name: reddit reddit_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY reddit
-    ADD CONSTRAINT reddit_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
-
-
---
--- Name: team_members team_members_country_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY team_members
-    ADD CONSTRAINT team_members_country_id_fkey FOREIGN KEY (country_id) REFERENCES countries(id);
-
-
---
--- Name: team_members team_members_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY team_members
-    ADD CONSTRAINT team_members_team_id_fkey FOREIGN KEY (team_id) REFERENCES teams(id);
-
-
---
--- Name: teams teams_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY teams
-    ADD CONSTRAINT teams_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
-
-
---
--- Name: twitter twitter_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY twitter
-    ADD CONSTRAINT twitter_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
-
-
---
--- Name: whitepapers whitepapers_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY whitepapers
-    ADD CONSTRAINT whitepapers_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
-
-
---
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017105339), (20171017111725), (20171017125741), (20171017130527), (20171017130741), (20171017131940), (20171017132003), (20171017132015), (20171017132031), (20171017132040), (20171017132049), (20171017132729), (20171017143803), (20171017144834), (20171018120438), (20171025082707);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707);
 

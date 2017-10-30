@@ -1,7 +1,7 @@
 defmodule Sanbase.Model.Project do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Sanbase.Model.{Project, ProjectEthAddress, ProjectBtcAddress, Btt, Facebook, Github, Ico, Reddit, Team, Twitter, Whitepaper, MarketSegment, Infrastructure, Country, Prices}
+  alias Sanbase.Model.{Project, ProjectEthAddress, ProjectBtcAddress, Ico, MarketSegment, Infrastructure}
 
 
   schema "project" do
@@ -9,29 +9,23 @@ defmodule Sanbase.Model.Project do
     field :ticker, :string
     field :logo_url, :string
     field :coinmarketcap_id, :string
-    field :cryptocompare_id, :string
-    field :geolocation_city, :string
     field :website_link, :string
-    field :open_source, :boolean
+    field :btt_link, :string
+    field :facebook_link, :string
+    field :github_link, :string
+    field :reddit_link, :string
+    field :twitter_link, :string
+    field :whitepaper_link, :string
     has_many :eth_addresses, ProjectEthAddress
     has_many :btc_addresses, ProjectBtcAddress
     belongs_to :market_segment, MarketSegment
     belongs_to :infrastructure, Infrastructure
-    belongs_to :geolocation_country, Country
-    has_one :btt, Btt
-    has_one :facebook, Facebook
-    has_one :github, Github
-    has_one :ico, Ico
-    has_one :reddit, Reddit
-    has_one :team, Team
-    has_one :twitter, Twitter
-    has_one :whitepaper, Whitepaper
   end
 
   @doc false
   def changeset(%Project{} = project, attrs \\ %{}) do
     project
-    |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :geolocation_city, :website_link, :open_source, :cryptocompare_id, :market_segment_id, :infrastructure_id, :geolocation_country_id])
+    |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :website_link, :market_segment_id, :infrastructure_id, :btt_link, :facebook_link, :github_link, :reddit_link, :twitter_link, :whitepaper_link])
     |> validate_required([:name])
     |> unique_constraint(:name)
   end

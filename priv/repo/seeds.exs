@@ -9,7 +9,3 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-
-Sanbase.Repo.insert!(%Sanbase.Item{name: "Milk"})
-Sanbase.Repo.insert!(%Sanbase.Item{name: "Butter"})
-Sanbase.Repo.insert!(%Sanbase.Item{name: "Bread"})

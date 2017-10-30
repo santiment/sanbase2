@@ -4,11 +4,7 @@ use Mix.Config
 # you can enable the server option below.
 config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
-  server: true,
-  watchers: [
-    yarn: ["test-server", cd: Path.expand("../app", __DIR__)],
-    node: ["app/node_modules/exit_on_eof/index.js", "chromedriver"]
-  ]
+  server: true
 
 config :sanbase, node_server: "http://localhost:3001"
 
@@ -20,8 +16,12 @@ config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
-  database: "sanbase_test",
+  database: "postgres",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :hound, driver: "chrome_driver"
+
+if File.exists?("config/test.secret.exs") do
+  import_config "test.secret.exs"
+end

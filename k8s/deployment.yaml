@@ -1,0 +1,49 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: sanbase-master
+  labels:
+    app: sanbase
+    branch: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sanbase
+      branch: master
+  template:
+    metadata:
+      labels:
+        app: sanbase
+        branch: master
+    spec:
+      containers:
+      - name: sanbase-master
+        image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+        env:
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: databaseUrl
+
+          - name: INFLUXDB_HOST
+            value: "influxdb-influxdb"
+
+          - name: PORT
+            value: "4000"
+
+          - name: WEBSITE_URL
+            value: "http://localhost:4000"
+
+          - name: ADMIN_BASIC_AUTH_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: exAdminBasicAuthUsername
+
+          - name: ADMIN_BASIC_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: exAdminBasicAuthPassword

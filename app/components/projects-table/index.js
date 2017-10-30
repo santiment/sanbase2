@@ -1,21 +1,21 @@
-const ProjectsTable = (props) => (
+const ProjectsTable = ({projects, eth_price}) => (
   <div className="row">
     <div className="col-12">
       <div className="panel">
         <div className="sortable table-responsive">
-          <table id="projects" className="table table-condensed table-hover" cellspacing="0" width="100%">
+          <table id="projects" className="table table-condensed table-hover" cellSpacing="0" width="100%">
             <thead>
-            <tr>
-              <th>Project</th>
-              <th>Market Cap</th>
-              <th className="sorttable_numeric">Balance (USD/ETH)</th>
-              <th>Last outgoing TX</th>
-              <th>ETH sent</th>
-            </tr>
+              <tr>
+                <th>Project</th>
+                <th>Market Cap</th>
+                <th className="sorttable_numeric">Balance (USD/ETH)</th>
+                <th>Last outgoing TX</th>
+                <th>ETH sent</th>
+              </tr>
             </thead>
             <tbody className='whaletable'>
             {
-              props.data.projects.map((project) => {
+              projects.map((project) => {
                 var marketCapUsd;
                 if(project.market_cap_usd !== null){
                   marketCapUsd = "$" + project.market_cap_usd.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -34,7 +34,7 @@ const ProjectsTable = (props) => (
                         var balance = wallet.balance !== null ? wallet.balance : 0;
                         return (
                           <div className="wallet">
-                            <div className="usd first">${(balance * props.data.eth_price).toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                            <div className="usd first">${(balance * eth_price).toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
                             <div className="eth">
                               <a className="address" href={ "https://etherscan.io/address/" + wallet.address } target="_blank">Ξ{ balance.toLocaleString('en-US') }
                                 <i className="fa fa-external-link"></i>

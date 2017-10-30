@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
 import Topbar from '../components/topbar'
@@ -7,10 +6,10 @@ import HeaderPage from '../components/header-page'
 const Index = (props) => (
   <div>
     <MainHead />
-    <SideMenu />
+    <SideMenu activeItem="roadmap"/>
     <div className="container vert-stretch" id="main">
       <Topbar />
-      <HeaderPage name="SANbase Roadmap" description="Please see our SANbase roadmap below. It is a living document; milestones may adjust."/>
+      <HeaderPage name="SANbase Roadmap" description="Please see our SANbase roadmap below. It is a living document; milestones may adjust." />
       <div className="row vert-stretch">
         <div className="col-12 vert-full">
           <div className="panel vert-full">
@@ -51,12 +50,12 @@ const Index = (props) => (
                     </p>
                   </div>
                   <div className="body">
-                    <div className="status-row" style={{'marginBottom': '10px'}}>
+                    <div className="status-row" style={{ 'marginBottom': '10px' }}>
                       <span className="status-item">Develop SANbase backend architecture and wireframe UI</span>
-                      <span className="status" style={{'width':'27%'}}>
+                      <span className="status" style={{ 'width': '27%' }}>
                         <div className="status-percent">30%</div>
                         <div className="status-border">
-                          <div className="status-progress" style={{'width':'30%'}}></div>
+                          <div className="status-progress" style={{ 'width': '30%' }}></div>
                         </div>
                       </span>
                     </div>
@@ -65,10 +64,10 @@ const Index = (props) => (
                       <li>
                         <div className="status-row embedded">
                           <span className="status-item">Crypto projects with key metrics</span>
-                          <span className="status" style={{'width':'28.4%'}}>
+                          <span className="status" style={{ 'width': '28.4%' }}>
                             <div className="status-percent">10%</div>
                             <div className="status-border">
-                              <div className="status-progress" style={{'width':'20%'}}></div>
+                              <div className="status-progress" style={{ 'width': '20%' }}></div>
                             </div>
                           </span>
                         </div>
@@ -76,10 +75,10 @@ const Index = (props) => (
                       <li>
                         <div className="status-row embedded">
                           <span className="status-item">Detailed views of each project</span>
-                          <span className="status" style={{'width':'28.4%'}}>
+                          <span className="status" style={{ 'width': '28.4%' }}>
                             <div className="status-percent">10%</div>
                             <div className="status-border">
-                              <div className="status-progress" style={{'width':'20%'}}></div>
+                              <div className="status-progress" style={{ 'width': '20%' }}></div>
                             </div>
                           </span>
                         </div>
@@ -95,19 +94,19 @@ const Index = (props) => (
                               <span className="status">
                                 <div className="status-percent">80%</div>
                                 <div className="status-border">
-                                  <div className="status-progress" style={{'width':'80%'}}></div>
+                                  <div className="status-progress" style={{ 'width': '80%' }}></div>
                                 </div>
                               </span>
                             </div>
                           </li>
                           <li>
                             <div className="status-row embedded nobg">
-                                Whale wallets
+                              Whale wallets
                             </div>
                           </li>
                           <li>
                             <div className="status-row embedded nobg">
-                                Exchange wallets
+                              Exchange wallets
                             </div>
                           </li>
                         </ul>
@@ -138,10 +137,10 @@ const Index = (props) => (
                       <li>
                         <div className="status-row embedded">
                           <span className="status-item">Port to mobile. Add push notifications.</span>
-                          <span className="status" style={{'width':'28.4%'}}>
+                          <span className="status" style={{ 'width': '28.4%' }}>
                             <div className="status-percent">25%</div>
                             <div className="status-border">
-                              <div className="status-progress" style={{'width':'25%'}}></div>
+                              <div className="status-progress" style={{ 'width': '25%' }}></div>
                             </div>
                           </span>
                         </div>
@@ -156,7 +155,7 @@ const Index = (props) => (
                     <p>2018</p>
                     <hr />
                     <p>Business Models<br />
-                    Token Economy</p>
+                      Token Economy</p>
                   </div>
                   <div className="body">
                     <div>
@@ -168,16 +167,16 @@ const Index = (props) => (
                       <p></p>
                     </div>
                     <div>
-                      <p style={{'marginBottom': '10px'}}>Open the SANbase API</p>
+                      <p style={{ 'marginBottom': '10px' }}>Open the SANbase API</p>
                       <p></p>
                     </div>
                     <p>Expand the set of data-feeds/signals:</p>
                     <ul>
-                        <li>Social metrics (Twitter followers, Slack activity, etc)</li>
-                        <li>Crowd sentiment</li>
-                        <li>Blockchain analytics</li>
-                        <li>More...</li>
-                      </ul>
+                      <li>Social metrics (Twitter followers, Slack activity, etc)</li>
+                      <li>Crowd sentiment</li>
+                      <li>Blockchain analytics</li>
+                      <li>More...</li>
+                    </ul>
                     <p>Sell first subscriptions (fiat and crypto)</p>
                     <p>SANbase Beta</p>
                   </div>

@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
 import Topbar from '../components/topbar'

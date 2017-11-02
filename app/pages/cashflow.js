@@ -72,7 +72,7 @@ Index.getInitialProps = async function() {
         wallets: [
           {
             last_outgoing: null,
-            balance: null,
+            balance: 1,
             tx_out: null
           }
         ]

@@ -69,15 +69,15 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     case column do
       c when c in [:ico_start_date, :ico_end_date] ->
         parse_date(value)
-      c when c in [:tokens_issued_at_ico, :tokens_sold_at_ico] ->
+      c when c in [:tokens_issued_at_ico] ->
         parse_int(value)
-      c when c in [:usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount] ->
+      c when c in [:tokens_sold_at_ico, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount] ->
         parse_decimal(value)
       # c when c in [] ->
       #   parse_boolean(value)
       c when c in [:ico_currencies] ->
         parse_comma_delimited(value)
-      _ -> value
+      _ -> parse_string(value)
     end
 
     {column, value}
@@ -152,10 +152,18 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
         #TODO: return error
         IO.write("parse_comma_delimited error: ")
         IO.inspect value
-        nil
+        []
       end
     else
       []
+    end
+  end
+
+  defp parse_string(value) do
+    if(!is_nil(value)) do
+      to_string(value)
+    else
+      nil
     end
   end
 

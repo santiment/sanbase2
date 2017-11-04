@@ -102,8 +102,8 @@ CREATE TABLE icos (
     project_id bigint NOT NULL,
     start_date date,
     end_date date,
-    tokens_issued_at_ico integer,
-    tokens_sold_at_ico integer,
+    tokens_issued_at_ico numeric,
+    tokens_sold_at_ico numeric,
     funds_raised_btc numeric,
     usd_btc_icoend numeric,
     usd_eth_icoend numeric,
@@ -111,7 +111,7 @@ CREATE TABLE icos (
     maximal_cap_amount numeric,
     cap_currency_id bigint,
     main_contract_address character varying(255),
-    comments character varying(255)
+    comments text
 );
 
 

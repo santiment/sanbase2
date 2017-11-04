@@ -24,8 +24,8 @@ defmodule Sanbase.Model.Project do
     field :team_token_wallet, :string
     has_many :eth_addresses, ProjectEthAddress
     has_many :btc_addresses, ProjectBtcAddress
-    belongs_to :market_segment, MarketSegment
-    belongs_to :infrastructure, Infrastructure
+    belongs_to :market_segment, MarketSegment, on_replace: :nilify
+    belongs_to :infrastructure, Infrastructure, on_replace: :nilify
     has_one :ico, Ico
   end
 

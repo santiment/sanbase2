@@ -1,19 +1,20 @@
 defmodule Sanbase.Notifications.CheckPricesTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.Notifications.CheckPrices
+  alias Sanbase.Notifications.{CheckPrices, Notification}
   alias Sanbase.Model.Project
   alias Sanbase.Prices.{Store, Point}
   alias Sanbase.Repo
 
   test "running the checks when there are no projects" do
-    CheckPrices.exec
+    assert CheckPrices.exec == []
   end
 
   test "running the checks for a project without prices" do
+    Store.drop_pair("SAN_USD")
     Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 
-    CheckPrices.exec
+    assert CheckPrices.exec == []
   end
 
   test "running the checks for a project with some prices" do
@@ -25,9 +26,11 @@ defmodule Sanbase.Notifications.CheckPricesTest do
       %Point{datetime: seconds_ago(2), price: 4, volume: 1, marketcap: 1},
     ],
     "SAN_USD")
-    Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+    project = Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 
-    CheckPrices.exec
+    [%Notification{project_id: project_id}] = CheckPrices.exec
+
+    assert project_id == project.id
   end
 
   defp seconds_ago(seconds) do

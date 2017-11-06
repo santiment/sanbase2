@@ -175,7 +175,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   def drop_pair(pair) do
-    "DROP MEASUREMENT #{pair}"
-    |> Store.execute
+    %{results: _} = "DROP MEASUREMENT #{pair}"
+    |> Store.execute(database: @price_database)
   end
 end

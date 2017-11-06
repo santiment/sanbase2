@@ -22,6 +22,9 @@ config :sanbase, Sanbase.Repo,
 
 config :hound, driver: "chrome_driver"
 
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
+  database: "prices_test"
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

@@ -61,7 +61,8 @@ config :xain, :after_callback, {Phoenix.HTML, :raw}
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
-  sync_enabled: true
+  sync_enabled: true,
+  database: "prices"
 
 config :sanbase, SanBase.Notifications.CheckPrice,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"}

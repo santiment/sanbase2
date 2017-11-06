@@ -12,20 +12,18 @@ defmodule Sanbase.Prices.Store do
   alias Sanbase.Prices.Store
   alias Sanbase.Prices.Point
 
-  @price_database "prices"
-
   def import_price_points(price_points, pair, tags \\ []) do
     price_points
     |> Stream.map(&convert_to_price_series(&1, pair, tags))
     |> Stream.chunk_every(300) # About 1 day of 5 min resolution data
     |> Enum.map(fn points ->
-      :ok = Store.write(points, database: @price_database)
+      :ok = Store.write(points, database: price_database())
     end)
   end
 
   def fetch_price_points(pair, from, to) do
     fetch_query(pair, from, to)
-    |> Store.query(database: @price_database)
+    |> Store.query(database: price_database())
     |> parse_price_series
   end
 
@@ -53,7 +51,7 @@ defmodule Sanbase.Prices.Store do
 
   def last_price_datetime(pair) do
     ~s/SELECT time, price FROM "#{pair}" ORDER BY time DESC LIMIT 1/
-    |> Store.query(database: @price_database)
+    |> Store.query(database: price_database())
     |> parse_last_price_datetime
   end
 
@@ -88,6 +86,11 @@ defmodule Sanbase.Prices.Store do
 
   def drop_pair(pair) do
     %{results: _} = "DROP MEASUREMENT #{pair}"
-    |> Store.execute(database: @price_database)
+    |> Store.execute(database: price_database())
+  end
+
+  defp price_database() do
+    Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
+    |> Keyword.get(:database)
   end
 end

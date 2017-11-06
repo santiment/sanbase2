@@ -11,11 +11,9 @@ defmodule Sanbase.ReleaseTasks.InfluxDB do
 
     Supervisor.start_link([Store.child_spec], [strategy: :one_for_one, name: Sanbase.ReleaseTasks.InfluxDB])
 
-    ["prices"]
-    |> Enum.each(fn database ->
-      database
-      |> Instream.Admin.Database.create()
-      |> Store.execute()
-    end)
+    Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
+    |> Keyword.get(:database)
+    |> Instream.Admin.Database.create()
+    |> Store.execute()
   end
 end

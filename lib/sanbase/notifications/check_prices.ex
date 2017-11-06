@@ -1,4 +1,6 @@
 defmodule Sanbase.Notifications.CheckPrices do
+  use Tesla
+
   alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.Prices.Store
@@ -42,8 +44,8 @@ defmodule Sanbase.Notifications.CheckPrices do
     [(last_price - first_price) / first_price, project]
   end
 
-  defp send_notification([price_difference, %Project{name: name} = project], type_id) do
-    Logger.info("Big price change of #{price_difference * 100} percent for project #{ name }: #{project_cmc_url(project)}")
+  defp send_notification([price_difference, project], type_id) do
+    Tesla.post(webhook_url(), notification_payload(price_difference, project), headers: %{"Content-Type" => "application/json"})
 
     Repo.insert!(%Notification{
       project_id: project.id,
@@ -69,11 +71,25 @@ defmodule Sanbase.Notifications.CheckPrices do
     type.id
   end
 
-  defp project_cmc_url(%Project{coinmarketcap_id: coinmarketcap_id}) do
-    "https://coinmarketcap.com/currencies/#{coinmarketcap_id}"
-  end
-
   defp price_ticker(%Project{ticker: ticker}) do
     "#{ticker}_USD"
   end
+
+  defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}) do
+    Poison.encode!(%{
+      payload: %{
+        text: "#{price_difference}% change in #{name}. Price graph: <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|here>"
+      }
+    })
+  end
+
+  defp webhook_url() do
+    Application.fetch_env!(:sanbase, SanBase.Notifications.CheckPrice)
+    |> Keyword.get(:webhook_url)
+    |> parse_webhook_url()
+  end
+
+  defp parse_webhook_url({:system, env_key}), do: System.get_env(env_key)
+
+  defp parse_webhook_url(value), do: value
 end

@@ -53,16 +53,18 @@ config :ex_admin,
     realm:    {:system, "ADMIN_BASIC_AUTH_REALM"}
   ]
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
-import_config "#{Mix.env}.exs"
-
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
   sync_enabled: true,
-  database: "prices"
+  database: "prices",
+  host: {:system, "INFLUXDB_HOST"},
+  pool: {:system, "INFLUXDB_POOL_SIZE"}
 
 config :sanbase, SanBase.Notifications.CheckPrice,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"}
+
+# Import environment specific config. This must remain at the bottom
+# of this file so it overrides the configuration defined above.
+import_config "#{Mix.env}.exs"

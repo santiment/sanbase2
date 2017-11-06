@@ -22,6 +22,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     update_interval = Keyword.get(config(), :update_interval, @default_update_interval)
 
     if Keyword.get(config(), :sync_enabled, false) do
+      Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
+      |> Keyword.get(:database)
+      |> Instream.Admin.Database.create()
+      |> Store.execute()
+
       GenServer.cast(self(), :sync)
 
       {:ok, %{update_interval: update_interval}}

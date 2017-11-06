@@ -68,10 +68,6 @@ config :logger, level: :info
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres
 
-config :sanbase, Sanbase.Prices.Store,
-  host: {:system, "INFLUXDB_HOST"},
-  pool: {:system, "INFLUXDB_POOL_SIZE"}
-
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.
 if File.exists?("config/prod.secret.exs") do

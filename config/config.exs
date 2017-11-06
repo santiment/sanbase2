@@ -45,6 +45,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.ProjectEthAddress,
     Sanbase.ExAdmin.Model.TrackedBtc,
     Sanbase.ExAdmin.Model.TrackedEth,
+    Sanbase.ExAdmin.Notifications.Type,
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

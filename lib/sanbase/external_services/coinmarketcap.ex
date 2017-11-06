@@ -10,6 +10,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.Coinmarketmap.GraphData
+  alias Sanbase.Notifications.CheckPrices
 
   @default_update_interval 1000 * 60 * 5 # 5 minutes
 
@@ -33,6 +34,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Project
     |> Repo.all
     |> Enum.each(&fetch_price_data/1)
+
+    CheckPrices.exec
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
 

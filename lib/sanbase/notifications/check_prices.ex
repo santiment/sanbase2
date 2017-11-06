@@ -15,14 +15,16 @@ defmodule Sanbase.Notifications.CheckPrices do
   @price_change_threshold 5 # percent
 
   def exec do
+    type_id = price_notification_type_id()
+
     Project
     |> Repo.all()
-    |> Enum.reject(&recent_notification?/1)
+    |> Enum.reject(&recent_notification?(&1, type_id))
     |> Enum.map(&price_difference/1)
     |> Enum.filter(fn [price_difference, _] ->
       Kernel.abs(price_difference) > @price_change_threshold / 100
     end)
-    |> Enum.map(&send_notification/1)
+    |> Enum.map(&send_notification(&1, type_id))
   end
 
   defp price_difference(project) do
@@ -39,12 +41,16 @@ defmodule Sanbase.Notifications.CheckPrices do
     [(last_price - first_price) / first_price, project]
   end
 
-  defp send_notification([price_difference, %Project{name: name} = project]) do
+  defp send_notification([price_difference, %Project{name: name} = project], type_id) do
     Logger.info("Big price change of #{price_difference * 100} percent for project #{ name }: #{project_cmc_url(project)}")
+
+    Repo.insert!(%Notification{
+      project_id: project.id,
+      type_id: type_id
+    })
   end
 
-  defp recent_notification?(%Project{id: id}) do
-    type_id = price_notification_type_id()
+  defp recent_notification?(%Project{id: id}, type_id) do
     cooldown_time = notification_cooldown_time()
 
     Notification

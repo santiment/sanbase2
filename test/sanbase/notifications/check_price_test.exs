@@ -6,6 +6,8 @@ defmodule Sanbase.Notifications.CheckPricesTest do
   alias Sanbase.Prices.{Store, Point}
   alias Sanbase.Repo
 
+  import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
+
   test "running the checks when there are no projects" do
     assert CheckPrices.exec == []
   end
@@ -31,12 +33,5 @@ defmodule Sanbase.Notifications.CheckPricesTest do
     [%Notification{project_id: project_id}] = CheckPrices.exec
 
     assert project_id == project.id
-  end
-
-  defp seconds_ago(seconds) do
-    DateTime.utc_now()
-    |> DateTime.to_unix()
-    |> Kernel.-(seconds)
-    |> DateTime.from_unix!
   end
 end

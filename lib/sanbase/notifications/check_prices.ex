@@ -13,8 +13,8 @@ defmodule Sanbase.Notifications.CheckPrices do
   require Logger
 
   @notification_name "price_change"
-  @cooldown_period_in_sec 60 * 10 # 10 minutes
-  @check_interval_in_sec 60 * 10 # 10 minutes
+  @cooldown_period_in_sec 60 * 20 # 20 minutes
+  @check_interval_in_sec 60 * 20 # 20 minutes
   @price_change_threshold 5 # percent
 
   def exec do

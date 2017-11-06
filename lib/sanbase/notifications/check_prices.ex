@@ -6,6 +6,7 @@ defmodule Sanbase.Notifications.CheckPrices do
   alias Sanbase.Notifications.Type
 
   import Ecto.Query
+  import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
 
   require Logger
 
@@ -74,12 +75,5 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   defp price_ticker(%Project{ticker: ticker}) do
     "#{ticker}_USD"
-  end
-
-  defp seconds_ago(seconds) do
-    DateTime.utc_now()
-    |> DateTime.to_unix()
-    |> Kernel.-(seconds)
-    |> DateTime.from_unix!
   end
 end

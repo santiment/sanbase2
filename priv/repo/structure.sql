@@ -75,6 +75,69 @@ CREATE TABLE latest_eth_wallet_data (
 
 
 --
+-- Name: notification; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE notification (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    type_id bigint NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: notification_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE notification_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE notification_id_seq OWNED BY notification.id;
+
+
+--
+-- Name: notification_type; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE notification_type (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: notification_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE notification_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE notification_type_id_seq OWNED BY notification_type.id;
+
+
+--
 -- Name: project; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -155,6 +218,20 @@ CREATE TABLE tracked_eth (
 
 
 --
+-- Name: notification id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY notification ALTER COLUMN id SET DEFAULT nextval('notification_id_seq'::regclass);
+
+
+--
+-- Name: notification_type id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY notification_type ALTER COLUMN id SET DEFAULT nextval('notification_type_id_seq'::regclass);
+
+
+--
 -- Name: project id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -183,6 +260,22 @@ ALTER TABLE ONLY latest_coinmarketcap_data
 
 ALTER TABLE ONLY latest_eth_wallet_data
     ADD CONSTRAINT latest_eth_wallet_data_pkey PRIMARY KEY (address);
+
+
+--
+-- Name: notification notification_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY notification
+    ADD CONSTRAINT notification_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notification_type notification_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY notification_type
+    ADD CONSTRAINT notification_type_pkey PRIMARY KEY (id);
 
 
 --
@@ -234,6 +327,20 @@ ALTER TABLE ONLY tracked_eth
 
 
 --
+-- Name: notification_project_id_type_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_project_id_type_id_index ON notification USING btree (project_id, type_id);
+
+
+--
+-- Name: notification_type_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX notification_type_name_index ON notification_type USING btree (name);
+
+
+--
 -- Name: project_btc_address_project_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -262,6 +369,22 @@ CREATE UNIQUE INDEX project_name_index ON project USING btree (name);
 
 
 --
+-- Name: notification notification_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY notification
+    ADD CONSTRAINT notification_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id);
+
+
+--
+-- Name: notification notification_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY notification
+    ADD CONSTRAINT notification_type_id_fkey FOREIGN KEY (type_id) REFERENCES notification_type(id);
+
+
+--
 -- Name: project_btc_address project_btc_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -281,5 +404,5 @@ ALTER TABLE ONLY project_eth_address
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20170911162322), (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171018120438), (20171018141238);
+INSERT INTO "schema_migrations" (version) VALUES (20170911162322), (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171018120438), (20171018141238), (20171106052403);
 

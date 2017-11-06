@@ -173,4 +173,9 @@ defmodule Sanbase.Prices.Store do
     ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
     WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
   end
+
+  def drop_pair(pair) do
+    "DROP MEASUREMENT #{pair}"
+    |> Store.execute
+  end
 end

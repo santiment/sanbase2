@@ -12,7 +12,7 @@ podTemplate(label: 'sanbase-builder', containers: [
         sh "docker run --rm --name postgres_${env.BRANCH_NAME} -d postgres:9.6-alpine"
         sh "docker run --rm --name influxdb_${env.BRANCH_NAME} -d influxdb:1.3-alpine"
         try {
-          sh "docker run --rm --link postgres_${env.BRANCH_NAME}:db --link influxdb_${env.BRANCH_NAME}:influxdb --env DATABASE_URL=postgres://postgres:password@db:5432/postgres, --env INFLUXDB_HOST=http://influxdb:8086 -t sanbase-test:${env.BRANCH_NAME}"
+          sh "docker run --rm --link postgres_${env.BRANCH_NAME}:db --link influxdb_${env.BRANCH_NAME}:influxdb --env DATABASE_URL=postgres://postgres:password@db:5432/postgres, --env INFLUXDB_HOST=influxdb -t sanbase-test:${env.BRANCH_NAME}"
         } finally {
           sh "docker kill influxdb_${env.BRANCH_NAME}"
           sh "docker kill postgres_${env.BRANCH_NAME}"

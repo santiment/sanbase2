@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import styles from 'styles/style.scss';
 
 class ProjectsTable extends Component {
   constructor(props){

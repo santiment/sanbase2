@@ -6,7 +6,6 @@ defmodule Sanbase.Model.ProjectEthAddress do
 
   @primary_key{:address, :string, []}
   schema "project_eth_address" do
-    # field :address, :string
     belongs_to :project, Project
   end
 

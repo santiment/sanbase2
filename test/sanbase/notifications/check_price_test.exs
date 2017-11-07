@@ -22,10 +22,10 @@ defmodule Sanbase.Notifications.CheckPricesTest do
   test "running the checks for a project with some prices" do
     Store.drop_pair("SAN_USD")
     Store.import_price_points([
-      %Point{datetime: seconds_ago(5), price: 1, volume: 1, marketcap: 1},
-      %Point{datetime: seconds_ago(4), price: 2, volume: 1, marketcap: 1},
-      %Point{datetime: seconds_ago(3), price: 3, volume: 1, marketcap: 1},
-      %Point{datetime: seconds_ago(2), price: 4, volume: 1, marketcap: 1},
+      %Point{datetime: seconds_ago(5), price: 1.0, volume: 1, marketcap: 1.0},
+      %Point{datetime: seconds_ago(4), price: 2.0, volume: 1, marketcap: 1.0},
+      %Point{datetime: seconds_ago(3), price: 3.0, volume: 1, marketcap: 1.0},
+      %Point{datetime: seconds_ago(2), price: 4.0, volume: 1, marketcap: 1.0},
     ],
     "SAN_USD")
     project = Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})

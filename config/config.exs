@@ -25,6 +25,13 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+config :sanbase, Sanbase.Prices.Store,
+  host: "localhost"
+
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
+                                 cleanup_interval_ms: 60_000 * 10]}
+
 config :ex_admin,
   repo: Sanbase.Repo,
   module: SanbaseWeb,    # MyProject.Web for phoenix >= 1.3.0-rc
@@ -50,3 +57,7 @@ config :ex_admin,
 import_config "#{Mix.env}.exs"
 
 config :xain, :after_callback, {Phoenix.HTML, :raw}
+
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
+  update_interval: 5 * 1000 * 60, # 5 minutes
+  sync_enabled: true

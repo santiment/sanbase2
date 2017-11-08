@@ -26,7 +26,8 @@ config :logger, :console,
   metadata: [:request_id]
 
 config :sanbase, Sanbase.Prices.Store,
-  host: "localhost"
+  host: {:system, "INFLUXDB_HOST", "localhost"},
+  port: {:system, "INFLUXDB_PORT", 8086}
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
@@ -58,9 +59,7 @@ config :xain, :after_callback, {Phoenix.HTML, :raw}
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
   sync_enabled: true,
-  database: "prices",
-  host: {:system, "INFLUXDB_HOST"},
-  pool: {:system, "INFLUXDB_POOL_SIZE"}
+  database: "prices"
 
 config :sanbase, SanBase.Notifications.CheckPrice,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"}

@@ -8,10 +8,10 @@ defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
   plug Tesla.Middleware.Logger
 
   alias Sanbase.ExternalServices.Coinmarketmap.GraphData
+  alias Sanbase.ExternalServices.Coinmarketcap.RateLimiter
   alias Sanbase.Prices.Point
 
   @seconds_in_day 24 * 60 * 60 # Number of seconds in a day
-  @time_between_requests 4000 # milliseconds
 
   def fetch_all_time_prices(token) do
     graph_data_all_time_url(token)
@@ -45,15 +45,8 @@ defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
   end
 
   defp extract_prices_for_interval_with_rate_limit(token, start_interval, end_interval) do
-    {:ok, {_, remaining, wait_period, _, _}} = Hammer.inspect_bucket("Coinmarketmap API Rate Limit", 60_000, 10)
-    if remaining > 0 do
-      Process.sleep(@time_between_requests)
-      {:allow, _} = Hammer.check_rate("Coinmarketmap API Rate Limit", 60_000, 10)
-      extract_prices_for_interval(token, start_interval, end_interval)
-    else
-      Process.sleep(wait_period)
-      extract_prices_for_interval_with_rate_limit(token, start_interval, end_interval)
-    end
+    RateLimiter.wait()
+    extract_prices_for_interval(token, start_interval, end_interval)
   end
 
   defp extract_prices_for_interval(token, start_interval, end_interval) do

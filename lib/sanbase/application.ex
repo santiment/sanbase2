@@ -15,6 +15,7 @@ defmodule Sanbase.Application do
       # Time series DB connection
       Sanbase.Prices.Store.child_spec,
       Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
+      Sanbase.ExternalServices.Coinmarketcap.RateLimiter.child_spec(%{}),
       # Start your own worker by calling: Sanbase.Worker.start_link(arg1, arg2, arg3)
       # worker(Sanbase.Worker, [arg1, arg2, arg3]),
     ]

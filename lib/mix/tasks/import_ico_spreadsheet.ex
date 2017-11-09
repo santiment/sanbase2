@@ -4,7 +4,7 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
   @shortdoc "Imports Ico Spreadsheet"
 
   @moduledoc """
-  Imports Ico Spreadsheet. Imports only the first occurence of a project (matches by project name)
+  Imports Ico Spreadsheet. Imports only the last occurence of a project (matches by project name)
 
   `mix ImportIcoSpreadsheet --document-id <document_id> --api-key <api_key> ["project1" "project2" ...]`
 
@@ -22,7 +22,6 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
 
   alias Sanbase.ExternalServices.IcoSpreadsheet
 
-  # TODO: don't take the first occurence but the last one
   def run(args) do
     parsed_args = OptionParser.parse(args,
       strict: [document_id: :string, api_key: :string],
@@ -43,7 +42,9 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
     {:ok, _started} = Application.ensure_all_started(:sanbase)
 
     res = IcoSpreadsheet.get_project_data(document_id, api_key, project_names)
+    |> Enum.reverse()
     |> Enum.uniq_by(fn row -> row.project_name end)
+    |> Enum.reverse()
 
     IO.inspect res
 

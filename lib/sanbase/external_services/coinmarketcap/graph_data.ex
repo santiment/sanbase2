@@ -1,4 +1,4 @@
-defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
+defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd]
 
   use Tesla
@@ -7,7 +7,7 @@ defmodule Sanbase.ExternalServices.Coinmarketmap.GraphData do
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger
 
-  alias Sanbase.ExternalServices.Coinmarketmap.GraphData
+  alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.RateLimiter
   alias Sanbase.Prices.Point
 

@@ -3,7 +3,7 @@ defmodule Mix.Tasks.ScrapeCoinmarketcapPrices do
 
   @shortdoc "Scrapes 5 min prices from coinmarketcap"
 
-  alias Sanbase.ExternalServices.Coinmarketmap.GraphData
+  alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.Prices.Store
 
   def run([token, start_time, end_time]) do

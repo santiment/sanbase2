@@ -21,6 +21,7 @@ defmodule Sanbase.Model.Project do
     field :linkedin_link, :string
     field :telegram_link, :string
     field :project_transparency, :string
+    field :token_address, :string
     field :team_token_wallet, :string
     has_many :eth_addresses, ProjectEthAddress
     has_many :btc_addresses, ProjectBtcAddress

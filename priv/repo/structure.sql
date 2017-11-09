@@ -314,6 +314,7 @@ CREATE TABLE project (
     linkedin_link character varying(255),
     telegram_link character varying(255),
     project_transparency character varying(255),
+    token_address character varying(255),
     team_token_wallet character varying(255),
     market_segment_id bigint,
     infrastructure_id bigint

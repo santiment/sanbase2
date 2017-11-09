@@ -27,6 +27,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow do
     :linkedin_link,
     :telegram_link,
     :ico_main_contract_address,
+    :token_address,
     :team_token_wallet,
     :eth_wallets,
     :btc_wallets,
@@ -63,16 +64,17 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow do
       linkedin_link: 132,
       telegram_link: 133,
       ico_main_contract_address: 135,
-      team_token_wallet: 136,
-      eth_wallet: 137,
-      btc_wallet: 138,
-      btc_wallet2: 139,
-      btc_wallet3: 140,
-      btc_wallet4: 141,
-      btc_wallet5: 142,
-      blockchain: 144,
-      project_transparency: 145,
-      comments: 146
+      token_address: 136,
+      team_token_wallet: 137,
+      eth_wallet: 138,
+      btc_wallet: 139,
+      btc_wallet2: 140,
+      btc_wallet3: 141,
+      btc_wallet4: 142,
+      btc_wallet5: 143,
+      blockchain: 145,
+      project_transparency: 146,
+      comments: 147
     }
   end
 end

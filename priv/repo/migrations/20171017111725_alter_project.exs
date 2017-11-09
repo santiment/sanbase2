@@ -15,6 +15,7 @@ defmodule Sanbase.Repo.Migrations.AlterProject do
       add :linkedin_link, :string
       add :telegram_link, :string
       add :project_transparency, :string
+      add :token_address, :string
       add :team_token_wallet, :string
       add :market_segment_id, references(:market_segments)
       add :infrastructure_id, references(:infrastructures)

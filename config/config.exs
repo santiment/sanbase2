@@ -61,3 +61,7 @@ config :xain, :after_callback, {Phoenix.HTML, :raw}
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
   sync_enabled: true
+
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
+  update_interval: 5 * 1000 * 60,
+  sync_enabled: true

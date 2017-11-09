@@ -6,12 +6,26 @@ This is the source of the sanbase project of [`https://santiment.net`](https://s
 
   In order to run the project locally you need:
 
-  * Elixir & NodeJS: `brew install elixir nodejs`
+  * Install PostgreSQL and InfluxDB. On OS X you can do that with `brew install postgresql influxdb`
+  * Elixir & NodeJS. On OS X you can do that with `brew install elixir nodejs`
   * Install dependencies with `mix deps.get`
   * Install JS dependencies for the static frontend with `cd assets && yarn && cd ..`
   * Install JS dependencies for the next.js frontend with `cd app && yarn && cd ..`
-  * Update your Postgres setup in `config/dev.exs`
-  * Create and migrate your database with `mix ecto.setup`
+  * Create a file `config/dev.secrets.exs` and put your PostgreSQL setup there. Example:
+
+```elixir
+use Mix.Config
+
+config :sanbase, Sanbase.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  username: "postgresql",
+  password: "",
+  database: "sanbase_dev",
+  hostname: "localhost",
+  pool_size: 10
+```
+
+  * Setup your database and import the seeds with `mix ecto.setup`
   * Start Phoenix endpoint with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.

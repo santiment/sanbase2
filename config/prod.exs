@@ -66,9 +66,11 @@ config :logger, level: :info
 #
 
 config :sanbase, Sanbase.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
+  adapter: Ecto.Adapters.Postgres
+
+config :sanbase, Sanbase.Prices.Store,
+  host: {:system, "INFLUXDB_HOST"},
+  pool: {:system, "INFLUXDB_POOL_SIZE"}
 
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.

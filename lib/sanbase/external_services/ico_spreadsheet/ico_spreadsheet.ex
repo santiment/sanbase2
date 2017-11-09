@@ -50,6 +50,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     |> Enum.into(%{})
     |> handle_wallets()
     |> handle_infrastructure()
+    |> handle_cap_currency()
 
     struct!(IcoSpreadsheetRow, res)
   end
@@ -181,6 +182,16 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
       parsed_value_row
     end
     |> Map.drop([:blockchain])
+  end
+
+  defp handle_cap_currency(parsed_value_row) do
+    value = if(!is_nil(parsed_value_row.cap_currency)) do String.downcase(parsed_value_row.cap_currency) else nil end
+
+    case value do
+      v when v in ["yes", "no"] ->
+        Map.put(parsed_value_row, :cap_currency, nil)
+      _ -> parsed_value_row
+    end
   end
 
   defp remove_nils(list) when is_list(list) do

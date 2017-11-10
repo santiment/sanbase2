@@ -114,16 +114,16 @@ INSERT INTO project (ticker, name, coinmarketcap_id, logo_url) VALUES
   ('DNT', 'district0x', 'district0x', 'district0x.png' ),
   ('DNA', 'Encrypgen', null, null),
   ('RSC', 'Etherisc', null, null),
-  ('EXP/LAB', 'Expanse/Tokenlab', null, ),
+  ('EXP/LAB', 'Expanse/Tokenlab', 'expanse', 'expanse.png'),
   ('GAT', 'Gatcoin.io', null, null),
-  ('HSR', 'Hshare', 'hshare', null),
+  ('HSR', 'Hshare', 'hshare', 'hshare.png'),
   ('ICN', 'Iconomi', 'iconomi', 'iconomi.png'),
-  ('IND', 'Indorse', 'indorse-token', null),
+  ('IND', 'Indorse', 'indorse-token', 'indorse-token.png'),
   /* ('', 'IconiqLab'), */
   /* ('KPMG', 'KPMG'), */
-  ('LKK', 'Lykke', 'lykke', null),
-  ('ART', 'Maecenas', null, null),
-  ('MCI', 'Musiconomi', null, null),
+  ('LKK', 'Lykke', 'lykke', 'lykke.png'),
+  ('ART', 'Maecenas', 'maecenas', 'maecenas.png'),
+  ('MCI', 'Musiconomi', 'musiconomi', 'musiconomi.png'),
   ('SAN', 'Santiment', 'santiment', 'santiment.png'),
   /* ('SNT', 'Status.im', 'status'), */
   ('VIC', 'Virgil Capital', null, null)

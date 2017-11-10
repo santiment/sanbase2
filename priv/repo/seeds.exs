@@ -123,17 +123,17 @@ end
 #######################################
 
 [
-  %Project{ name: "CFI",  ticker: "Cofound.it",  logo_url: "cofound-it",  coinmarketcap_id: "cofound-it.png"},
+  %Project{ name: "CFI",  ticker: "Cofound.it",  logo_url: "cofound-it.png",  coinmarketcap_id: "cofound-it"},
   %Project{ ticker: "DAP", name: "Dappbase" },
   %Project{ ticker: "DNA", name: "Encrypgen" },
   %Project{ ticker: "RSC", name: "Etherisc" },
-  %Project{ ticker: "EXP/LAB", name: "Expanse/Tokenlab" },
+  %Project{ ticker: "EXP/LAB", name: "Expanse/Tokenlab", logo_url: "expanse.png", coinmarketcap_id: "expanse" },
   %Project{ ticker: "GAT", name: "Gatcoin.io" },
-  %Project{ ticker: "HSR", name: "Hshare", coinmarketcap_id: "hshare" },
-  %Project{ ticker: "IND", name: "Indorse", coinmarketcap_id: "indorse-token" },
-  %Project{ ticker: "LKK", name: "Lykke", coinmarketcap_id: "lykke" },
-  %Project{ ticker: "ART", name: "Maecenas" },
-  %Project{ ticker: "MCI", name: "Musiconomi" },
+  %Project{ ticker: "HSR", name: "Hshare", coinmarketcap_id: "hshare", logo_url: "hshare.png" },
+  %Project{ ticker: "IND", name: "Indorse", coinmarketcap_id: "indorse-token", logo_url: "indorse-token.png" },
+  %Project{ ticker: "LKK", name: "Lykke", coinmarketcap_id: "lykke", logo_url: "lykke.png" },
+  %Project{ ticker: "ART", name: "Maecenas", coinmarketcap_id: "maecenas", logo_url: "maecenas.png" },
+  %Project{ ticker: "MCI", name: "Musiconomi", coinmarketcap_id: "musiconomi", logo_url: "musiconomi.png" },
   %Project{ ticker: "VIC", name: "Virgil Capital" }
 ]
 |> Enum.each(&Repo.insert!/1)

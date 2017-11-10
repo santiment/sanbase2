@@ -6,6 +6,7 @@ import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
 import $ from 'jquery'
 import DataTable from 'datatables.net'
+
 $.DataTable = DataTable;
 
 class Index extends Component {

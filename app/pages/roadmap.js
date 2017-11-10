@@ -2,6 +2,7 @@ import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
 import Topbar from '../components/topbar'
 import HeaderPage from '../components/header-page'
+import styles from './roadmap.scss'
 
 const Index = (props) => (
   <div>
@@ -10,6 +11,7 @@ const Index = (props) => (
     <div className="container vert-stretch" id="main">
       <Topbar />
       <HeaderPage name="SANbase Roadmap" description="Please see our SANbase roadmap below. It is a living document; milestones may adjust." />
+      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <div className="row vert-stretch">
         <div className="col-12 vert-full">
           <div className="panel vert-full">
@@ -50,35 +52,35 @@ const Index = (props) => (
                     </p>
                   </div>
                   <div className="body">
-                    <div className="status-row" style={{ 'marginBottom': '10px' }}>
+                    <div className="status-row" id="low-orbit">
                       <span className="status-item">Develop SANbase backend architecture and wireframe UI</span>
-                      <span className="status" style={{ 'width': '27%' }}>
+                      <span className="status">
                         <div className="status-percent">30%</div>
                         <div className="status-border">
-                          <div className="status-progress" style={{ 'width': '30%' }}></div>
+                          <div className="status-progress"></div>
                         </div>
                       </span>
                     </div>
                     <p><strong>Data-feeds:</strong> Bring in first round of real-time feeds:</p>
                     <ul>
                       <li>
-                        <div className="status-row embedded">
+                        <div className="status-row embedded" id="crypto-projects-item">
                           <span className="status-item">Crypto projects with key metrics</span>
-                          <span className="status" style={{ 'width': '28.4%' }}>
+                          <span className="status">
                             <div className="status-percent">10%</div>
                             <div className="status-border">
-                              <div className="status-progress" style={{ 'width': '20%' }}></div>
+                              <div className="status-progress"></div>
                             </div>
                           </span>
                         </div>
                       </li>
                       <li>
-                        <div className="status-row embedded">
+                        <div className="status-row embedded" id="detailed-views-item">
                           <span className="status-item">Detailed views of each project</span>
-                          <span className="status" style={{ 'width': '28.4%' }}>
+                          <span className="status">
                             <div className="status-percent">10%</div>
                             <div className="status-border">
-                              <div className="status-progress" style={{ 'width': '20%' }}></div>
+                              <div className="status-progress"></div>
                             </div>
                           </span>
                         </div>
@@ -89,12 +91,12 @@ const Index = (props) => (
                         </div>
                         <ul>
                           <li>
-                            <div className="status-row embedded">
+                            <div className="status-row embedded" id="team-wallets-item">
                               <span className="status-item">Team wallets</span>
                               <span className="status">
                                 <div className="status-percent">80%</div>
                                 <div className="status-border">
-                                  <div className="status-progress" style={{ 'width': '80%' }}></div>
+                                  <div className="status-progress"></div>
                                 </div>
                               </span>
                             </div>
@@ -135,12 +137,12 @@ const Index = (props) => (
                     <ul>
                       <li>DApp release. SAN token usage launched</li>
                       <li>
-                        <div className="status-row embedded">
+                        <div className="status-row embedded" id="mobile-port-item">
                           <span className="status-item">Port to mobile. Add push notifications.</span>
-                          <span className="status" style={{ 'width': '28.4%' }}>
+                          <span className="status">
                             <div className="status-percent">25%</div>
                             <div className="status-border">
-                              <div className="status-progress" style={{ 'width': '25%' }}></div>
+                              <div className="status-progress"></div>
                             </div>
                           </span>
                         </div>
@@ -167,7 +169,7 @@ const Index = (props) => (
                       <p></p>
                     </div>
                     <div>
-                      <p style={{ 'marginBottom': '10px' }}>Open the SANbase API</p>
+                      <p id="open-san-api">Open the SANbase API</p>
                       <p></p>
                     </div>
                     <p>Expand the set of data-feeds/signals:</p>

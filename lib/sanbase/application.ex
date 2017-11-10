@@ -26,6 +26,12 @@ defmodule Sanbase.Application do
       # Current marketcap fetcher
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
 
+      #Etherscan rate limiter
+      Sanbase.ExternalServices.Etherscan.RateLimiter.child_spec(%{}),
+
+      # Etherscan wallet tracker
+      Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),
+
       # Start your own worker by calling: Sanbase.Worker.start_link(arg1, arg2, arg3)
       # worker(Sanbase.Worker, [arg1, arg2, arg3]),
     ]

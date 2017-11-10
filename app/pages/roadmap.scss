@@ -1,41 +1,53 @@
 #low-orbit {
   margin-bottom: 10px;
+
+  .status {
+    width: 27%;
+  }
+
+  .status-progress {
+    width: 30%;
+  }
 }
 
-#low-orbit .status {
-  width: 27%;
+#crypto-projects-item {
+  .status {
+    width: 28.4%;
+  }
+
+  .status-progress {
+    width: 20%;
+  }
 }
 
-#low-orbit .status-progress {
-  width: 30%;
+#detailed-views-item {
+  .status {
+    width: 28.4%;
+  }
+
+  .status-progress {
+    width: 20%;
+  }
 }
 
-#crypto-projects-item .status {
-  widtH: 28.4%;
+#team-wallets-item {
+  .status-progress {
+    width: 80%;
+  }
+
+  .status {
+    width: 28.4%;
+  }
 }
 
-#crypto-projects-item .status-progress {
-  width: 20%;
-}
+#mobile-port-item {
+  .status {
+    width: 28.4%;
+  }
 
-#detailed-views-item .status {
-  widtH: 28.4%;
-}
-
-#detailed-views-item .status-progress {
-  width: 20%;
-}
-
-#team-wallets-item .status-progress {
-  width: 80%;
-}
-
-#mobile-port-item .status {
-  widtH: 28.4%;
-}
-
-#mobile-port-item .status-progress {
-  width: 25%;
+  .status-progress {
+    width: 25%;
+  }
 }
 
 #open-san-api {

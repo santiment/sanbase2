@@ -4,10 +4,37 @@ import { WEBSITE_URL } from '../config'
 import ProjectsTable from '../components/projects-table'
 import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
+import $ from 'jquery'
+import DataTable from 'datatables.net'
+$.DataTable = DataTable;
 
 class Index extends Component {
   constructor(props){
     super(props)
+  }
+
+  componentDidMount(){
+    $(document).ready(function () {
+      $('.table-hover').DataTable({
+          "dom": "<'row'<'col-sm-7'i><'col-sm-5'f>>" +
+          "<'row'<'col-sm-12'tr>>" +
+          "<'row'<'col-sm-5'><'col-sm-7'>>",
+          "paging": false,
+          fixedHeader: true,
+          language: {
+              search: "_INPUT_",
+              searchPlaceholder: "Search"
+          },
+        "order": [[ 1, "desc" ]],
+
+          responsive: {
+              details: {
+                type: ''
+              }
+          }
+
+      });
+    });
   }
 
   static async getInitialProps(){
@@ -61,35 +88,8 @@ class Index extends Component {
                   NOTE: This app is a prototype. We give no guarantee data is correct as we are in active development.</span>
               </div>
           </div>
-          <ProjectsTable data={ props.data }/>
+          <ProjectsTable data={ this.props.data }/>
         </div>
-        <script dangerouslySetInnerHTML={{ __html: `
-          $(document).ready(function () {
-
-              $('.table-hover').DataTable({
-
-                  "dom": "<'row'<'col-sm-7'i><'col-sm-5'f>>" +
-                  "<'row'<'col-sm-12'tr>>" +
-                  "<'row'<'col-sm-5'><'col-sm-7'>>",
-                  "paging": false,
-                  fixedHeader: true,
-                  language: {
-                      search: "_INPUT_",
-                      searchPlaceholder: "Search"
-                  },
-                "order": [[ 1, "desc" ]],
-
-                  responsive: {
-                      details: {
-                          display: $.fn.dataTable.Responsive.display.childRowImmediate,
-                          type: ''
-                      }
-                  }
-
-              });
-
-          });
-        `}} />
       </div>
     );
   }

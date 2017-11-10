@@ -1,8 +1,5 @@
-import styles from './index.scss'
-
 export default (props) => (
   <div className="row topbar">
-    <style dangerouslySetInnerHTML={{ __html: styles }}></style>
     <div className="col-lg-6">
       <div className="search">
         <i className="material-icons">search</i>
@@ -17,5 +14,19 @@ export default (props) => (
         </li>
       </ul>
     </div>
+    <style jsx>{`
+      .search {
+        padding-top: 24px;
+        padding-left: 16px;
+      }
+
+      .balance {
+        display: inline-block;
+        padding-top: 22px;
+        padding-left: 24px;
+        padding-right: 24px;
+        font-size: 14px;
+      }
+    `}</style>
   </div>
 )

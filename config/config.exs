@@ -32,6 +32,8 @@ config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
                                  cleanup_interval_ms: 60_000 * 10]}
 
+#config :tesla, adapter: :ibrowse
+
 config :ex_admin,
   repo: Sanbase.Repo,
   module: SanbaseWeb,    # MyProject.Web for phoenix >= 1.3.0-rc
@@ -65,3 +67,8 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
   update_interval: 5 * 1000 * 60,
   sync_enabled: true
+
+config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
+  update_interval: 5 * 1000 * 60, # 5 minutes
+  sync_enabled: true
+

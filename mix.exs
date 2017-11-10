@@ -43,6 +43,7 @@ defmodule Sanbase.Mixfile do
       {:corsica, "~> 1.0", only: [:dev]},
       {:hound, "~> 1.0", only: [:test]},
       {:tesla, "~> 0.9.0"},
+      {:ibrowse, "~> 4.4"},
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
       {:hammer, "~> 2.0.0"},

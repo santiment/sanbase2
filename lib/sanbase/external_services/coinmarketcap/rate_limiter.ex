@@ -15,7 +15,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RateLimiter do
   @name {:global, :coinmarketcap_rate_limiter}
   
   def start_link(_state) do
-    IO.puts("Starting CMC rate limiter")
+    Logger.info fn ->
+      "Starting rate limiter #{@bucket}"
+    end
     GenServer.start_link(__MODULE__, :ok, name: @name)
   end
 

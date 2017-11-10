@@ -39,28 +39,8 @@ class Index extends Component {
   }
 
   static async getInitialProps(){
-    //const res = await fetch(WEBSITE_URL + '/api/cashflow')
-    //const data = await res.json()
-
-    const data = {
-      projects: [
-        {
-          market_cap_usd: 1,
-          balance: 45,
-          name: 'EOS',
-          ticker: 'EOS',
-          logo_url: 'eos.png',
-          wallets: [
-            {
-              last_outgoing: null,
-              balance: 1,
-              tx_out: null
-            }
-          ]
-        }
-      ],
-      eth_price: 2
-    };
+    const res = await fetch(WEBSITE_URL + '/api/cashflow')
+    const data = await res.json()
 
     return {
       data: data

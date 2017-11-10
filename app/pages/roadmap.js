@@ -2,7 +2,6 @@ import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
 import Topbar from '../components/topbar'
 import HeaderPage from '../components/header-page'
-import styles from './roadmap.scss'
 
 const Index = (props) => (
   <div>
@@ -11,7 +10,6 @@ const Index = (props) => (
     <div className="container vert-stretch" id="main">
       <Topbar />
       <HeaderPage name="SANbase Roadmap" description="Please see our SANbase roadmap below. It is a living document; milestones may adjust." />
-      <style dangerouslySetInnerHTML={{ __html: styles }}></style>
       <div className="row vert-stretch">
         <div className="col-12 vert-full">
           <div className="panel vert-full">
@@ -209,6 +207,55 @@ const Index = (props) => (
         </div>
       </div>
     </div>
+    <style jsx>{`
+      #low-orbit .status {
+        width: 27%;
+      }
+
+      #low-orbit .status-progress {
+        width: 30%;
+      }
+
+      #low-orbit {
+        margin-bottom: 10px;
+      }
+
+      #crypto-projects-item .status {
+          width: 28.4%;
+      }
+
+      #crypto-projects-item .status-progress {
+        width: 20%;
+      }
+
+      #detailed-views-item .status {
+        width: 28.4%;
+      }
+
+      #detailed-views-item .status-progress {
+        width: 20%;
+      }
+
+      #team-wallets-item .status-progress {
+        width: 80%;
+      }
+
+      #team-wallets-item .status {
+        width: 28.4%;
+      }
+
+      #mobile-port-item .status {
+        width: 28.4%;
+      }
+
+      #mobile-port-item .status-progress {
+        width: 25%;
+      }
+
+      #open-san-api {
+        margin-bottom: 10px;
+      }
+    `}</style>
   </div>
 )
 

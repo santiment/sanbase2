@@ -4,7 +4,7 @@ export default (props) => (
   <div className="row topbar">
     <style dangerouslySetInnerHTML={{ __html: styles }}></style>
     <div className="col-lg-6">
-      <div className="search" style={{'paddingTop': '24px', 'paddingLeft': '16px'}}>
+      <div className="search">
         <i className="material-icons">search</i>
       </div>
     </div>

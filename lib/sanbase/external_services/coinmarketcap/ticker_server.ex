@@ -38,11 +38,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     {:noreply, state}
   end
 
-  defp store_ticker(ticker) do
-    case Repo.get(LatestCoinmarketcapData, ticker.id) do
-      nil  -> %LatestCoinmarketcapData{id: ticker.id}
+  defp get_or_create_ticker(id) do
+    case Repo.get(LatestCoinmarketcapData, id) do
+      nil  -> %LatestCoinmarketcapData{id: id}
       entry -> entry
     end
+  end
+
+  defp store_ticker(ticker) do
+    ticker.id
+    |> get_or_create_ticker()
     |> LatestCoinmarketcapData.changeset(
       %{market_cap_usd: ticker.market_cap_usd,
 	name: ticker.name,

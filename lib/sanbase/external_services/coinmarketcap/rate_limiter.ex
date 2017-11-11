@@ -2,6 +2,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RateLimiter do
   # A rate limiter for Coinmarketcap
 
   use GenServer, restart: :permanent, shutdown: 5_000
+  require Logger
 
   # Allow max 10 requests per 60 seconds. Wait 4 seconds before
   # executing each request. 
@@ -29,7 +30,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RateLimiter do
 
   def sleep_algorithm ({:deny, _}) do
     {:ok, {_,_,wait_period, _, _}} = Hammer.inspect_bucket(@bucket, @scale, @limit)
-    IO.puts("Denied!" <> to_string(wait_period))
+    Logger.info fn ->
+      "Rate limit exceeded. bucket:#{@bucket}, wait_period:#{wait_period}"
+    end
 
     Process.sleep(wait_period)
     sleep_algorithm(Hammer.check_rate(@bucket, @scale, @limit))

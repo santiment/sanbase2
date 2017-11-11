@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Influx.Setup do
 
     databases_to_create
     |> Enum.each(fn database ->
-      database
+      %{results: _} = database
       |> Instream.Admin.Database.create()
       |> Store.execute()
     end)

@@ -74,8 +74,6 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
         parse_int(value)
       c when c in [:tokens_sold_at_ico, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount] ->
         parse_decimal(value)
-      # c when c in [] ->
-      #   parse_boolean(value)
       c when c in [:ico_currencies] ->
         parse_comma_delimited(value)
       _ -> parse_string(value)
@@ -84,33 +82,29 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     {column, value}
   end
 
-  defp parse_int(value) do
-    if(is_binary(value)) do
-      case Integer.parse(value) do
-        {result, _} -> result
-        _ -> #TODO: return error
-          IO.write("parse_int error: ")
-          IO.inspect value
-          nil
-      end
-    else
-      value
+  defp parse_int(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {result, _} -> result
+      _ -> #TODO: return error
+        IO.write("parse_int error: ")
+        IO.inspect value
+        nil
     end
   end
 
-  defp parse_decimal(value) do
-    if(is_binary(value)) do
-      case Decimal.parse(value) do
-        {:ok, result} -> result
-        _ -> #TODO: return error
-          IO.write("parse_decimal error: ")
-          IO.inspect value
-          nil
-      end
-    else
-      value
+  defp parse_int(value), do: value
+
+  defp parse_decimal(value) when is_binary(value) do
+    case Decimal.parse(value) do
+      {:ok, result} -> result
+      _ -> #TODO: return error
+        IO.write("parse_decimal error: ")
+        IO.inspect value
+        nil
     end
   end
+
+  defp parse_decimal(value), do: value
 
   defp parse_boolean(value) do
     value = if(is_binary(value)) do String.downcase(value) else value end
@@ -126,47 +120,41 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     end
   end
 
-  defp parse_date(value) do
-    if(!is_nil(value)) do
-      if(is_integer(value)) do
-        #the -2 is to account for an Excel bug (search in internet)
-        Date.add(~D[1900-01-01], value - 2)
-      else
-        #TODO: return error
-        IO.write("parse_date error: ")
-        IO.inspect value
-        nil
-      end
-    else
-      nil
-    end
+  defp parse_date(value) when is_integer(value) do
+    #the -2 is to account for an Excel bug (search in internet)
+    Date.add(~D[1900-01-01], value - 2)
   end
+
+  defp parse_date(value) when is_nil(value), do: nil
+
+  defp parse_date(value) do
+    #TODO: return error
+    IO.write("parse_date error: ")
+    IO.inspect value
+    nil
+  end
+
+  defp parse_comma_delimited(value) when is_binary(value) do
+    value
+    |> String.split([",", ";"])
+    |> Enum.map(&String.trim(&1))
+    |> Enum.filter(&(String.length(&1) > 0))
+  end
+
+  defp parse_comma_delimited(value) when is_nil(value), do: []
 
   defp parse_comma_delimited(value) do
-    if(!is_nil(value)) do
-      if(is_binary(value)) do
-        value
-        |> String.split([",", ";"])
-        |> Enum.map(&String.trim(&1))
-        |> Enum.filter(&(String.length(&1) > 0))
-      else
-        #TODO: return error
-        IO.write("parse_comma_delimited error: ")
-        IO.inspect value
-        []
-      end
-    else
-      []
-    end
+    #TODO: return error
+    IO.write("parse_comma_delimited error: ")
+    IO.inspect value
+    []
   end
 
-  defp parse_string(value) do
-    if(!is_nil(value)) do
-      to_string(value)
-    else
-      nil
-    end
+  defp parse_string(value) when not is_nil(value) do
+    to_string(value)
   end
+
+  defp parse_string(_), do: nil
 
   defp handle_wallets(parsed_value_row) do
     parsed_value_row
@@ -176,10 +164,10 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   end
 
   defp handle_infrastructure(parsed_value_row) do
-    if is_nil(parsed_value_row.infrastructure) do
-      Map.put(parsed_value_row, :infrastructure, parsed_value_row.blockchain)
-    else
-      parsed_value_row
+    cond do
+      is_nil(parsed_value_row.infrastructure) ->
+        Map.put(parsed_value_row, :infrastructure, parsed_value_row.blockchain)
+      true -> parsed_value_row
     end
     |> Map.drop([:blockchain])
   end

@@ -28,7 +28,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp fill_project(ico_spreadsheet_row) do
     ensure_project(ico_spreadsheet_row.project_name)
-    |> IO.inspect()
     |> Project.changeset(%{
       name: ico_spreadsheet_row.project_name,
       ticker: ico_spreadsheet_row.ticker,
@@ -75,33 +74,29 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     end
   end
 
-  defp ensure_market_segment(market_segment_name) do
-    if(!is_nil(market_segment_name)) do
-      Repo.get_by(MarketSegment, name: market_segment_name)
-      |> case do
-        result = %MarketSegment{} -> result
-        nil ->
-          %MarketSegment{}
-          |> MarketSegment.changeset(%{name: market_segment_name})
-      end
-    else
-      nil
+  defp ensure_market_segment(market_segment_name) when not is_nil(market_segment_name) do
+    Repo.get_by(MarketSegment, name: market_segment_name)
+    |> case do
+      result = %MarketSegment{} -> result
+      nil ->
+        %MarketSegment{}
+        |> MarketSegment.changeset(%{name: market_segment_name})
     end
   end
 
-  defp ensure_infrastructure(infrastructure_code) do
-    if(!is_nil(infrastructure_code)) do
-      Repo.get_by(Infrastructure, code: infrastructure_code)
-      |> case do
-        result = %Infrastructure{} -> result
-        nil ->
-          %Infrastructure{}
-          |> Infrastructure.changeset(%{code: infrastructure_code})
-      end
-    else
-      nil
+  defp ensure_market_segment(_), do: nil
+
+  defp ensure_infrastructure(infrastructure_code) when not is_nil(infrastructure_code) do
+    Repo.get_by(Infrastructure, code: infrastructure_code)
+    |> case do
+      result = %Infrastructure{} -> result
+      nil ->
+        %Infrastructure{}
+        |> Infrastructure.changeset(%{code: infrastructure_code})
     end
   end
+
+  defp ensure_infrastructure(_), do: nil
 
   defp ensure_ico(project) do
     case project do
@@ -115,17 +110,15 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Enum.map(&ensure_currency(&1))
   end
 
-  defp ensure_currency(currency_code) do
-    if(!is_nil(currency_code)) do
-      Repo.get_by(Currency, code: currency_code)
-      |> case do
-        result = %Currency{} -> result
-        nil ->
-          %Currency{}
-          |> Currency.changeset(%{code: currency_code})
-      end
-    else
-      nil
+  defp ensure_currency(currency_code) when not is_nil(currency_code) do
+    Repo.get_by(Currency, code: currency_code)
+    |> case do
+      result = %Currency{} -> result
+      nil ->
+        %Currency{}
+        |> Currency.changeset(%{code: currency_code})
     end
   end
+
+  defp ensure_currency(_), do: nil
 end

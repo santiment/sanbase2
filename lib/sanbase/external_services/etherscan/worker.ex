@@ -8,13 +8,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.TrackedEth
   alias Sanbase.Repo
-  alias Sanbase.ExternalServices.Etherscan.Requests
+  alias Sanbase.ExternalServices.Etherscan.{Requests, TaskSupervisor}
   alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx}
 
-
+  alias Decimal, as: D
+  
   @default_update_interval_ms 1000 * 60 * 5
   @average_block_time_ms 10000 #Actually it's close to 15s
-  @default_timespan_ms 7*24*60*60*1000 # 1 week
+  @default_timespan_ms 30*24*60*60*1000 # 30 days
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -24,7 +25,11 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     Logger.info fn ->
       "Starting etherscan polling client"
     end
-    
+
+    # For calculating balance in eth (to keep functionality same as
+    # old sanbase)
+    D.set_context %{D.get_context | precision: 2}
+
     update_interval_ms = Keyword.get(config(), :update_interval_ms, @default_update_interval_ms)
 
     if Keyword.get(config(), :sync_enabled, false) do
@@ -39,12 +44,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   def handle_cast(:sync, %{update_interval_ms: update_interval_ms} = state) do
     #1. Get current block number
     endblock = Requests.get_latest_block_number()
-    #startblock = endblock - Float.ceil(@default_timespan_ms/@average_block_time_ms)
-    startblock = 0
+    startblock = endblock - Float.ceil(@default_timespan_ms/@average_block_time_ms)
+    #startblock = 0
     
     TrackedEth
     |> Repo.all
-    |> Enum.each(&(fetch_and_store(&1, startblock, endblock)))
+    |> Enum.each(&(fetch_and_store_async(&1, startblock, endblock)))
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval_ms)
 
@@ -55,25 +60,38 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     Application.get_env(:sanbase, __MODULE__)
   end
 
-  defp fetch(address, startblock, endblock) do
+
+  defp convert_to_eth(wei) do
+    D.div(D.new(wei), D.new(1000000000000000000))
+  end
+
+  def fetch(address, startblock, endblock) do
     changeset = %{
       update_time: NaiveDateTime.utc_now,
-      balance: Balance.get(address).result
+      balance: convert_to_eth(Balance.get(address).result) |> D.to_float(),
     }
-
+    
     case Tx.get_last_outgoing_transaction(address, startblock, endblock) do
       %Tx{timeStamp: ts, value: value}-> Map.merge(changeset,
         %{ 
 	  last_outgoing: NaiveDateTime.add(~N[1970-01-01 00:00:00], ts),
-	  tx_out: value
+	  tx_out: convert_to_eth(value) |> D.to_float()
          })
       nil -> changeset
     end
   end
 
-  defp fetch_and_store(%TrackedEth{address: address}, startblock, endblock) do
-    changeset = fetch(address, startblock, endblock)
+  def fetch_and_store_async(tracked_eth, startblock, endblock) do
+    #Logger.debug("fetch_and_store_async: #{tracked_eth.address}")
+    {:ok, pid} = Task.Supervisor.start_child(TaskSupervisor, fn ->
+      fetch_and_store(tracked_eth, startblock, endblock)
+    end)
+  end
 
+  def fetch_and_store(%TrackedEth{address: address}, startblock, endblock) do
+    #Logger.debug("fetch_and_store: #{address}")
+    changeset = fetch(address, startblock, endblock)
+    #Logger.debug("address fetched: #{address}")
     get_or_create_entry(address)
     |> LatestEthWalletData.changeset(changeset)
     |> Repo.insert_or_update!

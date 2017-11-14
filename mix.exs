@@ -48,6 +48,7 @@ defmodule Sanbase.Mixfile do
       {:hammer, "~> 2.0.0"},
       {:ex_admin, github: "smpallen99/ex_admin", branch: "phx-1.3"},
       {:basic_auth, "~> 2.2"},
+      {:mockery, "~> 2.0"},
       {:distillery, "~> 1.5", runtime: false}
     ]
   end

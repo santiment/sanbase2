@@ -8,6 +8,8 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
 
+  @http_service Mockery.of("Tesla")
+
   @cooldown_period_in_sec 60 * 60 # 60 minutes
   @check_interval_in_sec 60 * 60 # 60 minutes
   @price_change_threshold 5 # percent
@@ -27,7 +29,7 @@ defmodule Sanbase.Notifications.CheckPrices do
   end
 
   defp send_notification({notification, price_difference, project}) do
-    Tesla.post(webhook_url(), notification_payload(price_difference, project), headers: %{"Content-Type" => "application/json"})
+    @http_service.post(webhook_url(), notification_payload(price_difference, project), headers: %{"Content-Type" => "application/json"})
 
     Repo.insert!(notification)
   end

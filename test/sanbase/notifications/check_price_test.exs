@@ -1,5 +1,6 @@
 defmodule Sanbase.Notifications.CheckPricesTest do
   use Sanbase.DataCase, async: false
+  use Mockery
 
   alias Sanbase.Notifications.{CheckPrices, Notification}
   alias Sanbase.Model.Project
@@ -30,8 +31,11 @@ defmodule Sanbase.Notifications.CheckPricesTest do
     "SAN_USD")
     project = Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 
+    mock Tesla, [post: 3], :ok
+
     [%Notification{project_id: project_id}] = CheckPrices.exec
 
     assert project_id == project.id
+    assert_called Tesla, post: 3
   end
 end

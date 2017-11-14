@@ -6,12 +6,12 @@ defmodule Sanbase.Model.LatestEthWalletData do
 
   @primary_key{:address, :string, []}
   schema "latest_eth_wallet_data" do
-    field :balance, :float
-    field :last_incoming, :naive_datetime
-    field :last_outgoing, :naive_datetime
-    field :tx_in, :float
-    field :tx_out, :float
-    field :update_time, :naive_datetime
+    field :balance, :decimal
+    field :last_incoming, :utc_datetime
+    field :last_outgoing, :utc_datetime
+    field :tx_in, :decimal
+    field :tx_out, :decimal
+    field :update_time, :utc_datetime
   end
 
   @doc false

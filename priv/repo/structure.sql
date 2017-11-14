@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.1
--- Dumped by pg_dump version 9.6.1
+-- Dumped from database version 9.6.5
+-- Dumped by pg_dump version 9.6.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -65,11 +65,11 @@ CREATE TABLE latest_coinmarketcap_data (
 
 CREATE TABLE latest_eth_wallet_data (
     address text NOT NULL,
-    balance real NOT NULL,
+    balance numeric NOT NULL,
     last_incoming timestamp without time zone,
     last_outgoing timestamp without time zone,
-    tx_in real,
-    tx_out real,
+    tx_in numeric,
+    tx_out numeric,
     update_time timestamp without time zone NOT NULL
 );
 
@@ -281,5 +281,5 @@ ALTER TABLE ONLY project_eth_address
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20170911162322), (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171018120438), (20171018141238);
+INSERT INTO "schema_migrations" (version) VALUES (20170911162322), (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171018120438), (20171018141238), (20171114151430);
 

@@ -15,7 +15,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   def fetch_data() do
     RateLimiter.wait()
     
-    "/"
+    "/?limit=200"
     |> get()
     |> case do
 	 %{status: 200, body: body} ->

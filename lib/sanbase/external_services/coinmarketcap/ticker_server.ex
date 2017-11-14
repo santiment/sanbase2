@@ -53,8 +53,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 	name: ticker.name,
 	price_usd: ticker.price_usd,
 	symbol: ticker.symbol,
-	update_time: NaiveDateTime.add(~N[1970-01-01 00:00:00],
-	  ticker.last_updated)
+	update_time: (DateTime.from_unix!(ticker.last_updated) |> DateTime.to_naive())
       })
     |> Repo.insert_or_update!
   end

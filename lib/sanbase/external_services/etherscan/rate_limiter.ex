@@ -21,10 +21,8 @@ defmodule Sanbase.ExternalServices.Etherscan.RateLimiter do
   @default_limit 5
   @default_time_between_requests 1000 #miliseconds
 
-  
-
   @name {:global, :etherscan_rate_limiter}
-  
+
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok, name: @name)
   end
@@ -70,17 +68,16 @@ defmodule Sanbase.ExternalServices.Etherscan.RateLimiter do
     Process.sleep(wait_period)
     sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))
   end
-    
 
   def handle_call(:wait, _, state) do
     #Logger.debug "waiting"
     {bucket, scale, limit, _} = state
     result = sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))
-    {:reply, result, state} 
+    {:reply, result, state}
   end
 
   def config do
     Application.get_env(:sanbase, __MODULE__)
   end
-  
+
 end

@@ -12,7 +12,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx}
 
   alias Decimal, as: D
-  
+
   @default_update_interval_ms 1000 * 60 * 5
   @average_block_time_ms 10000 #Actually it's close to 15s
   @default_timespan_ms 30*24*60*60*1000 # 30 days
@@ -44,7 +44,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     #1. Get current block number
     endblock = Requests.get_latest_block_number() - @confirmations
     startblock = endblock - Float.ceil(@default_timespan_ms/@average_block_time_ms)
-    
+
     tracked = TrackedEth |> Repo.all
     results = Task.Supervisor.async_stream_nolink(
       TaskSupervisor,
@@ -76,12 +76,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
       update_time: DateTime.utc_now,
       balance: convert_to_eth(Balance.get(address).result)
     }
-    
+
     case Tx.get_last_outgoing_transaction(address, startblock, endblock) do
       %Tx{timeStamp: ts, value: value}-> Map.merge(changeset,
-        %{ 
-	  last_outgoing: DateTime.from_unix!(ts),
-	  tx_out: convert_to_eth(value)
+        %{
+          last_outgoing: DateTime.from_unix!(ts),
+          tx_out: convert_to_eth(value)
          })
       nil -> changeset
     end
@@ -107,5 +107,5 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
       entry -> entry
     end
   end
-    
+
 end

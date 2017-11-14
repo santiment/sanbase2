@@ -52,10 +52,6 @@ config :ex_admin,
     realm:    {:system, "ADMIN_BASIC_AUTH_REALM"}
   ]
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
-import_config "#{Mix.env}.exs"
-
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
@@ -69,4 +65,9 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
   update_interval: 5 * 1000 * 60, # 5 minutes
   sync_enabled: true
+
+# Import environment specific config. This must remain at the bottom
+# of this file so it overrides the configuration defined above.
+import_config "#{Mix.env}.exs"
+
 

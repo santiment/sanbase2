@@ -47,3 +47,9 @@ spec:
               secretKeyRef:
                 name: sanbase-env
                 key: exAdminBasicAuthPassword
+
+          - name: ETHERSCAN_APIKEY
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: etherscanApikey

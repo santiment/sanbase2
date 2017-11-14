@@ -16,15 +16,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   @default_update_interval_ms 1000 * 60 * 5
   @average_block_time_ms 10000 #Actually it's close to 15s
   @default_timespan_ms 30*24*60*60*1000 # 30 days
+  @confirmations 10
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
   end
 
   def init(:ok) do
-    Logger.info fn ->
-      "Starting etherscan polling client"
-    end
+    Logger.info "Starting etherscan polling client"
 
     # For calculating balance in eth (to keep functionality same as
     # old sanbase)
@@ -43,14 +42,21 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
   def handle_cast(:sync, %{update_interval_ms: update_interval_ms} = state) do
     #1. Get current block number
-    endblock = Requests.get_latest_block_number()
+    endblock = Requests.get_latest_block_number() - @confirmations
     startblock = endblock - Float.ceil(@default_timespan_ms/@average_block_time_ms)
-    #startblock = 0
     
-    TrackedEth
-    |> Repo.all
-    |> Enum.each(&(fetch_and_store_async(&1, startblock, endblock)))
+    tracked = TrackedEth |> Repo.all
+    results = Task.Supervisor.async_stream_nolink(
+      TaskSupervisor,
+      tracked,
+      &(fetch_and_store(&1, startblock, endblock)),
+      max_concurrency: 5,
+      ordered: false,
+      timeout: 60000
+    )
 
+    # Wait for all tasks to complete
+    Enum.to_list(results)
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval_ms)
 
     {:noreply, state}
@@ -74,7 +80,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     case Tx.get_last_outgoing_transaction(address, startblock, endblock) do
       %Tx{timeStamp: ts, value: value}-> Map.merge(changeset,
         %{ 
-	  last_outgoing: NaiveDateTime.add(~N[1970-01-01 00:00:00], ts),
+	  last_outgoing: ( ts |> DateTime.from_unix!() |> DateTime.to_naive()),
 	  tx_out: convert_to_eth(value) |> D.to_float()
          })
       nil -> changeset
@@ -82,16 +88,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   def fetch_and_store_async(tracked_eth, startblock, endblock) do
-    #Logger.debug("fetch_and_store_async: #{tracked_eth.address}")
     {:ok, pid} = Task.Supervisor.start_child(TaskSupervisor, fn ->
       fetch_and_store(tracked_eth, startblock, endblock)
     end)
   end
 
   def fetch_and_store(%TrackedEth{address: address}, startblock, endblock) do
-    #Logger.debug("fetch_and_store: #{address}")
+    Logger.debug("fetch_and_store: #{address}")
     changeset = fetch(address, startblock, endblock)
-    #Logger.debug("address fetched: #{address}")
     get_or_create_entry(address)
     |> LatestEthWalletData.changeset(changeset)
     |> Repo.insert_or_update!

@@ -10,11 +10,22 @@ defmodule Sanbase.Application do
     children = [
       # Start the Ecto repository
       supervisor(Sanbase.Repo, []),
+
       # Start the endpoint when the application starts
       supervisor(SanbaseWeb.Endpoint, []),
+
       # Time series DB connection
       Sanbase.Prices.Store.child_spec,
+
+      # Rate limiter for CMC requests
+      Sanbase.ExternalServices.Coinmarketcap.RateLimiter.child_spec(%{}),
+
+      # Price fetcher
       Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
+
+      # Current marketcap fetcher
+      Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
+
       # Start your own worker by calling: Sanbase.Worker.start_link(arg1, arg2, arg3)
       # worker(Sanbase.Worker, [arg1, arg2, arg3]),
     ]

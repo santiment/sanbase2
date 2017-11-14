@@ -48,6 +48,8 @@ defmodule Sanbase.Prices.Store do
 
   defp parse_last_price_datetime(%{results: [%{ statement_id: 0 }]}), do: nil
 
+  defp parse_last_price_datetime(_), do: nil
+
   defp fetch_query(pair, from, to) do
     ~s/SELECT time, price, volume, marketcap
     FROM "#{pair}"

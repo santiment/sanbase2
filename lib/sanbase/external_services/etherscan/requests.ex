@@ -12,7 +12,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   plug Tesla.Middleware.Compression
 
   plug Tesla.Middleware.Query, [
-    apikey: "myapikey" #TODO
+    apikey: Keyword.get(config(), :apikey)
   ]
   plug Tesla.Middleware.Logger
   

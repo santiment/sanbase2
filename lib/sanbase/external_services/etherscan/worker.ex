@@ -73,15 +73,15 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
   def fetch(address, startblock, endblock) do
     changeset = %{
-      update_time: NaiveDateTime.utc_now,
-      balance: convert_to_eth(Balance.get(address).result) |> D.to_float(),
+      update_time: DateTime.utc_now,
+      balance: convert_to_eth(Balance.get(address).result)
     }
     
     case Tx.get_last_outgoing_transaction(address, startblock, endblock) do
       %Tx{timeStamp: ts, value: value}-> Map.merge(changeset,
         %{ 
-	  last_outgoing: ( ts |> DateTime.from_unix!() |> DateTime.to_naive()),
-	  tx_out: convert_to_eth(value) |> D.to_float()
+	  last_outgoing: DateTime.from_unix!(ts),
+	  tx_out: convert_to_eth(value)
          })
       nil -> changeset
     end

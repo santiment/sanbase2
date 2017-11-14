@@ -9,7 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
-  alias Sanbase.ExternalServices.Coinmarketmap.GraphData
+  alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.Notifications.CheckPrices
 
   @default_update_interval 1000 * 60 * 5 # 5 minutes

@@ -52,7 +52,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
               :isError,
               :errCode
              ]
-    
+
     defp get_query(address) do
       [
        module: "account",

@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.CashflowView do
   use SanbaseWeb, :view
 
+  alias Decimal, as: D
+
   def render("index.json", %{eth_price: eth_price, projects: projects}) do
 
     projects = projects
@@ -44,7 +46,7 @@ defmodule SanbaseWeb.CashflowView do
 
     wallets = construct_wallet_data(wallets)
 
-    balance = Enum.reduce(wallets, 0, fn(x, acc) -> x.balance + acc end)
+    balance = Enum.reduce(wallets, D.new(0), fn(x, acc) -> D.add(x.balance, acc) end) |> D.round(2)
 
     %{
       name: project.name,
@@ -59,7 +61,21 @@ defmodule SanbaseWeb.CashflowView do
   defp construct_wallet_data(wallets) do
     wallets
     |> Enum.filter(&(&1 !== nil))
-    |> Enum.map(&Map.take(&1, [:address, :balance, :last_outgoing, :tx_out]))
+    |> Enum.map(&format_wallet/1)
   end
 
+  defp format_wallet(wallet) do
+    wallet
+    |> Map.update(:balance, D.new(0), &round_decimal/1)
+    |> Map.update(:tx_out, D.new(0), &round_decimal/1)
+    |> Map.take([:address, :balance, :last_outgoing, :tx_out])
+  end
+
+  defp round_decimal(nil) do
+    nil
+  end
+
+  defp round_decimal(num) do
+    D.round(num,2)
+  end
 end

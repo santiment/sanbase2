@@ -52,7 +52,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Ico.changeset(%{
       project_id: project.id,
       start_date: ico_spreadsheet_row.ico_start_date,
-      end_date: ico_spreadsheet_row.ico_start_date,
+      end_date: ico_spreadsheet_row.ico_end_date,
       tokens_issued_at_ico: ico_spreadsheet_row.tokens_issued_at_ico,
       tokens_sold_at_ico: ico_spreadsheet_row.tokens_sold_at_ico,
       usd_btc_icoend: ico_spreadsheet_row.usd_btc_icoend,
@@ -74,7 +74,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     end
   end
 
-  defp ensure_market_segment(market_segment_name) when not is_nil(market_segment_name) do
+  defp ensure_market_segment(nil), do: nil
+
+  defp ensure_market_segment(market_segment_name) do
     Repo.get_by(MarketSegment, name: market_segment_name)
     |> case do
       result = %MarketSegment{} -> result
@@ -84,9 +86,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     end
   end
 
-  defp ensure_market_segment(_), do: nil
+  defp ensure_infrastructure(nil), do: nil
 
-  defp ensure_infrastructure(infrastructure_code) when not is_nil(infrastructure_code) do
+  defp ensure_infrastructure(infrastructure_code) do
     Repo.get_by(Infrastructure, code: infrastructure_code)
     |> case do
       result = %Infrastructure{} -> result
@@ -95,8 +97,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
         |> Infrastructure.changeset(%{code: infrastructure_code})
     end
   end
-
-  defp ensure_infrastructure(_), do: nil
 
   defp ensure_ico(project) do
     case project do
@@ -110,7 +110,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Enum.map(&ensure_currency(&1))
   end
 
-  defp ensure_currency(currency_code) when not is_nil(currency_code) do
+  defp ensure_currency(nil), do: nil
+
+  defp ensure_currency(currency_code) do
     Repo.get_by(Currency, code: currency_code)
     |> case do
       result = %Currency{} -> result
@@ -119,6 +121,4 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
         |> Currency.changeset(%{code: currency_code})
     end
   end
-
-  defp ensure_currency(_), do: nil
 end

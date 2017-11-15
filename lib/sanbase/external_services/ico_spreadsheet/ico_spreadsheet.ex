@@ -1,6 +1,8 @@
 defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   use Tesla
 
+  require Logger
+
   plug Tesla.Middleware.BaseUrl, "https://sheets.googleapis.com/v4/spreadsheets/"
   plug Tesla.Middleware.JSON
   plug Tesla.Middleware.Compression
@@ -86,8 +88,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     case Integer.parse(value) do
       {result, _} -> result
       _ -> #TODO: return error
-        IO.write("parse_int error: ")
-        IO.inspect value
+        Logger.warn("parse_int error: #{inspect value}")
         nil
     end
   end
@@ -98,8 +99,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     case Decimal.parse(value) do
       {:ok, result} -> result
       _ -> #TODO: return error
-        IO.write("parse_decimal error: ")
-        IO.inspect value
+        Logger.warn("parse_decimal error: #{inspect value}")
         nil
     end
   end
@@ -114,8 +114,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
       v when v in ["no", "false", 0] -> false
       nil -> nil
       _ -> #TODO: return error
-        IO.write("parse_boolean error: ")
-        IO.inspect value
+        Logger.warn("parse_boolean error: #{inspect value}")
         nil
     end
   end
@@ -125,12 +124,11 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     Date.add(~D[1900-01-01], value - 2)
   end
 
-  defp parse_date(value) when is_nil(value), do: nil
+  defp parse_date(nil), do: nil
 
   defp parse_date(value) do
     #TODO: return error
-    IO.write("parse_date error: ")
-    IO.inspect value
+    Logger.warn("parse_date error: #{inspect value}")
     nil
   end
 
@@ -141,20 +139,19 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
     |> Enum.filter(&(String.length(&1) > 0))
   end
 
-  defp parse_comma_delimited(value) when is_nil(value), do: []
+  defp parse_comma_delimited(nil), do: []
 
   defp parse_comma_delimited(value) do
     #TODO: return error
-    IO.write("parse_comma_delimited error: ")
-    IO.inspect value
+    Logger.warn("parse_comma_delimited error: #{inspect value}")
     []
   end
 
-  defp parse_string(value) when not is_nil(value) do
+  defp parse_string(nil), do: nil
+
+  defp parse_string(value) do
     to_string(value)
   end
-
-  defp parse_string(_), do: nil
 
   defp handle_wallets(parsed_value_row) do
     parsed_value_row
@@ -183,6 +180,6 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   end
 
   defp remove_nils(list) when is_list(list) do
-    Enum.filter(list, &(!is_nil(&1)))
+    Enum.reject(list, &is_nil/1)
   end
 end

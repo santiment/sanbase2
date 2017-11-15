@@ -4,8 +4,8 @@ defmodule Sanbase.Model.LatestEthWalletData do
   alias Sanbase.Model.LatestEthWalletData
 
 
-  @primary_key{:address, :string, []}
   schema "latest_eth_wallet_data" do
+    field :address, :string
     field :balance, :decimal
     field :last_incoming, :utc_datetime
     field :last_outgoing, :utc_datetime
@@ -19,5 +19,6 @@ defmodule Sanbase.Model.LatestEthWalletData do
     latest_eth_wallet_data
     |> cast(attrs, [:address, :balance, :update_time, :last_incoming, :last_outgoing, :tx_in, :tx_out])
     |> validate_required([:address, :balance, :update_time])
+    |> unique_constraint(:address)
   end
 end

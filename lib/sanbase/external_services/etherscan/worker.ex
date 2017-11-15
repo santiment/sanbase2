@@ -102,7 +102,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   defp get_or_create_entry(address) do
-    case Repo.get(LatestEthWalletData, address) do
+    case Repo.get_by(LatestEthWalletData, address: address) do
       nil -> %LatestEthWalletData{address: address}
       entry -> entry
     end

@@ -83,7 +83,7 @@ end
 |> Enum.map(make_project)
 |> Enum.each(&Repo.insert!/1)
 
-  
+
 [
   {"EOS","0xA72Dc46CE562f20940267f8deb02746e242540ed"},
   {"Golem","0x7da82c7ab4771ff031b66538d2fb9b0b047f6cf9"},

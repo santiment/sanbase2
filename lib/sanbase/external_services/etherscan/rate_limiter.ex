@@ -47,13 +47,7 @@ defmodule Sanbase.ExternalServices.Etherscan.RateLimiter do
 
 
   def sleep_algorithm({bucket,_,_,tbr}, {:allow, count}) do
-    # Logger.debug fn ->
-    #   "Sleeping. Rate limiter: #{bucket}, delay: #{tbr}"
-    # end
     Process.sleep(tbr)
-    # Logger.debug fn ->
-    #   "Executing request. Rate limiter: #{bucket}, count: #{count}"
-    # end
     {:ok, count}
   end
 
@@ -70,7 +64,6 @@ defmodule Sanbase.ExternalServices.Etherscan.RateLimiter do
   end
 
   def handle_call(:wait, _, state) do
-    #Logger.debug "waiting"
     {bucket, scale, limit, _} = state
     result = sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))
     {:reply, result, state}

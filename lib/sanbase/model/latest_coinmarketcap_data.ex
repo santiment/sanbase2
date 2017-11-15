@@ -17,6 +17,6 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
   def changeset(%LatestCoinmarketcapData{} = latest_coinmarketcap_data, attrs \\ %{}) do
     latest_coinmarketcap_data
     |> cast(attrs, [:id, :name, :symbol, :price_usd, :market_cap_usd, :update_time])
-    |> validate_required([:id, :name, :symbol, :price_usd, :market_cap_usd, :update_time])
+    |> validate_required([:id, :update_time])
   end
 end

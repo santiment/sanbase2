@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 
+const wei_to_eth = 1000000000000000000.0;
+
 class ProjectsTable extends Component {
   constructor(props){
     super(props)
@@ -28,7 +30,7 @@ class ProjectsTable extends Component {
   }
 
   formatBalanceWallet(wallet, index){
-    const balance = wallet.balance !== null ? wallet.balance : 0;
+    const balance = wallet.balance !== null ? wallet.balance / wei_to_eth : 0;
 
     return (
       <div className="wallet" key={ index }>

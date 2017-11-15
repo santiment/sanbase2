@@ -47,6 +47,7 @@ defmodule SanbaseWeb.CashflowView do
     balance = Enum.reduce(wallets, 0, fn(x, acc) -> x.balance + acc end)
 
     %{
+      id: project.id,
       name: project.name,
       ticker: project.ticker,
       logo_url: project.logo_url,

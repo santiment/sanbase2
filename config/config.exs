@@ -45,6 +45,11 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.ProjectEthAddress,
     Sanbase.ExAdmin.Model.TrackedBtc,
     Sanbase.ExAdmin.Model.TrackedEth,
+    Sanbase.ExAdmin.Model.Currency,
+    Sanbase.ExAdmin.Model.Infrastructure,
+    Sanbase.ExAdmin.Model.MarketSegment,
+    Sanbase.ExAdmin.Model.Ico,
+    Sanbase.ExAdmin.Model.IcoCurrencies
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

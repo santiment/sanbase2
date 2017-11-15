@@ -49,7 +49,9 @@ defmodule Sanbase.Mixfile do
       {:hammer, "~> 2.0.0"},
       {:ex_admin, github: "smpallen99/ex_admin", branch: "phx-1.3"},
       {:basic_auth, "~> 2.2"},
-      {:distillery, "~> 1.5", runtime: false}
+      {:distillery, "~> 1.5", runtime: false},
+      {:timex, "~> 3.0"},
+      {:timex_ecto, "~> 3.0"}
     ]
   end
 
@@ -62,6 +64,7 @@ defmodule Sanbase.Mixfile do
   defp aliases do
     [
       "ecto.setup": ["ecto.create", "ecto.load", "run priv/repo/seeds.exs", "influx.setup prices"],
+      "ecto.setup.migrate": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs", "influx.setup prices"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "ecto.migrate": ["ecto.migrate", "ecto.dump"],
       "test": ["ecto.create --quiet", "ecto.load", "test"]    ]

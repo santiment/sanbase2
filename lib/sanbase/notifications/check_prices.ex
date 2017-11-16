@@ -28,8 +28,8 @@ defmodule Sanbase.Notifications.CheckPrices do
     }
   end
 
-  defp send_notification({notification, price_difference, project}) do
-    @http_service.post(webhook_url(), notification_payload(price_difference, project), headers: %{"Content-Type" => "application/json"})
+  def send_notification({notification, price_difference, project}) do
+    %{status: 200} = @http_service.post(webhook_url(), notification_payload(price_difference, project), headers: %{"Content-Type" => "application/json"})
 
     Repo.insert!(notification)
   end
@@ -40,9 +40,7 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}) do
     Poison.encode!(%{
-      payload: %{
-        text: "#{price_difference}% change in #{name}. Price graph: <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|here>"
-      }
+      text: "#{price_difference}% change in #{name}. Price graph: <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|here>"
     })
   end
 

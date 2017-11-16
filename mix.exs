@@ -39,6 +39,7 @@ defmodule Sanbase.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
+      {:decimal, "~> 1.0"},
       {:reverse_proxy, git: "https://github.com/slogsdon/elixir-reverse-proxy"},
       {:corsica, "~> 1.0", only: [:dev]},
       {:hound, "~> 1.0", only: [:test]},
@@ -49,7 +50,6 @@ defmodule Sanbase.Mixfile do
       {:ex_admin, github: "smpallen99/ex_admin", branch: "phx-1.3"},
       {:basic_auth, "~> 2.2"},
       {:distillery, "~> 1.5", runtime: false},
-      {:decimal, "~> 1.0"},
       {:timex, "~> 3.0"},
       {:timex_ecto, "~> 3.0"}
     ]

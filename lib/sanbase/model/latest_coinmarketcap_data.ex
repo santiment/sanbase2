@@ -9,7 +9,7 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
     field :market_cap_usd, :decimal
     field :price_usd, :decimal
     field :symbol, :string
-    field :update_time, Ecto.DateTime
+    field :update_time, :utc_datetime
   end
 
   @doc false

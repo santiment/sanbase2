@@ -83,7 +83,7 @@ end
 |> Enum.map(make_project)
 |> Enum.each(&Repo.insert!/1)
 
-  
+
 [
   {"EOS","0xA72Dc46CE562f20940267f8deb02746e242540ed"},
   {"Golem","0x7da82c7ab4771ff031b66538d2fb9b0b047f6cf9"},
@@ -140,8 +140,6 @@ end
 
 
 [
-  {"Aragon", "0xcafe1a77e84698c83ca8931f54a755176ef75f2c"},
-  {"district0x", "0xd20e4d854c71de2428e1268167753e4c7070ae68"},
   {"Encrypgen", "0x683a0aafa039406c104d814b9f244eea721445a7"},
   {"Etherisc", "0x9B0F6a5a667CB92aF0cd15DbE90E764e32f69e77"},
   {"Etherisc", "0x35792029777427920ce7aDecccE9e645465e9C72"},
@@ -152,7 +150,6 @@ end
   {"Maecenas", "0x02DC3b8AB87c562CdCE707647bd1ba21C390Faf4"},
   {"Maecenas", "0x9B60874D7bc4e4fBDd142e0F5a12002e4F7715a6"},
   {"Musiconomi", "0xc7CD9d874F93F2409F39A95987b3E3C738313925"},
-  {"Santiment", "0x6dd5a9f47cfbc44c04a0a4452f0ba792ebfbcc9a"},
 ]
 |> Enum.flat_map(make_eth_address)
 |> Enum.each(&Repo.insert!/1)

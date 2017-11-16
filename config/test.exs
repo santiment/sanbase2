@@ -25,6 +25,14 @@ config :hound, driver: "chrome_driver"
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   database: "prices_test"
 
+config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
+  scale: 1000,
+  limit: 5,
+  time_between_requests: 1000
+
+config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
+  apikey: "myapikey"
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

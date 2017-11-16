@@ -46,7 +46,12 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.ProjectEthAddress,
     Sanbase.ExAdmin.Model.TrackedBtc,
     Sanbase.ExAdmin.Model.TrackedEth,
-    Sanbase.ExAdmin.Notifications.Type,
+    Sanbase.ExAdmin.Model.Currency,
+    Sanbase.ExAdmin.Model.Infrastructure,
+    Sanbase.ExAdmin.Model.MarketSegment,
+    Sanbase.ExAdmin.Model.Ico,
+    Sanbase.ExAdmin.Model.IcoCurrencies,
+    Sanbase.ExAdmin.Notifications.Type
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},
@@ -65,8 +70,12 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
   update_interval: 5 * 1000 * 60,
   sync_enabled: true
 
-config :sanbase, SanBase.Notifications.CheckPrice,
-  webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"}
+config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
+  update_interval: 5 * 1000 * 60, # 5 minutes
+  sync_enabled: true
+
+config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
+  apikey: {:system, "ETHERSCAN_APIKEY"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

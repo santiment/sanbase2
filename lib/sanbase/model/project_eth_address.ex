@@ -4,15 +4,16 @@ defmodule Sanbase.Model.ProjectEthAddress do
   alias Sanbase.Model.{ProjectEthAddress, Project}
 
 
-  @primary_key{:address, :string, []}
   schema "project_eth_address" do
+    field :address, :string
     belongs_to :project, Project
   end
 
   @doc false
   def changeset(%ProjectEthAddress{} = project_eth_address, attrs \\ %{}) do
     project_eth_address
-    |> cast(attrs, [:address])
-    |> validate_required([:address])
+    |> cast(attrs, [:address, :project_id])
+    |> validate_required([:address, :project_id])
+    |> unique_constraint(:address)
   end
 end

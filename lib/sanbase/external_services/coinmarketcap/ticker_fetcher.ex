@@ -38,9 +38,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     {:noreply, state}
   end
 
-  defp get_or_create_ticker(id) do
-    case Repo.get(LatestCoinmarketcapData, id) do
-      nil  -> %LatestCoinmarketcapData{id: id}
+  defp get_or_create_ticker(coinmarketcap_id) do
+    case Repo.get_by(LatestCoinmarketcapData, coinmarketcap_id: coinmarketcap_id) do
+      nil  -> %LatestCoinmarketcapData{coinmarketcap_id: coinmarketcap_id}
       entry -> entry
     end
   end
@@ -53,8 +53,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 	name: ticker.name,
 	price_usd: ticker.price_usd,
 	symbol: ticker.symbol,
-	update_time: NaiveDateTime.add(~N[1970-01-01 00:00:00],
-	  ticker.last_updated)
+	update_time: DateTime.from_unix!(ticker.last_updated)
       })
     |> Repo.insert_or_update!
   end

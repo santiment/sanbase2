@@ -151,6 +151,9 @@ config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
                                  cleanup_interval_ms: 60_000 * 10]}
 
+config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
+  apikey: {:system, "ETHERSCAN_APIKEY"}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

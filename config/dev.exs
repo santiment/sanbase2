@@ -61,6 +61,10 @@ config :ex_admin,
     realm: "Admin Area"
   ]
 
+config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
+  scale: 1000,
+  limit: 5,
+  time_between_requests: 1000
 
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"

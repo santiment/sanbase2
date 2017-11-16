@@ -4,8 +4,8 @@ defmodule Sanbase.Model.TrackedEth do
   alias Sanbase.Model.TrackedEth
 
 
-  @primary_key{:address, :string, []}
   schema "tracked_eth" do
+    field :address, :string
   end
 
   @doc false
@@ -13,5 +13,6 @@ defmodule Sanbase.Model.TrackedEth do
     tracked_eth
     |> cast(attrs, [:address])
     |> validate_required([:address])
+    |> unique_constraint(:address)
   end
 end

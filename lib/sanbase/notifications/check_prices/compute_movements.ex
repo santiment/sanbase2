@@ -12,6 +12,7 @@ defmodule Sanbase.Notifications.CheckPrices.ComputeMovements do
     type_id = price_notification_type_id()
 
     Project
+    |> where([p], not is_nil(p.ticker) and not is_nil(p.coinmarketcap_id))
     |> Repo.all()
     |> Enum.reject(&recent_notification?(&1, type_id, cooldown_datetime))
   end

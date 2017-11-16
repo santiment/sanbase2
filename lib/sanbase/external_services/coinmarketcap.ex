@@ -6,6 +6,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   # into a local DB
   use GenServer, restart: :permanent, shutdown: 5_000
 
+  import Ecto.Query
+
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
@@ -37,6 +39,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
     Project
+    |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
     |> Repo.all
     |> Enum.each(&fetch_price_data/1)
 
@@ -50,8 +53,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   def config do
     Application.get_env(:sanbase, __MODULE__)
   end
-
-  defp fetch_price_data(%Project{coinmarketcap_id: nil}), do: :ok
 
   defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
     GraphData.fetch_prices(

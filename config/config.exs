@@ -71,6 +71,9 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
   update_interval: 5 * 1000 * 60, # 5 minutes
   sync_enabled: true
 
+config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
+  apikey: {:system, "ETHERSCAN_APIKEY"}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"

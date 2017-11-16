@@ -82,6 +82,3 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,
   time_between_requests: 250
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
-  apikey: {:system, "ETHERSCAN_APIKEY"}

@@ -31,7 +31,7 @@ defmodule Sanbase.Notifications.CheckPricesTest do
     "SAN_USD")
     project = Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 
-    mock Tesla, [post: 3], :ok
+    mock Tesla, [post: 3], %{status: 200}
 
     [%Notification{project_id: project_id}] = CheckPrices.exec
 

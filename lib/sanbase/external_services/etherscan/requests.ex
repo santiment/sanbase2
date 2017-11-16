@@ -12,7 +12,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   plug Tesla.Middleware.Compression
 
   plug Tesla.Middleware.Query, [
-    apikey: Keyword.get(config(), :apikey)
+    apikey: api_key()
   ]
   plug Tesla.Middleware.Logger
 
@@ -35,7 +35,17 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
     res
   end
 
-  def config do
+  defp api_key() do
+    config()
+    |> Keyword.get(:apikey)
+    |> parse_api_key()
+  end
+
+  defp parse_api_key({:system, env_key}), do: System.get_env(env_key)
+
+  defp parse_api_key(value), do: value
+
+  defp config do
     Application.get_env(:sanbase, __MODULE__)
   end
 end

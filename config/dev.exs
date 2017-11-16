@@ -66,11 +66,6 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   limit: 5,
   time_between_requests: 1000
 
-config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
-  apikey: "myapikey"
-
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end
-
-

@@ -23,7 +23,7 @@ defmodule Sanbase.Notifications.CheckPrices.ComputeMovements do
     projects_with_prices
     |> Enum.map(&price_difference/1)
     |> Enum.filter(fn {_project, price_difference} ->
-      Kernel.abs(price_difference) > change_threshold_percent
+      Kernel.abs(price_difference) >= change_threshold_percent
     end)
     |> Enum.map(&build_notification(&1, type_id))
   end
@@ -36,10 +36,10 @@ defmodule Sanbase.Notifications.CheckPrices.ComputeMovements do
     {project, difference_sign(ts2, ts1) * (high_price - low_price) * 100 / low_price}
   end
 
-  defp build_notification({project, price_difference}, type_id) do
+  defp build_notification({%Project{id: id} = project, price_difference}, type_id) do
     {
       %Notification{
-        project_id: project.id,
+        project_id: id,
         type_id: type_id
       },
       price_difference,

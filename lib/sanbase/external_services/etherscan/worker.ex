@@ -88,7 +88,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   def fetch_and_store(%TrackedEth{address: address}, startblock, endblock) do
-    Logger.debug("fetch_and_store: #{address}")
+    Logger.info("Updating transactions of address #{address}")
     changeset = fetch(address, startblock, endblock)
     get_or_create_entry(address)
     |> LatestEthWalletData.changeset(changeset)

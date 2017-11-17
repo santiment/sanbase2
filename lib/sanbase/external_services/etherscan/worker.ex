@@ -50,7 +50,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
     Repo.all(TrackedEth)
     |> Task.async_stream(
-      &fetch_and_store(&1, startblock, endblock))
+      &fetch_and_store(&1, startblock, endblock),
       max_concurrency: 5,
       on_timeout: :kill_task,
       ordered: false,

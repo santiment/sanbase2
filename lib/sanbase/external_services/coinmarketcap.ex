@@ -6,10 +6,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   # into a local DB
   use GenServer, restart: :permanent, shutdown: 5_000
 
+  import Ecto.Query
+
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
+  alias Sanbase.Notifications.CheckPrices
 
   @default_update_interval 1000 * 60 * 5 # 5 minutes
 
@@ -21,6 +24,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     update_interval = Keyword.get(config(), :update_interval, @default_update_interval)
 
     if Keyword.get(config(), :sync_enabled, false) do
+      Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
+      |> Keyword.get(:database)
+      |> Instream.Admin.Database.create()
+      |> Store.execute()
+
       GenServer.cast(self(), :sync)
 
       {:ok, %{update_interval: update_interval}}
@@ -31,8 +39,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
     Project
+    |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
     |> Repo.all
     |> Enum.each(&fetch_price_data/1)
+
+    CheckPrices.exec
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
 
@@ -42,8 +53,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   def config do
     Application.get_env(:sanbase, __MODULE__)
   end
-
-  defp fetch_price_data(%Project{coinmarketcap_id: nil}), do: :ok
 
   defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
     GraphData.fetch_prices(

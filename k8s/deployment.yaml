@@ -53,3 +53,9 @@ spec:
               secretKeyRef:
                 name: sanbase-env
                 key: etherscanApikey
+
+          - name: NOTIFICATIONS_WEBHOOK_URL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: notificationsWebhookUrl

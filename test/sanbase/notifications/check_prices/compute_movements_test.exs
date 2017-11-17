@@ -9,6 +9,15 @@ defmodule Sanbase.Notifications.CheckPrices.ComputeMovementsTest do
     assert ComputeMovements.compute_notifications([{"Project", []}], 5) == []
   end
 
+  test "computing the notifications when there are no changes in the price" do
+    prices = [
+      [DateTime.from_unix!(1510928574), 100],
+      [DateTime.from_unix!(1510928575), 100],
+      [DateTime.from_unix!(1510928576), 100],
+    ]
+    assert ComputeMovements.compute_notifications([{"Project", prices}], 5) == []
+  end
+
   test "computing the notifications when the change is below the threshold" do
     prices = [
       [DateTime.from_unix!(1510928574), 101],

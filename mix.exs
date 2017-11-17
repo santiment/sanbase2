@@ -20,7 +20,7 @@ defmodule Sanbase.Mixfile do
   def application do
     [
       mod: {Sanbase.Application, []},
-      extra_applications: [:logger, :runtime_tools],
+      extra_applications: [:logger, :runtime_tools, :sasl],
     ]
   end
 

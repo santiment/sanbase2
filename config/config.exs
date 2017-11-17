@@ -45,6 +45,9 @@ config :sanbase, SanbaseWeb.Endpoint,
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false
 
+# Do not log SASL crash reports
+config :sasl, sasl_error_logger: false
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: {Sanbase.Utils.JsonLogger, :format},

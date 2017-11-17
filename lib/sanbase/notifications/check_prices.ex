@@ -44,8 +44,7 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}) do
     Poison.encode!(%{
-      text: "#{name}: #{Float.round(price_difference, 2)}% change in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
-      icon_emoji: notification_emoji(price_difference),
+      text: "#{notification_emoji(price_difference)} #{name}: #{Float.round(price_difference, 2)}% in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
       channel: notification_channel(Mix.env)
     })
   end
@@ -60,8 +59,8 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   defp parse_webhook_url(value), do: value
 
-  defp notification_emoji(price_difference) when price_difference > 0, do: ":chart_with_upwards_trend:"
-  defp notification_emoji(price_difference) when price_difference < 0, do: ":chart_with_downwards_trend:"
+  defp notification_emoji(price_difference) when price_difference > 0, do: ":signal_up:"
+  defp notification_emoji(price_difference) when price_difference < 0, do: ":signal_down:"
 
   defp notification_channel(:prod), do: "#signals"
   defp notification_channel(_), do: "#signals-stage"

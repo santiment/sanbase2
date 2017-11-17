@@ -68,13 +68,13 @@ config :logger, level: :info
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres
 
+config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
+  scale: 1000,
+  limit: 5,
+  time_between_requests: 1000
+
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"
 end
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
-  scale: 1000,
-  limit: 5,
-  time_between_requests: 250

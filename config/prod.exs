@@ -77,4 +77,4 @@ end
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,
-  time_between_requests: 250
+  time_between_requests: 1000

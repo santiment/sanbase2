@@ -29,7 +29,11 @@ defmodule Sanbase.Notifications.CheckPrices do
   end
 
   def send_notification({notification, price_difference, project}) do
-    %{status: 200} = @http_service.post(webhook_url(), notification_payload(price_difference, project), headers: %{"Content-Type" => "application/json"})
+    %{status: 200} = @http_service.post(
+      webhook_url(),
+      notification_payload(price_difference, project),
+      headers: %{"Content-Type" => "application/json"}
+    )
 
     Repo.insert!(notification)
   end
@@ -40,7 +44,9 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}) do
     Poison.encode!(%{
-      text: "#{price_difference}% change in #{name}. Price graph: <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|here>"
+      text: "#{Float.round(price_difference, 2)}% change in #{name} within the last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
+      icon_emoji: notification_emoji(price_difference),
+      channel: notification_channel(Mix.env)
     })
   end
 
@@ -53,4 +59,10 @@ defmodule Sanbase.Notifications.CheckPrices do
   defp parse_webhook_url({:system, env_key}), do: System.get_env(env_key)
 
   defp parse_webhook_url(value), do: value
+
+  defp notification_emoji(price_difference) when price_difference > 0, do: ":chart_with_upwards_trend:"
+  defp notification_emoji(price_difference) when price_difference < 0, do: ":chart_with_downwards_trend:"
+
+  defp notification_channel(:prod), do: "#signals"
+  defp notification_channel(_), do: "#signals-stage"
 end

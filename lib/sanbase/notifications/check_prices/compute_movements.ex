@@ -31,9 +31,9 @@ defmodule Sanbase.Notifications.CheckPrices.ComputeMovements do
   defp price_difference({project, []}), do: {project, 0}
 
   defp price_difference({project, prices}) do
-    {[_, low_price | _], [_, high_price | _]} = Enum.min_max_by(prices, fn [_ts, price | _] -> price end)
+    {[ts1, low_price | _], [ts2, high_price | _]} = Enum.min_max_by(prices, fn [_ts, price | _] -> price end)
 
-    {project, (high_price - low_price) * 100 / low_price}
+    {project, difference_sign(ts2, ts1) * (high_price - low_price) * 100 / low_price}
   end
 
   defp build_notification({project, price_difference}, type_id) do
@@ -59,5 +59,13 @@ defmodule Sanbase.Notifications.CheckPrices.ComputeMovements do
     type = Repo.get_by(Type, name: @notification_name) || Repo.insert!(%Type{name: @notification_name})
 
     type.id
+  end
+
+  defp difference_sign(high_ts, low_ts) do
+    case DateTime.compare(high_ts, low_ts) do
+      :gt -> 1
+      :lt -> -1
+      _ -> 0
+    end
   end
 end

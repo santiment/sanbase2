@@ -8,7 +8,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.TrackedEth
   alias Sanbase.Repo
-  alias Sanbase.ExternalServices.Etherscan.{Requests, TaskSupervisor}
+  alias Sanbase.ExternalServices.Etherscan.Requests
   alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx}
 
   alias Decimal, as: D
@@ -24,6 +24,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
   def init(:ok) do
     Logger.info "Starting etherscan polling client"
+
+    # Trap exists, so that we don't die when a child dies
+    Process.flag(:trap_exit, true)
 
     # For calculating balance in eth (to keep functionality same as
     # old sanbase)
@@ -45,18 +48,16 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     endblock = Requests.get_latest_block_number() - @confirmations
     startblock = endblock - Float.ceil(@default_timespan_ms/@average_block_time_ms)
 
-    tracked = TrackedEth |> Repo.all
-    results = Task.Supervisor.async_stream_nolink(
-      TaskSupervisor,
-      tracked,
-      &(fetch_and_store(&1, startblock, endblock)),
-      max_concurrency: 5,
-      ordered: false,
-      timeout: 60000
-    )
+    Repo.all(TrackedEth)
+    |> Task.async_stream(fn tracked_eth ->
+      fetch_and_store(tracked_eth, startblock, endblock)
+    end,
+    max_concurrency: 5,
+    on_timeout: :kill_task,
+    ordered: false,
+    timeout: 30_000)
+    |> Stream.run
 
-    # Wait for all tasks to complete
-    Enum.to_list(results)
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval_ms)
 
     {:noreply, state}
@@ -85,12 +86,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
          })
       nil -> changeset
     end
-  end
-
-  def fetch_and_store_async(tracked_eth, startblock, endblock) do
-    {:ok, pid} = Task.Supervisor.start_child(TaskSupervisor, fn ->
-      fetch_and_store(tracked_eth, startblock, endblock)
-    end)
   end
 
   def fetch_and_store(%TrackedEth{address: address}, startblock, endblock) do

@@ -64,7 +64,7 @@ config :ex_admin,
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,
-  time_between_requests: 1000
+  time_between_requests: 0
 
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"

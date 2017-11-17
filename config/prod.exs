@@ -71,7 +71,7 @@ config :sanbase, Sanbase.Repo,
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,
-  time_between_requests: 1000
+  time_between_requests: 0
 
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.

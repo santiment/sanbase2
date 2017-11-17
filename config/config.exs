@@ -26,7 +26,8 @@ config :logger, :console,
   metadata: [:request_id]
 
 config :sanbase, Sanbase.Prices.Store,
-  host: "localhost"
+  host: {:system, "INFLUXDB_HOST", "localhost"},
+  port: {:system, "INFLUXDB_PORT", 8086}
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
@@ -49,7 +50,8 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.Infrastructure,
     Sanbase.ExAdmin.Model.MarketSegment,
     Sanbase.ExAdmin.Model.Ico,
-    Sanbase.ExAdmin.Model.IcoCurrencies
+    Sanbase.ExAdmin.Model.IcoCurrencies,
+    Sanbase.ExAdmin.Notifications.Type
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},
@@ -61,7 +63,8 @@ config :xain, :after_callback, {Phoenix.HTML, :raw}
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
-  sync_enabled: true
+  sync_enabled: true,
+  database: "prices"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
   update_interval: 5 * 1000 * 60,
@@ -73,6 +76,9 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY"}
+
+config :sanbase, SanBase.Notifications.CheckPrice,
+  webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -17,18 +17,12 @@ config :sanbase, SanbaseWeb.Endpoint,
   pubsub: [name: Sanbase.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
-
 config :sanbase, node_server: "http://localhost:3000"
-
-# Do not log SASL crash reports
-config :sasl, sasl_error_logger: false
 
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id],
-  handle_otp_reports: true,
-  handle_sasl_reports: true
+  metadata: [:request_id]
 
 config :sanbase, Sanbase.Prices.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},

@@ -49,13 +49,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     startblock = endblock - Float.ceil(@default_timespan_ms/@average_block_time_ms)
 
     Repo.all(TrackedEth)
-    |> Task.async_stream(fn tracked_eth ->
-      fetch_and_store(tracked_eth, startblock, endblock)
-    end,
-    max_concurrency: 5,
-    on_timeout: :kill_task,
-    ordered: false,
-    timeout: 30_000)
+    |> Task.async_stream(
+      &fetch_and_store(&1, startblock, endblock))
+      max_concurrency: 5,
+      on_timeout: :kill_task,
+      ordered: false,
+      timeout: 30_000)
     |> Stream.run
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval_ms)

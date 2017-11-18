@@ -66,6 +66,8 @@ config :ex_admin,
 
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
+config :tesla, adapter: :hackney
+
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
   sync_enabled: true,

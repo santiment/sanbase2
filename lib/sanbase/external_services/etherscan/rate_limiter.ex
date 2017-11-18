@@ -46,8 +46,8 @@ defmodule Sanbase.ExternalServices.Etherscan.RateLimiter do
   end
 
 
-  def sleep_algorithm({bucket,_,_,tbr}, {:allow, count}) do
-    Process.sleep(tbr)
+  def sleep_algorithm({bucket,_,_,time_between_requests}, {:allow, count}) do
+    Process.sleep(time_between_requests)
     {:ok, count}
   end
 

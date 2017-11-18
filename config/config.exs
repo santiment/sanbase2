@@ -66,6 +66,8 @@ config :ex_admin,
 
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
+config :tesla, adapter: :hackney
+
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
   sync_enabled: true,
@@ -82,8 +84,9 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY"}
 
-config :sanbase, SanBase.Notifications.CheckPrice,
-  webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"}
+config :sanbase, Sanbase.Notifications.CheckPrice,
+  webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
+  notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -45,23 +45,28 @@ defmodule Sanbase.Notifications.CheckPrices do
   defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}) do
     Poison.encode!(%{
       text: "#{notification_emoji(price_difference)} #{name}: #{Float.round(price_difference, 2)}% in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
-      channel: notification_channel(Mix.env)
+      channel: notification_channel()
     })
   end
 
   defp webhook_url() do
-    Application.fetch_env!(:sanbase, SanBase.Notifications.CheckPrice)
+    Application.fetch_env!(:sanbase, Sanbase.Notifications.CheckPrice)
     |> Keyword.get(:webhook_url)
-    |> parse_webhook_url()
+    |> parse_config_value()
   end
 
-  defp parse_webhook_url({:system, env_key}), do: System.get_env(env_key)
+  defp notification_channel() do
+    Application.fetch_env!(:sanbase, Sanbase.Notifications.CheckPrice)
+    |> Keyword.get(:notification_channel)
+    |> parse_config_value()
+  end
 
-  defp parse_webhook_url(value), do: value
+  defp parse_config_value({:system, env_key, default}), do: System.get_env(env_key) || default
+  defp parse_config_value({:system, env_key}), do: System.get_env(env_key)
+
+  defp parse_config_value(value), do: value
 
   defp notification_emoji(price_difference) when price_difference > 0, do: ":signal_up:"
   defp notification_emoji(price_difference) when price_difference < 0, do: ":signal_down:"
 
-  defp notification_channel(:prod), do: "#signals"
-  defp notification_channel(_), do: "#signals-stage"
 end

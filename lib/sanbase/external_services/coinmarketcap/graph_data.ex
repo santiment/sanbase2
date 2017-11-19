@@ -13,24 +13,31 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   @seconds_in_day 24 * 60 * 60 # Number of seconds in a day
 
-  def fetch_all_time_prices(token) do
-    graph_data_all_time_url(token)
+  def fetch_first_price_datetime(coinmarketcap_id) do
+    fetch_all_time_prices(coinmarketcap_id)
+    |> Enum.take(1)
+    |> hd
+    |> Map.get(:datetime)
+  end
+
+  def fetch_prices(coinmarketcap_id, from_datetime, to_datetime) do
+    daily_ranges(from_datetime, to_datetime)
+    |> Stream.flat_map(&extract_prices_for_interval_with_rate_limit(coinmarketcap_id, &1, &1 + @seconds_in_day))
+  end
+
+  defp parse_json(json) do
+    json
+    |> Poison.decode!(as: %GraphData{})
+    |> convert_to_price_points
+  end
+
+  defp fetch_all_time_prices(coinmarketcap_id) do
+    graph_data_all_time_url(coinmarketcap_id)
     |> get()
     |> case do
       %{status: 200, body: body} ->
         parse_json(body)
     end
-  end
-
-  def fetch_prices(token, from_datetime, to_datetime) do
-    daily_ranges(from_datetime, to_datetime)
-    |> Stream.flat_map(&extract_prices_for_interval_with_rate_limit(token, &1, &1 + @seconds_in_day))
-  end
-
-  def parse_json(json) do
-    json
-    |> Poison.decode!(as: %GraphData{})
-    |> convert_to_price_points
   end
 
   defp convert_to_price_points(%GraphData{
@@ -51,13 +58,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end)
   end
 
-  defp extract_prices_for_interval_with_rate_limit(token, start_interval, end_interval) do
+  defp extract_prices_for_interval_with_rate_limit(coinmarketcap_id, start_interval, end_interval) do
     RateLimiter.wait()
-    extract_prices_for_interval(token, start_interval, end_interval)
+    extract_prices_for_interval(coinmarketcap_id, start_interval, end_interval)
   end
 
-  defp extract_prices_for_interval(token, start_interval, end_interval) do
-    graph_data_interval_url(token, start_interval * 1000, end_interval * 1000)
+  defp extract_prices_for_interval(coinmarketcap_id, start_interval, end_interval) do
+    graph_data_interval_url(coinmarketcap_id, start_interval * 1000, end_interval * 1000)
     |> get()
     |> case do
       %{status: 200, body: body} ->

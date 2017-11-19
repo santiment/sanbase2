@@ -97,19 +97,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp last_price_datetime(pair, project) do
+  defp last_price_datetime(pair, %Project{coinmarketcap_id: coinmarketcap_id}) do
     case Store.last_price_datetime(pair) do
       nil ->
-        fetch_first_price_datetime(project)
+        GraphData.fetch_first_price_datetime(coinmarketcap_id)
       datetime ->
         datetime
     end
-  end
-
-  defp fetch_first_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id}) do
-    GraphData.fetch_all_time_prices(coinmarketcap_id)
-    |> Enum.take(1)
-    |> hd
-    |> Map.get(:datetime)
   end
 end

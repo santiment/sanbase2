@@ -11,6 +11,9 @@ config :sanbase, node_server: "http://localhost:3001"
 # Print only warnings and errors during test
 config :logger, level: :warn
 
+# Test adapter that allows mocking
+config :tesla, adapter: :mock
+
 # Configure your database
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,

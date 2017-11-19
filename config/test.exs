@@ -72,7 +72,8 @@ config :sanbase, Sanbase.Elasticsearch.Cluster, api: Sanbase.ElasticsearchMock
 config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  database: "prices_test"
+  database: "prices_test",
+  sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,

@@ -161,6 +161,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end)
   end
 
+  defp fetch_all_time_prices(coinmarketcap_id) do
+    graph_data_all_time_url(coinmarketcap_id)
+    |> get()
+    |> case do
+      %{status: 200, body: body} ->
+        parse_json(body)
+    end
+  end
+
   defp convert_to_price_points(%GraphData{
          market_cap_by_available_supply: market_cap_by_available_supply,
          price_usd: price_usd,

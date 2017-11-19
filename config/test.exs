@@ -26,7 +26,8 @@ config :sanbase, Sanbase.Repo,
 config :hound, driver: "chrome_driver"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  database: "prices_test"
+  database: "prices_test",
+  sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
@@ -35,6 +36,12 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: "myapikey"
+
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
+  sync_enabled: false
+
+config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
+  sync_enabled: false
 
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"

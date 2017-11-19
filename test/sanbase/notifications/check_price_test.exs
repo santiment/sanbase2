@@ -9,6 +9,13 @@ defmodule Sanbase.Notifications.CheckPricesTest do
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
 
+  setup do
+    Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
+    |> Keyword.get(:database)
+    |> Instream.Admin.Database.create()
+    |> Store.execute()
+  end
+
   test "running the checks when there are no projects" do
     assert CheckPrices.exec == []
   end

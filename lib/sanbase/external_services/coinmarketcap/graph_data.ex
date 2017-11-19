@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
-  defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd]
+  defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd, :price_btc]
 
   use Tesla
 
@@ -9,12 +9,30 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.RateLimiter
-  alias Sanbase.Prices.Point
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
 
   @seconds_in_day 24 * 60 * 60 # Number of seconds in a day
 
-  def fetch_all_time_prices(token) do
-    graph_data_all_time_url(token)
+  def fetch_first_price_datetime(coinmarketcap_id) do
+    fetch_all_time_prices(coinmarketcap_id)
+    |> Enum.take(1)
+    |> hd
+    |> Map.get(:datetime)
+  end
+
+  def fetch_prices(coinmarketcap_id, from_datetime, to_datetime) do
+    daily_ranges(from_datetime, to_datetime)
+    |> Stream.flat_map(&extract_prices_for_interval_with_rate_limit(coinmarketcap_id, &1, &1 + @seconds_in_day))
+  end
+
+  defp parse_json(json) do
+    json
+    |> Poison.decode!(as: %GraphData{})
+    |> convert_to_price_points
+  end
+
+  defp fetch_all_time_prices(coinmarketcap_id) do
+    graph_data_all_time_url(coinmarketcap_id)
     |> get()
     |> case do
       %{status: 200, body: body} ->
@@ -22,35 +40,31 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end
   end
 
-  def fetch_prices(token, from_datetime, to_datetime) do
-    daily_ranges(from_datetime, to_datetime)
-    |> Stream.flat_map(&extract_prices_for_interval_with_rate_limit(token, &1, &1 + @seconds_in_day))
-  end
-
-  def parse_json(json) do
-    json
-    |> Poison.decode!(as: %GraphData{})
-    |> convert_to_price_points
-  end
-
   defp convert_to_price_points(%GraphData{
     market_cap_by_available_supply: market_cap_by_available_supply,
     price_usd: price_usd,
-    volume_usd: volume_usd
+    volume_usd: volume_usd,
+    price_btc: price_btc
   }) do
-    List.zip([market_cap_by_available_supply, price_usd, volume_usd])
-    |> Stream.map(fn {[dt, marketcap], [dt, price], [dt, volume]} ->
-      %Point{marketcap: marketcap, price: price, volume: volume, datetime: DateTime.from_unix!(dt, :millisecond)}
+    List.zip([market_cap_by_available_supply, price_usd, volume_usd, price_btc])
+    |> Stream.map(fn {[dt, marketcap], [dt, price_usd], [dt, volume_usd], [dt, price_btc]} ->
+      %PricePoint{
+        marketcap: marketcap,
+        price_usd: price_usd,
+        volume_usd: volume_usd,
+        price_btc: price_btc,
+        datetime: DateTime.from_unix!(dt, :millisecond)
+      }
     end)
   end
 
-  defp extract_prices_for_interval_with_rate_limit(token, start_interval, end_interval) do
+  defp extract_prices_for_interval_with_rate_limit(coinmarketcap_id, start_interval, end_interval) do
     RateLimiter.wait()
-    extract_prices_for_interval(token, start_interval, end_interval)
+    extract_prices_for_interval(coinmarketcap_id, start_interval, end_interval)
   end
 
-  defp extract_prices_for_interval(token, start_interval, end_interval) do
-    graph_data_interval_url(token, start_interval * 1000, end_interval * 1000)
+  defp extract_prices_for_interval(coinmarketcap_id, start_interval, end_interval) do
+    graph_data_interval_url(coinmarketcap_id, start_interval * 1000, end_interval * 1000)
     |> get()
     |> case do
       %{status: 200, body: body} ->

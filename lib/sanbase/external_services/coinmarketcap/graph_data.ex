@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
-  defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd]
+  defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd, :price_btc]
 
   use Tesla
 
@@ -9,7 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.RateLimiter
-  alias Sanbase.Prices.Point
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
 
   @seconds_in_day 24 * 60 * 60 # Number of seconds in a day
 
@@ -36,11 +36,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   defp convert_to_price_points(%GraphData{
     market_cap_by_available_supply: market_cap_by_available_supply,
     price_usd: price_usd,
-    volume_usd: volume_usd
+    volume_usd: volume_usd,
+    price_btc: price_btc
   }) do
-    List.zip([market_cap_by_available_supply, price_usd, volume_usd])
-    |> Stream.map(fn {[dt, marketcap], [dt, price], [dt, volume]} ->
-      %Point{marketcap: marketcap, price: price, volume: volume, datetime: DateTime.from_unix!(dt, :millisecond)}
+    List.zip([market_cap_by_available_supply, price_usd, volume_usd, price_btc])
+    |> Stream.map(fn {[dt, marketcap], [dt, price_usd], [dt, volume_usd], [dt, price_btc]} ->
+      %PricePoint{
+        marketcap: marketcap,
+        price_usd: price_usd,
+        volume_usd: volume_usd,
+        price_btc: price_btc,
+        datetime: DateTime.from_unix!(dt, :millisecond)
+      }
     end)
   end
 

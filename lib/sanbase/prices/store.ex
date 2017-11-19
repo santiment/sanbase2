@@ -10,14 +10,14 @@ defmodule Sanbase.Prices.Store do
   use Instream.Connection, otp_app: :sanbase
 
   alias Sanbase.Prices.Store
-  alias Sanbase.Prices.Point
+  alias Sanbase.Prices.Measurement
 
-  def import_price_points(price_points, pair, tags \\ []) do
-    price_points
-    |> Stream.map(&convert_to_price_series(&1, pair, tags))
-    |> Stream.chunk_every(300) # About 1 day of 5 min resolution data
-    |> Enum.map(fn points ->
-      :ok = Store.write(points, database: price_database())
+  def import(measurements) do
+    measurements
+    |> Stream.map(&convert_measurement_for_import/1)
+    |> Stream.chunk_every(288) # 1 day of 5 min resolution data
+    |> Enum.map(fn data_for_import ->
+      :ok = Store.write(data_for_import, database: price_database())
     end)
   end
 
@@ -27,11 +27,18 @@ defmodule Sanbase.Prices.Store do
     |> parse_price_series
   end
 
+  def q(query) do
+    Store.query(query, database: price_database())
+    |> parse_price_series
+  end
+
   defp fetch_query(pair, from, to) do
     ~s/SELECT time, price, volume, marketcap
     FROM "#{pair}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
+
+  defp parse_price_series(%{results: [%{error: error}]}), do: raise error
 
   defp parse_price_series(%{
     results: [%{
@@ -69,17 +76,13 @@ defmodule Sanbase.Prices.Store do
 
   defp parse_last_price_datetime(_), do: nil
 
-  defp convert_to_price_series(%Point{datetime: datetime, price: price, volume: volume, marketcap: marketcap}, pair, tags) do
+  defp convert_measurement_for_import(%Measurement{timestamp: timestamp, fields: fields, tags: tags, name: name}) do
     %{
       points: [%{
-        measurement: pair,
-        fields: %{
-          price: price,
-          volume: volume,
-          marketcap: marketcap,
-        },
-        tags: tags,
-        timestamp: DateTime.to_unix(datetime, :nanosecond)
+        measurement: name,
+        fields: fields,
+        tags: tags || [],
+        timestamp: timestamp
       }]
     }
   end

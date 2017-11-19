@@ -1,12 +1,14 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   use ExUnit.Case, async: true
 
-  alias Sanbase.ExternalServices.Coinmarketcap.GraphData
+  alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
 
   test "parsing the coinbase json graph data" do
     points = File.read!(Path.join(__DIR__, "btc_graph_data.json"))
     |> GraphData.parse_json
     |> Enum.to_list
+
+    %PricePoint{} = hd(points)
 
     assert length(points) > 0
     assert hd(points).datetime == DateTime.from_unix!(1507991665000, :millisecond)

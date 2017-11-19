@@ -11,6 +11,9 @@ config :sanbase, node_server: "http://localhost:3001"
 # Print only warnings and errors during test
 config :logger, level: :warn
 
+# Test adapter that allows mocking
+config :tesla, adapter: :mock
+
 # Configure your database
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
@@ -23,7 +26,8 @@ config :sanbase, Sanbase.Repo,
 config :hound, driver: "chrome_driver"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  database: "prices_test"
+  database: "prices_test",
+  sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
@@ -32,6 +36,12 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: "myapikey"
+
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
+  sync_enabled: false
+
+config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
+  sync_enabled: false
 
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"

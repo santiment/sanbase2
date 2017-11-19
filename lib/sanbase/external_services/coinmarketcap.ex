@@ -10,8 +10,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  alias Sanbase.Prices.Store
+  alias Sanbase.Prices.{Store, Measurement}
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices
 
   @default_update_interval 1000 * 60 * 5 # 5 minutes
@@ -54,32 +55,54 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Application.get_env(:sanbase, __MODULE__)
   end
 
-  defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+  defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker} = project) do
     GraphData.fetch_prices(
       coinmarketcap_id,
       last_price_datetime(project),
       DateTime.utc_now
     )
-    |> Store.import_price_points(table_name(project), source: "coinmarketcap")
+    |> Stream.flat_map(fn price_point ->
+      [
+        convert_to_measurement(price_point, "_usd", "#{ticker}_USD"),
+        convert_to_measurement(price_point, "_btc", "#{ticker}_BTC"),
+      ]
+    end)
+    |> Store.import()
   end
 
-  defp last_price_datetime(project) do
-    case Store.last_price_datetime(table_name(project)) do
-      nil ->
-        fetch_first_price_datetime(project)
-      datetime ->
-        datetime
+  defp convert_to_measurement(%PricePoint{datetime: datetime} = point, suffix, name) do
+    %Measurement{
+      timestamp: DateTime.to_unix(datetime, :nanosecond),
+      fields: price_point_to_fields(point, suffix),
+      tags: [source: "coinmarketcap"],
+      name: name
+    }
+  end
+
+  defp price_point_to_fields(%PricePoint{marketcap: marketcap, volume_usd: volume} = point, suffix) do
+    %{
+      "price": Map.get(point, String.to_atom("price" <> suffix)),
+      "volume": volume,
+      "marketcap": marketcap
+    }
+  end
+
+  defp last_price_datetime(%Project{ticker: ticker} = project) do
+    usd_datetime = last_price_datetime(ticker <> "_USD", project)
+    btc_datetime = last_price_datetime(ticker <> "_BTC", project)
+
+    case DateTime.compare(usd_datetime, btc_datetime) do
+      :gt -> btc_datetime
+      _ -> usd_datetime
     end
   end
 
-  defp fetch_first_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id}) do
-    GraphData.fetch_all_time_prices(coinmarketcap_id)
-    |> Enum.take(1)
-    |> hd
-    |> Map.get(:datetime)
-  end
-
-  defp table_name(%Project{ticker: ticker}) do
-    ticker <> "_USD"
+  defp last_price_datetime(pair, %Project{coinmarketcap_id: coinmarketcap_id}) do
+    case Store.last_price_datetime(pair) do
+      nil ->
+        GraphData.fetch_first_price_datetime(coinmarketcap_id)
+      datetime ->
+        datetime
+    end
   end
 end

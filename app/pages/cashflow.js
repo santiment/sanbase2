@@ -6,11 +6,11 @@ import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
 import $ from 'jquery'
 import DataTable from 'datatables.net'
-// import 'bootstrap/dist/css/bootstrap.css';
-// import 'datatables.net-bs/js/dataTables.bootstrap';
-// import 'datatables.net-bs/css/dataTables.bootstrap.css';
+import bootstrapStyles from 'bootstrap/dist/css/bootstrap.css';
+import 'datatables.net-bs/js/dataTables.bootstrap';
+import dataTablesStyles from 'datatables.net-bs/css/dataTables.bootstrap.css';
 import 'datatables.net-fixedheader';
-// import 'datatables.net-fixedheader-bs/css/fixedHeader.bootstrap.css';
+import fixedHeaderStyles from 'datatables.net-fixedheader-bs/css/fixedHeader.bootstrap.css';
 
 $.DataTable = DataTable;
 

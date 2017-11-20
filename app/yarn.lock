@@ -1379,24 +1379,39 @@ dashdash@^1.12.0:
   dependencies:
     assert-plus "^1.0.0"
 
-datatables.net-bs@^1.10.15, datatables.net-bs@^1.10.16:
+datatables.net-bs4@^1.10.15, datatables.net-bs4@^1.10.16:
   version "1.10.16"
-  resolved "https://registry.yarnpkg.com/datatables.net-bs/-/datatables.net-bs-1.10.16.tgz#b0854f5b374f713ae3db4156c7cea8a760c3de76"
+  resolved "https://registry.yarnpkg.com/datatables.net-bs4/-/datatables.net-bs4-1.10.16.tgz#9eee67cfa8565bd3807a603a188305f7d0e20e32"
   dependencies:
     datatables.net "1.10.16"
     jquery ">=1.7"
 
-datatables.net-fixedheader-bs@^3.1.2:
+datatables.net-fixedheader-bs4@^3.1.2:
   version "3.1.3"
-  resolved "https://registry.yarnpkg.com/datatables.net-fixedheader-bs/-/datatables.net-fixedheader-bs-3.1.3.tgz#2f788e27a96eaefc980f8b51b06448cc898a1970"
+  resolved "https://registry.yarnpkg.com/datatables.net-fixedheader-bs4/-/datatables.net-fixedheader-bs4-3.1.3.tgz#1ab3676a0d143a97bf506d6fe73deec6e4012b38"
   dependencies:
-    datatables.net-bs "^1.10.15"
+    datatables.net-bs4 "^1.10.15"
     datatables.net-fixedheader "3.1.3"
     jquery ">=1.7"
 
 datatables.net-fixedheader@3.1.3, datatables.net-fixedheader@^3.1.2:
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/datatables.net-fixedheader/-/datatables.net-fixedheader-3.1.3.tgz#acfc1383577a0d546f5d021273dac6ae88bfed51"
+  dependencies:
+    datatables.net "^1.10.15"
+    jquery ">=1.7"
+
+datatables.net-responsive-bs4@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/datatables.net-responsive-bs4/-/datatables.net-responsive-bs4-2.2.0.tgz#2663043113750dc554586bb79baffe1e5f367e14"
+  dependencies:
+    datatables.net-bs4 "^1.10.15"
+    datatables.net-responsive "2.2.0"
+    jquery ">=1.7"
+
+datatables.net-responsive@2.2.0, datatables.net-responsive@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/datatables.net-responsive/-/datatables.net-responsive-2.2.0.tgz#16aea1cc1128bb496f65fe0922b5e327f200a035"
   dependencies:
     datatables.net "^1.10.15"
     jquery ">=1.7"

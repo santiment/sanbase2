@@ -5,12 +5,16 @@ import ProjectsTable from '../components/projects-table'
 import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
 import $ from 'jquery'
+
 import DataTable from 'datatables.net'
 import bootstrapStyles from 'bootstrap/dist/css/bootstrap.css';
-import 'datatables.net-bs/js/dataTables.bootstrap';
-import dataTablesStyles from 'datatables.net-bs/css/dataTables.bootstrap.css';
+import 'datatables.net-bs4/js/dataTables.bootstrap4';
+import dataTablesStyles from 'datatables.net-bs4/css/dataTables.bootstrap4.css';
 import 'datatables.net-fixedheader';
-import fixedHeaderStyles from 'datatables.net-fixedheader-bs/css/fixedHeader.bootstrap.css';
+import fixedHeaderStyles from 'datatables.net-fixedheader-bs4/css/fixedHeader.bootstrap4.css';
+import 'datatables.net-responsive';
+import 'datatables.net-responsive-bs4/js/responsive.bootstrap4';
+import responsiveStyles from 'datatables.net-responsive-bs4/css/responsive.bootstrap4.css';
 
 $.DataTable = DataTable;
 
@@ -20,26 +24,25 @@ class Index extends Component {
   }
 
   componentDidMount(){
-    $(document).ready(function () {
-      $('.table-hover').DataTable({
-          "dom": "<'row'<'col-sm-7'i><'col-sm-5'f>>" +
-          "<'row'<'col-sm-12'tr>>" +
-          "<'row'<'col-sm-5'><'col-sm-7'>>",
-          "paging": false,
-          fixedHeader: true,
-          language: {
-              search: "_INPUT_",
-              searchPlaceholder: "Search"
-          },
-        "order": [[ 1, "desc" ]],
+    $('.table-hover').DataTable({
+        dom: "<'row'<'col-sm-7'i><'col-sm-5'f>>" +
+        "<'row'<'col-sm-12'tr>>" +
+        "<'row'<'col-sm-5'><'col-sm-7'>>",
+        paging: false,
+        fixedHeader: true,
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search"
+        },
+        order: [[ 1, "desc" ]],
 
-          responsive: {
-              details: {
-                type: ''
-              }
-          }
+        responsive: {
+            details: {
+              display: $.fn.dataTable.Responsive.display.childRowImmediate,
+              type: ''
+            }
+        }
 
-      });
     });
   }
 

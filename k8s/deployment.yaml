@@ -59,3 +59,9 @@ spec:
               secretKeyRef:
                 name: sanbase-env
                 key: notificationsWebhookUrl
+
+          - name: NOTIFICATIONS_CHANNEL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: notificationsChannel

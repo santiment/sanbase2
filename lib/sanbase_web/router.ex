@@ -31,8 +31,8 @@ defmodule SanbaseWeb.Router do
   scope "/api", SanbaseWeb do
     pipe_through :api
 
-    resources "/items", ItemController, only: [:index]
     resources "/cashflow", CashflowController, only: [:index]
+    resources "/daily_prices", DailyPricesController, only: [:index]
   end
 
   scope "/" do

@@ -135,6 +135,24 @@ end
   %Project{ ticker: "ART", name: "Maecenas", coinmarketcap_id: "maecenas", logo_url: "maecenas.png" },
   %Project{ ticker: "MCI", name: "Musiconomi", coinmarketcap_id: "musiconomi", logo_url: "musiconomi.png" },
   %Project{ ticker: "VIC", name: "Virgil Capital" }
+  %Project{name: "Bitcoin", ticker: "BTC", coinmarketcap_id: "bitcoin"},
+  %Project{name: "Ethereum", ticker: "ETH", coinmarketcap_id: "ethereum"},
+  %Project{name: "Bitcoin Cash", ticker: "BCH", coinmarketcap_id: "bitcoin-cash"},
+  %Project{name: "Ripple", ticker: "XRP", coinmarketcap_id: "ripple"},
+  %Project{name: "Dash", ticker: "DASH", coinmarketcap_id: "dash"},
+  %Project{name: "Litecoin", ticker: "LTC", coinmarketcap_id: "litecoin"},
+  %Project{name: "IOTA", ticker: "MIOTA", coinmarketcap_id: "iota"},
+  %Project{name: "NEO", ticker: "NEO", coinmarketcap_id: "neo"},
+  %Project{name: "Monero", ticker: "XMR", coinmarketcap_id: "monero"},
+  %Project{name: "NEM", ticker: "XEM", coinmarketcap_id: "nem"},
+  %Project{name: "Ethereum Classic", ticker: "ETC", coinmarketcap_id: "ethereum-classic"},
+  %Project{name: "Lisk", ticker: "LSK", coinmarketcap_id: "lisk"},
+  %Project{name: "Qtum", ticker: "QTUM", coinmarketcap_id: "qtum"},
+  %Project{name: "OmiseGO", ticker: "OMG", coinmarketcap_id: "omisego"},
+  %Project{name: "Zcash", ticker: "ZEC", coinmarketcap_id: "zcash"},
+  %Project{name: "Cardano", ticker: "ADA", coinmarketcap_id: "cardano"},
+  %Project{name: "Stellar Lumens", ticker: "XLM", coinmarketcap_id: "stellar"},
+  %Project{name: "Tether", ticker: "USDT", coinmarketcap_id: "tether"}
 ]
 |> Enum.each(&Repo.insert!/1)
 

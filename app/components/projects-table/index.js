@@ -7,7 +7,7 @@ class ProjectsTable extends Component {
     this.ethPrice = this.props.data.eth_price
   }
 
-  formatTxOutWallet(wallet, index){
+  formatTxOutWallet = (wallet, index) => {
     const txOut = wallet.tx_out !== null ? wallet.tx_out : 0;
 
     return (
@@ -17,8 +17,13 @@ class ProjectsTable extends Component {
     )
   }
 
-  formatLastOutgoingWallet(wallet, index){
-    const lastOutgoing = wallet.last_outgoing !== null ? wallet.last_outgoing : 'No recent transfers';
+  formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  }
+
+  formatLastOutgoingWallet = (wallet, index) => {
+    const lastOutgoing = wallet.last_outgoing !== null ? this.formatDate(wallet.last_outgoing) : 'No recent transfers';
 
     return (
       <div key={ index }>
@@ -27,7 +32,7 @@ class ProjectsTable extends Component {
     )
   }
 
-  formatBalanceWallet(wallet, index){
+  formatBalanceWallet = (wallet, index) => {
     const balance = wallet.balance !== null ? wallet.balance : 0;
 
     return (
@@ -42,7 +47,7 @@ class ProjectsTable extends Component {
     )
   }
 
-  formatMarketCapProject(project){
+  formatMarketCapProject = (project) => {
     let marketCapUsd;
 
     if(project.market_cap_usd !== null){
@@ -52,7 +57,7 @@ class ProjectsTable extends Component {
     }
   }
 
-  render() {
+  render = () => {
     return (
       <div className="row">
         <div className="col-12">

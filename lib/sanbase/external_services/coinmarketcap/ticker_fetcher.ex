@@ -7,10 +7,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   use GenServer, restart: :permanent, shutdown: 5_000
 
   alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
 
   @default_update_interval 1000 * 60 * 5 # 5 minutes
+  @top_projects_to_follow 100
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -30,8 +32,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
     # Fetch current  marketcap
-    Ticker.fetch_data()
+    tickers = Ticker.fetch_data()
+
+    tickers
     |> Enum.each(&store_ticker/1)
+
+    tickers
+    |> Enum.take(@top_projects_to_follow)
+    |> Enum.each(&insert_or_create_project/1)
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
 
@@ -57,6 +65,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 	update_time: DateTime.from_unix!(ticker.last_updated)
       })
     |> Repo.insert_or_update!
+  end
+
+  defp insert_or_create_project(%Ticker{id: coinmarketcap_id, name: name, symbol: ticker}) do
+    find_or_init_project(%Project{name: name, coinmarketcap_id: coinmarketcap_id, ticker: ticker})
+    |> Repo.insert_or_update!
+  end
+
+  defp find_or_init_project(%Project{name: name} = project) do
+    case Repo.get_by(Project, name: name) do
+      nil -> Project.changeset(project)
+      existing_project -> Project.changeset(existing_project, Map.from_struct(project))
+    end
   end
 
   def config do

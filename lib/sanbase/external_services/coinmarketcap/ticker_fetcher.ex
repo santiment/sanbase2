@@ -12,7 +12,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
 
   @default_update_interval 1000 * 60 * 5 # 5 minutes
-  @top_projects_to_follow 100
+  @top_projects_to_follow 25
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)

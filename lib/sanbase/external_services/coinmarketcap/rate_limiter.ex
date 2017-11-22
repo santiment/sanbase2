@@ -5,15 +5,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RateLimiter do
   require Logger
 
   # Allow max 10 requests per 60 seconds. Wait 4 seconds before
-  # executing each request. 
+  # executing each request.
   @scale 60_000
-  @limit 10
-  @time_between_requests 4000 #miliseconds
+  @limit 20
+  @time_between_requests 2000 #miliseconds
   @bucket "Coinmarketcap API Rate Limit"
-  
+
 
   @name {:global, :coinmarketcap_rate_limiter}
-  
+
   def start_link(_state) do
     Logger.info fn ->
       "Starting rate limiter #{@bucket}"
@@ -39,11 +39,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.RateLimiter do
     Process.sleep(wait_period)
     sleep_algorithm(Hammer.check_rate(@bucket, @scale, @limit))
   end
-    
+
 
   def handle_call(:wait, _from, _state) do
     result = sleep_algorithm(Hammer.check_rate(@bucket, @scale, @limit))
-    {:reply, result, nil} 
+    {:reply, result, nil}
   end
-  
+
 end

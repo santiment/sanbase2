@@ -6,31 +6,13 @@ defmodule SanbaseWeb.DailyPricesController do
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
 
   @days_limit 14 * 24 * 60 * 60 # 14 days
-  @pairs [
-    "BTC_USD",
-    "ETH_USD",
-    "BCH_USD",
-    "XRP_USD",
-    "DASH_USD",
-    "LTC_USD",
-    "MIOTA_USD",
-    "NEO_USD",
-    "XMR_USD",
-    "XEM_USD",
-    "ETC_USD",
-    "LSK_USD",
-    "QTUM_USD",
-    "EOS_USD",
-    "OMG_USD",
-    "ZEC_USD",
-    "ADA_USD",
-    "HSR_USD",
-    "XLM_USD",
-    "USDT_USD"
-  ]
+  @max_assets_to_return 20
 
-  def index(conn, _params) do
-    prices = @pairs
+  def index(conn, %{"tickers" => tickers}) do
+    prices = String.split(tickers, ",")
+    |> Enum.map(&String.strip/1)
+    |> Enum.take(@max_assets_to_return)
+    |> Enum.map(fn ticker -> "#{ticker}_USD" end)
     |> Enum.reduce(%{}, fn pair, acc ->
       acc
       |> Map.put(pair, Store.fetch_prices_with_resolution(pair, seconds_ago(@days_limit), DateTime.utc_now(), "1d"))

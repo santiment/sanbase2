@@ -49,7 +49,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     ticker.id
     |> get_or_create_ticker()
     |> LatestCoinmarketcapData.changeset(
-      %{market_cap_usd: ticker.market_cap_usd,
+      %{
+        market_cap_usd: ticker.market_cap_usd,
 	name: ticker.name,
 	price_usd: ticker.price_usd,
 	symbol: ticker.symbol,

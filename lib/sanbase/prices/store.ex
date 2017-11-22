@@ -23,8 +23,15 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_price_points(pair, from, to) do
     fetch_query(pair, from, to)
-    |> Store.query(database: price_database())
-    |> parse_price_series
+    |> q()
+  end
+
+  def fetch_prices_with_resolution(pair, from, to, resolution) do
+    ~s/SELECT MEAN(price), SUM(volume), MEAN(marketcap)
+    FROM "#{pair}"
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    GROUP BY time(#{resolution})/
+    |> q()
   end
 
   def q(query) do

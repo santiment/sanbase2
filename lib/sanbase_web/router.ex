@@ -33,6 +33,7 @@ defmodule SanbaseWeb.Router do
 
     resources "/items", ItemController, only: [:index]
     resources "/cashflow", CashflowController, only: [:index]
+    resources "/daily_prices", DailyPricesController, only: [:index]
   end
 
   scope "/" do

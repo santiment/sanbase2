@@ -1,13 +1,11 @@
 defmodule Sanbase.ExternalServices.Etherscan.Requests do
 
-  #require Logger
   use Tesla
 
-
-  alias Sanbase.ExternalServices.Etherscan.RateLimiter
+  alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.Etherscan.Requests
 
-  plug RateLimiter.Tesla
+  plug RateLimiting.Middleware, name: :etherscan_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://api.etherscan.io/api"
   plug Tesla.Middleware.Compression
 

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import fetch from 'isomorphic-unfetch'
-import { WEBSITE_URL } from '../config'
+import { websiteUrl } from '../config'
 import ProjectsTable from '../components/projects-table'
 import MainHead from '../components/main-head'
 import SideMenu from '../components/side-menu'
@@ -43,7 +43,7 @@ class Index extends Component {
   }
 
   static async getInitialProps(){
-    const res = await fetch(WEBSITE_URL + '/api/cashflow')
+    const res = await fetch(websiteUrl() + '/api/cashflow')
     const data = await res.json()
 
     return {

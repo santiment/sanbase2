@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Link from 'next/link';
 
 class SideMenu extends Component {
   constructor (props) {
@@ -8,11 +9,11 @@ class SideMenu extends Component {
     }
   }
 
-  isActive(value) {
+  isActive = (value) => {
     return ((value === this.state.active) ? 'active' : '');
   }
 
-  render() {
+  render = () => {
     return (
       <div className="nav-side-menu">
         <div className="brand"><img src="/static/cashflow/img/logo_sanbase.png" width="115" height="22" alt="SANbase" /></div>
@@ -29,13 +30,21 @@ class SideMenu extends Component {
             </li>
             <ul className="sub-menu" id="products">
               <li><a href="#">Overview (tbd)</a></li>
-              <li><a href="cashflow" className={this.isActive('cashflow')}>Cash Flow</a></li>
+              <li>
+                <Link href="/cashflow" prefetch>
+                  <a className={this.isActive('cashflow')}>Cash Flow</a>
+                </Link>
+              </li>
             </ul>
             <li>
-              <a href="signals" className={this.isActive('signals')}><i className="fa fa-th fa-md"></i> Signals </a>
+              <Link href="/signals" prefetch>
+                <a className={this.isActive('signals')}><i className="fa fa-th fa-md"></i> Signals</a>
+              </Link>
             </li>
             <li>
-              <a href="roadmap" className={this.isActive('roadmap')}><i className="fa fa-comment-o fa-md"></i> Roadmap </a>
+              <Link href="/roadmap" prefetch>
+                <a className={this.isActive('roadmap')}><i className="fa fa-comment-o fa-md"></i> Roadmap</a>
+              </Link>
             </li>
           </ul>
         </div>

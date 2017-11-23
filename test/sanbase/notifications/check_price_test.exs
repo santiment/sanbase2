@@ -16,15 +16,11 @@ defmodule Sanbase.Notifications.CheckPricesTest do
     |> Store.execute()
   end
 
-  test "running the checks when there are no projects" do
-    assert CheckPrices.exec == []
-  end
-
   test "running the checks for a project without prices" do
     Store.drop_pair("SAN_USD")
-    Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+    project = Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 
-    assert CheckPrices.exec == []
+    assert CheckPrices.exec(project) == false
   end
 
   test "running the checks for a project with some prices" do
@@ -39,7 +35,7 @@ defmodule Sanbase.Notifications.CheckPricesTest do
 
     mock Tesla, [post: 3], %{status: 200}
 
-    [%Notification{project_id: project_id}] = CheckPrices.exec
+    %Notification{project_id: project_id} = CheckPrices.exec(project)
 
     assert project_id == project.id
     assert_called Tesla, post: 3

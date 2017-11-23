@@ -14,18 +14,17 @@ defmodule Sanbase.Notifications.CheckPrices do
   @check_interval_in_sec 60 * 60 # 60 minutes
   @price_change_threshold 5 # percent
 
-  def exec do
-    ComputeMovements.projects_to_monitor(seconds_ago(@cooldown_period_in_sec))
-    |> Enum.map(&fetch_price_points/1)
-    |> ComputeMovements.compute_notifications(@price_change_threshold)
-    |> Enum.map(&send_notification/1)
+  def exec(project) do
+    unless ComputeMovements.recent_notification?(project, seconds_ago(@cooldown_period_in_sec)) do
+      prices = fetch_price_points(project)
+
+      ComputeMovements.build_notification(project, prices, @price_change_threshold)
+      |> send_notification()
+    end
   end
 
   defp fetch_price_points(project) do
-    {
-      project,
-      Store.fetch_price_points(price_ticker(project), seconds_ago(@check_interval_in_sec), DateTime.utc_now())
-    }
+    Store.fetch_price_points(price_ticker(project), seconds_ago(@check_interval_in_sec), DateTime.utc_now())
   end
 
   def send_notification({notification, price_difference, project}) do
@@ -37,6 +36,8 @@ defmodule Sanbase.Notifications.CheckPrices do
 
     Repo.insert!(notification)
   end
+
+  def send_notification(_), do: false
 
   defp price_ticker(%Project{ticker: ticker}) do
     "#{ticker}_USD"

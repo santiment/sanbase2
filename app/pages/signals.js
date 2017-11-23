@@ -6,7 +6,7 @@ import HeaderPage from '../components/header-page'
 const Index = (props) => (
   <div>
     <MainHead>
-      <link href="http://cdn-images.mailchimp.com/embedcode/slim-10_7.css" rel="stylesheet" type="text/css" />
+      <link href="//cdn-images.mailchimp.com/embedcode/slim-10_7.css" rel="stylesheet" type="text/css" />
     </MainHead>
     <SideMenu activeItem="signals"/>
     <div className="container vert-stretch" id="main">
@@ -18,7 +18,7 @@ const Index = (props) => (
             <div className="signals-form">
               <h2><span>Join our <strong>SANbase Signals</strong> email list</span> <span>to receive pre-release alpha and beta signals:</span></h2>
               <div id="mc_embed_signup">
-                <form action="http://santiment.us14.list-manage.com/subscribe/post?u=122a728fd98df22b204fa533c&amp;id=80b55fcb45" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" className="validate" target="_blank" noValidate>
+                <form action="//santiment.us14.list-manage.com/subscribe/post?u=122a728fd98df22b204fa533c&amp;id=80b55fcb45" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" className="validate" target="_blank" noValidate>
                   <div id="mc_embed_signup_scroll">
                     <input type="email" value="" name="EMAIL" className="email" id="mce-EMAIL" placeholder="Your email address" required />
                     <div className="hidden-xs-up" aria-hidden="true">

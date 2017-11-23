@@ -42,9 +42,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Project
     |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
     |> Repo.all
-    |> Enum.each(&fetch_price_data/1)
-
-    CheckPrices.exec
+    |> Enum.map(fn project ->
+      Task.async(fn -> fetch_price_data(project) end)
+    end)
+    |> Enum.map(&Task.await(&1, :infinity))
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
 
@@ -68,6 +69,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       ]
     end)
     |> Store.import()
+
+    CheckPrices.exec(project)
   end
 
   defp convert_to_measurement(%PricePoint{datetime: datetime} = point, suffix, name) do

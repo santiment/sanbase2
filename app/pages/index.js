@@ -1,7 +1,6 @@
 import Layout from '../components/Layout.js'
 import TodoList from '../components/TodoList.js'
 import fetch from 'isomorphic-unfetch'
-import { WEBSITE_URL } from '../config'
 
 const Index = (props) => {}
 

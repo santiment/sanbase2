@@ -3,13 +3,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   use Tesla
 
-  plug Tesla.Middleware.BaseUrl, "https://graphs.coinmarketcap.com"
-  plug Tesla.Middleware.Compression
-  plug Tesla.Middleware.Logger
-
+  alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.RateLimiter
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
+
+  plug RateLimiting.Middleware, name: :coinmarketcap_rate_limiter
+  plug Tesla.Middleware.BaseUrl, "https://graphs.coinmarketcap.com"
+  plug Tesla.Middleware.Compression
+  plug Tesla.Middleware.Logger
 
   @seconds_in_day 24 * 60 * 60 # Number of seconds in a day
 
@@ -59,7 +61,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   end
 
   defp extract_prices_for_interval_with_rate_limit(coinmarketcap_id, start_interval, end_interval) do
-    RateLimiter.wait()
     extract_prices_for_interval(coinmarketcap_id, start_interval, end_interval)
   end
 

@@ -2,10 +2,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   # A module which fetches the ticker data from coinmarketcap
   defstruct [:id, :name, :symbol, :price_usd, :market_cap_usd, :last_updated]
 
-  alias Sanbase.ExternalServices.Coinmarketcap.RateLimiter
+  alias Sanbase.ExternalServices.RateLimiting
 
   use Tesla
 
+  plug RateLimiting.Middleware, name: :coinmarketcap_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v1/ticker"
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger
@@ -13,8 +14,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
 
   def fetch_data() do
-    RateLimiter.wait()
-
     "/?limit=1000"
     |> get()
     |> case do

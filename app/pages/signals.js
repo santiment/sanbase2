@@ -20,7 +20,7 @@ const Index = (props) => (
               <div id="mc_embed_signup">
                 <form action="//santiment.us14.list-manage.com/subscribe/post?u=122a728fd98df22b204fa533c&amp;id=80b55fcb45" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" className="validate" target="_blank" noValidate>
                   <div id="mc_embed_signup_scroll">
-                    <input type="email" value="" name="EMAIL" className="email" id="mce-EMAIL" placeholder="Your email address" required />
+                    <input type="email" defaultValue="" name="EMAIL" className="email" id="mce-EMAIL" placeholder="Your email address" required />
                     <div className="hidden-xs-up" aria-hidden="true">
                       <input type="text" name="b_122a728fd98df22b204fa533c_80b55fcb45" tabIndex="-1" value="" />
                     </div>

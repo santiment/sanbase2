@@ -17,17 +17,27 @@ defmodule Sanbase.Application do
       # Time series DB connection
       Sanbase.Prices.Store.child_spec,
 
-      # Rate limiter for CMC requests
-      Sanbase.ExternalServices.Coinmarketcap.RateLimiter.child_spec(%{}),
+      # Etherscan rate limiter
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :etherscan_rate_limiter,
+        scale: 1000,
+        limit: 5,
+        time_between_requests: 100
+      ),
+
+      # Coinmarketcap rate limiter
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :coinmarketcap_rate_limiter,
+        scale: 60_000,
+        limit: 20,
+        time_between_requests: 2000
+      ),
 
       # Price fetcher
       Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
 
       # Current marketcap fetcher
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
-
-      # Etherscan rate limiter
-      Sanbase.ExternalServices.Etherscan.RateLimiter.child_spec(%{}),
 
       # Etherscan wallet tracking worker
       Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),

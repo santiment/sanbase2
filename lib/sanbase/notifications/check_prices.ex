@@ -44,7 +44,7 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}) do
     Poison.encode!(%{
-      text: "#{name} #{notification_emoji(price_difference)}: #{Float.round(price_difference, 2)}% in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
+      text: "#{name}: #{notification_emoji(price_difference)} #{Float.round(price_difference, 2)}% in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
       channel: notification_channel()
     })
   end

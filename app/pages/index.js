@@ -1,5 +1,4 @@
 import fetch from 'isomorphic-unfetch'
-import { WEBSITE_URL } from '../config'
 
 const Index = (props) => {}
 

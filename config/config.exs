@@ -32,7 +32,8 @@ config :logger, :console,
 
 config :sanbase, Sanbase.Prices.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086}
+  port: {:system, "INFLUXDB_PORT", 8086},
+  pool: [ max_overflow: 10, size: 20 ]
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,

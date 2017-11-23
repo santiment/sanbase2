@@ -1,6 +1,5 @@
 defmodule Sanbase.ExternalServices.RateLimiting.Server do
   # A rate limiter for Etherscan
-
   use GenServer, restart: :permanent, shutdown: 5_000
   require Logger
 
@@ -39,17 +38,14 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
     {:ok, {bucket, scale, limit, time_between_requests}}
   end
 
-
   def wait(name) do
     GenServer.call(name, :wait, :infinity)
   end
-
 
   def sleep_algorithm({_bucket,_,_,time_between_requests}, {:allow, count}) do
     Process.sleep(time_between_requests)
     {:ok, count}
   end
-
 
   def sleep_algorithm({bucket, scale, limit, _} = state, {:deny, _}) do
     {:ok, {_,_,wait_period, _, _}} = Hammer.inspect_bucket(bucket, scale, limit)
@@ -65,5 +61,4 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
     result = sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))
     {:reply, result, state}
   end
-
 end

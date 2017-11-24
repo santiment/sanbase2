@@ -64,7 +64,7 @@ defmodule Sanbase.Prices.Store do
   defp parse_price_series(_), do: []
 
   def last_price_datetime(pair) do
-    ~s/SELECT time, price FROM "#{pair}" ORDER BY time DESC LIMIT 1/
+    ~s/SELECT LAST(price) FROM "#{pair}"/
     |> Store.query(database: price_database())
     |> parse_last_price_datetime
   end

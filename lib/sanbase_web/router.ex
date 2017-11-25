@@ -35,6 +35,12 @@ defmodule SanbaseWeb.Router do
     resources "/daily_prices", DailyPricesController, only: [:index]
   end
 
+  scope "/api", SanbaseWeb do
+    pipe_through [:api, :basic_auth]
+
+    resources "/projects", ProjectsController, only: [:index]
+  end
+
   scope "/" do
     pipe_through [:nextjs]
 

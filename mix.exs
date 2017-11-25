@@ -53,7 +53,8 @@ defmodule Sanbase.Mixfile do
       {:distillery, "~> 1.5", runtime: false},
       {:timex, "~> 3.0"},
       {:timex_ecto, "~> 3.0"},
-      {:hackney, "~> 1.10"}
+      {:hackney, "~> 1.10"},
+      {:floki, "~> 0.19.0"},
     ]
   end
 

@@ -25,9 +25,25 @@ defmodule Sanbase.Application do
         time_between_requests: 100
       ),
 
-      # Coinmarketcap rate limiter
+      # Coinmarketcap graph data rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-        :coinmarketcap_rate_limiter,
+        :graph_coinmarketcap_rate_limiter,
+        scale: 60_000,
+        limit: 20,
+        time_between_requests: 2000
+      ),
+
+      # Coinmarketcap api rate limiter
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :api_coinmarketcap_rate_limiter,
+        scale: 60_000,
+        limit: 5,
+        time_between_requests: 2000
+      ),
+
+      # Coinmarketcap http rate limiter
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :http_coinmarketcap_rate_limiter,
         scale: 60_000,
         limit: 20,
         time_between_requests: 2000

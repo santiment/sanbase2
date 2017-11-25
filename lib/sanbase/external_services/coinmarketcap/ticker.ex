@@ -6,7 +6,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   use Tesla
 
-  plug RateLimiting.Middleware, name: :coinmarketcap_rate_limiter
+  plug RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v1/ticker"
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger

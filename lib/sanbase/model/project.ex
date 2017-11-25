@@ -1,14 +1,13 @@
 defmodule Sanbase.Model.Project do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Sanbase.Model.{Project, ProjectEthAddress, ProjectBtcAddress, Ico, MarketSegment, Infrastructure}
+  alias Sanbase.Model.{Project, ProjectEthAddress, ProjectBtcAddress, Ico, MarketSegment, Infrastructure, LatestCoinmarketcapData}
 
 
   schema "project" do
     field :name, :string
     field :ticker, :string
     field :logo_url, :string
-    field :coinmarketcap_id, :string
     field :website_link, :string
     field :btt_link, :string
     field :facebook_link, :string
@@ -27,6 +26,7 @@ defmodule Sanbase.Model.Project do
     has_many :btc_addresses, ProjectBtcAddress
     belongs_to :market_segment, MarketSegment, on_replace: :nilify
     belongs_to :infrastructure, Infrastructure, on_replace: :nilify
+    belongs_to :latest_coinmarketcap_data, LatestCoinmarketcapData, foreign_key: :coinmarketcap_id, references: :coinmarketcap_id, type: :string, on_replace: :nilify
     has_one :ico, Ico
   end
 

@@ -8,7 +8,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   alias Sanbase.ExternalServices.Coinmarketcap.RateLimiter
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
 
-  plug RateLimiting.Middleware, name: :coinmarketcap_rate_limiter
+  plug RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://graphs.coinmarketcap.com"
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger

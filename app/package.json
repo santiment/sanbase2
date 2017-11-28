@@ -7,6 +7,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "node node_modules/exit_on_eof/index.js node_modules/next/dist/bin/next",
+    "test:lint:js": "standard | standard-reporter --stylish",
     "build": "node_modules/next/dist/bin/next build",
     "start": "node_modules/next/dist/bin/next start",
     "test-server": "WEBSITE_URL=http://localhost:4001 node node_modules/exit_on_eof/index.js 'node_modules/next/dist/bin/next -p 3001' > /dev/null"
@@ -29,5 +30,11 @@
     "react": "^16.0.0",
     "react-dom": "^16.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "babel-eslint": "^8.0.2",
+    "standard": "^10.0.3"
+  },
+  "standard": {
+    "parser": "babel-eslint"
+  }
 }

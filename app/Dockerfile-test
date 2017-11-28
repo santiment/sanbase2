@@ -1,0 +1,10 @@
+FROM node:latest
+
+RUN mkdir /usr/app
+WORKDIR /usr/app
+
+COPY package.json /usr/app/package.json
+RUN yarn
+
+COPY . /usr/app
+CMD npm run test:lint:js

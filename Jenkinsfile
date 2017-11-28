@@ -8,14 +8,14 @@ podTemplate(label: 'sanbase-builder', containers: [
       container('docker') {
         def scmVars = checkout scm
 
-        sh "docker build -t sanbase-test:${env.BRANCH_NAME} -f Dockerfile-test ."
-        sh "docker run --rm --name test_postgres_${env.BRANCH_NAME} -d postgres:9.6-alpine"
-        sh "docker run --rm --name test_influxdb_${env.BRANCH_NAME} -d influxdb:1.3-alpine"
+        sh "docker build -t sanbase-test:${scmVars.GIT_COMMIT} -f Dockerfile-test ."
+        sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT} -d postgres:9.6-alpine"
+        sh "docker run --rm --name test_influxdb_${scmVars.GIT_COMMIT} -d influxdb:1.3-alpine"
         try {
-          sh "docker run --rm --link test_postgres_${env.BRANCH_NAME}:test_db --link test_influxdb_${env.BRANCH_NAME}:test_influxdb --env DATABASE_URL=postgres://postgres:password@test_db:5432/postgres --env INFLUXDB_HOST=test_influxdb -t sanbase-test:${env.BRANCH_NAME}"
+          sh "docker run --rm --link test_postgres_${scmVars.GIT_COMMIT}:test_db --link test_influxdb_${scmVars.GIT_COMMIT}:test_influxdb --env DATABASE_URL=postgres://postgres:password@test_db:5432/postgres --env INFLUXDB_HOST=test_influxdb -t sanbase-test:${scmVars.GIT_COMMIT}"
         } finally {
-          sh "docker kill test_influxdb_${env.BRANCH_NAME}"
-          sh "docker kill test_postgres_${env.BRANCH_NAME}"
+          sh "docker kill test_influxdb_${scmVars.GIT_COMMIT}"
+          sh "docker kill test_postgres_${scmVars.GIT_COMMIT}"
         }
 
         if (env.BRANCH_NAME == "master") {

@@ -9,8 +9,7 @@ podTemplate(label: 'sanbase-builder', containers: [
         def scmVars = checkout scm
 
         sh "docker build -t sanbase-test:${scmVars.GIT_COMMIT} -f Dockerfile-test ."
-        sh "docker build -t sanbase-frontend-test:${scmVars.GIT_COMMIT} -f
-        app/Dockerfile-test app"
+        sh "docker build -t sanbase-frontend-test:${scmVars.GIT_COMMIT} -f app/Dockerfile-test app"
         sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT} -d postgres:9.6-alpine"
         sh "docker run --rm --name test_influxdb_${scmVars.GIT_COMMIT} -d influxdb:1.3-alpine"
         try {

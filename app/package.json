@@ -4,7 +4,7 @@
   "description": "NextJS app with server side rendering and Phoenix API",
   "main": "index.js",
   "author": "Valentin Mihov",
-  "license": "MIT",
+  "license": "",
   "scripts": {
     "dev": "node node_modules/exit_on_eof/index.js node_modules/next/dist/bin/next",
     "test:lint:js": "standard | standard-reporter --stylish",
@@ -32,7 +32,8 @@
   },
   "devDependencies": {
     "babel-eslint": "^8.0.2",
-    "standard": "^10.0.3"
+    "standard": "^10.0.3",
+    "standard-reporter": "^1.0.5"
   },
   "standard": {
     "parser": "babel-eslint"

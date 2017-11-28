@@ -57,6 +57,8 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       tokens_sold_at_ico: ico_spreadsheet_row.tokens_sold_at_ico,
       usd_btc_icoend: ico_spreadsheet_row.usd_btc_icoend,
       funds_raised_btc: ico_spreadsheet_row.funds_raised_btc,
+      funds_raised_usd: ico_spreadsheet_row.funds_raised_usd,
+      funds_raised_eth: ico_spreadsheet_row.funds_raised_eth,
       usd_eth_icoend: ico_spreadsheet_row.usd_eth_icoend,
       minimal_cap_amount: ico_spreadsheet_row.minimal_cap_amount,
       maximal_cap_amount: ico_spreadsheet_row.maximal_cap_amount,

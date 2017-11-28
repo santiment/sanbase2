@@ -1,8 +1,8 @@
-import fetch from 'isomorphic-unfetch'
+import Router from 'next/router'
 
 const Index = (props) => {}
 
-Index.getInitialProps = function({ res }) {
+Index.getInitialProps = ({res}) => {
   if (res) {
     res.writeHead(301, { Location: '/cashflow' })
     res.end()

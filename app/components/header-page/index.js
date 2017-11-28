@@ -1,6 +1,6 @@
 export default ({ description, name }) => (
-  <div className="row">
-    <div className="col-lg-12">
+  <div className='row'>
+    <div className='col-lg-12'>
       <h1>{ name }</h1>
       <p>{ description }</p>
     </div>

@@ -4,7 +4,7 @@ import fetch from 'isomorphic-unfetch'
 
 const Index = (props) => {}
 
-Index.getInitialProps = function({ res }) {
+Index.getInitialProps = ({res}) => {
   if (res) {
     res.writeHead(301, { Location: '/cashflow' })
     res.end()

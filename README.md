@@ -11,7 +11,7 @@ This is the source of the sanbase project of [`https://santiment.net`](https://s
   * Install dependencies with `mix deps.get`
   * Install JS dependencies for the static frontend with `cd assets && yarn && cd ..`
   * Install JS dependencies for the next.js frontend with `cd app && yarn && cd ..`
-  * Create a file `config/dev.secrets.exs` and put your PostgreSQL setup there. Example:
+  * Create a file `config/dev.secret.exs` and put your PostgreSQL setup there. Example:
 
 ```elixir
 use Mix.Config
@@ -49,18 +49,6 @@ This is going to run the app on port 4000, so [`localhost:4000`](http://localhos
 All the JS code is in `app/`. The API code is in `lib/` and follows the phoenix 1.3
 directory structure. You can find more info on how the JS side works on [Learning Next.js](https://learnnextjs.com). You can read more about how to define the API
 endpoints from the [Phoenix docs](https://hexdocs.pm/phoenix/overview.html) or from the excellent [Thoughtbot JSON API guide](https://robots.thoughtbot.com/building-a-phoenix-json-api)
-
-## .editorconfig
-
-We have .editorconfig file in our root.
-
-Config properties:
-
-- `charset = utf-8` - use utf-8 encoding,
-- `indent_style = space` - indent with spaces,
-- `indent_size = 2` - indent size 2,
-- `trim_trailing_whitespace = true` - will trim any useless trailing whitespaces,
-- `insert_final_newline = true` - add new line at the end of the file;
 
 ## Integration tests
 

@@ -27,14 +27,9 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
     parsed_args = OptionParser.parse(args,
       strict: [document_id: :string, api_key: :string, dry_run: :boolean],
       aliases: [d: :document_id, a: :api_key])
-      
-    # dry_run = case parsed_args do
-    #   {[dry_run: dry_run], _, _} -> dry_run
-    #   _ -> false
-    # end
-    
+
     {switches, project_names, errors} = parsed_args
-    
+
     switches
     |> set_defaults()
     |> case do
@@ -47,7 +42,7 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
       _ -> IO.puts("Missing or invalid arguments")
     end
   end
-  
+
   defp set_defaults(switches) do
     cond do
       Enum.any?(switches, fn {key, _} -> key == :dry_run end) -> switches
@@ -62,7 +57,7 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
     |> Enum.reverse()
     |> Enum.uniq_by(fn row -> row.project_name end)
     |> Enum.reverse()
-    
+
     if !dry_run do
       Sanbase.DbScripts.ImportIcoSpreadsheet.import(data)
     end

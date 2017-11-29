@@ -6,7 +6,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   require Logger
 
   alias Sanbase.Model.LatestEthWalletData
-  alias Sanbase.Model.TrackedEth
+  alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Etherscan.Requests
   alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx}
@@ -48,7 +48,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     endblock = Requests.get_latest_block_number() - @confirmations
     startblock = endblock - Float.ceil(@default_timespan_ms/@average_block_time_ms)
 
-    Repo.all(TrackedEth)
+    Repo.all(ProjectEthAddress)
     |> Task.async_stream(
       &fetch_and_store(&1, startblock, endblock),
       max_concurrency: 5,
@@ -71,7 +71,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     D.div(D.new(wei), D.new(1000000000000000000))
   end
 
-  def fetch(address, startblock, endblock) do
+  defp fetch(address, startblock, endblock) do
     changeset = %{
       update_time: DateTime.utc_now,
       balance: convert_to_eth(Balance.get(address).result)
@@ -87,7 +87,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     end
   end
 
-  def fetch_and_store(%TrackedEth{address: address}, startblock, endblock) do
+  defp fetch_and_store(%ProjectEthAddress{address: address}, startblock, endblock) do
     Logger.info("Updating transactions of address #{address}")
     changeset = fetch(address, startblock, endblock)
     get_or_create_entry(address)

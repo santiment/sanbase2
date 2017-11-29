@@ -2,12 +2,11 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.1
--- Dumped by pg_dump version 9.6.1
+-- Dumped from database version 9.5.10
+-- Dumped by pg_dump version 9.5.10
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
@@ -474,170 +473,98 @@ CREATE TABLE schema_migrations (
 
 
 --
--- Name: tracked_btc; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE tracked_btc (
-    id bigint NOT NULL,
-    address character varying(255) NOT NULL
-);
-
-
---
--- Name: tracked_btc_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE tracked_btc_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: tracked_btc_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE tracked_btc_id_seq OWNED BY tracked_btc.id;
-
-
---
--- Name: tracked_eth; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE tracked_eth (
-    id bigint NOT NULL,
-    address character varying(255) NOT NULL
-);
-
-
---
--- Name: tracked_eth_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE tracked_eth_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: tracked_eth_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE tracked_eth_id_seq OWNED BY tracked_eth.id;
-
-
---
--- Name: currencies id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY currencies ALTER COLUMN id SET DEFAULT nextval('currencies_id_seq'::regclass);
 
 
 --
--- Name: ico_currencies id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY ico_currencies ALTER COLUMN id SET DEFAULT nextval('ico_currencies_id_seq'::regclass);
 
 
 --
--- Name: icos id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY icos ALTER COLUMN id SET DEFAULT nextval('icos_id_seq'::regclass);
 
 
 --
--- Name: infrastructures id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY infrastructures ALTER COLUMN id SET DEFAULT nextval('infrastructures_id_seq'::regclass);
 
 
 --
--- Name: latest_btc_wallet_data id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY latest_btc_wallet_data ALTER COLUMN id SET DEFAULT nextval('latest_btc_wallet_data_id_seq'::regclass);
 
 
 --
--- Name: latest_coinmarketcap_data id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY latest_coinmarketcap_data ALTER COLUMN id SET DEFAULT nextval('latest_coinmarketcap_data_id_seq'::regclass);
 
 
 --
--- Name: latest_eth_wallet_data id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY latest_eth_wallet_data ALTER COLUMN id SET DEFAULT nextval('latest_eth_wallet_data_id_seq'::regclass);
 
 
 --
--- Name: market_segments id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY market_segments ALTER COLUMN id SET DEFAULT nextval('market_segments_id_seq'::regclass);
 
 
 --
--- Name: notification id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY notification ALTER COLUMN id SET DEFAULT nextval('notification_id_seq'::regclass);
 
 
 --
--- Name: notification_type id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY notification_type ALTER COLUMN id SET DEFAULT nextval('notification_type_id_seq'::regclass);
 
 
 --
--- Name: project id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project ALTER COLUMN id SET DEFAULT nextval('project_id_seq'::regclass);
 
 
 --
--- Name: project_btc_address id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project_btc_address ALTER COLUMN id SET DEFAULT nextval('project_btc_address_id_seq'::regclass);
 
 
 --
--- Name: project_eth_address id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project_eth_address ALTER COLUMN id SET DEFAULT nextval('project_eth_address_id_seq'::regclass);
 
 
 --
--- Name: tracked_btc id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY tracked_btc ALTER COLUMN id SET DEFAULT nextval('tracked_btc_id_seq'::regclass);
-
-
---
--- Name: tracked_eth id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY tracked_eth ALTER COLUMN id SET DEFAULT nextval('tracked_eth_id_seq'::regclass);
-
-
---
--- Name: currencies currencies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: currencies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY currencies
@@ -645,7 +572,7 @@ ALTER TABLE ONLY currencies
 
 
 --
--- Name: ico_currencies ico_currencies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: ico_currencies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY ico_currencies
@@ -653,7 +580,7 @@ ALTER TABLE ONLY ico_currencies
 
 
 --
--- Name: icos icos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: icos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY icos
@@ -661,7 +588,7 @@ ALTER TABLE ONLY icos
 
 
 --
--- Name: infrastructures infrastructures_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: infrastructures_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY infrastructures
@@ -669,7 +596,7 @@ ALTER TABLE ONLY infrastructures
 
 
 --
--- Name: latest_btc_wallet_data latest_btc_wallet_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: latest_btc_wallet_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY latest_btc_wallet_data
@@ -677,7 +604,7 @@ ALTER TABLE ONLY latest_btc_wallet_data
 
 
 --
--- Name: latest_coinmarketcap_data latest_coinmarketcap_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: latest_coinmarketcap_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY latest_coinmarketcap_data
@@ -685,7 +612,7 @@ ALTER TABLE ONLY latest_coinmarketcap_data
 
 
 --
--- Name: latest_eth_wallet_data latest_eth_wallet_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: latest_eth_wallet_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY latest_eth_wallet_data
@@ -693,7 +620,7 @@ ALTER TABLE ONLY latest_eth_wallet_data
 
 
 --
--- Name: market_segments market_segments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: market_segments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY market_segments
@@ -701,7 +628,7 @@ ALTER TABLE ONLY market_segments
 
 
 --
--- Name: notification notification_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: notification_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY notification
@@ -709,7 +636,7 @@ ALTER TABLE ONLY notification
 
 
 --
--- Name: notification_type notification_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: notification_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY notification_type
@@ -717,7 +644,7 @@ ALTER TABLE ONLY notification_type
 
 
 --
--- Name: project_btc_address project_btc_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: project_btc_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project_btc_address
@@ -725,7 +652,7 @@ ALTER TABLE ONLY project_btc_address
 
 
 --
--- Name: project_eth_address project_eth_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: project_eth_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project_eth_address
@@ -733,7 +660,7 @@ ALTER TABLE ONLY project_eth_address
 
 
 --
--- Name: project project_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: project_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project
@@ -741,27 +668,11 @@ ALTER TABLE ONLY project
 
 
 --
--- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
-
-
---
--- Name: tracked_btc tracked_btc_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY tracked_btc
-    ADD CONSTRAINT tracked_btc_pkey PRIMARY KEY (id);
-
-
---
--- Name: tracked_eth tracked_eth_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY tracked_eth
-    ADD CONSTRAINT tracked_eth_pkey PRIMARY KEY (id);
 
 
 --
@@ -891,21 +802,7 @@ CREATE UNIQUE INDEX project_name_index ON project USING btree (name);
 
 
 --
--- Name: tracked_btc_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX tracked_btc_address_index ON tracked_btc USING btree (address);
-
-
---
--- Name: tracked_eth_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX tracked_eth_address_index ON tracked_eth USING btree (address);
-
-
---
--- Name: ico_currencies ico_currencies_currency_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ico_currencies_currency_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY ico_currencies
@@ -913,7 +810,7 @@ ALTER TABLE ONLY ico_currencies
 
 
 --
--- Name: ico_currencies ico_currencies_ico_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ico_currencies_ico_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY ico_currencies
@@ -921,7 +818,7 @@ ALTER TABLE ONLY ico_currencies
 
 
 --
--- Name: icos icos_cap_currency_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: icos_cap_currency_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY icos
@@ -929,7 +826,7 @@ ALTER TABLE ONLY icos
 
 
 --
--- Name: icos icos_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: icos_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY icos
@@ -937,7 +834,7 @@ ALTER TABLE ONLY icos
 
 
 --
--- Name: notification notification_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notification_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY notification
@@ -945,7 +842,7 @@ ALTER TABLE ONLY notification
 
 
 --
--- Name: notification notification_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notification_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY notification
@@ -953,7 +850,7 @@ ALTER TABLE ONLY notification
 
 
 --
--- Name: project_btc_address project_btc_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: project_btc_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project_btc_address
@@ -961,7 +858,7 @@ ALTER TABLE ONLY project_btc_address
 
 
 --
--- Name: project_eth_address project_eth_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: project_eth_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project_eth_address
@@ -969,7 +866,7 @@ ALTER TABLE ONLY project_eth_address
 
 
 --
--- Name: project project_infrastructure_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: project_infrastructure_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project
@@ -977,7 +874,7 @@ ALTER TABLE ONLY project
 
 
 --
--- Name: project project_market_segment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: project_market_segment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY project
@@ -988,4 +885,5 @@ ALTER TABLE ONLY project
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804);
+

@@ -2,7 +2,7 @@ import Head from 'next/head'
 
 export default (props) => (
   <Head>
-    <meta charset='utf-8' />
+    <meta charSet='utf-8' />
     <title>SANBase</title>
     <meta name='viewport' content='initial-scale=1.0, width=device-width, shrink-to-fit=no' />
     <link rel='shortcut icon' href='/static/cashflow/img/favicon.png' />
@@ -18,6 +18,7 @@ export default (props) => (
     <script src='https://www.kryogenix.org/code/browser/sorttable/sorttable.js' />
     <script src='https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js' />
     <script src='https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap4.min.js' />
+    {process.env.NODE_ENV === 'production' &&
     <script dangerouslySetInnerHTML={{ __html: `
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
               (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -26,7 +27,7 @@ export default (props) => (
 
       ga('create', 'UA-100571693-1', 'auto');
       ga('send', 'pageview');
-    `}} />
+    `}} />}
     { props.children }
   </Head>
 )

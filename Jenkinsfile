@@ -9,10 +9,12 @@ podTemplate(label: 'sanbase-builder', containers: [
         def scmVars = checkout scm
 
         sh "docker build -t sanbase-test:${scmVars.GIT_COMMIT} -f Dockerfile-test ."
+        sh "docker build -t sanbase-frontend-test:${scmVars.GIT_COMMIT} -f app/Dockerfile-test app"
         sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT} -d postgres:9.6-alpine"
         sh "docker run --rm --name test_influxdb_${scmVars.GIT_COMMIT} -d influxdb:1.3-alpine"
         try {
           sh "docker run --rm --link test_postgres_${scmVars.GIT_COMMIT}:test_db --link test_influxdb_${scmVars.GIT_COMMIT}:test_influxdb --env DATABASE_URL=postgres://postgres:password@test_db:5432/postgres --env INFLUXDB_HOST=test_influxdb -t sanbase-test:${scmVars.GIT_COMMIT}"
+          sh "docker run --rm -t sanbase-frontend-test:${scmVars.GIT_COMMIT} yarn test --ci"
         } finally {
           sh "docker kill test_influxdb_${scmVars.GIT_COMMIT}"
           sh "docker kill test_postgres_${scmVars.GIT_COMMIT}"

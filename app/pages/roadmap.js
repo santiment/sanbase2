@@ -6,24 +6,24 @@ import HeaderPage from '../components/header-page'
 const Index = (props) => (
   <div>
     <MainHead />
-    <SideMenu activeItem="roadmap"/>
-    <div className="container vert-stretch" id="main">
+    <SideMenu activeItem='roadmap' />
+    <div className='container vert-stretch' id='main'>
       <Topbar />
-      <HeaderPage name="SANbase Roadmap" description="Please see our SANbase roadmap below. It is a living document; milestones may adjust." />
-      <div className="row vert-stretch">
-        <div className="col-12 vert-full">
-          <div className="panel vert-full">
-            <div className="fadeout">
-              <div className="timeline">
-                <a name="goal1"></a>
-                <div className="entry past">
-                  <div className="title">
+      <HeaderPage name='SANbase Roadmap' description='Please see our SANbase roadmap below. It is a living document; milestones may adjust.' />
+      <div className='row vert-stretch'>
+        <div className='col-12 vert-full'>
+          <div className='panel vert-full'>
+            <div className='fadeout'>
+              <div className='timeline'>
+                <a name='goal1' />
+                <div className='entry past'>
+                  <div className='title'>
                     <h3>Launch</h3>
                     <p>Q1-Q2, 2017</p>
                     <hr />
                     <p>Completed to date</p>
                   </div>
-                  <div className="body">
+                  <div className='body'>
                     <p>Generate first proofs of concept and initial funding</p>
                     <ul>
                       <li>Concierge MVP for crowdsourcing via community</li>
@@ -32,14 +32,14 @@ const Index = (props) => (
                       <li>Sentiment journaling game prototype</li>
                       <li>Trollbox feeds</li>
                       <li>Subscription smart contract</li>
-                      <li>First set of strategic partnerships<a name="goal2"></a></li>
+                      <li>First set of strategic partnerships<a name='goal2' /></li>
                       <li>Whitepaper Release</li>
                       <li>Crowdsale</li>
                     </ul>
                   </div>
                 </div>
-                <div className="entry present">
-                  <div className="title">
+                <div className='entry present'>
+                  <div className='title'>
                     <h3>Low Orbit</h3>
                     <p>Q3-Q4, 2017</p>
                     <hr />
@@ -49,63 +49,63 @@ const Index = (props) => (
                       Community
                     </p>
                   </div>
-                  <div className="body">
-                    <div className="status-row" id="low-orbit">
-                      <span className="status-item">Develop SANbase backend architecture and wireframe UI</span>
-                      <span className="status">
-                        <div className="status-percent">30%</div>
-                        <div className="status-border">
-                          <div className="status-progress"></div>
+                  <div className='body'>
+                    <div className='status-row' id='low-orbit'>
+                      <span className='status-item'>Develop SANbase backend architecture and wireframe UI</span>
+                      <span className='status'>
+                        <div className='status-percent'>30%</div>
+                        <div className='status-border'>
+                          <div className='status-progress' />
                         </div>
                       </span>
                     </div>
                     <p><strong>Data-feeds:</strong> Bring in first round of real-time feeds:</p>
                     <ul>
                       <li>
-                        <div className="status-row embedded" id="crypto-projects-item">
-                          <span className="status-item">Crypto projects with key metrics</span>
-                          <span className="status">
-                            <div className="status-percent">10%</div>
-                            <div className="status-border">
-                              <div className="status-progress"></div>
+                        <div className='status-row embedded' id='crypto-projects-item'>
+                          <span className='status-item'>Crypto projects with key metrics</span>
+                          <span className='status'>
+                            <div className='status-percent'>10%</div>
+                            <div className='status-border'>
+                              <div className='status-progress' />
                             </div>
                           </span>
                         </div>
                       </li>
                       <li>
-                        <div className="status-row embedded" id="detailed-views-item">
-                          <span className="status-item">Detailed views of each project</span>
-                          <span className="status">
-                            <div className="status-percent">10%</div>
-                            <div className="status-border">
-                              <div className="status-progress"></div>
+                        <div className='status-row embedded' id='detailed-views-item'>
+                          <span className='status-item'>Detailed views of each project</span>
+                          <span className='status'>
+                            <div className='status-percent'>10%</div>
+                            <div className='status-border'>
+                              <div className='status-progress' />
                             </div>
                           </span>
                         </div>
                       </li>
                       <li>
-                        <div className="status-row embedded nobg">
-                          <span className="status-item">Crypto Cash Flow:</span>
+                        <div className='status-row embedded nobg'>
+                          <span className='status-item'>Crypto Cash Flow:</span>
                         </div>
                         <ul>
                           <li>
-                            <div className="status-row embedded" id="team-wallets-item">
-                              <span className="status-item">Team wallets</span>
-                              <span className="status">
-                                <div className="status-percent">80%</div>
-                                <div className="status-border">
-                                  <div className="status-progress"></div>
+                            <div className='status-row embedded' id='team-wallets-item'>
+                              <span className='status-item'>Team wallets</span>
+                              <span className='status'>
+                                <div className='status-percent'>80%</div>
+                                <div className='status-border'>
+                                  <div className='status-progress' />
                                 </div>
                               </span>
                             </div>
                           </li>
                           <li>
-                            <div className="status-row embedded nobg">
+                            <div className='status-row embedded nobg'>
                               Whale wallets
                             </div>
                           </li>
                           <li>
-                            <div className="status-row embedded nobg">
+                            <div className='status-row embedded nobg'>
                               Exchange wallets
                             </div>
                           </li>
@@ -135,12 +135,12 @@ const Index = (props) => (
                     <ul>
                       <li>DApp release. SAN token usage launched</li>
                       <li>
-                        <div className="status-row embedded" id="mobile-port-item">
-                          <span className="status-item">Port to mobile. Add push notifications.</span>
-                          <span className="status">
-                            <div className="status-percent">25%</div>
-                            <div className="status-border">
-                              <div className="status-progress"></div>
+                        <div className='status-row embedded' id='mobile-port-item'>
+                          <span className='status-item'>Port to mobile. Add push notifications.</span>
+                          <span className='status'>
+                            <div className='status-percent'>25%</div>
+                            <div className='status-border'>
+                              <div className='status-progress' />
                             </div>
                           </span>
                         </div>
@@ -148,27 +148,27 @@ const Index = (props) => (
                     </ul>
                   </div>
                 </div>
-                <a name="goal3"></a>
-                <div className="entry future">
-                  <div className="title">
+                <a name='goal3' />
+                <div className='entry future'>
+                  <div className='title'>
                     <h3>Medium Orbit</h3>
                     <p>2018</p>
                     <hr />
                     <p>Business Models<br />
                       Token Economy</p>
                   </div>
-                  <div className="body">
+                  <div className='body'>
                     <div>
                       <p>Refine business and economic systems</p>
-                      <p></p>
+                      <p />
                     </div>
                     <div>
                       <p>Set pricing and staking levels</p>
-                      <p></p>
+                      <p />
                     </div>
                     <div>
-                      <p id="open-san-api">Open the SANbase API</p>
-                      <p></p>
+                      <p id='open-san-api'>Open the SANbase API</p>
+                      <p />
                     </div>
                     <p>Expand the set of data-feeds/signals:</p>
                     <ul>
@@ -181,15 +181,15 @@ const Index = (props) => (
                     <p>SANbase Beta</p>
                   </div>
                 </div>
-                <a name="goal4"></a>
-                <div className="entry future">
-                  <div className="title">
+                <a name='goal4' />
+                <div className='entry future'>
+                  <div className='title'>
                     <h3>High Orbit</h3>
                     <p>2019</p>
                     <hr />
                     <p>Decentralization</p>
                   </div>
-                  <div className="body">
+                  <div className='body'>
                     <p>Product/community/network is self-sustaining, ready for general availability.</p>
                     <ul>
                       <li>Social/Reputation systems</li>

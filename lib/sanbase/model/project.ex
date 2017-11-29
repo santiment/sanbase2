@@ -27,7 +27,7 @@ defmodule Sanbase.Model.Project do
     belongs_to :market_segment, MarketSegment, on_replace: :nilify
     belongs_to :infrastructure, Infrastructure, on_replace: :nilify
     belongs_to :latest_coinmarketcap_data, LatestCoinmarketcapData, foreign_key: :coinmarketcap_id, references: :coinmarketcap_id, type: :string, on_replace: :nilify
-    has_one :ico, Ico
+    has_many :ico, Ico
   end
 
   @doc false

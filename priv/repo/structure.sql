@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.1
--- Dumped by pg_dump version 9.6.1
+-- Dumped from database version 9.6.6
+-- Dumped by pg_dump version 9.6.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -786,13 +786,6 @@ CREATE INDEX ico_currencies_ico_id_index ON ico_currencies USING btree (ico_id);
 
 
 --
--- Name: icos_project_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX icos_project_id_index ON icos USING btree (project_id);
-
-
---
 -- Name: infrastructures_code_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -988,4 +981,5 @@ ALTER TABLE ONLY project
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171129022700);
+

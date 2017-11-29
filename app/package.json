@@ -1,14 +1,17 @@
 {
   "name": "sanbase",
-  "version": "1.0.0",
-  "description": "NextJS app with server side rendering and Phoenix API",
+  "version": "0.1.0",
+  "description": "Sanbase Web App",
   "main": "index.js",
   "author": "Valentin Mihov",
-  "license": "MIT",
+  "private": true,
+  "license": "",
   "scripts": {
     "dev": "node node_modules/exit_on_eof/index.js node_modules/next/dist/bin/next",
-    "build": "node_modules/next/dist/bin/next build",
-    "start": "node_modules/next/dist/bin/next start",
+    "test:lint:js": "standard | standard-reporter --stylish",
+    "test": "jest",
+    "build": "next build",
+    "start": "next start",
     "test-server": "WEBSITE_URL=http://localhost:4001 node node_modules/exit_on_eof/index.js 'node_modules/next/dist/bin/next -p 3001' > /dev/null"
   },
   "dependencies": {
@@ -26,8 +29,27 @@
     "node-sass": "^4.4.0",
     "normalize.css": "5.0.0",
     "raw-loader": "^0.5.1",
-    "react": "^16.0.0",
-    "react-dom": "^16.0.0"
+    "react": "^16.1.1",
+    "react-dom": "^16.1.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "babel-eslint": "^8.0.2",
+    "babel-jest": "^21.2.0",
+    "babel-preset-env": "^1.6.1",
+    "enzyme": "latest",
+    "enzyme-adapter-react-16": "latest",
+    "enzyme-to-json": "latest",
+    "jest": "^21.2.0",
+    "react-test-renderer": "16.1.1",
+    "standard": "^10.0.3",
+    "standard-reporter": "^1.0.5"
+  },
+  "standard": {
+    "parser": "babel-eslint"
+  },
+  "jest": {
+    "setupFiles": [
+      "./setupTests.js"
+    ]
+  }
 }

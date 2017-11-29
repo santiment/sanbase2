@@ -15,6 +15,5 @@ defmodule SanbaseWeb.DailyPricesView do
   defp convert_to_price_array(data) do
     data
     |> Enum.map(fn [_date, avg_price | _tail] -> avg_price end)
-    |> Enum.reverse
   end
 end

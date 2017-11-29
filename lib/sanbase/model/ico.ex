@@ -28,6 +28,5 @@ defmodule Sanbase.Model.Ico do
     ico
     |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :funds_raised_btc, :usd_btc_icoend, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id])
     |> validate_required([:project_id])
-    |> unique_constraint(:project_id)
   end
 end

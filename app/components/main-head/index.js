@@ -12,6 +12,7 @@ export default (props) => (
     <script src='https://use.fontawesome.com/6f993f4769.js' />
     <link rel='stylesheet' href='//cdn.datatables.net/1.10.15/css/jquery.dataTables.min.css' />
     <link rel='stylesheet' href='/static/cashflow/css/style_dapp_mvp1.css' />
+    <link rel='stylesheet' href='//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.12/semantic.min.css' />
     <script src='https://code.jquery.com/jquery-3.0.0.min.js' />
     <script src='https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js' />
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js' />

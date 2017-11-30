@@ -7,6 +7,7 @@
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -183,6 +184,38 @@ CREATE SEQUENCE public.exchange_eth_addresses_id_seq
 --
 
 ALTER SEQUENCE public.exchange_eth_addresses_id_seq OWNED BY public.exchange_eth_addresses.id;
+
+
+--
+-- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE eth_accounts (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: eth_accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE eth_accounts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: eth_accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE eth_accounts_id_seq OWNED BY eth_accounts.id;
 
 
 --
@@ -1432,6 +1465,13 @@ CREATE UNIQUE INDEX eth_accounts_address_index ON public.eth_accounts USING btre
 --
 
 CREATE UNIQUE INDEX exchange_eth_addresses_address_index ON public.exchange_eth_addresses USING btree (address);
+
+
+--
+-- Name: eth_accounts_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX eth_accounts_address_index ON eth_accounts USING btree (address);
 
 
 --

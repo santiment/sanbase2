@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Auth.ContextPlugTest do
+defmodule SanbaseWeb.Graphql.ContextPlugTest do
   use SanbaseWeb.ConnCase
 
   import Plug.Conn
@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Auth.ContextPlugTest do
 
   alias Sanbase.Auth.User
   alias Sanbase.Repo
-  alias SanbaseWeb.Auth.ContextPlug
+  alias SanbaseWeb.Graphql.ContextPlug
 
   test "loading the user from the current token", %{conn: conn} do
     user = %User{salt: User.generate_salt()}

@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Auth.ContextPlug do
+defmodule SanbaseWeb.Graphql.ContextPlug do
   @behavior Plug
 
   import Plug.Conn

@@ -36,6 +36,8 @@ defmodule Sanbase.Auth.User do
   require Mockery.Macro
   defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
+  @salt_length 64
+
   schema "users" do
     field(:email, :string)
     field(:email_candidate, :string)

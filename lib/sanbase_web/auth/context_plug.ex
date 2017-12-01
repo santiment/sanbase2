@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Auth.ContextPlug do
 
   import Plug.Conn
 
+  alias Sanbase.Auth.User
+
   require Logger
 
   def init(opts), do: opts
@@ -22,7 +24,7 @@ defmodule SanbaseWeb.Auth.ContextPlug do
   end
 
   defp authorize(token) do
-    with {:ok, user, claims} <- SanbaseWeb.Guardian.resource_from_token(token) do
+    with {:ok, %User{salt: salt} = user, %{"salt" => salt}} <- SanbaseWeb.Guardian.resource_from_token(token) do
       {:ok, user}
     else
       _ ->

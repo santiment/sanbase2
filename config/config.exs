@@ -91,6 +91,11 @@ config :sanbase, SanbaseWeb.Guardian,
   issuer: "santiment",
   secret_key: {SanbaseWeb.Guardian, :get_config, [:secret_key_base]}
 
+config :sanbase, Sanbase.Auth.Ethauth,
+  url: {:system, "ETHAUTH_URL"},
+  basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
+  basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"

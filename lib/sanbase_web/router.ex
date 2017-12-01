@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    plug SanbaseWeb.Auth.ContextPlug
+    plug SanbaseWeb.Graphql.ContextPlug
   end
 
   pipeline :nextjs do
@@ -32,10 +32,8 @@ defmodule SanbaseWeb.Router do
   scope "/" do
     pipe_through :api
 
-    forward "/graphql", Absinthe.Plug.GraphiQL,
-      schema: SanbaseWeb.Auth.Schema,
-      interface: :simple,
-      context: %{pubsub: SanbaseWeb.Endpoint}
+    forward "/graphql", Absinthe.Plug,
+      schema: SanbaseWeb.Graphql.Schema
   end
 
   scope "/api", SanbaseWeb do

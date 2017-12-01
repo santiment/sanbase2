@@ -1,43 +1,44 @@
 defmodule SanbaseWeb.Graphql.ContextPlugTest do
-  use SanbaseWeb.ConnCase, async: false
+  use SanbaseWeb.ConnCase
 
+  import Plug.Conn
   import ExUnit.CaptureLog
-  import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Auth.User
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.ContextPlug
 
   test "loading the user from the current token", %{conn: conn} do
-    user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
+    user = %User{salt: User.generate_salt()}
+    |> Repo.insert!
+    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
 
-    conn = setup_jwt_auth(conn, user)
+    conn = conn
+    |> put_req_header("authorization", "Bearer " <> token)
 
-    assert conn.private[:absinthe] == %{
-             context: %{auth: %{auth_method: :user_token, current_user: user}}
-           }
+    conn = ContextPlug.call(conn, %{})
+
+    assert conn.private[:absinthe] == %{context: %{current_user: user}}
   end
 
   test "verifying the user's salt when loading", %{conn: conn} do
-    user =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
+    user = %User{salt: User.generate_salt()}
+    |> Repo.insert!
+    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
 
-    conn = setup_jwt_auth(conn, user)
+    conn = conn
+    |> put_req_header("authorization", "Bearer " <> token)
 
     user
     |> Ecto.Changeset.change(salt: User.generate_salt())
-    |> Repo.update!()
+    |> Repo.update!
 
-    logs =
-      capture_log(fn ->
-        conn = ContextPlug.call(conn, %{})
+    logs = capture_log(fn ->
+      conn = ContextPlug.call(conn, %{})
 
-        assert conn.private[:absinthe] == %{context: %{}}
-      end)
+      assert conn.private[:absinthe] == %{context: %{}}
+    end)
 
-    assert logs =~ ~r/Invalid bearer token/
+    assert logs =~ ~r/Invalid token/
   end
 end

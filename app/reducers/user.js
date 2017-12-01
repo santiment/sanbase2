@@ -3,7 +3,8 @@ export const initialState = {
   pending: false,
   error: false,
   data: {},
-  account: null
+  account: null,
+  hasMetamask: false
 }
 
 export default (state = initialState, action) => {
@@ -12,6 +13,11 @@ export default (state = initialState, action) => {
       return {
         ...state,
         account: action.account
+      }
+    case 'CHECK_WEB3_PROVIDER':
+      return {
+        ...state,
+        hasMetamask: action.hasMetamask
       }
     case 'APP_LOADING_SUCCESS':
       return {

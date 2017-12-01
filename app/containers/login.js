@@ -1,8 +1,6 @@
 import { connect } from 'react-redux'
 import {
-  Form,
-  Message,
-  Button
+  Message
 } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import {
@@ -10,83 +8,82 @@ import {
   compose,
   pure
 } from 'recompose'
-import MainHead from 'components/main-head'
-import { setupWeb3 } from 'web3Helpers'
+import { setupWeb3, hasMetamask } from 'web3Helpers'
+import Head from 'components/head'
+import AuthForm from 'components/AuthForm'
 
 const propTypes = {
-  account: PropTypes.string,
-  data: PropTypes.object,
-  isLoading: PropTypes.bool.isRequired,
-  error: PropTypes.bool.isRequired
+  user: PropTypes.shape({
+    account: PropTypes.string,
+    data: PropTypes.object,
+    hasMetamask: PropTypes.bool,
+    isLoading: PropTypes.bool.isRequired,
+    error: PropTypes.bool.isRequired
+  }).isRequired
 }
 
-const Login = ({account, isLoading, requestAuth, changeAccount, appLoaded}) => {
-  return (
-    <div>
-      <MainHead />
-      <div className='wrapper'>
-        <div className='loginContainer'>
-          <Form warning>
-            {isLoading && <div>Loading</div>}
-            {account && !isLoading &&
-              <div>
-                <Message
-                  header='We detect you have Metamask!'
-                  list={[
-                    'We can auth you with Metamask account. It\'s secure and easy.',
-                    `Your selected wallet public key is ${account}`
-                  ]}
-                />
-                <Button
-                  color='green'
-                  onClick={() => requestAuth(account)}
-                >Sign in with Metamask</Button>
-              </div>}
-            {!account && !isLoading &&
-              <Message
-                warning
-                header={'We can\'t detect Metamask!'}
-                list={[
-                  'We can auth you with Metamask account. It\'s secure and easy.'
-                ]}
-              />}
-          </Form>
-        </div>
+export const Login = ({
+  user,
+  requestAuth,
+  changeAccount,
+  appLoaded,
+  checkMetamask
+}) => (
+  <div>
+    <Head />
+    <div className='wrapper'>
+      <div className='loginContainer'>
+        {user.isLoading && !user.hasMetamask && <div>Loading</div>}
+        {!user.hasMetamask && !user.isLoading &&
+          <Message
+            warning
+            header={'We can\'t detect Metamask!'}
+            list={[
+              'We can auth you with Metamask account. It\'s secure and easy.'
+            ]}
+          />}
+        {user.hasMetamask &&
+          <AuthForm
+            account={user.account}
+            handleAuth={() => this.props.requestAuth(user.account)} />}
       </div>
-      <style jsx>{`
-        .wrapper {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100vh;
-        }
-        .loginContainer {
-          padding: 1em;
-          background: white;
-          max-width: 50%;
-          border-radius: 2px;
-          box-shadow: 0 1.5px 0 0 rgba(0,0,0,0.1);
-        }
-      `}</style>
     </div>
-  )
-}
+    <style jsx>{`
+      .wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      .loginContainer {
+        padding: 1em;
+        background: white;
+        max-width: 70%;
+        border-radius: 2px;
+        box-shadow: 0 1.5px 0 0 rgba(0,0,0,0.1);
+      }
+    `}</style>
+  </div>
+)
 
 Login.propTypes = propTypes
 
-const mapStateToProps = ({user}) => {
-  return (
-    user
-  )
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  }
 }
 
 const mapDispatchToProps = dispatch => {
   return {
-    requestAuth: account => {
+    checkMetamask: hasMetamask => {
       dispatch({
-        type: 'REQUEST_AUTH_BY_SAN_TOKEN',
-        account
+        type: 'CHECK_WEB3_PROVIDER',
+        hasMetamask
       })
+    },
+    requestAuth: account => {
+      // TODO: request auth with san token
     },
     changeAccount: account => {
       dispatch({
@@ -109,12 +106,15 @@ export default compose(
   ),
   lifecycle({
     componentDidMount () {
+      this.props.checkMetamask(hasMetamask())
+      setTimeout(() => {
+        this.props.appLoaded()
+      }, 1000)
       setupWeb3((error, account) => {
         if (!error && this.props.account !== account) {
           this.props.changeAccount(account)
         }
       })
-      this.props.appLoaded()
     }
   }),
   pure

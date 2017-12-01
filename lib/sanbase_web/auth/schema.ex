@@ -25,6 +25,8 @@ defmodule SanbaseWeb.Auth.Schema do
   mutation do
     field :eth_login, :login do
       arg :signature, non_null(:string)
+      arg :address, non_null(:string)
+      arg :address_hash, non_null(:string)
 
       resolve &Resolver.eth_login/2
     end

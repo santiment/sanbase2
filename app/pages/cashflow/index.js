@@ -1,5 +1,5 @@
 import React from 'react';
-import { redirect_to } from '../lib/nextjs_utils';
+import { redirect_to } from '../../lib/nextjs_utils';
 
 export default class extends React.Component {
   static async getInitialProps({ res }) {

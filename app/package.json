@@ -1,62 +1,27 @@
 {
-  "name": "sanbase",
+  "name": "app",
   "version": "0.1.0",
-  "description": "Sanbase Web App",
-  "main": "index.js",
-  "author": "Valentin Mihov",
   "private": true,
-  "license": "",
-  "scripts": {
-    "dev": "node node_modules/exit_on_eof/index.js node_modules/next/dist/bin/next",
-    "test:lint:js": "standard | standard-reporter --stylish",
-    "test": "jest",
-    "build": "next build",
-    "start": "next start",
-    "test-server": "WEBSITE_URL=http://localhost:4001 node node_modules/exit_on_eof/index.js 'node_modules/next/dist/bin/next -p 3001' > /dev/null"
-  },
   "dependencies": {
-    "babel-plugin-module-resolver": "2.5.0",
-    "datatables.net": "^1.10.16",
-    "datatables.net-bs4": "^1.10.16",
-    "datatables.net-fixedheader": "^3.1.2",
-    "datatables.net-fixedheader-bs4": "^3.1.2",
-    "datatables.net-responsive": "^2.2.0",
-    "datatables.net-responsive-bs4": "^2.2.0",
-    "exit_on_eof": "^1.0.4",
-    "isomorphic-unfetch": "^2.0.0",
-    "jquery": "^3.2.1",
-    "next": "^4.1.4",
-    "next-redux-wrapper": "^1.3.5",
-    "node-sass": "^4.4.0",
-    "normalize.css": "5.0.0",
-    "raw-loader": "^0.5.1",
-    "react": "^16.1.1",
-    "react-dom": "^16.1.1",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
     "react-redux": "^5.0.6",
+    "react-router-dom": "^4.2.2",
+    "react-scripts": "1.0.17",
     "recompose": "^0.26.0",
     "redux": "^3.7.2",
-    "redux-thunk": "^2.2.0",
     "semantic-ui-react": "^0.77.0"
   },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
   "devDependencies": {
-    "babel-eslint": "^8.0.2",
-    "babel-jest": "^21.2.0",
-    "babel-preset-env": "^1.6.1",
-    "enzyme": "latest",
-    "enzyme-adapter-react-16": "latest",
-    "enzyme-to-json": "latest",
-    "jest": "^21.2.0",
-    "react-test-renderer": "16.1.1",
-    "redux-devtools-extension": "^2.13.2",
-    "standard": "^10.0.3",
-    "standard-reporter": "^1.0.5"
-  },
-  "standard": {
-    "parser": "babel-eslint"
-  },
-  "jest": {
-    "setupFiles": [
-      "./setupTests.js"
-    ]
+    "enzyme": "^3.2.0",
+    "enzyme-adapter-react-16": "^1.1.0",
+    "enzyme-to-json": "^3.2.2",
+    "redux-devtools-extension": "^2.13.2"
   }
 }

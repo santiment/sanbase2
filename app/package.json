@@ -15,7 +15,6 @@
     "test-server": "WEBSITE_URL=http://localhost:4001 node node_modules/exit_on_eof/index.js 'node_modules/next/dist/bin/next -p 3001' > /dev/null"
   },
   "dependencies": {
-    "babel-plugin-module-resolver": "2.5.0",
     "datatables.net": "^1.10.16",
     "datatables.net-bs4": "^1.10.16",
     "datatables.net-fixedheader": "^3.1.2",

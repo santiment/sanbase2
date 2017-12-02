@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "axios": "^0.17.1",
+    "moment": "^2.19.3",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.6",
     "react-router-dom": "^4.2.2",
     "react-scripts": "1.0.17",
+    "react-table": "^6.7.4",
     "recompose": "^0.26.0",
     "redux": "^3.7.2",
     "semantic-ui-react": "^0.77.0"
@@ -15,13 +18,24 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "test:lint:js": "standard | standard-reporter --stylish",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
   "devDependencies": {
+    "babel-eslint": "^8.0.3",
     "enzyme": "^3.2.0",
     "enzyme-adapter-react-16": "^1.1.0",
     "enzyme-to-json": "^3.2.2",
-    "redux-devtools-extension": "^2.13.2"
+    "redux-axios-middleware": "^4.0.0",
+    "redux-devtools-extension": "^2.13.2",
+    "standard": "^10.0.3",
+    "standard-reporter": "^1.0.5"
+  },
+  "standard": {
+    "parser": "babel-eslint",
+    "ignore": [
+      "src/registerServiceWorker.js"
+    ]
   }
 }

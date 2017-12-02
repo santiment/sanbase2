@@ -1,3 +1,4 @@
+import React from 'react'
 import { connect } from 'react-redux'
 import {
   Message
@@ -8,9 +9,9 @@ import {
   compose,
   pure
 } from 'recompose'
-import { setupWeb3, hasMetamask } from 'web3Helpers'
-import Head from 'components/head'
-import AuthForm from 'components/AuthForm'
+import { setupWeb3, hasMetamask } from './web3Helpers'
+import AuthForm from './AuthForm'
+import './login.css'
 
 const propTypes = {
   user: PropTypes.shape({
@@ -29,40 +30,22 @@ export const Login = ({
   appLoaded,
   checkMetamask
 }) => (
-  <div>
-    <Head />
-    <div className='wrapper'>
-      <div className='loginContainer'>
-        {user.isLoading && !user.hasMetamask && <div>Loading</div>}
-        {!user.hasMetamask && !user.isLoading &&
-          <Message
-            warning
-            header={'We can\'t detect Metamask!'}
-            list={[
-              'We can auth you with Metamask account. It\'s secure and easy.'
-            ]}
-          />}
-        {user.hasMetamask &&
-          <AuthForm
-            account={user.account}
-            handleAuth={() => this.props.requestAuth(user.account)} />}
-      </div>
+  <div className='wrapper'>
+    <div className='loginContainer'>
+      {user.isLoading && !user.hasMetamask && <div>Loading</div>}
+      {!user.hasMetamask && !user.isLoading &&
+        <Message
+          warning
+          header={'We can\'t detect Metamask!'}
+          list={[
+            'We can auth you with Metamask account. It\'s secure and easy.'
+          ]}
+        />}
+      {user.hasMetamask &&
+        <AuthForm
+          account={user.account}
+          handleAuth={() => this.props.requestAuth(user.account)} />}
     </div>
-    <style jsx>{`
-      .wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-      }
-      .loginContainer {
-        padding: 1em;
-        background: white;
-        max-width: 70%;
-        border-radius: 2px;
-        box-shadow: 0 1.5px 0 0 rgba(0,0,0,0.1);
-      }
-    `}</style>
   </div>
 )
 

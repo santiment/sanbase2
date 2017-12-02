@@ -3,7 +3,7 @@ import React from 'react'
 import { mount, shallow } from 'enzyme'
 import toJson from 'enzyme-to-json'
 import renderer from 'react-test-renderer'
-import { Login } from 'containers/login'
+import { Login } from './../Login'
 
 describe('Login container', () => {
   it('it should render correctly', () => {

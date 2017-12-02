@@ -4,10 +4,11 @@ import {
   Message,
   Button
 } from 'semantic-ui-react'
+import metamaskIcon from './assets/metamask-icon-64.png'
 
 export default ({account, handleAuth}) => {
   return (
-    <Form warning>
+    <Form>
       <Message
         header='We detect you have Metamask 🎉🎉🎉'
         list={[
@@ -24,11 +25,10 @@ export default ({account, handleAuth}) => {
             paddingTop: '5px',
             paddingBottom: '5px'
           }}
-          className='signin-with-santoken'
           onClick={handleAuth}
         >Sign in with Metamask &nbsp;
           <img
-            src={'../static/img/metamask-icon-64.png'}
+            src={metamaskIcon}
             alt='metamask logo'
             width={32}
             height={32} />

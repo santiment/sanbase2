@@ -17,7 +17,7 @@ class SideMenu extends Component {
     return (
       <div className='nav-side-menu'>
         <div className='brand'>
-          <Link href="/">
+          <Link href='/'>
             <a><img src='/static/cashflow/img/logo_sanbase.png' width='115' height='22' alt='SANbase' /></a>
           </Link>
         </div>

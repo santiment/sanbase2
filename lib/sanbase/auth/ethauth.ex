@@ -4,7 +4,9 @@ defmodule Sanbase.Auth.Ethauth do
   def verify_signature(signature, address, address_hash) do
     %Tesla.Env{status: 200, body: body} = get(client(), "auth-check", query: [addr: address, sign: signature, hash: address_hash])
 
-    Poison.decode!(body)["result"]
+    %{"addr" => address, "recovered" => recovered} = Poison.decode!(body)
+
+    String.downcase(address) == String.downcase(recovered)
   end
 
   def san_balance(address) do

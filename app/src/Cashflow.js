@@ -9,6 +9,7 @@ import {
 import 'react-table/react-table.css'
 import moment from 'moment'
 import { formatNumber } from './utils/formatting'
+import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
 
@@ -111,8 +112,15 @@ export const Cashflow = ({
   projects,
   loading
 }) => (
-  <div>
-    <h1>Cashflow</h1>
+  <div className='page cashflow'>
+    <div className='cashflow-head'>
+      <h1>Cash Flow</h1>
+      <p>
+        brought to you by Santiment
+        <br />
+        NOTE: This app is a prototype. We give no guarantee data is correct as we are in active development.
+      </p>
+    </div>
     <ReactTable
       loading={loading}
       showPagination={false}

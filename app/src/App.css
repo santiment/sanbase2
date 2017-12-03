@@ -1,28 +1,39 @@
 .App {
+  display: flex;
+}
+
+.side-menu {
+  height: 100vh;
+  min-height: 100%;
+  width: 15%;
+  max-width: 15%;
+  font-size: 13px;
+  background-color: #262b33;
+  color: rgba(255,255,255,0.5);
+}
+
+.side-menu .brand {
+  padding: 1.5em 0;
+  padding-bottom: 1.2em;
+  background-color: #3d4450;
   text-align: center;
-}
-
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
-}
-
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
   color: white;
+  box-shadow: 0 2px 5px 0 rgba(0,0,0,0.08);
 }
 
-.App-title {
-  font-size: 1.5em;
+.side-menu ul li {
+  line-height: 1.8em;
+  margin-left: 0px;
+  padding-left: 5px;
+  cursor: pointer;
 }
 
-.App-intro {
-  font-size: large;
+.side-menu .selected {
+  color: white;
+  font-size: bold;
 }
 
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.page {
+  flex: 1;
+  padding: 0 15px;
 }

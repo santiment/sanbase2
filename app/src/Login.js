@@ -9,7 +9,11 @@ import {
   compose,
   pure
 } from 'recompose'
-import { setupWeb3, hasMetamask } from './web3Helpers'
+import {
+  setupWeb3,
+  hasMetamask,
+  signMessage
+} from './web3Helpers'
 import AuthForm from './AuthForm'
 import './login.css'
 
@@ -44,7 +48,7 @@ export const Login = ({
       {user.hasMetamask &&
         <AuthForm
           account={user.account}
-          handleAuth={() => this.props.requestAuth(user.account)} />}
+          handleAuth={() => requestAuth(user.account)} />}
     </div>
   </div>
 )
@@ -66,7 +70,12 @@ const mapDispatchToProps = dispatch => {
       })
     },
     requestAuth: account => {
-      // TODO: request auth with san token
+      signMessage(account).then(res => {
+        console.log(res)
+      }).catch(error => {
+        // TODO: User denied, Account, etc.
+        console.log(error)
+      })
     },
     changeAccount: account => {
       dispatch({

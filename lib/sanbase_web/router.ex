@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug SanbaseWeb.Graphql.ContextPlug
   end
 
   pipeline :nextjs do
@@ -26,6 +27,13 @@ defmodule SanbaseWeb.Router do
   scope "/admin", ExAdmin do
     pipe_through [:browser, :basic_auth]
     admin_routes()
+  end
+
+  scope "/" do
+    pipe_through :api
+
+    forward "/graphql", Absinthe.Plug,
+      schema: SanbaseWeb.Graphql.Schema
   end
 
   scope "/api", SanbaseWeb do

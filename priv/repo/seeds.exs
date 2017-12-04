@@ -14,6 +14,7 @@ alias Sanbase.Model.Project
 alias Sanbase.Model.ProjectEthAddress
 alias Sanbase.Model.ProjectBtcAddress
 alias Sanbase.Repo
+alias Sanbase.Auth.{User, EthAccount}
 
 make_project = fn ({name, ticker, logo_url, coinmarkecap_id}) ->
   %Project{ name: name,
@@ -156,3 +157,14 @@ end
 ]
 |> Enum.flat_map(make_btc_address)
 |> Enum.each(&Repo.insert!/1)
+
+
+user = %User{
+  email: "john.d@santiment.net",
+  username: "John Dow",
+  salt: "LgcwR3e98PR/gvgV7Ph1+ZXnw4yhTz25k08QLi/39qdCt/V0XOGlJRiL938NtJk0"
+}
+|> Repo.insert!
+
+%EthAccount{address: "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a", user_id: user.id}
+|> Repo.insert!

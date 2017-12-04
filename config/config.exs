@@ -96,6 +96,17 @@ config :sanbase, Sanbase.Auth.Ethauth,
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
 
+config :faktory_worker_ex,
+  host: "localhost",
+  port: 7419,
+  client: [
+    pool: 10,
+  ],
+  worker: [
+    concurrency: 20,
+    queues: ["greeter"],
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"

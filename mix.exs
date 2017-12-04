@@ -56,7 +56,8 @@ defmodule Sanbase.Mixfile do
       {:hackney, "~> 1.10"},
       {:guardian, "~> 1.0"},
       {:absinthe_ecto, "~> 0.1.0"},
-      {:absinthe_plug, "~> 1.3.0"}
+      {:absinthe_plug, "~> 1.3.0"},
+      {:faktory_worker_ex, path: "../faktory_worker_ex"}
     ]
   end
 

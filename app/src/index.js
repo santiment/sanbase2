@@ -6,10 +6,21 @@ import { createStore, applyMiddleware } from 'redux'
 import { composeWithDevTools } from 'redux-devtools-extension'
 import axios from 'axios'
 import { multiClientMiddleware } from 'redux-axios-middleware'
+import ApolloClient from 'apollo-client'
+import { createHttpLink } from 'apollo-link-http'
+import { InMemoryCache } from 'apollo-cache-inmemory'
+import { ApolloProvider } from 'react-apollo'
 import App from './App'
 import reducers from './reducers/rootReducers.js'
 import registerServiceWorker from './registerServiceWorker'
 import './index.css'
+
+const httpLink = createHttpLink({ uri: 'http://localhost:4000/graphql' })
+
+const client = new ApolloClient({
+  link: httpLink,
+  cache: new InMemoryCache()
+})
 
 const clients = {
   sanbaseClient: {
@@ -28,10 +39,12 @@ const store = createStore(reducers,
 )
 
 ReactDOM.render(
-  <Provider store={store}>
-    <Router>
-      <Route path='/' component={App} />
-    </Router>
-  </Provider>,
+  <ApolloProvider client={client}>
+    <Provider store={store}>
+      <Router>
+        <Route path='/' component={App} />
+      </Router>
+    </Provider>
+  </ApolloProvider>,
   document.getElementById('root'))
-registerServiceWorker()
+//registerServiceWorker()

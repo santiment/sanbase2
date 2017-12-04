@@ -1,5 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
+import { graphql } from 'react-apollo'
+import gql from 'graphql-tag'
 import {
   Message
 } from 'semantic-ui-react'
@@ -32,7 +34,8 @@ export const Login = ({
   requestAuth,
   changeAccount,
   appLoaded,
-  checkMetamask
+  checkMetamask,
+  authWithSAN
 }) => (
   <div className='wrapper'>
     <div className='loginContainer'>
@@ -48,7 +51,7 @@ export const Login = ({
       {user.hasMetamask &&
         <AuthForm
           account={user.account}
-          handleAuth={() => requestAuth(user.account)} />}
+          handleAuth={() => requestAuth(user.account, authWithSAN)} />}
     </div>
   </div>
 )
@@ -69,9 +72,18 @@ const mapDispatchToProps = dispatch => {
         hasMetamask
       })
     },
-    requestAuth: account => {
-      signMessage(account).then(res => {
-        console.log(res)
+    requestAuth: (account, authWithSAN) => {
+      signMessage(account).then(({hashMessage, signature}) => {
+        // TODO:
+        authWithSAN({variables: {
+          signature: signature,
+          address: account,
+          addressHash: hashMessage}})
+        .then(({ data }) => {
+          console.log('data', data)
+        }).catch((error) => {
+          console.error(error)
+        })
       }).catch(error => {
         // TODO: User denied, Account, etc.
         console.log(error)
@@ -91,11 +103,22 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
+const requestAuthGQL = gql`
+  mutation ethLogin($signature: String, $address: String, $addressHash: String) {
+    ethLogin(
+      signature: $signature,
+      address: $address,
+      addressHash: $addressHash) {
+        token
+      }
+}`
+
 export default compose(
   connect(
     mapStateToProps,
     mapDispatchToProps
   ),
+  graphql(requestAuthGQL, {name: 'authWithSAN'}),
   lifecycle({
     componentDidMount () {
       this.props.checkMetamask(hasMetamask())

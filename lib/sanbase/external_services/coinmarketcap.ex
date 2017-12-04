@@ -70,7 +70,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end)
     |> Store.import()
 
-    CheckPrices.exec(project)
+    CheckPrices.exec(project, "usd")
+    CheckPrices.exec(project, "btc")
   end
 
   defp convert_to_measurement(%PricePoint{datetime: datetime} = point, suffix, name) do

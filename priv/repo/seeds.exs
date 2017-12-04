@@ -12,10 +12,9 @@
 
 alias Sanbase.Model.Project
 alias Sanbase.Model.ProjectEthAddress
-alias Sanbase.Model.TrackedEth
 alias Sanbase.Model.ProjectBtcAddress
-alias Sanbase.Model.TrackedBtc
 alias Sanbase.Repo
+alias Sanbase.Auth.{User, EthAccount}
 
 make_project = fn ({name, ticker, logo_url, coinmarkecap_id}) ->
   %Project{ name: name,
@@ -30,8 +29,7 @@ make_btc_address = fn ({name, address}) ->
     %ProjectBtcAddress{
       project: Repo.get_by(Project, name: name),
       address: address
-    },
-    %TrackedBtc{address: address}
+    }
   ]
 end
 
@@ -40,8 +38,7 @@ make_eth_address = fn ({name, address}) ->
     %ProjectEthAddress{
       project: Repo.get_by(Project, name: name),
       address: address
-    },
-    %TrackedEth{address: address}
+    }
   ]
 end
 
@@ -85,7 +82,7 @@ end
 
 
 [
-  {"EOS","0xA72Dc46CE562f20940267f8deb02746e242540ed"},
+  {"EOS","0x10F0c9112b255507701df1b1be5D8dcd9A82bb5e"},
   {"Golem","0x7da82c7ab4771ff031b66538d2fb9b0b047f6cf9"},
   {"Iconomi","0x154Af3E01eC56Bc55fD585622E33E3dfb8a248d8"},
   {"Gnosis","0x851b7F3Ab81bd8dF354F0D7640EFcD7288553419"},
@@ -123,9 +120,9 @@ end
 #######################################
 
 [
-  %Project{ name: "CFI",  ticker: "Cofound.it",  logo_url: "cofound-it.png",  coinmarketcap_id: "cofound-it"},
+  %Project{ ticker: "Cofound.it", name: "CFI", logo_url: "cofound-it.png", coinmarketcap_id: "cofound-it"},
   %Project{ ticker: "DAP", name: "Dappbase" },
-  %Project{ ticker: "DNA", name: "Encrypgen" },
+  %Project{ ticker: "DNA", name: "Encrypgen", coinmarketcap_id: "encrypgen" },
   %Project{ ticker: "RSC", name: "Etherisc" },
   %Project{ ticker: "EXP/LAB", name: "Expanse/Tokenlab", logo_url: "expanse.png", coinmarketcap_id: "expanse" },
   %Project{ ticker: "GAT", name: "Gatcoin.io" },
@@ -141,7 +138,6 @@ end
 
 [
   {"Encrypgen", "0x683a0aafa039406c104d814b9f244eea721445a7"},
-  {"Etherisc", "0x9B0F6a5a667CB92aF0cd15DbE90E764e32f69e77"},
   {"Etherisc", "0x35792029777427920ce7aDecccE9e645465e9C72"},
   {"Expanse/Tokenlab", "0xd1ea8853619aaad66f3f6c14ca22430ce6954476"},
   {"Expanse/Tokenlab", "0xf83fd4b62ccb4b5c4213278b6b506eb2f19988d0"},
@@ -161,3 +157,14 @@ end
 ]
 |> Enum.flat_map(make_btc_address)
 |> Enum.each(&Repo.insert!/1)
+
+
+user = %User{
+  email: "john.d@santiment.net",
+  username: "John Dow",
+  salt: "LgcwR3e98PR/gvgV7Ph1+ZXnw4yhTz25k08QLi/39qdCt/V0XOGlJRiL938NtJk0"
+}
+|> Repo.insert!
+
+%EthAccount{address: "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a", user_id: user.id}
+|> Repo.insert!

@@ -50,8 +50,6 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.LatestBtcWalletData,
     Sanbase.ExAdmin.Model.ProjectBtcAddress,
     Sanbase.ExAdmin.Model.ProjectEthAddress,
-    Sanbase.ExAdmin.Model.TrackedBtc,
-    Sanbase.ExAdmin.Model.TrackedEth,
     Sanbase.ExAdmin.Model.Currency,
     Sanbase.ExAdmin.Model.Infrastructure,
     Sanbase.ExAdmin.Model.MarketSegment,
@@ -88,6 +86,15 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
 config :sanbase, Sanbase.Notifications.CheckPrice,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
   notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"}
+
+config :sanbase, SanbaseWeb.Guardian,
+  issuer: "santiment",
+  secret_key: {SanbaseWeb.Guardian, :get_config, [:secret_key_base]}
+
+config :sanbase, Sanbase.Auth.Ethauth,
+  url: {:system, "ETHAUTH_URL"},
+  basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
+  basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

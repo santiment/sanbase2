@@ -64,6 +64,38 @@ ALTER SEQUENCE currencies_id_seq OWNED BY currencies.id;
 
 
 --
+-- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE eth_accounts (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: eth_accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE eth_accounts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: eth_accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE eth_accounts_id_seq OWNED BY eth_accounts.id;
+
+
+--
 -- Name: ico_currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -111,7 +143,9 @@ CREATE TABLE icos (
     maximal_cap_amount numeric,
     cap_currency_id bigint,
     main_contract_address character varying(255),
-    comments text
+    comments text,
+    funds_raised_usd numeric,
+    funds_raised_eth numeric
 );
 
 
@@ -474,20 +508,24 @@ CREATE TABLE schema_migrations (
 
 
 --
--- Name: tracked_btc; Type: TABLE; Schema: public; Owner: -
+-- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE tracked_btc (
+CREATE TABLE users (
     id bigint NOT NULL,
-    address character varying(255) NOT NULL
+    username character varying(255),
+    email character varying(255),
+    salt character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
 );
 
 
 --
--- Name: tracked_btc_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE tracked_btc_id_seq
+CREATE SEQUENCE users_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -496,39 +534,10 @@ CREATE SEQUENCE tracked_btc_id_seq
 
 
 --
--- Name: tracked_btc_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE tracked_btc_id_seq OWNED BY tracked_btc.id;
-
-
---
--- Name: tracked_eth; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE tracked_eth (
-    id bigint NOT NULL,
-    address character varying(255) NOT NULL
-);
-
-
---
--- Name: tracked_eth_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE tracked_eth_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: tracked_eth_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE tracked_eth_id_seq OWNED BY tracked_eth.id;
+ALTER SEQUENCE users_id_seq OWNED BY users.id;
 
 
 --
@@ -536,6 +545,13 @@ ALTER SEQUENCE tracked_eth_id_seq OWNED BY tracked_eth.id;
 --
 
 ALTER TABLE ONLY currencies ALTER COLUMN id SET DEFAULT nextval('currencies_id_seq'::regclass);
+
+
+--
+-- Name: eth_accounts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY eth_accounts ALTER COLUMN id SET DEFAULT nextval('eth_accounts_id_seq'::regclass);
 
 
 --
@@ -623,17 +639,10 @@ ALTER TABLE ONLY project_eth_address ALTER COLUMN id SET DEFAULT nextval('projec
 
 
 --
--- Name: tracked_btc id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tracked_btc ALTER COLUMN id SET DEFAULT nextval('tracked_btc_id_seq'::regclass);
-
-
---
--- Name: tracked_eth id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY tracked_eth ALTER COLUMN id SET DEFAULT nextval('tracked_eth_id_seq'::regclass);
+ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
 
 
 --
@@ -642,6 +651,14 @@ ALTER TABLE ONLY tracked_eth ALTER COLUMN id SET DEFAULT nextval('tracked_eth_id
 
 ALTER TABLE ONLY currencies
     ADD CONSTRAINT currencies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: eth_accounts eth_accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY eth_accounts
+    ADD CONSTRAINT eth_accounts_pkey PRIMARY KEY (id);
 
 
 --
@@ -749,19 +766,11 @@ ALTER TABLE ONLY schema_migrations
 
 
 --
--- Name: tracked_btc tracked_btc_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tracked_btc
-    ADD CONSTRAINT tracked_btc_pkey PRIMARY KEY (id);
-
-
---
--- Name: tracked_eth tracked_eth_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY tracked_eth
-    ADD CONSTRAINT tracked_eth_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
 
 --
@@ -769,6 +778,13 @@ ALTER TABLE ONLY tracked_eth
 --
 
 CREATE UNIQUE INDEX currencies_code_index ON currencies USING btree (code);
+
+
+--
+-- Name: eth_accounts_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX eth_accounts_address_index ON eth_accounts USING btree (address);
 
 
 --
@@ -884,17 +900,18 @@ CREATE UNIQUE INDEX project_name_index ON project USING btree (name);
 
 
 --
--- Name: tracked_btc_address_index; Type: INDEX; Schema: public; Owner: -
+-- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX tracked_btc_address_index ON tracked_btc USING btree (address);
+CREATE UNIQUE INDEX users_email_index ON users USING btree (email);
 
 
 --
--- Name: tracked_eth_address_index; Type: INDEX; Schema: public; Owner: -
+-- Name: eth_accounts eth_accounts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX tracked_eth_address_index ON tracked_eth USING btree (address);
+ALTER TABLE ONLY eth_accounts
+    ADD CONSTRAINT eth_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
 
 --
@@ -981,5 +998,5 @@ ALTER TABLE ONLY project
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171129022700);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543);
 

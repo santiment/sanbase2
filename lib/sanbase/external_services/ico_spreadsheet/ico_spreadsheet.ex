@@ -7,7 +7,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   plug Tesla.Middleware.JSON
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger
-  plug Tesla.Middleware.Timeout, timeout: 50000
+  plug Tesla.Middleware.Timeout, timeout: 100000
 
   alias Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow
 
@@ -75,7 +75,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
         parse_date(value)
       c when c in [:tokens_issued_at_ico] ->
         parse_int(value)
-      c when c in [:tokens_sold_at_ico, :usd_btc_icoend, :funds_raised_btc, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount] ->
+      c when c in [:tokens_sold_at_ico, :usd_btc_icoend, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount] ->
         parse_decimal(value)
       c when c in [:ico_currencies] ->
         parse_comma_delimited(value)

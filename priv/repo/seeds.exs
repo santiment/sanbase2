@@ -10,7 +10,6 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-alias Sanbase.Model
 alias Sanbase.Model.Project
 alias Sanbase.Model.ProjectEthAddress
 alias Sanbase.Model.ProjectBtcAddress

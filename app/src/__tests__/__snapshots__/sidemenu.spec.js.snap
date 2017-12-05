@@ -1,0 +1,224 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SideMenu container it should render correctly 1`] = `
+<div
+  className="side-menu"
+>
+  <div
+    className="brand"
+  >
+    <img
+      alt="SANbase"
+      height="22"
+      src="logo_sanbase.png"
+      width="115"
+    />
+  </div>
+  <i
+    className="fa fa-bars fa-2x toggle-btn"
+    data-target="#menu-content"
+    data-toggle="collapse"
+  />
+  <div
+    className="menu-list"
+  >
+    <ul
+      className="menu-content collapse out"
+      id="menu-content"
+    >
+      <li>
+        Dashboard (tbd)
+      </li>
+      <li
+        data-target="#products"
+        data-toggle="collapse"
+      >
+        Data-feeds
+      </li>
+      <ul
+        className="sub-menu"
+        id="products"
+      >
+        <li>
+          Overview (tbd)
+        </li>
+        <li>
+          <NavLink
+            activeClassName="selected"
+            ariaCurrent="true"
+            to="/cashflow"
+          >
+            Cash Flow
+          </NavLink>
+        </li>
+      </ul>
+      <li>
+        Signals
+      </li>
+      <li>
+        Roadmap
+      </li>
+    </ul>
+  </div>
+  <br />
+  <div
+    className="user-auth-control"
+  >
+    <NavLink
+      activeClassName="active"
+      ariaCurrent="true"
+      to="/login"
+    >
+      Log in
+    </NavLink>
+  </div>
+</div>
+`;
+
+exports[`SideMenu container it should show login button 1`] = `
+<div
+  className="side-menu"
+>
+  <div
+    className="brand"
+  >
+    <img
+      alt="SANbase"
+      height="22"
+      src="logo_sanbase.png"
+      width="115"
+    />
+  </div>
+  <i
+    className="fa fa-bars fa-2x toggle-btn"
+    data-target="#menu-content"
+    data-toggle="collapse"
+  />
+  <div
+    className="menu-list"
+  >
+    <ul
+      className="menu-content collapse out"
+      id="menu-content"
+    >
+      <li>
+        Dashboard (tbd)
+      </li>
+      <li
+        data-target="#products"
+        data-toggle="collapse"
+      >
+        Data-feeds
+      </li>
+      <ul
+        className="sub-menu"
+        id="products"
+      >
+        <li>
+          Overview (tbd)
+        </li>
+        <li>
+          <NavLink
+            activeClassName="selected"
+            ariaCurrent="true"
+            to="/cashflow"
+          >
+            Cash Flow
+          </NavLink>
+        </li>
+      </ul>
+      <li>
+        Signals
+      </li>
+      <li>
+        Roadmap
+      </li>
+    </ul>
+  </div>
+  <br />
+  <div
+    className="user-auth-control"
+  >
+    <NavLink
+      activeClassName="active"
+      ariaCurrent="true"
+      to="/login"
+    >
+      Log in
+    </NavLink>
+  </div>
+</div>
+`;
+
+exports[`SideMenu container it should show logout button 1`] = `
+<div
+  className="side-menu"
+>
+  <div
+    className="brand"
+  >
+    <img
+      alt="SANbase"
+      height="22"
+      src="logo_sanbase.png"
+      width="115"
+    />
+  </div>
+  <i
+    className="fa fa-bars fa-2x toggle-btn"
+    data-target="#menu-content"
+    data-toggle="collapse"
+  />
+  <div
+    className="menu-list"
+  >
+    <ul
+      className="menu-content collapse out"
+      id="menu-content"
+    >
+      <li>
+        Dashboard (tbd)
+      </li>
+      <li
+        data-target="#products"
+        data-toggle="collapse"
+      >
+        Data-feeds
+      </li>
+      <ul
+        className="sub-menu"
+        id="products"
+      >
+        <li>
+          Overview (tbd)
+        </li>
+        <li>
+          <NavLink
+            activeClassName="selected"
+            ariaCurrent="true"
+            to="/cashflow"
+          >
+            Cash Flow
+          </NavLink>
+        </li>
+      </ul>
+      <li>
+        Signals
+      </li>
+      <li>
+        Roadmap
+      </li>
+    </ul>
+  </div>
+  <br />
+  <div
+    className="user-auth-control"
+  >
+    You are logged in!
+    <br />
+    <button>
+      Log out
+    </button>
+  </div>
+</div>
+`;

@@ -1,6 +1,7 @@
 import React from 'react'
+import { Redirect } from 'react-router-dom'
 import { connect } from 'react-redux'
-import { graphql } from 'react-apollo'
+import { graphql, withApollo } from 'react-apollo'
 import gql from 'graphql-tag'
 import {
   Message
@@ -35,26 +36,38 @@ export const Login = ({
   changeAccount,
   appLoaded,
   checkMetamask,
-  authWithSAN
-}) => (
-  <div className='wrapper'>
-    <div className='loginContainer'>
-      {user.isLoading && !user.hasMetamask && <div>Loading</div>}
-      {!user.hasMetamask && !user.isLoading &&
-        <Message
-          warning
-          header={'We can\'t detect Metamask!'}
-          list={[
-            'We can auth you with Metamask account. It\'s secure and easy.'
-          ]}
-        />}
-      {user.hasMetamask &&
-        <AuthForm
-          account={user.account}
-          handleAuth={() => requestAuth(user.account, authWithSAN)} />}
+  authWithSAN,
+  client
+}) => {
+  if (user.data.username && user.data.username.length > 0) {
+    return <Redirect to={'/'} />
+  }
+  return (
+    <div className='wrapper'>
+      <div className='loginContainer'>
+        {user.isLoading && !user.hasMetamask && <div>Loading</div>}
+        {!user.hasMetamask && !user.isLoading &&
+          <Message
+            warning
+            header={'We can\'t detect Metamask!'}
+            list={[
+              'We can auth you with Metamask account. It\'s secure and easy.'
+            ]}
+          />}
+        {user.hasMetamask && !user.token &&
+          <AuthForm
+            account={user.account}
+            handleAuth={() => requestAuth(user.account, authWithSAN, client)} />}
+        {user.token &&
+          <div>
+            You are logged in! Redirecting...
+            <Redirect to={'/'} />
+          </div>
+        }
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 Login.propTypes = propTypes
 
@@ -72,21 +85,35 @@ const mapDispatchToProps = dispatch => {
         hasMetamask
       })
     },
-    requestAuth: (account, authWithSAN) => {
+    requestAuth: (account, authWithSAN, client) => {
       signMessage(account).then(({hashMessage, signature}) => {
-        // TODO:
         authWithSAN({variables: {
           signature: signature,
           address: account,
           addressHash: hashMessage}})
         .then(({ data }) => {
-          console.log('data', data)
+          const { token, user } = data.ethLogin
+          dispatch({
+            type: 'SUCCESS_LOGIN',
+            token,
+            username: user.username
+          })
+          // TODO:
+          client.resetStore()
         }).catch((error) => {
+          dispatch({
+            type: 'FAILED_LOGIN',
+            errorMessage: error
+          })
           console.error(error)
         })
       }).catch(error => {
         // TODO: User denied, Account, etc.
         console.log(error)
+        dispatch({
+          type: 'FAILED_LOGIN',
+          errorMessage: error
+        })
       })
     },
     changeAccount: account => {
@@ -109,7 +136,10 @@ const requestAuthGQL = gql`
       signature: $signature,
       address: $address,
       addressHash: $addressHash) {
-        token
+        token,
+        user {
+          username
+        }
       }
 }`
 
@@ -118,7 +148,11 @@ export default compose(
     mapStateToProps,
     mapDispatchToProps
   ),
-  graphql(requestAuthGQL, {name: 'authWithSAN'}),
+  withApollo,
+  graphql(requestAuthGQL, {
+    name: 'authWithSAN',
+    options: { fetchPolicy: 'network-only' }
+  }),
   lifecycle({
     componentDidMount () {
       this.props.checkMetamask(hasMetamask())

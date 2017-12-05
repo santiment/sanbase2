@@ -4,6 +4,7 @@ export const initialState = {
   error: false,
   data: {},
   account: null,
+  token: null,
   hasMetamask: false
 }
 
@@ -30,7 +31,10 @@ export default (state = initialState, action) => {
         pending: false,
         error: false,
         isLoading: false,
-        user: action.user
+        token: action.token,
+        data: {
+          username: action.username
+        }
       }
     case 'PENDING_LOGIN':
       return {
@@ -45,15 +49,18 @@ export default (state = initialState, action) => {
         pending: false,
         error: false,
         isLoading: false,
-        user: {}
+        data: {},
+        token: null
       }
-    case 'SIGNUP_PENDING':
+    case 'FAILED_LOGIN':
       return {
         ...state,
-        pending: true,
-        error: false,
+        pending: false,
+        error: true,
         isLoading: false,
-        user: {}
+        data: {},
+        token: null,
+        errorMessage: action.error
       }
     default:
       return state

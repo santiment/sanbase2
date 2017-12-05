@@ -1749,6 +1749,12 @@ apollo-client@^2.1.0:
   optionalDependencies:
     "@types/async" "2.0.45"
 
+apollo-link-context@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/apollo-link-context/-/apollo-link-context-1.0.2.tgz#e9d7a1a2cfe4e21b17d36a06510d032fb85d715d"
+  dependencies:
+    apollo-link "^1.0.4"
+
 apollo-link-dedup@^1.0.0:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/apollo-link-dedup/-/apollo-link-dedup-1.0.3.tgz#10df05214afb53ffb19c361451f8ae19d1964c83"
@@ -13415,6 +13421,10 @@ redux-thunk@^2.2.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/redux-thunk/-/redux-thunk-2.3.0.tgz#51c2c19a185ed5187aaa9a2d08b666d0d6467622"
   integrity sha512-km6dclyFnmcvxhAcrQV2AkZmPQjzPDjgVlQtR0EQjxZPyJ0BnMf3in1ryuR8A2qU0HldVRfxYXbFSKlI3N7Slw==
+
+redux-persist@^5.4.0:
+  version "5.4.0"
+  resolved "https://registry.yarnpkg.com/redux-persist/-/redux-persist-5.4.0.tgz#a1062313546a9d4ca6f9271464d18f736e8ca394"
 
 redux@^3.7.2:
   version "3.7.2"

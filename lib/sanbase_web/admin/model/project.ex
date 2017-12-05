@@ -1,7 +1,6 @@
 defmodule Sanbase.ExAdmin.Model.Project do
   use ExAdmin.Register
 
-  alias Sanbase.Model
   alias Sanbase.Model.Project
   alias Sanbase.Model.Infrastructure
 
@@ -21,7 +20,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
   end
 
   defp set_project_infrastructure_default(%Project{infrastructure_id: nil}=project) do
-    infrastructure = Model.get_infrastructure("ETH")
+    infrastructure = Infrastructure.get("ETH")
 
     case infrastructure do
       %Infrastructure{id: id} -> Map.put(project, :infrastructure_id, id)

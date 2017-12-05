@@ -28,7 +28,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test:lint:js": "standard | standard-reporter --stylish",
-    "test": "react-scripts test --env=jsdom",
+    "test:js": "react-scripts test --env=jsdom",
+    "test": "npm run test:lint:js && npm run test:js",
     "eject": "react-scripts eject"
   },
   "devDependencies": {

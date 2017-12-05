@@ -8,17 +8,32 @@ import axios from 'axios'
 import { multiClientMiddleware } from 'redux-axios-middleware'
 import ApolloClient from 'apollo-client'
 import { createHttpLink } from 'apollo-link-http'
+import { setContext } from 'apollo-link-context'
 import { InMemoryCache } from 'apollo-cache-inmemory'
 import { ApolloProvider } from 'react-apollo'
 import App from './App'
 import reducers from './reducers/rootReducers.js'
-import registerServiceWorker from './registerServiceWorker'
+import { loadState, saveState } from './utils/localStorage'
+import setAuthorizationToken from './utils/setAuthorizationToken'
+// import registerServiceWorker from './registerServiceWorker'
 import './index.css'
 
 const httpLink = createHttpLink({ uri: 'http://localhost:4000/graphql' })
 
+const authLink = setContext((_, { headers }) => {
+  // get the authentication token from local storage if it exists
+  const token = loadState() ? loadState().token : undefined
+  // return the headers to the context so httpLink can read them
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : null
+    }
+  }
+})
+
 const client = new ApolloClient({
-  link: httpLink,
+  link: authLink.concat(httpLink),
   cache: new InMemoryCache()
 })
 
@@ -31,12 +46,18 @@ const clients = {
   }
 }
 
+loadState() && setAuthorizationToken(loadState().token)
+
 const middleware = [multiClientMiddleware(clients)]
 
 const store = createStore(reducers,
-  {},
+  {user: loadState()} || {},
   composeWithDevTools(applyMiddleware(...middleware))
 )
+
+store.subscribe(() => {
+  saveState(store.getState().user)
+})
 
 ReactDOM.render(
   <ApolloProvider client={client}>
@@ -47,4 +68,4 @@ ReactDOM.render(
     </Provider>
   </ApolloProvider>,
   document.getElementById('root'))
-//registerServiceWorker()
+// registerServiceWorker()

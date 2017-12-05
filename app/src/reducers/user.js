@@ -1,6 +1,5 @@
 export const initialState = {
   isLoading: true,
-  pending: false,
   error: false,
   data: {},
   account: null,
@@ -28,7 +27,6 @@ export default (state = initialState, action) => {
     case 'SUCCESS_LOGIN':
       return {
         ...state,
-        pending: false,
         error: false,
         isLoading: false,
         token: action.token,
@@ -36,17 +34,9 @@ export default (state = initialState, action) => {
           username: action.username
         }
       }
-    case 'PENDING_LOGIN':
-      return {
-        ...state,
-        pending: true,
-        isLoading: false,
-        error: false
-      }
     case 'SUCCESS_LOGOUT':
       return {
         ...state,
-        pending: false,
         error: false,
         isLoading: false,
         data: {},
@@ -55,7 +45,6 @@ export default (state = initialState, action) => {
     case 'FAILED_LOGIN':
       return {
         ...state,
-        pending: false,
         error: true,
         isLoading: false,
         data: {},

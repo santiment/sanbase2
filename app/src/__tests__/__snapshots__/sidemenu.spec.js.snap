@@ -56,7 +56,13 @@ exports[`SideMenu container it should render correctly 1`] = `
         Signals
       </li>
       <li>
-        Roadmap
+        <NavLink
+          activeClassName="selected"
+          ariaCurrent="true"
+          to="/roadmap"
+        >
+          Roadmap
+        </NavLink>
       </li>
     </ul>
   </div>
@@ -131,7 +137,13 @@ exports[`SideMenu container it should show login button 1`] = `
         Signals
       </li>
       <li>
-        Roadmap
+        <NavLink
+          activeClassName="selected"
+          ariaCurrent="true"
+          to="/roadmap"
+        >
+          Roadmap
+        </NavLink>
       </li>
     </ul>
   </div>
@@ -206,7 +218,13 @@ exports[`SideMenu container it should show logout button 1`] = `
         Signals
       </li>
       <li>
-        Roadmap
+        <NavLink
+          activeClassName="selected"
+          ariaCurrent="true"
+          to="/roadmap"
+        >
+          Roadmap
+        </NavLink>
       </li>
     </ul>
   </div>

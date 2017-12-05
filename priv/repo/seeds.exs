@@ -10,27 +10,27 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-alias Sanbase.Model
 alias Sanbase.Model.Project
 alias Sanbase.Model.ProjectEthAddress
 alias Sanbase.Model.ProjectBtcAddress
+alias Sanbase.Model.Infrastructure
 alias Sanbase.Repo
 alias Sanbase.Auth.{User, EthAccount}
 
-infrastructure_eth = Model.get_or_insert_infrastructure("ETH")
+infrastructure_eth = Infrastructure.get_or_insert("ETH")
 
 make_project = fn ({name, ticker, logo_url, coinmarkecap_id, infrastructure_code}) ->
   infrastructure = case infrastructure_code do
     "ETH" -> infrastructure_eth
     nil -> infrastructure_eth
-    _ -> Model.get_or_insert_infrastructure(infrastructure_code)
+    _ -> Infrastructure.get_or_insert(infrastructure_code)
   end
 
   %Project{ name: name,
 	    ticker: ticker,
 	    logo_url: logo_url,
 	    coinmarketcap_id: coinmarkecap_id,
-      infrastructure: infrastructure
+	    infrastructure: infrastructure
   }
 end
 

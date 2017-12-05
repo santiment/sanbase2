@@ -1,7 +1,6 @@
 defmodule Sanbase.ExAdmin.Model.Ico do
   use ExAdmin.Register
 
-  alias Sanbase.Model
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
 
@@ -23,7 +22,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
   end
 
   defp set_ico_cap_currency_default(%Ico{cap_currency_id: nil}=ico) do
-    currency = Model.get_currency("ETH")
+    currency = Currency.get("ETH")
 
     case currency do
       %Currency{id: id} -> Map.put(ico, :cap_currency_id, id)

@@ -23,7 +23,7 @@ describe('SideMenu container', () => {
     const loading = false
     const login = shallow(<SideMenu user={user} loading={loading} />)
     expect(toJson(login)).toMatchSnapshot()
-    expect(login.find('.user-auth-control button').text()).toEqual('Log out')
+    expect(login.find('.user-auth-control a').text()).toEqual('Log out')
   })
 
   it('it should show login button', () => {
@@ -34,6 +34,6 @@ describe('SideMenu container', () => {
     const loading = false
     const login = shallow(<SideMenu user={user} loading={loading} />)
     expect(toJson(login)).toMatchSnapshot()
-    expect(login.find('.user-auth-control NavLink').contains('Log in')).toEqual(true)
+    expect(login.find('.user-auth-control Button').contains('Log in')).toEqual(true)
   })
 })

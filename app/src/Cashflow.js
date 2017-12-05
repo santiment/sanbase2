@@ -121,23 +121,25 @@ export const Cashflow = ({
         NOTE: This app is a prototype. We give no guarantee data is correct as we are in active development.
       </p>
     </div>
-    <ReactTable
-      loading={loading}
-      showPagination={false}
-      showPaginationTop={false}
-      showPaginationBottom={false}
-      sortable={false}
-      resizable
-      defaultSorted={[
-        {
-          id: 'market_cap_usd',
-          desc: true
-        }
-      ]}
-      className='-striped -highlight'
-      data={projects}
-      columns={columns}
-    />
+    <div className='panel'>
+      <ReactTable
+        loading={loading}
+        showPagination={false}
+        showPaginationTop={false}
+        showPaginationBottom={false}
+        sortable={false}
+        resizable
+        defaultSorted={[
+          {
+            id: 'market_cap_usd',
+            desc: true
+          }
+        ]}
+        className='-striped -highlight'
+        data={projects}
+        columns={columns}
+      />
+    </div>
   </div>
 )
 

@@ -1,16 +1,26 @@
 import React from 'react'
 import {
+  withRouter,
+  NavLink as Link
+} from 'react-router-dom'
+import {
   compose,
   pure
 } from 'recompose'
+import {
+  Button
+} from 'semantic-ui-react'
 import { connect } from 'react-redux'
-import { NavLink as Link } from 'react-router-dom'
+import { Icon } from 'react-fa'
+import 'font-awesome/css/font-awesome.css'
 import logo from './assets/logo_sanbase.png'
+import './SideMenu.css'
 
 export const SideMenu = ({
   user,
   loading,
-  logout
+  logout,
+  history
 }) => (
   <div className='side-menu'>
     <div className='brand'>
@@ -20,21 +30,29 @@ export const SideMenu = ({
         height='22'
         alt='SANbase' />
     </div>
-    <i
-      className='fa fa-bars fa-2x toggle-btn'
-      data-toggle='collapse'
-      data-target='#menu-content' />
     <div className='menu-list'>
       <ul id='menu-content' className='menu-content collapse out'>
         <li>
+          <Icon
+            className='toggle-btn'
+            name='home 2x' />
           Dashboard (tbd)
         </li>
-        <li data-toggle='collapse' data-target='#products'>
+        <li>
+          <Icon
+            name='list 2x' />
           Data-feeds
         </li>
         <ul className='sub-menu' id='products'>
-          <li>Overview (tbd)</li>
           <li>
+            <Icon
+              name='circle' />
+            Overview (tbd)
+          </li>
+          <li
+            onClick={() => history.push('/cashflow')}>
+            <Icon
+              name='circle' />
             <Link
               activeClassName='selected'
               to='/cashflow'>
@@ -42,10 +60,16 @@ export const SideMenu = ({
             </Link>
           </li>
         </ul>
-        <li>
+        <li
+          onClick={() => history.push('/signals')}>
+          <Icon
+            name='th 2x' />
           Signals
         </li>
-        <li>
+        <li
+          onClick={() => history.push('/roadmap')}>
+          <Icon
+            name='comment-o 2x' />
           <Link
             activeClassName='selected'
             to='/roadmap'>
@@ -54,22 +78,21 @@ export const SideMenu = ({
         </li>
       </ul>
     </div>
-
-    <br />
-
     {user.username
       ? <div className='user-auth-control'>
         You are logged in!
         <br />
-        <button
-          onClick={logout}>
+        <a href='#' onClick={logout}>
           Log out
-        </button>
+        </a>
       </div>
       : <div className='user-auth-control'>
-        <Link to={'/login'}>
+        <Button
+          basic
+          color='green'
+          onClick={() => history.push('/login')}>
           Log in
-        </Link>
+        </Button>
       </div>
       }
   </div>
@@ -97,6 +120,7 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  withRouter,
   pure
 )
 

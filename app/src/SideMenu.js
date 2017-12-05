@@ -46,7 +46,11 @@ export const SideMenu = ({
           Signals
         </li>
         <li>
-          Roadmap
+          <Link
+            activeClassName='selected'
+            to='/roadmap'>
+            Roadmap
+          </Link>
         </li>
       </ul>
     </div>

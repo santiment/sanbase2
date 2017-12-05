@@ -7,6 +7,7 @@ export const hasMetamask = () => {
 export const setupWeb3 = cbk => {
   if (!window.web3) { return }
   const web3 = new Web3(window.web3.currentProvider) // eslint-disable-line
+  // Why the interval method here? ==> https://github.com/MetaMask/faq/blob/master/DEVELOPERS.md
   setInterval(() => {
     const selectedAccount = web3.eth.accounts[0]
     if (prevSelectedAccount !== selectedAccount) {

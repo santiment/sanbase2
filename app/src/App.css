@@ -36,4 +36,13 @@
 .page {
   flex: 1;
   padding: 0 15px;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.page h1 {
+  font-size: 32px;
+  font-weight: 400;
+  margin: 32px 0 32px 16px;
+  color: #171717;
 }

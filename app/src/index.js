@@ -15,7 +15,6 @@ import App from './App'
 import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
-// import registerServiceWorker from './registerServiceWorker'
 import './index.css'
 
 const httpLink = createHttpLink({ uri: 'http://localhost:4000/graphql' })
@@ -68,4 +67,3 @@ ReactDOM.render(
     </Provider>
   </ApolloProvider>,
   document.getElementById('root'))
-// registerServiceWorker()

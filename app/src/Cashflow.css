@@ -1,16 +1,3 @@
-.cashflow {
-  height: 100vh;
-  overflow-y: auto;
-  padding-bottom: 15px;
-}
-
-.cashflow h1 {
-  font-size: 32px;
-  font-weight: 400;
-  margin: 32px 0 32px 16px;
-  color: #171717;
-}
-
 .cashflow-head {
   margin-bottom: 1em;
 }

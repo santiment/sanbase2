@@ -14,11 +14,6 @@ exports[`SideMenu container it should render correctly 1`] = `
       width="115"
     />
   </div>
-  <i
-    className="fa fa-bars fa-2x toggle-btn"
-    data-target="#menu-content"
-    data-toggle="collapse"
-  />
   <div
     className="menu-list"
   >
@@ -27,12 +22,18 @@ exports[`SideMenu container it should render correctly 1`] = `
       id="menu-content"
     >
       <li>
+        <Icon
+          Component="span"
+          className="toggle-btn"
+          name="home 2x"
+        />
         Dashboard (tbd)
       </li>
-      <li
-        data-target="#products"
-        data-toggle="collapse"
-      >
+      <li>
+        <Icon
+          Component="span"
+          name="list 2x"
+        />
         Data-feeds
       </li>
       <ul
@@ -40,9 +41,19 @@ exports[`SideMenu container it should render correctly 1`] = `
         id="products"
       >
         <li>
+          <Icon
+            Component="span"
+            name="circle"
+          />
           Overview (tbd)
         </li>
-        <li>
+        <li
+          onClick={[Function]}
+        >
+          <Icon
+            Component="span"
+            name="circle"
+          />
           <NavLink
             activeClassName="selected"
             ariaCurrent="true"
@@ -52,10 +63,22 @@ exports[`SideMenu container it should render correctly 1`] = `
           </NavLink>
         </li>
       </ul>
-      <li>
+      <li
+        onClick={[Function]}
+      >
+        <Icon
+          Component="span"
+          name="th 2x"
+        />
         Signals
       </li>
-      <li>
+      <li
+        onClick={[Function]}
+      >
+        <Icon
+          Component="span"
+          name="comment-o 2x"
+        />
         <NavLink
           activeClassName="selected"
           ariaCurrent="true"
@@ -66,17 +89,17 @@ exports[`SideMenu container it should render correctly 1`] = `
       </li>
     </ul>
   </div>
-  <br />
   <div
     className="user-auth-control"
   >
-    <NavLink
-      activeClassName="active"
-      ariaCurrent="true"
-      to="/login"
+    <Button
+      as="button"
+      basic={true}
+      color="green"
+      onClick={[Function]}
     >
       Log in
-    </NavLink>
+    </Button>
   </div>
 </div>
 `;
@@ -95,11 +118,6 @@ exports[`SideMenu container it should show login button 1`] = `
       width="115"
     />
   </div>
-  <i
-    className="fa fa-bars fa-2x toggle-btn"
-    data-target="#menu-content"
-    data-toggle="collapse"
-  />
   <div
     className="menu-list"
   >
@@ -108,12 +126,18 @@ exports[`SideMenu container it should show login button 1`] = `
       id="menu-content"
     >
       <li>
+        <Icon
+          Component="span"
+          className="toggle-btn"
+          name="home 2x"
+        />
         Dashboard (tbd)
       </li>
-      <li
-        data-target="#products"
-        data-toggle="collapse"
-      >
+      <li>
+        <Icon
+          Component="span"
+          name="list 2x"
+        />
         Data-feeds
       </li>
       <ul
@@ -121,9 +145,19 @@ exports[`SideMenu container it should show login button 1`] = `
         id="products"
       >
         <li>
+          <Icon
+            Component="span"
+            name="circle"
+          />
           Overview (tbd)
         </li>
-        <li>
+        <li
+          onClick={[Function]}
+        >
+          <Icon
+            Component="span"
+            name="circle"
+          />
           <NavLink
             activeClassName="selected"
             ariaCurrent="true"
@@ -133,10 +167,22 @@ exports[`SideMenu container it should show login button 1`] = `
           </NavLink>
         </li>
       </ul>
-      <li>
+      <li
+        onClick={[Function]}
+      >
+        <Icon
+          Component="span"
+          name="th 2x"
+        />
         Signals
       </li>
-      <li>
+      <li
+        onClick={[Function]}
+      >
+        <Icon
+          Component="span"
+          name="comment-o 2x"
+        />
         <NavLink
           activeClassName="selected"
           ariaCurrent="true"
@@ -147,17 +193,17 @@ exports[`SideMenu container it should show login button 1`] = `
       </li>
     </ul>
   </div>
-  <br />
   <div
     className="user-auth-control"
   >
-    <NavLink
-      activeClassName="active"
-      ariaCurrent="true"
-      to="/login"
+    <Button
+      as="button"
+      basic={true}
+      color="green"
+      onClick={[Function]}
     >
       Log in
-    </NavLink>
+    </Button>
   </div>
 </div>
 `;
@@ -176,11 +222,6 @@ exports[`SideMenu container it should show logout button 1`] = `
       width="115"
     />
   </div>
-  <i
-    className="fa fa-bars fa-2x toggle-btn"
-    data-target="#menu-content"
-    data-toggle="collapse"
-  />
   <div
     className="menu-list"
   >
@@ -189,12 +230,18 @@ exports[`SideMenu container it should show logout button 1`] = `
       id="menu-content"
     >
       <li>
+        <Icon
+          Component="span"
+          className="toggle-btn"
+          name="home 2x"
+        />
         Dashboard (tbd)
       </li>
-      <li
-        data-target="#products"
-        data-toggle="collapse"
-      >
+      <li>
+        <Icon
+          Component="span"
+          name="list 2x"
+        />
         Data-feeds
       </li>
       <ul
@@ -202,9 +249,19 @@ exports[`SideMenu container it should show logout button 1`] = `
         id="products"
       >
         <li>
+          <Icon
+            Component="span"
+            name="circle"
+          />
           Overview (tbd)
         </li>
-        <li>
+        <li
+          onClick={[Function]}
+        >
+          <Icon
+            Component="span"
+            name="circle"
+          />
           <NavLink
             activeClassName="selected"
             ariaCurrent="true"
@@ -214,10 +271,22 @@ exports[`SideMenu container it should show logout button 1`] = `
           </NavLink>
         </li>
       </ul>
-      <li>
+      <li
+        onClick={[Function]}
+      >
+        <Icon
+          Component="span"
+          name="th 2x"
+        />
         Signals
       </li>
-      <li>
+      <li
+        onClick={[Function]}
+      >
+        <Icon
+          Component="span"
+          name="comment-o 2x"
+        />
         <NavLink
           activeClassName="selected"
           ariaCurrent="true"
@@ -228,15 +297,16 @@ exports[`SideMenu container it should show logout button 1`] = `
       </li>
     </ul>
   </div>
-  <br />
   <div
     className="user-auth-control"
   >
     You are logged in!
     <br />
-    <button>
+    <a
+      href="#"
+    >
       Log out
-    </button>
+    </a>
   </div>
 </div>
 `;

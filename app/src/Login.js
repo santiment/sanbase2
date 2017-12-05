@@ -98,7 +98,6 @@ const mapDispatchToProps = dispatch => {
             token,
             username: user.username
           })
-          // TODO:
           client.resetStore()
         }).catch((error) => {
           dispatch({
@@ -108,7 +107,9 @@ const mapDispatchToProps = dispatch => {
           console.error(error)
         })
       }).catch(error => {
-        // TODO: User denied, Account, etc.
+        // TODO: 2017-12-05 16:05 | Yura Zatsepin:
+        // Remove console.error.
+        // Added User denied, Account error messages in UI
         console.log(error)
         dispatch({
           type: 'FAILED_LOGIN',
@@ -156,9 +157,7 @@ export default compose(
   lifecycle({
     componentDidMount () {
       this.props.checkMetamask(hasMetamask())
-      setTimeout(() => {
-        this.props.appLoaded()
-      }, 1000)
+      this.props.appLoaded()
       setupWeb3((error, account) => {
         if (!error && this.props.account !== account) {
           this.props.changeAccount(account)

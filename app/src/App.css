@@ -43,6 +43,23 @@
 .page h1 {
   font-size: 32px;
   font-weight: 400;
+  font-family: 'Source Sans Pro', sans-serif;
   margin: 32px 0 32px 16px;
+  line-height: 51px;
   color: #171717;
+  margin-bottom: 0.5rem;
+}
+
+.page-head p {
+  margin-left: 16px;
+  margin-bottom: 30px;
+}
+
+.panel {
+  background-color: #fff;
+  box-shadow: 0 0 3px rgba(0,0,0,0.1);
+  border-radius: 2px;
+  border: 1px solid #e2edeb;
+  padding: 16px;
+  margin: 16px;
 }

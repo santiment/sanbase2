@@ -1,10 +1,13 @@
 import React from 'react'
+import './Roadmap.css'
 
 const Roadmap = props => {
   return (
     <div className='page roadmap'>
-      <h1>SANbase Roadmap</h1>
-      <p>Please see our SANbase roadmap below. It is a living document; milestones may adjust.' </p>
+      <div className='page-head'>
+        <h1>SANbase Roadmap</h1>
+        <p>Please see our SANbase roadmap below. It is a living document; milestones may adjust.</p>
+      </div>
       <div className='row vert-stretch'>
         <div className='col-12 vert-full'>
           <div className='panel vert-full'>
@@ -50,7 +53,9 @@ const Roadmap = props => {
                       <span className='status'>
                         <div className='status-percent'>30%</div>
                         <div className='status-border'>
-                          <div className='status-progress' />
+                          <div
+                            style={{width: '30%'}}
+                            className='status-progress' />
                         </div>
                       </span>
                     </div>
@@ -62,7 +67,9 @@ const Roadmap = props => {
                           <span className='status'>
                             <div className='status-percent'>10%</div>
                             <div className='status-border'>
-                              <div className='status-progress' />
+                              <div
+                                style={{width: '10%'}}
+                                className='status-progress' />
                             </div>
                           </span>
                         </div>
@@ -73,7 +80,9 @@ const Roadmap = props => {
                           <span className='status'>
                             <div className='status-percent'>10%</div>
                             <div className='status-border'>
-                              <div className='status-progress' />
+                              <div
+                                style={{width: '10%'}}
+                                className='status-progress' />
                             </div>
                           </span>
                         </div>
@@ -89,7 +98,9 @@ const Roadmap = props => {
                               <span className='status'>
                                 <div className='status-percent'>80%</div>
                                 <div className='status-border'>
-                                  <div className='status-progress' />
+                                  <div
+                                    style={{width: '80%'}}
+                                    className='status-progress' />
                                 </div>
                               </span>
                             </div>
@@ -135,7 +146,9 @@ const Roadmap = props => {
                           <span className='status'>
                             <div className='status-percent'>25%</div>
                             <div className='status-border'>
-                              <div className='status-progress' />
+                              <div
+                                style={{width: '25%'}}
+                                className='status-progress' />
                             </div>
                           </span>
                         </div>

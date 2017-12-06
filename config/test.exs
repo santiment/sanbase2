@@ -84,6 +84,12 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: "myapikey"
 
 
+config :faktory_worker_ex,
+  client: [
+    pool: 0,
+  ],
+  start_workers: false
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

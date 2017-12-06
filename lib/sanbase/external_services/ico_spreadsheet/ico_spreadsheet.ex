@@ -7,7 +7,6 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   plug Tesla.Middleware.JSON
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger
-  plug Tesla.Middleware.Timeout, timeout: 100000
 
   alias Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow
 

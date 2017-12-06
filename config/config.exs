@@ -170,16 +170,20 @@ config :sanbase, Sanbase.Auth.Ethauth,
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
 
+config :sanbase, Sanbase.Github,
+  database: "github_activity"
+
 config :faktory_worker_ex,
   host: "localhost",
   port: 7419,
   client: [
-    pool: 10,
+    pool: 5,
   ],
   worker: [
-    concurrency: 20,
-    queues: ["greeter"],
-  ]
+    concurrency: 5,
+    queues: ["github_activity"],
+  ],
+  start_workers: true
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

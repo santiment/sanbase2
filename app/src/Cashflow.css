@@ -5,3 +5,55 @@
 .cashflow-head p {
   text-align: right;
 }
+
+.datatables-filter {
+  width: 40%;
+  float: right;
+}
+
+.row {
+  overflow: hidden;
+  width: 100%;
+}
+
+.datatables-filter label {
+  width: 100%;
+  margin-bottom: .5rem;
+  display: inline-block;
+}
+
+.datatables-filter input {
+  width: 100%;
+  margin-left: 0;
+  padding: 8px;
+  line-height: 1.25;
+  color: #464a4c;
+  border: 1px solid rgba(0,0,0,.15);
+  background-clip: padding-box;
+  outline-offset: -2px;
+  overflow: visible;
+  font-size: .875rem;
+  border-radius: .2rem;
+}
+
+.datatables-filter input:focus {
+  color: #464a4c;
+  background-color: #fff;
+  border-color: #5cb3fd;
+  outline: 0;
+}
+
+.rt-thead.-filters {
+  display: none;
+}
+
+.datatables-info {
+  width: 60%;
+  float: left;
+}
+
+.datatables-info label {
+  font-size: 12px;
+  margin-bottom: 16px;
+  display: inline-block;
+}

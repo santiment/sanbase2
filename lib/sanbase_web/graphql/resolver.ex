@@ -12,8 +12,8 @@ defmodule SanbaseWeb.Graphql.Resolver do
 
   def current_user(_root, _args, _context), do: {:ok, nil}
 
-  def eth_login(%{signature: signature, address: address, address_hash: address_hash} = args, _resolution) do
-    with true <- Ethauth.verify_signature(signature, address, address_hash),
+  def eth_login(%{signature: signature, address: address, message_hash: message_hash} = args, _resolution) do
+    with true <- Ethauth.verify_signature(signature, address, message_hash),
     {:ok, user} <- fetch_user(args, Repo.get_by(EthAccount, address: address)),
     {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
       {:ok, %{user: user, token: token}}

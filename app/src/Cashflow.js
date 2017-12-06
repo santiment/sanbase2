@@ -60,6 +60,17 @@ const formatMarketCapProject = cap => {
   }
 }
 
+const getFilter = search => {
+  if(search !== null) {
+    return [{
+          id: 'project',
+          value: search
+        }]
+  } else {
+    return []
+  }
+}
+
 const columns = [{
   Header: 'Project',
   id: 'project',
@@ -73,6 +84,9 @@ const columns = [{
   filterMethod: (filter, row) => {
     return row[filter.id].name.toLowerCase().indexOf(filter.value) !== -1 ||
       row[filter.id].ticker.toLowerCase().indexOf(filter.value) !== -1
+  },
+  Filter: ({filter, onChange}) => {
+    return
   }
 }, {
   Header: 'Market Cap',
@@ -110,7 +124,10 @@ const columns = [{
 
 export const Cashflow = ({
   projects,
-  loading
+  loading,
+  onSearch,
+  search,
+  visibleItems
 }) => (
   <div className='page cashflow'>
     <div className='cashflow-head'>
@@ -122,6 +139,18 @@ export const Cashflow = ({
       </p>
     </div>
     <div className='panel'>
+      <div className='row'>
+        <div className="datatables-info">
+          <label>
+            Showing {visibleItems} of {projects.length} entries
+          </label>
+        </div>
+        <div className='datatables-filter'>
+          <label>
+            <input placeholder='Search' onBlur={onSearch}/>
+          </label>
+        </div>
+      </div>
       <ReactTable
         loading={loading}
         showPagination={false}
@@ -138,6 +167,7 @@ export const Cashflow = ({
         className='-striped -highlight'
         data={projects}
         columns={columns}
+        filtered={getFilter(search)}
       />
     </div>
   </div>
@@ -146,7 +176,9 @@ export const Cashflow = ({
 const mapStateToProps = state => {
   return {
     projects: state.projects.items,
-    loading: state.projects.loading
+    loading: state.projects.loading,
+    search: state.projects.search.value,
+    visibleItems: state.projects.search.visibleItems
   }
 }
 
@@ -160,6 +192,14 @@ const mapDispatchToProps = dispatch => {
           request: {
             url: `/cashflow`
           }
+        }
+      })
+    },
+    onSearch: (event) => {
+      dispatch({
+        type: 'SET_SEARCH',
+        payload: {
+          search: event.target.value.toLowerCase()
         }
       })
     }

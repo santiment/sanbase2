@@ -17,6 +17,9 @@ defmodule Sanbase.Application do
       # Time series DB connection
       Sanbase.Prices.Store.child_spec,
 
+      # Time series DB connection
+      Sanbase.Github.Store.child_spec,
+
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :etherscan_rate_limiter,

@@ -13,14 +13,24 @@
 alias Sanbase.Model.Project
 alias Sanbase.Model.ProjectEthAddress
 alias Sanbase.Model.ProjectBtcAddress
+alias Sanbase.Model.Infrastructure
 alias Sanbase.Repo
 alias Sanbase.Auth.{User, EthAccount}
 
-make_project = fn ({name, ticker, logo_url, coinmarkecap_id}) ->
+infrastructure_eth = Infrastructure.get_or_insert("ETH")
+
+make_project = fn ({name, ticker, logo_url, coinmarkecap_id, infrastructure_code}) ->
+  infrastructure = case infrastructure_code do
+    "ETH" -> infrastructure_eth
+    nil -> infrastructure_eth
+    _ -> Infrastructure.get_or_insert(infrastructure_code)
+  end
+
   %Project{ name: name,
 	    ticker: ticker,
 	    logo_url: logo_url,
-	    coinmarketcap_id: coinmarkecap_id
+	    coinmarketcap_id: coinmarkecap_id,
+	    infrastructure: infrastructure
   }
 end
 
@@ -48,34 +58,34 @@ end
 # Old Sanbase projects
 ########################################
 [
-  {"EOS","EOS","eos.png","eos"},
-  {"Golem","GNT","golem.png","golem-network-tokens"},
-  {"Iconomi","ICN","iconomi.png","iconomi"},
-  {"Gnosis","GNO","gnosis.png","gnosis-gno"},
-  {"Status","SNT","status.png","status"},
-  {"TenX","PAY","tenx.png","tenx"},
-  {"Basic Attention Token","BAT","basic-attention-token.png","basic-attention-token"},
-  {"Populous","PPT","populous.png","populous"},
-  {"DigixDAO","DGD","digixdao.png","digixdao"},
-  {"Bancor","BNT","bancor.png","bancor"},
-  {"MobileGo","MGO","mobilego.png","mobilego"},
-  {"Aeternity","AE","aeternity.png","aeternity"},
-  {"SingularDTV","SNGLS","singulardtv.png","singulardtv"},
-  {"Civic","CVC","civic.png","civic"},
-  {"Aragon","ANT","aragon.png","aragon"},
-  {"FirstBlood","1ST","firstblood.png","firstblood"},
-  {"Etheroll","DICE","etheroll.png","etheroll"},
-  {"Melon","MLN","melon.png","melon"},
-  {"iExec RLC","RLC","rlc.png","rlc"},
-  {"Stox","STX","stox.png","stox"},
-  {"Humaniq","HMQ","humaniq.png","humaniq"},
-  {"Polybius","PLBT","polybius.png","polybius"},
-  {"Santiment","SAN","santiment.png","santiment"},
-  {"district0x","DNT","district0x.png","district0x"},
-  {"DAO.Casino","BET","dao-casino.png","dao-casino"},
-  {"Centra","CTR","centra.png","centra"},
-  {"Tierion","TNT","tierion.png","tierion"},
-  {"Matchpool","GUP","guppy.png","guppy"}
+  {"EOS","EOS","eos.png","eos","ETH"},
+  {"Golem","GNT","golem.png","golem-network-tokens","ETH"},
+  {"Iconomi","ICN","iconomi.png","iconomi","ETH"},
+  {"Gnosis","GNO","gnosis.png","gnosis-gno","ETH"},
+  {"Status","SNT","status.png","status","ETH"},
+  {"TenX","PAY","tenx.png","tenx","ETH"},
+  {"Basic Attention Token","BAT","basic-attention-token.png","basic-attention-token","ETH"},
+  {"Populous","PPT","populous.png","populous","ETH"},
+  {"DigixDAO","DGD","digixdao.png","digixdao","ETH"},
+  {"Bancor","BNT","bancor.png","bancor","ETH"},
+  {"MobileGo","MGO","mobilego.png","mobilego","ETH"},
+  {"Aeternity","AE","aeternity.png","aeternity","ETH"},
+  {"SingularDTV","SNGLS","singulardtv.png","singulardtv","ETH"},
+  {"Civic","CVC","civic.png","civic","ETH"},
+  {"Aragon","ANT","aragon.png","aragon","ETH"},
+  {"FirstBlood","1ST","firstblood.png","firstblood","ETH"},
+  {"Etheroll","DICE","etheroll.png","etheroll","ETH"},
+  {"Melon","MLN","melon.png","melon","ETH"},
+  {"iExec RLC","RLC","rlc.png","rlc","ETH"},
+  {"Stox","STX","stox.png","stox","ETH"},
+  {"Humaniq","HMQ","humaniq.png","humaniq","ETH"},
+  {"Polybius","PLBT","polybius.png","polybius","ETH"},
+  {"Santiment","SAN","santiment.png","santiment","ETH"},
+  {"district0x","DNT","district0x.png","district0x","ETH"},
+  {"DAO.Casino","BET","dao-casino.png","dao-casino","ETH"},
+  {"Centra","CTR","centra.png","centra","ETH"},
+  {"Tierion","TNT","tierion.png","tierion","ETH"},
+  {"Matchpool","GUP","guppy.png","guppy","ETH"}
 ]
 |> Enum.map(make_project)
 |> Enum.each(&Repo.insert!/1)
@@ -120,19 +130,20 @@ end
 #######################################
 
 [
-  %Project{ ticker: "Cofound.it", name: "CFI", logo_url: "cofound-it.png", coinmarketcap_id: "cofound-it"},
-  %Project{ ticker: "DAP", name: "Dappbase" },
-  %Project{ ticker: "DNA", name: "Encrypgen", coinmarketcap_id: "encrypgen" },
-  %Project{ ticker: "RSC", name: "Etherisc" },
-  %Project{ ticker: "EXP/LAB", name: "Expanse/Tokenlab", logo_url: "expanse.png", coinmarketcap_id: "expanse" },
-  %Project{ ticker: "GAT", name: "Gatcoin.io" },
-  %Project{ ticker: "HSR", name: "Hshare", coinmarketcap_id: "hshare", logo_url: "hshare.png" },
-  %Project{ ticker: "IND", name: "Indorse", coinmarketcap_id: "indorse-token", logo_url: "indorse-token.png" },
-  %Project{ ticker: "LKK", name: "Lykke", coinmarketcap_id: "lykke", logo_url: "lykke.png" },
-  %Project{ ticker: "ART", name: "Maecenas", coinmarketcap_id: "maecenas", logo_url: "maecenas.png" },
-  %Project{ ticker: "MCI", name: "Musiconomi", coinmarketcap_id: "musiconomi", logo_url: "musiconomi.png" },
-  %Project{ ticker: "VIC", name: "Virgil Capital" }
+  {"CFI","Cofound.it","cofound-it.png","cofound-it","ETH"},
+  {"Dappbase","DAP",nil,nil,"ETH"},
+  {"Encrypgen","DNA",nil,"encrypgen","ETH"},
+  {"Etherisc","RSC",nil,nil,"ETH"},
+  {"Expanse/Tokenlab","EXP/LAB","expanse.png","expanse","ETH"},
+  {"Gatcoin.ioCFI","GAT",nil,nil,"ETH"},
+  {"Hshare","HSR","hshare.png","hshare","ETH"},
+  {"Indorse","IND","indorse-token.png","indorse-token","ETH"},
+  {"Lykke","LKK","lykke.png","lykke","ETH"},
+  {"Maecenas","ART","maecenas.png","maecenas","ETH"},
+  {"Musiconomi","MCI","musiconomi.png","musiconomi","ETH"},
+  {"Virgil Capital","VIC",nil,nil,"ETH"}
 ]
+|> Enum.map(make_project)
 |> Enum.each(&Repo.insert!/1)
 
 

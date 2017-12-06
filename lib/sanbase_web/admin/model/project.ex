@@ -6,6 +6,17 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
   register_resource Sanbase.Model.Project do
 
+    show project do
+      attributes_table
+      panel "Icos" do
+        table_for project.icos do
+          column :id, link: true
+          column :start_date
+          column :end_date
+        end
+      end
+    end
+
     controller do
       # doc: https://hexdocs.pm/ex_admin/ExAdmin.Register.html#after_filter/2
       after_filter :set_defaults, only: [:new]

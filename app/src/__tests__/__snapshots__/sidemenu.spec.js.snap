@@ -14,93 +14,18 @@ exports[`SideMenu container it should render correctly 1`] = `
       width="115"
     />
   </div>
-  <div
-    className="menu-list"
-  >
-    <ul
-      className="menu-content collapse out"
-      id="menu-content"
-    >
-      <li>
-        <Icon
-          Component="span"
-          className="toggle-btn"
-          name="home 2x"
-        />
-        Dashboard (tbd)
-      </li>
-      <li>
-        <Icon
-          Component="span"
-          name="list 2x"
-        />
-        Data-feeds
-      </li>
-      <ul
-        className="sub-menu"
-        id="products"
-      >
-        <li>
-          <Icon
-            Component="span"
-            name="circle"
-          />
-          Overview (tbd)
-        </li>
-        <li
-          onClick={[Function]}
-        >
-          <Icon
-            Component="span"
-            name="circle"
-          />
-          <NavLink
-            activeClassName="selected"
-            ariaCurrent="true"
-            to="/cashflow"
-          >
-            Cash Flow
-          </NavLink>
-        </li>
-      </ul>
-      <li
-        onClick={[Function]}
-      >
-        <Icon
-          Component="span"
-          name="th 2x"
-        />
-        Signals
-      </li>
-      <li
-        onClick={[Function]}
-      >
-        <Icon
-          Component="span"
-          name="comment-o 2x"
-        />
-        <NavLink
-          activeClassName="selected"
-          ariaCurrent="true"
-          to="/roadmap"
-        >
-          Roadmap
-        </NavLink>
-      </li>
-    </ul>
-  </div>
-  <div
-    className="user-auth-control"
-  >
-    <Button
-      as="button"
-      basic={true}
-      color="green"
-      onClick={[Function]}
-    >
-      Log in
-    </Button>
-  </div>
+  <AppMenu
+    handleNavigation={[Function]}
+  />
+  <AuthControl
+    login={[Function]}
+    user={
+      Object {
+        "token": null,
+        "username": null,
+      }
+    }
+  />
 </div>
 `;
 
@@ -118,93 +43,18 @@ exports[`SideMenu container it should show login button 1`] = `
       width="115"
     />
   </div>
-  <div
-    className="menu-list"
-  >
-    <ul
-      className="menu-content collapse out"
-      id="menu-content"
-    >
-      <li>
-        <Icon
-          Component="span"
-          className="toggle-btn"
-          name="home 2x"
-        />
-        Dashboard (tbd)
-      </li>
-      <li>
-        <Icon
-          Component="span"
-          name="list 2x"
-        />
-        Data-feeds
-      </li>
-      <ul
-        className="sub-menu"
-        id="products"
-      >
-        <li>
-          <Icon
-            Component="span"
-            name="circle"
-          />
-          Overview (tbd)
-        </li>
-        <li
-          onClick={[Function]}
-        >
-          <Icon
-            Component="span"
-            name="circle"
-          />
-          <NavLink
-            activeClassName="selected"
-            ariaCurrent="true"
-            to="/cashflow"
-          >
-            Cash Flow
-          </NavLink>
-        </li>
-      </ul>
-      <li
-        onClick={[Function]}
-      >
-        <Icon
-          Component="span"
-          name="th 2x"
-        />
-        Signals
-      </li>
-      <li
-        onClick={[Function]}
-      >
-        <Icon
-          Component="span"
-          name="comment-o 2x"
-        />
-        <NavLink
-          activeClassName="selected"
-          ariaCurrent="true"
-          to="/roadmap"
-        >
-          Roadmap
-        </NavLink>
-      </li>
-    </ul>
-  </div>
-  <div
-    className="user-auth-control"
-  >
-    <Button
-      as="button"
-      basic={true}
-      color="green"
-      onClick={[Function]}
-    >
-      Log in
-    </Button>
-  </div>
+  <AppMenu
+    handleNavigation={[Function]}
+  />
+  <AuthControl
+    login={[Function]}
+    user={
+      Object {
+        "token": "",
+        "username": "",
+      }
+    }
+  />
 </div>
 `;
 
@@ -222,91 +72,17 @@ exports[`SideMenu container it should show logout button 1`] = `
       width="115"
     />
   </div>
-  <div
-    className="menu-list"
-  >
-    <ul
-      className="menu-content collapse out"
-      id="menu-content"
-    >
-      <li>
-        <Icon
-          Component="span"
-          className="toggle-btn"
-          name="home 2x"
-        />
-        Dashboard (tbd)
-      </li>
-      <li>
-        <Icon
-          Component="span"
-          name="list 2x"
-        />
-        Data-feeds
-      </li>
-      <ul
-        className="sub-menu"
-        id="products"
-      >
-        <li>
-          <Icon
-            Component="span"
-            name="circle"
-          />
-          Overview (tbd)
-        </li>
-        <li
-          onClick={[Function]}
-        >
-          <Icon
-            Component="span"
-            name="circle"
-          />
-          <NavLink
-            activeClassName="selected"
-            ariaCurrent="true"
-            to="/cashflow"
-          >
-            Cash Flow
-          </NavLink>
-        </li>
-      </ul>
-      <li
-        onClick={[Function]}
-      >
-        <Icon
-          Component="span"
-          name="th 2x"
-        />
-        Signals
-      </li>
-      <li
-        onClick={[Function]}
-      >
-        <Icon
-          Component="span"
-          name="comment-o 2x"
-        />
-        <NavLink
-          activeClassName="selected"
-          ariaCurrent="true"
-          to="/roadmap"
-        >
-          Roadmap
-        </NavLink>
-      </li>
-    </ul>
-  </div>
-  <div
-    className="user-auth-control"
-  >
-    You are logged in!
-    <br />
-    <a
-      href="#"
-    >
-      Log out
-    </a>
-  </div>
+  <AppMenu
+    handleNavigation={[Function]}
+  />
+  <AuthControl
+    login={[Function]}
+    user={
+      Object {
+        "token": "asdfasdfi",
+        "username": "user",
+      }
+    }
+  />
 </div>
 `;

@@ -6,14 +6,17 @@ import {
 import withSizes from 'react-sizes'
 import './App.css'
 import Login from './Login'
-import Cashflow from './Cashflow'
-import Roadmap from './Roadmap'
-import Signals from './Signals'
-import SideMenu from './SideMenu'
+import Cashflow from './pages/Cashflow'
+import Roadmap from './pages/Roadmap'
+import Signals from './pages/Signals'
+import SideMenu from './components/SideMenu'
+import MobileMenu from './components/MobileMenu'
 
 export const App = ({isDesktop}) => (
   <div className='App'>
-    {isDesktop && <SideMenu />}
+    {isDesktop
+      ? <SideMenu />
+      : <MobileMenu />}
     <Switch>
       <Route exact path='/cashflow' component={Cashflow} />
       <Route exact path='/roadmap' component={Roadmap} />

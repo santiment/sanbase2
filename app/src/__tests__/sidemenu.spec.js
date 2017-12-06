@@ -2,7 +2,7 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 import toJson from 'enzyme-to-json'
-import { SideMenu } from './../SideMenu'
+import { SideMenu } from './../components/SideMenu'
 
 describe('SideMenu container', () => {
   it('it should render correctly', () => {
@@ -23,7 +23,6 @@ describe('SideMenu container', () => {
     const loading = false
     const login = shallow(<SideMenu user={user} loading={loading} />)
     expect(toJson(login)).toMatchSnapshot()
-    expect(login.find('.user-auth-control a').text()).toEqual('Log out')
   })
 
   it('it should show login button', () => {
@@ -34,6 +33,5 @@ describe('SideMenu container', () => {
     const loading = false
     const login = shallow(<SideMenu user={user} loading={loading} />)
     expect(toJson(login)).toMatchSnapshot()
-    expect(login.find('.user-auth-control Button').contains('Log in')).toEqual(true)
   })
 })

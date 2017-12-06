@@ -8,7 +8,7 @@ import {
 } from 'recompose'
 import 'react-table/react-table.css'
 import moment from 'moment'
-import { formatNumber } from './utils/formatting'
+import { formatNumber } from '../utils/formatting'
 import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')

@@ -17,9 +17,14 @@ import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import './index.css'
+let withTracker = null
+if (process.env.NODE_ENV === 'production') {
+  withTracker = require('./withTracker')
+}
 
-const httpLink = createHttpLink({ uri: 'http://localhost:4000/graphql' })
+const origin = process.env.WEBSITE_URL || 'http://localhost:4000'
 
+const httpLink = createHttpLink({ uri: `${origin}/graphql` })
 const authLink = setContext((_, { headers }) => {
   // get the authentication token from local storage if it exists
   const token = loadState() ? loadState().token : undefined
@@ -40,7 +45,7 @@ const client = new ApolloClient({
 const clients = {
   sanbaseClient: {
     client: axios.create({
-      baseURL: 'http://localhost:4000/api',
+      baseURL: `${origin}/api`,
       responseType: 'json'
     })
   }
@@ -84,11 +89,13 @@ store.subscribe(() => {
   saveState(store.getState().user)
 })
 
+const Application = withTracker ? withTracker(App) : App
+
 ReactDOM.render(
   <ApolloProvider client={client}>
     <Provider store={store}>
       <Router>
-        <Route path='/' component={App} />
+        <Route path='/' component={Application} />
       </Router>
     </Provider>
   </ApolloProvider>,

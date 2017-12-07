@@ -16,6 +16,7 @@ const ProjectIcon = ({name, size}) => {
   return (
     <img
       width={size}
+      alt={name}
       height={size}
       src={imgSource} />
   )

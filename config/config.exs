@@ -38,7 +38,8 @@ config :sanbase, Sanbase.Prices.Store,
 config :sanbase, Sanbase.Github.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [ max_overflow: 10, size: 20 ]
+  pool: [ max_overflow: 10, size: 20 ],
+  database: "github_activity"
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
@@ -100,9 +101,6 @@ config :sanbase, Sanbase.Auth.Ethauth,
   url: {:system, "ETHAUTH_URL"},
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
-
-config :sanbase, Sanbase.Github,
-  database: "github_activity"
 
 config :faktory_worker_ex,
   host: "localhost",

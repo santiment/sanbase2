@@ -14,13 +14,13 @@ defmodule Sanbase.Github.Store do
     |> Stream.map(&convert_measurement_for_import/1)
     |> Stream.chunk_every(288) # 1 day of 5 min resolution data
     |> Enum.map(fn data_for_import ->
-      :ok = Store.write(data_for_import, database: database())
+      :ok = Store.write(data_for_import)
     end)
   end
 
   def last_price_datetime(ticker) do
     ~s/SELECT LAST(price) FROM "#{ticker}"/
-    |> Store.query(database: database())
+    |> Store.query()
     |> parse_last_price_datetime
   end
 
@@ -51,7 +51,7 @@ defmodule Sanbase.Github.Store do
 
   def drop_ticker(ticker) do
     %{results: _} = "DROP MEASUREMENT #{ticker}"
-    |> Store.execute(database: database())
+    |> Store.execute()
   end
 
   defp create_db do

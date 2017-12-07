@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import ReactTable from 'react-table'
 import { connect } from 'react-redux'
 import {
@@ -77,6 +78,7 @@ const columns = [{
   id: 'project',
   filterable: true,
   sortable: true,
+  width: 350,
   accessor: d => ({
     name: d.name,
     ticker: d.ticker
@@ -95,8 +97,9 @@ const columns = [{
   Header: 'Market Cap',
   id: 'market_cap_usd',
   sortable: true,
+  minWidth: 150,
   accessor: 'market_cap_usd',
-  Cell: props => <span>{formatMarketCapProject(props.value)}</span>, // Custom cell components!
+  Cell: props => <span className='market-cap'>{formatMarketCapProject(props.value)}</span>, // Custom cell components!
   sortMethod: (a, b) => {
     const _a = parseInt(a, 10)
     const _b = parseInt(b, 10)
@@ -108,6 +111,7 @@ const columns = [{
 }, {
   Header: 'Balance (USD/ETH)',
   id: 'balance',
+  minWidth: 250,
   accessor: d => ({
     ethPrice: d.ethPrice,
     wallets: d.wallets
@@ -136,16 +140,26 @@ export const Cashflow = ({
     <div className='cashflow-head'>
       <h1>Cash Flow</h1>
       <p>
-        brought to you by Santiment
+        brought to you by <a href='https://santiment.net' target='_blank'>Santiment</a>
         <br />
-        NOTE: This app is a prototype. We give no guarantee data is correct as we are in active development.
+        NOTE: This app is a prototype.
+        We give no guarantee data is correct as we are in active development.
       </p>
     </div>
     <div className='panel'>
       <div className='row'>
         <div className='datatables-info'>
           <label>
-            Showing {(tableInfo.visibleItems !== 0) ? (tableInfo.page - 1) * tableInfo.pageSize + 1 : 0} to {tableInfo.page * tableInfo.pageSize} of {tableInfo.visibleItems} entries (filtered from {projects.length} total entries)
+            Showing {
+              (tableInfo.visibleItems !== 0)
+                ? (tableInfo.page - 1) * tableInfo.pageSize + 1
+                : 0
+            } to {
+              tableInfo.page * tableInfo.pageSize
+            } of {tableInfo.visibleItems}
+            &nbsp;entries&nbsp;
+            {tableInfo.visibleItems !== projects.length &&
+              `(filtered from ${projects.length} total entries)`}
           </label>
         </div>
         <div className='datatables-filter'>
@@ -159,6 +173,7 @@ export const Cashflow = ({
         showPagination={false}
         showPaginationTop={false}
         showPaginationBottom={false}
+        defaultPageSize={projects.items ? projects.items.length : 32}
         sortable={false}
         resizable
         defaultSorted={[
@@ -167,7 +182,7 @@ export const Cashflow = ({
             desc: true
           }
         ]}
-        className='-striped -highlight'
+        className='-highlight'
         data={projects}
         columns={columns}
         filtered={getFilter(search)}

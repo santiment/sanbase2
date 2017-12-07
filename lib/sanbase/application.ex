@@ -11,6 +11,8 @@ defmodule Sanbase.Application do
       Envy.auto_load()
     end
 
+    Faktory.Configuration.init
+
     # Define workers and child supervisors to be supervised
     children =
       [

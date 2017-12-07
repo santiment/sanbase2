@@ -7,6 +7,7 @@ import { composeWithDevTools } from 'redux-devtools-extension'
 import axios from 'axios'
 import { multiClientMiddleware } from 'redux-axios-middleware'
 import ApolloClient from 'apollo-client'
+import gql from 'graphql-tag'
 import { createHttpLink } from 'apollo-link-http'
 import { setContext } from 'apollo-link-context'
 import { InMemoryCache } from 'apollo-cache-inmemory'
@@ -54,7 +55,32 @@ const store = createStore(reducers,
   composeWithDevTools(applyMiddleware(...middleware))
 )
 
+client.query({
+  query: gql`
+    query {
+      currentUser {
+        id,
+        email,
+        username,
+        ethAccounts{
+          address,
+          sanBalance
+        }
+      }
+    }
+  `
+})
+.then(response => {
+  store.dispatch({
+    type: 'CHANGE_USER_DATA',
+    user: response.data.currentUser
+  })
+})
+.catch(error => console.error(error))
+
 store.subscribe(() => {
+  // TODO: Yura Zatsepin: 2017-12-07 11:23:
+  // we need add throttle when save action was hapenned
   saveState(store.getState().user)
 })
 

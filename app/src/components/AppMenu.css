@@ -1,4 +1,4 @@
-.menu-list ul {
+ul.menu-list  {
   margin-top: 24px;
   padding: 0;
   list-style: none;
@@ -34,7 +34,7 @@
 
 .menu-list .sub-menu li {
   margin: 0;
-  padding-left: 48px;
+  padding-left: 8px;
 }
 
 .menu-list .sub-menu li:hover {
@@ -46,14 +46,4 @@
   margin-right: 10px;
 }
 
-.user-auth-control {
-  padding-left: 20px;
-}
 
-.user-auth-control a {
-  cursor: pointer;
-}
-
-.user-auth-control button {
-  width: 90%;
-}

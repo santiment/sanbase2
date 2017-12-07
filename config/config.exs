@@ -170,9 +170,6 @@ config :sanbase, Sanbase.Auth.Ethauth,
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
 
-config :sanbase, Sanbase.Github,
-  database: "github_activity"
-
 config :faktory_worker_ex,
   host: "localhost",
   port: 7419,

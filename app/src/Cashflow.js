@@ -61,11 +61,11 @@ const formatMarketCapProject = cap => {
 }
 
 const getFilter = search => {
-  if(search !== null) {
+  if (search !== null) {
     return [{
-          id: 'project',
-          value: search
-        }]
+      id: 'project',
+      value: search
+    }]
   } else {
     return []
   }
@@ -85,9 +85,7 @@ const columns = [{
     return row[filter.id].name.toLowerCase().indexOf(filter.value) !== -1 ||
       row[filter.id].ticker.toLowerCase().indexOf(filter.value) !== -1
   },
-  Filter: ({filter, onChange}) => {
-    return
-  }
+  Filter: ({filter, onChange}) => {}
 }, {
   Header: 'Market Cap',
   id: 'market_cap_usd',
@@ -127,7 +125,7 @@ export const Cashflow = ({
   loading,
   onSearch,
   search,
-  visibleItems
+  tableInfo
 }) => (
   <div className='page cashflow'>
     <div className='cashflow-head'>
@@ -140,14 +138,14 @@ export const Cashflow = ({
     </div>
     <div className='panel'>
       <div className='row'>
-        <div className="datatables-info">
+        <div className='datatables-info'>
           <label>
-            Showing {visibleItems} of {projects.length} entries
+            Showing {(tableInfo.visibleItems !== 0) ? (tableInfo.page - 1) * tableInfo.pageSize + 1 : 0} to {tableInfo.page * tableInfo.pageSize} of {tableInfo.visibleItems} entries (filtered from {projects.length} total entries)
           </label>
         </div>
         <div className='datatables-filter'>
           <label>
-            <input placeholder='Search' onBlur={onSearch}/>
+            <input placeholder='Search' onKeyUp={onSearch} />
           </label>
         </div>
       </div>
@@ -177,8 +175,8 @@ const mapStateToProps = state => {
   return {
     projects: state.projects.items,
     loading: state.projects.loading,
-    search: state.projects.search.value,
-    visibleItems: state.projects.search.visibleItems
+    search: state.projects.search,
+    tableInfo: state.projects.tableInfo
   }
 }
 

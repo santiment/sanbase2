@@ -18,26 +18,6 @@ defmodule Sanbase.Github.Store do
     end)
   end
 
-  def last_price_datetime(ticker) do
-    ~s/SELECT LAST(price) FROM "#{ticker}"/
-    |> Store.query()
-    |> parse_last_price_datetime
-  end
-
-  defp parse_last_price_datetime(%{
-    results: [%{
-      series: [%{
-        values: [[iso8601_datetime, _price]]
-      }]
-    }]
-  }) do
-    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-
-    datetime
-  end
-
-  defp parse_last_price_datetime(_), do: nil
-
   defp convert_measurement_for_import(%Measurement{timestamp: timestamp, fields: fields, tags: tags, name: name}) do
     %{
       points: [%{

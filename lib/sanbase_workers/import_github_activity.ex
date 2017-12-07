@@ -19,7 +19,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     Temp.track!
 
     datetime = archive
-    |> Timex.parse!("%Y-%m-%d-%-k", :strftime)
+    |> Timex.parse!("%Y-%m-%d-%k", :strftime)
     |> Timex.to_datetime
 
     orgs = Github.available_projects

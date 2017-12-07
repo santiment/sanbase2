@@ -110,5 +110,8 @@ spec:
           - name: PORT
             value: "4000"
 
+          - name: FAKTORY_HOST
+            value: faktory-faktory
+
           - name: FAKTORY_WORKERS_ENABLED
             value: 1

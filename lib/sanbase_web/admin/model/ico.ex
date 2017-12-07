@@ -14,14 +14,25 @@ defmodule Sanbase.ExAdmin.Model.Ico do
 
   def set_defaults(conn, params, resource, :new) do
     resource = resource
-    |> set_ico_cap_currency_default()
-    |> set_ico_start_date_default()
-    |> set_ico_end_date_default()
+    |> set_cap_currency_default()
+    |> set_start_date_default()
+    |> set_end_date_default()
+    |> set_project_default(params)
 
     {conn, params, resource}
   end
 
-  defp set_ico_cap_currency_default(%Ico{cap_currency_id: nil}=ico) do
+  defp set_project_default(%Ico{project_id: nil}=ico, params) do
+    Map.get(params, :project_id, nil)
+    |> case do
+      nil -> ico
+      project_id -> Map.put(ico, :project_id, project_id)
+    end
+  end
+
+  defp set_project_default(%Ico{}=ico), do: ico
+
+  defp set_cap_currency_default(%Ico{cap_currency_id: nil}=ico) do
     currency = Currency.get("ETH")
 
     case currency do
@@ -30,17 +41,17 @@ defmodule Sanbase.ExAdmin.Model.Ico do
     end
   end
 
-  defp set_ico_cap_currency_default(%Ico{}=ico), do: ico
+  defp set_cap_currency_default(%Ico{}=ico), do: ico
 
-  defp set_ico_start_date_default(%Ico{start_date: nil}=ico) do
+  defp set_start_date_default(%Ico{start_date: nil}=ico) do
     Map.put(ico, :start_date, Ecto.Date.utc())
   end
 
-  defp set_ico_start_date_default(%Ico{}=ico), do: ico
+  defp set_start_date_default(%Ico{}=ico), do: ico
 
-  defp set_ico_end_date_default(%Ico{end_date: nil}=ico) do
+  defp set_end_date_default(%Ico{end_date: nil}=ico) do
     Map.put(ico, :end_date, Ecto.Date.utc())
   end
 
-  defp set_ico_end_date_default(%Ico{}=ico), do: ico
+  defp set_end_date_default(%Ico{}=ico), do: ico
 end

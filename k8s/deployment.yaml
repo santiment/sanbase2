@@ -103,6 +103,9 @@ spec:
       containers:
       - name: sanbase-workers
         image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp-volume
         env:
           - name: DATABASE_URL
             valueFrom:
@@ -121,3 +124,9 @@ spec:
 
           - name: FAKTORY_WORKERS_ENABLED
             value: 1
+
+          - name: TMP
+            value: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

@@ -9,6 +9,7 @@ import {
 import 'react-table/react-table.css'
 import moment from 'moment'
 import { formatNumber } from '../utils/formatting'
+import ProjectIcon from './../components/ProjectIcon'
 import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
@@ -80,7 +81,11 @@ const columns = [{
     name: d.name,
     ticker: d.ticker
   }),
-  Cell: ({value}) => <div>{value.name} ({value.ticker})</div>,
+  Cell: ({value}) => (
+    <div>
+      <ProjectIcon name={value.name} /> {value.name} ({value.ticker})
+    </div>
+  ),
   filterMethod: (filter, row) => {
     return row[filter.id].name.toLowerCase().indexOf(filter.value) !== -1 ||
       row[filter.id].ticker.toLowerCase().indexOf(filter.value) !== -1

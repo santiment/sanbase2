@@ -582,14 +582,6 @@ babel-plugin-jest-hoist@^21.2.0:
   version "21.2.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-jest-hoist/-/babel-plugin-jest-hoist-21.2.0.tgz#2cef637259bd4b628a6cace039de5fcd14dbb006"
 
-babel-plugin-module-resolver@2.5.0:
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/babel-plugin-module-resolver/-/babel-plugin-module-resolver-2.5.0.tgz#a1204b4aeada066e8afb9b9f9c43e238d73d41bb"
-  dependencies:
-    find-babel-config "^1.0.1"
-    glob "^7.1.1"
-    resolve "^1.2.0"
-
 babel-plugin-module-resolver@2.7.1:
   version "2.7.1"
   resolved "https://registry.yarnpkg.com/babel-plugin-module-resolver/-/babel-plugin-module-resolver-2.7.1.tgz#18be3c42ddf59f7a456c9e0512cd91394f6e4be1"

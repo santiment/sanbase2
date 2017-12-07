@@ -15,6 +15,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   # TODO: import each row in transaction
   # TODO: log & return errors
   defp import_row(ico_spreadsheet_row = %IcoSpreadsheetRow{}) do
+    ico_spreadsheet_row = ico_spreadsheet_row
+    |> set_infrastructure_default()
+
     project = fill_project(ico_spreadsheet_row)
     |> Ecto.Changeset.put_assoc(:market_segment, ensure_market_segment(ico_spreadsheet_row.market_segment))
     |> Ecto.Changeset.put_assoc(:infrastructure, ensure_infrastructure(ico_spreadsheet_row.infrastructure))
@@ -69,7 +72,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp ensure_project(project_name) do
     Repo.get_by(Project, name: project_name)
-    |> Repo.preload([:eth_addresses, :btc_addresses, :market_segment, :infrastructure, {:ico, [:currencies, :cap_currency]}])
+    |> Repo.preload([:eth_addresses, :btc_addresses, :market_segment, :infrastructure, {:icos, [:currencies, :cap_currency]}])
     |> case do
       result = %Project{} -> result
       nil -> %Project{}
@@ -123,4 +126,10 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
         |> Currency.changeset(%{code: currency_code})
     end
   end
+
+  defp set_infrastructure_default(ico_spreadsheet_row = %IcoSpreadsheetRow{infrastructure: nil}) do
+    Map.put(ico_spreadsheet_row, :infrastructure, "ETH")
+  end
+
+  defp set_infrastructure_default(%IcoSpreadsheetRow{}=ico_spreadsheet_row), do: ico_spreadsheet_row
 end

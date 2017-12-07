@@ -1,5 +1,4 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import ReactTable from 'react-table'
 import { connect } from 'react-redux'
 import {
@@ -45,7 +44,10 @@ const formatBalanceWallet = ({wallets, ethPrice}) => {
       <div className='wallet' key={index}>
         <div className='usd first'>{formatNumber((balance * ethPrice), 'USD')}</div>
         <div className='eth'>
-          <a className='address' href={'https://etherscan.io/address/' + wallet.address} target='_blank'>Ξ{ balance.toLocaleString('en-US') }
+          <a
+            className='address'
+            href={'https://etherscan.io/address/' + wallet.address}
+            target='_blank'>Ξ{ balance.toLocaleString('en-US') }
             <i className='fa fa-external-link' />
           </a>
         </div>
@@ -140,7 +142,10 @@ export const Cashflow = ({
     <div className='cashflow-head'>
       <h1>Cash Flow</h1>
       <p>
-        brought to you by <a href='https://santiment.net' target='_blank'>Santiment</a>
+        brought to you by <a
+          href='https://santiment.net'
+          rel='noopener noreferrer'
+          target='_blank'>Santiment</a>
         <br />
         NOTE: This app is a prototype.
         We give no guarantee data is correct as we are in active development.

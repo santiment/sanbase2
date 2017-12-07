@@ -43,7 +43,7 @@ export const Login = ({
     return <Redirect to={'/'} />
   }
   return (
-    <div className='wrapper'>
+    <div className='page wrapper'>
       <div className='loginContainer'>
         {user.isLoading && !user.hasMetamask && <div>Loading</div>}
         {!user.hasMetamask && !user.isLoading &&
@@ -96,7 +96,7 @@ const mapDispatchToProps = dispatch => {
           dispatch({
             type: 'SUCCESS_LOGIN',
             token,
-            username: user.username
+            user
           })
           client.resetStore()
         }).catch((error) => {
@@ -139,7 +139,13 @@ const requestAuthGQL = gql`
       addressHash: $addressHash) {
         token,
         user {
-          username
+          id,
+          email,
+          username,
+          ethAccounts {
+            address,
+            sanBalance
+          }
         }
       }
 }`

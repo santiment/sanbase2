@@ -6,30 +6,7 @@
 }
 
 .roadmap li {
-    vertical-align: middle;
-}
-
-.roadmap h1 {
-  font-size: 32px;
-  font-weight: 400;
-  margin-left: 16px;
-  margin-top: 32px;
-  line-height: inherit;
-  color: #171717;
-}
-
-.roadmap h2 {
-  font-size: 24px;
-  font-weight: 300;
-  line-height: inherit;
-  color: #171717;
-}
-
-.roadmap h3 {
-  font-size: 21px;
-  font-weight: 300;
-  line-height: inherit;
-  color: #171717;
+  vertical-align: middle;
 }
 
 .roadmap a {
@@ -100,6 +77,10 @@
   }
 }
 
+.past {
+  color: #888;
+}
+
 .entry.past .title:before {
   content: '';
   position: absolute;
@@ -166,10 +147,10 @@
 }
 
 @media (max-width: 767px) {
-  .body {
-      float: none;
-      width: inherit;
-      padding-left: 40px;
+  .entry .body {
+    float: none;
+    width: inherit;
+    padding-left: 40px;
   }
 }
 
@@ -181,7 +162,7 @@
   margin: 0;
 }
 
-.body:first-child {
+.entry .body:first-child {
   margin-top: 0;
   font-weight: 400;
 }

@@ -9,6 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   use GenServer, restart: :permanent, shutdown: 5_000
 
   import Ecto.Query
+  import Sanbase.Utils, only: [parse_config_value: 1]
 
   require Sanbase.Utils.Config, as: Config
   require Logger
@@ -159,5 +160,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       datetime ->
         datetime
     end
+  end
+
+  defp get_config(key, default \\ nil) do
+    Keyword.get(config(), key, default)
+    |> parse_config_value()
   end
 end

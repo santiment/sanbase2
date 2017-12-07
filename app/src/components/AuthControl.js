@@ -3,6 +3,7 @@ import {
   Button
 } from 'semantic-ui-react'
 import './AuthControl.css'
+import { formatNumber } from './../utils/formatting.js'
 
 const Balance = ({user}) => {
   return (
@@ -14,8 +15,7 @@ const Balance = ({user}) => {
           {account.address}
         </div>
         <div className='account-balance'>
-          <span>SAN: </span>
-          <span>{account.sanBalance}</span>
+          {formatNumber(account.sanBalance, 'SAN')}
         </div>
       </div>
     ))}</div>

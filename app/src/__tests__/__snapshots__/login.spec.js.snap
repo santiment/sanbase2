@@ -2,7 +2,7 @@
 
 exports[`Login container it should render any loader while not loaded 1`] = `
 <div
-  className="wrapper"
+  className="page wrapper"
 >
   <div
     className="loginContainer"
@@ -16,7 +16,7 @@ exports[`Login container it should render any loader while not loaded 1`] = `
 
 exports[`Login container it should render correctly 1`] = `
 <div
-  className="wrapper"
+  className="page wrapper"
 >
   <div
     className="loginContainer"
@@ -60,7 +60,7 @@ exports[`Login container it should render message with metamask user account add
   }
 >
   <div
-    className="wrapper"
+    className="page wrapper"
   >
     <div
       className="loginContainer"

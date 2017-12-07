@@ -57,7 +57,7 @@ defmodule Sanbase.Mixfile do
       {:guardian, "~> 1.0"},
       {:absinthe_ecto, "~> 0.1.0"},
       {:absinthe_plug, "~> 1.3.0"},
-      {:faktory_worker_ex, git: "https://github.com/santiment/faktory_worker_ex"},
+      {:faktory_worker_ex, git: "https://github.com/santiment/faktory_worker_ex", runtime: false},
       {:temp, "~> 0.4"},
       {:httpoison, "~> 0.13"}
     ]

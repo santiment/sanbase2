@@ -31,7 +31,7 @@ export default (state = initialState, action) => {
         isLoading: false,
         token: action.token,
         data: {
-          username: action.username
+          ...action.user
         }
       }
     case 'SUCCESS_LOGOUT':
@@ -39,6 +39,7 @@ export default (state = initialState, action) => {
         ...state,
         error: false,
         isLoading: false,
+        account: null,
         data: {},
         token: null
       }
@@ -50,6 +51,13 @@ export default (state = initialState, action) => {
         data: {},
         token: null,
         errorMessage: action.error
+      }
+    case 'CHANGE_USER_DATA':
+      return {
+        ...state,
+        data: {
+          ...action.user
+        }
       }
     default:
       return state

@@ -1,9 +1,5 @@
 defmodule SanbaseWorkers.ImportGithubActivity do
   use Faktory.Job
-  use Tesla
-
-  plug Tesla.Middleware.BaseUrl, "http://data.githubarchive.org"
-  plug Tesla.Middleware.Logger
 
   require Logger
 
@@ -38,13 +34,31 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   defp download(archive) do
     {:ok, temp_filepath} = Temp.path(%{prefix: archive, suffix: ".json.gz"})
 
+    output_file = File.open!(temp_filepath, [:write, :delayed_write])
+
     Logger.info("Downloading archive #{archive} to #{temp_filepath}")
 
-    %Tesla.Env{status: 200, body: body} = get(archive <> ".json.gz")
+    %HTTPoison.AsyncResponse{id: request_ref} = HTTPoison.get!(@github_archive <> archive <> ".json.gz", %{}, stream_to: self(), recv_timeout: 60_000)
 
-    File.write!(temp_filepath, body)
+    :ok = stream_loop(request_ref, output_file)
+
+    File.close(output_file)
 
     temp_filepath
+  end
+
+  defp stream_loop(request_ref, output_file) do
+    receive do
+      %HTTPoison.AsyncStatus{id: ^request_ref, code: 200} ->
+        stream_loop(request_ref, output_file)
+      %HTTPoison.AsyncHeaders{id: ^request_ref} ->
+        stream_loop(request_ref, output_file)
+      %HTTPoison.AsyncEnd{id: ^request_ref} ->
+        :ok
+      %HTTPoison.AsyncChunk{chunk: data, id: ^request_ref} ->
+        :ok = IO.binwrite(output_file, data)
+        stream_loop(request_ref, output_file)
+    end
   end
 
   defp reduce_to_counts(stream, orgs) do

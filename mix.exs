@@ -20,7 +20,7 @@ defmodule Sanbase.Mixfile do
   def application do
     [
       mod: {Sanbase.Application, []},
-      extra_applications: [:logger, :runtime_tools, :inets, :sasl],
+      extra_applications: [:logger, :runtime_tools, :sasl],
     ]
   end
 
@@ -59,6 +59,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe_plug, "~> 1.3.0"},
       {:faktory_worker_ex, git: "https://github.com/santiment/faktory_worker_ex"},
       {:temp, "~> 0.4"},
+      {:httpoison, "~> 0.13"}
     ]
   end
 

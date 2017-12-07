@@ -3,10 +3,12 @@ export const initialState = {
   error: false,
   ethPrice: null,
   items: [],
-  search: {
-    value: null,
-    visibleItems: 0
-  }
+  tableInfo: {
+    visibleItems: 0,
+    pageSize: 0,
+    page: 1
+  },
+  search: null
 }
 
 export default (state = initialState, action) => {
@@ -27,9 +29,10 @@ export default (state = initialState, action) => {
         error: false,
         items: items,
         ethPrice: action.payload.data.eth_price,
-        search: {
-          value: null,
-          visibleItems: items.length
+        tableInfo: {
+          visibleItems: items.length,
+          pageSize: items.length,
+          page: 1
         }
       }
     case 'FAILED_PROJECTS':
@@ -46,10 +49,12 @@ export default (state = initialState, action) => {
 
       return {
         ...state,
-        search: {
-          value: action.payload.search,
-          visibleItems: visibleItems
-        }
+        tableInfo: {
+          visibleItems: visibleItems,
+          pageSize: visibleItems,
+          page: 1
+        },
+        search: action.payload.search
       }
     default:
       return state

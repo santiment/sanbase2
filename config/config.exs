@@ -75,16 +75,16 @@ config :tesla, adapter: :hackney
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
-  sync_enabled: true,
+  sync_enabled: {:system, "COINMARKETCAP_PRICES_ENABLED", false},
   database: "prices"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
   update_interval: 5 * 1000 * 60,
-  sync_enabled: true
+  sync_enabled: {:system, "COINMARKETCAP_TICKERS_ENABLED", false}
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
   update_interval: 5 * 1000 * 60, # 5 minutes
-  sync_enabled: true
+  sync_enabled: {:system, "ETHERSCAN_CRAWLER_ENABLED", false}
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY"}

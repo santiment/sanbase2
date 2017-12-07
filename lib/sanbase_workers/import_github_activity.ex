@@ -14,7 +14,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
   @github_archive "http://data.githubarchive.org/"
 
-  faktory_options queue: "github_activity", retry: -1, reserve_for: 60
+  faktory_options queue: "github_activity", retry: -1, reserve_for: 300
 
   import Ecto.Query
 
@@ -22,7 +22,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     Temp.track!
 
     datetime = archive
-    |> Timex.parse!("%Y-%m-%d-%H", :strftime)
+    |> Timex.parse!("%Y-%m-%d-%k", :strftime)
     |> Timex.to_datetime
 
     orgs = Project

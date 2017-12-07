@@ -41,7 +41,7 @@ defmodule Sanbase.Github.Store do
   end
 
   defp database() do
-    Application.fetch_env!(:sanbase, Sanbase.Github)
+    Application.fetch_env!(:sanbase, Sanbase.Github.Store)
     |> Keyword.get(:database)
   end
 end

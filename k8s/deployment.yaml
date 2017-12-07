@@ -65,3 +65,50 @@ spec:
               secretKeyRef:
                 name: sanbase-env
                 key: notificationsChannel
+
+          - name: COINMARKETCAP_PRICES_ENABLED
+            value: 1
+
+          - name: COINMARKETCAP_TICKERS_ENABLED
+            value: 1
+
+          - name: ETHERSCAN_CRAWLER_ENABLED
+            value: 1
+
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: sanbase-workers
+  labels:
+    app: sanbase-workers
+    branch: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sanbase-workers
+      branch: master
+  template:
+    metadata:
+      labels:
+        app: sanbase-workers
+        branch: master
+    spec:
+      containers:
+      - name: sanbase-workers
+        image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+        env:
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: databaseUrl
+
+          - name: INFLUXDB_HOST
+            value: "influxdb-influxdb"
+
+          - name: PORT
+            value: "4000"
+
+          - name: FAKTORY_WORKERS_ENABLED
+            value: 1

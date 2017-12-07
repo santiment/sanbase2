@@ -16,7 +16,11 @@ class SideMenu extends Component {
   render = () => {
     return (
       <div className='nav-side-menu'>
-        <div className='brand'><img src='/static/cashflow/img/logo_sanbase.png' width='115' height='22' alt='SANbase' /></div>
+        <div className='brand'>
+          <Link href='/'>
+            <a><img src='/static/cashflow/img/logo_sanbase.png' width='115' height='22' alt='SANbase' /></a>
+          </Link>
+        </div>
         <i className='fa fa-bars fa-2x toggle-btn' data-toggle='collapse' data-target='#menu-content' />
         <div className='menu-list'>
           <ul id='menu-content' className='menu-content collapse out'>

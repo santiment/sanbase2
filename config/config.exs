@@ -112,7 +112,7 @@ config :faktory_worker_ex,
     concurrency: 5,
     queues: ["github_activity"],
   ],
-  start_workers: true
+  start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

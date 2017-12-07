@@ -7,6 +7,7 @@ defmodule Sanbase.Notifications.CheckPrices do
   alias Sanbase.Notifications.CheckPrices.ComputeMovements
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
+  import Sanbase.Utils, only: [parse_config_value: 1]
 
   @http_service Mockery.of("Tesla")
 
@@ -61,11 +62,6 @@ defmodule Sanbase.Notifications.CheckPrices do
     |> Keyword.get(:notification_channel)
     |> parse_config_value()
   end
-
-  defp parse_config_value({:system, env_key, default}), do: System.get_env(env_key) || default
-  defp parse_config_value({:system, env_key}), do: System.get_env(env_key)
-
-  defp parse_config_value(value), do: value
 
   defp notification_emoji(price_difference) when price_difference > 0, do: ":signal_up:"
   defp notification_emoji(price_difference) when price_difference < 0, do: ":signal_down:"

@@ -8,26 +8,21 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   require Logger
 
   alias Sanbase.Model.Project
+  alias Sanbase.Github
   alias Sanbase.Github.Store
   alias Sanbase.Github.Measurement
-  alias Sanbase.Repo
-
   @github_archive "http://data.githubarchive.org/"
 
   faktory_options queue: "github_activity", retry: -1, reserve_for: 300
-
-  import Ecto.Query
 
   def perform(archive) do
     Temp.track!
 
     datetime = archive
-    |> Timex.parse!("%Y-%m-%d-%k", :strftime)
+    |> Timex.parse!("%Y-%m-%d-%-k", :strftime)
     |> Timex.to_datetime
 
-    orgs = Project
-    |> where([p], not is_nil(p.github_link) and not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
-    |> Repo.all
+    orgs = Github.available_projects
     |> Enum.map(&get_project_org/1)
     |> Map.new()
 

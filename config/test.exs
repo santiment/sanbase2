@@ -49,6 +49,9 @@ config :faktory_worker_ex,
   ],
   start_workers: false
 
+config :sanbase, Sanbase.Github.Store,
+  database: "github_activity_test"
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

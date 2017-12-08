@@ -49,6 +49,17 @@ defmodule Sanbase.Model.Ico do
       :token_btc_ico_price
     ])
     |> validate_required([:project_id])
+    |> add_currencies(attrs)
+  end
+
+  def add_currencies(changeset, attrs) do
+    if Enum.count(Map.get(attrs, :currencys, [])) > 0 do # deliberately is currencys - ex_admin puts that
+      ids = attrs[:currencys]
+      currencies = Sanbase.Repo.all(from c in Currency, where: c.id in ^ids)
+      put_assoc(changeset, :currencies, currencies)
+    else
+      changeset
+    end
   end
 
   @doc false

@@ -16,11 +16,17 @@ defmodule Sanbase.Application do
       # Start the endpoint when the application starts
       supervisor(SanbaseWeb.Endpoint, []),
 
-      # Time series DB connection
-      Sanbase.Prices.Store.child_spec,
+      # Start the Faktory supervisor
+      supervisor(Faktory.Supervisor, []),
 
-      # Time series DB connection
-      Sanbase.Github.Store.child_spec,
+      # Time series Prices DB connection
+      Sanbase.Prices.Store.child_spec(),
+
+      # Time sereies TwitterData DB connection
+      Sanbase.ExternalServices.TwitterData.Store.child_spec(),
+
+      # Time series Github DB connection
+      Sanbase.Github.Store.child_spec(),
 
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
@@ -52,6 +58,14 @@ defmodule Sanbase.Application do
         scale: 60_000,
         limit: 20,
         time_between_requests: 2000
+      ),
+
+      # Twitter API rate limiter
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :twitter_api_rate_limiter,
+        scale: 60 * 15 * 1000,
+        limit: 900,
+        time_between_requests: 10
       ),
 
       # Price fetcher

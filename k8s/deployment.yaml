@@ -69,6 +69,9 @@ items:
                   name: sanbase-env
                   key: notificationsChannel
 
+            - name: FAKTORY_HOST
+              value: faktory-faktory
+
             - name: ETHAUTH_URL
               valueFrom:
                 secretKeyRef:

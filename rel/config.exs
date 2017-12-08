@@ -51,7 +51,8 @@ release :sanbase do
     :sanbase,
     :exactor,
     :phoenix_html,
-    :inets
+    :inets,
+    :faktory_worker_ex
   ]
   set pre_start_hook: "rel/commands/migrate.sh"
 end

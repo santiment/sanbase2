@@ -9,6 +9,10 @@ use Mix.Config
 config :sanbase,
   ecto_repos: [Sanbase.Repo]
 
+config :sanbase, Sanbase.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  pool_size: 5
+
 # Configures the endpoint
 config :sanbase, SanbaseWeb.Endpoint,
   url: [host: "localhost"],

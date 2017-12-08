@@ -64,10 +64,6 @@ config :logger, level: :info
 #
 #     config :sanbase, SanbaseWeb.Endpoint, server: true
 #
-
-config :sanbase, Sanbase.Repo,
-  adapter: Ecto.Adapters.Postgres
-
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,

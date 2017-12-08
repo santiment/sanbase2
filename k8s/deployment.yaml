@@ -4,24 +4,24 @@ items:
 - apiVersion: apps/v1beta1
   kind: Deployment
   metadata:
-    name: sanbase-master
+    name: sanbase-web
     labels:
-      app: sanbase
+      app: sanbase-web
       branch: master
   spec:
     replicas: 1
     selector:
       matchLabels:
-        app: sanbase
+        app: sanbase-web
         branch: master
     template:
       metadata:
         labels:
-          app: sanbase
+          app: sanbase-web
           branch: master
       spec:
         containers:
-        - name: sanbase-master
+        - name: sanbase-web
           image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
           env:
             - name: DATABASE_URL

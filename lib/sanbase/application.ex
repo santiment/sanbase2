@@ -6,6 +6,8 @@ defmodule Sanbase.Application do
   def start(_type, _args) do
     import Supervisor.Spec
 
+    Faktory.Configuration.init
+
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Ecto repository
@@ -16,6 +18,9 @@ defmodule Sanbase.Application do
 
       # Time series DB connection
       Sanbase.Prices.Store.child_spec,
+
+      # Time series DB connection
+      Sanbase.Github.Store.child_spec,
 
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
@@ -57,6 +62,8 @@ defmodule Sanbase.Application do
 
       # Etherscan wallet tracking worker
       Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),
+
+      supervisor(Faktory.Supervisor, []),
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

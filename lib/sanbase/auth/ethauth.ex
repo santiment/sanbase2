@@ -1,6 +1,8 @@
 defmodule Sanbase.Auth.Ethauth do
   use Tesla
 
+  import Sanbase.Utils, only: [parse_config_value: 1]
+
   def verify_signature(signature, address, address_hash) do
     %Tesla.Env{status: 200, body: body} = get(client(), "auth-check", query: [addr: address, sign: signature, hash: address_hash])
 
@@ -32,10 +34,6 @@ defmodule Sanbase.Auth.Ethauth do
   defp config(key) do
     Application.get_env(:sanbase, __MODULE__)
     |> Keyword.get(key)
-    |> parse_config()
+    |> parse_config_value()
   end
-
-  defp parse_config({:system, env_key}), do: System.get_env(env_key)
-
-  defp parse_config(value), do: value
 end

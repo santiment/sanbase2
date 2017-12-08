@@ -5,6 +5,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.Etherscan.Requests
 
+  import Sanbase.Utils, only: [parse_config_value: 1]
+
   plug RateLimiting.Middleware, name: :etherscan_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://api.etherscan.io/api"
   plug Tesla.Middleware.Compression
@@ -36,12 +38,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   defp api_key() do
     config()
     |> Keyword.get(:apikey)
-    |> parse_api_key()
+    |> parse_config_value()
   end
-
-  defp parse_api_key({:system, env_key}), do: System.get_env(env_key)
-
-  defp parse_api_key(value), do: value
 
   defp config do
     Application.get_env(:sanbase, __MODULE__)

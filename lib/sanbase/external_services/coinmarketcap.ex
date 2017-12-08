@@ -43,10 +43,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Project
     |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
     |> Repo.all
-    |> Enum.map(fn project ->
-      Task.async(fn -> fetch_price_data(project) end)
-    end)
-    |> Enum.map(&Task.await(&1, :infinity))
+    |> Task.async_stream(
+      &fetch_price_data/1,
+      max_concurrency: 5,
+      timeout: :infinity
+    )
+    |> Stream.run
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
 

@@ -108,6 +108,11 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Worker,
   update_interval: 1000 * 60 * 60 * 6, # 6 hours
   sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
 
+config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
+  apikey: {:system, "TWITTERCOUNTER_API_KEY"},
+  update_interval: 1000 * 60 * 60 * 24, # 1 day
+  sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
+
 config :sanbase, Sanbase.Notifications.CheckPrice,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
   notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"}

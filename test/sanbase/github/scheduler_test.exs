@@ -62,9 +62,9 @@ defmodule Sanbase.Github.SchedulerTest do
 
     Github.Store.drop_ticker("SAN")
     Github.Store.import([
-      %Github.Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
-      %Github.Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 2}, name: "SAN"},
-      %Github.Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
+      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
+      %Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 2}, name: "SAN"},
+      %Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
     ])
 
     Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment", github_link: "https://github.com/santiment"})

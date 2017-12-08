@@ -4,15 +4,15 @@ items:
 - apiVersion: apps/v1beta1
   kind: Deployment
   metadata:
-    name: sanbase-master
+    name: sanbase-web
     labels:
-      app: sanbase
+      app: sanbase-web
       branch: master
   spec:
     replicas: 1
     selector:
       matchLabels:
-        app: sanbase
+        app: sanbase-web
         branch: master
     spec:
       containers:

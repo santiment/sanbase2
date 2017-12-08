@@ -3,6 +3,7 @@ defmodule Sanbase.Github.Scheduler do
   alias Sanbase.Github
   alias Sanbase.Prices
 
+  # A dependency injection, so that we can test this module in isolation
   @worker Mockery.of("SanbaseWorkers.ImportGithubActivity")
 
   def schedule_scrape do

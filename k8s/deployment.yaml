@@ -1,19 +1,17 @@
 apiVersion: apps/v1beta1
-kind: Deployment
-metadata:
-  name: sanbase-master
-  labels:
-    app: sanbase
-    branch: master
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
+kind: List
+items:
+- apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+    name: sanbase-master
+    labels:
       app: sanbase
       branch: master
-  template:
-    metadata:
-      labels:
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
         app: sanbase
         branch: master
     spec:

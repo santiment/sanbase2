@@ -65,3 +65,9 @@ spec:
               secretKeyRef:
                 name: sanbase-env
                 key: notificationsChannel
+
+          - name: ETHAUTH_URL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: ethauthUrl

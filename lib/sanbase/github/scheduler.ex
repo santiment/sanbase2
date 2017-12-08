@@ -15,7 +15,7 @@ defmodule Sanbase.Github.Scheduler do
 
   defp reduce_initial_scrape_datetime([]), do: nil
 
-  defp reduce_initial_scrape_datetime(list), do: Enum.min(list)
+  defp reduce_initial_scrape_datetime(list), do: Enum.min_by(list, &DateTime.to_unix/1)
 
   defp schedule_scrape_for_datetime(nil, _last_datetime), do: :ok
 

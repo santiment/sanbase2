@@ -9,7 +9,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   alias Sanbase.Github.Measurement
   @github_archive "http://data.githubarchive.org/"
 
-  faktory_options queue: "github_activity", retry: -1, reserve_for: 300
+  faktory_options queue: "github_activity", retry: -1, reserve_for: 600
 
   def perform(archive) do
     Temp.track!

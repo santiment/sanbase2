@@ -10,6 +10,11 @@ import 'react-table/react-table.css'
 import moment from 'moment'
 import { formatNumber } from '../utils/formatting'
 import ProjectIcon from './../components/ProjectIcon'
+import {
+  sortDate,
+  sortBalances,
+  sortTxOut
+} from './../utils/sortMethods'
 import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
@@ -28,7 +33,7 @@ const formatLastOutgoingWallet = wallets => {
 
 const formatTxOutWallet = wallets => {
   return wallets.map((wallet, index) => {
-    const txOut = wallet.tx_out || 0
+    const txOut = wallet.tx_out || '0.00'
     return (
       <div key={index}>
         {txOut.toLocaleString('en-US')}
@@ -65,14 +70,13 @@ const formatMarketCapProject = cap => {
 }
 
 const getFilter = search => {
-  if (search !== null) {
+  if (search) {
     return [{
       id: 'project',
       value: search
     }]
-  } else {
-    return []
   }
+  return []
 }
 
 const columns = [{
@@ -93,22 +97,21 @@ const columns = [{
   filterMethod: (filter, row) => {
     return row[filter.id].name.toLowerCase().indexOf(filter.value) !== -1 ||
       row[filter.id].ticker.toLowerCase().indexOf(filter.value) !== -1
-  },
-  Filter: ({filter, onChange}) => {}
+  }
 }, {
   Header: 'Market Cap',
   id: 'market_cap_usd',
-  sortable: true,
   minWidth: 150,
   accessor: 'market_cap_usd',
-  Cell: props => <span className='market-cap'>{formatMarketCapProject(props.value)}</span>, // Custom cell components!
+  Cell: props => <span className='market-cap'>{formatMarketCapProject(props.value)}</span>,
+  sortable: true,
   sortMethod: (a, b) => {
     const _a = parseInt(a, 10)
     const _b = parseInt(b, 10)
     if (_a === _b) {
       return 0
     }
-    return _a > _b ? 1 : -1
+    return _b > _a ? 1 : -1
   }
 }, {
   Header: 'Balance (USD/ETH)',
@@ -118,17 +121,25 @@ const columns = [{
     ethPrice: d.ethPrice,
     wallets: d.wallets
   }),
-  Cell: props => <div>{formatBalanceWallet(props.value)}</div>
+  Cell: props => <div>{formatBalanceWallet(props.value)}</div>,
+  sortable: true,
+  sortMethod: (a, b) => sortBalances(a, b)
 }, {
   Header: 'Last outgoing TX',
   id: 'tx',
   accessor: d => d.wallets,
-  Cell: props => <div>{formatLastOutgoingWallet(props.value)}</div>
+  Cell: props => <div>{formatLastOutgoingWallet(props.value)}</div>,
+  sortable: true,
+  sortMethod: (a, b, isDesc) => {
+    return sortDate(a[0].last_outgoing, b[0].last_outgoing, isDesc)
+  }
 }, {
   Header: 'ETH sent',
   id: 'sent',
   accessor: d => d.wallets,
-  Cell: props => <div>{formatTxOutWallet(props.value)}</div>
+  Cell: props => <div>{formatTxOutWallet(props.value)}</div>,
+  sortable: true,
+  sortMethod: (a, b) => sortTxOut(a, b)
 }]
 
 export const Cashflow = ({

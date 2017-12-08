@@ -24,7 +24,7 @@
 
 .datatables-filter label {
   width: 100%;
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
   display: inline-block;
 }
 
@@ -34,12 +34,12 @@
   padding: 8px;
   line-height: 1.25;
   color: #464a4c;
-  border: 1px solid rgba(0,0,0,.15);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   background-clip: padding-box;
   outline-offset: -2px;
   overflow: visible;
-  font-size: .875rem;
-  border-radius: .2rem;
+  font-size: 0.875rem;
+  border-radius: 0.2rem;
 }
 
 .datatables-filter input:focus {
@@ -66,9 +66,6 @@
 
 .cashflow .ReactTable {
   margin: 0 16px;
-}
-
-.ReactTable {
   border-top: none;
   border-left: none;
   border-right: none;
@@ -95,23 +92,21 @@
   padding: 5px;
 }
 
-.-sort-desc, .-sort-asc {
+.-sort-desc,
+.-sort-asc {
   background-color: rgba(0, 150, 99, 0.08);
 }
 
 .ReactTable .wallet {
   display: flex;
   justify-content: flex-end;
+  padding-right: 10px;
+  padding-left: 10px;
 }
 
 .ReactTable .wallet .usd {
   margin-right: 10px;
   flex: 1;
-}
-
-.ReactTable .wallet {
-  padding-right: 10px;
-  padding-left: 10px;
 }
 
 .ReactTable .market-cap {

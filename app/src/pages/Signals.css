@@ -1,16 +1,11 @@
 /* mailchimp, signals */
 .signals-form {
   text-align: center;
-  /* background-color: rgba(0, 150, 99, 0.08); */
   overflow: auto;
   padding: 70px 20px 50px 20px;
   margin: -16px -16px 16px -16px;
-
   background: linear-gradient(270deg, #df2f2f, #316bae, #309d81);
   background-size: 600% 600%;
-
-  -webkit-animation: AnimationName 60s ease infinite;
-  -moz-animation: AnimationName 60s ease infinite;
   animation: AnimationName 60s ease infinite;
 }
 
@@ -34,50 +29,54 @@
 }
 
 @-webkit-keyframes AnimationName {
-    0% {
-        background-position: 0% 50%
-    }
-    50% {
-        background-position: 100% 50%
-    }
-    100% {
-        background-position: 0% 50%
-    }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @-moz-keyframes AnimationName {
   0% {
-    background-position: 0% 50%
+    background-position: 0% 50%;
   }
+
   50% {
-    background-position: 100% 50%
+    background-position: 100% 50%;
   }
+
   100% {
-    background-position: 0% 50%
+    background-position: 0% 50%;
   }
 }
 
 @keyframes AnimationName {
   0% {
-    background-position: 0% 50%
+    background-position: 0% 50%;
   }
+
   50% {
-    background-position: 100% 50%
+    background-position: 100% 50%;
   }
+
   100% {
-    background-position: 0% 50%
+    background-position: 0% 50%;
   }
 }
 
-.signals-form h2 {
-  color: #fff;
-}
 .signals-form h2 span {
   display: block;
 }
+
 @media (max-width: 767px) {
   .signals-form h2 span {
-      display: inline;
+    display: inline;
   }
 }
 
@@ -86,7 +85,6 @@
 }
 
 #mc_embed_signup input.email {
-  font-family: "Roboto", sans serif;
   font-size: 15px;
   padding: 0 0.4em;
   margin: 10px auto;
@@ -98,7 +96,7 @@
 }
 
 .hidden-xs-up {
-  display: none!important;
+  display: none !important;
 }
 
 @media (max-width: 767px) {
@@ -112,8 +110,8 @@
   background-color: #aaa;
   border: 0 none;
   border-radius: 4px;
-  letter-spacing: .03em;
-  color: #FFFFFF;
+  letter-spacing: 0.03em;
+  color: "#FFFFFF";
   cursor: pointer;
   font-size: 15px;
   height: 32px;
@@ -131,7 +129,6 @@
 #mc_embed_signup input.button {
   margin: 20px auto 0 auto;
   background-color: rgba(41, 43, 44, 1);
-  font-family: "Roboto", sans serif;
   display: block;
   min-width: 90px;
   width: 150px;

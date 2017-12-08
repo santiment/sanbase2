@@ -28,10 +28,9 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   def init(:ok) do
     Process.flag(:trap_exit, true)
 
-    update_interval_ms = get_config(:update_interval, @default_update_interval)
-
     if get_config(:sync_enabled, false) do
       Store.create_db()
+      update_interval_ms = get_config(:update_interval, @default_update_interval)
 
       GenServer.cast(self(), :sync)
       {:ok, %{update_interval_ms: update_interval_ms}}
@@ -70,25 +69,24 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
     {:noreply, state}
   end
 
+  def fetch_twitter_user_data(twitter_name) do
+    Server.wait(@rate_limiter_name)
+    # GET https://api.twitter.com/1.1/users/show.json?screen_name=twitter_name
+    ExTwitter.user(twitter_name, include_entities: false)
+  end
+
   defp fetch_and_store("https://twitter.com/" <> twitter_name) do
     # Ignore trailing slash and everything after it
     [twitter_name | _] = String.split(twitter_name, "/")
 
     twitter_name
     |> fetch_twitter_user_data()
+    |> convert_to_measurement(twitter_name)
     |> store_twitter_user_data()
   end
 
   defp fetch_and_store(args) do
     Logger.warn("Invalid parameters while fetching twitter data: " <> inspect(args))
-  end
-
-  defp fetch_twitter_user_data(twitter_name) do
-    Server.wait(@rate_limiter_name)
-
-    # GET https://api.twitter.com/1.1/users/show.json?screen_name=twitter_name
-    ExTwitter.user(twitter_name, include_entities: false)
-    |> convert_to_measurement(twitter_name)
   end
 
   defp store_twitter_user_data(user_data_measurement) do
@@ -116,5 +114,5 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
     Application.fetch_env!(:sanbase, __MODULE__)
     |> Keyword.get(key, default)
     |> parse_config_value()
-end
+  end
 end

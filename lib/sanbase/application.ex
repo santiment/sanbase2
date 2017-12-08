@@ -65,6 +65,14 @@ defmodule Sanbase.Application do
         time_between_requests: 10
       ),
 
+      # Twittercounter API rate limiter
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :twittercounter_api_rate_limiter,
+        scale: 60 * 60 * 1000,
+        limit: 100,
+        time_between_requests: 100
+      ),
+
       # Price fetcher
       Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
 
@@ -76,6 +84,9 @@ defmodule Sanbase.Application do
 
       # Twitter account data tracking worker
       Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
+
+      # Twitter account historical data
+      Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
     ] ++ faktory_supervisor() ++ [
       # Github activity scraping scheduler
       Sanbase.ExternalServices.Github.child_spec(%{}),

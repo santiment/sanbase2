@@ -7,7 +7,6 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
 
   import Sanbase.Utils, only: [parse_config_value: 1]
 
-
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.TwitterData.Store
 
@@ -33,7 +32,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
   def last_record_for_measurement(measurement_name) do
     select_last_record_query(measurement_name)
     |> Store.query()
-    |> parse_last_twitter_record()
+    |> parse_twitter_record()
   end
 
   def create_db() do
@@ -47,6 +46,13 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
     |> Store.execute()
   end
 
+  def last_record_with_tag_value(measurement_name, tag_name, tag_value) do
+    ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"
+    WHERE #{tag_name} = '#{tag_value}'/
+    |> Store.execute()
+    |> parse_twitter_record()
+  end
+
   defp write_data(data) do
     :ok = Store.write(data)
   end
@@ -56,6 +62,16 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
     FROM "#{measurement_name}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp select_last_tag_value_query(measurement_name, tag, value) when is_bitstring(value) do
+    ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"
+    WHERE #{tag_name} = '#{tag_value}'/
+  end
+
+  defp select_last_tag_value_query(measurement_name, tag, value) when is_integer(value) do
+    ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"
+    WHERE #{tag_name} = #{tag_value}/
   end
 
   defp select_last_record_query(measurement_name) do
@@ -84,7 +100,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
 
   defp parse_twitter_data_series(_), do: []
 
-  defp parse_last_twitter_record(%{
+  defp parse_twitter_record(%{
          results: [
            %{
              series: [
@@ -100,9 +116,9 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
     {datetime, followers_count}
   end
 
-  defp parse_last_twitter_record(_), do: nil
+  defp parse_twitter_record(_), do: nil
 
- defp get_config(key, default \\ nil) do
+  defp get_config(key, default \\ nil) do
     Application.fetch_env!(:sanbase, __MODULE__)
     |> Keyword.get(key, default)
     |> parse_config_value()

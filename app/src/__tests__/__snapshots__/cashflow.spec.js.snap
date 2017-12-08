@@ -11,7 +11,14 @@ exports[`Cashflow container it should render correctly 1`] = `
       Cash Flow
     </h1>
     <p>
-      brought to you by Santiment
+      brought to you by 
+      <a
+        href="https://santiment.net"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Santiment
+      </a>
       <br />
       NOTE: This app is a prototype. We give no guarantee data is correct as we are in active development.
     </p>
@@ -19,6 +26,33 @@ exports[`Cashflow container it should render correctly 1`] = `
   <div
     className="panel"
   >
+    <div
+      className="row"
+    >
+      <div
+        className="datatables-info"
+      >
+        <label>
+          Showing 
+          1
+           to 
+          32
+           of 
+          32
+           entries 
+          (filtered from 2 total entries)
+        </label>
+      </div>
+      <div
+        className="datatables-filter"
+      >
+        <label>
+          <input
+            placeholder="Search"
+          />
+        </label>
+      </div>
+    </div>
     <ReactTable
       AggregatedComponent={[Function]}
       ExpanderComponent={[Function]}
@@ -38,7 +72,7 @@ exports[`Cashflow container it should render correctly 1`] = `
       TrComponent={[Function]}
       TrGroupComponent={[Function]}
       aggregatedKey="_aggregated"
-      className="-striped -highlight"
+      className="-highlight"
       collapseOnDataChange={true}
       collapseOnPageChange={true}
       collapseOnSortingChange={true}
@@ -82,12 +116,14 @@ exports[`Cashflow container it should render correctly 1`] = `
             "filterable": true,
             "id": "project",
             "sortable": true,
+            "width": 350,
           },
           Object {
             "Cell": [Function],
             "Header": "Market Cap",
             "accessor": "market_cap_usd",
             "id": "market_cap_usd",
+            "minWidth": 150,
             "sortMethod": [Function],
             "sortable": true,
           },
@@ -96,26 +132,68 @@ exports[`Cashflow container it should render correctly 1`] = `
             "Header": "Balance (USD/ETH)",
             "accessor": [Function],
             "id": "balance",
+            "minWidth": 250,
+            "sortMethod": [Function],
+            "sortable": true,
           },
           Object {
             "Cell": [Function],
             "Header": "Last outgoing TX",
             "accessor": [Function],
             "id": "tx",
+            "sortMethod": [Function],
+            "sortable": true,
           },
           Object {
             "Cell": [Function],
             "Header": "ETH sent",
             "accessor": [Function],
             "id": "sent",
+            "sortMethod": [Function],
+            "sortable": true,
           },
         ]
       }
-      data={Array []}
+      data={
+        Array [
+          Object {
+            "balance": "41994.09",
+            "id": 12,
+            "logo_url": "aeternity.png",
+            "market_cap_usd": "133759577.0",
+            "name": "Aeternity",
+            "ticker": "AE",
+            "wallets": Array [
+              Object {
+                "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
+                "balance": "41994.09",
+                "last_outgoing": null,
+                "tx_out": null,
+              },
+            ],
+          },
+          Object {
+            "balance": "264617.29",
+            "id": 15,
+            "logo_url": "aragon.png",
+            "market_cap_usd": "66649211.0",
+            "name": "Aragon",
+            "ticker": "ANT",
+            "wallets": Array [
+              Object {
+                "address": "0xcafE1A77e84698c83CA8931F54A755176eF75f2C",
+                "balance": "264617.29",
+                "last_outgoing": null,
+                "tx_out": null,
+              },
+            ],
+          },
+        ]
+      }
       defaultExpanded={Object {}}
       defaultFilterMethod={[Function]}
       defaultFiltered={Array []}
-      defaultPageSize={20}
+      defaultPageSize={32}
       defaultResized={Array []}
       defaultSortDesc={false}
       defaultSortMethod={[Function]}
@@ -136,6 +214,7 @@ exports[`Cashflow container it should render correctly 1`] = `
         }
       }
       filterable={false}
+      filtered={Array []}
       freezeWhenExpanded={false}
       getLoadingProps={[Function]}
       getNoDataProps={[Function]}

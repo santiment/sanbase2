@@ -31,8 +31,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test:lint:js": "standard | standard-reporter --stylish",
+    "test:lint:css": "stylelint \"**/*.css\"",
     "test:js": "react-scripts test --env=jsdom",
-    "test": "npm run test:lint:js && npm run test:js",
+    "test": "npm run test:lint:js && npm run test:lint:css && npm run test:js",
     "eject": "react-scripts eject"
   },
   "devDependencies": {
@@ -43,7 +44,9 @@
     "redux-axios-middleware": "^4.0.0",
     "redux-devtools-extension": "^2.13.2",
     "standard": "^10.0.3",
-    "standard-reporter": "^1.0.5"
+    "standard-reporter": "^1.0.5",
+    "stylelint": "^8.3.1",
+    "stylelint-config-standard": "^18.0.0"
   },
   "standard": {
     "parser": "babel-eslint",

@@ -13,6 +13,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
 
     form ico do
       inputs do
+        input ico, :project, collection: Sanbase.Repo.all(Project)
         input ico, :start_date
         input ico, :end_date
         input ico, :tokens_issued_at_ico
@@ -27,7 +28,6 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input ico, :maximal_cap_amount
         input ico, :main_contract_address
         input ico, :comments
-        input ico, :project, collection: Sanbase.Repo.all(Project)
         input ico, :cap_currency, collection: Sanbase.Repo.all(Currency)
         inputs :currencies, as: :check_boxes, collection: Sanbase.Repo.all(Currency)
       end

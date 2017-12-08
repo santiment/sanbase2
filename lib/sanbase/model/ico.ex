@@ -8,6 +8,7 @@ defmodule Sanbase.Model.Ico do
 
 
   schema "icos" do
+    belongs_to :project, Project
     field :start_date, Ecto.Date
     field :end_date, Ecto.Date
     field :tokens_issued_at_ico, :decimal
@@ -21,7 +22,6 @@ defmodule Sanbase.Model.Ico do
     field :maximal_cap_amount, :decimal
     field :main_contract_address, :string
     field :comments, :string
-    belongs_to :project, Project
     belongs_to :cap_currency, Currency, on_replace: :nilify
     many_to_many :currencies, Currency, join_through: "ico_currencies", on_replace: :delete
   end

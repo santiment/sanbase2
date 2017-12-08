@@ -1,6 +1,7 @@
 defmodule Sanbase.Model.Ico do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
@@ -31,6 +32,17 @@ defmodule Sanbase.Model.Ico do
     |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_btc_icoend, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id])
     |> calculate_funds_raised()
     |> validate_required([:project_id])
+    |> add_currencies(attrs)
+  end
+
+  def add_currencies(changeset, attrs) do
+    if Enum.count(Map.get(attrs, :currencys, [])) > 0 do # deliberately is currencys - ex_admin puts that
+      ids = attrs[:currencys]
+      currencies = Sanbase.Repo.all(from c in Currency, where: c.id in ^ids)
+      put_assoc(changeset, :currencies, currencies)
+    else
+      changeset
+    end
   end
 
   defp calculate_funds_raised(changeset) do

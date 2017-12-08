@@ -3,8 +3,35 @@ defmodule Sanbase.ExAdmin.Model.Ico do
 
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
+  alias Sanbase.Model.Project
 
   register_resource Sanbase.Model.Ico do
+
+    query do
+      %{all: [preload: [:project, :cap_currency, :currencies]] }
+    end
+
+    form ico do
+      inputs do
+        input ico, :start_date
+        input ico, :end_date
+        input ico, :tokens_issued_at_ico
+        input ico, :tokens_sold_at_ico
+        input ico, :tokens_sold_at_ico
+        input ico, :funds_raised_btc
+        input ico, :funds_raised_usd
+        input ico, :funds_raised_eth
+        input ico, :usd_btc_icoend
+        input ico, :usd_eth_icoend
+        input ico, :minimal_cap_amount
+        input ico, :maximal_cap_amount
+        input ico, :main_contract_address
+        input ico, :comments
+        input ico, :project, collection: Sanbase.Repo.all(Project)
+        input ico, :cap_currency, collection: Sanbase.Repo.all(Currency)
+        inputs :currencies, as: :check_boxes, collection: Sanbase.Repo.all(Currency)
+      end
+    end
 
     controller do
       # doc: https://hexdocs.pm/ex_admin/ExAdmin.Register.html#after_filter/2
@@ -40,15 +67,15 @@ defmodule Sanbase.ExAdmin.Model.Ico do
       end
     end
 
-    def run_query(repo, defn, action, id) do
-      run_query_impl(repo, defn, action, id)
+    def run_query(repo, defn, :index, id) do
+      run_query_impl(repo, defn, :index, id)
     end
   end
 
-  def run_query_impl(repo, defn, action, id) do
+  def run_query_impl(repo, defn, :index, id) do
     query = %Sanbase.ExAdmin.Model.Ico{}
     |> Map.get(:resource_model)
-    |> ExAdmin.Query.run_query(repo, defn, action, id, @query)
+    |> ExAdmin.Query.run_query(repo, defn, :index, id, @query)
 
     List.keyfind(id, :project_name, 0)
     |> case do

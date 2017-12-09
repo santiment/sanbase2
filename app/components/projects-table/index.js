@@ -48,8 +48,10 @@ class ProjectsTable extends Component {
   }
 
   formatMarketCapProject = (project) => {
-    if (project.market_cap_usd !== null) {
-      return '$' + project.market_cap_usd.toLocaleString('en-US', { maximumFractionDigits: 0 })
+    if (project.market_cap_usd !== null)
+    {
+      const marketcap = Number(project.market_cap_usd)
+      return '$' + marketcap.toLocaleString('en-US', { maximumFractionDigits: 0 })
     } else {
       return 'No data'
     }

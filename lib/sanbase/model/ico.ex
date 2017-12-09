@@ -31,7 +31,6 @@ defmodule Sanbase.Model.Ico do
     |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_btc_icoend, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id])
     |> calculate_funds_raised()
     |> validate_required([:project_id])
-    |> unique_constraint(:project_id)
   end
 
   defp calculate_funds_raised(changeset) do

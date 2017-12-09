@@ -1,0 +1,11 @@
+.user-auth-control {
+  padding-left: 20px;
+}
+
+.user-auth-control a {
+  cursor: pointer;
+}
+
+.user-auth-control button {
+  width: 90%;
+}

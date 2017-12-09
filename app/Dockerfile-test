@@ -8,4 +8,3 @@ COPY yarn.lock /usr/app/yarn.lock
 RUN yarn
 
 COPY . /usr/app
-CMD npm run test:lint:js

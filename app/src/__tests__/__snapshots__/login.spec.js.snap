@@ -1,0 +1,186 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Login container it should render any loader while not loaded 1`] = `
+<div
+  className="page wrapper"
+>
+  <div
+    className="loginContainer"
+  >
+    <div>
+      Loading
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Login container it should render correctly 1`] = `
+<div
+  className="page wrapper"
+>
+  <div
+    className="loginContainer"
+  >
+    <div
+      className="ui warning message"
+    >
+      <div
+        className="content"
+      >
+        <div
+          className="header"
+        >
+          We can't detect Metamask!
+        </div>
+        <ul
+          className="list"
+        >
+          <li
+            className="content"
+          >
+            We can auth you with Metamask account. It's secure and easy.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Login container it should render message with metamask user account address 1`] = `
+<Component
+  user={
+    Object {
+      "account": "0x23942983bc298374cjh",
+      "data": Object {},
+      "error": false,
+      "hasMetamask": true,
+      "isLoading": false,
+    }
+  }
+>
+  <div
+    className="page wrapper"
+  >
+    <div
+      className="loginContainer"
+    >
+      <Component
+        account="0x23942983bc298374cjh"
+        handleAuth={[Function]}
+      >
+        <Form
+          as="form"
+        >
+          <form
+            className="ui form"
+            onSubmit={[Function]}
+          >
+            <Message
+              header="We detect you have Metamask 🎉🎉🎉"
+              list={
+                Array [
+                  "We can auth you with Metamask account. It's secure and easy.",
+                  "Your selected wallet public key is 0x23942983bc298374cjh",
+                ]
+              }
+            >
+              <div
+                className="ui message"
+              >
+                <MessageContent>
+                  <div
+                    className="content"
+                  >
+                    <MessageHeader
+                      content="We detect you have Metamask 🎉🎉🎉"
+                      key="We detect you have Metamask 🎉🎉🎉"
+                    >
+                      <div
+                        className="header"
+                      >
+                        We detect you have Metamask 🎉🎉🎉
+                      </div>
+                    </MessageHeader>
+                    <MessageList
+                      as="ul"
+                      items={
+                        Array [
+                          "We can auth you with Metamask account. It's secure and easy.",
+                          "Your selected wallet public key is 0x23942983bc298374cjh",
+                        ]
+                      }
+                    >
+                      <ul
+                        className="list"
+                      >
+                        <MessageItem
+                          as="li"
+                          content="We can auth you with Metamask account. It's secure and easy."
+                          key="We can auth you with Metamask account. It's secure and easy."
+                        >
+                          <li
+                            className="content"
+                          >
+                            We can auth you with Metamask account. It's secure and easy.
+                          </li>
+                        </MessageItem>
+                        <MessageItem
+                          as="li"
+                          content="Your selected wallet public key is 0x23942983bc298374cjh"
+                          key="Your selected wallet public key is 0x23942983bc298374cjh"
+                        >
+                          <li
+                            className="content"
+                          >
+                            Your selected wallet public key is 0x23942983bc298374cjh
+                          </li>
+                        </MessageItem>
+                      </ul>
+                    </MessageList>
+                  </div>
+                </MessageContent>
+              </div>
+            </Message>
+            <Button
+              as="button"
+              color="green"
+              onClick={[Function]}
+              style={
+                Object {
+                  "alignItems": "center",
+                  "display": "flex",
+                  "paddingBottom": "5px",
+                  "paddingTop": "5px",
+                }
+              }
+            >
+              <button
+                className="ui green button"
+                onClick={[Function]}
+                role="button"
+                style={
+                  Object {
+                    "alignItems": "center",
+                    "display": "flex",
+                    "paddingBottom": "5px",
+                    "paddingTop": "5px",
+                  }
+                }
+              >
+                Sign in with Metamask  
+                <img
+                  alt="metamask logo"
+                  height={32}
+                  src="metamask-icon-64.png"
+                  width={32}
+                />
+              </button>
+            </Button>
+          </form>
+        </Form>
+      </Component>
+    </div>
+  </div>
+</Component>
+`;

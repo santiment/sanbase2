@@ -85,12 +85,9 @@ const mapDispatchToProps = dispatch => {
         hasMetamask
       })
     },
-    requestAuth: (account, authWithSAN, client) => {
-      signMessage(account).then(({hashMessage, signature}) => {
-        authWithSAN({variables: {
-          signature: signature,
-          address: account,
-          addressHash: hashMessage}})
+    requestAuth: (address, authWithSAN, client) => {
+      signMessage(address).then(({messageHash, signature}) => {
+        authWithSAN({variables: { signature, address, messageHash }})
         .then(({ data }) => {
           const { token, user } = data.ethLogin
           dispatch({

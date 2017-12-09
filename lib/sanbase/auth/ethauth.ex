@@ -1,6 +1,8 @@
 defmodule Sanbase.Auth.Ethauth do
   use Tesla
 
+  import Sanbase.Utils, only: [parse_config_value: 1]
+
   def verify_signature(signature, address, message_hash) do
     %Tesla.Env{status: 200, body: body} = get(client(), "recover", query: [sign: signature, hash: message_hash])
 

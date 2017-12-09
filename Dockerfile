@@ -1,5 +1,5 @@
 # NextJS build image
-FROM node:8.7.0-alpine as nextjs_builder
+FROM node:8.7.0-alpine as react_builder
 
 WORKDIR /app
 
@@ -59,10 +59,9 @@ RUN apk add --update bash nodejs nodejs-npm
 
 WORKDIR /app
 
-COPY --from=nextjs_builder /app/.next /app/app/.next
-COPY --from=nextjs_builder /app/static /app/app/static
-COPY --from=nextjs_modules /app/node_modules /app/app/node_modules
-COPY --from=nextjs_builder /app/package.json /app/app/package.json
+COPY --from=react_builder /app/build/static /app/app/static
+COPY --from=react_modules /app/node_modules /app/app/node_modules
+COPY --from=react_builder /app/package.json /app/app/package.json
 COPY --from=code_builder /app/_build/prod/rel/sanbase .
 
 CMD bin/sanbase foreground

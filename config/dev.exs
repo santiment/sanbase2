@@ -15,7 +15,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   check_origin: false,
   watchers: [
     yarn: [
-      "start",
+      "dev",
       cd: Path.expand("../app", __DIR__)
     ],
     node: [

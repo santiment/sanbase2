@@ -8,7 +8,7 @@ Path.join(["rel", "plugins", "*.exs"])
 
 use Mix.Releases.Config,
     # This sets the default release built by `mix release`
-    default_release: :default,
+    default_release: :sanbase,
     # This sets the default environment used by `mix release`
     default_environment: Mix.env()
 

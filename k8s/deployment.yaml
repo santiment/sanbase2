@@ -135,3 +135,5 @@ items:
         volumes:
           - name: tmp-volume
             emptyDir: {}
+        nodeSelector:
+          cpu.credits: "no"

@@ -1,0 +1,535 @@
+{
+    "eth_price": 458.38,
+    "projects": [
+        {
+            "balance": "41994.09",
+            "id": 12,
+            "logo_url": "aeternity.png",
+            "market_cap_usd": "133759577.0",
+            "name": "Aeternity",
+            "ticker": "AE",
+            "wallets": [
+                {
+                    "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
+                    "balance": "41994.09",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "264617.29",
+            "id": 15,
+            "logo_url": "aragon.png",
+            "market_cap_usd": "66649211.0",
+            "name": "Aragon",
+            "ticker": "ANT",
+            "wallets": [
+                {
+                    "address": "0xcafE1A77e84698c83CA8931F54A755176eF75f2C",
+                    "balance": "264617.29",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "12000.00",
+            "id": 10,
+            "logo_url": "bancor.png",
+            "market_cap_usd": "102080590.0",
+            "name": "Bancor",
+            "ticker": "BNT",
+            "wallets": [
+                {
+                    "address": "0x5894110995B8c8401Bd38262bA0c8EE41d4E4658",
+                    "balance": "12000.00",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "55544.97",
+            "id": 7,
+            "logo_url": "basic-attention-token.png",
+            "market_cap_usd": "171738000.0",
+            "name": "Basic Attention Token",
+            "ticker": "BAT",
+            "wallets": [
+                {
+                    "address": "0x44fcfaBfBe32024a01b778c025D70498382CCEd0",
+                    "balance": "55544.97",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "0.00",
+            "id": 26,
+            "logo_url": "centra.png",
+            "market_cap_usd": "28659824.0",
+            "name": "Centra",
+            "ticker": "CTR",
+            "wallets": [
+                {
+                    "address": "0x96A65609a7B84E8842732DEB08f56C3E21aC6f8a",
+                    "balance": "0.00",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "487.08",
+            "id": 14,
+            "logo_url": "civic.png",
+            "market_cap_usd": "104124597.0",
+            "name": "Civic",
+            "ticker": "CVC",
+            "wallets": [
+                {
+                    "address": "0x2323763D78bF7104b54A462A79C2Ce858d118F2F",
+                    "balance": "487.08",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "1.01",
+            "id": 25,
+            "logo_url": "dao-casino.png",
+            "market_cap_usd": "7518924.0",
+            "name": "DAO.Casino",
+            "ticker": "BET",
+            "wallets": [
+                {
+                    "address": "0x1446bf7AF9dF857b23a725646D94f9Ec49802227",
+                    "balance": "1.01",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "466648.15",
+            "id": 9,
+            "logo_url": "digixdao.png",
+            "market_cap_usd": "206048000.0",
+            "name": "DigixDAO",
+            "ticker": "DGD",
+            "wallets": [
+                {
+                    "address": "0xf0160428a8552ac9bb7e050d90eeade4ddd52843",
+                    "balance": "466648.15",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "42115.16",
+            "id": 24,
+            "logo_url": "district0x.png",
+            "market_cap_usd": "26122800.0",
+            "name": "district0x",
+            "ticker": "DNT",
+            "wallets": [
+                {
+                    "address": "0xd20E4d854C71dE2428E1268167753e4C7070aE68",
+                    "balance": "42115.16",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "27.00",
+            "id": 31,
+            "logo_url": null,
+            "market_cap_usd": "3797746.0",
+            "name": "Encrypgen",
+            "ticker": "DNA",
+            "wallets": [
+                {
+                    "address": "0x683a0aafa039406c104d814b9f244eea721445a7",
+                    "balance": "27.00",
+                    "last_outgoing": "2017-12-01T01:34:22.000000Z",
+                    "tx_out": "6.47"
+                }
+            ]
+        },
+        {
+            "balance": "35834.53",
+            "id": 1,
+            "logo_url": "eos.png",
+            "market_cap_usd": "1827607101.0",
+            "name": "EOS",
+            "ticker": "EOS",
+            "wallets": [
+                {
+                    "address": "0x10F0c9112b255507701df1b1be5D8dcd9A82bb5e",
+                    "balance": "35834.53",
+                    "last_outgoing": "2017-12-01T15:35:28.000000Z",
+                    "tx_out": "2500.00"
+                }
+            ]
+        },
+        {
+            "balance": "13944.12",
+            "id": 17,
+            "logo_url": "etheroll.png",
+            "market_cap_usd": "20320459.0",
+            "name": "Etheroll",
+            "ticker": "DICE",
+            "wallets": [
+                {
+                    "address": "0x24C3235558572cff8054b5a419251D3B0D43E91b",
+                    "balance": "13944.12",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "0.03",
+            "id": 33,
+            "logo_url": "expanse.png",
+            "market_cap_usd": "16144387.0",
+            "name": "Expanse/Tokenlab",
+            "ticker": "EXP/LAB",
+            "wallets": [
+                {
+                    "address": "0xd1ea8853619aaad66f3f6c14ca22430ce6954476",
+                    "balance": "0.00",
+                    "last_outgoing": null,
+                    "tx_out": null
+                },
+                {
+                    "address": "0xf83fd4b62ccb4b5c4213278b6b506eb2f19988d0",
+                    "balance": "0.03",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "84920.68",
+            "id": 16,
+            "logo_url": "firstblood.png",
+            "market_cap_usd": "33401132.0",
+            "name": "FirstBlood",
+            "ticker": "1ST",
+            "wallets": [
+                {
+                    "address": "0xa5384627F6DcD3440298E2D8b0Da9d5F0FCBCeF7",
+                    "balance": "84920.68",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "218674.70",
+            "id": 4,
+            "logo_url": "gnosis.png",
+            "market_cap_usd": "118244150.0",
+            "name": "Gnosis",
+            "ticker": "GNO",
+            "wallets": [
+                {
+                    "address": "0x851b7F3Ab81bd8dF354F0D7640EFcD7288553419",
+                    "balance": "218674.70",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "369023.14",
+            "id": 2,
+            "logo_url": "golem.png",
+            "market_cap_usd": "259342854.0",
+            "name": "Golem",
+            "ticker": "GNT",
+            "wallets": [
+                {
+                    "address": "0x7da82c7ab4771ff031b66538d2fb9b0b047f6cf9",
+                    "balance": "369023.14",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "0.00",
+            "id": 28,
+            "logo_url": "guppy.png",
+            "market_cap_usd": "18315525.0",
+            "name": "Matchpool",
+            "ticker": "GUP",
+            "wallets": [
+                {
+                    "address": "0x1c10aD0b5f1b4013173f05B4cc05a60cBBAa6536",
+                    "balance": "0.00",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "504.62",
+            "id": 21,
+            "logo_url": "humaniq.png",
+            "market_cap_usd": "18843693.0",
+            "name": "Humaniq",
+            "ticker": "HMQ",
+            "wallets": [
+                {
+                    "address": "0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883",
+                    "balance": "504.62",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "42422.88",
+            "id": 3,
+            "logo_url": "iconomi.png",
+            "market_cap_usd": "148287431.0",
+            "name": "Iconomi",
+            "ticker": "ICN",
+            "wallets": [
+                {
+                    "address": "0x154Af3E01eC56Bc55fD585622E33E3dfb8a248d8",
+                    "balance": "42422.88",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "22010.99",
+            "id": 36,
+            "logo_url": "indorse-token.png",
+            "market_cap_usd": "4030116.0",
+            "name": "Indorse",
+            "ticker": "IND",
+            "wallets": [
+                {
+                    "address": "0x1c82ee5b828455F870eb2998f2c9b6Cc2d52a5F6",
+                    "balance": "13807.42",
+                    "last_outgoing": null,
+                    "tx_out": null
+                },
+                {
+                    "address": "0x26967201d4d1e1aa97554838defa4fc4d010ff6f",
+                    "balance": "8203.57",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "30100.33",
+            "id": 38,
+            "logo_url": "maecenas.png",
+            "market_cap_usd": "13506031.0",
+            "name": "Maecenas",
+            "ticker": "ART",
+            "wallets": [
+                {
+                    "address": "0x02DC3b8AB87c562CdCE707647bd1ba21C390Faf4",
+                    "balance": "30100.33",
+                    "last_outgoing": null,
+                    "tx_out": null
+                },
+                {
+                    "address": "0x9B60874D7bc4e4fBDd142e0F5a12002e4F7715a6",
+                    "balance": "0.00",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "6509.96",
+            "id": 18,
+            "logo_url": "melon.png",
+            "market_cap_usd": "46455118.0",
+            "name": "Melon",
+            "ticker": "MLN",
+            "wallets": [
+                {
+                    "address": "0x8615F13C12c24DFdca0ba32511E2861BE02b93b2",
+                    "balance": "6509.96",
+                    "last_outgoing": "2017-11-29T18:21:46.000000Z",
+                    "tx_out": "50.00"
+                }
+            ]
+        },
+        {
+            "balance": "0.00",
+            "id": 11,
+            "logo_url": "mobilego.png",
+            "market_cap_usd": "60656942.0",
+            "name": "MobileGo",
+            "ticker": "MGO",
+            "wallets": [
+                {
+                    "address": "0x6d7ea347ef837462a55337C4f772868F2A80B863",
+                    "balance": "0.00",
+                    "last_outgoing": "2017-11-24T08:11:21.000000Z",
+                    "tx_out": "852.74"
+                }
+            ]
+        },
+        {
+            "balance": "27477.63",
+            "id": 22,
+            "logo_url": "polybius.png",
+            "market_cap_usd": "16797180.0",
+            "name": "Polybius",
+            "ticker": "PLBT",
+            "wallets": [
+                {
+                    "address": "0xe9Eca8bB5e61e8e32f26B5E8c117561F68084a9C",
+                    "balance": "27477.63",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "12362.75",
+            "id": 8,
+            "logo_url": "populous.png",
+            "market_cap_usd": "510682179.0",
+            "name": "Populous",
+            "ticker": "PPT",
+            "wallets": [
+                {
+                    "address": "0xca48BA80Cfa6CC06963B62AeE48000f031c7E2dC",
+                    "balance": "12362.75",
+                    "last_outgoing": "2017-12-01T18:16:23.000000Z",
+                    "tx_out": "291.86"
+                }
+            ]
+        },
+        {
+            "balance": "120762.25",
+            "id": 19,
+            "logo_url": "rlc.png",
+            "market_cap_usd": "41630535.0",
+            "name": "iExec RLC",
+            "ticker": "RLC",
+            "wallets": [
+                {
+                    "address": "0x21346283a31A5AD10Fa64377E77A8900Ac12d469",
+                    "balance": "120762.25",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "33999.28",
+            "id": 23,
+            "logo_url": "santiment.png",
+            "market_cap_usd": "106832607.0",
+            "name": "Santiment",
+            "ticker": "SAN",
+            "wallets": [
+                {
+                    "address": "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a",
+                    "balance": "33999.28",
+                    "last_outgoing": "2017-11-29T19:31:13.000000Z",
+                    "tx_out": "0.00"
+                }
+            ]
+        },
+        {
+            "balance": "53016.69",
+            "id": 13,
+            "logo_url": "singulardtv.png",
+            "market_cap_usd": "104310600.0",
+            "name": "SingularDTV",
+            "ticker": "SNGLS",
+            "wallets": [
+                {
+                    "address": "0x5901Deb2C898D5dBE5923E05e510E95968a35067",
+                    "balance": "53016.69",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "269419.35",
+            "id": 5,
+            "logo_url": "status.png",
+            "market_cap_usd": "256723832.0",
+            "name": "Status",
+            "ticker": "SNT",
+            "wallets": [
+                {
+                    "address": "0xA646E29877d52B9e2De457ECa09C724fF16D0a2B",
+                    "balance": "269419.35",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "1.96",
+            "id": 20,
+            "logo_url": "stox.png",
+            "market_cap_usd": "21194340.0",
+            "name": "Stox",
+            "ticker": "STX",
+            "wallets": [
+                {
+                    "address": "0x3dD88B391fe62a91436181eD2D43E20B86CDE60c",
+                    "balance": "1.96",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "97474.64",
+            "id": 6,
+            "logo_url": "tenx.png",
+            "market_cap_usd": "238427884.0",
+            "name": "TenX",
+            "ticker": "PAY",
+            "wallets": [
+                {
+                    "address": "0x185f19B43d818E10a31BE68f445ef8EDCB8AFB83",
+                    "balance": "97474.64",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        },
+        {
+            "balance": "0.00",
+            "id": 27,
+            "logo_url": "tierion.png",
+            "market_cap_usd": "31661653.0",
+            "name": "Tierion",
+            "ticker": "TNT",
+            "wallets": [
+                {
+                    "address": "0x0C4b367e876d18d5c102023D9240DD7e9C11b380",
+                    "balance": "0.00",
+                    "last_outgoing": null,
+                    "tx_out": null
+                }
+            ]
+        }
+    ]
+}

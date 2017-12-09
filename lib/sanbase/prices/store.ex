@@ -63,13 +63,19 @@ defmodule Sanbase.Prices.Store do
 
   defp parse_price_series(_), do: []
 
+  def first_price_datetime(pair) do
+    ~s/SELECT FIRST(price) FROM "#{pair}"/
+    |> Store.query(database: price_database())
+    |> parse_price_datetime
+  end
+
   def last_price_datetime(pair) do
     ~s/SELECT LAST(price) FROM "#{pair}"/
     |> Store.query(database: price_database())
-    |> parse_last_price_datetime
+    |> parse_price_datetime
   end
 
-  defp parse_last_price_datetime(%{
+  defp parse_price_datetime(%{
     results: [%{
       series: [%{
         values: [[iso8601_datetime, _price]]
@@ -81,7 +87,7 @@ defmodule Sanbase.Prices.Store do
     datetime
   end
 
-  defp parse_last_price_datetime(_), do: nil
+  defp parse_price_datetime(_), do: nil
 
   defp convert_measurement_for_import(%Measurement{timestamp: timestamp, fields: fields, tags: tags, name: name}) do
     %{

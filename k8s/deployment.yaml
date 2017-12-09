@@ -1,73 +1,137 @@
 apiVersion: apps/v1beta1
-kind: Deployment
-metadata:
-  name: sanbase-master
-  labels:
-    app: sanbase
-    branch: master
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: sanbase
+kind: List
+items:
+- apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+    name: sanbase-web
+    labels:
+      app: sanbase-web
       branch: master
-  template:
-    metadata:
-      labels:
-        app: sanbase
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: sanbase-web
         branch: master
-    spec:
-      containers:
-      - name: sanbase-master
-        image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
-        env:
-          - name: DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                name: sanbase-env
-                key: databaseUrl
+    template:
+      metadata:
+        labels:
+          app: sanbase-web
+          branch: master
+      spec:
+        containers:
+        - name: sanbase-web
+          image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: databaseUrl
 
-          - name: INFLUXDB_HOST
-            value: "influxdb-influxdb"
+            - name: INFLUXDB_HOST
+              value: "influxdb-influxdb"
 
-          - name: PORT
-            value: "4000"
+            - name: PORT
+              value: "4000"
 
-          - name: WEBSITE_URL
-            value: "http://localhost:4000"
+            - name: WEBSITE_URL
+              value: "http://localhost:4000"
 
-          - name: ADMIN_BASIC_AUTH_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: sanbase-env
-                key: exAdminBasicAuthUsername
+            - name: ADMIN_BASIC_AUTH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: exAdminBasicAuthUsername
 
-          - name: ADMIN_BASIC_AUTH_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: sanbase-env
-                key: exAdminBasicAuthPassword
+            - name: ADMIN_BASIC_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: exAdminBasicAuthPassword
 
-          - name: ETHERSCAN_APIKEY
-            valueFrom:
-              secretKeyRef:
-                name: sanbase-env
-                key: etherscanApikey
+            - name: ETHERSCAN_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: etherscanApikey
 
-          - name: NOTIFICATIONS_WEBHOOK_URL
-            valueFrom:
-              secretKeyRef:
-                name: sanbase-env
-                key: notificationsWebhookUrl
+            - name: NOTIFICATIONS_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: notificationsWebhookUrl
 
-          - name: NOTIFICATIONS_CHANNEL
-            valueFrom:
-              secretKeyRef:
-                name: sanbase-env
-                key: notificationsChannel
+            - name: NOTIFICATIONS_CHANNEL
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: notificationsChannel
 
-          - name: ETHAUTH_URL
-            valueFrom:
-              secretKeyRef:
-                name: sanbase-env
-                key: ethauthUrl
+            - name: FAKTORY_HOST
+              value: faktory-faktory
+
+            - name: ETHAUTH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: ethauthUrl
+
+            - name: COINMARKETCAP_PRICES_ENABLED
+              value: "1"
+
+            - name: COINMARKETCAP_TICKERS_ENABLED
+              value: "1"
+
+            - name: ETHERSCAN_CRAWLER_ENABLED
+              value: "1"
+- apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+    name: sanbase-workers
+    labels:
+      app: sanbase-workers
+      branch: master
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: sanbase-workers
+        branch: master
+    template:
+      metadata:
+        labels:
+          app: sanbase-workers
+          branch: master
+      spec:
+        containers:
+        - name: sanbase-workers
+          image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp-volume
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: databaseUrl
+
+            - name: INFLUXDB_HOST
+              value: "influxdb-influxdb"
+
+            - name: PORT
+              value: "4000"
+
+            - name: FAKTORY_HOST
+              value: faktory-faktory
+
+            - name: FAKTORY_WORKERS_ENABLED
+              value: "1"
+
+            - name: TMP
+              value: /tmp
+        volumes:
+          - name: tmp-volume
+            emptyDir: {}

@@ -19,12 +19,12 @@ export const setupWeb3 = cbk => {
 
 export const signMessage = account => {
   const message = `Login in Santiment with address ${account}`
-  const hashMessage = window.web3.sha3('\x19Ethereum Signed Message:\n' + message.length + message)
+  const messageHash = window.web3.sha3('\x19Ethereum Signed Message:\n' + message.length + message)
   return new Promise((resolve, reject) => {
     window.web3.personal.sign(window.web3.fromUtf8(message), account, (error, signature) => {
       if (!error) {
         resolve({
-          hashMessage,
+          messageHash,
           signature
         })
       } else {

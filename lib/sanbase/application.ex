@@ -16,9 +16,6 @@ defmodule Sanbase.Application do
       # Start the endpoint when the application starts
       supervisor(SanbaseWeb.Endpoint, []),
 
-      # Start the Faktory supervisor
-      supervisor(Faktory.Supervisor, []),
-
       # Time series Prices DB connection
       Sanbase.Prices.Store.child_spec(),
 
@@ -76,10 +73,12 @@ defmodule Sanbase.Application do
 
       # Etherscan wallet tracking worker
       Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),
+
+      # Twitter account data tracking worker
+      Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
     ] ++ faktory_supervisor() ++ [
       # Github activity scraping scheduler
       Sanbase.ExternalServices.Github.child_spec(%{}),
-
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

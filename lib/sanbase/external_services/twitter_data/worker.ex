@@ -66,7 +66,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   end
 
   def handle_info({:EXIT, pid, reason}, state) do
-    Logger.debug("Child process with pid #{pid} exitted unexpectedly. Reason: #{inspect(reason)}")
+    Logger.warn("Child process with pid #{pid} exitted unexpectedly. Reason: #{inspect(reason)}")
     {:noreply, state}
   end
 

@@ -24,7 +24,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
     |> Stream.run()
   end
 
-  def time_series_for_measurement(measurement_name, from, to) do
+  def all_records_for_measurement(measurement_name, from, to) do
     select_from_to_query(measurement_name, from, to)
     |> Store.query()
     |> parse_twitter_data_series()

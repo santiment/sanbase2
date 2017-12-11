@@ -175,12 +175,8 @@ defmodule Sanbase.Prices.Store do
   end
 
   def drop_pair(pair) do
-    %{results: _} = "DROP MEASUREMENT #{pair}"
-    |> Store.execute(database: price_database())
-  end
-
-  defp price_database() do
-    Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
-    |> Keyword.get(:database)
+    %{results: _} =
+      "DROP MEASUREMENT #{pair}"
+      |> Store.execute()
   end
 end

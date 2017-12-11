@@ -31,9 +31,9 @@ import { unregister } from './serviceWorker'
 import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 let withTracker = null
-if (process.env.NODE_ENV === 'production') {
-  withTracker = require('./withTracker')
-}
+// if (process.env.NODE_ENV === 'production') {
+//   withTracker = require('./withTracker')
+// }
 
 const main = () => {
   const httpLink = createHttpLink({ uri: `${getAPIUrl()}/graphql` })

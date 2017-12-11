@@ -55,5 +55,7 @@ defmodule SanbaseWeb.Router do
 
       get "/*path", ReverseProxy, upstream: ["http://localhost:3000"]
     end
+  else
+    get "/*path", RootController, :index
   end
 end

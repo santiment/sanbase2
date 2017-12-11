@@ -18,3 +18,9 @@ services:
     environment:
       - CI=true
     command: yarn test --ci
+  production:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:9000"

@@ -1,4 +1,3 @@
-# NextJS build image
 FROM node:8.7.0-alpine as react_builder
 
 WORKDIR /app

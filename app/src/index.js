@@ -18,9 +18,9 @@ import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import './index.css'
 let withTracker = null
-if (process.env.NODE_ENV === 'production') {
-  withTracker = require('./withTracker')
-}
+// if (process.env.NODE_ENV === 'production') {
+//   withTracker = require('./withTracker')
+// }
 
 const origin = process.env.WEBSITE_URL || 'http://localhost:4000'
 

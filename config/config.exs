@@ -37,7 +37,8 @@ config :logger, :console,
 config :sanbase, Sanbase.Prices.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [ max_overflow: 10, size: 20 ]
+  pool: [ max_overflow: 10, size: 20 ],
+  database: "prices"
 
 config :sanbase, Sanbase.Github.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
@@ -78,8 +79,7 @@ config :tesla, adapter: :hackney
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   update_interval: 5 * 1000 * 60, # 5 minutes
-  sync_enabled: {:system, "COINMARKETCAP_PRICES_ENABLED", false},
-  database: "prices"
+  sync_enabled: {:system, "COINMARKETCAP_PRICES_ENABLED", false}
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
   update_interval: 5 * 1000 * 60,

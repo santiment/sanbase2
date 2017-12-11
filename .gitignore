@@ -15,6 +15,7 @@ erl_crash.dump
 # variables.
 /config/*.secret.exs
 /app/node_modules/
+/app/server/node_modules/
 /app/.next
 
 # Generated on crash by NPM

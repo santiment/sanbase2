@@ -10,6 +10,9 @@ defmodule Sanbase.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
+      # Start the Task Supervisor
+      supervisor(Task.Supervisor, [[name: Sanbase.TaskSupervisor]]),
+
       # Start the Ecto repository
       supervisor(Sanbase.Repo, []),
 

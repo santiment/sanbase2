@@ -69,7 +69,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   def handle_info(msg, state) do
-    Logger.info("Unknown message received: #{msg}")
+    Logger.warn("Unknown message received: #{msg}")
     {:noreply, state}
   end
 

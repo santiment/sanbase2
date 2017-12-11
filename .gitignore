@@ -15,8 +15,7 @@ erl_crash.dump
 # variables.
 /config/*.secret.exs
 /app/node_modules/
-/app/server/node_modules/
-/app/.next
+/app/build/
 
 # Generated on crash by NPM
 npm-debug.log

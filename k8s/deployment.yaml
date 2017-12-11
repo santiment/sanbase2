@@ -37,7 +37,10 @@ items:
               value: "4000"
 
             - name: WEBSITE_URL
-              value: "http://localhost:4000"
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: websiteUrl
 
             - name: ADMIN_BASIC_AUTH_USERNAME
               valueFrom:

@@ -17,10 +17,6 @@ import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import './index.css'
-let withTracker = null
-// if (process.env.NODE_ENV === 'production') {
-//   withTracker = require('./withTracker')
-// }
 
 const origin = process.env.WEBSITE_URL || 'http://localhost:4000'
 
@@ -89,13 +85,11 @@ store.subscribe(() => {
   saveState(store.getState().user)
 })
 
-const Application = withTracker ? withTracker(App) : App
-
 ReactDOM.render(
   <ApolloProvider client={client}>
     <Provider store={store}>
       <Router>
-        <Route path='/' component={Application} />
+        <Route path='/' component={App} />
       </Router>
     </Provider>
   </ApolloProvider>,

@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :eth_login, :login do
       arg :signature, non_null(:string)
       arg :address, non_null(:string)
-      arg :messageHash, non_null(:string)
+      arg :message_hash, non_null(:string)
 
       resolve &AccountResolver.eth_login/2
     end

@@ -2,6 +2,7 @@
 
 - 2017-12-12 | v.0.2.1:
 
+  Update icons.
   Added Error boundary.
   Added Raven Logs.
   Added CHANGELOG.

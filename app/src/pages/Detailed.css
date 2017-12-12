@@ -1,0 +1,150 @@
+.detailed-head {
+  overflow: hidden;
+  margin-top: 32px;
+  height: 84px;
+  margin-right: 16px;
+}
+
+.detailed-name h1 {
+  margin-top: 0;
+}
+
+.detailed-name {
+  float: left;
+  width: 50%;
+}
+
+.detailed-name p {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.1;
+  color: #3D4051;
+  margin-bottom: 0.5rem;
+  margin-left: 52px;
+}
+
+.detailed-name img {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.detailed-buttons {
+  float: right;
+  width: 50%;
+  height: 100%;
+  position: relative;
+}
+
+.detailed-buttons a.add-to-dashboard {
+  border: none;
+  border-radius: 4px;
+  padding: 8px 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background-color: #009663;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.7;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+.detailed-buttons a.add-to-dashboard:hover {
+  opacity: 1;
+  background-color: #025aa5;
+  border-color: #01549b;
+}
+
+.detailed .nav {
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+  padding-left: 0;
+  margin-bottom: 0;
+  list-style: none;
+}
+
+.detailed .nav li {
+  display: list-item;
+  text-align: -webkit-match-parent;
+  margin-bottom: -1px;
+}
+
+.detailed .nav li .nav-link {
+  border: 1px solid;
+  border-color: #ccc rgba(0, 0, 0, 0) #ccc #ccc;
+  background-color: #f2f2f2;
+  color: #3d4051;
+  display: block;
+}
+
+.detailed .nav li:last-child .nav-link {
+  border-color: #ccc;
+}
+
+.detailed .nav li.active .nav-link {
+  background-color: #fff;
+  border-color: #ccc rgba(0, 0, 0, 0) #fff #ccc;
+}
+
+.detailed .nav li.active:last-child .nav-link {
+  background-color: #fff;
+  border-color: #ccc #ccc #fff #ccc;
+}
+
+.detailed .main-chart .nav li {
+  width: 50%;
+}
+
+.detailed .main-chart .nav li .nav-link {
+  font-size: 24px;
+  font-weight: 300;
+  color: #171717;
+  padding: 4px 15px;
+}
+
+.main-chart .diff {
+  font-size: 70%;
+}
+
+.main-chart .diff.up {
+  color: #309d81;
+}
+
+.main-chart .diff.down {
+  color: #ca2d2d;
+}
+
+.main-chart .content div {
+  display: none;
+}
+
+.detailed .activity-panel .nav li {
+  width: 20%;
+}
+
+.detailed .activity-panel .nav li .nav-link {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #3D4051;
+  padding: 1px 8px;
+}
+
+.detailed .analysis .panel {
+  width: 33%;
+  float: left;
+  margin: 16px 0.33333% 16px 0;
+}
+
+.detailed .information .panel {
+  width: 49.75%;
+  float: left;
+  margin: 16px 0.5% 16px 0;
+}
+
+.detailed .information .panel:last-child {
+  margin: 16px 0% 16px 0;
+}

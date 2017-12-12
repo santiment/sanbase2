@@ -24,6 +24,7 @@
     "react-scripts": "1.0.17",
     "react-sizes": "^0.4.3",
     "react-table": "^6.7.4",
+    "react-tabs": "^2.1.1",
     "recompose": "^0.26.0",
     "redux": "^3.7.2",
     "redux-persist": "^5.4.0",

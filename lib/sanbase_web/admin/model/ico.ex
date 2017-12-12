@@ -79,8 +79,11 @@ defmodule Sanbase.ExAdmin.Model.Ico do
     end
 
     query do
-      %{all: [preload: [:project, :cap_currency, :currencies]] }
+      %{all: [preload: [:project, :cap_currency, ico_currencies: [:currency]]] }
     end
+
+    create_changeset :changeset_ex_admin
+    update_changeset :changeset_ex_admin
 
     form ico do
       inputs do
@@ -100,7 +103,13 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input ico, :main_contract_address
         input ico, :comments
         input ico, :cap_currency, collection: Sanbase.Repo.all(Currency)
-        inputs :currencies, as: :check_boxes, collection: Sanbase.Repo.all(Currency)
+      end
+
+      inputs "Ico Currencies" do
+        has_many ico, :ico_currencies, fn(c) ->
+          inputs :currency, collection: Sanbase.Repo.all(Currency)
+          input c, :value
+        end
       end
     end
 

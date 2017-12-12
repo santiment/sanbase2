@@ -6,6 +6,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   alias Sanbase.Model.{Project, ProjectEthAddress, ProjectBtcAddress, Ico, MarketSegment, Infrastructure}
   alias Sanbase.Model.Currency
+  alias Sanbase.Model.IcoCurrencies
 
   def import(ico_spreadsheet) when is_list(ico_spreadsheet) do
     ico_spreadsheet
@@ -18,15 +19,40 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     ico_spreadsheet_row = ico_spreadsheet_row
     |> set_infrastructure_default()
 
-    project = fill_project(ico_spreadsheet_row)
+    project = insert_or_update_project(ico_spreadsheet_row)
+
+    ico = insert_or_update_ico(project, ico_spreadsheet_row)
+
+    insert_or_update_ico_currencies(ico, ico_spreadsheet_row)
+  end
+
+  defp insert_or_update_project(ico_spreadsheet_row) do
+    fill_project(ico_spreadsheet_row)
     |> Ecto.Changeset.put_assoc(:market_segment, ensure_market_segment(ico_spreadsheet_row.market_segment))
     |> Ecto.Changeset.put_assoc(:infrastructure, ensure_infrastructure(ico_spreadsheet_row.infrastructure))
     |> Repo.insert_or_update!()
+  end
 
+  defp insert_or_update_ico(project, ico_spreadsheet_row) do
     fill_ico(project, ico_spreadsheet_row)
-    |> Ecto.Changeset.put_assoc(:currencies, ensure_currencies(ico_spreadsheet_row.ico_currencies))
     |> Ecto.Changeset.put_assoc(:cap_currency, ensure_currency(ico_spreadsheet_row.cap_currency))
     |> Repo.insert_or_update!()
+  end
+
+  defp insert_or_update_ico_currencies(ico, ico_spreadsheet_row) do
+    currencies = ensure_currencies(ico_spreadsheet_row.ico_currencies)
+    |> Enum.map(&Ecto.Changeset.change(&1))
+
+    Enum.each(currencies, fn currency ->
+      currency = currency
+      |> Repo.insert_or_update!()
+
+      ensure_ico_currency(ico, currency)
+      |> Repo.insert_or_update!()
+    end)
+    
+    currency_ids = Enum.map(currencies, &Ecto.Changeset.get_field(&1, :id))
+    Repo.delete_all(from c in IcoCurrencies, where: c.ico_id == ^ico.id and c.currency_id not in ^currency_ids)
   end
 
   defp fill_project(ico_spreadsheet_row) do
@@ -72,7 +98,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp ensure_project(project_name) do
     Repo.get_by(Project, name: project_name)
-    |> Repo.preload([:eth_addresses, :btc_addresses, :market_segment, :infrastructure, {:icos, [:currencies, :cap_currency]}])
+    |> Repo.preload([:eth_addresses, :btc_addresses, :market_segment, :infrastructure, {:icos, [{:ico_currencies, [:ico, :currency]}, :cap_currency]}])
     |> case do
       result = %Project{} -> result
       nil -> %Project{}
@@ -105,7 +131,8 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp ensure_ico(project) do
     case project do
-      %{ico: result = %Ico{}} -> result
+      %{icos: []} -> %Ico{}
+      %{icos: result} when is_list(result) -> List.first(result)
       _ -> %Ico{}
     end
   end
@@ -121,10 +148,23 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     Repo.get_by(Currency, code: currency_code)
     |> case do
       result = %Currency{} -> result
+        # |> Ecto.Changeset.change()
       nil ->
         %Currency{}
         |> Currency.changeset(%{code: currency_code})
     end
+  end
+
+  defp ensure_ico_currency(ico, currency) do
+    Repo.get_by(IcoCurrencies, ico_id: ico.id, currency_id: currency.id)
+    |> Repo.preload([:ico, :currency])
+    |> case do
+      result = %IcoCurrencies{} -> result
+      nil -> %IcoCurrencies{}
+    end
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_assoc(:ico, ico)
+    |> Ecto.Changeset.put_assoc(:currency, currency)
   end
 
   defp set_infrastructure_default(ico_spreadsheet_row = %IcoSpreadsheetRow{infrastructure: nil}) do

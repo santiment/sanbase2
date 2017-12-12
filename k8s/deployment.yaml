@@ -78,6 +78,12 @@ items:
                   name: sanbase-env
                   key: ethauthUrl
 
+            - name: RAVEN_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: sentryFrontendDsn
+
             - name: COINMARKETCAP_PRICES_ENABLED
               value: "1"
 

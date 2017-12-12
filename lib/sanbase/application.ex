@@ -1,13 +1,10 @@
 defmodule Sanbase.Application do
   use Application
+  import Supervisor.Spec
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
-    import Supervisor.Spec
-
-    Faktory.Configuration.init
-
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Ecto repository
@@ -62,9 +59,7 @@ defmodule Sanbase.Application do
 
       # Etherscan wallet tracking worker
       Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),
-
-      supervisor(Faktory.Supervisor, []),
-    ]
+    ] ++ faktory_supervisor()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -77,5 +72,14 @@ defmodule Sanbase.Application do
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp faktory_supervisor do
+    if Faktory.start_workers? do
+      Faktory.Configuration.init
+      [supervisor(Faktory.Supervisor, [])]
+    else
+      []
+    end
   end
 end

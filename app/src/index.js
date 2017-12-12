@@ -6,6 +6,8 @@ import { createStore, applyMiddleware } from 'redux'
 import { composeWithDevTools } from 'redux-devtools-extension'
 import axios from 'axios'
 import { multiClientMiddleware } from 'redux-axios-middleware'
+import Raven from 'raven-js'
+import createRavenMiddleware from 'raven-for-redux'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import { createHttpLink } from 'apollo-link-http'
@@ -17,6 +19,8 @@ import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import './index.css'
+
+Raven.config(process.env.RAVEN_DSN).install()
 
 const origin = process.env.WEBSITE_URL || 'http://localhost:4000'
 
@@ -49,7 +53,10 @@ const clients = {
 
 loadState() && setAuthorizationToken(loadState().token)
 
-const middleware = [multiClientMiddleware(clients)]
+const middleware = [
+  multiClientMiddleware(clients),
+  createRavenMiddleware(Raven)
+]
 
 const store = createStore(reducers,
   {user: loadState()} || {},

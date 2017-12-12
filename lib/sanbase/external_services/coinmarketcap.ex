@@ -9,14 +9,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   import Ecto.Query
   import Sanbase.Utils, only: [parse_config_value: 1]
 
+  require Logger
+
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Prices.{Store, Measurement}
-  alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
+  alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
   alias Sanbase.Notifications.CheckPrices
 
-  @default_update_interval 1000 * 60 * 5 # 5 minutes
+  # 5 minutes
+  @default_update_interval 1000 * 60 * 5
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -26,7 +28,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     update_interval = get_config(:update_interval, @default_update_interval)
 
     if get_config(:sync_enabled, false) do
-      Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
+      Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
       |> Keyword.get(:database)
       |> Instream.Admin.Database.create()
       |> Store.execute()
@@ -40,18 +42,27 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
-    Project
-    |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
-    |> Repo.all
-    |> Task.async_stream(
+    query =
+      Project
+      |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
+
+    Task.Supervisor.async_stream_nolink(
+      Sanbase.TaskSupervisor,
+      Repo.all(query),
       &fetch_price_data/1,
+      ordered: false,
       max_concurrency: 5,
       timeout: :infinity
     )
-    |> Stream.run
+    |> Stream.run()
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
 
+    {:noreply, state}
+  end
+
+  def handle_info(msg, state) do
+    Logger.warn("Unknown message received: #{msg}")
     {:noreply, state}
   end
 
@@ -63,14 +74,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     GraphData.fetch_prices(
       coinmarketcap_id,
       last_price_datetime(project),
-      DateTime.utc_now
+      DateTime.utc_now()
     )
     |> Stream.flat_map(fn price_point ->
-      [
-        convert_to_measurement(price_point, "_usd", "#{ticker}_USD"),
-        convert_to_measurement(price_point, "_btc", "#{ticker}_BTC"),
-      ]
-    end)
+         [
+           convert_to_measurement(price_point, "_usd", "#{ticker}_USD"),
+           convert_to_measurement(price_point, "_btc", "#{ticker}_BTC")
+         ]
+       end)
     |> Store.import()
 
     CheckPrices.exec(project, "usd")
@@ -86,11 +97,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     }
   end
 
-  defp price_point_to_fields(%PricePoint{marketcap: marketcap, volume_usd: volume} = point, suffix) do
+  defp price_point_to_fields(
+         %PricePoint{marketcap: marketcap, volume_usd: volume} = point,
+         suffix
+       ) do
     %{
-      "price": Map.get(point, String.to_atom("price" <> suffix)),
-      "volume": volume,
-      "marketcap": marketcap
+      price: Map.get(point, String.to_atom("price" <> suffix)),
+      volume: volume,
+      marketcap: marketcap
     }
   end
 
@@ -108,6 +122,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     case Store.last_price_datetime(pair) do
       nil ->
         GraphData.fetch_first_price_datetime(coinmarketcap_id)
+
       datetime ->
         datetime
     end

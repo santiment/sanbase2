@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile-test
+    volumes:
+      - .:/usr/app/
+      - /usr/app/node_modules
+    tty: true
+    stdin_open: true
+    command: yarn test --watchAll
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile-test
+    environment:
+      - CI=true
+    command: yarn test --ci
+  production:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:9000"

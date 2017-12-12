@@ -6,6 +6,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   # into a local DB
   use GenServer, restart: :permanent, shutdown: 5_000
 
+  import Sanbase.Utils, only: [parse_config_value: 1]
+
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Project
   alias Sanbase.Repo
@@ -19,9 +21,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   end
 
   def init(:ok) do
-    update_interval = Keyword.get(config(), :update_interval, @default_update_interval)
+    update_interval = get_config(:update_interval, @default_update_interval)
 
-    if Keyword.get(config(), :sync_enabled, false) do
+    if get_config(:sync_enabled, false) do
       GenServer.cast(self(), :sync)
 
       {:ok, %{update_interval: update_interval}}
@@ -81,5 +83,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   def config do
     Application.get_env(:sanbase, __MODULE__)
+  end
+
+  defp get_config(key, default \\ nil) do
+    Keyword.get(config(), key, default)
+    |> parse_config_value()
   end
 end

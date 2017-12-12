@@ -6,8 +6,6 @@ config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
   server: true
 
-config :sanbase, node_server: "http://localhost:3001"
-
 # Print only warnings and errors during test
 config :logger, level: :warn
 
@@ -42,6 +40,15 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
   sync_enabled: false
+
+config :faktory_worker_ex,
+  client: [
+    pool: 0,
+  ],
+  start_workers: false
+
+config :sanbase, Sanbase.Github.Store,
+  database: "github_activity_test"
 
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"

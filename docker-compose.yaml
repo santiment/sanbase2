@@ -9,6 +9,21 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: db
       POSTGRES_DB: sanbase-db
+  influxdb:
+    image: influxdb
+    ports:
+      - "8086"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: db
+      POSTGRES_DB: sanbase-db
+  faktory:
+    image: contribsys/faktory:latest
+    ports:
+      - "7419"
+      - "7420:7420"
+    command: "-b 0.0.0.0:7419 -e production"
   sanbase:
     build:
       context: .
@@ -18,8 +33,12 @@ services:
       - "4000:4000"
     links:
       - db
+      - influxdb
+      - faktory
     environment:
       PORT: 4000
       DATABASE_URL: postgres://postgres:password@db:5432/sanbase-db
       ADMIN_BASIC_AUTH_USERNAME: admin
       ADMIN_BASIC_AUTH_PASSWORD: admin
+      INFLUXDB_HOST: influxdb
+      FAKTORY_HOST: faktory

@@ -7,6 +7,7 @@ defmodule Sanbase.Notifications.CheckPrices do
   alias Sanbase.Notifications.CheckPrices.ComputeMovements
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
+  import Sanbase.Utils, only: [parse_config_value: 1]
 
   @http_service Mockery.of("Tesla")
 
@@ -14,39 +15,41 @@ defmodule Sanbase.Notifications.CheckPrices do
   @check_interval_in_sec 60 * 60 # 60 minutes
   @price_change_threshold 5 # percent
 
-  def exec(project) do
-    unless ComputeMovements.recent_notification?(project, seconds_ago(@cooldown_period_in_sec)) do
-      prices = fetch_price_points(project)
+  def exec(project, counter_currency) do
+    unless ComputeMovements.recent_notification?(project, seconds_ago(@cooldown_period_in_sec), counter_currency) do
+      prices = fetch_price_points(project, counter_currency)
 
-      ComputeMovements.build_notification(project, prices, @price_change_threshold)
-      |> send_notification()
+      ComputeMovements.build_notification(project, counter_currency, prices, @price_change_threshold)
+      |> send_notification(counter_currency)
     end
   end
 
-  defp fetch_price_points(project) do
-    Store.fetch_price_points(price_ticker(project), seconds_ago(@check_interval_in_sec), DateTime.utc_now())
+  defp fetch_price_points(project, counter_currency) do
+    ticker = price_ticker(project, counter_currency)
+
+    Store.fetch_price_points(ticker, seconds_ago(@check_interval_in_sec), DateTime.utc_now())
   end
 
-  def send_notification({notification, price_difference, project}) do
+  def send_notification({notification, price_difference, project}, counter_currency) do
     %{status: 200} = @http_service.post(
       webhook_url(),
-      notification_payload(price_difference, project),
+      notification_payload(price_difference, project, counter_currency),
       headers: %{"Content-Type" => "application/json"}
     )
 
     Repo.insert!(notification)
   end
 
-  def send_notification(_), do: false
+  def send_notification(_, _), do: false
 
-  defp price_ticker(%Project{ticker: ticker}) do
-    "#{ticker}_USD"
+  defp price_ticker(%Project{ticker: ticker}, counter_currency) do
+    "#{ticker}_#{String.upcase(counter_currency)}"
   end
 
-  defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}) do
+  defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}, counter_currency) do
     Poison.encode!(%{
-      text: "#{name}: #{notification_emoji(price_difference)} #{Float.round(price_difference, 2)}% in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
-      channel: notification_channel()
+      text: "#{name}: #{notification_emoji(price_difference)} #{Float.round(price_difference, 2)}% #{String.upcase(counter_currency)} in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
+      channel: notification_channel(counter_currency)
     })
   end
 
@@ -56,16 +59,18 @@ defmodule Sanbase.Notifications.CheckPrices do
     |> parse_config_value()
   end
 
-  defp notification_channel() do
+  defp notification_channel("btc") do
+    Application.fetch_env!(:sanbase, Sanbase.Notifications.CheckPrice)
+    |> Keyword.get(:notification_channel)
+    |> parse_config_value()
+    |> Kernel.<>("-btc")
+  end
+
+  defp notification_channel(_) do
     Application.fetch_env!(:sanbase, Sanbase.Notifications.CheckPrice)
     |> Keyword.get(:notification_channel)
     |> parse_config_value()
   end
-
-  defp parse_config_value({:system, env_key, default}), do: System.get_env(env_key) || default
-  defp parse_config_value({:system, env_key}), do: System.get_env(env_key)
-
-  defp parse_config_value(value), do: value
 
   defp notification_emoji(price_difference) when price_difference > 0, do: ":signal_up:"
   defp notification_emoji(price_difference) when price_difference < 0, do: ":signal_down:"

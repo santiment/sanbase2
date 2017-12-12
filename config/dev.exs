@@ -13,7 +13,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   check_origin: false,
   watchers: [
     yarn: [
-      "dev",
+      "start",
       cd: Path.expand("../app", __DIR__)
     ],
     node: [
@@ -48,12 +48,10 @@ config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
 config :sanbase, Sanbase.Repo,
-  adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
   database: "sanbase_dev",
-  hostname: "localhost",
-  pool_size: 10
+  hostname: "localhost"
 
 config :ex_admin,
   basic_auth: [

@@ -1,5 +1,6 @@
 defmodule Sanbase.Application do
   use Application
+  import Supervisor.Spec
 
   import Supervisor.Spec
   import Sanbase.ApplicationUtils

@@ -1,15 +1,21 @@
 import React, { Component } from 'react'
 import GoogleAnalytics from 'react-ga'
 
-GoogleAnalytics.initialize('UA-100571693-1')
+if (process.env.NODE_ENV === 'production') {
+  GoogleAnalytics.initialize('UA-100571693-1')
+}
 
 const withTracker = (WrappedComponent, options = {}) => {
   const trackPage = page => {
-    GoogleAnalytics.set({
-      page,
-      ...options
-    })
-    GoogleAnalytics.pageview(page)
+    if (process.env.NODE_ENV === 'production') {
+      GoogleAnalytics.set({
+        page,
+        ...options
+      })
+      GoogleAnalytics.pageview(page)
+    } else {
+      console.log('track page', page)
+    }
   }
 
   const HOC = class extends Component {

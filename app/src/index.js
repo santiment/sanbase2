@@ -22,7 +22,10 @@ import './index.css'
 
 Raven.config(process.env.RAVEN_DSN).install()
 
-const origin = process.env.WEBSITE_URL || 'http://localhost:4000'
+let origin = process.env.WEBSITE_URL || ''
+if (process.env.production) {
+  origin = window.location.origin
+}
 
 const httpLink = createHttpLink({ uri: `${origin}/graphql` })
 const authLink = setContext((_, { headers }) => {

@@ -62,4 +62,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ProjectInfo do
     |> Enum.find(&(&1))
     |> List.last
   end
+
+  defp creator_transaction(html) do
+    Floki.find(html, "[data-original-title='Creator Transaction Hash']")
+    |> hd
+    |> Floki.text
+  end
 end

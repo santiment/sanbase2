@@ -102,6 +102,11 @@ config :sanbase, Sanbase.Auth.Ethauth,
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
 
+config :sanbase, Sanbase.Parity,
+  url: {:system, "PARITY_URL"},
+  basic_auth_username: {:system, "PARITY_BASIC_AUTH_USERNAME"},
+  basic_auth_password: {:system, "PARITY_BASIC_AUTH_PASSWORD"}
+
 config :faktory_worker_ex,
   host: {:system, "FAKTORY_HOST", "localhost"},
   port: {:system, "FAKTORY_PORT", 7419},

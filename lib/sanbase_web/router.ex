@@ -18,11 +18,6 @@ defmodule SanbaseWeb.Router do
     plug SanbaseWeb.Graphql.ContextPlug
   end
 
-  pipeline :nextjs do
-    plug :accepts, ["html"]
-    plug :put_secure_browser_headers
-  end
-
   use ExAdmin.Router
   scope "/admin", ExAdmin do
     pipe_through [:browser, :basic_auth]
@@ -49,9 +44,20 @@ defmodule SanbaseWeb.Router do
     resources "/projects", ProjectsController, only: [:index]
   end
 
-  scope "/" do
-    pipe_through [:nextjs]
+  if Mix.env == :dev do
+    pipeline :nextjs do
+      plug :accepts, ["html"]
+      plug :put_secure_browser_headers
+    end
 
-    get "/*path", ReverseProxy, upstream: [Application.fetch_env!(:sanbase, :node_server)]
+    scope "/" do
+      pipe_through [:nextjs]
+
+      get "/*path", ReverseProxy, upstream: ["http://localhost:3000"]
+    end
+  else
+    scope "/", SanbaseWeb do
+      get "/*path", RootController, :index
+    end
   end
 end

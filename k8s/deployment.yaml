@@ -37,7 +37,10 @@ items:
               value: "4000"
 
             - name: WEBSITE_URL
-              value: "http://localhost:4000"
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: websiteUrl
 
             - name: ADMIN_BASIC_AUTH_USERNAME
               valueFrom:
@@ -77,6 +80,12 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: ethauthUrl
+
+            - name: RAVEN_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: sentryFrontendDsn
 
             - name: COINMARKETCAP_PRICES_ENABLED
               value: "1"

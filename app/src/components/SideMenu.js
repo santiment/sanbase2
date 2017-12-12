@@ -18,7 +18,9 @@ export const SideMenu = ({
   history
 }) => (
   <div className='side-menu'>
-    <div className='brand'>
+    <div
+      onClick={() => history.push('/')}
+      className='brand'>
       <img
         src={logo}
         width='115'

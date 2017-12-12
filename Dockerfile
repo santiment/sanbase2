@@ -1,5 +1,4 @@
-# NextJS build image
-FROM node:8.7.0-alpine as nextjs_builder
+FROM node:8.7.0-alpine as react_builder
 
 WORKDIR /app
 
@@ -10,15 +9,6 @@ RUN yarn
 COPY ./app /app
 
 RUN yarn build
-
-# NextJS build image
-FROM node:8.7.0-alpine as nextjs_modules
-
-WORKDIR /app
-
-COPY ./app/package.json /app/package.json
-COPY ./app/yarn.lock /app/yarn.lock
-RUN yarn install --prod
 
 # Elixir and phoenix assets build image
 FROM elixir:1.5.2-alpine as code_builder
@@ -55,14 +45,11 @@ RUN mix release
 # Release image
 FROM elixir:1.5.2-alpine
 
-RUN apk add --update bash nodejs nodejs-npm
+RUN apk add --update bash
 
 WORKDIR /app
 
-COPY --from=nextjs_builder /app/.next /app/app/.next
-COPY --from=nextjs_builder /app/static /app/app/static
-COPY --from=nextjs_modules /app/node_modules /app/app/node_modules
-COPY --from=nextjs_builder /app/package.json /app/app/package.json
 COPY --from=code_builder /app/_build/prod/rel/sanbase .
+COPY --from=react_builder /app/build /app/lib/sanbase-0.0.1/priv/static/
 
 CMD bin/sanbase foreground

@@ -21,8 +21,7 @@ config :sanbase, SanbaseWeb.Endpoint,
   root: '.',
   version: Application.spec(:sanbase, :vsn),
   load_from_system_env: true,
-  secret_key_base: System.get_env("SECRET_KEY_BASE"),
-  watchers: [npm: ["run", "start", cd: Path.expand("../app", __DIR__)]]
+  secret_key_base: System.get_env("SECRET_KEY_BASE")
 
 # Do not print debug messages in production
 config :logger, level: :info
@@ -64,10 +63,6 @@ config :logger, level: :info
 #
 #     config :sanbase, SanbaseWeb.Endpoint, server: true
 #
-
-config :sanbase, Sanbase.Repo,
-  adapter: Ecto.Adapters.Postgres
-
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,

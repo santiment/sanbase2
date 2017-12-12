@@ -129,11 +129,11 @@ const mapDispatchToProps = dispatch => {
 }
 
 const requestAuthGQL = gql`
-  mutation ethLogin($signature: String, $address: String, $addressHash: String) {
+  mutation ethLogin($signature: String!, $address: String!, $messageHash: String!) {
     ethLogin(
       signature: $signature,
       address: $address,
-      addressHash: $addressHash) {
+      messageHash: $messageHash) {
         token,
         user {
           id,

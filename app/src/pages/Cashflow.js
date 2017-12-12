@@ -195,7 +195,7 @@ export const Cashflow = ({
         defaultSorted={[
           {
             id: 'market_cap_usd',
-            desc: true
+            desc: false
           }
         ]}
         className='-highlight'

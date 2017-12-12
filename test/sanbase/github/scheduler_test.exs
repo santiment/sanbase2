@@ -14,7 +14,7 @@ defmodule Sanbase.Github.SchedulerTest do
     |> Instream.Admin.Database.create()
     |> Github.Store.execute()
 
-    Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
+    Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
     |> Keyword.get(:database)
     |> Instream.Admin.Database.create()
     |> Prices.Store.execute()

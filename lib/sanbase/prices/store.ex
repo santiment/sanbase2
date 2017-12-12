@@ -13,12 +13,13 @@ defmodule Sanbase.Prices.Store do
   alias Sanbase.Prices.Measurement
 
   def import(measurements) do
+    # 1 day of 5 min resolution data
     measurements
     |> Stream.map(&convert_measurement_for_import/1)
-    |> Stream.chunk_every(288) # 1 day of 5 min resolution data
+    |> Stream.chunk_every(288)
     |> Enum.map(fn data_for_import ->
-      :ok = Store.write(data_for_import, database: price_database())
-    end)
+         :ok = Store.write(data_for_import)
+       end)
   end
 
   def fetch_price_points(pair, from, to) do
@@ -29,59 +30,71 @@ defmodule Sanbase.Prices.Store do
   def fetch_prices_with_resolution(pair, from, to, resolution) do
     ~s/SELECT MEAN(price), SUM(volume), MEAN(marketcap)
     FROM "#{pair}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{
+      DateTime.to_unix(to, :nanoseconds)
+    }
     GROUP BY time(#{resolution})/
     |> q()
   end
 
   def q(query) do
-    Store.query(query, database: price_database())
+    Store.query(query)
     |> parse_price_series
   end
 
   defp fetch_query(pair, from, to) do
     ~s/SELECT time, price, volume, marketcap
     FROM "#{pair}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{
+      DateTime.to_unix(to, :nanoseconds)
+    }/
   end
 
-  defp parse_price_series(%{results: [%{error: error}]}), do: raise error
+  defp parse_price_series(%{results: [%{error: error}]}), do: raise(error)
 
   defp parse_price_series(%{
-    results: [%{
-      series: [%{
-        values: price_series
-      }]
-    }]
-  }) do
+         results: [
+           %{
+             series: [
+               %{
+                 values: price_series
+               }
+             ]
+           }
+         ]
+       }) do
     price_series
     |> Enum.map(fn [iso8601_datetime | tail] ->
-      {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-      [datetime | tail]
-    end)
+         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+         [datetime | tail]
+       end)
   end
 
   defp parse_price_series(_), do: []
 
   def first_price_datetime(pair) do
     ~s/SELECT FIRST(price) FROM "#{pair}"/
-    |> Store.query(database: price_database())
+    |> Store.query()
     |> parse_price_datetime
   end
 
   def last_price_datetime(pair) do
     ~s/SELECT LAST(price) FROM "#{pair}"/
-    |> Store.query(database: price_database())
+    |> Store.query()
     |> parse_price_datetime
   end
 
   defp parse_price_datetime(%{
-    results: [%{
-      series: [%{
-        values: [[iso8601_datetime, _price]]
-      }]
-    }]
-  }) do
+         results: [
+           %{
+             series: [
+               %{
+                 values: [[iso8601_datetime, _price]]
+               }
+             ]
+           }
+         ]
+       }) do
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
     datetime
@@ -89,24 +102,27 @@ defmodule Sanbase.Prices.Store do
 
   defp parse_price_datetime(_), do: nil
 
-  defp convert_measurement_for_import(%Measurement{timestamp: timestamp, fields: fields, tags: tags, name: name}) do
+  defp convert_measurement_for_import(%Measurement{
+         timestamp: timestamp,
+         fields: fields,
+         tags: tags,
+         name: name
+       }) do
     %{
-      points: [%{
-        measurement: name,
-        fields: fields,
-        tags: tags || [],
-        timestamp: timestamp
-      }]
+      points: [
+        %{
+          measurement: name,
+          fields: fields,
+          tags: tags || [],
+          timestamp: timestamp
+        }
+      ]
     }
   end
 
   def drop_pair(pair) do
-    %{results: _} = "DROP MEASUREMENT #{pair}"
-    |> Store.execute(database: price_database())
-  end
-
-  defp price_database() do
-    Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
-    |> Keyword.get(:database)
+    %{results: _} =
+      "DROP MEASUREMENT #{pair}"
+      |> Store.execute()
   end
 end

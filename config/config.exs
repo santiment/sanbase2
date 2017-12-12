@@ -145,7 +145,7 @@ config :faktory_worker_ex,
 
 config :extwitter, :oauth, [
   consumer_key: {:system, "TWITTER_CONSUMER_KEY"},
-  consumer_secret: {:system, "TWITTER_CONSUMER_KEY"}
+  consumer_secret: {:system, "TWITTER_CONSUMER_SECRET"}
 ]
 
 # Import environment specific config. This must remain at the bottom

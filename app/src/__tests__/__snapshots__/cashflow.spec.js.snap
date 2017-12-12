@@ -200,7 +200,7 @@ exports[`Cashflow container it should render correctly 1`] = `
       defaultSorted={
         Array [
           Object {
-            "desc": true,
+            "desc": false,
             "id": "market_cap_usd",
           },
         ]

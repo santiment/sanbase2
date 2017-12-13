@@ -19,11 +19,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     ico_spreadsheet_row = ico_spreadsheet_row
     |> set_infrastructure_default()
 
-    project = insert_or_update_project(ico_spreadsheet_row)
-
-    ico = insert_or_update_ico(project, ico_spreadsheet_row)
-
-    insert_or_update_ico_currencies(ico, ico_spreadsheet_row)
+    insert_or_update_project(ico_spreadsheet_row)
+    |> insert_or_update_ico(ico_spreadsheet_row)
+    |> insert_or_update_ico_currencies(ico_spreadsheet_row)
   end
 
   defp insert_or_update_project(ico_spreadsheet_row) do
@@ -50,7 +48,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       ensure_ico_currency(ico, currency)
       |> Repo.insert_or_update!()
     end)
-    
+
     currency_ids = Enum.map(currencies, &Ecto.Changeset.get_field(&1, :id))
     Repo.delete_all(from c in IcoCurrencies, where: c.ico_id == ^ico.id and c.currency_id not in ^currency_ids)
   end
@@ -131,8 +129,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp ensure_ico(project) do
     case project do
-      %{icos: []} -> %Ico{}
-      %{icos: result} when is_list(result) -> List.first(result)
+      %{icos: [result|_]} -> result
       _ -> %Ico{}
     end
   end

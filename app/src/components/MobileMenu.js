@@ -29,7 +29,9 @@ const MobileMenu = ({
 }) => (
   <div className={appMenuCls(isMenuOpened)}>
     <div className='app-bar'>
-      <div className='brand'>
+      <div
+        onClick={() => history.push('/')}
+        className='brand'>
         <img
           src={logo}
           width='115'

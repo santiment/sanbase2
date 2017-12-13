@@ -8,7 +8,7 @@ export const initialState = {
     pageSize: 0,
     page: 1
   },
-  search: null
+  search: ''
 }
 
 export default (state = initialState, action) => {
@@ -42,9 +42,11 @@ export default (state = initialState, action) => {
         error: true
       }
     case 'SET_SEARCH':
-      const visibleItems = (items !== null) ? state.items.filter((item) => {
-        return item.name.toLowerCase().indexOf(action.payload.search) !== -1 ||
-          item.ticker.toLowerCase().indexOf(action.payload.search) !== -1
+      const visibleItems = (items !== null) ? state.items.filter(item => {
+        const name = item.name || ''
+        const ticker = item.ticker || ''
+        return name.toLowerCase().indexOf(action.payload.search) !== -1 ||
+          ticker.toLowerCase().indexOf(action.payload.search) !== -1
       }).length : 0
 
       return {

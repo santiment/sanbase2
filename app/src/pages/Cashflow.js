@@ -95,8 +95,10 @@ const columns = [{
     </div>
   ),
   filterMethod: (filter, row) => {
-    return row[filter.id].name.toLowerCase().indexOf(filter.value) !== -1 ||
-      row[filter.id].ticker.toLowerCase().indexOf(filter.value) !== -1
+    const name = row[filter.id].name || ''
+    const ticker = row[filter.id].ticker || ''
+    return name.toLowerCase().indexOf(filter.value) !== -1 ||
+      ticker.toLowerCase().indexOf(filter.value) !== -1
   }
 }, {
   Header: 'Market Cap',
@@ -195,7 +197,7 @@ export const Cashflow = ({
         defaultSorted={[
           {
             id: 'market_cap_usd',
-            desc: true
+            desc: false
           }
         ]}
         className='-highlight'

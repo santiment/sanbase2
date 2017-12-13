@@ -1,18 +1,18 @@
 import React from 'react'
 import './PanelBlock.css'
 
-const PanelBlock = ({title, classes, content}) => (
+const PanelBlock = ({title, classes, children}) => (
   <div className={'panel ' + classes}>
     <h4>{title}</h4>
     <hr />
-    {content}
+    {children}
   </div>
 )
 
 PanelBlock.defaultProps = {
   classes: '',
   title: '',
-  content: ''
+  children: ''
 }
 
 export default PanelBlock

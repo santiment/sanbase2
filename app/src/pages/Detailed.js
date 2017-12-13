@@ -11,6 +11,8 @@ import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
 import ProjectIcon from './../components/ProjectIcon'
 import PanelBlock from './../components/PanelBlock'
 import { retrieveProjects } from './Cashflow.actions.js'
+import GeneralInfoBlock from './../components/GeneralInfoBlock'
+import FinancialsBlock from './../components/FinancialsBlock'
 import './Detailed.css'
 
 const propTypes = {
@@ -130,14 +132,18 @@ export const Detailed = ({match, projects, loading}) => {
         </Tabs>
       </div>
       <PanelBlock title='Blockchain Analytics' />
-      <div className='row analysis'>
+      <div className='analysis'>
         <PanelBlock title='Signals/Volatility' />
         <PanelBlock title='Expert Analyses' />
         <PanelBlock title='News/Press' />
       </div>
-      <div className='row information'>
-        <PanelBlock title='General Info' />
-        <PanelBlock title='Financials' />
+      <div className='information'>
+        <PanelBlock title='General Info'>
+          <GeneralInfoBlock info={project} />
+        </PanelBlock>
+        <PanelBlock title='Financials'>
+          <FinancialsBlock info={project} />
+        </PanelBlock>
       </div>
     </div>
   )

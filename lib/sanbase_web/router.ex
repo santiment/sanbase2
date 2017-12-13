@@ -44,6 +44,8 @@ defmodule SanbaseWeb.Router do
     resources "/projects", ProjectsController, only: [:index]
   end
 
+  get "/env.js", SanbaseWeb.RootController, :react_env
+
   if Mix.env == :dev do
     pipeline :nextjs do
       plug :accepts, ["html"]

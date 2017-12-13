@@ -48,7 +48,7 @@ defmodule Sanbase.Application do
 
       # Coinmarketcap http rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-        :html_coinmarketcap_rate_limiter,
+        :http_coinmarketcap_rate_limiter,
         scale: 60_000,
         limit: 20,
         time_between_requests: 2000

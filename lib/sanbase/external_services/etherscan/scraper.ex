@@ -2,6 +2,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   use Tesla
 
   alias Sanbase.ExternalServices.RateLimiting
+  alias Sanbase.ExternalServices.ProjectInfo
 
   plug RateLimiting.Middleware, name: :etherscan_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://etherscan.io"
@@ -14,10 +15,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   def parse_address_page(html, project_info) do
-    project_info
-    |> struct!(
+    %ProjectInfo{project_info |
       creation_transaction: creation_transaction(html)
-    )
+    }
   end
 
   defp creation_transaction(html) do

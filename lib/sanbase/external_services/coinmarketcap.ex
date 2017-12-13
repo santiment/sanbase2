@@ -157,7 +157,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp get_config(key, default \\ nil) do
+  defp get_config(key, default) do
     Keyword.get(config(), key, default)
     |> parse_config_value()
   end

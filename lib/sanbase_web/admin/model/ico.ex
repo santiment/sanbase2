@@ -21,7 +21,6 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input ico, :end_date
         input ico, :tokens_issued_at_ico
         input ico, :tokens_sold_at_ico
-        input ico, :tokens_sold_at_ico
         input ico, :funds_raised_btc
         input ico, :funds_raised_usd
         input ico, :funds_raised_eth

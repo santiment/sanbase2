@@ -24,7 +24,6 @@ config :sanbase, Sanbase.Repo,
 config :hound, driver: "chrome_driver"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  database: "prices_test",
   sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
@@ -49,6 +48,9 @@ config :faktory_worker_ex,
 
 config :sanbase, Sanbase.Github.Store,
   database: "github_activity_test"
+
+config :sanbase, Sanbase.Prices.Store,
+  database: "prices_test"
 
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"

@@ -18,6 +18,7 @@ defmodule Sanbase.Model.IcoCurrencies do
     ico_currencies
     |> cast(attrs, [:ico_id, :currency_id, :value])
     |> validate_required([:ico_id, :currency_id])
+    |> unique_constraint(:ico_currency, name: :ico_currencies_uk)
   end
 
   @doc false
@@ -27,6 +28,7 @@ defmodule Sanbase.Model.IcoCurrencies do
     ico_currencies
     |> cast(attrs, [:ico_id, :currency_id, :value, :_destroy])
     |> validate_required([:currency_id])
+    |> unique_constraint(:ico_currency, name: :ico_currencies_uk)
     |> mark_for_deletion()
   end
 

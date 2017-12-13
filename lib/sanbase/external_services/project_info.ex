@@ -57,6 +57,6 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
     {block_number, ""} = Integer.parse(block_number_hex, 16)
 
-    struct!(project_info, contract_block_number: block_number)
+    %ProjectInfo{project_info | contract_block_number: block_number}
   end
 end

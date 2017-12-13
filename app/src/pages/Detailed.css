@@ -1,8 +1,9 @@
 .detailed-head {
-  overflow: hidden;
   margin-top: 32px;
   height: 84px;
   margin-right: 16px;
+  display: flex;
+  flex-direction: row;
 }
 
 .detailed-name h1 {
@@ -10,7 +11,6 @@
 }
 
 .detailed-name {
-  float: left;
   width: 50%;
 }
 
@@ -29,7 +29,6 @@
 }
 
 .detailed-buttons {
-  float: right;
   width: 50%;
   height: 100%;
   position: relative;
@@ -133,18 +132,26 @@
   border-color: #ccc #ccc #fff #ccc;
 }
 
+.detailed .analysis {
+  display: flex;
+  flex-direction: row;
+  margin: 16px;
+  justify-content: space-between;
+}
+
 .detailed .analysis .panel {
   width: 33%;
-  float: left;
-  margin: 16px 0.33333% 16px 0;
+  margin: 0;
+}
+
+.detailed .information {
+  display: flex;
+  flex-direction: row;
+  margin: 16px;
+  justify-content: space-between;
 }
 
 .detailed .information .panel {
   width: 49.75%;
-  float: left;
-  margin: 16px 0.5% 16px 0;
-}
-
-.detailed .information .panel:last-child {
-  margin: 16px 0% 16px 0;
+  margin: 0;
 }

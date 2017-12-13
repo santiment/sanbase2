@@ -9,7 +9,7 @@ const ProjectIcon = ({name, size}) => {
   }
   let imgSource = ''
   try {
-    imgSource = require(`../assets/project-icons/${name.toString().toLowerCase().split(' ').join('-')}.png`)
+    imgSource = require(`../assets/project-icons/${name.toString().toLowerCase().split((/[ /]+/)).join('-')}.png`)
   } catch (e) {
     // pass
   }

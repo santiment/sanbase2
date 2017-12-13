@@ -92,6 +92,11 @@ p {
   overflow-y: auto;
 }
 
+.page-head {
+  margin-top: 45px;
+  margin-right: 20px;
+}
+
 .page h1 {
   font-size: 32px;
   font-weight: 400;

@@ -3,7 +3,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   use Phoenix.ConnTest
 
   alias SanbaseWeb.Graphql.{PriceResolver, PriceTypes}
-  alias Sanbase.Prices.{Store, Measurement}
+  alias Sanbase.Prices.Store
+  alias Sanbase.Influxdb.Measurement
 
   import Plug.Conn
   import ExUnit.CaptureLog

@@ -48,6 +48,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     |> struct(Map.to_list(find_or_create_initial_ico(project)))
   end
 
+  require Logger
+
   def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: coinmarketcap_id} = project_info) do
     coinmarketcap_id
     |> Coinmarketcap.Scraper.fetch_project_page()

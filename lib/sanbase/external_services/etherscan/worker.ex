@@ -10,7 +10,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Repo
-  alias Sanbase.Parity
+  alias Sanbase.InternalServices.Parity
   alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx}
 
   alias Decimal, as: D

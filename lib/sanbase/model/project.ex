@@ -442,4 +442,12 @@ defmodule Sanbase.Model.Project do
 
     {:ok, addresses}
   end
+
+  def initial_ico(%Project{id: id}) do
+    Ico
+    |> where([i], i.project_id == ^id)
+    |> order_by(asc: :start_date)
+    |> limit(1)
+    |> Repo.one
+  end
 end

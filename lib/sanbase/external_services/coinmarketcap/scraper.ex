@@ -1,40 +1,33 @@
-defmodule Sanbase.ExternalServices.Coinmarketcap.ProjectInfo do
-  defstruct [
-    :coinmarketcap_id,
-    :name,
-    :website_link,
-    :github_link,
-    :smart_contract_address,
-    :ticker,
-  ]
-
+defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   use Tesla
 
+  alias Sanbase.ExternalServices.RateLimiting
+
   plug RateLimiting.Middleware, name: :html_coinmarketcap_rate_limiter
-  plug Tesla.Middleware.BaseUrl, "https://graphs.coinmarketcap.com/currencies"
+  plug Tesla.Middleware.BaseUrl, "https://coinmarketcap.com/currencies"
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger
 
   def fetch_project_page(coinmarketcap_id) do
-    %Tesla.Env{status: 200, body: body} = get("/#{coinmarketcap_id}")
+    %Tesla.Env{status: 200, body: body} = get("/#{coinmarketcap_id}/")
 
     body
   end
 
-  def scrape_info(coinmarketcap_id, html) do
-    %__MODULE__{
-      coinmarketcap_id: coinmarketcap_id,
+  def parse_project_page(html, project_info) do
+    project_info
+    |> struct!(
       name: name(html),
       ticker: ticker(html),
-      smart_contract_address: smart_contract_address(html),
+      main_contract_address: main_contract_address(html),
       website_link: website_link(html),
       github_link: github_link(html)
-    }
+    )
   end
 
   defp name(html) do
     Floki.attribute(html, ".currency-logo-32x32", "alt")
-    |> hd
+    |> List.first
   end
 
   defp ticker(html) do
@@ -46,26 +39,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.ProjectInfo do
 
   defp website_link(html) do
     Floki.attribute(html, ".bottom-margin-2x a:fl-contains('Website')", "href")
-    |> hd
+    |> List.first
   end
 
   defp github_link(html) do
     Floki.attribute(html, "a:fl-contains('Source Code')", "href")
-    |> hd
+    |> List.first
   end
 
-  defp smart_contract_address(html) do
+  defp main_contract_address(html) do
     Floki.attribute(html, "a:fl-contains('Explorer')", "href")
     |> Enum.map(fn link ->
       Regex.run(~r{https://ethplorer.io/address/(.+)}, link)
     end)
     |> Enum.find(&(&1))
-    |> List.last
-  end
-
-  defp creator_transaction(html) do
-    Floki.find(html, "[data-original-title='Creator Transaction Hash']")
-    |> hd
-    |> Floki.text
+    |> case do
+      nil -> nil
+      list -> List.last(list)
+    end
   end
 end

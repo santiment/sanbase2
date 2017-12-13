@@ -1,9 +1,11 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap do
-  # # Syncronize data from coinmarketcap.com
-  #
-  # A GenServer, which updates the data from coinmarketcap on a regular basis.
-  # On regular intervals it will fetch the data from coinmarketcap and insert it
-  # into a local DB
+  @moduledoc """
+  # Syncronize data from coinmarketcap.com
+
+  A GenServer, which updates the data from coinmarketcap on a regular basis.
+  On regular intervals it will fetch the data from coinmarketcap and insert it
+  into a local DB
+  """
   use GenServer, restart: :permanent, shutdown: 5_000
 
   import Ecto.Query

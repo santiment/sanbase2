@@ -6,8 +6,8 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
   object :price_point do
     field :datetime, non_null(:datetime)
     field :marketcap, :integer
-    field :price_usd, :string
-    field :price_btc, :string
+    field :price_usd, :decimal
+    field :price_btc, :decimal
     field :volume, :integer
   end
 

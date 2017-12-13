@@ -1,7 +1,14 @@
-defmodule Sanbase.Parity do
+defmodule Sanbase.InternalServices.Parity do
   import Sanbase.Utils, only: [parse_config_value: 1]
 
   use Tesla
+
+  def get_transaction_by_hash!() do
+    case get_transaction_by_hash() do
+      {:ok, result} -> result
+      {:error, error} -> raise error
+    end
+  end
 
   def get_transaction_by_hash(transaction_hash) do
     with %Tesla.Env{status: 200, body: body} <- post(client(), "/", json_rpc_call("eth_getTransactionByHash", [transaction_hash])),

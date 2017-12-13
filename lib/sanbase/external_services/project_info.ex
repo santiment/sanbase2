@@ -8,14 +8,17 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     :ticker,
     :creation_transaction,
     :contract_block_number,
+    :contract_abi
   ]
 
   alias Sanbase.ExternalServices.Coinmarketcap
   alias Sanbase.ExternalServices.Etherscan
   alias Sanbase.ExternalServices.ProjectInfo
-  alias Sanbase.Parity
+  alias Sanbase.InternalServices.Parity
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, Ico}
+
+  require Logger
 
   def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: coinmarketcap_id} = project_info) do
     Coinmarketcap.Scraper.fetch_project_page(coinmarketcap_id)
@@ -28,6 +31,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     Etherscan.Scraper.fetch_address_page(main_contract_address)
     |> Etherscan.Scraper.parse_address_page(project_info)
     |> fetch_block_number()
+    |> fetch_abi()
   end
 
   def update_project(project_info, project) do
@@ -51,12 +55,19 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   end
 
   defp fetch_block_number(%ProjectInfo{creation_transaction: creation_transaction} = project_info) do
-    {:ok, result} = Parity.get_transaction_by_hash(creation_transaction)
-
-    %{"blockNumber" => "0x" <> block_number_hex} = result
+    %{"blockNumber" => "0x" <> block_number_hex} = Parity.get_transaction_by_hash!(creation_transaction)
 
     {block_number, ""} = Integer.parse(block_number_hex, 16)
 
     %ProjectInfo{project_info | contract_block_number: block_number}
+  end
+
+  defp fetch_abi(%ProjectInfo{main_contract_address: main_contract_address} = project_info) do
+    case Etherscan.Requests.get_abi(main_contract_address) do
+      {:ok, abi} -> %ProjectInfo{project_info | contract_abi: abi}
+      {:error, error} ->
+        Logger.info("Can't get the ABI for address #{main_contract_address}: #{error}")
+        project_info
+    end
   end
 end

@@ -19,9 +19,11 @@ defmodule Sanbase.Model.Project do
     field :slack_link, :string
     field :linkedin_link, :string
     field :telegram_link, :string
-    field :project_transparency, :string
     field :token_address, :string
     field :team_token_wallet, :string
+    field :project_transparency, :boolean, default: false
+    field :project_transparency_status, :string
+    field :project_transparency_description, :string
     has_many :eth_addresses, ProjectEthAddress
     has_many :btc_addresses, ProjectBtcAddress
     belongs_to :market_segment, MarketSegment, on_replace: :nilify
@@ -33,7 +35,7 @@ defmodule Sanbase.Model.Project do
   @doc false
   def changeset(%Project{} = project, attrs \\ %{}) do
     project
-    |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :website_link, :market_segment_id, :infrastructure_id, :btt_link, :facebook_link, :github_link, :reddit_link, :twitter_link, :whitepaper_link, :blog_link, :slack_link, :linkedin_link, :telegram_link, :project_transparency, :team_token_wallet])
+    |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :website_link, :market_segment_id, :infrastructure_id, :btt_link, :facebook_link, :github_link, :reddit_link, :twitter_link, :whitepaper_link, :blog_link, :slack_link, :linkedin_link, :telegram_link, :team_token_wallet, :project_transparency, :project_transparency_status, :project_transparency_description])
     |> validate_required([:name])
     |> unique_constraint(:name)
   end

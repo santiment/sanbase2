@@ -1517,6 +1517,13 @@ CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON public.l
 
 
 --
+-- Name: ico_currencies_uk; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ico_currencies_uk ON ico_currencies USING btree (ico_id, currency_id);
+
+
+--
 -- Name: infrastructures_code_index; Type: INDEX; Schema: public; Owner: -
 --
 

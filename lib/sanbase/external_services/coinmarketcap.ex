@@ -86,7 +86,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   defp project_info_missing?(%Project{website_link: website_link, github_link: github_link, ticker: ticker, name: name} = project) do
-    is_nil(website_link) or is_nil(github_link) or is_nil(ticker) or is_nil(name) or missing_main_contract_address?(project)
+    !website_link or !github_link or !ticker or !name or missing_main_contract_address?(project)
   end
 
   defp missing_main_contract_address?(project) do
@@ -94,9 +94,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     |> Project.initial_ico
     |> case do
       nil -> true
-      %Ico{main_contract_address: nil} -> true
+      %Ico{} = ico -> missing_ico_info?(ico)
       _ -> false
     end
+  end
+
+  defp missing_ico_info?(%Ico{main_contract_address: main_contract_address, contract_abi: contract_abi, contract_block_number: contract_block_number}) do
+    !main_contract_address or !contract_abi or !contract_block_number
   end
 
   defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker} = project) do

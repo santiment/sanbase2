@@ -7,7 +7,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
   alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
 
+  import_types Absinthe.Type.Custom
   import_types SanbaseWeb.Graphql.AccountTypes
+  import_types SanbaseWeb.Graphql.PriceTypes
   import_types SanbaseWeb.Graphql.ProjectTypes
 
   query do
@@ -28,6 +30,23 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware MultipleAuth, [BasicAuth, JWTAuth]
       resolve &ProjectResolver.project/3
+    end
+
+    @desc "Historical information for the price"
+    field :history_price, list_of(:price_point) do
+      arg :ticker, non_null(:string)
+      arg :from, non_null(:datetime)
+      arg :to, non_null(:datetime)
+      arg :interval, :string
+
+      resolve &PriceResolver.history_price/3
+    end
+
+    @desc "Current price for a ticker"
+    field :price, :price_point do
+      arg :ticker, non_null(:string)
+
+      resolve &PriceResolver.current_price/3
     end
   end
 

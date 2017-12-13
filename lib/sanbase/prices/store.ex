@@ -174,6 +174,26 @@ defmodule Sanbase.Prices.Store do
     WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
   end
 
+  defp parse_record(%{
+         results: [
+           %{
+             series: [
+               %{
+                 values: [[iso8601_datetime, price, marketcap, volume]]
+               }
+             ]
+           }
+         ]
+       }) do
+    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+
+    {datetime, price, marketcap, volume}
+  end
+
+  defp parse_record(x) do
+    nil
+  end
+
   def drop_pair(pair) do
     %{results: _} =
       "DROP MEASUREMENT #{pair}"

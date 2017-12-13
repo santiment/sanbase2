@@ -95,6 +95,9 @@ config :sanbase, Sanbase.Github.Store,
 config :sanbase, Sanbase.Prices.Store,
   database: "prices_test"
 
+config :sanbase, Sanbase.Prices.Store,
+  database: "prices_test"
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

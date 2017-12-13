@@ -3,7 +3,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
 
   alias Sanbase.ExternalServices.RateLimiting
 
-  plug RateLimiting.Middleware, name: :html_coinmarketcap_rate_limiter
+  plug RateLimiting.Middleware, name: :http_coinmarketcap_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://coinmarketcap.com/currencies"
   plug Tesla.Middleware.Compression
   plug Tesla.Middleware.Logger

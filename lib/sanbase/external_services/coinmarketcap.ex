@@ -11,10 +11,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   require Logger
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
   alias Sanbase.Prices.{Store, Measurement}
   alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
+  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Notifications.CheckPrices
 
   # 5 minutes
@@ -49,7 +50,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
       Repo.all(query),
-      &fetch_price_data/1,
+      &fetch_project_data/1,
       ordered: false,
       max_concurrency: 5,
       timeout: :infinity
@@ -68,6 +69,34 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   def config do
     Application.get_env(:sanbase, __MODULE__)
+  end
+
+  defp fetch_project_data(project) do
+    fetch_project_info(project)
+    fetch_price_data(project)
+  end
+
+  defp fetch_project_info(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+    if project_info_missing?(project) do
+      {:ok, _project} = %ProjectInfo{coinmarketcap_id: coinmarketcap_id}
+      |> ProjectInfo.fetch_coinmarketcap_info()
+      |> ProjectInfo.fetch_contract_info()
+      |> ProjectInfo.update_project(project)
+    end
+  end
+
+  defp project_info_missing?(%Project{website_link: website_link, github_link: github_link, ticker: ticker, name: name} = project) do
+    is_nil(website_link) or is_nil(github_link) or is_nil(ticker) or is_nil(name) or missing_main_contract_address?(project)
+  end
+
+  defp missing_main_contract_address?(project) do
+    project
+    |> Project.initial_ico
+    |> case do
+      nil -> true
+      %Ico{main_contract_address: nil} -> true
+      _ -> false
+    end
   end
 
   defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker} = project) do

@@ -1,8 +1,9 @@
 defmodule Sanbase.Model.Project do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Sanbase.Model.{Project, ProjectEthAddress, ProjectBtcAddress, Ico, MarketSegment, Infrastructure, LatestCoinmarketcapData}
-
+  alias Sanbase.Repo
 
   schema "project" do
     field :name, :string
@@ -36,5 +37,13 @@ defmodule Sanbase.Model.Project do
     |> cast(attrs, [:name, :ticker, :logo_url, :coinmarketcap_id, :website_link, :market_segment_id, :infrastructure_id, :btt_link, :facebook_link, :github_link, :reddit_link, :twitter_link, :whitepaper_link, :blog_link, :slack_link, :linkedin_link, :telegram_link, :project_transparency, :team_token_wallet])
     |> validate_required([:name])
     |> unique_constraint(:name)
+  end
+
+  def initial_ico(%Project{id: id}) do
+    Ico
+    |> where([i], i.project_id == ^id)
+    |> order_by(asc: :start_date)
+    |> limit(1)
+    |> Repo.one
   end
 end

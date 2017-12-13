@@ -1,6 +1,8 @@
 defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   use Tesla
 
+  alias Sanbase.ExternalServices.RateLimiting
+
   plug RateLimiting.Middleware, name: :etherscan_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://etherscan.io"
   plug Tesla.Middleware.Logger
@@ -11,13 +13,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     body
   end
 
-  def parse_address_page(html) do
-    %{
-      creator_transaction: creator_transaction(html)
-    }
+  def parse_address_page(html, project_info) do
+    project_info
+    |> struct!(
+      creation_transaction: creation_transaction(html)
+    )
   end
 
-  defp creator_transaction(html) do
+  defp creation_transaction(html) do
     Floki.find(html, ~s/a[title="Creator Transaction Hash"]/)
     |> hd
     |> Floki.text

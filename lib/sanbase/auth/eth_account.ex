@@ -2,7 +2,7 @@ defmodule Sanbase.Auth.EthAccount do
   use Ecto.Schema
 
   alias Sanbase.Auth.User
-  alias Sanbase.Auth.Ethauth
+  alias Sanbase.InternalServices.Ethauth
 
   schema "eth_accounts" do
     field :address, :string

@@ -69,7 +69,8 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       slack_link: ico_spreadsheet_row.slack_link,
       linkedin_link: ico_spreadsheet_row.linkedin_link,
       telegram_link: ico_spreadsheet_row.telegram_link,
-      project_transparency: ico_spreadsheet_row.project_transparency,
+      project_transparency: if(!is_nil(ico_spreadsheet_row.project_transparency)) do true else false end,
+      project_transparency_status: ico_spreadsheet_row.project_transparency,
       team_token_wallet: ico_spreadsheet_row.team_token_wallet
       })
   end

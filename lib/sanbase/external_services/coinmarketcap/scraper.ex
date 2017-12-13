@@ -2,6 +2,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   use Tesla
 
   alias Sanbase.ExternalServices.RateLimiting
+  alias Sanbase.ExternalServices.ProjectInfo
 
   plug RateLimiting.Middleware, name: :http_coinmarketcap_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://coinmarketcap.com/currencies"
@@ -15,14 +16,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   def parse_project_page(html, project_info) do
-    project_info
-    |> struct!(
+    %ProjectInfo{project_info |
       name: name(html),
       ticker: ticker(html),
       main_contract_address: main_contract_address(html),
       website_link: website_link(html),
       github_link: github_link(html)
-    )
+    }
   end
 
   defp name(html) do

@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2017-13-12 | v.0.2.1:
+
+  Added skeleton layout for Project Detail Page
+
 - 2017-12-12 | v.0.2.1:
 
   Fix default sort Cashflow table

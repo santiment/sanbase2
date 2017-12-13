@@ -15,6 +15,7 @@ import {
   sortBalances,
   sortTxOut
 } from './../utils/sortMethods'
+import { retrieveProjects } from './Cashflow.actions.js'
 import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
@@ -220,17 +221,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    retrieveProjects: () => {
-      dispatch({
-        types: ['LOADING_PROJECTS', 'SUCCESS_PROJECTS', 'FAILED_PROJECTS'],
-        payload: {
-          client: 'sanbaseClient',
-          request: {
-            url: `/cashflow`
-          }
-        }
-      })
-    },
+    retrieveProjects: () => dispatch(retrieveProjects),
     onSearch: (event) => {
       dispatch({
         type: 'SET_SEARCH',

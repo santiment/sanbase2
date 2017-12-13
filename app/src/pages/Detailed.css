@@ -18,7 +18,7 @@
   font-size: 1.25rem;
   font-weight: 500;
   line-height: 1.1;
-  color: #3D4051;
+  color: "#3D4051";
   margin-bottom: 0.5rem;
   margin-left: 52px;
 }
@@ -81,29 +81,26 @@
   display: block;
 }
 
-.detailed .nav li:last-child .nav-link {
-  border-color: #ccc;
-}
-
-.detailed .nav li.active .nav-link {
-  background-color: #fff;
-  border-color: #ccc rgba(0, 0, 0, 0) #fff #ccc;
-}
-
-.detailed .nav li.active:last-child .nav-link {
-  background-color: #fff;
-  border-color: #ccc #ccc #fff #ccc;
-}
-
 .detailed .main-chart .nav li {
   width: 50%;
 }
 
-.detailed .main-chart .nav li .nav-link {
+.detailed .activity-panel .nav .nav-link {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: "#3D4051";
+  padding: 1px 8px;
+}
+
+.detailed .main-chart .nav .nav-link {
   font-size: 24px;
   font-weight: 300;
   color: #171717;
   padding: 4px 15px;
+}
+
+.detailed .nav li:last-child .nav-link {
+  border-color: #ccc;
 }
 
 .main-chart .diff {
@@ -111,11 +108,11 @@
 }
 
 .main-chart .diff.up {
-  color: #309d81;
+  color: "#309d81";
 }
 
 .main-chart .diff.down {
-  color: #ca2d2d;
+  color: "#ca2d2d";
 }
 
 .main-chart .content div {
@@ -126,11 +123,14 @@
   width: 20%;
 }
 
-.detailed .activity-panel .nav li .nav-link {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: #3D4051;
-  padding: 1px 8px;
+.detailed .nav li.active .nav-link {
+  background-color: #fff;
+  border-color: #ccc rgba(0, 0, 0, 0) #fff #ccc;
+}
+
+.detailed .nav li.active:last-child .nav-link {
+  background-color: #fff;
+  border-color: #ccc #ccc #fff #ccc;
 }
 
 .detailed .analysis .panel {

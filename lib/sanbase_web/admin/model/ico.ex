@@ -6,9 +6,20 @@ defmodule Sanbase.ExAdmin.Model.Ico do
   alias Sanbase.Model.Project
 
   register_resource Sanbase.Model.Ico do
-
     query do
       %{all: [preload: [:project, :cap_currency, :currencies]] }
+    end
+
+    index do
+      selectable_column()
+
+      column :id
+      column :project
+      column :start_date
+      column :end_date
+      column :tokens_issued_at_ico
+      column :main_contract_address
+      actions()     # display the default actions column
     end
 
     form ico do
@@ -17,7 +28,6 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input ico, :start_date
         input ico, :end_date
         input ico, :tokens_issued_at_ico
-        input ico, :tokens_sold_at_ico
         input ico, :tokens_sold_at_ico
         input ico, :funds_raised_btc
         input ico, :funds_raised_usd

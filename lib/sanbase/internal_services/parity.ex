@@ -3,8 +3,8 @@ defmodule Sanbase.InternalServices.Parity do
 
   use Tesla
 
-  def get_transaction_by_hash!() do
-    case get_transaction_by_hash() do
+  def get_transaction_by_hash!(transaction_hash) do
+    case get_transaction_by_hash(transaction_hash) do
       {:ok, result} -> result
       {:error, error} -> raise error
     end

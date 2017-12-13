@@ -102,7 +102,7 @@ config :sanbase, Sanbase.Auth.Ethauth,
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
 
-config :sanbase, Sanbase.Parity,
+config :sanbase, Sanbase.InternalServices.Parity,
   url: {:system, "PARITY_URL"},
   basic_auth_username: {:system, "PARITY_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "PARITY_BASIC_AUTH_PASSWORD"}

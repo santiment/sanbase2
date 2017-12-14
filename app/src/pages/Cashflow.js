@@ -13,8 +13,10 @@ import ProjectIcon from './../components/ProjectIcon'
 import {
   sortDate,
   sortBalances,
-  sortTxOut
+  sortTxOut,
+  simpleSort
 } from './../utils/sortMethods'
+import { retrieveProjects } from './Cashflow.actions.js'
 import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
@@ -52,7 +54,7 @@ const formatBalanceWallet = ({wallets, ethPrice}) => {
           <a
             className='address'
             href={'https://etherscan.io/address/' + wallet.address}
-            target='_blank'>Ξ{ balance.toLocaleString('en-US') }
+            target='_blank'>Ξ{formatNumber(balance)}
             <i className='fa fa-external-link' />
           </a>
         </div>
@@ -105,16 +107,9 @@ const columns = [{
   id: 'market_cap_usd',
   minWidth: 150,
   accessor: 'market_cap_usd',
-  Cell: props => <span className='market-cap'>{formatMarketCapProject(props.value)}</span>,
+  Cell: ({value}) => <div className='market-cap'>{formatMarketCapProject(value)}</div>,
   sortable: true,
-  sortMethod: (a, b) => {
-    const _a = parseInt(a, 10)
-    const _b = parseInt(b, 10)
-    if (_a === _b) {
-      return 0
-    }
-    return _b > _a ? 1 : -1
-  }
+  sortMethod: (a, b) => simpleSort(parseInt(a, 10), parseInt(b, 10))
 }, {
   Header: 'Balance (USD/ETH)',
   id: 'balance',
@@ -123,23 +118,23 @@ const columns = [{
     ethPrice: d.ethPrice,
     wallets: d.wallets
   }),
-  Cell: props => <div>{formatBalanceWallet(props.value)}</div>,
+  Cell: ({value}) => <div>{formatBalanceWallet(value)}</div>,
   sortable: true,
   sortMethod: (a, b) => sortBalances(a, b)
 }, {
   Header: 'Last outgoing TX',
   id: 'tx',
   accessor: d => d.wallets,
-  Cell: props => <div>{formatLastOutgoingWallet(props.value)}</div>,
+  Cell: ({value}) => <div>{formatLastOutgoingWallet(value)}</div>,
   sortable: true,
-  sortMethod: (a, b, isDesc) => {
-    return sortDate(a[0].last_outgoing, b[0].last_outgoing, isDesc)
-  }
+  sortMethod: (a, b, isDesc) => (
+    sortDate(a[0].last_outgoing, b[0].last_outgoing, isDesc)
+  )
 }, {
   Header: 'ETH sent',
   id: 'sent',
   accessor: d => d.wallets,
-  Cell: props => <div>{formatTxOutWallet(props.value)}</div>,
+  Cell: ({value}) => <div>{formatTxOutWallet(value)}</div>,
   sortable: true,
   sortMethod: (a, b) => sortTxOut(a, b)
 }]
@@ -220,17 +215,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    retrieveProjects: () => {
-      dispatch({
-        types: ['LOADING_PROJECTS', 'SUCCESS_PROJECTS', 'FAILED_PROJECTS'],
-        payload: {
-          client: 'sanbaseClient',
-          request: {
-            url: `/cashflow`
-          }
-        }
-      })
-    },
+    retrieveProjects: () => dispatch(retrieveProjects),
     onSearch: (event) => {
       dispatch({
         type: 'SET_SEARCH',

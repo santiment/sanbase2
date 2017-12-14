@@ -261,41 +261,77 @@ exports[`Project detail page container it should render correctly 1`] = `
   </div>
   <PanelBlock
     classes=""
-    content=""
     title="Blockchain Analytics"
   />
   <div
-    className="row analysis"
+    className="analysis"
   >
     <PanelBlock
       classes=""
-      content=""
       title="Signals/Volatility"
     />
     <PanelBlock
       classes=""
-      content=""
       title="Expert Analyses"
     />
     <PanelBlock
       classes=""
-      content=""
       title="News/Press"
     />
   </div>
   <div
-    className="row information"
+    className="information"
   >
     <PanelBlock
       classes=""
-      content=""
       title="General Info"
-    />
+    >
+      <GeneralInfoBlock
+        info={
+          Object {
+            "balance": "41994.09",
+            "id": 12,
+            "logo_url": "aeternity.png",
+            "market_cap_usd": "133759577.0",
+            "name": "Aeternity",
+            "ticker": "AE",
+            "wallets": Array [
+              Object {
+                "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
+                "balance": "41994.09",
+                "last_outgoing": null,
+                "tx_out": null,
+              },
+            ],
+          }
+        }
+      />
+    </PanelBlock>
     <PanelBlock
       classes=""
-      content=""
       title="Financials"
-    />
+    >
+      <FinancialsBlock
+        info={
+          Object {
+            "balance": "41994.09",
+            "id": 12,
+            "logo_url": "aeternity.png",
+            "market_cap_usd": "133759577.0",
+            "name": "Aeternity",
+            "ticker": "AE",
+            "wallets": Array [
+              Object {
+                "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
+                "balance": "41994.09",
+                "last_outgoing": null,
+                "tx_out": null,
+              },
+            ],
+          }
+        }
+      />
+    </PanelBlock>
   </div>
 </div>
 `;

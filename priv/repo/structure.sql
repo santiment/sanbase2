@@ -102,7 +102,8 @@ ALTER SEQUENCE eth_accounts_id_seq OWNED BY eth_accounts.id;
 CREATE TABLE ico_currencies (
     id bigint NOT NULL,
     ico_id bigint NOT NULL,
-    currency_id bigint NOT NULL
+    currency_id bigint NOT NULL,
+    value numeric
 );
 
 
@@ -410,11 +411,13 @@ CREATE TABLE project (
     slack_link character varying(255),
     linkedin_link character varying(255),
     telegram_link character varying(255),
-    project_transparency character varying(255),
+    project_transparency_status character varying(255),
     token_address character varying(255),
     team_token_wallet character varying(255),
     market_segment_id bigint,
-    infrastructure_id bigint
+    infrastructure_id bigint,
+    project_transparency boolean DEFAULT false NOT NULL,
+    project_transparency_description text
 );
 
 
@@ -425,7 +428,8 @@ CREATE TABLE project (
 CREATE TABLE project_btc_address (
     id bigint NOT NULL,
     address character varying(255) NOT NULL,
-    project_id bigint
+    project_id bigint NOT NULL,
+    project_transparency boolean DEFAULT false NOT NULL
 );
 
 
@@ -455,7 +459,8 @@ ALTER SEQUENCE project_btc_address_id_seq OWNED BY project_btc_address.id;
 CREATE TABLE project_eth_address (
     id bigint NOT NULL,
     address character varying(255) NOT NULL,
-    project_id bigint
+    project_id bigint NOT NULL,
+    project_transparency boolean DEFAULT false NOT NULL
 );
 
 
@@ -802,6 +807,13 @@ CREATE INDEX ico_currencies_ico_id_index ON ico_currencies USING btree (ico_id);
 
 
 --
+-- Name: ico_currencies_uk; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ico_currencies_uk ON ico_currencies USING btree (ico_id, currency_id);
+
+
+--
 -- Name: infrastructures_code_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -998,5 +1010,5 @@ ALTER TABLE ONLY project
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213120408), (20171213121433);
 

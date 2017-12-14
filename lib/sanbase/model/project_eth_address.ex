@@ -7,12 +7,13 @@ defmodule Sanbase.Model.ProjectEthAddress do
   schema "project_eth_address" do
     field :address, :string
     belongs_to :project, Project
+    field :project_transparency, :boolean, default: false
   end
 
   @doc false
   def changeset(%ProjectEthAddress{} = project_eth_address, attrs \\ %{}) do
     project_eth_address
-    |> cast(attrs, [:address, :project_id])
+    |> cast(attrs, [:address, :project_id, :project_transparency])
     |> validate_required([:address, :project_id])
     |> unique_constraint(:address)
   end

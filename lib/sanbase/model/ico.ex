@@ -5,6 +5,7 @@ defmodule Sanbase.Model.Ico do
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
+  alias Sanbase.Model.IcoCurrencies
 
 
   schema "icos" do
@@ -25,7 +26,7 @@ defmodule Sanbase.Model.Ico do
     field :contract_abi, :string
     field :comments, :string
     belongs_to :cap_currency, Currency, on_replace: :nilify
-    many_to_many :currencies, Currency, join_through: "ico_currencies", on_replace: :delete
+    has_many :ico_currencies, IcoCurrencies
   end
 
   @doc false
@@ -34,17 +35,13 @@ defmodule Sanbase.Model.Ico do
     |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_btc_icoend, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id, :contract_block_number, :contract_abi])
     |> calculate_funds_raised()
     |> validate_required([:project_id])
-    |> add_currencies(attrs)
   end
 
-  def add_currencies(changeset, attrs) do
-    if Enum.count(Map.get(attrs, :currencys, [])) > 0 do # deliberately is currencys - ex_admin puts that
-      ids = attrs[:currencys]
-      currencies = Sanbase.Repo.all(from c in Currency, where: c.id in ^ids)
-      put_assoc(changeset, :currencies, currencies)
-    else
-      changeset
-    end
+  @doc false
+  def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
+    ico
+    |> changeset(attrs)
+    |> cast_assoc(:ico_currencies, required: false, with: &IcoCurrencies.changeset_ex_admin/2)
   end
 
   defp calculate_funds_raised(changeset) do

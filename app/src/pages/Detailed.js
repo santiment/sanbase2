@@ -49,32 +49,32 @@ export const Detailed = ({match, projects, loading}) => {
           <p>Manage entire organisations using the blockchain.</p>
         </div>
         <div className='detailed-buttons'>
-          <a href='#' className='add-to-dashboard'>
+          <button className='add-to-dashboard'>
             <i className='fa fa-plus' />
             &nbsp; Add to Dashboard
-          </a>
+          </button>
         </div>
       </div>
       <div className='panel'>
         <Tabs className='main-chart'>
           <TabList className='nav'>
             <Tab className='nav-item' selectedClassName='active'>
-              <a className='nav-link' href='#'>
+              <button className='nav-link'>
                 $2.29 USD (not real) &nbsp;
                 <span className='diff down'>
                   <i className='fa fa-caret-down' />
                     &nbsp; 8.87% (not real)
                 </span>
-              </a>
+              </button>
             </Tab>
             <Tab className='nav-item' selectedClassName='active'>
-              <a className='nav-link' href='#'>
+              <button className='nav-link'>
                 2.29 BTC (not real) &nbsp;
                 <span className='diff up'>
                   <i className='fa fa-caret-up' />
                     &nbsp; 8.87% (not real)
                 </span>
-              </a>
+              </button>
             </Tab>
           </TabList>
           <TabPanel>
@@ -89,29 +89,29 @@ export const Detailed = ({match, projects, loading}) => {
         <Tabs className='activity-panel'>
           <TabList className='nav'>
             <Tab className='nav-item' selectedClassName='active'>
-              <a className='nav-link' href='#'>
+              <button className='nav-link'>
                 Social Mentions
-              </a>
+              </button>
             </Tab>
             <Tab className='nav-item' selectedClassName='active'>
-              <a className='nav-link' href='#'>
+              <button className='nav-link'>
                 Social Activity over Time
-              </a>
+              </button>
             </Tab>
             <Tab className='nav-item' selectedClassName='active'>
-              <a className='nav-link' href='#'>
+              <button className='nav-link'>
                 Sentiment/Intensity
-              </a>
+              </button>
             </Tab>
             <Tab className='nav-item' selectedClassName='active'>
-              <a className='nav-link' href='#'>
+              <button className='nav-link'>
                 Github Activity
-              </a>
+              </button>
             </Tab>
             <Tab className='nav-item' selectedClassName='active'>
-              <a className='nav-link' href='#'>
+              <button className='nav-link'>
                 SAN Community
-              </a>
+              </button>
             </Tab>
           </TabList>
           <TabPanel>

@@ -1,5 +1,12 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import './PanelBlock.css'
+
+const propTypes = {
+  title: PropTypes.string.isRequired,
+  classes: PropTypes.string,
+  children: PropTypes.node
+}
 
 const PanelBlock = ({title, classes, children}) => (
   <div className={'panel ' + classes}>
@@ -9,10 +16,12 @@ const PanelBlock = ({title, classes, children}) => (
   </div>
 )
 
+PanelBlock.propTypes = propTypes
+
 PanelBlock.defaultProps = {
   classes: '',
   title: '',
-  children: ''
+  children: null
 }
 
 export default PanelBlock

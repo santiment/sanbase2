@@ -10,6 +10,7 @@ import {
   Message,
   Divider
 } from 'semantic-ui-react'
+import copy from 'copy-to-clipboard'
 import Balance from './../components/Balance'
 import './Account.css'
 
@@ -36,7 +37,13 @@ export const Account = ({user, loading}) => {
           <Form.Field>
             <label>Username ( Eth Public Key )</label>
             <Input
-              action={{ color: 'teal', labelPosition: 'right', icon: 'copy', content: 'Copy' }}
+              action={{
+                color: 'teal',
+                labelPosition: 'right',
+                icon: 'copy',
+                content: 'Copy',
+                onClick: () => copy(user.username)
+              }}
               defaultValue={user.username}
             />
           </Form.Field>

@@ -27,7 +27,8 @@
     "recompose": "^0.26.0",
     "redux": "^3.7.2",
     "redux-persist": "^5.4.0",
-    "semantic-ui-react": "^0.77.0"
+    "semantic-ui-react": "^0.77.0",
+    "copy-to-clipboard": "^3"
   },
   "scripts": {
     "start": "node node_modules/exit_on_eof/index.js 'react-scripts start'",

@@ -69,11 +69,14 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       slack_link: ico_spreadsheet_row.slack_link,
       linkedin_link: ico_spreadsheet_row.linkedin_link,
       telegram_link: ico_spreadsheet_row.telegram_link,
-      project_transparency: if(!is_nil(ico_spreadsheet_row.project_transparency)) do true else false end,
+      project_transparency: is_project_transparency?(ico_spreadsheet_row.project_transparency),
       project_transparency_status: ico_spreadsheet_row.project_transparency,
       team_token_wallet: ico_spreadsheet_row.team_token_wallet
       })
   end
+
+  defp is_project_transparency?(nil), do: false
+  defp is_project_transparency?(_), do: true
 
   defp fill_ico(project, ico_spreadsheet_row) do
     ensure_ico(project)
@@ -146,7 +149,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     Repo.get_by(Currency, code: currency_code)
     |> case do
       result = %Currency{} -> result
-        # |> Ecto.Changeset.change()
       nil ->
         %Currency{}
         |> Currency.changeset(%{code: currency_code})

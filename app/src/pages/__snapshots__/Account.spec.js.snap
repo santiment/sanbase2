@@ -49,6 +49,7 @@ exports[`Account container it should render correctly 1`] = `
               "content": "Copy",
               "icon": "copy",
               "labelPosition": "right",
+              "onClick": [Function],
             }
           }
           defaultValue="0xjsadhf92fhk2fjhe"

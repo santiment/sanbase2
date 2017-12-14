@@ -8,7 +8,11 @@ export const Balance = ({user}) => {
         <div
           type='text'
           className='account-name'>
-          {account.address}
+          <a
+            className='address'
+            href={`https://etherscan.io/address/${account.address}`}
+            target='_blank'>{account.address}
+          </a>
         </div>
         <div className='account-balance'>
           {formatNumber(account.sanBalance, 'SAN')}

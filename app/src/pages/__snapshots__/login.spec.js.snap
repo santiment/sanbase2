@@ -35,6 +35,7 @@ exports[`Login container it should render correctly 1`] = `
       >
         <a
           href="https://metamask.io/#how-it-works"
+          rel="noopener noreferrer"
           target="_blank"
         >
           How Metamask works?
@@ -89,6 +90,7 @@ exports[`Login container it should render message about metamask was not detecte
           >
             <a
               href="https://metamask.io/#how-it-works"
+              rel="noopener noreferrer"
               target="_blank"
             >
               How Metamask works?

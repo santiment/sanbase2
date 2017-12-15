@@ -54,7 +54,7 @@ const formatBalanceWallet = ({wallets, ethPrice}) => {
           <a
             className='address'
             href={'https://etherscan.io/address/' + wallet.address}
-            target='_blank'>Ξ{formatNumber(balance)}
+            target='_blank'>Ξ{formatNumber(balance)}&nbsp;
             <i className='fa fa-external-link' />
           </a>
         </div>
@@ -134,7 +134,7 @@ const columns = [{
   Header: 'ETH sent',
   id: 'sent',
   accessor: d => d.wallets,
-  Cell: ({value}) => <div>{formatTxOutWallet(value)}</div>,
+  Cell: ({value}) => <div className='eth-sent-item'>{formatTxOutWallet(value)}</div>,
   sortable: true,
   sortMethod: (a, b) => sortTxOut(a, b)
 }]

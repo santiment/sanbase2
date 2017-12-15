@@ -6,7 +6,7 @@ import {
 import withSizes from 'react-sizes'
 import { compose } from 'recompose'
 import './App.css'
-import Login from './Login'
+import Login from './pages/Login'
 import Cashflow from './pages/Cashflow'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'

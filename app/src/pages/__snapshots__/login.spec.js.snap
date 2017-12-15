@@ -5,7 +5,7 @@ exports[`Login container it should render any loader while not loaded 1`] = `
   className="page wrapper"
 >
   <div
-    className="loginContainer"
+    className="login-container"
   >
     <div>
       Loading
@@ -19,32 +19,95 @@ exports[`Login container it should render correctly 1`] = `
   className="page wrapper"
 >
   <div
-    className="loginContainer"
+    className="login-container"
   >
     <div
       className="ui warning message"
     >
+      <h4>
+        We can't detect Metamask!
+      </h4>
+      <p>
+        We can auth you with Metamask account. It's secure and easy.
+      </p>
       <div
-        className="content"
+        className="help-links"
       >
-        <div
-          className="header"
+        <a
+          href="https://metamask.io/#how-it-works"
+          target="_blank"
         >
-          We can't detect Metamask!
-        </div>
-        <ul
-          className="list"
+          How Metamask works?
+        </a>
+        <a
+          href="https://metamask.io/"
         >
-          <li
-            className="content"
-          >
-            We can auth you with Metamask account. It's secure and easy.
-          </li>
-        </ul>
+          <img
+            alt="Metamask link"
+            src="download-metamask.png"
+            width={128}
+          />
+        </a>
       </div>
     </div>
   </div>
 </div>
+`;
+
+exports[`Login container it should render message about metamask was not detected 1`] = `
+<Component
+  user={
+    Object {
+      "account": null,
+      "data": Object {},
+      "error": false,
+      "hasMetamask": false,
+      "isLoading": false,
+    }
+  }
+>
+  <div
+    className="page wrapper"
+  >
+    <div
+      className="login-container"
+    >
+      <Message
+        warning={true}
+      >
+        <div
+          className="ui warning message"
+        >
+          <h4>
+            We can't detect Metamask!
+          </h4>
+          <p>
+            We can auth you with Metamask account. It's secure and easy.
+          </p>
+          <div
+            className="help-links"
+          >
+            <a
+              href="https://metamask.io/#how-it-works"
+              target="_blank"
+            >
+              How Metamask works?
+            </a>
+            <a
+              href="https://metamask.io/"
+            >
+              <img
+                alt="Metamask link"
+                src="download-metamask.png"
+                width={128}
+              />
+            </a>
+          </div>
+        </div>
+      </Message>
+    </div>
+  </div>
+</Component>
 `;
 
 exports[`Login container it should render message with metamask user account address 1`] = `
@@ -63,7 +126,7 @@ exports[`Login container it should render message with metamask user account add
     className="page wrapper"
   >
     <div
-      className="loginContainer"
+      className="login-container"
     >
       <Component
         account="0x23942983bc298374cjh"
@@ -81,6 +144,7 @@ exports[`Login container it should render message with metamask user account add
               list={
                 Array [
                   "We can auth you with Metamask account. It's secure and easy.",
+                  false,
                   "Your selected wallet public key is 0x23942983bc298374cjh",
                 ]
               }
@@ -107,6 +171,7 @@ exports[`Login container it should render message with metamask user account add
                       items={
                         Array [
                           "We can auth you with Metamask account. It's secure and easy.",
+                          false,
                           "Your selected wallet public key is 0x23942983bc298374cjh",
                         ]
                       }

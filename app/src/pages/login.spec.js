@@ -3,7 +3,7 @@ import React from 'react'
 import { mount, shallow } from 'enzyme'
 import toJson from 'enzyme-to-json'
 import renderer from 'react-test-renderer'
-import { Login } from './../Login'
+import { Login } from './Login'
 
 describe('Login container', () => {
   it('it should render correctly', () => {
@@ -43,7 +43,7 @@ describe('Login container', () => {
         error: false
       }}
     />)
-    expect(login.find('.header').text()).toEqual('We can\'t detect Metamask!')
+    expect(toJson(login)).toMatchSnapshot()
   })
 
   it('it should render message with metamask user account address', () => {
@@ -56,7 +56,6 @@ describe('Login container', () => {
         error: false
       }}
     />)
-    expect(login.find('.header').text()).toEqual('We detect you have Metamask 🎉🎉🎉')
     expect(toJson(login)).toMatchSnapshot()
   })
 })

@@ -5,19 +5,25 @@
   height: 100vh;
 }
 
-.loginContainer {
+.login-container {
   padding: 1em;
   max-width: 70%;
   border-radius: 2px;
 }
 
-.loginContainer .content {
+.login-container .content {
   text-overflow: ellipsis;
   overflow: hidden;
 }
 
+.login-container .help-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 @media (max-width: 620px) {
-  .loginContainer {
+  .login-container {
     max-width: 100%;
     border-radius: 0;
     border: 0;

@@ -39,7 +39,6 @@ export default (state = initialState, action) => {
         ...state,
         error: false,
         isLoading: false,
-        account: null,
         data: {},
         token: null
       }

@@ -242,6 +242,7 @@ exports[`Cashflow container it should render correctly 1`] = `
       indexKey="_index"
       loading={false}
       loadingText="Loading..."
+      multiSort={true}
       nestingLevelKey="_nestingLevel"
       nextText="Next"
       noDataText="No rows found"

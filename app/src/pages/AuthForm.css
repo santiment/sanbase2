@@ -1,0 +1,30 @@
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-30px);
+  }
+
+  60% {
+    transform: translateY(-15px);
+  }
+}
+
+.help-arrow-extension {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  animation: bounce 2s infinite;
+}
+
+@media (max-width: 620px) {
+  .help-arrow-extension {
+    display: none;
+  }
+}

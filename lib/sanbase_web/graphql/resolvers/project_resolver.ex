@@ -59,11 +59,11 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
 
   def funds_raised_icos(%Project{id: id}, _args, _context) do
     query = from i in Ico,
-    inner_join: ic in IcoCurrencies, on: ic.ico_id == i.id and not is_nil(ic.value),
+    inner_join: ic in IcoCurrencies, on: ic.ico_id == i.id and not is_nil(ic.amount),
     inner_join: c in Currency, on: c.id == ic.currency_id,
     where: i.project_id == ^id,
     group_by: [c.id, c.code],
-    select: %{currency_code: c.code, amount: sum(ic.value)}
+    select: %{currency_code: c.code, amount: sum(ic.amount)}
 
     funds_raised = Repo.all(query)
     |> case do

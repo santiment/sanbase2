@@ -53,6 +53,11 @@ exports[`Account container it should render correctly 1`] = `
             }
           }
           defaultValue="0xjsadhf92fhk2fjhe"
+          input={
+            Object {
+              "readOnly": true,
+            }
+          }
           type="text"
         />
       </FormField>
@@ -68,6 +73,20 @@ exports[`Account container it should render correctly 1`] = `
           }
         }
       />
+      <h3>
+        Sessions
+      </h3>
+      <Divider />
+      <p>
+        Your current session
+      </p>
+      <Button
+        as="button"
+        basic={true}
+        color="red"
+      >
+        Log out
+      </Button>
     </Form>
   </div>
 </div>

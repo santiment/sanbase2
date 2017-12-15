@@ -6032,9 +6032,9 @@ react-sizes@^0.4.3:
   dependencies:
     lodash.throttle "^4.1.1"
 
-react-table@^6.7.4:
-  version "6.7.4"
-  resolved "https://registry.yarnpkg.com/react-table/-/react-table-6.7.4.tgz#cd23e15d437034bf2374e9c8d343e1b4e1960e4f"
+react-table@^6.7.5:
+  version "6.7.5"
+  resolved "https://registry.yarnpkg.com/react-table/-/react-table-6.7.5.tgz#974b26e3986932e6c724f53911eddfa3923b7942"
   dependencies:
     classnames "^2.2.5"
 

@@ -130,6 +130,9 @@ items:
             - name: INFLUXDB_HOST
               value: "influxdb-influxdb"
 
+            - name: PARITY_URL
+              value: parity-parity
+
             - name: PORT
               value: "4000"
 

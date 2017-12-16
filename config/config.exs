@@ -97,10 +97,15 @@ config :sanbase, SanbaseWeb.Guardian,
   issuer: "santiment",
   secret_key: {SanbaseWeb.Guardian, :get_config, [:secret_key_base]}
 
-config :sanbase, Sanbase.Auth.Ethauth,
+config :sanbase, Sanbase.InternalServices.Ethauth,
   url: {:system, "ETHAUTH_URL"},
   basic_auth_username: {:system, "ETHAUTH_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "ETHAUTH_BASIC_AUTH_PASSWORD"}
+
+config :sanbase, Sanbase.InternalServices.Parity,
+  url: {:system, "PARITY_URL"},
+  basic_auth_username: {:system, "PARITY_BASIC_AUTH_USERNAME"},
+  basic_auth_password: {:system, "PARITY_BASIC_AUTH_PASSWORD"}
 
 config :faktory_worker_ex,
   host: {:system, "FAKTORY_HOST", "localhost"},

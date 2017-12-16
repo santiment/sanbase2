@@ -75,6 +75,9 @@ items:
             - name: FAKTORY_HOST
               value: faktory-faktory
 
+            - name: PARITY_URL
+              value: parity-parity
+
             - name: ETHAUTH_URL
               valueFrom:
                 secretKeyRef:

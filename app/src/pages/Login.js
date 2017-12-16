@@ -16,9 +16,10 @@ import {
   setupWeb3,
   hasMetamask,
   signMessage
-} from './web3Helpers'
+} from '../web3Helpers'
 import AuthForm from './AuthForm'
-import './login.css'
+import metamaskDownloadImg from './../assets/download-metamask.png'
+import './Login.css'
 
 const propTypes = {
   user: PropTypes.shape({
@@ -44,16 +45,23 @@ export const Login = ({
   }
   return (
     <div className='page wrapper'>
-      <div className='loginContainer'>
+      <div className='login-container'>
         {user.isLoading && !user.hasMetamask && <div>Loading</div>}
         {!user.hasMetamask && !user.isLoading &&
-          <Message
-            warning
-            header={'We can\'t detect Metamask!'}
-            list={[
-              'We can auth you with Metamask account. It\'s secure and easy.'
-            ]}
-          />}
+          <Message warning>
+            <h4>We can't detect Metamask!</h4>
+            <p>We can auth you with Metamask account. It's secure and easy.</p>
+            <div className='help-links'>
+              <a
+                target='_blank'
+                rel='noopener noreferrer'
+                href='https://metamask.io/#how-it-works'>How Metamask works?</a>
+              <a href='https://metamask.io/'>
+                <img width={128} src={metamaskDownloadImg} alt='Metamask link' />
+              </a>
+            </div>
+          </Message>
+        }
         {user.hasMetamask && !user.token &&
           <AuthForm
             account={user.account}

@@ -76,7 +76,7 @@ items:
               value: faktory-faktory
 
             - name: PARITY_URL
-              value: parity-parity
+              value: http://parity-parity:8545
 
             - name: ETHAUTH_URL
               valueFrom:

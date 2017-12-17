@@ -34,7 +34,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.InternalTx do
     Requests.get("/", query: get_query(address))
     |> case do
          %{status: 200, body: body} ->
-           response = Poison.decode!(body, as: %{result: [%InternalTx{}]})
+           response = Poison.Decode.decode(body, as: %{result: [%InternalTx{}]})
            response.result
        end
     end

@@ -17,7 +17,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Balance do
   def get(address) do
     Requests.get("/", query: get_query(address))
     |> case do
-         %{status: 200, body: body} -> Poison.decode!(body, as: %Balance{})
+         %{status: 200, body: body} -> Poison.Decode.decode(body, as: %Balance{})
        end
   end
 

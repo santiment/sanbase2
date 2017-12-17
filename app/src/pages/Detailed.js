@@ -13,6 +13,7 @@ import PanelBlock from './../components/PanelBlock'
 import { retrieveProjects } from './Cashflow.actions.js'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
+import ProjectChart from './ProjectChart'
 import './Detailed.css'
 
 const propTypes = {
@@ -21,7 +22,14 @@ const propTypes = {
   loading: PropTypes.bool.isRequired
 }
 
-export const Detailed = ({match, projects, loading}) => {
+const HiddenElements = () => ''
+
+export const Detailed = ({
+  match,
+  projects,
+  loading,
+  historyPrice
+}) => {
   if (loading) {
     return (
       <div className='page detailed'>
@@ -56,95 +64,70 @@ export const Detailed = ({match, projects, loading}) => {
         </div>
       </div>
       <div className='panel'>
-        <Tabs className='main-chart'>
-          <TabList className='nav'>
-            <Tab className='nav-item' selectedClassName='active'>
-              <button className='nav-link'>
-                $2.29 USD (not real) &nbsp;
-                <span className='diff down'>
-                  <i className='fa fa-caret-down' />
-                    &nbsp; 8.87% (not real)
-                </span>
-              </button>
-            </Tab>
-            <Tab className='nav-item' selectedClassName='active'>
-              <button className='nav-link'>
-                2.29 BTC (not real) &nbsp;
-                <span className='diff up'>
-                  <i className='fa fa-caret-up' />
-                    &nbsp; 8.87% (not real)
-                </span>
-              </button>
-            </Tab>
-          </TabList>
-          <TabPanel>
-            1
-          </TabPanel>
-          <TabPanel>
-            2
-          </TabPanel>
-        </Tabs>
+        <ProjectChart ticker={project.ticker.toUpperCase()} />
       </div>
-      <div className='panel'>
-        <Tabs className='activity-panel'>
-          <TabList className='nav'>
-            <Tab className='nav-item' selectedClassName='active'>
-              <button className='nav-link'>
-                Social Mentions
-              </button>
-            </Tab>
-            <Tab className='nav-item' selectedClassName='active'>
-              <button className='nav-link'>
-                Social Activity over Time
-              </button>
-            </Tab>
-            <Tab className='nav-item' selectedClassName='active'>
-              <button className='nav-link'>
-                Sentiment/Intensity
-              </button>
-            </Tab>
-            <Tab className='nav-item' selectedClassName='active'>
-              <button className='nav-link'>
-                Github Activity
-              </button>
-            </Tab>
-            <Tab className='nav-item' selectedClassName='active'>
-              <button className='nav-link'>
-                SAN Community
-              </button>
-            </Tab>
-          </TabList>
-          <TabPanel>
-            Social Mentions
-          </TabPanel>
-          <TabPanel>
-            Social Activity over Time
-          </TabPanel>
-          <TabPanel>
-            Sentiment/Intensity
-          </TabPanel>
-          <TabPanel>
-            Github Activity
-          </TabPanel>
-          <TabPanel>
-            SAN Community
-          </TabPanel>
-        </Tabs>
-      </div>
-      <PanelBlock title='Blockchain Analytics' />
-      <div className='analysis'>
-        <PanelBlock title='Signals/Volatility' />
-        <PanelBlock title='Expert Analyses' />
-        <PanelBlock title='News/Press' />
-      </div>
-      <div className='information'>
-        <PanelBlock title='General Info'>
-          <GeneralInfoBlock info={project} />
-        </PanelBlock>
-        <PanelBlock title='Financials'>
-          <FinancialsBlock info={project} />
-        </PanelBlock>
-      </div>
+      <HiddenElements>
+        <div className='panel'>
+          <Tabs className='activity-panel'>
+            <TabList className='nav'>
+              <Tab className='nav-item' selectedClassName='active'>
+                <button className='nav-link'>
+                  Social Mentions
+                </button>
+              </Tab>
+              <Tab className='nav-item' selectedClassName='active'>
+                <button className='nav-link'>
+                  Social Activity over Time
+                </button>
+              </Tab>
+              <Tab className='nav-item' selectedClassName='active'>
+                <button className='nav-link'>
+                  Sentiment/Intensity
+                </button>
+              </Tab>
+              <Tab className='nav-item' selectedClassName='active'>
+                <button className='nav-link'>
+                  Github Activity
+                </button>
+              </Tab>
+              <Tab className='nav-item' selectedClassName='active'>
+                <button className='nav-link'>
+                  SAN Community
+                </button>
+              </Tab>
+            </TabList>
+            <TabPanel>
+              Social Mentions
+            </TabPanel>
+            <TabPanel>
+              Social Activity over Time
+            </TabPanel>
+            <TabPanel>
+              Sentiment/Intensity
+            </TabPanel>
+            <TabPanel>
+              Github Activity
+            </TabPanel>
+            <TabPanel>
+              SAN Community
+            </TabPanel>
+          </Tabs>
+        </div>
+        <PanelBlock title='Blockchain Analytics' />
+        <div className='analysis'>
+          <PanelBlock title='Signals/Volatility' />
+          <PanelBlock title='Expert Analyses' />
+          <PanelBlock title='News/Press' />
+        </div>
+        <div className='information'>
+          <PanelBlock title='General Info'>
+            <GeneralInfoBlock info={project} />
+          </PanelBlock>
+          <PanelBlock title='Financials'>
+            <FinancialsBlock info={project} />
+          </PanelBlock>
+        </div>
+      </HiddenElements>
     </div>
   )
 }

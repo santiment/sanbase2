@@ -74,10 +74,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Repo.insert_or_update!
   end
 
-  defp find_or_init_project(%Project{name: name} = project) do
-    case Repo.get_by(Project, name: name) do
+  defp find_or_init_project(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+    case Repo.get_by(Project, coinmarketcap_id: coinmarketcap_id) do
       nil -> Project.changeset(project)
-      existing_project -> Project.changeset(existing_project, %{coinmarketcap_id: project.coinmarketcap_id, ticker: project.ticker})
+      existing_project -> Project.changeset(existing_project, %{coinmarketcap_id: coinmarketcap_id, ticker: project.ticker})
     end
   end
 

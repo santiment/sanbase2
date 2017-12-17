@@ -90,6 +90,12 @@ items:
                   name: sanbase-env
                   key: sentryFrontendDsn
 
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: sentryDsn
+
             - name: COINMARKETCAP_PRICES_ENABLED
               value: "1"
 

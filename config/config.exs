@@ -31,6 +31,11 @@ config :logger, :console,
   handle_otp_reports: true,
   handle_sasl_reports: true
 
+# Error tracking
+config :sentry,
+  included_environments: [:prod],
+  environment_name: Mix.env
+
 config :sanbase, Sanbase.Prices.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},

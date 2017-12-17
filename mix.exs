@@ -62,6 +62,7 @@ defmodule Sanbase.Mixfile do
       {:temp, "~> 0.4"},
       {:httpoison, "~> 0.13"},
       {:floki, "~> 0.19.0"},
+      {:sentry, "~> 6.0.4"},
     ]
   end
 

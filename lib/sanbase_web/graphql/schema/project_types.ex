@@ -37,7 +37,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :btc_balance, :decimal do
       resolve &ProjectResolver.btc_balance/3
     end
-    # If there is no data for any currency for any ico, then fallback to one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (in that order)
+    # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
     field :funds_raised_icos, list_of(:currency_amount) do
       resolve &ProjectResolver.funds_raised_icos/3
     end

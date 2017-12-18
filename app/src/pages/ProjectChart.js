@@ -11,10 +11,8 @@ import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { Line } from 'react-chartjs-2'
 import moment from 'moment'
-import { formatNumber } from '../utils/formatting'
+import { formatNumber, formatBTC } from '../utils/formatting'
 import './ProjectChart.css'
-
-const normalizeBTC = price => price > 1 ? price.toFixed(2) : price.toFixed(8)
 
 const TimeFilterItem = ({disabled, filter, setFilter, value = '1d'}) => {
   let cls = filter === value ? 'activated' : ''
@@ -60,7 +58,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC) => {
       data: history ? history.map(data => {
         if (isToggledBTC) {
           const price = parseFloat(data.priceBtc)
-          return normalizeBTC(price)
+          return formatBTC(price)
         }
         return data.priceUsd
       }) : []
@@ -94,7 +92,7 @@ const ProjectChart = ({
         title: item => '',
         label: (tooltipItem, data) => {
           return props.isToggledBTC
-            ? normalizeBTC(tooltipItem.yLabel)
+            ? formatBTC(tooltipItem.yLabel)
             : formatNumber(tooltipItem.yLabel, 'USD')
         }
       }
@@ -149,7 +147,7 @@ const ProjectChart = ({
           >
             <span className='selected-value-datetime'>{moment(chartData.labels[selected]).format('MMMM DD, YYYY')}</span>
             <span className='selected-value-data'>{props.isToggledBTC
-              ? normalizeBTC(parseFloat(chartData.datasets[0].data[selected]))
+              ? formatBTC(parseFloat(chartData.datasets[0].data[selected]))
               : formatNumber(chartData.datasets[0].data[selected], 'USD')}</span>
           </Merge>}</div>
       </div>

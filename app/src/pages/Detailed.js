@@ -1,11 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
+import { graphql } from 'react-apollo'
+import gql from 'graphql-tag'
 import {
   compose,
   pure,
   lifecycle
 } from 'recompose'
+import { Merge } from 'animate-components'
+import { fadeIn, slideRight } from 'animate-keyframes'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
 import ProjectIcon from './../components/ProjectIcon'
@@ -14,6 +18,7 @@ import { retrieveProjects } from './Cashflow.actions.js'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
 import ProjectChart from './ProjectChart'
+import { formatNumber, formatBTC } from '../utils/formatting'
 import './Detailed.css'
 
 const propTypes = {
@@ -24,11 +29,20 @@ const propTypes = {
 
 export const HiddenElements = () => ''
 
+const getProjectByTicker = (match, projects) => {
+  const selectedTicker = match.params.ticker
+  const project = projects.find(el => {
+    const ticker = el.ticker || ''
+    return ticker.toLowerCase() === selectedTicker
+  })
+  return project
+}
+
 export const Detailed = ({
   match,
   projects,
   loading,
-  historyPrice
+  price
 }) => {
   if (loading) {
     return (
@@ -37,11 +51,7 @@ export const Detailed = ({
       </div>
     )
   }
-  const selectedTicker = match.params.ticker
-  const project = projects.find(el => {
-    const ticker = el.ticker || ''
-    return ticker.toLowerCase() === selectedTicker
-  })
+  const project = getProjectByTicker(match, projects)
   if (!project) {
     return (
       <Redirect to={{
@@ -56,6 +66,17 @@ export const Detailed = ({
           <h1><ProjectIcon name={project.name} size={28} /> {project.name} ({project.ticker.toUpperCase()})</h1>
           <p>Manage entire organisations using the blockchain.</p>
         </div>
+        {!price.loading && price.price &&
+          <Merge
+            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
+            two={{ name: slideRight, duration: '0.5s', timingFunction: 'ease-out' }}
+            as='div'
+          >
+            <div className='detailed-price'>
+              <div>{formatNumber(price.price.priceUsd, 'USD')}</div>
+              <div>BTC {formatBTC(parseFloat(price.price.priceBtc))}</div>
+            </div>
+          </Merge>}
         <HiddenElements>
           <div className='detailed-buttons'>
             <button className='add-to-dashboard'>
@@ -150,6 +171,18 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
+const getPriceGQL = gql`
+  query getPrice($ticker: String!) {
+    price (
+      ticker: $ticker
+    ) {
+      priceBtc,
+      priceUsd,
+      volume,
+      datetime
+    }
+}`
+
 const enhance = compose(
   connect(
     mapStateToProps,
@@ -158,6 +191,17 @@ const enhance = compose(
   lifecycle({
     componentDidMount () {
       this.props.retrieveProjects()
+    }
+  }),
+  graphql(getPriceGQL, {
+    name: 'price',
+    options: ({match, projects}) => {
+      const project = getProjectByTicker(match, projects)
+      return {
+        variables: {
+          'ticker': project ? project.ticker.toUpperCase() : 'SAN'
+        }
+      }
     }
   }),
   pure

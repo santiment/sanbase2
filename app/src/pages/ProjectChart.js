@@ -7,6 +7,8 @@ import {
   withState,
   withHandlers
 } from 'recompose'
+import { Merge } from 'animate-components'
+import { fadeIn, slideUp } from 'animate-keyframes'
 import { Line } from 'react-chartjs-2'
 import moment from 'moment'
 import { formatNumber } from '../utils/formatting'
@@ -14,35 +16,35 @@ import './ProjectChart.css'
 
 const normalizeBTC = price => price > 1 ? price.toFixed(2) : price.toFixed(8)
 
-const TimeFilter = ({filter, setFilter, disabled}) => (
+const TimeFilterItem = ({disabled, filter, setFilter, value = '1d'}) => {
+  let cls = filter === value ? 'activated' : ''
+  if (disabled) {
+    cls += ' disabled'
+  }
+  return (
+    <div
+      className={cls}
+      onClick={() => !disabled && setFilter(value)}>{value}</div>
+  )
+}
+
+const TimeFilter = props => (
   <div className='time-filter'>
-    <button
-      className={filter === '1d' ? 'activated' : ''}
-      disabled={disabled}
-      onClick={() => setFilter('1d')}>1d</button>
-    <button
-      className={filter === '1w' ? 'activated' : ''}
-      disabled={disabled}
-      onClick={() => setFilter('1w')}>1w</button>
-    <button
-      className={filter === '2w' ? 'activated' : ''}
-      disabled={disabled}
-      onClick={() => setFilter('2w')}>2w</button>
-    <button
-      className={filter === '1m' ? 'activated' : ''}
-      disabled={disabled}
-      onClick={() => setFilter('1m')}>1m</button>
+    <TimeFilterItem value={'1d'} {...props} />
+    <TimeFilterItem value={'1w'} {...props} />
+    <TimeFilterItem value={'2w'} {...props} />
+    <TimeFilterItem value={'1m'} {...props} />
   </div>
 )
 
 const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
   <div className='currency-filter'>
-    <button
+    <div
       className={isToggledBTC ? 'activated' : ''}
-      onClick={showBTC}>BTC</button>
-    <button
+      onClick={showBTC}>BTC</div>
+    <div
       className={!isToggledBTC ? 'activated' : ''}
-      onClick={showUSD}>USD</button>
+      onClick={showUSD}>USD</div>
   </div>
 )
 
@@ -102,8 +104,8 @@ const ProjectChart = ({
     },
     elements: {
       point: {
-        hitRadius: 10,
-        hoverRadius: 10,
+        hitRadius: 4,
+        hoverRadius: 4,
         radius: 0
       }
     },
@@ -139,15 +141,17 @@ const ProjectChart = ({
     <div className='project-dp-chart'>
       <div className='chart-header'>
         <TimeFilter disabled {...props} />
-        <div>{selected
-          ? <div>
-            {props.isToggledBTC
+        <div className='selected-value'>{selected &&
+          <Merge
+            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
+            two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
+            as='div'
+          >
+            <span className='selected-value-datetime'>{moment(chartData.labels[selected]).format('MMMM DD, YYYY')}</span>
+            <span className='selected-value-data'>{props.isToggledBTC
               ? normalizeBTC(parseFloat(chartData.datasets[0].data[selected]))
-              : formatNumber(chartData.datasets[0].data[selected], 'USD')}
-            &nbsp;|&nbsp;
-            {moment(chartData.labels[selected]).format('YYYY-MM-DD')}
-          </div>
-        : ''}</div>
+              : formatNumber(chartData.datasets[0].data[selected], 'USD')}</span>
+          </Merge>}</div>
       </div>
       <Line
         className='graph'
@@ -178,8 +182,8 @@ const getHistoryGQL = gql`
     }
 }`
 
-const defaultFrom = moment().subtract(1, 'month').utc().format()
-const defaultTo = moment().utc().format()
+const defaultFrom = moment().subtract(1, 'M').utc().format()
+const defaultTo = moment().subtract(1, 'd').utc().format()
 
 const enhance = compose(
   withState('isToggledBTC', 'currencyToggle', false),

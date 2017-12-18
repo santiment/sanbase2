@@ -69,10 +69,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     {:noreply, state}
   end
 
-  def config do
-    Application.get_env(:sanbase, __MODULE__)
-  end
-
   defp fetch_project_data(project) do
     fetch_project_info(project)
     fetch_price_data(project)
@@ -166,5 +162,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   defp get_config(key, default) do
     Keyword.get(config(), key, default)
     |> parse_config_value()
+  end
+
+  def config do
+    Application.get_env(:sanbase, __MODULE__)
   end
 end

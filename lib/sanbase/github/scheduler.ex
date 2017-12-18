@@ -3,14 +3,26 @@ defmodule Sanbase.Github.Scheduler do
   alias Sanbase.Github
   alias Sanbase.Prices
 
+  require Logger
+
   # A dependency injection, so that we can test this module in isolation
   @worker Mockery.of("SanbaseWorkers.ImportGithubActivity")
 
   def schedule_scrape do
     Github.available_projects
+    |> log_scheduler_info
     |> Enum.map(&get_initial_scrape_datetime/1)
     |> reduce_initial_scrape_datetime
     |> schedule_scrape_for_datetime(yesterday())
+  end
+
+  defp log_scheduler_info(projects) do
+    project_names = projects
+    |> Enum.map(&(&1.name))
+
+    Logger.info("Scheduling github activity scraping for projects #{inspect(project_names)}")
+
+    projects
   end
 
   defp reduce_initial_scrape_datetime([]), do: nil

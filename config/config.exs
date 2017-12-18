@@ -86,6 +86,10 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
   update_interval: 5 * 1000 * 60, # 5 minutes
   sync_enabled: {:system, "ETHERSCAN_CRAWLER_ENABLED", false}
 
+config :sanbase, Sanbase.ExternalServices.Github,
+  update_interval: 60 * 1000 * 60, # 60 minutes
+  sync_enabled: {:system, "GITHUB_SCHEDULER_ENABLED", false}
+
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY"}
 

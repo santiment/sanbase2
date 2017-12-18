@@ -33,7 +33,7 @@ defmodule Sanbase.Prices.Store do
     FROM "#{pair}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    GROUP BY time(#{resolution})/
+    GROUP BY time(#{resolution}) fill(none)/
     |> q()
   end
 

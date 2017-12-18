@@ -40,15 +40,10 @@ defmodule SanbaseWeb.Graphql.PriceResolver do
          priceBtc: true,
          priceUsd: true
        }) do
-    result_usd =
-      (String.upcase(ticker) <> "_USD")
-      |> get_price_points(from, to, interval)
+    result_usd = String.upcase(ticker) <> "_USD" |> get_price_points(from, to, interval)
+    result_btc = String.upcase(ticker) <> "_BTC" |> get_price_points(from, to, interval)
 
-    result_btc =
-      (String.upcase(ticker) <> "_BTC")
-      |> get_price_points(from, to, interval)
-
-    # Zip the price in USD and BTC so they are shown as a single point
+    # Zip the price in USD and BTC so they are shown as a single price point
     result =
       Enum.zip(result_btc, result_usd)
       |> Enum.map(fn {btc_map, %{price_usd: price_usd}} ->
@@ -88,6 +83,8 @@ defmodule SanbaseWeb.Graphql.PriceResolver do
     |> Enum.into(%{}, fn field -> {field, true} end)
   end
 
+  # Set the same price for BTC and USD. Function is only used when zipping the time series
+  # where the right price is set as appropriate
   defp to_price_point([datetime, price, volume, marketcap]) do
     %{
       datetime: datetime,
@@ -105,7 +102,6 @@ defmodule SanbaseWeb.Graphql.PriceResolver do
       to,
       interval
     )
-    |> IO.inspect()
     |> Enum.map(&to_price_point/1)
   end
 end

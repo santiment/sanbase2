@@ -19,8 +19,7 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
     only_project_transparency = Map.get(args, :only_project_transparency, false)
 
     query = from p in Project,
-    where: not ^only_project_transparency or p.project_transparency,
-    select: p
+    where: not ^only_project_transparency or p.project_transparency
 
     projects = Repo.all(query)
 
@@ -67,27 +66,31 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
 
     funds_raised = Repo.all(query)
     |> case do
-      [] ->
-        fallback_query = from i in Ico,
-        where: i.project_id == ^id,
-        select: %{funds_raised_usd: sum(i.funds_raised_usd),
-                  funds_raised_btc: sum(i.funds_raised_btc),
-                  funds_raised_eth: sum(i.funds_raised_eth)}
-
-        Repo.one(fallback_query)
-        |> case do
-          %{funds_raised_usd: funds_raised_usd} when not is_nil(funds_raised_usd) ->
-            [%{currency_code: "USD", amount: funds_raised_usd}]
-          %{funds_raised_btc: funds_raised_btc} when not is_nil(funds_raised_btc) ->
-            [%{currency_code: "BTC", amount: funds_raised_btc}]
-          %{funds_raised_eth: funds_raised_eth} when not is_nil(funds_raised_eth) ->
-            [%{currency_code: "ETH", amount: funds_raised_eth}]
-          _ -> []
-        end
+      [] -> funds_raised_icos_fallback_to_precalculated_value(id)
       funds -> funds
     end
 
     {:ok, funds_raised}
+  end
+
+  # If there is no data for any currency for any ico, then fallback one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (in that order)
+  defp funds_raised_icos_fallback_to_precalculated_value(project_id) do
+    query = from i in Ico,
+    where: i.project_id == ^project_id,
+    select: %{funds_raised_usd: sum(i.funds_raised_usd),
+              funds_raised_btc: sum(i.funds_raised_btc),
+              funds_raised_eth: sum(i.funds_raised_eth)}
+
+    Repo.one(query)
+    |> case do
+      %{funds_raised_usd: funds_raised_usd} when not is_nil(funds_raised_usd) ->
+        [%{currency_code: "USD", amount: funds_raised_usd}]
+      %{funds_raised_btc: funds_raised_btc} when not is_nil(funds_raised_btc) ->
+        [%{currency_code: "BTC", amount: funds_raised_btc}]
+      %{funds_raised_eth: funds_raised_eth} when not is_nil(funds_raised_eth) ->
+        [%{currency_code: "ETH", amount: funds_raised_eth}]
+      _ -> []
+    end
   end
 
   defp get_parent_args(context) do

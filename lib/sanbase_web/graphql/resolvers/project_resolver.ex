@@ -56,41 +56,44 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
     {:ok, balance}
   end
 
+  # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
   def funds_raised_icos(%Project{id: id}, _args, _context) do
-    query = from i in Ico,
-    inner_join: ic in IcoCurrencies, on: ic.ico_id == i.id and not is_nil(ic.amount),
-    inner_join: c in Currency, on: c.id == ic.currency_id,
-    where: i.project_id == ^id,
-    group_by: [c.id, c.code],
-    select: %{currency_code: c.code, amount: sum(ic.amount)}
+    query =
+      '''
+      with data as (select c.code currency_code, ic.amount
+      from icos i
+      join ico_currencies ic
+      	on ic.ico_id = i.id
+      		and ic.amount is not null
+      join currencies c
+      	on c.id = ic.currency_id
+      where i.project_id = $1
+      union all
+      select case
+      		when i.funds_raised_usd is not null then 'USD'
+      		when i.funds_raised_btc is not null then 'BTC'
+      		when i.funds_raised_eth is not null then 'ETH'
+      		else null
+      	end currency_code
+      	, coalesce(i.funds_raised_usd, i.funds_raised_btc, i.funds_raised_eth) amount
+      from icos i
+      where i.project_id = $1
+      	and not exists (select 1
+      		from ico_currencies ic
+      		where ic.ico_id = i.id
+      			and ic.amount is not null))
+      select d.currency_code, sum(d.amount) amount
+      from data d
+      group by d.currency_code
+      order by d.currency_code
+      '''
 
-    funds_raised = Repo.all(query)
-    |> case do
-      [] -> funds_raised_icos_fallback_to_precalculated_value(id)
-      funds -> funds
-    end
+      %{rows: rows} = Ecto.Adapters.SQL.query!(Sanbase.Repo, query, [id])
 
-    {:ok, funds_raised}
-  end
+      funds_raised = rows
+      |> Enum.map(fn([currency_code, amount]) -> %{currency_code: currency_code, amount: amount} end)
 
-  # If there is no data for any currency for any ico, then fallback one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (in that order)
-  defp funds_raised_icos_fallback_to_precalculated_value(project_id) do
-    query = from i in Ico,
-    where: i.project_id == ^project_id,
-    select: %{funds_raised_usd: sum(i.funds_raised_usd),
-              funds_raised_btc: sum(i.funds_raised_btc),
-              funds_raised_eth: sum(i.funds_raised_eth)}
-
-    Repo.one(query)
-    |> case do
-      %{funds_raised_usd: funds_raised_usd} when not is_nil(funds_raised_usd) ->
-        [%{currency_code: "USD", amount: funds_raised_usd}]
-      %{funds_raised_btc: funds_raised_btc} when not is_nil(funds_raised_btc) ->
-        [%{currency_code: "BTC", amount: funds_raised_btc}]
-      %{funds_raised_eth: funds_raised_eth} when not is_nil(funds_raised_eth) ->
-        [%{currency_code: "ETH", amount: funds_raised_eth}]
-      _ -> []
-    end
+      {:ok, funds_raised}
   end
 
   defp get_parent_args(context) do

@@ -80,7 +80,10 @@ defmodule Sanbase.Application do
   defp faktory_supervisor do
     if Faktory.start_workers? do
       Faktory.Configuration.init
-      [supervisor(Faktory.Supervisor, [])]
+      [
+        supervisor(Faktory.Supervisor, []),
+        Sanbase.ExternalServices.Github.child_spec(%{})
+      ]
     else
       []
     end

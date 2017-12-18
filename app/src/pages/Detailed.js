@@ -56,12 +56,14 @@ export const Detailed = ({
           <h1><ProjectIcon name={project.name} size={28} /> {project.name} ({project.ticker.toUpperCase()})</h1>
           <p>Manage entire organisations using the blockchain.</p>
         </div>
-        <div className='detailed-buttons'>
-          <button className='add-to-dashboard'>
-            <i className='fa fa-plus' />
-            &nbsp; Add to Dashboard
-          </button>
-        </div>
+        <HiddenElements>
+          <div className='detailed-buttons'>
+            <button className='add-to-dashboard'>
+              <i className='fa fa-plus' />
+              &nbsp; Add to Dashboard
+            </button>
+          </div>
+        </HiddenElements>
       </div>
       <div className='panel'>
         <ProjectChart ticker={project.ticker.toUpperCase()} />

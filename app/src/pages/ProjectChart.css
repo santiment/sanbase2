@@ -1,0 +1,32 @@
+.project-dp-chart {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-dp-chart .graph {
+  flex: 1;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1em;
+}
+
+.time-filter,
+.currency-filter {
+  display: flex;
+  width: 200px;
+}
+
+.time-filter button,
+.currency-filter button {
+  cursor: pointer;
+}
+
+.time-filter .activated,
+.currency-filter .activated {
+  background: gray;
+  color: white;
+  width: 60px;
+}

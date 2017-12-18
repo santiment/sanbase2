@@ -22,7 +22,7 @@ const propTypes = {
   loading: PropTypes.bool.isRequired
 }
 
-const HiddenElements = () => ''
+export const HiddenElements = () => ''
 
 export const Detailed = ({
   match,

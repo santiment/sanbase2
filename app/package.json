@@ -3,6 +3,7 @@
   "version": "0.2.1",
   "private": true,
   "dependencies": {
+    "animate-components": "^1.4.8",
     "apollo-cache-inmemory": "^1.1.2",
     "apollo-client": "^2.1.0",
     "apollo-link-context": "^1.0.2",

@@ -10,7 +10,26 @@
 .chart-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 1em;
+  padding: 0 20px;
+  min-height: 40px;
+}
+
+.selected-value {
+  font-size: 1.2em;
+  text-align: center;
+}
+
+.selected-value-datetime {
+  font-size: 1.2em;
+  font-weight: 300;
+  margin-right: 1em;
+}
+
+.selected-value-data {
+  font-size: 1.2em;
+  font-weight: bold;
 }
 
 .time-filter,
@@ -19,14 +38,22 @@
   width: 200px;
 }
 
-.time-filter button,
-.currency-filter button {
+.time-filter div,
+.currency-filter div {
   cursor: pointer;
+  width: 40px;
+  margin-right: 5px;
+  text-align: center;
 }
 
 .time-filter .activated,
 .currency-filter .activated {
   background: gray;
-  color: white;
-  width: 60px;
+  color: white !important;
+  width: 40px;
+}
+
+.time-filter .disabled,
+.currency-filter .disabled {
+  color: #888;
 }

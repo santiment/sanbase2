@@ -158,6 +158,10 @@ config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
                                  cleanup_interval_ms: 60_000 * 10]}
 
+config :sanbase, Sanbase.ExternalServices.Github,
+  update_interval: 60 * 1000 * 60, # 60 minutes
+  sync_enabled: {:system, "GITHUB_SCHEDULER_ENABLED", false}
+
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY"}
 

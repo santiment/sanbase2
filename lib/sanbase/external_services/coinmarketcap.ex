@@ -166,4 +166,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Keyword.get(config(), key, default)
     |> parse_config_value()
   end
+
+  def config do
+    Application.get_env(:sanbase, __MODULE__)
+  end
 end

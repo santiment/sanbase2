@@ -58,7 +58,7 @@ defmodule Sanbase.Github.Store do
     |> Store.execute()
   end
 
-  defp create_db do
+  def create_db() do
     database()
     |> Instream.Admin.Database.create()
     |> Store.execute()

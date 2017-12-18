@@ -38,7 +38,7 @@ const formatTxOutWallet = wallets => {
     const txOut = wallet.tx_out || '0.00'
     return (
       <div key={index}>
-        {txOut.toLocaleString('en-US')}
+        {formatNumber(txOut)}
       </div>
     )
   })

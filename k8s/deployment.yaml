@@ -68,6 +68,12 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: sentryFrontendDsn
+
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: sentryDsn
 - apiVersion: apps/v1beta1
   kind: Deployment
   metadata:
@@ -192,3 +198,10 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: notificationsChannel
+
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: sentryDsn
+

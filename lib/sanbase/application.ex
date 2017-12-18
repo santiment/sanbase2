@@ -62,7 +62,11 @@ defmodule Sanbase.Application do
 
       # Etherscan wallet tracking worker
       Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),
-    ] ++ faktory_supervisor()
+    ] ++ faktory_supervisor() ++ [
+      # Github activity scraping scheduler
+      Sanbase.ExternalServices.Github.child_spec(%{}),
+
+    ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -78,12 +82,9 @@ defmodule Sanbase.Application do
   end
 
   defp faktory_supervisor do
-    if Faktory.start_workers? do
+    if System.get_env("FAKTORY_HOST") do
       Faktory.Configuration.init
-      [
-        supervisor(Faktory.Supervisor, []),
-        Sanbase.ExternalServices.Github.child_spec(%{})
-      ]
+      [supervisor(Faktory.Supervisor, [])]
     else
       []
     end

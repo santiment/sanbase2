@@ -1,7 +1,8 @@
 defmodule SanbaseWeb.Graphql.AccountResolver do
   require Logger
 
-  alias Sanbase.Auth.{User, EthAccount, Ethauth}
+  alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Repo
   alias Ecto.Multi
 

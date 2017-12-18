@@ -17,7 +17,7 @@ config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
-  database: "postgres",
+  database: "sanbase_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 

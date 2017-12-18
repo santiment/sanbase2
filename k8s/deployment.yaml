@@ -75,6 +75,9 @@ items:
             - name: FAKTORY_HOST
               value: faktory-faktory
 
+            - name: PARITY_URL
+              value: http://parity-parity:8545
+
             - name: ETHAUTH_URL
               valueFrom:
                 secretKeyRef:
@@ -86,6 +89,12 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: sentryFrontendDsn
+
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: sentryDsn
 
             - name: COINMARKETCAP_PRICES_ENABLED
               value: "1"
@@ -129,6 +138,9 @@ items:
 
             - name: INFLUXDB_HOST
               value: "influxdb-influxdb"
+
+            - name: PARITY_URL
+              value: parity-parity
 
             - name: PORT
               value: "4000"

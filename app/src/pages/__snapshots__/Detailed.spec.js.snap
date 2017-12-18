@@ -36,7 +36,7 @@ exports[`Project detail page container it should render correctly 1`] = `
         Manage entire organisations using the blockchain.
       </p>
     </div>
-    <HiddenElements>
+    <Component>
       <div
         className="detailed-buttons"
       >
@@ -49,7 +49,7 @@ exports[`Project detail page container it should render correctly 1`] = `
             Add to Dashboard
         </button>
       </div>
-    </HiddenElements>
+    </Component>
   </div>
   <div
     className="panel"
@@ -58,7 +58,7 @@ exports[`Project detail page container it should render correctly 1`] = `
       ticker="AE"
     />
   </div>
-  <HiddenElements>
+  <Component>
     <div
       className="panel"
     >
@@ -259,6 +259,6 @@ exports[`Project detail page container it should render correctly 1`] = `
         />
       </PanelBlock>
     </div>
-  </HiddenElements>
+  </Component>
 </div>
 `;

@@ -22,6 +22,14 @@
   margin-left: 52px;
 }
 
+.detailed-price {
+  display: flex;
+  flex-direction: column;
+  font-size: 2em;
+  font-weight: 300;
+  z-index: -1;
+}
+
 .detailed-name img {
   display: inline-block;
   vertical-align: middle;

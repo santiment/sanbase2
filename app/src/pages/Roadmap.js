@@ -48,10 +48,10 @@ const Roadmap = props => {
                 <div className='status-row' id='low-orbit'>
                   <span className='status-item'>Develop SANbase backend architecture and wireframe UI</span>
                   <span className='status'>
-                    <div className='status-percent'>30%</div>
+                    <div className='status-percent'>90%</div>
                     <div className='status-border'>
                       <div
-                        style={{width: '30%'}}
+                        style={{width: '90%'}}
                         className='status-progress' />
                     </div>
                   </span>
@@ -62,10 +62,10 @@ const Roadmap = props => {
                     <div className='status-row embedded' id='crypto-projects-item'>
                       <span className='status-item'>Crypto projects with key metrics</span>
                       <span className='status'>
-                        <div className='status-percent'>10%</div>
+                        <div className='status-percent'>30%</div>
                         <div className='status-border'>
                           <div
-                            style={{width: '10%'}}
+                            style={{width: '30%'}}
                             className='status-progress' />
                         </div>
                       </span>
@@ -75,10 +75,10 @@ const Roadmap = props => {
                     <div className='status-row embedded' id='detailed-views-item'>
                       <span className='status-item'>Detailed views of each project</span>
                       <span className='status'>
-                        <div className='status-percent'>10%</div>
+                        <div className='status-percent'>30%</div>
                         <div className='status-border'>
                           <div
-                            style={{width: '10%'}}
+                            style={{width: '30%'}}
                             className='status-progress' />
                         </div>
                       </span>
@@ -103,28 +103,97 @@ const Roadmap = props => {
                         </div>
                       </li>
                       <li>
-                        <div className='status-row embedded nobg'>
-                          Whale wallets
+                        <div className='status-row embedded'>
+                          <span className='status-item'>Whale wallets</span>
+                          <span className='status'>
+                            <div className='status-percent'>10%</div>
+                            <div className='status-border'>
+                              <div
+                                style={{width: '10%'}}
+                                className='status-progress' />
+                            </div>
+                          </span>
                         </div>
                       </li>
                       <li>
-                        <div className='status-row embedded nobg'>
-                          Exchange wallets
+                        <div className='status-row embedded'>
+                          <span className='status-item'>Exchange wallets</span>
+                          <span className='status'>
+                            <div className='status-percent'>10%</div>
+                            <div className='status-border'>
+                              <div
+                                style={{width: '10%'}}
+                                className='status-progress' />
+                            </div>
+                          </span>
                         </div>
                       </li>
                     </ul>
                   </li>
-                  <li>Price History</li>
-                  <li>Market Cap & related metrics</li>
+                  <li>
+                    <div className='status-row embedded'>
+                      <span className='status-item'>Price History</span>
+                      <span className='status'>
+                        <div className='status-percent'>100%</div>
+                        <div className='status-border'>
+                          <div
+                            style={{width: '100%'}}
+                            className='status-progress' />
+                        </div>
+                      </span>
+                    </div>
+                  </li>
+                  <li>Market Cap and volume</li>
                   <li>More...</li>
                 </ul>
-                <p><strong>Signals:</strong> Develop first signals (push notifications):</p>
+                <p><strong>Signals:</strong> Develop first signals (in our slack channel):</p>
                 <ul>
-                  <li>When team wallet transations occur</li>
+                  <li>
+                    <div className='status-row embedded'>
+                      <span className='status-item'>Price increase/decrease over the threshold</span>
+                      <span className='status'>
+                        <div className='status-percent'>100%</div>
+                        <div className='status-border'>
+                          <div
+                            style={{width: '100%'}}
+                            className='status-progress' />
+                        </div>
+                      </span>
+                    </div>
+                  </li>
+                  <li>
+                    <div className='status-row embedded'>
+                      <span className='status-item'>When team wallet transations occur</span>
+                      <span className='status'>
+                        <div className='status-percent'>25%</div>
+                        <div className='status-border'>
+                          <div
+                            style={{width: '25%'}}
+                            className='status-progress' />
+                        </div>
+                      </span>
+                    </div>
+                  </li>
                   <li>When money moves from long-term token holders and whales</li>
                   <li>If token trading volumes exceed last 10 days average</li>
                   <li>Time-sensitive insights or news from the community</li>
                   <li>More...</li>
+                </ul>
+                <p><strong>SAN Token integration:</strong></p>
+                <ul>
+                  <li>
+                    <div className='status-row embedded'>
+                      <span className='status-item'>Authentification with SAN token</span>
+                      <span className='status'>
+                        <div className='status-percent'>95%</div>
+                        <div className='status-border'>
+                          <div
+                            style={{width: '96%'}}
+                            className='status-progress' />
+                        </div>
+                      </span>
+                    </div>
+                  </li>
                 </ul>
                 <p>
                   Experiment with SAN rewards for community engagement:
@@ -136,12 +205,24 @@ const Roadmap = props => {
                 </ul>
                 <p>SANbase alpha release:</p>
                 <ul>
-                  <li>DApp release. SAN token usage launched</li>
+                  <li>
+                    <div className='status-row embedded'>
+                      <span className='status-item'>DApp release. SAN token usage launched</span>
+                      <span className='status'>
+                        <div className='status-percent'>15%</div>
+                        <div className='status-border'>
+                          <div
+                            style={{width: '15%'}}
+                            className='status-progress' />
+                        </div>
+                      </span>
+                    </div>
+                  </li>
                   <li>
                     <div className='status-row embedded' id='mobile-port-item'>
-                      <span className='status-item'>Port to mobile. Add push notifications.</span>
+                      <span className='status-item'>Port to mobile. Changed the plans. Moving to bots.</span>
                       <span className='status'>
-                        <div className='status-percent'>25%</div>
+                        <div className='status-percent'>15%</div>
                         <div className='status-border'>
                           <div
                             style={{width: '25%'}}

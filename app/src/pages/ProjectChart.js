@@ -8,6 +8,43 @@ import {
   withHandlers
 } from 'recompose'
 import { Line } from 'react-chartjs-2'
+import moment from 'moment'
+import { formatNumber } from '../utils/formatting'
+import './ProjectChart.css'
+
+const normalizeBTC = price => price > 1 ? price.toFixed(2) : price.toFixed(8)
+
+const TimeFilter = ({filter, setFilter, disabled}) => (
+  <div className='time-filter'>
+    <button
+      className={filter === '1d' ? 'activated' : ''}
+      disabled={disabled}
+      onClick={() => setFilter('1d')}>1d</button>
+    <button
+      className={filter === '1w' ? 'activated' : ''}
+      disabled={disabled}
+      onClick={() => setFilter('1w')}>1w</button>
+    <button
+      className={filter === '2w' ? 'activated' : ''}
+      disabled={disabled}
+      onClick={() => setFilter('2w')}>2w</button>
+    <button
+      className={filter === '1m' ? 'activated' : ''}
+      disabled={disabled}
+      onClick={() => setFilter('1m')}>1m</button>
+  </div>
+)
+
+const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
+  <div className='currency-filter'>
+    <button
+      className={isToggledBTC ? 'activated' : ''}
+      onClick={showBTC}>BTC</button>
+    <button
+      className={!isToggledBTC ? 'activated' : ''}
+      onClick={showUSD}>USD</button>
+  </div>
+)
 
 const getChartDataFromHistory = (history = [], isToggledBTC) => {
   return {
@@ -20,8 +57,8 @@ const getChartDataFromHistory = (history = [], isToggledBTC) => {
       pointBorderWidth: 0,
       data: history ? history.map(data => {
         if (isToggledBTC) {
-          const price = data.priceBtc
-          return price > 1 ? price.toFixed(2) : price.toFixed(8)
+          const price = parseFloat(data.priceBtc)
+          return normalizeBTC(price)
         }
         return data.priceUsd
       }) : []
@@ -30,23 +67,17 @@ const getChartDataFromHistory = (history = [], isToggledBTC) => {
 }
 
 const ProjectChart = ({
-  showBTC,
-  showUSD,
-  show1d,
-  show1w,
-  show2w,
-  show1m,
-  isToggledBTC,
-  filter,
-  historyPrice
+  historyPrice,
+  setSelected,
+  selected,
+  ...props
 }) => {
   if (historyPrice.loading) {
     return (
       <h2>Loading...</h2>
     )
   }
-  console.log(historyPrice.historyPrice)
-  const chartData = getChartDataFromHistory(historyPrice.historyPrice, isToggledBTC)
+  const chartData = getChartDataFromHistory(historyPrice.historyPrice, props.isToggledBTC)
   const chartOptions = {
     responsive: true,
     showTooltips: false,
@@ -56,6 +87,16 @@ const ProjectChart = ({
     scaleFontSize: 0,
     animation: false,
     pointRadius: 0,
+    tooltips: {
+      callbacks: {
+        title: item => '',
+        label: (tooltipItem, data) => {
+          return props.isToggledBTC
+            ? normalizeBTC(tooltipItem.yLabel)
+            : formatNumber(tooltipItem.yLabel, 'USD')
+        }
+      }
+    },
     legend: {
       display: false
     },
@@ -69,8 +110,7 @@ const ProjectChart = ({
     scales: {
       yAxes: [{
         ticks: {
-          display: true,
-          beginAtZero: true
+          display: true
         },
         gridLines: {
           drawBorder: true,
@@ -96,24 +136,29 @@ const ProjectChart = ({
   }
 
   return (
-    <div>
-      {isToggledBTC ? 'show BTC' : 'show USD'}
-      <button onClick={showBTC}>BTC</button>
-      <button onClick={showUSD}>USD</button>
-      <button onClick={show1d}>1d</button>
-      <button onClick={show1w}>1w</button>
-      <button onClick={show2w}>2w</button>
-      <button onClick={show1m}>2m</button>
-      {filter}
+    <div className='project-dp-chart'>
+      <div className='chart-header'>
+        <TimeFilter disabled {...props} />
+        <div>{selected
+          ? <div>
+            {props.isToggledBTC
+              ? normalizeBTC(parseFloat(chartData.datasets[0].data[selected]))
+              : formatNumber(chartData.datasets[0].data[selected], 'USD')}
+            &nbsp;|&nbsp;
+            {moment(chartData.labels[selected]).format('YYYY-MM-DD')}
+          </div>
+        : ''}</div>
+      </div>
       <Line
+        className='graph'
         data={chartData}
         options={chartOptions}
         onElementsClick={elems => {
-          console.log(elems[0]._index)
+          elems[0] && setSelected(elems[0]._index)
         }}
         style={{ transition: 'opacity 0.25s ease' }}
-        redraw
       />
+      <CurrencyFilter {...props} />
     </div>
   )
 }
@@ -133,26 +178,24 @@ const getHistoryGQL = gql`
     }
 }`
 
+const defaultFrom = moment().subtract(1, 'month').utc().format()
+const defaultTo = moment().utc().format()
+
 const enhance = compose(
   withState('isToggledBTC', 'currencyToggle', false),
   withHandlers({
     showBTC: ({ currencyToggle }) => e => currencyToggle(true),
     showUSD: ({ currencyToggle }) => e => currencyToggle(false)
   }),
-  withState('filter', 'setFilter', '1d'),
-  withHandlers({
-    show1d: ({ setFilter }) => e => setFilter('1d'),
-    show1w: ({ setFilter }) => e => setFilter('1w'),
-    show2w: ({ setFilter }) => e => setFilter('2w'),
-    show1m: ({ setFilter }) => e => setFilter('1m')
-  }),
+  withState('filter', 'setFilter', '1m'),
+  withState('selected', 'setSelected', null),
   graphql(getHistoryGQL, {
     name: 'historyPrice',
     options: ({ticker}) => ({
       variables: {
         'ticker': ticker,
-        'from': '2017-11-14 09:14:31Z',
-        'to': '2017-12-14 09:14:31Z',
+        'from': defaultFrom,
+        'to': defaultTo,
         'interval': '1h'
       }
     })

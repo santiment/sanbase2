@@ -30,9 +30,9 @@
     "semantic-ui-react": "^0.77.0"
   },
   "scripts": {
-    "start": "node node_modules/exit_on_eof/index.js 'react-scripts start'",
+    "start": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(git rev-parse --short HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
     "start:server": "node server",
-    "build": "react-scripts build",
+    "build": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(git rev-parse --short HEAD) react-scripts build",
     "test:lint:js": "standard | standard-reporter --stylish",
     "test:lint:css": "stylelint \"**/*.css\"",
     "test:js": "react-scripts test --env=jsdom",

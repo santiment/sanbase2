@@ -74,6 +74,7 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: sentryDsn
+
 - apiVersion: apps/v1beta1
   kind: Deployment
   metadata:
@@ -180,6 +181,30 @@ items:
 
             - name: GITHUB_SCHEDULER_ENABLED
               value: "1"
+
+            - name: TWITTER_SCRAPER_ENABLED
+              value: "1"
+
+            - name: TWITTERCOUNTER_SCRAPER_ENABLED
+              value: "1"
+
+            - name: TWITTER_CONSUMER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: twitterConsumerKey
+
+            - name: TWITTER_CONSUMER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: twitterConsumerSecret
+
+            - name: TWITTERCOUNTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: twittercounterApiKey
 
             - name: ETHERSCAN_APIKEY
               valueFrom:

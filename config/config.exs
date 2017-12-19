@@ -48,6 +48,12 @@ config :sanbase, Sanbase.Github.Store,
   pool: [ max_overflow: 10, size: 20 ],
   database: "github_activity"
 
+config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
+  host: {:system, "INFLUXDB_HOST", "localhost"},
+  port: {:system, "INFLUXDB_PORT", 8086},
+  pool: [ max_overflow: 10, size: 20 ],
+  database: "twitter_followers_data"
+
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
                                  cleanup_interval_ms: 60_000 * 10]}
@@ -98,6 +104,15 @@ config :sanbase, Sanbase.ExternalServices.Github,
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY"}
 
+config :sanbase, Sanbase.ExternalServices.TwitterData.Worker,
+  update_interval: 1000 * 60 * 60 * 6, # 6 hours
+  sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
+
+config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
+  apikey: {:system, "TWITTERCOUNTER_API_KEY"},
+  update_interval: 1000 * 60 * 60 * 24, # 1 day
+  sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
+
 config :sanbase, Sanbase.Notifications.CheckPrice,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
   notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"}
@@ -127,6 +142,11 @@ config :faktory_worker_ex,
     queues: ["github_activity"],
   ],
   start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
+
+config :extwitter, :oauth, [
+  consumer_key: {:system, "TWITTER_CONSUMER_KEY"},
+  consumer_secret: {:system, "TWITTER_CONSUMER_SECRET"}
+]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

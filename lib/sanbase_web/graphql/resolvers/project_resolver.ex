@@ -58,6 +58,10 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
 
   # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
   def funds_raised_icos(%Project{id: id}, _args, _context) do
+    # We have to aggregate all amounts for every currency for every ICO of the given project, this is the last part of the query (after the with clause).
+    # The data to be aggreagated has to be fetched and unioned from two different sources (the "union all" inside the with clause):
+    #   * For ICOs that have raw data entered for at least one currency we aggregate it by currency (the first query)
+    #   * For ICOs that don't have that data entered (currently everything imported from the spreadsheet) we fall back to a precalculated total (the second query)
     query =
       '''
       with data as (select c.code currency_code, ic.amount

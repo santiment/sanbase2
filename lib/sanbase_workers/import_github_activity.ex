@@ -26,9 +26,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
     archive
     |> download
-    |> File.stream!([:compressed])
-    |> reduce_to_counts(orgs)
-    |> store_counts(orgs, datetime)
+    |> stream_process_cleanup(orgs, datetime)
   end
 
   defp download(archive) do
@@ -59,6 +57,14 @@ defmodule SanbaseWorkers.ImportGithubActivity do
         :ok = IO.binwrite(output_file, data)
         stream_loop(request_ref, output_file)
     end
+  end
+
+  defp stream_process_cleanup(filename, orgs, datetime) do
+    File.stream!(filename, [:compressed])
+    |> reduce_to_counts(orgs)
+    |> store_counts(orgs, datetime)
+
+    File.rm!(filename)
   end
 
   defp reduce_to_counts(stream, orgs) do

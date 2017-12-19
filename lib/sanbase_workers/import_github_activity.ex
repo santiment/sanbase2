@@ -6,7 +6,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   alias Sanbase.Model.Project
   alias Sanbase.Github
   alias Sanbase.Github.Store
-  alias Sanbase.Github.Measurement
+  alias Sanbase.Influxdb.Measurement
   @github_archive "http://data.githubarchive.org/"
 
   faktory_options queue: "github_activity", retry: -1, reserve_for: 600

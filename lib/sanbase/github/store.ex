@@ -8,8 +8,6 @@ defmodule Sanbase.Github.Store do
   alias Sanbase.Github.Store
 
   def import(measurements) do
-    create_db()
-
     measurements
     |> Stream.map(&convert_measurement_for_import/1)
     |> Stream.chunk_every(288) # 1 day of 5 min resolution data
@@ -60,7 +58,7 @@ defmodule Sanbase.Github.Store do
     |> Store.execute()
   end
 
-  defp create_db do
+  def create_db() do
     database()
     |> Instream.Admin.Database.create()
     |> Store.execute()

@@ -9,7 +9,7 @@ items:
       app: sanbase-web
       branch: master
   spec:
-    replicas: 1
+    replicas: 2
     selector:
       matchLabels:
         app: sanbase-web
@@ -54,27 +54,6 @@ items:
                   name: sanbase-env
                   key: exAdminBasicAuthPassword
 
-            - name: ETHERSCAN_APIKEY
-              valueFrom:
-                secretKeyRef:
-                  name: sanbase-env
-                  key: etherscanApikey
-
-            - name: NOTIFICATIONS_WEBHOOK_URL
-              valueFrom:
-                secretKeyRef:
-                  name: sanbase-env
-                  key: notificationsWebhookUrl
-
-            - name: NOTIFICATIONS_CHANNEL
-              valueFrom:
-                secretKeyRef:
-                  name: sanbase-env
-                  key: notificationsChannel
-
-            - name: FAKTORY_HOST
-              value: faktory-faktory
-
             - name: PARITY_URL
               value: http://parity-parity:8545
 
@@ -95,15 +74,6 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: sentryDsn
-
-            - name: COINMARKETCAP_PRICES_ENABLED
-              value: "1"
-
-            - name: COINMARKETCAP_TICKERS_ENABLED
-              value: "1"
-
-            - name: ETHERSCAN_CRAWLER_ENABLED
-              value: "1"
 - apiVersion: apps/v1beta1
   kind: Deployment
   metadata:
@@ -158,3 +128,80 @@ items:
             emptyDir: {}
         nodeSelector:
           cpu.credits: "no"
+- apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+    name: sanbase-scrapers
+    labels:
+      app: sanbase-scrapers
+      branch: master
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: sanbase-scrapers
+        branch: master
+    template:
+      metadata:
+        labels:
+          app: sanbase-scrapers
+          branch: master
+      spec:
+        containers:
+        - name: sanbase-scrapers
+          image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: databaseUrl
+
+            - name: INFLUXDB_HOST
+              value: "influxdb-influxdb"
+
+            - name: PARITY_URL
+              value: parity-parity
+
+            - name: PORT
+              value: "4000"
+
+            - name: FAKTORY_HOST
+              value: faktory-faktory
+
+            - name: COINMARKETCAP_PRICES_ENABLED
+              value: "1"
+
+            - name: COINMARKETCAP_TICKERS_ENABLED
+              value: "1"
+
+            - name: ETHERSCAN_CRAWLER_ENABLED
+              value: "1"
+
+            - name: GITHUB_SCHEDULER_ENABLED
+              value: "1"
+
+            - name: ETHERSCAN_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: etherscanApikey
+
+            - name: NOTIFICATIONS_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: notificationsWebhookUrl
+
+            - name: NOTIFICATIONS_CHANNEL
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: notificationsChannel
+
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: sentryDsn
+

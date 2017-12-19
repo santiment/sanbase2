@@ -26,8 +26,6 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   end
 
   def init(:ok) do
-    Process.flag(:trap_exit, true)
-
     if get_config(:sync_enabled, false) do
       Store.create_db()
       update_interval_ms = get_config(:update_interval, @default_update_interval)
@@ -47,25 +45,24 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
         where: not is_nil(p.twitter_link)
       )
 
-    Repo.all(query)
-    |> Task.async_stream(
-         &fetch_and_store(&1),
-         ordered: false,
-         max_concurency: System.schedulers_online() * 2, # IO bound
-         timeout: 15 * 1000 * 60 # twitter api time window
-       )
+    Task.Supervisor.async_stream_nolink(
+      Sanbase.TaskSupervisor,
+      Repo.all(query),
+      &fetch_and_store(&1),
+      ordered: false,
+      # IO bound
+      max_concurency: System.schedulers_online() * 2,
+      # twitter api time window
+      timeout: 15 * 1000 * 60
+    )
     |> Stream.run()
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval_ms)
     {:noreply, state}
   end
 
-  def handle_info({:EXIT, pid, :normal}, state) do
-    {:noreply, state}
-  end
-
-  def handle_info({:EXIT, pid, reason}, state) do
-    Logger.warn("Child process with pid #{pid} exitted unexpectedly. Reason: #{inspect(reason)}")
+  def handle_info(msg, state) do
+    Logger.msg("Unknown message received: #{msg}")
     {:noreply, state}
   end
 

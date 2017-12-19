@@ -32,8 +32,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :history_price, list_of(:price_point) do
       arg :ticker, non_null(:string)
       arg :from, non_null(:datetime)
-      arg :to, non_null(:datetime)
-      arg :interval, :string
+      arg :to, :datetime, default_value: DateTime.utc_now()
+      arg :interval, :string, default_value: "1h"
 
       resolve &PriceResolver.history_price/3
     end

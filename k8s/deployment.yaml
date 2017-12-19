@@ -111,7 +111,7 @@ items:
               value: "influxdb-influxdb"
 
             - name: PARITY_URL
-              value: parity-parity
+              value: http://parity-parity:8545
 
             - name: PORT
               value: "4000"
@@ -162,7 +162,7 @@ items:
               value: "influxdb-influxdb"
 
             - name: PARITY_URL
-              value: parity-parity
+              value: http://parity-parity:8545
 
             - name: PORT
               value: "4000"

@@ -72,8 +72,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     }
     """
 
-    result = context.conn
-    |> post("/graphql", query_skeleton(query, "historyPrice"))
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     assert json_response(result, 200)["data"]["historyPrice"] == []
   end
@@ -88,13 +89,12 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     }
     """
 
-    result = context.conn
-    |> post("/graphql", query_skeleton(query, "price"))
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "price"))
 
     assert json_response(result, 200)["data"]["price"]["priceUsd"] == "22"
     assert json_response(result, 200)["data"]["price"]["priceBtc"] == "1200"
-    IO.inspect(json_response(result, 200))
-
   end
 
   test "data aggregation for larger intervals", context do
@@ -112,16 +112,39 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     }
     """
 
-    result = context.conn
-    |> post("/graphql", query_skeleton(query, "historyPrice"))
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     history_price = json_response(result, 200)["data"]["historyPrice"]
     assert Enum.count(history_price) == 1
 
-    [history_price|_] = history_price
+    [history_price | _] = history_price
     assert history_price["priceUsd"] == "21"
     assert history_price["priceBtc"] == "1100"
     assert history_price["volume"] == "500"
     assert history_price["marketcap"] == "650"
+  end
+
+  test "too complex queries are denied", context do
+    now = DateTime.utc_now()
+    years_ago = Sanbase.DateTimeUtils.days_ago(10 * 365)
+
+    query = """
+    {
+      historyPrice(ticker: "TEST", from: "#{years_ago}", to: "#{now}", interval: "5m"){
+        priceUsd
+        priceBtc
+        datetime
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+
+    [error | _] = json_response(result, 400)["errors"]
+    assert String.contains?(error["message"], "too complex")
   end
 end

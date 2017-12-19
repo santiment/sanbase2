@@ -84,6 +84,7 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
       			and ic.amount is not null))
       select d.currency_code, sum(d.amount) amount
       from data d
+      where d.currency_code is not null
       group by d.currency_code
       order by d.currency_code
       '''

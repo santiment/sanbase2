@@ -17,23 +17,23 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Enum.each(&import_row(&1))
   end
 
-  # TODO: import each row in transaction
-  # TODO: log & return errors
   defp import_row(ico_spreadsheet_row = %IcoSpreadsheetRow{}) do
     ico_spreadsheet_row = ico_spreadsheet_row
     |> set_infrastructure_default()
 
-    project = insert_or_update_project(ico_spreadsheet_row)
+    Repo.transaction(fn ->
+      project = insert_or_update_project(ico_spreadsheet_row)
 
-    project
-    |> insert_or_update_ico(ico_spreadsheet_row)
-    |> insert_or_update_ico_currencies(ico_spreadsheet_row)
+      project
+      |> insert_or_update_ico(ico_spreadsheet_row)
+      |> insert_or_update_ico_currencies(ico_spreadsheet_row)
 
-    project
-    |> insert_or_update_eth_wallets(ico_spreadsheet_row)
+      project
+      |> insert_or_update_eth_wallets(ico_spreadsheet_row)
 
-    project
-    |> insert_or_update_btc_wallets(ico_spreadsheet_row)
+      project
+      |> insert_or_update_btc_wallets(ico_spreadsheet_row)
+    end)
   end
 
   defp insert_or_update_project(ico_spreadsheet_row) do

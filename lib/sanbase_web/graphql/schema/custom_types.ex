@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.CustomTypes do
   use Absinthe.Schema.Notation
 
-  scalar :ecto_datetime, name: "Ecto.DateTime" do
+  scalar :ecto_datetime, name: "EctoDateTime" do
     serialize &Ecto.DateTime.to_iso8601/1
     parse &parse_ecto_datetime/1
   end
 
-  @spec parse_ecto_datetime(Absinthe.Blueprint.Input.String.t) :: {:ok, NaiveDateTime.t} | :error
+  @spec parse_ecto_datetime(Absinthe.Blueprint.Input.String.t) :: {:ok, Ecto.DateTime.type} | :error
   @spec parse_ecto_datetime(Absinthe.Blueprint.Input.Null.t) :: {:ok, nil}
   defp parse_ecto_datetime(%Absinthe.Blueprint.Input.String{value: value}) do
     case Ecto.DateTime.cast(value) do

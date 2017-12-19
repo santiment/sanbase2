@@ -12,6 +12,7 @@ defmodule Sanbase.Github.Scheduler do
     Github.available_projects
     |> log_scheduler_info
     |> Enum.map(&get_initial_scrape_datetime/1)
+    |> Enum.reject(&is_nil/1)
     |> reduce_initial_scrape_datetime
     |> schedule_scrape_for_datetime(yesterday())
   end

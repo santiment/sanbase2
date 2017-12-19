@@ -20,6 +20,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
     orgs = Github.available_projects
     |> Enum.map(&get_project_org/1)
+    |> Enum.reject(&is_nil/1)
     |> Map.new()
 
     Logger.info("Scanning activity for github users #{Map.keys(orgs) |> inspect}")
@@ -78,14 +79,17 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   end
 
   defp get_project_org(%Project{github_link: github_link} = project) do
-    [_, github_path] = Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link)
+    case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
+      [_, github_path] ->
+        org = github_path
+        |> String.downcase
+        |> String.split("/")
+        |> hd
 
-    org = github_path
-    |> String.downcase
-    |> String.split("/")
-    |> hd
-
-    {org, project}
+        {org, project}
+      nil ->
+        nil
+    end
   end
 
   defp reduce_repos_to_counts(repo, counts, orgs) do

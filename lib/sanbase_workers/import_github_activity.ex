@@ -78,7 +78,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   end
 
   defp get_project_org(%Project{github_link: github_link} = project) do
-    [_, github_path] = Regex.run(~r{https://(?:www.)?github.com/(.+)/?}, github_link)
+    [_, github_path] = Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link)
 
     org = github_path
     |> String.downcase

@@ -36,5 +36,23 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       resolve &AccountResolver.eth_login/2
     end
+
+    field :change_email, :user do
+      arg :email, non_null(:string)
+
+      resolve &AccountResolver.change_email/3
+    end
+
+    field :follow_project, :user do
+      arg :project_id, non_null(:integer)
+
+      resolve &AccountResolver.follow_project/3
+    end
+
+    field :unfollow_project, :user do
+      arg :project_id, non_null(:integer)
+
+      resolve &AccountResolver.unfollow_project/3
+    end
   end
 end

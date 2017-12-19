@@ -86,7 +86,12 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
       from data d
       where d.currency_code is not null
       group by d.currency_code
-      order by d.currency_code
+      order by case
+          			when d.currency_code = 'BTC' then '_'
+          			when d.currency_code = 'ETH' then '__'
+          			when d.currency_code = 'USD' then '___'
+          			else d.currency_code
+          		end
       '''
 
       %{rows: rows} = Ecto.Adapters.SQL.query!(Sanbase.Repo, query, [id])

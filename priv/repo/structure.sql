@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.6
--- Dumped by pg_dump version 9.6.6
+-- Dumped from database version 9.5.10
+-- Dumped by pg_dump version 10.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -515,6 +515,36 @@ CREATE TABLE schema_migrations (
 
 
 --
+-- Name: user_followed_project; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE user_followed_project (
+    id bigint NOT NULL,
+    project_id bigint,
+    user_id bigint
+);
+
+
+--
+-- Name: user_followed_project_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE user_followed_project_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_followed_project_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE user_followed_project_id_seq OWNED BY user_followed_project.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -646,6 +676,13 @@ ALTER TABLE ONLY project_eth_address ALTER COLUMN id SET DEFAULT nextval('projec
 
 
 --
+-- Name: user_followed_project id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_followed_project ALTER COLUMN id SET DEFAULT nextval('user_followed_project_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -770,6 +807,14 @@ ALTER TABLE ONLY project
 
 ALTER TABLE ONLY schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: user_followed_project user_followed_project_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_followed_project
+    ADD CONSTRAINT user_followed_project_pkey PRIMARY KEY (id);
 
 
 --
@@ -914,6 +959,13 @@ CREATE UNIQUE INDEX project_name_index ON project USING btree (name);
 
 
 --
+-- Name: projet_user_constraint; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX projet_user_constraint ON user_followed_project USING btree (project_id, user_id);
+
+
+--
 -- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1006,6 +1058,22 @@ ALTER TABLE ONLY project
 
 ALTER TABLE ONLY project
     ADD CONSTRAINT project_market_segment_id_fkey FOREIGN KEY (market_segment_id) REFERENCES market_segments(id);
+
+
+--
+-- Name: user_followed_project user_followed_project_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_followed_project
+    ADD CONSTRAINT user_followed_project_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id);
+
+
+--
+-- Name: user_followed_project user_followed_project_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_followed_project
+    ADD CONSTRAINT user_followed_project_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
 
 --

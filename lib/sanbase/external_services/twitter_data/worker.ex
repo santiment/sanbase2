@@ -100,8 +100,12 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
 
   def fetch_twitter_user_data(twitter_name) do
     Server.wait(@rate_limiter_name)
-    # GET https://api.twitter.com/1.1/users/show.json?screen_name=twitter_name
-    ExTwitter.user(twitter_name, include_entities: false)
+
+    try do
+      ExTwitter.user(twitter_name, include_entities: false)
+    rescue
+      _ -> nil
+    end
   end
 
   defp fetch_and_store("https://twitter.com/" <> twitter_name) do

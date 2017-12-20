@@ -39,6 +39,6 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       assert conn.private[:absinthe] == %{context: %{}}
     end)
 
-    assert logs =~ ~r/Invalid token/
+    assert logs =~ ~r/Invalid bearer token/
   end
 end

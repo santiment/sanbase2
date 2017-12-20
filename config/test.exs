@@ -50,6 +50,10 @@ config :faktory_worker_ex,
 config :sanbase, Sanbase.Github.Store,
   database: "github_activity_test"
 
+config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+  basic_auth_username: "user",
+  basic_auth_password: "pass"
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

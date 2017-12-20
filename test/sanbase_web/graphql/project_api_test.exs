@@ -2,6 +2,8 @@ defmodule Sanbase.Graphql.ProjectApiTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
+  import Sanbase.Utils, only: [parse_config_value: 1]
+
   alias Ecto.Changeset
   alias Sanbase.Graphql.ProjectInfo
   alias Sanbase.Model.Project
@@ -56,6 +58,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     result =
     context.conn
+    |> put_req_header("authorization", get_authorization_header())
     |> post("/graphql", query_skeleton(query, "allProjects"))
 
     assert json_response(result, 200)["data"]["allProjects"] == [%{"name" => "Project1", "btcBalance" => nil, "ethBalance" => "500"}]
@@ -112,6 +115,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     result =
     context.conn
+    |> put_req_header("authorization", get_authorization_header())
     |> post("/graphql", query_skeleton(query, "allProjects"))
 
     assert json_response(result, 200)["data"]["allProjects"] ==
@@ -121,5 +125,18 @@ defmodule Sanbase.Graphql.ProjectApiTest do
         [%{"currencyCode" => "BTC", "amount" => "300"},
           %{"currencyCode" => "ETH", "amount" => "50"},
           %{"currencyCode" => "USD", "amount" => "200"}]}]
+  end
+
+  defp get_authorization_header do
+    username = context_config(:basic_auth_username)
+    password = context_config(:basic_auth_password)
+
+    "Basic " <> Base.encode64(username <> ":" <> password)
+  end
+
+  defp context_config(key) do
+    Application.get_env(:sanbase, SanbaseWeb.Graphql.ContextPlug)
+    |> Keyword.get(key)
+    |> parse_config_value()
   end
 end

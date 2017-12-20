@@ -141,6 +141,7 @@ exports[`Cashflow container it should render correctly 1`] = `
             "Header": "Last outgoing TX",
             "accessor": [Function],
             "id": "tx",
+            "minWidth": 140,
             "sortMethod": [Function],
             "sortable": true,
           },

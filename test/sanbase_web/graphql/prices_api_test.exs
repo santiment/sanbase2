@@ -147,4 +147,25 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     [error | _] = json_response(result, 400)["errors"]
     assert String.contains?(error["message"], "too complex")
   end
+
+  test "default arguments are correctly set", context do
+    yesterday = Sanbase.DateTimeUtils.days_ago(1)
+
+    query = """
+    {
+      historyPrice(ticker: "TEST", from: "#{yesterday}"){
+        priceUsd
+      }
+    }
+    """
+
+    result =
+    context.conn
+    |> post("/graphql", query_skeleton(query, "historyPrice"))
+
+    history_price  = json_response(result, 200)["data"]["historyPrice"]
+    assert Enum.count(history_price) == 2
+    assert Enum.at(history_price,0)["priceUsd"] == "20"
+    assert Enum.at(history_price,1)["priceUsd"] == "22"
+  end
 end

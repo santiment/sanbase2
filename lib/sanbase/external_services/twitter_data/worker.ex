@@ -26,6 +26,11 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   end
 
   def init(:ok) do
+    :ok = ExTwitter.configure(
+      consumer_key: get_config(:consumer_key),
+      consumer_secret: get_config(:consumer_secret),
+    )
+
     if get_config(:sync_enabled, false) do
       Store.create_db()
       update_interval_ms = get_config(:update_interval, @default_update_interval)

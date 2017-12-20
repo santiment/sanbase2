@@ -75,17 +75,17 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
 
     twitter_name
     |> Sanbase.ExternalServices.TwitterData.Worker.fetch_twitter_user_data()
-    |> fetch_twittercounter_and_store(twitter_name)
+    |> fetch_and_store_twittercounter_user_data(twitter_name)
   end
 
   defp fetch_and_store(args) do
     Logger.warn("Invalid twitter link format: " <> inspect(args))
   end
 
-  defp fetch_twittercounter_and_store(nil, _), do: :ok
+  defp fetch_and_store_twittercounter_user_data(nil, _), do: :ok
 
   # Twittercounter works only with id, but not with name
-  defp fetch_twittercounter_and_store(
+  defp fetch_and_store_twittercounter_user_data(
          %ExTwitter.Model.User{id: twitter_id, id_str: twitter_id_str},
          twitter_name
        ) do
@@ -94,7 +94,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
         {twitter_id, twitter_id_str}
         |> fetch_twittercounter_user_data()
         |> convert_to_measurement(twitter_name)
-        |> store_twitter_user_data()
+        |> store_twittercounter_user_data()
 
       true ->
         :ok
@@ -120,9 +120,9 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
     end
   end
 
-  defp store_twitter_user_data([]), do: :ok
+  defp store_twittercounter_user_data([]), do: :ok
 
-  defp store_twitter_user_data(user_data_measurement) do
+  defp store_twittercounter_user_data(user_data_measurement) do
     user_data_measurement
     |> Store.import()
   end

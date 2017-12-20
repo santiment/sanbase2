@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :update_time, :ecto_datetime
   end
 
-  object :currency_amount do # TODO: change name in ico_currencies too value->amount
+  object :currency_amount do
     field :currency_code, :string
     field :amount, :decimal
   end

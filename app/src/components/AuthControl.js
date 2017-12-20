@@ -14,7 +14,8 @@ const AuthControl = ({user, login, logout}) => {
         <Balance user={user} />
         <a href='#' onClick={logout}>
           Log out
-        </a>&nbsp;
+        </a>
+        <br />
         <Link to='/account' >Settings</Link>
       </div>
     )

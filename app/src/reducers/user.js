@@ -52,6 +52,9 @@ export default (state = initialState, action) => {
         errorMessage: action.error
       }
     case 'CHANGE_USER_DATA':
+      if (!action.user) {
+        return initialState
+      }
       return {
         ...state,
         data: {

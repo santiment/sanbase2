@@ -61,6 +61,15 @@ export default (state = initialState, action) => {
           ...action.user
         }
       }
+    case 'CHANGE_EMAIL_USER':
+      console.log(state)
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          email: action.email
+        }
+      }
     default:
       return state
   }

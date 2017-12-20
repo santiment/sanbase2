@@ -12,11 +12,33 @@ import {
   Divider,
   Button
 } from 'semantic-ui-react'
+import { graphql, withApollo } from 'react-apollo'
+import gql from 'graphql-tag'
 import copy from 'copy-to-clipboard'
 import Balance from './../components/Balance'
 import './Account.css'
 
-export const Account = ({user, loading, logout}) => {
+let emailInputRef
+
+const requestChangeEmailGQL = gql`
+  mutation changeEmail($email: String!) {
+    changeEmail(
+      email: $email) {
+        email
+      }
+}`
+
+const handleEmailInputRef = (c) => {
+  emailInputRef = c
+}
+
+export const Account = ({
+  user,
+  loading,
+  logout,
+  changeEmailReq,
+  requestChangeEmail
+}) => {
   if (user && !user.username) {
     return (
       <Redirect to={{
@@ -31,15 +53,26 @@ export const Account = ({user, loading, logout}) => {
       </div>
       <div className='panel'>
         <Form loading={loading}>
-          <Form.Field disabled>
+          <Form.Field>
             <label>Email</label>
-            <Input placeholder={user.email || ''} />
+            <Input
+              placeholder={user.email || ''}
+              ref={handleEmailInputRef}
+              action={{
+                color: 'teal',
+                labelPosition: 'right',
+                icon: 'save',
+                content: 'Save',
+                onClick: () => requestChangeEmail(emailInputRef.inputRef.value, changeEmailReq)
+              }}
+            />
             {!user.email &&
               <Message
                 warning
+                visible
                 header='Email is not added yet!'
                 list={[
-                  'For acces your dashboard from mobile device, you should add email address.'
+                  'For access your dashboard from mobile device, you should add email address.'
                 ]}
               />}
           </Form.Field>
@@ -87,6 +120,18 @@ const mapDispatchToProps = dispatch => {
       dispatch({
         type: 'SUCCESS_LOGOUT'
       })
+    },
+    requestChangeEmail: (newEmail, changeEmailReq) => {
+      changeEmailReq({variables: { newEmail }})
+      .then(({ data }) => {
+        dispatch({
+          type: 'CHANGE_EMAIL_USER',
+          email: data.changeEmail.email
+        })
+      })
+      .catch((error) => {
+        console.error(error)
+      })
     }
   }
 }
@@ -96,6 +141,11 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  withApollo,
+  graphql(requestChangeEmailGQL, {
+    name: 'changeEmailReq',
+    options: { fetchPolicy: 'network-only' }
+  }),
   pure
 )
 

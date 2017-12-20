@@ -182,12 +182,6 @@ items:
             - name: GITHUB_SCHEDULER_ENABLED
               value: "1"
 
-            - name: TWITTER_SCRAPER_ENABLED
-              value: "1"
-
-            - name: TWITTERCOUNTER_SCRAPER_ENABLED
-              value: "1"
-
             - name: TWITTER_CONSUMER_KEY
               valueFrom:
                 secretKeyRef:

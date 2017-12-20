@@ -32,6 +32,20 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
     {:ok, projects}
   end
 
+  def project(parent, args, %{context: %{basic_auth: true}}), do: project(parent, args)
+
+  def project(parent, args, %{context: %{current_user: user}}) when not is_nil(user), do: project(parent, args)
+
+  def project(_parent, _args, _context), do: {:error, :unauthorized}
+
+  defp project(parent, args) do
+    id = Map.get(args, :id)
+
+    project = Repo.get(Project, id)
+
+    {:ok, project}
+  end
+
   def eth_balance(%Project{id: id}, args, context) do
     only_project_transparency = get_parent_args(context)
     |> Map.get(:only_project_transparency, false)

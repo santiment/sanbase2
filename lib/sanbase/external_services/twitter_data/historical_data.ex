@@ -23,7 +23,8 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.TwitterData.{HistoricalData, Store}
 
-  @default_update_interval 1000 * 60 * 60 * 24 # 1 day
+  # 1 day
+  @default_update_interval 1000 * 60 * 60 * 24
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -64,7 +65,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   end
 
   def handle_info(msg, state) do
-    Logger.msg("Unknown message received: #{msg}")
+    Logger.info("Unknown message received: #{msg}")
     {:noreply, state}
   end
 
@@ -72,30 +73,38 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
     # Ignore trailing slash and everything after it
     twitter_name = String.split(twitter_name, "/") |> hd
 
-    # Twittercounter works only with id, but not with name
-    %ExTwitter.Model.User{id: twitter_id, id_str: twitter_id_str} =
-      twitter_name
-      |> Sanbase.ExternalServices.TwitterData.Worker.fetch_twitter_user_data()
+    twitter_name
+    |> Sanbase.ExternalServices.TwitterData.Worker.fetch_twitter_user_data()
+    |> fetch_twittercounter_and_store(twitter_name)
+  end
 
+  defp fetch_and_store(args) do
+    Logger.warn("Invalid twitter link format: " <> inspect(args))
+  end
+
+  defp fetch_twittercounter_and_store(nil, _), do: :ok
+
+  # Twittercounter works only with id, but not with name
+  defp fetch_twittercounter_and_store(
+         %ExTwitter.Model.User{id: twitter_id, id_str: twitter_id_str},
+         twitter_name
+       ) do
     case has_scraped_data?(twitter_name) do
       false ->
         {twitter_id, twitter_id_str}
         |> fetch_twittercounter_user_data()
         |> convert_to_measurement(twitter_name)
         |> store_twitter_user_data()
+
       true ->
         :ok
     end
   end
 
-  defp fetch_and_store(args) do
-    Logger.warn("Invalid parameters while fetching twitter data: " <> inspect(args))
-  end
-
   defp fetch_twittercounter_user_data({twitter_id, twitter_id_str}) do
     RateLimiting.Server.wait(@rate_limiter_name)
 
-    apikey = get_config(:apikey, "")
+    apikey = get_config(:apikey)
 
     case get("/?twitter_id=" <> twitter_id_str <> "&apikey=" <> apikey) do
       %Tesla.Env{status: 200, body: body} ->

@@ -26,10 +26,11 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   end
 
   def init(:ok) do
-    :ok = ExTwitter.configure(
-      consumer_key: get_config(:consumer_key),
-      consumer_secret: get_config(:consumer_secret),
-    )
+    :ok =
+      ExTwitter.configure(
+        consumer_key: get_config(:consumer_key),
+        consumer_secret: get_config(:consumer_secret)
+      )
 
     if get_config(:sync_enabled, false) do
       Store.create_db()
@@ -67,32 +68,41 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   end
 
   def handle_info(msg, state) do
-    Logger.msg("Unknown message received: #{msg}")
+    Logger.info("Unknown message received: #{msg}")
     {:noreply, state}
   end
 
+  @doc ~S"""
+  Stop the process from crashing on fetching fail and return nil
+  """
   def fetch_twitter_user_data(twitter_name) do
     Server.wait(@rate_limiter_name)
-    # GET https://api.twitter.com/1.1/users/show.json?screen_name=twitter_name
-    ExTwitter.user(twitter_name, include_entities: false)
+
+    try do
+      ExTwitter.user(twitter_name, include_entities: false)
+    rescue
+      _ -> nil
+    end
   end
 
   defp fetch_and_store("https://twitter.com/" <> twitter_name) do
     # Ignore trailing slash and everything after it
-    [twitter_name | _] = String.split(twitter_name, "/")
+    twitter_name = String.split(twitter_name, "/") |> hd
 
     twitter_name
     |> fetch_twitter_user_data()
-    |> convert_to_measurement(twitter_name)
-    |> store_twitter_user_data()
+    |> store_twitter_user_data(twitter_name)
   end
 
   defp fetch_and_store(args) do
     Logger.warn("Invalid parameters while fetching twitter data: " <> inspect(args))
   end
 
-  defp store_twitter_user_data(user_data_measurement) do
-    user_data_measurement
+  defp store_twitter_user_data(nil, _twitter_name), do: :ok
+
+  defp store_twitter_user_data(twitter_user_data, twitter_name) do
+    twitter_user_data
+    |> convert_to_measurement(twitter_name)
     |> Store.import()
   end
 
@@ -102,14 +112,10 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
        ) do
     %Measurement{
       timestamp: DateTime.to_unix(DateTime.utc_now(), :nanosecond),
-      fields: twitter_data_to_fields(user_data),
+      fields: %{followers_count: followers_count},
       tags: [source: "twitter"],
       name: measurement_name
     }
-  end
-
-  defp twitter_data_to_fields(%ExTwitter.Model.User{followers_count: followers_count} = user_data) do
-    %{followers_count: followers_count}
   end
 
   defp get_config(key, default \\ nil) do

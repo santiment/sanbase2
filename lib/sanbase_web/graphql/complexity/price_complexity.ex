@@ -1,7 +1,13 @@
 defmodule SanbaseWeb.Graphql.PriceComplexity do
   require Logger
 
-  @doc "Returns the number of intervals in the period 'from-to'"
+  @doc ~S"""
+  Returns the complexity of the query. It is the number of intervals in the period
+  'from-to' multiplied by the child complexity. The child complexity is the number
+  of fields that will be returned for a single price point. The calculation is done
+  based only on the supplied arguments and avoids accessing the DB if the query
+  is rejected.
+  """
   def history_price(%{from: from, to: to, interval: interval}, child_complexity) do
     from_unix = DateTime.to_unix(from, :second)
     to_unix = DateTime.to_unix(to, :second)
@@ -19,8 +25,8 @@ defmodule SanbaseWeb.Graphql.PriceComplexity do
   end
 
   defp str_to_sec(seconds, "s"), do: seconds
-  defp str_to_sec(hours, "h"), do: hours * 60 * 60
   defp str_to_sec(minutes, "m"), do: minutes * 60
+  defp str_to_sec(hours, "h"), do: hours * 60 * 60
   defp str_to_sec(days, "d"), do: days * 60 * 60 * 24
   defp str_to_sec(weeks, "w"), do: weeks * 60 * 60 * 24 * 7
 end

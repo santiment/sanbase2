@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
   alias Sanbase.Repo
   alias Ecto.Multi
 
-  def all_projects(parent, args, context) do
+  def all_projects(parent, args, %{context: %{basic_auth: true}}) do
     only_project_transparency = Map.get(args, :only_project_transparency, false)
 
     query = from p in Project,
@@ -25,6 +25,8 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
 
     {:ok, projects}
   end
+
+  def all_projects(_parent, _args, _context), do: {:error, :unauthorized}
 
   def eth_balance(%Project{id: id}, args, context) do
     only_project_transparency = get_parent_args(context)

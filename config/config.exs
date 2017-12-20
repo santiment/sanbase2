@@ -105,6 +105,8 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY"}
 
 config :sanbase, Sanbase.ExternalServices.TwitterData.Worker,
+  consumer_key: {:system, "TWITTER_CONSUMER_KEY"},
+  consumer_secret: {:system, "TWITTER_CONSUMER_SECRET"},
   update_interval: 1000 * 60 * 60 * 6, # 6 hours
   sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
 
@@ -142,11 +144,6 @@ config :faktory_worker_ex,
     queues: ["github_activity"],
   ],
   start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
-
-config :extwitter, :oauth, [
-  consumer_key: {:system, "TWITTER_CONSUMER_KEY"},
-  consumer_secret: {:system, "TWITTER_CONSUMER_SECRET"}
-]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

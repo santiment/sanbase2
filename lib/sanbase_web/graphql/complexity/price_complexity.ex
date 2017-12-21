@@ -2,13 +2,21 @@ defmodule SanbaseWeb.Graphql.PriceComplexity do
   require Logger
 
   @doc ~S"""
+  Internal services use basic authentication. Return complexity = 0 to allow them
+  to access everything without limits.
+  """
+  def history_price(_,_, %Absinthe.Complexity{context: %{basic_auth: true}}) do
+    0
+  end
+
+  @doc ~S"""
   Returns the complexity of the query. It is the number of intervals in the period
   'from-to' multiplied by the child complexity. The child complexity is the number
   of fields that will be returned for a single price point. The calculation is done
   based only on the supplied arguments and avoids accessing the DB if the query
   is rejected.
   """
-  def history_price(%{from: from, to: to, interval: interval}, child_complexity) do
+  def history_price(%{from: from, to: to, interval: interval}, child_complexity, _) do
     from_unix = DateTime.to_unix(from, :second)
     to_unix = DateTime.to_unix(to, :second)
 

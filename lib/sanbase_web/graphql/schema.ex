@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1h")
 
-      complexity(&PriceComplexity.history_price/2)
+      complexity(&PriceComplexity.history_price/3)
 
       resolve(&PriceResolver.history_price/3)
     end

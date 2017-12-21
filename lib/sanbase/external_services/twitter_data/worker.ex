@@ -81,7 +81,20 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
     try do
       ExTwitter.user(twitter_name, include_entities: false)
     rescue
-      _ -> nil
+      e in ExTwitter.RateLimitExceededError ->
+        Logger.info("Rate limit to twitter exceeded.")
+        nil
+
+      e in ExTwitter.ConnectionError ->
+        Logger.warn("Connection error while trying to fetch twitter user data: #{e.reason}")
+        nil
+
+      e in ExTwitter.Error ->
+        Logger.warn("Error trying to fetch twitter user data for #{twitter_name}: #{e.message}")
+        nil
+
+      _ ->
+        nil
     end
   end
 

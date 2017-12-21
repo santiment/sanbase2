@@ -28,15 +28,16 @@ items:
               path: /
               port: 4000
             timeoutSeconds: 5
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          readynessProbe:
+            initialDelaySeconds: 100
+            periodSeconds: 10
+          readinessProbe:
             httpGet:
               path: /
               port: 4000
             timeoutSeconds: 5
-            initialDelaySeconds: 5
-            periodSeconds: 5
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 6
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -119,15 +120,16 @@ items:
               path: /
               port: 4000
             timeoutSeconds: 5
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          readynessProbe:
+            initialDelaySeconds: 100
+            periodSeconds: 10
+          readinessProbe:
             httpGet:
               path: /
               port: 4000
             timeoutSeconds: 5
-            initialDelaySeconds: 5
-            periodSeconds: 5
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 6
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -190,15 +192,16 @@ items:
               path: /
               port: 4000
             timeoutSeconds: 5
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          readynessProbe:
+            initialDelaySeconds: 100
+            periodSeconds: 10
+          readinessProbe:
             httpGet:
               path: /
               port: 4000
             timeoutSeconds: 5
-            initialDelaySeconds: 5
-            periodSeconds: 5
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 6
           env:
             - name: DATABASE_URL
               valueFrom:

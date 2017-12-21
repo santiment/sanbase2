@@ -15,9 +15,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
-  alias Sanbase.Prices.{Store, Measurement}
+  alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
   alias Sanbase.ExternalServices.ProjectInfo
+  alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Prices.Store
+  alias Sanbase.ExternalServices.Coinmarketcap.GraphData
+  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices
 
   # 5 minutes
@@ -67,10 +71,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   def handle_info(msg, state) do
     Logger.warn("Unknown message received: #{msg}")
     {:noreply, state}
-  end
-
-  def config do
-    Application.get_env(:sanbase, __MODULE__)
   end
 
   defp fetch_project_data(project) do
@@ -166,5 +166,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   defp get_config(key, default) do
     Keyword.get(config(), key, default)
     |> parse_config_value()
+  end
+
+  def config do
+    Application.get_env(:sanbase, __MODULE__)
   end
 end

@@ -15,9 +15,9 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
   alias Sanbase.Repo
   alias Ecto.Multi
 
-  def all_projects(parent, args, %{context: %{basic_auth: true}}), do: all_projects(parent, args)
+  def all_projects(parent, args, %{context: %{auth: %{auth_method: :basic}}}), do: all_projects(parent, args)
 
-  def all_projects(parent, args, %{context: %{current_user: user}}) when not is_nil(user), do: all_projects(parent, args)
+  def all_projects(parent, args, %{context: %{auth: %{auth_method: :user_token}}}), do: all_projects(parent, args)
 
   def all_projects(_parent, _args, _context), do: {:error, :unauthorized}
 
@@ -32,9 +32,9 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
     {:ok, projects}
   end
 
-  def project(parent, args, %{context: %{basic_auth: true}}), do: project(parent, args)
+  def project(parent, args, %{context: %{auth: %{auth_method: :basic}}}), do: project(parent, args)
 
-  def project(parent, args, %{context: %{current_user: user}}) when not is_nil(user), do: project(parent, args)
+  def project(parent, args, %{context: %{auth: %{auth_method: :user_token}}}), do: project(parent, args)
 
   def project(_parent, _args, _context), do: {:error, :unauthorized}
 

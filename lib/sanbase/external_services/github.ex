@@ -41,7 +41,7 @@ defmodule Sanbase.ExternalServices.Github do
     {:noreply, state}
   end
 
-  defp schedule_jobs_if_free(%{"faktory" => %{"tasks" => %{"total_enqueued" => total_enqueued}}}) do
+  defp schedule_jobs_if_free(%{"faktory" => %{"total_enqueued" => total_enqueued}}) do
     if total_enqueued > 0 do
       :ok
     else

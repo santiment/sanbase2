@@ -23,6 +23,21 @@ items:
         containers:
         - name: sanbase-web
           image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 100
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 6
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -74,6 +89,7 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: sentryDsn
+
 - apiVersion: apps/v1beta1
   kind: Deployment
   metadata:
@@ -99,6 +115,21 @@ items:
           volumeMounts:
           - mountPath: /tmp
             name: tmp-volume
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 100
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 6
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -110,7 +141,7 @@ items:
               value: "influxdb-influxdb"
 
             - name: PARITY_URL
-              value: parity-parity
+              value: http://parity-parity:8545
 
             - name: PORT
               value: "4000"
@@ -123,6 +154,12 @@ items:
 
             - name: TMP
               value: /tmp
+
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: sentryDsn
         volumes:
           - name: tmp-volume
             emptyDir: {}
@@ -150,6 +187,21 @@ items:
         containers:
         - name: sanbase-scrapers
           image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 100
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 6
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -161,7 +213,7 @@ items:
               value: "influxdb-influxdb"
 
             - name: PARITY_URL
-              value: parity-parity
+              value: http://parity-parity:8545
 
             - name: PORT
               value: "4000"
@@ -180,6 +232,24 @@ items:
 
             - name: GITHUB_SCHEDULER_ENABLED
               value: "1"
+
+            - name: TWITTER_CONSUMER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: twitterConsumerKey
+
+            - name: TWITTER_CONSUMER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: twitterConsumerSecret
+
+            - name: TWITTERCOUNTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sanbase-env
+                  key: twittercounterApiKey
 
             - name: ETHERSCAN_APIKEY
               valueFrom:
@@ -204,4 +274,3 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: sentryDsn
-

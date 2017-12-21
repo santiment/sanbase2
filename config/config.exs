@@ -145,6 +145,10 @@ config :faktory_worker_ex,
   ],
   start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
 
+config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+  basic_auth_username: {:system, "GRAPHQL_BASIC_AUTH_USERNAME"},
+  basic_auth_password: {:system, "GRAPHQL_BASIC_AUTH_PASSWORD"}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"

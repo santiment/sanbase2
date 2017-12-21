@@ -23,7 +23,7 @@
   animation: bounce 2s infinite;
 }
 
-@media (max-width: 620px) {
+@media (max-width: 768px) {
   .help-arrow-extension {
     display: none;
   }

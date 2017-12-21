@@ -13,7 +13,7 @@ const AuthControl = ({user, login, logout}) => {
         You are logged in!
         <Balance user={user} />
         <a href='#' onClick={logout}>
-          Log out
+          Logout
         </a>
         <br />
         <Link to='/account' >Settings</Link>
@@ -26,7 +26,7 @@ const AuthControl = ({user, login, logout}) => {
         basic
         color='green'
         onClick={login}>
-        Log in
+        Login
       </Button>
     </div>
   )

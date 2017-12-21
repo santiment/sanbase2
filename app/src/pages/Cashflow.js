@@ -149,7 +149,7 @@ export const Cashflow = ({
 }) => (
   <div className='page cashflow'>
     <div className='cashflow-head'>
-      <h1>Cash Flow</h1>
+      <h1>Projects: Cash Flow</h1>
       <p>
         brought to you by <a
           href='https://santiment.net'

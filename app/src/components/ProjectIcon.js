@@ -1,17 +1,26 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import './ProjectIcon.css'
 
-const ProjectIcon = ({name, size}) => {
+export const DefaultIcon = ({size}) => (
+  <span
+    width={size}
+    className='project-icon-default' />
+)
+
+export const ProjectIcon = ({name, size}) => {
   if (!name) {
     return (
-      <span className='project-icon-default' />
+      <DefaultIcon size={size} />
     )
   }
   let imgSource = ''
   try {
-    imgSource = require(`../assets/project-icons/${name.toString().toLowerCase().split((/[ /]+/)).join('-')}.png`)
+    imgSource = require(`../assets/project-icons/${name.toString().toLowerCase().split((/[ /.]+/)).join('-')}.png`)
   } catch (e) {
-    // pass
+    return (
+      <DefaultIcon size={size} />
+    )
   }
   return (
     <img

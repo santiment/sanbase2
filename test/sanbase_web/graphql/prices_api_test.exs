@@ -103,7 +103,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{two_days_ago}", to: "#{now}", interval: "1w") {
+      historyPrice(ticker: "TEST", from: "#{two_days_ago}", to: "#{now}", interval: "10w") {
         priceUsd
         priceBtc
         marketcap

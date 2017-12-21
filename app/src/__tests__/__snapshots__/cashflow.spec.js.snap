@@ -115,8 +115,8 @@ exports[`Cashflow container it should render correctly 1`] = `
             "filterMethod": [Function],
             "filterable": true,
             "id": "project",
+            "minWidth": 250,
             "sortable": true,
-            "width": 350,
           },
           Object {
             "Cell": [Function],

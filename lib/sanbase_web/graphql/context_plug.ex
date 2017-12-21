@@ -71,7 +71,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp config(key) do
-    Application.get_env(:sanbase, __MODULE__)
+    Application.fetch_env!(:sanbase, __MODULE__)
     |> Keyword.get(key)
     |> parse_config_value()
   end

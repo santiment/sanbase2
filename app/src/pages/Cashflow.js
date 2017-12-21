@@ -86,7 +86,7 @@ const columns = [{
   id: 'project',
   filterable: true,
   sortable: true,
-  width: 350,
+  minWidth: 250,
   accessor: d => ({
     name: d.name,
     ticker: d.ticker

@@ -130,6 +130,9 @@ items:
             initialDelaySeconds: 40
             periodSeconds: 10
             failureThreshold: 6
+          resources:
+            limits:
+              cpu: 500m
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -160,6 +163,8 @@ items:
                 secretKeyRef:
                   name: sanbase-env
                   key: sentryDsn
+
+          
         volumes:
           - name: tmp-volume
             emptyDir: {}

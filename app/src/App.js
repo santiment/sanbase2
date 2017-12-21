@@ -23,7 +23,7 @@ export const App = ({isDesktop}) => (
       : <MobileMenu />}
     <ErrorBoundary>
       <Switch>
-        <Route exact path='/cashflow' component={Cashflow} />
+        <Route exact path='/projects' component={Cashflow} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route exact path='/account' component={Account} />

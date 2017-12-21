@@ -4,27 +4,16 @@ defmodule Sanbase.Github.Store do
   # Currently using InfluxDB for the time series data.
   use Instream.Connection, otp_app: :sanbase
 
-  alias Sanbase.Github.Measurement
+  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Github.Store
 
   def import(measurements) do
     measurements
-    |> Stream.map(&convert_measurement_for_import/1)
+    |> Stream.map(&Measurement.convert_measurement_for_import/1)
     |> Stream.chunk_every(288) # 1 day of 5 min resolution data
     |> Enum.map(fn data_for_import ->
       :ok = Store.write(data_for_import)
     end)
-  end
-
-  defp convert_measurement_for_import(%Measurement{timestamp: timestamp, fields: fields, tags: tags, name: name}) do
-    %{
-      points: [%{
-        measurement: name,
-        fields: fields,
-        tags: tags || [],
-        timestamp: timestamp
-      }]
-    }
   end
 
   def first_activity_datetime(ticker) do

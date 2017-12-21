@@ -6,10 +6,10 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   alias Sanbase.Model.Project
   alias Sanbase.Github
   alias Sanbase.Github.Store
-  alias Sanbase.Github.Measurement
+  alias Sanbase.Influxdb.Measurement
   @github_archive "http://data.githubarchive.org/"
 
-  faktory_options queue: "github_activity", retry: -1, reserve_for: 600
+  faktory_options queue: "github_activity", retry: -1, reserve_for: 900
 
   def perform(archive) do
     Temp.track!
@@ -20,6 +20,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
     orgs = Github.available_projects
     |> Enum.map(&get_project_org/1)
+    |> Enum.reject(&is_nil/1)
     |> Map.new()
 
     Logger.info("Scanning activity for github users #{Map.keys(orgs) |> inspect}")
@@ -69,23 +70,31 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
   defp reduce_to_counts(stream, orgs) do
     stream
-    |> Enum.reduce(%{}, fn line, counts ->
-      reduce_events_to_counts(line, counts, orgs)
+    |> Stream.map(&Poison.decode!/1)
+    |> Stream.map(&get_repository_name/1)
+    |> Stream.reject(&is_nil/1)
+    |> Enum.reduce(%{}, fn repo, counts ->
+      reduce_repos_to_counts(repo, counts, orgs)
     end)
   end
 
-  defp get_project_org(%Project{github_link: "https://github.com/" <> github_path} = project) do
-    org = github_path
-    |> String.split("/")
-    |> hd
+  defp get_project_org(%Project{github_link: github_link} = project) do
+    case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
+      [_, github_path] ->
+        org = github_path
+        |> String.downcase
+        |> String.split("/")
+        |> hd
 
-    {org, project}
+        {org, project}
+      nil ->
+        nil
+    end
   end
 
-  defp reduce_events_to_counts(line, counts, orgs) do
-    repo_org = line
-    |> Poison.decode!()
-    |> get_in(["repo", "name"])
+  defp reduce_repos_to_counts(repo, counts, orgs) do
+    repo_org = repo
+    |> String.downcase
     |> String.split("/")
     |> hd
 
@@ -100,6 +109,12 @@ defmodule SanbaseWorkers.ImportGithubActivity do
       counts
     end
   end
+
+  defp get_repository_name(%{"repo" => %{"name" => name}}), do: name
+
+  defp get_repository_name(%{"repository" => %{"name" => name}}), do: name
+
+  defp get_repository_name(_), do: nil
 
   defp store_counts(counts, orgs, datetime) do
     counts

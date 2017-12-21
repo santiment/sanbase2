@@ -11,8 +11,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   alias Sanbase.Model.IcoCurrencies
 
   def import(ico_spreadsheet) when is_list(ico_spreadsheet) do
-    Logger.configure(level: :info)
-
     ico_spreadsheet
     |> Enum.each(&import_row(&1))
   end

@@ -8,7 +8,7 @@ exports[`Cashflow container it should render correctly 1`] = `
     className="cashflow-head"
   >
     <h1>
-      Cash Flow
+      Projects: Cash Flow
     </h1>
     <p>
       brought to you by 

@@ -124,6 +124,7 @@ const columns = [{
 }, {
   Header: 'Last outgoing TX',
   id: 'tx',
+  minWidth: 140,
   accessor: d => d.wallets,
   Cell: ({value}) => <div>{formatLastOutgoingWallet(value)}</div>,
   sortable: true,

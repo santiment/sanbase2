@@ -21,7 +21,7 @@ defmodule Sanbase.Mixfile do
     [
       mod: {Sanbase.Application, []},
       extra_applications: [:logger, :runtime_tools, :sasl],
-      included_applications: [:faktory_worker_ex]
+      included_applications: [:faktory_worker_ex, :oauther]
     ]
   end
 
@@ -63,6 +63,7 @@ defmodule Sanbase.Mixfile do
       {:httpoison, "~> 0.13"},
       {:floki, "~> 0.19.0"},
       {:sentry, "~> 6.0.4"},
+      {:extwitter, "~> 0.9.0"}
     ]
   end
 

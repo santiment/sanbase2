@@ -23,6 +23,20 @@ items:
         containers:
         - name: sanbase-web
           image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readynessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -100,6 +114,20 @@ items:
           volumeMounts:
           - mountPath: /tmp
             name: tmp-volume
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readynessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -157,6 +185,20 @@ items:
         containers:
         - name: sanbase-scrapers
           image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readynessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
           env:
             - name: DATABASE_URL
               valueFrom:

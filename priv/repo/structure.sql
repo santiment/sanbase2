@@ -1946,7 +1946,7 @@ ALTER TABLE ONLY public.votes
 --
 
 ALTER TABLE ONLY user_followed_project
-    ADD CONSTRAINT user_followed_project_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id);
+    ADD CONSTRAINT user_followed_project_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
 
 
 --
@@ -1954,7 +1954,7 @@ ALTER TABLE ONLY user_followed_project
 --
 
 ALTER TABLE ONLY user_followed_project
-    ADD CONSTRAINT user_followed_project_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT user_followed_project_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --

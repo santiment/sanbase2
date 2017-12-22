@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+- 2017-21-12 | v.0.2.4:
+
+  Update navigation menu
+  Added auth
+  Added account settings
+  Some fixes...
+
 - 2017-12-12 | v.0.2.1:
 
   Fix default sort Cashflow table

@@ -114,9 +114,12 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
 
       %Tesla.Env{status: 401} ->
         Logger.warn("Twittercounter API credentials are missing or incorrect")
+        %{}
 
       %Tesla.Env{status: 403} ->
         Logger.info("Twittercounter API limit has been reached")
+        %{}
+
     end
   end
 

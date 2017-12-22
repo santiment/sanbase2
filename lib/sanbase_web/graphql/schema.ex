@@ -3,32 +3,28 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   alias Sanbase.Auth.{User, EthAccount}
-  alias SanbaseWeb.Graphql.{AccountResolver, PriceResolver}
+  alias SanbaseWeb.Graphql.AccountResolver
+  alias SanbaseWeb.Graphql.ProjectResolver
 
   import_types SanbaseWeb.Graphql.AccountTypes
-  import_types SanbaseWeb.Graphql.PriceTypes
-  import_types Absinthe.Type.Custom
+  import_types SanbaseWeb.Graphql.ProjectTypes
 
   query do
     field :current_user, :user do
       resolve &AccountResolver.current_user/3
     end
 
-    @desc "Historical information for the price"
-    field :history_price, list_of(:price_point) do
-      arg :ticker, non_null(:string)
-      arg :from, non_null(:datetime)
-      arg :to, non_null(:datetime)
-      arg :interval, :string
+    field :all_projects, list_of(:project) do
+      arg :only_project_transparency, :boolean
 
-      resolve &PriceResolver.history_price/3
+      resolve &ProjectResolver.all_projects/3
     end
 
-    @desc "Current price for a ticker"
-    field :price, :price_point do
-      arg :ticker, non_null(:string)
+    field :project, :project do
+      arg :id, non_null(:id)
+      arg :only_project_transparency, :boolean # this is to filter the wallets
 
-      resolve &PriceResolver.current_price/3
+      resolve &ProjectResolver.project/3
     end
   end
 

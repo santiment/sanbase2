@@ -7,11 +7,11 @@ defmodule Sanbase.Influxdb.Measurement do
   alias Sanbase.Influxdb.Measurement
 
   def convert_measurement_for_import(%Measurement{
-        timestamp: timestamp,
-        fields: fields,
-        tags: tags,
-        name: name
-      }) do
+         timestamp: timestamp,
+         fields: fields,
+         tags: tags,
+         name: name
+       }) do
     %{
       points: [
         %{

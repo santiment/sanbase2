@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     conn = ContextPlug.call(conn, %{})
 
-    assert conn.private[:absinthe] == %{context: %{current_user: user}}
+    assert conn.private[:absinthe] == %{context: %{auth: %{auth_method: :user_token, current_user: user}}}
   end
 
   test "verifying the user's salt when loading", %{conn: conn} do
@@ -39,6 +39,6 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       assert conn.private[:absinthe] == %{context: %{}}
     end)
 
-    assert logs =~ ~r/Invalid token/
+    assert logs =~ ~r/Invalid bearer token/
   end
 end

@@ -4,7 +4,8 @@ defmodule Sanbase.Notifications.CheckPricesTest do
 
   alias Sanbase.Notifications.{CheckPrices, Notification}
   alias Sanbase.Model.Project
-  alias Sanbase.Prices.{Store, Measurement}
+  alias Sanbase.Prices.Store
+  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Repo
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]

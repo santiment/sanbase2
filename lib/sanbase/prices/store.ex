@@ -5,18 +5,18 @@ defmodule Sanbase.Prices.Store do
   #
   # There is a single database at the moment, which contains simple average
   # price data for a given currency pair within a given interval. The current
-  # interval is about 5 mins (+/- 3 seconds). The timestamps are stores as
+  # interval is about 5 mins (+/- 3 seconds). The timestamps are stored as
   # nanoseconds
   use Instream.Connection, otp_app: :sanbase
 
   alias Sanbase.Prices.Store
-  alias Sanbase.Prices.Measurement
+  alias Sanbase.Influxdb.Measurement
 
   def import(measurements) do
     # 1 day of 5 min resolution data
     measurements
-    |> Stream.map(&convert_measurement_for_import/1)
-    |> Stream.chunk_every(288)
+    |> Stream.map(&Measurement.convert_measurement_for_import/1)
+    |> Stream.chunk_every(288) # 1 day of 5 min resolution data
     |> Enum.map(fn data_for_import ->
          :ok = Store.write(data_for_import)
        end)
@@ -28,11 +28,11 @@ defmodule Sanbase.Prices.Store do
   end
 
   def fetch_prices_with_resolution(pair, from, to, resolution) do
-    # fill(none) skips intervals with no data to report instead of returning null
     ~s/SELECT MEAN(price), SUM(volume), MEAN(marketcap)
     FROM "#{pair}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{
+      DateTime.to_unix(to, :nanoseconds)
+    }
     GROUP BY time(#{resolution})/
     |> q()
   end
@@ -45,8 +45,8 @@ defmodule Sanbase.Prices.Store do
   defp fetch_query(pair, from, to) do
     ~s/SELECT time, price, volume, marketcap
     FROM "#{pair}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{
+      DateTime.to_unix(to, :nanoseconds)
     }/
   end
 
@@ -78,12 +78,6 @@ defmodule Sanbase.Prices.Store do
     |> parse_price_datetime
   end
 
-  def last_record(pair) do
-    ~s/SELECT LAST(price), marketcap, volume from "#{pair}"/
-    |> Store.query()
-    |> parse_record
-  end
-
   def last_price_datetime(pair) do
     ~s/SELECT LAST(price) FROM "#{pair}"/
     |> Store.query()
@@ -102,48 +96,11 @@ defmodule Sanbase.Prices.Store do
          ]
        }) do
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+
     datetime
   end
 
   defp parse_price_datetime(_), do: nil
-
-  defp parse_record(%{
-         results: [
-           %{
-             series: [
-               %{
-                 values: [[iso8601_datetime, price, marketcap, volume]]
-               }
-             ]
-           }
-         ]
-       }) do
-    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-
-    {datetime, price, marketcap, volume}
-  end
-
-  defp parse_record(x) do
-    nil
-  end
-
-  defp convert_measurement_for_import(%Measurement{
-         timestamp: timestamp,
-         fields: fields,
-         tags: tags,
-         name: name
-       }) do
-    %{
-      points: [
-        %{
-          measurement: name,
-          fields: fields,
-          tags: tags || [],
-          timestamp: timestamp
-        }
-      ]
-    }
-  end
 
   def drop_pair(pair) do
     %{results: _} =

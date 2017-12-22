@@ -9,19 +9,19 @@ const propTypes = {
 const GeneralInfoBlock = ({info}) => (
   <div>
     <p className='social-icons'>
-      <a href='#'>
+      <a href={info.websiteLink}>
         <i className='fa fa-globe' />
       </a>
-      <a href='#'>
+      <a href={info.slackLink}>
         <i className='fa fa-slack' />
       </a>
-      <a href='#'>
+      <a href={info.twitterLink}>
         <i className='fa fa-twitter' />
       </a>
       <a href='#'>
         <i className='fa fa-medium' />
       </a>
-      <a href='#'>
+      <a href={info.githubLink}>
         <i className='fa fa-github' />
       </a>
     </p>
@@ -31,7 +31,7 @@ const GeneralInfoBlock = ({info}) => (
         Market Cap
       </div>
       <div>
-        ${info.market_cap_usd}
+        ${info.marketCapUsd}
       </div>
     </div>
     <div className='row-info'>

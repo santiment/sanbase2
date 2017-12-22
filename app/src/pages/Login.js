@@ -40,8 +40,8 @@ export const Login = ({
   authWithSAN,
   client
 }) => {
-  if (user.data.username && user.data.username.length > 0) {
-    return <Redirect to={'/'} />
+  if (user.data.hasOwnProperty('username')) {
+    return <Redirect to='/' />
   }
   return (
     <div className='page wrapper'>
@@ -109,7 +109,7 @@ const mapDispatchToProps = dispatch => {
             type: 'FAILED_LOGIN',
             errorMessage: error
           })
-          console.error(error)
+          throw new Error(error)
         })
       }).catch(error => {
         // TODO: 2017-12-05 16:05 | Yura Zatsepin:

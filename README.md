@@ -29,6 +29,8 @@ config :sanbase, Sanbase.Repo,
   * Start Phoenix endpoint with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+For tests run `npm run test:js` and follow cli instructions. To read more about
+frontend app, open README file in the app folder.
 
 This setup is going to start 2 processes:
   * A Phoenix server, which is routing the traffic and responding to API requests

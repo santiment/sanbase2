@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
     end
   end
 
-  def change_email(_root, %{email: new_email}, %{context: %{current_user: user}}) do
+  def change_email(_root, %{email: new_email}, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     Repo.get!(User, user.id)
     |> User.changeset(%{email: new_email})
     |> Repo.update()
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
        end
   end
 
-  def unfollow_project(_root, %{project_id: project_id}, %{context: %{current_user: user}}) do
+  def unfollow_project(_root, %{project_id: project_id}, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     from(
       pair in UserFollowedProject,
       where: pair.project_id == ^project_id and pair.user_id == ^user.id
@@ -63,7 +63,7 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
     {:ok, user}
   end
 
-  def follow_project(_root, %{project_id: project_id}, %{context: %{current_user: user}}) do
+  def follow_project(_root, %{project_id: project_id}, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     with %Project{} <- Repo.get(Project, project_id) do
       %UserFollowedProject{project_id: project_id, user_id: user.id}
       |> UserFollowedProject.changeset(%{project_id: project_id, user_id: user.id})
@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
     end
   end
 
-  def followed_projects(%User{} = user, _args, %{context: %{current_user: user}}) do
+  def followed_projects(%User{} = user, _args, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     query =
       from(
         pair in UserFollowedProject,
@@ -97,11 +97,11 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
   end
 
   # No eth account and there is a user logged in
-  defp fetch_user(%{address: address, context: %{current_user: current_user}}, nil) do
-    %EthAccount{user_id: current_user.id, address: address}
+  defp fetch_user(%{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}}, nil) do
+    %EthAccount{user_id: user.id, address: address}
     |> Repo.insert!()
 
-    {:ok, current_user}
+    {:ok, user}
   end
 
   # No eth account and no user logged in

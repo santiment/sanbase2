@@ -8,20 +8,19 @@ import {
 } from 'recompose'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
+import gql from 'graphql-tag'
+import { graphql } from 'react-apollo'
 import ProjectIcon from './../components/ProjectIcon'
 import PanelBlock from './../components/PanelBlock'
-import { retrieveProjects } from './Cashflow.actions.js'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
 import './Detailed.css'
 
 const propTypes = {
-  match: PropTypes.object.isRequired,
-  projects: PropTypes.array.isRequired,
-  loading: PropTypes.bool.isRequired
+  match: PropTypes.object.isRequired
 }
 
-export const Detailed = ({match, projects, loading}) => {
+export const Detailed = ({data: { loading, project }, match}) => {
   if (loading) {
     return (
       <div className='page detailed'>
@@ -29,11 +28,7 @@ export const Detailed = ({match, projects, loading}) => {
       </div>
     )
   }
-  const selectedTicker = match.params.ticker
-  const project = projects.find(el => {
-    const ticker = el.ticker || ''
-    return ticker.toLowerCase() === selectedTicker
-  })
+
   if (!project) {
     return (
       <Redirect to={{
@@ -41,6 +36,7 @@ export const Detailed = ({match, projects, loading}) => {
       }} />
     )
   }
+
   return (
     <div className='page detailed'>
       <div className='detailed-head'>
@@ -151,28 +147,50 @@ export const Detailed = ({match, projects, loading}) => {
 
 Detailed.propTypes = propTypes
 
+const projectDetails = graphql(gql`
+  query {
+    project(
+      id: 1,      
+    ){
+      id,
+      name,
+      ticker,
+      marketCapUsd,
+      websiteLink,
+      facebookLink,
+      githubLink,
+      redditLink,
+      twitterLink,
+      whitepaperLink,
+      slackLink
+    }
+  }
+`, {
+  options: (props) => ({
+    variables: {
+      ticker: props.match.params.ticker
+    }
+  })
+})
+
 const mapStateToProps = state => {
   return {
-    projects: state.projects.items,
-    loading: state.projects.isLoading
   }
 }
 
 const mapDispatchToProps = dispatch => {
   return {
-    // TODO: have to retrive only selected project
-    retrieveProjects: () => dispatch(retrieveProjects)
   }
 }
 
 const enhance = compose(
+  projectDetails,
   connect(
     mapStateToProps,
     mapDispatchToProps
   ),
   lifecycle({
     componentDidMount () {
-      this.props.retrieveProjects()
     }
   }),
   pure

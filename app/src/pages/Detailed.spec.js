@@ -42,7 +42,7 @@ const projects = [
 describe('Project detail page container', () => {
   it('it should render correctly', () => {
     const match = {
-      params: {ticker: 'ae'}
+      params: {ticker: 'eos'}
     }
     const pdp = shallow(<Detailed
       projects={projects}

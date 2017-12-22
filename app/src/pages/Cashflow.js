@@ -38,7 +38,7 @@ const formatTxOutWallet = wallets => {
     const txOut = wallet.tx_out || '0.00'
     return (
       <div key={index}>
-        {txOut.toLocaleString('en-US')}
+        {formatNumber(txOut)}
       </div>
     )
   })
@@ -86,7 +86,7 @@ const columns = [{
   id: 'project',
   filterable: true,
   sortable: true,
-  width: 350,
+  minWidth: 250,
   accessor: d => ({
     name: d.name,
     ticker: d.ticker
@@ -124,6 +124,7 @@ const columns = [{
 }, {
   Header: 'Last outgoing TX',
   id: 'tx',
+  minWidth: 140,
   accessor: d => d.wallets,
   Cell: ({value}) => <div>{formatLastOutgoingWallet(value)}</div>,
   sortable: true,
@@ -148,7 +149,7 @@ export const Cashflow = ({
 }) => (
   <div className='page cashflow'>
     <div className='cashflow-head'>
-      <h1>Cash Flow</h1>
+      <h1>Projects: Cash Flow</h1>
       <p>
         brought to you by <a
           href='https://santiment.net'

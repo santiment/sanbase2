@@ -1,12 +1,12 @@
 defmodule SanbaseWeb.Graphql.AccountResolver do
   require Logger
 
-  alias Sanbase.Prices.Store
-  alias Sanbase.Auth.{User, EthAccount, Ethauth}
+  alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Repo
   alias Ecto.Multi
 
-  def current_user(_root, _args, %{context: %{current_user: user}}) do
+  def current_user(_root, _args, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     {:ok, user}
   end
 

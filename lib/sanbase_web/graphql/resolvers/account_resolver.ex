@@ -1,19 +1,16 @@
 defmodule SanbaseWeb.Graphql.AccountResolver do
   require Logger
 
+  alias SanbaseWeb.Graphql.ResolverHelpers
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Model.{Project, UserFollowedProject}
   alias Sanbase.Repo
   alias Ecto.Multi
 
-<<<<<<< e8afffc15b5499fa28360c60a0bf0daad4cda432
-  def current_user(_root, _args, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
-=======
   import Ecto.Query
 
-  def current_user(_root, _args, %{context: %{current_user: user}}) do
->>>>>>> Add mutation for changing user's email address and following projects
+  def current_user(_root, _args, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     {:ok, user}
   end
 
@@ -48,7 +45,11 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
            {:ok, user}
 
          {:error, changeset} ->
-           {:error, "Cannot update current user's email: " <> inspect(changeset)}
+           {
+             :error,
+             message: "Cannot update current user's email to #{new_email}",
+             details: ResolverHelpers.error_details(changeset)
+           }
        end
   end
 
@@ -72,7 +73,11 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
              {:ok, user}
 
            {:error, changeset} ->
-             {:error, "Cannot add a favourite project: " <> inspect(changeset)}
+             {
+               :error,
+               message: "Cannot follow project with id #{project_id}",
+               details: ResolverHelpers.error_details(changeset)
+             }
          end
     else
       _ ->

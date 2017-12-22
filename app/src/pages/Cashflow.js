@@ -156,7 +156,7 @@ export const Cashflow = ({
           rel='noopener noreferrer'
           target='_blank'>Santiment</a>
         <br />
-        NOTE: This app is a prototype.
+        NOTE: This app is in development.
         We give no guarantee data is correct as we are in active development.
       </p>
     </div>

@@ -20,7 +20,7 @@ exports[`Cashflow container it should render correctly 1`] = `
         Santiment
       </a>
       <br />
-      NOTE: This app is a prototype. We give no guarantee data is correct as we are in active development.
+      NOTE: This app is in development. We give no guarantee data is correct as we are in active development.
     </p>
   </div>
   <div

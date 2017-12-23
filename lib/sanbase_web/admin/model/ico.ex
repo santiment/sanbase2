@@ -86,6 +86,69 @@ defmodule Sanbase.ExAdmin.Model.Ico do
       end
     end
 
+    # Another hack to remove the thousands comma separator when pasting into number fields
+    sidebar " ", only: [:edit, :new] do
+      panel " " do
+        markup_contents do
+          script type: "text/javascript" do
+            """
+            $(document).ready(function() {
+
+              function removeSeparators(e) {
+                var self = this;
+                setTimeout(function(e) {
+                  var val = $(self).val();
+                  if(val != null) {
+                    val = val.replace(/,/g, "");
+                    $(self).val(val);
+                  }
+                }, 0);
+              }
+
+              function numberFields() {
+                return [
+                  $("input#ico_tokens_issued_at_ico"),
+                  $("input#ico_tokens_sold_at_ico"),
+                  $("input#ico_funds_raised_btc"),
+                  $("input#ico_funds_raised_usd"),
+                  $("input#ico_funds_raised_eth"),
+                  $("input#ico_usd_btc_icoend"),
+                  $("input#ico_usd_eth_icoend"),
+                  $("input#ico_minimal_cap_amount"),
+                  $("input#ico_maximal_cap_amount"),
+                  $("input#ico_funds_raised_usd")
+                  ];
+              }
+
+              function icoCurrencyNumberFields() {
+                return [].concat($('input').filter(function() {
+                    return this.id.match(/ico_ico_currencies_attributes_\\d+_value/);
+                }));
+              }
+
+              numberFields().forEach(function(el){
+                el.off("removeSeparators");
+                el.on("paste", removeSeparators);
+              });
+
+              icoCurrencyNumberFields().forEach(function(el){
+                el.off("removeSeparators");
+                el.on("paste", removeSeparators);
+              });
+
+              $('a:contains("Add New Ico Currency")').click(function(){
+                icoCurrencyNumberFields().forEach(function(el){
+                  el.off("removeSeparators");
+                  el.on("paste", removeSeparators);
+                });
+              });
+            });
+            """
+          end
+        end
+      end
+    end
+
     def run_query(repo, defn, :index, id) do
       run_query_impl(repo, defn, :index, id)
     end

@@ -2,7 +2,7 @@ defmodule Sanbase.Model.Ico do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  alias Sanbase.Utils
+  alias Sanbase.Model.ModelUtils
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
@@ -41,15 +41,15 @@ defmodule Sanbase.Model.Ico do
   @doc false
   def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
     attrs = attrs
-    |> Utils.removeThousandsSeparator(:tokens_issued_at_ico)
-    |> Utils.removeThousandsSeparator(:tokens_sold_at_ico)
-    |> Utils.removeThousandsSeparator(:funds_raised_btc)
-    |> Utils.removeThousandsSeparator(:funds_raised_usd)
-    |> Utils.removeThousandsSeparator(:funds_raised_eth)
-    |> Utils.removeThousandsSeparator(:usd_btc_icoend)
-    |> Utils.removeThousandsSeparator(:usd_eth_icoend)
-    |> Utils.removeThousandsSeparator(:minimal_cap_amount)
-    |> Utils.removeThousandsSeparator(:maximal_cap_amount)
+    |> ModelUtils.removeThousandsSeparator(:tokens_issued_at_ico)
+    |> ModelUtils.removeThousandsSeparator(:tokens_sold_at_ico)
+    |> ModelUtils.removeThousandsSeparator(:funds_raised_btc)
+    |> ModelUtils.removeThousandsSeparator(:funds_raised_usd)
+    |> ModelUtils.removeThousandsSeparator(:funds_raised_eth)
+    |> ModelUtils.removeThousandsSeparator(:usd_btc_icoend)
+    |> ModelUtils.removeThousandsSeparator(:usd_eth_icoend)
+    |> ModelUtils.removeThousandsSeparator(:minimal_cap_amount)
+    |> ModelUtils.removeThousandsSeparator(:maximal_cap_amount)
 
     ico
     |> changeset(attrs)

@@ -46,6 +46,8 @@ endpoints from the [Phoenix docs](https://hexdocs.pm/phoenix/overview.html) or f
 
 ## Running the backend tests
 
+Make sure you have a test DB: `createdb sanbase_test`. This is needed by the tests to validate logic, which relies on the DB.
+
 In order to run the backend tests you need to run `mix test`. The default DB config is in [`config/test.exs`](config/test.exs). If you need to change the default config you can create a file `.env.test` and specify the DB URL there like this:
 
 

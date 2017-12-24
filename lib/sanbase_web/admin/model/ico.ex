@@ -47,7 +47,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
       inputs "Ico Currencies" do
         has_many ico, :ico_currencies, fn(c) ->
           inputs :currency, collection: Sanbase.Repo.all(Currency)
-          input c, :value
+          input c, :amount
         end
       end
     end

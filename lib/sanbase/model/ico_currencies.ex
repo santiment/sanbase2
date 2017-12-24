@@ -25,7 +25,7 @@ defmodule Sanbase.Model.IcoCurrencies do
   @doc false
   def changeset_ex_admin(%IcoCurrencies{} = ico_currencies, attrs \\ %{}) do
     attrs = set_currency_id(attrs)
-    |> Utils.removeThousandsSeparator(:value)
+    |> Utils.removeThousandsSeparator(:amount)
 
     ico_currencies
     |> cast(attrs, [:ico_id, :currency_id, :amount, :_destroy])

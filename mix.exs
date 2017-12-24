@@ -63,7 +63,8 @@ defmodule Sanbase.Mixfile do
       {:httpoison, "~> 0.13"},
       {:floki, "~> 0.19.0"},
       {:sentry, "~> 6.0.4"},
-      {:extwitter, "~> 0.9.0"}
+      {:extwitter, "~> 0.9.0"},
+      {:envy, "~> 1.1.1", only: [:dev, :test]}
     ]
   end
 
@@ -78,6 +79,6 @@ defmodule Sanbase.Mixfile do
       "ecto.setup": ["ecto.create", "ecto.load", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "ecto.migrate": ["ecto.migrate", "ecto.dump"],
-      "test": ["ecto.create --quiet", "ecto.load", "test"]    ]
+      "test": ["load_dotenv", "ecto.create --quiet", "ecto.load", "test"]    ]
   end
 end

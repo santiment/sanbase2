@@ -5,6 +5,10 @@ defmodule Sanbase.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
+    unless Mix.env == :prod do
+      Envy.auto_load
+    end
+
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Task Supervisor

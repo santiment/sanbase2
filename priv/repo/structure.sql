@@ -1201,6 +1201,13 @@ ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.u
 
 
 --
+-- Name: project_transparency_statuses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY project_transparency_statuses ALTER COLUMN id SET DEFAULT nextval('project_transparency_statuses_id_seq'::regclass);
+
+
+--
 -- Name: user_followed_project id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1699,6 +1706,20 @@ CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_token
 
 
 --
+-- Name: project_project_transparency_status_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX project_project_transparency_status_id_index ON project USING btree (project_transparency_status_id);
+
+
+--
+-- Name: project_transparency_statuses_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_transparency_statuses_name_index ON project_transparency_statuses USING btree (name);
+
+
+--
 -- Name: projet_user_constraint; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1939,6 +1960,14 @@ ALTER TABLE ONLY public.votes
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project project_project_transparency_status_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY project
+    ADD CONSTRAINT project_project_transparency_status_id_fkey FOREIGN KEY (project_transparency_status_id) REFERENCES project_transparency_statuses(id);
 
 
 --

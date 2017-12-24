@@ -6,7 +6,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   alias Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow
 
-  alias Sanbase.Model.{Project, ProjectEthAddress, ProjectBtcAddress, Ico, MarketSegment, Infrastructure}
+  alias Sanbase.Model.{Project, ProjectEthAddress, ProjectBtcAddress, Ico, MarketSegment, Infrastructure, ProjectTransparencyStatus}
   alias Sanbase.Model.Currency
   alias Sanbase.Model.IcoCurrencies
 
@@ -38,6 +38,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     fill_project(ico_spreadsheet_row)
     |> Ecto.Changeset.put_assoc(:market_segment, ensure_market_segment(ico_spreadsheet_row.market_segment))
     |> Ecto.Changeset.put_assoc(:infrastructure, ensure_infrastructure(ico_spreadsheet_row.infrastructure))
+    |> Ecto.Changeset.put_assoc(:project_transparency_status, ensure_project_transparency_status(ico_spreadsheet_row.project_transparency))
     |> Repo.insert_or_update!()
   end
 
@@ -102,7 +103,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       linkedin_link: ico_spreadsheet_row.linkedin_link,
       telegram_link: ico_spreadsheet_row.telegram_link,
       project_transparency: is_project_transparency?(ico_spreadsheet_row.project_transparency),
-      project_transparency_status: ico_spreadsheet_row.project_transparency,
       team_token_wallet: ico_spreadsheet_row.team_token_wallet
       })
   end
@@ -132,7 +132,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp ensure_project(project_name) do
     Repo.get_by(Project, name: project_name)
-    |> Repo.preload([:eth_addresses, :btc_addresses, :market_segment, :infrastructure, {:icos, [{:ico_currencies, [:ico, :currency]}, :cap_currency]}])
+    |> Repo.preload([:eth_addresses, :btc_addresses, :market_segment, :infrastructure, :project_transparency_status, {:icos, [{:ico_currencies, [:ico, :currency]}, :cap_currency]}])
     |> case do
       result = %Project{} -> result
       nil -> %Project{}
@@ -160,6 +160,18 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       nil ->
         %Infrastructure{}
         |> Infrastructure.changeset(%{code: infrastructure_code})
+    end
+  end
+
+  defp ensure_project_transparency_status(nil), do: nil
+
+  defp ensure_project_transparency_status(project_transparency_status_name) do
+    Repo.get_by(ProjectTransparencyStatus, name: project_transparency_status_name)
+    |> case do
+      result = %ProjectTransparencyStatus{} -> result
+      nil ->
+        %ProjectTransparencyStatus{}
+        |> ProjectTransparencyStatus.changeset(%{name: project_transparency_status_name})
     end
   end
 

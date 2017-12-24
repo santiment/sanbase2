@@ -14,9 +14,8 @@ config :tesla, adapter: :mock
 
 # Configure your database
 config :sanbase, Sanbase.Repo,
-  pool: Ecto.Adapters.SQL.Sandbox
-
-config :hound, driver: "chrome_driver"
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_test"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   database: "prices_test",

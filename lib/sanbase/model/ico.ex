@@ -53,6 +53,17 @@ defmodule Sanbase.Model.Ico do
 
   @doc false
   def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
+    attrs = attrs
+    |> Utils.removeThousandsSeparator(:tokens_issued_at_ico)
+    |> Utils.removeThousandsSeparator(:tokens_sold_at_ico)
+    |> Utils.removeThousandsSeparator(:funds_raised_btc)
+    |> Utils.removeThousandsSeparator(:funds_raised_usd)
+    |> Utils.removeThousandsSeparator(:funds_raised_eth)
+    |> Utils.removeThousandsSeparator(:usd_btc_icoend)
+    |> Utils.removeThousandsSeparator(:usd_eth_icoend)
+    |> Utils.removeThousandsSeparator(:minimal_cap_amount)
+    |> Utils.removeThousandsSeparator(:maximal_cap_amount)
+
     ico
     |> changeset(attrs)
     |> cast_assoc(:ico_currencies, required: false, with: &IcoCurrencies.changeset_ex_admin/2)

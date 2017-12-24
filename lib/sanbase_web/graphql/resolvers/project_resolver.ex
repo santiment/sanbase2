@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ProjectResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
   import Ecto.Query, warn: false

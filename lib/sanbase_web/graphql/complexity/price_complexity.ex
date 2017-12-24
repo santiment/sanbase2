@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.PriceComplexity do
   Internal services use basic authentication. Return complexity = 0 to allow them
   to access everything without limits.
   """
-  def history_price(_,_, %Absinthe.Complexity{context: %{basic_auth: true}}) do
+  def history_price(_,_, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}) do
     0
   end
 

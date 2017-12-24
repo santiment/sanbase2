@@ -73,6 +73,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.Infrastructure,
     Sanbase.ExAdmin.Model.MarketSegment,
     Sanbase.ExAdmin.Model.Ico,
+    Sanbase.ExAdmin.Model.ProjectTransparencyStatus,
     Sanbase.ExAdmin.Notifications.Type
   ],
   basic_auth: [

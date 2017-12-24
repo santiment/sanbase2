@@ -26,10 +26,18 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :token_address, :string
     field :team_token_wallet, :string
     field :market_cap_usd, :decimal
-    field :project_transparency, :boolean
-    field :project_transparency_status, :string
-    field :project_transparency_description, :string
     field :latest_coinmarketcap_data, :latest_coinmarketcap_data, resolve: assoc(:latest_coinmarketcap_data)
+    field :market_segment, :string do
+      resolve &ProjectResolver.market_segment/3
+    end
+    field :infrastructure, :string do
+      resolve &ProjectResolver.infrastructure/3
+    end
+    field :project_transparency, :boolean
+    field :project_transparency_status, :string do
+      resolve &ProjectResolver.project_transparency_status/3
+    end
+    field :project_transparency_description, :string
 
     field :eth_balance, :decimal do
       resolve &ProjectResolver.eth_balance/3

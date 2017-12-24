@@ -14,11 +14,6 @@ config :tesla, adapter: :mock
 
 # Configure your database
 config :sanbase, Sanbase.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "postgres",
-  database: "sanbase_test",
-  hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :hound, driver: "chrome_driver"

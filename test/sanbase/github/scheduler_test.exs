@@ -228,4 +228,19 @@ defmodule Sanbase.Github.SchedulerTest do
     |> Timex.end_of_day()
     |> Timex.to_datetime()
   end
+
+  defp mark_as_processed_interval(project_id, from_datetime, to_datetime) do
+    case DateTime.compare(from_datetime, to_datetime) do
+      :lt ->
+        archive_name = Scheduler.archive_name_for(from_datetime)
+        Github.ProcessedGithubArchive.mark_as_processed(project_id, archive_name)
+
+        next_datetime = from_datetime
+        |> Timex.shift(hours: 1)
+
+        mark_as_processed_interval(project_id, next_datetime, to_datetime)
+      _ ->
+        :ok
+    end
+  end
 end

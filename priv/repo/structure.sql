@@ -1629,6 +1629,13 @@ CREATE UNIQUE INDEX project_btc_address_address_index ON public.project_btc_addr
 
 
 --
+-- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX processed_github_archives_project_id_archive_index ON processed_github_archives USING btree (project_id, archive);
+
+
+--
 -- Name: project_btc_address_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1888,6 +1895,14 @@ ALTER TABLE ONLY public.posts
 
 ALTER TABLE ONLY public.processed_github_archives
     ADD CONSTRAINT processed_github_archives_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: processed_github_archives processed_github_archives_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY processed_github_archives
+    ADD CONSTRAINT processed_github_archives_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
 
 
 --

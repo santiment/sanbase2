@@ -182,4 +182,10 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     end)
     |> Store.import()
   end
+
+  defp s3_bucket do
+    Application.fetch_env!(:sanbase, __MODULE__)
+    |> Keyword.fetch!(:s3_bucket)
+    |> parse_config_value
+  end
 end

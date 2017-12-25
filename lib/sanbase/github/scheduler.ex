@@ -88,6 +88,20 @@ defmodule Sanbase.Github.Scheduler do
     end
   end
 
+  defp fetch_processed_archives(projects) do
+    project_ids = projects
+    |> Enum.map(&(&1.id))
+
+    Github.ProcessedGithubArchive
+    |> where([p], p.project_id in ^project_ids)
+    |> group_by(:archive)
+    |> having([p], count(p.project_id) == ^(length(project_ids)))
+    |> select([:archive])
+    |> Repo.all
+    |> Enum.map(&(&1.archive))
+    |> MapSet.new
+  end
+
   defp yesterday do
     Timex.now()
     |> Timex.shift(days: -1)

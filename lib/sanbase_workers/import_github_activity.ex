@@ -3,10 +3,13 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
   require Logger
 
+  import Sanbase.Utils, only: [parse_config_value: 1]
+
   alias Sanbase.Model.Project
   alias Sanbase.Github
   alias Sanbase.Github.Store
   alias Sanbase.Influxdb.Measurement
+  alias ExAws.S3
   @github_archive "http://data.githubarchive.org/"
 
   faktory_options queue: "github_activity", retry: -1, reserve_for: 900
@@ -28,9 +31,32 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     archive
     |> download
     |> stream_process_cleanup(orgs, datetime)
+
+    orgs.values()
+    |> Enum.each(&Github.ProcessedGithubArchive.mark_as_processed(&1.id, archive))
   end
 
   defp download(archive) do
+    case download_from_s3(archive) do
+      {:error, error} ->
+        Logger.info("Can't download #{archive} from S3. Downloading from archive: #{inspect(error)}")
+        download_from_archive(archive)
+      {:ok, filepath} -> filepath
+    end
+  end
+
+  defp download_from_s3(archive) do
+    {:ok, temp_filepath} = Temp.path(%{prefix: archive, suffix: ".json.gz"})
+
+    with {:ok, _} <- S3.head_object(s3_bucket(), s3_path(archive)) |> ExAws.request,
+      {:ok, temp_filepath} <- S3.download_file(s3_bucket(), s3_path(archive), temp_filepath) |> ExAws.request do
+      temp_filepath
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp download_from_archive(archive) do
     {:ok, temp_filepath} = Temp.path(%{prefix: archive, suffix: ".json.gz"})
 
     output_file = File.open!(temp_filepath, [:write, :delayed_write])
@@ -42,6 +68,13 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     :ok = stream_loop(request_ref, output_file)
 
     File.close(output_file)
+
+    Logger.info("Uploading archive #{archive} to S3...")
+
+    temp_filepath
+    |> S3.Upload.stream_file()
+    |> S3.upload(s3_bucket(), s3_path(archive), content_type: "application/json", content_encoding: "application/gzip")
+    |> ExAws.request!
 
     temp_filepath
   end
@@ -58,6 +91,12 @@ defmodule SanbaseWorkers.ImportGithubActivity do
         :ok = IO.binwrite(output_file, data)
         stream_loop(request_ref, output_file)
     end
+  end
+
+  defp s3_path(archive) do
+    [year, month | rest] = String.split(archive, "-")
+
+    "#{year}/#{month}/#{archive}.json.gz"
   end
 
   defp stream_process_cleanup(filename, orgs, datetime) do
@@ -127,5 +166,11 @@ defmodule SanbaseWorkers.ImportGithubActivity do
       }
     end)
     |> Store.import
+  end
+
+  defp s3_bucket do
+    Application.fetch_env!(:sanbase, __MODULE__)
+    |> Keyword.fetch!(:s3_bucket)
+    |> parse_config_value
   end
 end

@@ -63,7 +63,10 @@ defmodule Sanbase.Mixfile do
       {:floki, "~> 0.19.0"},
       {:sentry, "~> 6.0.4"},
       {:extwitter, "~> 0.9.0"},
-      {:envy, "~> 1.1.1", only: [:dev, :test]}
+      {:envy, "~> 1.1.1", only: [:dev, :test]},
+      {:ex_aws, "~> 2.0"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:sweet_xml, "~> 0.6"},
     ]
   end
 

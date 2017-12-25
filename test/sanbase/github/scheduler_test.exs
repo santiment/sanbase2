@@ -2,6 +2,8 @@ defmodule Sanbase.Github.SchedulerTest do
   use Sanbase.DataCase, async: false
   use Mockery
 
+  import Sanbase.DateTimeUtils, only: [days_ago: 1]
+
   alias Sanbase.Github.Scheduler
   alias Sanbase.Model.Project
   alias Sanbase.Prices
@@ -103,13 +105,6 @@ defmodule Sanbase.Github.SchedulerTest do
     Scheduler.schedule_scrape()
 
     assert_called SanbaseWorkers.ImportGithubActivity, :perform_async, [_], 48 # 2 days
-  end
-
-  defp days_ago(days) do
-    Timex.today()
-    |> Timex.shift(days: -days)
-    |> Timex.end_of_day()
-    |> Timex.to_datetime()
   end
 
   defp mark_as_processed_interval(project_id, from_datetime, to_datetime) do

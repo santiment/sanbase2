@@ -2,6 +2,8 @@ defmodule Sanbase.Github.SchedulerTest do
   use Sanbase.DataCase, async: false
   use Mockery
 
+  import Sanbase.DateTimeUtils, only: [days_ago: 1]
+
   alias Sanbase.Github.Scheduler
   alias Sanbase.Model.Project
   alias Sanbase.Prices

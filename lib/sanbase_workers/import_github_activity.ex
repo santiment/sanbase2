@@ -73,7 +73,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
     temp_filepath
     |> S3.Upload.stream_file()
-    |> S3.upload(s3_bucket(), s3_path(archive), content_type: "application/json", content_encoding: "application/gzip")
+    |> S3.upload(s3_bucket(), s3_path(archive), content_type: "application/json", content_encoding: "gzip")
     |> ExAws.request!
 
     temp_filepath

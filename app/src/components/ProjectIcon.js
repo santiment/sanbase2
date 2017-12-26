@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { setDisplayName } from 'recompose'
 import './ProjectIcon.css'
 
 export const DefaultIcon = ({size}) => (
@@ -40,4 +41,4 @@ ProjectIcon.defaultProps = {
   size: 16
 }
 
-export default ProjectIcon
+export default setDisplayName('ProjectIcon')(ProjectIcon)

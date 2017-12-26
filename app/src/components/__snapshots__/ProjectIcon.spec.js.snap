@@ -19,7 +19,7 @@ exports[`ProjectIcon component DAO.Casino icon should render correctly 1`] = `
 `;
 
 exports[`ProjectIcon component DefaultIcon should render correctly 1`] = `
-<Component
+<ProjectIcon
   name="Any Not Available Name"
   size={16}
 >
@@ -31,7 +31,7 @@ exports[`ProjectIcon component DefaultIcon should render correctly 1`] = `
       width={16}
     />
   </Component>
-</Component>
+</ProjectIcon>
 `;
 
 exports[`ProjectIcon component SAN icon should render correctly 1`] = `

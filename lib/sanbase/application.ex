@@ -61,7 +61,7 @@ defmodule Sanbase.Application do
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :twitter_api_rate_limiter,
         scale: 60 * 15 * 1000,
-        limit: 900,
+        limit: 450,
         time_between_requests: 10
       ),
 

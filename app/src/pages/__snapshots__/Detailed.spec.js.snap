@@ -23,306 +23,204 @@ exports[`Project detail page container it should render correctly 1`] = `
     >
       <h1>
         <ProjectIcon
-          name="Aeternity"
+          name="Aragon"
           size={28}
         />
          
-        Aeternity
+        Aragon
          (
-        AE
+        ANT
         )
       </h1>
       <p>
         Manage entire organisations using the blockchain.
       </p>
     </div>
+    <Component>
+      <div
+        className="detailed-buttons"
+      >
+        <button
+          className="add-to-dashboard"
+        >
+          <i
+            className="fa fa-plus"
+          />
+            Add to Dashboard
+        </button>
+      </div>
+    </Component>
+  </div>
+  <Component>
     <div
-      className="detailed-buttons"
+      className="panel"
     >
-      <button
-        className="add-to-dashboard"
+      <Tabs
+        className="activity-panel"
+        defaultFocus={false}
+        defaultIndex={null}
+        forceRenderTabPanel={false}
+        selectedIndex={null}
       >
-        <i
-          className="fa fa-plus"
-        />
-          Add to Dashboard
-      </button>
+        <TabList
+          className="nav"
+        >
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              Social Mentions
+            </button>
+          </Tab>
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              Social Activity over Time
+            </button>
+          </Tab>
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              Sentiment/Intensity
+            </button>
+          </Tab>
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              Github Activity
+            </button>
+          </Tab>
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              SAN Community
+            </button>
+          </Tab>
+        </TabList>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          Social Mentions
+        </TabPanel>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          Social Activity over Time
+        </TabPanel>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          Sentiment/Intensity
+        </TabPanel>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          Github Activity
+        </TabPanel>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          SAN Community
+        </TabPanel>
+      </Tabs>
     </div>
-  </div>
-  <div
-    className="panel"
-  >
-    <Tabs
-      className="main-chart"
-      defaultFocus={false}
-      defaultIndex={null}
-      forceRenderTabPanel={false}
-      selectedIndex={null}
+  </Component>
+  <Component>
+    <PanelBlock
+      classes=""
+      isUnauthorized={false}
+      title="Blockchain Analytics"
+    />
+    <div
+      className="analysis"
     >
-      <TabList
-        className="nav"
-      >
-        <Tab
-          className="nav-item"
-          disabledClassName="react-tabs__tab--disabled"
-          focus={false}
-          id={null}
-          panelId={null}
-          selected={false}
-          selectedClassName="active"
-        >
-          <button
-            className="nav-link"
-          >
-            $2.29 USD (not real)  
-            <span
-              className="diff down"
-            >
-              <i
-                className="fa fa-caret-down"
-              />
-                8.87% (not real)
-            </span>
-          </button>
-        </Tab>
-        <Tab
-          className="nav-item"
-          disabledClassName="react-tabs__tab--disabled"
-          focus={false}
-          id={null}
-          panelId={null}
-          selected={false}
-          selectedClassName="active"
-        >
-          <button
-            className="nav-link"
-          >
-            2.29 BTC (not real)  
-            <span
-              className="diff up"
-            >
-              <i
-                className="fa fa-caret-up"
-              />
-                8.87% (not real)
-            </span>
-          </button>
-        </Tab>
-      </TabList>
-      <TabPanel
-        className="react-tabs__tab-panel"
-        forceRender={false}
-        selectedClassName="react-tabs__tab-panel--selected"
-      >
-        1
-      </TabPanel>
-      <TabPanel
-        className="react-tabs__tab-panel"
-        forceRender={false}
-        selectedClassName="react-tabs__tab-panel--selected"
-      >
-        2
-      </TabPanel>
-    </Tabs>
-  </div>
-  <div
-    className="panel"
-  >
-    <Tabs
-      className="activity-panel"
-      defaultFocus={false}
-      defaultIndex={null}
-      forceRenderTabPanel={false}
-      selectedIndex={null}
-    >
-      <TabList
-        className="nav"
-      >
-        <Tab
-          className="nav-item"
-          disabledClassName="react-tabs__tab--disabled"
-          focus={false}
-          id={null}
-          panelId={null}
-          selected={false}
-          selectedClassName="active"
-        >
-          <button
-            className="nav-link"
-          >
-            Social Mentions
-          </button>
-        </Tab>
-        <Tab
-          className="nav-item"
-          disabledClassName="react-tabs__tab--disabled"
-          focus={false}
-          id={null}
-          panelId={null}
-          selected={false}
-          selectedClassName="active"
-        >
-          <button
-            className="nav-link"
-          >
-            Social Activity over Time
-          </button>
-        </Tab>
-        <Tab
-          className="nav-item"
-          disabledClassName="react-tabs__tab--disabled"
-          focus={false}
-          id={null}
-          panelId={null}
-          selected={false}
-          selectedClassName="active"
-        >
-          <button
-            className="nav-link"
-          >
-            Sentiment/Intensity
-          </button>
-        </Tab>
-        <Tab
-          className="nav-item"
-          disabledClassName="react-tabs__tab--disabled"
-          focus={false}
-          id={null}
-          panelId={null}
-          selected={false}
-          selectedClassName="active"
-        >
-          <button
-            className="nav-link"
-          >
-            Github Activity
-          </button>
-        </Tab>
-        <Tab
-          className="nav-item"
-          disabledClassName="react-tabs__tab--disabled"
-          focus={false}
-          id={null}
-          panelId={null}
-          selected={false}
-          selectedClassName="active"
-        >
-          <button
-            className="nav-link"
-          >
-            SAN Community
-          </button>
-        </Tab>
-      </TabList>
-      <TabPanel
-        className="react-tabs__tab-panel"
-        forceRender={false}
-        selectedClassName="react-tabs__tab-panel--selected"
-      >
-        Social Mentions
-      </TabPanel>
-      <TabPanel
-        className="react-tabs__tab-panel"
-        forceRender={false}
-        selectedClassName="react-tabs__tab-panel--selected"
-      >
-        Social Activity over Time
-      </TabPanel>
-      <TabPanel
-        className="react-tabs__tab-panel"
-        forceRender={false}
-        selectedClassName="react-tabs__tab-panel--selected"
-      >
-        Sentiment/Intensity
-      </TabPanel>
-      <TabPanel
-        className="react-tabs__tab-panel"
-        forceRender={false}
-        selectedClassName="react-tabs__tab-panel--selected"
-      >
-        Github Activity
-      </TabPanel>
-      <TabPanel
-        className="react-tabs__tab-panel"
-        forceRender={false}
-        selectedClassName="react-tabs__tab-panel--selected"
-      >
-        SAN Community
-      </TabPanel>
-    </Tabs>
-  </div>
-  <PanelBlock
-    classes=""
-    title="Blockchain Analytics"
-  />
-  <div
-    className="analysis"
-  >
-    <PanelBlock
-      classes=""
-      title="Signals/Volatility"
-    />
-    <PanelBlock
-      classes=""
-      title="Expert Analyses"
-    />
-    <PanelBlock
-      classes=""
-      title="News/Press"
-    />
-  </div>
+      <PanelBlock
+        classes=""
+        isUnauthorized={false}
+        title="Signals/Volatility"
+      />
+      <PanelBlock
+        classes=""
+        isUnauthorized={false}
+        title="Expert Analyses"
+      />
+      <PanelBlock
+        classes=""
+        isUnauthorized={false}
+        title="News/Press"
+      />
+    </div>
+  </Component>
   <div
     className="information"
   >
     <PanelBlock
       classes=""
+      isUnauthorized={true}
       title="General Info"
     >
-      <GeneralInfoBlock
-        info={
-          Object {
-            "balance": "41994.09",
-            "id": 12,
-            "logo_url": "aeternity.png",
-            "market_cap_usd": "133759577.0",
-            "name": "Aeternity",
-            "ticker": "AE",
-            "wallets": Array [
-              Object {
-                "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
-                "balance": "41994.09",
-                "last_outgoing": null,
-                "tx_out": null,
-              },
-            ],
-          }
-        }
-      />
+      <GeneralInfoBlock />
     </PanelBlock>
     <PanelBlock
       classes=""
+      isUnauthorized={true}
       title="Financials"
     >
-      <FinancialsBlock
-        info={
-          Object {
-            "balance": "41994.09",
-            "id": 12,
-            "logo_url": "aeternity.png",
-            "market_cap_usd": "133759577.0",
-            "name": "Aeternity",
-            "ticker": "AE",
-            "wallets": Array [
-              Object {
-                "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
-                "balance": "41994.09",
-                "last_outgoing": null,
-                "tx_out": null,
-              },
-            ],
-          }
-        }
-      />
+      <FinancialsBlock />
     </PanelBlock>
   </div>
 </div>

@@ -25,4 +25,10 @@ defmodule Sanbase.Auth.User do
     |> cast(attrs, [:email, :username, :salt])
     |> unique_constraint(:email)
   end
+
+  def san_balance(%User{eth_accounts: eth_accounts}) do
+    eth_accounts
+    |> EthAccount.san_balance()
+    |> Enum.sum()
+  end
 end

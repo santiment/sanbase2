@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.PriceComplexity do
+defmodule SanbaseWeb.Graphql.Complexity.PriceComplexity do
   require Logger
 
   @doc ~S"""

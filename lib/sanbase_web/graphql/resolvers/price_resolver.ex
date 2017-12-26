@@ -44,6 +44,8 @@ defmodule SanbaseWeb.Graphql.PriceResolver do
     {:ok, data}
   end
 
+  # Measurements are always stored with _BTC and _USD suffixes. Add only one of them
+  # to avoid filtering the list for duplicates afterwards
   defp trim_measurement(name) do
     case String.ends_with?(name, "_BTC") do
       true -> String.slice(name, 0..-5)

@@ -71,8 +71,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       |> Repo.insert_or_update!()
     end)
 
-    wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
-    Repo.delete_all(from a in ProjectEthAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
+    # Don't delete the rest because not everything from seeds is entered in the spreadsheet
+    # wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
+    # Repo.delete_all(from a in ProjectEthAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
   end
 
   defp insert_or_update_btc_wallets(project, ico_spreadsheet_row) do
@@ -82,8 +83,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       |> Repo.insert_or_update!()
     end)
 
-    wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
-    Repo.delete_all(from a in ProjectBtcAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
+    # Don't delete the rest because not everything from seeds is entered in the spreadsheet
+    # wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
+    # Repo.delete_all(from a in ProjectBtcAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
   end
 
   defp fill_project(ico_spreadsheet_row) do

@@ -1,0 +1,227 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Project detail page container it should redirect to / 1`] = `
+<Redirect
+  push={false}
+  to={
+    Object {
+      "pathname": "/",
+    }
+  }
+/>
+`;
+
+exports[`Project detail page container it should render correctly 1`] = `
+<div
+  className="page detailed"
+>
+  <div
+    className="detailed-head"
+  >
+    <div
+      className="detailed-name"
+    >
+      <h1>
+        <ProjectIcon
+          name="Aragon"
+          size={28}
+        />
+         
+        Aragon
+         (
+        ANT
+        )
+      </h1>
+      <p>
+        Manage entire organisations using the blockchain.
+      </p>
+    </div>
+    <Component>
+      <div
+        className="detailed-buttons"
+      >
+        <button
+          className="add-to-dashboard"
+        >
+          <i
+            className="fa fa-plus"
+          />
+            Add to Dashboard
+        </button>
+      </div>
+    </Component>
+  </div>
+  <Component>
+    <div
+      className="panel"
+    >
+      <Tabs
+        className="activity-panel"
+        defaultFocus={false}
+        defaultIndex={null}
+        forceRenderTabPanel={false}
+        selectedIndex={null}
+      >
+        <TabList
+          className="nav"
+        >
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              Social Mentions
+            </button>
+          </Tab>
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              Social Activity over Time
+            </button>
+          </Tab>
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              Sentiment/Intensity
+            </button>
+          </Tab>
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              Github Activity
+            </button>
+          </Tab>
+          <Tab
+            className="nav-item"
+            disabledClassName="react-tabs__tab--disabled"
+            focus={false}
+            id={null}
+            panelId={null}
+            selected={false}
+            selectedClassName="active"
+          >
+            <button
+              className="nav-link"
+            >
+              SAN Community
+            </button>
+          </Tab>
+        </TabList>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          Social Mentions
+        </TabPanel>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          Social Activity over Time
+        </TabPanel>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          Sentiment/Intensity
+        </TabPanel>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          Github Activity
+        </TabPanel>
+        <TabPanel
+          className="react-tabs__tab-panel"
+          forceRender={false}
+          selectedClassName="react-tabs__tab-panel--selected"
+        >
+          SAN Community
+        </TabPanel>
+      </Tabs>
+    </div>
+  </Component>
+  <Component>
+    <PanelBlock
+      classes=""
+      isUnauthorized={false}
+      title="Blockchain Analytics"
+    />
+    <div
+      className="analysis"
+    >
+      <PanelBlock
+        classes=""
+        isUnauthorized={false}
+        title="Signals/Volatility"
+      />
+      <PanelBlock
+        classes=""
+        isUnauthorized={false}
+        title="Expert Analyses"
+      />
+      <PanelBlock
+        classes=""
+        isUnauthorized={false}
+        title="News/Press"
+      />
+    </div>
+  </Component>
+  <div
+    className="information"
+  >
+    <PanelBlock
+      classes=""
+      isUnauthorized={true}
+      title="General Info"
+    >
+      <GeneralInfoBlock />
+    </PanelBlock>
+    <PanelBlock
+      classes=""
+      isUnauthorized={true}
+      title="Financials"
+    >
+      <FinancialsBlock />
+    </PanelBlock>
+  </div>
+</div>
+`;

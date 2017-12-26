@@ -5,7 +5,6 @@ import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
 import {
   compose,
-  pure,
   lifecycle
 } from 'recompose'
 import { Merge } from 'animate-components'
@@ -162,9 +161,13 @@ const mapStateToProps = state => {
     projects: state.projects.items,
     loading: state.projects.isLoading
   }
+  const project = data.project
+
+  return {generalInfo: {isLoading, isEmpty, isError, project, errorMessage, isUnauthorized}}
 }
 
-const mapDispatchToProps = dispatch => {
+const mapPropsToOptions = ({match, projects}) => {
+  const project = getProjectByTicker(match, projects)
   return {
     // TODO: have to retrive only selected project
     retrieveProjects: () => dispatch(retrieveProjects)
@@ -188,6 +191,10 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  graphql(queryProject, {
+    props: mapDataToProps,
+    options: mapPropsToOptions
+  }),
   lifecycle({
     componentDidMount () {
       this.props.retrieveProjects()
@@ -203,8 +210,7 @@ const enhance = compose(
         }
       }
     }
-  }),
-  pure
+  })
 )
 
 export default enhance(Detailed)

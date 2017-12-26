@@ -23,13 +23,13 @@ exports[`Project detail page container it should render correctly 1`] = `
     >
       <h1>
         <ProjectIcon
-          name="Aeternity"
+          name="Aragon"
           size={28}
         />
          
-        Aeternity
+        Aragon
          (
-        AE
+        ANT
         )
       </h1>
       <p>

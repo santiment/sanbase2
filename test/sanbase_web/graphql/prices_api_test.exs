@@ -202,4 +202,37 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     assert json_response(result, 200)["data"] != nil
   end
+
+  test "fetch all available prices", context do
+    now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
+
+    Store.import([
+      # older
+      %Measurement{
+        timestamp: now,
+        fields: %{price: 1, volume: 5, marketcap: 500},
+        name: "XYZ_BTC"
+      },
+      %Measurement{
+        timestamp: now,
+        fields: %{price: 20, volume: 200, marketcap: 500},
+        name: "XYZ_USD"
+      }
+    ])
+
+    query = """
+    {
+      availablePrices
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "availablePrices"))
+
+    resp_data = json_response(result,200)["data"]["availablePrices"]
+    assert Enum.count(resp_data) == 2
+    assert "TEST" in resp_data
+    assert "XYZ" in resp_data
+  end
 end

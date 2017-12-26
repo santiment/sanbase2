@@ -2,8 +2,6 @@ defmodule Sanbase.Github.SchedulerTest do
   use Sanbase.DataCase, async: false
   use Mockery
 
-  import Sanbase.DateTimeUtils, only: [days_ago: 1]
-
   alias Sanbase.Github.Scheduler
   alias Sanbase.Model.Project
   alias Sanbase.Prices
@@ -39,10 +37,10 @@ defmodule Sanbase.Github.SchedulerTest do
 
     Prices.Store.drop_pair("SAN_USD")
     Prices.Store.import([
-      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
     ])
     Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment", github_link: "https://github.com/santiment"})
 
@@ -56,17 +54,17 @@ defmodule Sanbase.Github.SchedulerTest do
   test "scheduling projects with some pricing data and some activity" do
     Prices.Store.drop_pair("SAN_USD")
     Prices.Store.import([
-      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
     ])
 
     Github.Store.drop_ticker("SAN")
     Github.Store.import([
-      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
-      %Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 2}, name: "SAN"},
-      %Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
+      %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
+      %Measurement{timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 2}, name: "SAN"},
+      %Measurement{timestamp: days_ago_start_of_day(3) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
     ])
 
     Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment", github_link: "https://github.com/santiment"})
@@ -81,15 +79,15 @@ defmodule Sanbase.Github.SchedulerTest do
   test "scheduling projects which has processed archives" do
     Prices.Store.drop_pair("SAN_USD")
     Prices.Store.import([
-      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Measurement{timestamp: days_ago(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
     ])
 
     Prices.Store.drop_pair("OMG_USD")
     Prices.Store.import([
-      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "OMG_USD"},
+      %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "OMG_USD"},
     ])
 
     Github.Store.drop_ticker("SAN")
@@ -99,8 +97,8 @@ defmodule Sanbase.Github.SchedulerTest do
 
     mock SanbaseWorkers.ImportGithubActivity, [perform_async: 1], :ok
 
-    mark_as_processed_interval(san_project.id, days_ago(5), days_ago(1))
-    mark_as_processed_interval(omg_project.id, days_ago(5), days_ago(2))
+    mark_as_processed_interval(san_project.id, days_ago_start_of_day(5), days_ago_start_of_day(1))
+    mark_as_processed_interval(omg_project.id, days_ago_start_of_day(5), days_ago_start_of_day(2))
 
     Scheduler.schedule_scrape()
 
@@ -120,5 +118,12 @@ defmodule Sanbase.Github.SchedulerTest do
       _ ->
         :ok
     end
+  end
+
+  defp days_ago_start_of_day(days) do
+    Timex.today()
+    |> Timex.shift(days: -days)
+    |> Timex.end_of_day()
+    |> Timex.to_datetime()
   end
 end

@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
-  import_types Absinthe.Type.Custom
   import_types SanbaseWeb.Graphql.CustomTypes
 
   alias SanbaseWeb.Graphql.ProjectResolver

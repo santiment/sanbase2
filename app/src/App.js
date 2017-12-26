@@ -39,7 +39,7 @@ export const App = ({isDesktop}) => (
 )
 
 const mapSizesToProps = ({ width }) => ({
-  isDesktop: width > 620
+  isDesktop: width > 768
 })
 
 const enchance = compose(

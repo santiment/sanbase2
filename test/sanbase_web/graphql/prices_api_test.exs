@@ -136,6 +136,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
         priceUsd
         priceBtc
         datetime
+        volume
       }
     }
     """
@@ -160,12 +161,45 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     """
 
     result =
-    context.conn
-    |> post("/graphql", query_skeleton(query, "historyPrice"))
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     history_price = json_response(result, 200)["data"]["historyPrice"]
     assert Enum.count(history_price) == 2
-    assert Enum.at(history_price,0)["priceUsd"] == "20"
-    assert Enum.at(history_price,1)["priceUsd"] == "22"
+    assert Enum.at(history_price, 0)["priceUsd"] == "20"
+    assert Enum.at(history_price, 1)["priceUsd"] == "22"
+  end
+
+  test "complexity is 0 with basic authentication", context do
+    username =
+      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
+      |> Keyword.get(:basic_auth_username)
+
+    password =
+      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
+      |> Keyword.get(:basic_auth_password)
+
+    basic_auth = Base.encode64(username <> ":" <> password)
+
+    now = DateTime.utc_now()
+    years_ago = Sanbase.DateTimeUtils.days_ago(10 * 365)
+
+    query = """
+    {
+      historyPrice(ticker: "TEST", from: "#{years_ago}", to: "#{now}", interval: "5m"){
+        priceUsd
+        priceBtc
+        datetime
+        volume
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> put_req_header("authorization", "Basic " <> basic_auth)
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+
+    assert json_response(result, 200)["data"] != nil
   end
 end

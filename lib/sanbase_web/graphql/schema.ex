@@ -3,7 +3,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   alias Sanbase.Auth.{User, EthAccount}
-  alias SanbaseWeb.Graphql.{AccountResolver, PriceResolver, ProjectResolver, PriceComplexity}
+  alias SanbaseWeb.Graphql.Resolvers.{AccountResolver, PriceResolver, ProjectResolver}
+  alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
 
   import_types Absinthe.Type.Custom

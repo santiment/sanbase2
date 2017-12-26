@@ -26,7 +26,6 @@ let origin = process.env.WEBSITE_URL || ''
 if (process.env.production) {
   origin = window.location.origin
 }
-origin = 'https://sanbase.stage.internal.santiment.net'
 
 const httpLink = createHttpLink({ uri: `${origin}/graphql` })
 const authLink = setContext((_, { headers }) => {

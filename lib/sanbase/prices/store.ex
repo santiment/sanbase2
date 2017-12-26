@@ -37,6 +37,12 @@ defmodule Sanbase.Prices.Store do
     |> q()
   end
 
+  def list_measurements() do
+    "SHOW MEASUREMENTS"
+    |> Store.query()
+    |> parse_measurements_list()
+  end
+
   def q(query) do
     Store.query(query)
     |> parse_price_series
@@ -48,6 +54,25 @@ defmodule Sanbase.Prices.Store do
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)
     }/
+  end
+
+
+  defp parse_measurements_list(%{results: [%{error: error}]}), do: raise(error)
+
+  defp parse_measurements_list(%{
+    results: [
+      %{
+        series: [
+          %{
+            values: measurements
+          }
+        ]
+      }
+    ]
+  }) do
+
+    measurements
+    |> Enum.map(&Kernel.hd/1)
   end
 
   defp parse_price_series(%{results: [%{error: error}]}), do: raise(error)

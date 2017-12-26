@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.PriceResolver do
         history_price(args, requested_fields(resolution))
   end
 
-  def current_price(_root, %{ticker: ticker}, _context) do
+  def current_price(_root, %{ticker: ticker}, _resolution) do
     with {datetime, price_usd, marketcap, volume} <-
            Store.last_record(String.upcase(ticker) <> "_USD"),
          {_, price_btc, _, _} <- Store.last_record(String.upcase(ticker) <> "_BTC") do
@@ -33,6 +33,21 @@ defmodule SanbaseWeb.Graphql.PriceResolver do
 
       _ ->
         {:error, "Cannot fetch price for ticker #{ticker}"}
+    end
+  end
+
+  def available_prices(_root, _args, _resolutions) do
+    data = Store.list_measurements()
+    |> Enum.map(&trim_measurement/1)
+    |> Enum.reject(&is_nil/1)
+
+    {:ok, data}
+  end
+
+  defp trim_measurement(name) do
+    case String.ends_with?(name, "_BTC") do
+      true -> String.slice(name, 0..-5)
+      _ -> nil
     end
   end
 

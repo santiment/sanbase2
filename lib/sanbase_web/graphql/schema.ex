@@ -46,6 +46,11 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       resolve(&PriceResolver.current_price/3)
     end
+
+    @desc "Returns a list of available tickers"
+    field :available_prices, list_of(:string) do
+      resolve(&PriceResolver.available_prices/3)
+    end
   end
 
   mutation do

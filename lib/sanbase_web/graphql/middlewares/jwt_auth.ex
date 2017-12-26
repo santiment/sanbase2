@@ -3,6 +3,20 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTAuth do
   Authenticate that the request contains a valid JWT token and that the user has
   enough san tokens to access the data. If the san tokens are not specified
   it is assumed that 0 tokens are required.
+
+  Example:
+
+      query do
+        field :project, :project do
+          arg :id, non_null(:id)
+
+          middleware SanbaseWeb.Graphql.Middlewares.JWTAuth, san_tokens: 200
+
+          resolve &ProjectResolver.project/3
+        end
+      end
+
+  This is going to require 200 SAN tokens to access the project query.
   """
   @behavior Absinthe.Middleware
 

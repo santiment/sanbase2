@@ -1,10 +1,10 @@
 defmodule SanbaseWeb.Graphql.Middlewares.MultipleAuth do
-  @behavior Absinthe.Middleware
   @moduledoc """
   Authentication middleware, which allows to specify multiple auth methods. If
   one of them works, the request will continue to the resolver. Otherwise the
   response will be terminated and an unauthorized error will be returned.
   """
+  @behavior Absinthe.Middleware
 
   alias Absinthe.Resolution
 

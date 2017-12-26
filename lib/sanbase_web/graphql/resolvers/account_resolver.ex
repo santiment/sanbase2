@@ -89,11 +89,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
 
   def followed_projects(%User{} = user, _args, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
     query =
-      from(
-        pair in UserFollowedProject,
-        select: pair.project_id,
-        where: pair.user_id == ^user.id
-      )
+    from(
+      p in Project,
+      inner_join: ufp in UserFollowedProject, on: p.id == ufp.project_id,
+      where: ufp.user_id == ^user.id
+    )
 
     {:ok, Repo.all(query)}
   end

@@ -131,3 +131,7 @@ p {
     padding: 8px;
   }
 }
+
+.fa-disabled {
+  color: #d3d3d3;
+}

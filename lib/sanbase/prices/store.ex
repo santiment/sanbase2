@@ -28,13 +28,19 @@ defmodule Sanbase.Prices.Store do
   end
 
   def fetch_prices_with_resolution(pair, from, to, resolution) do
+    # fill(none) skips intervals with no data to report instead of returning null
     ~s/SELECT MEAN(price), SUM(volume), MEAN(marketcap)
     FROM "#{pair}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{
-      DateTime.to_unix(to, :nanoseconds)
-    }
-    GROUP BY time(#{resolution})/
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    GROUP BY time(#{resolution}) fill(none)/
     |> q()
+  end
+
+  def list_measurements() do
+    "SHOW MEASUREMENTS"
+    |> Store.query()
+    |> parse_measurements_list()
   end
 
   def q(query) do
@@ -45,9 +51,28 @@ defmodule Sanbase.Prices.Store do
   defp fetch_query(pair, from, to) do
     ~s/SELECT time, price, volume, marketcap
     FROM "#{pair}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)} AND time <= #{
-      DateTime.to_unix(to, :nanoseconds)
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)
     }/
+  end
+
+
+  defp parse_measurements_list(%{results: [%{error: error}]}), do: raise(error)
+
+  defp parse_measurements_list(%{
+    results: [
+      %{
+        series: [
+          %{
+            values: measurements
+          }
+        ]
+      }
+    ]
+  }) do
+
+    measurements
+    |> Enum.map(&Kernel.hd/1)
   end
 
   defp parse_price_series(%{results: [%{error: error}]}), do: raise(error)
@@ -78,6 +103,12 @@ defmodule Sanbase.Prices.Store do
     |> parse_price_datetime
   end
 
+  def last_record(pair) do
+    ~s/SELECT LAST(price), marketcap, volume from "#{pair}"/
+    |> Store.query()
+    |> parse_record
+  end
+
   def last_price_datetime(pair) do
     ~s/SELECT LAST(price) FROM "#{pair}"/
     |> Store.query()
@@ -96,11 +127,30 @@ defmodule Sanbase.Prices.Store do
          ]
        }) do
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-
     datetime
   end
 
   defp parse_price_datetime(_), do: nil
+
+  defp parse_record(%{
+         results: [
+           %{
+             series: [
+               %{
+                 values: [[iso8601_datetime, price, marketcap, volume]]
+               }
+             ]
+           }
+         ]
+       }) do
+    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+
+    {datetime, price, marketcap, volume}
+  end
+
+  defp parse_record(x) do
+    nil
+  end
 
   def drop_pair(pair) do
     %{results: _} =

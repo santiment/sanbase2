@@ -32,7 +32,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     |> download
     |> stream_process_cleanup(orgs, datetime)
 
-    orgs.values()
+    Map.values(orgs)
     |> Enum.each(&Github.ProcessedGithubArchive.mark_as_processed(&1.id, archive))
   end
 
@@ -49,8 +49,9 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     {:ok, temp_filepath} = Temp.path(%{prefix: archive, suffix: ".json.gz"})
 
     with {:ok, _} <- S3.head_object(s3_bucket(), s3_path(archive)) |> ExAws.request,
-      {:ok, temp_filepath} <- S3.download_file(s3_bucket(), s3_path(archive), temp_filepath) |> ExAws.request do
-      temp_filepath
+      {:ok, :done} <- S3.download_file(s3_bucket(), s3_path(archive), temp_filepath) |> ExAws.request do
+      Logger.info("Downloaded #{archive} from S3 into #{temp_filepath}")
+      {:ok, temp_filepath}
     else
       {:error, error} -> {:error, error}
     end

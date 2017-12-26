@@ -2,8 +2,6 @@ defmodule Sanbase.Github.SchedulerTest do
   use Sanbase.DataCase, async: false
   use Mockery
 
-  import Sanbase.DateTimeUtils, only: [days_ago: 1]
-
   alias Sanbase.Github.Scheduler
   alias Sanbase.Model.Project
   alias Sanbase.Prices
@@ -244,5 +242,12 @@ defmodule Sanbase.Github.SchedulerTest do
       _ ->
         :ok
     end
+  end
+
+  defp days_ago_start_of_day(days) do
+    Timex.today()
+    |> Timex.shift(days: -days)
+    |> Timex.end_of_day()
+    |> Timex.to_datetime()
   end
 end

@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.MultipleAuth do
     auths
     |> Enum.map(fn
       {middleware, config} -> middleware.call(resolution, config)
-      middleware -> middleware.call(resolution, nil)
+      middleware -> middleware.call(resolution, [])
     end)
     |> Enum.find(&(&1.state == :unresolved))
     |> case do

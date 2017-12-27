@@ -155,6 +155,7 @@ const ProjectChart = ({
         className='graph'
         data={chartData}
         redraw
+        height={100}
         options={chartOptions}
         onElementsClick={elems => {
           elems[0] && setSelected(elems[0]._index)

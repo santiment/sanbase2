@@ -61,7 +61,7 @@ const GeneralInfoBlock = ({
         Volume
       </div>
       <div>
-        ${volume}
+        {formatNumber(volume, 'USD')}
         <HiddenElements>
           <span className='diff down'>
             <i className='fa fa-caret-down' />

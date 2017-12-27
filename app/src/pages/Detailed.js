@@ -86,7 +86,7 @@ export const Detailed = ({
         </HiddenElements>
       </div>
       <div className='panel'>
-        <ProjectChart ticker={project.ticker.toUpperCase()} />
+        <ProjectChart ticker={project.ticker} />
       </div>
       <HiddenElements>
         <div className='panel'>
@@ -182,7 +182,8 @@ const getPriceGQL = gql`
       priceBtc,
       priceUsd,
       volume,
-      datetime
+      datetime,
+      marketcap
     }
 }`
 

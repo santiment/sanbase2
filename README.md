@@ -7,30 +7,22 @@ This is the source of the sanbase project of [`https://santiment.net`](https://s
   In order to run the project locally you need:
 
   * Install PostgreSQL and InfluxDB. On OS X you can do that with `brew install postgresql influxdb`
+  * You may need to run the servers after installing: `brew services start postgresql && brew services start influxdb`
   * Elixir & NodeJS. On OS X you can do that with `brew install elixir nodejs`
   * Install dependencies with `mix deps.get`
   * Install JS dependencies for the static frontend with `cd assets && yarn && cd ..`
   * Install JS dependencies for the next.js frontend with `cd app && yarn && cd ..`
-  * Create a file `config/dev.secret.exs` and put your PostgreSQL setup there. Example:
+  * If you don't have a database, run `createdb sanbase_dev`
+  * Create a file `.env` and put your PostgreSQL setup there. Example:
 
-```elixir
-use Mix.Config
-
-config :sanbase, Sanbase.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "postgresql",
-  password: "",
-  database: "sanbase_dev",
-  hostname: "localhost",
-  pool_size: 10
+```
+DATABASE_URL=postgres://johnsnow:@localhost:5432/sanbase_dev
 ```
 
   * Setup your database and import the seeds with `mix ecto.setup`
   * Start Phoenix endpoint with `mix phx.server`
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
-For tests run `npm run test:js` and follow cli instructions. To read more about
-frontend app, open README file in the app folder.
+Now you can visit [`localhost:4000`](http://localhost:4000) from your browser. For details how to run the frontend tests, check the section about running the frontend tests in this file.
 
 This setup is going to start 2 processes:
   * A Phoenix server, which is routing the traffic and responding to API requests
@@ -52,23 +44,35 @@ All the JS code is in `app/`. The API code is in `lib/` and follows the phoenix 
 directory structure. You can find more info on how the JS side works on [Learning Next.js](https://learnnextjs.com). You can read more about how to define the API
 endpoints from the [Phoenix docs](https://hexdocs.pm/phoenix/overview.html) or from the excellent [Thoughtbot JSON API guide](https://robots.thoughtbot.com/building-a-phoenix-json-api)
 
-## Integration tests
+## Running the backend tests
 
-It is possible to write high level integration tests for the JS app using the `Hound`
-integration testing framework. See the integration test in `test/integration/home_test.exs`
-for an example of that. It is possible to setup the DB and click around the app using
-a headless chrome browser. In order to run the tests you need `chromedriver` installed.
-You can install the driver with:
+Make sure you have a test DB: `createdb sanbase_test`. This is needed by the tests to validate logic, which relies on the DB.
 
-```bash
-$ brew install chromedriver
-```
+In order to run the backend tests you need to run `mix test`. The default DB config is in [`config/test.exs`](config/test.exs). If you need to change the default config you can create a file `.env.test` and specify the DB URL there like this:
 
-you can run the default tests with
 
 ```bash
-$ mix test
+DATABASE_URL=postgres://custom_username:custom_password@localhost:5432/sanbase_test
 ```
 
-This mix task is going to automatically run the `chromedriver` and the node server,
-which are needed to run the tests.
+## Running the frontend tests
+
+The frontend application is in the `app` folder. To run the tests you can do:
+
+```
+cd app && npm run test:js
+```
+
+This is going to run the tests in watch mode, so when you change the JS files the tests will automatically run.
+
+If you need to update snapshots, press `u` after running the `npm run test:js`.
+
+We use JEST, enzyme and jest snapshots for testing.
+
+We use **standard** for js lint and **stylelint** for css. Use these commands the run the linters:
+
+```
+cd app
+npm run test:lint:js
+npm run test:lint:css
+```

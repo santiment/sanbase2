@@ -3,7 +3,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   alias Sanbase.Auth.{User, EthAccount}
-  alias SanbaseWeb.Graphql.{AccountResolver, PriceResolver, ProjectResolver, PriceComplexity}
+  alias SanbaseWeb.Graphql.Resolvers.{AccountResolver, PriceResolver, ProjectResolver}
+  alias SanbaseWeb.Graphql.Complexity.PriceComplexity
+  alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
 
   import_types Absinthe.Type.Custom
   import_types SanbaseWeb.Graphql.AccountTypes
@@ -18,6 +20,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_projects, list_of(:project) do
       arg :only_project_transparency, :boolean
 
+      middleware MultipleAuth, [BasicAuth, JWTAuth]
       resolve &ProjectResolver.all_projects/3
     end
 
@@ -25,6 +28,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg :id, non_null(:id)
       arg :only_project_transparency, :boolean # this is to filter the wallets
 
+      middleware MultipleAuth, [BasicAuth, JWTAuth]
       resolve &ProjectResolver.project/3
     end
 

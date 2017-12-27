@@ -66,18 +66,26 @@ const getChartDataFromHistory = (history = [], isToggledBTC) => {
   }
 }
 
-const ProjectChart = ({
-  historyPrice,
+export const ProjectChart = ({
+  history,
   setSelected,
   selected,
   ...props
 }) => {
-  if (!historyPrice || historyPrice.loading) {
+  if (!history || history.isLoading) {
     return (
       <h2>Loading...</h2>
     )
   }
-  const chartData = getChartDataFromHistory(historyPrice.historyPrice, props.isToggledBTC)
+  if (history.isError) {
+    return (
+      <div>
+        <h2>We can't get the data from our server now... ;(</h2>
+        <p>{history.errorMessage}</p>
+      </div>
+    )
+  }
+  const chartData = getChartDataFromHistory(history.data, props.isToggledBTC)
   const chartOptions = {
     responsive: true,
     showTooltips: false,
@@ -186,6 +194,28 @@ const getHistoryGQL = gql`
 const defaultFrom = moment().subtract(1, 'M').utc().format()
 const defaultTo = moment().subtract(1, 'd').utc().format()
 
+const mapDataToProps = ({historyPrice}) => {
+  const isLoading = historyPrice.loading
+  const isEmpty = !!historyPrice.project
+  const isError = !!historyPrice.error
+  const data = historyPrice.historyPrice
+  const errorMessage = isError ? historyPrice.error.message : ''
+  const project = historyPrice.project
+
+  return {history: {isLoading, isEmpty, isError, project, errorMessage, data}}
+}
+
+const mapPropsToOptions = ({ticker}) => {
+  return {
+    variables: {
+      'ticker': ticker,
+      'from': defaultFrom,
+      'to': defaultTo,
+      'interval': '1h'
+    }
+  }
+}
+
 const enhance = compose(
   withState('isToggledBTC', 'currencyToggle', false),
   withHandlers({
@@ -196,16 +226,8 @@ const enhance = compose(
   withState('selected', 'setSelected', null),
   graphql(getHistoryGQL, {
     name: 'historyPrice',
-    options: ({ticker}) => {
-      return {
-        variables: {
-          'ticker': ticker,
-          'from': defaultFrom,
-          'to': defaultTo,
-          'interval': '1h'
-        }
-      }
-    }
+    props: mapDataToProps,
+    options: mapPropsToOptions
   }),
   pure
 )

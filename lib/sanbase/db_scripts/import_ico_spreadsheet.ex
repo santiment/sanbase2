@@ -28,7 +28,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     presales
     |> adjust_presales_project_names()
     |> Enum.concat(main_icos)
-    |> IO.inspect()
   end
 
   # Make the project names of the 2 rows (presale and main) the same so they are inserted as 2 icos of the same project
@@ -151,10 +150,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       Ecto.Changeset.change(wallet)
       |> Repo.insert_or_update!()
     end)
-
-    # Don't delete the rest because not everything from seeds is entered in the spreadsheet and we don't want to overwrite it
-    # wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
-    # Repo.delete_all(from a in ProjectEthAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
   end
 
   defp insert_or_update_btc_wallets(_project, %IcoSpreadsheetRow{btc_wallets: nil}), do: nil
@@ -164,10 +159,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       Ecto.Changeset.change(wallet)
       |> Repo.insert_or_update!()
     end)
-
-    # Don't delete the rest because not everything from seeds is entered in the spreadsheet and we don't want to overwrite it
-    # wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
-    # Repo.delete_all(from a in ProjectBtcAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
   end
 
   defp ensure_project(project_name) do

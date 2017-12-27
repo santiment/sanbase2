@@ -11,7 +11,8 @@ defmodule Sanbase.Model.Project do
     MarketSegment,
     Infrastructure,
     LatestCoinmarketcapData,
-    UserFollowedProject
+    UserFollowedProject,
+    ProjectTransparencyStatus
   }
   import Ecto.Query
 
@@ -36,7 +37,7 @@ defmodule Sanbase.Model.Project do
     field(:token_address, :string)
     field(:team_token_wallet, :string)
     field(:project_transparency, :boolean, default: false)
-    field(:project_transparency_status, :string)
+    belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
     field(:project_transparency_description, :string)
     has_many(:eth_addresses, ProjectEthAddress)
     has_many(:btc_addresses, ProjectBtcAddress)
@@ -78,7 +79,7 @@ defmodule Sanbase.Model.Project do
          :telegram_link,
          :team_token_wallet,
          :project_transparency,
-         :project_transparency_status,
+         :project_transparency_status_id,
          :project_transparency_description
        ])
     |> validate_required([:name])

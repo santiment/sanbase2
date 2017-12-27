@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.1
--- Dumped by pg_dump version 9.6.1
+-- Dumped from database version 9.6.6
+-- Dumped by pg_dump version 9.6.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -445,13 +445,13 @@ CREATE TABLE project (
     slack_link character varying(255),
     linkedin_link character varying(255),
     telegram_link character varying(255),
-    project_transparency_status character varying(255),
     token_address character varying(255),
     team_token_wallet character varying(255),
     market_segment_id bigint,
     infrastructure_id bigint,
     project_transparency boolean DEFAULT false NOT NULL,
-    project_transparency_description text
+    project_transparency_description text,
+    project_transparency_status_id bigint
 );
 
 
@@ -534,6 +534,35 @@ CREATE SEQUENCE project_id_seq
 --
 
 ALTER SEQUENCE project_id_seq OWNED BY project.id;
+
+
+--
+-- Name: project_transparency_statuses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE project_transparency_statuses (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL
+);
+
+
+--
+-- Name: project_transparency_statuses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE project_transparency_statuses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_transparency_statuses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE project_transparency_statuses_id_seq OWNED BY project_transparency_statuses.id;
 
 
 --
@@ -715,6 +744,13 @@ ALTER TABLE ONLY project_eth_address ALTER COLUMN id SET DEFAULT nextval('projec
 
 
 --
+-- Name: project_transparency_statuses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY project_transparency_statuses ALTER COLUMN id SET DEFAULT nextval('project_transparency_statuses_id_seq'::regclass);
+
+
+--
 -- Name: user_followed_project id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -846,6 +882,14 @@ ALTER TABLE ONLY project_eth_address
 
 ALTER TABLE ONLY project
     ADD CONSTRAINT project_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_transparency_statuses project_transparency_statuses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY project_transparency_statuses
+    ADD CONSTRAINT project_transparency_statuses_pkey PRIMARY KEY (id);
 
 
 --
@@ -1013,6 +1057,20 @@ CREATE UNIQUE INDEX project_name_index ON project USING btree (name);
 
 
 --
+-- Name: project_project_transparency_status_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX project_project_transparency_status_id_index ON project USING btree (project_transparency_status_id);
+
+
+--
+-- Name: project_transparency_statuses_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_transparency_statuses_name_index ON project_transparency_statuses USING btree (name);
+
+
+--
 -- Name: projet_user_constraint; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1031,7 +1089,7 @@ CREATE UNIQUE INDEX users_email_index ON users USING btree (email);
 --
 
 ALTER TABLE ONLY eth_accounts
-    ADD CONSTRAINT eth_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT eth_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
@@ -1123,6 +1181,14 @@ ALTER TABLE ONLY project
 
 
 --
+-- Name: project project_project_transparency_status_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY project
+    ADD CONSTRAINT project_project_transparency_status_id_fkey FOREIGN KEY (project_transparency_status_id) REFERENCES project_transparency_statuses(id);
+
+
+--
 -- Name: user_followed_project user_followed_project_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1142,5 +1208,5 @@ ALTER TABLE ONLY user_followed_project
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171225093503);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530);
 

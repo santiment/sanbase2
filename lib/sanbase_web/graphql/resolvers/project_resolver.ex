@@ -11,6 +11,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.Ico
   alias Sanbase.Model.IcoCurrencies
   alias Sanbase.Model.Currency
+  alias Sanbase.Model.MarketSegment
+  alias Sanbase.Model.Infrastructure
+  alias Sanbase.Model.ProjectTransparencyStatus
 
   alias Sanbase.Repo
   alias Ecto.Multi
@@ -112,6 +115,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Enum.map(fn([currency_code, amount]) -> %{currency_code: currency_code, amount: amount} end)
 
       {:ok, funds_raised}
+  end
+
+  def market_segment(%Project{market_segment_id: nil}, _args, _context), do: {:ok, nil}
+  def market_segment(%Project{market_segment_id: market_segment_id}, _args, _context) do
+    %MarketSegment{name: market_segment} = Repo.get!(MarketSegment, market_segment_id)
+
+    {:ok, market_segment}
+  end
+
+  def infrastructure(%Project{infrastructure_id: nil}, _args, _context), do: {:ok, nil}
+  def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, _context) do
+    %Infrastructure{code: infrastructure} = Repo.get!(Infrastructure, infrastructure_id)
+
+    {:ok, infrastructure}
+  end
+
+  def project_transparency_status(%Project{project_transparency_status_id: nil}, _args, _context), do: {:ok, nil}
+  def project_transparency_status(%Project{project_transparency_status_id: project_transparency_status_id}, _args, _context) do
+    %ProjectTransparencyStatus{name: project_transparency_status} = Repo.get!(ProjectTransparencyStatus, project_transparency_status_id)
+
+    {:ok, project_transparency_status}
   end
 
   defp get_parent_args(context) do

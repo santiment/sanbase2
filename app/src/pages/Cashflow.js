@@ -39,7 +39,7 @@ const formatTxOutWallet = wallets => {
     const txOut = wallet.tx_out || '0.00'
     return (
       <div key={index}>
-        {txOut.toLocaleString('en-US')}
+        {formatNumber(txOut)}
       </div>
     )
   })
@@ -95,7 +95,7 @@ export const Cashflow = ({
     id: 'project',
     filterable: true,
     sortable: true,
-    width: 350,
+    minWidth: 250,
     accessor: d => ({
       name: d.name,
       ticker: d.ticker
@@ -136,6 +136,7 @@ export const Cashflow = ({
     accessor: d => d.wallets,
     Cell: ({value}) => <div>{formatLastOutgoingWallet(value)}</div>,
     sortable: true,
+    minWidth: 140,
     sortMethod: (a, b, isDesc) => (
       sortDate(a[0].last_outgoing, b[0].last_outgoing, isDesc)
     )
@@ -151,14 +152,14 @@ export const Cashflow = ({
   return (
     <div className='page cashflow'>
       <div className='cashflow-head'>
-        <h1>Cash Flow</h1>
+        <h1>Projects: Cash Flow</h1>
         <p>
           brought to you by <a
             href='https://santiment.net'
             rel='noopener noreferrer'
             target='_blank'>Santiment</a>
           <br />
-          NOTE: This app is a prototype.
+          NOTE: This app is in development.
           We give no guarantee data is correct as we are in active development.
         </p>
       </div>

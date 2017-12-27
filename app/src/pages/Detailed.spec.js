@@ -42,12 +42,15 @@ const projects = [
 describe('Project detail page container', () => {
   it('it should render correctly', () => {
     const match = {
-      params: {ticker: 'ae'}
+      params: {ticker: 'ant'}
     }
     const pdp = shallow(<Detailed
       projects={projects}
+      generalInfo={{
+        isUnauthorized: true
+      }}
       loading={false}
-      price={{
+      PriceQuery={{
         loading: true
       }}
       match={match}
@@ -61,7 +64,7 @@ describe('Project detail page container', () => {
     }
     const pdp = shallow(<Detailed
       projects={projects}
-      price={{
+      PriceQuery={{
         loading: true
       }}
       loading={false}

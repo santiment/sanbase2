@@ -1,20 +1,19 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-import { graphql } from 'react-apollo'
-import gql from 'graphql-tag'
 import {
   compose,
-  pure,
   lifecycle
 } from 'recompose'
 import { Merge } from 'animate-components'
 import { fadeIn, slideRight } from 'animate-keyframes'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
+import gql from 'graphql-tag'
+import { graphql } from 'react-apollo'
+import { retrieveProjects } from './Cashflow.actions.js'
 import ProjectIcon from './../components/ProjectIcon'
 import PanelBlock from './../components/PanelBlock'
-import { retrieveProjects } from './Cashflow.actions.js'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
 import ProjectChart from './ProjectChart'
@@ -24,7 +23,8 @@ import './Detailed.css'
 const propTypes = {
   match: PropTypes.object.isRequired,
   projects: PropTypes.array.isRequired,
-  loading: PropTypes.bool.isRequired
+  loading: PropTypes.bool.isRequired,
+  generalInfo: PropTypes.object
 }
 
 export const HiddenElements = () => ''
@@ -42,7 +42,8 @@ export const Detailed = ({
   match,
   projects,
   loading,
-  price
+  PriceQuery,
+  generalInfo
 }) => {
   if (loading) {
     return (
@@ -52,6 +53,7 @@ export const Detailed = ({
     )
   }
   const project = getProjectByTicker(match, projects)
+
   if (!project) {
     return (
       <Redirect to={{
@@ -59,6 +61,7 @@ export const Detailed = ({
       }} />
     )
   }
+
   return (
     <div className='page detailed'>
       <div className='detailed-head'>
@@ -66,17 +69,19 @@ export const Detailed = ({
           <h1><ProjectIcon name={project.name} size={28} /> {project.name} ({project.ticker.toUpperCase()})</h1>
           <p>Manage entire organisations using the blockchain.</p>
         </div>
-        {!price.loading && price.price &&
+
+        {!PriceQuery.loading && PriceQuery.price &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideRight, duration: '0.5s', timingFunction: 'ease-out' }}
             as='div'
           >
             <div className='detailed-price'>
-              <div>{formatNumber(price.price.priceUsd, 'USD')}</div>
-              <div>BTC {formatBTC(parseFloat(price.price.priceBtc))}</div>
+              <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
+              <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
             </div>
           </Merge>}
+
         <HiddenElements>
           <div className='detailed-buttons'>
             <button className='add-to-dashboard'>
@@ -136,21 +141,29 @@ export const Detailed = ({
             </TabPanel>
           </Tabs>
         </div>
+      </HiddenElements>
+      <HiddenElements>
         <PanelBlock title='Blockchain Analytics' />
         <div className='analysis'>
           <PanelBlock title='Signals/Volatility' />
           <PanelBlock title='Expert Analyses' />
           <PanelBlock title='News/Press' />
         </div>
-        <div className='information'>
-          <PanelBlock title='General Info'>
-            <GeneralInfoBlock info={project} />
-          </PanelBlock>
-          <PanelBlock title='Financials'>
-            <FinancialsBlock info={project} />
-          </PanelBlock>
-        </div>
       </HiddenElements>
+      <div className='information'>
+        <PanelBlock
+          isUnauthorized={generalInfo.isUnauthorized}
+          isLoading={generalInfo.isLoading}
+          title='General Info'>
+          <GeneralInfoBlock {...generalInfo.project} />
+        </PanelBlock>
+        <PanelBlock
+          isUnauthorized={generalInfo.isUnauthorized}
+          isLoading={generalInfo.isLoading}
+          title='Financials'>
+          <FinancialsBlock {...generalInfo.project} />
+        </PanelBlock>
+      </div>
     </div>
   )
 }
@@ -183,6 +196,62 @@ const getPriceGQL = gql`
     }
 }`
 
+const queryProject = gql`
+  query project($id: ID!) {
+    project(
+      id: $id,
+    ){
+      id,
+      name,
+      ticker,
+      marketCapUsd,
+      websiteLink,
+      facebookLink,
+      githubLink,
+      redditLink,
+      twitterLink,
+      whitepaperLink,
+      slackLink,
+      btcBalance,
+      projectTransparency,
+      projectTransparencyDescription,
+      projectTransparencyStatus,
+      tokenAddress,
+      fundsRaisedIcos { amount, currencyCode },
+      latestCoinmarketcapData {
+        priceUsd,
+        updateTime,
+        marketCapUsd
+      }
+    }
+  }
+`
+
+const mapDataToProps = ({ProjectQuery}) => {
+  const isLoading = ProjectQuery.loading
+  const isEmpty = !!ProjectQuery.project
+  const isError = !!ProjectQuery.error
+  const errorMessage = ProjectQuery.error ? ProjectQuery.error.message : ''
+  const isUnauthorized = ProjectQuery.error ? /\bunauthorized/.test(ProjectQuery.error.message) : false
+  if (ProjectQuery.error && !isUnauthorized) {
+    // If our API server is not reponed with ProjectQuery
+    throw new Error(ProjectQuery.error.message)
+  }
+  const project = ProjectQuery.project
+
+  return {generalInfo: {isLoading, isEmpty, isError, project, errorMessage, isUnauthorized}}
+}
+
+const mapPropsToOptions = ({match, projects}) => {
+  const project = getProjectByTicker(match, projects)
+  return {
+    skip: !project,
+    variables: {
+      id: project ? project.id : 0
+    }
+  }
+}
+
 const enhance = compose(
   connect(
     mapStateToProps,
@@ -194,17 +263,22 @@ const enhance = compose(
     }
   }),
   graphql(getPriceGQL, {
-    name: 'price',
+    name: 'PriceQuery',
     options: ({match, projects}) => {
       const project = getProjectByTicker(match, projects)
       return {
+        skip: !project,
         variables: {
           'ticker': project ? project.ticker.toUpperCase() : 'SAN'
         }
       }
     }
   }),
-  pure
+  graphql(queryProject, {
+    name: 'ProjectQuery',
+    props: mapDataToProps,
+    options: mapPropsToOptions
+  })
 )
 
 export default enhance(Detailed)

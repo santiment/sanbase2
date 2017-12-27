@@ -11,21 +11,21 @@ defmodule SanbaseWeb.Graphql.PriceResolver do
   def history_price(
         _root,
         %{ticker: ticker, from: from, to: to, interval: interval} = args,
-        context
+        resolution
       ) do
-    hist_price(args, requested_fields(context))
+        history_price(args, requested_fields(resolution))
   end
 
-  def current_price(_root, %{ticker: ticker}, _context) do
+  def current_price(_root, %{ticker: ticker}, _resolution) do
     with {datetime, price_usd, marketcap, volume} <-
            Store.last_record(String.upcase(ticker) <> "_USD"),
          {_, price_btc, _, _} <- Store.last_record(String.upcase(ticker) <> "_BTC") do
       {:ok, %{
         datetime: datetime,
-        price_btc: price_btc,
-        price_usd: price_usd,
-        marketcap: marketcap,
-        volume: volume
+        price_btc: Decimal.new(price_btc),
+        price_usd: Decimal.new(price_usd),
+        marketcap: Decimal.new(marketcap),
+        volume: Decimal.new(volume)
       }}
     else
       {:error, reason} ->
@@ -36,73 +36,89 @@ defmodule SanbaseWeb.Graphql.PriceResolver do
     end
   end
 
-  defp hist_price(%{ticker: ticker, from: from, to: to, interval: interval}, %{
+  def available_prices(_root, _args, _resolutions) do
+    data = Store.list_measurements()
+    |> Enum.map(&trim_measurement/1)
+    |> Enum.reject(&is_nil/1)
+
+    {:ok, data}
+  end
+
+  # Measurements are always stored with _BTC and _USD suffixes. Add only one of them
+  # to avoid filtering the list for duplicates afterwards
+  defp trim_measurement(name) do
+    case String.ends_with?(name, "_BTC") do
+      true -> String.slice(name, 0..-5)
+      _ -> nil
+    end
+  end
+
+  defp history_price(%{ticker: ticker, from: from, to: to, interval: interval}, %{
          priceBtc: true,
          priceUsd: true
        }) do
-    pair_btc = String.upcase(ticker) <> "_BTC"
-    pair_usd = String.upcase(ticker) <> "_USD"
+    result_usd = String.upcase(ticker) <> "_USD" |> get_price_points(from, to, interval)
+    result_btc = String.upcase(ticker) <> "_BTC" |> get_price_points(from, to, interval)
 
-    result_btc = get_price_points(pair_btc, from, to, interval)
-    result_usd = get_price_points(pair_usd, from, to, interval)
-
-    # The data is always in _USD and _BTC measurements, but with a slightly different
-    # timestamp. Zip combines corresponding results
+    # Zip the price in USD and BTC so they are shown as a single price point
     result =
       Enum.zip(result_btc, result_usd)
-      |> Enum.map(fn {%{datetime: ltime} = btc_map, %{datetime: rtime, price_usd: price_usd}} ->
-           IO.inspect(DateTime.to_unix(ltime) - DateTime.to_unix(rtime))
+      |> Enum.map(fn {btc_map, %{price_usd: price_usd}} ->
            Map.put(btc_map, :price_usd, price_usd)
          end)
 
     {:ok, result}
   end
 
-  defp hist_price(%{ticker: ticker, from: from, to: to, interval: interval}, %{
+  defp history_price(%{ticker: ticker, from: from, to: to, interval: interval}, %{
          priceBtc: true
        }) do
-    pair = String.upcase(ticker) <> "_BTC"
-    result = get_price_points(pair, from, to, interval)
+    result =
+      (String.upcase(ticker) <> "_BTC")
+      |> get_price_points(from, to, interval)
+
     {:ok, result}
   end
 
-  defp hist_price(%{ticker: ticker, from: from, to: to, interval: interval}, %{
+  defp history_price(%{ticker: ticker, from: from, to: to, interval: interval}, %{
          priceUsd: true
        }) do
-    pair = String.upcase(ticker) <> "_USD"
-    result = get_price_points(pair, from, to, interval)
+    result =
+      (String.upcase(ticker) <> "_USD")
+      |> get_price_points(from, to, interval)
+
     {:ok, result}
   end
 
-  defp hist_price(args, fields) do
-    Logger.warn("Unexpected arguments passed to hist_price")
+  defp history_price(args, fields) do
+    Logger.warn("Unexpected arguments passed to history_price")
   end
 
   defp requested_fields(context) do
-    fields =
-      context.definition.selections
-      |> Enum.map(&(Map.get(&1, :name) |> String.to_atom()))
-      |> Enum.into(%{}, fn field -> {field, true} end)
+    context.definition.selections
+    |> Enum.map(&(Map.get(&1, :name) |> String.to_atom()))
+    |> Enum.into(%{}, fn field -> {field, true} end)
   end
 
+  # Set the same price for BTC and USD. Function is only used when zipping the time series
+  # where the right price is set as appropriate
   defp to_price_point([datetime, price, volume, marketcap]) do
     %{
       datetime: datetime,
-      price_btc: price,
-      price_usd: price,
-      marketcap: marketcap,
-      volume: volume
+      price_btc: Decimal.new(price),
+      price_usd: Decimal.new(price),
+      marketcap: Decimal.new(marketcap),
+      volume: Decimal.new(volume)
     }
   end
 
   defp get_price_points(pair, from, to, interval) do
-    Sanbase.Prices.Store.fetch_prices_with_resolution(
+    Store.fetch_prices_with_resolution(
       pair,
       from,
       to,
       interval
     )
-    |> IO.inspect()
     |> Enum.map(&to_price_point/1)
   end
 end

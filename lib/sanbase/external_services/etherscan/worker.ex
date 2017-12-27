@@ -10,7 +10,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Repo
-  alias Sanbase.ExternalServices.Etherscan.Requests
+  alias Sanbase.InternalServices.Parity
   alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx}
 
   alias Decimal, as: D
@@ -49,7 +49,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
   def handle_cast(:sync, %{update_interval_ms: update_interval_ms} = state) do
     # 1. Get current block number
-    endblock = Requests.get_latest_block_number() - @confirmations
+    endblock = Parity.get_latest_block_number!() - @confirmations
     startblock = endblock - Float.ceil(@default_timespan_ms / @average_block_time_ms)
 
     Task.Supervisor.async_stream_nolink(

@@ -25,7 +25,7 @@ export const App = ({isDesktop}) => (
       : <MobileMenu />}
     <ErrorBoundary>
       <Switch>
-        <Route exact path='/cashflow' component={Cashflow} />
+        <Route exact path='/projects' component={Cashflow} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route exact path='/projects/:ticker' component={Detailed} />
@@ -39,7 +39,7 @@ export const App = ({isDesktop}) => (
 )
 
 const mapSizesToProps = ({ width }) => ({
-  isDesktop: width > 620
+  isDesktop: width > 768
 })
 
 const enchance = compose(

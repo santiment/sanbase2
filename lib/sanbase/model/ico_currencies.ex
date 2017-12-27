@@ -9,14 +9,14 @@ defmodule Sanbase.Model.IcoCurrencies do
   schema "ico_currencies" do
     belongs_to :ico, Ico
     belongs_to :currency, Currency, on_replace: :nilify
-    field :value, :decimal
+    field :amount, :decimal
     field :_destroy, :boolean, virtual: true # used by ex_admin
   end
 
   @doc false
   def changeset(%IcoCurrencies{} = ico_currencies, attrs \\ %{}) do
     ico_currencies
-    |> cast(attrs, [:ico_id, :currency_id, :value])
+    |> cast(attrs, [:ico_id, :currency_id, :amount])
     |> validate_required([:ico_id, :currency_id])
     |> unique_constraint(:ico_currency, name: :ico_currencies_uk)
   end
@@ -26,7 +26,7 @@ defmodule Sanbase.Model.IcoCurrencies do
     attrs = set_currency_id(attrs)
 
     ico_currencies
-    |> cast(attrs, [:ico_id, :currency_id, :value, :_destroy])
+    |> cast(attrs, [:ico_id, :currency_id, :amount, :_destroy])
     |> validate_required([:currency_id])
     |> unique_constraint(:ico_currency, name: :ico_currencies_uk)
     |> mark_for_deletion()

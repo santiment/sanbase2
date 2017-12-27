@@ -5,18 +5,18 @@ defmodule Sanbase.Prices.Store do
   #
   # There is a single database at the moment, which contains simple average
   # price data for a given currency pair within a given interval. The current
-  # interval is about 5 mins (+/- 3 seconds). The timestamps are stores as
+  # interval is about 5 mins (+/- 3 seconds). The timestamps are stored as
   # nanoseconds
   use Instream.Connection, otp_app: :sanbase
 
   alias Sanbase.Prices.Store
-  alias Sanbase.Prices.Measurement
+  alias Sanbase.Influxdb.Measurement
 
   def import(measurements) do
     # 1 day of 5 min resolution data
     measurements
-    |> Stream.map(&convert_measurement_for_import/1)
-    |> Stream.chunk_every(288)
+    |> Stream.map(&Measurement.convert_measurement_for_import/1)
+    |> Stream.chunk_every(288) # 1 day of 5 min resolution data
     |> Enum.map(fn data_for_import ->
          :ok = Store.write(data_for_import)
        end)
@@ -33,8 +33,14 @@ defmodule Sanbase.Prices.Store do
     FROM "#{pair}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    GROUP BY time(#{resolution})/
+    GROUP BY time(#{resolution}) fill(none)/
     |> q()
+  end
+
+  def list_measurements() do
+    "SHOW MEASUREMENTS"
+    |> Store.query()
+    |> parse_measurements_list()
   end
 
   def q(query) do
@@ -48,6 +54,25 @@ defmodule Sanbase.Prices.Store do
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)
     }/
+  end
+
+
+  defp parse_measurements_list(%{results: [%{error: error}]}), do: raise(error)
+
+  defp parse_measurements_list(%{
+    results: [
+      %{
+        series: [
+          %{
+            values: measurements
+          }
+        ]
+      }
+    ]
+  }) do
+
+    measurements
+    |> Enum.map(&Kernel.hd/1)
   end
 
   defp parse_price_series(%{results: [%{error: error}]}), do: raise(error)
@@ -125,24 +150,6 @@ defmodule Sanbase.Prices.Store do
 
   defp parse_record(x) do
     nil
-  end
-
-  defp convert_measurement_for_import(%Measurement{
-         timestamp: timestamp,
-         fields: fields,
-         tags: tags,
-         name: name
-       }) do
-    %{
-      points: [
-        %{
-          measurement: name,
-          fields: fields,
-          tags: tags || [],
-          timestamp: timestamp
-        }
-      ]
-    }
   end
 
   def drop_pair(pair) do

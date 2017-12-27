@@ -5,6 +5,7 @@ defmodule Sanbase.Github.SchedulerTest do
   alias Sanbase.Github.Scheduler
   alias Sanbase.Model.Project
   alias Sanbase.Prices
+  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Github
   alias Sanbase.Repo
 
@@ -36,10 +37,10 @@ defmodule Sanbase.Github.SchedulerTest do
 
     Prices.Store.drop_pair("SAN_USD")
     Prices.Store.import([
-      %Prices.Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Prices.Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Prices.Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Prices.Measurement{timestamp: days_ago(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
     ])
     Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment", github_link: "https://github.com/santiment"})
 
@@ -53,17 +54,17 @@ defmodule Sanbase.Github.SchedulerTest do
   test "scheduling projects with some pricing data and some activity" do
     Prices.Store.drop_pair("SAN_USD")
     Prices.Store.import([
-      %Prices.Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Prices.Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Prices.Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
-      %Prices.Measurement{timestamp: days_ago(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{price: 3.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
+      %Measurement{timestamp: days_ago(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
     ])
 
     Github.Store.drop_ticker("SAN")
     Github.Store.import([
-      %Github.Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
-      %Github.Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 2}, name: "SAN"},
-      %Github.Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
+      %Measurement{timestamp: days_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
+      %Measurement{timestamp: days_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 2}, name: "SAN"},
+      %Measurement{timestamp: days_ago(3) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
     ])
 
     Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment", github_link: "https://github.com/santiment"})

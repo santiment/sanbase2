@@ -23,13 +23,13 @@ exports[`Project detail page container it should render correctly 1`] = `
     >
       <h1>
         <ProjectIcon
-          name="Aeternity"
+          name="Aragon"
           size={28}
         />
          
-        Aeternity
+        Aragon
          (
-        AE
+        ANT
         )
       </h1>
       <p>
@@ -55,7 +55,7 @@ exports[`Project detail page container it should render correctly 1`] = `
     className="panel"
   >
     <withState(withHandlers(withState(withState(Apollo(pure(ProjectChart))))))
-      ticker="AE"
+      ticker="ANT"
     />
   </div>
   <Component>
@@ -185,8 +185,11 @@ exports[`Project detail page container it should render correctly 1`] = `
         </TabPanel>
       </Tabs>
     </div>
+  </Component>
+  <Component>
     <PanelBlock
       classes=""
+      isUnauthorized={false}
       title="Blockchain Analytics"
     />
     <div
@@ -194,71 +197,38 @@ exports[`Project detail page container it should render correctly 1`] = `
     >
       <PanelBlock
         classes=""
+        isUnauthorized={false}
         title="Signals/Volatility"
       />
       <PanelBlock
         classes=""
+        isUnauthorized={false}
         title="Expert Analyses"
       />
       <PanelBlock
         classes=""
+        isUnauthorized={false}
         title="News/Press"
       />
     </div>
-    <div
-      className="information"
-    >
-      <PanelBlock
-        classes=""
-        title="General Info"
-      >
-        <GeneralInfoBlock
-          info={
-            Object {
-              "balance": "41994.09",
-              "id": 12,
-              "logo_url": "aeternity.png",
-              "market_cap_usd": "133759577.0",
-              "name": "Aeternity",
-              "ticker": "AE",
-              "wallets": Array [
-                Object {
-                  "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
-                  "balance": "41994.09",
-                  "last_outgoing": null,
-                  "tx_out": null,
-                },
-              ],
-            }
-          }
-        />
-      </PanelBlock>
-      <PanelBlock
-        classes=""
-        title="Financials"
-      >
-        <FinancialsBlock
-          info={
-            Object {
-              "balance": "41994.09",
-              "id": 12,
-              "logo_url": "aeternity.png",
-              "market_cap_usd": "133759577.0",
-              "name": "Aeternity",
-              "ticker": "AE",
-              "wallets": Array [
-                Object {
-                  "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
-                  "balance": "41994.09",
-                  "last_outgoing": null,
-                  "tx_out": null,
-                },
-              ],
-            }
-          }
-        />
-      </PanelBlock>
-    </div>
   </Component>
+  <div
+    className="information"
+  >
+    <PanelBlock
+      classes=""
+      isUnauthorized={true}
+      title="General Info"
+    >
+      <GeneralInfoBlock />
+    </PanelBlock>
+    <PanelBlock
+      classes=""
+      isUnauthorized={true}
+      title="Financials"
+    >
+      <FinancialsBlock />
+    </PanelBlock>
+  </div>
 </div>
 `;

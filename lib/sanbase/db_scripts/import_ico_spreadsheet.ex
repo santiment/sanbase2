@@ -12,7 +12,35 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   def import(ico_spreadsheet) when is_list(ico_spreadsheet) do
     ico_spreadsheet
+    |> put_presales_in_front()
     |> Enum.each(&import_row(&1))
+  end
+
+  # The common project data in the main ICO row is with higher priority than the presale => put the presale to the front
+  defp put_presales_in_front(ico_spreadsheet) do
+    {presales, main_icos} = Enum.split_with(ico_spreadsheet, fn(row) ->
+      row.project_name
+      |> String.downcase()
+      |> String.trim()
+      |> String.ends_with?(" (presale)")
+    end)
+
+    presales
+    |> adjust_presales_project_names()
+    |> Enum.concat(main_icos)
+    |> IO.inspect()
+  end
+
+  # Make the project names of the 2 rows (presale and main) the same so they are inserted as 2 icos of the same project
+  defp adjust_presales_project_names(ico_spreadsheet) do
+    Enum.map(ico_spreadsheet, fn(row) ->
+      project_name = row.project_name
+      |> String.trim()
+      |> String.replace_suffix(" (presale)", "")
+      |> String.replace_suffix(" (Presale)", "")
+
+      Map.put(row, :project_name, project_name)
+    end)
   end
 
   defp import_row(ico_spreadsheet_row = %IcoSpreadsheetRow{}) do
@@ -36,61 +64,15 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp insert_or_update_project(ico_spreadsheet_row) do
     fill_project(ico_spreadsheet_row)
-    |> Ecto.Changeset.put_assoc(:market_segment, ensure_market_segment(ico_spreadsheet_row.market_segment))
-    |> Ecto.Changeset.put_assoc(:infrastructure, ensure_infrastructure(ico_spreadsheet_row.infrastructure))
-    |> Ecto.Changeset.put_assoc(:project_transparency_status, ensure_project_transparency_status(ico_spreadsheet_row.project_transparency))
+    |> put_assoc_if_not_nil(:market_segment, ensure_market_segment(ico_spreadsheet_row.market_segment))
+    |> put_assoc_if_not_nil(:infrastructure, ensure_infrastructure(ico_spreadsheet_row.infrastructure))
+    |> put_assoc_if_not_nil(:project_transparency_status, ensure_project_transparency_status(ico_spreadsheet_row.project_transparency))
     |> Repo.insert_or_update!()
-  end
-
-  defp insert_or_update_ico(project, ico_spreadsheet_row) do
-    fill_ico(project, ico_spreadsheet_row)
-    |> Ecto.Changeset.put_assoc(:cap_currency, ensure_currency(ico_spreadsheet_row.cap_currency))
-    |> Repo.insert_or_update!()
-  end
-
-  defp insert_or_update_ico_currencies(ico, ico_spreadsheet_row) do
-    currencies = ensure_currencies(ico_spreadsheet_row.ico_currencies)
-    |> Enum.map(fn(currency) ->
-      Ecto.Changeset.change(currency)
-      |> Repo.insert_or_update!()
-    end)
-
-    Enum.each(currencies, fn(currency) ->
-      ensure_ico_currency(ico, currency)
-      |> Repo.insert_or_update!()
-    end)
-
-    currency_ids = Enum.map(currencies, &Map.fetch!(&1, :id))
-    Repo.delete_all(from c in IcoCurrencies, where: c.ico_id == ^ico.id and c.currency_id not in ^currency_ids)
-  end
-
-  defp insert_or_update_eth_wallets(project, ico_spreadsheet_row) do
-    wallets = ensure_eth_wallets(project, ico_spreadsheet_row.eth_wallets)
-    |> Enum.map(fn(wallet) ->
-      Ecto.Changeset.change(wallet)
-      |> Repo.insert_or_update!()
-    end)
-
-    # Don't delete the rest because not everything from seeds is entered in the spreadsheet
-    # wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
-    # Repo.delete_all(from a in ProjectEthAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
-  end
-
-  defp insert_or_update_btc_wallets(project, ico_spreadsheet_row) do
-    wallets = ensure_btc_wallets(project, ico_spreadsheet_row.btc_wallets)
-    |> Enum.map(fn(wallet) ->
-      Ecto.Changeset.change(wallet)
-      |> Repo.insert_or_update!()
-    end)
-
-    # Don't delete the rest because not everything from seeds is entered in the spreadsheet
-    # wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
-    # Repo.delete_all(from a in ProjectBtcAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
+    |> Repo.preload([:eth_addresses, :btc_addresses, :market_segment, :infrastructure, :project_transparency_status, {:icos, [{:ico_currencies, [:ico, :currency]}, :cap_currency]}])
   end
 
   defp fill_project(ico_spreadsheet_row) do
-    ensure_project(ico_spreadsheet_row.project_name)
-    |> Project.changeset(%{
+    values = %{
       name: ico_spreadsheet_row.project_name,
       ticker: ico_spreadsheet_row.ticker,
       website_link: ico_spreadsheet_row.website_link,
@@ -106,15 +88,24 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       telegram_link: ico_spreadsheet_row.telegram_link,
       project_transparency: is_project_transparency?(ico_spreadsheet_row.project_transparency),
       team_token_wallet: ico_spreadsheet_row.team_token_wallet
-      })
+      }
+    |> remove_map_nils()
+
+    ensure_project(ico_spreadsheet_row.project_name)
+    |> Project.changeset(values)
   end
 
   defp is_project_transparency?(nil), do: false
   defp is_project_transparency?(_), do: true
 
+  defp insert_or_update_ico(project, ico_spreadsheet_row) do
+    fill_ico(project, ico_spreadsheet_row)
+    |> put_assoc_if_not_nil(:cap_currency, ensure_currency(ico_spreadsheet_row.cap_currency))
+    |> Repo.insert_or_update!()
+  end
+
   defp fill_ico(project, ico_spreadsheet_row) do
-    ensure_ico(project)
-    |> Ico.changeset(%{
+    values = %{
       project_id: project.id,
       start_date: ico_spreadsheet_row.ico_start_date,
       end_date: ico_spreadsheet_row.ico_end_date,
@@ -128,8 +119,55 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       minimal_cap_amount: ico_spreadsheet_row.minimal_cap_amount,
       maximal_cap_amount: ico_spreadsheet_row.maximal_cap_amount,
       main_contract_address: ico_spreadsheet_row.ico_main_contract_address,
-      comments: ico_spreadsheet_row.comments,
-      })
+      comments: ico_spreadsheet_row.comments
+      }
+    |> remove_map_nils()
+
+    ensure_ico(project, ico_spreadsheet_row)
+    |> Ico.changeset(values)
+  end
+
+  defp insert_or_update_ico_currencies(_ico, %IcoSpreadsheetRow{ico_currencies: nil}), do: nil
+  defp insert_or_update_ico_currencies(ico, %IcoSpreadsheetRow{ico_currencies: ico_currencies}) do
+    currencies = ensure_currencies(ico_currencies)
+    |> Enum.map(fn(currency) ->
+      Ecto.Changeset.change(currency)
+      |> Repo.insert_or_update!()
+    end)
+
+    Enum.each(currencies, fn(currency) ->
+      ensure_ico_currency(ico, currency)
+      |> Repo.insert_or_update!()
+    end)
+
+    currency_ids = Enum.map(currencies, &Map.fetch!(&1, :id))
+    Repo.delete_all(from c in IcoCurrencies, where: c.ico_id == ^ico.id and c.currency_id not in ^currency_ids)
+  end
+
+  defp insert_or_update_eth_wallets(_project, %IcoSpreadsheetRow{eth_wallets: nil}), do: nil
+  defp insert_or_update_eth_wallets(project, %IcoSpreadsheetRow{eth_wallets: eth_wallets}) do
+    wallets = ensure_eth_wallets(project, eth_wallets)
+    |> Enum.map(fn(wallet) ->
+      Ecto.Changeset.change(wallet)
+      |> Repo.insert_or_update!()
+    end)
+
+    # Don't delete the rest because not everything from seeds is entered in the spreadsheet and we don't want to overwrite it
+    # wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
+    # Repo.delete_all(from a in ProjectEthAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
+  end
+
+  defp insert_or_update_btc_wallets(_project, %IcoSpreadsheetRow{btc_wallets: nil}), do: nil
+  defp insert_or_update_btc_wallets(project, %IcoSpreadsheetRow{btc_wallets: btc_wallets}) do
+    wallets = ensure_btc_wallets(project, btc_wallets)
+    |> Enum.map(fn(wallet) ->
+      Ecto.Changeset.change(wallet)
+      |> Repo.insert_or_update!()
+    end)
+
+    # Don't delete the rest because not everything from seeds is entered in the spreadsheet and we don't want to overwrite it
+    # wallet_ids = Enum.map(wallets, &Map.fetch!(&1, :id))
+    # Repo.delete_all(from a in ProjectBtcAddress, where: a.project_id == ^project.id and a.id not in ^wallet_ids)
   end
 
   defp ensure_project(project_name) do
@@ -141,8 +179,21 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     end
   end
 
-  defp ensure_market_segment(nil), do: nil
+  defp ensure_ico(project, ico_spreadsheet_row) do
+    project.icos
+    |> Enum.find(fn(ico) ->
+      (is_nil(ico_spreadsheet_row.ico_start_date) and is_nil(ico.start_date))
+      or (!is_nil(ico_spreadsheet_row.ico_start_date)
+          and !is_nil(ico.start_date)
+          and Ecto.Date.compare(ico.start_date, Ecto.Date.cast!(ico_spreadsheet_row.ico_start_date)) == :eq)
+    end)
+    |> case do
+      %Ico{} = result -> result
+      _ -> %Ico{}
+    end
+  end
 
+  defp ensure_market_segment(nil), do: nil
   defp ensure_market_segment(market_segment_name) do
     Repo.get_by(MarketSegment, name: market_segment_name)
     |> case do
@@ -154,7 +205,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   end
 
   defp ensure_infrastructure(nil), do: nil
-
   defp ensure_infrastructure(infrastructure_code) do
     Repo.get_by(Infrastructure, code: infrastructure_code)
     |> case do
@@ -166,7 +216,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   end
 
   defp ensure_project_transparency_status(nil), do: nil
-
   defp ensure_project_transparency_status(project_transparency_status_name) do
     Repo.get_by(ProjectTransparencyStatus, name: project_transparency_status_name)
     |> case do
@@ -177,20 +226,12 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     end
   end
 
-  defp ensure_ico(project) do
-    case project do
-      %{icos: [result|_]} -> result
-      _ -> %Ico{}
-    end
-  end
-
   defp ensure_currencies(currency_codes) do
     currency_codes
     |> Enum.map(&ensure_currency(&1))
   end
 
   defp ensure_currency(nil), do: nil
-
   defp ensure_currency(currency_code) do
     Repo.get_by(Currency, code: currency_code)
     |> case do
@@ -219,7 +260,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   end
 
   defp ensure_eth_wallet(project, nil), do: nil
-
   defp ensure_eth_wallet(project, wallet_address) do
     Repo.get_by(ProjectEthAddress, address: wallet_address)
     |> Repo.preload([:project])
@@ -239,7 +279,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   end
 
   defp ensure_btc_wallet(project, nil), do: nil
-
   defp ensure_btc_wallet(project, wallet_address) do
     Repo.get_by(ProjectBtcAddress, address: wallet_address)
     |> Repo.preload([:project])
@@ -256,6 +295,16 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   defp set_infrastructure_default(ico_spreadsheet_row = %IcoSpreadsheetRow{infrastructure: nil}) do
     Map.put(ico_spreadsheet_row, :infrastructure, "ETH")
   end
-
   defp set_infrastructure_default(%IcoSpreadsheetRow{}=ico_spreadsheet_row), do: ico_spreadsheet_row
+
+  defp put_assoc_if_not_nil(changeset, _name, nil), do: changeset
+  defp put_assoc_if_not_nil(changeset, name, value) do
+    Ecto.Changeset.put_assoc(changeset, name, value)
+  end
+
+  defp remove_map_nils(%{} = map) do
+    map
+    |> Enum.filter(fn {_, v} -> v != nil end)
+    |> Enum.into(%{})
+  end
 end

@@ -1,12 +1,13 @@
 .detailed-head {
   margin-top: 32px;
-  height: 84px;
+  min-height: 84px;
   margin-right: 16px;
   display: flex;
 }
 
 .detailed-name h1 {
   margin-top: 0;
+  font-size: 2em;
 }
 
 .detailed-name {
@@ -14,11 +15,11 @@
 }
 
 .detailed-name p {
-  font-size: 1.25rem;
+  font-size: 1.25em;
   font-weight: 500;
   line-height: 1.1;
   color: #3d4051;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.5em;
   margin-left: 52px;
 }
 
@@ -33,6 +34,40 @@
 .detailed-name img {
   display: inline-block;
   vertical-align: middle;
+}
+
+@media (max-width: 1024px) {
+  .detailed-head {
+    margin: 16px;
+    height: auto;
+    flex-direction: column;
+  }
+
+  .detailed-name {
+    width: 100%;
+  }
+
+  .detailed-name h1 {
+    margin-bottom: 0;
+    margin-left: 0;
+    font-size: 1em;
+  }
+
+  .detailed-name p {
+    display: none;
+  }
+
+  .detailed-price {
+    margin-top: 5px;
+    font-size: 1.2em;
+    font-weight: 400;
+  }
+}
+
+@media (max-width: 768px) {
+  .detailed-head {
+    margin: 0;
+  }
 }
 
 .detailed-buttons {
@@ -161,8 +196,25 @@
 }
 
 .detailed .information .panel {
-  width: 49.75%;
   margin: 0;
+  margin-right: 5px;
+  flex: 1 1 0;
+}
+
+@media (max-width: 1024px) {
+  .detailed .information {
+    flex-direction: column;
+  }
+
+  .detailed .information .panel {
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .detailed .information {
+    margin: 0;
+  }
 }
 
 .row-info {

@@ -43,7 +43,6 @@ export const Detailed = ({
   projects,
   loading,
   PriceQuery,
-  client,
   generalInfo
 }) => {
   if (loading) {
@@ -154,7 +153,7 @@ export const Detailed = ({
       <div className='information'>
         <PanelBlock
           isUnauthorized={generalInfo.isUnauthorized}
-          isLoading={generalInfo.isLoading || PriceQuery.loading || !PriceQuery.price}
+          isLoading={generalInfo.isLoading || PriceQuery.loading}
           title='General Info'>
           <GeneralInfoBlock
             volume={!!PriceQuery.price && PriceQuery.price.volume}

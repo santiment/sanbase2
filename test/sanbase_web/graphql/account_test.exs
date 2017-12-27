@@ -39,7 +39,10 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       |> put_req_header("authorization", "Bearer " <> token)
 
     conn = ContextPlug.call(conn, %{})
-    assert conn.private[:absinthe] == %{context: %{auth: %{auth_method: :user_token, current_user: user}}}
+
+    assert conn.private[:absinthe] == %{
+             context: %{auth: %{auth_method: :user_token, current_user: user}}
+           }
 
     {:ok, conn: conn}
   end
@@ -70,8 +73,8 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     follow_mutation = """
     mutation {
       followProject(projectId: #{project.id}){
-        followedProjects{
-          ticker
+        followedProjects {
+          id
         }
       }
     }
@@ -81,16 +84,15 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       context.conn
       |> post("/graphql", mutation_skeleton(follow_mutation))
 
-      json_response(follow_result,200)["data"]["followProject"]["followedProjects"] |> IO.inspect()
-
-    assert project.id in json_response(follow_result, 200)["data"]["followProject"][
-             "followedProjects"
-           ]
+    assert [%{"id" => "#{project.id}"}] ==
+             json_response(follow_result, 200)["data"]["followProject"]["followedProjects"]
 
     unfollow_mutation = """
     mutation {
       unfollowProject(projectId: #{project.id}){
-        followedProjects
+        followedProjects {
+          id
+        }
       }
     }
     """
@@ -102,6 +104,6 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     followed_projects =
       json_response(unfollow_result, 200)["data"]["followProject"]["followedProjects"]
 
-    assert followed_projects == nil# || project.id not in followed_projects
+    assert followed_projects == nil || [%{"ticker" => "#{project.id}"}] not in followed_projects
   end
 end

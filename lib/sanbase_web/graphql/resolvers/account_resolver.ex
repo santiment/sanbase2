@@ -12,7 +12,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
 
   import Ecto.Query
 
-  def current_user(_root, _args, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
+  def current_user(_root, _args, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
     {:ok, user}
   end
 
@@ -38,7 +40,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     end
   end
 
-  def change_email(_root, %{email: new_email}, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
+  def change_email(_root, %{email: new_email}, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
     Repo.get!(User, user.id)
     |> User.changeset(%{email: new_email})
     |> Repo.update()
@@ -55,7 +59,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
        end
   end
 
-  def unfollow_project(_root, %{project_id: project_id}, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
+  def unfollow_project(_root, %{project_id: project_id}, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
     from(
       pair in UserFollowedProject,
       where: pair.project_id == ^project_id and pair.user_id == ^user.id
@@ -65,7 +71,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     {:ok, user}
   end
 
-  def follow_project(_root, %{project_id: project_id}, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
+  def follow_project(_root, %{project_id: project_id}, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
     with %Project{} <- Repo.get(Project, project_id) do
       %UserFollowedProject{project_id: project_id, user_id: user.id}
       |> UserFollowedProject.changeset(%{project_id: project_id, user_id: user.id})
@@ -87,19 +95,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     end
   end
 
-  def followed_projects(%User{} = user, _args, %{context: %{auth: %{auth_method: :user_token, current_user: user}}}) do
+  def followed_projects(%User{} = user, _args, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
     query =
-    from(
-      p in Project,
-      inner_join: ufp in UserFollowedProject, on: p.id == ufp.project_id,
-      where: ufp.user_id == ^user.id
-    )
+      from(
+        p in Project,
+        inner_join: ufp in UserFollowedProject,
+        on: p.id == ufp.project_id,
+        where: ufp.user_id == ^user.id
+      )
 
     {:ok, Repo.all(query)}
   end
 
   # No eth account and there is a user logged in
-  defp fetch_user(%{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}}, nil) do
+  defp fetch_user(
+         %{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}},
+         nil
+       ) do
     %EthAccount{user_id: user.id, address: address}
     |> Repo.insert!()
 

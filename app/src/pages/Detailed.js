@@ -5,6 +5,8 @@ import {
   compose,
   lifecycle
 } from 'recompose'
+import { Merge } from 'animate-components'
+import { fadeIn, slideRight } from 'animate-keyframes'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
 import gql from 'graphql-tag'
@@ -14,6 +16,8 @@ import ProjectIcon from './../components/ProjectIcon'
 import PanelBlock from './../components/PanelBlock'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
+import ProjectChart from './ProjectChart'
+import { formatNumber, formatBTC } from '../utils/formatting'
 import './Detailed.css'
 
 const propTypes = {
@@ -38,6 +42,7 @@ export const Detailed = ({
   match,
   projects,
   loading,
+  PriceQuery,
   generalInfo
 }) => {
   if (loading) {
@@ -64,6 +69,19 @@ export const Detailed = ({
           <h1><ProjectIcon name={project.name} size={28} /> {project.name} ({project.ticker.toUpperCase()})</h1>
           <p>Manage entire organisations using the blockchain.</p>
         </div>
+
+        {!PriceQuery.loading && PriceQuery.price &&
+          <Merge
+            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
+            two={{ name: slideRight, duration: '0.5s', timingFunction: 'ease-out' }}
+            as='div'
+          >
+            <div className='detailed-price'>
+              <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
+              <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
+            </div>
+          </Merge>}
+
         <HiddenElements>
           <div className='detailed-buttons'>
             <button className='add-to-dashboard'>
@@ -72,6 +90,9 @@ export const Detailed = ({
             </button>
           </div>
         </HiddenElements>
+      </div>
+      <div className='panel'>
+        <ProjectChart ticker={project.ticker} />
       </div>
       <HiddenElements>
         <div className='panel'>
@@ -132,9 +153,11 @@ export const Detailed = ({
       <div className='information'>
         <PanelBlock
           isUnauthorized={generalInfo.isUnauthorized}
-          isLoading={generalInfo.isLoading}
+          isLoading={generalInfo.isLoading || PriceQuery.loading}
           title='General Info'>
-          <GeneralInfoBlock {...generalInfo.project} />
+          <GeneralInfoBlock
+            volume={!!PriceQuery.price && PriceQuery.price.volume}
+            {...generalInfo.project} />
         </PanelBlock>
         <PanelBlock
           isUnauthorized={generalInfo.isUnauthorized}
@@ -162,6 +185,19 @@ const mapDispatchToProps = dispatch => {
     retrieveProjects: () => dispatch(retrieveProjects)
   }
 }
+
+const getPriceGQL = gql`
+  query getPrice($ticker: String!) {
+    price (
+      ticker: $ticker
+    ) {
+      priceBtc,
+      priceUsd,
+      volume,
+      datetime,
+      marketcap
+    }
+}`
 
 const queryProject = gql`
   query project($id: ID!) {
@@ -194,17 +230,17 @@ const queryProject = gql`
   }
 `
 
-const mapDataToProps = ({data}) => {
-  const isLoading = data.loading
-  const isEmpty = !!data.project
-  const isError = !!data.error
-  const errorMessage = data.error ? data.error.message : ''
-  const isUnauthorized = data.error ? /\bunauthorized/.test(data.error.message) : false
-  if (data.error && !isUnauthorized) {
-    // If our API server is not reponed with data
-    throw new Error(data.error.message)
+const mapDataToProps = ({ProjectQuery}) => {
+  const isLoading = ProjectQuery.loading
+  const isEmpty = !!ProjectQuery.project
+  const isError = !!ProjectQuery.error
+  const errorMessage = ProjectQuery.error ? ProjectQuery.error.message : ''
+  const isUnauthorized = ProjectQuery.error ? /\bunauthorized/.test(ProjectQuery.error.message) : false
+  if (ProjectQuery.error && !isUnauthorized) {
+    // If our API server is not reponed with ProjectQuery
+    throw new Error(ProjectQuery.error.message)
   }
-  const project = data.project
+  const project = ProjectQuery.project
 
   return {generalInfo: {isLoading, isEmpty, isError, project, errorMessage, isUnauthorized}}
 }
@@ -224,7 +260,20 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  graphql(getPriceGQL, {
+    name: 'PriceQuery',
+    options: ({match, projects}) => {
+      const project = getProjectByTicker(match, projects)
+      return {
+        skip: !project,
+        variables: {
+          'ticker': project ? project.ticker.toUpperCase() : 'SAN'
+        }
+      }
+    }
+  }),
   graphql(queryProject, {
+    name: 'ProjectQuery',
     props: mapDataToProps,
     options: mapPropsToOptions
   }),

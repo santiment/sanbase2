@@ -30,13 +30,13 @@ defmodule SanbaseWeb.Router do
     forward "/graphql", Absinthe.Plug,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
-      max_complexity: 500
+      max_complexity: 5000
 
     if Mix.env == :dev do
       forward "/graphiql", Absinthe.Plug.GraphiQL,
         schema: SanbaseWeb.Graphql.Schema,
         analyze_complexity: true,
-        max_complexity: 500
+        max_complexity: 5000
     end
   end
 

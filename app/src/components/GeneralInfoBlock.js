@@ -53,20 +53,20 @@ const GeneralInfoBlock = ({
       </a>
     </p>
     <hr />
-    <div className={`row-info ${!latestCoinmarketcapData.marketCapUsd && 'info-disabled'}`}>
+    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.marketCapUsd && 'info-disabled'}`}>
       <div>
         Market Cap
       </div>
       <div>
-        {formatNumber(latestCoinmarketcapData.marketCapUsd, 'USD')}
+        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.marketCapUsd, 'USD')}
       </div>
     </div>
-    <div className={`row-info ${!latestCoinmarketcapData.priceUsd && 'info-disabled'}`}>
+    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.priceUsd && 'info-disabled'}`}>
       <div>
         Price
       </div>
       <div>
-        {formatNumber(latestCoinmarketcapData.priceUsd, 'USD')}
+        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.priceUsd, 'USD')}
       </div>
     </div>
     <div className={`row-info ${!volume && 'info-disabled'}`}>
@@ -74,7 +74,7 @@ const GeneralInfoBlock = ({
         Volume
       </div>
       <div>
-        ${volume}
+        {formatNumber(volume, 'USD')}
         <HiddenElements>
           <span className='diff down'>
             <i className='fa fa-caret-down' />

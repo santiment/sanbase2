@@ -70,7 +70,9 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     follow_mutation = """
     mutation {
       followProject(projectId: #{project.id}){
-        followedProjects
+        followedProjects{
+          ticker
+        }
       }
     }
     """
@@ -78,6 +80,8 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     follow_result =
       context.conn
       |> post("/graphql", mutation_skeleton(follow_mutation))
+
+      json_response(follow_result,200)["data"]["followProject"]["followedProjects"] |> IO.inspect()
 
     assert project.id in json_response(follow_result, 200)["data"]["followProject"][
              "followedProjects"
@@ -98,6 +102,6 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     followed_projects =
       json_response(unfollow_result, 200)["data"]["followProject"]["followedProjects"]
 
-    assert followed_projects == nil || project.id not in followed_projects
+    assert followed_projects == nil# || project.id not in followed_projects
   end
 end

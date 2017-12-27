@@ -43,7 +43,6 @@ defmodule Sanbase.Mixfile do
       {:decimal, "~> 1.0"},
       {:reverse_proxy, git: "https://github.com/slogsdon/elixir-reverse-proxy"},
       {:corsica, "~> 1.0", only: [:dev]},
-      {:hound, "~> 1.0", only: [:test]},
       {:tesla, "~> 0.9.0"},
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
@@ -63,7 +62,11 @@ defmodule Sanbase.Mixfile do
       {:httpoison, "~> 0.13"},
       {:floki, "~> 0.19.0"},
       {:sentry, "~> 6.0.4"},
-      {:extwitter, "~> 0.9.0"}
+      {:extwitter, "~> 0.9.0"},
+      {:envy, "~> 1.1.1", only: [:dev, :test]},
+      {:ex_aws, "~> 2.0"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:sweet_xml, "~> 0.6"},
     ]
   end
 
@@ -75,9 +78,10 @@ defmodule Sanbase.Mixfile do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      "ecto.setup": ["ecto.create", "ecto.load", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "ecto.migrate": ["ecto.migrate", "ecto.dump"],
-      "test": ["ecto.create --quiet", "ecto.load", "test"]    ]
+      "ecto.setup": ["load_dotenv", "ecto.create", "ecto.load", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["load_dotenv", "ecto.drop", "ecto.setup"],
+      "ecto.migrate": ["load_dotenv", "ecto.migrate", "ecto.dump"],
+      "ecto.rollback": ["load_dotenv", "ecto.rollback", "ecto.dump"],
+      "test": ["load_dotenv", "ecto.create --quiet", "ecto.load", "test"]    ]
   end
 end

@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.PriceResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
   alias Sanbase.Prices.Store

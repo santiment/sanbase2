@@ -5,6 +5,10 @@ defmodule Sanbase.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
+    if Code.ensure_loaded?(Envy) do
+      Envy.auto_load
+    end
+
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Task Supervisor
@@ -61,7 +65,7 @@ defmodule Sanbase.Application do
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :twitter_api_rate_limiter,
         scale: 60 * 15 * 1000,
-        limit: 900,
+        limit: 450,
         time_between_requests: 10
       ),
 

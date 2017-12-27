@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   alias Sanbase.Auth.{User, EthAccount}
-  alias SanbaseWeb.Graphql.AccountResolver
+  alias SanbaseWeb.Graphql.Resolvers.{AccountResolver, EthAccountResolver}
 
   object :user do
     field :id, non_null(:id)
@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   object :eth_account do
     field :address, non_null(:string)
     field :san_balance, non_null(:integer) do
-      resolve &EthAccount.san_balance/3
+      resolve &EthAccountResolver.san_balance/3
     end
   end
 

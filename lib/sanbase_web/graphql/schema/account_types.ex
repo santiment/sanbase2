@@ -12,7 +12,6 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field :username, :string
     field :eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts)
     field :followed_projects, list_of(:project) do
-      #TODO Redo to return list_of(:project) when there's an API for that?
       resolve &AccountResolver.followed_projects/3
     end
   end

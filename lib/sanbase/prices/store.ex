@@ -193,10 +193,4 @@ defmodule Sanbase.Prices.Store do
   defp parse_record(x) do
     nil
   end
-
-  def drop_pair(pair) do
-    %{results: _} =
-      "DROP MEASUREMENT #{pair}"
-      |> Store.execute()
-  end
 end

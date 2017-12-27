@@ -50,6 +50,9 @@ describe('Project detail page container', () => {
         isUnauthorized: true
       }}
       loading={false}
+      PriceQuery={{
+        loading: true
+      }}
       match={match}
       />)
     expect(toJson(pdp)).toMatchSnapshot()
@@ -61,6 +64,9 @@ describe('Project detail page container', () => {
     }
     const pdp = shallow(<Detailed
       projects={projects}
+      PriceQuery={{
+        loading: true
+      }}
       loading={false}
       match={match}
       />)

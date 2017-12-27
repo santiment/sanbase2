@@ -51,6 +51,13 @@ exports[`Project detail page container it should render correctly 1`] = `
       </div>
     </Component>
   </div>
+  <div
+    className="panel"
+  >
+    <withState(withHandlers(withState(withState(Apollo(pure(ProjectChart))))))
+      ticker="ANT"
+    />
+  </div>
   <Component>
     <div
       className="panel"
@@ -210,10 +217,13 @@ exports[`Project detail page container it should render correctly 1`] = `
   >
     <PanelBlock
       classes=""
+      isLoading={true}
       isUnauthorized={true}
       title="General Info"
     >
-      <GeneralInfoBlock />
+      <GeneralInfoBlock
+        volume={false}
+      />
     </PanelBlock>
     <PanelBlock
       classes=""

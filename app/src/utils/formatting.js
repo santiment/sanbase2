@@ -1,3 +1,5 @@
+const formatBTC = price => price > 1 ? price.toFixed(2) : price.toFixed(8)
+
 const formatNumber = (amount, currency, options = {}) => {
   if (currency === 'SAN') {
     const value = amount / 10000000000
@@ -21,4 +23,4 @@ const formatNumber = (amount, currency, options = {}) => {
   return value
 }
 
-export { formatNumber }
+export { formatNumber, formatBTC }

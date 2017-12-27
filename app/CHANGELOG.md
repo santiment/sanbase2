@@ -1,11 +1,16 @@
 ## CHANGELOG
 
+- 2017-26-12 | v.0.2.6:
+
+  Added Project Detailed Page
+
 - 2017-21-12 | v.0.2.4:
 
   Update navigation menu
   Added auth
   Added account settings
   Some fixes...
+  Added skeleton layout for Project Detail Page
 
 - 2017-12-12 | v.0.2.1:
 

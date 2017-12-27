@@ -1,10 +1,12 @@
-defmodule SanbaseWeb.Graphql.AccountResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   require Logger
 
-  alias SanbaseWeb.Graphql.ResolverHelpers
+  alias SanbaseWeb.Graphql.Resolvers.Helpers
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Model.{Project, UserFollowedProject}
+  alias Sanbase.Prices.Store
+  alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Repo
   alias Ecto.Multi
 
@@ -48,7 +50,7 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
            {
              :error,
              message: "Cannot update current user's email to #{new_email}",
-             details: ResolverHelpers.error_details(changeset)
+             details: Helpers.error_details(changeset)
            }
        end
   end
@@ -76,7 +78,7 @@ defmodule SanbaseWeb.Graphql.AccountResolver do
              {
                :error,
                message: "Cannot follow project with id #{project_id}",
-               details: ResolverHelpers.error_details(changeset)
+               details: Helpers.error_details(changeset)
              }
          end
     else

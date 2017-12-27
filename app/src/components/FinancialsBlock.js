@@ -2,50 +2,53 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 const propTypes = {
-  info: PropTypes.object.isRequired
+  projectTransparencyStatus: PropTypes.string,
+  marketCapUsd: PropTypes.string
 }
 
-const FinancialsBlock = ({info}) => (
+const FinancialsBlock = ({
+  marketCapUsd,
+  projectTransparencyStatus,
+  transparencyRecord,
+  transactions,
+  balance
+}) => (
   <div>
-    Project Transparency: NOT LISTED
+    Project Transparency:&nbsp;{projectTransparencyStatus || 'Not Listed'}
     <hr />
-    <div className='row-info'>
+    <div className={`row-info ${!marketCapUsd && 'info-disabled'}`}>
       <div>
         Collected
       </div>
       <div className='value'>
-        ${info.market_cap_usd}
-        <br />
-        (2017-05-17)
+        ${marketCapUsd}
       </div>
     </div>
-    <div className='row-info'>
+    <div className={`row-info ${!balance && 'info-disabled'}`}>
       <div>
         Balance
       </div>
       <div>
-        $57,345,121
-        <br />
-        (Ξ266,698.0)
+        {balance}
       </div>
     </div>
-    <div className='row-info'>
+    <div className={`row-info ${!transactions && 'info-disabled'}`}>
       <div>
         Transactions
       </div>
       <div>
         <a href='#'>
-          0xcafE1A77e84698c83CA8931F54A755176eF75f2C
+          {transactions}
         </a>
       </div>
     </div>
-    <div className='row-info'>
+    <div className={`row-info ${!transparencyRecord && 'info-disabled'}`}>
       <div>
         Transparency Record
       </div>
       <div>
         <a href='#'>
-          http://transparency.aragon.one
+          {transparencyRecord}
         </a>
       </div>
     </div>

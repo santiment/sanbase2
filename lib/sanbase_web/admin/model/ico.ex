@@ -6,13 +6,24 @@ defmodule Sanbase.ExAdmin.Model.Ico do
   alias Sanbase.Model.Project
 
   register_resource Sanbase.Model.Ico do
-
     query do
       %{all: [preload: [:project, :cap_currency, ico_currencies: [:currency]]] }
     end
 
     create_changeset :changeset_ex_admin
     update_changeset :changeset_ex_admin
+
+    index do
+      selectable_column()
+
+      column :id
+      column :project
+      column :start_date
+      column :end_date
+      column :tokens_issued_at_ico
+      column :main_contract_address
+      actions()     # display the default actions column
+    end
 
     form ico do
       inputs do
@@ -36,7 +47,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
       inputs "Ico Currencies" do
         has_many ico, :ico_currencies, fn(c) ->
           inputs :currency, collection: Sanbase.Repo.all(Currency)
-          input c, :value
+          input c, :amount
         end
       end
     end

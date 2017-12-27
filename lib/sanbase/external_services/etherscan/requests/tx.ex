@@ -43,7 +43,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
   end
 
   defp parse_tx_json(body) do
-    response = Poison.decode!(body, as: %{"result" => [%Tx{}]})
+    response = Poison.Decode.decode(body, as: %{"result" => [%Tx{}]})
     response["result"]
     |> Enum.map( fn(tx)->
       {ts, ""} = Integer.parse(tx.timeStamp)

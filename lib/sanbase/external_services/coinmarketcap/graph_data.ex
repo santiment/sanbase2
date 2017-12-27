@@ -5,7 +5,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.ExternalServices.Coinmarketcap.RateLimiter
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
 
   plug RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter

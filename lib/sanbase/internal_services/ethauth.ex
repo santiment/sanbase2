@@ -1,4 +1,4 @@
-defmodule Sanbase.Auth.Ethauth do
+defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
 
   import Sanbase.Utils, only: [parse_config_value: 1]

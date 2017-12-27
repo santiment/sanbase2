@@ -202,7 +202,7 @@ const enhance = compose(
           'ticker': ticker,
           'from': defaultFrom,
           'to': defaultTo,
-          'interval': '10h'
+          'interval': '1h'
         }
       }
     }

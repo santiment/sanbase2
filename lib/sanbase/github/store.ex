@@ -19,6 +19,40 @@ defmodule Sanbase.Github.Store do
     |> parse_measurement_datetime
   end
 
+  def fetch_activity_with_resolution!(repo, from, to, resolution) do
+    activity_with_resolution_query(repo, from, to, resolution)
+    |> Store.query()
+    |> parse_activity_series!()
+  end
+
+  defp activity_with_resolution_query(repo, from, to, resolution) do
+    ~s/SELECT SUM(activity)
+    FROM "#{repo}"
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    GROUP BY time(#{resolution}) fill(none)/
+  end
+
+  defp parse_activity_series!(%{results: [%{error: error}]}), do: raise(error)
+
+  defp parse_activity_series!(%{
+          results: [
+            %{
+              series: [
+                %{
+                  values: activity_series
+                }
+              ]
+            }
+          ]
+        }) do
+    activity_series
+    |> Enum.map(fn [iso8601_datetime, activity] ->
+          {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+          {datetime, activity}
+        end)
+  end
+
   defp parse_measurement_datetime(%{
          results: [
            %{

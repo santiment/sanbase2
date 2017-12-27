@@ -72,7 +72,7 @@ const ProjectChart = ({
   selected,
   ...props
 }) => {
-  if (historyPrice.loading) {
+  if (!historyPrice || historyPrice.loading) {
     return (
       <h2>Loading...</h2>
     )
@@ -102,8 +102,8 @@ const ProjectChart = ({
     },
     elements: {
       point: {
-        hitRadius: 4,
-        hoverRadius: 4,
+        hitRadius: 2,
+        hoverRadius: 2,
         radius: 0
       }
     },
@@ -154,6 +154,7 @@ const ProjectChart = ({
       <Line
         className='graph'
         data={chartData}
+        redraw
         options={chartOptions}
         onElementsClick={elems => {
           elems[0] && setSelected(elems[0]._index)
@@ -166,8 +167,8 @@ const ProjectChart = ({
 }
 
 const getHistoryGQL = gql`
-  query history($ticker: String!, $from: DateTime!, $to:DateTime!, $interval: String) {
-    historyPrice (
+  query history($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
+    historyPrice(
       ticker: $ticker,
       from: $from,
       to: $to,
@@ -176,7 +177,8 @@ const getHistoryGQL = gql`
       priceBtc,
       priceUsd,
       volume,
-      datetime
+      datetime,
+      marketcap
     }
 }`
 
@@ -193,14 +195,16 @@ const enhance = compose(
   withState('selected', 'setSelected', null),
   graphql(getHistoryGQL, {
     name: 'historyPrice',
-    options: ({ticker}) => ({
-      variables: {
-        'ticker': ticker,
-        'from': defaultFrom,
-        'to': defaultTo,
-        'interval': '1h'
+    options: ({ticker}) => {
+      return {
+        variables: {
+          'ticker': ticker,
+          'from': defaultFrom,
+          'to': defaultTo,
+          'interval': '10h'
+        }
       }
-    })
+    }
   }),
   pure
 )

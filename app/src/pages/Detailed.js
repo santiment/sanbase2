@@ -43,6 +43,7 @@ export const Detailed = ({
   projects,
   loading,
   PriceQuery,
+  client,
   generalInfo
 }) => {
   if (loading) {
@@ -92,7 +93,7 @@ export const Detailed = ({
         </HiddenElements>
       </div>
       <div className='panel'>
-        <ProjectChart ticker={project.ticker.toUpperCase()} />
+        <ProjectChart ticker={project.ticker} />
       </div>
       <HiddenElements>
         <div className='panel'>
@@ -153,9 +154,11 @@ export const Detailed = ({
       <div className='information'>
         <PanelBlock
           isUnauthorized={generalInfo.isUnauthorized}
-          isLoading={generalInfo.isLoading}
+          isLoading={generalInfo.isLoading || PriceQuery.loading || !PriceQuery.price}
           title='General Info'>
-          <GeneralInfoBlock {...generalInfo.project} />
+          <GeneralInfoBlock
+            volume={!!PriceQuery.price && PriceQuery.price.volume}
+            {...generalInfo.project} />
         </PanelBlock>
         <PanelBlock
           isUnauthorized={generalInfo.isUnauthorized}
@@ -192,7 +195,8 @@ const getPriceGQL = gql`
       priceBtc,
       priceUsd,
       volume,
-      datetime
+      datetime,
+      marketcap
     }
 }`
 
@@ -257,11 +261,6 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
-  lifecycle({
-    componentDidMount () {
-      this.props.retrieveProjects()
-    }
-  }),
   graphql(getPriceGQL, {
     name: 'PriceQuery',
     options: ({match, projects}) => {
@@ -278,6 +277,11 @@ const enhance = compose(
     name: 'ProjectQuery',
     props: mapDataToProps,
     options: mapPropsToOptions
+  }),
+  lifecycle({
+    componentDidMount () {
+      this.props.retrieveProjects()
+    }
   })
 )
 

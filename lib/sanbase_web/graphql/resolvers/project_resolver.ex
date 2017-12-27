@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ProjectResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
   import Ecto.Query, warn: false
@@ -18,15 +18,7 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
   alias Sanbase.Repo
   alias Ecto.Multi
 
-  # TODO: use batch queries for the FKs
-
-  def all_projects(parent, args, %{context: %{auth: %{auth_method: :basic}}}), do: all_projects(parent, args)
-
-  def all_projects(parent, args, %{context: %{auth: %{auth_method: :user_token}}}), do: all_projects(parent, args)
-
-  def all_projects(_parent, _args, _context), do: {:error, :unauthorized}
-
-  defp all_projects(parent, args) do
+  def all_projects(parent, args, _) do
     only_project_transparency = Map.get(args, :only_project_transparency, false)
 
     query = from p in Project,
@@ -37,13 +29,7 @@ defmodule SanbaseWeb.Graphql.ProjectResolver do
     {:ok, projects}
   end
 
-  def project(parent, args, %{context: %{auth: %{auth_method: :basic}}}), do: project(parent, args)
-
-  def project(parent, args, %{context: %{auth: %{auth_method: :user_token}}}), do: project(parent, args)
-
-  def project(_parent, _args, _context), do: {:error, :unauthorized}
-
-  defp project(parent, args) do
+  def project(parent, args, _) do
     id = Map.get(args, :id)
 
     project = Repo.get(Project, id)

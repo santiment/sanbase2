@@ -14,17 +14,10 @@ config :tesla, adapter: :mock
 
 # Configure your database
 config :sanbase, Sanbase.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "postgres",
-  database: "sanbase_test",
-  hostname: "localhost",
-  pool: Ecto.Adapters.SQL.Sandbox
-
-config :hound, driver: "chrome_driver"
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_test"
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  database: "prices_test",
   sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
@@ -53,6 +46,9 @@ config :sanbase, Sanbase.Github.Store,
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
+
+config :sanbase, Sanbase.Prices.Store,
+  database: "prices_test"
 
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"

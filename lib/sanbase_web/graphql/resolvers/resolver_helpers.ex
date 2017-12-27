@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ResolverHelpers do
+defmodule SanbaseWeb.Graphql.Resolvers.Helpers do
   def error_details(changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(fn {msg, _} -> msg end)

@@ -48,6 +48,9 @@ config :sanbase, Sanbase.Github.Store,
   pool: [ max_overflow: 10, size: 20 ],
   database: "github_activity"
 
+config :sanbase, SanbaseWorkers.ImportGithubActivity,
+  s3_bucket: {:system, "GITHUB_ARCHIVE_BUCKET", "santiment-github-archive"}
+
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
@@ -149,6 +152,11 @@ config :faktory_worker_ex,
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: {:system, "GRAPHQL_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "GRAPHQL_BASIC_AUTH_PASSWORD"}
+
+config :ex_aws,
+  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
+  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
+  region: "eu-central-1"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

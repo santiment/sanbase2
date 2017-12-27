@@ -32,7 +32,7 @@ export const App = ({isDesktop}) => (
         <Route exact path='/account' component={Account} />
         <Route path='/login' component={Login} />
         <Route exact path='/' component={Cashflow} />
-        <Redirect from='/' to='/cashflow' />
+        <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>
   </div>

@@ -7,7 +7,7 @@ import {
   compose,
   lifecycle
 } from 'recompose'
-import { Merge } from 'animate-components'
+import { Merge, FadeIn } from 'animate-components'
 import { fadeIn, slideRight } from 'animate-keyframes'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
@@ -77,11 +77,51 @@ export const Detailed = ({
             </div>
           </Merge>}
         <HiddenElements>
-          <div className='detailed-buttons'>
-            <button className='add-to-dashboard'>
-              <i className='fa fa-plus' />
-              &nbsp; Add to Dashboard
-            </button>
+          <div className='panel'>
+            <Tabs className='activity-panel'>
+              <TabList className='nav'>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    Social Mentions
+                  </button>
+                </Tab>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    Social Activity over Time
+                  </button>
+                </Tab>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    Sentiment/Intensity
+                  </button>
+                </Tab>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    Github Activity
+                  </button>
+                </Tab>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    SAN Community
+                  </button>
+                </Tab>
+              </TabList>
+              <TabPanel>
+                Social Mentions
+              </TabPanel>
+              <TabPanel>
+                Social Activity over Time
+              </TabPanel>
+              <TabPanel>
+                Sentiment/Intensity
+              </TabPanel>
+              <TabPanel>
+                Github Activity
+              </TabPanel>
+              <TabPanel>
+                SAN Community
+              </TabPanel>
+            </Tabs>
           </div>
         </HiddenElements>
       </div>

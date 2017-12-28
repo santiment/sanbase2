@@ -8,6 +8,7 @@ import {
   lifecycle
 } from 'recompose'
 import 'react-table/react-table.css'
+import { FadeIn } from 'animate-components'
 import moment from 'moment'
 import { formatNumber } from '../utils/formatting'
 import ProjectIcon from './../components/ProjectIcon'
@@ -183,27 +184,27 @@ export const Cashflow = ({
               <input placeholder='Search' onKeyUp={onSearch} />
             </label>
           </div>
+          <ReactTable
+            loading={loading}
+            showPagination={false}
+            showPaginationTop={false}
+            showPaginationBottom={false}
+            defaultPageSize={projects.items ? projects.items.length : 32}
+            sortable={false}
+            resizable
+            defaultSorted={[
+              {
+                id: 'market_cap_usd',
+                desc: false
+              }
+            ]}
+            className='-highlight'
+            data={projects}
+            columns={columns}
+            filtered={getFilter(search)}
+          />
         </div>
-        <ReactTable
-          loading={loading}
-          showPagination={false}
-          showPaginationTop={false}
-          showPaginationBottom={false}
-          defaultPageSize={projects.items ? projects.items.length : 32}
-          sortable={false}
-          resizable
-          defaultSorted={[
-            {
-              id: 'market_cap_usd',
-              desc: false
-            }
-          ]}
-          className='-highlight'
-          data={projects}
-          columns={columns}
-          filtered={getFilter(search)}
-        />
-      </div>
+      </FadeIn>
     </div>
   )
 }

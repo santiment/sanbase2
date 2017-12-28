@@ -49,6 +49,33 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :funds_raised_icos, list_of(:currency_amount) do
       resolve &ProjectResolver.funds_raised_icos/3
     end
+    field :initial_ico, :ico do
+      resolve &ProjectResolver.initial_ico/3
+    end
+    field :icos, list_of(:ico), resolve: assoc(:icos)
+  end
+
+  object :ico do
+    field :id, non_null(:id)
+    field :start_date, :ecto_date
+    field :end_date, :ecto_date
+    field :tokens_issued_at_ico, :decimal
+    field :tokens_sold_at_ico, :decimal
+    field :funds_raised_btc, :decimal
+    field :funds_raised_usd, :decimal
+    field :funds_raised_eth, :decimal
+    field :minimal_cap_amount, :decimal
+    field :maximal_cap_amount, :decimal
+    field :main_contract_address, :string
+    field :contract_block_number, :integer
+    field :contract_abi, :string
+    field :comments, :string
+    field :cap_currency, :string do
+      resolve &ProjectResolver.ico_cap_currency/3
+    end
+    field :currency_amounts, list_of(:currency_amount) do
+      resolve &ProjectResolver.ico_currency_amounts/3
+    end
   end
 
   object :latest_coinmarketcap_data do

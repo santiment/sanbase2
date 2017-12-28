@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   require Logger
 
+  import Absinthe.Resolution.Helpers, only: [async: 1]
+  import Ecto.Query
+
   alias SanbaseWeb.Graphql.Resolvers.Helpers
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
@@ -97,6 +100,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   def followed_projects(%User{} = user, _args, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
+    async(fn ->
     query =
       from(
         p in Project,
@@ -106,6 +110,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
       )
 
     {:ok, Repo.all(query)}
+    end)
   end
 
   # No eth account and there is a user logged in

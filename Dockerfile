@@ -3,6 +3,9 @@ FROM node:8.12.0-alpine as react_builder
 ARG GIT_HEAD
 RUN GIT_HEAD=$GIT_HEAD
 
+ARG GIT_HEAD
+RUN GIT_HEAD=$GIT_HEAD
+
 WORKDIR /app
 
 COPY ./app/package.json /app/package.json

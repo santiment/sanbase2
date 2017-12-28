@@ -32,6 +32,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve &ProjectResolver.project/3
     end
 
+    field :all_projects_with_eth_contract_info, list_of(:project) do
+      middleware BasicAuth
+      resolve &ProjectResolver.all_projects_with_eth_contract_info/3
+    end
+
     @desc "Historical information for the price"
     field :history_price, list_of(:price_point) do
       arg(:ticker, non_null(:string))

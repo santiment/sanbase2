@@ -49,6 +49,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, project}
   end
 
+  def all_projects_with_eth_contract_info(_parent, _args, _context) do
+    all_icos_query = from i in Ico,
+    select: %{project_id: i.project_id,
+              main_contract_address: i.main_contract_address,
+              contract_block_number: i.contract_block_number,
+              contract_abi: i.contract_abi,
+              rank: fragment("row_number() over(partition by ? order by ? asc)", i.project_id, i.start_date)}
+
+    query = from d in subquery(all_icos_query),
+    inner_join: p in Project, on: p.id == d.project_id,
+    where: d.rank == 1
+          and not is_nil(d.main_contract_address)
+          and not is_nil(d.contract_block_number)
+          and not is_nil(d.contract_abi),
+    select: p
+
+    projects = Repo.all(query)
+
+    {:ok, projects}
+  end
+
   def eth_balance(%Project{id: id}, args, context) do
     only_project_transparency = get_parent_args(context)
     |> Map.get(:only_project_transparency, false)
@@ -148,6 +169,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     %ProjectTransparencyStatus{name: project_transparency_status} = Repo.get!(ProjectTransparencyStatus, project_transparency_status_id)
 
     {:ok, project_transparency_status}
+  end
+
+  def initial_ico(%Project{} = project, _args, _context) do
+    ico = Project.initial_ico(project)
+
+    {:ok, ico}
+  end
+
+  def ico_cap_currency(%Ico{cap_currency_id: nil}, _args, _context), do: {:ok, nil}
+  def ico_cap_currency(%Ico{cap_currency_id: cap_currency_id}, _args, _context) do
+    %Currency{code: currency_code} = Repo.get!(Currency, cap_currency_id)
+
+    {:ok, currency_code}
+  end
+
+  def ico_currency_amounts(%Ico{id: id}, _args, _context) do
+    query = from i in Ico,
+    left_join: ic in assoc(i, :ico_currencies),
+    inner_join: c in assoc(ic, :currency),
+    where: i.id == ^id,
+    select: %{currency_code: c.code, amount: ic.amount}
+
+    currency_amounts = Repo.all(query)
+
+    {:ok, currency_amounts}
   end
 
   defp get_parent_args(context) do

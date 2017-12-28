@@ -1,7 +1,8 @@
 defmodule Sanbase.Github.Store do
-  # A module for storing and fetching github activity data from/to a time series data store
-  #
-  # Currently using InfluxDB for the time series data.
+  @moduledoc """
+  A module for storing and fetching github activity data from/to a time series data store
+  InfluxDB is used for the timeseries databae
+  """
   use Sanbase.Influxdb.Store
 
   alias Sanbase.Influxdb.Measurement
@@ -10,13 +11,13 @@ defmodule Sanbase.Github.Store do
   def first_activity_datetime(ticker) do
     ~s/SELECT FIRST(activity) FROM "#{ticker}"/
     |> Store.query()
-    |> parse_measurement_datetime
+    |> parse_measurement_datetime()
   end
 
   def last_activity_datetime(ticker) do
     ~s/SELECT LAST(activity) FROM "#{ticker}"/
     |> Store.query()
-    |> parse_measurement_datetime
+    |> parse_measurement_datetime()
   end
 
   def fetch_activity_with_resolution!(repo, from, to, resolution) do
@@ -36,21 +37,21 @@ defmodule Sanbase.Github.Store do
   defp parse_activity_series!(%{results: [%{error: error}]}), do: raise(error)
 
   defp parse_activity_series!(%{
-          results: [
-            %{
-              series: [
-                %{
-                  values: activity_series
-                }
-              ]
-            }
-          ]
-        }) do
+         results: [
+           %{
+             series: [
+               %{
+                 values: activity_series
+               }
+             ]
+           }
+         ]
+       }) do
     activity_series
     |> Enum.map(fn [iso8601_datetime, activity] ->
-          {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-          {datetime, activity}
-        end)
+         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+         {datetime, activity}
+       end)
   end
 
   defp parse_measurement_datetime(%{
@@ -58,7 +59,7 @@ defmodule Sanbase.Github.Store do
            %{
              series: [
                %{
-                 values: [[iso8601_datetime, _price]]
+                 values: [[iso8601_datetime, _activity]]
                }
              ]
            }

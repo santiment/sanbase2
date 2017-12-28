@@ -21,7 +21,6 @@ import setAuthorizationToken from './utils/setAuthorizationToken'
 import './index.css'
 
 const handleLoad = () => {
-  console.log(JSON.stringify(window.env))
   Raven.config(window.env.RAVEN_DSN).install()
   let origin = window.env.WEBSITE_URL || ''
   if (process.env.production) {

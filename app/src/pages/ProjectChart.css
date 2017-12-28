@@ -1,6 +1,7 @@
 .project-dp-chart {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .project-dp-chart .graph {
@@ -11,7 +12,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1em;
+  margin-bottom: 10px;
   padding: 0 20px;
   min-height: 40px;
 }
@@ -22,14 +23,14 @@
 }
 
 .selected-value-datetime {
-  font-size: 1.2em;
+  font-size: 1.6em;
   font-weight: 300;
-  margin-right: 1em;
 }
 
 .selected-value-data {
   font-size: 1.2em;
   font-weight: bold;
+  margin-right: 0.5em;
 }
 
 .time-filter,
@@ -56,4 +57,8 @@
 .time-filter .disabled,
 .currency-filter .disabled {
   color: #888;
+}
+
+.currency-filter {
+  margin-top: 10px;
 }

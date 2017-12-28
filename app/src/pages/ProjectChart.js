@@ -9,7 +9,7 @@ import {
 } from 'recompose'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
-import { Line } from 'react-chartjs-2'
+import { Bar } from 'react-chartjs-2'
 import moment from 'moment'
 import { formatNumber, formatBTC } from '../utils/formatting'
 import './ProjectChart.css'
@@ -50,17 +50,37 @@ const getChartDataFromHistory = (history = [], isToggledBTC) => {
   return {
     labels: history ? history.map(data => new Date(data.datetime)) : [],
     datasets: [{
+      label: 'price',
+      type: 'line',
       strokeColor: '#7a9d83eb',
       borderColor: '#7a9d83eb',
       borderWidth: 1,
       backgroundColor: 'rgba(239, 242, 236, 0.5)',
-      pointBorderWidth: 0,
+      pointBorderWidth: 2,
+      yAxisID: 'y-axis-1',
       data: history ? history.map(data => {
         if (isToggledBTC) {
           const price = parseFloat(data.priceBtc)
           return formatBTC(price)
         }
         return data.priceUsd
+      }) : []
+    },
+    {
+      label: 'volume',
+      fill: false,
+      type: 'bar',
+      yAxisID: 'y-axis-2',
+      strokeColor: 'rgba(49, 107, 174, 0.5)',
+      borderColor: 'rgba(49, 107, 174, 0.5)',
+      borderWidth: 1,
+      backgroundColor: 'rgba(239, 242, 236, 0.5)',
+      pointBorderWidth: 2,
+      data: history ? history.map(data => {
+        if (isToggledBTC) {
+          return []
+        }
+        return parseFloat(data.volume)
       }) : []
     }]
   }
@@ -86,6 +106,7 @@ export const ProjectChart = ({
     )
   }
   const chartData = getChartDataFromHistory(history.data, props.isToggledBTC)
+  const max = Math.max(...chartData.datasets[1].data)
   const chartOptions = {
     responsive: true,
     showTooltips: false,
@@ -117,12 +138,28 @@ export const ProjectChart = ({
     },
     scales: {
       yAxes: [{
+        id: 'y-axis-1',
+        type: 'linear',
+        display: true,
+        position: 'left',
         ticks: {
-          display: true
+          display: true,
+          beginAtZero: true
         },
         gridLines: {
           drawBorder: true,
           display: true
+        }
+      }, {
+        id: 'y-axis-2',
+        type: 'linear',
+        display: false,
+        position: 'right',
+        ticks: {
+          max: max * 2.2
+        },
+        labels: {
+          show: true
         }
       }],
       xAxes: [{
@@ -154,17 +191,25 @@ export const ProjectChart = ({
             as='div'
           >
             <span className='selected-value-datetime'>{moment(chartData.labels[selected]).format('MMMM DD, YYYY')}</span>
-            <span className='selected-value-data'>{props.isToggledBTC
+          </Merge>}</div>
+        <div className='selected-value'>{selected &&
+          <Merge
+            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
+            two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
+            as='div'
+          >
+            <span className='selected-value-data'>Price: {props.isToggledBTC
               ? formatBTC(parseFloat(chartData.datasets[0].data[selected]))
               : formatNumber(chartData.datasets[0].data[selected], 'USD')}</span>
+            <span className='selected-value-data'>Volume: {formatNumber(chartData.datasets[1].data[selected], 'USD')}</span>
           </Merge>}</div>
       </div>
-      <Line
+      <Bar
         className='graph'
         data={chartData}
+        options={chartOptions}
         redraw
         height={100}
-        options={chartOptions}
         onElementsClick={elems => {
           elems[0] && setSelected(elems[0]._index)
         }}

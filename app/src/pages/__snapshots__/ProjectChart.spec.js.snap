@@ -13,8 +13,11 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
     <div
       className="selected-value"
     />
+    <div
+      className="selected-value"
+    />
   </div>
-  <Line
+  <Bar
     className="graph"
     data={
       Object {
@@ -27,8 +30,26 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               undefined,
               undefined,
             ],
-            "pointBorderWidth": 0,
+            "label": "price",
+            "pointBorderWidth": 2,
             "strokeColor": "#7a9d83eb",
+            "type": "line",
+            "yAxisID": "y-axis-1",
+          },
+          Object {
+            "backgroundColor": "rgba(239, 242, 236, 0.5)",
+            "borderColor": "rgba(49, 107, 174, 0.5)",
+            "borderWidth": 1,
+            "data": Array [
+              NaN,
+              NaN,
+            ],
+            "fill": false,
+            "label": "volume",
+            "pointBorderWidth": 2,
+            "strokeColor": "rgba(49, 107, 174, 0.5)",
+            "type": "bar",
+            "yAxisID": "y-axis-2",
           },
         ],
         "labels": Array [
@@ -78,13 +99,30 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
           ],
           "yAxes": Array [
             Object {
+              "display": true,
               "gridLines": Object {
                 "display": true,
                 "drawBorder": true,
               },
+              "id": "y-axis-1",
+              "position": "left",
               "ticks": Object {
+                "beginAtZero": true,
                 "display": true,
               },
+              "type": "linear",
+            },
+            Object {
+              "display": false,
+              "id": "y-axis-2",
+              "labels": Object {
+                "show": true,
+              },
+              "position": "right",
+              "ticks": Object {
+                "max": NaN,
+              },
+              "type": "linear",
             },
           ],
         },

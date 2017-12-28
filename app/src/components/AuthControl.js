@@ -2,25 +2,9 @@ import React from 'react'
 import {
   Button
 } from 'semantic-ui-react'
+import { Link } from 'react-router-dom'
+import Balance from './../components/Balance'
 import './AuthControl.css'
-import { formatNumber } from './../utils/formatting.js'
-
-const Balance = ({user}) => {
-  return (
-    <div>{user.ethAccounts.map((account, index) => (
-      <div key={index}>
-        <div
-          type='text'
-          className='account-name'>
-          {account.address}
-        </div>
-        <div className='account-balance'>
-          {formatNumber(account.sanBalance, 'SAN')}
-        </div>
-      </div>
-    ))}</div>
-  )
-}
 
 const AuthControl = ({user, login, logout}) => {
   if (user.username) {
@@ -29,8 +13,10 @@ const AuthControl = ({user, login, logout}) => {
         You are logged in!
         <Balance user={user} />
         <a href='#' onClick={logout}>
-          Log out
+          Logout
         </a>
+        <br />
+        <Link to='/account' >Settings</Link>
       </div>
     )
   }
@@ -40,7 +26,7 @@ const AuthControl = ({user, login, logout}) => {
         basic
         color='green'
         onClick={login}>
-        Log in
+        Login
       </Button>
     </div>
   )

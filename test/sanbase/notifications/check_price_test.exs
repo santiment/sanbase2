@@ -4,13 +4,14 @@ defmodule Sanbase.Notifications.CheckPricesTest do
 
   alias Sanbase.Notifications.{CheckPrices, Notification}
   alias Sanbase.Model.Project
-  alias Sanbase.Prices.{Store, Measurement}
+  alias Sanbase.Prices.Store
+  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Repo
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
 
   setup do
-    Application.fetch_env!(:sanbase, Sanbase.ExternalServices.Coinmarketcap)
+    Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
     |> Keyword.get(:database)
     |> Instream.Admin.Database.create()
     |> Store.execute()

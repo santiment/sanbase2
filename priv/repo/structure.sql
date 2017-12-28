@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.6
--- Dumped by pg_dump version 9.6.6
+-- Dumped from database version 9.6.1
+-- Dumped by pg_dump version 9.6.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -102,7 +102,8 @@ ALTER SEQUENCE eth_accounts_id_seq OWNED BY eth_accounts.id;
 CREATE TABLE ico_currencies (
     id bigint NOT NULL,
     ico_id bigint NOT NULL,
-    currency_id bigint NOT NULL
+    currency_id bigint NOT NULL,
+    amount numeric
 );
 
 
@@ -145,7 +146,9 @@ CREATE TABLE icos (
     main_contract_address character varying(255),
     comments text,
     funds_raised_usd numeric,
-    funds_raised_eth numeric
+    funds_raised_eth numeric,
+    contract_block_number integer,
+    contract_abi text
 );
 
 
@@ -390,6 +393,38 @@ ALTER SEQUENCE notification_type_id_seq OWNED BY notification_type.id;
 
 
 --
+-- Name: processed_github_archives; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE processed_github_archives (
+    id bigint NOT NULL,
+    project_id bigint,
+    archive character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: processed_github_archives_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE processed_github_archives_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: processed_github_archives_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE processed_github_archives_id_seq OWNED BY processed_github_archives.id;
+
+
+--
 -- Name: project; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -410,11 +445,13 @@ CREATE TABLE project (
     slack_link character varying(255),
     linkedin_link character varying(255),
     telegram_link character varying(255),
-    project_transparency character varying(255),
+    project_transparency_status character varying(255),
     token_address character varying(255),
     team_token_wallet character varying(255),
     market_segment_id bigint,
-    infrastructure_id bigint
+    infrastructure_id bigint,
+    project_transparency boolean DEFAULT false NOT NULL,
+    project_transparency_description text
 );
 
 
@@ -425,7 +462,8 @@ CREATE TABLE project (
 CREATE TABLE project_btc_address (
     id bigint NOT NULL,
     address character varying(255) NOT NULL,
-    project_id bigint
+    project_id bigint NOT NULL,
+    project_transparency boolean DEFAULT false NOT NULL
 );
 
 
@@ -455,7 +493,8 @@ ALTER SEQUENCE project_btc_address_id_seq OWNED BY project_btc_address.id;
 CREATE TABLE project_eth_address (
     id bigint NOT NULL,
     address character varying(255) NOT NULL,
-    project_id bigint
+    project_id bigint NOT NULL,
+    project_transparency boolean DEFAULT false NOT NULL
 );
 
 
@@ -505,6 +544,36 @@ CREATE TABLE schema_migrations (
     version bigint NOT NULL,
     inserted_at timestamp without time zone
 );
+
+
+--
+-- Name: user_followed_project; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE user_followed_project (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    user_id bigint NOT NULL
+);
+
+
+--
+-- Name: user_followed_project_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE user_followed_project_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_followed_project_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE user_followed_project_id_seq OWNED BY user_followed_project.id;
 
 
 --
@@ -618,6 +687,13 @@ ALTER TABLE ONLY notification_type ALTER COLUMN id SET DEFAULT nextval('notifica
 
 
 --
+-- Name: processed_github_archives id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY processed_github_archives ALTER COLUMN id SET DEFAULT nextval('processed_github_archives_id_seq'::regclass);
+
+
+--
 -- Name: project id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -636,6 +712,13 @@ ALTER TABLE ONLY project_btc_address ALTER COLUMN id SET DEFAULT nextval('projec
 --
 
 ALTER TABLE ONLY project_eth_address ALTER COLUMN id SET DEFAULT nextval('project_eth_address_id_seq'::regclass);
+
+
+--
+-- Name: user_followed_project id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_followed_project ALTER COLUMN id SET DEFAULT nextval('user_followed_project_id_seq'::regclass);
 
 
 --
@@ -734,6 +817,14 @@ ALTER TABLE ONLY notification_type
 
 
 --
+-- Name: processed_github_archives processed_github_archives_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY processed_github_archives
+    ADD CONSTRAINT processed_github_archives_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: project_btc_address project_btc_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -763,6 +854,14 @@ ALTER TABLE ONLY project
 
 ALTER TABLE ONLY schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: user_followed_project user_followed_project_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_followed_project
+    ADD CONSTRAINT user_followed_project_pkey PRIMARY KEY (id);
 
 
 --
@@ -799,6 +898,13 @@ CREATE INDEX ico_currencies_currency_id_index ON ico_currencies USING btree (cur
 --
 
 CREATE INDEX ico_currencies_ico_id_index ON ico_currencies USING btree (ico_id);
+
+
+--
+-- Name: ico_currencies_uk; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ico_currencies_uk ON ico_currencies USING btree (ico_id, currency_id);
 
 
 --
@@ -851,6 +957,13 @@ CREATE UNIQUE INDEX notification_type_name_index ON notification_type USING btre
 
 
 --
+-- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX processed_github_archives_project_id_archive_index ON processed_github_archives USING btree (project_id, archive);
+
+
+--
 -- Name: project_btc_address_address_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -897,6 +1010,13 @@ CREATE INDEX project_market_segment_id_index ON project USING btree (market_segm
 --
 
 CREATE UNIQUE INDEX project_name_index ON project USING btree (name);
+
+
+--
+-- Name: projet_user_constraint; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX projet_user_constraint ON user_followed_project USING btree (project_id, user_id);
 
 
 --
@@ -951,7 +1071,7 @@ ALTER TABLE ONLY icos
 --
 
 ALTER TABLE ONLY notification
-    ADD CONSTRAINT notification_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id);
+    ADD CONSTRAINT notification_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
 
 
 --
@@ -960,6 +1080,14 @@ ALTER TABLE ONLY notification
 
 ALTER TABLE ONLY notification
     ADD CONSTRAINT notification_type_id_fkey FOREIGN KEY (type_id) REFERENCES notification_type(id);
+
+
+--
+-- Name: processed_github_archives processed_github_archives_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY processed_github_archives
+    ADD CONSTRAINT processed_github_archives_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
 
 
 --
@@ -995,8 +1123,24 @@ ALTER TABLE ONLY project
 
 
 --
+-- Name: user_followed_project user_followed_project_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_followed_project
+    ADD CONSTRAINT user_followed_project_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_followed_project user_followed_project_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_followed_project
+    ADD CONSTRAINT user_followed_project_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171225093503);
 

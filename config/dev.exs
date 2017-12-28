@@ -65,6 +65,10 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   limit: 5,
   time_between_requests: 250
 
+config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+  basic_auth_username: "user",
+  basic_auth_password: "pass"
+
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

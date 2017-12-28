@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PriceResolver.available_prices/3)
     end
 
-    @desc "Returns a list of availalbe github repositories"
+    @desc "Returns a list of available github repositories"
     field :github_availables_repos, list_of(:string) do
       resolve(&GithubResolver.available_repos/3)
     end

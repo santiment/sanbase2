@@ -15,39 +15,37 @@ exports[`Project detail page container it should render correctly 1`] = `
 <div
   className="page detailed"
 >
-  <div
-    className="detailed-head"
+  <FadeIn
+    as="div"
+    backfaceVisible="visible"
+    delay="0s"
+    direction="normal"
+    duration="0.7s"
+    fillMode="none"
+    iterations="1"
+    playState="running"
+    timingFunction="ease-in"
   >
     <div
-      className="detailed-name"
+      className="detailed-head"
     >
-      <h1>
-        <ProjectIcon
-          name="Aragon"
-          size={28}
-        />
-         
-        Aragon
-         (
-        ANT
-        )
-      </h1>
-      <p>
-        Manage entire organisations using the blockchain.
-      </p>
-    </div>
-    <Component>
       <div
-        className="detailed-buttons"
+        className="detailed-name"
       >
-        <button
-          className="add-to-dashboard"
-        >
-          <i
-            className="fa fa-plus"
+        <h1>
+          <ProjectIcon
+            name="Aragon"
+            size={28}
           />
-            Add to Dashboard
-        </button>
+           
+          Aragon
+           (
+          ANT
+          )
+        </h1>
+        <p>
+          Manage entire organisations using the blockchain.
+        </p>
       </div>
     </Component>
   </div>
@@ -62,87 +60,92 @@ exports[`Project detail page container it should render correctly 1`] = `
     <div
       className="panel"
     >
-      <Tabs
-        className="activity-panel"
-        defaultFocus={false}
-        defaultIndex={null}
-        forceRenderTabPanel={false}
-        selectedIndex={null}
+      <withState(withHandlers(withState(withState(Apollo(pure(ProjectChart))))))
+        ticker="ANT"
+      />
+    </div>
+    <Component>
+      <div
+        className="panel"
       >
-        <TabList
-          className="nav"
+        <Tabs
+          className="activity-panel"
+          defaultFocus={false}
+          defaultIndex={null}
+          forceRenderTabPanel={false}
+          selectedIndex={null}
         >
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
+          <TabList
+            className="nav"
           >
-            <button
-              className="nav-link"
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
             >
-              Social Mentions
-            </button>
-          </Tab>
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
-          >
-            <button
-              className="nav-link"
+              <button
+                className="nav-link"
+              >
+                Social Mentions
+              </button>
+            </Tab>
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
             >
-              Social Activity over Time
-            </button>
-          </Tab>
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
-          >
-            <button
-              className="nav-link"
+              <button
+                className="nav-link"
+              >
+                Social Activity over Time
+              </button>
+            </Tab>
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
             >
-              Sentiment/Intensity
-            </button>
-          </Tab>
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
-          >
-            <button
-              className="nav-link"
+              <button
+                className="nav-link"
+              >
+                Sentiment/Intensity
+              </button>
+            </Tab>
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
             >
-              Github Activity
-            </button>
-          </Tab>
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
-          >
-            <button
-              className="nav-link"
+              <button
+                className="nav-link"
+              >
+                Github Activity
+              </button>
+            </Tab>
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
             >
               SAN Community
             </button>
@@ -196,6 +199,29 @@ exports[`Project detail page container it should render correctly 1`] = `
         classes=""
         title="Signals/Volatility"
       />
+      <div
+        className="analysis"
+      >
+        <PanelBlock
+          classes=""
+          isUnauthorized={false}
+          title="Signals/Volatility"
+        />
+        <PanelBlock
+          classes=""
+          isUnauthorized={false}
+          title="Expert Analyses"
+        />
+        <PanelBlock
+          classes=""
+          isUnauthorized={false}
+          title="News/Press"
+        />
+      </div>
+    </Component>
+    <div
+      className="information"
+    >
       <PanelBlock
         classes=""
         title="Expert Analyses"

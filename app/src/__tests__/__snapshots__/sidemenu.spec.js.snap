@@ -6,6 +6,7 @@ exports[`SideMenu container it should render correctly 1`] = `
 >
   <div
     className="brand"
+    onClick={[Function]}
   >
     <img
       alt="SANbase"
@@ -35,6 +36,7 @@ exports[`SideMenu container it should show login button 1`] = `
 >
   <div
     className="brand"
+    onClick={[Function]}
   >
     <img
       alt="SANbase"
@@ -64,6 +66,7 @@ exports[`SideMenu container it should show logout button 1`] = `
 >
   <div
     className="brand"
+    onClick={[Function]}
   >
     <img
       alt="SANbase"

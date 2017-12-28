@@ -1,0 +1,93 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Account container it should render correctly 1`] = `
+<div
+  className="page account"
+>
+  <div
+    className="page-head"
+  >
+    <h1>
+      Account settings
+    </h1>
+  </div>
+  <div
+    className="panel"
+  >
+    <Form
+      as="form"
+      loading={false}
+    >
+      <FormField
+        disabled={true}
+      >
+        <label>
+          Email
+        </label>
+        <Input
+          placeholder=""
+          type="text"
+        />
+        <Message
+          header="Email is not added yet!"
+          list={
+            Array [
+              "For acces your dashboard from mobile device, you should add email address.",
+            ]
+          }
+          warning={true}
+        />
+      </FormField>
+      <FormField>
+        <label>
+          Username ( Eth Public Key )
+        </label>
+        <Input
+          action={
+            Object {
+              "color": "teal",
+              "content": "Copy",
+              "icon": "copy",
+              "labelPosition": "right",
+              "onClick": [Function],
+            }
+          }
+          defaultValue="0xjsadhf92fhk2fjhe"
+          input={
+            Object {
+              "readOnly": true,
+            }
+          }
+          type="text"
+        />
+      </FormField>
+      <h3>
+        Wallets
+      </h3>
+      <Divider />
+      <Component
+        user={
+          Object {
+            "email": null,
+            "username": "0xjsadhf92fhk2fjhe",
+          }
+        }
+      />
+      <h3>
+        Sessions
+      </h3>
+      <Divider />
+      <p>
+        Your current session
+      </p>
+      <Button
+        as="button"
+        basic={true}
+        color="red"
+      >
+        Log out
+      </Button>
+    </Form>
+  </div>
+</div>
+`;

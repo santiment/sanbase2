@@ -11,15 +11,38 @@
   font-size: 12px;
 }
 
-.datatables-filter {
-  width: 40%;
-  float: right;
+@media (max-width: 1024px) {
+  .cashflow-head {
+    flex-direction: column;
+    margin: 0;
+  }
+
+  .cashflow-head h1 {
+    margin-bottom: 0;
+    margin-left: 0;
+  }
+
+  .cashflow-head p {
+    margin: 0;
+    text-align: left;
+  }
 }
 
 .row {
-  overflow: hidden;
+  display: flex;
   width: 100%;
+  justify-content: space-between;
   padding: 0 16px 5px 16px;
+}
+
+@media (max-width: 768px) {
+  .row {
+    flex-direction: column;
+  }
+}
+
+.datatables-filter {
+  min-width: 40%;
 }
 
 .datatables-filter label {
@@ -53,11 +76,6 @@
   display: none;
 }
 
-.datatables-info {
-  width: 60%;
-  float: left;
-}
-
 .datatables-info label {
   font-size: 12px;
   margin-bottom: 16px;
@@ -86,6 +104,7 @@
   padding: 10px !important;
   font-size: 13px;
   font-weight: bold;
+  outline: none;
 }
 
 .rt-td > div {
@@ -112,4 +131,8 @@
 .ReactTable .market-cap {
   display: flex;
   justify-content: flex-end;
+}
+
+.eth-sent-item {
+  text-align: right;
 }

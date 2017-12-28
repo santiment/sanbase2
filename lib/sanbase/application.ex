@@ -5,6 +5,10 @@ defmodule Sanbase.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
+    if Code.ensure_loaded?(Envy) do
+      Envy.auto_load
+    end
+
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Task Supervisor
@@ -16,11 +20,14 @@ defmodule Sanbase.Application do
       # Start the endpoint when the application starts
       supervisor(SanbaseWeb.Endpoint, []),
 
-      # Time series DB connection
-      Sanbase.Prices.Store.child_spec,
+      # Time series Prices DB connection
+      Sanbase.Prices.Store.child_spec(),
 
-      # Time series DB connection
-      Sanbase.Github.Store.child_spec,
+      # Time sereies TwitterData DB connection
+      Sanbase.ExternalServices.TwitterData.Store.child_spec(),
+
+      # Time series Github DB connection
+      Sanbase.Github.Store.child_spec(),
 
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
@@ -54,6 +61,22 @@ defmodule Sanbase.Application do
         time_between_requests: 2000
       ),
 
+      # Twitter API rate limiter
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :twitter_api_rate_limiter,
+        scale: 60 * 15 * 1000,
+        limit: 450,
+        time_between_requests: 10
+      ),
+
+      # Twittercounter API rate limiter
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :twittercounter_api_rate_limiter,
+        scale: 60 * 60 * 1000,
+        limit: 100,
+        time_between_requests: 100
+      ),
+
       # Price fetcher
       Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
 
@@ -62,11 +85,24 @@ defmodule Sanbase.Application do
 
       # Etherscan wallet tracking worker
       Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),
-    ] ++ faktory_supervisor()
+
+      # Twitter account data tracking worker
+      Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
+
+      # Twitter account historical data
+      Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
+    ] ++ faktory_supervisor() ++ [
+      # Github activity scraping scheduler
+      Sanbase.ExternalServices.Github.child_spec(%{}),
+    ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Sanbase.Supervisor, max_restarts: 5, max_seconds: 1]
+
+    # Add error tracking through sentry
+    :ok = :error_logger.add_report_handler(Sentry.Logger)
+
     Supervisor.start_link(children, opts)
   end
 
@@ -78,7 +114,7 @@ defmodule Sanbase.Application do
   end
 
   defp faktory_supervisor do
-    if Faktory.start_workers? do
+    if System.get_env("FAKTORY_HOST") do
       Faktory.Configuration.init
       [supervisor(Faktory.Supervisor, [])]
     else

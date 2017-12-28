@@ -13,8 +13,10 @@ import ProjectIcon from './../components/ProjectIcon'
 import {
   sortDate,
   sortBalances,
-  sortTxOut
+  sortTxOut,
+  simpleSort
 } from './../utils/sortMethods'
+import { retrieveProjects } from './Cashflow.actions.js'
 import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
@@ -36,7 +38,7 @@ const formatTxOutWallet = wallets => {
     const txOut = wallet.tx_out || '0.00'
     return (
       <div key={index}>
-        {txOut.toLocaleString('en-US')}
+        {formatNumber(txOut)}
       </div>
     )
   })
@@ -52,7 +54,7 @@ const formatBalanceWallet = ({wallets, ethPrice}) => {
           <a
             className='address'
             href={'https://etherscan.io/address/' + wallet.address}
-            target='_blank'>Ξ{ balance.toLocaleString('en-US') }
+            target='_blank'>Ξ{formatNumber(balance)}&nbsp;
             <i className='fa fa-external-link' />
           </a>
         </div>
@@ -84,7 +86,7 @@ const columns = [{
   id: 'project',
   filterable: true,
   sortable: true,
-  width: 350,
+  minWidth: 250,
   accessor: d => ({
     name: d.name,
     ticker: d.ticker
@@ -95,24 +97,19 @@ const columns = [{
     </div>
   ),
   filterMethod: (filter, row) => {
-    return row[filter.id].name.toLowerCase().indexOf(filter.value) !== -1 ||
-      row[filter.id].ticker.toLowerCase().indexOf(filter.value) !== -1
+    const name = row[filter.id].name || ''
+    const ticker = row[filter.id].ticker || ''
+    return name.toLowerCase().indexOf(filter.value) !== -1 ||
+      ticker.toLowerCase().indexOf(filter.value) !== -1
   }
 }, {
   Header: 'Market Cap',
   id: 'market_cap_usd',
   minWidth: 150,
   accessor: 'market_cap_usd',
-  Cell: props => <span className='market-cap'>{formatMarketCapProject(props.value)}</span>,
+  Cell: ({value}) => <div className='market-cap'>{formatMarketCapProject(value)}</div>,
   sortable: true,
-  sortMethod: (a, b) => {
-    const _a = parseInt(a, 10)
-    const _b = parseInt(b, 10)
-    if (_a === _b) {
-      return 0
-    }
-    return _b > _a ? 1 : -1
-  }
+  sortMethod: (a, b) => simpleSort(parseInt(a, 10), parseInt(b, 10))
 }, {
   Header: 'Balance (USD/ETH)',
   id: 'balance',
@@ -121,23 +118,24 @@ const columns = [{
     ethPrice: d.ethPrice,
     wallets: d.wallets
   }),
-  Cell: props => <div>{formatBalanceWallet(props.value)}</div>,
+  Cell: ({value}) => <div>{formatBalanceWallet(value)}</div>,
   sortable: true,
   sortMethod: (a, b) => sortBalances(a, b)
 }, {
   Header: 'Last outgoing TX',
   id: 'tx',
+  minWidth: 140,
   accessor: d => d.wallets,
-  Cell: props => <div>{formatLastOutgoingWallet(props.value)}</div>,
+  Cell: ({value}) => <div>{formatLastOutgoingWallet(value)}</div>,
   sortable: true,
-  sortMethod: (a, b, isDesc) => {
-    return sortDate(a[0].last_outgoing, b[0].last_outgoing, isDesc)
-  }
+  sortMethod: (a, b, isDesc) => (
+    sortDate(a[0].last_outgoing, b[0].last_outgoing, isDesc)
+  )
 }, {
   Header: 'ETH sent',
   id: 'sent',
   accessor: d => d.wallets,
-  Cell: props => <div>{formatTxOutWallet(props.value)}</div>,
+  Cell: ({value}) => <div className='eth-sent-item'>{formatTxOutWallet(value)}</div>,
   sortable: true,
   sortMethod: (a, b) => sortTxOut(a, b)
 }]
@@ -151,14 +149,14 @@ export const Cashflow = ({
 }) => (
   <div className='page cashflow'>
     <div className='cashflow-head'>
-      <h1>Cash Flow</h1>
+      <h1>Projects: Cash Flow</h1>
       <p>
         brought to you by <a
           href='https://santiment.net'
           rel='noopener noreferrer'
           target='_blank'>Santiment</a>
         <br />
-        NOTE: This app is a prototype.
+        NOTE: This app is in development.
         We give no guarantee data is correct as we are in active development.
       </p>
     </div>
@@ -195,7 +193,7 @@ export const Cashflow = ({
         defaultSorted={[
           {
             id: 'market_cap_usd',
-            desc: true
+            desc: false
           }
         ]}
         className='-highlight'
@@ -218,17 +216,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    retrieveProjects: () => {
-      dispatch({
-        types: ['LOADING_PROJECTS', 'SUCCESS_PROJECTS', 'FAILED_PROJECTS'],
-        payload: {
-          client: 'sanbaseClient',
-          request: {
-            url: `/cashflow`
-          }
-        }
-      })
-    },
+    retrieveProjects: () => dispatch(retrieveProjects),
     onSearch: (event) => {
       dispatch({
         type: 'SET_SEARCH',

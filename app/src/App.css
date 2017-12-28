@@ -3,7 +3,7 @@
   font-family: Helvetica, sans-serif;
 }
 
-@media (max-width: 620px) {
+@media (max-width: 768px) {
   .App {
     flex-direction: column;
   }
@@ -60,6 +60,12 @@ p {
   color: rgba(255, 255, 255, 0.5);
 }
 
+@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+  .side-menu {
+    min-width: 20%;
+  }
+}
+
 .side-menu .brand {
   padding-top: 22px;
   padding-bottom: 14px;
@@ -90,6 +96,13 @@ p {
   padding: 0 15px;
   height: 100vh;
   overflow-y: auto;
+  overflow: scroll;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page-head {
+  margin-top: 45px;
+  margin-right: 20px;
 }
 
 .page h1 {
@@ -125,4 +138,8 @@ p {
     margin: 16px 0;
     padding: 8px;
   }
+}
+
+.fa-disabled {
+  color: #d3d3d3;
 }

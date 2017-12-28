@@ -1,0 +1,44 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProjectIcon component (smoke) it should render correctly 1`] = `
+<img
+  alt="Cofound.it"
+  height={16}
+  src="cofound-it.png"
+  width={16}
+/>
+`;
+
+exports[`ProjectIcon component DAO.Casino icon should render correctly 1`] = `
+<img
+  alt="DAO.Casino"
+  height={16}
+  src="dao-casino.png"
+  width={16}
+/>
+`;
+
+exports[`ProjectIcon component DefaultIcon should render correctly 1`] = `
+<ProjectIcon
+  name="Any Not Available Name"
+  size={16}
+>
+  <Component
+    size={16}
+  >
+    <span
+      className="project-icon-default"
+      width={16}
+    />
+  </Component>
+</ProjectIcon>
+`;
+
+exports[`ProjectIcon component SAN icon should render correctly 1`] = `
+<img
+  alt="Santiment"
+  height={16}
+  src="santiment.png"
+  width={16}
+/>
+`;

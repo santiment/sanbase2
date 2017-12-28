@@ -7,20 +7,10 @@ defmodule Sanbase.Prices.Store do
   # price data for a given currency pair within a given interval. The current
   # interval is about 5 mins (+/- 3 seconds). The timestamps are stored as
   # nanoseconds
-  use Instream.Connection, otp_app: :sanbase
+  use Sanbase.Influxdb.Store
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
-
-  def import(measurements) do
-    # 1 day of 5 min resolution data
-    measurements
-    |> Stream.map(&Measurement.convert_measurement_for_import/1)
-    |> Stream.chunk_every(288) # 1 day of 5 min resolution data
-    |> Enum.map(fn data_for_import ->
-         :ok = Store.write(data_for_import)
-       end)
-  end
 
   def fetch_price_points(pair, from, to) do
     fetch_query(pair, from, to)
@@ -37,12 +27,6 @@ defmodule Sanbase.Prices.Store do
     |> q()
   end
 
-  def list_measurements() do
-    "SHOW MEASUREMENTS"
-    |> Store.query()
-    |> parse_measurements_list()
-  end
-
   def q(query) do
     Store.query(query)
     |> parse_price_series
@@ -54,25 +38,6 @@ defmodule Sanbase.Prices.Store do
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)
     }/
-  end
-
-
-  defp parse_measurements_list(%{results: [%{error: error}]}), do: raise(error)
-
-  defp parse_measurements_list(%{
-    results: [
-      %{
-        series: [
-          %{
-            values: measurements
-          }
-        ]
-      }
-    ]
-  }) do
-
-    measurements
-    |> Enum.map(&Kernel.hd/1)
   end
 
   defp parse_price_series(%{results: [%{error: error}]}), do: raise(error)
@@ -150,11 +115,5 @@ defmodule Sanbase.Prices.Store do
 
   defp parse_record(x) do
     nil
-  end
-
-  def drop_pair(pair) do
-    %{results: _} =
-      "DROP MEASUREMENT #{pair}"
-      |> Store.execute()
   end
 end

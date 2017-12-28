@@ -12,10 +12,65 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
     />
     <div
       className="selected-value"
-    />
+    >
+      <Merge
+        as="div"
+        one={
+          Object {
+            "duration": "0.3s",
+            "name": "bcCCNc",
+            "timingFunction": "ease-in",
+          }
+        }
+        two={
+          Object {
+            "duration": "0.5s",
+            "name": "dVMtpd",
+            "timingFunction": "ease-out",
+          }
+        }
+      >
+        <span
+          className="selected-value-datetime"
+        >
+          December 28, 2017
+        </span>
+      </Merge>
+    </div>
     <div
       className="selected-value"
-    />
+    >
+      <Merge
+        as="div"
+        one={
+          Object {
+            "duration": "0.3s",
+            "name": "bcCCNc",
+            "timingFunction": "ease-in",
+          }
+        }
+        two={
+          Object {
+            "duration": "0.5s",
+            "name": "dVMtpd",
+            "timingFunction": "ease-out",
+          }
+        }
+      >
+        <span
+          className="selected-value-data"
+        >
+          Price: 
+          NaN
+        </span>
+        <span
+          className="selected-value-data"
+        >
+          Volume: 
+          NaN
+        </span>
+      </Merge>
+    </div>
   </div>
   <Bar
     className="graph"

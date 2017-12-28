@@ -184,7 +184,7 @@ export const ProjectChart = ({
     <div className='project-dp-chart'>
       <div className='chart-header'>
         <TimeFilter disabled {...props} />
-        <div className='selected-value'>{selected &&
+        <div className='selected-value'>{selected !== null &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
@@ -192,7 +192,7 @@ export const ProjectChart = ({
           >
             <span className='selected-value-datetime'>{moment(chartData.labels[selected]).format('MMMM DD, YYYY')}</span>
           </Merge>}</div>
-        <div className='selected-value'>{selected &&
+        <div className='selected-value'>{selected !== null &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}

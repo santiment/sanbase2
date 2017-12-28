@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
   import Ecto.Query, warn: false
+  import Absinthe.Resolution.Helpers, only: [async: 1]
 
   alias Sanbase.Model.Project
   alias Sanbase.Model.ProjectEthAddress
@@ -67,33 +68,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def eth_balance(%Project{id: id}, _args, resolution) do
-    only_project_transparency = get_parent_args(resolution)
-    |> Map.get(:only_project_transparency, false)
+    async(fn ->
+      only_project_transparency = get_parent_args(resolution)
+      |> Map.get(:only_project_transparency, false)
 
-    query = from a in ProjectEthAddress,
-    inner_join: wd in LatestEthWalletData, on: wd.address == a.address,
-    where: a.project_id == ^id and
-          (not ^only_project_transparency or a.project_transparency),
-    select: sum(wd.balance)
+      query = from a in ProjectEthAddress,
+      inner_join: wd in LatestEthWalletData, on: wd.address == a.address,
+      where: a.project_id == ^id and
+            (not ^only_project_transparency or a.project_transparency),
+      select: sum(wd.balance)
 
-    balance = Repo.one(query)
+      balance = Repo.one(query)
 
-    {:ok, balance}
+      {:ok, balance}
+    end)
   end
 
   def btc_balance(%Project{id: id}, _args, resolution) do
-    only_project_transparency = get_parent_args(resolution)
-    |> Map.get(:only_project_transparency, false)
+    async(fn ->
+      only_project_transparency = get_parent_args(resolution)
+      |> Map.get(:only_project_transparency, false)
 
-    query = from a in ProjectBtcAddress,
-    inner_join: wd in LatestBtcWalletData, on: wd.address == a.address,
-    where: a.project_id == ^id and
-          (not ^only_project_transparency or a.project_transparency),
-    select: sum(wd.satoshi_balance)
+      query = from a in ProjectBtcAddress,
+      inner_join: wd in LatestBtcWalletData, on: wd.address == a.address,
+      where: a.project_id == ^id and
+            (not ^only_project_transparency or a.project_transparency),
+      select: sum(wd.satoshi_balance)
 
-    balance = Repo.one(query)
+      balance = Repo.one(query)
 
-    {:ok, balance}
+      {:ok, balance}
+    end)
   end
 
   # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
@@ -102,7 +107,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     # The data to be aggreagated has to be fetched and unioned from two different sources (the "union all" inside the with clause):
     #   * For ICOs that have raw data entered for at least one currency we aggregate it by currency (the first query)
     #   * For ICOs that don't have that data entered (currently everything imported from the spreadsheet) we fall back to a precalculated total (the second query)
-    query =
+
+    async(fn -> query =
       '''
       with data as (select c.code currency_code, ic.amount
       from icos i
@@ -144,27 +150,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Enum.map(fn([currency_code, amount]) -> %{currency_code: currency_code, amount: amount} end)
 
       {:ok, funds_raised}
+            end)
   end
 
   def market_segment(%Project{market_segment_id: nil}, _args, _resolution), do: {:ok, nil}
   def market_segment(%Project{market_segment_id: market_segment_id}, _args, _resolution) do
-    %MarketSegment{name: market_segment} = Repo.get!(MarketSegment, market_segment_id)
+    async(fn -> %MarketSegment{name: market_segment} = Repo.get!(MarketSegment, market_segment_id)
 
     {:ok, market_segment}
+  end)
   end
 
   def infrastructure(%Project{infrastructure_id: nil}, _args, _resolution), do: {:ok, nil}
   def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, _resolution) do
-    %Infrastructure{code: infrastructure} = Repo.get!(Infrastructure, infrastructure_id)
+    async(fn -> %Infrastructure{code: infrastructure} = Repo.get!(Infrastructure, infrastructure_id)
 
     {:ok, infrastructure}
+  end)
   end
 
   def project_transparency_status(%Project{project_transparency_status_id: nil}, _args, _resolution), do: {:ok, nil}
   def project_transparency_status(%Project{project_transparency_status_id: project_transparency_status_id}, _args, _resolution) do
-    %ProjectTransparencyStatus{name: project_transparency_status} = Repo.get!(ProjectTransparencyStatus, project_transparency_status_id)
+    async(fn -> %ProjectTransparencyStatus{name: project_transparency_status} = Repo.get!(ProjectTransparencyStatus, project_transparency_status_id)
 
     {:ok, project_transparency_status}
+  end)
   end
 
   def roi_usd(%Project{} = project, _args, _resolution) do
@@ -224,9 +234,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def percent_change_7d(_parent, _args, _resolution), do: {:ok, nil}
 
   def initial_ico(%Project{} = project, _args, _resolution) do
-    ico = Project.initial_ico(project)
+    async(fn ->
+      ico = Project.initial_ico(project)
 
-    {:ok, ico}
+      {:ok, ico}
+    end)
   end
 
   def ico_cap_currency(%Ico{cap_currency_id: nil}, _args, _resolution), do: {:ok, nil}

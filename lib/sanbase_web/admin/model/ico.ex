@@ -40,6 +40,8 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input ico, :minimal_cap_amount
         input ico, :maximal_cap_amount
         input ico, :main_contract_address
+        input ico, :contract_block_number
+        input ico, :contract_abi
         input ico, :comments
         input ico, :cap_currency, collection: Sanbase.Repo.all(Currency)
       end

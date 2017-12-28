@@ -82,9 +82,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :id, non_null(:id)
     field :coinmarketcap_id, non_null(:string)
     field :name, :string
-    field :market_cap_usd, :decimal
-    field :price_usd, :decimal
     field :symbol, :string
+    field :rank, :integer
+    field :price_usd, :decimal
+    field :volume_24h_usd, :decimal, name: "volume24h_usd"
+    field :market_cap_usd, :decimal
     field :update_time, :ecto_datetime
   end
 

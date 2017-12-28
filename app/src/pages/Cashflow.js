@@ -8,6 +8,7 @@ import {
   lifecycle
 } from 'recompose'
 import 'react-table/react-table.css'
+import { FadeIn } from 'animate-components'
 import moment from 'moment'
 import { formatNumber } from '../utils/formatting'
 import ProjectIcon from './../components/ProjectIcon'
@@ -151,60 +152,62 @@ export const Cashflow = ({
 
   return (
     <div className='page cashflow'>
-      <div className='cashflow-head'>
-        <h1>Projects: Cash Flow</h1>
-        <p>
-          brought to you by <a
-            href='https://santiment.net'
-            rel='noopener noreferrer'
-            target='_blank'>Santiment</a>
-          <br />
-          NOTE: This app is in development.
-          We give no guarantee data is correct as we are in active development.
-        </p>
-      </div>
-      <div className='panel'>
-        <div className='row'>
-          <div className='datatables-info'>
-            <label>
-              Showing {
-                (tableInfo.visibleItems !== 0)
-                  ? (tableInfo.page - 1) * tableInfo.pageSize + 1
-                  : 0
-              } to {
-                tableInfo.page * tableInfo.pageSize
-              } of {tableInfo.visibleItems}
-              &nbsp;entries&nbsp;
-              {tableInfo.visibleItems !== projects.length &&
-                `(filtered from ${projects.length} total entries)`}
-            </label>
-          </div>
-          <div className='datatables-filter'>
-            <label>
-              <input placeholder='Search' onKeyUp={onSearch} />
-            </label>
-          </div>
+      <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
+        <div className='cashflow-head'>
+          <h1>Projects: Cash Flow</h1>
+          <p>
+            brought to you by <a
+              href='https://santiment.net'
+              rel='noopener noreferrer'
+              target='_blank'>Santiment</a>
+            <br />
+            NOTE: This app is in development.
+            We give no guarantee data is correct as we are in active development.
+          </p>
         </div>
-        <ReactTable
-          loading={loading}
-          showPagination={false}
-          showPaginationTop={false}
-          showPaginationBottom={false}
-          defaultPageSize={projects.items ? projects.items.length : 32}
-          sortable={false}
-          resizable
-          defaultSorted={[
-            {
-              id: 'market_cap_usd',
-              desc: false
-            }
-          ]}
-          className='-highlight'
-          data={projects}
-          columns={columns}
-          filtered={getFilter(search)}
-        />
-      </div>
+        <div className='panel'>
+          <div className='row'>
+            <div className='datatables-info'>
+              <label>
+                Showing {
+                  (tableInfo.visibleItems !== 0)
+                    ? (tableInfo.page - 1) * tableInfo.pageSize + 1
+                    : 0
+                } to {
+                  tableInfo.page * tableInfo.pageSize
+                } of {tableInfo.visibleItems}
+                &nbsp;entries&nbsp;
+                {tableInfo.visibleItems !== projects.length &&
+                  `(filtered from ${projects.length} total entries)`}
+              </label>
+            </div>
+            <div className='datatables-filter'>
+              <label>
+                <input placeholder='Search' onKeyUp={onSearch} />
+              </label>
+            </div>
+          </div>
+          <ReactTable
+            loading={loading}
+            showPagination={false}
+            showPaginationTop={false}
+            showPaginationBottom={false}
+            defaultPageSize={projects.items ? projects.items.length : 32}
+            sortable={false}
+            resizable
+            defaultSorted={[
+              {
+                id: 'market_cap_usd',
+                desc: false
+              }
+            ]}
+            className='-highlight'
+            data={projects}
+            columns={columns}
+            filtered={getFilter(search)}
+          />
+        </div>
+      </FadeIn>
     </div>
   )
 }

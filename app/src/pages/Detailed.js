@@ -5,7 +5,7 @@ import {
   compose,
   lifecycle
 } from 'recompose'
-import { Merge } from 'animate-components'
+import { Merge, FadeIn } from 'animate-components'
 import { fadeIn, slideRight } from 'animate-keyframes'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
@@ -64,108 +64,110 @@ export const Detailed = ({
 
   return (
     <div className='page detailed'>
-      <div className='detailed-head'>
-        <div className='detailed-name'>
-          <h1><ProjectIcon name={project.name} size={28} /> {project.name} ({project.ticker.toUpperCase()})</h1>
-          <p>Manage entire organisations using the blockchain.</p>
-        </div>
+      <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
+        <div className='detailed-head'>
+          <div className='detailed-name'>
+            <h1><ProjectIcon name={project.name} size={28} /> {project.name} ({project.ticker.toUpperCase()})</h1>
+            <p>Manage entire organisations using the blockchain.</p>
+          </div>
 
-        {!PriceQuery.loading && PriceQuery.price &&
-          <Merge
-            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-            two={{ name: slideRight, duration: '0.5s', timingFunction: 'ease-out' }}
-            as='div'
-          >
-            <div className='detailed-price'>
-              <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
-              <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
+          {!PriceQuery.loading && PriceQuery.price &&
+            <Merge
+              one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
+              two={{ name: slideRight, duration: '0.5s', timingFunction: 'ease-out' }}
+              as='div'
+            >
+              <div className='detailed-price'>
+                <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
+                <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
+              </div>
+            </Merge>}
+
+          <HiddenElements>
+            <div className='detailed-buttons'>
+              <button className='add-to-dashboard'>
+                <i className='fa fa-plus' />
+                &nbsp; Add to Dashboard
+              </button>
             </div>
-          </Merge>}
-
+          </HiddenElements>
+        </div>
+        <div className='panel'>
+          <ProjectChart ticker={project.ticker} />
+        </div>
         <HiddenElements>
-          <div className='detailed-buttons'>
-            <button className='add-to-dashboard'>
-              <i className='fa fa-plus' />
-              &nbsp; Add to Dashboard
-            </button>
+          <div className='panel'>
+            <Tabs className='activity-panel'>
+              <TabList className='nav'>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    Social Mentions
+                  </button>
+                </Tab>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    Social Activity over Time
+                  </button>
+                </Tab>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    Sentiment/Intensity
+                  </button>
+                </Tab>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    Github Activity
+                  </button>
+                </Tab>
+                <Tab className='nav-item' selectedClassName='active'>
+                  <button className='nav-link'>
+                    SAN Community
+                  </button>
+                </Tab>
+              </TabList>
+              <TabPanel>
+                Social Mentions
+              </TabPanel>
+              <TabPanel>
+                Social Activity over Time
+              </TabPanel>
+              <TabPanel>
+                Sentiment/Intensity
+              </TabPanel>
+              <TabPanel>
+                Github Activity
+              </TabPanel>
+              <TabPanel>
+                SAN Community
+              </TabPanel>
+            </Tabs>
           </div>
         </HiddenElements>
-      </div>
-      <div className='panel'>
-        <ProjectChart ticker={project.ticker} />
-      </div>
-      <HiddenElements>
-        <div className='panel'>
-          <Tabs className='activity-panel'>
-            <TabList className='nav'>
-              <Tab className='nav-item' selectedClassName='active'>
-                <button className='nav-link'>
-                  Social Mentions
-                </button>
-              </Tab>
-              <Tab className='nav-item' selectedClassName='active'>
-                <button className='nav-link'>
-                  Social Activity over Time
-                </button>
-              </Tab>
-              <Tab className='nav-item' selectedClassName='active'>
-                <button className='nav-link'>
-                  Sentiment/Intensity
-                </button>
-              </Tab>
-              <Tab className='nav-item' selectedClassName='active'>
-                <button className='nav-link'>
-                  Github Activity
-                </button>
-              </Tab>
-              <Tab className='nav-item' selectedClassName='active'>
-                <button className='nav-link'>
-                  SAN Community
-                </button>
-              </Tab>
-            </TabList>
-            <TabPanel>
-              Social Mentions
-            </TabPanel>
-            <TabPanel>
-              Social Activity over Time
-            </TabPanel>
-            <TabPanel>
-              Sentiment/Intensity
-            </TabPanel>
-            <TabPanel>
-              Github Activity
-            </TabPanel>
-            <TabPanel>
-              SAN Community
-            </TabPanel>
-          </Tabs>
+        <HiddenElements>
+          <PanelBlock title='Blockchain Analytics' />
+          <div className='analysis'>
+            <PanelBlock title='Signals/Volatility' />
+            <PanelBlock title='Expert Analyses' />
+            <PanelBlock title='News/Press' />
+          </div>
+        </HiddenElements>
+        <div className='information'>
+          <PanelBlock
+            isUnauthorized={generalInfo.isUnauthorized}
+            isLoading={generalInfo.isLoading || PriceQuery.loading}
+            title='General Info'>
+            <GeneralInfoBlock
+              volume={!!PriceQuery.price && PriceQuery.price.volume}
+              {...generalInfo.project} />
+          </PanelBlock>
+          <PanelBlock
+            isUnauthorized={generalInfo.isUnauthorized}
+            isLoading={generalInfo.isLoading}
+            title='Financials'>
+            <FinancialsBlock {...generalInfo.project} />
+          </PanelBlock>
         </div>
-      </HiddenElements>
-      <HiddenElements>
-        <PanelBlock title='Blockchain Analytics' />
-        <div className='analysis'>
-          <PanelBlock title='Signals/Volatility' />
-          <PanelBlock title='Expert Analyses' />
-          <PanelBlock title='News/Press' />
-        </div>
-      </HiddenElements>
-      <div className='information'>
-        <PanelBlock
-          isUnauthorized={generalInfo.isUnauthorized}
-          isLoading={generalInfo.isLoading || PriceQuery.loading}
-          title='General Info'>
-          <GeneralInfoBlock
-            volume={!!PriceQuery.price && PriceQuery.price.volume}
-            {...generalInfo.project} />
-        </PanelBlock>
-        <PanelBlock
-          isUnauthorized={generalInfo.isUnauthorized}
-          isLoading={generalInfo.isLoading}
-          title='Financials'>
-          <FinancialsBlock {...generalInfo.project} />
-        </PanelBlock>
-      </div>
+      </FadeIn>
     </div>
   )
 }

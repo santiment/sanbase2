@@ -1,6 +1,5 @@
 import React from 'react'
-import { graphql } from 'react-apollo'
-import gql from 'graphql-tag'
+import PropTypes from 'prop-types'
 import {
   compose,
   pure,
@@ -12,7 +11,7 @@ import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { Bar, Chart } from 'react-chartjs-2'
 import moment from 'moment'
-import { formatNumber, formatBTC } from '../utils/formatting'
+import { formatNumber, formatBTC } from '../../utils/formatting'
 import './ProjectChart.css'
 
 export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
@@ -23,8 +22,8 @@ export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
   return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
 }
 
-const TimeFilterItem = ({disabled, filter, setFilter, value = '1d'}) => {
-  let cls = filter === value ? 'activated' : ''
+const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
+  let cls = interval === value ? 'activated' : ''
   if (disabled) {
     cls += ' disabled'
   }
@@ -110,7 +109,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       return parseFloat(data.volume)
     }) : []}
   return {
-    labels: history ? history.map(data => new Date(data.datetime)) : [],
+    labels: history ? history.map(data => moment(data.datetime).utc()) : [],
     datasets: [priceDataset, volumeDataset, marketcapDataset].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -120,24 +119,30 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
 
 export const ProjectChart = ({
   history,
+  isError,
+  isEmpty,
+  isLoading,
+  errorMessage,
   setSelected,
   selected,
   ...props
 }) => {
-  if (!history || history.isLoading) {
+  if (isLoading) {
     return (
-      <h2>Loading...</h2>
-    )
-  }
-  if (history.isError) {
-    return (
-      <div>
-        <h2>We can't get the data from our server now... ;(</h2>
-        <p>{history.errorMessage}</p>
+      <div className='project-chart-loader'>
+        <h2>Loading...</h2>
       </div>
     )
   }
-  const chartData = getChartDataFromHistory(history.data, props.isToggledBTC, props.isToggledMarketCap)
+  if (isError) {
+    return (
+      <div>
+        <h2>We can't get the data from our server now... ;(</h2>
+        <p>{errorMessage}</p>
+      </div>
+    )
+  }
+  const chartData = getChartDataFromHistory(history, props.isToggledBTC, props.isToggledMarketCap)
   const max = Math.max(...chartData.datasets[1].data)
   const chartOptions = {
     responsive: true,
@@ -209,14 +214,16 @@ export const ProjectChart = ({
       }],
       xAxes: [{
         type: 'time',
-        time: {
-          displayFormats: {
-            quarter: 'MMM YYYY'
-          }
-        },
         ticks: {
-          autoSkipPadding: 1
-        },
+          autoSkipPadding: 1,
+          callback: function (value, index, values) {
+            if (!values[index]) { return }
+            const time = moment.utc(values[index]['value'])
+            if (props.interval === '1d') {
+              return time.format('HH:mm')
+            }
+            return time.format('D MMM')
+          }},
         gridLines: {
           drawBorder: true,
           display: true
@@ -228,14 +235,16 @@ export const ProjectChart = ({
   return (
     <div className='project-dp-chart'>
       <div className='chart-header'>
-        <TimeFilter disabled {...props} />
+        <TimeFilter {...props} />
         <div className='selected-value'>{selected !== null &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
             as='div'
           >
-            <span className='selected-value-datetime'>{moment(chartData.labels[selected]).format('MMMM DD, YYYY')}</span>
+            <span className='selected-value-datetime'>
+              {moment(chartData.labels[selected]).utc().format('MMMM DD, YYYY')}
+            </span>
           </Merge>}</div>
         <div className='selected-value'>{selected !== null &&
           <Merge
@@ -270,61 +279,13 @@ export const ProjectChart = ({
   )
 }
 
-const getHistoryGQL = gql`
-  query history($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
-    historyPrice(
-      ticker: $ticker,
-      from: $from,
-      to: $to,
-      interval: $interval
-    ) {
-      priceBtc,
-      priceUsd,
-      volume,
-      datetime,
-      marketcap
-    }
-}`
-
-const defaultFrom = moment().subtract(1, 'M').utc().format()
-const defaultTo = moment().subtract(1, 'd').utc().format()
-
-const mapDataToProps = ({historyPrice}) => {
-  const isLoading = historyPrice.loading
-  const isEmpty = !!historyPrice.project
-  const isError = !!historyPrice.error
-  const data = historyPrice.historyPrice
-  const errorMessage = isError ? historyPrice.error.message : ''
-  const project = historyPrice.project
-
-  return {history: {isLoading, isEmpty, isError, project, errorMessage, data}}
-}
-
-const mapPropsToOptions = ({ticker}) => {
-  return {
-    variables: {
-      'ticker': ticker,
-      'from': defaultFrom,
-      'to': defaultTo,
-      'interval': '1h'
-    }
-  }
-}
-
 const enhance = compose(
   withState('isToggledBTC', 'currencyToggle', false),
   withHandlers({
     showBTC: ({ currencyToggle }) => e => currencyToggle(true),
     showUSD: ({ currencyToggle }) => e => currencyToggle(false)
   }),
-  withState('filter', 'setFilter', '1m'),
-  withState('selected', 'setSelected', null),
   withState('isToggledMarketCap', 'toggleMarketcap', false),
-  graphql(getHistoryGQL, {
-    name: 'historyPrice',
-    props: mapDataToProps,
-    options: mapPropsToOptions
-  }),
   lifecycle({
     componentWillMount () {
       Chart.defaults.LineWithLine = Chart.defaults.line
@@ -344,7 +305,7 @@ const enhance = compose(
             ctx.moveTo(x, topY)
             ctx.lineTo(x, bottomY)
             ctx.lineWidth = 2
-            ctx.strokeStyle = 'rgb(49, 107, 174)'
+            ctx.strokeStyle = 'rgba(49, 107, 174, 0.5)'
             ctx.stroke()
             ctx.restore()
           }
@@ -354,5 +315,19 @@ const enhance = compose(
   }),
   pure
 )
+
+ProjectChart.propTypes = {
+  isLoading: PropTypes.bool.isRequired,
+  isError: PropTypes.bool.isRequired,
+  history: PropTypes.array.isRequired,
+  isEmpty: PropTypes.bool
+}
+
+ProjectChart.defaultProps = {
+  isLoading: true,
+  isEmpty: true,
+  isError: false,
+  history: []
+}
 
 export default enhance(ProjectChart)

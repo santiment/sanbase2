@@ -68,16 +68,44 @@ const fetchPriceHistory = (client, ticker, interval = '1m') => {
   })
 }
 
-/* eslint-disable no-use-before-define */
 class ProjectChartContainer extends Component {
-  state = {
-    interval: '1m',
-    isLoading: true,
-    isError: false,
-    isEmpty: true,
-    errorMessage: '',
-    selected: null,
-    history: []
+  constructor (props) {
+    super(props)
+    this.state = {
+      interval: '1m',
+      isLoading: true,
+      isError: false,
+      isEmpty: true,
+      errorMessage: '',
+      selected: null,
+      history: []
+    }
+
+    this.setFilter = this.setFilter.bind(this)
+    this.setSelected = this.setSelected.bind(this)
+  }
+
+  setSelected (selected) {
+    this.setState({selected})
+  }
+
+  setFilter (interval) {
+    if (interval === this.state.interval) { return }
+    const { client, ticker } = this.props
+    this.setState({
+      interval,
+      isLoading: true,
+      selected: null
+    })
+    fetchPriceHistory(client, ticker, interval).then(data => {
+      const historyPrice = data.historyPrice || []
+      this.setState({
+        isLoading: false,
+        isEmpty: historyPrice.length === 0,
+        history: data.historyPrice,
+        selected: null
+      })
+    })
   }
 
   componentDidMount () {
@@ -107,30 +135,6 @@ class ProjectChartContainer extends Component {
       </div>
     )
   }
-
-  setSelected = selected => {
-    this.setState({selected})
-  }
-
-  setFilter = interval => {
-    if (interval === this.state.interval) { return }
-    const { client, ticker } = this.props
-    this.setState({
-      interval,
-      isLoading: true,
-      selected: null
-    })
-    fetchPriceHistory(client, ticker, interval).then(data => {
-      const historyPrice = data.historyPrice || []
-      this.setState({
-        isLoading: false,
-        isEmpty: historyPrice.length === 0,
-        history: data.historyPrice,
-        selected: null
-      })
-    })
-  }
 }
-/* eslint-enable no-use-before-define */
 
 export default withApollo(ProjectChartContainer)

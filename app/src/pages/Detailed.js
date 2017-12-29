@@ -16,7 +16,7 @@ import ProjectIcon from './../components/ProjectIcon'
 import PanelBlock from './../components/PanelBlock'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
-import ProjectChart from './ProjectChart'
+import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
 import { formatNumber, formatBTC } from '../utils/formatting'
 import './Detailed.css'
 
@@ -92,8 +92,8 @@ export const Detailed = ({
             </div>
           </HiddenElements>
         </div>
-        <div className='panel'>
-          <ProjectChart ticker={project.ticker} />
+        <div className='panel panel-chart'>
+          <ProjectChartContainer ticker={project.ticker} />
         </div>
         <HiddenElements>
           <div className='panel'>

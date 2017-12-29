@@ -60,8 +60,7 @@
   "standard": {
     "parser": "babel-eslint",
     "ignore": [
-      "src/registerServiceWorker.js",
-      "server/node_modules"
+      "src/registerServiceWorker.js"
     ]
   }
 }

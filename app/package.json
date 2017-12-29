@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": true,
   "dependencies": {
     "animate-components": "^1.4.8",

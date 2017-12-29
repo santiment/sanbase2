@@ -4,8 +4,6 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
   import Sanbase.Utils, only: [parse_config_value: 1]
 
-  alias Ecto.Changeset
-  alias Sanbase.Graphql.ProjectInfo
   alias Sanbase.Model.Project
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
@@ -15,7 +13,6 @@ defmodule Sanbase.Graphql.ProjectApiTest do
   alias Sanbase.Repo
 
   import Plug.Conn
-  import ExUnit.CaptureLog
 
   defp query_skeleton(query, query_name) do
     %{
@@ -30,19 +27,19 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     |> Project.changeset(%{name: "Project1", project_transparency: true})
     |> Repo.insert!
 
-    addr1_1 = %ProjectEthAddress{}
+    %ProjectEthAddress{}
     |> ProjectEthAddress.changeset(%{project_id: project1.id, address: "abcdefg", project_transparency: true})
     |> Repo.insert!
 
-    addr1_1_data = %LatestEthWalletData{}
+    %LatestEthWalletData{}
     |> LatestEthWalletData.changeset(%{address: "abcdefg", update_time: Ecto.DateTime.utc(), balance: 500})
     |> Repo.insert!
 
-    addr1_2 = %ProjectEthAddress{}
+    %ProjectEthAddress{}
     |> ProjectEthAddress.changeset(%{project_id: project1.id, address: "rrrrr"})
     |> Repo.insert!
 
-    addr1_2_data = %LatestEthWalletData{}
+    %LatestEthWalletData{}
     |> LatestEthWalletData.changeset(%{address: "rrrrr", update_time: Ecto.DateTime.utc(), balance: 800})
     |> Repo.insert!
 
@@ -77,7 +74,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     |> Project.changeset(%{name: "Project1"})
     |> Repo.insert!
 
-    ico1 = %Ico{}
+    %Ico{}
     |> Ico.changeset(%{project_id: project1.id, funds_raised_usd: 123.45})
     |> Repo.insert!
 
@@ -89,15 +86,15 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     |> Ico.changeset(%{project_id: project2.id, funds_raised_usd: 100})
     |> Repo.insert!
 
-    ico2_2 = %Ico{}
+    %Ico{}
     |> Ico.changeset(%{project_id: project2.id, funds_raised_usd: 200})
     |> Repo.insert!
 
-    ico_currency_2_1 = %IcoCurrencies{}
+    %IcoCurrencies{}
     |> IcoCurrencies.changeset(%{ico_id: ico2_1.id, currency_id: currency1.id, amount: 50})
     |> Repo.insert!
 
-    ico_currency_2_2 = %IcoCurrencies{}
+    %IcoCurrencies{}
     |> IcoCurrencies.changeset(%{ico_id: ico2_1.id, currency_id: currency2.id, amount: 300})
     |> Repo.insert!
 

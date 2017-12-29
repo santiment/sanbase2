@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Schema
   use Absinthe.Ecto, repo: Sanbase.Repo
 
-  alias Sanbase.Auth.{User, EthAccount}
   alias SanbaseWeb.Graphql.Resolvers.{
     AccountResolver,
     PriceResolver,

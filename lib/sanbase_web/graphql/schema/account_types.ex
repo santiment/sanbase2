@@ -2,9 +2,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
-  alias Sanbase.Auth.{User, EthAccount}
   alias SanbaseWeb.Graphql.Resolvers.{AccountResolver, EthAccountResolver}
-  alias SanbaseWeb.Graphql.ProjectTypes
 
   object :user do
     field :id, non_null(:id)

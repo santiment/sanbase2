@@ -12,9 +12,67 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
     />
     <div
       className="selected-value"
-    />
+    >
+      <Merge
+        as="div"
+        one={
+          Object {
+            "duration": "0.3s",
+            "name": "bcCCNc",
+            "timingFunction": "ease-in",
+          }
+        }
+        two={
+          Object {
+            "duration": "0.5s",
+            "name": "dVMtpd",
+            "timingFunction": "ease-out",
+          }
+        }
+      >
+        <span
+          className="selected-value-datetime"
+        >
+          December 29, 2017
+        </span>
+      </Merge>
+    </div>
+    <div
+      className="selected-value"
+    >
+      <Merge
+        as="div"
+        one={
+          Object {
+            "duration": "0.3s",
+            "name": "bcCCNc",
+            "timingFunction": "ease-in",
+          }
+        }
+        two={
+          Object {
+            "duration": "0.5s",
+            "name": "dVMtpd",
+            "timingFunction": "ease-out",
+          }
+        }
+      >
+        <span
+          className="selected-value-data"
+        >
+          Price: 
+          NaN
+        </span>
+        <span
+          className="selected-value-data"
+        >
+          Volume: 
+          NaN
+        </span>
+      </Merge>
+    </div>
   </div>
-  <Line
+  <Bar
     className="graph"
     data={
       Object {
@@ -27,8 +85,25 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               undefined,
               undefined,
             ],
-            "pointBorderWidth": 0,
+            "fill": true,
+            "label": "price",
+            "pointBorderWidth": 2,
             "strokeColor": "#7a9d83eb",
+            "type": "line",
+            "yAxisID": "y-axis-1",
+          },
+          Object {
+            "borderColor": "rgba(49, 107, 174, 0.5)",
+            "borderWidth": 1,
+            "data": Array [
+              NaN,
+              NaN,
+            ],
+            "fill": false,
+            "label": "volume",
+            "pointBorderWidth": 2,
+            "type": "bar",
+            "yAxisID": "y-axis-2",
           },
         ],
         "labels": Array [
@@ -78,13 +153,44 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
           ],
           "yAxes": Array [
             Object {
+              "display": true,
               "gridLines": Object {
                 "display": true,
                 "drawBorder": true,
               },
+              "id": "y-axis-1",
+              "position": "left",
               "ticks": Object {
+                "beginAtZero": true,
                 "display": true,
               },
+              "type": "linear",
+            },
+            Object {
+              "display": false,
+              "id": "y-axis-2",
+              "labels": Object {
+                "show": true,
+              },
+              "position": "right",
+              "ticks": Object {
+                "max": NaN,
+              },
+              "type": "linear",
+            },
+            Object {
+              "display": undefined,
+              "gridLines": Object {
+                "display": false,
+              },
+              "id": "y-axis-3",
+              "position": "right",
+              "ticks": Object {
+                "display": false,
+                "mirror": true,
+                "padding": 50,
+              },
+              "type": "linear",
             },
           ],
         },
@@ -104,7 +210,12 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
       }
     }
   />
-  <CurrencyFilter />
+  <div
+    className="chart-footer"
+  >
+    <CurrencyFilter />
+    <MarketcapToggle />
+  </div>
 </div>
 `;
 

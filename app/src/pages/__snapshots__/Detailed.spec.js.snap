@@ -15,223 +15,235 @@ exports[`Project detail page container it should render correctly 1`] = `
 <div
   className="page detailed"
 >
-  <div
-    className="detailed-head"
+  <FadeIn
+    as="div"
+    backfaceVisible="visible"
+    delay="0s"
+    direction="normal"
+    duration="0.7s"
+    fillMode="none"
+    iterations="1"
+    playState="running"
+    timingFunction="ease-in"
   >
     <div
-      className="detailed-name"
+      className="detailed-head"
     >
-      <h1>
-        <ProjectIcon
-          name="Aragon"
-          size={28}
-        />
-         
-        Aragon
-         (
-        ANT
-        )
-      </h1>
-      <p>
-        Manage entire organisations using the blockchain.
-      </p>
-    </div>
-    <Component>
       <div
-        className="detailed-buttons"
+        className="detailed-name"
       >
-        <button
-          className="add-to-dashboard"
-        >
-          <i
-            className="fa fa-plus"
+        <h1>
+          <ProjectIcon
+            name="Aragon"
+            size={28}
           />
-            Add to Dashboard
-        </button>
+           
+          Aragon
+           (
+          ANT
+          )
+        </h1>
+        <p>
+          Manage entire organisations using the blockchain.
+        </p>
       </div>
-    </Component>
-  </div>
-  <div
-    className="panel"
-  >
-    <withState(withHandlers(withState(withState(Apollo(pure(ProjectChart))))))
-      ticker="ANT"
-    />
-  </div>
-  <Component>
+      <Component>
+        <div
+          className="detailed-buttons"
+        >
+          <button
+            className="add-to-dashboard"
+          >
+            <i
+              className="fa fa-plus"
+            />
+              Add to Dashboard
+          </button>
+        </div>
+      </Component>
+    </div>
     <div
       className="panel"
     >
-      <Tabs
-        className="activity-panel"
-        defaultFocus={false}
-        defaultIndex={null}
-        forceRenderTabPanel={false}
-        selectedIndex={null}
+      <withState(withHandlers(withState(withState(withState(Apollo(pure(ProjectChart)))))))
+        ticker="ANT"
+      />
+    </div>
+    <Component>
+      <div
+        className="panel"
       >
-        <TabList
-          className="nav"
+        <Tabs
+          className="activity-panel"
+          defaultFocus={false}
+          defaultIndex={null}
+          forceRenderTabPanel={false}
+          selectedIndex={null}
         >
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
+          <TabList
+            className="nav"
           >
-            <button
-              className="nav-link"
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
             >
-              Social Mentions
-            </button>
-          </Tab>
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
+              <button
+                className="nav-link"
+              >
+                Social Mentions
+              </button>
+            </Tab>
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
+            >
+              <button
+                className="nav-link"
+              >
+                Social Activity over Time
+              </button>
+            </Tab>
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
+            >
+              <button
+                className="nav-link"
+              >
+                Sentiment/Intensity
+              </button>
+            </Tab>
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
+            >
+              <button
+                className="nav-link"
+              >
+                Github Activity
+              </button>
+            </Tab>
+            <Tab
+              className="nav-item"
+              disabledClassName="react-tabs__tab--disabled"
+              focus={false}
+              id={null}
+              panelId={null}
+              selected={false}
+              selectedClassName="active"
+            >
+              <button
+                className="nav-link"
+              >
+                SAN Community
+              </button>
+            </Tab>
+          </TabList>
+          <TabPanel
+            className="react-tabs__tab-panel"
+            forceRender={false}
+            selectedClassName="react-tabs__tab-panel--selected"
           >
-            <button
-              className="nav-link"
-            >
-              Social Activity over Time
-            </button>
-          </Tab>
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
+            Social Mentions
+          </TabPanel>
+          <TabPanel
+            className="react-tabs__tab-panel"
+            forceRender={false}
+            selectedClassName="react-tabs__tab-panel--selected"
           >
-            <button
-              className="nav-link"
-            >
-              Sentiment/Intensity
-            </button>
-          </Tab>
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
+            Social Activity over Time
+          </TabPanel>
+          <TabPanel
+            className="react-tabs__tab-panel"
+            forceRender={false}
+            selectedClassName="react-tabs__tab-panel--selected"
           >
-            <button
-              className="nav-link"
-            >
-              Github Activity
-            </button>
-          </Tab>
-          <Tab
-            className="nav-item"
-            disabledClassName="react-tabs__tab--disabled"
-            focus={false}
-            id={null}
-            panelId={null}
-            selected={false}
-            selectedClassName="active"
+            Sentiment/Intensity
+          </TabPanel>
+          <TabPanel
+            className="react-tabs__tab-panel"
+            forceRender={false}
+            selectedClassName="react-tabs__tab-panel--selected"
           >
-            <button
-              className="nav-link"
-            >
-              SAN Community
-            </button>
-          </Tab>
-        </TabList>
-        <TabPanel
-          className="react-tabs__tab-panel"
-          forceRender={false}
-          selectedClassName="react-tabs__tab-panel--selected"
-        >
-          Social Mentions
-        </TabPanel>
-        <TabPanel
-          className="react-tabs__tab-panel"
-          forceRender={false}
-          selectedClassName="react-tabs__tab-panel--selected"
-        >
-          Social Activity over Time
-        </TabPanel>
-        <TabPanel
-          className="react-tabs__tab-panel"
-          forceRender={false}
-          selectedClassName="react-tabs__tab-panel--selected"
-        >
-          Sentiment/Intensity
-        </TabPanel>
-        <TabPanel
-          className="react-tabs__tab-panel"
-          forceRender={false}
-          selectedClassName="react-tabs__tab-panel--selected"
-        >
-          Github Activity
-        </TabPanel>
-        <TabPanel
-          className="react-tabs__tab-panel"
-          forceRender={false}
-          selectedClassName="react-tabs__tab-panel--selected"
-        >
-          SAN Community
-        </TabPanel>
-      </Tabs>
-    </div>
-  </Component>
-  <Component>
-    <PanelBlock
-      classes=""
-      isUnauthorized={false}
-      title="Blockchain Analytics"
-    />
+            Github Activity
+          </TabPanel>
+          <TabPanel
+            className="react-tabs__tab-panel"
+            forceRender={false}
+            selectedClassName="react-tabs__tab-panel--selected"
+          >
+            SAN Community
+          </TabPanel>
+        </Tabs>
+      </div>
+    </Component>
+    <Component>
+      <PanelBlock
+        classes=""
+        isUnauthorized={false}
+        title="Blockchain Analytics"
+      />
+      <div
+        className="analysis"
+      >
+        <PanelBlock
+          classes=""
+          isUnauthorized={false}
+          title="Signals/Volatility"
+        />
+        <PanelBlock
+          classes=""
+          isUnauthorized={false}
+          title="Expert Analyses"
+        />
+        <PanelBlock
+          classes=""
+          isUnauthorized={false}
+          title="News/Press"
+        />
+      </div>
+    </Component>
     <div
-      className="analysis"
+      className="information"
     >
       <PanelBlock
         classes=""
-        isUnauthorized={false}
-        title="Signals/Volatility"
-      />
+        isLoading={true}
+        isUnauthorized={true}
+        title="General Info"
+      >
+        <GeneralInfoBlock
+          volume={false}
+        />
+      </PanelBlock>
       <PanelBlock
         classes=""
-        isUnauthorized={false}
-        title="Expert Analyses"
-      />
-      <PanelBlock
-        classes=""
-        isUnauthorized={false}
-        title="News/Press"
-      />
+        isUnauthorized={true}
+        title="Financials"
+      >
+        <FinancialsBlock />
+      </PanelBlock>
     </div>
-  </Component>
-  <div
-    className="information"
-  >
-    <PanelBlock
-      classes=""
-      isLoading={true}
-      isUnauthorized={true}
-      title="General Info"
-    >
-      <GeneralInfoBlock
-        volume={false}
-      />
-    </PanelBlock>
-    <PanelBlock
-      classes=""
-      isUnauthorized={true}
-      title="Financials"
-    >
-      <FinancialsBlock />
-    </PanelBlock>
-  </div>
+  </FadeIn>
 </div>
 `;

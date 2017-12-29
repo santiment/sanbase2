@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.Helpers do
   def error_details(changeset) do
     changeset
-    |> Ecto.Changeset.traverse_errors(fn {msg, _} -> msg end)
+    |> Ecto.Changeset.traverse_errors(&format_error/1)
   end
 
   @spec format_error(Ecto.Changeset.error()) :: String.t()

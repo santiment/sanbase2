@@ -159,7 +159,7 @@ defmodule Sanbase.Model.Ico do
     put_change(changeset, key, value)
   end
 
-  defp add_change(changeset, key, :error) do
+  defp add_change(changeset, _key, :error) do
     changeset
   end
 

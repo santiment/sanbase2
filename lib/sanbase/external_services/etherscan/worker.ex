@@ -111,7 +111,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     end
   end
 
-  defp config do
+  defp config() do
     Application.get_env(:sanbase, __MODULE__)
   end
 

@@ -10,7 +10,7 @@ defmodule SanbaseWeb.DailyPricesController do
 
   def index(conn, %{"tickers" => tickers}) do
     prices = String.split(tickers, ",")
-    |> Enum.map(&String.strip/1)
+    |> Enum.map(&String.trim/1)
     |> Enum.take(@max_assets_to_return)
     |> Enum.map(fn ticker -> "#{ticker}_USD" end)
     |> Enum.reduce(%{}, fn pair, acc ->

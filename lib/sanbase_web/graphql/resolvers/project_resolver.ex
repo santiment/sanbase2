@@ -9,14 +9,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.LatestBtcWalletData
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.Ico
-  alias Sanbase.Model.IcoCurrencies
   alias Sanbase.Model.Currency
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.Infrastructure
   alias Sanbase.Model.ProjectTransparencyStatus
 
   alias Sanbase.Repo
-  alias Ecto.Multi
 
   def all_projects(parent, args, %{context: %{basic_auth: true}}), do: all_projects(parent, args)
 
@@ -70,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_balance(%Project{id: id}, args, context) do
+  def eth_balance(%Project{id: id}, _args, context) do
     only_project_transparency = get_parent_args(context)
     |> Map.get(:only_project_transparency, false)
 
@@ -85,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, balance}
   end
 
-  def btc_balance(%Project{id: id}, args, context) do
+  def btc_balance(%Project{id: id}, _args, context) do
     only_project_transparency = get_parent_args(context)
     |> Map.get(:only_project_transparency, false)
 

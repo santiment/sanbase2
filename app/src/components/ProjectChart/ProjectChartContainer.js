@@ -68,6 +68,7 @@ const fetchPriceHistory = (client, ticker, interval = '1m') => {
   })
 }
 
+/* eslint-disable no-use-before-define */
 class ProjectChartContainer extends Component {
   state = {
     interval: '1m',
@@ -130,5 +131,6 @@ class ProjectChartContainer extends Component {
     })
   }
 }
+/* eslint-enable no-use-before-define */
 
 export default withApollo(ProjectChartContainer)

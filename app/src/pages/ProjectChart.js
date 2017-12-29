@@ -46,43 +46,62 @@ const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
   </div>
 )
 
-const getChartDataFromHistory = (history = [], isToggledBTC) => {
+const MarketcapToggle = ({isToggledMarketCap, toggleMarketcap}) => (
+  <div className='marketcap-toggle'>
+    <div
+      className={isToggledMarketCap ? 'activated' : ''}
+      onClick={() => toggleMarketcap(!isToggledMarketCap)}>MarketCap</div>
+  </div>
+)
+
+const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap) => {
+  const priceDataset = {
+    label: 'price',
+    type: 'line',
+    strokeColor: '#7a9d83eb',
+    borderColor: '#7a9d83eb',
+    borderWidth: 1,
+    backgroundColor: 'rgba(239, 242, 236, 0.5)',
+    pointBorderWidth: 2,
+    yAxisID: 'y-axis-1',
+    data: history ? history.map(data => {
+      if (isToggledBTC) {
+        const price = parseFloat(data.priceBtc)
+        return formatBTC(price)
+      }
+      return data.priceUsd
+    }) : []}
+  const volumeDataset = {
+    label: 'volume',
+    fill: false,
+    type: 'bar',
+    yAxisID: 'y-axis-2',
+    strokeColor: 'rgba(49, 107, 174, 0.5)',
+    borderColor: 'rgba(49, 107, 174, 0.5)',
+    borderWidth: 1,
+    backgroundColor: 'rgba(239, 242, 236, 0.5)',
+    pointBorderWidth: 2,
+    data: history ? history.map(data => {
+      if (isToggledBTC) {
+        return []
+      }
+      return parseFloat(data.volume)
+    }) : []}
+  const marketcapDataset = !isToggledMarketCap || isToggledBTC ? null : {
+    label: 'marketcap',
+    type: 'line',
+    yAxisID: 'y-axis-3',
+    borderColor: 'rgb(200, 47, 63)',
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    data: history ? history.map(data => parseFloat(data.marketcap)) : []
+  }
   return {
     labels: history ? history.map(data => new Date(data.datetime)) : [],
-    datasets: [{
-      label: 'price',
-      type: 'line',
-      strokeColor: '#7a9d83eb',
-      borderColor: '#7a9d83eb',
-      borderWidth: 1,
-      backgroundColor: 'rgba(239, 242, 236, 0.5)',
-      pointBorderWidth: 2,
-      yAxisID: 'y-axis-1',
-      data: history ? history.map(data => {
-        if (isToggledBTC) {
-          const price = parseFloat(data.priceBtc)
-          return formatBTC(price)
-        }
-        return data.priceUsd
-      }) : []
-    },
-    {
-      label: 'volume',
-      fill: false,
-      type: 'bar',
-      yAxisID: 'y-axis-2',
-      strokeColor: 'rgba(49, 107, 174, 0.5)',
-      borderColor: 'rgba(49, 107, 174, 0.5)',
-      borderWidth: 1,
-      backgroundColor: 'rgba(239, 242, 236, 0.5)',
-      pointBorderWidth: 2,
-      data: history ? history.map(data => {
-        if (isToggledBTC) {
-          return []
-        }
-        return parseFloat(data.volume)
-      }) : []
-    }]
+    datasets: [priceDataset, volumeDataset, marketcapDataset].reduce((acc, curr) => {
+      if (curr) acc.push(curr)
+      return acc
+    }, [])
   }
 }
 
@@ -105,7 +124,7 @@ export const ProjectChart = ({
       </div>
     )
   }
-  const chartData = getChartDataFromHistory(history.data, props.isToggledBTC)
+  const chartData = getChartDataFromHistory(history.data, props.isToggledBTC, props.isToggledMarketCap)
   const max = Math.max(...chartData.datasets[1].data)
   const chartOptions = {
     responsive: true,
@@ -161,6 +180,19 @@ export const ProjectChart = ({
         labels: {
           show: true
         }
+      }, {
+        id: 'y-axis-3',
+        type: 'linear',
+        ticks: {
+          mirror: true,
+          padding: 50,
+          display: false
+        },
+        gridLines: {
+          display: false
+        },
+        display: props.isToggledMarketCap,
+        position: 'right'
       }],
       xAxes: [{
         type: 'time',
@@ -215,7 +247,10 @@ export const ProjectChart = ({
         }}
         style={{ transition: 'opacity 0.25s ease' }}
       />
-      <CurrencyFilter {...props} />
+      <div className='chart-footer'>
+        <CurrencyFilter {...props} />
+        <MarketcapToggle {...props} />
+      </div>
     </div>
   )
 }
@@ -269,6 +304,7 @@ const enhance = compose(
   }),
   withState('filter', 'setFilter', '1m'),
   withState('selected', 'setSelected', null),
+  withState('isToggledMarketCap', 'toggleMarketcap', false),
   graphql(getHistoryGQL, {
     name: 'historyPrice',
     props: mapDataToProps,

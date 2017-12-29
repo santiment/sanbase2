@@ -171,8 +171,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert Enum.count(history_price) == 2
     assert Enum.at(history_price, 0)["priceUsd"] == "20"
     assert Enum.at(history_price, 1)["priceUsd"] == "22"
-
-    assert 1 == 2 # 100% fail the test to see all prints
   end
 
   test "complexity is 0 with basic authentication", context do

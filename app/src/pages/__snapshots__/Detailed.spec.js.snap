@@ -63,9 +63,9 @@ exports[`Project detail page container it should render correctly 1`] = `
       </Component>
     </div>
     <div
-      className="panel"
+      className="panel panel-chart"
     >
-      <withState(withHandlers(withState(withState(withState(Apollo(lifecycle(pure(ProjectChart))))))))
+      <withApollo(ProjectChartContainer)
         ticker="ANT"
       />
     </div>

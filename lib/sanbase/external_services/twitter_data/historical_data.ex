@@ -113,11 +113,18 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
         |> Map.get("followersperdate")
 
       %Tesla.Env{status: 401} ->
-        Logger.warn("Twittercounter API credentials are missing or incorrect")
+        Logger.warn("Twittercounter API credentials are missing or incorrect.")
         %{}
 
       %Tesla.Env{status: 403} ->
         Logger.info("Twittercounter API limit has been reached")
+        %{}
+
+      %Tesla.Env{status: status, body: body} ->
+        Logger.warn("Error status #{status} fetching twittercounter data for twitter id #{twitter_id_str}: #{body}")
+        %{}
+
+      _ ->
         %{}
 
     end

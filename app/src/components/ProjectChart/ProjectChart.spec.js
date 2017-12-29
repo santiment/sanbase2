@@ -48,22 +48,18 @@ describe('ProjectChart utils', () => {
 describe('ProjectChart component', () => {
   it('(smoke) it should render correctly', () => {
     const chart = shallow(<ProjectChart
-      history={{
-        isLoading: false,
-        isError: false,
-        data: historyData
-      }} />)
+      isLoading={false}
+      isError={false}
+      history={historyData} />)
     expect(toJson(chart)).toMatchSnapshot()
   })
 
   describe('Loading State', () => {
     it('it should render correctly with loading prop', () => {
       const chart = mount(<ProjectChart
-        history={{
-          isLoading: true,
-          isError: false,
-          data: historyData
-        }} />)
+        isLoading
+        isError={false}
+        history={[]} />)
       expect(toJson(chart)).toMatchSnapshot()
     })
 
@@ -76,12 +72,10 @@ describe('ProjectChart component', () => {
   describe('Error State', () => {
     it('it should render correctly with error message', () => {
       const chart = mount(<ProjectChart
-        history={{
-          isLoading: false,
-          isError: true,
-          errorMessage: '400 error',
-          data: historyData
-        }} />)
+        isError
+        isLoading={false}
+        errorMessage={'400 error'}
+        history={[]} />)
       expect(toJson(chart)).toMatchSnapshot()
     })
   })

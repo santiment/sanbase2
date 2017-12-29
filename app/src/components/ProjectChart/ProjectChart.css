@@ -8,29 +8,32 @@
   flex: 1;
 }
 
+.project-chart-loader {
+  padding-top: 10px;
+}
+
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
   padding: 0 20px;
-  min-height: 40px;
+  min-height: 60px;
 }
 
 .selected-value {
-  font-size: 1.2em;
+  font-size: 1em;
   text-align: center;
 }
 
 .selected-value-datetime {
-  font-size: 1.6em;
+  font-size: 1.4em;
   font-weight: 300;
 }
 
 .selected-value-data {
   display: flex;
   flex-direction: column;
-  font-size: 1.2em;
+  font-size: 1em;
   font-weight: bold;
   margin-right: 0.5em;
   text-align: left;

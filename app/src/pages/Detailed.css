@@ -5,6 +5,10 @@
   display: flex;
 }
 
+.panel-chart {
+  padding-top: 0;
+}
+
 .detailed-name h1 {
   margin-top: 0;
   font-size: 2em;

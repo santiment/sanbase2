@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.MultipleAuth do
   one of them works, the request will continue to the resolver. Otherwise the
   response will be terminated and an unauthorized error will be returned.
   """
-  @behavior Absinthe.Middleware
+  @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
 

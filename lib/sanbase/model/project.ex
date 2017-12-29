@@ -11,13 +11,9 @@ defmodule Sanbase.Model.Project do
     MarketSegment,
     Infrastructure,
     LatestCoinmarketcapData,
-    UserFollowedProject,
     ProjectTransparencyStatus
   }
   import Ecto.Query
-
-  alias Sanbase.Auth.{User, EthAccount}
-  alias Sanbase.InternalServices.Ethauth
 
   schema "project" do
     field(:name, :string)

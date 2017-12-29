@@ -95,7 +95,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   end
 
   defp s3_path(archive) do
-    [year, month | rest] = String.split(archive, "-")
+    [year, month | _rest] = String.split(archive, "-")
 
     "#{year}/#{month}/#{archive}.json.gz"
   end

@@ -7,7 +7,7 @@ defmodule Sanbase.Influxdb.Store do
     ```
   """
 
-  defmacro __using__(options \\ []) do
+  defmacro __using__(_options \\ []) do
     quote do
       use Instream.Connection, otp_app: :sanbase
       alias Sanbase.Influxdb.Measurement

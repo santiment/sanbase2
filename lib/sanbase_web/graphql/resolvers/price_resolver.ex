@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
   alias Sanbase.Prices.Store
-  alias SanbaseWeb.Graphql.PriceTypes
 
   @doc """
   Returns a list of price points for the given ticker. Optimizes the number of queries
@@ -10,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   """
   def history_price(
         _root,
-        %{ticker: ticker, from: from, to: to, interval: interval} = args,
+        %{ticker: _ticker, from: _from, to: _to, interval: _interval} = args,
         resolution
       ) do
     history_price(args, requested_fields(resolution))
@@ -95,7 +94,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     {:ok, result}
   end
 
-  defp history_price(args, fields) do
+  defp history_price(_args, _fields) do
     Logger.warn("Unexpected arguments passed to history_price")
   end
 

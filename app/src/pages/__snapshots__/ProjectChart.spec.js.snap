@@ -85,6 +85,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               undefined,
               undefined,
             ],
+            "fill": true,
             "label": "price",
             "pointBorderWidth": 2,
             "strokeColor": "#7a9d83eb",
@@ -92,7 +93,6 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             "yAxisID": "y-axis-1",
           },
           Object {
-            "backgroundColor": "rgba(239, 242, 236, 0.5)",
             "borderColor": "rgba(49, 107, 174, 0.5)",
             "borderWidth": 1,
             "data": Array [
@@ -102,7 +102,6 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             "fill": false,
             "label": "volume",
             "pointBorderWidth": 2,
-            "strokeColor": "rgba(49, 107, 174, 0.5)",
             "type": "bar",
             "yAxisID": "y-axis-2",
           },

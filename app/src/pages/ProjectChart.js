@@ -14,6 +14,14 @@ import moment from 'moment'
 import { formatNumber, formatBTC } from '../utils/formatting'
 import './ProjectChart.css'
 
+export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
+  return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
+export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
+  return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
 const TimeFilterItem = ({disabled, filter, setFilter, value = '1d'}) => {
   let cls = filter === value ? 'activated' : ''
   if (disabled) {
@@ -58,6 +66,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
   const priceDataset = {
     label: 'price',
     type: 'line',
+    fill: !isToggledMarketCap,
     strokeColor: '#7a9d83eb',
     borderColor: '#7a9d83eb',
     borderWidth: 1,
@@ -76,26 +85,29 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
     fill: false,
     type: 'bar',
     yAxisID: 'y-axis-2',
-    strokeColor: 'rgba(49, 107, 174, 0.5)',
     borderColor: 'rgba(49, 107, 174, 0.5)',
     borderWidth: 1,
-    backgroundColor: 'rgba(239, 242, 236, 0.5)',
     pointBorderWidth: 2,
     data: history ? history.map(data => {
       if (isToggledBTC) {
-        return []
+        return calculateBTCVolume(data)
       }
       return parseFloat(data.volume)
     }) : []}
-  const marketcapDataset = !isToggledMarketCap || isToggledBTC ? null : {
+  const marketcapDataset = !isToggledMarketCap ? null : {
     label: 'marketcap',
     type: 'line',
+    fill: false,
     yAxisID: 'y-axis-3',
     borderColor: 'rgb(200, 47, 63)',
     borderWidth: 1,
     pointBorderWidth: 2,
-    data: history ? history.map(data => parseFloat(data.marketcap)) : []
-  }
+    data: history ? history.map(data => {
+      if (isToggledBTC) {
+        return calculateBTCMarketcap(data)
+      }
+      return parseFloat(data.volume)
+    }) : []}
   return {
     labels: history ? history.map(data => new Date(data.datetime)) : [],
     datasets: [priceDataset, volumeDataset, marketcapDataset].reduce((acc, curr) => {
@@ -233,7 +245,9 @@ export const ProjectChart = ({
             <span className='selected-value-data'>Price: {props.isToggledBTC
               ? formatBTC(parseFloat(chartData.datasets[0].data[selected]))
               : formatNumber(chartData.datasets[0].data[selected], 'USD')}</span>
-            <span className='selected-value-data'>Volume: {formatNumber(chartData.datasets[1].data[selected], 'USD')}</span>
+            <span className='selected-value-data'>Volume: {props.isToggledBTC
+              ? formatBTC(parseFloat(chartData.datasets[1].data[selected]))
+              : formatNumber(chartData.datasets[1].data[selected], 'USD')}</span>
           </Merge>}</div>
       </div>
       <Bar

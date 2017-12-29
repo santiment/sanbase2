@@ -3,6 +3,8 @@
 - 2017-29-12 | v.0.2.7:
 
   Added charts with Volume, Price, Marketcap
+  Added time filter
+  Some fixes, styles
 
 - 2017-26-12 | v.0.2.6:
 

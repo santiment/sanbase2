@@ -1,6 +1,6 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   # A module which fetches the ticker data from coinmarketcap
-  defstruct [:id, :name, :symbol, :price_usd, :rank, :'24h_volume_usd', :market_cap_usd, :last_updated]
+  defstruct [:id, :name, :symbol, :price_usd, :rank, :'24h_volume_usd', :market_cap_usd, :last_updated, :available_supply, :total_supply]
 
   alias Sanbase.ExternalServices.RateLimiting
 

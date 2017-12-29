@@ -244,7 +244,9 @@ CREATE TABLE latest_coinmarketcap_data (
     market_cap_usd numeric,
     update_time timestamp without time zone NOT NULL,
     rank integer,
-    volume_24h_usd numeric
+    volume_usd numeric,
+    available_supply numeric,
+    total_supply numeric
 );
 
 

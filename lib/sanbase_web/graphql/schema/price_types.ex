@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.PriceTypes do
-  alias SanbaseWeb.Graphql.PriceResolver
-
   use Absinthe.Schema.Notation
 
   object :price_point do

@@ -2,12 +2,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
-  alias SanbaseWeb.Graphql.{PriceResolver, PriceTypes}
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
   import Plug.Conn
-  import ExUnit.CaptureLog
 
   defp query_skeleton(query, query_name) do
     %{

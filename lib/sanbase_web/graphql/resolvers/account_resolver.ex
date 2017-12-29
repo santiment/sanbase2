@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
   alias Sanbase.Model.{Project, UserFollowedProject}
-  alias Sanbase.Prices.Store
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Repo
   alias Ecto.Multi

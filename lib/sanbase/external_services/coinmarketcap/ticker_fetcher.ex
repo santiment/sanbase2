@@ -64,7 +64,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 	name: ticker.name,
 	price_usd: ticker.price_usd,
   rank: ticker.rank,
-  volume_24h_usd: ticker.'24h_volume_usd',
+  volume_usd: ticker.'24h_volume_usd',
+  available_supply: ticker.available_supply,
+  total_supply: ticker.total_supply,
 	symbol: ticker.symbol,
 	update_time: DateTime.from_unix!(ticker.last_updated)
       })

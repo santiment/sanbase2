@@ -163,11 +163,16 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     result =
       context.conn
       |> post("/graphql", query_skeleton(query, "historyPrice"))
+      |> IO.inspect()
 
+    IO.puts("json_response(result,200)")
+    IO.inspect(json_response(result,200))
     history_price = json_response(result, 200)["data"]["historyPrice"]
     assert Enum.count(history_price) == 2
     assert Enum.at(history_price, 0)["priceUsd"] == "20"
     assert Enum.at(history_price, 1)["priceUsd"] == "22"
+
+    assert 1 == 2 # 100% fail the test to see all prints
   end
 
   test "complexity is 0 with basic authentication", context do

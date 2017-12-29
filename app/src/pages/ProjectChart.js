@@ -5,11 +5,12 @@ import {
   compose,
   pure,
   withState,
-  withHandlers
+  withHandlers,
+  lifecycle
 } from 'recompose'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
-import { Bar } from 'react-chartjs-2'
+import { Bar, Chart } from 'react-chartjs-2'
 import moment from 'moment'
 import { formatNumber, formatBTC } from '../utils/formatting'
 import './ProjectChart.css'
@@ -65,7 +66,7 @@ const MarketcapToggle = ({isToggledMarketCap, toggleMarketcap}) => (
 const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap) => {
   const priceDataset = {
     label: 'price',
-    type: 'line',
+    type: 'LineWithLine',
     fill: !isToggledMarketCap,
     strokeColor: '#7a9d83eb',
     borderColor: '#7a9d83eb',
@@ -323,6 +324,33 @@ const enhance = compose(
     name: 'historyPrice',
     props: mapDataToProps,
     options: mapPropsToOptions
+  }),
+  lifecycle({
+    componentWillMount () {
+      Chart.defaults.LineWithLine = Chart.defaults.line
+      Chart.controllers.LineWithLine = Chart.controllers.line.extend({
+        draw: function (ease) {
+          Chart.controllers.line.prototype.draw.call(this, ease)
+
+          if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
+            const activePoint = this.chart.tooltip._active[0]
+            const ctx = this.chart.ctx
+            const x = activePoint.tooltipPosition().x
+            const topY = this.chart.scales['y-axis-1'].top
+            const bottomY = this.chart.scales['y-axis-1'].bottom
+
+            ctx.save()
+            ctx.beginPath()
+            ctx.moveTo(x, topY)
+            ctx.lineTo(x, bottomY)
+            ctx.lineWidth = 2
+            ctx.strokeStyle = 'rgb(49, 107, 174)'
+            ctx.stroke()
+            ctx.restore()
+          }
+        }
+      })
+    }
   }),
   pure
 )

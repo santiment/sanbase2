@@ -89,7 +89,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             "label": "price",
             "pointBorderWidth": 2,
             "strokeColor": "#7a9d83eb",
-            "type": "line",
+            "type": "LineWithLine",
             "yAxisID": "y-axis-1",
           },
           Object {

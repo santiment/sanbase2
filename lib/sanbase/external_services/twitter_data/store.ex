@@ -34,12 +34,12 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp select_last_tag_value_query(measurement_name, tag, value) when is_bitstring(value) do
+  defp select_last_tag_value_query(measurement_name, tag_name, tag_value) when is_bitstring(tag_value) do
     ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"
     WHERE #{tag_name} = '#{tag_value}'/
   end
 
-  defp select_last_tag_value_query(measurement_name, tag, value) when is_integer(value) do
+  defp select_last_tag_value_query(measurement_name, tag_name, tag_value) when is_integer(tag_value) do
     ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"
     WHERE #{tag_name} = #{tag_value}/
   end

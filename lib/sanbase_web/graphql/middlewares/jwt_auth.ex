@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTAuth do
 
   This is going to require 200 SAN tokens to access the project query.
   """
-  @behavior Absinthe.Middleware
+  @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
   alias Sanbase.Auth.User

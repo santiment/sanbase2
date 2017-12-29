@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
 
   def activity(
         _root,
-        %{repository: repository, from: from, to: to, interval: interval} = args,
+        %{repository: repository, from: from, to: to, interval: interval},
         _resolution
       ) do
     result =

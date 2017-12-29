@@ -17,7 +17,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting.Server
-  alias Sanbase.ExternalServices.TwitterData.{Worker, Store}
+  alias Sanbase.ExternalServices.TwitterData.Store
 
   @default_update_interval 1000 * 60 * 60 * 6
 
@@ -120,7 +120,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   end
 
   defp convert_to_measurement(
-         %ExTwitter.Model.User{followers_count: followers_count} = user_data,
+         %ExTwitter.Model.User{followers_count: followers_count},
          measurement_name
        ) do
     %Measurement{

@@ -38,7 +38,7 @@
     "start": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
     "start:server": "node server",
     "build": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) react-scripts build",
-    "test:lint:js": "standard --parser babel-eslint | standard-reporter --stylish",
+    "test:lint:js": "standard | standard-reporter --stylish",
     "test:lint:css": "stylelint \"**/*.css\"",
     "test:js": "react-scripts test --env=jsdom",
     "test": "npm run test:lint:js && npm run test:lint:css && CI=true npm run test:js",
@@ -61,7 +61,8 @@
     "parser": "babel-eslint",
     "ignore": [
       "src/registerServiceWorker.js",
-      "server/node_modules"
+      "server/node_modules",
+      "src/components/ProjectChart/ProjectChartContainer"
     ]
   }
 }

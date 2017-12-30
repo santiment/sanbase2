@@ -267,6 +267,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :funds_raised, list_of(:currency_amount) do
       resolve(&IcoResolver.funds_raised/3)
     end
+    field :roi_usd, :decimal do
+      resolve &ProjectResolver.roi_usd/3
+    end
     field :initial_ico, :ico do
       resolve &ProjectResolver.initial_ico/3
     end

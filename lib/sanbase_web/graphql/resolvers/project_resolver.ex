@@ -159,6 +159,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, project_transparency_status}
   end
 
+  def roi_usd(%Project{} = project, _args, _context) do
+    roi = Project.roi_usd(project)
+
+    {:ok, roi}
+  end
+
   def initial_ico(%Project{} = project, _args, _context) do
     ico = Project.initial_ico(project)
 

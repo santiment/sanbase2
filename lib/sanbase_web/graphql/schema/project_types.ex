@@ -270,6 +270,27 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :roi_usd, :decimal do
       resolve &ProjectResolver.roi_usd/3
     end
+
+    field :coinmarketcap_id, :string
+    field :rank, :integer do
+      resolve &ProjectResolver.rank/3
+    end
+    field :price_usd, :decimal do
+      resolve &ProjectResolver.price_usd/3
+    end
+    field :volume_usd, :decimal do
+      resolve &ProjectResolver.volume_usd/3
+    end
+    field :market_cap_usd, :decimal do
+      resolve &ProjectResolver.market_cap_usd/3
+    end
+    field :available_supply, :decimal do
+      resolve &ProjectResolver.available_supply/3
+    end
+    field :total_supply, :decimal do
+      resolve &ProjectResolver.total_supply/3
+    end
+
     field :initial_ico, :ico do
       resolve &ProjectResolver.initial_ico/3
     end

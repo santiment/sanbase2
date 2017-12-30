@@ -22,7 +22,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
         "datasets": Array [
           Object {
             "backgroundColor": "rgba(239, 242, 236, 0.5)",
-            "borderColor": "#7a9d83eb",
+            "borderColor": "#00a05a",
             "borderWidth": 1,
             "data": Array [
               undefined,
@@ -31,13 +31,12 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             "fill": true,
             "label": "Price",
             "pointBorderWidth": 2,
-            "strokeColor": "#7a9d83eb",
             "type": "LineWithLine",
             "yAxisID": "y-axis-1",
           },
           Object {
-            "borderColor": "rgba(49, 107, 174, 0.5)",
-            "borderWidth": 1,
+            "borderColor": "#1d70b8",
+            "borderWidth": 4,
             "data": Array [
               NaN,
               NaN,
@@ -80,6 +79,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
           "xAxes": Array [
             Object {
               "gridLines": Object {
+                "color": "#f0f0f0",
                 "display": true,
                 "drawBorder": true,
               },
@@ -94,6 +94,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             Object {
               "display": true,
               "gridLines": Object {
+                "color": "#f0f0f0",
                 "display": true,
                 "drawBorder": true,
               },
@@ -144,7 +145,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             "title": [Function],
           },
           "cornerRadius": 3,
-          "displayColors": false,
+          "displayColors": true,
           "mode": "index",
           "titleFontColor": "#000",
           "titleFontSize": 14,

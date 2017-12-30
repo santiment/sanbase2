@@ -249,7 +249,7 @@ export const ProjectChart = ({
     <div className='project-dp-chart'>
       <div className='chart-header'>
         <TimeFilter {...props} />
-        <div className='selected-value'>{selected !== null &&
+        <div className='selected-value'>{selected &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
@@ -259,7 +259,7 @@ export const ProjectChart = ({
               {moment(chartData.labels[selected]).utc().format('MMMM DD, YYYY')}
             </span>
           </Merge>}</div>
-        <div className='selected-value'>{selected !== null &&
+        <div className='selected-value'>{selected &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
@@ -285,8 +285,13 @@ export const ProjectChart = ({
         style={{ transition: 'opacity 0.25s ease' }}
       />
       <div className='chart-footer'>
-        <CurrencyFilter {...props} />
-        <MarketcapToggle {...props} />
+        <div className='chart-footer-filters'>
+          <CurrencyFilter {...props} />
+          <MarketcapToggle {...props} />
+        </div>
+        <div>
+          <small className='trademark'>santiment.net</small>
+        </div>
       </div>
     </div>
   )
@@ -333,14 +338,16 @@ ProjectChart.propTypes = {
   isLoading: PropTypes.bool.isRequired,
   isError: PropTypes.bool.isRequired,
   history: PropTypes.array.isRequired,
-  isEmpty: PropTypes.bool
+  isEmpty: PropTypes.bool,
+  selected: PropTypes.number
 }
 
 ProjectChart.defaultProps = {
   isLoading: true,
   isEmpty: true,
   isError: false,
-  history: []
+  history: [],
+  selected: undefined
 }
 
 export default enhance(ProjectChart)

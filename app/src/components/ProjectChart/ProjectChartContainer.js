@@ -77,7 +77,7 @@ class ProjectChartContainer extends Component {
       isError: false,
       isEmpty: true,
       errorMessage: '',
-      selected: null,
+      selected: undefined,
       history: []
     }
 

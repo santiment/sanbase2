@@ -57,8 +57,18 @@
 
 .chart-footer {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   margin-top: 10px;
+}
+
+.chart-footer-filters {
+  display: flex;
+  align-items: center;
+}
+
+.trademark {
+  color: #e3e3e3;
 }
 
 .time-filter,

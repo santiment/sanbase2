@@ -109,6 +109,14 @@ defmodule Sanbase.Prices.Store do
     |> parse_record
   end
 
+  def fetch_closest_price_point(pair, timestamp) do
+    ~s/SELECT LAST(price), marketcap, volume
+    FROM "#{pair}"
+    WHERE time <= #{DateTime.to_unix(timestamp, :nanoseconds)}/
+    |> Store.query()
+    |> parse_record
+  end
+
   def last_price_datetime(pair) do
     ~s/SELECT LAST(price) FROM "#{pair}"/
     |> Store.query()

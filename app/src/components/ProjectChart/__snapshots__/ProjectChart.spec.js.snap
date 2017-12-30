@@ -10,65 +10,10 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
     <TimeFilter />
     <div
       className="selected-value"
-    >
-      <Merge
-        as="div"
-        one={
-          Object {
-            "duration": "0.3s",
-            "name": "bcCCNc",
-            "timingFunction": "ease-in",
-          }
-        }
-        two={
-          Object {
-            "duration": "0.5s",
-            "name": "dVMtpd",
-            "timingFunction": "ease-out",
-          }
-        }
-      >
-        <span
-          className="selected-value-datetime"
-        >
-          December 29, 2017
-        </span>
-      </Merge>
-    </div>
+    />
     <div
       className="selected-value"
-    >
-      <Merge
-        as="div"
-        one={
-          Object {
-            "duration": "0.3s",
-            "name": "bcCCNc",
-            "timingFunction": "ease-in",
-          }
-        }
-        two={
-          Object {
-            "duration": "0.5s",
-            "name": "dVMtpd",
-            "timingFunction": "ease-out",
-          }
-        }
-      >
-        <span
-          className="selected-value-data"
-        >
-          Price: 
-          NaN
-        </span>
-        <span
-          className="selected-value-data"
-        >
-          Volume: 
-          NaN
-        </span>
-      </Merge>
-    </div>
+    />
   </div>
   <Bar
     className="graph"
@@ -77,28 +22,27 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
         "datasets": Array [
           Object {
             "backgroundColor": "rgba(239, 242, 236, 0.5)",
-            "borderColor": "#7a9d83eb",
+            "borderColor": "#00a05a",
             "borderWidth": 1,
             "data": Array [
               undefined,
               undefined,
             ],
             "fill": true,
-            "label": "price",
+            "label": "Price",
             "pointBorderWidth": 2,
-            "strokeColor": "#7a9d83eb",
             "type": "LineWithLine",
             "yAxisID": "y-axis-1",
           },
           Object {
-            "borderColor": "rgba(49, 107, 174, 0.5)",
-            "borderWidth": 1,
+            "borderColor": "#1d70b8",
+            "borderWidth": 4,
             "data": Array [
               NaN,
               NaN,
             ],
             "fill": false,
-            "label": "volume",
+            "label": "Volume",
             "pointBorderWidth": 2,
             "type": "bar",
             "yAxisID": "y-axis-2",
@@ -135,6 +79,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
           "xAxes": Array [
             Object {
               "gridLines": Object {
+                "color": "#f0f0f0",
                 "display": true,
                 "drawBorder": true,
               },
@@ -149,6 +94,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             Object {
               "display": true,
               "gridLines": Object {
+                "color": "#f0f0f0",
                 "display": true,
                 "drawBorder": true,
               },
@@ -180,20 +126,30 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               "id": "y-axis-3",
               "position": "right",
               "ticks": Object {
-                "display": false,
-                "mirror": true,
-                "padding": 50,
+                "display": true,
               },
               "type": "linear",
             },
           ],
         },
-        "showTooltips": false,
+        "showTooltips": true,
         "tooltips": Object {
+          "backgroundColor": "rgba(255, 255, 255, 0.8)",
+          "bodyFontColor": "#000",
+          "bodyFontSize": 14,
+          "bodySpacing": 4,
+          "borderColor": "#d3d3d3",
+          "borderWidth": 2,
           "callbacks": Object {
             "label": [Function],
             "title": [Function],
           },
+          "cornerRadius": 3,
+          "displayColors": true,
+          "mode": "index",
+          "titleFontColor": "#000",
+          "titleFontSize": 14,
+          "titleMarginBottom": 8,
         },
       }
     }
@@ -207,8 +163,19 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
   <div
     className="chart-footer"
   >
-    <CurrencyFilter />
-    <MarketcapToggle />
+    <div
+      className="chart-footer-filters"
+    >
+      <CurrencyFilter />
+      <MarketcapToggle />
+    </div>
+    <div>
+      <small
+        className="trademark"
+      >
+        santiment.net
+      </small>
+    </div>
   </div>
 </div>
 `;

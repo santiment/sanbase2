@@ -67,6 +67,10 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             "radius": 0,
           },
         },
+        "hover": Object {
+          "intersect": true,
+          "mode": "nearest",
+        },
         "legend": Object {
           "display": false,
         },
@@ -100,6 +104,11 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               },
               "id": "y-axis-1",
               "position": "left",
+              "scaleLabel": Object {
+                "display": true,
+                "fontColor": "#00a05a",
+                "labelString": "Price",
+              },
               "ticks": Object {
                 "beginAtZero": true,
                 "display": true,
@@ -113,6 +122,11 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
                 "show": true,
               },
               "position": "right",
+              "scaleLabel": Object {
+                "display": true,
+                "fontColor": "rgba(49, 107, 174, 0.5)",
+                "labelString": "Volume",
+              },
               "ticks": Object {
                 "max": NaN,
               },
@@ -125,6 +139,11 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               },
               "id": "y-axis-3",
               "position": "right",
+              "scaleLabel": Object {
+                "display": true,
+                "fontColor": "rgb(200, 47, 63)",
+                "labelString": "MarketCap",
+              },
               "ticks": Object {
                 "display": true,
               },
@@ -146,6 +165,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
           },
           "cornerRadius": 3,
           "displayColors": true,
+          "intersect": false,
           "mode": "index",
           "titleFontColor": "#000",
           "titleFontSize": 14,

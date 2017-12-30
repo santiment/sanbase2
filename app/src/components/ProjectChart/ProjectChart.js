@@ -14,6 +14,12 @@ import moment from 'moment'
 import { formatNumber, formatBTC } from '../../utils/formatting'
 import './ProjectChart.css'
 
+const COLORS = {
+  price: '#00a05a',
+  volume: 'rgba(49, 107, 174, 0.5)',
+  marketcap: 'rgb(200, 47, 63)'
+}
+
 export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
   return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
 }
@@ -67,7 +73,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
     label: 'Price',
     type: 'LineWithLine',
     fill: !isToggledMarketCap,
-    borderColor: '#00a05a',
+    borderColor: COLORS.price,
     borderWidth: 1,
     backgroundColor: 'rgba(239, 242, 236, 0.5)',
     pointBorderWidth: 2,
@@ -84,7 +90,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
     fill: false,
     type: 'bar',
     yAxisID: 'y-axis-2',
-    borderColor: 'rgba(49, 107, 174, 0.5)',
+    borderColor: COLORS.volume,
     borderWidth: 4,
     pointBorderWidth: 2,
     data: history ? history.map(data => {
@@ -98,7 +104,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-3',
-    borderColor: 'rgb(200, 47, 63)',
+    borderColor: COLORS.marketcap,
     borderWidth: 1,
     pointBorderWidth: 2,
     data: history ? history.map(data => {
@@ -152,8 +158,13 @@ export const ProjectChart = ({
     scaleFontSize: 0,
     animation: false,
     pointRadius: 0,
+    hover: {
+      mode: 'nearest',
+      intersect: true
+    },
     tooltips: {
       mode: 'index',
+      intersect: false,
       titleMarginBottom: 8,
       titleFontSize: 14,
       titleFontColor: '#000',
@@ -193,6 +204,11 @@ export const ProjectChart = ({
         type: 'linear',
         display: true,
         position: 'left',
+        scaleLabel: {
+          display: true,
+          labelString: 'Price',
+          fontColor: COLORS.price
+        },
         ticks: {
           display: true,
           beginAtZero: true
@@ -207,6 +223,11 @@ export const ProjectChart = ({
         type: 'linear',
         display: false,
         position: 'right',
+        scaleLabel: {
+          display: true,
+          labelString: 'Volume',
+          fontColor: COLORS.volume
+        },
         ticks: {
           max: max * 2.2
         },
@@ -216,6 +237,11 @@ export const ProjectChart = ({
       }, {
         id: 'y-axis-3',
         type: 'linear',
+        scaleLabel: {
+          display: true,
+          labelString: 'MarketCap',
+          fontColor: COLORS.marketcap
+        },
         ticks: {
           display: true
         },
@@ -323,8 +349,8 @@ const enhance = compose(
             ctx.beginPath()
             ctx.moveTo(x, topY)
             ctx.lineTo(x, bottomY)
-            ctx.lineWidth = 2
-            ctx.strokeStyle = 'rgba(49, 107, 174, 0.5)'
+            ctx.lineWidth = 1
+            ctx.strokeStyle = '#adadad'
             ctx.stroke()
             ctx.restore()
           }

@@ -35,7 +35,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             "yAxisID": "y-axis-1",
           },
           Object {
-            "borderColor": "#1d70b8",
+            "borderColor": "rgba(49, 107, 174, 0.5)",
             "borderWidth": 4,
             "data": Array [
               NaN,

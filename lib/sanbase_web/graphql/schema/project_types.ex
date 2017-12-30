@@ -65,8 +65,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :volume_usd, :decimal do
       resolve &ProjectResolver.volume_usd/3
     end
-    field :market_cap_usd, :decimal do
-      resolve &ProjectResolver.market_cap_usd/3
+    field :marketcap_usd, :decimal do
+      resolve &ProjectResolver.marketcap_usd/3
     end
     field :available_supply, :decimal do
       resolve &ProjectResolver.available_supply/3

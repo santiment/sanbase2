@@ -223,9 +223,13 @@ const queryProject = gql`
       projectTransparencyStatus,
       tokenAddress,
       fundsRaisedIcos { amount, currencyCode },
+      roiUsd,
       latestCoinmarketcapData {
         priceUsd,
         updateTime,
+        rank,
+        symbol,
+        totalSupply,
         marketCapUsd
       }
     }

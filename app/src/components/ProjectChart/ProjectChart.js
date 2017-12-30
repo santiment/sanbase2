@@ -64,11 +64,10 @@ const MarketcapToggle = ({isToggledMarketCap, toggleMarketcap}) => (
 
 const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap) => {
   const priceDataset = {
-    label: 'price',
+    label: 'Price',
     type: 'LineWithLine',
     fill: !isToggledMarketCap,
-    strokeColor: '#7a9d83eb',
-    borderColor: '#7a9d83eb',
+    borderColor: '#00a05a',
     borderWidth: 1,
     backgroundColor: 'rgba(239, 242, 236, 0.5)',
     pointBorderWidth: 2,
@@ -81,12 +80,12 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       return data.priceUsd
     }) : []}
   const volumeDataset = {
-    label: 'volume',
+    label: 'Volume',
     fill: false,
     type: 'bar',
     yAxisID: 'y-axis-2',
-    borderColor: 'rgba(49, 107, 174, 0.5)',
-    borderWidth: 1,
+    borderColor: '#1d70b8',
+    borderWidth: 4,
     pointBorderWidth: 2,
     data: history ? history.map(data => {
       if (isToggledBTC) {
@@ -95,7 +94,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       return parseFloat(data.volume)
     }) : []}
   const marketcapDataset = !isToggledMarketCap ? null : {
-    label: 'marketcap',
+    label: 'Marketcap',
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-3',
@@ -106,7 +105,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       if (isToggledBTC) {
         return calculateBTCMarketcap(data)
       }
-      return parseFloat(data.volume)
+      return parseFloat(data.marketcap)
     }) : []}
   return {
     labels: history ? history.map(data => moment(data.datetime).utc()) : [],
@@ -146,7 +145,7 @@ export const ProjectChart = ({
   const max = Math.max(...chartData.datasets[1].data)
   const chartOptions = {
     responsive: true,
-    showTooltips: false,
+    showTooltips: true,
     pointDot: false,
     scaleShowLabels: false,
     datasetFill: false,
@@ -154,12 +153,27 @@ export const ProjectChart = ({
     animation: false,
     pointRadius: 0,
     tooltips: {
+      mode: 'index',
+      titleMarginBottom: 8,
+      titleFontSize: 14,
+      titleFontColor: '#000',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      cornerRadius: 3,
+      borderColor: '#d3d3d3',
+      borderWidth: 2,
+      bodyFontSize: 14,
+      bodySpacing: 4,
+      bodyFontColor: '#000',
+      displayColors: true,
       callbacks: {
-        title: item => '',
+        title: item => {
+          return item[0].xLabel.format('dddd, MMM DD YYYY, HH:mm:ss UTC')
+        },
         label: (tooltipItem, data) => {
-          return props.isToggledBTC
+          const label = data.datasets[tooltipItem.datasetIndex].label.toString()
+          return `${label}: ${props.isToggledBTC
             ? formatBTC(tooltipItem.yLabel)
-            : formatNumber(tooltipItem.yLabel, 'USD')
+            : formatNumber(tooltipItem.yLabel, 'USD')}`
         }
       }
     },
@@ -185,7 +199,8 @@ export const ProjectChart = ({
         },
         gridLines: {
           drawBorder: true,
-          display: true
+          display: true,
+          color: '#f0f0f0'
         }
       }, {
         id: 'y-axis-2',
@@ -202,9 +217,7 @@ export const ProjectChart = ({
         id: 'y-axis-3',
         type: 'linear',
         ticks: {
-          mirror: true,
-          padding: 50,
-          display: false
+          display: true
         },
         gridLines: {
           display: false
@@ -226,7 +239,8 @@ export const ProjectChart = ({
           }},
         gridLines: {
           drawBorder: true,
-          display: true
+          display: true,
+          color: '#f0f0f0'
         }
       }]
     }
@@ -236,7 +250,7 @@ export const ProjectChart = ({
     <div className='project-dp-chart'>
       <div className='chart-header'>
         <TimeFilter {...props} />
-        <div className='selected-value'>{selected !== null &&
+        <div className='selected-value'>{selected &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
@@ -246,7 +260,7 @@ export const ProjectChart = ({
               {moment(chartData.labels[selected]).utc().format('MMMM DD, YYYY')}
             </span>
           </Merge>}</div>
-        <div className='selected-value'>{selected !== null &&
+        <div className='selected-value'>{selected &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
@@ -272,8 +286,13 @@ export const ProjectChart = ({
         style={{ transition: 'opacity 0.25s ease' }}
       />
       <div className='chart-footer'>
-        <CurrencyFilter {...props} />
-        <MarketcapToggle {...props} />
+        <div className='chart-footer-filters'>
+          <CurrencyFilter {...props} />
+          <MarketcapToggle {...props} />
+        </div>
+        <div>
+          <small className='trademark'>santiment.net</small>
+        </div>
       </div>
     </div>
   )
@@ -320,14 +339,16 @@ ProjectChart.propTypes = {
   isLoading: PropTypes.bool.isRequired,
   isError: PropTypes.bool.isRequired,
   history: PropTypes.array.isRequired,
-  isEmpty: PropTypes.bool
+  isEmpty: PropTypes.bool,
+  selected: PropTypes.number
 }
 
 ProjectChart.defaultProps = {
   isLoading: true,
   isEmpty: true,
   isError: false,
-  history: []
+  history: [],
+  selected: undefined
 }
 
 export default enhance(ProjectChart)

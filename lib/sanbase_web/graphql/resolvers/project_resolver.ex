@@ -188,10 +188,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
   def volume_usd(_parent, _args, _context), do: {:ok, nil}
 
-  def market_cap_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}}, _args, _context) do
+  def marketcap_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}}, _args, _context) do
     {:ok, market_cap_usd}
   end
-  def market_cap_usd(_parent, _args, _context), do: {:ok, nil}
+  def marketcap_usd(_parent, _args, _context), do: {:ok, nil}
 
   def available_supply(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{available_supply: available_supply}}, _args, _context) do
     {:ok, available_supply}

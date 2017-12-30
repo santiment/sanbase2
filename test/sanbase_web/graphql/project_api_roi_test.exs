@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
 
   import Sanbase.Utils, only: [parse_config_value: 1]
 
-  alias Ecto.Changeset
   alias Sanbase.Model.Project
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Ico
@@ -13,7 +12,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   alias Sanbase.Influxdb.Measurement
 
   import Plug.Conn
-  import ExUnit.CaptureLog
 
   defp query_skeleton(query, query_name) do
     %{
@@ -50,7 +48,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
       }
     ])
 
-    cmc_data = %LatestCoinmarketcapData{}
+    %LatestCoinmarketcapData{}
     |> LatestCoinmarketcapData.changeset(%{coinmarketcap_id: "TEST_ID", price_usd: 50, update_time: now})
     |> Repo.insert!
 

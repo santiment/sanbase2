@@ -25,9 +25,7 @@ const GeneralInfoBlock = ({
   marketCapUsd,
   rank,
   volume,
-  circulating,
-  totalSupply,
-  roi
+  roiUsd
 }) => (
   <div>
     <p className='social-icons'>
@@ -83,36 +81,38 @@ const GeneralInfoBlock = ({
         </HiddenElements>
       </div>
     </div>
-    <div className={`row-info ${!circulating && 'info-disabled'}`}>
+    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.marketCapUsd && 'info-disabled'}`}>
       <div>
         Circulating
       </div>
       <div>
-        ${circulating}
+        {latestCoinmarketcapData && latestCoinmarketcapData.symbol}&nbsp;
+        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.marketCapUsd / latestCoinmarketcapData.priceUsd)}
       </div>
     </div>
-    <div className={`row-info ${!totalSupply && 'info-disabled'}`}>
+    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.totalSupply && 'info-disabled'}`}>
       <div>
         Total supply
       </div>
       <div>
-        {totalSupply}
+        {latestCoinmarketcapData && latestCoinmarketcapData.symbol}&nbsp;
+        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.totalSupply)}
       </div>
     </div>
-    <div className={`row-info ${!rank && 'info-disabled'}`}>
+    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.rank && 'info-disabled'}`}>
       <div>
         Rank
       </div>
       <div>
-        {rank}
+        {latestCoinmarketcapData && latestCoinmarketcapData.rank}
       </div>
     </div>
-    <div className={`row-info ${!roi && 'info-disabled'}`}>
+    <div className={`row-info ${!roiUsd && 'info-disabled'}`}>
       <div>
         ROI since ICO
       </div>
       <div>
-        {roi}
+        {roiUsd}
       </div>
     </div>
   </div>

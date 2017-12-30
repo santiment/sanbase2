@@ -18,14 +18,14 @@ defmodule Sanbase.Notifications.CheckPricesTest do
   end
 
   test "running the checks for a project without prices" do
-    Store.drop_pair("SAN_USD")
+    Store.drop_measurement("SAN_USD")
     project = Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 
     assert CheckPrices.exec(project, "usd") == false
   end
 
   test "running the checks for a project with some prices" do
-    Store.drop_pair("SAN_USD")
+    Store.drop_measurement("SAN_USD")
     Store.import([
       %Measurement{timestamp: seconds_ago(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
       %Measurement{timestamp: seconds_ago(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},

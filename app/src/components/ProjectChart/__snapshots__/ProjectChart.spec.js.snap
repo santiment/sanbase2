@@ -10,65 +10,10 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
     <TimeFilter />
     <div
       className="selected-value"
-    >
-      <Merge
-        as="div"
-        one={
-          Object {
-            "duration": "0.3s",
-            "name": "bcCCNc",
-            "timingFunction": "ease-in",
-          }
-        }
-        two={
-          Object {
-            "duration": "0.5s",
-            "name": "dVMtpd",
-            "timingFunction": "ease-out",
-          }
-        }
-      >
-        <span
-          className="selected-value-datetime"
-        >
-          December 29, 2017
-        </span>
-      </Merge>
-    </div>
+    />
     <div
       className="selected-value"
-    >
-      <Merge
-        as="div"
-        one={
-          Object {
-            "duration": "0.3s",
-            "name": "bcCCNc",
-            "timingFunction": "ease-in",
-          }
-        }
-        two={
-          Object {
-            "duration": "0.5s",
-            "name": "dVMtpd",
-            "timingFunction": "ease-out",
-          }
-        }
-      >
-        <span
-          className="selected-value-data"
-        >
-          Price: 
-          NaN
-        </span>
-        <span
-          className="selected-value-data"
-        >
-          Volume: 
-          NaN
-        </span>
-      </Merge>
-    </div>
+    />
   </div>
   <Bar
     className="graph"
@@ -84,7 +29,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               undefined,
             ],
             "fill": true,
-            "label": "price",
+            "label": "Price",
             "pointBorderWidth": 2,
             "strokeColor": "#7a9d83eb",
             "type": "LineWithLine",
@@ -98,7 +43,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               NaN,
             ],
             "fill": false,
-            "label": "volume",
+            "label": "Volume",
             "pointBorderWidth": 2,
             "type": "bar",
             "yAxisID": "y-axis-2",
@@ -180,20 +125,30 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               "id": "y-axis-3",
               "position": "right",
               "ticks": Object {
-                "display": false,
-                "mirror": true,
-                "padding": 50,
+                "display": true,
               },
               "type": "linear",
             },
           ],
         },
-        "showTooltips": false,
+        "showTooltips": true,
         "tooltips": Object {
+          "backgroundColor": "rgba(255, 255, 255, 0.8)",
+          "bodyFontColor": "#000",
+          "bodyFontSize": 14,
+          "bodySpacing": 4,
+          "borderColor": "#d3d3d3",
+          "borderWidth": 2,
           "callbacks": Object {
             "label": [Function],
             "title": [Function],
           },
+          "cornerRadius": 3,
+          "displayColors": false,
+          "mode": "index",
+          "titleFontColor": "#000",
+          "titleFontSize": 14,
+          "titleMarginBottom": 8,
         },
       }
     }
@@ -207,8 +162,19 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
   <div
     className="chart-footer"
   >
-    <CurrencyFilter />
-    <MarketcapToggle />
+    <div
+      className="chart-footer-filters"
+    >
+      <CurrencyFilter />
+      <MarketcapToggle />
+    </div>
+    <div>
+      <small
+        className="trademark"
+      >
+        santiment.net
+      </small>
+    </div>
   </div>
 </div>
 `;

@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.ProjectBtcAddress
   alias Sanbase.Model.LatestBtcWalletData
   alias Sanbase.Model.LatestEthWalletData
+  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
   alias Sanbase.Model.MarketSegment
@@ -16,26 +17,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.Repo
 
-  def all_projects(_parent, args, _context) do
+  def all_projects(_parent, args, context) do
     only_project_transparency = Map.get(args, :only_project_transparency, false)
 
     query = from p in Project,
     where: not ^only_project_transparency or p.project_transparency
 
-    projects = Repo.all(query)
+    projects = case coinmarketcap_requested?(context) do
+      true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
+      _ -> Repo.all(query)
+    end
 
     {:ok, projects}
   end
 
-  def project(_parent, args, _context) do
+  def project(_parent, args, context) do
     id = Map.get(args, :id)
 
-    project = Repo.get(Project, id)
+    project = case coinmarketcap_requested?(context) do
+      true -> Repo.get(Project, id) |> Repo.preload(:latest_coinmarketcap_data)
+      _ -> Repo.get(Project, id)
+    end
 
     {:ok, project}
   end
 
-  def all_projects_with_eth_contract_info(_parent, _args, _context) do
+  def all_projects_with_eth_contract_info(_parent, _args, context) do
     all_icos_query = from i in Ico,
     select: %{project_id: i.project_id,
               main_contract_address: i.main_contract_address,
@@ -51,7 +58,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
           and not is_nil(d.contract_abi),
     select: p
 
-    projects = Repo.all(query)
+    projects = case coinmarketcap_requested?(context) do
+      true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
+      _ -> Repo.all(query)
+    end
 
     {:ok, projects}
   end
@@ -163,6 +173,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, roi}
   end
 
+  def rank(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{rank: rank}}, _args, _context) do
+    {:ok, rank}
+  end
+  def rank(_parent, _args, _context), do: {:ok, nil}
+
+  def price_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}}, _args, _context) do
+    {:ok, price_usd}
+  end
+  def price_usd(_parent, _args, _context), do: {:ok, nil}
+
+  def volume_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{volume_usd: volume_usd}}, _args, _context) do
+    {:ok, volume_usd}
+  end
+  def volume_usd(_parent, _args, _context), do: {:ok, nil}
+
+  def market_cap_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}}, _args, _context) do
+    {:ok, market_cap_usd}
+  end
+  def market_cap_usd(_parent, _args, _context), do: {:ok, nil}
+
+  def available_supply(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{available_supply: available_supply}}, _args, _context) do
+    {:ok, available_supply}
+  end
+  def available_supply(_parent, _args, _context), do: {:ok, nil}
+
+  def total_supply(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{total_supply: total_supply}}, _args, _context) do
+    {:ok, total_supply}
+  end
+  def total_supply(_parent, _args, _context), do: {:ok, nil}
+
   def initial_ico(%Project{} = project, _args, _context) do
     ico = Project.initial_ico(project)
 
@@ -186,6 +226,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     currency_amounts = Repo.all(query)
 
     {:ok, currency_amounts}
+  end
+
+  defp coinmarketcap_requested?(context) do
+    case requested_fields(context) do
+      %{rank: true} -> true
+      %{priceUsd: true} -> true
+      %{volumeUsd: true} -> true
+      %{marketCapUsd: true} -> true
+      %{availableSupply: true} -> true
+      %{totalSupply: true} -> true
+      _ -> false
+    end
+  end
+
+  defp requested_fields(context) do
+    context.definition.selections
+    |> Enum.map(&(Map.get(&1, :name) |> String.to_atom()))
+    |> Enum.into(%{}, fn field -> {field, true} end)
   end
 
   defp get_parent_args(context) do

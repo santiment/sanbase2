@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
   alias Sanbase.Prices.Store
-  alias SanbaseWeb.Graphql.PriceTypes
 
   @doc """
   Returns a list of price points for the given ticker. Optimizes the number of queries
@@ -10,10 +9,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   """
   def history_price(
         _root,
-        %{ticker: ticker, from: from, to: to, interval: interval} = args,
+        %{ticker: _ticker, from: _from, to: _to, interval: _interval} = args,
         resolution
       ) do
-        history_price(args, requested_fields(resolution))
+    history_price(args, requested_fields(resolution))
   end
 
   def current_price(_root, %{ticker: ticker}, _resolution) do
@@ -37,11 +36,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   end
 
   def available_prices(_root, _args, _resolutions) do
-    data = Store.list_measurements()
-    |> Enum.map(&trim_measurement/1)
-    |> Enum.reject(&is_nil/1)
+    with {:ok, data} <- Store.list_measurements() do
+      transformed_data =
+        data
+        |> Enum.map(&trim_measurement/1)
+        |> Enum.reject(&is_nil/1)
 
-    {:ok, data}
+      {:ok, transformed_data}
+    else
+      {:error, error} -> {:error, "Cannot get available prices: #{error}"}
+    end
   end
 
   # Measurements are always stored with _BTC and _USD suffixes. Add only one of them
@@ -57,8 +61,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
          priceBtc: true,
          priceUsd: true
        }) do
-    result_usd = String.upcase(ticker) <> "_USD" |> get_price_points(from, to, interval)
-    result_btc = String.upcase(ticker) <> "_BTC" |> get_price_points(from, to, interval)
+    result_usd = (String.upcase(ticker) <> "_USD") |> get_price_points(from, to, interval)
+    result_btc = (String.upcase(ticker) <> "_BTC") |> get_price_points(from, to, interval)
 
     # Zip the price in USD and BTC so they are shown as a single price point
     result =
@@ -90,7 +94,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     {:ok, result}
   end
 
-  defp history_price(args, fields) do
+  defp history_price(_args, _fields) do
     Logger.warn("Unexpected arguments passed to history_price")
   end
 

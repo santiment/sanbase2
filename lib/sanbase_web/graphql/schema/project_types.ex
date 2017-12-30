@@ -5,7 +5,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   import_types SanbaseWeb.Graphql.CustomTypes
 
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
-  alias SanbaseWeb.Graphql.Middleware.BasicAuth
 
   object :project do
     field :id, non_null(:id)

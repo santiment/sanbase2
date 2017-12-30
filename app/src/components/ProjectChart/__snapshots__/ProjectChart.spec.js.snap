@@ -1,0 +1,267 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProjectChart component (smoke) it should render correctly 1`] = `
+<div
+  className="project-dp-chart"
+>
+  <div
+    className="chart-header"
+  >
+    <TimeFilter />
+    <div
+      className="selected-value"
+    >
+      <Merge
+        as="div"
+        one={
+          Object {
+            "duration": "0.3s",
+            "name": "bcCCNc",
+            "timingFunction": "ease-in",
+          }
+        }
+        two={
+          Object {
+            "duration": "0.5s",
+            "name": "dVMtpd",
+            "timingFunction": "ease-out",
+          }
+        }
+      >
+        <span
+          className="selected-value-datetime"
+        >
+          December 29, 2017
+        </span>
+      </Merge>
+    </div>
+    <div
+      className="selected-value"
+    >
+      <Merge
+        as="div"
+        one={
+          Object {
+            "duration": "0.3s",
+            "name": "bcCCNc",
+            "timingFunction": "ease-in",
+          }
+        }
+        two={
+          Object {
+            "duration": "0.5s",
+            "name": "dVMtpd",
+            "timingFunction": "ease-out",
+          }
+        }
+      >
+        <span
+          className="selected-value-data"
+        >
+          Price: 
+          NaN
+        </span>
+        <span
+          className="selected-value-data"
+        >
+          Volume: 
+          NaN
+        </span>
+      </Merge>
+    </div>
+  </div>
+  <Bar
+    className="graph"
+    data={
+      Object {
+        "datasets": Array [
+          Object {
+            "backgroundColor": "rgba(239, 242, 236, 0.5)",
+            "borderColor": "#7a9d83eb",
+            "borderWidth": 1,
+            "data": Array [
+              undefined,
+              undefined,
+            ],
+            "fill": true,
+            "label": "price",
+            "pointBorderWidth": 2,
+            "strokeColor": "#7a9d83eb",
+            "type": "LineWithLine",
+            "yAxisID": "y-axis-1",
+          },
+          Object {
+            "borderColor": "rgba(49, 107, 174, 0.5)",
+            "borderWidth": 1,
+            "data": Array [
+              NaN,
+              NaN,
+            ],
+            "fill": false,
+            "label": "volume",
+            "pointBorderWidth": 2,
+            "type": "bar",
+            "yAxisID": "y-axis-2",
+          },
+        ],
+        "labels": Array [
+          "2017-12-27T21:45:00.000Z",
+          "2017-12-27T21:45:00.000Z",
+        ],
+      }
+    }
+    height={100}
+    onElementsClick={[Function]}
+    options={
+      Object {
+        "animation": false,
+        "datasetFill": false,
+        "elements": Object {
+          "point": Object {
+            "hitRadius": 2,
+            "hoverRadius": 2,
+            "radius": 0,
+          },
+        },
+        "legend": Object {
+          "display": false,
+        },
+        "pointDot": false,
+        "pointRadius": 0,
+        "responsive": true,
+        "scaleFontSize": 0,
+        "scaleShowLabels": false,
+        "scales": Object {
+          "xAxes": Array [
+            Object {
+              "gridLines": Object {
+                "display": true,
+                "drawBorder": true,
+              },
+              "ticks": Object {
+                "autoSkipPadding": 1,
+                "callback": [Function],
+              },
+              "type": "time",
+            },
+          ],
+          "yAxes": Array [
+            Object {
+              "display": true,
+              "gridLines": Object {
+                "display": true,
+                "drawBorder": true,
+              },
+              "id": "y-axis-1",
+              "position": "left",
+              "ticks": Object {
+                "beginAtZero": true,
+                "display": true,
+              },
+              "type": "linear",
+            },
+            Object {
+              "display": false,
+              "id": "y-axis-2",
+              "labels": Object {
+                "show": true,
+              },
+              "position": "right",
+              "ticks": Object {
+                "max": NaN,
+              },
+              "type": "linear",
+            },
+            Object {
+              "display": undefined,
+              "gridLines": Object {
+                "display": false,
+              },
+              "id": "y-axis-3",
+              "position": "right",
+              "ticks": Object {
+                "display": false,
+                "mirror": true,
+                "padding": 50,
+              },
+              "type": "linear",
+            },
+          ],
+        },
+        "showTooltips": false,
+        "tooltips": Object {
+          "callbacks": Object {
+            "label": [Function],
+            "title": [Function],
+          },
+        },
+      }
+    }
+    redraw={true}
+    style={
+      Object {
+        "transition": "opacity 0.25s ease",
+      }
+    }
+  />
+  <div
+    className="chart-footer"
+  >
+    <CurrencyFilter />
+    <MarketcapToggle />
+  </div>
+</div>
+`;
+
+exports[`ProjectChart component Error State it should render correctly with error message 1`] = `
+<ProjectChart
+  errorMessage="400 error"
+  history={Array []}
+  isEmpty={true}
+  isError={true}
+  isLoading={false}
+>
+  <div>
+    <h2>
+      We can't get the data from our server now... ;(
+    </h2>
+    <p>
+      400 error
+    </p>
+  </div>
+</ProjectChart>
+`;
+
+exports[`ProjectChart component Loading State it should render correctly with loading prop 1`] = `
+<ProjectChart
+  history={Array []}
+  isEmpty={true}
+  isError={false}
+  isLoading={true}
+>
+  <div
+    className="project-chart-loader"
+  >
+    <h2>
+      Loading...
+    </h2>
+  </div>
+</ProjectChart>
+`;
+
+exports[`ProjectChart component Loading State it should render correctly withour history prop 1`] = `
+<ProjectChart
+  history={Array []}
+  isEmpty={true}
+  isError={false}
+  isLoading={true}
+>
+  <div
+    className="project-chart-loader"
+  >
+    <h2>
+      Loading...
+    </h2>
+  </div>
+</ProjectChart>
+`;

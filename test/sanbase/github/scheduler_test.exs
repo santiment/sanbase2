@@ -22,7 +22,7 @@ defmodule Sanbase.Github.SchedulerTest do
   end
 
   test "nothing is scheduled if there are no projects with github links" do
-    Prices.Store.drop_pair("SAN_USD")
+    Prices.Store.drop_measurement("SAN_USD")
     Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 
     mock SanbaseWorkers.ImportGithubActivity, [perform_async: 1], :ok
@@ -33,9 +33,9 @@ defmodule Sanbase.Github.SchedulerTest do
   end
 
   test "scheduling projects with some pricing data but no activity" do
-    Github.Store.drop_ticker("SAN")
+    Github.Store.drop_measurement("SAN")
 
-    Prices.Store.drop_pair("SAN_USD")
+    Prices.Store.drop_measurement("SAN_USD")
     Prices.Store.import([
       %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
       %Measurement{timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
@@ -52,7 +52,7 @@ defmodule Sanbase.Github.SchedulerTest do
   end
 
   test "scheduling projects with some pricing data and some activity" do
-    Prices.Store.drop_pair("SAN_USD")
+    Prices.Store.drop_measurement("SAN_USD")
     Prices.Store.import([
       %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
       %Measurement{timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
@@ -60,7 +60,7 @@ defmodule Sanbase.Github.SchedulerTest do
       %Measurement{timestamp: days_ago_start_of_day(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
     ])
 
-    Github.Store.drop_ticker("SAN")
+    Github.Store.drop_measurement("SAN")
     Github.Store.import([
       %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 1}, name: "SAN"},
       %Measurement{timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds), fields: %{activity: 2}, name: "SAN"},
@@ -77,7 +77,7 @@ defmodule Sanbase.Github.SchedulerTest do
   end
 
   test "scheduling projects which has processed archives" do
-    Prices.Store.drop_pair("SAN_USD")
+    Prices.Store.drop_measurement("SAN_USD")
     Prices.Store.import([
       %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
       %Measurement{timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds), fields: %{price: 2.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
@@ -85,12 +85,12 @@ defmodule Sanbase.Github.SchedulerTest do
       %Measurement{timestamp: days_ago_start_of_day(2) |> DateTime.to_unix(:nanoseconds), fields: %{price: 4.0, volume: 1, marketcap: 1.0}, name: "SAN_USD"},
     ])
 
-    Prices.Store.drop_pair("OMG_USD")
+    Prices.Store.drop_measurement("OMG_USD")
     Prices.Store.import([
       %Measurement{timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds), fields: %{price: 1.0, volume: 1, marketcap: 1.0}, name: "OMG_USD"},
     ])
 
-    Github.Store.drop_ticker("SAN")
+    Github.Store.drop_measurement("SAN")
 
     san_project = Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment", github_link: "https://github.com/santiment"})
     omg_project = Repo.insert!(%Project{name: "OmiseGo", ticker: "OMG", coinmarketcap_id: "omisego", github_link: "https://github.com/omisego"})

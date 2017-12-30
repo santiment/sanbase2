@@ -2,8 +2,12 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Schema
   use Absinthe.Ecto, repo: Sanbase.Repo
 
-  alias Sanbase.Auth.{User, EthAccount}
-  alias SanbaseWeb.Graphql.Resolvers.{AccountResolver, PriceResolver, ProjectResolver}
+  alias SanbaseWeb.Graphql.Resolvers.{
+    AccountResolver,
+    PriceResolver,
+    ProjectResolver,
+    GithubResolver
+  }
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
 
@@ -11,6 +15,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types SanbaseWeb.Graphql.AccountTypes
   import_types SanbaseWeb.Graphql.PriceTypes
   import_types SanbaseWeb.Graphql.ProjectTypes
+  import_types SanbaseWeb.Graphql.GithubTypes
 
   query do
     field :current_user, :user do
@@ -60,6 +65,21 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :available_prices, list_of(:string) do
       resolve(&PriceResolver.available_prices/3)
     end
+
+    @desc "Returns a list of available github repositories"
+    field :github_availables_repos, list_of(:string) do
+      resolve(&GithubResolver.available_repos/3)
+    end
+
+    @desc "Returns a list of github activities"
+    field :github_activity, list_of(:activity_point) do
+      arg(:repository, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, :string, default_value: "1h")
+
+      resolve(&GithubResolver.activity/3)
+    end
   end
 
   mutation do
@@ -74,19 +94,22 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :change_email, :user do
       arg :email, non_null(:string)
 
-      resolve &AccountResolver.change_email/3
+      middleware(JWTAuth)
+      resolve(&AccountResolver.change_email/3)
     end
 
     field :follow_project, :user do
       arg :project_id, non_null(:integer)
 
-      resolve &AccountResolver.follow_project/3
+      middleware(JWTAuth)
+      resolve(&AccountResolver.follow_project/3)
     end
 
     field :unfollow_project, :user do
       arg :project_id, non_null(:integer)
 
-      resolve &AccountResolver.unfollow_project/3
+      middleware(JWTAuth)
+      resolve(&AccountResolver.unfollow_project/3)
     end
   end
 end

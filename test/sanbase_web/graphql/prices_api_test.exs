@@ -2,12 +2,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
-  alias SanbaseWeb.Graphql.{PriceResolver, PriceTypes}
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
   import Plug.Conn
-  import ExUnit.CaptureLog
 
   defp query_skeleton(query, query_name) do
     %{
@@ -23,8 +21,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     |> Instream.Admin.Database.create()
     |> Store.execute()
 
-    Store.drop_pair("TEST_BTC")
-    Store.drop_pair("TEST_USD")
+    Store.drop_measurement("TEST_BTC")
+    Store.drop_measurement("TEST_USD")
 
     now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
     yesterday = Sanbase.DateTimeUtils.seconds_ago(60 * 60 * 24) |> DateTime.to_unix(:nanoseconds)
@@ -58,7 +56,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "no information is available for a ticker", context do
-    Store.drop_pair("SAN_USD")
+    Store.drop_measurement("SAN_USD")
 
     now = DateTime.utc_now()
     yesterday = Sanbase.DateTimeUtils.seconds_ago(60 * 60 * 24)

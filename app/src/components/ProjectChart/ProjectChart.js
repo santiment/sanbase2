@@ -64,7 +64,7 @@ const MarketcapToggle = ({isToggledMarketCap, toggleMarketcap}) => (
 
 const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap) => {
   const priceDataset = {
-    label: 'price',
+    label: 'Price',
     type: 'LineWithLine',
     fill: !isToggledMarketCap,
     strokeColor: '#7a9d83eb',
@@ -81,7 +81,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       return data.priceUsd
     }) : []}
   const volumeDataset = {
-    label: 'volume',
+    label: 'Volume',
     fill: false,
     type: 'bar',
     yAxisID: 'y-axis-2',
@@ -95,7 +95,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       return parseFloat(data.volume)
     }) : []}
   const marketcapDataset = !isToggledMarketCap ? null : {
-    label: 'marketcap',
+    label: 'Marketcap',
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-3',
@@ -106,7 +106,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       if (isToggledBTC) {
         return calculateBTCMarketcap(data)
       }
-      return parseFloat(data.volume)
+      return parseFloat(data.marketcap)
     }) : []}
   return {
     labels: history ? history.map(data => moment(data.datetime).utc()) : [],
@@ -146,7 +146,7 @@ export const ProjectChart = ({
   const max = Math.max(...chartData.datasets[1].data)
   const chartOptions = {
     responsive: true,
-    showTooltips: false,
+    showTooltips: true,
     pointDot: false,
     scaleShowLabels: false,
     datasetFill: false,
@@ -154,12 +154,27 @@ export const ProjectChart = ({
     animation: false,
     pointRadius: 0,
     tooltips: {
+      mode: 'index',
+      titleMarginBottom: 8,
+      titleFontSize: 14,
+      titleFontColor: '#000',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      cornerRadius: 3,
+      borderColor: '#d3d3d3',
+      borderWidth: 2,
+      bodyFontSize: 14,
+      bodySpacing: 4,
+      bodyFontColor: '#000',
+      displayColors: false,
       callbacks: {
-        title: item => '',
+        title: item => {
+          return item[0].xLabel.format('dddd, MMM DD YYYY, HH:mm:ss UTC')
+        },
         label: (tooltipItem, data) => {
-          return props.isToggledBTC
+          const label = data.datasets[tooltipItem.datasetIndex].label.toString()
+          return `${label}: ${props.isToggledBTC
             ? formatBTC(tooltipItem.yLabel)
-            : formatNumber(tooltipItem.yLabel, 'USD')
+            : formatNumber(tooltipItem.yLabel, 'USD')}`
         }
       }
     },
@@ -202,9 +217,7 @@ export const ProjectChart = ({
         id: 'y-axis-3',
         type: 'linear',
         ticks: {
-          mirror: true,
-          padding: 50,
-          display: false
+          display: true
         },
         gridLines: {
           display: false

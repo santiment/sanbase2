@@ -22,7 +22,7 @@ export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
   return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
 }
 
-const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
+export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
   let cls = interval === value ? 'activated' : ''
   if (disabled) {
     cls += ' disabled'
@@ -34,7 +34,7 @@ const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
   )
 }
 
-const TimeFilter = props => (
+export const TimeFilter = props => (
   <div className='time-filter'>
     <TimeFilterItem value={'1d'} {...props} />
     <TimeFilterItem value={'1w'} {...props} />
@@ -43,7 +43,7 @@ const TimeFilter = props => (
   </div>
 )
 
-const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
+export const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
   <div className='currency-filter'>
     <div
       className={isToggledBTC ? 'activated' : ''}

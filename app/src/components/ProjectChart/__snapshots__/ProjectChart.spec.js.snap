@@ -7,7 +7,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
   <div
     className="chart-header"
   >
-    <TimeFilter />
+    <Component />
     <div
       className="selected-value"
     />
@@ -186,7 +186,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
     <div
       className="chart-footer-filters"
     >
-      <CurrencyFilter />
+      <Component />
       <MarketcapToggle />
     </div>
     <div>

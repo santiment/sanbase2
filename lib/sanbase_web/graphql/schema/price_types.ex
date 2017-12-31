@@ -7,5 +7,6 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
     field(:price_usd, :decimal)
     field(:price_btc, :decimal)
     field(:volume, :decimal)
+    field(:ticker, :string)
   end
 end

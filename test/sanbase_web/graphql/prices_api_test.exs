@@ -215,6 +215,28 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert "XYZ" in resp_data
   end
 
+  test "fetch price for a list of tickers", context do
+    query = """
+    {
+      prices(tickers: ["TEST", "XYZ"]){
+        ticker
+        priceUsd
+        priceBtc
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> put_req_header("authorization", "Basic " <> basic_auth())
+      |> post("/graphql", query_skeleton(query, "prices"))
+
+    resp_data = json_response(result, 200)["data"]["prices"]
+
+    assert %{"priceBtc" => "1200", "priceUsd" => "22", "ticker" => "TEST"} in resp_data
+    assert %{"priceBtc" => "1", "priceUsd" => "20", "ticker" => "XYZ"} in resp_data
+  end
+
   defp basic_auth() do
     username =
       Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)

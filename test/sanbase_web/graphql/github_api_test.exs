@@ -9,6 +9,8 @@ defmodule Sanbase.Github.GithubApiTest do
     Github.Store.create_db()
 
     Github.Store.drop_measurement("SAN")
+    Github.Store.drop_measurement("TEST1")
+    Github.Store.drop_measurement("TEST2")
 
     Github.Store.import([
       %Measurement{
@@ -25,8 +27,19 @@ defmodule Sanbase.Github.GithubApiTest do
         timestamp: days_ago_start_of_day(3) |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 15},
         name: "SAN"
+      },
+      %Measurement{
+        timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds),
+        fields: %{activity: 5},
+        name: "TEST1"
+      },
+      %Measurement{
+        timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds),
+        fields: %{activity: 10},
+        name: "TEST2"
       }
     ])
+
   end
 
   test "fetching github time series data", context do
@@ -57,8 +70,8 @@ defmodule Sanbase.Github.GithubApiTest do
     {
       githubActivity(
         repository: "SAN",
-        from: "#{days_ago_start_of_day(5)}",
-        interval: "10d") {
+        from: "#{days_ago_start_of_day(6)}",
+        interval: "6d") {
           activity
         }
     }
@@ -75,19 +88,6 @@ defmodule Sanbase.Github.GithubApiTest do
   end
 
   test "retrive all repository names", context do
-    Github.Store.import([
-      %Measurement{
-        timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds),
-        fields: %{activity: 5},
-        name: "TEST1"
-      },
-      %Measurement{
-        timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds),
-        fields: %{activity: 10},
-        name: "TEST2"
-      }
-    ])
-
     query = """
     {
       githubAvailablesRepos

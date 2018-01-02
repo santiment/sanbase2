@@ -3,27 +3,17 @@ defmodule SanbaseWeb.Graphql.AccountTest do
   use Phoenix.ConnTest
 
   import Plug.Conn
-  import ExUnit.CaptureLog
 
   alias Sanbase.Model.Project
   alias Sanbase.Auth.User
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.ContextPlug
-  alias SanbaseWeb.Graphql.{AccountTypes, AccountResolver}
 
   defp mutation_skeleton(query) do
     %{
       "operationName" => "",
       "query" => "#{query}",
       "variables" => ""
-    }
-  end
-
-  defp query_skeleton(query, query_name) do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
     }
   end
 

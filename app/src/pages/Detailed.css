@@ -5,6 +5,15 @@
   display: flex;
 }
 
+.detailed .panel {
+  border-radius: 4px;
+  box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
+}
+
+.panel-chart {
+  padding-top: 0;
+}
+
 .detailed-name h1 {
   margin-top: 0;
   font-size: 2em;

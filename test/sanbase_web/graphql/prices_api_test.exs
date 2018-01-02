@@ -2,12 +2,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
-  alias SanbaseWeb.Graphql.{PriceResolver, PriceTypes}
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
   import Plug.Conn
-  import ExUnit.CaptureLog
 
   defp query_skeleton(query, query_name) do
     %{
@@ -25,6 +23,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     Store.drop_measurement("TEST_BTC")
     Store.drop_measurement("TEST_USD")
+    Store.drop_measurement("XYZ_USD")
+    Store.drop_measurement("XYZ_BTC")
 
     now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
     yesterday = Sanbase.DateTimeUtils.seconds_ago(60 * 60 * 24) |> DateTime.to_unix(:nanoseconds)
@@ -51,6 +51,17 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
         timestamp: now,
         fields: %{price: 22, volume: 300, marketcap: 800},
         name: "TEST_USD"
+      },
+      # older
+      %Measurement{
+        timestamp: now,
+        fields: %{price: 1, volume: 5, marketcap: 500},
+        name: "XYZ_BTC"
+      },
+      %Measurement{
+        timestamp: now,
+        fields: %{price: 20, volume: 200, marketcap: 500},
+        name: "XYZ_USD"
       }
     ])
 
@@ -103,7 +114,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{two_days_ago}", to: "#{now}", interval: "10w") {
+      historyPrice(ticker: "TEST", from: "#{two_days_ago}", to: "#{now}", interval: "2d") {
         priceUsd
         priceBtc
         marketcap
@@ -205,20 +216,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   test "fetch all available prices", context do
     now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
-
-    Store.import([
-      # older
-      %Measurement{
-        timestamp: now,
-        fields: %{price: 1, volume: 5, marketcap: 500},
-        name: "XYZ_BTC"
-      },
-      %Measurement{
-        timestamp: now,
-        fields: %{price: 20, volume: 200, marketcap: 500},
-        name: "XYZ_USD"
-      }
-    ])
 
     query = """
     {

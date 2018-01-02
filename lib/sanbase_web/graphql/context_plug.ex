@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ContextPlug do
-  @behavior Plug
+  @behaviour Plug
 
   import Plug.Conn
 
@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp build_context(conn, []), do: %{}
+  defp build_context(_conn, []), do: %{}
 
   def bearer_authentication(conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),

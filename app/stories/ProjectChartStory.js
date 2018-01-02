@@ -1,4 +1,5 @@
 import React from 'react'
+import moment from 'moment'
 import { storiesOf } from '@storybook/react'
 import { action } from '@storybook/addon-actions'
 import ProjectChart, { TimeFilter } from './../src/components/ProjectChart/ProjectChart'
@@ -19,7 +20,11 @@ storiesOf('ProjectChart', module)
       isLoading={false}
       isToggledBTC={false}
       isToggledMatketCap={false}
+      focusedInput='startDate'
       selected={null}
+      changeDate={action('changeDates')}
+      startDate={moment('2017-12-21T00:00:00Z')}
+      endDate={moment('2017-12-28T00:00:00Z')}
       showBTC={action('showBTC')}
       showUSD={action('showUSD')} />
   ))
@@ -36,6 +41,9 @@ storiesOf('ProjectChart', module)
       isToggledBTC={false}
       isToggledMatketCap={false}
       selected={null}
+      changeDate={action('changeDates')}
+      startDate={moment('2017-11-28T00:00:00Z')}
+      endDate={moment('2017-12-28T00:00:00Z')}
       showBTC={action('showBTC')}
       showUSD={action('showUSD')} />
   ))

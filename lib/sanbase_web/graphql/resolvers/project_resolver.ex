@@ -173,6 +173,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, roi}
   end
 
+  def symbol(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{symbol: symbol}}, _args, _context) do
+    {:ok, symbol}
+  end
+  def symbol(_parent, _args, _context), do: {:ok, nil}
+
   def rank(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{rank: rank}}, _args, _context) do
     {:ok, rank}
   end
@@ -230,6 +235,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   defp coinmarketcap_requested?(context) do
     case requested_fields(context) do
+      %{symbol: true} -> true
       %{rank: true} -> true
       %{priceUsd: true} -> true
       %{volumeUsd: true} -> true

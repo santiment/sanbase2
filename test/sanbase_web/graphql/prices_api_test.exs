@@ -345,20 +345,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "fetch all available prices", context do
     now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
 
-    Store.import([
-      # older
-      %Measurement{
-        timestamp: now,
-        fields: %{price: 1, volume: 5, marketcap: 500},
-        name: "XYZ_BTC"
-      },
-      %Measurement{
-        timestamp: now,
-        fields: %{price: 20, volume: 200, marketcap: 500},
-        name: "XYZ_USD"
-      }
-    ])
-
     query = """
     {
       availablePrices

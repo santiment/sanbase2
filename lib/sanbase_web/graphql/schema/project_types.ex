@@ -27,7 +27,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :latest_coinmarketcap_data, :latest_coinmarketcap_data do
       resolve assoc(:latest_coinmarketcap_data)
 
-      deprecate "The chiild entity latestCoinmarketcapData will be deleted. Please use the flattened fields."
+      deprecate "The child entity latestCoinmarketcapData will be deleted. Please use the flattened fields."
     end
     field :market_segment, :string do
       resolve &ProjectResolver.market_segment/3

@@ -98,7 +98,7 @@ defmodule Sanbase.Model.Project do
       zero = Decimal.new(0)
 
       project.icos
-      |> Enum.reduce({project, 0, Decimal.new(0)}, &roi_usd_accumulator/2)
+      |> Enum.reduce({project, 0, zero}, &roi_usd_accumulator/2)
       |> case do
         {_, _, ^zero} -> nil
         {_, count, total_paid} ->

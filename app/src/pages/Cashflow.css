@@ -4,6 +4,10 @@
   margin-bottom: 1em;
 }
 
+.cashflow-head h1 {
+  margin-top: 32px !important;
+}
+
 .cashflow-head p {
   margin-top: 45px;
   margin-right: 20px;
@@ -109,6 +113,10 @@
 
 .rt-td > div {
   padding: 5px;
+}
+
+.rt-td:first-child:hover {
+  cursor: pointer;
 }
 
 .-sort-desc,

@@ -77,6 +77,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :total_supply, :decimal do
       resolve &ProjectResolver.total_supply/3
     end
+    field :percent_change_1h, :decimal, name: "percent_change1h" do
+      resolve &ProjectResolver.percent_change_1h/3
+    end
+    field :percent_change_24h, :decimal, name: "percent_change24h" do
+      resolve &ProjectResolver.percent_change_24h/3
+    end
+    field :percent_change_1d, :decimal, name: "percent_change7d" do
+      resolve &ProjectResolver.percent_change_7d/3
+    end
 
     field :initial_ico, :ico do
       resolve &ProjectResolver.initial_ico/3

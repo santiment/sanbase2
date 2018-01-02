@@ -208,6 +208,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
   def total_supply(_parent, _args, _context), do: {:ok, nil}
 
+  def percent_change_1h(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_1h: percent_change_1h}}, _args, _context) do
+    {:ok, percent_change_1h}
+  end
+  def percent_change_1h(_parent, _args, _context), do: {:ok, nil}
+
+  def percent_change_24h(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_24h: percent_change_24h}}, _args, _context) do
+    {:ok, percent_change_24h}
+  end
+  def percent_change_24h(_parent, _args, _context), do: {:ok, nil}
+
+  def percent_change_7d(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_7d: percent_change_7d}}, _args, _context) do
+    {:ok, percent_change_7d}
+  end
+  def percent_change_7d(_parent, _args, _context), do: {:ok, nil}
+
   def initial_ico(%Project{} = project, _args, _context) do
     ico = Project.initial_ico(project)
 
@@ -242,6 +257,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       %{marketCapUsd: true} -> true
       %{availableSupply: true} -> true
       %{totalSupply: true} -> true
+      %{percent_change_1h: true} -> true
+      %{percent_change_24h: true} -> true
+      %{percent_change_7d: true} -> true
       _ -> false
     end
   end

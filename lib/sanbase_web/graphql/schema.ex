@@ -50,7 +50,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1h")
 
       complexity(&PriceComplexity.history_price/3)
-
       resolve(&PriceResolver.history_price/3)
     end
 
@@ -65,7 +64,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :prices, list_of(:price_point) do
       arg(:tickers, non_null(list_of(:string)))
 
-      middleware(BasicAuth)
+      complexity(&PriceComplexity.current_prices/3)
       resolve(&PriceResolver.current_prices/3)
     end
 

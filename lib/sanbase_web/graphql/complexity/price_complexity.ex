@@ -5,6 +5,23 @@ defmodule SanbaseWeb.Graphql.Complexity.PriceComplexity do
   Internal services use basic authentication. Return complexity = 0 to allow them
   to access everything without limits.
   """
+  def current_prices(_,_, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}) do
+    0
+  end
+
+  @doc ~S"""
+  Returns the complexity of the query. It is the number of returned fields multiplied by 100.
+  The multiplier is big because the current implementation makes a separate DB query for
+  each ticker
+  """
+  def current_prices(%{tickers: tickers}, child_complexity, _) do
+    Enum.count(tickers) * child_complexity * 100
+  end
+
+  @doc ~S"""
+  Internal services use basic authentication. Return complexity = 0 to allow them
+  to access everything without limits.
+  """
   def history_price(_,_, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}) do
     0
   end

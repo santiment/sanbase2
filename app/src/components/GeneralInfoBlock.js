@@ -1,18 +1,7 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { formatNumber } from '../utils/formatting'
 import { HiddenElements } from '../pages/Detailed'
 import './GeneralInfoBlock.css'
-
-const propTypes = {
-  websiteLink: PropTypes.string,
-  slackLink: PropTypes.string,
-  twitterLink: PropTypes.string,
-  githubLink: PropTypes.string,
-  mediumLink: PropTypes.string,
-  whitepaperLink: PropTypes.string,
-  latestCoinmarketcapData: PropTypes.object
-}
 
 const GeneralInfoBlock = ({
   websiteLink,
@@ -21,10 +10,12 @@ const GeneralInfoBlock = ({
   githubLink,
   mediumLink,
   whitepaperLink,
-  latestCoinmarketcapData,
-  marketCapUsd,
+  marketcap,
   rank,
+  priceUsd,
+  totalSupply,
   volume,
+  ticker,
   roiUsd
 }) => (
   <div>
@@ -51,20 +42,20 @@ const GeneralInfoBlock = ({
       </a>
     </p>
     <hr />
-    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.marketCapUsd && 'info-disabled'}`}>
+    <div className={`row-info ${!marketcap && 'info-disabled'}`}>
       <div>
         Market Cap
       </div>
       <div>
-        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.marketCapUsd, 'USD')}
+        {formatNumber(marketcap, 'USD')}
       </div>
     </div>
-    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.priceUsd && 'info-disabled'}`}>
+    <div className={`row-info ${!priceUsd && 'info-disabled'}`}>
       <div>
         Price
       </div>
       <div>
-        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.priceUsd, 'USD')}
+        {formatNumber(priceUsd, 'USD')}
       </div>
     </div>
     <div className={`row-info ${!volume && 'info-disabled'}`}>
@@ -81,30 +72,30 @@ const GeneralInfoBlock = ({
         </HiddenElements>
       </div>
     </div>
-    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.marketCapUsd && 'info-disabled'}`}>
+    <div className={`row-info ${!marketcap && 'info-disabled'}`}>
       <div>
         Circulating
       </div>
       <div>
-        {latestCoinmarketcapData && latestCoinmarketcapData.symbol}&nbsp;
-        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.marketCapUsd / latestCoinmarketcapData.priceUsd)}
+        {ticker}&nbsp;
+        {formatNumber(marketcap / priceUsd)}
       </div>
     </div>
-    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.totalSupply && 'info-disabled'}`}>
+    <div className={`row-info ${!totalSupply && 'info-disabled'}`}>
       <div>
         Total supply
       </div>
       <div>
-        {latestCoinmarketcapData && latestCoinmarketcapData.symbol}&nbsp;
-        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.totalSupply)}
+        {ticker}&nbsp;
+        {formatNumber(totalSupply)}
       </div>
     </div>
-    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.rank && 'info-disabled'}`}>
+    <div className={`row-info ${!rank && 'info-disabled'}`}>
       <div>
         Rank
       </div>
       <div>
-        {latestCoinmarketcapData && latestCoinmarketcapData.rank}
+        {rank}
       </div>
     </div>
     <div className={`row-info ${!roiUsd && 'info-disabled'}`}>
@@ -117,7 +108,5 @@ const GeneralInfoBlock = ({
     </div>
   </div>
 )
-
-GeneralInfoBlock.propTypes = propTypes
 
 export default GeneralInfoBlock

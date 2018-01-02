@@ -156,9 +156,7 @@ export const Detailed = ({
             isUnauthorized={generalInfo.isUnauthorized}
             isLoading={generalInfo.isLoading || PriceQuery.loading}
             title='General Info'>
-            <GeneralInfoBlock
-              volume={!!PriceQuery.price && PriceQuery.price.volume}
-              {...generalInfo.project} />
+            <GeneralInfoBlock {...PriceQuery.price} {...generalInfo.project} />
           </PanelBlock>
           <PanelBlock
             isUnauthorized={generalInfo.isUnauthorized}
@@ -209,7 +207,6 @@ const queryProject = gql`
       id,
       name,
       ticker,
-      marketCapUsd,
       websiteLink,
       facebookLink,
       githubLink,
@@ -224,14 +221,9 @@ const queryProject = gql`
       tokenAddress,
       fundsRaisedIcos { amount, currencyCode },
       roiUsd,
-      latestCoinmarketcapData {
-        priceUsd,
-        updateTime,
-        rank,
-        symbol,
-        totalSupply,
-        marketCapUsd
-      }
+      priceUsd,
+      rank,
+      totalSupply,
     }
   }
 `

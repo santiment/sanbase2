@@ -10,9 +10,13 @@ import {
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { Bar, Chart } from 'react-chartjs-2'
+import { DateRangePicker } from 'react-dates'
+import 'react-dates/initialize'
+import 'react-dates/lib/css/_datepicker.css'
 import moment from 'moment'
 import { formatNumber, formatBTC } from '../../utils/formatting'
 import './ProjectChart.css'
+import './react-dates-override.css'
 
 const COLORS = {
   price: '#00a05a',
@@ -130,6 +134,12 @@ export const ProjectChart = ({
   errorMessage,
   setSelected,
   selected,
+  changeDates,
+  startDate,
+  endDate,
+  isDesktop,
+  focusedInput,
+  onFocusChange,
   ...props
 }) => {
   if (isLoading) {
@@ -275,30 +285,45 @@ export const ProjectChart = ({
   return (
     <div className='project-dp-chart'>
       <div className='chart-header'>
-        <TimeFilter {...props} />
-        <div className='selected-value'>{selected &&
-          <Merge
-            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-            two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
-            as='div'
-          >
-            <span className='selected-value-datetime'>
-              {moment(chartData.labels[selected]).utc().format('MMMM DD, YYYY')}
-            </span>
-          </Merge>}</div>
-        <div className='selected-value'>{selected &&
-          <Merge
-            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-            two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
-            as='div'
-          >
-            <span className='selected-value-data'>Price: {props.isToggledBTC
-              ? formatBTC(parseFloat(chartData.datasets[0].data[selected]))
-              : formatNumber(chartData.datasets[0].data[selected], 'USD')}</span>
-            <span className='selected-value-data'>Volume: {props.isToggledBTC
-              ? formatBTC(parseFloat(chartData.datasets[1].data[selected]))
-              : formatNumber(chartData.datasets[1].data[selected], 'USD')}</span>
-          </Merge>}</div>
+        <div className='chart-datetime-settings'>
+          <TimeFilter {...props} />
+          <DateRangePicker
+            startDateId='startDate'
+            endDateId='endDate'
+            startDate={startDate}
+            endDate={endDate}
+            onDatesChange={({ startDate, endDate }) => changeDates(startDate, endDate)}
+            focusedInput={focusedInput}
+            onFocusChange={onFocusChange}
+            displayFormat={() => moment.localeData().longDateFormat('L')}
+            isDayBlocked={() => false}
+            isDayHighlighted={() => false}
+          />
+        </div>
+        {!isDesktop && [
+          <div className='selected-value'>{selected &&
+            <Merge
+              one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
+              two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
+              as='div'
+            >
+              <span className='selected-value-datetime'>
+                {moment(chartData.labels[selected]).utc().format('MMMM DD, YYYY')}
+              </span>
+            </Merge>}</div>,
+          <div className='selected-value'>{selected &&
+            <Merge
+              one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
+              two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
+              as='div'
+            >
+              <span className='selected-value-data'>Price: {props.isToggledBTC
+                ? formatBTC(parseFloat(chartData.datasets[0].data[selected]))
+                : formatNumber(chartData.datasets[0].data[selected], 'USD')}</span>
+              <span className='selected-value-data'>Volume: {props.isToggledBTC
+                ? formatBTC(parseFloat(chartData.datasets[1].data[selected]))
+                : formatNumber(chartData.datasets[1].data[selected], 'USD')}</span>
+            </Merge>}</div> ]}
       </div>
       <Bar
         className='graph'
@@ -366,7 +391,13 @@ ProjectChart.propTypes = {
   isError: PropTypes.bool.isRequired,
   history: PropTypes.array.isRequired,
   isEmpty: PropTypes.bool,
-  selected: PropTypes.number
+  selected: PropTypes.number,
+  isDesktop: PropTypes.bool.isRequired,
+  changeDates: PropTypes.func,
+  startDate: PropTypes.object,
+  endDate: PropTypes.object,
+  focusedInput: PropTypes.string,
+  onFocusChange: PropTypes.func
 }
 
 ProjectChart.defaultProps = {
@@ -374,7 +405,9 @@ ProjectChart.defaultProps = {
   isEmpty: true,
   isError: false,
   history: [],
-  selected: undefined
+  selected: undefined,
+  isDesktop: true,
+  focusedInput: null
 }
 
 export default enhance(ProjectChart)

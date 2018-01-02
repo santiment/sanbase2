@@ -1,0 +1,40 @@
+.DateRangePicker {
+  margin-right: 20px;
+  box-shadow: 0 0 0 0.5px rgba(50, 50, 93, 0.17), 0 2px 5px 0 rgba(50, 50, 93, 0.1);
+}
+
+.DateRangePickerInput__withBorder {
+  border: none;
+}
+
+.DateInput {
+  width: 90px;
+  padding: 4px 5px;
+}
+
+.DateInput_input {
+  padding: 2px;
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 15px;
+}
+
+.DateRangePickerInput_arrow_svg {
+  height: 18px;
+  width: 15px;
+}
+
+.CalendarDay__highlighted_calendar {
+  background: #82e0aa;
+  color: #186a3b;
+}
+
+.CalendarDay__highlighted_calendar:hover {
+  background: #58d68d;
+  color: #186a3b;
+}
+
+.CalendarDay__highlighted_calendar:active {
+  background: #58d68d;
+  color: #186a3b;
+}

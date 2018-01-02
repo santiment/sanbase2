@@ -20,6 +20,16 @@
   min-height: 60px;
 }
 
+.chart-datetime-settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.time-filter {
+  margin-right: 20px;
+}
+
 .selected-value {
   font-size: 1em;
   text-align: center;

@@ -49,6 +49,30 @@ export const makeItervalBounds = interval => {
   }
 }
 
+const fetchPriceHistoryFromStartToEndDate = (
+  client,
+  ticker,
+  startDate,
+  endDate,
+  minInterval = '1h'
+) => {
+  return new Promise((resolve, reject) => {
+    client.query({
+      query: getHistoryGQL,
+      variables: {
+        'ticker': ticker,
+        'from': moment(startDate).utc(),
+        'to': moment(endDate).utc(),
+        'interval': minInterval
+      }
+    })
+    .then(response => {
+      resolve(response.data)
+    })
+    .catch(error => reject(error))
+  })
+}
+
 const fetchPriceHistory = (client, ticker, interval = '1m') => {
   const { from, to, minInterval } = makeItervalBounds(interval)
   return new Promise((resolve, reject) => {
@@ -62,7 +86,6 @@ const fetchPriceHistory = (client, ticker, interval = '1m') => {
       }
     })
     .then(response => {
-      console.log(response.data)
       resolve(response.data)
     })
     .catch(error => reject(error))
@@ -72,6 +95,7 @@ const fetchPriceHistory = (client, ticker, interval = '1m') => {
 class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
+    const { from, to } = makeItervalBounds('1m')
     this.state = {
       interval: '1m',
       isLoading: true,
@@ -79,11 +103,49 @@ class ProjectChartContainer extends Component {
       isEmpty: true,
       errorMessage: '',
       selected: undefined,
-      history: []
+      history: [],
+      startDate: moment(from),
+      endDate: moment(to),
+      focusedInput: null
     }
 
     this.setFilter = this.setFilter.bind(this)
     this.setSelected = this.setSelected.bind(this)
+    this.onDatesChange = this.onDatesChange.bind(this)
+    this.onFocusChange = this.onFocusChange.bind(this)
+  }
+
+  onFocusChange (focusedInput) {
+    if (focusedInput) {
+      this.setState({
+        focusedInput: focusedInput
+      })
+      return
+    }
+    const { client, ticker } = this.props
+    const { startDate, endDate } = this.state
+    //this.setState({
+      //interval: undefined,
+      //isLoading: true,
+      //selected: undefined,
+      //focusedInput: focusedInput
+    //})
+    console.log(startDate, endDate)
+    //fetchPriceHistoryFromStartToEndDate(client, ticker, startDate, endDate).then(data => {
+      //const historyPrice = data.historyPrice || []
+      //this.setState({
+        //isLoading: false,
+        //isEmpty: historyPrice.length === 0,
+        //history: data.historyPrice,
+        //selected: undefined,
+        //startDate: startDate,
+        //endDate: endDate
+      //})
+    //})
+  }
+
+  onDatesChange (startDate, endDate) {
+    this.setState({startDate, endDate})
   }
 
   setSelected (selected) {
@@ -93,18 +155,20 @@ class ProjectChartContainer extends Component {
   setFilter (interval) {
     if (interval === this.state.interval) { return }
     const { client, ticker } = this.props
+    const { from, to } = makeItervalBounds(interval)
     this.setState({
       interval,
       isLoading: true,
-      selected: null
+      selected: undefined,
+      startDate: moment(from),
+      endDate: moment(to)
     })
     fetchPriceHistory(client, ticker, interval).then(data => {
       const historyPrice = data.historyPrice || []
       this.setState({
         isLoading: false,
         isEmpty: historyPrice.length === 0,
-        history: data.historyPrice,
-        selected: null
+        history: data.historyPrice
       })
     })
   }
@@ -132,6 +196,8 @@ class ProjectChartContainer extends Component {
           : <ProjectChart
             setFilter={this.setFilter}
             setSelected={this.setSelected}
+            changeDates={this.onDatesChange}
+            onFocusChange={this.onFocusChange}
             {...this.state} />}
       </div>
     )

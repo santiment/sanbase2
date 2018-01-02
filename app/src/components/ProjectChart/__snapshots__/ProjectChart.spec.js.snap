@@ -7,13 +7,98 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
   <div
     className="chart-header"
   >
-    <Component />
     <div
-      className="selected-value"
-    />
-    <div
-      className="selected-value"
-    />
+      className="chart-datetime-settings"
+    >
+      <Component />
+      <withStyles(DateRangePicker)
+        anchorDirection="left"
+        block={false}
+        customArrowIcon={null}
+        customCloseIcon={null}
+        customInputIcon={null}
+        daySize={39}
+        disabled={false}
+        displayFormat={[Function]}
+        enableOutsideDays={false}
+        endDate={null}
+        endDateId="endDate"
+        endDatePlaceholderText="End Date"
+        firstDayOfWeek={null}
+        focusedInput={null}
+        hideKeyboardShortcutsPanel={false}
+        horizontalMargin={0}
+        initialVisibleMonth={null}
+        inputIconPosition="before"
+        isDayBlocked={[Function]}
+        isDayHighlighted={[Function]}
+        isOutsideRange={[Function]}
+        isRTL={false}
+        keepOpenOnDateSelect={false}
+        minimumNights={1}
+        monthFormat="MMMM YYYY"
+        navNext={null}
+        navPrev={null}
+        noBorder={false}
+        numberOfMonths={2}
+        onClose={[Function]}
+        onDatesChange={[Function]}
+        onNextMonthClick={[Function]}
+        onPrevMonthClick={[Function]}
+        openDirection="down"
+        orientation="horizontal"
+        phrases={
+          Object {
+            "calendarLabel": "Calendar",
+            "chooseAvailableEndDate": [Function],
+            "chooseAvailableStartDate": [Function],
+            "clearDates": "Clear Dates",
+            "closeDatePicker": "Close",
+            "dateIsUnavailable": [Function],
+            "enterKey": "Enter key",
+            "escape": "Escape key",
+            "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+            "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+            "homeEnd": "Home and end keys",
+            "jumpToNextMonth": "Move forward to switch to the next month.",
+            "jumpToPrevMonth": "Move backward to switch to the previous month.",
+            "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+            select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+            "keyboardShortcuts": "Keyboard Shortcuts",
+            "leftArrowRightArrow": "Right and left arrow keys",
+            "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+            "moveFocusByOneMonth": "Switch months.",
+            "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+            "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+            "openThisPanel": "Open this panel.",
+            "pageUpPageDown": "page up and page down keys",
+            "questionMark": "Question mark",
+            "returnFocusToInput": "Return to the date input field.",
+            "selectFocusedDate": "Select the date in focus.",
+            "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+            "upArrowDownArrow": "up and down arrow keys",
+          }
+        }
+        readOnly={false}
+        renderCalendarInfo={null}
+        renderDayContents={null}
+        renderMonth={null}
+        reopenPickerOnClearDates={false}
+        required={false}
+        screenReaderInputMessage=""
+        showClearDates={false}
+        showDefaultInputIcon={false}
+        small={false}
+        startDate={null}
+        startDateId="startDate"
+        startDatePlaceholderText="Start Date"
+        verticalHeight={null}
+        verticalSpacing={22}
+        weekDayFormat="dd"
+        withFullScreenPortal={false}
+        withPortal={false}
+      />
+    </div>
   </div>
   <Bar
     className="graph"
@@ -203,7 +288,9 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
 exports[`ProjectChart component Error State it should render correctly with error message 1`] = `
 <ProjectChart
   errorMessage="400 error"
+  focusedInput={null}
   history={Array []}
+  isDesktop={true}
   isEmpty={true}
   isError={true}
   isLoading={false}
@@ -221,7 +308,9 @@ exports[`ProjectChart component Error State it should render correctly with erro
 
 exports[`ProjectChart component Loading State it should render correctly with loading prop 1`] = `
 <ProjectChart
+  focusedInput={null}
   history={Array []}
+  isDesktop={true}
   isEmpty={true}
   isError={false}
   isLoading={true}
@@ -238,7 +327,9 @@ exports[`ProjectChart component Loading State it should render correctly with lo
 
 exports[`ProjectChart component Loading State it should render correctly withour history prop 1`] = `
 <ProjectChart
+  focusedInput={null}
   history={Array []}
+  isDesktop={true}
   isEmpty={true}
   isError={false}
   isLoading={true}

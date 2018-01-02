@@ -117,7 +117,7 @@ defmodule Sanbase.Model.Project do
     with :gt <- Ecto.DateTime.compare(project.latest_coinmarketcap_data.update_time, Ecto.DateTime.from_date(end_date)),
         {:ok, timestamp, _} <- Ecto.Date.to_iso8601(end_date) <> "T00:00:00Z" |> DateTime.from_iso8601() do
 
-      Store.fetch_closest_price_point(project.ticker <> "_USD", timestamp)
+      Store.fetch_last_known_price_point(project.ticker <> "_USD", timestamp)
       |> case do
         nil -> {project, count, total_paid}
         {_, nil, _, _} -> {project, count, total_paid}

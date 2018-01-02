@@ -272,6 +272,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :coinmarketcap_id, :string
+    field :symbol, :string do
+      resolve &ProjectResolver.symbol/3
+    end
     field :rank, :integer do
       resolve &ProjectResolver.rank/3
     end

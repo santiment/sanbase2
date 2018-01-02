@@ -21,7 +21,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting
-  alias Sanbase.ExternalServices.TwitterData.{HistoricalData, Store}
+  alias Sanbase.ExternalServices.TwitterData.Store
 
   # 1 day
   @default_update_interval 1000 * 60 * 60 * 24
@@ -86,12 +86,12 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
 
   # Twittercounter works only with id, but not with name
   defp fetch_and_store_twittercounter_user_data(
-         %ExTwitter.Model.User{id: twitter_id, id_str: twitter_id_str},
+         %ExTwitter.Model.User{id_str: twitter_id_str},
          twitter_name
        ) do
     case has_scraped_data?(twitter_name) do
       false ->
-        {twitter_id, twitter_id_str}
+        twitter_id_str
         |> fetch_twittercounter_user_data()
         |> convert_to_measurement(twitter_name)
         |> store_twittercounter_user_data()
@@ -101,7 +101,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
     end
   end
 
-  defp fetch_twittercounter_user_data({twitter_id, twitter_id_str}) do
+  defp fetch_twittercounter_user_data(twitter_id_str) do
     RateLimiting.Server.wait(@rate_limiter_name)
 
     apikey = get_config(:apikey)
@@ -113,11 +113,18 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
         |> Map.get("followersperdate")
 
       %Tesla.Env{status: 401} ->
-        Logger.warn("Twittercounter API credentials are missing or incorrect")
+        Logger.warn("Twittercounter API credentials are missing or incorrect.")
         %{}
 
       %Tesla.Env{status: 403} ->
         Logger.info("Twittercounter API limit has been reached")
+        %{}
+
+      %Tesla.Env{status: status, body: body} ->
+        Logger.warn("Error status #{status} fetching twittercounter data for twitter id #{twitter_id_str}: #{body}")
+        %{}
+
+      _ ->
         %{}
 
     end

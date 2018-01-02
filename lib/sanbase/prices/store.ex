@@ -113,7 +113,7 @@ defmodule Sanbase.Prices.Store do
     {datetime, price, marketcap, volume}
   end
 
-  defp parse_record(x) do
+  defp parse_record(_) do
     nil
   end
 end

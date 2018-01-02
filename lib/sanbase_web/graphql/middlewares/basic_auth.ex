@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Middlewares.BasicAuth do
-  @behavior Absinthe.Middleware
+  @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution
 

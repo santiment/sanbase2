@@ -1,0 +1,5866 @@
+[
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T08:00:00Z",
+        "marketcap": "68101800",
+        "priceBtc": "0.00010973366666666667",
+        "priceUsd": "1.12523",
+        "volume": "31008200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T09:00:00Z",
+        "marketcap": "67976669.25",
+        "priceBtc": "0.00010994308333333334",
+        "priceUsd": "1.1231625",
+        "volume": "122008400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T10:00:00Z",
+        "marketcap": "66542637.583333336",
+        "priceBtc": "0.00010997641666666667",
+        "priceUsd": "1.0994683333333333",
+        "volume": "118684400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T11:00:00Z",
+        "marketcap": "64947616",
+        "priceBtc": "0.00011005399999999999",
+        "priceUsd": "1.0731141666666668",
+        "volume": "115652050"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T12:00:00Z",
+        "marketcap": "65652300.333333336",
+        "priceBtc": "0.00011058949999999999",
+        "priceUsd": "1.0847575",
+        "volume": "115092200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T13:00:00Z",
+        "marketcap": "64860513.916666664",
+        "priceBtc": "0.00011245525",
+        "priceUsd": "1.0716750000000002",
+        "volume": "106944120"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T14:00:00Z",
+        "marketcap": "63464510.583333336",
+        "priceBtc": "0.00011350708333333333",
+        "priceUsd": "1.0486091666666666",
+        "volume": "103776110"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T15:00:00Z",
+        "marketcap": "66868854.166666664",
+        "priceBtc": "0.00011881800000000001",
+        "priceUsd": "1.1048583333333335",
+        "volume": "109703590"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T16:00:00Z",
+        "marketcap": "65879007.75",
+        "priceBtc": "0.0001163645",
+        "priceUsd": "1.0885033333333334",
+        "volume": "107682200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T17:00:00Z",
+        "marketcap": "69756789.16666667",
+        "priceBtc": "0.00012303983333333333",
+        "priceUsd": "1.1525750000000001",
+        "volume": "114737680"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T18:00:00Z",
+        "marketcap": "73600980.5",
+        "priceBtc": "0.00012591816666666667",
+        "priceUsd": "1.2160916666666668",
+        "volume": "125954600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T19:00:00Z",
+        "marketcap": "75556716.33333333",
+        "priceBtc": "0.0001277090833333333",
+        "priceUsd": "1.2484058333333332",
+        "volume": "124282080"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T20:00:00Z",
+        "marketcap": "74158494",
+        "priceBtc": "0.00012656349999999998",
+        "priceUsd": "1.2253033333333334",
+        "volume": "100730170"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T21:00:00Z",
+        "marketcap": "73725102",
+        "priceBtc": "0.00012674775",
+        "priceUsd": "1.2181425",
+        "volume": "81332860"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T22:00:00Z",
+        "marketcap": "74423986.16666667",
+        "priceBtc": "0.00012486941666666664",
+        "priceUsd": "1.22969",
+        "volume": "67910940"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-11-30T23:00:00Z",
+        "marketcap": "75118533.16666667",
+        "priceBtc": "0.00012393550000000002",
+        "priceUsd": "1.2411658333333333",
+        "volume": "66041820"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T00:00:00Z",
+        "marketcap": "77399124",
+        "priceBtc": "0.00012767708333333335",
+        "priceUsd": "1.2788475000000001",
+        "volume": "70700270"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T01:00:00Z",
+        "marketcap": "74993301.66666667",
+        "priceBtc": "0.00012616783333333336",
+        "priceUsd": "1.2390966666666665",
+        "volume": "71909910"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T02:00:00Z",
+        "marketcap": "73494107.5",
+        "priceBtc": "0.00012463800000000002",
+        "priceUsd": "1.2143258333333333",
+        "volume": "70639030"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T03:00:00Z",
+        "marketcap": "72602459",
+        "priceBtc": "0.0001228225",
+        "priceUsd": "1.1995933333333333",
+        "volume": "70223800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T04:00:00Z",
+        "marketcap": "74776731.83333333",
+        "priceBtc": "0.0001258378333333333",
+        "priceUsd": "1.2355183333333335",
+        "volume": "72628960"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T05:00:00Z",
+        "marketcap": "74249076",
+        "priceBtc": "0.00012600233333333332",
+        "priceUsd": "1.2268000000000001",
+        "volume": "72351640"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T06:00:00Z",
+        "marketcap": "73718898.5",
+        "priceBtc": "0.000126481",
+        "priceUsd": "1.21804",
+        "volume": "71127420"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T07:00:00Z",
+        "marketcap": "73139848.83333333",
+        "priceBtc": "0.00012711433333333335",
+        "priceUsd": "1.2084725",
+        "volume": "69086050"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T08:00:00Z",
+        "marketcap": "74634201.25",
+        "priceBtc": "0.00012718558333333336",
+        "priceUsd": "1.2331633333333334",
+        "volume": "69694050"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T09:00:00Z",
+        "marketcap": "76155738.41666667",
+        "priceBtc": "0.0001271655",
+        "priceUsd": "1.2583033333333333",
+        "volume": "71967460"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T10:00:00Z",
+        "marketcap": "76577631.08333333",
+        "priceBtc": "0.000127337",
+        "priceUsd": "1.2652741666666667",
+        "volume": "74211180"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T11:00:00Z",
+        "marketcap": "76606177.5",
+        "priceBtc": "0.00012744333333333335",
+        "priceUsd": "1.2657458333333331",
+        "volume": "73757410"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T12:00:00Z",
+        "marketcap": "77392718.66666667",
+        "priceBtc": "0.00012553608333333333",
+        "priceUsd": "1.2787416666666667",
+        "volume": "74889160"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T13:00:00Z",
+        "marketcap": "77644593.33333333",
+        "priceBtc": "0.00012267375000000002",
+        "priceUsd": "1.2829033333333333",
+        "volume": "75358940"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T14:00:00Z",
+        "marketcap": "79740741.83333333",
+        "priceBtc": "0.00012384674999999998",
+        "priceUsd": "1.3175375",
+        "volume": "75149650"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T15:00:00Z",
+        "marketcap": "79637853.41666667",
+        "priceBtc": "0.0001247694166666667",
+        "priceUsd": "1.3158375",
+        "volume": "70146590"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T16:00:00Z",
+        "marketcap": "79185548.16666667",
+        "priceBtc": "0.00012337633333333337",
+        "priceUsd": "1.3083641666666666",
+        "volume": "68309430"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T17:00:00Z",
+        "marketcap": "79171930.75",
+        "priceBtc": "0.00012401358333333334",
+        "priceUsd": "1.3081391666666666",
+        "volume": "65586380"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T18:00:00Z",
+        "marketcap": "82953884.58333333",
+        "priceBtc": "0.00013017900000000002",
+        "priceUsd": "1.3706275",
+        "volume": "67556600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T19:00:00Z",
+        "marketcap": "85831379.16666667",
+        "priceBtc": "0.00013379349999999998",
+        "priceUsd": "1.4181716666666668",
+        "volume": "71994780"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T20:00:00Z",
+        "marketcap": "94254556.08333333",
+        "priceBtc": "0.0001458146666666667",
+        "priceUsd": "1.5573458333333334",
+        "volume": "91267690"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T21:00:00Z",
+        "marketcap": "101998518.41666667",
+        "priceBtc": "0.00015529800000000003",
+        "priceUsd": "1.6852975",
+        "volume": "119552700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T22:00:00Z",
+        "marketcap": "102365739.16666667",
+        "priceBtc": "0.00015577191666666667",
+        "priceUsd": "1.6913650000000005",
+        "volume": "149945900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-01T23:00:00Z",
+        "marketcap": "102448201.08333333",
+        "priceBtc": "0.0001568623333333333",
+        "priceUsd": "1.6927275000000004",
+        "volume": "159699700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T00:00:00Z",
+        "marketcap": "106354024.5",
+        "priceBtc": "0.00016068433333333337",
+        "priceUsd": "1.7572625000000002",
+        "volume": "173706200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T01:00:00Z",
+        "marketcap": "102725142.33333333",
+        "priceBtc": "0.00015416658333333334",
+        "priceUsd": "1.6973033333333334",
+        "volume": "177043800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T02:00:00Z",
+        "marketcap": "102097018.83333333",
+        "priceBtc": "0.00015312516666666666",
+        "priceUsd": "1.6869249999999998",
+        "volume": "176093700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T03:00:00Z",
+        "marketcap": "100656430.83333333",
+        "priceBtc": "0.0001516125",
+        "priceUsd": "1.6631225",
+        "volume": "173562500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T04:00:00Z",
+        "marketcap": "96189411.75",
+        "priceBtc": "0.00014656841666666666",
+        "priceUsd": "1.589315",
+        "volume": "175674300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T05:00:00Z",
+        "marketcap": "97971095",
+        "priceBtc": "0.00014981291666666668",
+        "priceUsd": "1.6187533333333333",
+        "volume": "181030600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T06:00:00Z",
+        "marketcap": "100461396.75",
+        "priceBtc": "0.000151878",
+        "priceUsd": "1.6599000000000002",
+        "volume": "187398000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T07:00:00Z",
+        "marketcap": "101264278.83333333",
+        "priceBtc": "0.00015340350000000002",
+        "priceUsd": "1.6731658333333337",
+        "volume": "190866800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T08:00:00Z",
+        "marketcap": "100137096.83333333",
+        "priceBtc": "0.00015105824999999998",
+        "priceUsd": "1.6545416666666666",
+        "volume": "189336300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T09:00:00Z",
+        "marketcap": "101181312.58333333",
+        "priceBtc": "0.000150724",
+        "priceUsd": "1.6717950000000001",
+        "volume": "191594000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T10:00:00Z",
+        "marketcap": "105064994.83333333",
+        "priceBtc": "0.00015559216666666666",
+        "priceUsd": "1.7359641666666665",
+        "volume": "206279900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T11:00:00Z",
+        "marketcap": "105912663.66666667",
+        "priceBtc": "0.00015906491666666667",
+        "priceUsd": "1.7499700000000002",
+        "volume": "216040600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T12:00:00Z",
+        "marketcap": "104395262.33333333",
+        "priceBtc": "0.00015665058333333334",
+        "priceUsd": "1.7248983333333332",
+        "volume": "216333700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T13:00:00Z",
+        "marketcap": "103542146.33333333",
+        "priceBtc": "0.00015423175000000002",
+        "priceUsd": "1.7108024999999998",
+        "volume": "216925700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T14:00:00Z",
+        "marketcap": "100908608.08333333",
+        "priceBtc": "0.00015274983333333334",
+        "priceUsd": "1.6672891666666665",
+        "volume": "210081500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T15:00:00Z",
+        "marketcap": "100201654.16666667",
+        "priceBtc": "0.00015226391666666665",
+        "priceUsd": "1.6556083333333336",
+        "volume": "209520100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T16:00:00Z",
+        "marketcap": "98256459.08333333",
+        "priceBtc": "0.00015040716666666669",
+        "priceUsd": "1.623468333333333",
+        "volume": "207597800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T17:00:00Z",
+        "marketcap": "102770282.08333333",
+        "priceBtc": "0.00015595208333333334",
+        "priceUsd": "1.6980491666666666",
+        "volume": "221316800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T18:00:00Z",
+        "marketcap": "109079708.33333333",
+        "priceBtc": "0.0001642136666666667",
+        "priceUsd": "1.8022983333333336",
+        "volume": "240644900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T19:00:00Z",
+        "marketcap": "111912113.75",
+        "priceBtc": "0.00016896933333333334",
+        "priceUsd": "1.8490975",
+        "volume": "249151200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T20:00:00Z",
+        "marketcap": "117322881.25",
+        "priceBtc": "0.00017736408333333335",
+        "priceUsd": "1.9384983333333332",
+        "volume": "255927000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T21:00:00Z",
+        "marketcap": "121868024.58333333",
+        "priceBtc": "0.00018300275",
+        "priceUsd": "2.013596666666666",
+        "volume": "259836600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T22:00:00Z",
+        "marketcap": "130946711.16666667",
+        "priceBtc": "0.00019638166666666667",
+        "priceUsd": "2.163601666666667",
+        "volume": "273858900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-02T23:00:00Z",
+        "marketcap": "124250848",
+        "priceBtc": "0.00018726291666666664",
+        "priceUsd": "2.0529675",
+        "volume": "294731600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T00:00:00Z",
+        "marketcap": "120632456.41666667",
+        "priceBtc": "0.00018190899999999998",
+        "priceUsd": "1.9931816666666666",
+        "volume": "306324800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T01:00:00Z",
+        "marketcap": "120468793.33333333",
+        "priceBtc": "0.0001826878333333333",
+        "priceUsd": "1.9904775",
+        "volume": "294994900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T02:00:00Z",
+        "marketcap": "124336840.58333333",
+        "priceBtc": "0.00018760791666666665",
+        "priceUsd": "2.0543883333333333",
+        "volume": "305481300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T03:00:00Z",
+        "marketcap": "125680693.66666667",
+        "priceBtc": "0.0001897035",
+        "priceUsd": "2.0765925",
+        "volume": "309838100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T04:00:00Z",
+        "marketcap": "122524542.83333333",
+        "priceBtc": "0.00018328675000000002",
+        "priceUsd": "2.0244441666666666",
+        "volume": "292213400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T05:00:00Z",
+        "marketcap": "125274940.33333333",
+        "priceBtc": "0.00018671833333333334",
+        "priceUsd": "2.069888333333333",
+        "volume": "301678700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T06:00:00Z",
+        "marketcap": "126724153",
+        "priceBtc": "0.00018913033333333332",
+        "priceUsd": "2.0938333333333334",
+        "volume": "305373600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T07:00:00Z",
+        "marketcap": "129807928.75",
+        "priceBtc": "0.00019200483333333337",
+        "priceUsd": "2.1447858333333336",
+        "volume": "313372500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T08:00:00Z",
+        "marketcap": "131396847.66666667",
+        "priceBtc": "0.00019430466666666663",
+        "priceUsd": "2.1710391666666666",
+        "volume": "320144400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T09:00:00Z",
+        "marketcap": "135662376.66666666",
+        "priceBtc": "0.00020096625",
+        "priceUsd": "2.2415175",
+        "volume": "344580900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T10:00:00Z",
+        "marketcap": "132464415.16666667",
+        "priceBtc": "0.00019609049999999998",
+        "priceUsd": "2.1886783333333333",
+        "volume": "340782400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T11:00:00Z",
+        "marketcap": "136718495.33333334",
+        "priceBtc": "0.00019826716666666668",
+        "priceUsd": "2.2589675000000002",
+        "volume": "351790800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T12:00:00Z",
+        "marketcap": "143214230.5",
+        "priceBtc": "0.00020283966666666663",
+        "priceUsd": "2.366295",
+        "volume": "386155800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T13:00:00Z",
+        "marketcap": "150792663.75",
+        "priceBtc": "0.00021279241666666664",
+        "priceUsd": "2.4915116666666672",
+        "volume": "431098100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T14:00:00Z",
+        "marketcap": "155797526.33333334",
+        "priceBtc": "0.00022077550000000002",
+        "priceUsd": "2.5742058333333335",
+        "volume": "539756300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T15:00:00Z",
+        "marketcap": "155145597.5",
+        "priceBtc": "0.00021791591666666665",
+        "priceUsd": "2.5634341666666667",
+        "volume": "572764100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T16:00:00Z",
+        "marketcap": "148667212.25",
+        "priceBtc": "0.0002088111666666667",
+        "priceUsd": "2.456393333333333",
+        "volume": "573518400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T17:00:00Z",
+        "marketcap": "151406059.75",
+        "priceBtc": "0.00021360925",
+        "priceUsd": "2.5016466666666664",
+        "volume": "601668800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T18:00:00Z",
+        "marketcap": "157823418.33333334",
+        "priceBtc": "0.00022295191666666669",
+        "priceUsd": "2.6076791666666668",
+        "volume": "625676300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T19:00:00Z",
+        "marketcap": "154729958.83333334",
+        "priceBtc": "0.00021775966666666663",
+        "priceUsd": "2.5565666666666664",
+        "volume": "647228900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T20:00:00Z",
+        "marketcap": "151372974.16666666",
+        "priceBtc": "0.00021441416666666667",
+        "priceUsd": "2.5011",
+        "volume": "663171000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T21:00:00Z",
+        "marketcap": "142001761.91666666",
+        "priceBtc": "0.00020973066666666663",
+        "priceUsd": "2.3462616666666665",
+        "volume": "660131800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T22:00:00Z",
+        "marketcap": "136121793.33333334",
+        "priceBtc": "0.00020564350000000002",
+        "priceUsd": "2.2491083333333335",
+        "volume": "658391700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-03T23:00:00Z",
+        "marketcap": "143018490.5",
+        "priceBtc": "0.00021279683333333332",
+        "priceUsd": "2.3630608333333334",
+        "volume": "669684200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T00:00:00Z",
+        "marketcap": "147901854.08333334",
+        "priceBtc": "0.00021645066666666664",
+        "priceUsd": "2.4437475",
+        "volume": "670868600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T01:00:00Z",
+        "marketcap": "151425679.16666666",
+        "priceBtc": "0.00021984575",
+        "priceUsd": "2.501970833333333",
+        "volume": "688016700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T02:00:00Z",
+        "marketcap": "146309253.33333334",
+        "priceBtc": "0.00021389975000000005",
+        "priceUsd": "2.4174333333333338",
+        "volume": "667655000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T03:00:00Z",
+        "marketcap": "149164707.66666666",
+        "priceBtc": "0.00021746725000000003",
+        "priceUsd": "2.4646133333333333",
+        "volume": "683146100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T04:00:00Z",
+        "marketcap": "149590282.25",
+        "priceBtc": "0.00021538725000000002",
+        "priceUsd": "2.4716449999999996",
+        "volume": "686734800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T05:00:00Z",
+        "marketcap": "160750591.66666666",
+        "priceBtc": "0.00023184724999999998",
+        "priceUsd": "2.6560441666666668",
+        "volume": "752207700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T06:00:00Z",
+        "marketcap": "159790149.33333334",
+        "priceBtc": "0.00023101833333333334",
+        "priceUsd": "2.6401749999999997",
+        "volume": "757502100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T07:00:00Z",
+        "marketcap": "156240652.5",
+        "priceBtc": "0.00022520175",
+        "priceUsd": "2.5815275000000004",
+        "volume": "748038000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T08:00:00Z",
+        "marketcap": "155403221.91666666",
+        "priceBtc": "0.00022226466666666668",
+        "priceUsd": "2.5676908333333333",
+        "volume": "747189100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T09:00:00Z",
+        "marketcap": "152221803.08333334",
+        "priceBtc": "0.00021801916666666665",
+        "priceUsd": "2.5151250000000003",
+        "volume": "721006600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T10:00:00Z",
+        "marketcap": "146962493.5",
+        "priceBtc": "0.0002140511666666667",
+        "priceUsd": "2.4282266666666663",
+        "volume": "687890800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T11:00:00Z",
+        "marketcap": "148923979.25",
+        "priceBtc": "0.0002170605833333333",
+        "priceUsd": "2.4606358333333334",
+        "volume": "693588100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T12:00:00Z",
+        "marketcap": "146385259.58333334",
+        "priceBtc": "0.00021523533333333333",
+        "priceUsd": "2.418689166666667",
+        "volume": "664999800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T13:00:00Z",
+        "marketcap": "142520137.66666666",
+        "priceBtc": "0.0002121625",
+        "priceUsd": "2.354826666666667",
+        "volume": "626051500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T14:00:00Z",
+        "marketcap": "148368079.58333334",
+        "priceBtc": "0.00021623333333333338",
+        "priceUsd": "2.4514508333333334",
+        "volume": "566294900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T15:00:00Z",
+        "marketcap": "148245571.91666666",
+        "priceBtc": "0.000215492",
+        "priceUsd": "2.449426666666667",
+        "volume": "540229400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T16:00:00Z",
+        "marketcap": "144966509.91666666",
+        "priceBtc": "0.0002113991666666667",
+        "priceUsd": "2.3952475000000004",
+        "volume": "507674300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T17:00:00Z",
+        "marketcap": "146564507.25",
+        "priceBtc": "0.00021359924999999998",
+        "priceUsd": "2.4216508333333335",
+        "volume": "493090300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T18:00:00Z",
+        "marketcap": "144486112.08333334",
+        "priceBtc": "0.00021301983333333336",
+        "priceUsd": "2.38731",
+        "volume": "474955900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T19:00:00Z",
+        "marketcap": "143218366.25",
+        "priceBtc": "0.00021102199999999997",
+        "priceUsd": "2.3663633333333336",
+        "volume": "429392200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T20:00:00Z",
+        "marketcap": "144585419.75",
+        "priceBtc": "0.00020935449999999998",
+        "priceUsd": "2.388950833333333",
+        "volume": "386906100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T21:00:00Z",
+        "marketcap": "151763395.08333334",
+        "priceBtc": "0.00021730991666666667",
+        "priceUsd": "2.507550833333333",
+        "volume": "343681100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T22:00:00Z",
+        "marketcap": "166805369.5",
+        "priceBtc": "0.00023942241666666668",
+        "priceUsd": "2.756085833333333",
+        "volume": "352134300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-04T23:00:00Z",
+        "marketcap": "168771747.41666666",
+        "priceBtc": "0.00024144958333333335",
+        "priceUsd": "2.7885758333333333",
+        "volume": "350153700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T00:00:00Z",
+        "marketcap": "167770502.83333334",
+        "priceBtc": "0.00023820758333333332",
+        "priceUsd": "2.7720325",
+        "volume": "337606200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T01:00:00Z",
+        "marketcap": "159263098.5",
+        "priceBtc": "0.00022697324999999997",
+        "priceUsd": "2.631466666666667",
+        "volume": "315888400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T02:00:00Z",
+        "marketcap": "151960295.16666666",
+        "priceBtc": "0.00021581466666666666",
+        "priceUsd": "2.5108041666666665",
+        "volume": "305131400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T03:00:00Z",
+        "marketcap": "151720575.41666666",
+        "priceBtc": "0.00021672241666666667",
+        "priceUsd": "2.5068433333333338",
+        "volume": "305514600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T04:00:00Z",
+        "marketcap": "150464581",
+        "priceBtc": "0.00021524341666666664",
+        "priceUsd": "2.4860908333333334",
+        "volume": "301463800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T05:00:00Z",
+        "marketcap": "155406752.41666666",
+        "priceBtc": "0.00022224658333333332",
+        "priceUsd": "2.5677491666666667",
+        "volume": "294942000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T06:00:00Z",
+        "marketcap": "158625896.91666666",
+        "priceBtc": "0.00022612825",
+        "priceUsd": "2.620938333333333",
+        "volume": "298700500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T07:00:00Z",
+        "marketcap": "156266828.41666666",
+        "priceBtc": "0.00022136366666666667",
+        "priceUsd": "2.58196",
+        "volume": "294743500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T08:00:00Z",
+        "marketcap": "154904566.58333334",
+        "priceBtc": "0.00021640441666666667",
+        "priceUsd": "2.559451666666667",
+        "volume": "290953300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T09:00:00Z",
+        "marketcap": "157369347.75",
+        "priceBtc": "0.00022008033333333334",
+        "priceUsd": "2.6001766666666666",
+        "volume": "292548800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T10:00:00Z",
+        "marketcap": "157209820.33333334",
+        "priceBtc": "0.00022263683333333334",
+        "priceUsd": "2.597540833333333",
+        "volume": "284167400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T11:00:00Z",
+        "marketcap": "155799997.75",
+        "priceBtc": "0.00021982958333333332",
+        "priceUsd": "2.574246666666667",
+        "volume": "275232800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T12:00:00Z",
+        "marketcap": "155114277.25",
+        "priceBtc": "0.00021860741666666667",
+        "priceUsd": "2.5629166666666667",
+        "volume": "275086100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T13:00:00Z",
+        "marketcap": "160651839.08333334",
+        "priceBtc": "0.00022436291666666662",
+        "priceUsd": "2.6544125",
+        "volume": "296500900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T14:00:00Z",
+        "marketcap": "161422140",
+        "priceBtc": "0.00022561933333333338",
+        "priceUsd": "2.66714",
+        "volume": "299695500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T15:00:00Z",
+        "marketcap": "160996263",
+        "priceBtc": "0.000225089",
+        "priceUsd": "2.6601033333333337",
+        "volume": "289924200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T16:00:00Z",
+        "marketcap": "160290973.5",
+        "priceBtc": "0.00022639966666666663",
+        "priceUsd": "2.6484500000000004",
+        "volume": "285755300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T17:00:00Z",
+        "marketcap": "162211808.16666666",
+        "priceBtc": "0.00022868624999999998",
+        "priceUsd": "2.6801875",
+        "volume": "292893100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T18:00:00Z",
+        "marketcap": "167839851.41666666",
+        "priceBtc": "0.00023663216666666665",
+        "priceUsd": "2.7731783333333335",
+        "volume": "314839400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T19:00:00Z",
+        "marketcap": "179950415.58333334",
+        "priceBtc": "0.00025300958333333335",
+        "priceUsd": "2.9732783333333335",
+        "volume": "368392900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T20:00:00Z",
+        "marketcap": "188414495.66666666",
+        "priceBtc": "0.00026442533333333336",
+        "priceUsd": "3.1131283333333335",
+        "volume": "427091200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T21:00:00Z",
+        "marketcap": "186302863.58333334",
+        "priceBtc": "0.00026152725000000004",
+        "priceUsd": "3.0782383333333327",
+        "volume": "426094300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T22:00:00Z",
+        "marketcap": "186884031.58333334",
+        "priceBtc": "0.000262329",
+        "priceUsd": "3.0878408333333334",
+        "volume": "388181800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-05T23:00:00Z",
+        "marketcap": "181517597",
+        "priceBtc": "0.00025506783333333337",
+        "priceUsd": "2.9991725",
+        "volume": "358146400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T00:00:00Z",
+        "marketcap": "184741432",
+        "priceBtc": "0.00025936125",
+        "priceUsd": "3.0524391666666673",
+        "volume": "366147100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T01:00:00Z",
+        "marketcap": "182240791.16666666",
+        "priceBtc": "0.00025387658333333334",
+        "priceUsd": "3.0111216666666665",
+        "volume": "365276300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T02:00:00Z",
+        "marketcap": "180480643.83333334",
+        "priceBtc": "0.00024750625",
+        "priceUsd": "2.9820391666666666",
+        "volume": "372969600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T03:00:00Z",
+        "marketcap": "180941321.41666666",
+        "priceBtc": "0.00024453308333333336",
+        "priceUsd": "2.9896508333333336",
+        "volume": "374779600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T04:00:00Z",
+        "marketcap": "178164395.08333334",
+        "priceBtc": "0.00024096674999999997",
+        "priceUsd": "2.9437683333333333",
+        "volume": "380183000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T05:00:00Z",
+        "marketcap": "179755432.08333334",
+        "priceBtc": "0.00024309991666666668",
+        "priceUsd": "2.9700566666666663",
+        "volume": "398388200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T06:00:00Z",
+        "marketcap": "183852355.75",
+        "priceBtc": "0.00024554008333333333",
+        "priceUsd": "3.0377491666666665",
+        "volume": "409900900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T07:00:00Z",
+        "marketcap": "190908832.25",
+        "priceBtc": "0.0002533994166666667",
+        "priceUsd": "3.154341666666667",
+        "volume": "448785500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T08:00:00Z",
+        "marketcap": "193509990.83333334",
+        "priceBtc": "0.000256373",
+        "priceUsd": "3.1973199999999995",
+        "volume": "483683500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T09:00:00Z",
+        "marketcap": "195476469.66666666",
+        "priceBtc": "0.0002572199166666667",
+        "priceUsd": "3.229811666666666",
+        "volume": "489632300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T10:00:00Z",
+        "marketcap": "199035851.83333334",
+        "priceBtc": "0.0002592811666666667",
+        "priceUsd": "3.2886225000000002",
+        "volume": "504477000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T11:00:00Z",
+        "marketcap": "182938515.41666666",
+        "priceBtc": "0.0002383",
+        "priceUsd": "3.02265",
+        "volume": "474772600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T12:00:00Z",
+        "marketcap": "183992011.41666666",
+        "priceBtc": "0.0002394625",
+        "priceUsd": "3.040056666666666",
+        "volume": "476977800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T13:00:00Z",
+        "marketcap": "185821154.41666666",
+        "priceBtc": "0.000241267",
+        "priceUsd": "3.0702791666666673",
+        "volume": "459127000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T14:00:00Z",
+        "marketcap": "174582569",
+        "priceBtc": "0.000226138",
+        "priceUsd": "2.884586666666667",
+        "volume": "423367700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T15:00:00Z",
+        "marketcap": "160645484.41666666",
+        "priceBtc": "0.00020847850000000004",
+        "priceUsd": "2.6543075",
+        "volume": "393842040"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T16:00:00Z",
+        "marketcap": "140623309.91666666",
+        "priceBtc": "0.0001844356666666667",
+        "priceUsd": "2.3234858333333337",
+        "volume": "414729000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T17:00:00Z",
+        "marketcap": "157227523.33333334",
+        "priceBtc": "0.00020443949999999998",
+        "priceUsd": "2.5978333333333334",
+        "volume": "476460900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T18:00:00Z",
+        "marketcap": "171048606.16666666",
+        "priceBtc": "0.00022170033333333337",
+        "priceUsd": "2.8261958333333332",
+        "volume": "518406400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T19:00:00Z",
+        "marketcap": "166568020.25",
+        "priceBtc": "0.00021191775",
+        "priceUsd": "2.752164166666667",
+        "volume": "486405000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T20:00:00Z",
+        "marketcap": "157206693.25",
+        "priceBtc": "0.00019748383333333333",
+        "priceUsd": "2.597489166666667",
+        "volume": "425289800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T21:00:00Z",
+        "marketcap": "158176012.41666666",
+        "priceBtc": "0.0001978655",
+        "priceUsd": "2.613505",
+        "volume": "422888200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T22:00:00Z",
+        "marketcap": "154883232.16666666",
+        "priceBtc": "0.0001898365",
+        "priceUsd": "2.5590991666666665",
+        "volume": "406346700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-06T23:00:00Z",
+        "marketcap": "150100790.08333334",
+        "priceBtc": "0.00018190350000000003",
+        "priceUsd": "2.48008",
+        "volume": "380825800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T00:00:00Z",
+        "marketcap": "143535050.41666666",
+        "priceBtc": "0.00016944499999999997",
+        "priceUsd": "2.3715958333333336",
+        "volume": "355853000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T01:00:00Z",
+        "marketcap": "133400497.41666667",
+        "priceBtc": "0.0001564155",
+        "priceUsd": "2.204145",
+        "volume": "333003300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T02:00:00Z",
+        "marketcap": "136599013.91666666",
+        "priceBtc": "0.00016273475",
+        "priceUsd": "2.2569933333333334",
+        "volume": "327989300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T03:00:00Z",
+        "marketcap": "155790515.83333334",
+        "priceBtc": "0.00018509458333333334",
+        "priceUsd": "2.5740900000000004",
+        "volume": "384768500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T04:00:00Z",
+        "marketcap": "154870018.33333334",
+        "priceBtc": "0.00018227591666666667",
+        "priceUsd": "2.5588808333333333",
+        "volume": "376431000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T05:00:00Z",
+        "marketcap": "150474466.33333334",
+        "priceBtc": "0.00017432558333333335",
+        "priceUsd": "2.4862541666666664",
+        "volume": "352914800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T06:00:00Z",
+        "marketcap": "151622730.75",
+        "priceBtc": "0.00017494966666666665",
+        "priceUsd": "2.5052266666666667",
+        "volume": "346176200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T07:00:00Z",
+        "marketcap": "147750850.33333334",
+        "priceBtc": "0.00017116741666666665",
+        "priceUsd": "2.4412525",
+        "volume": "312219300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T08:00:00Z",
+        "marketcap": "145395413.08333334",
+        "priceBtc": "0.00016499775",
+        "priceUsd": "2.402334166666667",
+        "volume": "282511800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T09:00:00Z",
+        "marketcap": "146298157.58333334",
+        "priceBtc": "0.00016467341666666664",
+        "priceUsd": "2.41725",
+        "volume": "287746200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T10:00:00Z",
+        "marketcap": "135129374.75",
+        "priceBtc": "0.0001500455",
+        "priceUsd": "2.232710833333333",
+        "volume": "265002100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T11:00:00Z",
+        "marketcap": "140831053.83333334",
+        "priceBtc": "0.0001560685833333333",
+        "priceUsd": "2.326918333333333",
+        "volume": "286000500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T12:00:00Z",
+        "marketcap": "152806198.83333334",
+        "priceBtc": "0.00017131625",
+        "priceUsd": "2.5247808333333333",
+        "volume": "317195500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T13:00:00Z",
+        "marketcap": "154138653.5",
+        "priceBtc": "0.00016946458333333335",
+        "priceUsd": "2.546796666666667",
+        "volume": "321227500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T14:00:00Z",
+        "marketcap": "153633390.91666666",
+        "priceBtc": "0.00016468383333333335",
+        "priceUsd": "2.5384483333333336",
+        "volume": "319832200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T15:00:00Z",
+        "marketcap": "152175402.41666666",
+        "priceBtc": "0.0001587909166666667",
+        "priceUsd": "2.5143583333333335",
+        "volume": "292039700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T16:00:00Z",
+        "marketcap": "159567527.08333334",
+        "priceBtc": "0.00016111308333333332",
+        "priceUsd": "2.6364966666666665",
+        "volume": "258350000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T17:00:00Z",
+        "marketcap": "154512733.25",
+        "priceBtc": "0.0001631245",
+        "priceUsd": "2.5529775000000003",
+        "volume": "235870200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T18:00:00Z",
+        "marketcap": "158794401.75",
+        "priceBtc": "0.00016226874999999998",
+        "priceUsd": "2.6237225",
+        "volume": "234805200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T19:00:00Z",
+        "marketcap": "163621580.16666666",
+        "priceBtc": "0.0001703125",
+        "priceUsd": "2.7034808333333333",
+        "volume": "232922700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T20:00:00Z",
+        "marketcap": "178166109.75",
+        "priceBtc": "0.00018598224999999999",
+        "priceUsd": "2.943796666666666",
+        "volume": "284944200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T21:00:00Z",
+        "marketcap": "170858716.75",
+        "priceBtc": "0.00017348583333333335",
+        "priceUsd": "2.8230583333333334",
+        "volume": "306049800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T22:00:00Z",
+        "marketcap": "165731346.25",
+        "priceBtc": "0.00016295991666666668",
+        "priceUsd": "2.7383399999999996",
+        "volume": "306105000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-07T23:00:00Z",
+        "marketcap": "171846142.5",
+        "priceBtc": "0.00016719641666666668",
+        "priceUsd": "2.839373333333333",
+        "volume": "318809400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T00:00:00Z",
+        "marketcap": "163662534",
+        "priceBtc": "0.00015498408333333336",
+        "priceUsd": "2.7041575000000004",
+        "volume": "302810200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T01:00:00Z",
+        "marketcap": "158061372.75",
+        "priceBtc": "0.00014942783333333335",
+        "priceUsd": "2.611610833333333",
+        "volume": "286249600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T02:00:00Z",
+        "marketcap": "157232213.58333334",
+        "priceBtc": "0.00015117475000000003",
+        "priceUsd": "2.597910833333333",
+        "volume": "279710600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T03:00:00Z",
+        "marketcap": "159679846.91666666",
+        "priceBtc": "0.00015736291666666665",
+        "priceUsd": "2.6383525000000003",
+        "volume": "267124600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T04:00:00Z",
+        "marketcap": "159838870",
+        "priceBtc": "0.000159403",
+        "priceUsd": "2.6409800000000003",
+        "volume": "265143700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T05:00:00Z",
+        "marketcap": "160130235.58333334",
+        "priceBtc": "0.00016931941666666666",
+        "priceUsd": "2.6457941666666667",
+        "volume": "261472200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T06:00:00Z",
+        "marketcap": "166357300.91666666",
+        "priceBtc": "0.00017187066666666663",
+        "priceUsd": "2.7486825000000006",
+        "volume": "269776900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T07:00:00Z",
+        "marketcap": "163784133.83333334",
+        "priceBtc": "0.00016412508333333336",
+        "priceUsd": "2.706166666666667",
+        "volume": "262336800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T08:00:00Z",
+        "marketcap": "174980807.33333334",
+        "priceBtc": "0.00017601",
+        "priceUsd": "2.891166666666667",
+        "volume": "277726800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T09:00:00Z",
+        "marketcap": "176509102.91666666",
+        "priceBtc": "0.0001864264166666667",
+        "priceUsd": "2.916418333333333",
+        "volume": "274929000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T10:00:00Z",
+        "marketcap": "180948382.41666666",
+        "priceBtc": "0.00019177116666666666",
+        "priceUsd": "2.9897674999999992",
+        "volume": "273839300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T11:00:00Z",
+        "marketcap": "179128721.16666666",
+        "priceBtc": "0.00019918008333333334",
+        "priceUsd": "2.9597016666666662",
+        "volume": "254513500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T12:00:00Z",
+        "marketcap": "176411409.41666666",
+        "priceBtc": "0.00019087783333333332",
+        "priceUsd": "2.9148041666666664",
+        "volume": "240155300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T13:00:00Z",
+        "marketcap": "174841353.41666666",
+        "priceBtc": "0.0001917261666666667",
+        "priceUsd": "2.8888625",
+        "volume": "245623600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T14:00:00Z",
+        "marketcap": "178278177.33333334",
+        "priceBtc": "0.00018765591666666665",
+        "priceUsd": "2.945648333333333",
+        "volume": "245838800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T15:00:00Z",
+        "marketcap": "176824425.58333334",
+        "priceBtc": "0.00018359574999999995",
+        "priceUsd": "2.921628333333333",
+        "volume": "242605900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T16:00:00Z",
+        "marketcap": "177585597.41666666",
+        "priceBtc": "0.00018693825",
+        "priceUsd": "2.934205",
+        "volume": "236908600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T17:00:00Z",
+        "marketcap": "176739391.16666666",
+        "priceBtc": "0.00018978766666666669",
+        "priceUsd": "2.920223333333334",
+        "volume": "228794100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T18:00:00Z",
+        "marketcap": "178327150.16666666",
+        "priceBtc": "0.00019398341666666667",
+        "priceUsd": "2.9464574999999997",
+        "volume": "222953100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T19:00:00Z",
+        "marketcap": "177972740.25",
+        "priceBtc": "0.00018958616666666666",
+        "priceUsd": "2.9406016666666672",
+        "volume": "221150500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T20:00:00Z",
+        "marketcap": "178241863.75",
+        "priceBtc": "0.00019099025",
+        "priceUsd": "2.9450483333333337",
+        "volume": "184714400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T21:00:00Z",
+        "marketcap": "177787742.83333334",
+        "priceBtc": "0.0001873745833333333",
+        "priceUsd": "2.937545",
+        "volume": "141186500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T22:00:00Z",
+        "marketcap": "181454451.91666666",
+        "priceBtc": "0.0001864628333333333",
+        "priceUsd": "2.998129166666667",
+        "volume": "130900700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-08T23:00:00Z",
+        "marketcap": "179649870.75",
+        "priceBtc": "0.00018384283333333336",
+        "priceUsd": "2.968312500000001",
+        "volume": "124797400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T00:00:00Z",
+        "marketcap": "177279403.83333334",
+        "priceBtc": "0.00017938100000000002",
+        "priceUsd": "2.929145833333333",
+        "volume": "125830400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T01:00:00Z",
+        "marketcap": "175004764.25",
+        "priceBtc": "0.00018038975000000002",
+        "priceUsd": "2.8915625000000005",
+        "volume": "129483400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T02:00:00Z",
+        "marketcap": "175481530.58333334",
+        "priceBtc": "0.00018282283333333332",
+        "priceUsd": "2.89944",
+        "volume": "128882200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T03:00:00Z",
+        "marketcap": "177625441.5",
+        "priceBtc": "0.00018409358333333333",
+        "priceUsd": "2.934863333333334",
+        "volume": "129377800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T04:00:00Z",
+        "marketcap": "180185545.91666666",
+        "priceBtc": "0.00018739950000000002",
+        "priceUsd": "2.9771633333333334",
+        "volume": "128493800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T05:00:00Z",
+        "marketcap": "183280820.83333334",
+        "priceBtc": "0.00019459358333333334",
+        "priceUsd": "3.028305833333334",
+        "volume": "131020500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T06:00:00Z",
+        "marketcap": "180374124.08333334",
+        "priceBtc": "0.00019089066666666665",
+        "priceUsd": "2.980279166666666",
+        "volume": "133033500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T07:00:00Z",
+        "marketcap": "178356049.75",
+        "priceBtc": "0.00018693958333333333",
+        "priceUsd": "2.946935",
+        "volume": "137088000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T08:00:00Z",
+        "marketcap": "179175071.16666666",
+        "priceBtc": "0.00018927233333333333",
+        "priceUsd": "2.9604675",
+        "volume": "140451500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T09:00:00Z",
+        "marketcap": "176997066",
+        "priceBtc": "0.00018985608333333334",
+        "priceUsd": "2.9244808333333334",
+        "volume": "142254300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T10:00:00Z",
+        "marketcap": "173433295.91666666",
+        "priceBtc": "0.0001882471666666667",
+        "priceUsd": "2.8655975",
+        "volume": "136505100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T11:00:00Z",
+        "marketcap": "172425091",
+        "priceBtc": "0.00018866216666666664",
+        "priceUsd": "2.8489391666666672",
+        "volume": "127529500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T12:00:00Z",
+        "marketcap": "172921426.5",
+        "priceBtc": "0.00018666183333333332",
+        "priceUsd": "2.85714",
+        "volume": "123715200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T13:00:00Z",
+        "marketcap": "171501768.91666666",
+        "priceBtc": "0.00018633391666666665",
+        "priceUsd": "2.833683333333333",
+        "volume": "110822000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T14:00:00Z",
+        "marketcap": "171873074.83333334",
+        "priceBtc": "0.0001862865",
+        "priceUsd": "2.8398183333333336",
+        "volume": "105644700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T15:00:00Z",
+        "marketcap": "171407303.33333334",
+        "priceBtc": "0.0001887384166666667",
+        "priceUsd": "2.8321225",
+        "volume": "99815250"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T16:00:00Z",
+        "marketcap": "170144046.25",
+        "priceBtc": "0.00019228341666666668",
+        "priceUsd": "2.81125",
+        "volume": "99941470"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T17:00:00Z",
+        "marketcap": "161546766.16666666",
+        "priceBtc": "0.00019008274999999999",
+        "priceUsd": "2.6691991666666666",
+        "volume": "100962190"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T18:00:00Z",
+        "marketcap": "163447527.58333334",
+        "priceBtc": "0.00018797533333333335",
+        "priceUsd": "2.7006049999999995",
+        "volume": "105025180"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T19:00:00Z",
+        "marketcap": "161759301",
+        "priceBtc": "0.00018566441666666665",
+        "priceUsd": "2.6727108333333334",
+        "volume": "103285880"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T20:00:00Z",
+        "marketcap": "166186476.08333334",
+        "priceBtc": "0.00018698800000000002",
+        "priceUsd": "2.7458600000000004",
+        "volume": "105444070"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T21:00:00Z",
+        "marketcap": "165731598.5",
+        "priceBtc": "0.0001869415833333333",
+        "priceUsd": "2.7383441666666664",
+        "volume": "108650390"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T22:00:00Z",
+        "marketcap": "169596468.33333334",
+        "priceBtc": "0.00018738866666666667",
+        "priceUsd": "2.8022025000000004",
+        "volume": "120502390"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-09T23:00:00Z",
+        "marketcap": "169656385.66666666",
+        "priceBtc": "0.00018800683333333333",
+        "priceUsd": "2.8031925",
+        "volume": "119280810"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T00:00:00Z",
+        "marketcap": "166871692.33333334",
+        "priceBtc": "0.00018752674999999996",
+        "priceUsd": "2.757181666666666",
+        "volume": "109545860"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T01:00:00Z",
+        "marketcap": "161771103.08333334",
+        "priceBtc": "0.00018861591666666664",
+        "priceUsd": "2.672905833333333",
+        "volume": "95706360"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T02:00:00Z",
+        "marketcap": "160407341.9090909",
+        "priceBtc": "0.00018882581818181816",
+        "priceUsd": "2.6503727272727273",
+        "volume": "86508240"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T03:00:00Z",
+        "marketcap": "153323515.58333334",
+        "priceBtc": "0.00018731066666666672",
+        "priceUsd": "2.533328333333333",
+        "volume": "91768420"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T04:00:00Z",
+        "marketcap": "149285399.83333334",
+        "priceBtc": "0.00018285533333333334",
+        "priceUsd": "2.4666075",
+        "volume": "117211960"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T05:00:00Z",
+        "marketcap": "157341759.58333334",
+        "priceBtc": "0.0001907290833333333",
+        "priceUsd": "2.5997208333333326",
+        "volume": "135859600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T06:00:00Z",
+        "marketcap": "160140927.83333334",
+        "priceBtc": "0.00019229516666666668",
+        "priceUsd": "2.6459708333333336",
+        "volume": "134239700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T07:00:00Z",
+        "marketcap": "158734988.91666666",
+        "priceBtc": "0.00018943241666666665",
+        "priceUsd": "2.6227408333333333",
+        "volume": "127887600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T08:00:00Z",
+        "marketcap": "155327568.66666666",
+        "priceBtc": "0.000188755",
+        "priceUsd": "2.5664408333333335",
+        "volume": "120267300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T09:00:00Z",
+        "marketcap": "155692166.66666666",
+        "priceBtc": "0.0001877440833333333",
+        "priceUsd": "2.5724650000000002",
+        "volume": "113369430"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T10:00:00Z",
+        "marketcap": "159470943.16666666",
+        "priceBtc": "0.00018728066666666673",
+        "priceUsd": "2.634900833333333",
+        "volume": "115763050"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T11:00:00Z",
+        "marketcap": "157077074.16666666",
+        "priceBtc": "0.00018529391666666665",
+        "priceUsd": "2.5953475",
+        "volume": "112903310"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T12:00:00Z",
+        "marketcap": "155692368.58333334",
+        "priceBtc": "0.00018461766666666665",
+        "priceUsd": "2.5724683333333336",
+        "volume": "110659600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T13:00:00Z",
+        "marketcap": "158011441.66666666",
+        "priceBtc": "0.00018015591666666668",
+        "priceUsd": "2.6107858333333334",
+        "volume": "112037290"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T14:00:00Z",
+        "marketcap": "169511837.66666666",
+        "priceBtc": "0.00018293908333333333",
+        "priceUsd": "2.800804166666667",
+        "volume": "128198030"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T15:00:00Z",
+        "marketcap": "178210947.08333334",
+        "priceBtc": "0.00019104608333333334",
+        "priceUsd": "2.9445375000000005",
+        "volume": "149150500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T16:00:00Z",
+        "marketcap": "176311093.16666666",
+        "priceBtc": "0.00018728275000000003",
+        "priceUsd": "2.9131466666666666",
+        "volume": "148054200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T17:00:00Z",
+        "marketcap": "176360015.83333334",
+        "priceBtc": "0.00018851166666666668",
+        "priceUsd": "2.913955",
+        "volume": "143005700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T18:00:00Z",
+        "marketcap": "174641578.5",
+        "priceBtc": "0.00018777091666666662",
+        "priceUsd": "2.8855616666666664",
+        "volume": "143957700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T19:00:00Z",
+        "marketcap": "179926761.41666666",
+        "priceBtc": "0.00019186691666666668",
+        "priceUsd": "2.9728875",
+        "volume": "151871700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T20:00:00Z",
+        "marketcap": "183110248.08333334",
+        "priceBtc": "0.0001938343333333333",
+        "priceUsd": "3.0254875000000006",
+        "volume": "161411000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T21:00:00Z",
+        "marketcap": "186115949.83333334",
+        "priceBtc": "0.00020281325000000002",
+        "priceUsd": "3.0751500000000003",
+        "volume": "170374200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T22:00:00Z",
+        "marketcap": "184079063",
+        "priceBtc": "0.00020436883333333335",
+        "priceUsd": "3.041495",
+        "volume": "163442400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-10T23:00:00Z",
+        "marketcap": "189645877.66666666",
+        "priceBtc": "0.00020314475000000006",
+        "priceUsd": "3.1334741666666663",
+        "volume": "176286600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T00:00:00Z",
+        "marketcap": "199140303.83333334",
+        "priceBtc": "0.00021426258333333333",
+        "priceUsd": "3.2903483333333337",
+        "volume": "204514900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T01:00:00Z",
+        "marketcap": "216011673.41666666",
+        "priceBtc": "0.0002252543333333333",
+        "priceUsd": "3.56911",
+        "volume": "273570900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T02:00:00Z",
+        "marketcap": "238330628.25",
+        "priceBtc": "0.00024276408333333334",
+        "priceUsd": "3.937880833333333",
+        "volume": "348145000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T03:00:00Z",
+        "marketcap": "244321100.83333334",
+        "priceBtc": "0.00024319958333333337",
+        "priceUsd": "4.03686",
+        "volume": "409248400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T04:00:00Z",
+        "marketcap": "233975071.91666666",
+        "priceBtc": "0.0002349888333333333",
+        "priceUsd": "3.8659149999999998",
+        "volume": "388168200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T05:00:00Z",
+        "marketcap": "227095018.58333334",
+        "priceBtc": "0.00022768291666666664",
+        "priceUsd": "3.7522375",
+        "volume": "372999100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T06:00:00Z",
+        "marketcap": "232581741.58333334",
+        "priceBtc": "0.00023110683333333335",
+        "priceUsd": "3.842893333333333",
+        "volume": "450645200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T07:00:00Z",
+        "marketcap": "240285053.08333334",
+        "priceBtc": "0.00023639975000000002",
+        "priceUsd": "3.9701733333333333",
+        "volume": "561489300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T08:00:00Z",
+        "marketcap": "237347136.75",
+        "priceBtc": "0.00023305975000000002",
+        "priceUsd": "3.921630833333333",
+        "volume": "568286900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T09:00:00Z",
+        "marketcap": "231828992.25",
+        "priceBtc": "0.00023023108333333338",
+        "priceUsd": "3.830455833333333",
+        "volume": "565508400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T10:00:00Z",
+        "marketcap": "229901046.16666666",
+        "priceBtc": "0.00022701325000000003",
+        "priceUsd": "3.798600833333333",
+        "volume": "582635900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T11:00:00Z",
+        "marketcap": "226778283.83333334",
+        "priceBtc": "0.00022526766666666666",
+        "priceUsd": "3.747004166666667",
+        "volume": "582186400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T12:00:00Z",
+        "marketcap": "228611865.16666666",
+        "priceBtc": "0.00022693975000000004",
+        "priceUsd": "3.7773000000000003",
+        "volume": "595038200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T13:00:00Z",
+        "marketcap": "231535508.41666666",
+        "priceBtc": "0.00023141891666666664",
+        "priceUsd": "3.825606666666666",
+        "volume": "616964100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T14:00:00Z",
+        "marketcap": "243247430.58333334",
+        "priceBtc": "0.00024353675",
+        "priceUsd": "4.019120000000001",
+        "volume": "676044400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T15:00:00Z",
+        "marketcap": "243463798.83333334",
+        "priceBtc": "0.00024404883333333332",
+        "priceUsd": "4.022695",
+        "volume": "672088500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T16:00:00Z",
+        "marketcap": "249918882.91666666",
+        "priceBtc": "0.00024899283333333335",
+        "priceUsd": "4.1293508333333335",
+        "volume": "699093200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T17:00:00Z",
+        "marketcap": "245097655.83333334",
+        "priceBtc": "0.00024505566666666663",
+        "priceUsd": "4.049690833333334",
+        "volume": "708030500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T18:00:00Z",
+        "marketcap": "242678165.5",
+        "priceBtc": "0.0002413639166666667",
+        "priceUsd": "4.009714166666667",
+        "volume": "704286800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T19:00:00Z",
+        "marketcap": "247561932.66666666",
+        "priceBtc": "0.0002443770833333333",
+        "priceUsd": "4.0904074999999995",
+        "volume": "723064600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T20:00:00Z",
+        "marketcap": "243394702.33333334",
+        "priceBtc": "0.00023212025000000002",
+        "priceUsd": "4.021553333333333",
+        "volume": "717411200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T21:00:00Z",
+        "marketcap": "239590304.66666666",
+        "priceBtc": "0.00022970116666666668",
+        "priceUsd": "3.958694166666666",
+        "volume": "700887600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T22:00:00Z",
+        "marketcap": "227212331.5",
+        "priceBtc": "0.00021833158333333332",
+        "priceUsd": "3.7541758333333335",
+        "volume": "672762700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-11T23:00:00Z",
+        "marketcap": "225634709.91666666",
+        "priceBtc": "0.00021908949999999998",
+        "priceUsd": "3.7281091666666666",
+        "volume": "676948000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T00:00:00Z",
+        "marketcap": "227136073.08333334",
+        "priceBtc": "0.0002236330833333333",
+        "priceUsd": "3.7529158333333332",
+        "volume": "667953000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T01:00:00Z",
+        "marketcap": "234326304.33333334",
+        "priceBtc": "0.00022970933333333333",
+        "priceUsd": "3.871718333333334",
+        "volume": "641631400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T02:00:00Z",
+        "marketcap": "233644870.83333334",
+        "priceBtc": "0.00022781758333333333",
+        "priceUsd": "3.8604591666666663",
+        "volume": "598550400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T03:00:00Z",
+        "marketcap": "225092024.41666666",
+        "priceBtc": "0.00022353516666666665",
+        "priceUsd": "3.7191425",
+        "volume": "531644700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T04:00:00Z",
+        "marketcap": "225210800",
+        "priceBtc": "0.00022520799999999996",
+        "priceUsd": "3.721105",
+        "volume": "499985100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T05:00:00Z",
+        "marketcap": "229389882.66666666",
+        "priceBtc": "0.00022878149999999998",
+        "priceUsd": "3.790155",
+        "volume": "498600900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T06:00:00Z",
+        "marketcap": "228734978.25",
+        "priceBtc": "0.00022737408333333334",
+        "priceUsd": "3.779334166666666",
+        "volume": "431508800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T07:00:00Z",
+        "marketcap": "221986763.16666666",
+        "priceBtc": "0.0002195465833333333",
+        "priceUsd": "3.6678349999999997",
+        "volume": "337415900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T08:00:00Z",
+        "marketcap": "226618605.16666666",
+        "priceBtc": "0.00022061008333333336",
+        "priceUsd": "3.744365833333333",
+        "volume": "340581000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T09:00:00Z",
+        "marketcap": "222859649.91666666",
+        "priceBtc": "0.00021676075000000002",
+        "priceUsd": "3.6822575",
+        "volume": "331162800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T10:00:00Z",
+        "marketcap": "220750388.08333334",
+        "priceBtc": "0.00021649250000000002",
+        "priceUsd": "3.647406666666667",
+        "volume": "320512700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T11:00:00Z",
+        "marketcap": "213798111.33333334",
+        "priceBtc": "0.00020957983333333332",
+        "priceUsd": "3.5325358333333328",
+        "volume": "347415800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T12:00:00Z",
+        "marketcap": "220581429.41666666",
+        "priceBtc": "0.00021675216666666667",
+        "priceUsd": "3.644615",
+        "volume": "362307900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T13:00:00Z",
+        "marketcap": "219267837.58333334",
+        "priceBtc": "0.00021170383333333334",
+        "priceUsd": "3.6229108333333335",
+        "volume": "348682300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T14:00:00Z",
+        "marketcap": "218477866.91666666",
+        "priceBtc": "0.00020921316666666666",
+        "priceUsd": "3.6098583333333334",
+        "volume": "313890900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T15:00:00Z",
+        "marketcap": "216932978.25",
+        "priceBtc": "0.00020948775000000002",
+        "priceUsd": "3.5843325000000004",
+        "volume": "306327300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T16:00:00Z",
+        "marketcap": "229892673.91666666",
+        "priceBtc": "0.00022031299999999998",
+        "priceUsd": "3.7984625",
+        "volume": "357776900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T17:00:00Z",
+        "marketcap": "240262609.33333334",
+        "priceBtc": "0.000229844",
+        "priceUsd": "3.9698025",
+        "volume": "375118900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T18:00:00Z",
+        "marketcap": "234425359.75",
+        "priceBtc": "0.00022021683333333332",
+        "priceUsd": "3.8733550000000005",
+        "volume": "363429100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T19:00:00Z",
+        "marketcap": "238480472.08333334",
+        "priceBtc": "0.00022469691666666668",
+        "priceUsd": "3.9403566666666663",
+        "volume": "367699100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T20:00:00Z",
+        "marketcap": "235112189.83333334",
+        "priceBtc": "0.00022098658333333333",
+        "priceUsd": "3.884703333333333",
+        "volume": "348623100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T21:00:00Z",
+        "marketcap": "230864414",
+        "priceBtc": "0.0002202240833333333",
+        "priceUsd": "3.8145183333333326",
+        "volume": "359242500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T22:00:00Z",
+        "marketcap": "233366568",
+        "priceBtc": "0.00022120216666666667",
+        "priceUsd": "3.8558608333333333",
+        "volume": "352045300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-12T23:00:00Z",
+        "marketcap": "231092281.5",
+        "priceBtc": "0.00022052625000000003",
+        "priceUsd": "3.8182833333333335",
+        "volume": "332484900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T00:00:00Z",
+        "marketcap": "228918210.33333334",
+        "priceBtc": "0.00021703641666666665",
+        "priceUsd": "3.7823616666666666",
+        "volume": "321913800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T01:00:00Z",
+        "marketcap": "227527048.83333334",
+        "priceBtc": "0.0002170065833333333",
+        "priceUsd": "3.759375833333334",
+        "volume": "313664700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T02:00:00Z",
+        "marketcap": "220210224.41666666",
+        "priceBtc": "0.00021475308333333333",
+        "priceUsd": "3.638481666666667",
+        "volume": "305760400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T03:00:00Z",
+        "marketcap": "218624432.5",
+        "priceBtc": "0.00021543774999999998",
+        "priceUsd": "3.61228",
+        "volume": "304313400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T04:00:00Z",
+        "marketcap": "221682788.75",
+        "priceBtc": "0.00022026883333333333",
+        "priceUsd": "3.6628125",
+        "volume": "303630600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T05:00:00Z",
+        "marketcap": "226335510.83333334",
+        "priceBtc": "0.0002204155833333333",
+        "priceUsd": "3.7396883333333335",
+        "volume": "305451900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T06:00:00Z",
+        "marketcap": "236919746.33333334",
+        "priceBtc": "0.00023183975000000003",
+        "priceUsd": "3.9145691666666664",
+        "volume": "334880400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T07:00:00Z",
+        "marketcap": "253463537.91666666",
+        "priceBtc": "0.00024792216666666666",
+        "priceUsd": "4.187918333333333",
+        "volume": "386280700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T08:00:00Z",
+        "marketcap": "249248696.5",
+        "priceBtc": "0.00024435416666666665",
+        "priceUsd": "4.1182775000000005",
+        "volume": "380012300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T09:00:00Z",
+        "marketcap": "250254530.83333334",
+        "priceBtc": "0.00024486300000000006",
+        "priceUsd": "4.134896666666667",
+        "volume": "389202300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T10:00:00Z",
+        "marketcap": "265009880.5",
+        "priceBtc": "0.0002581703333333334",
+        "priceUsd": "4.378695833333333",
+        "volume": "461878800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T11:00:00Z",
+        "marketcap": "256260688.91666666",
+        "priceBtc": "0.0002501508333333333",
+        "priceUsd": "4.234134999999999",
+        "volume": "421413900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T12:00:00Z",
+        "marketcap": "258961659.58333334",
+        "priceBtc": "0.00024918425",
+        "priceUsd": "4.2787625",
+        "volume": "424532000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T13:00:00Z",
+        "marketcap": "252066475.58333334",
+        "priceBtc": "0.00024091733333333335",
+        "priceUsd": "4.164834999999999",
+        "volume": "433403100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T14:00:00Z",
+        "marketcap": "253143121.33333334",
+        "priceBtc": "0.00024209374999999999",
+        "priceUsd": "4.182624166666667",
+        "volume": "443896400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T15:00:00Z",
+        "marketcap": "258798702.58333334",
+        "priceBtc": "0.00024857075",
+        "priceUsd": "4.276070000000001",
+        "volume": "443866600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T16:00:00Z",
+        "marketcap": "258117067.08333334",
+        "priceBtc": "0.00025041",
+        "priceUsd": "4.2648075",
+        "volume": "397287000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T17:00:00Z",
+        "marketcap": "253974197.08333334",
+        "priceBtc": "0.0002518499166666667",
+        "priceUsd": "4.1963558333333335",
+        "volume": "369608400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T18:00:00Z",
+        "marketcap": "251625770.41666666",
+        "priceBtc": "0.0002554580833333333",
+        "priceUsd": "4.157553333333333",
+        "volume": "369108300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T19:00:00Z",
+        "marketcap": "256128245.25",
+        "priceBtc": "0.00025826691666666667",
+        "priceUsd": "4.2319466666666665",
+        "volume": "373968100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T20:00:00Z",
+        "marketcap": "257345152.33333334",
+        "priceBtc": "0.0002586284166666666",
+        "priceUsd": "4.2520533333333335",
+        "volume": "375284800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T21:00:00Z",
+        "marketcap": "256786831.58333334",
+        "priceBtc": "0.00025448333333333333",
+        "priceUsd": "4.242828333333334",
+        "volume": "347437800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T22:00:00Z",
+        "marketcap": "256147158.75",
+        "priceBtc": "0.00025409675",
+        "priceUsd": "4.232259166666666",
+        "volume": "342200400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-13T23:00:00Z",
+        "marketcap": "252091239.25",
+        "priceBtc": "0.0002530866666666666",
+        "priceUsd": "4.165244166666667",
+        "volume": "336589600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T00:00:00Z",
+        "marketcap": "248683869.58333334",
+        "priceBtc": "0.00025021658333333334",
+        "priceUsd": "4.108944999999999",
+        "volume": "336810200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T01:00:00Z",
+        "marketcap": "253921189.25",
+        "priceBtc": "0.000254621",
+        "priceUsd": "4.19548",
+        "volume": "347009900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T02:00:00Z",
+        "marketcap": "253091828.33333334",
+        "priceBtc": "0.00025655366666666666",
+        "priceUsd": "4.181776666666667",
+        "volume": "338877600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T03:00:00Z",
+        "marketcap": "252847872.16666666",
+        "priceBtc": "0.00025714775",
+        "priceUsd": "4.177745833333334",
+        "volume": "328600000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T04:00:00Z",
+        "marketcap": "256720962.91666666",
+        "priceBtc": "0.00025786516666666666",
+        "priceUsd": "4.241740000000001",
+        "volume": "328449100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T05:00:00Z",
+        "marketcap": "254635103.41666666",
+        "priceBtc": "0.00025466566666666664",
+        "priceUsd": "4.207275833333333",
+        "volume": "325238700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T06:00:00Z",
+        "marketcap": "256143678.66666666",
+        "priceBtc": "0.0002558720833333334",
+        "priceUsd": "4.2322016666666675",
+        "volume": "309509600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T07:00:00Z",
+        "marketcap": "259321163.33333334",
+        "priceBtc": "0.0002600458333333333",
+        "priceUsd": "4.284702499999999",
+        "volume": "301565600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T08:00:00Z",
+        "marketcap": "259754051",
+        "priceBtc": "0.00025453616666666666",
+        "priceUsd": "4.291855",
+        "volume": "310652000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T09:00:00Z",
+        "marketcap": "260432761.16666666",
+        "priceBtc": "0.00025644925",
+        "priceUsd": "4.303069166666666",
+        "volume": "303557200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T10:00:00Z",
+        "marketcap": "259561236.33333334",
+        "priceBtc": "0.00025794116666666666",
+        "priceUsd": "4.288669166666667",
+        "volume": "237214700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T11:00:00Z",
+        "marketcap": "258307007.16666666",
+        "priceBtc": "0.00025594208333333334",
+        "priceUsd": "4.267945833333332",
+        "volume": "210494200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T12:00:00Z",
+        "marketcap": "264579716.66666666",
+        "priceBtc": "0.0002604873333333333",
+        "priceUsd": "4.371588333333333",
+        "volume": "204965700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T13:00:00Z",
+        "marketcap": "269038110.9166667",
+        "priceBtc": "0.00026502675",
+        "priceUsd": "4.445253333333333",
+        "volume": "187444300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T14:00:00Z",
+        "marketcap": "264281592.5",
+        "priceBtc": "0.00026281216666666665",
+        "priceUsd": "4.3666625",
+        "volume": "182985800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T15:00:00Z",
+        "marketcap": "254129033.83333334",
+        "priceBtc": "0.00025593675",
+        "priceUsd": "4.1989141666666665",
+        "volume": "178457500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T16:00:00Z",
+        "marketcap": "254242059.75",
+        "priceBtc": "0.00025371058333333333",
+        "priceUsd": "4.200781666666667",
+        "volume": "177593700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T17:00:00Z",
+        "marketcap": "257187692.83333334",
+        "priceBtc": "0.00025503283333333336",
+        "priceUsd": "4.249451666666666",
+        "volume": "171098100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T18:00:00Z",
+        "marketcap": "264044646.66666666",
+        "priceBtc": "0.00026130008333333335",
+        "priceUsd": "4.3627475",
+        "volume": "161342400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T19:00:00Z",
+        "marketcap": "260461156.16666666",
+        "priceBtc": "0.00025904300000000003",
+        "priceUsd": "4.303538333333333",
+        "volume": "155020700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T20:00:00Z",
+        "marketcap": "260606107.83333334",
+        "priceBtc": "0.0002592555833333333",
+        "priceUsd": "4.305933333333332",
+        "volume": "179466800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T21:00:00Z",
+        "marketcap": "255033594.08333334",
+        "priceBtc": "0.0002549895833333333",
+        "priceUsd": "4.2138599999999995",
+        "volume": "193021300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T22:00:00Z",
+        "marketcap": "256732411.83333334",
+        "priceBtc": "0.00025554375",
+        "priceUsd": "4.241929166666668",
+        "volume": "193581900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-14T23:00:00Z",
+        "marketcap": "256324943.75",
+        "priceBtc": "0.0002558144166666667",
+        "priceUsd": "4.235196666666667",
+        "volume": "191138400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T00:00:00Z",
+        "marketcap": "254141340.16666666",
+        "priceBtc": "0.00024979575",
+        "priceUsd": "4.1991175",
+        "volume": "183884800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T01:00:00Z",
+        "marketcap": "251561162.66666666",
+        "priceBtc": "0.00024370925000000002",
+        "priceUsd": "4.156485833333334",
+        "volume": "178627100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T02:00:00Z",
+        "marketcap": "234764235.58333334",
+        "priceBtc": "0.00022382208333333333",
+        "priceUsd": "3.878954166666667",
+        "volume": "186301200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T03:00:00Z",
+        "marketcap": "229532917.66666666",
+        "priceBtc": "0.00021735350000000003",
+        "priceUsd": "3.7925183333333337",
+        "volume": "217388500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T04:00:00Z",
+        "marketcap": "246841815",
+        "priceBtc": "0.00023541683333333337",
+        "priceUsd": "4.078509166666666",
+        "volume": "255715300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T05:00:00Z",
+        "marketcap": "246643099.33333334",
+        "priceBtc": "0.0002331815833333333",
+        "priceUsd": "4.0752258333333335",
+        "volume": "255267200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T06:00:00Z",
+        "marketcap": "245273019.83333334",
+        "priceBtc": "0.00023247024999999998",
+        "priceUsd": "4.0525883333333335",
+        "volume": "253138600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T07:00:00Z",
+        "marketcap": "239375096.58333334",
+        "priceBtc": "0.00022831058333333334",
+        "priceUsd": "3.9551383333333336",
+        "volume": "222983800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T08:00:00Z",
+        "marketcap": "243567242",
+        "priceBtc": "0.0002320745",
+        "priceUsd": "4.024404166666668",
+        "volume": "209821900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T09:00:00Z",
+        "marketcap": "243258223.91666666",
+        "priceBtc": "0.00022902141666666668",
+        "priceUsd": "4.0192983333333325",
+        "volume": "203156900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T10:00:00Z",
+        "marketcap": "242729206.33333334",
+        "priceBtc": "0.00022406233333333332",
+        "priceUsd": "4.010557499999999",
+        "volume": "205410900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T11:00:00Z",
+        "marketcap": "245452015.25",
+        "priceBtc": "0.00022620024999999997",
+        "priceUsd": "4.055545833333333",
+        "volume": "209063500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T12:00:00Z",
+        "marketcap": "246501325.33333334",
+        "priceBtc": "0.00022622200000000002",
+        "priceUsd": "4.0728833333333325",
+        "volume": "207747900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T13:00:00Z",
+        "marketcap": "249648952.33333334",
+        "priceBtc": "0.00023077525",
+        "priceUsd": "4.124890833333333",
+        "volume": "206593400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T14:00:00Z",
+        "marketcap": "253094249.25",
+        "priceBtc": "0.00023396124999999998",
+        "priceUsd": "4.181816666666667",
+        "volume": "218092300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T15:00:00Z",
+        "marketcap": "256961540",
+        "priceBtc": "0.00023883483333333335",
+        "priceUsd": "4.245715",
+        "volume": "230577500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T16:00:00Z",
+        "marketcap": "258284412",
+        "priceBtc": "0.00023986341666666665",
+        "priceUsd": "4.2675725",
+        "volume": "246249100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T17:00:00Z",
+        "marketcap": "257182144.91666666",
+        "priceBtc": "0.0002394994166666667",
+        "priceUsd": "4.24936",
+        "volume": "253407700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T18:00:00Z",
+        "marketcap": "254170088.33333334",
+        "priceBtc": "0.0002368284166666667",
+        "priceUsd": "4.1995925",
+        "volume": "258076000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T19:00:00Z",
+        "marketcap": "247949932.58333334",
+        "priceBtc": "0.00023000241666666668",
+        "priceUsd": "4.096818333333332",
+        "volume": "265850100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T20:00:00Z",
+        "marketcap": "249133501.91666666",
+        "priceBtc": "0.00023081575000000003",
+        "priceUsd": "4.116374166666667",
+        "volume": "259482500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T21:00:00Z",
+        "marketcap": "245471634.75",
+        "priceBtc": "0.0002296753333333333",
+        "priceUsd": "4.05587",
+        "volume": "238713000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T22:00:00Z",
+        "marketcap": "242811063.08333334",
+        "priceBtc": "0.00022854916666666667",
+        "priceUsd": "4.01191",
+        "volume": "236335000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-15T23:00:00Z",
+        "marketcap": "245377723.91666666",
+        "priceBtc": "0.00022979275",
+        "priceUsd": "4.054318333333334",
+        "volume": "239791000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T00:00:00Z",
+        "marketcap": "244622654.75",
+        "priceBtc": "0.00022874324999999998",
+        "priceUsd": "4.0418425",
+        "volume": "239447600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T01:00:00Z",
+        "marketcap": "245652899.66666666",
+        "priceBtc": "0.00022985100000000002",
+        "priceUsd": "4.058865",
+        "volume": "239299500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T02:00:00Z",
+        "marketcap": "250980398.08333334",
+        "priceBtc": "0.00023510308333333333",
+        "priceUsd": "4.14689",
+        "volume": "221006000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T03:00:00Z",
+        "marketcap": "249150296.83333334",
+        "priceBtc": "0.00023475508333333333",
+        "priceUsd": "4.116651666666666",
+        "volume": "183132100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T04:00:00Z",
+        "marketcap": "246576120.83333334",
+        "priceBtc": "0.00023146499999999995",
+        "priceUsd": "4.074119166666667",
+        "volume": "159131700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T05:00:00Z",
+        "marketcap": "247324684.16666666",
+        "priceBtc": "0.00023117825000000002",
+        "priceUsd": "4.0864875",
+        "volume": "159188100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T06:00:00Z",
+        "marketcap": "250084513",
+        "priceBtc": "0.00023239133333333335",
+        "priceUsd": "4.1320875",
+        "volume": "175828200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T07:00:00Z",
+        "marketcap": "253214992.08333334",
+        "priceBtc": "0.0002331550833333333",
+        "priceUsd": "4.183811666666666",
+        "volume": "184077200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T08:00:00Z",
+        "marketcap": "254758266.75",
+        "priceBtc": "0.0002349555",
+        "priceUsd": "4.209310833333333",
+        "volume": "185402900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T09:00:00Z",
+        "marketcap": "255434808.25",
+        "priceBtc": "0.00023467525",
+        "priceUsd": "4.220489166666666",
+        "volume": "188456100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T10:00:00Z",
+        "marketcap": "255110407",
+        "priceBtc": "0.00023408008333333333",
+        "priceUsd": "4.215129166666667",
+        "volume": "184787100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T11:00:00Z",
+        "marketcap": "257609635.91666666",
+        "priceBtc": "0.00023596683333333333",
+        "priceUsd": "4.256423333333333",
+        "volume": "186922300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T12:00:00Z",
+        "marketcap": "257682212.58333334",
+        "priceBtc": "0.00023446833333333334",
+        "priceUsd": "4.257622500000001",
+        "volume": "211603900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T13:00:00Z",
+        "marketcap": "260253110",
+        "priceBtc": "0.00023422433333333327",
+        "priceUsd": "4.3001008333333335",
+        "volume": "229405000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T14:00:00Z",
+        "marketcap": "260404164.16666666",
+        "priceBtc": "0.00023204058333333336",
+        "priceUsd": "4.302596666666665",
+        "volume": "214299000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T15:00:00Z",
+        "marketcap": "257373850.16666666",
+        "priceBtc": "0.00022676616666666665",
+        "priceUsd": "4.252527499999999",
+        "volume": "195902100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T16:00:00Z",
+        "marketcap": "254269748.75",
+        "priceBtc": "0.00022266441666666669",
+        "priceUsd": "4.201239166666666",
+        "volume": "178631800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T17:00:00Z",
+        "marketcap": "255879800.33333334",
+        "priceBtc": "0.0002238609166666667",
+        "priceUsd": "4.227841666666667",
+        "volume": "171007100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T18:00:00Z",
+        "marketcap": "257272626",
+        "priceBtc": "0.00022548633333333335",
+        "priceUsd": "4.250854999999999",
+        "volume": "161283900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T19:00:00Z",
+        "marketcap": "258546928.58333334",
+        "priceBtc": "0.0002242340833333334",
+        "priceUsd": "4.271909999999999",
+        "volume": "146950200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T20:00:00Z",
+        "marketcap": "260354586.08333334",
+        "priceBtc": "0.00022255241666666666",
+        "priceUsd": "4.301777499999999",
+        "volume": "133124200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T21:00:00Z",
+        "marketcap": "260441587.33333334",
+        "priceBtc": "0.00022278149999999997",
+        "priceUsd": "4.303215000000001",
+        "volume": "132331000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T22:00:00Z",
+        "marketcap": "263061205.58333334",
+        "priceBtc": "0.00022442900000000003",
+        "priceUsd": "4.346498333333334",
+        "volume": "133468900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-16T23:00:00Z",
+        "marketcap": "277066579.8333333",
+        "priceBtc": "0.00023435966666666662",
+        "priceUsd": "4.577905833333333",
+        "volume": "150508500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T00:00:00Z",
+        "marketcap": "286621024.25",
+        "priceBtc": "0.00024444283333333337",
+        "priceUsd": "4.7357716666666665",
+        "volume": "163503600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T01:00:00Z",
+        "marketcap": "285259367.5",
+        "priceBtc": "0.00024478208333333326",
+        "priceUsd": "4.713273333333333",
+        "volume": "168004800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T02:00:00Z",
+        "marketcap": "279563942.5",
+        "priceBtc": "0.00023975100000000004",
+        "priceUsd": "4.6191691666666665",
+        "volume": "166148500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T03:00:00Z",
+        "marketcap": "276726695.0833333",
+        "priceBtc": "0.00023686033333333333",
+        "priceUsd": "4.57229",
+        "volume": "164817900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T04:00:00Z",
+        "marketcap": "278577273.3333333",
+        "priceBtc": "0.00023920233333333334",
+        "priceUsd": "4.602866666666667",
+        "volume": "165314200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T05:00:00Z",
+        "marketcap": "281188569.5833333",
+        "priceBtc": "0.000240169",
+        "priceUsd": "4.646012499999999",
+        "volume": "168463700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T06:00:00Z",
+        "marketcap": "276821967.75",
+        "priceBtc": "0.00023477341666666666",
+        "priceUsd": "4.573864166666667",
+        "volume": "151622300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T07:00:00Z",
+        "marketcap": "278364637.4166667",
+        "priceBtc": "0.0002337991666666667",
+        "priceUsd": "4.599353333333334",
+        "volume": "145864800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T08:00:00Z",
+        "marketcap": "275020967.6666667",
+        "priceBtc": "0.00023075725000000003",
+        "priceUsd": "4.544106666666666",
+        "volume": "162510200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T09:00:00Z",
+        "marketcap": "272440588.5",
+        "priceBtc": "0.000229322",
+        "priceUsd": "4.501471666666667",
+        "volume": "158308800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T10:00:00Z",
+        "marketcap": "272883361.25",
+        "priceBtc": "0.0002284460833333333",
+        "priceUsd": "4.5087874999999995",
+        "volume": "158355300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T11:00:00Z",
+        "marketcap": "274550757.75",
+        "priceBtc": "0.00022887208333333337",
+        "priceUsd": "4.5363375",
+        "volume": "156787100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T12:00:00Z",
+        "marketcap": "272142464.1666667",
+        "priceBtc": "0.00022587808333333337",
+        "priceUsd": "4.496545833333333",
+        "volume": "129601840"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T13:00:00Z",
+        "marketcap": "270887882.1666667",
+        "priceBtc": "0.00022577858333333332",
+        "priceUsd": "4.475816666666667",
+        "volume": "111803420"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T14:00:00Z",
+        "marketcap": "270632073.4166667",
+        "priceBtc": "0.00022665825",
+        "priceUsd": "4.47159",
+        "volume": "107068430"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T15:00:00Z",
+        "marketcap": "269623414.4166667",
+        "priceBtc": "0.0002287855",
+        "priceUsd": "4.454924166666667",
+        "volume": "104328720"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T16:00:00Z",
+        "marketcap": "270881224.6666667",
+        "priceBtc": "0.00023089608333333336",
+        "priceUsd": "4.4757066666666665",
+        "volume": "103773350"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T17:00:00Z",
+        "marketcap": "268993727.6666667",
+        "priceBtc": "0.00023038841666666674",
+        "priceUsd": "4.44452",
+        "volume": "104844600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T18:00:00Z",
+        "marketcap": "268710835.1666667",
+        "priceBtc": "0.0002312116666666666",
+        "priceUsd": "4.439845833333333",
+        "volume": "105283150"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T19:00:00Z",
+        "marketcap": "267730773.08333334",
+        "priceBtc": "0.00023247825",
+        "priceUsd": "4.423652499999998",
+        "volume": "101331570"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T20:00:00Z",
+        "marketcap": "271677701.4166667",
+        "priceBtc": "0.00023233074999999995",
+        "priceUsd": "4.4888666666666674",
+        "volume": "111385830"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T21:00:00Z",
+        "marketcap": "270505026.5833333",
+        "priceBtc": "0.00023216816666666665",
+        "priceUsd": "4.469490833333333",
+        "volume": "114418300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T22:00:00Z",
+        "marketcap": "272800495.75",
+        "priceBtc": "0.00023151049999999996",
+        "priceUsd": "4.507418333333334",
+        "volume": "115602170"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-17T23:00:00Z",
+        "marketcap": "266449207.75",
+        "priceBtc": "0.00022914783333333332",
+        "priceUsd": "4.402477500000001",
+        "volume": "107999110"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T00:00:00Z",
+        "marketcap": "262884832.66666666",
+        "priceBtc": "0.00023032566666666664",
+        "priceUsd": "4.343584166666667",
+        "volume": "104034670"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T01:00:00Z",
+        "marketcap": "250780926",
+        "priceBtc": "0.00022486191666666667",
+        "priceUsd": "4.1435941666666665",
+        "volume": "101169040"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T02:00:00Z",
+        "marketcap": "255200132",
+        "priceBtc": "0.00022725091666666667",
+        "priceUsd": "4.216611666666666",
+        "volume": "107469900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T03:00:00Z",
+        "marketcap": "252286525.41666666",
+        "priceBtc": "0.000224709",
+        "priceUsd": "4.168470833333333",
+        "volume": "110117730"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T04:00:00Z",
+        "marketcap": "256920838.75",
+        "priceBtc": "0.00022518958333333334",
+        "priceUsd": "4.245042499999999",
+        "volume": "112028440"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T05:00:00Z",
+        "marketcap": "258011757.75",
+        "priceBtc": "0.00022569758333333332",
+        "priceUsd": "4.263067500000001",
+        "volume": "110048320"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T06:00:00Z",
+        "marketcap": "259859864.66666666",
+        "priceBtc": "0.0002256569166666666",
+        "priceUsd": "4.293603333333334",
+        "volume": "118631660"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T07:00:00Z",
+        "marketcap": "261509507.83333334",
+        "priceBtc": "0.00022784650000000004",
+        "priceUsd": "4.320859999999999",
+        "volume": "120360030"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T08:00:00Z",
+        "marketcap": "259983027.91666666",
+        "priceBtc": "0.0002276360833333333",
+        "priceUsd": "4.295638333333333",
+        "volume": "100970400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T09:00:00Z",
+        "marketcap": "259417142.16666666",
+        "priceBtc": "0.00022688874999999997",
+        "priceUsd": "4.286288333333333",
+        "volume": "100377290"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T10:00:00Z",
+        "marketcap": "260860403.5",
+        "priceBtc": "0.00022759783333333337",
+        "priceUsd": "4.310135000000001",
+        "volume": "105117710"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T11:00:00Z",
+        "marketcap": "262626300.5",
+        "priceBtc": "0.00022715074999999998",
+        "priceUsd": "4.339312499999999",
+        "volume": "109957390"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T12:00:00Z",
+        "marketcap": "261613506",
+        "priceBtc": "0.00022501758333333331",
+        "priceUsd": "4.322578333333333",
+        "volume": "115882320"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T13:00:00Z",
+        "marketcap": "259994224.83333334",
+        "priceBtc": "0.0002262548333333333",
+        "priceUsd": "4.295823333333334",
+        "volume": "115835560"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T14:00:00Z",
+        "marketcap": "256383852.5",
+        "priceBtc": "0.00022697733333333333",
+        "priceUsd": "4.236169999999999",
+        "volume": "115088240"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T15:00:00Z",
+        "marketcap": "258886560.91666666",
+        "priceBtc": "0.00022722941666666665",
+        "priceUsd": "4.277521666666666",
+        "volume": "116690770"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T16:00:00Z",
+        "marketcap": "259724193.33333334",
+        "priceBtc": "0.00022792558333333335",
+        "priceUsd": "4.291361666666667",
+        "volume": "124766100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T17:00:00Z",
+        "marketcap": "261059169.66666666",
+        "priceBtc": "0.00023071075",
+        "priceUsd": "4.313419166666667",
+        "volume": "136470800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T18:00:00Z",
+        "marketcap": "259762120.83333334",
+        "priceBtc": "0.0002308885",
+        "priceUsd": "4.291988333333333",
+        "volume": "135848600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T19:00:00Z",
+        "marketcap": "266701587",
+        "priceBtc": "0.00023477116666666665",
+        "priceUsd": "4.4066475",
+        "volume": "154340700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T20:00:00Z",
+        "marketcap": "271715477.5",
+        "priceBtc": "0.00023937900000000004",
+        "priceUsd": "4.489490833333334",
+        "volume": "159274600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T21:00:00Z",
+        "marketcap": "270072996.1666667",
+        "priceBtc": "0.00023697425000000004",
+        "priceUsd": "4.4623525",
+        "volume": "156515000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T22:00:00Z",
+        "marketcap": "268563361.8333333",
+        "priceBtc": "0.00023631566666666663",
+        "priceUsd": "4.437409166666667",
+        "volume": "156164700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-18T23:00:00Z",
+        "marketcap": "269845784.5",
+        "priceBtc": "0.00023394824999999997",
+        "priceUsd": "4.458598333333332",
+        "volume": "150067100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T00:00:00Z",
+        "marketcap": "270785800.6666667",
+        "priceBtc": "0.00023553241666666669",
+        "priceUsd": "4.47413",
+        "volume": "145896400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T01:00:00Z",
+        "marketcap": "274839399.9166667",
+        "priceBtc": "0.00023940858333333333",
+        "priceUsd": "4.541106666666667",
+        "volume": "141461200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T02:00:00Z",
+        "marketcap": "273111077.4166667",
+        "priceBtc": "0.0002398055",
+        "priceUsd": "4.51255",
+        "volume": "135144100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T03:00:00Z",
+        "marketcap": "271698480.8333333",
+        "priceBtc": "0.00023786566666666661",
+        "priceUsd": "4.489210000000001",
+        "volume": "131439300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T04:00:00Z",
+        "marketcap": "273379192.4166667",
+        "priceBtc": "0.0002375560833333333",
+        "priceUsd": "4.51698",
+        "volume": "135004300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T05:00:00Z",
+        "marketcap": "276452578.3333333",
+        "priceBtc": "0.00024045058333333334",
+        "priceUsd": "4.567760833333334",
+        "volume": "163699000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T06:00:00Z",
+        "marketcap": "286543605.75",
+        "priceBtc": "0.00025023125000000004",
+        "priceUsd": "4.734492499999999",
+        "volume": "184298900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T07:00:00Z",
+        "marketcap": "287481907.0833333",
+        "priceBtc": "0.0002509733333333333",
+        "priceUsd": "4.749995833333334",
+        "volume": "185029600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T08:00:00Z",
+        "marketcap": "284224078.6666667",
+        "priceBtc": "0.00024776299999999997",
+        "priceUsd": "4.696167500000001",
+        "volume": "185931000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T09:00:00Z",
+        "marketcap": "285173879.3333333",
+        "priceBtc": "0.00024988825",
+        "priceUsd": "4.711860833333334",
+        "volume": "187944700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T10:00:00Z",
+        "marketcap": "276057517.3333333",
+        "priceBtc": "0.00024738125000000005",
+        "priceUsd": "4.561233333333333",
+        "volume": "203107100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T11:00:00Z",
+        "marketcap": "274570074.75",
+        "priceBtc": "0.00025038766666666667",
+        "priceUsd": "4.536656666666667",
+        "volume": "217917600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T12:00:00Z",
+        "marketcap": "280972907.5",
+        "priceBtc": "0.00025651475",
+        "priceUsd": "4.642449166666667",
+        "volume": "227270100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T13:00:00Z",
+        "marketcap": "284996195.1666667",
+        "priceBtc": "0.00025895366666666667",
+        "priceUsd": "4.708925",
+        "volume": "229228400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T14:00:00Z",
+        "marketcap": "283963024.5833333",
+        "priceBtc": "0.0002611351666666667",
+        "priceUsd": "4.6918541666666655",
+        "volume": "227976800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T15:00:00Z",
+        "marketcap": "282416723.5833333",
+        "priceBtc": "0.00025936641666666674",
+        "priceUsd": "4.666304999999999",
+        "volume": "227427600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T16:00:00Z",
+        "marketcap": "284179695.5",
+        "priceBtc": "0.00025794233333333337",
+        "priceUsd": "4.695434166666666",
+        "volume": "219827300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T17:00:00Z",
+        "marketcap": "287138895.5",
+        "priceBtc": "0.000258634",
+        "priceUsd": "4.744328333333333",
+        "volume": "218722500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T18:00:00Z",
+        "marketcap": "297536822.6666667",
+        "priceBtc": "0.0002693806666666667",
+        "priceUsd": "4.916130833333334",
+        "volume": "247038600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T19:00:00Z",
+        "marketcap": "295551834",
+        "priceBtc": "0.0002701184166666667",
+        "priceUsd": "4.883333333333334",
+        "volume": "245930600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T20:00:00Z",
+        "marketcap": "292287095.9166667",
+        "priceBtc": "0.00027107766666666663",
+        "priceUsd": "4.829390833333334",
+        "volume": "240652900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T21:00:00Z",
+        "marketcap": "281559421.6666667",
+        "priceBtc": "0.0002689435833333333",
+        "priceUsd": "4.65214",
+        "volume": "252756600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T22:00:00Z",
+        "marketcap": "276886575.5833333",
+        "priceBtc": "0.00026336908333333335",
+        "priceUsd": "4.574931666666667",
+        "volume": "265652500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-19T23:00:00Z",
+        "marketcap": "278859812.75",
+        "priceBtc": "0.00026315700000000003",
+        "priceUsd": "4.6075349999999995",
+        "volume": "267634800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T00:00:00Z",
+        "marketcap": "270548653.1666667",
+        "priceBtc": "0.00026258875",
+        "priceUsd": "4.470211666666667",
+        "volume": "261762300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T01:00:00Z",
+        "marketcap": "267970492.91666666",
+        "priceBtc": "0.00026846358333333333",
+        "priceUsd": "4.427613333333333",
+        "volume": "268242900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T02:00:00Z",
+        "marketcap": "274008879.25",
+        "priceBtc": "0.00026907575",
+        "priceUsd": "4.527384166666667",
+        "volume": "275006200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T03:00:00Z",
+        "marketcap": "278210304.75",
+        "priceBtc": "0.0002690334166666666",
+        "priceUsd": "4.596803333333334",
+        "volume": "276998400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T04:00:00Z",
+        "marketcap": "277152521.75",
+        "priceBtc": "0.00026965725",
+        "priceUsd": "4.579325833333333",
+        "volume": "273011200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T05:00:00Z",
+        "marketcap": "277142586.0833333",
+        "priceBtc": "0.00027187991666666666",
+        "priceUsd": "4.579161666666667",
+        "volume": "246133400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T06:00:00Z",
+        "marketcap": "271761777.3333333",
+        "priceBtc": "0.00027446891666666666",
+        "priceUsd": "4.490255833333333",
+        "volume": "217223400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T07:00:00Z",
+        "marketcap": "275139339.75",
+        "priceBtc": "0.00027365575",
+        "priceUsd": "4.5460625",
+        "volume": "225355300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T08:00:00Z",
+        "marketcap": "278917611.8333333",
+        "priceBtc": "0.00027489091666666664",
+        "priceUsd": "4.608490000000001",
+        "volume": "225817200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T09:00:00Z",
+        "marketcap": "279521626.8333333",
+        "priceBtc": "0.0002715901666666667",
+        "priceUsd": "4.618469999999999",
+        "volume": "236865400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T10:00:00Z",
+        "marketcap": "281368019",
+        "priceBtc": "0.00026901908333333335",
+        "priceUsd": "4.6489775",
+        "volume": "211236100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T11:00:00Z",
+        "marketcap": "285433319.25",
+        "priceBtc": "0.000271824",
+        "priceUsd": "4.716147500000001",
+        "volume": "193531200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T12:00:00Z",
+        "marketcap": "289549610",
+        "priceBtc": "0.00027160683333333336",
+        "priceUsd": "4.78416",
+        "volume": "190464700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T13:00:00Z",
+        "marketcap": "286039957.25",
+        "priceBtc": "0.00026942625",
+        "priceUsd": "4.726170833333334",
+        "volume": "189757700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T14:00:00Z",
+        "marketcap": "281654845.5",
+        "priceBtc": "0.0002685069166666667",
+        "priceUsd": "4.653716666666667",
+        "volume": "186245500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T15:00:00Z",
+        "marketcap": "281074383.6666667",
+        "priceBtc": "0.00027404616666666664",
+        "priceUsd": "4.644125833333333",
+        "volume": "187464300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T16:00:00Z",
+        "marketcap": "273890607.9166667",
+        "priceBtc": "0.00027552858333333333",
+        "priceUsd": "4.525429999999999",
+        "volume": "186173700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T17:00:00Z",
+        "marketcap": "277182127.5833333",
+        "priceBtc": "0.0002735201666666666",
+        "priceUsd": "4.579815000000001",
+        "volume": "180956000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T18:00:00Z",
+        "marketcap": "278343000.5833333",
+        "priceBtc": "0.0002738008333333333",
+        "priceUsd": "4.598995833333334",
+        "volume": "162500300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T19:00:00Z",
+        "marketcap": "276595815.1666667",
+        "priceBtc": "0.000272387",
+        "priceUsd": "4.570127500000001",
+        "volume": "146605900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T20:00:00Z",
+        "marketcap": "279109922.25",
+        "priceBtc": "0.0002745981666666667",
+        "priceUsd": "4.6116675",
+        "volume": "148813000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T21:00:00Z",
+        "marketcap": "274970834.8333333",
+        "priceBtc": "0.00027582341666666674",
+        "priceUsd": "4.543278333333333",
+        "volume": "129900720"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T22:00:00Z",
+        "marketcap": "269843716.5833333",
+        "priceBtc": "0.0002770495833333334",
+        "priceUsd": "4.458564166666666",
+        "volume": "112621930"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-20T23:00:00Z",
+        "marketcap": "266285746.58333334",
+        "priceBtc": "0.00026866408333333335",
+        "priceUsd": "4.399776666666667",
+        "volume": "113170940"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T00:00:00Z",
+        "marketcap": "269384804.3333333",
+        "priceBtc": "0.0002690064166666667",
+        "priceUsd": "4.450981666666667",
+        "volume": "110998170"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T01:00:00Z",
+        "marketcap": "266828533.08333334",
+        "priceBtc": "0.00026541091666666667",
+        "priceUsd": "4.408745",
+        "volume": "103905300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T02:00:00Z",
+        "marketcap": "267128825.91666666",
+        "priceBtc": "0.0002664104166666667",
+        "priceUsd": "4.413706666666667",
+        "volume": "105771840"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T03:00:00Z",
+        "marketcap": "266759285.25",
+        "priceBtc": "0.00026779716666666664",
+        "priceUsd": "4.407600833333333",
+        "volume": "106604060"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T04:00:00Z",
+        "marketcap": "275795706.9166667",
+        "priceBtc": "0.00026754350000000003",
+        "priceUsd": "4.5569075",
+        "volume": "111967640"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T05:00:00Z",
+        "marketcap": "280431028.8333333",
+        "priceBtc": "0.00027371325",
+        "priceUsd": "4.633495833333334",
+        "volume": "118335760"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T06:00:00Z",
+        "marketcap": "279026855.0833333",
+        "priceBtc": "0.0002703355833333333",
+        "priceUsd": "4.610295",
+        "volume": "118033390"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T07:00:00Z",
+        "marketcap": "278161281.5",
+        "priceBtc": "0.0002666936666666667",
+        "priceUsd": "4.595993333333334",
+        "volume": "108513270"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T08:00:00Z",
+        "marketcap": "276095949.1666667",
+        "priceBtc": "0.0002683993333333333",
+        "priceUsd": "4.561868333333334",
+        "volume": "120859870"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T09:00:00Z",
+        "marketcap": "273894642.75",
+        "priceBtc": "0.0002664590833333333",
+        "priceUsd": "4.525496666666668",
+        "volume": "137369400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T10:00:00Z",
+        "marketcap": "268093303.33333334",
+        "priceBtc": "0.00026520516666666665",
+        "priceUsd": "4.429642500000001",
+        "volume": "150221200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T11:00:00Z",
+        "marketcap": "264988798.58333334",
+        "priceBtc": "0.0002628039166666667",
+        "priceUsd": "4.3783475",
+        "volume": "156189500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T12:00:00Z",
+        "marketcap": "256806552",
+        "priceBtc": "0.0002529034166666667",
+        "priceUsd": "4.243154166666667",
+        "volume": "178772900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T13:00:00Z",
+        "marketcap": "256778459.41666666",
+        "priceBtc": "0.00025555825",
+        "priceUsd": "4.24269",
+        "volume": "182291600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T14:00:00Z",
+        "marketcap": "253050925.41666666",
+        "priceBtc": "0.00025560391666666664",
+        "priceUsd": "4.181100833333333",
+        "volume": "184157800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T15:00:00Z",
+        "marketcap": "243396770.08333334",
+        "priceBtc": "0.0002538270833333333",
+        "priceUsd": "4.0215875",
+        "volume": "185831300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T16:00:00Z",
+        "marketcap": "240326511.08333334",
+        "priceBtc": "0.0002524764166666667",
+        "priceUsd": "3.9708583333333327",
+        "volume": "199464000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T17:00:00Z",
+        "marketcap": "239579208.75",
+        "priceBtc": "0.0002551398333333333",
+        "priceUsd": "3.9585108333333334",
+        "volume": "205824400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T18:00:00Z",
+        "marketcap": "239581276.66666666",
+        "priceBtc": "0.00025694083333333337",
+        "priceUsd": "3.9585449999999995",
+        "volume": "208791600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T19:00:00Z",
+        "marketcap": "241965058.58333334",
+        "priceBtc": "0.0002599605",
+        "priceUsd": "3.9979316666666667",
+        "volume": "210336700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T20:00:00Z",
+        "marketcap": "244503122.5",
+        "priceBtc": "0.00026205391666666667",
+        "priceUsd": "4.039867500000001",
+        "volume": "202791200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T21:00:00Z",
+        "marketcap": "242717253.08333334",
+        "priceBtc": "0.00025960958333333335",
+        "priceUsd": "4.01036",
+        "volume": "196651800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T22:00:00Z",
+        "marketcap": "244252861.66666666",
+        "priceBtc": "0.0002564154166666667",
+        "priceUsd": "4.0357325",
+        "volume": "196288100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-21T23:00:00Z",
+        "marketcap": "244962740.83333334",
+        "priceBtc": "0.00025911375000000004",
+        "priceUsd": "4.047461666666666",
+        "volume": "195766800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T00:00:00Z",
+        "marketcap": "246977789.16666666",
+        "priceBtc": "0.0002609878333333333",
+        "priceUsd": "4.080755833333334",
+        "volume": "197430900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T01:00:00Z",
+        "marketcap": "235256031.83333334",
+        "priceBtc": "0.0002604674166666666",
+        "priceUsd": "3.8870799999999996",
+        "volume": "188528700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T02:00:00Z",
+        "marketcap": "235877447.16666666",
+        "priceBtc": "0.00026592900000000004",
+        "priceUsd": "3.8973475000000004",
+        "volume": "191446100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T03:00:00Z",
+        "marketcap": "232403452.25",
+        "priceBtc": "0.0002779768333333333",
+        "priceUsd": "3.8399474999999996",
+        "volume": "204366300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T04:00:00Z",
+        "marketcap": "234605414.33333334",
+        "priceBtc": "0.0002665830833333334",
+        "priceUsd": "3.8763300000000007",
+        "volume": "213138400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T05:00:00Z",
+        "marketcap": "235921830.33333334",
+        "priceBtc": "0.00026799558333333334",
+        "priceUsd": "3.8980808333333328",
+        "volume": "211775200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T06:00:00Z",
+        "marketcap": "231138026.41666666",
+        "priceBtc": "0.00027080383333333334",
+        "priceUsd": "3.8190391666666668",
+        "volume": "209529600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T07:00:00Z",
+        "marketcap": "220551168.16666666",
+        "priceBtc": "0.00027477649999999997",
+        "priceUsd": "3.6441149999999998",
+        "volume": "218864200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T08:00:00Z",
+        "marketcap": "220839608.41666666",
+        "priceBtc": "0.00027348466666666664",
+        "priceUsd": "3.6488808333333336",
+        "volume": "226155100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T09:00:00Z",
+        "marketcap": "228752277.5",
+        "priceBtc": "0.0002758509166666667",
+        "priceUsd": "3.7796199999999995",
+        "volume": "213987800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T10:00:00Z",
+        "marketcap": "234887045.75",
+        "priceBtc": "0.00027525916666666666",
+        "priceUsd": "3.8809833333333335",
+        "volume": "207910300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T11:00:00Z",
+        "marketcap": "232649779",
+        "priceBtc": "0.00027753775",
+        "priceUsd": "3.8440175",
+        "volume": "202087300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T12:00:00Z",
+        "marketcap": "234225736",
+        "priceBtc": "0.00027823566666666674",
+        "priceUsd": "3.8700566666666667",
+        "volume": "175279500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T13:00:00Z",
+        "marketcap": "219785709",
+        "priceBtc": "0.00028032925",
+        "priceUsd": "3.6314675000000007",
+        "volume": "165841500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T14:00:00Z",
+        "marketcap": "214798498.83333334",
+        "priceBtc": "0.00029920525",
+        "priceUsd": "3.549065",
+        "volume": "171592000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T15:00:00Z",
+        "marketcap": "228350660.08333334",
+        "priceBtc": "0.0002974602500000001",
+        "priceUsd": "3.772984166666667",
+        "volume": "183055200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T16:00:00Z",
+        "marketcap": "247616100.41666666",
+        "priceBtc": "0.00032103958333333337",
+        "priceUsd": "4.0913025",
+        "volume": "189864800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T17:00:00Z",
+        "marketcap": "256512412.16666666",
+        "priceBtc": "0.00032683475",
+        "priceUsd": "4.238294166666667",
+        "volume": "195705600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T18:00:00Z",
+        "marketcap": "261018922.08333334",
+        "priceBtc": "0.0003295896666666667",
+        "priceUsd": "4.312754166666667",
+        "volume": "206433600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T19:00:00Z",
+        "marketcap": "249221713.41666666",
+        "priceBtc": "0.00031161774999999997",
+        "priceUsd": "4.117831666666667",
+        "volume": "206015800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T20:00:00Z",
+        "marketcap": "250116539.5",
+        "priceBtc": "0.00030251899999999995",
+        "priceUsd": "4.132616666666666",
+        "volume": "209880500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T21:00:00Z",
+        "marketcap": "250926734.91666666",
+        "priceBtc": "0.00029245800000000005",
+        "priceUsd": "4.146003333333334",
+        "volume": "212145300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T22:00:00Z",
+        "marketcap": "250884318.5",
+        "priceBtc": "0.000287721",
+        "priceUsd": "4.1453025",
+        "volume": "213572000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-22T23:00:00Z",
+        "marketcap": "250806748.91666666",
+        "priceBtc": "0.00029056058333333333",
+        "priceUsd": "4.144020833333334",
+        "volume": "215506500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T00:00:00Z",
+        "marketcap": "263099738.16666666",
+        "priceBtc": "0.0003123301666666666",
+        "priceUsd": "4.347135",
+        "volume": "232328800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T01:00:00Z",
+        "marketcap": "273570897.4166667",
+        "priceBtc": "0.0003237740833333333",
+        "priceUsd": "4.5201475",
+        "volume": "244763600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T02:00:00Z",
+        "marketcap": "274302564.8333333",
+        "priceBtc": "0.0003173950833333334",
+        "priceUsd": "4.532236666666667",
+        "volume": "242262900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T03:00:00Z",
+        "marketcap": "269490617.8333333",
+        "priceBtc": "0.0003101123333333334",
+        "priceUsd": "4.45273",
+        "volume": "219951300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T04:00:00Z",
+        "marketcap": "285652108.4166667",
+        "priceBtc": "0.0003226831666666667",
+        "priceUsd": "4.719762499999999",
+        "volume": "229144300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T05:00:00Z",
+        "marketcap": "350120386.0833333",
+        "priceBtc": "0.0004063239166666667",
+        "priceUsd": "5.784956666666667",
+        "volume": "355974200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T06:00:00Z",
+        "marketcap": "350845799.6666667",
+        "priceBtc": "0.0004196763333333333",
+        "priceUsd": "5.7969425",
+        "volume": "397651300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T07:00:00Z",
+        "marketcap": "347982527.5833333",
+        "priceBtc": "0.00040440024999999994",
+        "priceUsd": "5.749633333333333",
+        "volume": "379247700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T08:00:00Z",
+        "marketcap": "363522855.0833333",
+        "priceBtc": "0.0004165320833333334",
+        "priceUsd": "6.0064025",
+        "volume": "383216900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T09:00:00Z",
+        "marketcap": "383659013.1666667",
+        "priceBtc": "0.0004421833333333333",
+        "priceUsd": "6.339107500000001",
+        "volume": "420591200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T10:00:00Z",
+        "marketcap": "382369428.9166667",
+        "priceBtc": "0.0004351226666666667",
+        "priceUsd": "6.317799999999999",
+        "volume": "446099100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T11:00:00Z",
+        "marketcap": "398390002.6666667",
+        "priceBtc": "0.0004406485",
+        "priceUsd": "6.5825041666666655",
+        "volume": "621691100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T12:00:00Z",
+        "marketcap": "394475403.5",
+        "priceBtc": "0.0004330849166666666",
+        "priceUsd": "6.517824166666666",
+        "volume": "719287200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T13:00:00Z",
+        "marketcap": "378566241.5833333",
+        "priceBtc": "0.00041645675",
+        "priceUsd": "6.254960833333334",
+        "volume": "693398900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T14:00:00Z",
+        "marketcap": "380161896",
+        "priceBtc": "0.00041047536363636363",
+        "priceUsd": "6.281325454545455",
+        "volume": "625280700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T15:00:00Z",
+        "marketcap": "370552298.0833333",
+        "priceBtc": "0.0003974036666666667",
+        "priceUsd": "6.1225483333333335",
+        "volume": "654882500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T16:00:00Z",
+        "marketcap": "359660910.25",
+        "priceBtc": "0.00039477216666666663",
+        "priceUsd": "5.9425925",
+        "volume": "636828200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T17:00:00Z",
+        "marketcap": "374476833.0833333",
+        "priceBtc": "0.00040987916666666667",
+        "priceUsd": "6.187392499999999",
+        "volume": "654532100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T18:00:00Z",
+        "marketcap": "379633153.4166667",
+        "priceBtc": "0.0004154434166666666",
+        "priceUsd": "6.272589166666666",
+        "volume": "653021500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T19:00:00Z",
+        "marketcap": "375203406.4166667",
+        "priceBtc": "0.0004124961666666667",
+        "priceUsd": "6.199397500000001",
+        "volume": "634461500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T20:00:00Z",
+        "marketcap": "383831327.9230769",
+        "priceBtc": "0.00041697800000000003",
+        "priceUsd": "6.341954615384615",
+        "volume": "709842800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T21:00:00Z",
+        "marketcap": "383946192.8333333",
+        "priceBtc": "0.00041130883333333337",
+        "priceUsd": "6.3438525",
+        "volume": "659582300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T22:00:00Z",
+        "marketcap": "393204782.6666667",
+        "priceBtc": "0.00042053833333333335",
+        "priceUsd": "6.496829999999999",
+        "volume": "736781600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-23T23:00:00Z",
+        "marketcap": "402455908.1666667",
+        "priceBtc": "0.000449159",
+        "priceUsd": "6.649684166666667",
+        "volume": "904499800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T00:00:00Z",
+        "marketcap": "387625460.1666667",
+        "priceBtc": "0.00044421458333333326",
+        "priceUsd": "6.404644166666665",
+        "volume": "901387700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T01:00:00Z",
+        "marketcap": "378416851.6666667",
+        "priceBtc": "0.00043732574999999995",
+        "priceUsd": "6.2524925",
+        "volume": "878381300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T02:00:00Z",
+        "marketcap": "359760066.5",
+        "priceBtc": "0.0004266994166666666",
+        "priceUsd": "5.944230833333333",
+        "volume": "837989600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T03:00:00Z",
+        "marketcap": "370699973.0833333",
+        "priceBtc": "0.0004400870833333333",
+        "priceUsd": "6.1249883333333335",
+        "volume": "868356500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T04:00:00Z",
+        "marketcap": "376761559.75",
+        "priceBtc": "0.00044804391666666664",
+        "priceUsd": "6.2251425",
+        "volume": "881564200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T05:00:00Z",
+        "marketcap": "375347651.9166667",
+        "priceBtc": "0.00044528724999999997",
+        "priceUsd": "6.201780833333333",
+        "volume": "799820500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T06:00:00Z",
+        "marketcap": "375761676.5833333",
+        "priceBtc": "0.0004383728333333333",
+        "priceUsd": "6.208621666666667",
+        "volume": "750203500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T07:00:00Z",
+        "marketcap": "380162927.4166667",
+        "priceBtc": "0.00044063266666666663",
+        "priceUsd": "6.2813425",
+        "volume": "741352000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T08:00:00Z",
+        "marketcap": "365132603.8333333",
+        "priceBtc": "0.0004284171666666667",
+        "priceUsd": "6.033",
+        "volume": "697092200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T09:00:00Z",
+        "marketcap": "349003038.9166667",
+        "priceBtc": "0.0004107966666666667",
+        "priceUsd": "5.766495",
+        "volume": "665487700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T10:00:00Z",
+        "marketcap": "331708162.5",
+        "priceBtc": "0.00040869233333333337",
+        "priceUsd": "5.480735833333334",
+        "volume": "621890700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T11:00:00Z",
+        "marketcap": "330830333.25",
+        "priceBtc": "0.00041781875",
+        "priceUsd": "5.466231666666666",
+        "volume": "495262600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T12:00:00Z",
+        "marketcap": "325848620.5",
+        "priceBtc": "0.0004198339166666667",
+        "priceUsd": "5.383920000000001",
+        "volume": "400050200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T13:00:00Z",
+        "marketcap": "345072492.6666667",
+        "priceBtc": "0.00043330824999999996",
+        "priceUsd": "5.7015424999999995",
+        "volume": "416518200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T14:00:00Z",
+        "marketcap": "353816832",
+        "priceBtc": "0.0004353246666666667",
+        "priceUsd": "5.84602",
+        "volume": "423611700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T15:00:00Z",
+        "marketcap": "353140138",
+        "priceBtc": "0.00043445083333333334",
+        "priceUsd": "5.834839166666666",
+        "volume": "421332400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T16:00:00Z",
+        "marketcap": "359730402.8333333",
+        "priceBtc": "0.0004411749166666666",
+        "priceUsd": "5.9437283333333335",
+        "volume": "421702000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T17:00:00Z",
+        "marketcap": "353782888.9166667",
+        "priceBtc": "0.0004361745",
+        "priceUsd": "5.845459166666667",
+        "volume": "414119200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T18:00:00Z",
+        "marketcap": "337399448.3333333",
+        "priceBtc": "0.0004273616666666667",
+        "priceUsd": "5.57476",
+        "volume": "389363800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T19:00:00Z",
+        "marketcap": "331760448.6666667",
+        "priceBtc": "0.0004249019166666667",
+        "priceUsd": "5.481588333333334",
+        "volume": "379903200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T20:00:00Z",
+        "marketcap": "341523464",
+        "priceBtc": "0.0004265475833333333",
+        "priceUsd": "5.6429",
+        "volume": "379625700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T21:00:00Z",
+        "marketcap": "345481244.1666667",
+        "priceBtc": "0.0004281685833333333",
+        "priceUsd": "5.708293333333333",
+        "volume": "378101000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T22:00:00Z",
+        "marketcap": "355143489.25",
+        "priceBtc": "0.0004403052500000001",
+        "priceUsd": "5.867940000000001",
+        "volume": "333956900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-24T23:00:00Z",
+        "marketcap": "367080933.5833333",
+        "priceBtc": "0.00043825775000000004",
+        "priceUsd": "6.065179166666666",
+        "volume": "204766900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T00:00:00Z",
+        "marketcap": "373931950.25",
+        "priceBtc": "0.00044000983333333327",
+        "priceUsd": "6.178376666666666",
+        "volume": "171919500"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T01:00:00Z",
+        "marketcap": "367980098.6666667",
+        "priceBtc": "0.00044012200000000004",
+        "priceUsd": "6.080035833333334",
+        "volume": "162879300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T02:00:00Z",
+        "marketcap": "371176150.5833333",
+        "priceBtc": "0.00044771000000000004",
+        "priceUsd": "6.132843333333334",
+        "volume": "157230100"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T03:00:00Z",
+        "marketcap": "363714510.3333333",
+        "priceBtc": "0.00044225974999999995",
+        "priceUsd": "6.009556666666668",
+        "volume": "148663800"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T04:00:00Z",
+        "marketcap": "368857930",
+        "priceBtc": "0.0004446599166666667",
+        "priceUsd": "6.094539999999999",
+        "volume": "143468600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T05:00:00Z",
+        "marketcap": "372136393.5",
+        "priceBtc": "0.0004423076666666666",
+        "priceUsd": "6.1487091666666664",
+        "volume": "140384000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T06:00:00Z",
+        "marketcap": "372416865.75",
+        "priceBtc": "0.00044010250000000006",
+        "priceUsd": "6.153343333333333",
+        "volume": "139178200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T07:00:00Z",
+        "marketcap": "371464087.25",
+        "priceBtc": "0.00044002041666666667",
+        "priceUsd": "6.137600833333334",
+        "volume": "137145300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T08:00:00Z",
+        "marketcap": "375612614.6666667",
+        "priceBtc": "0.00044075775",
+        "priceUsd": "6.206145833333333",
+        "volume": "136223900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T09:00:00Z",
+        "marketcap": "377617025.25",
+        "priceBtc": "0.00044076175",
+        "priceUsd": "6.2392641666666675",
+        "volume": "117877270"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T10:00:00Z",
+        "marketcap": "373371308.4166667",
+        "priceBtc": "0.00043907283333333337",
+        "priceUsd": "6.169113333333335",
+        "volume": "108830200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T11:00:00Z",
+        "marketcap": "375117791.25",
+        "priceBtc": "0.00043842975000000004",
+        "priceUsd": "6.197969999999999",
+        "volume": "110529840"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T12:00:00Z",
+        "marketcap": "370437925.0833333",
+        "priceBtc": "0.0004272370833333333",
+        "priceUsd": "6.1206458333333345",
+        "volume": "106352580"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T13:00:00Z",
+        "marketcap": "365659810.3333333",
+        "priceBtc": "0.0004239036666666667",
+        "priceUsd": "6.041698333333334",
+        "volume": "101496060"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T14:00:00Z",
+        "marketcap": "353890568.8333333",
+        "priceBtc": "0.00042694291666666665",
+        "priceUsd": "5.847238333333333",
+        "volume": "96471970"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T15:00:00Z",
+        "marketcap": "352604007.8333333",
+        "priceBtc": "0.0004248829166666667",
+        "priceUsd": "5.825980833333333",
+        "volume": "91338110"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T16:00:00Z",
+        "marketcap": "360970462.1666667",
+        "priceBtc": "0.0004287326666666666",
+        "priceUsd": "5.9642175",
+        "volume": "85550970"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T17:00:00Z",
+        "marketcap": "363744822.3333333",
+        "priceBtc": "0.00043326375",
+        "priceUsd": "6.010057499999999",
+        "volume": "83540810"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T18:00:00Z",
+        "marketcap": "363830713.8333333",
+        "priceBtc": "0.00042889591666666666",
+        "priceUsd": "6.011476666666666",
+        "volume": "83244180"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T19:00:00Z",
+        "marketcap": "363721672.3333333",
+        "priceBtc": "0.00042702358333333336",
+        "priceUsd": "6.0096750000000005",
+        "volume": "96157300"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T20:00:00Z",
+        "marketcap": "362725922.8333333",
+        "priceBtc": "0.00042759583333333334",
+        "priceUsd": "5.993222500000002",
+        "volume": "97050780"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T21:00:00Z",
+        "marketcap": "360860058.75",
+        "priceBtc": "0.00043229866666666655",
+        "priceUsd": "5.962393333333332",
+        "volume": "95160060"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T22:00:00Z",
+        "marketcap": "359538192.8333333",
+        "priceBtc": "0.00043208674999999997",
+        "priceUsd": "5.9405525",
+        "volume": "90746970"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-25T23:00:00Z",
+        "marketcap": "362855189.0833333",
+        "priceBtc": "0.00043029716666666664",
+        "priceUsd": "5.995358333333333",
+        "volume": "89148280"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T00:00:00Z",
+        "marketcap": "360451631.5",
+        "priceBtc": "0.0004242289999999999",
+        "priceUsd": "5.955645",
+        "volume": "86386230"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T01:00:00Z",
+        "marketcap": "359910508.25",
+        "priceBtc": "0.0004265893333333333",
+        "priceUsd": "5.946704166666667",
+        "volume": "83678470"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T02:00:00Z",
+        "marketcap": "360564254.0833333",
+        "priceBtc": "0.00042553925",
+        "priceUsd": "5.957505833333332",
+        "volume": "81118520"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T03:00:00Z",
+        "marketcap": "359431874.75",
+        "priceBtc": "0.000418678",
+        "priceUsd": "5.938795833333334",
+        "volume": "79498390"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T04:00:00Z",
+        "marketcap": "364846637.6666667",
+        "priceBtc": "0.0004046405833333334",
+        "priceUsd": "6.028262499999999",
+        "volume": "84576820"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T05:00:00Z",
+        "marketcap": "364855413.5",
+        "priceBtc": "0.00039505266666666665",
+        "priceUsd": "6.0284075",
+        "volume": "87721710"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T06:00:00Z",
+        "marketcap": "361605294.75",
+        "priceBtc": "0.00038899691666666663",
+        "priceUsd": "5.974706666666666",
+        "volume": "88117690"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T07:00:00Z",
+        "marketcap": "359744071",
+        "priceBtc": "0.0003860895",
+        "priceUsd": "5.943954166666667",
+        "volume": "88396890"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T08:00:00Z",
+        "marketcap": "362282846.25",
+        "priceBtc": "0.00038978116666666665",
+        "priceUsd": "5.985901666666667",
+        "volume": "88841520"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T09:00:00Z",
+        "marketcap": "361560205.4166667",
+        "priceBtc": "0.00039268725",
+        "priceUsd": "5.973961666666667",
+        "volume": "87726000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T10:00:00Z",
+        "marketcap": "364177458.3333333",
+        "priceBtc": "0.0003912760833333334",
+        "priceUsd": "6.017205833333333",
+        "volume": "80142470"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T11:00:00Z",
+        "marketcap": "360392773.1666667",
+        "priceBtc": "0.00039200099999999995",
+        "priceUsd": "5.9546725",
+        "volume": "73110390"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T12:00:00Z",
+        "marketcap": "358012516.9166667",
+        "priceBtc": "0.0003896534166666666",
+        "priceUsd": "5.915344166666666",
+        "volume": "71106190"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T13:00:00Z",
+        "marketcap": "355935781.8333333",
+        "priceBtc": "0.0003828230833333333",
+        "priceUsd": "5.881030833333334",
+        "volume": "69300430"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T14:00:00Z",
+        "marketcap": "362316688.4166667",
+        "priceBtc": "0.00038516999999999995",
+        "priceUsd": "5.986460833333335",
+        "volume": "66192110"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T15:00:00Z",
+        "marketcap": "361478096.25",
+        "priceBtc": "0.00037777758333333334",
+        "priceUsd": "5.972604999999999",
+        "volume": "65898330"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T16:00:00Z",
+        "marketcap": "363366656.4166667",
+        "priceBtc": "0.0003747110833333333",
+        "priceUsd": "6.0038091666666675",
+        "volume": "67374810"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T17:00:00Z",
+        "marketcap": "360897280.1666667",
+        "priceBtc": "0.00037418125000000005",
+        "priceUsd": "5.963008333333332",
+        "volume": "66098270"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T18:00:00Z",
+        "marketcap": "360709609.5833333",
+        "priceBtc": "0.00037816691666666666",
+        "priceUsd": "5.959907499999999",
+        "volume": "66199080"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T19:00:00Z",
+        "marketcap": "361812332.75",
+        "priceBtc": "0.00037694466666666663",
+        "priceUsd": "5.9781275",
+        "volume": "53034150"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T20:00:00Z",
+        "marketcap": "361626528",
+        "priceBtc": "0.00037270891666666664",
+        "priceUsd": "5.975057500000001",
+        "volume": "51300900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T21:00:00Z",
+        "marketcap": "359406152.6666667",
+        "priceBtc": "0.00037232950000000003",
+        "priceUsd": "5.938370833333333",
+        "volume": "51376540"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T22:00:00Z",
+        "marketcap": "361620576.8333333",
+        "priceBtc": "0.0003752388333333333",
+        "priceUsd": "5.974959166666667",
+        "volume": "55739150"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-26T23:00:00Z",
+        "marketcap": "361714084.3333333",
+        "priceBtc": "0.0003782878333333333",
+        "priceUsd": "5.976504166666667",
+        "volume": "64504980"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T00:00:00Z",
+        "marketcap": "361544217.3333333",
+        "priceBtc": "0.00037821500000000005",
+        "priceUsd": "5.973697499999999",
+        "volume": "63807060"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T01:00:00Z",
+        "marketcap": "366824821.75",
+        "priceBtc": "0.0003787175833333333",
+        "priceUsd": "6.060947499999998",
+        "volume": "65253640"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T02:00:00Z",
+        "marketcap": "368867159.75",
+        "priceBtc": "0.0003831329166666667",
+        "priceUsd": "6.094692500000001",
+        "volume": "69477910"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T03:00:00Z",
+        "marketcap": "368373546.75",
+        "priceBtc": "0.00038407225",
+        "priceUsd": "6.086536666666665",
+        "volume": "69836550"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T04:00:00Z",
+        "marketcap": "368256738",
+        "priceBtc": "0.0003747445",
+        "priceUsd": "6.084606666666667",
+        "volume": "72273920"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T05:00:00Z",
+        "marketcap": "366599929.4166667",
+        "priceBtc": "0.0003702264166666667",
+        "priceUsd": "6.0572316666666675",
+        "volume": "69238970"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T06:00:00Z",
+        "marketcap": "365655523.1666667",
+        "priceBtc": "0.00036646583333333323",
+        "priceUsd": "6.041627500000001",
+        "volume": "67475360"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T07:00:00Z",
+        "marketcap": "362529123.0833333",
+        "priceBtc": "0.00036610375000000004",
+        "priceUsd": "5.9899708333333335",
+        "volume": "68996960"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T08:00:00Z",
+        "marketcap": "361447179.1666667",
+        "priceBtc": "0.0003661615",
+        "priceUsd": "5.972094166666667",
+        "volume": "75367170"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T09:00:00Z",
+        "marketcap": "358677661.0833333",
+        "priceBtc": "0.00036839175",
+        "priceUsd": "5.926334166666666",
+        "volume": "78196410"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T10:00:00Z",
+        "marketcap": "355183484.5833333",
+        "priceBtc": "0.00037083874999999995",
+        "priceUsd": "5.868600833333333",
+        "volume": "83083320"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T11:00:00Z",
+        "marketcap": "353236520.4166667",
+        "priceBtc": "0.0003698461666666667",
+        "priceUsd": "5.836431666666667",
+        "volume": "82672280"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T12:00:00Z",
+        "marketcap": "358386143.5833333",
+        "priceBtc": "0.0003713675833333333",
+        "priceUsd": "5.9215175",
+        "volume": "83554130"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T13:00:00Z",
+        "marketcap": "359874648.5833333",
+        "priceBtc": "0.000374381",
+        "priceUsd": "5.946111666666667",
+        "volume": "84686960"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T14:00:00Z",
+        "marketcap": "357474671.8333333",
+        "priceBtc": "0.0003764760833333334",
+        "priceUsd": "5.906457499999999",
+        "volume": "84445220"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T15:00:00Z",
+        "marketcap": "350969239.6666667",
+        "priceBtc": "0.0003774168333333333",
+        "priceUsd": "5.79897",
+        "volume": "81880640"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T16:00:00Z",
+        "marketcap": "348732220.4166667",
+        "priceBtc": "0.0003767648333333334",
+        "priceUsd": "5.762008333333334",
+        "volume": "80430570"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T17:00:00Z",
+        "marketcap": "346387218.4166667",
+        "priceBtc": "0.00038362124999999993",
+        "priceUsd": "5.7232625",
+        "volume": "82593170"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T18:00:00Z",
+        "marketcap": "346351207.4166667",
+        "priceBtc": "0.00037822524999999997",
+        "priceUsd": "5.7226675",
+        "volume": "81929730"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T19:00:00Z",
+        "marketcap": "347699703.1666667",
+        "priceBtc": "0.00037843500000000005",
+        "priceUsd": "5.744948333333333",
+        "volume": "81855200"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T20:00:00Z",
+        "marketcap": "342832569.8333333",
+        "priceBtc": "0.00037977191666666667",
+        "priceUsd": "5.66453",
+        "volume": "80498900"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T21:00:00Z",
+        "marketcap": "344413170.1666667",
+        "priceBtc": "0.00037691133333333333",
+        "priceUsd": "5.690645833333334",
+        "volume": "80131680"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T22:00:00Z",
+        "marketcap": "346908066.5833333",
+        "priceBtc": "0.0003737638333333333",
+        "priceUsd": "5.731868333333334",
+        "volume": "95012280"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-27T23:00:00Z",
+        "marketcap": "347184150.9166667",
+        "priceBtc": "0.0003705115",
+        "priceUsd": "5.736430000000001",
+        "volume": "93680070"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T00:00:00Z",
+        "marketcap": "347091652.0833333",
+        "priceBtc": "0.00037302858333333326",
+        "priceUsd": "5.734901666666667",
+        "volume": "93701090"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T01:00:00Z",
+        "marketcap": "346646709.4166667",
+        "priceBtc": "0.0003727059166666667",
+        "priceUsd": "5.727550000000001",
+        "volume": "92899730"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T02:00:00Z",
+        "marketcap": "342559663",
+        "priceBtc": "0.0003727315833333333",
+        "priceUsd": "5.660020833333334",
+        "volume": "89483170"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T03:00:00Z",
+        "marketcap": "332523690.3333333",
+        "priceBtc": "0.0003806608333333334",
+        "priceUsd": "5.494199166666665",
+        "volume": "93376340"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T04:00:00Z",
+        "marketcap": "333926404.25",
+        "priceBtc": "0.00038035716666666664",
+        "priceUsd": "5.5173758333333325",
+        "volume": "89023250"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T05:00:00Z",
+        "marketcap": "327481040.9166667",
+        "priceBtc": "0.00038125458333333333",
+        "priceUsd": "5.410880833333333",
+        "volume": "90949140"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T06:00:00Z",
+        "marketcap": "321217144.6666667",
+        "priceBtc": "0.00037978949999999996",
+        "priceUsd": "5.307384166666666",
+        "volume": "98196780"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T07:00:00Z",
+        "marketcap": "322439400.4166667",
+        "priceBtc": "0.0003750906666666667",
+        "priceUsd": "5.327579166666667",
+        "volume": "96423580"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T08:00:00Z",
+        "marketcap": "320137924.4166667",
+        "priceBtc": "0.0003727998333333334",
+        "priceUsd": "5.2895525",
+        "volume": "89664180"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T09:00:00Z",
+        "marketcap": "325215979.3333333",
+        "priceBtc": "0.00037327341666666664",
+        "priceUsd": "5.373455833333334",
+        "volume": "88943960"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T10:00:00Z",
+        "marketcap": "321800734.75",
+        "priceBtc": "0.00037222716666666667",
+        "priceUsd": "5.317026666666666",
+        "volume": "81698780"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T11:00:00Z",
+        "marketcap": "316071808.4166667",
+        "priceBtc": "0.00037710766666666654",
+        "priceUsd": "5.222369166666666",
+        "volume": "81384870"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T12:00:00Z",
+        "marketcap": "314569736.25",
+        "priceBtc": "0.0003707868333333334",
+        "priceUsd": "5.197550833333333",
+        "volume": "82121730"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T13:00:00Z",
+        "marketcap": "316179740.6666667",
+        "priceBtc": "0.0003661985833333333",
+        "priceUsd": "5.2241525",
+        "volume": "82086020"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T14:00:00Z",
+        "marketcap": "314299502.6666667",
+        "priceBtc": "0.00036577191666666665",
+        "priceUsd": "5.193085833333334",
+        "volume": "81437700"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T15:00:00Z",
+        "marketcap": "320206617.75",
+        "priceBtc": "0.0003663198333333333",
+        "priceUsd": "5.290687499999999",
+        "volume": "82846680"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T16:00:00Z",
+        "marketcap": "315565032.0833333",
+        "priceBtc": "0.00036384391666666676",
+        "priceUsd": "5.2139958333333345",
+        "volume": "81205380"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T17:00:00Z",
+        "marketcap": "313875743",
+        "priceBtc": "0.0003682132500000001",
+        "priceUsd": "5.186084166666666",
+        "volume": "77320970"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T18:00:00Z",
+        "marketcap": "313426109.8333333",
+        "priceBtc": "0.0003702834166666666",
+        "priceUsd": "5.178655",
+        "volume": "76813170"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T19:00:00Z",
+        "marketcap": "307807486.3333333",
+        "priceBtc": "0.00036691858333333334",
+        "priceUsd": "5.085820000000001",
+        "volume": "76967760"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T20:00:00Z",
+        "marketcap": "305253428.75",
+        "priceBtc": "0.0003593791666666667",
+        "priceUsd": "5.04362",
+        "volume": "78106220"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T21:00:00Z",
+        "marketcap": "304601397.8333333",
+        "priceBtc": "0.00036107141666666674",
+        "priceUsd": "5.032846666666667",
+        "volume": "80122650"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T22:00:00Z",
+        "marketcap": "309025555.6666667",
+        "priceBtc": "0.0003611984166666667",
+        "priceUsd": "5.105945833333334",
+        "volume": "65245720"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-28T23:00:00Z",
+        "marketcap": "311043987.3333333",
+        "priceBtc": "0.00036215375",
+        "priceUsd": "5.139295833333334",
+        "volume": "59417390"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T00:00:00Z",
+        "marketcap": "310132061.5833333",
+        "priceBtc": "0.0003553943333333332",
+        "priceUsd": "5.124228333333334",
+        "volume": "60901440"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T01:00:00Z",
+        "marketcap": "306670668.4166667",
+        "priceBtc": "0.0003537024166666667",
+        "priceUsd": "5.067036666666667",
+        "volume": "60550580"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T02:00:00Z",
+        "marketcap": "319221106.4166667",
+        "priceBtc": "0.00035668533333333324",
+        "priceUsd": "5.274404166666667",
+        "volume": "63122530"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T03:00:00Z",
+        "marketcap": "325382517.75",
+        "priceBtc": "0.0003604830833333333",
+        "priceUsd": "5.3762075000000005",
+        "volume": "58163440"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T04:00:00Z",
+        "marketcap": "328508010.0833333",
+        "priceBtc": "0.00036313833333333337",
+        "priceUsd": "5.427849166666667",
+        "volume": "57944890"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T05:00:00Z",
+        "marketcap": "325446217.8333333",
+        "priceBtc": "0.0003604074166666667",
+        "priceUsd": "5.37726",
+        "volume": "75452280"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T06:00:00Z",
+        "marketcap": "331124153.5833333",
+        "priceBtc": "0.0003637558333333333",
+        "priceUsd": "5.471075",
+        "volume": "78014520"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T07:00:00Z",
+        "marketcap": "325159390.8333333",
+        "priceBtc": "0.0003642124166666667",
+        "priceUsd": "5.372520833333333",
+        "volume": "75923720"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T08:00:00Z",
+        "marketcap": "323178533.75",
+        "priceBtc": "0.00036406850000000006",
+        "priceUsd": "5.339791666666667",
+        "volume": "74939870"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T09:00:00Z",
+        "marketcap": "319317993.25",
+        "priceBtc": "0.00036307891666666675",
+        "priceUsd": "5.276005",
+        "volume": "70617370"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T10:00:00Z",
+        "marketcap": "311155248.1666667",
+        "priceBtc": "0.00035876466666666666",
+        "priceUsd": "5.141134166666666",
+        "volume": "66476210"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T11:00:00Z",
+        "marketcap": "310422167",
+        "priceBtc": "0.00035933416666666663",
+        "priceUsd": "5.129021666666667",
+        "volume": "62889050"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T12:00:00Z",
+        "marketcap": "310688416.5833333",
+        "priceBtc": "0.00035980666666666664",
+        "priceUsd": "5.133420833333333",
+        "volume": "60718620"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T13:00:00Z",
+        "marketcap": "311248604.3333333",
+        "priceBtc": "0.000361672",
+        "priceUsd": "5.1426766666666675",
+        "volume": "60474330"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T14:00:00Z",
+        "marketcap": "312816293.1666667",
+        "priceBtc": "0.00035745425",
+        "priceUsd": "5.1685791666666665",
+        "volume": "60249310"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T15:00:00Z",
+        "marketcap": "316723537",
+        "priceBtc": "0.00036023625000000003",
+        "priceUsd": "5.233137499999999",
+        "volume": "60879670"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T16:00:00Z",
+        "marketcap": "333431631.5",
+        "priceBtc": "0.00037474499999999995",
+        "priceUsd": "5.509200833333334",
+        "volume": "69124940"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T17:00:00Z",
+        "marketcap": "339936912.3333333",
+        "priceBtc": "0.0003804236666666667",
+        "priceUsd": "5.616685833333334",
+        "volume": "74303890"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T18:00:00Z",
+        "marketcap": "336935794.0833333",
+        "priceBtc": "0.0003809911666666666",
+        "priceUsd": "5.567099166666666",
+        "volume": "78586690"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T19:00:00Z",
+        "marketcap": "334835808.25",
+        "priceBtc": "0.0003792799166666666",
+        "priceUsd": "5.532401666666668",
+        "volume": "77880400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T20:00:00Z",
+        "marketcap": "331240659.75",
+        "priceBtc": "0.00037616874999999995",
+        "priceUsd": "5.473",
+        "volume": "72962950"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T21:00:00Z",
+        "marketcap": "329433351.5",
+        "priceBtc": "0.00037657550000000004",
+        "priceUsd": "5.443138333333333",
+        "volume": "68794230"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T22:00:00Z",
+        "marketcap": "332544015.6666667",
+        "priceBtc": "0.00038029266666666665",
+        "priceUsd": "5.494534999999999",
+        "volume": "69192520"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-29T23:00:00Z",
+        "marketcap": "336813790.5",
+        "priceBtc": "0.00038147",
+        "priceUsd": "5.565083333333333",
+        "volume": "69509860"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T00:00:00Z",
+        "marketcap": "332147340.0833333",
+        "priceBtc": "0.00038188274999999993",
+        "priceUsd": "5.487980833333334",
+        "volume": "65517150"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T01:00:00Z",
+        "marketcap": "328598642.6666667",
+        "priceBtc": "0.0003788739166666667",
+        "priceUsd": "5.429346666666667",
+        "volume": "65165150"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T02:00:00Z",
+        "marketcap": "323620147.5833333",
+        "priceBtc": "0.00039207175",
+        "priceUsd": "5.347088333333333",
+        "volume": "66572000"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T03:00:00Z",
+        "marketcap": "318533014",
+        "priceBtc": "0.0003874472499999999",
+        "priceUsd": "5.263035000000001",
+        "volume": "65324850"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T04:00:00Z",
+        "marketcap": "314030328",
+        "priceBtc": "0.0003828623333333333",
+        "priceUsd": "5.1886383333333335",
+        "volume": "63275980"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T05:00:00Z",
+        "marketcap": "314660923.8333333",
+        "priceBtc": "0.00038753800000000004",
+        "priceUsd": "5.1990575",
+        "volume": "62869030"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T06:00:00Z",
+        "marketcap": "315827549.1666667",
+        "priceBtc": "0.00038430433333333335",
+        "priceUsd": "5.218333333333334",
+        "volume": "62552430"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T07:00:00Z",
+        "marketcap": "316865513.1666667",
+        "priceBtc": "0.0003828103333333333",
+        "priceUsd": "5.235483333333334",
+        "volume": "61902980"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T08:00:00Z",
+        "marketcap": "317489653.3333333",
+        "priceBtc": "0.0003806004166666667",
+        "priceUsd": "5.245795833333333",
+        "volume": "62120720"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T09:00:00Z",
+        "marketcap": "318297580.6666667",
+        "priceBtc": "0.00038616299999999997",
+        "priceUsd": "5.259145",
+        "volume": "62277510"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T10:00:00Z",
+        "marketcap": "318568571.0833333",
+        "priceBtc": "0.0003928094166666667",
+        "priceUsd": "5.2636225",
+        "volume": "61619570"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T11:00:00Z",
+        "marketcap": "321510175.25",
+        "priceBtc": "0.0003929511666666667",
+        "priceUsd": "5.312225833333334",
+        "volume": "60553710"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T12:00:00Z",
+        "marketcap": "321565604",
+        "priceBtc": "0.0004027965000000001",
+        "priceUsd": "5.313141666666666",
+        "volume": "60250140"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T13:00:00Z",
+        "marketcap": "308777211",
+        "priceBtc": "0.00040454450000000007",
+        "priceUsd": "5.1018425",
+        "volume": "63924400"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T14:00:00Z",
+        "marketcap": "307866697.5833333",
+        "priceBtc": "0.00040081141666666666",
+        "priceUsd": "5.086798333333333",
+        "volume": "66806280"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T15:00:00Z",
+        "marketcap": "309588971.5",
+        "priceBtc": "0.0004041050833333334",
+        "priceUsd": "5.115255",
+        "volume": "66609690"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T16:00:00Z",
+        "marketcap": "305307294.0833333",
+        "priceBtc": "0.00040473625",
+        "priceUsd": "5.04451",
+        "volume": "63611600"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T17:00:00Z",
+        "marketcap": "309703157.5833333",
+        "priceBtc": "0.00040788799999999997",
+        "priceUsd": "5.117141666666666",
+        "volume": "65889550"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T18:00:00Z",
+        "marketcap": "318709488",
+        "priceBtc": "0.0004136564166666667",
+        "priceUsd": "5.265950833333333",
+        "volume": "65030990"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T19:00:00Z",
+        "marketcap": "318320831.5833333",
+        "priceBtc": "0.0004035006666666666",
+        "priceUsd": "5.259529166666667",
+        "volume": "62199360"
+    },
+    {
+        "__typename": "PricePoint",
+        "datetime": "2017-12-30T20:00:00Z",
+        "marketcap": "313669878.6363636",
+        "priceBtc": "0.0003972409090909091",
+        "priceUsd": "5.182682727272727",
+        "volume": "55884630"
+    }
+]

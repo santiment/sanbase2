@@ -1,0 +1,254 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProjectChart component (smoke) it should render correctly 1`] = `
+<div
+  className="project-dp-chart"
+>
+  <div
+    className="chart-header"
+  >
+    <Component />
+    <div
+      className="selected-value"
+    />
+    <div
+      className="selected-value"
+    />
+  </div>
+  <Bar
+    className="graph"
+    data={
+      Object {
+        "datasets": Array [
+          Object {
+            "backgroundColor": "rgba(239, 242, 236, 0.5)",
+            "borderColor": "#00a05a",
+            "borderWidth": 1,
+            "data": Array [
+              undefined,
+              undefined,
+            ],
+            "fill": true,
+            "label": "Price",
+            "pointBorderWidth": 2,
+            "type": "LineWithLine",
+            "yAxisID": "y-axis-1",
+          },
+          Object {
+            "borderColor": "rgba(49, 107, 174, 0.5)",
+            "borderWidth": 4,
+            "data": Array [
+              NaN,
+              NaN,
+            ],
+            "fill": false,
+            "label": "Volume",
+            "pointBorderWidth": 2,
+            "type": "bar",
+            "yAxisID": "y-axis-2",
+          },
+        ],
+        "labels": Array [
+          "2017-12-27T21:45:00.000Z",
+          "2017-12-27T21:45:00.000Z",
+        ],
+      }
+    }
+    height={100}
+    onElementsClick={[Function]}
+    options={
+      Object {
+        "animation": false,
+        "datasetFill": false,
+        "elements": Object {
+          "point": Object {
+            "hitRadius": 2,
+            "hoverRadius": 2,
+            "radius": 0,
+          },
+        },
+        "hover": Object {
+          "intersect": true,
+          "mode": "nearest",
+        },
+        "legend": Object {
+          "display": false,
+        },
+        "pointDot": false,
+        "pointRadius": 0,
+        "responsive": true,
+        "scaleFontSize": 0,
+        "scaleShowLabels": false,
+        "scales": Object {
+          "xAxes": Array [
+            Object {
+              "gridLines": Object {
+                "color": "#f0f0f0",
+                "display": true,
+                "drawBorder": true,
+              },
+              "ticks": Object {
+                "autoSkipPadding": 1,
+                "callback": [Function],
+              },
+              "type": "time",
+            },
+          ],
+          "yAxes": Array [
+            Object {
+              "display": true,
+              "gridLines": Object {
+                "color": "#f0f0f0",
+                "display": true,
+                "drawBorder": true,
+              },
+              "id": "y-axis-1",
+              "position": "left",
+              "scaleLabel": Object {
+                "display": true,
+                "fontColor": "#00a05a",
+                "labelString": "Price",
+              },
+              "ticks": Object {
+                "beginAtZero": true,
+                "display": true,
+              },
+              "type": "linear",
+            },
+            Object {
+              "display": false,
+              "id": "y-axis-2",
+              "labels": Object {
+                "show": true,
+              },
+              "position": "right",
+              "scaleLabel": Object {
+                "display": true,
+                "fontColor": "rgba(49, 107, 174, 0.5)",
+                "labelString": "Volume",
+              },
+              "ticks": Object {
+                "max": NaN,
+              },
+              "type": "linear",
+            },
+            Object {
+              "display": undefined,
+              "gridLines": Object {
+                "display": false,
+              },
+              "id": "y-axis-3",
+              "position": "right",
+              "scaleLabel": Object {
+                "display": true,
+                "fontColor": "rgb(200, 47, 63)",
+                "labelString": "MarketCap",
+              },
+              "ticks": Object {
+                "display": true,
+              },
+              "type": "linear",
+            },
+          ],
+        },
+        "showTooltips": true,
+        "tooltips": Object {
+          "backgroundColor": "rgba(255, 255, 255, 0.8)",
+          "bodyFontColor": "#000",
+          "bodyFontSize": 14,
+          "bodySpacing": 4,
+          "borderColor": "#d3d3d3",
+          "borderWidth": 2,
+          "callbacks": Object {
+            "label": [Function],
+            "title": [Function],
+          },
+          "cornerRadius": 3,
+          "displayColors": true,
+          "intersect": false,
+          "mode": "index",
+          "titleFontColor": "#000",
+          "titleFontSize": 14,
+          "titleMarginBottom": 8,
+        },
+      }
+    }
+    redraw={true}
+    style={
+      Object {
+        "transition": "opacity 0.25s ease",
+      }
+    }
+  />
+  <div
+    className="chart-footer"
+  >
+    <div
+      className="chart-footer-filters"
+    >
+      <Component />
+      <MarketcapToggle />
+    </div>
+    <div>
+      <small
+        className="trademark"
+      >
+        santiment.net
+      </small>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ProjectChart component Error State it should render correctly with error message 1`] = `
+<ProjectChart
+  errorMessage="400 error"
+  history={Array []}
+  isEmpty={true}
+  isError={true}
+  isLoading={false}
+>
+  <div>
+    <h2>
+      We can't get the data from our server now... ;(
+    </h2>
+    <p>
+      400 error
+    </p>
+  </div>
+</ProjectChart>
+`;
+
+exports[`ProjectChart component Loading State it should render correctly with loading prop 1`] = `
+<ProjectChart
+  history={Array []}
+  isEmpty={true}
+  isError={false}
+  isLoading={true}
+>
+  <div
+    className="project-chart-loader"
+  >
+    <h2>
+      Loading...
+    </h2>
+  </div>
+</ProjectChart>
+`;
+
+exports[`ProjectChart component Loading State it should render correctly withour history prop 1`] = `
+<ProjectChart
+  history={Array []}
+  isEmpty={true}
+  isError={false}
+  isLoading={true}
+>
+  <div
+    className="project-chart-loader"
+  >
+    <h2>
+      Loading...
+    </h2>
+  </div>
+</ProjectChart>
+`;

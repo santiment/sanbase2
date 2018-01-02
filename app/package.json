@@ -44,6 +44,7 @@
     "recompose": "^0.26.0",
     "redux": "^3.7.2",
     "redux-persist": "^5.4.0",
+    "semantic-ui-css": "^2.2.12",
     "semantic-ui-react": "^0.77.0"
   },
   "devDependencies": {

@@ -18,6 +18,7 @@ import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
 import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
 import { formatNumber, formatBTC } from '../utils/formatting'
+import Panel from './../components/Panel'
 import './Detailed.css'
 
 const propTypes = {
@@ -92,9 +93,9 @@ export const Detailed = ({
             </div>
           </HiddenElements>
         </div>
-        <div className='panel panel-chart'>
+        <Panel withoutHeader>
           <ProjectChartContainer ticker={project.ticker} />
-        </div>
+        </Panel>
         <HiddenElements>
           <div className='panel'>
             <Tabs className='activity-panel'>

@@ -18,6 +18,7 @@ import App from './App'
 import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
+import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
 const handleLoad = () => {

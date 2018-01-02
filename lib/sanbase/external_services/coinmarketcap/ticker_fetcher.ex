@@ -68,6 +68,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   available_supply: ticker.available_supply,
   total_supply: ticker.total_supply,
 	symbol: ticker.symbol,
+  percent_change_1h: ticker.percent_change_1h,
+  percent_change_24h: ticker.percent_change_24h,
+  percent_change_7d: ticker.percent_change_7d,
 	update_time: DateTime.from_unix!(ticker.last_updated)
       })
     |> Repo.insert_or_update!

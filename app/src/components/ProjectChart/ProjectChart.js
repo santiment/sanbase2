@@ -84,7 +84,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
     fill: false,
     type: 'bar',
     yAxisID: 'y-axis-2',
-    borderColor: '#1d70b8',
+    borderColor: 'rgba(49, 107, 174, 0.5)',
     borderWidth: 4,
     pointBorderWidth: 2,
     data: history ? history.map(data => {

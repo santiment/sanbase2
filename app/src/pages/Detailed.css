@@ -85,12 +85,6 @@
   position: relative;
 }
 
-.detailed .panel button {
-  width: 100%;
-  text-align: left;
-  outline: none;
-}
-
 .detailed-buttons button.add-to-dashboard {
   border: none;
   border-radius: 4px;

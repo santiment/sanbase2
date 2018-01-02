@@ -12,6 +12,25 @@
   padding-top: 10px;
 }
 
+.project-chart-body {
+  position: relative;
+}
+
+.project-chart__isLoading,
+.project-chart__isEmpty {
+  color: black;
+  font-size: 2em;
+  font-weight: 300;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  background: rgba(227, 227, 227, 0.4);
+  border-radius: 4px;
+  justify-content: center;
+}
+
 .chart-header {
   display: flex;
   justify-content: space-between;

@@ -4,6 +4,14 @@ import gql from 'graphql-tag'
 import moment from 'moment'
 import ProjectChart from './ProjectChart'
 
+export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
+  return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
+export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
+  return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
 const getHistoryGQL = gql`
   query history($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
     historyPrice(
@@ -61,13 +69,18 @@ const fetchPriceHistoryFromStartToEndDate = (
       query: getHistoryGQL,
       variables: {
         'ticker': ticker,
-        'from': moment(startDate).utc(),
-        'to': moment(endDate).utc(),
+        'from': startDate,
+        'to': endDate,
         'interval': minInterval
       }
     })
     .then(response => {
-      resolve(response.data)
+      const history = response.data.historyPrice || []
+      resolve(history.map(item => {
+        const volumeBTC = calculateBTCVolume(item)
+        const marketcapBTC = calculateBTCMarketcap(item)
+        return {...item, volumeBTC, marketcapBTC}
+      }))
     })
     .catch(error => reject(error))
   })
@@ -75,21 +88,7 @@ const fetchPriceHistoryFromStartToEndDate = (
 
 const fetchPriceHistory = (client, ticker, interval = '1m') => {
   const { from, to, minInterval } = makeItervalBounds(interval)
-  return new Promise((resolve, reject) => {
-    client.query({
-      query: getHistoryGQL,
-      variables: {
-        'ticker': ticker,
-        'from': from,
-        'to': to,
-        'interval': minInterval
-      }
-    })
-    .then(response => {
-      resolve(response.data)
-    })
-    .catch(error => reject(error))
-  })
+  return fetchPriceHistoryFromStartToEndDate(client, ticker, from, to, minInterval)
 }
 
 class ProjectChartContainer extends Component {
@@ -116,36 +115,36 @@ class ProjectChartContainer extends Component {
   }
 
   onFocusChange (focusedInput) {
-    if (focusedInput) {
-      this.setState({
-        focusedInput: focusedInput
-      })
-      return
-    }
-    const { client, ticker } = this.props
-    const { startDate, endDate } = this.state
-    //this.setState({
-      //interval: undefined,
-      //isLoading: true,
-      //selected: undefined,
-      //focusedInput: focusedInput
-    //})
-    console.log(startDate, endDate)
-    //fetchPriceHistoryFromStartToEndDate(client, ticker, startDate, endDate).then(data => {
-      //const historyPrice = data.historyPrice || []
-      //this.setState({
-        //isLoading: false,
-        //isEmpty: historyPrice.length === 0,
-        //history: data.historyPrice,
-        //selected: undefined,
-        //startDate: startDate,
-        //endDate: endDate
-      //})
-    //})
+    this.setState({
+      focusedInput: focusedInput
+    })
   }
 
   onDatesChange (startDate, endDate) {
-    this.setState({startDate, endDate})
+    const { client, ticker } = this.props
+    this.setState({
+      interval: undefined,
+      isLoading: true,
+      selected: undefined,
+      startDate,
+      endDate
+    })
+    fetchPriceHistoryFromStartToEndDate(client, ticker, startDate, endDate).then(historyPrice => {
+      this.setState({
+        isLoading: false,
+        isEmpty: historyPrice.length === 0,
+        history: historyPrice,
+        startDate: startDate,
+        endDate: endDate
+      })
+    }).catch(() => {
+      this.setState({
+        isLoading: false,
+        isEmpty: true,
+        history: [],
+        isError: false
+      })
+    })
   }
 
   setSelected (selected) {
@@ -163,12 +162,11 @@ class ProjectChartContainer extends Component {
       startDate: moment(from),
       endDate: moment(to)
     })
-    fetchPriceHistory(client, ticker, interval).then(data => {
-      const historyPrice = data.historyPrice || []
+    fetchPriceHistory(client, ticker, interval).then(historyPrice => {
       this.setState({
         isLoading: false,
         isEmpty: historyPrice.length === 0,
-        history: data.historyPrice
+        history: historyPrice
       })
     })
   }
@@ -176,15 +174,20 @@ class ProjectChartContainer extends Component {
   componentDidMount () {
     const { client, ticker } = this.props
     const { interval } = this.state
-    fetchPriceHistory(client, ticker, interval).then(data => {
-      const historyPrice = data.historyPrice || []
+    fetchPriceHistory(client, ticker, interval).then(historyPrice => {
       this.setState({
         isLoading: false,
         isEmpty: historyPrice.length === 0,
-        history: data.historyPrice
+        history: historyPrice
       })
     })
-    .catch(error => console.log(error))
+    .catch(error =>
+      this.setState({
+        isLoading: false,
+        isError: true,
+        errorMessage: error
+      })
+    )
   }
 
   render () {

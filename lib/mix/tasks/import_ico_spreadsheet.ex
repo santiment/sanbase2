@@ -54,9 +54,6 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
     {:ok, _started} = Application.ensure_all_started(:sanbase)
 
     data = IcoSpreadsheet.get_project_data(document_id, api_key, project_names)
-    |> Enum.reverse()
-    |> Enum.uniq_by(fn row -> row.project_name end)
-    |> Enum.reverse()
 
     if !dry_run do
       Sanbase.DbScripts.ImportIcoSpreadsheet.import(data)

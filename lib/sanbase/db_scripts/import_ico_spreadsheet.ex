@@ -12,6 +12,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   def import(ico_spreadsheet) when is_list(ico_spreadsheet) do
     ico_spreadsheet
+    |> Enum.reverse()
+    |> Enum.uniq_by(fn row -> row.project_name end)
+    |> Enum.reverse()
     |> put_presales_in_front()
     |> Enum.each(&import_row(&1))
   end

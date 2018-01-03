@@ -203,23 +203,6 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
     <div
       className="chart-footer-filters"
     >
-      <Component
-        focusedInput={null}
-        history={
-          Array [
-            Object {
-              "datetime": "2017-12-27T21:45Z",
-              "priceBtc": 123,
-            },
-            Object {
-              "datetime": "2017-12-27T21:45Z",
-              "priceBtc": 123,
-            },
-          ]
-        }
-        isDesktop={true}
-        onFocusChange={[Function]}
-      />
       <MarketcapToggle
         focusedInput={null}
         history={
@@ -1645,6 +1628,22 @@ exports[`ProjectChart component Loading State it should render correctly with lo
             </DateRangePicker>
           </withStyles(DateRangePicker)>
         </div>
+        <Component>
+          <div
+            className="currency-filter"
+          >
+            <div
+              className=""
+            >
+              BTC
+            </div>
+            <div
+              className="activated"
+            >
+              USD
+            </div>
+          </div>
+        </Component>
       </div>
     </ProjectChartHeader>
     <div
@@ -1994,27 +1993,6 @@ exports[`ProjectChart component Loading State it should render correctly with lo
       <div
         className="chart-footer-filters"
       >
-        <Component
-          focusedInput={null}
-          history={Array []}
-          isDesktop={true}
-          onFocusChange={[Function]}
-        >
-          <div
-            className="currency-filter"
-          >
-            <div
-              className=""
-            >
-              BTC
-            </div>
-            <div
-              className="activated"
-            >
-              USD
-            </div>
-          </div>
-        </Component>
         <MarketcapToggle
           focusedInput={null}
           history={Array []}
@@ -3419,6 +3397,22 @@ exports[`ProjectChart component Loading State it should render correctly withour
             </DateRangePicker>
           </withStyles(DateRangePicker)>
         </div>
+        <Component>
+          <div
+            className="currency-filter"
+          >
+            <div
+              className=""
+            >
+              BTC
+            </div>
+            <div
+              className="activated"
+            >
+              USD
+            </div>
+          </div>
+        </Component>
       </div>
     </ProjectChartHeader>
     <div
@@ -3768,27 +3762,6 @@ exports[`ProjectChart component Loading State it should render correctly withour
       <div
         className="chart-footer-filters"
       >
-        <Component
-          focusedInput={null}
-          history={Array []}
-          isDesktop={true}
-          onFocusChange={[Function]}
-        >
-          <div
-            className="currency-filter"
-          >
-            <div
-              className=""
-            >
-              BTC
-            </div>
-            <div
-              className="activated"
-            >
-              USD
-            </div>
-          </div>
-        </Component>
         <MarketcapToggle
           focusedInput={null}
           history={Array []}

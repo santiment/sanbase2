@@ -5,8 +5,7 @@ import {
   compose,
   lifecycle
 } from 'recompose'
-import { Merge, FadeIn } from 'animate-components'
-import { fadeIn, slideRight } from 'animate-keyframes'
+import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
 import gql from 'graphql-tag'
@@ -73,16 +72,10 @@ export const Detailed = ({
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&
-            <Merge
-              one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-              two={{ name: slideRight, duration: '0.5s', timingFunction: 'ease-out' }}
-              as='div'
-            >
-              <div className='detailed-price'>
-                <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
-                <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
-              </div>
-            </Merge>}
+            <div className='detailed-price'>
+              <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
+              <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
+            </div>}
 
           <HiddenElements>
             <div className='detailed-buttons'>

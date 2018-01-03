@@ -96,6 +96,7 @@ const ProjectChartHeader = ({
           }}
         />
       </div>
+      <CurrencyFilter {...props} />
       {!isDesktop && [
         <div className='selected-value'>{selected &&
           <Merge
@@ -160,6 +161,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
     fill: false,
     yAxisID: 'y-axis-3',
     borderColor: COLORS.marketcap,
+    backgroundColor: COLORS.marketcap,
     borderWidth: 1,
     pointBorderWidth: 2,
     data: history ? history.map(data => {
@@ -353,7 +355,6 @@ export const ProjectChart = ({
       </div>
       <div className='chart-footer'>
         <div className='chart-footer-filters'>
-          <CurrencyFilter {...props} />
           <MarketcapToggle {...props} />
         </div>
         <div>

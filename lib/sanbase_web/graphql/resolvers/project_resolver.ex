@@ -17,13 +17,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.Repo
 
-  def all_projects(_parent, args, context) do
+  def all_projects(_parent, args, resolution) do
     only_project_transparency = Map.get(args, :only_project_transparency, false)
 
     query = from p in Project,
     where: not ^only_project_transparency or p.project_transparency
 
-    projects = case coinmarketcap_requested?(context) do
+    projects = case coinmarketcap_requested?(resolution) do
       true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
       _ -> Repo.all(query)
     end
@@ -31,10 +31,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def project(_parent, args, context) do
+  def project(_parent, args, resolution) do
     id = Map.get(args, :id)
 
-    project = case coinmarketcap_requested?(context) do
+    project = case coinmarketcap_requested?(resolution) do
       true -> Repo.get(Project, id) |> Repo.preload(:latest_coinmarketcap_data)
       _ -> Repo.get(Project, id)
     end
@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, project}
   end
 
-  def all_projects_with_eth_contract_info(_parent, _args, context) do
+  def all_projects_with_eth_contract_info(_parent, _args, resolution) do
     all_icos_query = from i in Ico,
     select: %{project_id: i.project_id,
               main_contract_address: i.main_contract_address,
@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
           and not is_nil(d.contract_abi),
     select: p
 
-    projects = case coinmarketcap_requested?(context) do
+    projects = case coinmarketcap_requested?(resolution) do
       true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
       _ -> Repo.all(query)
     end
@@ -66,8 +66,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_balance(%Project{id: id}, _args, context) do
-    only_project_transparency = get_parent_args(context)
+  def eth_balance(%Project{id: id}, _args, resolution) do
+    only_project_transparency = get_parent_args(resolution)
     |> Map.get(:only_project_transparency, false)
 
     query = from a in ProjectEthAddress,
@@ -81,8 +81,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, balance}
   end
 
-  def btc_balance(%Project{id: id}, _args, context) do
-    only_project_transparency = get_parent_args(context)
+  def btc_balance(%Project{id: id}, _args, resolution) do
+    only_project_transparency = get_parent_args(resolution)
     |> Map.get(:only_project_transparency, false)
 
     query = from a in ProjectBtcAddress,
@@ -97,7 +97,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
-  def funds_raised_icos(%Project{id: id}, _args, _context) do
+  def funds_raised_icos(%Project{id: id}, _args, _resolution) do
     # We have to aggregate all amounts for every currency for every ICO of the given project, this is the last part of the query (after the with clause).
     # The data to be aggreagated has to be fetched and unioned from two different sources (the "union all" inside the with clause):
     #   * For ICOs that have raw data entered for at least one currency we aggregate it by currency (the first query)
@@ -146,97 +146,97 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       {:ok, funds_raised}
   end
 
-  def market_segment(%Project{market_segment_id: nil}, _args, _context), do: {:ok, nil}
-  def market_segment(%Project{market_segment_id: market_segment_id}, _args, _context) do
+  def market_segment(%Project{market_segment_id: nil}, _args, _resolution), do: {:ok, nil}
+  def market_segment(%Project{market_segment_id: market_segment_id}, _args, _resolution) do
     %MarketSegment{name: market_segment} = Repo.get!(MarketSegment, market_segment_id)
 
     {:ok, market_segment}
   end
 
-  def infrastructure(%Project{infrastructure_id: nil}, _args, _context), do: {:ok, nil}
-  def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, _context) do
+  def infrastructure(%Project{infrastructure_id: nil}, _args, _resolution), do: {:ok, nil}
+  def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, _resolution) do
     %Infrastructure{code: infrastructure} = Repo.get!(Infrastructure, infrastructure_id)
 
     {:ok, infrastructure}
   end
 
-  def project_transparency_status(%Project{project_transparency_status_id: nil}, _args, _context), do: {:ok, nil}
-  def project_transparency_status(%Project{project_transparency_status_id: project_transparency_status_id}, _args, _context) do
+  def project_transparency_status(%Project{project_transparency_status_id: nil}, _args, _resolution), do: {:ok, nil}
+  def project_transparency_status(%Project{project_transparency_status_id: project_transparency_status_id}, _args, _resolution) do
     %ProjectTransparencyStatus{name: project_transparency_status} = Repo.get!(ProjectTransparencyStatus, project_transparency_status_id)
 
     {:ok, project_transparency_status}
   end
 
-  def roi_usd(%Project{} = project, _args, _context) do
+  def roi_usd(%Project{} = project, _args, _resolution) do
     roi = Project.roi_usd(project)
 
     {:ok, roi}
   end
 
-  def symbol(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{symbol: symbol}}, _args, _context) do
+  def symbol(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{symbol: symbol}}, _args, _resolution) do
     {:ok, symbol}
   end
-  def symbol(_parent, _args, _context), do: {:ok, nil}
+  def symbol(_parent, _args, _resolution), do: {:ok, nil}
 
-  def rank(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{rank: rank}}, _args, _context) do
+  def rank(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{rank: rank}}, _args, _resolution) do
     {:ok, rank}
   end
-  def rank(_parent, _args, _context), do: {:ok, nil}
+  def rank(_parent, _args, _resolution), do: {:ok, nil}
 
-  def price_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}}, _args, _context) do
+  def price_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_usd: price_usd}}, _args, _resolution) do
     {:ok, price_usd}
   end
-  def price_usd(_parent, _args, _context), do: {:ok, nil}
+  def price_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def volume_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{volume_usd: volume_usd}}, _args, _context) do
+  def volume_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{volume_usd: volume_usd}}, _args, _resolution) do
     {:ok, volume_usd}
   end
-  def volume_usd(_parent, _args, _context), do: {:ok, nil}
+  def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def marketcap_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}}, _args, _context) do
+  def marketcap_usd(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}}, _args, _resolution) do
     {:ok, market_cap_usd}
   end
-  def marketcap_usd(_parent, _args, _context), do: {:ok, nil}
+  def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def available_supply(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{available_supply: available_supply}}, _args, _context) do
+  def available_supply(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{available_supply: available_supply}}, _args, _resolution) do
     {:ok, available_supply}
   end
-  def available_supply(_parent, _args, _context), do: {:ok, nil}
+  def available_supply(_parent, _args, _resolution), do: {:ok, nil}
 
-  def total_supply(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{total_supply: total_supply}}, _args, _context) do
+  def total_supply(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{total_supply: total_supply}}, _args, _resolution) do
     {:ok, total_supply}
   end
-  def total_supply(_parent, _args, _context), do: {:ok, nil}
+  def total_supply(_parent, _args, _resolution), do: {:ok, nil}
 
-  def percent_change_1h(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_1h: percent_change_1h}}, _args, _context) do
+  def percent_change_1h(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_1h: percent_change_1h}}, _args, _resolution) do
     {:ok, percent_change_1h}
   end
-  def percent_change_1h(_parent, _args, _context), do: {:ok, nil}
+  def percent_change_1h(_parent, _args, _resolution), do: {:ok, nil}
 
-  def percent_change_24h(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_24h: percent_change_24h}}, _args, _context) do
+  def percent_change_24h(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_24h: percent_change_24h}}, _args, _resolution) do
     {:ok, percent_change_24h}
   end
-  def percent_change_24h(_parent, _args, _context), do: {:ok, nil}
+  def percent_change_24h(_parent, _args, _resolution), do: {:ok, nil}
 
-  def percent_change_7d(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_7d: percent_change_7d}}, _args, _context) do
+  def percent_change_7d(%Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{percent_change_7d: percent_change_7d}}, _args, _resolution) do
     {:ok, percent_change_7d}
   end
-  def percent_change_7d(_parent, _args, _context), do: {:ok, nil}
+  def percent_change_7d(_parent, _args, _resolution), do: {:ok, nil}
 
-  def initial_ico(%Project{} = project, _args, _context) do
+  def initial_ico(%Project{} = project, _args, _resolution) do
     ico = Project.initial_ico(project)
 
     {:ok, ico}
   end
 
-  def ico_cap_currency(%Ico{cap_currency_id: nil}, _args, _context), do: {:ok, nil}
-  def ico_cap_currency(%Ico{cap_currency_id: cap_currency_id}, _args, _context) do
+  def ico_cap_currency(%Ico{cap_currency_id: nil}, _args, _resolution), do: {:ok, nil}
+  def ico_cap_currency(%Ico{cap_currency_id: cap_currency_id}, _args, _resolution) do
     %Currency{code: currency_code} = Repo.get!(Currency, cap_currency_id)
 
     {:ok, currency_code}
   end
 
-  def ico_currency_amounts(%Ico{id: id}, _args, _context) do
+  def ico_currency_amounts(%Ico{id: id}, _args, _resolution) do
     query = from i in Ico,
     left_join: ic in assoc(i, :ico_currencies),
     inner_join: c in assoc(ic, :currency),
@@ -248,8 +248,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, currency_amounts}
   end
 
-  defp coinmarketcap_requested?(context) do
-    case requested_fields(context) do
+  defp coinmarketcap_requested?(resolution) do
+    case requested_fields(resolution) do
       %{symbol: true} -> true
       %{rank: true} -> true
       %{priceUsd: true} -> true
@@ -264,14 +264,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  defp requested_fields(context) do
-    context.definition.selections
+  defp requested_fields(resolution) do
+    resolution.definition.selections
     |> Enum.map(&(Map.get(&1, :name) |> String.to_atom()))
     |> Enum.into(%{}, fn field -> {field, true} end)
   end
 
-  defp get_parent_args(context) do
-    case context do
+  defp get_parent_args(resolution) do
+    case resolution do
       %{path: [_, _, %{argument_data: parent_args} | _]} -> parent_args
       _ -> %{}
     end

@@ -2,7 +2,8 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
 import toJson from 'enzyme-to-json'
-import { ProjectChart, calculateBTCVolume } from './ProjectChart'
+import { ProjectChart } from './ProjectChart'
+import { calculateBTCVolume } from './ProjectChartContainer'
 
 const historyPrice = [
   {
@@ -50,7 +51,8 @@ describe('ProjectChart component', () => {
     const chart = shallow(<ProjectChart
       isLoading={false}
       isError={false}
-      history={historyData} />)
+      history={historyData}
+      onFocusChange={() => {}} />)
     expect(toJson(chart)).toMatchSnapshot()
   })
 
@@ -59,12 +61,12 @@ describe('ProjectChart component', () => {
       const chart = mount(<ProjectChart
         isLoading
         isError={false}
-        history={[]} />)
+        onFocusChange={() => {}} />)
       expect(toJson(chart)).toMatchSnapshot()
     })
 
     it('it should render correctly withour history prop', () => {
-      const chart = mount(<ProjectChart />)
+      const chart = mount(<ProjectChart onFocusChange={() => {}} />)
       expect(toJson(chart)).toMatchSnapshot()
     })
   })
@@ -75,7 +77,8 @@ describe('ProjectChart component', () => {
         isError
         isLoading={false}
         errorMessage={'400 error'}
-        history={[]} />)
+        history={[]}
+        onFocusChange={() => {}} />)
       expect(toJson(chart)).toMatchSnapshot()
     })
   })

@@ -43,7 +43,7 @@ export const App = ({isDesktop}) => (
   </div>
 )
 
-const mapSizesToProps = ({ width }) => ({
+export const mapSizesToProps = ({ width }) => ({
   isDesktop: width > 768
 })
 

@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2017-29-12 | v.0.2.9:
+
+  Added Search field in the project detail page
+  A lot of changes in the Chart Component
+
 - 2017-29-12 | v.0.2.8:
 
   Added storybook (dev exp.)

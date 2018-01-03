@@ -26,8 +26,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     Store.drop_measurement("XYZ_USD")
     Store.drop_measurement("XYZ_BTC")
 
-    now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
-    yesterday = Sanbase.DateTimeUtils.seconds_ago(60 * 60 * 24) |> DateTime.to_unix(:nanoseconds)
+    two_hours_ago = Sanbase.DateTimeUtils.hours_ago(2) |> DateTime.to_unix(:nanoseconds)
+    yesterday = days_ago_start_of_day(1) |> DateTime.to_unix(:nanoseconds)
 
     Store.import([
       # older
@@ -43,23 +43,23 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       },
       # newer
       %Measurement{
-        timestamp: now,
+        timestamp: two_hours_ago,
         fields: %{price: 1200, volume: 300, marketcap: 800},
         name: "TEST_BTC"
       },
       %Measurement{
-        timestamp: now,
+        timestamp: two_hours_ago,
         fields: %{price: 22, volume: 300, marketcap: 800},
         name: "TEST_USD"
       },
       # older
       %Measurement{
-        timestamp: now,
+        timestamp: two_hours_ago,
         fields: %{price: 1, volume: 5, marketcap: 500},
         name: "XYZ_BTC"
       },
       %Measurement{
-        timestamp: now,
+        timestamp: two_hours_ago,
         fields: %{price: 20, volume: 200, marketcap: 500},
         name: "XYZ_USD"
       }
@@ -72,7 +72,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     Store.drop_measurement("SAN_USD")
 
     now = DateTime.utc_now()
-    yesterday = Sanbase.DateTimeUtils.seconds_ago(60 * 60 * 24)
+    yesterday = days_ago_start_of_day(1)
 
     query = """
     {
@@ -110,11 +110,12 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   test "data aggregation for larger intervals", context do
     now = DateTime.utc_now()
-    two_days_ago = Sanbase.DateTimeUtils.seconds_ago(2 * 60 * 60 * 24)
+    three_days_ago = days_ago_start_of_day(3)
 
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{two_days_ago}", to: "#{now}", interval: "2d") {
+      historyPrice(ticker: "TEST", from: "#{three_days_ago}", to: "#{now}", interval: "3d") {
+        datetime
         priceUsd
         priceBtc
         marketcap
@@ -139,7 +140,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   test "too complex queries are denied", context do
     now = DateTime.utc_now()
-    years_ago = Sanbase.DateTimeUtils.days_ago(10 * 365)
+    years_ago = days_ago_start_of_day(10 * 365)
 
     query = """
     {
@@ -161,7 +162,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "default arguments are correctly set", context do
-    yesterday = Sanbase.DateTimeUtils.days_ago(1)
+    yesterday = days_ago_start_of_day(1)
 
     query = """
     {
@@ -193,7 +194,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     basic_auth = Base.encode64(username <> ":" <> password)
 
     now = DateTime.utc_now()
-    years_ago = Sanbase.DateTimeUtils.days_ago(10 * 365)
+    years_ago = days_ago_start_of_day(10 * 365)
 
     query = """
     {
@@ -215,8 +216,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "fetch all available prices", context do
-    now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
-
     query = """
     {
       availablePrices
@@ -231,5 +230,12 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert Enum.count(resp_data) == 2
     assert "TEST" in resp_data
     assert "XYZ" in resp_data
+  end
+
+  defp days_ago_start_of_day(days) do
+    Timex.today()
+    |> Timex.shift(days: -days)
+    |> Timex.end_of_day()
+    |> Timex.to_datetime()
   end
 end

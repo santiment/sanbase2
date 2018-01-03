@@ -24,11 +24,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :telegram_link, :string
     field :token_address, :string
     field :team_token_wallet, :string
-    field :latest_coinmarketcap_data, :latest_coinmarketcap_data do
-      resolve assoc(:latest_coinmarketcap_data)
-
-      deprecate "The child entity latestCoinmarketcapData will be deleted. Please use the flattened fields."
-    end
     field :market_segment, :string do
       resolve &ProjectResolver.market_segment/3
     end
@@ -114,20 +109,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :currency_amounts, list_of(:currency_amount) do
       resolve &ProjectResolver.ico_currency_amounts/3
     end
-  end
-
-  object :latest_coinmarketcap_data do
-    field :id, non_null(:id)
-    field :coinmarketcap_id, non_null(:string)
-    field :name, :string
-    field :symbol, :string
-    field :rank, :integer
-    field :price_usd, :decimal
-    field :volume_usd, :decimal
-    field :market_cap_usd, :decimal
-    field :available_supply, :decimal
-    field :total_supply, :decimal
-    field :update_time, :ecto_datetime
   end
 
   object :currency_amount do

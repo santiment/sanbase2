@@ -254,7 +254,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       %{rank: true} -> true
       %{priceUsd: true} -> true
       %{volumeUsd: true} -> true
-      %{marketCapUsd: true} -> true
+      %{marketcapUsd: true} -> true
       %{availableSupply: true} -> true
       %{totalSupply: true} -> true
       %{percent_change_1h: true} -> true

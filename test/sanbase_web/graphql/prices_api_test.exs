@@ -343,8 +343,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "fetch all available prices", context do
-    now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
-
     query = """
     {
       availablePrices
@@ -359,5 +357,12 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert Enum.count(resp_data) == 2
     assert "TEST" in resp_data
     assert "XYZ" in resp_data
+  end
+
+  defp days_ago_start_of_day(days) do
+    Timex.today()
+    |> Timex.shift(days: -days)
+    |> Timex.end_of_day()
+    |> Timex.to_datetime()
   end
 end

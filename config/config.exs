@@ -145,7 +145,7 @@ config :faktory_worker_ex,
   ],
   worker: [
     concurrency: 5,
-    queues: ["github_activity"],
+    queues: ["github_activity", "data_migrations"],
   ],
   start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
 

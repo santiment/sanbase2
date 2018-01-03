@@ -7,8 +7,7 @@ import {
   compose,
   lifecycle
 } from 'recompose'
-import { Merge, FadeIn } from 'animate-components'
-import { fadeIn, slideRight } from 'animate-keyframes'
+import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
 import ProjectIcon from './../components/ProjectIcon'

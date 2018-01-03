@@ -3,6 +3,7 @@
   min-height: 84px;
   margin-right: 16px;
   display: flex;
+  justify-content: space-between;
 }
 
 .panel-chart {
@@ -190,13 +191,14 @@
 .detailed .information {
   display: flex;
   margin: 16px;
+  margin-right: 7px;
   justify-content: space-between;
 }
 
 .detailed .information .panel {
   margin: 0;
-  margin-right: 5px;
   flex: 1 1 0;
+  margin-right: 9px;
 }
 
 @media (max-width: 1024px) {

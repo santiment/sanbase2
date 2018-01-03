@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.2.7",
+  "version": "0.2.9",
   "private": true,
   "scripts": {
     "start": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -31,6 +31,7 @@
     "react": "^16.2.0",
     "react-apollo": "^2.0.1",
     "react-chartjs-2": "^2.6.4",
+    "react-dates": "^16.0.1",
     "react-dom": "^16.2.0",
     "react-fa": "^5.0.0",
     "react-ga": "^2.3.5",
@@ -43,6 +44,7 @@
     "recompose": "^0.26.0",
     "redux": "^3.7.2",
     "redux-persist": "^5.4.0",
+    "semantic-ui-css": "^2.2.12",
     "semantic-ui-react": "^0.77.0"
   },
   "devDependencies": {

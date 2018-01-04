@@ -62,13 +62,13 @@ exports[`Project detail page container it should render correctly 1`] = `
         </div>
       </Component>
     </div>
-    <div
-      className="panel panel-chart"
+    <Panel
+      withoutHeader={true}
     >
       <withApollo(ProjectChartContainer)
         ticker="ANT"
       />
-    </div>
+    </Panel>
     <Component>
       <div
         className="panel"

@@ -4,190 +4,222 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
 <div
   className="project-dp-chart"
 >
+  <ProjectChartHeader
+    focusedInput={null}
+    history={
+      Array [
+        Object {
+          "datetime": "2017-12-27T21:45Z",
+          "priceBtc": 123,
+        },
+        Object {
+          "datetime": "2017-12-27T21:45Z",
+          "priceBtc": 123,
+        },
+      ]
+    }
+    isDesktop={true}
+    onFocusChange={[Function]}
+  />
   <div
-    className="chart-header"
+    className="project-chart-body"
   >
-    <Component />
     <div
-      className="selected-value"
-    />
-    <div
-      className="selected-value"
+      className="project-chart__isEmpty"
+    >
+       We don't have any data 
+    </div>
+    <Bar
+      data={
+        Object {
+          "datasets": Array [
+            Object {
+              "backgroundColor": "rgba(239, 242, 236, 0.5)",
+              "borderColor": "#00a05a",
+              "borderWidth": 1,
+              "data": Array [
+                undefined,
+                undefined,
+              ],
+              "fill": true,
+              "label": "Price",
+              "pointBorderWidth": 2,
+              "type": "LineWithLine",
+              "yAxisID": "y-axis-1",
+            },
+            Object {
+              "backgroundColor": "rgba(49, 107, 174, 0.5)",
+              "borderColor": "rgba(49, 107, 174, 0.5)",
+              "borderWidth": 4,
+              "data": Array [
+                NaN,
+                NaN,
+              ],
+              "fill": false,
+              "label": "Volume",
+              "pointBorderWidth": 1,
+              "type": "bar",
+              "yAxisID": "y-axis-2",
+            },
+          ],
+          "labels": Array [
+            "2017-12-27T21:45:00.000Z",
+            "2017-12-27T21:45:00.000Z",
+          ],
+        }
+      }
+      height={100}
+      onElementsClick={[Function]}
+      options={
+        Object {
+          "animation": false,
+          "datasetFill": false,
+          "elements": Object {
+            "point": Object {
+              "hitRadius": 2,
+              "hoverRadius": 2,
+              "radius": 0,
+            },
+          },
+          "hover": Object {
+            "intersect": true,
+            "mode": "nearest",
+          },
+          "legend": Object {
+            "display": false,
+          },
+          "pointDot": false,
+          "pointRadius": 0,
+          "responsive": true,
+          "scaleFontSize": 0,
+          "scaleShowLabels": false,
+          "scales": Object {
+            "xAxes": Array [
+              Object {
+                "gridLines": Object {
+                  "color": "#f0f0f0",
+                  "display": true,
+                  "drawBorder": true,
+                },
+                "ticks": Object {
+                  "autoSkipPadding": 1,
+                  "callback": [Function],
+                },
+                "type": "time",
+              },
+            ],
+            "yAxes": Array [
+              Object {
+                "display": true,
+                "gridLines": Object {
+                  "color": "#f0f0f0",
+                  "display": true,
+                  "drawBorder": true,
+                },
+                "id": "y-axis-1",
+                "position": "left",
+                "scaleLabel": Object {
+                  "display": true,
+                  "fontColor": "#00a05a",
+                  "labelString": "Price (USD)",
+                },
+                "ticks": Object {
+                  "beginAtZero": true,
+                  "callback": [Function],
+                  "display": true,
+                },
+                "type": "linear",
+              },
+              Object {
+                "display": false,
+                "id": "y-axis-2",
+                "labels": Object {
+                  "show": true,
+                },
+                "position": "right",
+                "scaleLabel": Object {
+                  "display": false,
+                  "fontColor": "rgba(49, 107, 174, 0.5)",
+                  "labelString": "Volume",
+                },
+                "ticks": Object {
+                  "max": NaN,
+                },
+                "type": "linear",
+              },
+              Object {
+                "display": undefined,
+                "gridLines": Object {
+                  "display": false,
+                },
+                "id": "y-axis-3",
+                "position": "right",
+                "scaleLabel": Object {
+                  "display": true,
+                  "fontColor": "rgb(200, 47, 63)",
+                  "labelString": "MarketCap (USD)",
+                },
+                "ticks": Object {
+                  "callback": [Function],
+                  "display": true,
+                },
+                "type": "linear",
+              },
+            ],
+          },
+          "showTooltips": true,
+          "tooltips": Object {
+            "backgroundColor": "rgba(255, 255, 255, 0.8)",
+            "bodyFontColor": "#000",
+            "bodyFontSize": 14,
+            "bodySpacing": 4,
+            "borderColor": "#d3d3d3",
+            "borderWidth": 2,
+            "callbacks": Object {
+              "label": [Function],
+              "title": [Function],
+            },
+            "cornerRadius": 3,
+            "displayColors": true,
+            "intersect": false,
+            "mode": "index",
+            "titleFontColor": "#000",
+            "titleFontSize": 14,
+            "titleMarginBottom": 8,
+          },
+        }
+      }
+      redraw={true}
+      style={
+        Object {
+          "transition": "opacity 0.25s ease",
+        }
+      }
     />
   </div>
-  <Bar
-    className="graph"
-    data={
-      Object {
-        "datasets": Array [
-          Object {
-            "backgroundColor": "rgba(239, 242, 236, 0.5)",
-            "borderColor": "#00a05a",
-            "borderWidth": 1,
-            "data": Array [
-              undefined,
-              undefined,
-            ],
-            "fill": true,
-            "label": "Price",
-            "pointBorderWidth": 2,
-            "type": "LineWithLine",
-            "yAxisID": "y-axis-1",
-          },
-          Object {
-            "borderColor": "rgba(49, 107, 174, 0.5)",
-            "borderWidth": 4,
-            "data": Array [
-              NaN,
-              NaN,
-            ],
-            "fill": false,
-            "label": "Volume",
-            "pointBorderWidth": 2,
-            "type": "bar",
-            "yAxisID": "y-axis-2",
-          },
-        ],
-        "labels": Array [
-          "2017-12-27T21:45:00.000Z",
-          "2017-12-27T21:45:00.000Z",
-        ],
-      }
-    }
-    height={100}
-    onElementsClick={[Function]}
-    options={
-      Object {
-        "animation": false,
-        "datasetFill": false,
-        "elements": Object {
-          "point": Object {
-            "hitRadius": 2,
-            "hoverRadius": 2,
-            "radius": 0,
-          },
-        },
-        "hover": Object {
-          "intersect": true,
-          "mode": "nearest",
-        },
-        "legend": Object {
-          "display": false,
-        },
-        "pointDot": false,
-        "pointRadius": 0,
-        "responsive": true,
-        "scaleFontSize": 0,
-        "scaleShowLabels": false,
-        "scales": Object {
-          "xAxes": Array [
-            Object {
-              "gridLines": Object {
-                "color": "#f0f0f0",
-                "display": true,
-                "drawBorder": true,
-              },
-              "ticks": Object {
-                "autoSkipPadding": 1,
-                "callback": [Function],
-              },
-              "type": "time",
-            },
-          ],
-          "yAxes": Array [
-            Object {
-              "display": true,
-              "gridLines": Object {
-                "color": "#f0f0f0",
-                "display": true,
-                "drawBorder": true,
-              },
-              "id": "y-axis-1",
-              "position": "left",
-              "scaleLabel": Object {
-                "display": true,
-                "fontColor": "#00a05a",
-                "labelString": "Price",
-              },
-              "ticks": Object {
-                "beginAtZero": true,
-                "display": true,
-              },
-              "type": "linear",
-            },
-            Object {
-              "display": false,
-              "id": "y-axis-2",
-              "labels": Object {
-                "show": true,
-              },
-              "position": "right",
-              "scaleLabel": Object {
-                "display": true,
-                "fontColor": "rgba(49, 107, 174, 0.5)",
-                "labelString": "Volume",
-              },
-              "ticks": Object {
-                "max": NaN,
-              },
-              "type": "linear",
-            },
-            Object {
-              "display": undefined,
-              "gridLines": Object {
-                "display": false,
-              },
-              "id": "y-axis-3",
-              "position": "right",
-              "scaleLabel": Object {
-                "display": true,
-                "fontColor": "rgb(200, 47, 63)",
-                "labelString": "MarketCap",
-              },
-              "ticks": Object {
-                "display": true,
-              },
-              "type": "linear",
-            },
-          ],
-        },
-        "showTooltips": true,
-        "tooltips": Object {
-          "backgroundColor": "rgba(255, 255, 255, 0.8)",
-          "bodyFontColor": "#000",
-          "bodyFontSize": 14,
-          "bodySpacing": 4,
-          "borderColor": "#d3d3d3",
-          "borderWidth": 2,
-          "callbacks": Object {
-            "label": [Function],
-            "title": [Function],
-          },
-          "cornerRadius": 3,
-          "displayColors": true,
-          "intersect": false,
-          "mode": "index",
-          "titleFontColor": "#000",
-          "titleFontSize": 14,
-          "titleMarginBottom": 8,
-        },
-      }
-    }
-    redraw={true}
-    style={
-      Object {
-        "transition": "opacity 0.25s ease",
-      }
-    }
-  />
   <div
     className="chart-footer"
   >
     <div
       className="chart-footer-filters"
     >
-      <Component />
-      <MarketcapToggle />
+      <MarketcapToggle
+        focusedInput={null}
+        history={
+          Array [
+            Object {
+              "datetime": "2017-12-27T21:45Z",
+              "priceBtc": 123,
+            },
+            Object {
+              "datetime": "2017-12-27T21:45Z",
+              "priceBtc": 123,
+            },
+          ]
+        }
+        isDesktop={true}
+        onFocusChange={[Function]}
+      />
     </div>
     <div>
       <small
@@ -203,10 +235,13 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
 exports[`ProjectChart component Error State it should render correctly with error message 1`] = `
 <ProjectChart
   errorMessage="400 error"
+  focusedInput={null}
   history={Array []}
+  isDesktop={true}
   isEmpty={true}
   isError={true}
   isLoading={false}
+  onFocusChange={[Function]}
 >
   <div>
     <h2>
@@ -221,34 +256,3538 @@ exports[`ProjectChart component Error State it should render correctly with erro
 
 exports[`ProjectChart component Loading State it should render correctly with loading prop 1`] = `
 <ProjectChart
+  focusedInput={null}
   history={Array []}
+  isDesktop={true}
   isEmpty={true}
   isError={false}
   isLoading={true}
+  onFocusChange={[Function]}
 >
   <div
-    className="project-chart-loader"
+    className="project-dp-chart"
   >
-    <h2>
-      Loading...
-    </h2>
+    <ProjectChartHeader
+      focusedInput={null}
+      history={Array []}
+      isDesktop={true}
+      onFocusChange={[Function]}
+    >
+      <div
+        className="chart-header"
+      >
+        <div
+          className="chart-datetime-settings"
+        >
+          <Component>
+            <div
+              className="time-filter"
+            >
+              <Component
+                value="1d"
+              >
+                <div
+                  className=""
+                  onClick={[Function]}
+                >
+                  1d
+                </div>
+              </Component>
+              <Component
+                value="1w"
+              >
+                <div
+                  className=""
+                  onClick={[Function]}
+                >
+                  1w
+                </div>
+              </Component>
+              <Component
+                value="2w"
+              >
+                <div
+                  className=""
+                  onClick={[Function]}
+                >
+                  2w
+                </div>
+              </Component>
+              <Component
+                value="1m"
+              >
+                <div
+                  className=""
+                  onClick={[Function]}
+                >
+                  1m
+                </div>
+              </Component>
+            </div>
+          </Component>
+          <withStyles(DateRangePicker)
+            anchorDirection="left"
+            block={false}
+            customArrowIcon={null}
+            customCloseIcon={null}
+            customInputIcon={null}
+            daySize={39}
+            disabled={false}
+            displayFormat={[Function]}
+            enableOutsideDays={false}
+            endDate={null}
+            endDateId="endDate"
+            endDatePlaceholderText="End Date"
+            firstDayOfWeek={null}
+            focusedInput={null}
+            hideKeyboardShortcutsPanel={true}
+            horizontalMargin={0}
+            initialVisibleMonth={null}
+            inputIconPosition="before"
+            isDayBlocked={[Function]}
+            isDayHighlighted={[Function]}
+            isOutsideRange={[Function]}
+            isRTL={false}
+            keepOpenOnDateSelect={false}
+            minimumNights={1}
+            monthFormat="MMMM YYYY"
+            navNext={null}
+            navPrev={null}
+            noBorder={false}
+            numberOfMonths={2}
+            onClose={[Function]}
+            onDatesChange={[Function]}
+            onFocusChange={[Function]}
+            onNextMonthClick={[Function]}
+            onPrevMonthClick={[Function]}
+            openDirection="down"
+            orientation="horizontal"
+            phrases={
+              Object {
+                "calendarLabel": "Calendar",
+                "chooseAvailableEndDate": [Function],
+                "chooseAvailableStartDate": [Function],
+                "clearDates": "Clear Dates",
+                "closeDatePicker": "Close",
+                "dateIsUnavailable": [Function],
+                "enterKey": "Enter key",
+                "escape": "Escape key",
+                "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                "homeEnd": "Home and end keys",
+                "jumpToNextMonth": "Move forward to switch to the next month.",
+                "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                "keyboardShortcuts": "Keyboard Shortcuts",
+                "leftArrowRightArrow": "Right and left arrow keys",
+                "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                "moveFocusByOneMonth": "Switch months.",
+                "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                "openThisPanel": "Open this panel.",
+                "pageUpPageDown": "page up and page down keys",
+                "questionMark": "Question mark",
+                "returnFocusToInput": "Return to the date input field.",
+                "selectFocusedDate": "Select the date in focus.",
+                "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                "upArrowDownArrow": "up and down arrow keys",
+              }
+            }
+            readOnly={false}
+            renderCalendarInfo={null}
+            renderDayContents={null}
+            renderMonth={null}
+            reopenPickerOnClearDates={false}
+            required={false}
+            screenReaderInputMessage=""
+            showClearDates={false}
+            showDefaultInputIcon={false}
+            small={true}
+            startDate={null}
+            startDateId="startDate"
+            startDatePlaceholderText="Start Date"
+            verticalHeight={null}
+            verticalSpacing={22}
+            weekDayFormat="dd"
+            withFullScreenPortal={false}
+            withPortal={false}
+          >
+            <DateRangePicker
+              anchorDirection="left"
+              block={false}
+              customArrowIcon={null}
+              customCloseIcon={null}
+              customInputIcon={null}
+              daySize={39}
+              disabled={false}
+              displayFormat={[Function]}
+              enableOutsideDays={false}
+              endDate={null}
+              endDateId="endDate"
+              endDatePlaceholderText="End Date"
+              firstDayOfWeek={null}
+              focusedInput={null}
+              hideKeyboardShortcutsPanel={true}
+              horizontalMargin={0}
+              initialVisibleMonth={null}
+              inputIconPosition="before"
+              isDayBlocked={[Function]}
+              isDayHighlighted={[Function]}
+              isOutsideRange={[Function]}
+              isRTL={false}
+              keepOpenOnDateSelect={false}
+              minimumNights={1}
+              monthFormat="MMMM YYYY"
+              navNext={null}
+              navPrev={null}
+              noBorder={false}
+              numberOfMonths={2}
+              onClose={[Function]}
+              onDatesChange={[Function]}
+              onFocusChange={[Function]}
+              onNextMonthClick={[Function]}
+              onPrevMonthClick={[Function]}
+              openDirection="down"
+              orientation="horizontal"
+              phrases={
+                Object {
+                  "calendarLabel": "Calendar",
+                  "chooseAvailableEndDate": [Function],
+                  "chooseAvailableStartDate": [Function],
+                  "clearDates": "Clear Dates",
+                  "closeDatePicker": "Close",
+                  "dateIsUnavailable": [Function],
+                  "enterKey": "Enter key",
+                  "escape": "Escape key",
+                  "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                  "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                  "homeEnd": "Home and end keys",
+                  "jumpToNextMonth": "Move forward to switch to the next month.",
+                  "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                  "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                  select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                  "keyboardShortcuts": "Keyboard Shortcuts",
+                  "leftArrowRightArrow": "Right and left arrow keys",
+                  "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                  "moveFocusByOneMonth": "Switch months.",
+                  "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                  "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                  "openThisPanel": "Open this panel.",
+                  "pageUpPageDown": "page up and page down keys",
+                  "questionMark": "Question mark",
+                  "returnFocusToInput": "Return to the date input field.",
+                  "selectFocusedDate": "Select the date in focus.",
+                  "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                  "upArrowDownArrow": "up and down arrow keys",
+                }
+              }
+              readOnly={false}
+              renderCalendarInfo={null}
+              renderDayContents={null}
+              renderMonth={null}
+              reopenPickerOnClearDates={false}
+              required={false}
+              screenReaderInputMessage=""
+              showClearDates={false}
+              showDefaultInputIcon={false}
+              small={true}
+              startDate={null}
+              startDateId="startDate"
+              startDatePlaceholderText="Start Date"
+              styles={
+                Object {
+                  "DateRangePicker": "DateRangePicker",
+                  "DateRangePicker__block": "DateRangePicker__block",
+                  "DateRangePicker_closeButton": "DateRangePicker_closeButton",
+                  "DateRangePicker_closeButton_svg": "DateRangePicker_closeButton_svg",
+                  "DateRangePicker_picker": "DateRangePicker_picker",
+                  "DateRangePicker_picker__directionLeft": "DateRangePicker_picker__directionLeft",
+                  "DateRangePicker_picker__directionRight": "DateRangePicker_picker__directionRight",
+                  "DateRangePicker_picker__fullScreenPortal": "DateRangePicker_picker__fullScreenPortal",
+                  "DateRangePicker_picker__portal": "DateRangePicker_picker__portal",
+                  "DateRangePicker_picker__rtl": "DateRangePicker_picker__rtl",
+                }
+              }
+              theme={
+                Object {
+                  "reactDates": Object {
+                    "border": Object {
+                      "input": Object {
+                        "border": 0,
+                        "borderBottom": "2px solid transparent",
+                        "borderBottomFocused": "2px solid #008489",
+                        "borderFocused": 0,
+                        "borderLeft": 0,
+                        "borderLeftFocused": 0,
+                        "borderRight": 0,
+                        "borderRightFocused": 0,
+                        "borderTop": 0,
+                        "borderTopFocused": 0,
+                        "outlineFocused": 0,
+                      },
+                    },
+                    "color": Object {
+                      "background": "#fff",
+                      "backgroundDark": "#f2f2f2",
+                      "backgroundFocused": "#fff",
+                      "blocked_calendar": Object {
+                        "backgroundColor": "#cacccd",
+                        "backgroundColor_active": "#cacccd",
+                        "backgroundColor_hover": "#cacccd",
+                        "borderColor": "#cacccd",
+                        "borderColor_active": "#cacccd",
+                        "borderColor_hover": "#cacccd",
+                        "color": "#82888a",
+                        "color_active": "#82888a",
+                        "color_hover": "#82888a",
+                      },
+                      "blocked_out_of_range": Object {
+                        "backgroundColor": "#fff",
+                        "backgroundColor_active": "#fff",
+                        "backgroundColor_hover": "#fff",
+                        "borderColor": "#e4e7e7",
+                        "borderColor_active": "#e4e7e7",
+                        "borderColor_hover": "#e4e7e7",
+                        "color": "#cacccd",
+                        "color_active": "#cacccd",
+                        "color_hover": "#cacccd",
+                      },
+                      "core": Object {
+                        "border": "#dbdbdb",
+                        "borderLight": "#e4e7e7",
+                        "borderLighter": "#eceeee",
+                        "borderMedium": "#c4c4c4",
+                        "gray": "#565a5c",
+                        "grayLight": "#82888a",
+                        "grayLighter": "#cacccd",
+                        "grayLightest": "#f2f2f2",
+                        "primary": "#00a699",
+                        "primaryShade_1": "#33dacd",
+                        "primaryShade_2": "#66e2da",
+                        "primaryShade_3": "#80e8e0",
+                        "primaryShade_4": "#b2f1ec",
+                        "primary_dark": "#008489",
+                        "secondary": "#007a87",
+                        "white": "#fff",
+                        "yellow": "#ffe8bc",
+                        "yellow_dark": "#ffce71",
+                      },
+                      "disabled": "#f2f2f2",
+                      "highlighted": Object {
+                        "backgroundColor": "#ffe8bc",
+                        "backgroundColor_active": "#ffce71",
+                        "backgroundColor_hover": "#ffce71",
+                        "color": "#565a5c",
+                        "color_active": "#565a5c",
+                        "color_hover": "#565a5c",
+                      },
+                      "hoveredSpan": Object {
+                        "backgroundColor": "#b2f1ec",
+                        "backgroundColor_active": "#80e8e0",
+                        "backgroundColor_hover": "#b2f1ec",
+                        "borderColor": "#80e8e0",
+                        "borderColor_active": "#80e8e0",
+                        "borderColor_hover": "#80e8e0",
+                        "color": "#007a87",
+                        "color_active": "#007a87",
+                        "color_hover": "#007a87",
+                      },
+                      "minimumNights": Object {
+                        "backgroundColor": "#fff",
+                        "backgroundColor_active": "#fff",
+                        "backgroundColor_hover": "#fff",
+                        "borderColor": "#eceeee",
+                        "color": "#cacccd",
+                        "color_active": "#cacccd",
+                        "color_hover": "#cacccd",
+                      },
+                      "outside": Object {
+                        "backgroundColor": "#fff",
+                        "backgroundColor_active": "#fff",
+                        "backgroundColor_hover": "#fff",
+                        "color": "#565a5c",
+                        "color_active": "#565a5c",
+                        "color_hover": "#565a5c",
+                      },
+                      "placeholderText": "#757575",
+                      "selected": Object {
+                        "backgroundColor": "#00a699",
+                        "backgroundColor_active": "#00a699",
+                        "backgroundColor_hover": "#00a699",
+                        "borderColor": "#00a699",
+                        "borderColor_active": "#00a699",
+                        "borderColor_hover": "#00a699",
+                        "color": "#fff",
+                        "color_active": "#fff",
+                        "color_hover": "#fff",
+                      },
+                      "selectedSpan": Object {
+                        "backgroundColor": "#66e2da",
+                        "backgroundColor_active": "#33dacd",
+                        "backgroundColor_hover": "#33dacd",
+                        "borderColor": "#33dacd",
+                        "borderColor_active": "#00a699",
+                        "borderColor_hover": "#00a699",
+                        "color": "#fff",
+                        "color_active": "#fff",
+                        "color_hover": "#fff",
+                      },
+                      "text": "#565a5c",
+                      "textDisabled": "#dbdbdb",
+                      "textFocused": "#007a87",
+                    },
+                    "font": Object {
+                      "captionSize": 18,
+                      "input": Object {
+                        "lineHeight": "24px",
+                        "lineHeight_small": "18px",
+                        "size": 18,
+                        "size_small": 14,
+                        "styleDisabled": "italic",
+                      },
+                      "size": 14,
+                    },
+                    "sizing": Object {
+                      "arrowWidth": 24,
+                      "arrowWidth_small": 19,
+                      "inputWidth": 130,
+                      "inputWidth_small": 90,
+                    },
+                    "spacing": Object {
+                      "captionPaddingBottom": 37,
+                      "captionPaddingTop": 22,
+                      "displayTextPaddingBottom": 11,
+                      "displayTextPaddingBottom_small": 6,
+                      "displayTextPaddingHorizontal": undefined,
+                      "displayTextPaddingHorizontal_small": undefined,
+                      "displayTextPaddingLeft": 12,
+                      "displayTextPaddingLeft_small": 8,
+                      "displayTextPaddingRight": 12,
+                      "displayTextPaddingRight_small": 8,
+                      "displayTextPaddingTop": 13,
+                      "displayTextPaddingTop_small": 8,
+                      "displayTextPaddingVertical": undefined,
+                      "displayTextPaddingVertical_small": undefined,
+                      "inputPadding": 0,
+                    },
+                    "zIndex": 0,
+                  },
+                }
+              }
+              verticalHeight={null}
+              verticalSpacing={22}
+              weekDayFormat="dd"
+              withFullScreenPortal={false}
+              withPortal={false}
+            >
+              <div
+                className="DateRangePicker DateRangePicker_1"
+              >
+                <OutsideClickHandler
+                  onOutsideClick={[Function]}
+                >
+                  <div>
+                    <DateRangePickerInputController
+                      block={false}
+                      customArrowIcon={null}
+                      customCloseIcon={null}
+                      customInputIcon={null}
+                      disabled={false}
+                      displayFormat={[Function]}
+                      endDate={null}
+                      endDateId="endDate"
+                      endDatePlaceholderText="End Date"
+                      inputIconPosition="before"
+                      isEndDateFocused={false}
+                      isFocused={false}
+                      isOutsideRange={[Function]}
+                      isRTL={false}
+                      isStartDateFocused={false}
+                      keepOpenOnDateSelect={false}
+                      minimumNights={1}
+                      noBorder={false}
+                      onClose={[Function]}
+                      onDatesChange={[Function]}
+                      onFocusChange={[Function]}
+                      onKeyDownArrowDown={[Function]}
+                      onKeyDownQuestionMark={[Function]}
+                      openDirection="down"
+                      phrases={
+                        Object {
+                          "calendarLabel": "Calendar",
+                          "chooseAvailableEndDate": [Function],
+                          "chooseAvailableStartDate": [Function],
+                          "clearDates": "Clear Dates",
+                          "closeDatePicker": "Close",
+                          "dateIsUnavailable": [Function],
+                          "enterKey": "Enter key",
+                          "escape": "Escape key",
+                          "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                          "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                          "homeEnd": "Home and end keys",
+                          "jumpToNextMonth": "Move forward to switch to the next month.",
+                          "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                          "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                          select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                          "keyboardShortcuts": "Keyboard Shortcuts",
+                          "leftArrowRightArrow": "Right and left arrow keys",
+                          "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                          "moveFocusByOneMonth": "Switch months.",
+                          "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                          "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                          "openThisPanel": "Open this panel.",
+                          "pageUpPageDown": "page up and page down keys",
+                          "questionMark": "Question mark",
+                          "returnFocusToInput": "Return to the date input field.",
+                          "selectFocusedDate": "Select the date in focus.",
+                          "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                          "upArrowDownArrow": "up and down arrow keys",
+                        }
+                      }
+                      readOnly={false}
+                      reopenPickerOnClearDates={false}
+                      required={false}
+                      screenReaderMessage=""
+                      showCaret={true}
+                      showClearDates={false}
+                      showDefaultInputIcon={false}
+                      small={true}
+                      startDate={null}
+                      startDateId="startDate"
+                      startDatePlaceholderText="Start Date"
+                      verticalSpacing={22}
+                      withFullScreenPortal={false}
+                    >
+                      <withStyles(DateRangePickerInput)
+                        block={false}
+                        customArrowIcon={null}
+                        customCloseIcon={null}
+                        customInputIcon={null}
+                        disabled={false}
+                        endDate={null}
+                        endDateId="endDate"
+                        endDatePlaceholderText="End Date"
+                        inputIconPosition="before"
+                        isEndDateFocused={false}
+                        isFocused={false}
+                        isRTL={false}
+                        isStartDateFocused={false}
+                        noBorder={false}
+                        onClearDates={[Function]}
+                        onEndDateChange={[Function]}
+                        onEndDateFocus={[Function]}
+                        onEndDateTab={[Function]}
+                        onKeyDownArrowDown={[Function]}
+                        onKeyDownQuestionMark={[Function]}
+                        onStartDateChange={[Function]}
+                        onStartDateFocus={[Function]}
+                        onStartDateShiftTab={[Function]}
+                        openDirection="down"
+                        phrases={
+                          Object {
+                            "calendarLabel": "Calendar",
+                            "chooseAvailableEndDate": [Function],
+                            "chooseAvailableStartDate": [Function],
+                            "clearDates": "Clear Dates",
+                            "closeDatePicker": "Close",
+                            "dateIsUnavailable": [Function],
+                            "enterKey": "Enter key",
+                            "escape": "Escape key",
+                            "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                            "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                            "homeEnd": "Home and end keys",
+                            "jumpToNextMonth": "Move forward to switch to the next month.",
+                            "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                            "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                            select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                            "keyboardShortcuts": "Keyboard Shortcuts",
+                            "leftArrowRightArrow": "Right and left arrow keys",
+                            "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                            "moveFocusByOneMonth": "Switch months.",
+                            "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                            "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                            "openThisPanel": "Open this panel.",
+                            "pageUpPageDown": "page up and page down keys",
+                            "questionMark": "Question mark",
+                            "returnFocusToInput": "Return to the date input field.",
+                            "selectFocusedDate": "Select the date in focus.",
+                            "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                            "upArrowDownArrow": "up and down arrow keys",
+                          }
+                        }
+                        readOnly={false}
+                        required={false}
+                        screenReaderMessage=""
+                        showCaret={true}
+                        showClearDates={false}
+                        showDefaultInputIcon={false}
+                        small={true}
+                        startDate={null}
+                        startDateId="startDate"
+                        startDatePlaceholderText="Start Date"
+                        verticalSpacing={22}
+                      >
+                        <DateRangePickerInput
+                          block={false}
+                          customArrowIcon={null}
+                          customCloseIcon={null}
+                          customInputIcon={null}
+                          disabled={false}
+                          endDate={null}
+                          endDateId="endDate"
+                          endDatePlaceholderText="End Date"
+                          inputIconPosition="before"
+                          isEndDateFocused={false}
+                          isFocused={false}
+                          isRTL={false}
+                          isStartDateFocused={false}
+                          noBorder={false}
+                          onClearDates={[Function]}
+                          onEndDateChange={[Function]}
+                          onEndDateFocus={[Function]}
+                          onEndDateTab={[Function]}
+                          onKeyDownArrowDown={[Function]}
+                          onKeyDownQuestionMark={[Function]}
+                          onStartDateChange={[Function]}
+                          onStartDateFocus={[Function]}
+                          onStartDateShiftTab={[Function]}
+                          openDirection="down"
+                          phrases={
+                            Object {
+                              "calendarLabel": "Calendar",
+                              "chooseAvailableEndDate": [Function],
+                              "chooseAvailableStartDate": [Function],
+                              "clearDates": "Clear Dates",
+                              "closeDatePicker": "Close",
+                              "dateIsUnavailable": [Function],
+                              "enterKey": "Enter key",
+                              "escape": "Escape key",
+                              "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                              "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                              "homeEnd": "Home and end keys",
+                              "jumpToNextMonth": "Move forward to switch to the next month.",
+                              "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                              "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                              select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                              "keyboardShortcuts": "Keyboard Shortcuts",
+                              "leftArrowRightArrow": "Right and left arrow keys",
+                              "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                              "moveFocusByOneMonth": "Switch months.",
+                              "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                              "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                              "openThisPanel": "Open this panel.",
+                              "pageUpPageDown": "page up and page down keys",
+                              "questionMark": "Question mark",
+                              "returnFocusToInput": "Return to the date input field.",
+                              "selectFocusedDate": "Select the date in focus.",
+                              "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                              "upArrowDownArrow": "up and down arrow keys",
+                            }
+                          }
+                          readOnly={false}
+                          required={false}
+                          screenReaderMessage=""
+                          showCaret={true}
+                          showClearDates={false}
+                          showDefaultInputIcon={false}
+                          small={true}
+                          startDate={null}
+                          startDateId="startDate"
+                          startDatePlaceholderText="Start Date"
+                          styles={
+                            Object {
+                              "DateRangePickerInput": "DateRangePickerInput",
+                              "DateRangePickerInput__block": "DateRangePickerInput__block",
+                              "DateRangePickerInput__disabled": "DateRangePickerInput__disabled",
+                              "DateRangePickerInput__rtl": "DateRangePickerInput__rtl",
+                              "DateRangePickerInput__showClearDates": "DateRangePickerInput__showClearDates",
+                              "DateRangePickerInput__withBorder": "DateRangePickerInput__withBorder",
+                              "DateRangePickerInput_arrow": "DateRangePickerInput_arrow",
+                              "DateRangePickerInput_arrow_svg": "DateRangePickerInput_arrow_svg",
+                              "DateRangePickerInput_arrow_svg__small": "DateRangePickerInput_arrow_svg__small",
+                              "DateRangePickerInput_calendarIcon": "DateRangePickerInput_calendarIcon",
+                              "DateRangePickerInput_calendarIcon_svg": "DateRangePickerInput_calendarIcon_svg",
+                              "DateRangePickerInput_clearDates": "DateRangePickerInput_clearDates",
+                              "DateRangePickerInput_clearDates__hide": "DateRangePickerInput_clearDates__hide",
+                              "DateRangePickerInput_clearDates__small": "DateRangePickerInput_clearDates__small",
+                              "DateRangePickerInput_clearDates_default": "DateRangePickerInput_clearDates_default",
+                              "DateRangePickerInput_clearDates_svg": "DateRangePickerInput_clearDates_svg",
+                              "DateRangePickerInput_clearDates_svg__small": "DateRangePickerInput_clearDates_svg__small",
+                            }
+                          }
+                          theme={
+                            Object {
+                              "reactDates": Object {
+                                "border": Object {
+                                  "input": Object {
+                                    "border": 0,
+                                    "borderBottom": "2px solid transparent",
+                                    "borderBottomFocused": "2px solid #008489",
+                                    "borderFocused": 0,
+                                    "borderLeft": 0,
+                                    "borderLeftFocused": 0,
+                                    "borderRight": 0,
+                                    "borderRightFocused": 0,
+                                    "borderTop": 0,
+                                    "borderTopFocused": 0,
+                                    "outlineFocused": 0,
+                                  },
+                                },
+                                "color": Object {
+                                  "background": "#fff",
+                                  "backgroundDark": "#f2f2f2",
+                                  "backgroundFocused": "#fff",
+                                  "blocked_calendar": Object {
+                                    "backgroundColor": "#cacccd",
+                                    "backgroundColor_active": "#cacccd",
+                                    "backgroundColor_hover": "#cacccd",
+                                    "borderColor": "#cacccd",
+                                    "borderColor_active": "#cacccd",
+                                    "borderColor_hover": "#cacccd",
+                                    "color": "#82888a",
+                                    "color_active": "#82888a",
+                                    "color_hover": "#82888a",
+                                  },
+                                  "blocked_out_of_range": Object {
+                                    "backgroundColor": "#fff",
+                                    "backgroundColor_active": "#fff",
+                                    "backgroundColor_hover": "#fff",
+                                    "borderColor": "#e4e7e7",
+                                    "borderColor_active": "#e4e7e7",
+                                    "borderColor_hover": "#e4e7e7",
+                                    "color": "#cacccd",
+                                    "color_active": "#cacccd",
+                                    "color_hover": "#cacccd",
+                                  },
+                                  "core": Object {
+                                    "border": "#dbdbdb",
+                                    "borderLight": "#e4e7e7",
+                                    "borderLighter": "#eceeee",
+                                    "borderMedium": "#c4c4c4",
+                                    "gray": "#565a5c",
+                                    "grayLight": "#82888a",
+                                    "grayLighter": "#cacccd",
+                                    "grayLightest": "#f2f2f2",
+                                    "primary": "#00a699",
+                                    "primaryShade_1": "#33dacd",
+                                    "primaryShade_2": "#66e2da",
+                                    "primaryShade_3": "#80e8e0",
+                                    "primaryShade_4": "#b2f1ec",
+                                    "primary_dark": "#008489",
+                                    "secondary": "#007a87",
+                                    "white": "#fff",
+                                    "yellow": "#ffe8bc",
+                                    "yellow_dark": "#ffce71",
+                                  },
+                                  "disabled": "#f2f2f2",
+                                  "highlighted": Object {
+                                    "backgroundColor": "#ffe8bc",
+                                    "backgroundColor_active": "#ffce71",
+                                    "backgroundColor_hover": "#ffce71",
+                                    "color": "#565a5c",
+                                    "color_active": "#565a5c",
+                                    "color_hover": "#565a5c",
+                                  },
+                                  "hoveredSpan": Object {
+                                    "backgroundColor": "#b2f1ec",
+                                    "backgroundColor_active": "#80e8e0",
+                                    "backgroundColor_hover": "#b2f1ec",
+                                    "borderColor": "#80e8e0",
+                                    "borderColor_active": "#80e8e0",
+                                    "borderColor_hover": "#80e8e0",
+                                    "color": "#007a87",
+                                    "color_active": "#007a87",
+                                    "color_hover": "#007a87",
+                                  },
+                                  "minimumNights": Object {
+                                    "backgroundColor": "#fff",
+                                    "backgroundColor_active": "#fff",
+                                    "backgroundColor_hover": "#fff",
+                                    "borderColor": "#eceeee",
+                                    "color": "#cacccd",
+                                    "color_active": "#cacccd",
+                                    "color_hover": "#cacccd",
+                                  },
+                                  "outside": Object {
+                                    "backgroundColor": "#fff",
+                                    "backgroundColor_active": "#fff",
+                                    "backgroundColor_hover": "#fff",
+                                    "color": "#565a5c",
+                                    "color_active": "#565a5c",
+                                    "color_hover": "#565a5c",
+                                  },
+                                  "placeholderText": "#757575",
+                                  "selected": Object {
+                                    "backgroundColor": "#00a699",
+                                    "backgroundColor_active": "#00a699",
+                                    "backgroundColor_hover": "#00a699",
+                                    "borderColor": "#00a699",
+                                    "borderColor_active": "#00a699",
+                                    "borderColor_hover": "#00a699",
+                                    "color": "#fff",
+                                    "color_active": "#fff",
+                                    "color_hover": "#fff",
+                                  },
+                                  "selectedSpan": Object {
+                                    "backgroundColor": "#66e2da",
+                                    "backgroundColor_active": "#33dacd",
+                                    "backgroundColor_hover": "#33dacd",
+                                    "borderColor": "#33dacd",
+                                    "borderColor_active": "#00a699",
+                                    "borderColor_hover": "#00a699",
+                                    "color": "#fff",
+                                    "color_active": "#fff",
+                                    "color_hover": "#fff",
+                                  },
+                                  "text": "#565a5c",
+                                  "textDisabled": "#dbdbdb",
+                                  "textFocused": "#007a87",
+                                },
+                                "font": Object {
+                                  "captionSize": 18,
+                                  "input": Object {
+                                    "lineHeight": "24px",
+                                    "lineHeight_small": "18px",
+                                    "size": 18,
+                                    "size_small": 14,
+                                    "styleDisabled": "italic",
+                                  },
+                                  "size": 14,
+                                },
+                                "sizing": Object {
+                                  "arrowWidth": 24,
+                                  "arrowWidth_small": 19,
+                                  "inputWidth": 130,
+                                  "inputWidth_small": 90,
+                                },
+                                "spacing": Object {
+                                  "captionPaddingBottom": 37,
+                                  "captionPaddingTop": 22,
+                                  "displayTextPaddingBottom": 11,
+                                  "displayTextPaddingBottom_small": 6,
+                                  "displayTextPaddingHorizontal": undefined,
+                                  "displayTextPaddingHorizontal_small": undefined,
+                                  "displayTextPaddingLeft": 12,
+                                  "displayTextPaddingLeft_small": 8,
+                                  "displayTextPaddingRight": 12,
+                                  "displayTextPaddingRight_small": 8,
+                                  "displayTextPaddingTop": 13,
+                                  "displayTextPaddingTop_small": 8,
+                                  "displayTextPaddingVertical": undefined,
+                                  "displayTextPaddingVertical_small": undefined,
+                                  "inputPadding": 0,
+                                },
+                                "zIndex": 0,
+                              },
+                            }
+                          }
+                          verticalSpacing={22}
+                        >
+                          <div
+                            className="DateRangePickerInput DateRangePickerInput_1 DateRangePickerInput__withBorder DateRangePickerInput__withBorder_2"
+                          >
+                            <withStyles(DateInput)
+                              disabled={false}
+                              displayValue={null}
+                              focused={false}
+                              id="startDate"
+                              isFocused={false}
+                              onChange={[Function]}
+                              onFocus={[Function]}
+                              onKeyDownArrowDown={[Function]}
+                              onKeyDownQuestionMark={[Function]}
+                              onKeyDownShiftTab={[Function]}
+                              onKeyDownTab={[Function]}
+                              openDirection="down"
+                              placeholder="Start Date"
+                              readOnly={false}
+                              required={false}
+                              screenReaderMessage="Press the down arrow key to interact with the calendar and
+                              select a date. Press the question mark key to get the keyboard shortcuts for changing dates."
+                              showCaret={true}
+                              small={true}
+                              verticalSpacing={22}
+                            >
+                              <DateInput
+                                disabled={false}
+                                displayValue={null}
+                                focused={false}
+                                id="startDate"
+                                isFocused={false}
+                                onChange={[Function]}
+                                onFocus={[Function]}
+                                onKeyDownArrowDown={[Function]}
+                                onKeyDownQuestionMark={[Function]}
+                                onKeyDownShiftTab={[Function]}
+                                onKeyDownTab={[Function]}
+                                openDirection="down"
+                                placeholder="Start Date"
+                                readOnly={false}
+                                required={false}
+                                screenReaderMessage="Press the down arrow key to interact with the calendar and
+                                select a date. Press the question mark key to get the keyboard shortcuts for changing dates."
+                                showCaret={true}
+                                small={true}
+                                styles={
+                                  Object {
+                                    "DateInput": "DateInput",
+                                    "DateInput__disabled": "DateInput__disabled",
+                                    "DateInput__small": "DateInput__small",
+                                    "DateInput_fang": "DateInput_fang",
+                                    "DateInput_fangShape": "DateInput_fangShape",
+                                    "DateInput_fangStroke": "DateInput_fangStroke",
+                                    "DateInput_input": "DateInput_input",
+                                    "DateInput_input__disabled": "DateInput_input__disabled",
+                                    "DateInput_input__focused": "DateInput_input__focused",
+                                    "DateInput_input__readOnly": "DateInput_input__readOnly",
+                                    "DateInput_input__small": "DateInput_input__small",
+                                    "DateInput_screenReaderMessage": "DateInput_screenReaderMessage",
+                                  }
+                                }
+                                theme={
+                                  Object {
+                                    "reactDates": Object {
+                                      "border": Object {
+                                        "input": Object {
+                                          "border": 0,
+                                          "borderBottom": "2px solid transparent",
+                                          "borderBottomFocused": "2px solid #008489",
+                                          "borderFocused": 0,
+                                          "borderLeft": 0,
+                                          "borderLeftFocused": 0,
+                                          "borderRight": 0,
+                                          "borderRightFocused": 0,
+                                          "borderTop": 0,
+                                          "borderTopFocused": 0,
+                                          "outlineFocused": 0,
+                                        },
+                                      },
+                                      "color": Object {
+                                        "background": "#fff",
+                                        "backgroundDark": "#f2f2f2",
+                                        "backgroundFocused": "#fff",
+                                        "blocked_calendar": Object {
+                                          "backgroundColor": "#cacccd",
+                                          "backgroundColor_active": "#cacccd",
+                                          "backgroundColor_hover": "#cacccd",
+                                          "borderColor": "#cacccd",
+                                          "borderColor_active": "#cacccd",
+                                          "borderColor_hover": "#cacccd",
+                                          "color": "#82888a",
+                                          "color_active": "#82888a",
+                                          "color_hover": "#82888a",
+                                        },
+                                        "blocked_out_of_range": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "borderColor": "#e4e7e7",
+                                          "borderColor_active": "#e4e7e7",
+                                          "borderColor_hover": "#e4e7e7",
+                                          "color": "#cacccd",
+                                          "color_active": "#cacccd",
+                                          "color_hover": "#cacccd",
+                                        },
+                                        "core": Object {
+                                          "border": "#dbdbdb",
+                                          "borderLight": "#e4e7e7",
+                                          "borderLighter": "#eceeee",
+                                          "borderMedium": "#c4c4c4",
+                                          "gray": "#565a5c",
+                                          "grayLight": "#82888a",
+                                          "grayLighter": "#cacccd",
+                                          "grayLightest": "#f2f2f2",
+                                          "primary": "#00a699",
+                                          "primaryShade_1": "#33dacd",
+                                          "primaryShade_2": "#66e2da",
+                                          "primaryShade_3": "#80e8e0",
+                                          "primaryShade_4": "#b2f1ec",
+                                          "primary_dark": "#008489",
+                                          "secondary": "#007a87",
+                                          "white": "#fff",
+                                          "yellow": "#ffe8bc",
+                                          "yellow_dark": "#ffce71",
+                                        },
+                                        "disabled": "#f2f2f2",
+                                        "highlighted": Object {
+                                          "backgroundColor": "#ffe8bc",
+                                          "backgroundColor_active": "#ffce71",
+                                          "backgroundColor_hover": "#ffce71",
+                                          "color": "#565a5c",
+                                          "color_active": "#565a5c",
+                                          "color_hover": "#565a5c",
+                                        },
+                                        "hoveredSpan": Object {
+                                          "backgroundColor": "#b2f1ec",
+                                          "backgroundColor_active": "#80e8e0",
+                                          "backgroundColor_hover": "#b2f1ec",
+                                          "borderColor": "#80e8e0",
+                                          "borderColor_active": "#80e8e0",
+                                          "borderColor_hover": "#80e8e0",
+                                          "color": "#007a87",
+                                          "color_active": "#007a87",
+                                          "color_hover": "#007a87",
+                                        },
+                                        "minimumNights": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "borderColor": "#eceeee",
+                                          "color": "#cacccd",
+                                          "color_active": "#cacccd",
+                                          "color_hover": "#cacccd",
+                                        },
+                                        "outside": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "color": "#565a5c",
+                                          "color_active": "#565a5c",
+                                          "color_hover": "#565a5c",
+                                        },
+                                        "placeholderText": "#757575",
+                                        "selected": Object {
+                                          "backgroundColor": "#00a699",
+                                          "backgroundColor_active": "#00a699",
+                                          "backgroundColor_hover": "#00a699",
+                                          "borderColor": "#00a699",
+                                          "borderColor_active": "#00a699",
+                                          "borderColor_hover": "#00a699",
+                                          "color": "#fff",
+                                          "color_active": "#fff",
+                                          "color_hover": "#fff",
+                                        },
+                                        "selectedSpan": Object {
+                                          "backgroundColor": "#66e2da",
+                                          "backgroundColor_active": "#33dacd",
+                                          "backgroundColor_hover": "#33dacd",
+                                          "borderColor": "#33dacd",
+                                          "borderColor_active": "#00a699",
+                                          "borderColor_hover": "#00a699",
+                                          "color": "#fff",
+                                          "color_active": "#fff",
+                                          "color_hover": "#fff",
+                                        },
+                                        "text": "#565a5c",
+                                        "textDisabled": "#dbdbdb",
+                                        "textFocused": "#007a87",
+                                      },
+                                      "font": Object {
+                                        "captionSize": 18,
+                                        "input": Object {
+                                          "lineHeight": "24px",
+                                          "lineHeight_small": "18px",
+                                          "size": 18,
+                                          "size_small": 14,
+                                          "styleDisabled": "italic",
+                                        },
+                                        "size": 14,
+                                      },
+                                      "sizing": Object {
+                                        "arrowWidth": 24,
+                                        "arrowWidth_small": 19,
+                                        "inputWidth": 130,
+                                        "inputWidth_small": 90,
+                                      },
+                                      "spacing": Object {
+                                        "captionPaddingBottom": 37,
+                                        "captionPaddingTop": 22,
+                                        "displayTextPaddingBottom": 11,
+                                        "displayTextPaddingBottom_small": 6,
+                                        "displayTextPaddingHorizontal": undefined,
+                                        "displayTextPaddingHorizontal_small": undefined,
+                                        "displayTextPaddingLeft": 12,
+                                        "displayTextPaddingLeft_small": 8,
+                                        "displayTextPaddingRight": 12,
+                                        "displayTextPaddingRight_small": 8,
+                                        "displayTextPaddingTop": 13,
+                                        "displayTextPaddingTop_small": 8,
+                                        "displayTextPaddingVertical": undefined,
+                                        "displayTextPaddingVertical_small": undefined,
+                                        "inputPadding": 0,
+                                      },
+                                      "zIndex": 0,
+                                    },
+                                  }
+                                }
+                                verticalSpacing={22}
+                              >
+                                <div
+                                  className="DateInput DateInput_1 DateInput__small DateInput__small_2"
+                                >
+                                  <input
+                                    aria-describedby="DateInput__screen-reader-message-startDate"
+                                    aria-label="Start Date"
+                                    autoComplete="off"
+                                    className="DateInput_input DateInput_input_1 DateInput_input__small DateInput_input__small_2"
+                                    disabled={false}
+                                    id="startDate"
+                                    name="startDate"
+                                    onChange={[Function]}
+                                    onFocus={[Function]}
+                                    onKeyDown={[Function]}
+                                    placeholder="Start Date"
+                                    readOnly={false}
+                                    required={false}
+                                    type="text"
+                                    value=""
+                                  />
+                                  <p
+                                    className="DateInput_screenReaderMessage DateInput_screenReaderMessage_1"
+                                    id="DateInput__screen-reader-message-startDate"
+                                  >
+                                    Press the down arrow key to interact with the calendar and
+                                      select a date. Press the question mark key to get the keyboard shortcuts for changing dates.
+                                  </p>
+                                </div>
+                              </DateInput>
+                            </withStyles(DateInput)>
+                            <div
+                              aria-hidden="true"
+                              className="DateRangePickerInput_arrow DateRangePickerInput_arrow_1"
+                              role="presentation"
+                            >
+                              <RightArrow
+                                className="DateRangePickerInput_arrow_svg DateRangePickerInput_arrow_svg_1 DateRangePickerInput_arrow_svg__small DateRangePickerInput_arrow_svg__small_2"
+                                viewBox="0 0 1000 1000"
+                              >
+                                <svg
+                                  className="DateRangePickerInput_arrow_svg DateRangePickerInput_arrow_svg_1 DateRangePickerInput_arrow_svg__small DateRangePickerInput_arrow_svg__small_2"
+                                  viewBox="0 0 1000 1000"
+                                >
+                                  <path
+                                    d="M694.4 242.4l249.1 249.1c11 11 11 21 0 32L694.4 772.7c-5 5-10 7-16 7s-11-2-16-7c-11-11-11-21 0-32l210.1-210.1H67.1c-13 0-23-10-23-23s10-23 23-23h805.4L662.4 274.5c-21-21.1 11-53.1 32-32.1z"
+                                  />
+                                </svg>
+                              </RightArrow>
+                            </div>
+                            <withStyles(DateInput)
+                              disabled={false}
+                              displayValue={null}
+                              focused={false}
+                              id="endDate"
+                              isFocused={false}
+                              onChange={[Function]}
+                              onFocus={[Function]}
+                              onKeyDownArrowDown={[Function]}
+                              onKeyDownQuestionMark={[Function]}
+                              onKeyDownShiftTab={[Function]}
+                              onKeyDownTab={[Function]}
+                              openDirection="down"
+                              placeholder="End Date"
+                              readOnly={false}
+                              required={false}
+                              screenReaderMessage="Press the down arrow key to interact with the calendar and
+                              select a date. Press the question mark key to get the keyboard shortcuts for changing dates."
+                              showCaret={true}
+                              small={true}
+                              verticalSpacing={22}
+                            >
+                              <DateInput
+                                disabled={false}
+                                displayValue={null}
+                                focused={false}
+                                id="endDate"
+                                isFocused={false}
+                                onChange={[Function]}
+                                onFocus={[Function]}
+                                onKeyDownArrowDown={[Function]}
+                                onKeyDownQuestionMark={[Function]}
+                                onKeyDownShiftTab={[Function]}
+                                onKeyDownTab={[Function]}
+                                openDirection="down"
+                                placeholder="End Date"
+                                readOnly={false}
+                                required={false}
+                                screenReaderMessage="Press the down arrow key to interact with the calendar and
+                                select a date. Press the question mark key to get the keyboard shortcuts for changing dates."
+                                showCaret={true}
+                                small={true}
+                                styles={
+                                  Object {
+                                    "DateInput": "DateInput",
+                                    "DateInput__disabled": "DateInput__disabled",
+                                    "DateInput__small": "DateInput__small",
+                                    "DateInput_fang": "DateInput_fang",
+                                    "DateInput_fangShape": "DateInput_fangShape",
+                                    "DateInput_fangStroke": "DateInput_fangStroke",
+                                    "DateInput_input": "DateInput_input",
+                                    "DateInput_input__disabled": "DateInput_input__disabled",
+                                    "DateInput_input__focused": "DateInput_input__focused",
+                                    "DateInput_input__readOnly": "DateInput_input__readOnly",
+                                    "DateInput_input__small": "DateInput_input__small",
+                                    "DateInput_screenReaderMessage": "DateInput_screenReaderMessage",
+                                  }
+                                }
+                                theme={
+                                  Object {
+                                    "reactDates": Object {
+                                      "border": Object {
+                                        "input": Object {
+                                          "border": 0,
+                                          "borderBottom": "2px solid transparent",
+                                          "borderBottomFocused": "2px solid #008489",
+                                          "borderFocused": 0,
+                                          "borderLeft": 0,
+                                          "borderLeftFocused": 0,
+                                          "borderRight": 0,
+                                          "borderRightFocused": 0,
+                                          "borderTop": 0,
+                                          "borderTopFocused": 0,
+                                          "outlineFocused": 0,
+                                        },
+                                      },
+                                      "color": Object {
+                                        "background": "#fff",
+                                        "backgroundDark": "#f2f2f2",
+                                        "backgroundFocused": "#fff",
+                                        "blocked_calendar": Object {
+                                          "backgroundColor": "#cacccd",
+                                          "backgroundColor_active": "#cacccd",
+                                          "backgroundColor_hover": "#cacccd",
+                                          "borderColor": "#cacccd",
+                                          "borderColor_active": "#cacccd",
+                                          "borderColor_hover": "#cacccd",
+                                          "color": "#82888a",
+                                          "color_active": "#82888a",
+                                          "color_hover": "#82888a",
+                                        },
+                                        "blocked_out_of_range": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "borderColor": "#e4e7e7",
+                                          "borderColor_active": "#e4e7e7",
+                                          "borderColor_hover": "#e4e7e7",
+                                          "color": "#cacccd",
+                                          "color_active": "#cacccd",
+                                          "color_hover": "#cacccd",
+                                        },
+                                        "core": Object {
+                                          "border": "#dbdbdb",
+                                          "borderLight": "#e4e7e7",
+                                          "borderLighter": "#eceeee",
+                                          "borderMedium": "#c4c4c4",
+                                          "gray": "#565a5c",
+                                          "grayLight": "#82888a",
+                                          "grayLighter": "#cacccd",
+                                          "grayLightest": "#f2f2f2",
+                                          "primary": "#00a699",
+                                          "primaryShade_1": "#33dacd",
+                                          "primaryShade_2": "#66e2da",
+                                          "primaryShade_3": "#80e8e0",
+                                          "primaryShade_4": "#b2f1ec",
+                                          "primary_dark": "#008489",
+                                          "secondary": "#007a87",
+                                          "white": "#fff",
+                                          "yellow": "#ffe8bc",
+                                          "yellow_dark": "#ffce71",
+                                        },
+                                        "disabled": "#f2f2f2",
+                                        "highlighted": Object {
+                                          "backgroundColor": "#ffe8bc",
+                                          "backgroundColor_active": "#ffce71",
+                                          "backgroundColor_hover": "#ffce71",
+                                          "color": "#565a5c",
+                                          "color_active": "#565a5c",
+                                          "color_hover": "#565a5c",
+                                        },
+                                        "hoveredSpan": Object {
+                                          "backgroundColor": "#b2f1ec",
+                                          "backgroundColor_active": "#80e8e0",
+                                          "backgroundColor_hover": "#b2f1ec",
+                                          "borderColor": "#80e8e0",
+                                          "borderColor_active": "#80e8e0",
+                                          "borderColor_hover": "#80e8e0",
+                                          "color": "#007a87",
+                                          "color_active": "#007a87",
+                                          "color_hover": "#007a87",
+                                        },
+                                        "minimumNights": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "borderColor": "#eceeee",
+                                          "color": "#cacccd",
+                                          "color_active": "#cacccd",
+                                          "color_hover": "#cacccd",
+                                        },
+                                        "outside": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "color": "#565a5c",
+                                          "color_active": "#565a5c",
+                                          "color_hover": "#565a5c",
+                                        },
+                                        "placeholderText": "#757575",
+                                        "selected": Object {
+                                          "backgroundColor": "#00a699",
+                                          "backgroundColor_active": "#00a699",
+                                          "backgroundColor_hover": "#00a699",
+                                          "borderColor": "#00a699",
+                                          "borderColor_active": "#00a699",
+                                          "borderColor_hover": "#00a699",
+                                          "color": "#fff",
+                                          "color_active": "#fff",
+                                          "color_hover": "#fff",
+                                        },
+                                        "selectedSpan": Object {
+                                          "backgroundColor": "#66e2da",
+                                          "backgroundColor_active": "#33dacd",
+                                          "backgroundColor_hover": "#33dacd",
+                                          "borderColor": "#33dacd",
+                                          "borderColor_active": "#00a699",
+                                          "borderColor_hover": "#00a699",
+                                          "color": "#fff",
+                                          "color_active": "#fff",
+                                          "color_hover": "#fff",
+                                        },
+                                        "text": "#565a5c",
+                                        "textDisabled": "#dbdbdb",
+                                        "textFocused": "#007a87",
+                                      },
+                                      "font": Object {
+                                        "captionSize": 18,
+                                        "input": Object {
+                                          "lineHeight": "24px",
+                                          "lineHeight_small": "18px",
+                                          "size": 18,
+                                          "size_small": 14,
+                                          "styleDisabled": "italic",
+                                        },
+                                        "size": 14,
+                                      },
+                                      "sizing": Object {
+                                        "arrowWidth": 24,
+                                        "arrowWidth_small": 19,
+                                        "inputWidth": 130,
+                                        "inputWidth_small": 90,
+                                      },
+                                      "spacing": Object {
+                                        "captionPaddingBottom": 37,
+                                        "captionPaddingTop": 22,
+                                        "displayTextPaddingBottom": 11,
+                                        "displayTextPaddingBottom_small": 6,
+                                        "displayTextPaddingHorizontal": undefined,
+                                        "displayTextPaddingHorizontal_small": undefined,
+                                        "displayTextPaddingLeft": 12,
+                                        "displayTextPaddingLeft_small": 8,
+                                        "displayTextPaddingRight": 12,
+                                        "displayTextPaddingRight_small": 8,
+                                        "displayTextPaddingTop": 13,
+                                        "displayTextPaddingTop_small": 8,
+                                        "displayTextPaddingVertical": undefined,
+                                        "displayTextPaddingVertical_small": undefined,
+                                        "inputPadding": 0,
+                                      },
+                                      "zIndex": 0,
+                                    },
+                                  }
+                                }
+                                verticalSpacing={22}
+                              >
+                                <div
+                                  className="DateInput DateInput_1 DateInput__small DateInput__small_2"
+                                >
+                                  <input
+                                    aria-describedby="DateInput__screen-reader-message-endDate"
+                                    aria-label="End Date"
+                                    autoComplete="off"
+                                    className="DateInput_input DateInput_input_1 DateInput_input__small DateInput_input__small_2"
+                                    disabled={false}
+                                    id="endDate"
+                                    name="endDate"
+                                    onChange={[Function]}
+                                    onFocus={[Function]}
+                                    onKeyDown={[Function]}
+                                    placeholder="End Date"
+                                    readOnly={false}
+                                    required={false}
+                                    type="text"
+                                    value=""
+                                  />
+                                  <p
+                                    className="DateInput_screenReaderMessage DateInput_screenReaderMessage_1"
+                                    id="DateInput__screen-reader-message-endDate"
+                                  >
+                                    Press the down arrow key to interact with the calendar and
+                                      select a date. Press the question mark key to get the keyboard shortcuts for changing dates.
+                                  </p>
+                                </div>
+                              </DateInput>
+                            </withStyles(DateInput)>
+                          </div>
+                        </DateRangePickerInput>
+                      </withStyles(DateRangePickerInput)>
+                    </DateRangePickerInputController>
+                  </div>
+                </OutsideClickHandler>
+              </div>
+            </DateRangePicker>
+          </withStyles(DateRangePicker)>
+        </div>
+        <Component>
+          <div
+            className="currency-filter"
+          >
+            <div
+              className=""
+            >
+              BTC
+            </div>
+            <div
+              className="activated"
+            >
+              USD
+            </div>
+          </div>
+        </Component>
+      </div>
+    </ProjectChartHeader>
+    <div
+      className="project-chart-body"
+    >
+      <div
+        className="project-chart__isLoading"
+      >
+         Loading... 
+      </div>
+      <Bar
+        data={
+          Object {
+            "datasets": Array [
+              Object {
+                "backgroundColor": "rgba(239, 242, 236, 0.5)",
+                "borderColor": "#00a05a",
+                "borderWidth": 1,
+                "data": Array [],
+                "fill": true,
+                "label": "Price",
+                "pointBorderWidth": 2,
+                "type": "LineWithLine",
+                "yAxisID": "y-axis-1",
+              },
+              Object {
+                "backgroundColor": "rgba(49, 107, 174, 0.5)",
+                "borderColor": "rgba(49, 107, 174, 0.5)",
+                "borderWidth": 4,
+                "data": Array [],
+                "fill": false,
+                "label": "Volume",
+                "pointBorderWidth": 1,
+                "type": "bar",
+                "yAxisID": "y-axis-2",
+              },
+            ],
+            "labels": Array [],
+          }
+        }
+        height={100}
+        onElementsClick={[Function]}
+        options={
+          Object {
+            "animation": false,
+            "datasetFill": false,
+            "elements": Object {
+              "point": Object {
+                "hitRadius": 2,
+                "hoverRadius": 2,
+                "radius": 0,
+              },
+            },
+            "hover": Object {
+              "intersect": true,
+              "mode": "nearest",
+            },
+            "legend": Object {
+              "display": false,
+            },
+            "pointDot": false,
+            "pointRadius": 0,
+            "responsive": true,
+            "scaleFontSize": 0,
+            "scaleShowLabels": false,
+            "scales": Object {
+              "xAxes": Array [
+                Object {
+                  "gridLines": Object {
+                    "color": "#f0f0f0",
+                    "display": true,
+                    "drawBorder": true,
+                  },
+                  "ticks": Object {
+                    "autoSkipPadding": 1,
+                    "callback": [Function],
+                  },
+                  "type": "time",
+                },
+              ],
+              "yAxes": Array [
+                Object {
+                  "display": true,
+                  "gridLines": Object {
+                    "color": "#f0f0f0",
+                    "display": true,
+                    "drawBorder": true,
+                  },
+                  "id": "y-axis-1",
+                  "position": "left",
+                  "scaleLabel": Object {
+                    "display": true,
+                    "fontColor": "#00a05a",
+                    "labelString": "Price (USD)",
+                  },
+                  "ticks": Object {
+                    "beginAtZero": true,
+                    "callback": [Function],
+                    "display": true,
+                  },
+                  "type": "linear",
+                },
+                Object {
+                  "display": false,
+                  "id": "y-axis-2",
+                  "labels": Object {
+                    "show": true,
+                  },
+                  "position": "right",
+                  "scaleLabel": Object {
+                    "display": false,
+                    "fontColor": "rgba(49, 107, 174, 0.5)",
+                    "labelString": "Volume",
+                  },
+                  "ticks": Object {
+                    "max": -Infinity,
+                  },
+                  "type": "linear",
+                },
+                Object {
+                  "display": undefined,
+                  "gridLines": Object {
+                    "display": false,
+                  },
+                  "id": "y-axis-3",
+                  "position": "right",
+                  "scaleLabel": Object {
+                    "display": true,
+                    "fontColor": "rgb(200, 47, 63)",
+                    "labelString": "MarketCap (USD)",
+                  },
+                  "ticks": Object {
+                    "callback": [Function],
+                    "display": true,
+                  },
+                  "type": "linear",
+                },
+              ],
+            },
+            "showTooltips": true,
+            "tooltips": Object {
+              "backgroundColor": "rgba(255, 255, 255, 0.8)",
+              "bodyFontColor": "#000",
+              "bodyFontSize": 14,
+              "bodySpacing": 4,
+              "borderColor": "#d3d3d3",
+              "borderWidth": 2,
+              "callbacks": Object {
+                "label": [Function],
+                "title": [Function],
+              },
+              "cornerRadius": 3,
+              "displayColors": true,
+              "intersect": false,
+              "mode": "index",
+              "titleFontColor": "#000",
+              "titleFontSize": 14,
+              "titleMarginBottom": 8,
+            },
+          }
+        }
+        redraw={true}
+        style={
+          Object {
+            "transition": "opacity 0.25s ease",
+          }
+        }
+      >
+        <ChartComponent
+          data={
+            Object {
+              "datasets": Array [
+                Object {
+                  "backgroundColor": "rgba(239, 242, 236, 0.5)",
+                  "borderColor": "#00a05a",
+                  "borderWidth": 1,
+                  "data": Array [],
+                  "fill": true,
+                  "label": "Price",
+                  "pointBorderWidth": 2,
+                  "type": "LineWithLine",
+                  "yAxisID": "y-axis-1",
+                },
+                Object {
+                  "backgroundColor": "rgba(49, 107, 174, 0.5)",
+                  "borderColor": "rgba(49, 107, 174, 0.5)",
+                  "borderWidth": 4,
+                  "data": Array [],
+                  "fill": false,
+                  "label": "Volume",
+                  "pointBorderWidth": 1,
+                  "type": "bar",
+                  "yAxisID": "y-axis-2",
+                },
+              ],
+              "labels": Array [],
+            }
+          }
+          datasetKeyProvider={[Function]}
+          height={100}
+          legend={
+            Object {
+              "display": true,
+              "position": "bottom",
+            }
+          }
+          onElementsClick={[Function]}
+          options={
+            Object {
+              "animation": false,
+              "datasetFill": false,
+              "elements": Object {
+                "point": Object {
+                  "hitRadius": 2,
+                  "hoverRadius": 2,
+                  "radius": 0,
+                },
+              },
+              "hover": Object {
+                "intersect": true,
+                "mode": "nearest",
+              },
+              "legend": Object {
+                "display": false,
+              },
+              "pointDot": false,
+              "pointRadius": 0,
+              "responsive": true,
+              "scaleFontSize": 0,
+              "scaleShowLabels": false,
+              "scales": Object {
+                "xAxes": Array [
+                  Object {
+                    "gridLines": Object {
+                      "color": "#f0f0f0",
+                      "display": true,
+                      "drawBorder": true,
+                    },
+                    "ticks": Object {
+                      "autoSkipPadding": 1,
+                      "callback": [Function],
+                    },
+                    "type": "time",
+                  },
+                ],
+                "yAxes": Array [
+                  Object {
+                    "display": true,
+                    "gridLines": Object {
+                      "color": "#f0f0f0",
+                      "display": true,
+                      "drawBorder": true,
+                    },
+                    "id": "y-axis-1",
+                    "position": "left",
+                    "scaleLabel": Object {
+                      "display": true,
+                      "fontColor": "#00a05a",
+                      "labelString": "Price (USD)",
+                    },
+                    "ticks": Object {
+                      "beginAtZero": true,
+                      "callback": [Function],
+                      "display": true,
+                    },
+                    "type": "linear",
+                  },
+                  Object {
+                    "display": false,
+                    "id": "y-axis-2",
+                    "labels": Object {
+                      "show": true,
+                    },
+                    "position": "right",
+                    "scaleLabel": Object {
+                      "display": false,
+                      "fontColor": "rgba(49, 107, 174, 0.5)",
+                      "labelString": "Volume",
+                    },
+                    "ticks": Object {
+                      "max": -Infinity,
+                    },
+                    "type": "linear",
+                  },
+                  Object {
+                    "display": undefined,
+                    "gridLines": Object {
+                      "display": false,
+                    },
+                    "id": "y-axis-3",
+                    "position": "right",
+                    "scaleLabel": Object {
+                      "display": true,
+                      "fontColor": "rgb(200, 47, 63)",
+                      "labelString": "MarketCap (USD)",
+                    },
+                    "ticks": Object {
+                      "callback": [Function],
+                      "display": true,
+                    },
+                    "type": "linear",
+                  },
+                ],
+              },
+              "showTooltips": true,
+              "tooltips": Object {
+                "backgroundColor": "rgba(255, 255, 255, 0.8)",
+                "bodyFontColor": "#000",
+                "bodyFontSize": 14,
+                "bodySpacing": 4,
+                "borderColor": "#d3d3d3",
+                "borderWidth": 2,
+                "callbacks": Object {
+                  "label": [Function],
+                  "title": [Function],
+                },
+                "cornerRadius": 3,
+                "displayColors": true,
+                "intersect": false,
+                "mode": "index",
+                "titleFontColor": "#000",
+                "titleFontSize": 14,
+                "titleMarginBottom": 8,
+              },
+            }
+          }
+          redraw={true}
+          style={
+            Object {
+              "transition": "opacity 0.25s ease",
+            }
+          }
+          type="bar"
+          width={300}
+        >
+          <canvas
+            height={100}
+            onClick={[Function]}
+            width={300}
+          />
+        </ChartComponent>
+      </Bar>
+    </div>
+    <div
+      className="chart-footer"
+    >
+      <div
+        className="chart-footer-filters"
+      >
+        <MarketcapToggle
+          focusedInput={null}
+          history={Array []}
+          isDesktop={true}
+          onFocusChange={[Function]}
+        >
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              MarketCap
+            </div>
+          </div>
+        </MarketcapToggle>
+      </div>
+      <div>
+        <small
+          className="trademark"
+        >
+          santiment.net
+        </small>
+      </div>
+    </div>
   </div>
 </ProjectChart>
 `;
 
 exports[`ProjectChart component Loading State it should render correctly withour history prop 1`] = `
 <ProjectChart
+  focusedInput={null}
   history={Array []}
+  isDesktop={true}
   isEmpty={true}
   isError={false}
   isLoading={true}
+  onFocusChange={[Function]}
 >
   <div
-    className="project-chart-loader"
+    className="project-dp-chart"
   >
-    <h2>
-      Loading...
-    </h2>
+    <ProjectChartHeader
+      focusedInput={null}
+      history={Array []}
+      isDesktop={true}
+      onFocusChange={[Function]}
+    >
+      <div
+        className="chart-header"
+      >
+        <div
+          className="chart-datetime-settings"
+        >
+          <Component>
+            <div
+              className="time-filter"
+            >
+              <Component
+                value="1d"
+              >
+                <div
+                  className=""
+                  onClick={[Function]}
+                >
+                  1d
+                </div>
+              </Component>
+              <Component
+                value="1w"
+              >
+                <div
+                  className=""
+                  onClick={[Function]}
+                >
+                  1w
+                </div>
+              </Component>
+              <Component
+                value="2w"
+              >
+                <div
+                  className=""
+                  onClick={[Function]}
+                >
+                  2w
+                </div>
+              </Component>
+              <Component
+                value="1m"
+              >
+                <div
+                  className=""
+                  onClick={[Function]}
+                >
+                  1m
+                </div>
+              </Component>
+            </div>
+          </Component>
+          <withStyles(DateRangePicker)
+            anchorDirection="left"
+            block={false}
+            customArrowIcon={null}
+            customCloseIcon={null}
+            customInputIcon={null}
+            daySize={39}
+            disabled={false}
+            displayFormat={[Function]}
+            enableOutsideDays={false}
+            endDate={null}
+            endDateId="endDate"
+            endDatePlaceholderText="End Date"
+            firstDayOfWeek={null}
+            focusedInput={null}
+            hideKeyboardShortcutsPanel={true}
+            horizontalMargin={0}
+            initialVisibleMonth={null}
+            inputIconPosition="before"
+            isDayBlocked={[Function]}
+            isDayHighlighted={[Function]}
+            isOutsideRange={[Function]}
+            isRTL={false}
+            keepOpenOnDateSelect={false}
+            minimumNights={1}
+            monthFormat="MMMM YYYY"
+            navNext={null}
+            navPrev={null}
+            noBorder={false}
+            numberOfMonths={2}
+            onClose={[Function]}
+            onDatesChange={[Function]}
+            onFocusChange={[Function]}
+            onNextMonthClick={[Function]}
+            onPrevMonthClick={[Function]}
+            openDirection="down"
+            orientation="horizontal"
+            phrases={
+              Object {
+                "calendarLabel": "Calendar",
+                "chooseAvailableEndDate": [Function],
+                "chooseAvailableStartDate": [Function],
+                "clearDates": "Clear Dates",
+                "closeDatePicker": "Close",
+                "dateIsUnavailable": [Function],
+                "enterKey": "Enter key",
+                "escape": "Escape key",
+                "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                "homeEnd": "Home and end keys",
+                "jumpToNextMonth": "Move forward to switch to the next month.",
+                "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                "keyboardShortcuts": "Keyboard Shortcuts",
+                "leftArrowRightArrow": "Right and left arrow keys",
+                "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                "moveFocusByOneMonth": "Switch months.",
+                "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                "openThisPanel": "Open this panel.",
+                "pageUpPageDown": "page up and page down keys",
+                "questionMark": "Question mark",
+                "returnFocusToInput": "Return to the date input field.",
+                "selectFocusedDate": "Select the date in focus.",
+                "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                "upArrowDownArrow": "up and down arrow keys",
+              }
+            }
+            readOnly={false}
+            renderCalendarInfo={null}
+            renderDayContents={null}
+            renderMonth={null}
+            reopenPickerOnClearDates={false}
+            required={false}
+            screenReaderInputMessage=""
+            showClearDates={false}
+            showDefaultInputIcon={false}
+            small={true}
+            startDate={null}
+            startDateId="startDate"
+            startDatePlaceholderText="Start Date"
+            verticalHeight={null}
+            verticalSpacing={22}
+            weekDayFormat="dd"
+            withFullScreenPortal={false}
+            withPortal={false}
+          >
+            <DateRangePicker
+              anchorDirection="left"
+              block={false}
+              customArrowIcon={null}
+              customCloseIcon={null}
+              customInputIcon={null}
+              daySize={39}
+              disabled={false}
+              displayFormat={[Function]}
+              enableOutsideDays={false}
+              endDate={null}
+              endDateId="endDate"
+              endDatePlaceholderText="End Date"
+              firstDayOfWeek={null}
+              focusedInput={null}
+              hideKeyboardShortcutsPanel={true}
+              horizontalMargin={0}
+              initialVisibleMonth={null}
+              inputIconPosition="before"
+              isDayBlocked={[Function]}
+              isDayHighlighted={[Function]}
+              isOutsideRange={[Function]}
+              isRTL={false}
+              keepOpenOnDateSelect={false}
+              minimumNights={1}
+              monthFormat="MMMM YYYY"
+              navNext={null}
+              navPrev={null}
+              noBorder={false}
+              numberOfMonths={2}
+              onClose={[Function]}
+              onDatesChange={[Function]}
+              onFocusChange={[Function]}
+              onNextMonthClick={[Function]}
+              onPrevMonthClick={[Function]}
+              openDirection="down"
+              orientation="horizontal"
+              phrases={
+                Object {
+                  "calendarLabel": "Calendar",
+                  "chooseAvailableEndDate": [Function],
+                  "chooseAvailableStartDate": [Function],
+                  "clearDates": "Clear Dates",
+                  "closeDatePicker": "Close",
+                  "dateIsUnavailable": [Function],
+                  "enterKey": "Enter key",
+                  "escape": "Escape key",
+                  "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                  "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                  "homeEnd": "Home and end keys",
+                  "jumpToNextMonth": "Move forward to switch to the next month.",
+                  "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                  "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                  select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                  "keyboardShortcuts": "Keyboard Shortcuts",
+                  "leftArrowRightArrow": "Right and left arrow keys",
+                  "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                  "moveFocusByOneMonth": "Switch months.",
+                  "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                  "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                  "openThisPanel": "Open this panel.",
+                  "pageUpPageDown": "page up and page down keys",
+                  "questionMark": "Question mark",
+                  "returnFocusToInput": "Return to the date input field.",
+                  "selectFocusedDate": "Select the date in focus.",
+                  "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                  "upArrowDownArrow": "up and down arrow keys",
+                }
+              }
+              readOnly={false}
+              renderCalendarInfo={null}
+              renderDayContents={null}
+              renderMonth={null}
+              reopenPickerOnClearDates={false}
+              required={false}
+              screenReaderInputMessage=""
+              showClearDates={false}
+              showDefaultInputIcon={false}
+              small={true}
+              startDate={null}
+              startDateId="startDate"
+              startDatePlaceholderText="Start Date"
+              styles={
+                Object {
+                  "DateRangePicker": "DateRangePicker",
+                  "DateRangePicker__block": "DateRangePicker__block",
+                  "DateRangePicker_closeButton": "DateRangePicker_closeButton",
+                  "DateRangePicker_closeButton_svg": "DateRangePicker_closeButton_svg",
+                  "DateRangePicker_picker": "DateRangePicker_picker",
+                  "DateRangePicker_picker__directionLeft": "DateRangePicker_picker__directionLeft",
+                  "DateRangePicker_picker__directionRight": "DateRangePicker_picker__directionRight",
+                  "DateRangePicker_picker__fullScreenPortal": "DateRangePicker_picker__fullScreenPortal",
+                  "DateRangePicker_picker__portal": "DateRangePicker_picker__portal",
+                  "DateRangePicker_picker__rtl": "DateRangePicker_picker__rtl",
+                }
+              }
+              theme={
+                Object {
+                  "reactDates": Object {
+                    "border": Object {
+                      "input": Object {
+                        "border": 0,
+                        "borderBottom": "2px solid transparent",
+                        "borderBottomFocused": "2px solid #008489",
+                        "borderFocused": 0,
+                        "borderLeft": 0,
+                        "borderLeftFocused": 0,
+                        "borderRight": 0,
+                        "borderRightFocused": 0,
+                        "borderTop": 0,
+                        "borderTopFocused": 0,
+                        "outlineFocused": 0,
+                      },
+                    },
+                    "color": Object {
+                      "background": "#fff",
+                      "backgroundDark": "#f2f2f2",
+                      "backgroundFocused": "#fff",
+                      "blocked_calendar": Object {
+                        "backgroundColor": "#cacccd",
+                        "backgroundColor_active": "#cacccd",
+                        "backgroundColor_hover": "#cacccd",
+                        "borderColor": "#cacccd",
+                        "borderColor_active": "#cacccd",
+                        "borderColor_hover": "#cacccd",
+                        "color": "#82888a",
+                        "color_active": "#82888a",
+                        "color_hover": "#82888a",
+                      },
+                      "blocked_out_of_range": Object {
+                        "backgroundColor": "#fff",
+                        "backgroundColor_active": "#fff",
+                        "backgroundColor_hover": "#fff",
+                        "borderColor": "#e4e7e7",
+                        "borderColor_active": "#e4e7e7",
+                        "borderColor_hover": "#e4e7e7",
+                        "color": "#cacccd",
+                        "color_active": "#cacccd",
+                        "color_hover": "#cacccd",
+                      },
+                      "core": Object {
+                        "border": "#dbdbdb",
+                        "borderLight": "#e4e7e7",
+                        "borderLighter": "#eceeee",
+                        "borderMedium": "#c4c4c4",
+                        "gray": "#565a5c",
+                        "grayLight": "#82888a",
+                        "grayLighter": "#cacccd",
+                        "grayLightest": "#f2f2f2",
+                        "primary": "#00a699",
+                        "primaryShade_1": "#33dacd",
+                        "primaryShade_2": "#66e2da",
+                        "primaryShade_3": "#80e8e0",
+                        "primaryShade_4": "#b2f1ec",
+                        "primary_dark": "#008489",
+                        "secondary": "#007a87",
+                        "white": "#fff",
+                        "yellow": "#ffe8bc",
+                        "yellow_dark": "#ffce71",
+                      },
+                      "disabled": "#f2f2f2",
+                      "highlighted": Object {
+                        "backgroundColor": "#ffe8bc",
+                        "backgroundColor_active": "#ffce71",
+                        "backgroundColor_hover": "#ffce71",
+                        "color": "#565a5c",
+                        "color_active": "#565a5c",
+                        "color_hover": "#565a5c",
+                      },
+                      "hoveredSpan": Object {
+                        "backgroundColor": "#b2f1ec",
+                        "backgroundColor_active": "#80e8e0",
+                        "backgroundColor_hover": "#b2f1ec",
+                        "borderColor": "#80e8e0",
+                        "borderColor_active": "#80e8e0",
+                        "borderColor_hover": "#80e8e0",
+                        "color": "#007a87",
+                        "color_active": "#007a87",
+                        "color_hover": "#007a87",
+                      },
+                      "minimumNights": Object {
+                        "backgroundColor": "#fff",
+                        "backgroundColor_active": "#fff",
+                        "backgroundColor_hover": "#fff",
+                        "borderColor": "#eceeee",
+                        "color": "#cacccd",
+                        "color_active": "#cacccd",
+                        "color_hover": "#cacccd",
+                      },
+                      "outside": Object {
+                        "backgroundColor": "#fff",
+                        "backgroundColor_active": "#fff",
+                        "backgroundColor_hover": "#fff",
+                        "color": "#565a5c",
+                        "color_active": "#565a5c",
+                        "color_hover": "#565a5c",
+                      },
+                      "placeholderText": "#757575",
+                      "selected": Object {
+                        "backgroundColor": "#00a699",
+                        "backgroundColor_active": "#00a699",
+                        "backgroundColor_hover": "#00a699",
+                        "borderColor": "#00a699",
+                        "borderColor_active": "#00a699",
+                        "borderColor_hover": "#00a699",
+                        "color": "#fff",
+                        "color_active": "#fff",
+                        "color_hover": "#fff",
+                      },
+                      "selectedSpan": Object {
+                        "backgroundColor": "#66e2da",
+                        "backgroundColor_active": "#33dacd",
+                        "backgroundColor_hover": "#33dacd",
+                        "borderColor": "#33dacd",
+                        "borderColor_active": "#00a699",
+                        "borderColor_hover": "#00a699",
+                        "color": "#fff",
+                        "color_active": "#fff",
+                        "color_hover": "#fff",
+                      },
+                      "text": "#565a5c",
+                      "textDisabled": "#dbdbdb",
+                      "textFocused": "#007a87",
+                    },
+                    "font": Object {
+                      "captionSize": 18,
+                      "input": Object {
+                        "lineHeight": "24px",
+                        "lineHeight_small": "18px",
+                        "size": 18,
+                        "size_small": 14,
+                        "styleDisabled": "italic",
+                      },
+                      "size": 14,
+                    },
+                    "sizing": Object {
+                      "arrowWidth": 24,
+                      "arrowWidth_small": 19,
+                      "inputWidth": 130,
+                      "inputWidth_small": 90,
+                    },
+                    "spacing": Object {
+                      "captionPaddingBottom": 37,
+                      "captionPaddingTop": 22,
+                      "displayTextPaddingBottom": 11,
+                      "displayTextPaddingBottom_small": 6,
+                      "displayTextPaddingHorizontal": undefined,
+                      "displayTextPaddingHorizontal_small": undefined,
+                      "displayTextPaddingLeft": 12,
+                      "displayTextPaddingLeft_small": 8,
+                      "displayTextPaddingRight": 12,
+                      "displayTextPaddingRight_small": 8,
+                      "displayTextPaddingTop": 13,
+                      "displayTextPaddingTop_small": 8,
+                      "displayTextPaddingVertical": undefined,
+                      "displayTextPaddingVertical_small": undefined,
+                      "inputPadding": 0,
+                    },
+                    "zIndex": 0,
+                  },
+                }
+              }
+              verticalHeight={null}
+              verticalSpacing={22}
+              weekDayFormat="dd"
+              withFullScreenPortal={false}
+              withPortal={false}
+            >
+              <div
+                className="DateRangePicker DateRangePicker_1"
+              >
+                <OutsideClickHandler
+                  onOutsideClick={[Function]}
+                >
+                  <div>
+                    <DateRangePickerInputController
+                      block={false}
+                      customArrowIcon={null}
+                      customCloseIcon={null}
+                      customInputIcon={null}
+                      disabled={false}
+                      displayFormat={[Function]}
+                      endDate={null}
+                      endDateId="endDate"
+                      endDatePlaceholderText="End Date"
+                      inputIconPosition="before"
+                      isEndDateFocused={false}
+                      isFocused={false}
+                      isOutsideRange={[Function]}
+                      isRTL={false}
+                      isStartDateFocused={false}
+                      keepOpenOnDateSelect={false}
+                      minimumNights={1}
+                      noBorder={false}
+                      onClose={[Function]}
+                      onDatesChange={[Function]}
+                      onFocusChange={[Function]}
+                      onKeyDownArrowDown={[Function]}
+                      onKeyDownQuestionMark={[Function]}
+                      openDirection="down"
+                      phrases={
+                        Object {
+                          "calendarLabel": "Calendar",
+                          "chooseAvailableEndDate": [Function],
+                          "chooseAvailableStartDate": [Function],
+                          "clearDates": "Clear Dates",
+                          "closeDatePicker": "Close",
+                          "dateIsUnavailable": [Function],
+                          "enterKey": "Enter key",
+                          "escape": "Escape key",
+                          "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                          "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                          "homeEnd": "Home and end keys",
+                          "jumpToNextMonth": "Move forward to switch to the next month.",
+                          "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                          "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                          select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                          "keyboardShortcuts": "Keyboard Shortcuts",
+                          "leftArrowRightArrow": "Right and left arrow keys",
+                          "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                          "moveFocusByOneMonth": "Switch months.",
+                          "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                          "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                          "openThisPanel": "Open this panel.",
+                          "pageUpPageDown": "page up and page down keys",
+                          "questionMark": "Question mark",
+                          "returnFocusToInput": "Return to the date input field.",
+                          "selectFocusedDate": "Select the date in focus.",
+                          "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                          "upArrowDownArrow": "up and down arrow keys",
+                        }
+                      }
+                      readOnly={false}
+                      reopenPickerOnClearDates={false}
+                      required={false}
+                      screenReaderMessage=""
+                      showCaret={true}
+                      showClearDates={false}
+                      showDefaultInputIcon={false}
+                      small={true}
+                      startDate={null}
+                      startDateId="startDate"
+                      startDatePlaceholderText="Start Date"
+                      verticalSpacing={22}
+                      withFullScreenPortal={false}
+                    >
+                      <withStyles(DateRangePickerInput)
+                        block={false}
+                        customArrowIcon={null}
+                        customCloseIcon={null}
+                        customInputIcon={null}
+                        disabled={false}
+                        endDate={null}
+                        endDateId="endDate"
+                        endDatePlaceholderText="End Date"
+                        inputIconPosition="before"
+                        isEndDateFocused={false}
+                        isFocused={false}
+                        isRTL={false}
+                        isStartDateFocused={false}
+                        noBorder={false}
+                        onClearDates={[Function]}
+                        onEndDateChange={[Function]}
+                        onEndDateFocus={[Function]}
+                        onEndDateTab={[Function]}
+                        onKeyDownArrowDown={[Function]}
+                        onKeyDownQuestionMark={[Function]}
+                        onStartDateChange={[Function]}
+                        onStartDateFocus={[Function]}
+                        onStartDateShiftTab={[Function]}
+                        openDirection="down"
+                        phrases={
+                          Object {
+                            "calendarLabel": "Calendar",
+                            "chooseAvailableEndDate": [Function],
+                            "chooseAvailableStartDate": [Function],
+                            "clearDates": "Clear Dates",
+                            "closeDatePicker": "Close",
+                            "dateIsUnavailable": [Function],
+                            "enterKey": "Enter key",
+                            "escape": "Escape key",
+                            "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                            "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                            "homeEnd": "Home and end keys",
+                            "jumpToNextMonth": "Move forward to switch to the next month.",
+                            "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                            "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                            select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                            "keyboardShortcuts": "Keyboard Shortcuts",
+                            "leftArrowRightArrow": "Right and left arrow keys",
+                            "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                            "moveFocusByOneMonth": "Switch months.",
+                            "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                            "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                            "openThisPanel": "Open this panel.",
+                            "pageUpPageDown": "page up and page down keys",
+                            "questionMark": "Question mark",
+                            "returnFocusToInput": "Return to the date input field.",
+                            "selectFocusedDate": "Select the date in focus.",
+                            "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                            "upArrowDownArrow": "up and down arrow keys",
+                          }
+                        }
+                        readOnly={false}
+                        required={false}
+                        screenReaderMessage=""
+                        showCaret={true}
+                        showClearDates={false}
+                        showDefaultInputIcon={false}
+                        small={true}
+                        startDate={null}
+                        startDateId="startDate"
+                        startDatePlaceholderText="Start Date"
+                        verticalSpacing={22}
+                      >
+                        <DateRangePickerInput
+                          block={false}
+                          customArrowIcon={null}
+                          customCloseIcon={null}
+                          customInputIcon={null}
+                          disabled={false}
+                          endDate={null}
+                          endDateId="endDate"
+                          endDatePlaceholderText="End Date"
+                          inputIconPosition="before"
+                          isEndDateFocused={false}
+                          isFocused={false}
+                          isRTL={false}
+                          isStartDateFocused={false}
+                          noBorder={false}
+                          onClearDates={[Function]}
+                          onEndDateChange={[Function]}
+                          onEndDateFocus={[Function]}
+                          onEndDateTab={[Function]}
+                          onKeyDownArrowDown={[Function]}
+                          onKeyDownQuestionMark={[Function]}
+                          onStartDateChange={[Function]}
+                          onStartDateFocus={[Function]}
+                          onStartDateShiftTab={[Function]}
+                          openDirection="down"
+                          phrases={
+                            Object {
+                              "calendarLabel": "Calendar",
+                              "chooseAvailableEndDate": [Function],
+                              "chooseAvailableStartDate": [Function],
+                              "clearDates": "Clear Dates",
+                              "closeDatePicker": "Close",
+                              "dateIsUnavailable": [Function],
+                              "enterKey": "Enter key",
+                              "escape": "Escape key",
+                              "focusStartDate": "Interact with the calendar and add the check-in date for your trip.",
+                              "hideKeyboardShortcutsPanel": "Close the shortcuts panel.",
+                              "homeEnd": "Home and end keys",
+                              "jumpToNextMonth": "Move forward to switch to the next month.",
+                              "jumpToPrevMonth": "Move backward to switch to the previous month.",
+                              "keyboardNavigationInstructions": "Press the down arrow key to interact with the calendar and
+                              select a date. Press the question mark key to get the keyboard shortcuts for changing dates.",
+                              "keyboardShortcuts": "Keyboard Shortcuts",
+                              "leftArrowRightArrow": "Right and left arrow keys",
+                              "moveFocusByOneDay": "Move backward (left) and forward (right) by one day.",
+                              "moveFocusByOneMonth": "Switch months.",
+                              "moveFocusByOneWeek": "Move backward (up) and forward (down) by one week.",
+                              "moveFocustoStartAndEndOfWeek": "Go to the first or last day of a week.",
+                              "openThisPanel": "Open this panel.",
+                              "pageUpPageDown": "page up and page down keys",
+                              "questionMark": "Question mark",
+                              "returnFocusToInput": "Return to the date input field.",
+                              "selectFocusedDate": "Select the date in focus.",
+                              "showKeyboardShortcutsPanel": "Open the keyboard shortcuts panel.",
+                              "upArrowDownArrow": "up and down arrow keys",
+                            }
+                          }
+                          readOnly={false}
+                          required={false}
+                          screenReaderMessage=""
+                          showCaret={true}
+                          showClearDates={false}
+                          showDefaultInputIcon={false}
+                          small={true}
+                          startDate={null}
+                          startDateId="startDate"
+                          startDatePlaceholderText="Start Date"
+                          styles={
+                            Object {
+                              "DateRangePickerInput": "DateRangePickerInput",
+                              "DateRangePickerInput__block": "DateRangePickerInput__block",
+                              "DateRangePickerInput__disabled": "DateRangePickerInput__disabled",
+                              "DateRangePickerInput__rtl": "DateRangePickerInput__rtl",
+                              "DateRangePickerInput__showClearDates": "DateRangePickerInput__showClearDates",
+                              "DateRangePickerInput__withBorder": "DateRangePickerInput__withBorder",
+                              "DateRangePickerInput_arrow": "DateRangePickerInput_arrow",
+                              "DateRangePickerInput_arrow_svg": "DateRangePickerInput_arrow_svg",
+                              "DateRangePickerInput_arrow_svg__small": "DateRangePickerInput_arrow_svg__small",
+                              "DateRangePickerInput_calendarIcon": "DateRangePickerInput_calendarIcon",
+                              "DateRangePickerInput_calendarIcon_svg": "DateRangePickerInput_calendarIcon_svg",
+                              "DateRangePickerInput_clearDates": "DateRangePickerInput_clearDates",
+                              "DateRangePickerInput_clearDates__hide": "DateRangePickerInput_clearDates__hide",
+                              "DateRangePickerInput_clearDates__small": "DateRangePickerInput_clearDates__small",
+                              "DateRangePickerInput_clearDates_default": "DateRangePickerInput_clearDates_default",
+                              "DateRangePickerInput_clearDates_svg": "DateRangePickerInput_clearDates_svg",
+                              "DateRangePickerInput_clearDates_svg__small": "DateRangePickerInput_clearDates_svg__small",
+                            }
+                          }
+                          theme={
+                            Object {
+                              "reactDates": Object {
+                                "border": Object {
+                                  "input": Object {
+                                    "border": 0,
+                                    "borderBottom": "2px solid transparent",
+                                    "borderBottomFocused": "2px solid #008489",
+                                    "borderFocused": 0,
+                                    "borderLeft": 0,
+                                    "borderLeftFocused": 0,
+                                    "borderRight": 0,
+                                    "borderRightFocused": 0,
+                                    "borderTop": 0,
+                                    "borderTopFocused": 0,
+                                    "outlineFocused": 0,
+                                  },
+                                },
+                                "color": Object {
+                                  "background": "#fff",
+                                  "backgroundDark": "#f2f2f2",
+                                  "backgroundFocused": "#fff",
+                                  "blocked_calendar": Object {
+                                    "backgroundColor": "#cacccd",
+                                    "backgroundColor_active": "#cacccd",
+                                    "backgroundColor_hover": "#cacccd",
+                                    "borderColor": "#cacccd",
+                                    "borderColor_active": "#cacccd",
+                                    "borderColor_hover": "#cacccd",
+                                    "color": "#82888a",
+                                    "color_active": "#82888a",
+                                    "color_hover": "#82888a",
+                                  },
+                                  "blocked_out_of_range": Object {
+                                    "backgroundColor": "#fff",
+                                    "backgroundColor_active": "#fff",
+                                    "backgroundColor_hover": "#fff",
+                                    "borderColor": "#e4e7e7",
+                                    "borderColor_active": "#e4e7e7",
+                                    "borderColor_hover": "#e4e7e7",
+                                    "color": "#cacccd",
+                                    "color_active": "#cacccd",
+                                    "color_hover": "#cacccd",
+                                  },
+                                  "core": Object {
+                                    "border": "#dbdbdb",
+                                    "borderLight": "#e4e7e7",
+                                    "borderLighter": "#eceeee",
+                                    "borderMedium": "#c4c4c4",
+                                    "gray": "#565a5c",
+                                    "grayLight": "#82888a",
+                                    "grayLighter": "#cacccd",
+                                    "grayLightest": "#f2f2f2",
+                                    "primary": "#00a699",
+                                    "primaryShade_1": "#33dacd",
+                                    "primaryShade_2": "#66e2da",
+                                    "primaryShade_3": "#80e8e0",
+                                    "primaryShade_4": "#b2f1ec",
+                                    "primary_dark": "#008489",
+                                    "secondary": "#007a87",
+                                    "white": "#fff",
+                                    "yellow": "#ffe8bc",
+                                    "yellow_dark": "#ffce71",
+                                  },
+                                  "disabled": "#f2f2f2",
+                                  "highlighted": Object {
+                                    "backgroundColor": "#ffe8bc",
+                                    "backgroundColor_active": "#ffce71",
+                                    "backgroundColor_hover": "#ffce71",
+                                    "color": "#565a5c",
+                                    "color_active": "#565a5c",
+                                    "color_hover": "#565a5c",
+                                  },
+                                  "hoveredSpan": Object {
+                                    "backgroundColor": "#b2f1ec",
+                                    "backgroundColor_active": "#80e8e0",
+                                    "backgroundColor_hover": "#b2f1ec",
+                                    "borderColor": "#80e8e0",
+                                    "borderColor_active": "#80e8e0",
+                                    "borderColor_hover": "#80e8e0",
+                                    "color": "#007a87",
+                                    "color_active": "#007a87",
+                                    "color_hover": "#007a87",
+                                  },
+                                  "minimumNights": Object {
+                                    "backgroundColor": "#fff",
+                                    "backgroundColor_active": "#fff",
+                                    "backgroundColor_hover": "#fff",
+                                    "borderColor": "#eceeee",
+                                    "color": "#cacccd",
+                                    "color_active": "#cacccd",
+                                    "color_hover": "#cacccd",
+                                  },
+                                  "outside": Object {
+                                    "backgroundColor": "#fff",
+                                    "backgroundColor_active": "#fff",
+                                    "backgroundColor_hover": "#fff",
+                                    "color": "#565a5c",
+                                    "color_active": "#565a5c",
+                                    "color_hover": "#565a5c",
+                                  },
+                                  "placeholderText": "#757575",
+                                  "selected": Object {
+                                    "backgroundColor": "#00a699",
+                                    "backgroundColor_active": "#00a699",
+                                    "backgroundColor_hover": "#00a699",
+                                    "borderColor": "#00a699",
+                                    "borderColor_active": "#00a699",
+                                    "borderColor_hover": "#00a699",
+                                    "color": "#fff",
+                                    "color_active": "#fff",
+                                    "color_hover": "#fff",
+                                  },
+                                  "selectedSpan": Object {
+                                    "backgroundColor": "#66e2da",
+                                    "backgroundColor_active": "#33dacd",
+                                    "backgroundColor_hover": "#33dacd",
+                                    "borderColor": "#33dacd",
+                                    "borderColor_active": "#00a699",
+                                    "borderColor_hover": "#00a699",
+                                    "color": "#fff",
+                                    "color_active": "#fff",
+                                    "color_hover": "#fff",
+                                  },
+                                  "text": "#565a5c",
+                                  "textDisabled": "#dbdbdb",
+                                  "textFocused": "#007a87",
+                                },
+                                "font": Object {
+                                  "captionSize": 18,
+                                  "input": Object {
+                                    "lineHeight": "24px",
+                                    "lineHeight_small": "18px",
+                                    "size": 18,
+                                    "size_small": 14,
+                                    "styleDisabled": "italic",
+                                  },
+                                  "size": 14,
+                                },
+                                "sizing": Object {
+                                  "arrowWidth": 24,
+                                  "arrowWidth_small": 19,
+                                  "inputWidth": 130,
+                                  "inputWidth_small": 90,
+                                },
+                                "spacing": Object {
+                                  "captionPaddingBottom": 37,
+                                  "captionPaddingTop": 22,
+                                  "displayTextPaddingBottom": 11,
+                                  "displayTextPaddingBottom_small": 6,
+                                  "displayTextPaddingHorizontal": undefined,
+                                  "displayTextPaddingHorizontal_small": undefined,
+                                  "displayTextPaddingLeft": 12,
+                                  "displayTextPaddingLeft_small": 8,
+                                  "displayTextPaddingRight": 12,
+                                  "displayTextPaddingRight_small": 8,
+                                  "displayTextPaddingTop": 13,
+                                  "displayTextPaddingTop_small": 8,
+                                  "displayTextPaddingVertical": undefined,
+                                  "displayTextPaddingVertical_small": undefined,
+                                  "inputPadding": 0,
+                                },
+                                "zIndex": 0,
+                              },
+                            }
+                          }
+                          verticalSpacing={22}
+                        >
+                          <div
+                            className="DateRangePickerInput DateRangePickerInput_1 DateRangePickerInput__withBorder DateRangePickerInput__withBorder_2"
+                          >
+                            <withStyles(DateInput)
+                              disabled={false}
+                              displayValue={null}
+                              focused={false}
+                              id="startDate"
+                              isFocused={false}
+                              onChange={[Function]}
+                              onFocus={[Function]}
+                              onKeyDownArrowDown={[Function]}
+                              onKeyDownQuestionMark={[Function]}
+                              onKeyDownShiftTab={[Function]}
+                              onKeyDownTab={[Function]}
+                              openDirection="down"
+                              placeholder="Start Date"
+                              readOnly={false}
+                              required={false}
+                              screenReaderMessage="Press the down arrow key to interact with the calendar and
+                              select a date. Press the question mark key to get the keyboard shortcuts for changing dates."
+                              showCaret={true}
+                              small={true}
+                              verticalSpacing={22}
+                            >
+                              <DateInput
+                                disabled={false}
+                                displayValue={null}
+                                focused={false}
+                                id="startDate"
+                                isFocused={false}
+                                onChange={[Function]}
+                                onFocus={[Function]}
+                                onKeyDownArrowDown={[Function]}
+                                onKeyDownQuestionMark={[Function]}
+                                onKeyDownShiftTab={[Function]}
+                                onKeyDownTab={[Function]}
+                                openDirection="down"
+                                placeholder="Start Date"
+                                readOnly={false}
+                                required={false}
+                                screenReaderMessage="Press the down arrow key to interact with the calendar and
+                                select a date. Press the question mark key to get the keyboard shortcuts for changing dates."
+                                showCaret={true}
+                                small={true}
+                                styles={
+                                  Object {
+                                    "DateInput": "DateInput",
+                                    "DateInput__disabled": "DateInput__disabled",
+                                    "DateInput__small": "DateInput__small",
+                                    "DateInput_fang": "DateInput_fang",
+                                    "DateInput_fangShape": "DateInput_fangShape",
+                                    "DateInput_fangStroke": "DateInput_fangStroke",
+                                    "DateInput_input": "DateInput_input",
+                                    "DateInput_input__disabled": "DateInput_input__disabled",
+                                    "DateInput_input__focused": "DateInput_input__focused",
+                                    "DateInput_input__readOnly": "DateInput_input__readOnly",
+                                    "DateInput_input__small": "DateInput_input__small",
+                                    "DateInput_screenReaderMessage": "DateInput_screenReaderMessage",
+                                  }
+                                }
+                                theme={
+                                  Object {
+                                    "reactDates": Object {
+                                      "border": Object {
+                                        "input": Object {
+                                          "border": 0,
+                                          "borderBottom": "2px solid transparent",
+                                          "borderBottomFocused": "2px solid #008489",
+                                          "borderFocused": 0,
+                                          "borderLeft": 0,
+                                          "borderLeftFocused": 0,
+                                          "borderRight": 0,
+                                          "borderRightFocused": 0,
+                                          "borderTop": 0,
+                                          "borderTopFocused": 0,
+                                          "outlineFocused": 0,
+                                        },
+                                      },
+                                      "color": Object {
+                                        "background": "#fff",
+                                        "backgroundDark": "#f2f2f2",
+                                        "backgroundFocused": "#fff",
+                                        "blocked_calendar": Object {
+                                          "backgroundColor": "#cacccd",
+                                          "backgroundColor_active": "#cacccd",
+                                          "backgroundColor_hover": "#cacccd",
+                                          "borderColor": "#cacccd",
+                                          "borderColor_active": "#cacccd",
+                                          "borderColor_hover": "#cacccd",
+                                          "color": "#82888a",
+                                          "color_active": "#82888a",
+                                          "color_hover": "#82888a",
+                                        },
+                                        "blocked_out_of_range": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "borderColor": "#e4e7e7",
+                                          "borderColor_active": "#e4e7e7",
+                                          "borderColor_hover": "#e4e7e7",
+                                          "color": "#cacccd",
+                                          "color_active": "#cacccd",
+                                          "color_hover": "#cacccd",
+                                        },
+                                        "core": Object {
+                                          "border": "#dbdbdb",
+                                          "borderLight": "#e4e7e7",
+                                          "borderLighter": "#eceeee",
+                                          "borderMedium": "#c4c4c4",
+                                          "gray": "#565a5c",
+                                          "grayLight": "#82888a",
+                                          "grayLighter": "#cacccd",
+                                          "grayLightest": "#f2f2f2",
+                                          "primary": "#00a699",
+                                          "primaryShade_1": "#33dacd",
+                                          "primaryShade_2": "#66e2da",
+                                          "primaryShade_3": "#80e8e0",
+                                          "primaryShade_4": "#b2f1ec",
+                                          "primary_dark": "#008489",
+                                          "secondary": "#007a87",
+                                          "white": "#fff",
+                                          "yellow": "#ffe8bc",
+                                          "yellow_dark": "#ffce71",
+                                        },
+                                        "disabled": "#f2f2f2",
+                                        "highlighted": Object {
+                                          "backgroundColor": "#ffe8bc",
+                                          "backgroundColor_active": "#ffce71",
+                                          "backgroundColor_hover": "#ffce71",
+                                          "color": "#565a5c",
+                                          "color_active": "#565a5c",
+                                          "color_hover": "#565a5c",
+                                        },
+                                        "hoveredSpan": Object {
+                                          "backgroundColor": "#b2f1ec",
+                                          "backgroundColor_active": "#80e8e0",
+                                          "backgroundColor_hover": "#b2f1ec",
+                                          "borderColor": "#80e8e0",
+                                          "borderColor_active": "#80e8e0",
+                                          "borderColor_hover": "#80e8e0",
+                                          "color": "#007a87",
+                                          "color_active": "#007a87",
+                                          "color_hover": "#007a87",
+                                        },
+                                        "minimumNights": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "borderColor": "#eceeee",
+                                          "color": "#cacccd",
+                                          "color_active": "#cacccd",
+                                          "color_hover": "#cacccd",
+                                        },
+                                        "outside": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "color": "#565a5c",
+                                          "color_active": "#565a5c",
+                                          "color_hover": "#565a5c",
+                                        },
+                                        "placeholderText": "#757575",
+                                        "selected": Object {
+                                          "backgroundColor": "#00a699",
+                                          "backgroundColor_active": "#00a699",
+                                          "backgroundColor_hover": "#00a699",
+                                          "borderColor": "#00a699",
+                                          "borderColor_active": "#00a699",
+                                          "borderColor_hover": "#00a699",
+                                          "color": "#fff",
+                                          "color_active": "#fff",
+                                          "color_hover": "#fff",
+                                        },
+                                        "selectedSpan": Object {
+                                          "backgroundColor": "#66e2da",
+                                          "backgroundColor_active": "#33dacd",
+                                          "backgroundColor_hover": "#33dacd",
+                                          "borderColor": "#33dacd",
+                                          "borderColor_active": "#00a699",
+                                          "borderColor_hover": "#00a699",
+                                          "color": "#fff",
+                                          "color_active": "#fff",
+                                          "color_hover": "#fff",
+                                        },
+                                        "text": "#565a5c",
+                                        "textDisabled": "#dbdbdb",
+                                        "textFocused": "#007a87",
+                                      },
+                                      "font": Object {
+                                        "captionSize": 18,
+                                        "input": Object {
+                                          "lineHeight": "24px",
+                                          "lineHeight_small": "18px",
+                                          "size": 18,
+                                          "size_small": 14,
+                                          "styleDisabled": "italic",
+                                        },
+                                        "size": 14,
+                                      },
+                                      "sizing": Object {
+                                        "arrowWidth": 24,
+                                        "arrowWidth_small": 19,
+                                        "inputWidth": 130,
+                                        "inputWidth_small": 90,
+                                      },
+                                      "spacing": Object {
+                                        "captionPaddingBottom": 37,
+                                        "captionPaddingTop": 22,
+                                        "displayTextPaddingBottom": 11,
+                                        "displayTextPaddingBottom_small": 6,
+                                        "displayTextPaddingHorizontal": undefined,
+                                        "displayTextPaddingHorizontal_small": undefined,
+                                        "displayTextPaddingLeft": 12,
+                                        "displayTextPaddingLeft_small": 8,
+                                        "displayTextPaddingRight": 12,
+                                        "displayTextPaddingRight_small": 8,
+                                        "displayTextPaddingTop": 13,
+                                        "displayTextPaddingTop_small": 8,
+                                        "displayTextPaddingVertical": undefined,
+                                        "displayTextPaddingVertical_small": undefined,
+                                        "inputPadding": 0,
+                                      },
+                                      "zIndex": 0,
+                                    },
+                                  }
+                                }
+                                verticalSpacing={22}
+                              >
+                                <div
+                                  className="DateInput DateInput_1 DateInput__small DateInput__small_2"
+                                >
+                                  <input
+                                    aria-describedby="DateInput__screen-reader-message-startDate"
+                                    aria-label="Start Date"
+                                    autoComplete="off"
+                                    className="DateInput_input DateInput_input_1 DateInput_input__small DateInput_input__small_2"
+                                    disabled={false}
+                                    id="startDate"
+                                    name="startDate"
+                                    onChange={[Function]}
+                                    onFocus={[Function]}
+                                    onKeyDown={[Function]}
+                                    placeholder="Start Date"
+                                    readOnly={false}
+                                    required={false}
+                                    type="text"
+                                    value=""
+                                  />
+                                  <p
+                                    className="DateInput_screenReaderMessage DateInput_screenReaderMessage_1"
+                                    id="DateInput__screen-reader-message-startDate"
+                                  >
+                                    Press the down arrow key to interact with the calendar and
+                                      select a date. Press the question mark key to get the keyboard shortcuts for changing dates.
+                                  </p>
+                                </div>
+                              </DateInput>
+                            </withStyles(DateInput)>
+                            <div
+                              aria-hidden="true"
+                              className="DateRangePickerInput_arrow DateRangePickerInput_arrow_1"
+                              role="presentation"
+                            >
+                              <RightArrow
+                                className="DateRangePickerInput_arrow_svg DateRangePickerInput_arrow_svg_1 DateRangePickerInput_arrow_svg__small DateRangePickerInput_arrow_svg__small_2"
+                                viewBox="0 0 1000 1000"
+                              >
+                                <svg
+                                  className="DateRangePickerInput_arrow_svg DateRangePickerInput_arrow_svg_1 DateRangePickerInput_arrow_svg__small DateRangePickerInput_arrow_svg__small_2"
+                                  viewBox="0 0 1000 1000"
+                                >
+                                  <path
+                                    d="M694.4 242.4l249.1 249.1c11 11 11 21 0 32L694.4 772.7c-5 5-10 7-16 7s-11-2-16-7c-11-11-11-21 0-32l210.1-210.1H67.1c-13 0-23-10-23-23s10-23 23-23h805.4L662.4 274.5c-21-21.1 11-53.1 32-32.1z"
+                                  />
+                                </svg>
+                              </RightArrow>
+                            </div>
+                            <withStyles(DateInput)
+                              disabled={false}
+                              displayValue={null}
+                              focused={false}
+                              id="endDate"
+                              isFocused={false}
+                              onChange={[Function]}
+                              onFocus={[Function]}
+                              onKeyDownArrowDown={[Function]}
+                              onKeyDownQuestionMark={[Function]}
+                              onKeyDownShiftTab={[Function]}
+                              onKeyDownTab={[Function]}
+                              openDirection="down"
+                              placeholder="End Date"
+                              readOnly={false}
+                              required={false}
+                              screenReaderMessage="Press the down arrow key to interact with the calendar and
+                              select a date. Press the question mark key to get the keyboard shortcuts for changing dates."
+                              showCaret={true}
+                              small={true}
+                              verticalSpacing={22}
+                            >
+                              <DateInput
+                                disabled={false}
+                                displayValue={null}
+                                focused={false}
+                                id="endDate"
+                                isFocused={false}
+                                onChange={[Function]}
+                                onFocus={[Function]}
+                                onKeyDownArrowDown={[Function]}
+                                onKeyDownQuestionMark={[Function]}
+                                onKeyDownShiftTab={[Function]}
+                                onKeyDownTab={[Function]}
+                                openDirection="down"
+                                placeholder="End Date"
+                                readOnly={false}
+                                required={false}
+                                screenReaderMessage="Press the down arrow key to interact with the calendar and
+                                select a date. Press the question mark key to get the keyboard shortcuts for changing dates."
+                                showCaret={true}
+                                small={true}
+                                styles={
+                                  Object {
+                                    "DateInput": "DateInput",
+                                    "DateInput__disabled": "DateInput__disabled",
+                                    "DateInput__small": "DateInput__small",
+                                    "DateInput_fang": "DateInput_fang",
+                                    "DateInput_fangShape": "DateInput_fangShape",
+                                    "DateInput_fangStroke": "DateInput_fangStroke",
+                                    "DateInput_input": "DateInput_input",
+                                    "DateInput_input__disabled": "DateInput_input__disabled",
+                                    "DateInput_input__focused": "DateInput_input__focused",
+                                    "DateInput_input__readOnly": "DateInput_input__readOnly",
+                                    "DateInput_input__small": "DateInput_input__small",
+                                    "DateInput_screenReaderMessage": "DateInput_screenReaderMessage",
+                                  }
+                                }
+                                theme={
+                                  Object {
+                                    "reactDates": Object {
+                                      "border": Object {
+                                        "input": Object {
+                                          "border": 0,
+                                          "borderBottom": "2px solid transparent",
+                                          "borderBottomFocused": "2px solid #008489",
+                                          "borderFocused": 0,
+                                          "borderLeft": 0,
+                                          "borderLeftFocused": 0,
+                                          "borderRight": 0,
+                                          "borderRightFocused": 0,
+                                          "borderTop": 0,
+                                          "borderTopFocused": 0,
+                                          "outlineFocused": 0,
+                                        },
+                                      },
+                                      "color": Object {
+                                        "background": "#fff",
+                                        "backgroundDark": "#f2f2f2",
+                                        "backgroundFocused": "#fff",
+                                        "blocked_calendar": Object {
+                                          "backgroundColor": "#cacccd",
+                                          "backgroundColor_active": "#cacccd",
+                                          "backgroundColor_hover": "#cacccd",
+                                          "borderColor": "#cacccd",
+                                          "borderColor_active": "#cacccd",
+                                          "borderColor_hover": "#cacccd",
+                                          "color": "#82888a",
+                                          "color_active": "#82888a",
+                                          "color_hover": "#82888a",
+                                        },
+                                        "blocked_out_of_range": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "borderColor": "#e4e7e7",
+                                          "borderColor_active": "#e4e7e7",
+                                          "borderColor_hover": "#e4e7e7",
+                                          "color": "#cacccd",
+                                          "color_active": "#cacccd",
+                                          "color_hover": "#cacccd",
+                                        },
+                                        "core": Object {
+                                          "border": "#dbdbdb",
+                                          "borderLight": "#e4e7e7",
+                                          "borderLighter": "#eceeee",
+                                          "borderMedium": "#c4c4c4",
+                                          "gray": "#565a5c",
+                                          "grayLight": "#82888a",
+                                          "grayLighter": "#cacccd",
+                                          "grayLightest": "#f2f2f2",
+                                          "primary": "#00a699",
+                                          "primaryShade_1": "#33dacd",
+                                          "primaryShade_2": "#66e2da",
+                                          "primaryShade_3": "#80e8e0",
+                                          "primaryShade_4": "#b2f1ec",
+                                          "primary_dark": "#008489",
+                                          "secondary": "#007a87",
+                                          "white": "#fff",
+                                          "yellow": "#ffe8bc",
+                                          "yellow_dark": "#ffce71",
+                                        },
+                                        "disabled": "#f2f2f2",
+                                        "highlighted": Object {
+                                          "backgroundColor": "#ffe8bc",
+                                          "backgroundColor_active": "#ffce71",
+                                          "backgroundColor_hover": "#ffce71",
+                                          "color": "#565a5c",
+                                          "color_active": "#565a5c",
+                                          "color_hover": "#565a5c",
+                                        },
+                                        "hoveredSpan": Object {
+                                          "backgroundColor": "#b2f1ec",
+                                          "backgroundColor_active": "#80e8e0",
+                                          "backgroundColor_hover": "#b2f1ec",
+                                          "borderColor": "#80e8e0",
+                                          "borderColor_active": "#80e8e0",
+                                          "borderColor_hover": "#80e8e0",
+                                          "color": "#007a87",
+                                          "color_active": "#007a87",
+                                          "color_hover": "#007a87",
+                                        },
+                                        "minimumNights": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "borderColor": "#eceeee",
+                                          "color": "#cacccd",
+                                          "color_active": "#cacccd",
+                                          "color_hover": "#cacccd",
+                                        },
+                                        "outside": Object {
+                                          "backgroundColor": "#fff",
+                                          "backgroundColor_active": "#fff",
+                                          "backgroundColor_hover": "#fff",
+                                          "color": "#565a5c",
+                                          "color_active": "#565a5c",
+                                          "color_hover": "#565a5c",
+                                        },
+                                        "placeholderText": "#757575",
+                                        "selected": Object {
+                                          "backgroundColor": "#00a699",
+                                          "backgroundColor_active": "#00a699",
+                                          "backgroundColor_hover": "#00a699",
+                                          "borderColor": "#00a699",
+                                          "borderColor_active": "#00a699",
+                                          "borderColor_hover": "#00a699",
+                                          "color": "#fff",
+                                          "color_active": "#fff",
+                                          "color_hover": "#fff",
+                                        },
+                                        "selectedSpan": Object {
+                                          "backgroundColor": "#66e2da",
+                                          "backgroundColor_active": "#33dacd",
+                                          "backgroundColor_hover": "#33dacd",
+                                          "borderColor": "#33dacd",
+                                          "borderColor_active": "#00a699",
+                                          "borderColor_hover": "#00a699",
+                                          "color": "#fff",
+                                          "color_active": "#fff",
+                                          "color_hover": "#fff",
+                                        },
+                                        "text": "#565a5c",
+                                        "textDisabled": "#dbdbdb",
+                                        "textFocused": "#007a87",
+                                      },
+                                      "font": Object {
+                                        "captionSize": 18,
+                                        "input": Object {
+                                          "lineHeight": "24px",
+                                          "lineHeight_small": "18px",
+                                          "size": 18,
+                                          "size_small": 14,
+                                          "styleDisabled": "italic",
+                                        },
+                                        "size": 14,
+                                      },
+                                      "sizing": Object {
+                                        "arrowWidth": 24,
+                                        "arrowWidth_small": 19,
+                                        "inputWidth": 130,
+                                        "inputWidth_small": 90,
+                                      },
+                                      "spacing": Object {
+                                        "captionPaddingBottom": 37,
+                                        "captionPaddingTop": 22,
+                                        "displayTextPaddingBottom": 11,
+                                        "displayTextPaddingBottom_small": 6,
+                                        "displayTextPaddingHorizontal": undefined,
+                                        "displayTextPaddingHorizontal_small": undefined,
+                                        "displayTextPaddingLeft": 12,
+                                        "displayTextPaddingLeft_small": 8,
+                                        "displayTextPaddingRight": 12,
+                                        "displayTextPaddingRight_small": 8,
+                                        "displayTextPaddingTop": 13,
+                                        "displayTextPaddingTop_small": 8,
+                                        "displayTextPaddingVertical": undefined,
+                                        "displayTextPaddingVertical_small": undefined,
+                                        "inputPadding": 0,
+                                      },
+                                      "zIndex": 0,
+                                    },
+                                  }
+                                }
+                                verticalSpacing={22}
+                              >
+                                <div
+                                  className="DateInput DateInput_1 DateInput__small DateInput__small_2"
+                                >
+                                  <input
+                                    aria-describedby="DateInput__screen-reader-message-endDate"
+                                    aria-label="End Date"
+                                    autoComplete="off"
+                                    className="DateInput_input DateInput_input_1 DateInput_input__small DateInput_input__small_2"
+                                    disabled={false}
+                                    id="endDate"
+                                    name="endDate"
+                                    onChange={[Function]}
+                                    onFocus={[Function]}
+                                    onKeyDown={[Function]}
+                                    placeholder="End Date"
+                                    readOnly={false}
+                                    required={false}
+                                    type="text"
+                                    value=""
+                                  />
+                                  <p
+                                    className="DateInput_screenReaderMessage DateInput_screenReaderMessage_1"
+                                    id="DateInput__screen-reader-message-endDate"
+                                  >
+                                    Press the down arrow key to interact with the calendar and
+                                      select a date. Press the question mark key to get the keyboard shortcuts for changing dates.
+                                  </p>
+                                </div>
+                              </DateInput>
+                            </withStyles(DateInput)>
+                          </div>
+                        </DateRangePickerInput>
+                      </withStyles(DateRangePickerInput)>
+                    </DateRangePickerInputController>
+                  </div>
+                </OutsideClickHandler>
+              </div>
+            </DateRangePicker>
+          </withStyles(DateRangePicker)>
+        </div>
+        <Component>
+          <div
+            className="currency-filter"
+          >
+            <div
+              className=""
+            >
+              BTC
+            </div>
+            <div
+              className="activated"
+            >
+              USD
+            </div>
+          </div>
+        </Component>
+      </div>
+    </ProjectChartHeader>
+    <div
+      className="project-chart-body"
+    >
+      <div
+        className="project-chart__isLoading"
+      >
+         Loading... 
+      </div>
+      <Bar
+        data={
+          Object {
+            "datasets": Array [
+              Object {
+                "backgroundColor": "rgba(239, 242, 236, 0.5)",
+                "borderColor": "#00a05a",
+                "borderWidth": 1,
+                "data": Array [],
+                "fill": true,
+                "label": "Price",
+                "pointBorderWidth": 2,
+                "type": "LineWithLine",
+                "yAxisID": "y-axis-1",
+              },
+              Object {
+                "backgroundColor": "rgba(49, 107, 174, 0.5)",
+                "borderColor": "rgba(49, 107, 174, 0.5)",
+                "borderWidth": 4,
+                "data": Array [],
+                "fill": false,
+                "label": "Volume",
+                "pointBorderWidth": 1,
+                "type": "bar",
+                "yAxisID": "y-axis-2",
+              },
+            ],
+            "labels": Array [],
+          }
+        }
+        height={100}
+        onElementsClick={[Function]}
+        options={
+          Object {
+            "animation": false,
+            "datasetFill": false,
+            "elements": Object {
+              "point": Object {
+                "hitRadius": 2,
+                "hoverRadius": 2,
+                "radius": 0,
+              },
+            },
+            "hover": Object {
+              "intersect": true,
+              "mode": "nearest",
+            },
+            "legend": Object {
+              "display": false,
+            },
+            "pointDot": false,
+            "pointRadius": 0,
+            "responsive": true,
+            "scaleFontSize": 0,
+            "scaleShowLabels": false,
+            "scales": Object {
+              "xAxes": Array [
+                Object {
+                  "gridLines": Object {
+                    "color": "#f0f0f0",
+                    "display": true,
+                    "drawBorder": true,
+                  },
+                  "ticks": Object {
+                    "autoSkipPadding": 1,
+                    "callback": [Function],
+                  },
+                  "type": "time",
+                },
+              ],
+              "yAxes": Array [
+                Object {
+                  "display": true,
+                  "gridLines": Object {
+                    "color": "#f0f0f0",
+                    "display": true,
+                    "drawBorder": true,
+                  },
+                  "id": "y-axis-1",
+                  "position": "left",
+                  "scaleLabel": Object {
+                    "display": true,
+                    "fontColor": "#00a05a",
+                    "labelString": "Price (USD)",
+                  },
+                  "ticks": Object {
+                    "beginAtZero": true,
+                    "callback": [Function],
+                    "display": true,
+                  },
+                  "type": "linear",
+                },
+                Object {
+                  "display": false,
+                  "id": "y-axis-2",
+                  "labels": Object {
+                    "show": true,
+                  },
+                  "position": "right",
+                  "scaleLabel": Object {
+                    "display": false,
+                    "fontColor": "rgba(49, 107, 174, 0.5)",
+                    "labelString": "Volume",
+                  },
+                  "ticks": Object {
+                    "max": -Infinity,
+                  },
+                  "type": "linear",
+                },
+                Object {
+                  "display": undefined,
+                  "gridLines": Object {
+                    "display": false,
+                  },
+                  "id": "y-axis-3",
+                  "position": "right",
+                  "scaleLabel": Object {
+                    "display": true,
+                    "fontColor": "rgb(200, 47, 63)",
+                    "labelString": "MarketCap (USD)",
+                  },
+                  "ticks": Object {
+                    "callback": [Function],
+                    "display": true,
+                  },
+                  "type": "linear",
+                },
+              ],
+            },
+            "showTooltips": true,
+            "tooltips": Object {
+              "backgroundColor": "rgba(255, 255, 255, 0.8)",
+              "bodyFontColor": "#000",
+              "bodyFontSize": 14,
+              "bodySpacing": 4,
+              "borderColor": "#d3d3d3",
+              "borderWidth": 2,
+              "callbacks": Object {
+                "label": [Function],
+                "title": [Function],
+              },
+              "cornerRadius": 3,
+              "displayColors": true,
+              "intersect": false,
+              "mode": "index",
+              "titleFontColor": "#000",
+              "titleFontSize": 14,
+              "titleMarginBottom": 8,
+            },
+          }
+        }
+        redraw={true}
+        style={
+          Object {
+            "transition": "opacity 0.25s ease",
+          }
+        }
+      >
+        <ChartComponent
+          data={
+            Object {
+              "datasets": Array [
+                Object {
+                  "backgroundColor": "rgba(239, 242, 236, 0.5)",
+                  "borderColor": "#00a05a",
+                  "borderWidth": 1,
+                  "data": Array [],
+                  "fill": true,
+                  "label": "Price",
+                  "pointBorderWidth": 2,
+                  "type": "LineWithLine",
+                  "yAxisID": "y-axis-1",
+                },
+                Object {
+                  "backgroundColor": "rgba(49, 107, 174, 0.5)",
+                  "borderColor": "rgba(49, 107, 174, 0.5)",
+                  "borderWidth": 4,
+                  "data": Array [],
+                  "fill": false,
+                  "label": "Volume",
+                  "pointBorderWidth": 1,
+                  "type": "bar",
+                  "yAxisID": "y-axis-2",
+                },
+              ],
+              "labels": Array [],
+            }
+          }
+          datasetKeyProvider={[Function]}
+          height={100}
+          legend={
+            Object {
+              "display": true,
+              "position": "bottom",
+            }
+          }
+          onElementsClick={[Function]}
+          options={
+            Object {
+              "animation": false,
+              "datasetFill": false,
+              "elements": Object {
+                "point": Object {
+                  "hitRadius": 2,
+                  "hoverRadius": 2,
+                  "radius": 0,
+                },
+              },
+              "hover": Object {
+                "intersect": true,
+                "mode": "nearest",
+              },
+              "legend": Object {
+                "display": false,
+              },
+              "pointDot": false,
+              "pointRadius": 0,
+              "responsive": true,
+              "scaleFontSize": 0,
+              "scaleShowLabels": false,
+              "scales": Object {
+                "xAxes": Array [
+                  Object {
+                    "gridLines": Object {
+                      "color": "#f0f0f0",
+                      "display": true,
+                      "drawBorder": true,
+                    },
+                    "ticks": Object {
+                      "autoSkipPadding": 1,
+                      "callback": [Function],
+                    },
+                    "type": "time",
+                  },
+                ],
+                "yAxes": Array [
+                  Object {
+                    "display": true,
+                    "gridLines": Object {
+                      "color": "#f0f0f0",
+                      "display": true,
+                      "drawBorder": true,
+                    },
+                    "id": "y-axis-1",
+                    "position": "left",
+                    "scaleLabel": Object {
+                      "display": true,
+                      "fontColor": "#00a05a",
+                      "labelString": "Price (USD)",
+                    },
+                    "ticks": Object {
+                      "beginAtZero": true,
+                      "callback": [Function],
+                      "display": true,
+                    },
+                    "type": "linear",
+                  },
+                  Object {
+                    "display": false,
+                    "id": "y-axis-2",
+                    "labels": Object {
+                      "show": true,
+                    },
+                    "position": "right",
+                    "scaleLabel": Object {
+                      "display": false,
+                      "fontColor": "rgba(49, 107, 174, 0.5)",
+                      "labelString": "Volume",
+                    },
+                    "ticks": Object {
+                      "max": -Infinity,
+                    },
+                    "type": "linear",
+                  },
+                  Object {
+                    "display": undefined,
+                    "gridLines": Object {
+                      "display": false,
+                    },
+                    "id": "y-axis-3",
+                    "position": "right",
+                    "scaleLabel": Object {
+                      "display": true,
+                      "fontColor": "rgb(200, 47, 63)",
+                      "labelString": "MarketCap (USD)",
+                    },
+                    "ticks": Object {
+                      "callback": [Function],
+                      "display": true,
+                    },
+                    "type": "linear",
+                  },
+                ],
+              },
+              "showTooltips": true,
+              "tooltips": Object {
+                "backgroundColor": "rgba(255, 255, 255, 0.8)",
+                "bodyFontColor": "#000",
+                "bodyFontSize": 14,
+                "bodySpacing": 4,
+                "borderColor": "#d3d3d3",
+                "borderWidth": 2,
+                "callbacks": Object {
+                  "label": [Function],
+                  "title": [Function],
+                },
+                "cornerRadius": 3,
+                "displayColors": true,
+                "intersect": false,
+                "mode": "index",
+                "titleFontColor": "#000",
+                "titleFontSize": 14,
+                "titleMarginBottom": 8,
+              },
+            }
+          }
+          redraw={true}
+          style={
+            Object {
+              "transition": "opacity 0.25s ease",
+            }
+          }
+          type="bar"
+          width={300}
+        >
+          <canvas
+            height={100}
+            onClick={[Function]}
+            width={300}
+          />
+        </ChartComponent>
+      </Bar>
+    </div>
+    <div
+      className="chart-footer"
+    >
+      <div
+        className="chart-footer-filters"
+      >
+        <MarketcapToggle
+          focusedInput={null}
+          history={Array []}
+          isDesktop={true}
+          onFocusChange={[Function]}
+        >
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              MarketCap
+            </div>
+          </div>
+        </MarketcapToggle>
+      </div>
+      <div>
+        <small
+          className="trademark"
+        >
+          santiment.net
+        </small>
+      </div>
+    </div>
   </div>
 </ProjectChart>
 `;

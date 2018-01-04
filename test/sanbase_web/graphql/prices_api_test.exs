@@ -359,10 +359,15 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert "XYZ" in resp_data
   end
 
-  defp days_ago_start_of_day(days) do
-    Timex.today()
-    |> Timex.shift(days: -days)
-    |> Timex.end_of_day()
-    |> Timex.to_datetime()
+  defp basic_auth() do
+    username =
+      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
+      |> Keyword.get(:basic_auth_username)
+
+    password =
+      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
+      |> Keyword.get(:basic_auth_password)
+
+    Base.encode64(username <> ":" <> password)
   end
 end

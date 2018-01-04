@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import {
   compose,
-  lifecycle
+  lifecycle,
+  pure
 } from 'recompose'
 import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
@@ -43,6 +44,7 @@ export const Detailed = ({
   projects,
   loading,
   PriceQuery,
+  user,
   generalInfo
 }) => {
   if (loading) {
@@ -171,8 +173,13 @@ Detailed.propTypes = propTypes
 
 const mapStateToProps = state => {
   return {
+    user: state.user,
     projects: state.projects.items,
-    loading: state.projects.isLoading
+    loading: state.projects.isLoading,
+    generalInfo: {
+      isLoading: false,
+      isUnauthorized: !state.user.token
+    }
   }
 }
 
@@ -243,10 +250,10 @@ const mapDataToProps = ({ProjectQuery}) => {
   return {generalInfo: {isLoading, isEmpty, isError, project, errorMessage, isUnauthorized}}
 }
 
-const mapPropsToOptions = ({match, projects}) => {
+const mapPropsToOptions = ({match, projects, user}) => {
   const project = getProjectByTicker(match, projects)
   return {
-    skip: !project,
+    skip: !project || !user.token,
     variables: {
       id: project ? project.id : 0
     }
@@ -258,6 +265,11 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  lifecycle({
+    componentDidMount () {
+      this.props.retrieveProjects()
+    }
+  }),
   graphql(getPriceGQL, {
     name: 'PriceQuery',
     options: ({match, projects}) => {
@@ -275,11 +287,7 @@ const enhance = compose(
     props: mapDataToProps,
     options: mapPropsToOptions
   }),
-  lifecycle({
-    componentDidMount () {
-      this.props.retrieveProjects()
-    }
-  })
+  pure
 )
 
 export default enhance(Detailed)

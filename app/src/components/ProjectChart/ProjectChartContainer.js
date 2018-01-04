@@ -194,9 +194,7 @@ class ProjectChartContainer extends Component {
   componentWillReceiveProps (nextProps) {
     if (nextProps.ticker !== this.props.ticker) {
       this.setState({
-        interval: undefined,
-        isLoading: true,
-        selected: undefined
+        isLoading: true
       })
       this.updateHistoryData(nextProps.ticker)
     }

@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import debounce from 'lodash.debounce'
 import { Search, Input } from 'semantic-ui-react'
 import './Search.css'
 
@@ -10,7 +11,7 @@ const resultRenderer = ({ name, ticker }) => {
 }
 
 const CustomInput = <Input
-  iconPosition={'left'}
+  iconPosition='left'
   placeholder='Search...' />
 
 class SearchPanel extends Component {
@@ -24,16 +25,13 @@ class SearchPanel extends Component {
     }
     this.handleResultSelect = this.handleResultSelect.bind(this)
     this.handleSearchChange = this.handleSearchChange.bind(this)
+    this.handleDebouncedChange = this.handleDebouncedChange.bind(this)
+    this.handleDebouncedChange = debounce(
+      this.handleDebouncedChange,
+      100)
   }
 
-  handleResultSelect (e, { result }) {
-    this.setState({ value: '' })
-    this.props.onSelectProject(result.ticker)
-  }
-
-  handleSearchChange (e, { value }) {
-    this.setState({ isLoading: true, value })
-
+  handleDebouncedChange (value) {
     const results = this.props.projects.filter(el => {
       const name = el.name || ''
       const ticker = el.ticker || ''
@@ -51,6 +49,16 @@ class SearchPanel extends Component {
       isLoading: false,
       results: results
     })
+  }
+
+  handleResultSelect (e, { result }) {
+    this.setState({ value: '' })
+    this.props.onSelectProject(result.ticker)
+  }
+
+  handleSearchChange (e, { value }) {
+    this.setState({ isLoading: true, value })
+    this.handleDebouncedChange(value)
   }
 
   render () {

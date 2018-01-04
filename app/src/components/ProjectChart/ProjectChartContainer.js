@@ -62,7 +62,6 @@ const fetchPriceHistory = (client, ticker, interval = '1m') => {
       }
     })
     .then(response => {
-      console.log(response.data)
       resolve(response.data)
     })
     .catch(error => reject(error))

@@ -232,9 +232,7 @@ exports[`Project detail page container it should render correctly 1`] = `
         isUnauthorized={true}
         title="General Info"
       >
-        <GeneralInfoBlock
-          volume={false}
-        />
+        <GeneralInfoBlock />
       </PanelBlock>
       <PanelBlock
         classes=""

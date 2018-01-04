@@ -1,18 +1,7 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import { formatNumber } from '../utils/formatting'
 import { HiddenElements } from '../pages/Detailed'
 import './GeneralInfoBlock.css'
-
-const propTypes = {
-  websiteLink: PropTypes.string,
-  slackLink: PropTypes.string,
-  twitterLink: PropTypes.string,
-  githubLink: PropTypes.string,
-  mediumLink: PropTypes.string,
-  whitepaperLink: PropTypes.string,
-  latestCoinmarketcapData: PropTypes.object
-}
 
 const GeneralInfoBlock = ({
   websiteLink,
@@ -21,13 +10,13 @@ const GeneralInfoBlock = ({
   githubLink,
   mediumLink,
   whitepaperLink,
-  latestCoinmarketcapData,
-  marketCapUsd,
+  marketcapUsd,
   rank,
-  volume,
-  circulating,
+  priceUsd,
   totalSupply,
-  roi
+  volumeUsd,
+  ticker,
+  roiUsd
 }) => (
   <div>
     <p className='social-icons'>
@@ -53,28 +42,28 @@ const GeneralInfoBlock = ({
       </a>
     </p>
     <hr />
-    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.marketCapUsd && 'info-disabled'}`}>
+    <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
       <div>
         Market Cap
       </div>
       <div>
-        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.marketCapUsd, 'USD')}
+        {formatNumber(marketcapUsd, 'USD')}
       </div>
     </div>
-    <div className={`row-info ${latestCoinmarketcapData && !latestCoinmarketcapData.priceUsd && 'info-disabled'}`}>
+    <div className={`row-info ${!priceUsd && 'info-disabled'}`}>
       <div>
         Price
       </div>
       <div>
-        {latestCoinmarketcapData && formatNumber(latestCoinmarketcapData.priceUsd, 'USD')}
+        {formatNumber(priceUsd, 'USD')}
       </div>
     </div>
-    <div className={`row-info ${!volume && 'info-disabled'}`}>
+    <div className={`row-info ${!volumeUsd && 'info-disabled'}`}>
       <div>
         Volume
       </div>
       <div>
-        {formatNumber(volume, 'USD')}
+        {formatNumber(volumeUsd, 'USD')}
         <HiddenElements>
           <span className='diff down'>
             <i className='fa fa-caret-down' />
@@ -83,12 +72,13 @@ const GeneralInfoBlock = ({
         </HiddenElements>
       </div>
     </div>
-    <div className={`row-info ${!circulating && 'info-disabled'}`}>
+    <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
       <div>
         Circulating
       </div>
       <div>
-        ${circulating}
+        {ticker}&nbsp;
+        {formatNumber(marketcapUsd / priceUsd)}
       </div>
     </div>
     <div className={`row-info ${!totalSupply && 'info-disabled'}`}>
@@ -96,7 +86,8 @@ const GeneralInfoBlock = ({
         Total supply
       </div>
       <div>
-        {totalSupply}
+        {ticker}&nbsp;
+        {formatNumber(totalSupply)}
       </div>
     </div>
     <div className={`row-info ${!rank && 'info-disabled'}`}>
@@ -107,17 +98,15 @@ const GeneralInfoBlock = ({
         {rank}
       </div>
     </div>
-    <div className={`row-info ${!roi && 'info-disabled'}`}>
+    <div className={`row-info ${!roiUsd && 'info-disabled'}`}>
       <div>
         ROI since ICO
       </div>
       <div>
-        {roi}
+        {roiUsd}
       </div>
     </div>
   </div>
 )
-
-GeneralInfoBlock.propTypes = propTypes
 
 export default GeneralInfoBlock

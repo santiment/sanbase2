@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2017-05-12 | v.0.3.0:
+
+  Added Github Activity
+
 - 2017-29-12 | v.0.2.8:
 
   Added storybook (dev exp.)

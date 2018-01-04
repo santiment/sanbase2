@@ -12,34 +12,35 @@ defmodule Sanbase.Github.GithubApiTest do
     Github.Store.drop_measurement("TEST1")
     Github.Store.drop_measurement("TEST2")
 
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
+    datetime3 = DateTime.from_naive!(~N[2017-05-15 21:45:00], "Etc/UTC")
+
     Github.Store.import([
       %Measurement{
-        timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 5},
         name: "SAN"
       },
       %Measurement{
-        timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 10},
         name: "SAN"
       },
+
       %Measurement{
-        timestamp: days_ago_start_of_day(3) |> DateTime.to_unix(:nanoseconds),
-        fields: %{activity: 15},
-        name: "SAN"
-      },
-      %Measurement{
-        timestamp: days_ago_start_of_day(5) |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 5},
         name: "TEST1"
       },
       %Measurement{
-        timestamp: days_ago_start_of_day(4) |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 10},
         name: "TEST2"
       }
     ])
 
+    [datetime1: datetime1, datetime2: datetime2, datetime3: datetime3]
   end
 
   test "fetching github time series data", context do
@@ -47,7 +48,7 @@ defmodule Sanbase.Github.GithubApiTest do
     {
       githubActivity(
         repository: "SAN",
-        from: "#{days_ago_start_of_day(5)}",
+        from: "#{context.datetime1}",
         interval: "1d") {
           activity
         }
@@ -62,7 +63,6 @@ defmodule Sanbase.Github.GithubApiTest do
 
     assert %{"activity" => 5} in activities
     assert %{"activity" => 10} in activities
-    assert %{"activity" => 15} in activities
   end
 
   test "fetch github time series data for larger interval sums all activities", context do
@@ -70,8 +70,9 @@ defmodule Sanbase.Github.GithubApiTest do
     {
       githubActivity(
         repository: "SAN",
-        from: "#{days_ago_start_of_day(6)}",
-        interval: "6d") {
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}",
+        interval: "2d") {
           activity
         }
     }
@@ -84,7 +85,7 @@ defmodule Sanbase.Github.GithubApiTest do
     activities = json_response(result, 200)["data"]["githubActivity"]
 
     assert Enum.count(activities) == 1
-    assert %{"activity" => 30} in activities
+    assert %{"activity" => 15} in activities
   end
 
   test "retrive all repository names", context do
@@ -101,13 +102,6 @@ defmodule Sanbase.Github.GithubApiTest do
     repos = json_response(result, 200)["data"]["githubAvailablesRepos"]
 
     assert ["SAN", "TEST1", "TEST2"] == Enum.sort(repos)
-  end
-
-  defp days_ago_start_of_day(days) do
-    Timex.today()
-    |> Timex.shift(days: -days)
-    |> Timex.end_of_day()
-    |> Timex.to_datetime()
   end
 
   defp query_skeleton(query, query_name) do

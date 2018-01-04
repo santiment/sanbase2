@@ -41,25 +41,11 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
                 undefined,
                 undefined,
               ],
-              "fill": true,
+              "fill": false,
               "label": "Price",
               "pointBorderWidth": 2,
               "type": "LineWithLine",
               "yAxisID": "y-axis-1",
-            },
-            Object {
-              "backgroundColor": "rgba(49, 107, 174, 0.5)",
-              "borderColor": "rgba(49, 107, 174, 0.5)",
-              "borderWidth": 4,
-              "data": Array [
-                NaN,
-                NaN,
-              ],
-              "fill": false,
-              "label": "Volume",
-              "pointBorderWidth": 1,
-              "type": "bar",
-              "yAxisID": "y-axis-2",
             },
           ],
           "labels": Array [
@@ -139,7 +125,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
                 "position": "right",
                 "scaleLabel": Object {
                   "display": false,
-                  "fontColor": "rgba(49, 107, 174, 0.5)",
+                  "fontColor": "rgba(49, 107, 174, 0.4)",
                   "labelString": "Volume",
                 },
                 "ticks": Object {
@@ -161,6 +147,23 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
                 },
                 "ticks": Object {
                   "callback": [Function],
+                  "display": true,
+                },
+                "type": "linear",
+              },
+              Object {
+                "display": undefined,
+                "gridLines": Object {
+                  "display": false,
+                },
+                "id": "y-axis-4",
+                "position": "right",
+                "scaleLabel": Object {
+                  "display": true,
+                  "fontColor": "rgba(96, 76, 141, 0.7)",
+                  "labelString": "Github Activity",
+                },
+                "ticks": Object {
                   "display": true,
                 },
                 "type": "linear",
@@ -204,6 +207,40 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
       className="chart-footer-filters"
     >
       <MarketcapToggle
+        focusedInput={null}
+        history={
+          Array [
+            Object {
+              "datetime": "2017-12-27T21:45Z",
+              "priceBtc": 123,
+            },
+            Object {
+              "datetime": "2017-12-27T21:45Z",
+              "priceBtc": 123,
+            },
+          ]
+        }
+        isDesktop={true}
+        onFocusChange={[Function]}
+      />
+      <GithubActivityToggle
+        focusedInput={null}
+        history={
+          Array [
+            Object {
+              "datetime": "2017-12-27T21:45Z",
+              "priceBtc": 123,
+            },
+            Object {
+              "datetime": "2017-12-27T21:45Z",
+              "priceBtc": 123,
+            },
+          ]
+        }
+        isDesktop={true}
+        onFocusChange={[Function]}
+      />
+      <VolumeToggle
         focusedInput={null}
         history={
           Array [
@@ -1663,22 +1700,11 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                 "borderColor": "#00a05a",
                 "borderWidth": 1,
                 "data": Array [],
-                "fill": true,
+                "fill": false,
                 "label": "Price",
                 "pointBorderWidth": 2,
                 "type": "LineWithLine",
                 "yAxisID": "y-axis-1",
-              },
-              Object {
-                "backgroundColor": "rgba(49, 107, 174, 0.5)",
-                "borderColor": "rgba(49, 107, 174, 0.5)",
-                "borderWidth": 4,
-                "data": Array [],
-                "fill": false,
-                "label": "Volume",
-                "pointBorderWidth": 1,
-                "type": "bar",
-                "yAxisID": "y-axis-2",
               },
             ],
             "labels": Array [],
@@ -1755,7 +1781,7 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                   "position": "right",
                   "scaleLabel": Object {
                     "display": false,
-                    "fontColor": "rgba(49, 107, 174, 0.5)",
+                    "fontColor": "rgba(49, 107, 174, 0.4)",
                     "labelString": "Volume",
                   },
                   "ticks": Object {
@@ -1777,6 +1803,23 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                   },
                   "ticks": Object {
                     "callback": [Function],
+                    "display": true,
+                  },
+                  "type": "linear",
+                },
+                Object {
+                  "display": undefined,
+                  "gridLines": Object {
+                    "display": false,
+                  },
+                  "id": "y-axis-4",
+                  "position": "right",
+                  "scaleLabel": Object {
+                    "display": true,
+                    "fontColor": "rgba(96, 76, 141, 0.7)",
+                    "labelString": "Github Activity",
+                  },
+                  "ticks": Object {
                     "display": true,
                   },
                   "type": "linear",
@@ -1821,22 +1864,11 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                   "borderColor": "#00a05a",
                   "borderWidth": 1,
                   "data": Array [],
-                  "fill": true,
+                  "fill": false,
                   "label": "Price",
                   "pointBorderWidth": 2,
                   "type": "LineWithLine",
                   "yAxisID": "y-axis-1",
-                },
-                Object {
-                  "backgroundColor": "rgba(49, 107, 174, 0.5)",
-                  "borderColor": "rgba(49, 107, 174, 0.5)",
-                  "borderWidth": 4,
-                  "data": Array [],
-                  "fill": false,
-                  "label": "Volume",
-                  "pointBorderWidth": 1,
-                  "type": "bar",
-                  "yAxisID": "y-axis-2",
                 },
               ],
               "labels": Array [],
@@ -1920,7 +1952,7 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                     "position": "right",
                     "scaleLabel": Object {
                       "display": false,
-                      "fontColor": "rgba(49, 107, 174, 0.5)",
+                      "fontColor": "rgba(49, 107, 174, 0.4)",
                       "labelString": "Volume",
                     },
                     "ticks": Object {
@@ -1942,6 +1974,23 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                     },
                     "ticks": Object {
                       "callback": [Function],
+                      "display": true,
+                    },
+                    "type": "linear",
+                  },
+                  Object {
+                    "display": undefined,
+                    "gridLines": Object {
+                      "display": false,
+                    },
+                    "id": "y-axis-4",
+                    "position": "right",
+                    "scaleLabel": Object {
+                      "display": true,
+                      "fontColor": "rgba(96, 76, 141, 0.7)",
+                      "labelString": "Github Activity",
+                    },
+                    "ticks": Object {
                       "display": true,
                     },
                     "type": "linear",
@@ -2010,6 +2059,40 @@ exports[`ProjectChart component Loading State it should render correctly with lo
             </div>
           </div>
         </MarketcapToggle>
+        <GithubActivityToggle
+          focusedInput={null}
+          history={Array []}
+          isDesktop={true}
+          onFocusChange={[Function]}
+        >
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              Github Activity
+            </div>
+          </div>
+        </GithubActivityToggle>
+        <VolumeToggle
+          focusedInput={null}
+          history={Array []}
+          isDesktop={true}
+          onFocusChange={[Function]}
+        >
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              Volume
+            </div>
+          </div>
+        </VolumeToggle>
       </div>
       <div>
         <small
@@ -3432,22 +3515,11 @@ exports[`ProjectChart component Loading State it should render correctly withour
                 "borderColor": "#00a05a",
                 "borderWidth": 1,
                 "data": Array [],
-                "fill": true,
+                "fill": false,
                 "label": "Price",
                 "pointBorderWidth": 2,
                 "type": "LineWithLine",
                 "yAxisID": "y-axis-1",
-              },
-              Object {
-                "backgroundColor": "rgba(49, 107, 174, 0.5)",
-                "borderColor": "rgba(49, 107, 174, 0.5)",
-                "borderWidth": 4,
-                "data": Array [],
-                "fill": false,
-                "label": "Volume",
-                "pointBorderWidth": 1,
-                "type": "bar",
-                "yAxisID": "y-axis-2",
               },
             ],
             "labels": Array [],
@@ -3524,7 +3596,7 @@ exports[`ProjectChart component Loading State it should render correctly withour
                   "position": "right",
                   "scaleLabel": Object {
                     "display": false,
-                    "fontColor": "rgba(49, 107, 174, 0.5)",
+                    "fontColor": "rgba(49, 107, 174, 0.4)",
                     "labelString": "Volume",
                   },
                   "ticks": Object {
@@ -3546,6 +3618,23 @@ exports[`ProjectChart component Loading State it should render correctly withour
                   },
                   "ticks": Object {
                     "callback": [Function],
+                    "display": true,
+                  },
+                  "type": "linear",
+                },
+                Object {
+                  "display": undefined,
+                  "gridLines": Object {
+                    "display": false,
+                  },
+                  "id": "y-axis-4",
+                  "position": "right",
+                  "scaleLabel": Object {
+                    "display": true,
+                    "fontColor": "rgba(96, 76, 141, 0.7)",
+                    "labelString": "Github Activity",
+                  },
+                  "ticks": Object {
                     "display": true,
                   },
                   "type": "linear",
@@ -3590,22 +3679,11 @@ exports[`ProjectChart component Loading State it should render correctly withour
                   "borderColor": "#00a05a",
                   "borderWidth": 1,
                   "data": Array [],
-                  "fill": true,
+                  "fill": false,
                   "label": "Price",
                   "pointBorderWidth": 2,
                   "type": "LineWithLine",
                   "yAxisID": "y-axis-1",
-                },
-                Object {
-                  "backgroundColor": "rgba(49, 107, 174, 0.5)",
-                  "borderColor": "rgba(49, 107, 174, 0.5)",
-                  "borderWidth": 4,
-                  "data": Array [],
-                  "fill": false,
-                  "label": "Volume",
-                  "pointBorderWidth": 1,
-                  "type": "bar",
-                  "yAxisID": "y-axis-2",
                 },
               ],
               "labels": Array [],
@@ -3689,7 +3767,7 @@ exports[`ProjectChart component Loading State it should render correctly withour
                     "position": "right",
                     "scaleLabel": Object {
                       "display": false,
-                      "fontColor": "rgba(49, 107, 174, 0.5)",
+                      "fontColor": "rgba(49, 107, 174, 0.4)",
                       "labelString": "Volume",
                     },
                     "ticks": Object {
@@ -3711,6 +3789,23 @@ exports[`ProjectChart component Loading State it should render correctly withour
                     },
                     "ticks": Object {
                       "callback": [Function],
+                      "display": true,
+                    },
+                    "type": "linear",
+                  },
+                  Object {
+                    "display": undefined,
+                    "gridLines": Object {
+                      "display": false,
+                    },
+                    "id": "y-axis-4",
+                    "position": "right",
+                    "scaleLabel": Object {
+                      "display": true,
+                      "fontColor": "rgba(96, 76, 141, 0.7)",
+                      "labelString": "Github Activity",
+                    },
+                    "ticks": Object {
                       "display": true,
                     },
                     "type": "linear",
@@ -3779,6 +3874,40 @@ exports[`ProjectChart component Loading State it should render correctly withour
             </div>
           </div>
         </MarketcapToggle>
+        <GithubActivityToggle
+          focusedInput={null}
+          history={Array []}
+          isDesktop={true}
+          onFocusChange={[Function]}
+        >
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              Github Activity
+            </div>
+          </div>
+        </GithubActivityToggle>
+        <VolumeToggle
+          focusedInput={null}
+          history={Array []}
+          isDesktop={true}
+          onFocusChange={[Function]}
+        >
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              Volume
+            </div>
+          </div>
+        </VolumeToggle>
       </div>
       <div>
         <small

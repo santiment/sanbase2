@@ -20,8 +20,9 @@ import './react-dates-override.css'
 
 const COLORS = {
   price: '#00a05a',
-  volume: 'rgba(49, 107, 174, 0.5)',
-  marketcap: 'rgb(200, 47, 63)'
+  volume: 'rgba(49, 107, 174, 0.4)',
+  marketcap: 'rgb(200, 47, 63)',
+  githubActivity: 'rgba(96, 76, 141, 0.7)' // Ultra Violet color #604c8d'
 }
 
 export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
@@ -61,6 +62,22 @@ const MarketcapToggle = ({isToggledMarketCap, toggleMarketcap}) => (
     <div
       className={isToggledMarketCap ? 'activated' : ''}
       onClick={() => toggleMarketcap(!isToggledMarketCap)}>MarketCap</div>
+  </div>
+)
+
+const GithubActivityToggle = ({isToggledGithubActivity, toggleGithubActivity}) => (
+  <div className='marketcap-toggle'>
+    <div
+      className={isToggledGithubActivity ? 'activated' : ''}
+      onClick={() => toggleGithubActivity(!isToggledGithubActivity)}>Github Activity</div>
+  </div>
+)
+
+const VolumeToggle = ({isToggledVolume, toggleVolume}) => (
+  <div className='marketcap-toggle'>
+    <div
+      className={isToggledVolume ? 'activated' : ''}
+      onClick={() => toggleVolume(!isToggledVolume)}>Volume</div>
   </div>
 )
 
@@ -123,11 +140,17 @@ const ProjectChartHeader = ({
   )
 }
 
-const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap) => {
+const getChartDataFromHistory = (
+  history = [],
+  isToggledBTC,
+  isToggledMarketCap,
+  isToggledGithubActivity,
+  isToggledVolume
+) => {
   const priceDataset = {
     label: 'Price',
     type: 'LineWithLine',
-    fill: !isToggledMarketCap,
+    fill: false,
     borderColor: COLORS.price,
     borderWidth: 1,
     backgroundColor: 'rgba(239, 242, 236, 0.5)',
@@ -140,7 +163,7 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       }
       return data.priceUsd
     }) : []}
-  const volumeDataset = {
+  const volumeDataset = !isToggledVolume ? null : {
     label: 'Volume',
     fill: false,
     type: 'bar',
@@ -170,9 +193,21 @@ const getChartDataFromHistory = (history = [], isToggledBTC, isToggledMarketCap)
       }
       return parseFloat(data.marketcap)
     }) : []}
+  const githubActivityDataset = !isToggledGithubActivity ? null : {
+    label: 'Github Activity',
+    type: 'bar',
+    fill: false,
+    yAxisID: 'y-axis-4',
+    borderColor: COLORS.githubActivity,
+    backgroundColor: COLORS.githubActivity,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    data: history ? history.map(data => {
+      return parseInt(data.githubActivity)
+    }) : []}
   return {
     labels: history ? history.map(data => moment(data.datetime).utc()) : [],
-    datasets: [priceDataset, marketcapDataset, volumeDataset].reduce((acc, curr) => {
+    datasets: [priceDataset, marketcapDataset, githubActivityDataset, volumeDataset].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
     }, [])
@@ -221,6 +256,9 @@ const makeOptionsFromProps = props => ({
       },
       label: (tooltipItem, data) => {
         const label = data.datasets[tooltipItem.datasetIndex].label.toString()
+        if (label === 'Github Activity') {
+          return `${label}: ${tooltipItem.yLabel}`
+        }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
           : formatNumber(tooltipItem.yLabel, 'USD')}`
@@ -295,6 +333,22 @@ const makeOptionsFromProps = props => ({
       },
       display: props.isToggledMarketCap,
       position: 'right'
+    }, {
+      id: 'y-axis-4',
+      type: 'linear',
+      scaleLabel: {
+        display: true,
+        labelString: 'Github Activity',
+        fontColor: COLORS.githubActivity
+      },
+      ticks: {
+        display: true
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledGithubActivity,
+      position: 'right'
     }],
     xAxes: [{
       type: 'time',
@@ -333,7 +387,12 @@ export const ProjectChart = ({
       </div>
     )
   }
-  const chartData = getChartDataFromHistory(props.history, props.isToggledBTC, props.isToggledMarketCap)
+  const chartData = getChartDataFromHistory(
+    props.history,
+    props.isToggledBTC,
+    props.isToggledMarketCap,
+    props.isToggledGithubActivity,
+    props.isToggledVolume)
   const chartOptions = makeOptionsFromProps(props)
 
   return (
@@ -356,6 +415,8 @@ export const ProjectChart = ({
       <div className='chart-footer'>
         <div className='chart-footer-filters'>
           <MarketcapToggle {...props} />
+          <GithubActivityToggle {...props} />
+          <VolumeToggle {...props} />
         </div>
         <div>
           <small className='trademark'>santiment.net</small>
@@ -372,6 +433,8 @@ const enhance = compose(
     showUSD: ({ currencyToggle }) => e => currencyToggle(false)
   }),
   withState('isToggledMarketCap', 'toggleMarketcap', false),
+  withState('isToggledGithubActivity', 'toggleGithubActivity', false),
+  withState('isToggledVolume', 'toggleVolume', true),
   lifecycle({
     componentWillMount () {
       Chart.defaults.LineWithLine = Chart.defaults.line

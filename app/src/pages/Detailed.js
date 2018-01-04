@@ -156,7 +156,7 @@ export const Detailed = ({
             isUnauthorized={generalInfo.isUnauthorized}
             isLoading={generalInfo.isLoading || PriceQuery.loading}
             title='General Info'>
-            <GeneralInfoBlock {...PriceQuery.price} {...generalInfo.project} />
+            <GeneralInfoBlock {...generalInfo.project} />
           </PanelBlock>
           <PanelBlock
             isUnauthorized={generalInfo.isUnauthorized}
@@ -222,6 +222,8 @@ const queryProject = gql`
       fundsRaisedIcos { amount, currencyCode },
       roiUsd,
       priceUsd,
+      volumeUsd,
+      marketcapUsd,
       rank,
       totalSupply,
     }

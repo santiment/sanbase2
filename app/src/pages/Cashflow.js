@@ -23,7 +23,7 @@ import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
 
-const formatLastOutgoingWallet = wallets => {
+export const formatLastOutgoingWallet = wallets => {
   return wallets.map((wallet, index) => {
     const lastOutgoing = wallet.last_outgoing !== null
       ? formatDate(wallet.last_outgoing) : 'No recent transfers'
@@ -35,7 +35,7 @@ const formatLastOutgoingWallet = wallets => {
   })
 }
 
-const formatTxOutWallet = wallets => {
+export const formatTxOutWallet = wallets => {
   return wallets.map((wallet, index) => {
     const txOut = wallet.tx_out || '0.00'
     return (
@@ -46,7 +46,7 @@ const formatTxOutWallet = wallets => {
   })
 }
 
-const formatBalanceWallet = ({wallets, ethPrice}) => {
+export const formatBalanceWallet = ({wallets, ethPrice}) => {
   return wallets.map((wallet, index) => {
     const balance = wallet.balance || 0
     return (

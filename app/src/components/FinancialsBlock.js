@@ -1,55 +1,61 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import cx from 'classnames'
+import {
+  formatBalanceWallet,
+  formatLastOutgoingWallet,
+  formatTxOutWallet
+} from './../pages/Cashflow'
+import './FinancialsBlock.css'
 
 const propTypes = {
-  projectTransparencyStatus: PropTypes.string,
-  marketCapUsd: PropTypes.string
+  projectTransparencyStatus: PropTypes.string
 }
 
 const FinancialsBlock = ({
-  marketCapUsd,
   projectTransparencyStatus,
-  transparencyRecord,
-  transactions,
-  balance
+  fundsRaisedIcos,
+  ethBalance,
+  wallets,
+  ethPrice
 }) => (
   <div>
     Project Transparency:&nbsp;{projectTransparencyStatus || 'Not Listed'}
     <hr />
-    <div className={`row-info ${!marketCapUsd && 'info-disabled'}`}>
+    <div className={cx({
+      'row-info': true,
+      'info-disabled': fundsRaisedIcos && fundsRaisedIcos.length === 0
+    })}>
       <div>
         Collected
       </div>
       <div className='value'>
-        ${marketCapUsd}
+        {fundsRaisedIcos.map((amountIco, index) => {
+          return <div key={index} >{amountIco.currencyCode} {amountIco.amount}</div>
+        })}
       </div>
     </div>
-    <div className={`row-info ${!balance && 'info-disabled'}`}>
+    <div className={cx({
+      'row-info': true,
+      'info-disabled': !wallets && !ethBalance
+    })}>
       <div>
         Balance
       </div>
-      <div>
-        {balance}
-      </div>
+      {wallets && formatBalanceWallet({wallets, ethPrice})}
     </div>
-    <div className={`row-info ${!transactions && 'info-disabled'}`}>
+    <div className={cx({
+      'row-info': true,
+      'info-disabled': !wallets
+    })}>
+      <div>Transactions</div>
       <div>
-        Transactions
-      </div>
-      <div>
-        <a href='#'>
-          {transactions}
-        </a>
-      </div>
-    </div>
-    <div className={`row-info ${!transparencyRecord && 'info-disabled'}`}>
-      <div>
-        Transparency Record
-      </div>
-      <div>
-        <a href='#'>
-          {transparencyRecord}
-        </a>
+        <div>
+          Last outgoing TX: {formatLastOutgoingWallet(wallets)}
+        </div>
+        <div className='financials-transactions-amount'>
+          ETH&nbsp;{formatTxOutWallet(wallets)}
+        </div>
       </div>
     </div>
   </div>

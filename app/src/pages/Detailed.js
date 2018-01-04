@@ -5,7 +5,8 @@ import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
 import {
   compose,
-  lifecycle
+  lifecycle,
+  pure
 } from 'recompose'
 import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
@@ -198,8 +199,13 @@ Detailed.propTypes = propTypes
 
 const mapStateToProps = state => {
   return {
+    user: state.user,
     projects: state.projects.items,
-    loading: state.projects.isLoading
+    loading: state.projects.isLoading,
+    generalInfo: {
+      isLoading: false,
+      isUnauthorized: !state.user.token
+    }
   }
   const project = data.project
 

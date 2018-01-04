@@ -156,7 +156,10 @@ export const Detailed = ({
             isUnauthorized={generalInfo.isUnauthorized}
             isLoading={generalInfo.isLoading}
             title='Financials'>
-            <FinancialsBlock {...generalInfo.project} />
+            <FinancialsBlock
+              ethPrice={project.ethPrice}
+              wallets={project.wallets}
+              {...generalInfo.project} />
           </PanelBlock>
         </div>
       </FadeIn>
@@ -217,6 +220,7 @@ const queryProject = gql`
       roiUsd,
       priceUsd,
       volumeUsd,
+      ethBalance,
       marketcapUsd,
       rank,
       totalSupply,

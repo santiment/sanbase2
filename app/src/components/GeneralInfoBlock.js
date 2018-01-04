@@ -10,11 +10,11 @@ const GeneralInfoBlock = ({
   githubLink,
   mediumLink,
   whitepaperLink,
-  marketcap,
+  marketcapUsd,
   rank,
   priceUsd,
   totalSupply,
-  volume,
+  volumeUsd,
   ticker,
   roiUsd
 }) => (
@@ -45,12 +45,12 @@ const GeneralInfoBlock = ({
         ${info.market_cap_usd}
       </div>
     </div>
-    <div className={`row-info ${!volume && 'info-disabled'}`}>
+    <div className={`row-info ${!volumeUsd && 'info-disabled'}`}>
       <div>
         Volume
       </div>
       <div>
-        {formatNumber(volume, 'USD')}
+        {formatNumber(volumeUsd, 'USD')}
         <HiddenElements>
           <span className='diff down'>
             <i className='fa fa-caret-down' />
@@ -59,13 +59,13 @@ const GeneralInfoBlock = ({
         </HiddenElements>
       </div>
     </div>
-    <div className={`row-info ${!marketcap && 'info-disabled'}`}>
+    <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
       <div>
         Circulating
       </div>
       <div>
         {ticker}&nbsp;
-        {formatNumber(marketcap / priceUsd)}
+        {formatNumber(marketcapUsd / priceUsd)}
       </div>
     </div>
     <div className={`row-info ${!totalSupply && 'info-disabled'}`}>

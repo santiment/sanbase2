@@ -239,7 +239,18 @@ exports[`Project detail page container it should render correctly 1`] = `
         isUnauthorized={true}
         title="Financials"
       >
-        <FinancialsBlock />
+        <FinancialsBlock
+          wallets={
+            Array [
+              Object {
+                "address": "0xcafE1A77e84698c83CA8931F54A755176eF75f2C",
+                "balance": "264617.29",
+                "last_outgoing": null,
+                "tx_out": null,
+              },
+            ]
+          }
+        />
       </PanelBlock>
     </div>
   </FadeIn>

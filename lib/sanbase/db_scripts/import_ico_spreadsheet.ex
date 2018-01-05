@@ -11,14 +11,14 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   alias Sanbase.Model.IcoCurrencies
 
   def import(ico_spreadsheet) when is_list(ico_spreadsheet) do
-    IO.puts("Starting ICO spreadsheet import...")
+    Logger.info("Starting ICO spreadsheet import...")
     ico_spreadsheet
     |> Enum.reverse()
     |> Enum.uniq_by(fn row -> row.project_name end)
     |> Enum.reverse()
     |> put_presales_in_front()
     |> Enum.each(&import_row(&1))
-    IO.puts("Finished ICO spreadsheet import.")
+    Logger.info("Finished ICO spreadsheet import.")
   end
 
   # The common project data in the main ICO row is with higher priority than the presale => put the presale to the front

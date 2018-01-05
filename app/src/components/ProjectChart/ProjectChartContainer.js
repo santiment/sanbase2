@@ -112,6 +112,7 @@ class ProjectChartContainer extends Component {
     this.setSelected = this.setSelected.bind(this)
     this.onDatesChange = this.onDatesChange.bind(this)
     this.onFocusChange = this.onFocusChange.bind(this)
+    this.updateHistoryData = this.updateHistoryData.bind(this)
   }
 
   onFocusChange (focusedInput) {
@@ -171,8 +172,8 @@ class ProjectChartContainer extends Component {
     })
   }
 
-  componentDidMount () {
-    const { client, ticker } = this.props
+  updateHistoryData (ticker) {
+    const { client } = this.props
     const { interval } = this.state
     fetchPriceHistory(client, ticker, interval).then(historyPrice => {
       this.setState({
@@ -188,6 +189,20 @@ class ProjectChartContainer extends Component {
         errorMessage: error
       })
     )
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.ticker !== this.props.ticker) {
+      this.setState({
+        isLoading: true
+      })
+      this.updateHistoryData(nextProps.ticker)
+    }
+  }
+
+  componentDidMount () {
+    const { ticker } = this.props
+    this.updateHistoryData(ticker)
   }
 
   render () {

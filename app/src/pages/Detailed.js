@@ -19,6 +19,7 @@ import FinancialsBlock from './../components/FinancialsBlock'
 import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
 import { formatNumber, formatBTC } from '../utils/formatting'
 import Panel from './../components/Panel'
+import Search from './../components/Search'
 import './Detailed.css'
 
 const propTypes = {
@@ -41,6 +42,7 @@ const getProjectByTicker = (match, projects) => {
 
 export const Detailed = ({
   match,
+  history,
   projects,
   loading,
   PriceQuery,
@@ -66,6 +68,9 @@ export const Detailed = ({
 
   return (
     <div className='page detailed'>
+      <Search
+        onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+        projects={projects} />
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>

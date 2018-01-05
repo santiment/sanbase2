@@ -3,6 +3,7 @@ import { storiesOf } from '@storybook/react'
 import PanelBlock from './../src/components/PanelBlock'
 import GeneralInfoBlock from './../src/components/GeneralInfoBlock'
 import FinancialsBlock from './../src/components/FinancialsBlock'
+import PercentChanges from './../src/components/PercentChanges'
 
 const project = {
   name: 'Santiment Network Token',
@@ -103,4 +104,10 @@ storiesOf('Project Detailted Page', module)
         wallets={wallets}
         {...project2} />
     </PanelBlock>
+  ))
+  .add('PercentChanges in the Header of detailed page', () => (
+    <PercentChanges changes={29.23} />
+  ))
+  .add('PercentChanges negative in the Header of detailed page', () => (
+    <PercentChanges changes={-0.23} />
   ))

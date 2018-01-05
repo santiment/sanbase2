@@ -96,6 +96,10 @@
   align-items: center;
 }
 
+.chart-footer-filters div {
+  margin-right: 2px;
+}
+
 .trademark {
   color: #e3e3e3;
 }

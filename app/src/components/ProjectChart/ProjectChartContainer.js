@@ -28,19 +28,6 @@ const getHistoryGQL = gql`
     }
 }`
 
-const getHistoryGithubActivityGQL = gql`
-  query history($repository: String, $from: DateTime, $to: DateTime, $interval: String) {
-    historyGithubActivity(
-      repository: $ticker,
-      from: $from,
-      to: $to,
-      interval: $interval
-    ) {
-      datetime,
-      activity
-    }
-}`
-
 export const makeItervalBounds = interval => {
   switch (interval) {
     case '1d':
@@ -79,7 +66,18 @@ const fetchGithubActivityHistoryFromStartToEndDate = (
 ) => {
   return new Promise((resolve, reject) => {
     client.query({
-      query: getHistoryGithubActivityGQL,
+      query: gql`
+        query githubActivityQuery($repository: String, $from: DateTime, $to: DateTime, $interval: String) {
+          githubActivity(
+            repository: $repository,
+            from: $from,
+            to: $to,
+            interval: $interval
+          ) {
+            datetime,
+            activity
+          }
+      }`,
       variables: {
         'repository': ticker.toUpperCase(),
         'from': startDate,
@@ -88,7 +86,7 @@ const fetchGithubActivityHistoryFromStartToEndDate = (
       }
     })
     .then(response => {
-      const history = response.data.historyGithubActivity || []
+      const history = response.data.githubActivity || []
       resolve(history)
     })
     .catch(error => reject(error))
@@ -121,11 +119,13 @@ const fetchPriceHistoryFromStartToEndDate = (
       } catch (e) {
         /* pass */
       }
-      resolve(history.map((item, index) => {
+      const indexes = historyGithubActivity.map(obj => obj.datetime)
+      resolve(history.map(item => {
         const volumeBTC = calculateBTCVolume(item)
         const marketcapBTC = calculateBTCMarketcap(item)
         if (historyGithubActivity.length > 0 && minInterval === '1h') {
-          const githubActivity = historyGithubActivity[index]
+          const index = indexes.indexOf(item.datetime)
+          const githubActivity = index > -1
             ? historyGithubActivity[index].activity
             : 0
           return {...item, volumeBTC, marketcapBTC, githubActivity}

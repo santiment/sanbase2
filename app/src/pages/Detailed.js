@@ -83,7 +83,7 @@ export const Detailed = ({
             <div className='detailed-price'>
               <div className='detailed-price-usd'>
                 {formatNumber(PriceQuery.price.priceUsd, 'USD')}&nbsp;
-                {!generalInfo.isLoading &&
+                {!generalInfo.isLoading && generalInfo.project &&
                   <PercentChanges changes={generalInfo.project.percentChange24h} />}
               </div>
               <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>

@@ -6,17 +6,16 @@ defmodule Sanbase.Repo.Migrations.ClearProjectsRunIcoImport do
   import Supervisor.Spec
 
   def up do
-    document_id = System.get_env("ICO_IMPORT_DOCUMENT_ID")
-    api_key = System.get_env("ICO_IMPORT_API_KEY")
+    faktory_host = System.get_env("FAKTORY_HOST")
 
-    if !is_nil(document_id) and !is_nil(api_key) do
+    if !is_nil(faktory_host) do
       opts = [strategy: :one_for_one, name: Sanbase.Supervisor, max_restarts: 5, max_seconds: 1]
       Faktory.Configuration.init
       Supervisor.start_link([supervisor(Faktory.Supervisor, [])], opts)
 
-      SanbaseWorkers.DataMigrations.ClearProjectsRunIcoImport.perform_async([document_id, api_key])
+      SanbaseWorkers.DataMigrations.ClearProjectsRunIcoImport.perform_async([])
     else
-      Logger.warn("ICO_IMPORT_DOCUMENT_ID or ICO_IMPORT_API_KEY variable missing. Skipping ICO import.")
+      Logger.warn("FAKTORY_HOST variable missing. Skipping ICO import.")
     end
   end
 

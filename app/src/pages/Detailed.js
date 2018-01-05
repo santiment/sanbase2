@@ -20,6 +20,7 @@ import ProjectChartContainer from './../components/ProjectChart/ProjectChartCont
 import { formatNumber, formatBTC } from '../utils/formatting'
 import Panel from './../components/Panel'
 import Search from './../components/Search'
+import PercentChanges from './../components/PercentChanges'
 import './Detailed.css'
 
 const propTypes = {
@@ -80,7 +81,11 @@ export const Detailed = ({
 
           {!PriceQuery.loading && PriceQuery.price &&
             <div className='detailed-price'>
-              <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
+              <div className='detailed-price-usd'>
+                {formatNumber(PriceQuery.price.priceUsd, 'USD')}&nbsp;
+                {!generalInfo.isLoading &&
+                  <PercentChanges changes={generalInfo.project.percentChange24h} />}
+              </div>
               <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
             </div>}
 
@@ -236,6 +241,7 @@ const queryProject = gql`
       marketcapUsd,
       rank,
       totalSupply,
+      percentChange24h,
     }
   }
 `

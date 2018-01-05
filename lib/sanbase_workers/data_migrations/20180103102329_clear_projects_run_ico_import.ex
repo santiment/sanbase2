@@ -11,11 +11,18 @@ defmodule SanbaseWorkers.DataMigrations.ClearProjectsRunIcoImport do
 
   faktory_options queue: "data_migrations", retry: 1
 
-  def perform(document_id, api_key) do
-    clear_data()
+  def perform() do
+    document_id = System.get_env("ICO_IMPORT_DOCUMENT_ID")
+    api_key = System.get_env("ICO_IMPORT_API_KEY")
 
-    IcoSpreadsheet.get_project_data(document_id, api_key, [])
-    |> Sanbase.DbScripts.ImportIcoSpreadsheet.import()
+    if !is_nil(document_id) and !is_nil(api_key) do
+      clear_data()
+
+      IcoSpreadsheet.get_project_data(document_id, api_key, [])
+      |> Sanbase.DbScripts.ImportIcoSpreadsheet.import()
+    else
+      raise "ICO_IMPORT_DOCUMENT_ID or ICO_IMPORT_API_KEY variable missing. Cannot do ICO import."
+    end
   end
 
   defp clear_data do

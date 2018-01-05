@@ -1,6 +1,7 @@
 defmodule Sanbase.Model.Ico do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Sanbase.Repo
   alias Sanbase.Model.ModelUtils
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Project
@@ -33,7 +34,6 @@ defmodule Sanbase.Model.Ico do
   def changeset(%Ico{} = ico, attrs \\ %{}) do
     ico
     |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_btc_icoend, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id, :contract_block_number, :contract_abi])
-    |> calculate_funds_raised()
     |> validate_required([:project_id])
   end
 
@@ -55,62 +55,65 @@ defmodule Sanbase.Model.Ico do
     |> cast_assoc(:ico_currencies, required: false, with: &IcoCurrencies.changeset_ex_admin/2)
   end
 
-  defp calculate_funds_raised(changeset) do
-    btc_change = fetch_change(changeset, :funds_raised_btc)
-    usd_change = fetch_change(changeset, :funds_raised_usd)
-    eth_change = fetch_change(changeset, :funds_raised_eth)
+  def funds_raised_all_ico_price(ico) do
+    ico = Repo.preload(ico, [ico_currencies: [:currency]])
 
-    usd_btc = get_field(changeset, :usd_btc_icoend)
-    usd_eth = get_field(changeset, :usd_eth_icoend)
-
-    usd_change = calculate_usd_from_btc(btc_change, usd_change, usd_btc)
-    usd_change = calculate_usd_from_eth(eth_change, usd_change, usd_eth)
-    btc_change = calculate_btc_from_usd(usd_change, btc_change, usd_btc)
-    eth_change = calculate_eth_from_usd(usd_change, eth_change, usd_eth)
-
-    changeset
-    |> add_change(:funds_raised_usd, usd_change)
-    |> add_change(:funds_raised_btc, btc_change)
-    |> add_change(:funds_raised_eth, eth_change)
+    %{funds_raised_usd: funds_raised_usd_ico_price(ico),
+      funds_raised_eth: funds_raised_eth_ico_price(ico),
+      funds_raised_btc: funds_raised_btc_ico_price(ico)}
   end
 
-  defp add_change(changeset, key, {:ok, value}) do
-    put_change(changeset, key, value)
+  def funds_raised_usd_ico_price(%Ico{funds_raised_usd: nil, end_date: end_date} = ico) when not is_nil(end_date) do
+    funds_raised_ico_price_impl("USD", "ETH", ico.funds_raised_eth, "BTC", ico.funds_raised_btc, end_date)
+    |> case do
+      nil -> funds_raised_ico_price_from_currencies(ico, "USD", end_date)
+      funds_raised -> funds_raised
+    end
   end
+  def funds_raised_usd_ico_price(%Ico{funds_raised_usd: funds_raised_usd}), do: funds_raised_usd
 
-  defp add_change(changeset, _key, :error) do
-    changeset
+  def funds_raised_eth_ico_price(%Ico{funds_raised_eth: nil, end_date: end_date} = ico) when not is_nil(end_date) do
+    funds_raised_ico_price_impl("ETH", "USD", ico.funds_raised_usd, "BTC", ico.funds_raised_btc, end_date)
+    |> case do
+      nil -> funds_raised_ico_price_from_currencies(ico, "ETH", end_date)
+      funds_raised -> funds_raised
+    end
   end
+  def funds_raised_eth_ico_price(%Ico{funds_raised_eth: funds_raised_eth}), do: funds_raised_eth
 
-  defp calculate_usd_from_btc({:ok, btc}, :error, usd_btc) when not is_nil(btc) and not is_nil(usd_btc) do
-    {:ok, Decimal.mult(btc,usd_btc)}
+  def funds_raised_btc_ico_price(%Ico{funds_raised_btc: nil, end_date: end_date} = ico) when not is_nil(end_date) do
+    funds_raised_ico_price_impl("BTC", "USD", ico.funds_raised_usd, "ETH", ico.funds_raised_eth, end_date)
+    |> case do
+      nil -> funds_raised_ico_price_from_currencies(ico, "BTC", end_date)
+      funds_raised -> funds_raised
+    end
   end
+  def funds_raised_btc_ico_price(%Ico{funds_raised_btc: funds_raised_btc}), do: funds_raised_btc
 
-  defp calculate_usd_from_btc(_btc, usd, _usd_btc), do: usd
+  defp funds_raised_ico_price_impl(target_ticker, funds_raised_ticker1, funds_raised_amount1, funds_raised_ticker2, funds_raised_amount2, date) do
+    timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
 
-  defp calculate_usd_from_eth({:ok, eth}, :error, usd_eth) when not is_nil(eth) and not is_nil(usd_eth) do
-    {:ok, Decimal.mult(eth,usd_eth)}
-  end
-
-  defp calculate_usd_from_eth(_eth, usd, _usd_eth), do: usd
-
-  defp calculate_btc_from_usd({:ok, usd}, :error, usd_btc) when not is_nil(usd) and not is_nil(usd_btc) do
-    cond do
-      !Decimal.equal?(usd_btc, Decimal.new(0)) ->
-        {:ok, Decimal.div(usd,usd_btc)}
-      true -> :error
+    Sanbase.Prices.Utils.convert_amount(funds_raised_amount1, funds_raised_ticker1, target_ticker, timestamp)
+    |> case do
+      nil -> Sanbase.Prices.Utils.convert_amount(funds_raised_amount2, funds_raised_ticker2, target_ticker, timestamp)
+      converted_amount -> converted_amount
     end
   end
 
-  defp calculate_btc_from_usd(_usd, btc, _usd_btc), do: btc
+  defp funds_raised_ico_price_from_currencies(ico, target_ticker, date) do
+    timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
 
-  defp calculate_eth_from_usd({:ok, usd}, :error, usd_eth) when not is_nil(usd) and not is_nil(usd_eth) do
-    cond do
-      !Decimal.equal?(usd_eth, Decimal.new(0)) ->
-        {:ok, Decimal.div(usd,usd_eth)}
-      true -> :error
-    end
+    Repo.preload(ico, [ico_currencies: [:currency]]).ico_currencies
+    |> Enum.reduce(nil, fn(ic, acc) ->
+      Sanbase.Prices.Utils.convert_amount(ic.amount, ic.currency.code, target_ticker, timestamp)
+      |> case do
+        nil -> acc
+        converted_amount ->
+          case acc do
+            nil -> converted_amount
+            res -> Decimal.add(res, converted_amount)
+          end
+      end
+    end)
   end
-
-  defp calculate_eth_from_usd(_usd, eth, _usd_eth), do: eth
 end

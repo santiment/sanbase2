@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
-    funds_raised = Project.funds_raised_icos(project)
+    funds_raised = Project.funds_raised_icos(project, true)
     {:ok, funds_raised}
   end
 

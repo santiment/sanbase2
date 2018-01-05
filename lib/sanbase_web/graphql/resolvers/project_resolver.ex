@@ -28,6 +28,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       _ -> Repo.all(query)
     end
 
+    projects = case funds_raised_ico_price_requested?(resolution) do
+      true -> Repo.preload(projects, [icos: [ico_currencies: [:currency]]])
+      _ -> projects
+    end
+
     {:ok, projects}
   end
 
@@ -37,6 +42,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     project = case coinmarketcap_requested?(resolution) do
       true -> Repo.get(Project, id) |> Repo.preload(:latest_coinmarketcap_data)
       _ -> Repo.get(Project, id)
+    end
+
+    project = case funds_raised_ico_price_requested?(resolution) do
+      true -> Repo.preload(project, [icos: [ico_currencies: [:currency]]])
+      _ -> project
     end
 
     {:ok, project}
@@ -61,6 +71,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     projects = case coinmarketcap_requested?(resolution) do
       true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
       _ -> Repo.all(query)
+    end
+
+    projects = case funds_raised_ico_price_requested?(resolution) do
+      true -> Repo.preload(projects, [icos: [ico_currencies: [:currency]]])
+      _ -> projects
     end
 
     {:ok, projects}
@@ -96,54 +111,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, balance}
   end
 
-  # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
-  def funds_raised_icos(%Project{id: id}, _args, _resolution) do
-    # We have to aggregate all amounts for every currency for every ICO of the given project, this is the last part of the query (after the with clause).
-    # The data to be aggreagated has to be fetched and unioned from two different sources (the "union all" inside the with clause):
-    #   * For ICOs that have raw data entered for at least one currency we aggregate it by currency (the first query)
-    #   * For ICOs that don't have that data entered (currently everything imported from the spreadsheet) we fall back to a precalculated total (the second query)
-    query =
-      '''
-      with data as (select c.code currency_code, ic.amount
-      from icos i
-      join ico_currencies ic
-      	on ic.ico_id = i.id
-      		and ic.amount is not null
-      join currencies c
-      	on c.id = ic.currency_id
-      where i.project_id = $1
-      union all
-      select case
-      		when i.funds_raised_usd is not null then 'USD'
-      		when i.funds_raised_btc is not null then 'BTC'
-      		when i.funds_raised_eth is not null then 'ETH'
-      		else null
-      	end currency_code
-      	, coalesce(i.funds_raised_usd, i.funds_raised_btc, i.funds_raised_eth) amount
-      from icos i
-      where i.project_id = $1
-      	and not exists (select 1
-      		from ico_currencies ic
-      		where ic.ico_id = i.id
-      			and ic.amount is not null))
-      select d.currency_code, sum(d.amount) amount
-      from data d
-      where d.currency_code is not null
-      group by d.currency_code
-      order by case
-          			when d.currency_code = 'BTC' then '_'
-          			when d.currency_code = 'ETH' then '__'
-          			when d.currency_code = 'USD' then '___'
-          			else d.currency_code
-          		end
-      '''
-
-      %{rows: rows} = Ecto.Adapters.SQL.query!(Sanbase.Repo, query, [id])
-
-      funds_raised = rows
-      |> Enum.map(fn([currency_code, amount]) -> %{currency_code: currency_code, amount: amount} end)
-
-      {:ok, funds_raised}
+  def funds_raised_icos(%Project{} = project, _args, _resolution) do
+    funds_raised = Project.funds_raised_icos(project)
+    {:ok, funds_raised}
   end
 
   def market_segment(%Project{market_segment_id: nil}, _args, _resolution), do: {:ok, nil}
@@ -223,29 +193,42 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
   def percent_change_7d(_parent, _args, _resolution), do: {:ok, nil}
 
-  def initial_ico(%Project{} = project, _args, _resolution) do
+  def funds_raised_usd_ico_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_usd_ico_price(project)
+
+    {:ok, result}
+  end
+
+  def funds_raised_eth_ico_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_eth_ico_price(project)
+
+    {:ok, result}
+  end
+
+  def funds_raised_btc_ico_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_btc_ico_price(project)
+
+    {:ok, result}
+  end
+
+  def initial_ico(%Project{} = project, _args, resolution) do
     ico = Project.initial_ico(project)
+
+    ico = case funds_raised_ico_price_requested?(resolution) do
+      true -> Repo.preload(ico, [ico_currencies: [:currency]])
+      _ -> ico
+    end
 
     {:ok, ico}
   end
 
-  def ico_cap_currency(%Ico{cap_currency_id: nil}, _args, _resolution), do: {:ok, nil}
-  def ico_cap_currency(%Ico{cap_currency_id: cap_currency_id}, _args, _resolution) do
-    %Currency{code: currency_code} = Repo.get!(Currency, cap_currency_id)
+  def icos(%Project{} = project, _args, resolution) do
+    project = case funds_raised_ico_price_requested?(resolution) do
+      true -> Repo.preload(project, [icos: [ico_currencies: [:currency]]])
+      _ -> Repo.preload(project, :icos)
+    end
 
-    {:ok, currency_code}
-  end
-
-  def ico_currency_amounts(%Ico{id: id}, _args, _resolution) do
-    query = from i in Ico,
-    left_join: ic in assoc(i, :ico_currencies),
-    inner_join: c in assoc(ic, :currency),
-    where: i.id == ^id,
-    select: %{currency_code: c.code, amount: ic.amount}
-
-    currency_amounts = Repo.all(query)
-
-    {:ok, currency_amounts}
+    {:ok, project.icos}
   end
 
   defp coinmarketcap_requested?(resolution) do
@@ -260,6 +243,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       %{percent_change_1h: true} -> true
       %{percent_change_24h: true} -> true
       %{percent_change_7d: true} -> true
+      _ -> false
+    end
+  end
+
+  defp funds_raised_ico_price_requested?(resolution) do
+    case requested_fields(resolution) do
+      %{fundsRaisedUsdIcoPrice: true} -> true
+      %{fundsRaisedEthIcoPrice: true} -> true
+      %{fundsRaisedBtcIcoPrice: true} -> true
       _ -> false
     end
   end

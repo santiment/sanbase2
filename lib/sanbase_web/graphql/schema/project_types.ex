@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   import_types SanbaseWeb.Graphql.CustomTypes
 
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
+  alias SanbaseWeb.Graphql.Resolvers.IcoResolver
 
   object :project do
     field :id, non_null(:id)
@@ -42,7 +43,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :btc_balance, :decimal do
       resolve &ProjectResolver.btc_balance/3
     end
-    # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
+    # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_eth, Ico.funds_raised_btc (checked in that order)
     field :funds_raised_icos, list_of(:currency_amount) do
       resolve &ProjectResolver.funds_raised_icos/3
     end
@@ -82,10 +83,22 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve &ProjectResolver.percent_change_7d/3
     end
 
+    field :funds_raised_usd_ico_price, :decimal do
+      resolve &ProjectResolver.funds_raised_usd_ico_price/3
+    end
+    field :funds_raised_eth_ico_price, :decimal do
+      resolve &ProjectResolver.funds_raised_eth_ico_price/3
+    end
+    field :funds_raised_btc_ico_price, :decimal do
+      resolve &ProjectResolver.funds_raised_btc_ico_price/3
+    end
+
     field :initial_ico, :ico do
       resolve &ProjectResolver.initial_ico/3
     end
-    field :icos, list_of(:ico), resolve: assoc(:icos)
+    field :icos, list_of(:ico) do
+      resolve &ProjectResolver.icos/3
+    end
   end
 
   object :ico do
@@ -94,9 +107,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :end_date, :ecto_date
     field :tokens_issued_at_ico, :decimal
     field :tokens_sold_at_ico, :decimal
-    field :funds_raised_btc, :decimal
-    field :funds_raised_usd, :decimal
-    field :funds_raised_eth, :decimal
+    field :funds_raised_usd_ico_price, :decimal do
+      resolve &IcoResolver.funds_raised_usd_ico_price/3
+    end
+    field :funds_raised_eth_ico_price, :decimal do
+      resolve &IcoResolver.funds_raised_eth_ico_price/3
+    end
+    field :funds_raised_btc_ico_price, :decimal do
+      resolve &IcoResolver.funds_raised_btc_ico_price/3
+    end
     field :minimal_cap_amount, :decimal
     field :maximal_cap_amount, :decimal
     field :main_contract_address, :string
@@ -104,10 +123,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :contract_abi, :string
     field :comments, :string
     field :cap_currency, :string do
-      resolve &ProjectResolver.ico_cap_currency/3
+      resolve &IcoResolver.cap_currency/3
     end
     field :currency_amounts, list_of(:currency_amount) do
-      resolve &ProjectResolver.ico_currency_amounts/3
+      resolve &IcoResolver.currency_amounts/3
     end
   end
 

@@ -16,10 +16,12 @@ defmodule SanbaseWorkers.DataMigrations.ClearProjectsRunIcoImport do
     api_key = System.get_env("ICO_IMPORT_API_KEY")
 
     if !is_nil(document_id) and !is_nil(api_key) do
-      clear_data()
+      ico_spreadsheet = IcoSpreadsheet.get_project_data(document_id, api_key, [])
+      Repo.transaction(fn ->
+        clear_data()
 
-      IcoSpreadsheet.get_project_data(document_id, api_key, [])
-      |> Sanbase.DbScripts.ImportIcoSpreadsheet.import()
+        Sanbase.DbScripts.ImportIcoSpreadsheet.import(ico_spreadsheet)
+      end)
     else
       raise "ICO_IMPORT_DOCUMENT_ID or ICO_IMPORT_API_KEY variable missing. Cannot do ICO import."
     end

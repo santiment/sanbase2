@@ -3,10 +3,10 @@ import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import {
   compose,
-  lifecycle
+  lifecycle,
+  pure
 } from 'recompose'
-import { Merge, FadeIn } from 'animate-components'
-import { fadeIn, slideRight } from 'animate-keyframes'
+import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
 import gql from 'graphql-tag'
@@ -18,6 +18,8 @@ import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
 import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
 import { formatNumber, formatBTC } from '../utils/formatting'
+import Panel from './../components/Panel'
+import Search from './../components/Search'
 import './Detailed.css'
 
 const propTypes = {
@@ -40,9 +42,11 @@ const getProjectByTicker = (match, projects) => {
 
 export const Detailed = ({
   match,
+  history,
   projects,
   loading,
   PriceQuery,
+  user,
   generalInfo
 }) => {
   if (loading) {
@@ -64,6 +68,9 @@ export const Detailed = ({
 
   return (
     <div className='page detailed'>
+      <Search
+        onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+        projects={projects} />
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>
@@ -72,16 +79,10 @@ export const Detailed = ({
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&
-            <Merge
-              one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-              two={{ name: slideRight, duration: '0.5s', timingFunction: 'ease-out' }}
-              as='div'
-            >
-              <div className='detailed-price'>
-                <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
-                <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
-              </div>
-            </Merge>}
+            <div className='detailed-price'>
+              <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
+              <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
+            </div>}
 
           <HiddenElements>
             <div className='detailed-buttons'>
@@ -92,9 +93,9 @@ export const Detailed = ({
             </div>
           </HiddenElements>
         </div>
-        <div className='panel panel-chart'>
+        <Panel withoutHeader>
           <ProjectChartContainer ticker={project.ticker} />
-        </div>
+        </Panel>
         <HiddenElements>
           <div className='panel'>
             <Tabs className='activity-panel'>
@@ -156,15 +157,16 @@ export const Detailed = ({
             isUnauthorized={generalInfo.isUnauthorized}
             isLoading={generalInfo.isLoading || PriceQuery.loading}
             title='General Info'>
-            <GeneralInfoBlock
-              volume={!!PriceQuery.price && PriceQuery.price.volume}
-              {...generalInfo.project} />
+            <GeneralInfoBlock {...generalInfo.project} />
           </PanelBlock>
           <PanelBlock
             isUnauthorized={generalInfo.isUnauthorized}
             isLoading={generalInfo.isLoading}
             title='Financials'>
-            <FinancialsBlock {...generalInfo.project} />
+            <FinancialsBlock
+              ethPrice={project.ethPrice}
+              wallets={project.wallets}
+              {...generalInfo.project} />
           </PanelBlock>
         </div>
       </FadeIn>
@@ -176,8 +178,13 @@ Detailed.propTypes = propTypes
 
 const mapStateToProps = state => {
   return {
+    user: state.user,
     projects: state.projects.items,
-    loading: state.projects.isLoading
+    loading: state.projects.isLoading,
+    generalInfo: {
+      isLoading: false,
+      isUnauthorized: !state.user.token
+    }
   }
 }
 
@@ -209,7 +216,6 @@ const queryProject = gql`
       id,
       name,
       ticker,
-      marketCapUsd,
       websiteLink,
       facebookLink,
       githubLink,
@@ -223,11 +229,13 @@ const queryProject = gql`
       projectTransparencyStatus,
       tokenAddress,
       fundsRaisedIcos { amount, currencyCode },
-      latestCoinmarketcapData {
-        priceUsd,
-        updateTime,
-        marketCapUsd
-      }
+      roiUsd,
+      priceUsd,
+      volumeUsd,
+      ethBalance,
+      marketcapUsd,
+      rank,
+      totalSupply,
     }
   }
 `
@@ -247,10 +255,10 @@ const mapDataToProps = ({ProjectQuery}) => {
   return {generalInfo: {isLoading, isEmpty, isError, project, errorMessage, isUnauthorized}}
 }
 
-const mapPropsToOptions = ({match, projects}) => {
+const mapPropsToOptions = ({match, projects, user}) => {
   const project = getProjectByTicker(match, projects)
   return {
-    skip: !project,
+    skip: !project || !user.token,
     variables: {
       id: project ? project.id : 0
     }
@@ -262,6 +270,11 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  lifecycle({
+    componentDidMount () {
+      this.props.retrieveProjects()
+    }
+  }),
   graphql(getPriceGQL, {
     name: 'PriceQuery',
     options: ({match, projects}) => {
@@ -279,11 +292,7 @@ const enhance = compose(
     props: mapDataToProps,
     options: mapPropsToOptions
   }),
-  lifecycle({
-    componentDidMount () {
-      this.props.retrieveProjects()
-    }
-  })
+  pure
 )
 
 export default enhance(Detailed)

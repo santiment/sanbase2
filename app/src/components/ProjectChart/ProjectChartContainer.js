@@ -4,6 +4,14 @@ import gql from 'graphql-tag'
 import moment from 'moment'
 import ProjectChart from './ProjectChart'
 
+export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
+  return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
+export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
+  return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
 const getHistoryGQL = gql`
   query history($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
     historyPrice(
@@ -17,6 +25,19 @@ const getHistoryGQL = gql`
       volume,
       datetime,
       marketcap
+    }
+}`
+
+const getHistoryGithubActivityGQL = gql`
+  query history($repository: String, $from: DateTime, $to: DateTime, $interval: String) {
+    historyGithubActivity(
+      repository: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime,
+      activity
     }
 }`
 
@@ -49,29 +70,82 @@ export const makeItervalBounds = interval => {
   }
 }
 
-const fetchPriceHistory = (client, ticker, interval = '1m') => {
-  const { from, to, minInterval } = makeItervalBounds(interval)
+const fetchGithubActivityHistoryFromStartToEndDate = (
+  client,
+  ticker,
+  startDate,
+  endDate,
+  minInterval = '1h'
+) => {
   return new Promise((resolve, reject) => {
     client.query({
-      query: getHistoryGQL,
+      query: getHistoryGithubActivityGQL,
       variables: {
-        'ticker': ticker,
-        'from': from,
-        'to': to,
+        'repository': ticker.toUpperCase(),
+        'from': startDate,
+        'to': endDate,
         'interval': minInterval
       }
     })
     .then(response => {
-      console.log(response.data)
-      resolve(response.data)
+      const history = response.data.historyGithubActivity || []
+      resolve(history)
     })
     .catch(error => reject(error))
   })
 }
 
+const fetchPriceHistoryFromStartToEndDate = (
+  client,
+  ticker,
+  startDate,
+  endDate,
+  minInterval = '1h'
+) => {
+  return new Promise((resolve, reject) => {
+    client.query({
+      query: getHistoryGQL,
+      variables: {
+        'ticker': ticker,
+        'from': startDate,
+        'to': endDate,
+        'interval': minInterval
+      }
+    })
+    .then(async response => {
+      const history = response.data.historyPrice || []
+      let historyGithubActivity = []
+      try {
+        historyGithubActivity = await fetchGithubActivityHistoryFromStartToEndDate(
+          client, ticker, startDate, endDate)
+      } catch (e) {
+        /* pass */
+      }
+      resolve(history.map((item, index) => {
+        const volumeBTC = calculateBTCVolume(item)
+        const marketcapBTC = calculateBTCMarketcap(item)
+        if (historyGithubActivity.length > 0 && minInterval === '1h') {
+          const githubActivity = historyGithubActivity[index]
+            ? historyGithubActivity[index].activity
+            : 0
+          return {...item, volumeBTC, marketcapBTC, githubActivity}
+        }
+        return {...item, volumeBTC, marketcapBTC}
+      }))
+    })
+    .catch(error => reject(error))
+  })
+}
+
+const fetchPriceHistory = (client, ticker, interval = '1m') => {
+  const { from, to, minInterval } = makeItervalBounds(interval)
+  return fetchPriceHistoryFromStartToEndDate(client, ticker, from, to, minInterval)
+}
+
 class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
+    const { from, to } = makeItervalBounds('1m')
     this.state = {
       interval: '1m',
       isLoading: true,
@@ -79,11 +153,50 @@ class ProjectChartContainer extends Component {
       isEmpty: true,
       errorMessage: '',
       selected: undefined,
-      history: []
+      history: [],
+      startDate: moment(from),
+      endDate: moment(to),
+      focusedInput: null
     }
 
     this.setFilter = this.setFilter.bind(this)
     this.setSelected = this.setSelected.bind(this)
+    this.onDatesChange = this.onDatesChange.bind(this)
+    this.onFocusChange = this.onFocusChange.bind(this)
+    this.updateHistoryData = this.updateHistoryData.bind(this)
+  }
+
+  onFocusChange (focusedInput) {
+    this.setState({
+      focusedInput: focusedInput
+    })
+  }
+
+  onDatesChange (startDate, endDate) {
+    const { client, ticker } = this.props
+    this.setState({
+      interval: undefined,
+      isLoading: true,
+      selected: undefined,
+      startDate,
+      endDate
+    })
+    fetchPriceHistoryFromStartToEndDate(client, ticker, startDate, endDate).then(historyPrice => {
+      this.setState({
+        isLoading: false,
+        isEmpty: historyPrice.length === 0,
+        history: historyPrice,
+        startDate: startDate,
+        endDate: endDate
+      })
+    }).catch(() => {
+      this.setState({
+        isLoading: false,
+        isEmpty: true,
+        history: [],
+        isError: false
+      })
+    })
   }
 
   setSelected (selected) {
@@ -93,34 +206,54 @@ class ProjectChartContainer extends Component {
   setFilter (interval) {
     if (interval === this.state.interval) { return }
     const { client, ticker } = this.props
+    const { from, to } = makeItervalBounds(interval)
     this.setState({
       interval,
       isLoading: true,
-      selected: null
+      selected: undefined,
+      startDate: moment(from),
+      endDate: moment(to)
     })
-    fetchPriceHistory(client, ticker, interval).then(data => {
-      const historyPrice = data.historyPrice || []
+    fetchPriceHistory(client, ticker, interval).then(historyPrice => {
       this.setState({
         isLoading: false,
         isEmpty: historyPrice.length === 0,
-        history: data.historyPrice,
-        selected: null
+        history: historyPrice
       })
     })
   }
 
-  componentDidMount () {
-    const { client, ticker } = this.props
+  updateHistoryData (ticker) {
+    const { client } = this.props
     const { interval } = this.state
-    fetchPriceHistory(client, ticker, interval).then(data => {
-      const historyPrice = data.historyPrice || []
+    fetchPriceHistory(client, ticker, interval).then(historyPrice => {
       this.setState({
         isLoading: false,
         isEmpty: historyPrice.length === 0,
-        history: data.historyPrice
+        history: historyPrice
       })
     })
-    .catch(error => console.log(error))
+    .catch(error =>
+      this.setState({
+        isLoading: false,
+        isError: true,
+        errorMessage: error
+      })
+    )
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.ticker !== this.props.ticker) {
+      this.setState({
+        isLoading: true
+      })
+      this.updateHistoryData(nextProps.ticker)
+    }
+  }
+
+  componentDidMount () {
+    const { ticker } = this.props
+    this.updateHistoryData(ticker)
   }
 
   render () {
@@ -132,6 +265,8 @@ class ProjectChartContainer extends Component {
           : <ProjectChart
             setFilter={this.setFilter}
             setSelected={this.setSelected}
+            changeDates={this.onDatesChange}
+            onFocusChange={this.onFocusChange}
             {...this.state} />}
       </div>
     )

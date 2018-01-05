@@ -1,6 +1,15 @@
 ## CHANGELOG
 
-- 2017-29-12 | v.0.2.8:
+- 2018-05-01 | v.0.3.0:
+
+  Added Github Activity
+
+- 2018-04-01 | v.0.2.9:
+
+  Added Search field in the project detail page
+  A lot of changes in the Chart Component
+
+- 2017-31-12 | v.0.2.8:
 
   Added storybook (dev exp.)
   Change chart hover behavior

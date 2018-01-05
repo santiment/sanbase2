@@ -1,2 +1,7 @@
+import 'semantic-ui-css/semantic.min.css'
+import 'font-awesome/css/font-awesome.css'
 import './Welcome.js'
 import './ProjectChartStory.js'
+import './PagesStory.js'
+import './StandardsStory.js'
+import './SearchStory.js'

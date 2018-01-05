@@ -18,10 +18,17 @@ import App from './App'
 import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
+import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
 const handleLoad = () => {
-  Raven.config(window.env.RAVEN_DSN).install()
+  Raven.config(window.env.RAVEN_DSN || '', {
+    release: process.env.REACT_APP_VERSION,
+    environment: process.env.NODE_ENV,
+    tags: {
+      git_commit: process.env.REACT_APP_VERSION.split('-')[1]
+    }
+  }).install()
   let origin = window.env.WEBSITE_URL || ''
   if (process.env.production) {
     origin = window.location.origin

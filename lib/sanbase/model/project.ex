@@ -160,36 +160,56 @@ defmodule Sanbase.Model.Project do
     end)
   end
 
-  # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_eth, Ico.funds_raised_btc (checked in that order)
-  def funds_raised_icos(%Project{id: id}) do
-    # We have to aggregate all amounts for every currency for every ICO of the given project, this is the last part of the query (after the with clause).
-    # The data to be aggreagated has to be fetched and unioned from two different sources (the "union all" inside the with clause):
-    #   * For ICOs that have raw data entered for at least one currency we aggregate it by currency (the first query)
-    #   * For ICOs that don't have that data entered (currently everything imported from the spreadsheet) we fall back to a precalculated total (the second query)
-    query =
+  @doc """
+  Aggregates all amounts for every currency for every ICO of the given project.
+  When fallback_to_totals = true: if there is no amount for any currency for a given ico, then fallback to one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_eth, Ico.funds_raised_btc (checked in that order)
+  """
+  def funds_raised_icos(%Project{id: id}, fallback_to_totals) do
+    # For ICOs that have amount entered for at least one currency we aggregate it by currency
+    currencies_subquery =
       '''
-      with data as (select c.code currency_code, ic.amount
+      (select c.code currency_code, ic.amount
       from icos i
       join ico_currencies ic
       	on ic.ico_id = i.id
       		and ic.amount is not null
       join currencies c
       	on c.id = ic.currency_id
-      where i.project_id = $1
+      where i.project_id = $1)
+      '''
+
+    # When fallback_to_totals = true:
+    # For ICOs that don't have any amounts for any currency entered we fall back to a precalculated total
+    totals_subquery = case fallback_to_totals do
+      true ->
+        '''
+        (select case
+        		when i.funds_raised_usd is not null then 'USD'
+        		when i.funds_raised_eth is not null then 'ETH'
+            when i.funds_raised_btc is not null then 'BTC'
+        		else null
+        	end currency_code
+        	, coalesce(i.funds_raised_usd, i.funds_raised_btc, i.funds_raised_eth) amount
+        from icos i
+        where i.project_id = $1
+        	and not exists (select 1
+        		from ico_currencies ic
+        		where ic.ico_id = i.id
+        			and ic.amount is not null))
+        '''
+      _ ->
+        '''
+        (select null as currency_code, null as amount
+        where 1=2)
+        '''
+    end
+
+    query =
+      '''
+      with data as
+      (#{currencies_subquery}
       union all
-      select case
-      		when i.funds_raised_usd is not null then 'USD'
-      		when i.funds_raised_eth is not null then 'ETH'
-          when i.funds_raised_btc is not null then 'BTC'
-      		else null
-      	end currency_code
-      	, coalesce(i.funds_raised_usd, i.funds_raised_btc, i.funds_raised_eth) amount
-      from icos i
-      where i.project_id = $1
-      	and not exists (select 1
-      		from ico_currencies ic
-      		where ic.ico_id = i.id
-      			and ic.amount is not null))
+      #{totals_subquery})
       select d.currency_code, sum(d.amount) amount
       from data d
       where d.currency_code is not null
@@ -202,9 +222,9 @@ defmodule Sanbase.Model.Project do
           		end
       '''
 
-      %{rows: rows} = Ecto.Adapters.SQL.query!(Sanbase.Repo, query, [id])
+    %{rows: rows} = Ecto.Adapters.SQL.query!(Sanbase.Repo, query, [id])
 
-      rows |> Enum.map(fn([currency_code, amount]) -> %{currency_code: currency_code, amount: amount} end)
+    rows |> Enum.map(fn([currency_code, amount]) -> %{currency_code: currency_code, amount: amount} end)
   end
 
   defp add_if_not_nil(first, second) do

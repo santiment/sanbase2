@@ -2,6 +2,7 @@ defmodule Sanbase.Model.Project do
   use Ecto.Schema
   import Ecto.Changeset
   alias Sanbase.Repo
+  alias Sanbase.Prices.Store
 
   alias Sanbase.Model.{
     Project,
@@ -87,5 +88,44 @@ defmodule Sanbase.Model.Project do
     |> where([i], i.project_id == ^id)
     |> first(:start_date)
     |> Repo.one
+  end
+
+  def roi_usd(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project) when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
+    with project <- Repo.preload(project, [:icos, :latest_coinmarketcap_data]),
+        true <- !is_nil(project.latest_coinmarketcap_data)
+              and !is_nil(project.latest_coinmarketcap_data.price_usd) do
+
+      zero = Decimal.new(0)
+
+      project.icos
+      |> Enum.reduce({project, 0, zero}, &roi_usd_accumulator/2)
+      |> case do
+        {_, _, ^zero} -> nil
+        {_, count, total_paid} ->
+          project.latest_coinmarketcap_data.price_usd
+          |> Decimal.mult(Decimal.new(count))
+          |> Decimal.div(total_paid)
+      end
+    else
+      _ -> nil
+    end
+  end
+  def roi_usd(_), do: nil
+
+  defp roi_usd_accumulator(%Ico{end_date: nil}, {project, count, total_paid}), do: {project, count, total_paid}
+  defp roi_usd_accumulator(%Ico{end_date: end_date}, {project, count, total_paid}) do
+    with :gt <- Ecto.DateTime.compare(project.latest_coinmarketcap_data.update_time, Ecto.DateTime.from_date(end_date)),
+        {:ok, timestamp, _} <- Ecto.Date.to_iso8601(end_date) <> "T00:00:00Z" |> DateTime.from_iso8601() do
+
+      Store.fetch_last_known_price_point(project.ticker <> "_USD", timestamp)
+      |> case do
+        nil -> {project, count, total_paid}
+        {_, nil, _, _} -> {project, count, total_paid}
+        {_, 0, _, _} -> {project, count, total_paid}
+        {_, price_at_ico_end, _, _} -> {project, count+1, Decimal.add(total_paid, Decimal.new(price_at_ico_end))}
+      end
+    else
+      _ -> {project, count, total_paid}
+    end
   end
 end

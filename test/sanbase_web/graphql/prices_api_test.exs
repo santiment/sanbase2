@@ -26,57 +26,60 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     Store.drop_measurement("XYZ_USD")
     Store.drop_measurement("XYZ_BTC")
 
-    now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
-    yesterday = Sanbase.DateTimeUtils.seconds_ago(60 * 60 * 24) |> DateTime.to_unix(:nanoseconds)
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
+    datetime3 = DateTime.from_naive!(~N[2017-05-15 21:45:00], "Etc/UTC")
+    years_ago = DateTime.from_naive!(~N[2007-01-01 21:45:00], "Etc/UTC")
 
     Store.import([
       # older
       %Measurement{
-        timestamp: yesterday,
+        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{price: 1000, volume: 200, marketcap: 500},
         name: "TEST_BTC"
       },
       %Measurement{
-        timestamp: yesterday,
+        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{price: 20, volume: 200, marketcap: 500},
         name: "TEST_USD"
       },
       # newer
       %Measurement{
-        timestamp: now,
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{price: 1200, volume: 300, marketcap: 800},
         name: "TEST_BTC"
       },
       %Measurement{
-        timestamp: now,
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{price: 22, volume: 300, marketcap: 800},
         name: "TEST_USD"
       },
       # older
       %Measurement{
-        timestamp: now,
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{price: 1, volume: 5, marketcap: 500},
         name: "XYZ_BTC"
       },
       %Measurement{
-        timestamp: now,
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{price: 20, volume: 200, marketcap: 500},
         name: "XYZ_USD"
       }
     ])
 
-    :ok
+    [
+      datetime1: datetime1,
+      datetime2: datetime2,
+      datetime3: datetime3,
+      years_ago: years_ago
+    ]
   end
 
   test "no information is available for a ticker", context do
     Store.drop_measurement("SAN_USD")
-
-    now = DateTime.utc_now()
-    yesterday = Sanbase.DateTimeUtils.seconds_ago(60 * 60 * 24)
-
     query = """
     {
-      historyPrice(ticker: "SAN", from: "#{yesterday}", to: "#{now}", interval: "1h") {
+      historyPrice(ticker: "SAN", from: "#{context.datetime1}", to: "#{context.datetime2}", interval: "1h") {
         datetime
         priceUsd
       }
@@ -109,12 +112,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "data aggregation for larger intervals", context do
-    now = DateTime.utc_now()
-    two_days_ago = Sanbase.DateTimeUtils.seconds_ago(2 * 60 * 60 * 24)
-
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{two_days_ago}", to: "#{now}", interval: "2d") {
+      historyPrice(ticker: "TEST", from: "#{context.datetime1}", to: "#{context.datetime3}", interval: "2d") {
+        datetime
         priceUsd
         priceBtc
         marketcap
@@ -138,12 +139,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "too complex queries are denied", context do
-    now = DateTime.utc_now()
-    years_ago = Sanbase.DateTimeUtils.days_ago(10 * 365)
-
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{years_ago}", to: "#{now}", interval: "5m"){
+      historyPrice(ticker: "TEST", from: "#{context.years_ago}", to: "#{context.datetime1}", interval: "5m"){
         priceUsd
         priceBtc
         datetime
@@ -161,11 +159,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "default arguments are correctly set", context do
-    yesterday = Sanbase.DateTimeUtils.days_ago(1)
-
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{yesterday}"){
+      historyPrice(ticker: "TEST", from: "#{context.datetime1}"){
         priceUsd
       }
     }
@@ -173,6 +169,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     result =
       context.conn
+      |> put_req_header("authorization", "Basic " <> basic_auth())
       |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     history_price = json_response(result, 200)["data"]["historyPrice"]
@@ -182,22 +179,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "complexity is 0 with basic authentication", context do
-    username =
-      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
-      |> Keyword.get(:basic_auth_username)
-
-    password =
-      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
-      |> Keyword.get(:basic_auth_password)
-
-    basic_auth = Base.encode64(username <> ":" <> password)
-
-    now = DateTime.utc_now()
-    years_ago = Sanbase.DateTimeUtils.days_ago(10 * 365)
-
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{years_ago}", to: "#{now}", interval: "5m"){
+      historyPrice(ticker: "TEST", from: "#{context.years_ago}", to: "#{context.datetime1}", interval: "5m"){
         priceUsd
         priceBtc
         datetime
@@ -208,15 +192,13 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     result =
       context.conn
-      |> put_req_header("authorization", "Basic " <> basic_auth)
+      |> put_req_header("authorization", "Basic " <> basic_auth())
       |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     assert json_response(result, 200)["data"] != nil
   end
 
   test "fetch all available prices", context do
-    now = DateTime.utc_now() |> DateTime.to_unix(:nanoseconds)
-
     query = """
     {
       availablePrices
@@ -231,5 +213,17 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert Enum.count(resp_data) == 2
     assert "TEST" in resp_data
     assert "XYZ" in resp_data
+  end
+
+  defp basic_auth() do
+    username =
+      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
+      |> Keyword.get(:basic_auth_username)
+
+    password =
+      Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)
+      |> Keyword.get(:basic_auth_password)
+
+    Base.encode64(username <> ":" <> password)
   end
 end

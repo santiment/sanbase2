@@ -59,8 +59,6 @@ defmodule Sanbase.Model.Ico do
     |> ModelUtils.removeThousandsSeparator(:funds_raised_btc)
     |> ModelUtils.removeThousandsSeparator(:funds_raised_usd)
     |> ModelUtils.removeThousandsSeparator(:funds_raised_eth)
-    |> ModelUtils.removeThousandsSeparator(:usd_btc_icoend)
-    |> ModelUtils.removeThousandsSeparator(:usd_eth_icoend)
     |> ModelUtils.removeThousandsSeparator(:minimal_cap_amount)
     |> ModelUtils.removeThousandsSeparator(:maximal_cap_amount)
 

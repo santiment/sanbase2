@@ -1,7 +1,7 @@
 .detailed-head {
-  margin-top: 32px;
-  min-height: 84px;
+  margin-top: 0;
   margin-right: 16px;
+  min-height: 84px;
   display: flex;
   justify-content: space-between;
 }

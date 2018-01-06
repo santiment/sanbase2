@@ -76,7 +76,7 @@ export const Detailed = ({
         <div className='detailed-head'>
           <div className='detailed-name'>
             <h1>
-              <ProjectIcon name={project.name} size={28} />
+              <ProjectIcon name={project.name} size={28} />&nbsp;
               {project.name} ({project.ticker.toUpperCase()})
             </h1>
           </div>

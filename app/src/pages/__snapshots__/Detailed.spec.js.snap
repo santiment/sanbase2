@@ -76,15 +76,12 @@ exports[`Project detail page container it should render correctly 1`] = `
             name="Aragon"
             size={28}
           />
-           
+           
           Aragon
            (
           ANT
           )
         </h1>
-        <p>
-          Manage entire organisations using the blockchain.
-        </p>
       </div>
       <Component>
         <div

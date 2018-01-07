@@ -11,7 +11,8 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   alias Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow
 
   def get_project_data(document_id, api_key, project_names) when is_list(project_names) do
-    ico_data_url(document_id, api_key)
+    Logger.info("Starting ICO spreadsheet fetch...")
+    ico_spreasheet = ico_data_url(document_id, api_key)
     |> get()
     |> case do
       %{status: 200, body: %{"values" => data}} ->
@@ -21,6 +22,8 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
         |> filter_value_rows(column_indices, project_names)
         |> parse_value_rows(column_indices)
     end
+    Logger.info("Finished ICO spreadsheet fetch.")
+    ico_spreasheet
   end
 
   defp ico_data_url(document_id, api_key) do

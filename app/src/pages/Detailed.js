@@ -75,8 +75,10 @@ export const Detailed = ({
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>
-            <h1><ProjectIcon name={project.name} size={28} /> {project.name} ({project.ticker.toUpperCase()})</h1>
-            <p>Manage entire organisations using the blockchain.</p>
+            <h1>
+              <ProjectIcon name={project.name} size={28} />&nbsp;
+              {project.name} ({project.ticker.toUpperCase()})
+            </h1>
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&

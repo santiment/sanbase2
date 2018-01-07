@@ -207,7 +207,7 @@ config :faktory_worker_ex,
   host: {:system, "FAKTORY_HOST", "localhost"},
   port: {:system, "FAKTORY_PORT", 7419},
   client: [
-    pool: 5,
+    pool: 1,
   ],
   worker: [
     concurrency: 5,

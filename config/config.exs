@@ -11,7 +11,8 @@ config :sanbase,
 
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
-  pool_size: 5
+  pool_size: 5,
+  prepare: :unnamed
 
 # Configures the endpoint
 config :sanbase, SanbaseWeb.Endpoint,

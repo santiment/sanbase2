@@ -20,6 +20,9 @@ defmodule Sanbase.ExAdmin.Model.Project do
           column :id, link: true
           column :start_date
           column :end_date
+          column :token_usd_ico_price
+          column :token_eth_ico_price
+          column :token_btc_ico_price
           column :tokens_issued_at_ico
           column :tokens_sold_at_ico
           column :funds_raised_btc

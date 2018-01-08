@@ -27,20 +27,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
     {:ok, currency_amounts}
   end
 
-  def funds_raised_usd_ico_price(%Ico{} = ico, _args, _resolution) do
-    result = Ico.funds_raised_usd_ico_price(ico)
+  def funds_raised_usd_ico_end_price(%Ico{} = ico, _args, _resolution) do
+    result = Ico.funds_raised_usd_ico_end_price(ico)
 
     {:ok, result}
   end
 
-  def funds_raised_eth_ico_price(%Ico{} = ico, _args, _resolution) do
-    result = Ico.funds_raised_eth_ico_price(ico)
+  def funds_raised_eth_ico_end_price(%Ico{} = ico, _args, _resolution) do
+    result = Ico.funds_raised_eth_ico_end_price(ico)
 
     {:ok, result}
   end
 
-  def funds_raised_btc_ico_price(%Ico{} = ico, _args, _resolution) do
-    result = Ico.funds_raised_btc_ico_price(ico)
+  def funds_raised_btc_ico_end_price(%Ico{} = ico, _args, _resolution) do
+    result = Ico.funds_raised_btc_ico_end_price(ico)
 
     {:ok, result}
   end

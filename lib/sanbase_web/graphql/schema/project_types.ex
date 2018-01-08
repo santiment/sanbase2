@@ -83,14 +83,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve &ProjectResolver.percent_change_7d/3
     end
 
-    field :funds_raised_usd_ico_price, :decimal do
-      resolve &ProjectResolver.funds_raised_usd_ico_price/3
+    field :funds_raised_usd_ico_end_price, :decimal do
+      resolve &ProjectResolver.funds_raised_usd_ico_end_price/3
     end
-    field :funds_raised_eth_ico_price, :decimal do
-      resolve &ProjectResolver.funds_raised_eth_ico_price/3
+    field :funds_raised_eth_ico_end_price, :decimal do
+      resolve &ProjectResolver.funds_raised_eth_ico_end_price/3
     end
-    field :funds_raised_btc_ico_price, :decimal do
-      resolve &ProjectResolver.funds_raised_btc_ico_price/3
+    field :funds_raised_btc_ico_end_price, :decimal do
+      resolve &ProjectResolver.funds_raised_btc_ico_end_price/3
     end
 
     field :initial_ico, :ico do
@@ -110,14 +110,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :token_btc_ico_price, :decimal
     field :tokens_issued_at_ico, :decimal
     field :tokens_sold_at_ico, :decimal
-    field :funds_raised_usd_ico_price, :decimal do
-      resolve &IcoResolver.funds_raised_usd_ico_price/3
+    field :funds_raised_usd_ico_end_price, :decimal do
+      resolve &IcoResolver.funds_raised_usd_ico_end_price/3
     end
-    field :funds_raised_eth_ico_price, :decimal do
-      resolve &IcoResolver.funds_raised_eth_ico_price/3
+    field :funds_raised_eth_ico_end_price, :decimal do
+      resolve &IcoResolver.funds_raised_eth_ico_end_price/3
     end
-    field :funds_raised_btc_ico_price, :decimal do
-      resolve &IcoResolver.funds_raised_btc_ico_price/3
+    field :funds_raised_btc_ico_end_price, :decimal do
+      resolve &IcoResolver.funds_raised_btc_ico_end_price/3
     end
     field :minimal_cap_amount, :decimal
     field :maximal_cap_amount, :decimal

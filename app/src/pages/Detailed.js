@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import {
   compose,
-  lifecycle
+  lifecycle,
+  pure
 } from 'recompose'
 import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
@@ -18,6 +19,8 @@ import FinancialsBlock from './../components/FinancialsBlock'
 import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
 import { formatNumber, formatBTC } from '../utils/formatting'
 import Panel from './../components/Panel'
+import Search from './../components/Search'
+import PercentChanges from './../components/PercentChanges'
 import './Detailed.css'
 
 const propTypes = {
@@ -40,9 +43,11 @@ const getProjectByTicker = (match, projects) => {
 
 export const Detailed = ({
   match,
+  history,
   projects,
   loading,
   PriceQuery,
+  user,
   generalInfo
 }) => {
   if (loading) {
@@ -64,16 +69,25 @@ export const Detailed = ({
 
   return (
     <div className='page detailed'>
+      <Search
+        onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+        projects={projects} />
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>
-            <h1><ProjectIcon name={project.name} size={28} /> {project.name} ({project.ticker.toUpperCase()})</h1>
-            <p>Manage entire organisations using the blockchain.</p>
+            <h1>
+              <ProjectIcon name={project.name} size={28} />&nbsp;
+              {project.name} ({project.ticker.toUpperCase()})
+            </h1>
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&
             <div className='detailed-price'>
-              <div>{formatNumber(PriceQuery.price.priceUsd, 'USD')}</div>
+              <div className='detailed-price-usd'>
+                {formatNumber(PriceQuery.price.priceUsd, 'USD')}&nbsp;
+                {!generalInfo.isLoading && generalInfo.project &&
+                  <PercentChanges changes={generalInfo.project.percentChange24h} />}
+              </div>
               <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
             </div>}
 
@@ -156,7 +170,10 @@ export const Detailed = ({
             isUnauthorized={generalInfo.isUnauthorized}
             isLoading={generalInfo.isLoading}
             title='Financials'>
-            <FinancialsBlock {...generalInfo.project} />
+            <FinancialsBlock
+              ethPrice={project.ethPrice}
+              wallets={project.wallets}
+              {...generalInfo.project} />
           </PanelBlock>
         </div>
       </FadeIn>
@@ -168,8 +185,13 @@ Detailed.propTypes = propTypes
 
 const mapStateToProps = state => {
   return {
+    user: state.user,
     projects: state.projects.items,
-    loading: state.projects.isLoading
+    loading: state.projects.isLoading,
+    generalInfo: {
+      isLoading: false,
+      isUnauthorized: !state.user.token
+    }
   }
 }
 
@@ -217,9 +239,11 @@ const queryProject = gql`
       roiUsd,
       priceUsd,
       volumeUsd,
+      ethBalance,
       marketcapUsd,
       rank,
       totalSupply,
+      percentChange24h,
     }
   }
 `
@@ -239,10 +263,10 @@ const mapDataToProps = ({ProjectQuery}) => {
   return {generalInfo: {isLoading, isEmpty, isError, project, errorMessage, isUnauthorized}}
 }
 
-const mapPropsToOptions = ({match, projects}) => {
+const mapPropsToOptions = ({match, projects, user}) => {
   const project = getProjectByTicker(match, projects)
   return {
-    skip: !project,
+    skip: !project || !user.token,
     variables: {
       id: project ? project.id : 0
     }
@@ -254,6 +278,11 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  lifecycle({
+    componentDidMount () {
+      this.props.retrieveProjects()
+    }
+  }),
   graphql(getPriceGQL, {
     name: 'PriceQuery',
     options: ({match, projects}) => {
@@ -271,11 +300,7 @@ const enhance = compose(
     props: mapDataToProps,
     options: mapPropsToOptions
   }),
-  lifecycle({
-    componentDidMount () {
-      this.props.retrieveProjects()
-    }
-  })
+  pure
 )
 
 export default enhance(Detailed)

@@ -24,7 +24,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
         price_btc: Decimal.new(price_btc),
         price_usd: Decimal.new(price_usd),
         marketcap: Decimal.new(marketcap),
-        volume: Decimal.new(volume)
+        volume: Decimal.new(volume),
+        ticker: ticker
       }}
     else
       {:error, reason} ->
@@ -33,6 +34,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       _ ->
         {:error, "Cannot fetch price for ticker #{ticker}"}
     end
+  end
+
+  def current_prices(_root, %{tickers: tickers}, _resolution) do
+    prices =
+    tickers
+    |> Enum.map(fn ticker ->
+      {:ok, price_point} = current_price(nil, %{ticker: ticker}, nil)
+      price_point
+    end)
+
+    {:ok, prices}
   end
 
   def available_prices(_root, _args, _resolutions) do

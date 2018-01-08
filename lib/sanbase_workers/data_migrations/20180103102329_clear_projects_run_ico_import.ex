@@ -21,7 +21,7 @@ defmodule SanbaseWorkers.DataMigrations.ClearProjectsRunIcoImport do
         clear_data()
 
         Sanbase.DbScripts.ImportIcoSpreadsheet.import(ico_spreadsheet)
-      end)
+      end, timeout: 600000)
     else
       raise "ICO_IMPORT_DOCUMENT_ID or ICO_IMPORT_API_KEY variable missing. Cannot do ICO import."
     end

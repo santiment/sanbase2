@@ -9,7 +9,7 @@ defmodule SanbaseWorkers.DataMigrations.ClearProjectsRunIcoImport do
   alias Sanbase.Model.Project
   alias Sanbase.Model.Ico
 
-  faktory_options queue: "data_migrations", retry: 1
+  faktory_options queue: "data_migrations", retry: 1, priority: 9
 
   def perform() do
     document_id = System.get_env("ICO_IMPORT_DOCUMENT_ID")

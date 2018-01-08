@@ -141,10 +141,10 @@ config :faktory_worker_ex,
   host: {:system, "FAKTORY_HOST", "localhost"},
   port: {:system, "FAKTORY_PORT", 7419},
   client: [
-    pool: 5,
+    pool: 1,
   ],
   worker: [
-    concurrency: 5,
+    concurrency: 1,
     queues: ["github_activity", "data_migrations"],
   ],
   start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}

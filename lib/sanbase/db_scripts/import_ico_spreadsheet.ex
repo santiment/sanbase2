@@ -63,7 +63,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
       project
       |> insert_or_update_btc_wallets(ico_spreadsheet_row)
-    end)
+    end, timeout: 600000)
   end
 
   defp insert_or_update_project(ico_spreadsheet_row) do

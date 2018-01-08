@@ -127,32 +127,32 @@ defmodule Sanbase.Model.Project do
     end
   end
 
-  def funds_raised_usd_ico_price(project) do
+  def funds_raised_usd_ico_end_price(project) do
     Repo.preload(project, :icos).icos
     |> Enum.reduce(nil, fn(ico, acc) ->
-      add_if_not_nil(acc, Ico.funds_raised_usd_ico_price(ico))
+      add_if_not_nil(acc, Ico.funds_raised_usd_ico_end_price(ico))
     end)
   end
 
-  def funds_raised_eth_ico_price(project) do
+  def funds_raised_eth_ico_end_price(project) do
     Repo.preload(project, :icos).icos
     |> Enum.reduce(nil, fn(ico, acc) ->
-      add_if_not_nil(acc, Ico.funds_raised_eth_ico_price(ico))
+      add_if_not_nil(acc, Ico.funds_raised_eth_ico_end_price(ico))
     end)
   end
 
-  def funds_raised_btc_ico_price(project) do
+  def funds_raised_btc_ico_end_price(project) do
     Repo.preload(project, :icos).icos
     |> Enum.reduce(nil, fn(ico, acc) ->
-      add_if_not_nil(acc, Ico.funds_raised_btc_ico_price(ico))
+      add_if_not_nil(acc, Ico.funds_raised_btc_ico_end_price(ico))
     end)
   end
 
-  def funds_raised_all_ico_price(project) do
+  def funds_raised_all_ico_end_price(project) do
     Repo.preload(project, :icos).icos
     |> Enum.reduce(%{funds_raised_usd: nil, funds_raised_eth: nil, funds_raised_btc: nil},
     fn(ico, %{funds_raised_usd: acc_usd, funds_raised_eth: acc_eth, funds_raised_btc: acc_btc}) ->
-      %{funds_raised_usd: ico_usd, funds_raised_eth: ico_eth, funds_raised_btc: ico_btc} = Ico.funds_raised_all_ico_price(ico)
+      %{funds_raised_usd: ico_usd, funds_raised_eth: ico_eth, funds_raised_btc: ico_btc} = Ico.funds_raised_all_ico_end_price(ico)
 
       %{funds_raised_usd: add_if_not_nil(acc_usd, ico_usd),
         funds_raised_eth: add_if_not_nil(acc_eth, ico_eth),

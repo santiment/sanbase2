@@ -54,6 +54,9 @@ defmodule Sanbase.Model.Ico do
   @doc false
   def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
     attrs = attrs
+    |> ModelUtils.removeThousandsSeparator(:token_usd_ico_price)
+    |> ModelUtils.removeThousandsSeparator(:token_eth_ico_price)
+    |> ModelUtils.removeThousandsSeparator(:token_btc_ico_price)
     |> ModelUtils.removeThousandsSeparator(:tokens_issued_at_ico)
     |> ModelUtils.removeThousandsSeparator(:tokens_sold_at_ico)
     |> ModelUtils.removeThousandsSeparator(:funds_raised_btc)

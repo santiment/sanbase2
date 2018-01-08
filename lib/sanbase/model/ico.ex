@@ -12,6 +12,9 @@ defmodule Sanbase.Model.Ico do
     belongs_to :project, Project
     field :start_date, Ecto.Date
     field :end_date, Ecto.Date
+    field :token_usd_ico_price, :decimal
+    field :token_eth_ico_price, :decimal
+    field :token_btc_ico_price, :decimal
     field :tokens_issued_at_ico, :decimal
     field :tokens_sold_at_ico, :decimal
     field :funds_raised_btc, :decimal
@@ -32,7 +35,7 @@ defmodule Sanbase.Model.Ico do
   @doc false
   def changeset(%Ico{} = ico, attrs \\ %{}) do
     ico
-    |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_btc_icoend, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id, :contract_block_number, :contract_abi])
+    |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_btc_icoend, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id, :contract_block_number, :contract_abi, :token_usd_ico_price, :token_eth_ico_price, :token_btc_ico_price])
     |> calculate_funds_raised()
     |> validate_required([:project_id])
   end
@@ -40,6 +43,9 @@ defmodule Sanbase.Model.Ico do
   @doc false
   def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
     attrs = attrs
+    |> ModelUtils.removeThousandsSeparator(:token_usd_ico_price)
+    |> ModelUtils.removeThousandsSeparator(:token_eth_ico_price)
+    |> ModelUtils.removeThousandsSeparator(:token_btc_ico_price)
     |> ModelUtils.removeThousandsSeparator(:tokens_issued_at_ico)
     |> ModelUtils.removeThousandsSeparator(:tokens_sold_at_ico)
     |> ModelUtils.removeThousandsSeparator(:funds_raised_btc)

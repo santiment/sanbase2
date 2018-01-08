@@ -2,6 +2,9 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow do
   defstruct [
     :project_name,
     :ticker,
+    :token_btc_ico_price,
+    :token_usd_ico_price,
+    :token_eth_ico_price,
     :ico_start_date,
     :ico_end_date,
     :tokens_issued_at_ico,
@@ -41,6 +44,9 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet.IcoSpreadsheetRow do
     %{
       project_name: 1,
       ticker: 2,
+      token_btc_ico_price: 5,
+      token_usd_ico_price: 9,
+      token_eth_ico_price: 13,
       ico_start_date: 15,
       ico_end_date: 16,
       tokens_issued_at_ico: 22,

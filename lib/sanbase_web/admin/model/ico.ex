@@ -30,6 +30,9 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input ico, :project, collection: Sanbase.Repo.all(Project)
         input ico, :start_date
         input ico, :end_date
+        input ico, :token_usd_ico_price
+        input ico, :token_eth_ico_price
+        input ico, :token_btc_ico_price
         input ico, :tokens_issued_at_ico
         input ico, :tokens_sold_at_ico
         input ico, :funds_raised_btc

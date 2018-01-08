@@ -92,6 +92,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :id, non_null(:id)
     field :start_date, :ecto_date
     field :end_date, :ecto_date
+    field :token_usd_ico_price, :decimal
+    field :token_eth_ico_price, :decimal
+    field :token_btc_ico_price, :decimal
     field :tokens_issued_at_ico, :decimal
     field :tokens_sold_at_ico, :decimal
     field :funds_raised_btc, :decimal

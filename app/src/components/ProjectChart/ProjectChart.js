@@ -195,7 +195,7 @@ const getChartDataFromHistory = (
     }) : []}
   const githubActivityDataset = !isToggledGithubActivity ? null : {
     label: 'Github Activity',
-    type: 'bar',
+    type: 'line',
     fill: false,
     yAxisID: 'y-axis-4',
     borderColor: COLORS.githubActivity,
@@ -342,7 +342,9 @@ const makeOptionsFromProps = props => ({
         fontColor: COLORS.githubActivity
       },
       ticks: {
-        display: true
+        display: true,
+        // same hack as in volume.
+        max: parseInt(Math.max(...props.history.map(data => data.githubActivity)) * 2.2)
       },
       gridLines: {
         display: false

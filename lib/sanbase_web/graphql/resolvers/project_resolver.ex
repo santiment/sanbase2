@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       _ -> Repo.all(query)
     end
 
-    projects = case funds_raised_ico_price_requested?(resolution) do
+    projects = case funds_raised_ico_end_price_requested?(resolution) do
       true -> Repo.preload(projects, [icos: [ico_currencies: [:currency]]])
       _ -> projects
     end
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       _ -> Repo.get(Project, id)
     end
 
-    project = case funds_raised_ico_price_requested?(resolution) do
+    project = case funds_raised_ico_end_price_requested?(resolution) do
       true -> Repo.preload(project, [icos: [ico_currencies: [:currency]]])
       _ -> project
     end
@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       _ -> Repo.all(query)
     end
 
-    projects = case funds_raised_ico_price_requested?(resolution) do
+    projects = case funds_raised_ico_end_price_requested?(resolution) do
       true -> Repo.preload(projects, [icos: [ico_currencies: [:currency]]])
       _ -> projects
     end
@@ -205,20 +205,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
   def percent_change_7d(_parent, _args, _resolution), do: {:ok, nil}
 
-  def funds_raised_usd_ico_price(%Project{} = project, _args, _resolution) do
-    result = Project.funds_raised_usd_ico_price(project)
+  def funds_raised_usd_ico_end_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_usd_ico_end_price(project)
 
     {:ok, result}
   end
 
-  def funds_raised_eth_ico_price(%Project{} = project, _args, _resolution) do
-    result = Project.funds_raised_eth_ico_price(project)
+  def funds_raised_eth_ico_end_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_eth_ico_end_price(project)
 
     {:ok, result}
   end
 
-  def funds_raised_btc_ico_price(%Project{} = project, _args, _resolution) do
-    result = Project.funds_raised_btc_ico_price(project)
+  def funds_raised_btc_ico_end_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_btc_ico_end_price(project)
 
     {:ok, result}
   end
@@ -226,7 +226,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def initial_ico(%Project{} = project, _args, resolution) do
     ico = Project.initial_ico(project)
 
-    ico = case funds_raised_ico_price_requested?(resolution) do
+    ico = case funds_raised_ico_end_price_requested?(resolution) do
       true -> Repo.preload(ico, [ico_currencies: [:currency]])
       _ -> ico
     end
@@ -235,7 +235,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def icos(%Project{} = project, _args, resolution) do
-    project = case funds_raised_ico_price_requested?(resolution) do
+    project = case funds_raised_ico_end_price_requested?(resolution) do
       true -> Repo.preload(project, [icos: [ico_currencies: [:currency]]])
       _ -> Repo.preload(project, :icos)
     end
@@ -259,11 +259,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  defp funds_raised_ico_price_requested?(resolution) do
+  defp funds_raised_ico_end_price_requested?(resolution) do
     case requested_fields(resolution) do
-      %{fundsRaisedUsdIcoPrice: true} -> true
-      %{fundsRaisedEthIcoPrice: true} -> true
-      %{fundsRaisedBtcIcoPrice: true} -> true
+      %{fundsRaisedUsdIcoEndPrice: true} -> true
+      %{fundsRaisedEthIcoEndPrice: true} -> true
+      %{fundsRaisedBtcIcoEndPrice: true} -> true
       _ -> false
     end
   end

@@ -101,14 +101,14 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     {
       allProjects {
         name,
-        fundsRaisedUsdIcoPrice,
-        fundsRaisedEthIcoPrice,
-        fundsRaisedBtcIcoPrice,
+        fundsRaisedUsdIcoEndPrice,
+        fundsRaisedEthIcoEndPrice,
+        fundsRaisedBtcIcoEndPrice,
         icos {
           endDate,
-          fundsRaisedUsdIcoPrice,
-          fundsRaisedEthIcoPrice,
-          fundsRaisedBtcIcoPrice
+          fundsRaisedUsdIcoEndPrice,
+          fundsRaisedEthIcoEndPrice,
+          fundsRaisedBtcIcoEndPrice
         }
       }
     }
@@ -121,18 +121,18 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
 
     assert json_response(result, 200)["data"]["allProjects"] ==
       [%{"name" => "Project",
-        "fundsRaisedUsdIcoPrice" => "1200",
-        "fundsRaisedEthIcoPrice" => "250.0",
-        "fundsRaisedBtcIcoPrice" => "300",
+        "fundsRaisedUsdIcoEndPrice" => "1200",
+        "fundsRaisedEthIcoEndPrice" => "250.0",
+        "fundsRaisedBtcIcoEndPrice" => "300",
         "icos" => [
           %{"endDate" => "2017-08-19",
-          "fundsRaisedUsdIcoPrice" => "200",
-          "fundsRaisedEthIcoPrice" => "150",
-          "fundsRaisedBtcIcoPrice" => "100"},
+          "fundsRaisedUsdIcoEndPrice" => "200",
+          "fundsRaisedEthIcoEndPrice" => "150",
+          "fundsRaisedBtcIcoEndPrice" => "100"},
           %{"endDate" => "2017-10-17",
-            "fundsRaisedUsdIcoPrice" => "1000",
-            "fundsRaisedEthIcoPrice" => "100.0",
-            "fundsRaisedBtcIcoPrice" => "200"}]}]
+            "fundsRaisedUsdIcoEndPrice" => "1000",
+            "fundsRaisedEthIcoEndPrice" => "100.0",
+            "fundsRaisedBtcIcoEndPrice" => "200"}]}]
   end
 
   defp get_authorization_header do

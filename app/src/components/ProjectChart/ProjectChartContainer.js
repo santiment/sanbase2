@@ -57,6 +57,42 @@ export const makeItervalBounds = interval => {
   }
 }
 
+const fetchGithubActivityHistoryFromStartToEndDate = (
+  client,
+  ticker,
+  startDate,
+  endDate,
+  minInterval = '1h'
+) => {
+  return new Promise((resolve, reject) => {
+    client.query({
+      query: gql`
+        query githubActivityQuery($repository: String, $from: DateTime, $to: DateTime, $interval: String) {
+          githubActivity(
+            repository: $repository,
+            from: $from,
+            to: $to,
+            interval: $interval
+          ) {
+            datetime,
+            activity
+          }
+      }`,
+      variables: {
+        'repository': ticker.toUpperCase(),
+        'from': startDate,
+        'to': endDate,
+        'interval': minInterval
+      }
+    })
+    .then(response => {
+      const history = response.data.githubActivity || []
+      resolve(history)
+    })
+    .catch(error => reject(error))
+  })
+}
+
 const fetchPriceHistoryFromStartToEndDate = (
   client,
   ticker,
@@ -74,11 +110,26 @@ const fetchPriceHistoryFromStartToEndDate = (
         'interval': minInterval
       }
     })
-    .then(response => {
+    .then(async response => {
       const history = response.data.historyPrice || []
+      let historyGithubActivity = []
+      try {
+        historyGithubActivity = await fetchGithubActivityHistoryFromStartToEndDate(
+          client, ticker, startDate, endDate)
+      } catch (e) {
+        /* pass */
+      }
+      const indexes = historyGithubActivity.map(obj => obj.datetime)
       resolve(history.map(item => {
         const volumeBTC = calculateBTCVolume(item)
         const marketcapBTC = calculateBTCMarketcap(item)
+        if (historyGithubActivity.length > 0 && minInterval === '1h') {
+          const index = indexes.indexOf(item.datetime)
+          const githubActivity = index > -1
+            ? historyGithubActivity[index].activity
+            : 0
+          return {...item, volumeBTC, marketcapBTC, githubActivity}
+        }
         return {...item, volumeBTC, marketcapBTC}
       }))
     })
@@ -112,6 +163,7 @@ class ProjectChartContainer extends Component {
     this.setSelected = this.setSelected.bind(this)
     this.onDatesChange = this.onDatesChange.bind(this)
     this.onFocusChange = this.onFocusChange.bind(this)
+    this.updateHistoryData = this.updateHistoryData.bind(this)
   }
 
   onFocusChange (focusedInput) {
@@ -171,8 +223,8 @@ class ProjectChartContainer extends Component {
     })
   }
 
-  componentDidMount () {
-    const { client, ticker } = this.props
+  updateHistoryData (ticker) {
+    const { client } = this.props
     const { interval } = this.state
     fetchPriceHistory(client, ticker, interval).then(historyPrice => {
       this.setState({
@@ -188,6 +240,20 @@ class ProjectChartContainer extends Component {
         errorMessage: error
       })
     )
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.ticker !== this.props.ticker) {
+      this.setState({
+        isLoading: true
+      })
+      this.updateHistoryData(nextProps.ticker)
+    }
+  }
+
+  componentDidMount () {
+    const { ticker } = this.props
+    this.updateHistoryData(ticker)
   }
 
   render () {

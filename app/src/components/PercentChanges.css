@@ -1,0 +1,7 @@
+.percent-changes--positive {
+  color: green;
+}
+
+.percent-changes--negative {
+  color: red;
+}

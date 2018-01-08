@@ -19,7 +19,7 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_prices_with_resolution(pair, from, to, resolution) do
     # fill(none) skips intervals with no data to report instead of returning null
-    ~s/SELECT MEAN(price), SUM(volume), MEAN(marketcap)
+    ~s/SELECT MEAN(price), LAST(volume), MEAN(marketcap)
     FROM "#{pair}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}

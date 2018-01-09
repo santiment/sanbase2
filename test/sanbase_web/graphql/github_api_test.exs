@@ -16,6 +16,9 @@ defmodule Sanbase.Github.GithubApiTest do
     datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
     datetime3 = DateTime.from_naive!(~N[2017-05-15 21:45:00], "Etc/UTC")
 
+    datetime_no_activity1 = DateTime.from_naive!(~N[2010-05-13 21:45:00], "Etc/UTC")
+    datetime_no_activity2 = DateTime.from_naive!(~N[2010-05-15 21:45:00], "Etc/UTC")
+
     Github.Store.import([
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
@@ -40,7 +43,13 @@ defmodule Sanbase.Github.GithubApiTest do
       }
     ])
 
-    [datetime1: datetime1, datetime2: datetime2, datetime3: datetime3]
+    [
+      datetime1: datetime1,
+      datetime2: datetime2,
+      datetime3: datetime3,
+      datetime_no_activity1: datetime_no_activity1,
+      datetime_no_activity2: datetime_no_activity2
+    ]
   end
 
   test "fetching github time series data", context do
@@ -102,6 +111,28 @@ defmodule Sanbase.Github.GithubApiTest do
     repos = json_response(result, 200)["data"]["githubAvailablesRepos"]
 
     assert ["SAN", "TEST1", "TEST2"] == Enum.sort(repos)
+  end
+
+  test "interval with no activity returns empty result", context do
+    query = """
+    {
+      githubActivity(
+        repository: "SAN",
+        from: "#{context.datetime_no_activity1}",
+        to: "#{context.datetime_no_activity2}",
+        interval: "1d") {
+          activity
+        }
+    }
+    """
+
+    result =
+    context.conn
+    |> post("/graphql", query_skeleton(query, "githubActivity"))
+
+    activities = json_response(result, 200)["data"]["githubActivity"]
+
+    assert activities == []
   end
 
   defp query_skeleton(query, query_name) do

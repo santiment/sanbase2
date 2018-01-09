@@ -35,6 +35,9 @@ defmodule Sanbase.Github.GithubApiTest do
     datetime_no_activity1 = DateTime.from_naive!(~N[2010-05-13 21:45:00], "Etc/UTC")
     datetime_no_activity2 = DateTime.from_naive!(~N[2010-05-15 21:45:00], "Etc/UTC")
 
+    datetime_no_activity1 = DateTime.from_naive!(~N[2010-05-13 21:45:00], "Etc/UTC")
+    datetime_no_activity2 = DateTime.from_naive!(~N[2010-05-15 21:45:00], "Etc/UTC")
+
     Github.Store.import([
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),

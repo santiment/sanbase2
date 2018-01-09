@@ -51,8 +51,12 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       |> Ico.changeset(Map.from_struct(project_info))
       |> Repo.insert_or_update!
 
+      project_attrs = project_info
+      |> Map.from_struct()
+      |> Map.delete(:name)
+
       project
-      |> Project.changeset(Map.from_struct(project_info))
+      |> Project.changeset(project_attrs)
       |> Repo.update!
     end
   end

@@ -26,20 +26,21 @@ defmodule Sanbase.Github.Store do
     |> parse_activity_series!()
   end
 
-  def fetch_moving_average_for_hours!(ticker, from, to, interval) do
-    interval_in_hours = Sanbase.DateTimeUtils.str_to_hours(interval)
+  def fetch_moving_average_for_hours!(ticker, from, to, interval, ma_interval) do
+    ma_interval_in_hours = Sanbase.DateTimeUtils.str_to_hours(ma_interval)
 
-    moving_average_activity(ticker, from, to, interval_in_hours)
+    moving_average_activity(ticker, from, to, interval, ma_interval_in_hours)
     |> Store.query()
     |> parse_moving_average_series!()
   end
 
   # The subsequent fields are 1 hour apart, so the interval must be in hours
-  defp moving_average_activity(ticker, from, to, interval_in_hours) do
-    ~s/SELECT MOVING_AVERAGE(activity, #{interval_in_hours})
+  defp moving_average_activity(ticker, from, to, interval, ma_interval_in_hours) do
+    ~s/SELECT MOVING_AVERAGE(SUM(activity), #{ma_interval_in_hours})
     FROM "#{ticker}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    GROUP BY time(#{interval})/
   end
 
   defp activity_with_resolution_query(ticker, from, to, resolution) do

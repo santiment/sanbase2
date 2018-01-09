@@ -80,10 +80,11 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Returns a list of github activities"
     field :github_activity, list_of(:activity_point) do
-      arg(:repository, non_null(:string))
+      arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1h")
+      arg(:transform, :string, default_value: "None")
 
       resolve(&GithubResolver.activity/3)
     end

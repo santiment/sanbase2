@@ -12,25 +12,47 @@ defmodule Sanbase.Github.GithubApiTest do
     Github.Store.drop_measurement("TEST1")
     Github.Store.drop_measurement("TEST2")
 
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
-    datetime3 = DateTime.from_naive!(~N[2017-05-15 21:45:00], "Etc/UTC")
-
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 15:00:00], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2017-05-13 16:00:00], "Etc/UTC")
+    datetime3 = DateTime.from_naive!(~N[2017-05-13 17:00:00], "Etc/UTC")
+    datetime4 = DateTime.from_naive!(~N[2017-05-13 18:00:00], "Etc/UTC")
+    datetime5 = DateTime.from_naive!(~N[2017-05-13 19:00:00], "Etc/UTC")
+    datetime6 = DateTime.from_naive!(~N[2017-05-13 20:00:00], "Etc/UTC")
+    dates_interval = "1d"
     datetime_no_activity1 = DateTime.from_naive!(~N[2010-05-13 21:45:00], "Etc/UTC")
     datetime_no_activity2 = DateTime.from_naive!(~N[2010-05-15 21:45:00], "Etc/UTC")
 
     Github.Store.import([
       %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 5},
         name: "SAN"
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 10},
         name: "SAN"
       },
-
+      %Measurement{
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        fields: %{activity: 5},
+        name: "SAN"
+      },
+      %Measurement{
+        timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
+        fields: %{activity: 10},
+        name: "SAN"
+      },
+      %Measurement{
+        timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
+        fields: %{activity: 20},
+        name: "SAN"
+      },
+      %Measurement{
+        timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
+        fields: %{activity: 10},
+        name: "SAN"
+      },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 5},
@@ -47,6 +69,10 @@ defmodule Sanbase.Github.GithubApiTest do
       datetime1: datetime1,
       datetime2: datetime2,
       datetime3: datetime3,
+      datetime4: datetime4,
+      datetime5: datetime5,
+      datetime6: datetime6,
+      dates_interval: dates_interval,
       datetime_no_activity1: datetime_no_activity1,
       datetime_no_activity2: datetime_no_activity2
     ]
@@ -56,9 +82,9 @@ defmodule Sanbase.Github.GithubApiTest do
     query = """
     {
       githubActivity(
-        repository: "SAN",
+        ticker: "SAN",
         from: "#{context.datetime1}",
-        interval: "1d") {
+        interval: "1h") {
           activity
         }
     }
@@ -78,10 +104,10 @@ defmodule Sanbase.Github.GithubApiTest do
     query = """
     {
       githubActivity(
-        repository: "SAN",
+        ticker: "SAN",
         from: "#{context.datetime1}",
-        to: "#{context.datetime3}",
-        interval: "2d") {
+        to: "#{context.datetime6}",
+        interval: "#{context.dates_interval}") {
           activity
         }
     }
@@ -94,10 +120,10 @@ defmodule Sanbase.Github.GithubApiTest do
     activities = json_response(result, 200)["data"]["githubActivity"]
 
     assert Enum.count(activities) == 1
-    assert %{"activity" => 15} in activities
+    assert %{"activity" => 60} in activities
   end
 
-  test "retrive all repository names", context do
+  test "retrive all ticker names", context do
     query = """
     {
       githubAvailablesRepos
@@ -117,7 +143,7 @@ defmodule Sanbase.Github.GithubApiTest do
     query = """
     {
       githubActivity(
-        repository: "SAN",
+        ticker: "SAN",
         from: "#{context.datetime_no_activity1}",
         to: "#{context.datetime_no_activity2}",
         interval: "1d") {
@@ -133,6 +159,31 @@ defmodule Sanbase.Github.GithubApiTest do
     activities = json_response(result, 200)["data"]["githubActivity"]
 
     assert activities == []
+  end
+
+  test "fetch moving average activity", context do
+    query = """
+    {
+      githubActivity(
+        ticker: "SAN",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime6}",
+        transform: "movingAverage",
+        interval: "3h") {
+          activity
+        }
+    }
+    """
+
+    result =
+    context.conn
+    |> post("/graphql", query_skeleton(query, "githubActivity"))
+
+    activities = json_response(result, 200)["data"]["githubActivity"]
+    assert %{"activity" => 7} in activities
+    assert %{"activity" => 9} in activities
+    assert %{"activity" => 12} in activities
+    assert %{"activity" => 14} in activities
   end
 
   defp query_skeleton(query, query_name) do

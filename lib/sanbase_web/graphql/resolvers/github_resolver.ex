@@ -5,11 +5,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
 
   def activity(
         _root,
-        %{repository: repository, from: from, to: to, interval: interval},
+        %{ticker: ticker, from: from, to: to, interval: interval, transform: "None"},
         _resolution
       ) do
     result =
-    Store.fetch_activity_with_resolution!(repository, from, to, interval)
+    Store.fetch_activity_with_resolution!(ticker, from, to, interval)
+    |> Enum.map(fn {datetime, activity} -> %{datetime: datetime, activity: activity} end)
+
+    {:ok, result}
+  end
+
+  def activity(
+        _root,
+        %{ticker: ticker, from: from, to: to, interval: interval, transform: "movingAverage"},
+        _resolution
+      ) do
+    result =
+    Store.fetch_moving_average_for_hours!(ticker, from, to, interval)
     |> Enum.map(fn {datetime, activity} -> %{datetime: datetime, activity: activity} end)
 
     {:ok, result}

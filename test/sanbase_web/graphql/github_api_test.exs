@@ -49,7 +49,6 @@ defmodule Sanbase.Github.GithubApiTest do
         fields: %{activity: 10},
         name: "SAN"
       },
-
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{activity: 5},

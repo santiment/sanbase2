@@ -54,6 +54,8 @@ defmodule Sanbase.Github.Store do
        end)
   end
 
+  defp parse_activity_series!(_), do: []
+
   defp parse_measurement_datetime(%{
          results: [
            %{

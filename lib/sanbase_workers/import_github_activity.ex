@@ -157,14 +157,13 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   defp get_repository_name(_), do: nil
 
   defp store_counts(counts, orgs, datetime) do
-    orgs
-    |> Map.values()
-    |> Enum.map(fn project ->
+    counts
+    |> Enum.map(fn {org, count} ->
       %Measurement{
         timestamp: DateTime.to_unix(datetime, :nanosecond),
-        fields: %{activity: Map.get(counts, project.ticker, 0)},
+        fields: %{activity: count},
         tags: [source: "githubarchive"],
-        name: project.ticker
+        name: orgs[org].ticker
       }
     end)
     |> Store.import

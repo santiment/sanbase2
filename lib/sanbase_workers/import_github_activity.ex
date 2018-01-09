@@ -171,9 +171,8 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   defp get_repository_name(_), do: nil
 
   defp store_counts(counts, orgs, datetime) do
-    orgs
-    |> Map.values()
-    |> Enum.map(fn project ->
+    counts
+    |> Enum.map(fn {org, count} ->
       %Measurement{
         timestamp: DateTime.to_unix(datetime, :nanosecond),
         fields: %{activity: count},

@@ -27,20 +27,18 @@ defmodule Sanbase.Github.Store do
   end
 
   def fetch_moving_average_for_hours!(ticker, from, to, interval, ma_interval) do
-    ma_interval_in_hours = Sanbase.DateTimeUtils.str_to_hours(ma_interval)
-
-    moving_average_activity(ticker, from, to, interval, ma_interval_in_hours)
+    moving_average_activity(ticker, from, to, interval, ma_interval)
     |> Store.query()
     |> parse_moving_average_series!()
   end
 
   # The subsequent fields are 1 hour apart, so the interval must be in hours
-  defp moving_average_activity(ticker, from, to, interval, ma_interval_in_hours) do
-    ~s/SELECT MOVING_AVERAGE(SUM(activity), #{ma_interval_in_hours})
+  defp moving_average_activity(ticker, from, to, interval, ma_interval) do
+    ~s/SELECT MOVING_AVERAGE(SUM(activity), #{ma_interval})
     FROM "#{ticker}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    GROUP BY time(#{interval})/
+    GROUP BY time(#{interval}) fill(0)/
   end
 
   defp activity_with_resolution_query(ticker, from, to, resolution) do
@@ -90,10 +88,11 @@ defmodule Sanbase.Github.Store do
     |> Enum.map(fn [iso8601_datetime, activity] ->
       {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
-      activity =
-        activity
-        |> Float.ceil()
-        |> Kernel.trunc()
+      if is_float(activity) do
+        activity = activity
+          |> Float.ceil()
+          |> Kernel.trunc()
+      end
 
       {datetime, activity}
     end)

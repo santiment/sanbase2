@@ -12,7 +12,7 @@ export const PercentChanges = ({changes}) => (
       'fa-caret-up': changes >= 0,
       'fa-caret-down': changes < 0
     })} />&nbsp;
-    {changes < 0 ? changes.toString().split('-')[1] : changes}
+    {changes < 0 ? changes.toString().split('-')[1] : changes}%
   </div>
 )
 

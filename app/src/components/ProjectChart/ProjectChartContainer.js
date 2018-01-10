@@ -67,19 +67,21 @@ const fetchGithubActivityHistoryFromStartToEndDate = (
   return new Promise((resolve, reject) => {
     client.query({
       query: gql`
-        query githubActivityQuery($repository: String, $from: DateTime, $to: DateTime, $interval: String) {
+        query githubActivityQuery($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
           githubActivity(
-            repository: $repository,
+            ticker: $ticker,
             from: $from,
             to: $to,
             interval: $interval
+            movingAverageInterval: "3h"
+            transform: "movingAverage"
           ) {
             datetime,
             activity
           }
       }`,
       variables: {
-        'repository': ticker.toUpperCase(),
+        'ticker': ticker.toUpperCase(),
         'from': startDate,
         'to': endDate,
         'interval': minInterval

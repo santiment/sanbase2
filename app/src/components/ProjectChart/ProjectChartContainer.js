@@ -115,7 +115,7 @@ const fetchPriceHistoryFromStartToEndDate = (
       let historyGithubActivity = []
       try {
         historyGithubActivity = await fetchGithubActivityHistoryFromStartToEndDate(
-          client, ticker, startDate, endDate)
+          client, ticker, startDate, endDate, minInterval)
       } catch (e) {
         /* pass */
       }
@@ -123,7 +123,7 @@ const fetchPriceHistoryFromStartToEndDate = (
       resolve(history.map(item => {
         const volumeBTC = calculateBTCVolume(item)
         const marketcapBTC = calculateBTCMarketcap(item)
-        if (historyGithubActivity.length > 0 && minInterval === '1h') {
+        if (historyGithubActivity.length > 0) {
           const index = indexes.indexOf(item.datetime)
           const githubActivity = index > -1
             ? historyGithubActivity[index].activity
@@ -173,6 +173,11 @@ class ProjectChartContainer extends Component {
   }
 
   onDatesChange (startDate, endDate) {
+    this.setState({
+      startDate,
+      endDate
+    })
+    if (!startDate || !endDate) { return }
     const { client, ticker } = this.props
     this.setState({
       interval: undefined,
@@ -181,7 +186,14 @@ class ProjectChartContainer extends Component {
       startDate,
       endDate
     })
-    fetchPriceHistoryFromStartToEndDate(client, ticker, startDate, endDate).then(historyPrice => {
+    let interval = '1h'
+    const diffInDays = moment(endDate).diff(startDate, 'days')
+    if (diffInDays > 200 && diffInDays < 900) {
+      interval = '1d'
+    } else if (diffInDays >= 900) {
+      interval = '1w'
+    }
+    fetchPriceHistoryFromStartToEndDate(client, ticker, startDate, endDate, interval).then(historyPrice => {
       this.setState({
         isLoading: false,
         isEmpty: historyPrice.length === 0,
@@ -189,7 +201,7 @@ class ProjectChartContainer extends Component {
         startDate: startDate,
         endDate: endDate
       })
-    }).catch(() => {
+    }).catch(e => {
       this.setState({
         isLoading: false,
         isEmpty: true,

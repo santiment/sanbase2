@@ -12,14 +12,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.TokenBurnRateResolver do
 
     case get("/burn_rate?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}") do
       %Tesla.Env{status: 200, body: body} ->
-        {:ok, result} = Code.string_to_quoted(body)
+        {:ok, result} = Poison.decode(body)
 
-        result = result
-        |> Enum.map(fn [timestamp, br] = arg ->
-          %{datetime: DateTime.from_unix!(timestamp), burn_rate: Decimal.new(br)}
-        end)
+        result =
+          result
+          |> Enum.map(fn [timestamp, br] = arg ->
+            %{datetime: DateTime.from_unix!(timestamp), burn_rate: Decimal.new(br)}
+          end)
 
         {:ok, result}
+
+      %Tesla.Env{status: status, body: body} ->
+        {:error, "Error status #{status} fetching burn rate for ticker #{ticker}: #{body}"}
 
       _ ->
         {:error, "Cannot fetch burn rate data for ticker #{ticker}"}

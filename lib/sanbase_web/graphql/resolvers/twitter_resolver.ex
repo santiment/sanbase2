@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     with %Project{twitter_link: twitter_link} <- Repo.get_by(Project, ticker: ticker),
          twitter_name <- extract_twitter_name(twitter_link),
          twitter_historical_data <-
-           Store.all_records_for_measurement(twitter_name, from, to, interval) do
+           Store.all_records_for_measurement!(twitter_name, from, to, interval) do
       result =
         twitter_historical_data
         |> Enum.map(fn {datetime, followers_count} ->
@@ -40,10 +40,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
       {:ok, result}
     else
       {:error, reason} ->
-        {:error, "Cannot fetch twitter data for ticker #{ticker}: #{reason}"}
+        {:error, "Cannot fetch twitter history data for ticker #{ticker}: #{reason}"}
 
       _ ->
-        {:error, "Cannot fetch twitter data for ticker #{ticker}"}
+        {:error, "Cannot fetch twitter history data for ticker #{ticker}"}
     end
   end
 

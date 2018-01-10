@@ -8,10 +8,10 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.TwitterData.Store
 
-  def all_records_for_measurement(measurement_name, from, to, interval) do
+  def all_records_for_measurement!(measurement_name, from, to, interval) do
     select_from_to_query(measurement_name, from, to, interval)
     |> Store.query()
-    |> parse_twitter_data_series()
+    |> parse_twitter_data_series!()
   end
 
   def last_record_for_measurement(measurement_name) do
@@ -49,9 +49,9 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
     ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"/
   end
 
-  defp parse_twitter_data_series(%{results: [%{error: error}]}), do: raise(error)
+  defp parse_twitter_data_series!(%{results: [%{error: error}]}), do: raise(error)
 
-  defp parse_twitter_data_series(%{
+  defp parse_twitter_data_series!(%{
          results: [
            %{
              series: [
@@ -69,7 +69,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
        end)
   end
 
-  defp parse_twitter_data_series(_), do: []
+  defp parse_twitter_data_series!(_), do: []
 
   defp parse_twitter_record(%{
          results: [

@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import cx from 'classnames'
+import { formatNumber } from '../utils/formatting'
 import {
   formatBalanceWallet,
   formatLastOutgoingWallet,
@@ -10,6 +11,13 @@ import './FinancialsBlock.css'
 
 const propTypes = {
   projectTransparencyStatus: PropTypes.string
+}
+
+const collectedField = (currency, amount) => {
+  if (currency === 'USD') {
+    return formatNumber(amount, 'USD')
+  }
+  return `${currency} ${formatNumber(amount)}`
 }
 
 const FinancialsBlock = ({
@@ -31,7 +39,9 @@ const FinancialsBlock = ({
       </div>
       <div className='value'>
         {fundsRaisedIcos.map((amountIco, index) => {
-          return <div key={index} >{amountIco.currencyCode} {amountIco.amount}</div>
+          return <div key={index} >{
+            collectedField(amountIco.currencyCode, amountIco.amount)
+          }</div>
         })}
       </div>
     </div>

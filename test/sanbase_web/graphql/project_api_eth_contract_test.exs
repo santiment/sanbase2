@@ -17,17 +17,17 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
   import Plug.Conn
   import ExUnit.CaptureLog
 
-  defp query_skeleton(query, query_name) do
+  defp query_skeleton(query, query_name, variables \\ "{}") do
     %{
       "operationName" => "#{query_name}",
       "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
+      "variables" => "#{variables}"
     }
   end
 
   test "fetch wallet projects with ethereum contract info", context do
     project1 = %Project{}
-    |> Project.changeset(%{name: "Project1", ticker: "P1"})
+    |> Project.changeset(%{name: "Project1", ticker: "P1", coinmarketcap_id: "P1_id"})
     |> Repo.insert!
 
     ico1_1 = %Ico{}
@@ -51,7 +51,7 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
     |> Repo.insert!
 
     project2 = %Project{}
-    |> Project.changeset(%{name: "Project2", ticker: "P2"})
+    |> Project.changeset(%{name: "Project2", ticker: "P2", coinmarketcap_id: "P2_id"})
     |> Repo.insert!
 
     ico2_1 = %Ico{}

@@ -14,11 +14,11 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
   import Plug.Conn
 
-  defp query_skeleton(query, query_name) do
+  defp query_skeleton(query, query_name, variable_defs \\"", variables \\ "{}") do
     %{
       "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
+      "query" => "query #{query_name}#{variable_defs} #{query}",
+      "variables" => "#{variables}"
     }
   end
 
@@ -45,7 +45,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     query = """
     {
-      allProjects(onlyProjectTransparency:true) {
+      project(id:$id, onlyProjectTransparency:true) {
         name,
         btcBalance,
         ethBalance
@@ -54,11 +54,11 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     """
 
     result =
-    context.conn
-    |> put_req_header("authorization", get_authorization_header())
-    |> post("/graphql", query_skeleton(query, "allProjects"))
+      context.conn
+      |> put_req_header("authorization", get_authorization_header())
+      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project1.id}}"))
 
-    assert json_response(result, 200)["data"]["allProjects"] == [%{"name" => "Project1", "btcBalance" => nil, "ethBalance" => "500"}]
+    assert json_response(result, 200)["data"]["project"] == %{"name" => "Project1", "btcBalance" => nil, "ethBalance" => "500"}
   end
 
   test "fetch funds raised from icos", context do
@@ -100,7 +100,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     query = """
     {
-      allProjects {
+      project(id:$id, onlyProjectTransparency:true) {
         name,
         fundsRaisedIcos {
           amount,
@@ -111,17 +111,24 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     """
 
     result =
-    context.conn
-    |> put_req_header("authorization", get_authorization_header())
-    |> post("/graphql", query_skeleton(query, "allProjects"))
+      context.conn
+      |> put_req_header("authorization", get_authorization_header())
+      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project1.id}}"))
 
-    assert json_response(result, 200)["data"]["allProjects"] ==
-      [%{"name" => "Project1", "fundsRaisedIcos" =>
-        [%{"currencyCode" => "USD", "amount" => "123.45"}]},
-      %{"name" => "Project2", "fundsRaisedIcos" =>
-        [%{"currencyCode" => "BTC", "amount" => "300"},
-          %{"currencyCode" => "ETH", "amount" => "50"},
-          %{"currencyCode" => "USD", "amount" => "200"}]}]
+      assert json_response(result, 200)["data"]["project"] ==
+        %{"name" => "Project1", "fundsRaisedIcos" =>
+          [%{"currencyCode" => "USD", "amount" => "123.45"}]}
+
+      result =
+        context.conn
+        |> put_req_header("authorization", get_authorization_header())
+        |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project2.id}}"))
+
+        assert json_response(result, 200)["data"]["project"] ==
+          %{"name" => "Project2", "fundsRaisedIcos" =>
+            [%{"currencyCode" => "BTC", "amount" => "300"},
+              %{"currencyCode" => "ETH", "amount" => "50"},
+              %{"currencyCode" => "USD", "amount" => "200"}]}
   end
 
   defp get_authorization_header do

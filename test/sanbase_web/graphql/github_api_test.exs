@@ -169,7 +169,7 @@ defmodule Sanbase.Github.GithubApiTest do
         from: "#{context.datetime1}",
         to: "#{context.datetime6}",
         transform: "movingAverage",
-        moving_average_interval: "3h") {
+        moving_average_interval: 3) {
           activity
         }
     }

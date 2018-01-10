@@ -84,7 +84,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1h")
-      arg(:moving_average_interval, :string, default_value: "1d")
+      arg(:moving_average_interval, :integer, default_value: 10)
       arg(:transform, :string, default_value: "None")
 
       resolve(&GithubResolver.activity/3)

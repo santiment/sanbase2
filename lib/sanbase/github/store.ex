@@ -50,7 +50,7 @@ defmodule Sanbase.Github.Store do
     FROM "#{ticker}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    GROUP BY time(#{interval})/
+    GROUP BY time(#{interval}) fill(0)/
   end
 
   defp activity_with_resolution_query(ticker, from, to, resolution) do

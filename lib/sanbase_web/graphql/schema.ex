@@ -118,6 +118,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&EtherbiResolver.burn_rate/3)
     end
 
+    @desc "Transaction volume for a ticker and given time period"
+    field :transaction_volume, list_of(:transaction_volume) do
+      arg(:ticker, non_null(:string))
+      arg(:from, :datetime)
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+
+      resolve(&TokenBurnRateResolver.transaction_volume/3)
+    end
+
   end
 
   mutation do

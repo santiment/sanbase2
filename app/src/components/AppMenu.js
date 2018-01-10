@@ -10,6 +10,12 @@ const AppMenu = ({handleNavigation}) => (
       Projects
     </li>
     <li
+      onClick={() => handleNavigation('event/votes')}>
+      <Icon
+        name='map 2x' />
+      Event
+    </li>
+    <li
       onClick={() => handleNavigation('signals')}>
       <Icon name='th 2x' />
       Signals

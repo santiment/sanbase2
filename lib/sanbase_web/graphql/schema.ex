@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TwitterResolver.history_twitter_data/3)
     end
 
-    @desc "Burn rate"
+    @desc "Burn rate for a ticker and given time period"
     field :burn_rate, list_of(:burn_rate_data) do
       arg(:ticker, non_null(:string))
       arg(:from, :datetime)

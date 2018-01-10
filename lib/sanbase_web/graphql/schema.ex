@@ -13,6 +13,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types SanbaseWeb.Graphql.ProjectTypes
   import_types SanbaseWeb.Graphql.GithubTypes
   import_types SanbaseWeb.Graphql.TwitterTypes
+  import_types SanbaseWeb.Graphql.EtherbiTypes
 
   query do
     field :current_user, :user do
@@ -103,6 +104,16 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       resolve(&TwitterResolver.history_twitter_data/3)
     end
+
+    @desc "Burn rate"
+    field :burn_rate, list_of(:burn_rate_data) do
+      arg(:ticker, non_null(:string))
+      arg(:from, :datetime)
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+
+      resolve(&EtherbiResolver.burn_rate/3)
+    end
+
   end
 
   mutation do

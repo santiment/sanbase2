@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   require Logger
 
+  import Absinthe.Resolution.Helpers, only: [async: 1]
+  import Ecto.Query
+
   alias SanbaseWeb.Graphql.Resolvers.Helpers
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
@@ -46,16 +49,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     |> User.changeset(%{email: new_email})
     |> Repo.update()
     |> case do
-         {:ok, user} ->
-           {:ok, user}
+      {:ok, user} ->
+        {:ok, user}
 
-         {:error, changeset} ->
-           {
-             :error,
-             message: "Cannot update current user's email to #{new_email}",
-             details: Helpers.error_details(changeset)
-           }
-       end
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot update current user's email to #{new_email}",
+          details: Helpers.error_details(changeset)
+        }
+    end
   end
 
   def unfollow_project(_root, %{project_id: project_id}, %{
@@ -78,16 +81,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
       |> UserFollowedProject.changeset(%{project_id: project_id, user_id: user.id})
       |> Repo.insert(on_conflict: :nothing)
       |> case do
-           {:ok, _} ->
-             {:ok, user}
+        {:ok, _} ->
+          {:ok, user}
 
-           {:error, changeset} ->
-             {
-               :error,
-               message: "Cannot follow project with id #{project_id}",
-               details: Helpers.error_details(changeset)
-             }
-         end
+        {:error, changeset} ->
+          {
+            :error,
+            message: "Cannot follow project with id #{project_id}",
+            details: Helpers.error_details(changeset)
+          }
+      end
     else
       _ ->
         {:error, "Project with the given ID does not exist."}
@@ -97,15 +100,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   def followed_projects(%User{} = user, _args, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
-    query =
-      from(
-        p in Project,
-        inner_join: ufp in UserFollowedProject,
-        on: p.id == ufp.project_id,
-        where: ufp.user_id == ^user.id
-      )
+    async(fn ->
+      query =
+        from(
+          p in Project,
+          inner_join: ufp in UserFollowedProject,
+          on: p.id == ufp.project_id,
+          where: ufp.user_id == ^user.id
+        )
 
-    {:ok, Repo.all(query)}
+      {:ok, Repo.all(query)}
+    end)
   end
 
   # No eth account and there is a user logged in
@@ -124,15 +129,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     Multi.new()
     |> Multi.insert(:add_user, %User{username: address, salt: User.generate_salt()})
     |> Multi.run(:add_eth_account, fn %{add_user: %User{id: id}} ->
-         eth_account = Repo.insert(%EthAccount{user_id: id, address: address})
+      eth_account = Repo.insert(%EthAccount{user_id: id, address: address})
 
-         {:ok, eth_account}
-       end)
+      {:ok, eth_account}
+    end)
     |> Repo.transaction()
     |> case do
-         {:ok, %{add_user: user}} -> {:ok, user}
-         {:error, _, reason, _} -> {:error, reason}
-       end
+      {:ok, %{add_user: user}} -> {:ok, user}
+      {:error, _, reason, _} -> {:error, reason}
+    end
   end
 
   # Existing eth account, login as the user of the eth account

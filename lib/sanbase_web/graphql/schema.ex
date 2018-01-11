@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.current_user/3)
     end
 
-    field :all_projects, list_of(:project) do
+    field :all_projects, list_of(:project_basic) do
       arg :only_project_transparency, :boolean
 
       middleware MultipleAuth, [BasicAuth, JWTAuth]
@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve &ProjectResolver.project/3
     end
 
-    field :all_projects_with_eth_contract_info, list_of(:project) do
+    field :all_projects_with_eth_contract_info, list_of(:project_with_eth_contract_info) do
       middleware BasicAuth
       resolve &ProjectResolver.all_projects_with_eth_contract_info/3
     end

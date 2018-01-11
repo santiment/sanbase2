@@ -1,19 +1,17 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
-  use Tesla
-
   import Sanbase.Utils, only: [parse_config_value: 1]
-
-  plug(Tesla.Middleware.BaseUrl, get_config(:url))
-  plug(Tesla.Middleware.Logger)
 
   def burn_rate(_root, %{ticker: ticker, from: from, to: to}, _resolution) do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
-    case get("/burn_rate?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}") do
-      %Tesla.Env{status: 200, body: body} ->
-        {:ok, result} = Poison.decode(body)
+    etherbi_url = get_config(:url)
+    url = "#{etherbi_url}/burn_rate?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}"
 
+    options = [recv_timeout: 30_000]
+    case HTTPoison.get(url, options) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Poison.decode(body)
         result =
           result
           |> Enum.map(fn [timestamp, br] ->
@@ -22,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
         {:ok, result}
 
-      %Tesla.Env{status: status, body: body} ->
+      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching burn rate for ticker #{ticker}: #{body}"}
 
       _ ->
@@ -34,8 +32,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
-    case get("/transaction_volume?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}") do
-      %Tesla.Env{status: 200, body: body} ->
+    etherbi_url = get_config(:url)
+    url = "#{etherbi_url}/transaction_volume?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}"
+    options = [recv_timeout: 30_000]
+    case HTTPoison.get(url, options) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Poison.decode(body)
 
         result =
@@ -46,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
         {:ok, result}
 
-      %Tesla.Env{status: status, body: body} ->
+      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching transaction volume for ticker #{ticker}: #{body}"}
 
       _ ->

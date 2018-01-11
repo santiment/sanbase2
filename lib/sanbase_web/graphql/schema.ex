@@ -124,7 +124,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, :datetime)
       arg(:to, :datetime, default_value: DateTime.utc_now())
 
-      resolve(&TokenBurnRateResolver.transaction_volume/3)
+      resolve(&EtherbiResolver.transaction_volume/3)
     end
 
   end

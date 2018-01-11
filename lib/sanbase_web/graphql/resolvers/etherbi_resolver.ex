@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Resolvers.TokenBurnRateResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   use Tesla
 
   import Sanbase.Utils, only: [parse_config_value: 1]

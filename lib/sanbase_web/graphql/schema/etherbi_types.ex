@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.TokenBurnRateTypes do
+defmodule SanbaseWeb.Graphql.EtherbiTypes do
   use Absinthe.Schema.Notation
 
   object :burn_rate_data do

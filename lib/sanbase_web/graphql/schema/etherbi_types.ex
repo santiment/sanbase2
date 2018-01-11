@@ -3,21 +3,11 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
 
   object :burn_rate_data do
     field(:datetime, non_null(:datetime))
-    field(:burn_rate, :float)
+    field(:burn_rate, :decimal)
   end
 
   object :transaction_volume do
     field(:datetime, non_null(:datetime))
-    field(:transaction_volume, :float)
-  end
-
-  object :active_addresses do
-    field(:datetime, non_null(:datetime))
-    field(:active_addresses, non_null(:integer))
-  end
-
-  object :wallet do
-    field(:name, non_null(:string))
-    field(:address, non_null(:string))
+    field(:transaction_volume, :decimal)
   end
 end

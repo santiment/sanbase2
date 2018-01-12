@@ -179,3 +179,37 @@ user = %User{
 
 %EthAccount{address: "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a", user_id: user.id}
 |> Repo.insert!
+
+### Import random Github activity for SAN ticker
+
+alias Sanbase.Influxdb.Measurement
+alias Sanbase.Github
+
+defmodule SeedsGithubActivityImporter do
+  def previous_hour(datetime) do
+    datetime
+    |> DateTime.to_unix()
+    |> Kernel.-(3600)
+    |> DateTime.from_unix!
+  end
+
+  def import_gh_activity(datetime, _activity, _ticker, 0), do: :ok
+
+  def import_gh_activity(datetime, activity, ticker, n) do
+    Github.Store.import(
+      %Measurement{
+        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+        fields: %{activity: activity},
+        name: ticker
+      })
+
+    datetime = previous_hour(datetime)
+    activity = :rand.uniform(100)
+    import_gh_activity(datetime, activity, ticker, n-1)
+  end
+end
+
+Github.Store.create_db()
+Github.Store.drop_measurement("SAN")
+
+SeedsGithubActivityImporter.import_gh_activity(DateTime.utc_now(), 50, "SAN", 500)

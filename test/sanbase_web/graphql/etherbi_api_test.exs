@@ -2,9 +2,7 @@ defmodule Sanbase.Github.EtherbiApiTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
   import Mockery
-  import Mock
 
   test "fetch burn rate", context do
     mock HTTPoison, :get,

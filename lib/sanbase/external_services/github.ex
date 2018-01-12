@@ -9,7 +9,8 @@ defmodule Sanbase.ExternalServices.Github do
   """
   use GenServer, restart: :permanent, shutdown: 5_000
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
+  alias Sanbase.Utils.Config
 
   # 60 minutes
   @default_update_interval 1000 * 60 * 60
@@ -19,9 +20,9 @@ defmodule Sanbase.ExternalServices.Github do
   end
 
   def init(:ok) do
-    update_interval = get_config(:update_interval, @default_update_interval)
+    update_interval = Config.get(:update_interval, @default_update_interval)
 
-    if get_config(:sync_enabled, false) do
+    if Config.get(:sync_enabled, false) do
       Sanbase.Github.Store.create_db()
 
       GenServer.cast(self(), :sync)
@@ -47,14 +48,5 @@ defmodule Sanbase.ExternalServices.Github do
     else
       Sanbase.Github.Scheduler.schedule_scrape
     end
-  end
-
-  defp get_config(key, default) do
-    Keyword.get(config(), key, default)
-    |> parse_config_value()
-  end
-
-  def config do
-    Application.get_env(:sanbase, __MODULE__)
   end
 end

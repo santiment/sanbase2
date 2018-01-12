@@ -117,6 +117,7 @@ export const Detailed = ({
 
   const burnRate = {
     loading: BurnRate.loading,
+    error: BurnRate.error,
     items: BurnRate.burnRate || []
   }
 
@@ -159,30 +160,33 @@ export const Detailed = ({
             price={price}
             github={github}
             burnRate={burnRate}
-            onDatesChange={async (from, to, interval) => {
-              const ticker = match.params.ticker.toUpperCase()
-              await TwitterHistoryData.refetch({
-                from,
-                to,
-                ticker
-              })
-              await HistoryPrice.refetch({
-                from,
-                to,
-                ticker,
-                interval
-              })
-              await GithubActivity.refetch({
-                from,
-                to,
-                ticker,
-                interval: '1d'
-              })
-              await BurnRate.refetch({
-                from,
-                to,
-                ticker
-              })
+            onDatesChange={async (from, to, interval, ticker) => {
+              try {
+                await TwitterHistoryData.refetch({
+                  from,
+                  to,
+                  ticker
+                })
+                await HistoryPrice.refetch({
+                  from,
+                  to,
+                  ticker,
+                  interval
+                })
+                await GithubActivity.refetch({
+                  from,
+                  to,
+                  ticker,
+                  interval: '1d'
+                })
+                await BurnRate.refetch({
+                  from,
+                  to,
+                  ticker
+                })
+              } catch (e) {
+                console.log(e)
+              }
             }}
             ticker={project.ticker} />
         </Panel>

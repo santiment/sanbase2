@@ -11,13 +11,14 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   require Logger
 
   import Ecto.Query
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
 
   alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting.Server
   alias Sanbase.ExternalServices.TwitterData.Store
+  alias Sanbase.Utils.Config
 
   @default_update_interval 1000 * 60 * 60 * 6
 
@@ -28,13 +29,13 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   def init(:ok) do
     :ok =
       ExTwitter.configure(
-        consumer_key: get_config(:consumer_key),
-        consumer_secret: get_config(:consumer_secret)
+        consumer_key: Config.get(:consumer_key),
+        consumer_secret: Config.get(:consumer_secret)
       )
 
-    if get_config(:sync_enabled, false) do
+    if Config.get(:sync_enabled, false) do
       Store.create_db()
-      update_interval_ms = get_config(:update_interval, @default_update_interval)
+      update_interval_ms = Config.get(:update_interval, @default_update_interval)
 
       GenServer.cast(self(), :sync)
       {:ok, %{update_interval_ms: update_interval_ms}}
@@ -129,11 +130,5 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
       tags: [source: "twitter"],
       name: measurement_name
     }
-  end
-
-  defp get_config(key, default \\ nil) do
-    Application.fetch_env!(:sanbase, __MODULE__)
-    |> Keyword.get(key, default)
-    |> parse_config_value()
   end
 end

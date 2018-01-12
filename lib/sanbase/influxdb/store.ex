@@ -10,8 +10,9 @@ defmodule Sanbase.Influxdb.Store do
   defmacro __using__(_options \\ []) do
     quote do
       use Instream.Connection, otp_app: :sanbase
+      import Sanbase.Utils.Config
+
       alias Sanbase.Influxdb.Measurement
-      import Sanbase.Utils, only: [parse_config_value: 1]
 
       def import(%Measurement{} = measurement) do
         :ok =
@@ -49,7 +50,7 @@ defmodule Sanbase.Influxdb.Store do
       end
 
       def create_db() do
-        get_config(:database)
+        Sanbase.Utils.Config.get(:database)
         |> Instream.Admin.Database.create()
         |> __MODULE__.execute()
       end
@@ -88,13 +89,6 @@ defmodule Sanbase.Influxdb.Store do
            }) do
         {:ok, measurements |> Enum.map(&Kernel.hd/1)}
            end
-
-      defp get_config(key, default \\ nil) do
-        Application.fetch_env!(:sanbase, __MODULE__)
-        |> Keyword.get(key, default)
-        |> parse_config_value()
-      end
-
     end
   end
 end

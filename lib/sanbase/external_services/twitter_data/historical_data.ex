@@ -15,13 +15,14 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   require Logger
 
   import Ecto.Query
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
 
   alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.TwitterData.Store
+  alias Sanbase.Utils.Config
 
   # 1 day
   @default_update_interval 1000 * 60 * 60 * 24
@@ -31,9 +32,9 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   end
 
   def init(:ok) do
-    if get_config(:sync_enabled, false) do
+    if Config.get(:sync_enabled, false) do
       Store.create_db()
-      update_interval_ms = get_config(:update_interval, @default_update_interval)
+      update_interval_ms = Config.get(:update_interval, @default_update_interval)
 
       GenServer.cast(self(), :sync)
       {:ok, %{update_interval_ms: update_interval_ms}}
@@ -104,7 +105,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
   defp fetch_twittercounter_user_data(twitter_id_str) do
     RateLimiting.Server.wait(@rate_limiter_name)
 
-    apikey = get_config(:apikey)
+    apikey = Config.get(:apikey)
 
     case get("/?twitter_id=" <> twitter_id_str <> "&apikey=" <> apikey) do
       %Tesla.Env{status: 200, body: body} ->
@@ -154,12 +155,6 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
            name: measurement_name
          }
        end)
-  end
-
-  defp get_config(key, default \\ nil) do
-    Application.fetch_env!(:sanbase, __MODULE__)
-    |> Keyword.get(key, default)
-    |> parse_config_value()
   end
 
   defp from_twittercounter_date("date" <> date) do

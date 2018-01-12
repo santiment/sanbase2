@@ -43,7 +43,6 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
               ],
               "fill": false,
               "label": "Price",
-              "pointBorderWidth": 2,
               "type": "LineWithLine",
               "yAxisID": "y-axis-1",
             },
@@ -62,19 +61,20 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
           "datasetFill": false,
           "elements": Object {
             "point": Object {
-              "hitRadius": 2,
+              "hitRadius": 1,
               "hoverRadius": 2,
               "radius": 0,
             },
           },
           "hover": Object {
-            "intersect": true,
-            "mode": "nearest",
+            "intersect": false,
+            "mode": "x",
           },
           "legend": Object {
             "display": false,
           },
           "pointDot": false,
+          "pointHitDetectionRadius": 0.5,
           "pointRadius": 0,
           "responsive": true,
           "scaleFontSize": 0,
@@ -169,6 +169,27 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
                 },
                 "type": "linear",
               },
+              Object {
+                "display": undefined,
+                "gridLines": Object {
+                  "display": false,
+                },
+                "id": "y-axis-5",
+                "position": "right",
+                "scaleLabel": Object {
+                  "display": true,
+                  "fontColor": "rgba(16, 195, 245, 0.7)",
+                  "labelString": "Twitter",
+                },
+                "ticks": Object {
+                  "display": true,
+                },
+                "tooltips": Object {
+                  "intersect": false,
+                  "mode": "index",
+                },
+                "type": "linear",
+              },
             ],
           },
           "showTooltips": true,
@@ -186,7 +207,7 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
             "cornerRadius": 3,
             "displayColors": true,
             "intersect": false,
-            "mode": "index",
+            "mode": "x",
             "titleFontColor": "#000",
             "titleFontSize": 14,
             "titleMarginBottom": 8,
@@ -207,57 +228,18 @@ exports[`ProjectChart component (smoke) it should render correctly 1`] = `
     <div
       className="chart-footer-filters"
     >
-      <MarketcapToggle
-        focusedInput={null}
-        history={
-          Array [
-            Object {
-              "datetime": "2017-12-27T21:45Z",
-              "priceBtc": 123,
-            },
-            Object {
-              "datetime": "2017-12-27T21:45Z",
-              "priceBtc": 123,
-            },
-          ]
-        }
-        isDesktop={true}
-        onFocusChange={[Function]}
-      />
-      <GithubActivityToggle
-        focusedInput={null}
-        history={
-          Array [
-            Object {
-              "datetime": "2017-12-27T21:45Z",
-              "priceBtc": 123,
-            },
-            Object {
-              "datetime": "2017-12-27T21:45Z",
-              "priceBtc": 123,
-            },
-          ]
-        }
-        isDesktop={true}
-        onFocusChange={[Function]}
-      />
-      <VolumeToggle
-        focusedInput={null}
-        history={
-          Array [
-            Object {
-              "datetime": "2017-12-27T21:45Z",
-              "priceBtc": 123,
-            },
-            Object {
-              "datetime": "2017-12-27T21:45Z",
-              "priceBtc": 123,
-            },
-          ]
-        }
-        isDesktop={true}
-        onFocusChange={[Function]}
-      />
+      <Component>
+        Marketcap
+      </Component>
+      <Component>
+        Volume
+      </Component>
+      <Component>
+        Github Activity
+      </Component>
+      <Component>
+        Twitter
+      </Component>
     </div>
     <div>
       <small
@@ -1703,7 +1685,6 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                 "data": Array [],
                 "fill": false,
                 "label": "Price",
-                "pointBorderWidth": 2,
                 "type": "LineWithLine",
                 "yAxisID": "y-axis-1",
               },
@@ -1719,19 +1700,20 @@ exports[`ProjectChart component Loading State it should render correctly with lo
             "datasetFill": false,
             "elements": Object {
               "point": Object {
-                "hitRadius": 2,
+                "hitRadius": 1,
                 "hoverRadius": 2,
                 "radius": 0,
               },
             },
             "hover": Object {
-              "intersect": true,
-              "mode": "nearest",
+              "intersect": false,
+              "mode": "x",
             },
             "legend": Object {
               "display": false,
             },
             "pointDot": false,
+            "pointHitDetectionRadius": 0.5,
             "pointRadius": 0,
             "responsive": true,
             "scaleFontSize": 0,
@@ -1826,6 +1808,27 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                   },
                   "type": "linear",
                 },
+                Object {
+                  "display": undefined,
+                  "gridLines": Object {
+                    "display": false,
+                  },
+                  "id": "y-axis-5",
+                  "position": "right",
+                  "scaleLabel": Object {
+                    "display": true,
+                    "fontColor": "rgba(16, 195, 245, 0.7)",
+                    "labelString": "Twitter",
+                  },
+                  "ticks": Object {
+                    "display": true,
+                  },
+                  "tooltips": Object {
+                    "intersect": false,
+                    "mode": "index",
+                  },
+                  "type": "linear",
+                },
               ],
             },
             "showTooltips": true,
@@ -1843,7 +1846,7 @@ exports[`ProjectChart component Loading State it should render correctly with lo
               "cornerRadius": 3,
               "displayColors": true,
               "intersect": false,
-              "mode": "index",
+              "mode": "x",
               "titleFontColor": "#000",
               "titleFontSize": 14,
               "titleMarginBottom": 8,
@@ -1868,7 +1871,6 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                   "data": Array [],
                   "fill": false,
                   "label": "Price",
-                  "pointBorderWidth": 2,
                   "type": "LineWithLine",
                   "yAxisID": "y-axis-1",
                 },
@@ -1891,19 +1893,20 @@ exports[`ProjectChart component Loading State it should render correctly with lo
               "datasetFill": false,
               "elements": Object {
                 "point": Object {
-                  "hitRadius": 2,
+                  "hitRadius": 1,
                   "hoverRadius": 2,
                   "radius": 0,
                 },
               },
               "hover": Object {
-                "intersect": true,
-                "mode": "nearest",
+                "intersect": false,
+                "mode": "x",
               },
               "legend": Object {
                 "display": false,
               },
               "pointDot": false,
+              "pointHitDetectionRadius": 0.5,
               "pointRadius": 0,
               "responsive": true,
               "scaleFontSize": 0,
@@ -1998,6 +2001,27 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                     },
                     "type": "linear",
                   },
+                  Object {
+                    "display": undefined,
+                    "gridLines": Object {
+                      "display": false,
+                    },
+                    "id": "y-axis-5",
+                    "position": "right",
+                    "scaleLabel": Object {
+                      "display": true,
+                      "fontColor": "rgba(16, 195, 245, 0.7)",
+                      "labelString": "Twitter",
+                    },
+                    "ticks": Object {
+                      "display": true,
+                    },
+                    "tooltips": Object {
+                      "intersect": false,
+                      "mode": "index",
+                    },
+                    "type": "linear",
+                  },
                 ],
               },
               "showTooltips": true,
@@ -2015,7 +2039,7 @@ exports[`ProjectChart component Loading State it should render correctly with lo
                 "cornerRadius": 3,
                 "displayColors": true,
                 "intersect": false,
-                "mode": "index",
+                "mode": "x",
                 "titleFontColor": "#000",
                 "titleFontSize": 14,
                 "titleMarginBottom": 8,
@@ -2045,12 +2069,7 @@ exports[`ProjectChart component Loading State it should render correctly with lo
       <div
         className="chart-footer-filters"
       >
-        <MarketcapToggle
-          focusedInput={null}
-          history={Array []}
-          isDesktop={true}
-          onFocusChange={[Function]}
-        >
+        <Component>
           <div
             className="marketcap-toggle"
           >
@@ -2058,33 +2077,11 @@ exports[`ProjectChart component Loading State it should render correctly with lo
               className=""
               onClick={[Function]}
             >
-              MarketCap
+              Marketcap
             </div>
           </div>
-        </MarketcapToggle>
-        <GithubActivityToggle
-          focusedInput={null}
-          history={Array []}
-          isDesktop={true}
-          onFocusChange={[Function]}
-        >
-          <div
-            className="marketcap-toggle"
-          >
-            <div
-              className=""
-              onClick={[Function]}
-            >
-              Github Activity
-            </div>
-          </div>
-        </GithubActivityToggle>
-        <VolumeToggle
-          focusedInput={null}
-          history={Array []}
-          isDesktop={true}
-          onFocusChange={[Function]}
-        >
+        </Component>
+        <Component>
           <div
             className="marketcap-toggle"
           >
@@ -2095,7 +2092,31 @@ exports[`ProjectChart component Loading State it should render correctly with lo
               Volume
             </div>
           </div>
-        </VolumeToggle>
+        </Component>
+        <Component>
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              Github Activity
+            </div>
+          </div>
+        </Component>
+        <Component>
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              Twitter
+            </div>
+          </div>
+        </Component>
       </div>
       <div>
         <small
@@ -3520,7 +3541,6 @@ exports[`ProjectChart component Loading State it should render correctly withour
                 "data": Array [],
                 "fill": false,
                 "label": "Price",
-                "pointBorderWidth": 2,
                 "type": "LineWithLine",
                 "yAxisID": "y-axis-1",
               },
@@ -3536,19 +3556,20 @@ exports[`ProjectChart component Loading State it should render correctly withour
             "datasetFill": false,
             "elements": Object {
               "point": Object {
-                "hitRadius": 2,
+                "hitRadius": 1,
                 "hoverRadius": 2,
                 "radius": 0,
               },
             },
             "hover": Object {
-              "intersect": true,
-              "mode": "nearest",
+              "intersect": false,
+              "mode": "x",
             },
             "legend": Object {
               "display": false,
             },
             "pointDot": false,
+            "pointHitDetectionRadius": 0.5,
             "pointRadius": 0,
             "responsive": true,
             "scaleFontSize": 0,
@@ -3643,6 +3664,27 @@ exports[`ProjectChart component Loading State it should render correctly withour
                   },
                   "type": "linear",
                 },
+                Object {
+                  "display": undefined,
+                  "gridLines": Object {
+                    "display": false,
+                  },
+                  "id": "y-axis-5",
+                  "position": "right",
+                  "scaleLabel": Object {
+                    "display": true,
+                    "fontColor": "rgba(16, 195, 245, 0.7)",
+                    "labelString": "Twitter",
+                  },
+                  "ticks": Object {
+                    "display": true,
+                  },
+                  "tooltips": Object {
+                    "intersect": false,
+                    "mode": "index",
+                  },
+                  "type": "linear",
+                },
               ],
             },
             "showTooltips": true,
@@ -3660,7 +3702,7 @@ exports[`ProjectChart component Loading State it should render correctly withour
               "cornerRadius": 3,
               "displayColors": true,
               "intersect": false,
-              "mode": "index",
+              "mode": "x",
               "titleFontColor": "#000",
               "titleFontSize": 14,
               "titleMarginBottom": 8,
@@ -3685,7 +3727,6 @@ exports[`ProjectChart component Loading State it should render correctly withour
                   "data": Array [],
                   "fill": false,
                   "label": "Price",
-                  "pointBorderWidth": 2,
                   "type": "LineWithLine",
                   "yAxisID": "y-axis-1",
                 },
@@ -3708,19 +3749,20 @@ exports[`ProjectChart component Loading State it should render correctly withour
               "datasetFill": false,
               "elements": Object {
                 "point": Object {
-                  "hitRadius": 2,
+                  "hitRadius": 1,
                   "hoverRadius": 2,
                   "radius": 0,
                 },
               },
               "hover": Object {
-                "intersect": true,
-                "mode": "nearest",
+                "intersect": false,
+                "mode": "x",
               },
               "legend": Object {
                 "display": false,
               },
               "pointDot": false,
+              "pointHitDetectionRadius": 0.5,
               "pointRadius": 0,
               "responsive": true,
               "scaleFontSize": 0,
@@ -3815,6 +3857,27 @@ exports[`ProjectChart component Loading State it should render correctly withour
                     },
                     "type": "linear",
                   },
+                  Object {
+                    "display": undefined,
+                    "gridLines": Object {
+                      "display": false,
+                    },
+                    "id": "y-axis-5",
+                    "position": "right",
+                    "scaleLabel": Object {
+                      "display": true,
+                      "fontColor": "rgba(16, 195, 245, 0.7)",
+                      "labelString": "Twitter",
+                    },
+                    "ticks": Object {
+                      "display": true,
+                    },
+                    "tooltips": Object {
+                      "intersect": false,
+                      "mode": "index",
+                    },
+                    "type": "linear",
+                  },
                 ],
               },
               "showTooltips": true,
@@ -3832,7 +3895,7 @@ exports[`ProjectChart component Loading State it should render correctly withour
                 "cornerRadius": 3,
                 "displayColors": true,
                 "intersect": false,
-                "mode": "index",
+                "mode": "x",
                 "titleFontColor": "#000",
                 "titleFontSize": 14,
                 "titleMarginBottom": 8,
@@ -3862,12 +3925,7 @@ exports[`ProjectChart component Loading State it should render correctly withour
       <div
         className="chart-footer-filters"
       >
-        <MarketcapToggle
-          focusedInput={null}
-          history={Array []}
-          isDesktop={true}
-          onFocusChange={[Function]}
-        >
+        <Component>
           <div
             className="marketcap-toggle"
           >
@@ -3875,33 +3933,11 @@ exports[`ProjectChart component Loading State it should render correctly withour
               className=""
               onClick={[Function]}
             >
-              MarketCap
+              Marketcap
             </div>
           </div>
-        </MarketcapToggle>
-        <GithubActivityToggle
-          focusedInput={null}
-          history={Array []}
-          isDesktop={true}
-          onFocusChange={[Function]}
-        >
-          <div
-            className="marketcap-toggle"
-          >
-            <div
-              className=""
-              onClick={[Function]}
-            >
-              Github Activity
-            </div>
-          </div>
-        </GithubActivityToggle>
-        <VolumeToggle
-          focusedInput={null}
-          history={Array []}
-          isDesktop={true}
-          onFocusChange={[Function]}
-        >
+        </Component>
+        <Component>
           <div
             className="marketcap-toggle"
           >
@@ -3912,7 +3948,31 @@ exports[`ProjectChart component Loading State it should render correctly withour
               Volume
             </div>
           </div>
-        </VolumeToggle>
+        </Component>
+        <Component>
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              Github Activity
+            </div>
+          </div>
+        </Component>
+        <Component>
+          <div
+            className="marketcap-toggle"
+          >
+            <div
+              className=""
+              onClick={[Function]}
+            >
+              Twitter
+            </div>
+          </div>
+        </Component>
       </div>
       <div>
         <small

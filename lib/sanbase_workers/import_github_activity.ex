@@ -12,7 +12,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   alias ExAws.S3
   @github_archive "http://data.githubarchive.org/"
 
-  faktory_options queue: "github_activity", retry: -1, reserve_for: 900
+  faktory_options queue: "default", retry: -1, reserve_for: 900
 
   def perform(archive) do
     Temp.track!

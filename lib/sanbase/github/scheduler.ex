@@ -59,7 +59,7 @@ defmodule Sanbase.Github.Scheduler do
     end
   end
 
-  defp need_to_scrape_project?(%Project{id: id, name: name}, datetime) do
+  defp need_to_scrape_project?(%Project{id: id}, datetime) do
     archive_name = archive_name_for(datetime)
 
     !Repo.get_by(Github.ProcessedGithubArchive, project_id: id, archive: archive_name)

@@ -11,10 +11,26 @@ defmodule Sanbase.Utils.Config do
     value
   end
 
+  defmacro get(key) do
+    quote bind_quoted: [key: key] do
+      Application.fetch_env!(:sanbase, __MODULE__)
+      |> Keyword.get(key)
+      |> Sanbase.Utils.Config.parse_config_value()
+    end
+  end
+
   defmacro get(key, default \\ nil) do
     quote bind_quoted: [key: key, default: default] do
       Application.fetch_env!(:sanbase, __MODULE__)
       |> Keyword.get(key, default)
+      |> Sanbase.Utils.Config.parse_config_value()
+    end
+  end
+
+  defmacro module_get(module, key) do
+    quote bind_quoted: [module: module, key: key] do
+      Application.fetch_env!(:sanbase, module)
+      |> Keyword.get(key)
       |> Sanbase.Utils.Config.parse_config_value()
     end
   end

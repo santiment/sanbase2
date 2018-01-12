@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import cx from 'classnames'
 import moment from 'moment'
 import {
   compose,
@@ -7,6 +8,7 @@ import {
   withState,
   withHandlers
 } from 'recompose'
+import { Popup, Icon } from 'semantic-ui-react'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { Bar, Chart } from 'react-chartjs-2'
@@ -96,11 +98,25 @@ export const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
   </div>
 )
 
-export const ToggleBtn = ({isToggled, toggle, children}) => (
-  <div className='marketcap-toggle'>
-    <div
-      className={isToggled ? 'activated' : ''}
-      onClick={() => toggle(!isToggled)}>{children}</div>
+export const ToggleBtn = ({
+  disabled,
+  isToggled,
+  toggle,
+  children
+}) => (
+  <div className={cx({
+    'toggleBtn': true,
+    'activated': isToggled,
+    'disabled': disabled
+  })}
+    onClick={() => !disabled && toggle(!isToggled)}>
+    {disabled
+      ? <Popup
+        trigger={<span>{children}</span>}
+        content="Looks like we don't have any data"
+        position='top center'
+      />
+    : children}
   </div>
 )
 
@@ -183,6 +199,7 @@ const getChartDataFromHistory = (
     borderColor: COLORS.price,
     borderWidth: 1,
     backgroundColor: 'rgba(239, 242, 236, 0.5)',
+    hitRadius: 2,
     yAxisID: 'y-axis-1',
     data: history ? history.map(data => {
       if (isToggledBTC) {
@@ -299,7 +316,7 @@ const makeOptionsFromProps = props => ({
   showTooltips: true,
   pointDot: false,
   scaleShowLabels: false,
-  pointHitDetectionRadius: 0.5,
+  pointHitDetectionRadius: 2,
   datasetFill: false,
   scaleFontSize: 0,
   animation: false,
@@ -329,10 +346,12 @@ const makeOptionsFromProps = props => ({
       label: (tooltipItem, data) => {
         const label = data.datasets[tooltipItem.datasetIndex].label.toString()
         if (label === 'Github Activity' ||
-          label === 'Twitter' ||
           label === 'Burn Rate'
         ) {
           return `${label}: ${tooltipItem.yLabel}`
+        }
+        if (label === 'Twitter') {
+          return `${label}: ${tooltipItem.yLabel} followers`
         }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
@@ -345,7 +364,7 @@ const makeOptionsFromProps = props => ({
   },
   elements: {
     point: {
-      hitRadius: 1,
+      hitRadius: 2,
       hoverRadius: 2,
       radius: 0
     }
@@ -419,12 +438,14 @@ const makeOptionsFromProps = props => ({
       ticks: {
         display: true,
         // same hack as in volume.
-        max: parseInt(Math.max(...props.github.history.items.map(data => data.activity)) * 2.2, 10)
+        max: parseInt(
+          Math.max(...props.github.history.items.map(data => data.activity)) * 2.2, 10)
       },
       gridLines: {
         display: false
       },
-      display: props.isToggledGithubActivity,
+      display: props.isToggledGithubActivity &&
+        props.github.history.items.length !== 0,
       position: 'right'
     }, {
       id: 'y-axis-5',
@@ -444,7 +465,8 @@ const makeOptionsFromProps = props => ({
       gridLines: {
         display: false
       },
-      display: props.isToggledTwitter,
+      display: props.isToggledTwitter &&
+        props.twitter.history.items.length !== 0,
       position: 'right'
     }, {
       id: 'y-axis-6',
@@ -459,16 +481,26 @@ const makeOptionsFromProps = props => ({
         fontColor: COLORS.burnRate
       },
       ticks: {
-        display: true
+        display: true,
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return value / 10e8
+        }
       },
       gridLines: {
         display: false
       },
-      display: props.isToggledBurnRate,
+      display: props.isToggledBurnRate &&
+        props.burnRate.items.length !== 0,
       position: 'right'
     }],
     xAxes: [{
       type: 'time',
+      time: {
+        min: props.history && props.history.length > 0
+          ? moment(props.history[0].datetime)
+          : moment()
+      },
       ticks: {
         autoSkipPadding: 1,
         callback: function (value, index, values) {
@@ -546,19 +578,32 @@ export const ProjectChart = ({
             Volume
           </ToggleBtn>
           <ToggleBtn
-            isToggled={props.isToggledGithubActivity}
+            disabled={props.github.history.items.length === 0}
+            isToggled={props.isToggledGithubActivity &&
+              props.github.history.items.length !== 0}
             toggle={props.toggleGithubActivity}>
             Github Activity
           </ToggleBtn>
           <ToggleBtn
-            isToggled={props.isToggledTwitter}
+            disabled={props.twitter.history.items.length === 0}
+            isToggled={props.isToggledTwitter &&
+              props.twitter.history.items.length !== 0}
             toggle={props.toggleTwitter}>
             Twitter
           </ToggleBtn>
           <ToggleBtn
-            isToggled={props.isToggledBurnRate}
+            disabled={props.burnRate.items.length === 0}
+            isToggled={props.isToggledBurnRate &&
+              props.burnRate.items.length !== 0}
             toggle={props.toggleBurnRate}>
-            Burn Rate
+            Burn Rate&nbsp;
+            <Popup
+              trigger={<Icon name='info circle' />}
+              content='Token Burn Rate shows the amount of movement
+              of tokens between addresses. One use for this metric is
+              to spot large amounts of tokens moving after sitting for long periods of time'
+              position='top left'
+            />
           </ToggleBtn>
         </div>
         <div>

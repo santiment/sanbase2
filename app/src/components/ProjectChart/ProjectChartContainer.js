@@ -63,6 +63,9 @@ class ProjectChartContainer extends Component {
       endDate
     })
     if (!startDate || !endDate) { return }
+    this.setState({
+      interval: undefined
+    })
     let interval = '1h'
     const diffInDays = moment(endDate).diff(startDate, 'days')
     if (diffInDays > 32 && diffInDays < 900) {
@@ -70,7 +73,12 @@ class ProjectChartContainer extends Component {
     } else if (diffInDays >= 900) {
       interval = '1w'
     }
-    this.props.onDatesChange(startDate.utc().format(), endDate.utc().format(), interval)
+    this.props.onDatesChange(
+      startDate.utc().format(),
+      endDate.utc().format(),
+      interval,
+      this.props.ticker
+    )
   }
 
   setSelected (selected) {
@@ -79,20 +87,23 @@ class ProjectChartContainer extends Component {
 
   setFilter (interval) {
     if (interval === this.state.interval) { return }
-    const { from, to, minInterval } = makeItervalBounds(interval)
     this.setState({
-      interval,
-      startDate: moment(from),
-      endDate: moment(to)
+      interval
+    }, () => {
+      this.updateHistoryData(this.props.ticker)
     })
-    this.props.onDatesChange(from, to, minInterval)
   }
 
   componentDidMount () {
     const { client, ticker } = this.props
     const { interval } = this.state
     const { from, to, minInterval } = makeItervalBounds(interval)
-    this.props.onDatesChange(from, to, minInterval)
+    this.setState({
+      interval,
+      startDate: moment(from),
+      endDate: moment(to)
+    })
+    this.props.onDatesChange(from, to, minInterval, ticker)
   }
 
   render () {
@@ -107,7 +118,8 @@ class ProjectChartContainer extends Component {
           github={this.props.github}
           burnRate={this.props.burnRate}
           history={this.props.price.history.items}
-          isLoading={this.props.price.history.loading}
+          isLoading={this.props.price.history.loading ||
+            this.props.burnRate.loading}
           isEmpty={this.props.price.history.items.length === 0}
           {...this.state} />
       </div>

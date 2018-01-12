@@ -60,6 +60,7 @@ exports[`Project detail page container it should render correctly 1`] = `
       <ProjectChartContainer
         burnRate={
           Object {
+            "error": undefined,
             "items": Array [],
             "loading": true,
           }

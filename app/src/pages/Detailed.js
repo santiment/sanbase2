@@ -8,7 +8,6 @@ import {
 } from 'recompose'
 import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import { retrieveProjects } from './Cashflow.actions.js'
@@ -16,11 +15,13 @@ import ProjectIcon from './../components/ProjectIcon'
 import PanelBlock from './../components/PanelBlock'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
-import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
-import { formatNumber, formatBTC } from '../utils/formatting'
+import ProjectChartContainer, {
+  makeItervalBounds
+} from './../components/ProjectChart/ProjectChartContainer'
 import Panel from './../components/Panel'
 import Search from './../components/Search'
 import PercentChanges from './../components/PercentChanges'
+import { formatNumber, formatBTC } from '../utils/formatting'
 import './Detailed.css'
 
 const propTypes = {
@@ -47,6 +48,8 @@ export const Detailed = ({
   projects,
   loading,
   PriceQuery,
+  TwitterData,
+  TwitterHistoryData,
   user,
   generalInfo
 }) => {
@@ -65,6 +68,19 @@ export const Detailed = ({
         pathname: '/'
       }} />
     )
+  }
+
+  const twitter = {
+    history: {
+      loading: TwitterHistoryData.loading,
+      items: TwitterHistoryData.historyTwitterData || []
+    },
+    data: {
+      loading: TwitterData.loading,
+      followersCount: TwitterData.twitterData
+        ? TwitterData.twitterData.followersCount
+        : undefined
+    }
   }
 
   return (
@@ -101,56 +117,10 @@ export const Detailed = ({
           </HiddenElements>
         </div>
         <Panel withoutHeader>
-          <ProjectChartContainer ticker={project.ticker} />
+          <ProjectChartContainer
+            twitter={twitter}
+            ticker={project.ticker} />
         </Panel>
-        <HiddenElements>
-          <div className='panel'>
-            <Tabs className='activity-panel'>
-              <TabList className='nav'>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    Social Mentions
-                  </button>
-                </Tab>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    Social Activity over Time
-                  </button>
-                </Tab>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    Sentiment/Intensity
-                  </button>
-                </Tab>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    Github Activity
-                  </button>
-                </Tab>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    SAN Community
-                  </button>
-                </Tab>
-              </TabList>
-              <TabPanel>
-                Social Mentions
-              </TabPanel>
-              <TabPanel>
-                Social Activity over Time
-              </TabPanel>
-              <TabPanel>
-                Sentiment/Intensity
-              </TabPanel>
-              <TabPanel>
-                Github Activity
-              </TabPanel>
-              <TabPanel>
-                SAN Community
-              </TabPanel>
-            </Tabs>
-          </div>
-        </HiddenElements>
         <HiddenElements>
           <PanelBlock title='Blockchain Analytics' />
           <div className='analysis'>
@@ -247,6 +217,30 @@ const queryProject = gql`
     }
   }
 `
+const queryTwitterHistory = gql`
+  query queryTwitterHistory($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
+    historyTwitterData(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime
+      followersCount
+      __typename
+    }
+  }
+`
+
+const queryTwitterData = gql`
+  query queryTwitterData($ticker:String) {
+    twitterData(ticker: $ticker) {
+      datetime
+      followersCount
+      twitterName
+    }
+  }
+`
 
 const mapDataToProps = ({ProjectQuery}) => {
   const isLoading = ProjectQuery.loading
@@ -299,6 +293,29 @@ const enhance = compose(
     name: 'ProjectQuery',
     props: mapDataToProps,
     options: mapPropsToOptions
+  }),
+  graphql(queryTwitterData, {
+    name: 'TwitterData',
+    options: ({match}) => {
+      return {
+        variables: {
+          'ticker': match.params.ticker.toUpperCase()
+        }
+      }
+    }
+  }),
+  graphql(queryTwitterHistory, {
+    name: 'TwitterHistoryData',
+    options: ({match}) => {
+      const {from, to} = makeItervalBounds('1m')
+      return {
+        variables: {
+          from,
+          to,
+          ticker: match.params.ticker.toUpperCase()
+        }
+      }
+    }
   }),
   pure
 )

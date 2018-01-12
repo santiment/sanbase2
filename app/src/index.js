@@ -22,6 +22,12 @@ import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
 const handleLoad = () => {
+  if (!window.env) {
+    window.env = {
+      RAVEN_DSN: '',
+      WEBSITE_URL: ''
+    }
+  }
   Raven.config(window.env.RAVEN_DSN || '', {
     release: process.env.REACT_APP_VERSION,
     environment: process.env.NODE_ENV,
@@ -33,6 +39,7 @@ const handleLoad = () => {
   if (process.env.production) {
     origin = window.location.origin
   }
+  origin = 'https://sanbase.stage.internal.santiment.net/'
 
   const httpLink = createHttpLink({ uri: `${origin}/graphql` })
   const authLink = setContext((_, { headers }) => {

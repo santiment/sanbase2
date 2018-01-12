@@ -103,136 +103,20 @@ exports[`Project detail page container it should render correctly 1`] = `
     >
       <withApollo(ProjectChartContainer)
         ticker="ANT"
+        twitter={
+          Object {
+            "data": Object {
+              "followersCount": undefined,
+              "loading": true,
+            },
+            "history": Object {
+              "items": Array [],
+              "loading": true,
+            },
+          }
+        }
       />
     </Panel>
-    <Component>
-      <div
-        className="panel"
-      >
-        <Tabs
-          className="activity-panel"
-          defaultFocus={false}
-          defaultIndex={null}
-          forceRenderTabPanel={false}
-          selectedIndex={null}
-        >
-          <TabList
-            className="nav"
-          >
-            <Tab
-              className="nav-item"
-              disabledClassName="react-tabs__tab--disabled"
-              focus={false}
-              id={null}
-              panelId={null}
-              selected={false}
-              selectedClassName="active"
-            >
-              <button
-                className="nav-link"
-              >
-                Social Mentions
-              </button>
-            </Tab>
-            <Tab
-              className="nav-item"
-              disabledClassName="react-tabs__tab--disabled"
-              focus={false}
-              id={null}
-              panelId={null}
-              selected={false}
-              selectedClassName="active"
-            >
-              <button
-                className="nav-link"
-              >
-                Social Activity over Time
-              </button>
-            </Tab>
-            <Tab
-              className="nav-item"
-              disabledClassName="react-tabs__tab--disabled"
-              focus={false}
-              id={null}
-              panelId={null}
-              selected={false}
-              selectedClassName="active"
-            >
-              <button
-                className="nav-link"
-              >
-                Sentiment/Intensity
-              </button>
-            </Tab>
-            <Tab
-              className="nav-item"
-              disabledClassName="react-tabs__tab--disabled"
-              focus={false}
-              id={null}
-              panelId={null}
-              selected={false}
-              selectedClassName="active"
-            >
-              <button
-                className="nav-link"
-              >
-                Github Activity
-              </button>
-            </Tab>
-            <Tab
-              className="nav-item"
-              disabledClassName="react-tabs__tab--disabled"
-              focus={false}
-              id={null}
-              panelId={null}
-              selected={false}
-              selectedClassName="active"
-            >
-              <button
-                className="nav-link"
-              >
-                SAN Community
-              </button>
-            </Tab>
-          </TabList>
-          <TabPanel
-            className="react-tabs__tab-panel"
-            forceRender={false}
-            selectedClassName="react-tabs__tab-panel--selected"
-          >
-            Social Mentions
-          </TabPanel>
-          <TabPanel
-            className="react-tabs__tab-panel"
-            forceRender={false}
-            selectedClassName="react-tabs__tab-panel--selected"
-          >
-            Social Activity over Time
-          </TabPanel>
-          <TabPanel
-            className="react-tabs__tab-panel"
-            forceRender={false}
-            selectedClassName="react-tabs__tab-panel--selected"
-          >
-            Sentiment/Intensity
-          </TabPanel>
-          <TabPanel
-            className="react-tabs__tab-panel"
-            forceRender={false}
-            selectedClassName="react-tabs__tab-panel--selected"
-          >
-            Github Activity
-          </TabPanel>
-          <TabPanel
-            className="react-tabs__tab-panel"
-            forceRender={false}
-            selectedClassName="react-tabs__tab-panel--selected"
-          >
-            SAN Community
-          </TabPanel>
-        </Tabs>
-      </div>
-    </Component>
     <Component>
       <PanelBlock
         classes=""

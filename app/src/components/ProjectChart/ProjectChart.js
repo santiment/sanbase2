@@ -1,11 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import moment from 'moment'
 import {
   compose,
   pure,
   withState,
-  withHandlers,
-  lifecycle
+  withHandlers
 } from 'recompose'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
@@ -13,7 +13,6 @@ import { Bar, Chart } from 'react-chartjs-2'
 import { DateRangePicker } from 'react-dates'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
-import moment from 'moment'
 import { formatNumber, formatBTC } from '../../utils/formatting'
 import './ProjectChart.css'
 import './react-dates-override.css'
@@ -22,8 +21,47 @@ const COLORS = {
   price: '#00a05a',
   volume: 'rgba(49, 107, 174, 0.4)',
   marketcap: 'rgb(200, 47, 63)',
-  githubActivity: 'rgba(96, 76, 141, 0.7)' // Ultra Violet color #604c8d'
+  githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
+  twitter: 'rgba(16, 195, 245, 0.7)' // Ultra Violet color #604c8d'
 }
+
+// Fix X mode in Chart.js lib. Monkey loves this.
+const originalX = Chart.Interaction.modes.x
+Chart.Interaction.modes.x = function (chart, e, options) {
+  const activePoints = originalX.apply(this, arguments)
+  return activePoints.reduce((acc, item) => {
+    const i = acc.findIndex(x => x._datasetIndex === item._datasetIndex)
+    if (i <= -1) {
+      acc.push(item)
+    }
+    return acc
+  }, [])
+}
+
+// Draw a vertical line in our Chart, when tooltip is activated.
+Chart.defaults.LineWithLine = Chart.defaults.line
+Chart.controllers.LineWithLine = Chart.controllers.line.extend({
+  draw: function (ease) {
+    Chart.controllers.line.prototype.draw.call(this, ease)
+
+    if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
+      const activePoint = this.chart.tooltip._active[0]
+      const ctx = this.chart.ctx
+      const x = activePoint.tooltipPosition().x
+      const topY = this.chart.scales['y-axis-1'].top
+      const bottomY = this.chart.scales['y-axis-1'].bottom
+
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(x, topY)
+      ctx.lineTo(x, bottomY)
+      ctx.lineWidth = 1
+      ctx.strokeStyle = '#adadad'
+      ctx.stroke()
+      ctx.restore()
+    }
+  }
+})
 
 export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
   let cls = interval === value ? 'activated' : ''
@@ -57,27 +95,11 @@ export const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
   </div>
 )
 
-const MarketcapToggle = ({isToggledMarketCap, toggleMarketcap}) => (
+export const ToggleBtn = ({isToggled, toggle, children}) => (
   <div className='marketcap-toggle'>
     <div
-      className={isToggledMarketCap ? 'activated' : ''}
-      onClick={() => toggleMarketcap(!isToggledMarketCap)}>MarketCap</div>
-  </div>
-)
-
-const GithubActivityToggle = ({isToggledGithubActivity, toggleGithubActivity}) => (
-  <div className='marketcap-toggle'>
-    <div
-      className={isToggledGithubActivity ? 'activated' : ''}
-      onClick={() => toggleGithubActivity(!isToggledGithubActivity)}>Github Activity</div>
-  </div>
-)
-
-const VolumeToggle = ({isToggledVolume, toggleVolume}) => (
-  <div className='marketcap-toggle'>
-    <div
-      className={isToggledVolume ? 'activated' : ''}
-      onClick={() => toggleVolume(!isToggledVolume)}>Volume</div>
+      className={isToggled ? 'activated' : ''}
+      onClick={() => toggle(!isToggled)}>{children}</div>
   </div>
 )
 
@@ -142,11 +164,14 @@ const ProjectChartHeader = ({
 
 const getChartDataFromHistory = (
   history = [],
+  twitter,
   isToggledBTC,
   isToggledMarketCap,
   isToggledGithubActivity,
-  isToggledVolume
+  isToggledVolume,
+  isToggledTwitter
 ) => {
+  const labels = history ? history.map(data => moment(data.datetime).utc()) : []
   const priceDataset = {
     label: 'Price',
     type: 'LineWithLine',
@@ -154,7 +179,6 @@ const getChartDataFromHistory = (
     borderColor: COLORS.price,
     borderWidth: 1,
     backgroundColor: 'rgba(239, 242, 236, 0.5)',
-    pointBorderWidth: 2,
     yAxisID: 'y-axis-1',
     data: history ? history.map(data => {
       if (isToggledBTC) {
@@ -171,7 +195,7 @@ const getChartDataFromHistory = (
     borderColor: COLORS.volume,
     backgroundColor: COLORS.volume,
     borderWidth: 4,
-    pointBorderWidth: 1,
+    pointBorderWidth: 2,
     data: history ? history.map(data => {
       if (isToggledBTC) {
         return parseFloat(data.volumeBTC)
@@ -203,11 +227,33 @@ const getChartDataFromHistory = (
     borderWidth: 1,
     pointBorderWidth: 2,
     data: history ? history.map(data => {
-      return parseInt(data.githubActivity)
+      return parseInt(data.githubActivity, 10)
+    }) : []}
+  const twitterDataset = !isToggledTwitter ? null : {
+    label: 'Twitter',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-5',
+    borderColor: COLORS.twitter,
+    backgroundColor: COLORS.twitter,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: twitter ? twitter.history.items.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.followersCount
+      }
     }) : []}
   return {
-    labels: history ? history.map(data => moment(data.datetime).utc()) : [],
-    datasets: [priceDataset, marketcapDataset, githubActivityDataset, volumeDataset].reduce((acc, curr) => {
+    labels,
+    datasets: [
+      priceDataset,
+      marketcapDataset,
+      githubActivityDataset,
+      volumeDataset,
+      twitterDataset
+    ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
     }, [])
@@ -228,16 +274,17 @@ const makeOptionsFromProps = props => ({
   showTooltips: true,
   pointDot: false,
   scaleShowLabels: false,
+  pointHitDetectionRadius: 0.5,
   datasetFill: false,
   scaleFontSize: 0,
   animation: false,
   pointRadius: 0,
   hover: {
-    mode: 'nearest',
-    intersect: true
+    mode: 'x',
+    intersect: false
   },
   tooltips: {
-    mode: 'index',
+    mode: 'x',
     intersect: false,
     titleMarginBottom: 8,
     titleFontSize: 14,
@@ -256,7 +303,7 @@ const makeOptionsFromProps = props => ({
       },
       label: (tooltipItem, data) => {
         const label = data.datasets[tooltipItem.datasetIndex].label.toString()
-        if (label === 'Github Activity') {
+        if (label === 'Github Activity' || label === 'Twitter') {
           return `${label}: ${tooltipItem.yLabel}`
         }
         return `${label}: ${props.isToggledBTC
@@ -270,7 +317,7 @@ const makeOptionsFromProps = props => ({
   },
   elements: {
     point: {
-      hitRadius: 2,
+      hitRadius: 1,
       hoverRadius: 2,
       radius: 0
     }
@@ -344,12 +391,32 @@ const makeOptionsFromProps = props => ({
       ticks: {
         display: true,
         // same hack as in volume.
-        max: parseInt(Math.max(...props.history.map(data => data.githubActivity)) * 2.2)
+        max: parseInt(Math.max(...props.history.map(data => data.githubActivity)) * 2.2, 10)
       },
       gridLines: {
         display: false
       },
       display: props.isToggledGithubActivity,
+      position: 'right'
+    }, {
+      id: 'y-axis-5',
+      type: 'linear',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'Twitter',
+        fontColor: COLORS.twitter
+      },
+      ticks: {
+        display: true
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledTwitter,
       position: 'right'
     }],
     xAxes: [{
@@ -391,10 +458,12 @@ export const ProjectChart = ({
   }
   const chartData = getChartDataFromHistory(
     props.history,
+    props.twitter,
     props.isToggledBTC,
     props.isToggledMarketCap,
     props.isToggledGithubActivity,
-    props.isToggledVolume)
+    props.isToggledVolume,
+    props.isToggledTwitter)
   const chartOptions = makeOptionsFromProps(props)
 
   return (
@@ -416,9 +485,26 @@ export const ProjectChart = ({
       </div>
       <div className='chart-footer'>
         <div className='chart-footer-filters'>
-          <MarketcapToggle {...props} />
-          <GithubActivityToggle {...props} />
-          <VolumeToggle {...props} />
+          <ToggleBtn
+            isToggled={props.isToggledMarketCap}
+            toggle={props.toggleMarketcap}>
+            Marketcap
+          </ToggleBtn>
+          <ToggleBtn
+            isToggled={props.isToggledVolume}
+            toggle={props.toggleVolume}>
+            Volume
+          </ToggleBtn>
+          <ToggleBtn
+            isToggled={props.isToggledGithubActivity}
+            toggle={props.toggleGithubActivity}>
+            Github Activity
+          </ToggleBtn>
+          <ToggleBtn
+            isToggled={props.isToggledTwitter}
+            toggle={props.toggleTwitter}>
+            Twitter
+          </ToggleBtn>
         </div>
         <div>
           <small className='trademark'>santiment.net</small>
@@ -437,33 +523,7 @@ const enhance = compose(
   withState('isToggledMarketCap', 'toggleMarketcap', false),
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledVolume', 'toggleVolume', true),
-  lifecycle({
-    componentWillMount () {
-      Chart.defaults.LineWithLine = Chart.defaults.line
-      Chart.controllers.LineWithLine = Chart.controllers.line.extend({
-        draw: function (ease) {
-          Chart.controllers.line.prototype.draw.call(this, ease)
-
-          if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
-            const activePoint = this.chart.tooltip._active[0]
-            const ctx = this.chart.ctx
-            const x = activePoint.tooltipPosition().x
-            const topY = this.chart.scales['y-axis-1'].top
-            const bottomY = this.chart.scales['y-axis-1'].bottom
-
-            ctx.save()
-            ctx.beginPath()
-            ctx.moveTo(x, topY)
-            ctx.lineTo(x, bottomY)
-            ctx.lineWidth = 1
-            ctx.strokeStyle = '#adadad'
-            ctx.stroke()
-            ctx.restore()
-          }
-        }
-      })
-    }
-  }),
+  withState('isToggledTwitter', 'toggleTwitter', false),
   pure
 )
 

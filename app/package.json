@@ -33,7 +33,7 @@
     "react": "^16.2.0",
     "react-apollo": "^2.0.1",
     "react-chartjs-2": "^2.6.4",
-    "react-dates": "^16.0.1",
+    "react-dates": "16.0.1",
     "react-dom": "^16.2.0",
     "react-fa": "^5.0.0",
     "react-ga": "^2.3.5",

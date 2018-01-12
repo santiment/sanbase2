@@ -10,7 +10,7 @@ defmodule Sanbase.Influxdb.Store do
   defmacro __using__(_options \\ []) do
     quote do
       use Instream.Connection, otp_app: :sanbase
-      import Sanbase.Utils.Config
+      require Sanbase.Utils.Config
 
       alias Sanbase.Influxdb.Measurement
 

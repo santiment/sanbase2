@@ -30,6 +30,14 @@ const propTypes = {
 
 export const HiddenElements = () => ''
 
+export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
+  return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
+export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
+  return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
 const getProjectByTicker = (match, projects) => {
   const selectedTicker = match.params.ticker
   const project = projects.find(el => {
@@ -221,8 +229,8 @@ const mapPropsToOptions = ({match, projects}) => {
   }
 }
 
-const getPriceGQL = gql`
-  query getPrice($ticker: String!) {
+const queryPrice = gql`
+  query queryPrice($ticker: String!) {
     price (
       ticker: $ticker
     ) {
@@ -255,7 +263,8 @@ const enhance = compose(
       return {
         variables: {
           'ticker': project ? project.ticker.toUpperCase() : 'SAN'
-        }
+        },
+        pollInterval: 2000 * 60
       }
     }
   })

@@ -57,7 +57,30 @@ exports[`Project detail page container it should render correctly 1`] = `
     <div
       className="panel panel-chart"
     >
-      <withApollo(ProjectChartContainer)
+      <ProjectChartContainer
+        burnRate={
+          Object {
+            "items": Array [],
+            "loading": true,
+          }
+        }
+        github={
+          Object {
+            "history": Object {
+              "items": Array [],
+              "loading": true,
+            },
+          }
+        }
+        onDatesChange={[Function]}
+        price={
+          Object {
+            "history": Object {
+              "items": Array [],
+              "loading": true,
+            },
+          }
+        }
         ticker="ANT"
         twitter={
           Object {

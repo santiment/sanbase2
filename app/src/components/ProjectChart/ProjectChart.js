@@ -164,12 +164,15 @@ const ProjectChartHeader = ({
 
 const getChartDataFromHistory = (
   history = [],
-  twitter,
+  twitter = [],
+  github = [],
+  burnRate = [],
   isToggledBTC,
   isToggledMarketCap,
   isToggledGithubActivity,
   isToggledVolume,
-  isToggledTwitter
+  isToggledTwitter,
+  isToggledBurnRate
 ) => {
   const labels = history ? history.map(data => moment(data.datetime).utc()) : []
   const priceDataset = {
@@ -211,12 +214,12 @@ const getChartDataFromHistory = (
     backgroundColor: COLORS.marketcap,
     borderWidth: 1,
     pointBorderWidth: 2,
-    data: history ? history.map(data => {
+    data: history.map(data => {
       if (isToggledBTC) {
         return parseFloat(data.marketcapBTC)
       }
       return parseFloat(data.marketcap)
-    }) : []}
+    })}
   const githubActivityDataset = !isToggledGithubActivity ? null : {
     label: 'Github Activity',
     type: 'line',
@@ -226,9 +229,13 @@ const getChartDataFromHistory = (
     backgroundColor: COLORS.githubActivity,
     borderWidth: 1,
     pointBorderWidth: 2,
-    data: history ? history.map(data => {
-      return parseInt(data.githubActivity, 10)
-    }) : []}
+    pointRadius: 2,
+    data: github.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.activity
+      }
+    })}
   const twitterDataset = !isToggledTwitter ? null : {
     label: 'Twitter',
     type: 'line',
@@ -239,12 +246,28 @@ const getChartDataFromHistory = (
     borderWidth: 1,
     pointBorderWidth: 2,
     pointRadius: 2,
-    data: twitter ? twitter.history.items.map(data => {
+    data: twitter.map(data => {
       return {
         x: moment(data.datetime),
         y: data.followersCount
       }
-    }) : []}
+    })}
+  const burnrateDataset = !isToggledBurnRate ? null : {
+    label: 'Burn Rate',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-6',
+    borderColor: COLORS.twitter,
+    backgroundColor: COLORS.twitter,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: burnRate.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.burnRate / 10e8
+      }
+    })}
   return {
     labels,
     datasets: [
@@ -252,7 +275,8 @@ const getChartDataFromHistory = (
       marketcapDataset,
       githubActivityDataset,
       volumeDataset,
-      twitterDataset
+      twitterDataset,
+      burnrateDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -303,7 +327,10 @@ const makeOptionsFromProps = props => ({
       },
       label: (tooltipItem, data) => {
         const label = data.datasets[tooltipItem.datasetIndex].label.toString()
-        if (label === 'Github Activity' || label === 'Twitter') {
+        if (label === 'Github Activity' ||
+          label === 'Twitter' ||
+          label === 'Burn Rate'
+        ) {
           return `${label}: ${tooltipItem.yLabel}`
         }
         return `${label}: ${props.isToggledBTC
@@ -391,7 +418,7 @@ const makeOptionsFromProps = props => ({
       ticks: {
         display: true,
         // same hack as in volume.
-        max: parseInt(Math.max(...props.history.map(data => data.githubActivity)) * 2.2, 10)
+        max: parseInt(Math.max(...props.github.history.items.map(data => data.activity)) * 2.2, 10)
       },
       gridLines: {
         display: false
@@ -417,6 +444,26 @@ const makeOptionsFromProps = props => ({
         display: false
       },
       display: props.isToggledTwitter,
+      position: 'right'
+    }, {
+      id: 'y-axis-6',
+      type: 'linear',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'Burn Rate',
+        fontColor: COLORS.twitter
+      },
+      ticks: {
+        display: true
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledBurnRate,
       position: 'right'
     }],
     xAxes: [{
@@ -458,12 +505,15 @@ export const ProjectChart = ({
   }
   const chartData = getChartDataFromHistory(
     props.history,
-    props.twitter,
+    props.twitter.history.items,
+    props.github.history.items,
+    props.burnRate.items,
     props.isToggledBTC,
     props.isToggledMarketCap,
     props.isToggledGithubActivity,
     props.isToggledVolume,
-    props.isToggledTwitter)
+    props.isToggledTwitter,
+    props.isToggledBurnRate)
   const chartOptions = makeOptionsFromProps(props)
 
   return (
@@ -475,7 +525,6 @@ export const ProjectChart = ({
         <Bar
           data={chartData}
           options={chartOptions}
-          redraw
           height={100}
           onElementsClick={elems => {
             !props.isDesktop && elems[0] && setSelected(elems[0]._index)
@@ -505,6 +554,11 @@ export const ProjectChart = ({
             toggle={props.toggleTwitter}>
             Twitter
           </ToggleBtn>
+          <ToggleBtn
+            isToggled={props.isToggledBurnRate}
+            toggle={props.toggleBurnRate}>
+            Burn Rate
+          </ToggleBtn>
         </div>
         <div>
           <small className='trademark'>santiment.net</small>
@@ -524,6 +578,7 @@ const enhance = compose(
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledVolume', 'toggleVolume', true),
   withState('isToggledTwitter', 'toggleTwitter', false),
+  withState('isToggledBurnRate', 'toggleBurnRate', false),
   pure
 )
 

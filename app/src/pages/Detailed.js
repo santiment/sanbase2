@@ -33,6 +33,14 @@ const propTypes = {
 
 export const HiddenElements = () => ''
 
+export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
+  return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
+export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
+  return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
 const getProjectByTicker = (match, projects) => {
   const selectedTicker = match.params.ticker
   const project = projects.find(el => {
@@ -50,8 +58,12 @@ export const Detailed = ({
   PriceQuery,
   TwitterData,
   TwitterHistoryData,
+  HistoryPrice,
+  GithubActivity,
+  BurnRate,
   user,
-  generalInfo
+  generalInfo,
+  changeDatetimeFilter
 }) => {
   if (loading) {
     return (
@@ -81,6 +93,31 @@ export const Detailed = ({
         ? TwitterData.twitterData.followersCount
         : undefined
     }
+  }
+
+  const price = {
+    history: {
+      loading: HistoryPrice.loading,
+      items: HistoryPrice.historyPrice
+        ? HistoryPrice.historyPrice.map(item => {
+          const volumeBTC = calculateBTCVolume(item)
+          const marketcapBTC = calculateBTCMarketcap(item)
+          return {...item, volumeBTC, marketcapBTC}
+        })
+        : []
+    }
+  }
+
+  const github = {
+    history: {
+      loading: GithubActivity.loading,
+      items: GithubActivity.githubActivity || []
+    }
+  }
+
+  const burnRate = {
+    loading: BurnRate.loading,
+    items: BurnRate.burnRate || []
   }
 
   return (
@@ -119,16 +156,36 @@ export const Detailed = ({
         <Panel withoutHeader>
           <ProjectChartContainer
             twitter={twitter}
+            price={price}
+            github={github}
+            burnRate={burnRate}
+            onDatesChange={async (from, to, interval) => {
+              const ticker = match.params.ticker.toUpperCase()
+              await TwitterHistoryData.refetch({
+                from,
+                to,
+                ticker
+              })
+              await HistoryPrice.refetch({
+                from,
+                to,
+                ticker,
+                interval
+              })
+              await GithubActivity.refetch({
+                from,
+                to,
+                ticker,
+                interval: '1d'
+              })
+              await BurnRate.refetch({
+                from,
+                to,
+                ticker
+              })
+            }}
             ticker={project.ticker} />
         </Panel>
-        <HiddenElements>
-          <PanelBlock title='Blockchain Analytics' />
-          <div className='analysis'>
-            <PanelBlock title='Signals/Volatility' />
-            <PanelBlock title='Expert Analyses' />
-            <PanelBlock title='News/Press' />
-          </div>
-        </HiddenElements>
         <div className='information'>
           <PanelBlock
             isUnauthorized={generalInfo.isUnauthorized}
@@ -172,8 +229,8 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const getPriceGQL = gql`
-  query getPrice($ticker: String!) {
+const queryPrice = gql`
+  query queryPrice($ticker: String!) {
     price (
       ticker: $ticker
     ) {
@@ -186,7 +243,7 @@ const getPriceGQL = gql`
 }`
 
 const queryProject = gql`
-  query project($id: ID!) {
+  query queryProject($id: ID!) {
     project(
       id: $id,
     ){
@@ -242,6 +299,48 @@ const queryTwitterData = gql`
   }
 `
 
+const queryHistoryPrice = gql`
+  query queryHistoryPrice($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
+    historyPrice(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      priceBtc,
+      priceUsd,
+      volume,
+      datetime,
+      marketcap
+    }
+}`
+
+const queryGithubActivity = gql`
+  query queryGithubActivity($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
+    githubActivity(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime,
+      activity
+    }
+}`
+
+const queryBurnRate = gql`
+  query queryBurnRate($ticker:String, $from: DateTime, $to: DateTime) {
+    burnRate(
+      ticker: $ticker,
+      from: $from,
+      to: $to
+    ) {
+      datetime
+      burnRate
+      __typename
+    }
+}`
+
 const mapDataToProps = ({ProjectQuery}) => {
   const isLoading = ProjectQuery.loading
   const isEmpty = !!ProjectQuery.project
@@ -263,7 +362,8 @@ const mapPropsToOptions = ({match, projects, user}) => {
     skip: !project || !user.token,
     variables: {
       id: project ? project.id : 0
-    }
+    },
+    pollInterval: 2000 * 60
   }
 }
 
@@ -277,7 +377,7 @@ const enhance = compose(
       this.props.retrieveProjects()
     }
   }),
-  graphql(getPriceGQL, {
+  graphql(queryPrice, {
     name: 'PriceQuery',
     options: ({match, projects}) => {
       const project = getProjectByTicker(match, projects)
@@ -285,7 +385,8 @@ const enhance = compose(
         skip: !project,
         variables: {
           'ticker': project ? project.ticker.toUpperCase() : 'SAN'
-        }
+        },
+        pollInterval: 2000 * 60
       }
     }
   }),
@@ -306,6 +407,47 @@ const enhance = compose(
   }),
   graphql(queryTwitterHistory, {
     name: 'TwitterHistoryData',
+    options: ({match}) => {
+      const {from, to} = makeItervalBounds('1m')
+      return {
+        variables: {
+          from,
+          to,
+          ticker: match.params.ticker.toUpperCase()
+        }
+      }
+    }
+  }),
+  graphql(queryHistoryPrice, {
+    name: 'HistoryPrice',
+    options: ({match}) => {
+      const {from, to} = makeItervalBounds('1m')
+      return {
+        variables: {
+          from,
+          to,
+          ticker: match.params.ticker.toUpperCase(),
+          interval: '1h'
+        }
+      }
+    }
+  }),
+  graphql(queryGithubActivity, {
+    name: 'GithubActivity',
+    options: ({match}) => {
+      const {from, to} = makeItervalBounds('1m')
+      return {
+        variables: {
+          from,
+          to,
+          ticker: match.params.ticker.toUpperCase(),
+          interval: '1d'
+        }
+      }
+    }
+  }),
+  graphql(queryBurnRate, {
+    name: 'BurnRate',
     options: ({match}) => {
       const {from, to} = makeItervalBounds('1m')
       return {

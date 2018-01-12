@@ -7,15 +7,14 @@ defmodule Sanbase.Github.EtherbiApiTest do
   import Mock
 
   test "fetch burn rate", context do
-    with_mock HTTPoison,
-      get: fn _url, _options ->
+    mock HTTPoison, :get,
         {:ok, %HTTPoison.Response{
           status_code: 200,
           body: "[[1514766000, 91716892495405965698400256],\
               [1514770144, 359319706108516227858038784],\
               [1514778068, 31034050000000001245184]]"
         }}
-      end do
+
       ticker = "SAN"
       datetime1 = DateTime.from_naive!(~N[2018-01-01 12:00:00], "Etc/UTC")
       datetime2 = DateTime.from_naive!(~N[2017-01-01 21:45:00], "Etc/UTC")
@@ -43,16 +42,14 @@ defmodule Sanbase.Github.EtherbiApiTest do
       assert %{"burnRate" => "91716892495405965698400256"} in burn_rates
       assert %{"burnRate" => "359319706108516227858038784"} in burn_rates
       assert %{"burnRate" => "31034050000000001245184"} in burn_rates
-    end
   end
 
   test "fetch transaction volume", context do
-    with_mock HTTPoison,
-      get: fn _url, _options ->
+    mock HTTPoison, :get,
         {:ok, %HTTPoison.Response{status_code: 200, body: "[[1514765863, 5810803200000000000],
               [1514766007, 700000000000001803841],
               [1514770144, 1749612781540000000000]]"}}
-      end do
+
       ticker = "SAN"
       datetime1 = DateTime.from_naive!(~N[2018-01-01 12:00:00], "Etc/UTC")
       datetime2 = DateTime.from_naive!(~N[2017-01-01 21:45:00], "Etc/UTC")
@@ -80,13 +77,6 @@ defmodule Sanbase.Github.EtherbiApiTest do
       assert %{"transactionVolume" => "5810803200000000000"} in transaction_volumes
       assert %{"transactionVolume" => "700000000000001803841"} in transaction_volumes
       assert %{"transactionVolume" => "1749612781540000000000"} in transaction_volumes
-    end
-  end
-
-  defp get_config(key) do
-    Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.Resolvers.EtherbiResolver)
-    |> Keyword.get(key)
-    |> parse_config_value()
   end
 
   defp query_skeleton(query, query_name) do

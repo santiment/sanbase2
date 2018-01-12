@@ -9,30 +9,28 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
   alias Sanbase.Model.Currency
 
   def up do
-    Repo.transaction(fn ->
-      usd = ensure_currency("USD")
-      eth = ensure_currency("ETH")
-      btc = ensure_currency("BTC")
-      currencies = %{usd: usd, eth: eth, btc: btc}
+    usd = find_or_insert_currency("USD")
+    eth = find_or_insert_currency("ETH")
+    btc = find_or_insert_currency("BTC")
+    currencies = %{usd: usd, eth: eth, btc: btc}
 
-      from(i in Ico,
-      preload: [ico_currencies: [:currency]],
-      where: fragment(
-        "NOT EXISTS(select 1
-                    from ico_currencies ic
-                    where ic.ico_id = ?
-                          and ic.amount is not null)",i.id))
-      |> Repo.stream(max_rows: 10000)
-      |> Stream.each(fn(ico) ->
-        ico_currency = try_from_existing_ico_currencies(ico, currencies)
-          || try_from_totals(ico, currencies)
+    from(i in Ico,
+    preload: [ico_currencies: [:currency]],
+    where: fragment(
+      "NOT EXISTS(select 1
+                  from ico_currencies ic
+                  where ic.ico_id = ?
+                        and ic.amount is not null)",i.id))
+    |> Repo.stream(max_rows: 10000)
+    |> Stream.each(fn(ico) ->
+      ico_currency = try_from_existing_ico_currencies(ico, currencies)
+        || try_from_totals(ico, currencies)
 
-        if !is_nil(ico_currency) do
-          Repo.insert_or_update!(ico_currency)
-        end
-      end)
-      |> Enum.to_list()
-    end, timeout: 600000)
+      if !is_nil(ico_currency) do
+        Repo.insert_or_update!(ico_currency)
+      end
+    end)
+    |> Enum.to_list()
   end
 
   defp try_from_existing_ico_currencies(ico, %{usd: usd, eth: eth, btc: btc}) do
@@ -68,7 +66,7 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
     end
   end
 
-  defp ensure_currency(currency_code) do
+  defp find_or_insert_currency(currency_code) do
     Repo.get_by(Currency, code: currency_code)
     |> case do
       result = %Currency{} -> result

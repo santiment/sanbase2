@@ -1,5 +1,6 @@
 defmodule Sanbase.InternalServices.Parity do
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
+  alias Sanbase.Utils.Config
 
   use Tesla
 
@@ -37,9 +38,9 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   defp client() do
-    parity_url = config(:url)
-    basic_auth_username = config(:basic_auth_username)
-    basic_auth_password = config(:basic_auth_password)
+    parity_url = Config.get(:url)
+    basic_auth_username = Config.get(:basic_auth_username)
+    basic_auth_password = Config.get(:basic_auth_password)
 
     Tesla.build_client [
       {Tesla.Middleware.BaseUrl, parity_url},
@@ -56,11 +57,5 @@ defmodule Sanbase.InternalServices.Parity do
       id: 1,
       jsonrpc: "2.0"
     }
-  end
-
-  defp config(key) do
-    Application.get_env(:sanbase, __MODULE__)
-    |> Keyword.get(key)
-    |> parse_config_value()
   end
 end

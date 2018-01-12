@@ -3,10 +3,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   import Plug.Conn
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
 
   alias SanbaseWeb.Graphql.ContextPlug
   alias Sanbase.Auth.User
+  alias Sanbase.Utils.Config
 
   require Logger
 
@@ -58,8 +59,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp basic_authorize(auth_attempt) do
-    username = config(:basic_auth_username)
-    password = config(:basic_auth_password)
+    username = Config.get(:basic_auth_username)
+    password = Config.get(:basic_auth_password)
 
     Base.encode64(username <> ":" <> password)
     |> case do
@@ -68,11 +69,5 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         Logger.warn("Invalid basic auth credentials in request")
         {:error, :invalid_credentials}
     end
-  end
-
-  defp config(key) do
-    Application.fetch_env!(:sanbase, __MODULE__)
-    |> Keyword.get(key)
-    |> parse_config_value()
   end
 end

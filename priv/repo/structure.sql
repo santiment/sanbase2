@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.6
--- Dumped by pg_dump version 9.6.6
+-- Dumped from database version 9.6.1
+-- Dumped by pg_dump version 9.6.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -138,6 +138,8 @@ CREATE TABLE icos (
     tokens_issued_at_ico numeric,
     tokens_sold_at_ico numeric,
     funds_raised_btc numeric,
+    usd_btc_icoend numeric,
+    usd_eth_icoend numeric,
     minimal_cap_amount numeric,
     maximal_cap_amount numeric,
     cap_currency_id bigint,
@@ -147,8 +149,6 @@ CREATE TABLE icos (
     funds_raised_eth numeric,
     contract_block_number integer,
     contract_abi text,
-    usd_btc_icoend numeric,
-    usd_eth_icoend numeric,
     token_usd_ico_price numeric,
     token_eth_ico_price numeric,
     token_btc_ico_price numeric
@@ -461,7 +461,9 @@ CREATE TABLE project (
     infrastructure_id bigint,
     project_transparency boolean DEFAULT false NOT NULL,
     project_transparency_description text,
-    project_transparency_status_id bigint
+    project_transparency_status_id bigint,
+    token_decimals integer,
+    total_supply numeric
 );
 
 
@@ -1218,5 +1220,5 @@ ALTER TABLE ONLY user_followed_project
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180108100755), (20180108110118), (20180108140221), (20180112084549);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750);
 

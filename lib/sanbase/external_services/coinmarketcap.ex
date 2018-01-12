@@ -9,8 +9,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   use GenServer, restart: :permanent, shutdown: 5_000
 
   import Ecto.Query
-  import Sanbase.Utils, only: [parse_config_value: 1]
 
+  require Sanbase.Utils.Config
   require Logger
 
   alias Sanbase.Model.{Project, Ico}
@@ -23,6 +23,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices
+  alias Sanbase.Utils.Config
 
   # 5 minutes
   @default_update_interval 1000 * 60 * 5
@@ -32,9 +33,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def init(:ok) do
-    update_interval = get_config(:update_interval, @default_update_interval)
+    update_interval = Config.get(:update_interval, @default_update_interval)
 
-    if get_config(:sync_enabled, false) do
+    if Config.get(:sync_enabled, false) do
       Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
       |> Keyword.get(:database)
       |> Instream.Admin.Database.create()
@@ -162,14 +163,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       datetime ->
         datetime
     end
-  end
-
-  defp get_config(key, default) do
-    Keyword.get(config(), key, default)
-    |> parse_config_value()
-  end
-
-  def config do
-    Application.get_env(:sanbase, __MODULE__)
   end
 end

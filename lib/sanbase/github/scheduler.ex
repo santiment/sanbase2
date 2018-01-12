@@ -6,23 +6,19 @@ defmodule Sanbase.Github.Scheduler do
 
   require Logger
 
-  import Ecto.Query
-
   # A dependency injection, so that we can test this module in isolation
   @worker Mockery.of("SanbaseWorkers.ImportGithubActivity")
 
   def schedule_scrape do
     available_projects = Github.available_projects
 
-    processed_archives = available_projects
-    |> fetch_processed_archives()
-
-    available_projects
+    initial_scrape_datetime = available_projects
     |> log_scheduler_info
     |> Enum.map(&get_initial_scrape_datetime/1)
     |> Enum.reject(&is_nil/1)
     |> reduce_initial_scrape_datetime()
-    |> schedule_scrape_for_datetime(yesterday(), processed_archives)
+
+    schedule_scrape_for_datetime(initial_scrape_datetime, available_projects, yesterday())
   end
 
   def archive_name_for(datetime) do
@@ -44,20 +40,29 @@ defmodule Sanbase.Github.Scheduler do
 
   defp schedule_scrape_for_datetime(nil, _last_datetime, _processed_archives), do: :ok
 
-  defp schedule_scrape_for_datetime(datetime, last_datetime, processed_archives) do
-    case DateTime.compare(datetime, last_datetime) do
+  defp schedule_scrape_for_datetime(current_datetime, projects, last_datetime) do
+    case DateTime.compare(current_datetime, last_datetime) do
       :lt ->
-        archive_name = archive_name_for(datetime)
+        need_to_scrape = projects
+        |> Enum.any?(&need_to_scrape_project?(&1, current_datetime))
 
-        unless MapSet.member?(processed_archives, archive_name) do
+        if need_to_scrape do
+          archive_name = archive_name_for(current_datetime)
+
           @worker.perform_async([archive_name])
         end
 
-        datetime
+        current_datetime
         |> Timex.shift(hours: 1)
-        |> schedule_scrape_for_datetime(last_datetime, processed_archives)
+        |> schedule_scrape_for_datetime(projects, last_datetime)
       _ -> :ok
     end
+  end
+
+  defp need_to_scrape_project?(%Project{id: id}, datetime) do
+    archive_name = archive_name_for(datetime)
+
+    !Repo.get_by(Github.ProcessedGithubArchive, project_id: id, archive: archive_name)
   end
 
   defp get_initial_scrape_datetime(%Project{ticker: ticker}) do
@@ -66,20 +71,6 @@ defmodule Sanbase.Github.Scheduler do
     else
       Prices.Store.first_price_datetime(ticker <> "_USD")
     end
-  end
-
-  defp fetch_processed_archives(projects) do
-    project_ids = projects
-    |> Enum.map(&(&1.id))
-
-    Github.ProcessedGithubArchive
-    |> where([p], p.project_id in ^project_ids)
-    |> group_by(:archive)
-    |> having([p], count(p.project_id) == ^(length(project_ids)))
-    |> select([:archive])
-    |> Repo.all
-    |> Enum.map(&(&1.archive))
-    |> MapSet.new
   end
 
   defp yesterday do

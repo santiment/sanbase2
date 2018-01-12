@@ -5,13 +5,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   use GenServer, restart: :permanent, shutdown: 5_000
   require Logger
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
 
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Repo
   alias Sanbase.InternalServices.Parity
   alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx}
+  alias Sanbase.Utils.Config
 
   alias Decimal, as: D
 
@@ -36,9 +37,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     # old sanbase)
     D.set_context(%{D.get_context() | precision: 2})
 
-    update_interval_ms = get_config(:update_interval, @default_update_interval_ms)
+    update_interval_ms = Config.get(:update_interval, @default_update_interval_ms)
 
-    if get_config(:sync_enabled, false) do
+    if Config.get(:sync_enabled, false) do
       GenServer.cast(self(), :sync)
 
       {:ok, %{update_interval_ms: update_interval_ms}}
@@ -109,14 +110,5 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
       nil -> %LatestEthWalletData{address: address}
       entry -> entry
     end
-  end
-
-  defp config() do
-    Application.get_env(:sanbase, __MODULE__)
-  end
-
-  defp get_config(key, default \\ nil) do
-    Keyword.get(config(), key, default)
-    |> parse_config_value()
   end
 end

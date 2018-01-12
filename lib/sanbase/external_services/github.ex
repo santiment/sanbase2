@@ -42,8 +42,8 @@ defmodule Sanbase.ExternalServices.Github do
     {:noreply, state}
   end
 
-  defp schedule_jobs_if_free(%{"faktory" => %{"total_enqueued" => total_enqueued}}) do
-    if total_enqueued > 0 do
+  defp schedule_jobs_if_free(%{"faktory" => %{"default_size" => default_size}}) do
+    if default_size > 0 do
       :ok
     else
       Sanbase.Github.Scheduler.schedule_scrape

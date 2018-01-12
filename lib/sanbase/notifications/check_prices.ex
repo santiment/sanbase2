@@ -5,9 +5,11 @@ defmodule Sanbase.Notifications.CheckPrices do
   alias Sanbase.Model.Project
   alias Sanbase.Prices.Store
   alias Sanbase.Notifications.CheckPrices.ComputeMovements
+  alias Sanbase.Utils.Config
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
-  import Sanbase.Utils, only: [parse_config_value: 1]
+
+  require Sanbase.Utils.Config
 
   @http_service Mockery.of("Tesla")
 
@@ -32,7 +34,7 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   def send_notification({notification, price_difference, project}, counter_currency) do
     %{status: 200} = @http_service.post(
-      webhook_url(),
+      Config.get(:webhook_url),
       notification_payload(price_difference, project, counter_currency),
       headers: %{"Content-Type" => "application/json"}
     )
@@ -53,23 +55,13 @@ defmodule Sanbase.Notifications.CheckPrices do
     })
   end
 
-  defp webhook_url() do
-    Application.fetch_env!(:sanbase, Sanbase.Notifications.CheckPrice)
-    |> Keyword.get(:webhook_url)
-    |> parse_config_value()
-  end
-
   defp notification_channel("btc") do
-    Application.fetch_env!(:sanbase, Sanbase.Notifications.CheckPrice)
-    |> Keyword.get(:notification_channel)
-    |> parse_config_value()
+    Config.get(:notification_channel)
     |> Kernel.<>("-btc")
   end
 
   defp notification_channel(_) do
-    Application.fetch_env!(:sanbase, Sanbase.Notifications.CheckPrice)
-    |> Keyword.get(:notification_channel)
-    |> parse_config_value()
+    Config.get(:notification_channel)
   end
 
   defp notification_emoji(price_difference) when price_difference > 0, do: ":signal_up:"

@@ -120,7 +120,7 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
   update_interval: 1000 * 60 * 60 * 24, # 1 day
   sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
 
-config :sanbase, Sanbase.Notifications.CheckPrice,
+config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
   notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"}
 
@@ -142,11 +142,11 @@ config :faktory_worker_ex,
   host: {:system, "FAKTORY_HOST", "localhost"},
   port: {:system, "FAKTORY_PORT", 7419},
   client: [
-    pool: 5,
+    pool: 1,
   ],
   worker: [
-    concurrency: 5,
-    queues: ["github_activity", "data_migrations"],
+    concurrency: 1,
+    queues: ["default", "data_migrations"],
   ],
   start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
 

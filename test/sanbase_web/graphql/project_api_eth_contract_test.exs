@@ -2,7 +2,7 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
 
   alias Ecto.Changeset
   alias Sanbase.Graphql.ProjectInfo
@@ -13,6 +13,7 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
   alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Repo
+  alias Sanbase.Utils.Config
 
   import Plug.Conn
   import ExUnit.CaptureLog
@@ -105,8 +106,6 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
   end
 
   defp context_config(key) do
-    Application.get_env(:sanbase, SanbaseWeb.Graphql.ContextPlug)
-    |> Keyword.get(key)
-    |> parse_config_value()
+    Config.module_get(SanbaseWeb.Graphql.ContextPlug, key)
   end
 end

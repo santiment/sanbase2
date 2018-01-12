@@ -59,6 +59,18 @@ exports[`Project detail page container it should render correctly 1`] = `
     >
       <withApollo(ProjectChartContainer)
         ticker="ANT"
+        twitter={
+          Object {
+            "data": Object {
+              "followersCount": undefined,
+              "loading": true,
+            },
+            "history": Object {
+              "items": Array [],
+              "loading": true,
+            },
+          }
+        }
       />
     </Panel>
     <Component>

@@ -86,7 +86,7 @@
 
 .chart-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-top: 10px;
 }
@@ -123,7 +123,7 @@
 .currency-filter .activated,
 .marketcap-toggle .activated {
   background: gray;
-  color: white !important;
+  color: white;
 }
 
 .time-filter .disabled,

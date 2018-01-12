@@ -1,0 +1,17 @@
+.analytics-trend-row {
+  display: flex;
+  border-bottom: 1px solid rgba(207, 215, 223, 0.5);
+  padding: 16px 20px;
+  font-size: 20px;
+}
+
+.analytics-trend-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.analytics-trend-details {
+  color: #009663;
+  font-weight: 500;
+}

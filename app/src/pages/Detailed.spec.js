@@ -53,6 +53,12 @@ describe('Project detail page container', () => {
       PriceQuery={{
         loading: true
       }}
+      TwitterData={{
+        loading: true
+      }}
+      TwitterHistoryData={{
+        loading: true
+      }}
       match={match}
       />)
     expect(toJson(pdp)).toMatchSnapshot()

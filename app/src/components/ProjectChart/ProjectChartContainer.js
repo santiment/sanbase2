@@ -279,6 +279,7 @@ class ProjectChartContainer extends Component {
             setSelected={this.setSelected}
             changeDates={this.onDatesChange}
             onFocusChange={this.onFocusChange}
+            twitter={this.props.twitter}
             {...this.state} />}
       </div>
     )

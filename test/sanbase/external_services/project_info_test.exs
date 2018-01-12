@@ -30,10 +30,12 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
       coinmarketcap_id: "santiment",
       github_link: "https://github.com/santiment",
       main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098",
-      contract_block_number: 3972935
+      contract_block_number: 3972935,
+      token_decimals: 18
     }, project)
 
     assert project.github_link == "https://github.com/santiment"
+    assert project.token_decimals == 18
     assert Project.initial_ico(project).main_contract_address == "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
     assert Project.initial_ico(project).contract_block_number == 3972935
   end

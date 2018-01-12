@@ -78,10 +78,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     fetch_price_data(project)
   end
 
-  defp fetch_project_info(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+  defp fetch_project_info(project) do
     if project_info_missing?(project) do
-      {:ok, _project} = %ProjectInfo{coinmarketcap_id: coinmarketcap_id}
+      {:ok, _project} = ProjectInfo.from_project(project)
       |> ProjectInfo.fetch_coinmarketcap_info()
+      |> ProjectInfo.fetch_etherscan_token_summary()
       |> ProjectInfo.fetch_contract_info()
       |> ProjectInfo.update_project(project)
     end

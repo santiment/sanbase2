@@ -14,6 +14,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.Logger)
 
+  @max_redirects 10
+
   def fetch_address_page(address) do
     case get("/address/#{address}") do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -161,5 +163,44 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> String.split()
     |> List.first()
     |> D.new()
+  end
+
+  defp total_supply(html) do
+    Floki.find(html, ~s/td:fl-contains('Total Supply') + td/)
+    |> hd
+    |> Floki.text
+    |> parse_total_supply
+  end
+
+  defp main_contract_address(html) do
+    Floki.find(html, ~s/td:fl-contains('Contract Address') + td/)
+    |> hd
+    |> Floki.text
+  end
+
+  defp token_decimals(html) do
+    Floki.find(html, ~s/td:fl-contains('Token Decimals') + td/)
+    |> hd
+    |> Floki.text
+    |> parse_token_decimals
+  end
+
+  defp parse_token_decimals(nil), do: 0
+
+  defp parse_token_decimals(token_decimals) do
+    token_decimals
+    |> String.trim()
+    |> String.to_integer()
+  end
+
+  defp parse_total_supply(nil), do: D.new(0)
+
+  defp parse_total_supply(total_supply) do
+    total_supply
+    |> String.trim()
+    |> String.replace(",", "")
+    |> String.split()
+    |> List.first
+    |> D.new
   end
 end

@@ -21,7 +21,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
       ticker: ticker(html),
       main_contract_address: main_contract_address(html),
       website_link: website_link(html),
-      github_link: github_link(html)
+      github_link: github_link(html),
+      etherscan_token_name: etherscan_token_name(html)
     }
   end
 
@@ -45,6 +46,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   defp github_link(html) do
     Floki.attribute(html, "a:fl-contains('Source Code')", "href")
     |> List.first
+  end
+
+  defp etherscan_token_name(html) do
+    Floki.attribute(html, "a:fl-contains('Explorer')", "href")
+    |> Enum.map(fn link ->
+      Regex.run(~r{https://etherscan.io/token/(.+)}, link)
+    end)
+    |> Enum.find(&(&1))
+    |> case do
+      nil -> nil
+      list -> List.last(list)
+    end
   end
 
   defp main_contract_address(html) do

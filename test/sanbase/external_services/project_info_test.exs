@@ -55,6 +55,22 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     assert expected_project_info == ProjectInfo.from_project(project)
   end
 
+  test "creating project info from a project" do
+    project = %Project{coinmarketcap_id: "coinmarketcap_id", name: "Name"}
+    |> Repo.insert!
+
+    %Ico{main_contract_address: "address", project_id: project.id}
+    |> Repo.insert!
+
+    expected_project_info = %ProjectInfo{
+      coinmarketcap_id: "coinmarketcap_id",
+      name: "Name",
+      main_contract_address: "address"
+    }
+
+    assert expected_project_info == ProjectInfo.from_project(project)
+  end
+
   test "updating project info if there is no ico attached to it" do
     project =
       %Project{coinmarketcap_id: "santiment", name: "Santiment"}

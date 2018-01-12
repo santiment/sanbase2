@@ -73,7 +73,7 @@ const fetchGithubActivityHistoryFromStartToEndDate = (
             from: $from,
             to: $to,
             interval: $interval
-            movingAverageInterval: "3h"
+            movingAverageInterval: 7
             transform: "movingAverage"
           ) {
             datetime,

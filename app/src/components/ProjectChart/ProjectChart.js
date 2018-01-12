@@ -22,7 +22,8 @@ const COLORS = {
   volume: 'rgba(49, 107, 174, 0.4)',
   marketcap: 'rgb(200, 47, 63)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
-  twitter: 'rgba(16, 195, 245, 0.7)' // Ultra Violet color #604c8d'
+  twitter: 'rgba(16, 195, 245, 0.7)', // Ultra Violet color #604c8d'
+  burnRate: 'rgba(252, 138, 23, 0.7)'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -257,8 +258,8 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-6',
-    borderColor: COLORS.twitter,
-    backgroundColor: COLORS.twitter,
+    borderColor: COLORS.burnRate,
+    backgroundColor: COLORS.burnRate,
     borderWidth: 1,
     pointBorderWidth: 2,
     pointRadius: 2,
@@ -455,7 +456,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Burn Rate',
-        fontColor: COLORS.twitter
+        fontColor: COLORS.burnRate
       },
       ticks: {
         display: true

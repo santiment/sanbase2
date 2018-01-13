@@ -101,15 +101,48 @@ exports[`Project detail page container it should render correctly 1`] = `
     <Panel
       withoutHeader={true}
     >
-      <withApollo(ProjectChartContainer)
+      <ProjectChartContainer
+        burnRate={
+          Object {
+            "error": false,
+            "items": Array [],
+            "loading": true,
+          }
+        }
+        github={
+          Object {
+            "history": Object {
+              "items": Array [],
+              "loading": true,
+            },
+          }
+        }
+        onDatesChange={[Function]}
+        price={
+          Object {
+            "history": Object {
+              "items": Array [],
+              "loading": true,
+            },
+          }
+        }
         ticker="ANT"
+        transactionVolume={
+          Object {
+            "error": false,
+            "items": Array [],
+            "loading": true,
+          }
+        }
         twitter={
           Object {
             "data": Object {
+              "error": false,
               "followersCount": undefined,
               "loading": true,
             },
             "history": Object {
+              "error": false,
               "items": Array [],
               "loading": true,
             },
@@ -117,32 +150,6 @@ exports[`Project detail page container it should render correctly 1`] = `
         }
       />
     </Panel>
-    <Component>
-      <PanelBlock
-        classes=""
-        isUnauthorized={false}
-        title="Blockchain Analytics"
-      />
-      <div
-        className="analysis"
-      >
-        <PanelBlock
-          classes=""
-          isUnauthorized={false}
-          title="Signals/Volatility"
-        />
-        <PanelBlock
-          classes=""
-          isUnauthorized={false}
-          title="Expert Analyses"
-        />
-        <PanelBlock
-          classes=""
-          isUnauthorized={false}
-          title="News/Press"
-        />
-      </div>
-    </Component>
     <div
       className="information"
     >

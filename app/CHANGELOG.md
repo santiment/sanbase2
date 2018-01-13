@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+- 2018-13-01 | v.0.3.2:
+
+  Added Twitter, Burn Rate
+  Async loading all data
+  Fix origin link
+
 - 2018-05-01 | v.0.3.1:
 
   Added Github Activity

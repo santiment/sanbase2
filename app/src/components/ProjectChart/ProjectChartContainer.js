@@ -132,8 +132,7 @@ class ProjectChartContainer extends Component {
           github={this.props.github}
           burnRate={this.props.burnRate}
           history={this.props.price.history.items}
-          isLoading={this.props.price.history.loading ||
-            this.props.burnRate.loading}
+          isLoading={this.props.price.history.loading}
           isEmpty={this.props.price.history.items.length === 0}
           {...this.state} />
       </div>

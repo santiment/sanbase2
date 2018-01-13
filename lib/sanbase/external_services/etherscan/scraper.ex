@@ -5,6 +5,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.ProjectInfo
 
+  require Logger
+
   plug RateLimiting.Middleware, name: :etherscan_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://etherscan.io"
   plug Tesla.Middleware.Logger
@@ -26,6 +28,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
       %Tesla.Env{status: 200, body: body} -> body
       %Tesla.Env{status: 302, headers: %{"location" => "/token/" <> name}} ->
         fetch_token_page(name, redirects + 1)
+      response ->
+        Logger.warn("Invalid response from etherscan for #{token_name}: #{inspect(response)}")
+        ""
     end
   end
 

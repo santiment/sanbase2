@@ -127,6 +127,13 @@ exports[`Project detail page container it should render correctly 1`] = `
           }
         }
         ticker="ANT"
+        transactionVolume={
+          Object {
+            "error": false,
+            "items": Array [],
+            "loading": true,
+          }
+        }
         twitter={
           Object {
             "data": Object {

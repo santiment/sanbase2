@@ -600,7 +600,6 @@ export const ProjectChart = ({
     props.isToggledBurnRate,
     props.isToggledTransactionVolume)
   const chartOptions = makeOptionsFromProps(props)
-  console.log(chartData)
 
   return (
     <div className='project-dp-chart'>

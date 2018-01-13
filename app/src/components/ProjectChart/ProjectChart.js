@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import cx from 'classnames'
 import moment from 'moment'
 import {
   compose,
@@ -7,6 +8,7 @@ import {
   withState,
   withHandlers
 } from 'recompose'
+import { Popup, Icon } from 'semantic-ui-react'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { Bar, Chart } from 'react-chartjs-2'
@@ -22,7 +24,9 @@ const COLORS = {
   volume: 'rgba(49, 107, 174, 0.4)',
   marketcap: 'rgb(200, 47, 63)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
-  twitter: 'rgba(16, 195, 245, 0.7)' // Ultra Violet color #604c8d'
+  twitter: 'rgba(16, 195, 245, 0.7)', // Ultra Violet color #604c8d'
+  burnRate: 'rgba(252, 138, 23, 0.7)',
+  transactionVolume: 'rgba(39, 166, 153, 0.7)'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -95,11 +99,27 @@ export const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
   </div>
 )
 
-export const ToggleBtn = ({isToggled, toggle, children}) => (
-  <div className='marketcap-toggle'>
-    <div
-      className={isToggled ? 'activated' : ''}
-      onClick={() => toggle(!isToggled)}>{children}</div>
+export const ToggleBtn = ({
+  loading,
+  disabled,
+  isToggled,
+  toggle,
+  children
+}) => (
+  <div className={cx({
+    'toggleBtn': true,
+    'activated': isToggled,
+    'disabled': disabled || loading
+  })}
+    onClick={() => !disabled && !loading && toggle(!isToggled)}>
+    {disabled
+      ? <Popup
+        trigger={<span>{children}</span>}
+        content="Looks like we don't have any data"
+        position='top center'
+      />
+    : children}
+    {loading && '(loading...)'}
   </div>
 )
 
@@ -164,12 +184,17 @@ const ProjectChartHeader = ({
 
 const getChartDataFromHistory = (
   history = [],
-  twitter,
+  twitter = [],
+  github = [],
+  burnRate = [],
+  transactionVolume = [],
   isToggledBTC,
   isToggledMarketCap,
   isToggledGithubActivity,
   isToggledVolume,
-  isToggledTwitter
+  isToggledTwitter,
+  isToggledBurnRate,
+  isToggledTransactionVolume
 ) => {
   const labels = history ? history.map(data => moment(data.datetime).utc()) : []
   const priceDataset = {
@@ -179,6 +204,7 @@ const getChartDataFromHistory = (
     borderColor: COLORS.price,
     borderWidth: 1,
     backgroundColor: 'rgba(239, 242, 236, 0.5)',
+    hitRadius: 2,
     yAxisID: 'y-axis-1',
     data: history ? history.map(data => {
       if (isToggledBTC) {
@@ -211,12 +237,12 @@ const getChartDataFromHistory = (
     backgroundColor: COLORS.marketcap,
     borderWidth: 1,
     pointBorderWidth: 2,
-    data: history ? history.map(data => {
+    data: history.map(data => {
       if (isToggledBTC) {
         return parseFloat(data.marketcapBTC)
       }
       return parseFloat(data.marketcap)
-    }) : []}
+    })}
   const githubActivityDataset = !isToggledGithubActivity ? null : {
     label: 'Github Activity',
     type: 'line',
@@ -226,9 +252,13 @@ const getChartDataFromHistory = (
     backgroundColor: COLORS.githubActivity,
     borderWidth: 1,
     pointBorderWidth: 2,
-    data: history ? history.map(data => {
-      return parseInt(data.githubActivity, 10)
-    }) : []}
+    pointRadius: 2,
+    data: github.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.activity
+      }
+    })}
   const twitterDataset = !isToggledTwitter ? null : {
     label: 'Twitter',
     type: 'line',
@@ -239,12 +269,44 @@ const getChartDataFromHistory = (
     borderWidth: 1,
     pointBorderWidth: 2,
     pointRadius: 2,
-    data: twitter ? twitter.history.items.map(data => {
+    data: twitter.map(data => {
       return {
         x: moment(data.datetime),
         y: data.followersCount
       }
-    }) : []}
+    })}
+  const burnrateDataset = !isToggledBurnRate ? null : {
+    label: 'Burn Rate',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-6',
+    borderColor: COLORS.burnRate,
+    backgroundColor: COLORS.burnRate,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: burnRate.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.burnRate / 10e8
+      }
+    })}
+  const transactionVolumeDataset = !isToggledTransactionVolume ? null : {
+    label: 'Transaction Volume',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-7',
+    borderColor: COLORS.transactionVolume,
+    backgroundColor: COLORS.transactionVolume,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: transactionVolume.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.transactionVolume / 10e8
+      }
+    })}
   return {
     labels,
     datasets: [
@@ -252,7 +314,9 @@ const getChartDataFromHistory = (
       marketcapDataset,
       githubActivityDataset,
       volumeDataset,
-      twitterDataset
+      twitterDataset,
+      burnrateDataset,
+      transactionVolumeDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -274,7 +338,7 @@ const makeOptionsFromProps = props => ({
   showTooltips: true,
   pointDot: false,
   scaleShowLabels: false,
-  pointHitDetectionRadius: 0.5,
+  pointHitDetectionRadius: 2,
   datasetFill: false,
   scaleFontSize: 0,
   animation: false,
@@ -303,8 +367,16 @@ const makeOptionsFromProps = props => ({
       },
       label: (tooltipItem, data) => {
         const label = data.datasets[tooltipItem.datasetIndex].label.toString()
-        if (label === 'Github Activity' || label === 'Twitter') {
+        if (label === 'Github Activity' ||
+          label === 'Burn Rate'
+        ) {
           return `${label}: ${tooltipItem.yLabel}`
+        }
+        if (label === 'Transaction Volume') {
+          return `${label}: ${tooltipItem.yLabel / 10e8} tokens`
+        }
+        if (label === 'Twitter') {
+          return `${label}: ${tooltipItem.yLabel} followers`
         }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
@@ -317,7 +389,7 @@ const makeOptionsFromProps = props => ({
   },
   elements: {
     point: {
-      hitRadius: 1,
+      hitRadius: 2,
       hoverRadius: 2,
       radius: 0
     }
@@ -391,12 +463,14 @@ const makeOptionsFromProps = props => ({
       ticks: {
         display: true,
         // same hack as in volume.
-        max: parseInt(Math.max(...props.history.map(data => data.githubActivity)) * 2.2, 10)
+        max: parseInt(
+          Math.max(...props.github.history.items.map(data => data.activity)) * 2.2, 10)
       },
       gridLines: {
         display: false
       },
-      display: props.isToggledGithubActivity,
+      display: props.isToggledGithubActivity &&
+        props.github.history.items.length !== 0,
       position: 'right'
     }, {
       id: 'y-axis-5',
@@ -416,11 +490,67 @@ const makeOptionsFromProps = props => ({
       gridLines: {
         display: false
       },
-      display: props.isToggledTwitter,
+      display: props.isToggledTwitter &&
+        props.twitter.history.items.length !== 0,
+      position: 'right'
+    }, {
+      id: 'y-axis-6',
+      type: 'linear',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'Burn Rate',
+        fontColor: COLORS.burnRate
+      },
+      ticks: {
+        display: true,
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return value / 10e8
+        }
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledBurnRate &&
+        props.burnRate.items.length !== 0,
+      position: 'right'
+    }, {
+      id: 'y-axis-7',
+      type: 'linear',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'Transaction Volume',
+        fontColor: COLORS.transactionVolume
+      },
+      ticks: {
+        display: true,
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return value / 10e8
+        }
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledTransactionVolume &&
+        props.transactionVolume.items.length !== 0,
       position: 'right'
     }],
     xAxes: [{
       type: 'time',
+      time: {
+        min: props.history && props.history.length > 0
+          ? moment(props.history[0].datetime)
+          : moment()
+      },
       ticks: {
         autoSkipPadding: 1,
         callback: function (value, index, values) {
@@ -458,13 +588,19 @@ export const ProjectChart = ({
   }
   const chartData = getChartDataFromHistory(
     props.history,
-    props.twitter,
+    props.twitter.history.items,
+    props.github.history.items,
+    props.burnRate.items,
+    props.transactionVolume.items,
     props.isToggledBTC,
     props.isToggledMarketCap,
     props.isToggledGithubActivity,
     props.isToggledVolume,
-    props.isToggledTwitter)
+    props.isToggledTwitter,
+    props.isToggledBurnRate,
+    props.isToggledTransactionVolume)
   const chartOptions = makeOptionsFromProps(props)
+  console.log(chartData)
 
   return (
     <div className='project-dp-chart'>
@@ -475,7 +611,6 @@ export const ProjectChart = ({
         <Bar
           data={chartData}
           options={chartOptions}
-          redraw
           height={100}
           onElementsClick={elems => {
             !props.isDesktop && elems[0] && setSelected(elems[0]._index)
@@ -496,14 +631,48 @@ export const ProjectChart = ({
             Volume
           </ToggleBtn>
           <ToggleBtn
-            isToggled={props.isToggledGithubActivity}
+            loading={props.github.history.loading}
+            disabled={props.github.history.items.length === 0}
+            isToggled={props.isToggledGithubActivity &&
+              props.github.history.items.length !== 0}
             toggle={props.toggleGithubActivity}>
             Github Activity
           </ToggleBtn>
           <ToggleBtn
-            isToggled={props.isToggledTwitter}
+            loading={props.twitter.history.loading}
+            disabled={props.twitter.history.items.length === 0}
+            isToggled={props.isToggledTwitter &&
+              props.twitter.history.items.length !== 0}
             toggle={props.toggleTwitter}>
             Twitter
+          </ToggleBtn>
+          <ToggleBtn
+            loading={props.burnRate.loading}
+            disabled={props.burnRate.items.length === 0}
+            isToggled={props.isToggledBurnRate &&
+              props.burnRate.items.length !== 0}
+            toggle={props.toggleBurnRate}>
+            Burn Rate&nbsp;
+            <Popup
+              trigger={<Icon name='info circle' />}
+              content='Token Burn Rate shows the amount of movement
+              of tokens between addresses. One use for this metric is
+              to spot large amounts of tokens moving after sitting for long periods of time'
+              position='top left'
+            />
+          </ToggleBtn>
+          <ToggleBtn
+            loading={props.transactionVolume.loading}
+            disabled={props.transactionVolume.items.length === 0}
+            isToggled={props.isToggledTransactionVolume &&
+              props.transactionVolume.items.length !== 0}
+            toggle={props.toggleTransactionVolume}>
+            Transaction Volume&nbsp;
+            <Popup
+              trigger={<Icon name='info circle' />}
+              content='Total amount of tokens that were transacted on the blockchain'
+              position='top left'
+            />
           </ToggleBtn>
         </div>
         <div>
@@ -524,6 +693,8 @@ const enhance = compose(
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledVolume', 'toggleVolume', true),
   withState('isToggledTwitter', 'toggleTwitter', false),
+  withState('isToggledBurnRate', 'toggleBurnRate', false),
+  withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
   pure
 )
 

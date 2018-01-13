@@ -4,6 +4,7 @@ RUN mkdir /usr/app
 WORKDIR /usr/app
 
 COPY package.json /usr/app/package.json
+COPY yarn.lock /usr/app/yarn.lock
 RUN yarn
 
 COPY . /usr/app

@@ -99,6 +99,7 @@ export const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
 )
 
 export const ToggleBtn = ({
+  loading,
   disabled,
   isToggled,
   toggle,
@@ -107,9 +108,9 @@ export const ToggleBtn = ({
   <div className={cx({
     'toggleBtn': true,
     'activated': isToggled,
-    'disabled': disabled
+    'disabled': disabled || loading
   })}
-    onClick={() => !disabled && toggle(!isToggled)}>
+    onClick={() => !disabled && !loading && toggle(!isToggled)}>
     {disabled
       ? <Popup
         trigger={<span>{children}</span>}
@@ -117,6 +118,7 @@ export const ToggleBtn = ({
         position='top center'
       />
     : children}
+    {loading && '(loading...)'}
   </div>
 )
 
@@ -578,6 +580,7 @@ export const ProjectChart = ({
             Volume
           </ToggleBtn>
           <ToggleBtn
+            loading={props.github.history.loading}
             disabled={props.github.history.items.length === 0}
             isToggled={props.isToggledGithubActivity &&
               props.github.history.items.length !== 0}
@@ -585,6 +588,7 @@ export const ProjectChart = ({
             Github Activity
           </ToggleBtn>
           <ToggleBtn
+            loading={props.twitter.history.loading}
             disabled={props.twitter.history.items.length === 0}
             isToggled={props.isToggledTwitter &&
               props.twitter.history.items.length !== 0}
@@ -592,6 +596,7 @@ export const ProjectChart = ({
             Twitter
           </ToggleBtn>
           <ToggleBtn
+            loading={props.burnRate.loading}
             disabled={props.burnRate.items.length === 0}
             isToggled={props.isToggledBurnRate &&
               props.burnRate.items.length !== 0}

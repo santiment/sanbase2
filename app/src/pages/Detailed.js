@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 import {
   compose,
   lifecycle,
+  withState,
   pure
 } from 'recompose'
 import { FadeIn } from 'animate-components'
@@ -15,9 +16,7 @@ import ProjectIcon from './../components/ProjectIcon'
 import PanelBlock from './../components/PanelBlock'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
-import ProjectChartContainer, {
-  makeItervalBounds
-} from './../components/ProjectChart/ProjectChartContainer'
+import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
 import Panel from './../components/Panel'
 import Search from './../components/Search'
 import PercentChanges from './../components/PercentChanges'
@@ -56,14 +55,34 @@ export const Detailed = ({
   projects,
   loading,
   PriceQuery,
-  TwitterData,
-  TwitterHistoryData,
-  HistoryPrice,
-  GithubActivity,
-  BurnRate,
+  TwitterData = {
+    loading: true,
+    error: false,
+    twitterData: []
+  },
+  TwitterHistoryData = {
+    loading: true,
+    error: false,
+    twitterHistoryData: []
+  },
+  HistoryPrice = {
+    loading: true,
+    error: false,
+    historyPrice: []
+  },
+  GithubActivity = {
+    loading: true,
+    error: false,
+    burnRate: []
+  },
+  BurnRate = {
+    loading: true,
+    error: false,
+    burnRate: []
+  },
   user,
   generalInfo,
-  changeDatetimeFilter
+  changeChartVars
 }) => {
   if (loading) {
     return (
@@ -84,10 +103,12 @@ export const Detailed = ({
 
   const twitter = {
     history: {
+      error: TwitterHistoryData.error || false,
       loading: TwitterHistoryData.loading,
       items: TwitterHistoryData.historyTwitterData || []
     },
     data: {
+      error: TwitterData.error || false,
       loading: TwitterData.loading,
       followersCount: TwitterData.twitterData
         ? TwitterData.twitterData.followersCount
@@ -117,7 +138,7 @@ export const Detailed = ({
 
   const burnRate = {
     loading: BurnRate.loading,
-    error: BurnRate.error,
+    error: BurnRate.error || false,
     items: BurnRate.burnRate || []
   }
 
@@ -160,33 +181,13 @@ export const Detailed = ({
             price={price}
             github={github}
             burnRate={burnRate}
-            onDatesChange={async (from, to, interval, ticker) => {
-              try {
-                await TwitterHistoryData.refetch({
-                  from,
-                  to,
-                  ticker
-                })
-                await HistoryPrice.refetch({
-                  from,
-                  to,
-                  ticker,
-                  interval
-                })
-                await GithubActivity.refetch({
-                  from,
-                  to,
-                  ticker,
-                  interval: '1d'
-                })
-                await BurnRate.refetch({
-                  from,
-                  to,
-                  ticker
-                })
-              } catch (e) {
-                console.log(e)
-              }
+            onDatesChange={(from, to, interval, ticker) => {
+              changeChartVars({
+                from,
+                to,
+                interval,
+                ticker
+              })
             }}
             ticker={project.ticker} />
         </Panel>
@@ -366,8 +367,7 @@ const mapPropsToOptions = ({match, projects, user}) => {
     skip: !project || !user.token,
     variables: {
       id: project ? project.id : 0
-    },
-    pollInterval: 2000 * 60
+    }
   }
 }
 
@@ -376,6 +376,12 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  withState('chartVars', 'changeChartVars', {
+    from: undefined,
+    to: undefined,
+    interval: undefined,
+    ticker: undefined
+  }),
   lifecycle({
     componentDidMount () {
       this.props.retrieveProjects()
@@ -389,8 +395,7 @@ const enhance = compose(
         skip: !project,
         variables: {
           'ticker': project ? project.ticker.toUpperCase() : 'SAN'
-        },
-        pollInterval: 2000 * 60
+        }
       }
     }
   }),
@@ -401,50 +406,58 @@ const enhance = compose(
   }),
   graphql(queryTwitterData, {
     name: 'TwitterData',
-    options: ({match}) => {
+    options: ({chartVars}) => {
+      const { ticker } = chartVars
       return {
+        skip: !ticker,
+        errorPolicy: 'all',
         variables: {
-          'ticker': match.params.ticker.toUpperCase()
+          ticker
         }
       }
     }
   }),
   graphql(queryTwitterHistory, {
     name: 'TwitterHistoryData',
-    options: ({match}) => {
-      const {from, to} = makeItervalBounds('1m')
+    options: ({chartVars}) => {
+      const {from, to, ticker} = chartVars
       return {
+        skip: !from,
+        errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker: match.params.ticker.toUpperCase()
+          ticker
         }
       }
     }
   }),
   graphql(queryHistoryPrice, {
     name: 'HistoryPrice',
-    options: ({match}) => {
-      const {from, to} = makeItervalBounds('1m')
+    options: ({chartVars}) => {
+      const {from, to, ticker, interval} = chartVars
       return {
+        skip: !from,
+        errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker: match.params.ticker.toUpperCase(),
-          interval: '1h'
+          ticker,
+          interval
         }
       }
     }
   }),
   graphql(queryGithubActivity, {
     name: 'GithubActivity',
-    options: ({match}) => {
-      const {from, to} = makeItervalBounds('1m')
+    options: ({match, chartVars}) => {
+      const {from, to, ticker} = chartVars
       return {
+        skip: !from,
         variables: {
           from,
           to,
-          ticker: match.params.ticker.toUpperCase(),
+          ticker,
           interval: '1d'
         }
       }
@@ -452,13 +465,15 @@ const enhance = compose(
   }),
   graphql(queryBurnRate, {
     name: 'BurnRate',
-    options: ({match}) => {
-      const {from, to} = makeItervalBounds('1m')
+    options: ({chartVars}) => {
+      const {from, to, ticker} = chartVars
       return {
+        skip: !from,
+        errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker: match.params.ticker.toUpperCase()
+          ticker
         }
       }
     }

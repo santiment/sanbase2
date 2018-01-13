@@ -104,7 +104,7 @@ exports[`Project detail page container it should render correctly 1`] = `
       <ProjectChartContainer
         burnRate={
           Object {
-            "error": undefined,
+            "error": false,
             "items": Array [],
             "loading": true,
           }
@@ -130,10 +130,12 @@ exports[`Project detail page container it should render correctly 1`] = `
         twitter={
           Object {
             "data": Object {
+              "error": false,
               "followersCount": undefined,
               "loading": true,
             },
             "history": Object {
+              "error": false,
               "items": Array [],
               "loading": true,
             },

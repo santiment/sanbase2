@@ -87,7 +87,8 @@ export const Detailed = ({
   },
   user,
   generalInfo,
-  changeChartVars
+  changeChartVars,
+  isDesktop
 }) => {
   if (loading) {
     return (
@@ -188,6 +189,7 @@ export const Detailed = ({
         </div>
         <Panel withoutHeader>
           <ProjectChartContainer
+            isDesktop={isDesktop}
             twitter={twitter}
             price={price}
             github={github}

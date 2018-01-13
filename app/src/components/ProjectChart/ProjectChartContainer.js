@@ -131,6 +131,7 @@ class ProjectChartContainer extends Component {
           twitter={this.props.twitter}
           github={this.props.github}
           burnRate={this.props.burnRate}
+          transactionVolume={this.props.transactionVolume}
           history={this.props.price.history.items}
           isLoading={this.props.price.history.loading}
           isEmpty={this.props.price.history.items.length === 0}

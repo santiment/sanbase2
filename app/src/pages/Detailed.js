@@ -80,6 +80,11 @@ export const Detailed = ({
     error: false,
     burnRate: []
   },
+  TransactionVolume = {
+    loading: true,
+    error: false,
+    transactionVolume: []
+  },
   user,
   generalInfo,
   changeChartVars
@@ -142,6 +147,12 @@ export const Detailed = ({
     items: BurnRate.burnRate || []
   }
 
+  const transactionVolume = {
+    loading: TransactionVolume.loading,
+    error: TransactionVolume.error || false,
+    items: TransactionVolume.transactionVolume || []
+  }
+
   return (
     <div className='page detailed'>
       <Search
@@ -181,6 +192,7 @@ export const Detailed = ({
             price={price}
             github={github}
             burnRate={burnRate}
+            transactionVolume={transactionVolume}
             onDatesChange={(from, to, interval, ticker) => {
               changeChartVars({
                 from,
@@ -346,6 +358,19 @@ const queryBurnRate = gql`
     }
 }`
 
+const queryTransactionVolume = gql`
+  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime) {
+    transactionVolume(
+      ticker: $ticker,
+      from: $from,
+      to: $to
+    ) {
+      datetime
+      transactionVolume
+      __typename
+    }
+}`
+
 const mapDataToProps = ({ProjectQuery}) => {
   const isLoading = ProjectQuery.loading
   const isEmpty = !!ProjectQuery.project
@@ -465,6 +490,21 @@ const enhance = compose(
   }),
   graphql(queryBurnRate, {
     name: 'BurnRate',
+    options: ({chartVars}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker
+        }
+      }
+    }
+  }),
+  graphql(queryTransactionVolume, {
+    name: 'TransactionVolume',
     options: ({chartVars}) => {
       const {from, to, ticker} = chartVars
       return {

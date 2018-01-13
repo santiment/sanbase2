@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     url = "#{etherbi_url}/burn_rate?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}"
 
     options = [recv_timeout: @recv_timeout]
-    case @http_client.get(url, options) do
+    case @http_client.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Poison.decode(body)
         result =
@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     url = "#{etherbi_url}/transaction_volume?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}"
 
     options = [recv_timeout: @recv_timeout]
-    case @http_client.get(url, options) do
+    case @http_client.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Poison.decode(body)
 

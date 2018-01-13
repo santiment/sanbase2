@@ -25,7 +25,8 @@ const COLORS = {
   marketcap: 'rgb(200, 47, 63)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
   twitter: 'rgba(16, 195, 245, 0.7)', // Ultra Violet color #604c8d'
-  burnRate: 'rgba(252, 138, 23, 0.7)'
+  burnRate: 'rgba(252, 138, 23, 0.7)',
+  transactionVolume: 'rgba(39, 166, 153, 0.7)'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -186,12 +187,14 @@ const getChartDataFromHistory = (
   twitter = [],
   github = [],
   burnRate = [],
+  transactionVolume = [],
   isToggledBTC,
   isToggledMarketCap,
   isToggledGithubActivity,
   isToggledVolume,
   isToggledTwitter,
-  isToggledBurnRate
+  isToggledBurnRate,
+  isToggledTransactionVolume
 ) => {
   const labels = history ? history.map(data => moment(data.datetime).utc()) : []
   const priceDataset = {
@@ -288,6 +291,22 @@ const getChartDataFromHistory = (
         y: data.burnRate / 10e8
       }
     })}
+  const transactionVolumeDataset = !isToggledTransactionVolume ? null : {
+    label: 'Transaction Volume',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-7',
+    borderColor: COLORS.transactionVolume,
+    backgroundColor: COLORS.transactionVolume,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: transactionVolume.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.transactionVolume / 10e8
+      }
+    })}
   return {
     labels,
     datasets: [
@@ -296,7 +315,8 @@ const getChartDataFromHistory = (
       githubActivityDataset,
       volumeDataset,
       twitterDataset,
-      burnrateDataset
+      burnrateDataset,
+      transactionVolumeDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -351,6 +371,9 @@ const makeOptionsFromProps = props => ({
           label === 'Burn Rate'
         ) {
           return `${label}: ${tooltipItem.yLabel}`
+        }
+        if (label === 'Transaction Volume') {
+          return `${label}: ${tooltipItem.yLabel / 10e8} tokens`
         }
         if (label === 'Twitter') {
           return `${label}: ${tooltipItem.yLabel} followers`
@@ -495,6 +518,31 @@ const makeOptionsFromProps = props => ({
       display: props.isToggledBurnRate &&
         props.burnRate.items.length !== 0,
       position: 'right'
+    }, {
+      id: 'y-axis-7',
+      type: 'linear',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'Transaction Volume',
+        fontColor: COLORS.transactionVolume
+      },
+      ticks: {
+        display: true,
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return value / 10e8
+        }
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledTransactionVolume &&
+        props.transactionVolume.items.length !== 0,
+      position: 'right'
     }],
     xAxes: [{
       type: 'time',
@@ -543,13 +591,16 @@ export const ProjectChart = ({
     props.twitter.history.items,
     props.github.history.items,
     props.burnRate.items,
+    props.transactionVolume.items,
     props.isToggledBTC,
     props.isToggledMarketCap,
     props.isToggledGithubActivity,
     props.isToggledVolume,
     props.isToggledTwitter,
-    props.isToggledBurnRate)
+    props.isToggledBurnRate,
+    props.isToggledTransactionVolume)
   const chartOptions = makeOptionsFromProps(props)
+  console.log(chartData)
 
   return (
     <div className='project-dp-chart'>
@@ -610,6 +661,19 @@ export const ProjectChart = ({
               position='top left'
             />
           </ToggleBtn>
+          <ToggleBtn
+            loading={props.transactionVolume.loading}
+            disabled={props.transactionVolume.items.length === 0}
+            isToggled={props.isToggledTransactionVolume &&
+              props.transactionVolume.items.length !== 0}
+            toggle={props.toggleTransactionVolume}>
+            Transaction Volume&nbsp;
+            <Popup
+              trigger={<Icon name='info circle' />}
+              content='Total amount of tokens that were transacted on the blockchain'
+              position='top left'
+            />
+          </ToggleBtn>
         </div>
         <div>
           <small className='trademark'>santiment.net</small>
@@ -630,6 +694,7 @@ const enhance = compose(
   withState('isToggledVolume', 'toggleVolume', true),
   withState('isToggledTwitter', 'toggleTwitter', false),
   withState('isToggledBurnRate', 'toggleBurnRate', false),
+  withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
   pure
 )
 

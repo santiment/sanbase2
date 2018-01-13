@@ -6,6 +6,7 @@ import gql from 'graphql-tag'
 import {
   compose,
   lifecycle,
+  withState,
   pure
 } from 'recompose'
 import { FadeIn } from 'animate-components'
@@ -16,9 +17,7 @@ import PanelBlock from './../components/PanelBlock'
 import { retrieveProjects } from './Cashflow.actions.js'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
-import ProjectChartContainer, {
-  makeItervalBounds
-} from './../components/ProjectChart/ProjectChartContainer'
+import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
 import Panel from './../components/Panel'
 import './Detailed.css'
 
@@ -263,8 +262,7 @@ const enhance = compose(
       return {
         variables: {
           'ticker': project ? project.ticker.toUpperCase() : 'SAN'
-        },
-        pollInterval: 2000 * 60
+        }
       }
     }
   })

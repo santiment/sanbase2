@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.1
--- Dumped by pg_dump version 9.6.1
+-- Dumped from database version 9.6.6
+-- Dumped by pg_dump version 9.6.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -96,6 +96,37 @@ ALTER SEQUENCE eth_accounts_id_seq OWNED BY eth_accounts.id;
 
 
 --
+-- Name: exchange_eth_addresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE exchange_eth_addresses (
+    id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    comments text
+);
+
+
+--
+-- Name: exchange_eth_addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE exchange_eth_addresses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: exchange_eth_addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE exchange_eth_addresses_id_seq OWNED BY exchange_eth_addresses.id;
+
+
+--
 -- Name: ico_currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -138,8 +169,6 @@ CREATE TABLE icos (
     tokens_issued_at_ico numeric,
     tokens_sold_at_ico numeric,
     funds_raised_btc numeric,
-    usd_btc_icoend numeric,
-    usd_eth_icoend numeric,
     minimal_cap_amount numeric,
     maximal_cap_amount numeric,
     cap_currency_id bigint,
@@ -149,6 +178,8 @@ CREATE TABLE icos (
     funds_raised_eth numeric,
     contract_block_number integer,
     contract_abi text,
+    usd_btc_icoend numeric,
+    usd_eth_icoend numeric,
     token_usd_ico_price numeric,
     token_eth_ico_price numeric,
     token_btc_ico_price numeric
@@ -665,6 +696,13 @@ ALTER TABLE ONLY eth_accounts ALTER COLUMN id SET DEFAULT nextval('eth_accounts_
 
 
 --
+-- Name: exchange_eth_addresses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY exchange_eth_addresses ALTER COLUMN id SET DEFAULT nextval('exchange_eth_addresses_id_seq'::regclass);
+
+
+--
 -- Name: ico_currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -790,6 +828,14 @@ ALTER TABLE ONLY currencies
 
 ALTER TABLE ONLY eth_accounts
     ADD CONSTRAINT eth_accounts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: exchange_eth_addresses exchange_eth_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY exchange_eth_addresses
+    ADD CONSTRAINT exchange_eth_addresses_pkey PRIMARY KEY (id);
 
 
 --
@@ -940,6 +986,13 @@ CREATE UNIQUE INDEX currencies_code_index ON currencies USING btree (code);
 --
 
 CREATE UNIQUE INDEX eth_accounts_address_index ON eth_accounts USING btree (address);
+
+
+--
+-- Name: exchange_eth_addresses_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX exchange_eth_addresses_address_index ON exchange_eth_addresses USING btree (address);
 
 
 --
@@ -1220,5 +1273,5 @@ ALTER TABLE ONLY user_followed_project
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910);
 

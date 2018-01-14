@@ -219,6 +219,37 @@ ALTER SEQUENCE eth_accounts_id_seq OWNED BY eth_accounts.id;
 
 
 --
+-- Name: exchange_eth_addresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE exchange_eth_addresses (
+    id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    comments text
+);
+
+
+--
+-- Name: exchange_eth_addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE exchange_eth_addresses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: exchange_eth_addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE exchange_eth_addresses_id_seq OWNED BY exchange_eth_addresses.id;
+
+
+--
 -- Name: ico_currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -266,6 +297,8 @@ CREATE TABLE public.icos (
     comments text,
     contract_block_number integer,
     contract_abi text,
+    usd_btc_icoend numeric,
+    usd_eth_icoend numeric,
     token_usd_ico_price numeric,
     token_eth_ico_price numeric,
     token_btc_ico_price numeric
@@ -1486,6 +1519,13 @@ CREATE UNIQUE INDEX exchange_eth_addresses_address_index ON public.exchange_eth_
 --
 
 CREATE UNIQUE INDEX eth_accounts_address_index ON eth_accounts USING btree (address);
+
+
+--
+-- Name: exchange_eth_addresses_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX exchange_eth_addresses_address_index ON exchange_eth_addresses USING btree (address);
 
 
 --

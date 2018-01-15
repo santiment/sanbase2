@@ -57,49 +57,16 @@ defmodule Sanbase.Model.Ico do
     |> cast_assoc(:ico_currencies, required: false, with: &IcoCurrencies.changeset_ex_admin/2)
   end
 
-  def funds_raised_all_ico_end_price(ico) do
-    ico = Repo.preload(ico, [ico_currencies: [:currency]])
-
-    %{funds_raised_usd: funds_raised_usd_ico_end_price(ico),
-      funds_raised_eth: funds_raised_eth_ico_end_price(ico),
-      funds_raised_btc: funds_raised_btc_ico_end_price(ico)}
+  def funds_raised_usd_ico_end_price(%Ico{end_date: end_date} = ico) when not is_nil(end_date) do
+    funds_raised_ico_end_price_from_currencies(ico, "USD", end_date)
   end
 
-  def funds_raised_usd_ico_end_price(%Ico{funds_raised_usd: nil, end_date: end_date} = ico) when not is_nil(end_date) do
-    funds_raised_ico_end_price_impl("USD", "ETH", ico.funds_raised_eth, "BTC", ico.funds_raised_btc, end_date)
-    |> case do
-      nil -> funds_raised_ico_end_price_from_currencies(ico, "USD", end_date)
-      funds_raised -> funds_raised
-    end
+  def funds_raised_eth_ico_end_price(%Ico{end_date: end_date} = ico) when not is_nil(end_date) do
+    funds_raised_ico_end_price_from_currencies(ico, "ETH", end_date)
   end
-  def funds_raised_usd_ico_end_price(%Ico{funds_raised_usd: funds_raised_usd}), do: funds_raised_usd
 
-  def funds_raised_eth_ico_end_price(%Ico{funds_raised_eth: nil, end_date: end_date} = ico) when not is_nil(end_date) do
-    funds_raised_ico_end_price_impl("ETH", "USD", ico.funds_raised_usd, "BTC", ico.funds_raised_btc, end_date)
-    |> case do
-      nil -> funds_raised_ico_end_price_from_currencies(ico, "ETH", end_date)
-      funds_raised -> funds_raised
-    end
-  end
-  def funds_raised_eth_ico_end_price(%Ico{funds_raised_eth: funds_raised_eth}), do: funds_raised_eth
-
-  def funds_raised_btc_ico_end_price(%Ico{funds_raised_btc: nil, end_date: end_date} = ico) when not is_nil(end_date) do
-    funds_raised_ico_end_price_impl("BTC", "USD", ico.funds_raised_usd, "ETH", ico.funds_raised_eth, end_date)
-    |> case do
-      nil -> funds_raised_ico_end_price_from_currencies(ico, "BTC", end_date)
-      funds_raised -> funds_raised
-    end
-  end
-  def funds_raised_btc_ico_end_price(%Ico{funds_raised_btc: funds_raised_btc}), do: funds_raised_btc
-
-  defp funds_raised_ico_end_price_impl(target_ticker, funds_raised_ticker1, funds_raised_amount1, funds_raised_ticker2, funds_raised_amount2, date) do
-    timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
-
-    Sanbase.Prices.Utils.convert_amount(funds_raised_amount1, funds_raised_ticker1, target_ticker, timestamp)
-    |> case do
-      nil -> Sanbase.Prices.Utils.convert_amount(funds_raised_amount2, funds_raised_ticker2, target_ticker, timestamp)
-      converted_amount -> converted_amount
-    end
+  def funds_raised_btc_ico_end_price(%Ico{end_date: end_date} = ico) when not is_nil(end_date) do
+    funds_raised_ico_end_price_from_currencies(ico, "BTC", end_date)
   end
 
   defp funds_raised_ico_end_price_from_currencies(ico, target_ticker, date) do

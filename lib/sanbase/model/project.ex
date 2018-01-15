@@ -152,18 +152,6 @@ defmodule Sanbase.Model.Project do
     end)
   end
 
-  def funds_raised_all_ico_end_price(project) do
-    Repo.preload(project, :icos).icos
-    |> Enum.reduce(%{funds_raised_usd: nil, funds_raised_eth: nil, funds_raised_btc: nil},
-    fn(ico, %{funds_raised_usd: acc_usd, funds_raised_eth: acc_eth, funds_raised_btc: acc_btc}) ->
-      %{funds_raised_usd: ico_usd, funds_raised_eth: ico_eth, funds_raised_btc: ico_btc} = Ico.funds_raised_all_ico_end_price(ico)
-
-      %{funds_raised_usd: add_if_not_nil(acc_usd, ico_usd),
-        funds_raised_eth: add_if_not_nil(acc_eth, ico_eth),
-        funds_raised_btc: add_if_not_nil(acc_btc, ico_btc)}
-    end)
-  end
-
   @doc """
   Aggregates all amounts for every currency for every ICO of the given project.
   When fallback_to_totals = true: if there is no amount for any currency for a given ico, then fallback to one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_eth, Ico.funds_raised_btc (checked in that order)

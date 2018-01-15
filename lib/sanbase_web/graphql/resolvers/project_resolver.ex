@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
   import Ecto.Query, warn: false
+  import Absinthe.Resolution.Helpers
 
   alias Sanbase.Model.Project
   alias Sanbase.Model.ProjectEthAddress
@@ -21,7 +22,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     only_project_transparency = Map.get(args, :only_project_transparency, false)
 
     query = from p in Project,
-    where: not ^only_project_transparency or p.project_transparency
+    where: not is_nil(p.coinmarketcap_id)
+        and (not ^only_project_transparency or p.project_transparency)
 
     projects = case coinmarketcap_requested?(resolution) do
       true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
@@ -62,7 +64,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     query = from d in subquery(all_icos_query),
     inner_join: p in Project, on: p.id == d.project_id,
-    where: d.rank == 1
+    where: not is_nil(p.coinmarketcap_id)
+          and d.rank == 1
           and not is_nil(d.main_contract_address)
           and not is_nil(d.contract_block_number)
           and not is_nil(d.contract_abi),
@@ -85,30 +88,42 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     only_project_transparency = get_parent_args(resolution)
     |> Map.get(:only_project_transparency, false)
 
+    batch({__MODULE__, :eth_balances_by_id, only_project_transparency}, id, fn batch_results ->
+      {:ok, Map.get(batch_results, id)}
+    end)
+  end
+  def eth_balances_by_id(only_project_transparency, project_ids) do
     query = from a in ProjectEthAddress,
     inner_join: wd in LatestEthWalletData, on: wd.address == a.address,
-    where: a.project_id == ^id and
+    where: a.project_id in ^project_ids and
           (not ^only_project_transparency or a.project_transparency),
-    select: sum(wd.balance)
+    group_by: a.project_id,
+    select: %{project_id: a.project_id, balance: sum(wd.balance)}
 
-    balance = Repo.one(query)
+    balances = Repo.all(query)
 
-    {:ok, balance}
+    Map.new(balances, fn balance -> {balance.project_id, balance.balance} end)
   end
 
   def btc_balance(%Project{id: id}, _args, resolution) do
     only_project_transparency = get_parent_args(resolution)
     |> Map.get(:only_project_transparency, false)
 
+    batch({__MODULE__, :btc_balances_by_id, only_project_transparency}, id, fn batch_results ->
+      {:ok, Map.get(batch_results, id)}
+    end)
+  end
+  def btc_balances_by_id(only_project_transparency, project_ids) do
     query = from a in ProjectBtcAddress,
     inner_join: wd in LatestBtcWalletData, on: wd.address == a.address,
-    where: a.project_id == ^id and
+    where: a.project_id in ^project_ids and
           (not ^only_project_transparency or a.project_transparency),
-    select: sum(wd.satoshi_balance)
+    group_by: a.project_id,
+    select: %{project_id: a.project_id, balance: sum(wd.satoshi_balance)}
 
-    balance = Repo.one(query)
+    balances = Repo.all(query)
 
-    {:ok, balance}
+    Map.new(balances, fn balance -> {balance.project_id, balance.balance} end)
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
@@ -118,23 +133,44 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def market_segment(%Project{market_segment_id: nil}, _args, _resolution), do: {:ok, nil}
   def market_segment(%Project{market_segment_id: market_segment_id}, _args, _resolution) do
-    %MarketSegment{name: market_segment} = Repo.get!(MarketSegment, market_segment_id)
+    batch({__MODULE__, :market_segments_by_id}, market_segment_id, fn batch_results ->
+      {:ok, Map.get(batch_results, market_segment_id)}
+    end)
+  end
+  def market_segments_by_id(_, market_segment_ids) do
+    market_segments = from(i in MarketSegment,
+    where: i.id in ^market_segment_ids)
+    |> Repo.all()
 
-    {:ok, market_segment}
+    Map.new(market_segments, fn market_segment -> {market_segment.id, market_segment.name} end)
   end
 
   def infrastructure(%Project{infrastructure_id: nil}, _args, _resolution), do: {:ok, nil}
   def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, _resolution) do
-    %Infrastructure{code: infrastructure} = Repo.get!(Infrastructure, infrastructure_id)
+    batch({__MODULE__, :infrastructures_by_id}, infrastructure_id, fn batch_results ->
+      {:ok, Map.get(batch_results, infrastructure_id)}
+    end)
+  end
+  def infrastructures_by_id(_, infrastructure_ids) do
+    infrastructures = from(i in Infrastructure,
+    where: i.id in ^infrastructure_ids)
+    |> Repo.all()
 
-    {:ok, infrastructure}
+    Map.new(infrastructures, fn infrastructure -> {infrastructure.id, infrastructure.code} end)
   end
 
   def project_transparency_status(%Project{project_transparency_status_id: nil}, _args, _resolution), do: {:ok, nil}
   def project_transparency_status(%Project{project_transparency_status_id: project_transparency_status_id}, _args, _resolution) do
-    %ProjectTransparencyStatus{name: project_transparency_status} = Repo.get!(ProjectTransparencyStatus, project_transparency_status_id)
+    batch({__MODULE__, :project_transparency_statuses_by_id}, project_transparency_status_id, fn batch_results ->
+      {:ok, Map.get(batch_results, project_transparency_status_id)}
+    end)
+  end
+  def project_transparency_statuses_by_id(_, project_transparency_status_ids) do
+    project_transparency_statuses = from(i in ProjectTransparencyStatus,
+    where: i.id in ^project_transparency_status_ids)
+    |> Repo.all()
 
-    {:ok, project_transparency_status}
+    Map.new(project_transparency_statuses, fn project_transparency_status -> {project_transparency_status.id, project_transparency_status.name} end)
   end
 
   def roi_usd(%Project{} = project, _args, _resolution) do
@@ -264,7 +300,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   defp get_parent_args(resolution) do
     case resolution do
-      %{path: [_, _, %{argument_data: parent_args} | _]} -> parent_args
+      %{path: [_, %{argument_data: parent_args} | _]} -> parent_args
       _ -> %{}
     end
   end

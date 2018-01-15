@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  import Sanbase.Utils.Config, only: [parse_config_value: 1]
 
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
@@ -15,15 +15,15 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
 
   import Plug.Conn
 
-  defp query_skeleton(query, query_name) do
+  defp query_skeleton(query, query_name, variable_defs \\"", variables \\ "{}") do
     %{
       "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
+      "query" => "query #{query_name}#{variable_defs} #{query}",
+      "variables" => "#{variables}"
     }
   end
 
-  setup do
+  defp setup do
     Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
     |> Keyword.get(:database)
     |> Instream.Admin.Database.create()
@@ -93,13 +93,15 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
         })
     |> Repo.insert!()
 
-    :ok
+    project.id
   end
 
   test "fetch project funds raised", context do
+    project_id = setup()
+
     query = """
     {
-      allProjects {
+      project(id: $id) {
         name,
         fundsRaisedUsdIcoEndPrice,
         fundsRaisedEthIcoEndPrice,
@@ -117,10 +119,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     result =
       context.conn
       |> put_req_header("authorization", get_authorization_header())
-      |> post("/graphql", query_skeleton(query, "allProjects"))
+      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}"))
 
-    assert json_response(result, 200)["data"]["allProjects"] ==
-      [%{"name" => "Project",
+    assert json_response(result, 200)["data"]["project"] ==
+      %{"name" => "Project",
         "fundsRaisedUsdIcoEndPrice" => "1200",
         "fundsRaisedEthIcoEndPrice" => "250.0",
         "fundsRaisedBtcIcoEndPrice" => "300",
@@ -132,7 +134,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
           %{"endDate" => "2017-10-17",
             "fundsRaisedUsdIcoEndPrice" => "1000",
             "fundsRaisedEthIcoEndPrice" => "100.0",
-            "fundsRaisedBtcIcoEndPrice" => "200"}]}]
+            "fundsRaisedBtcIcoEndPrice" => "200"}]}
   end
 
   defp get_authorization_header do

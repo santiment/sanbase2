@@ -6,7 +6,9 @@ defmodule SanbaseWeb.Graphql.Schema do
     AccountResolver,
     PriceResolver,
     ProjectResolver,
-    GithubResolver
+    GithubResolver,
+    TwitterResolver,
+    EtherbiResolver,
   }
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
@@ -16,13 +18,15 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types SanbaseWeb.Graphql.PriceTypes
   import_types SanbaseWeb.Graphql.ProjectTypes
   import_types SanbaseWeb.Graphql.GithubTypes
+  import_types SanbaseWeb.Graphql.TwitterTypes
+  import_types SanbaseWeb.Graphql.EtherbiTypes
 
   query do
     field :current_user, :user do
       resolve(&AccountResolver.current_user/3)
     end
 
-    field :all_projects, list_of(:project) do
+    field :all_projects, list_of(:project_basic) do
       arg :only_project_transparency, :boolean
 
       middleware MultipleAuth, [BasicAuth, JWTAuth]
@@ -37,7 +41,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve &ProjectResolver.project/3
     end
 
-    field :all_projects_with_eth_contract_info, list_of(:project) do
+    field :all_projects_with_eth_contract_info, list_of(:project_with_eth_contract_info) do
       middleware BasicAuth
       resolve &ProjectResolver.all_projects_with_eth_contract_info/3
     end
@@ -80,13 +84,51 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Returns a list of github activities"
     field :github_activity, list_of(:activity_point) do
-      arg(:repository, non_null(:string))
+      arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1h")
+      arg(:moving_average_interval, :integer, default_value: 10)
+      arg(:transform, :string, default_value: "None")
 
       resolve(&GithubResolver.activity/3)
     end
+
+    @desc "Current data for a twitter account"
+    field :twitter_data, :twitter_data do
+      arg(:ticker, non_null(:string))
+
+      resolve(&TwitterResolver.twitter_data/3)
+    end
+
+    @desc "Historical information for a twitter account"
+    field :history_twitter_data, list_of(:twitter_data) do
+      arg(:ticker, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, :string, default_value: "6h")
+
+      resolve(&TwitterResolver.history_twitter_data/3)
+    end
+
+    @desc "Burn rate for a ticker and given time period"
+    field :burn_rate, list_of(:burn_rate_data) do
+      arg(:ticker, non_null(:string))
+      arg(:from, :datetime)
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+
+      resolve(&EtherbiResolver.burn_rate/3)
+    end
+
+    @desc "Transaction volume for a ticker and given time period"
+    field :transaction_volume, list_of(:transaction_volume) do
+      arg(:ticker, non_null(:string))
+      arg(:from, :datetime)
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+
+      resolve(&EtherbiResolver.transaction_volume/3)
+    end
+
   end
 
   mutation do

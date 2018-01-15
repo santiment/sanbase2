@@ -2,9 +2,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
 
   use Tesla
 
-  alias Sanbase.ExternalServices.RateLimiting
+  require Sanbase.Utils.Config
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  alias Sanbase.Utils.Config
+  alias Sanbase.ExternalServices.RateLimiting
 
   plug RateLimiting.Middleware, name: :etherscan_rate_limiter
   plug Tesla.Middleware.BaseUrl, "https://api.etherscan.io/api"
@@ -12,7 +13,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   plug Tesla.Middleware.JSON
 
   plug Tesla.Middleware.Query, [
-    apikey: api_key()
+    apikey: Config.get(:api_key)
   ]
   plug Tesla.Middleware.Logger
 
@@ -25,13 +26,4 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
     end
   end
 
-  defp api_key() do
-    config()
-    |> Keyword.get(:apikey)
-    |> parse_config_value()
-  end
-
-  defp config do
-    Application.get_env(:sanbase, __MODULE__)
-  end
 end

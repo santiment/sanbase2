@@ -22,6 +22,12 @@ import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
 const handleLoad = () => {
+  if (!window.env) {
+    window.env = {
+      RAVEN_DSN: '',
+      WEBSITE_URL: process.env.REACT_APP_WEBSITE_URL || ''
+    }
+  }
   Raven.config(window.env.RAVEN_DSN || '', {
     release: process.env.REACT_APP_VERSION,
     environment: process.env.NODE_ENV,
@@ -113,8 +119,12 @@ const handleLoad = () => {
     document.getElementById('root'))
 }
 
-const script = document.createElement('script')
-script.src = `/env.js?${process.env.REACT_APP_VERSION}`
-script.async = false
-document.body.appendChild(script)
-script.addEventListener('load', handleLoad)
+if (process.env.NODE_ENV === 'development') {
+  handleLoad()
+} else {
+  const script = document.createElement('script')
+  script.src = `/env.js?${process.env.REACT_APP_VERSION}`
+  script.async = false
+  document.body.appendChild(script)
+  script.addEventListener('load', handleLoad)
+}

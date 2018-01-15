@@ -4,11 +4,11 @@ import { connect } from 'react-redux'
 import {
   compose,
   lifecycle,
+  withState,
   pure
 } from 'recompose'
 import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import { retrieveProjects } from './Cashflow.actions.js'
@@ -17,10 +17,10 @@ import PanelBlock from './../components/PanelBlock'
 import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
 import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
-import { formatNumber, formatBTC } from '../utils/formatting'
 import Panel from './../components/Panel'
 import Search from './../components/Search'
 import PercentChanges from './../components/PercentChanges'
+import { formatNumber, formatBTC } from '../utils/formatting'
 import './Detailed.css'
 
 const propTypes = {
@@ -31,6 +31,14 @@ const propTypes = {
 }
 
 export const HiddenElements = () => ''
+
+export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
+  return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
+
+export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
+  return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
+}
 
 const getProjectByTicker = (match, projects) => {
   const selectedTicker = match.params.ticker
@@ -47,8 +55,39 @@ export const Detailed = ({
   projects,
   loading,
   PriceQuery,
+  TwitterData = {
+    loading: true,
+    error: false,
+    twitterData: []
+  },
+  TwitterHistoryData = {
+    loading: true,
+    error: false,
+    twitterHistoryData: []
+  },
+  HistoryPrice = {
+    loading: true,
+    error: false,
+    historyPrice: []
+  },
+  GithubActivity = {
+    loading: true,
+    error: false,
+    burnRate: []
+  },
+  BurnRate = {
+    loading: true,
+    error: false,
+    burnRate: []
+  },
+  TransactionVolume = {
+    loading: true,
+    error: false,
+    transactionVolume: []
+  },
   user,
-  generalInfo
+  generalInfo,
+  changeChartVars
 }) => {
   if (loading) {
     return (
@@ -65,6 +104,53 @@ export const Detailed = ({
         pathname: '/'
       }} />
     )
+  }
+
+  const twitter = {
+    history: {
+      error: TwitterHistoryData.error || false,
+      loading: TwitterHistoryData.loading,
+      items: TwitterHistoryData.historyTwitterData || []
+    },
+    data: {
+      error: TwitterData.error || false,
+      loading: TwitterData.loading,
+      followersCount: TwitterData.twitterData
+        ? TwitterData.twitterData.followersCount
+        : undefined
+    }
+  }
+
+  const price = {
+    history: {
+      loading: HistoryPrice.loading,
+      items: HistoryPrice.historyPrice
+        ? HistoryPrice.historyPrice.map(item => {
+          const volumeBTC = calculateBTCVolume(item)
+          const marketcapBTC = calculateBTCMarketcap(item)
+          return {...item, volumeBTC, marketcapBTC}
+        })
+        : []
+    }
+  }
+
+  const github = {
+    history: {
+      loading: GithubActivity.loading,
+      items: GithubActivity.githubActivity || []
+    }
+  }
+
+  const burnRate = {
+    loading: BurnRate.loading,
+    error: BurnRate.error || false,
+    items: BurnRate.burnRate || []
+  }
+
+  const transactionVolume = {
+    loading: TransactionVolume.loading,
+    error: TransactionVolume.error || false,
+    items: TransactionVolume.transactionVolume || []
   }
 
   return (
@@ -101,64 +187,22 @@ export const Detailed = ({
           </HiddenElements>
         </div>
         <Panel withoutHeader>
-          <ProjectChartContainer ticker={project.ticker} />
+          <ProjectChartContainer
+            twitter={twitter}
+            price={price}
+            github={github}
+            burnRate={burnRate}
+            transactionVolume={transactionVolume}
+            onDatesChange={(from, to, interval, ticker) => {
+              changeChartVars({
+                from,
+                to,
+                interval,
+                ticker
+              })
+            }}
+            ticker={project.ticker} />
         </Panel>
-        <HiddenElements>
-          <div className='panel'>
-            <Tabs className='activity-panel'>
-              <TabList className='nav'>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    Social Mentions
-                  </button>
-                </Tab>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    Social Activity over Time
-                  </button>
-                </Tab>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    Sentiment/Intensity
-                  </button>
-                </Tab>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    Github Activity
-                  </button>
-                </Tab>
-                <Tab className='nav-item' selectedClassName='active'>
-                  <button className='nav-link'>
-                    SAN Community
-                  </button>
-                </Tab>
-              </TabList>
-              <TabPanel>
-                Social Mentions
-              </TabPanel>
-              <TabPanel>
-                Social Activity over Time
-              </TabPanel>
-              <TabPanel>
-                Sentiment/Intensity
-              </TabPanel>
-              <TabPanel>
-                Github Activity
-              </TabPanel>
-              <TabPanel>
-                SAN Community
-              </TabPanel>
-            </Tabs>
-          </div>
-        </HiddenElements>
-        <HiddenElements>
-          <PanelBlock title='Blockchain Analytics' />
-          <div className='analysis'>
-            <PanelBlock title='Signals/Volatility' />
-            <PanelBlock title='Expert Analyses' />
-            <PanelBlock title='News/Press' />
-          </div>
-        </HiddenElements>
         <div className='information'>
           <PanelBlock
             isUnauthorized={generalInfo.isUnauthorized}
@@ -202,8 +246,8 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const getPriceGQL = gql`
-  query getPrice($ticker: String!) {
+const queryPrice = gql`
+  query queryPrice($ticker: String!) {
     price (
       ticker: $ticker
     ) {
@@ -216,7 +260,7 @@ const getPriceGQL = gql`
 }`
 
 const queryProject = gql`
-  query project($id: ID!) {
+  query queryProject($id: ID!) {
     project(
       id: $id,
     ){
@@ -247,6 +291,85 @@ const queryProject = gql`
     }
   }
 `
+const queryTwitterHistory = gql`
+  query queryTwitterHistory($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
+    historyTwitterData(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime
+      followersCount
+      __typename
+    }
+  }
+`
+
+const queryTwitterData = gql`
+  query queryTwitterData($ticker:String) {
+    twitterData(ticker: $ticker) {
+      datetime
+      followersCount
+      twitterName
+    }
+  }
+`
+
+const queryHistoryPrice = gql`
+  query queryHistoryPrice($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
+    historyPrice(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      priceBtc,
+      priceUsd,
+      volume,
+      datetime,
+      marketcap
+    }
+}`
+
+const queryGithubActivity = gql`
+  query queryGithubActivity($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
+    githubActivity(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime,
+      activity
+    }
+}`
+
+const queryBurnRate = gql`
+  query queryBurnRate($ticker:String, $from: DateTime, $to: DateTime) {
+    burnRate(
+      ticker: $ticker,
+      from: $from,
+      to: $to
+    ) {
+      datetime
+      burnRate
+      __typename
+    }
+}`
+
+const queryTransactionVolume = gql`
+  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime) {
+    transactionVolume(
+      ticker: $ticker,
+      from: $from,
+      to: $to
+    ) {
+      datetime
+      transactionVolume
+      __typename
+    }
+}`
 
 const mapDataToProps = ({ProjectQuery}) => {
   const isLoading = ProjectQuery.loading
@@ -278,12 +401,18 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  withState('chartVars', 'changeChartVars', {
+    from: undefined,
+    to: undefined,
+    interval: undefined,
+    ticker: undefined
+  }),
   lifecycle({
     componentDidMount () {
       this.props.retrieveProjects()
     }
   }),
-  graphql(getPriceGQL, {
+  graphql(queryPrice, {
     name: 'PriceQuery',
     options: ({match, projects}) => {
       const project = getProjectByTicker(match, projects)
@@ -299,6 +428,95 @@ const enhance = compose(
     name: 'ProjectQuery',
     props: mapDataToProps,
     options: mapPropsToOptions
+  }),
+  graphql(queryTwitterData, {
+    name: 'TwitterData',
+    options: ({chartVars}) => {
+      const { ticker } = chartVars
+      return {
+        skip: !ticker,
+        errorPolicy: 'all',
+        variables: {
+          ticker
+        }
+      }
+    }
+  }),
+  graphql(queryTwitterHistory, {
+    name: 'TwitterHistoryData',
+    options: ({chartVars}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker
+        }
+      }
+    }
+  }),
+  graphql(queryHistoryPrice, {
+    name: 'HistoryPrice',
+    options: ({chartVars}) => {
+      const {from, to, ticker, interval} = chartVars
+      return {
+        skip: !from,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker,
+          interval
+        }
+      }
+    }
+  }),
+  graphql(queryGithubActivity, {
+    name: 'GithubActivity',
+    options: ({match, chartVars}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from,
+        variables: {
+          from,
+          to,
+          ticker,
+          interval: '1d'
+        }
+      }
+    }
+  }),
+  graphql(queryBurnRate, {
+    name: 'BurnRate',
+    options: ({chartVars}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker
+        }
+      }
+    }
+  }),
+  graphql(queryTransactionVolume, {
+    name: 'TransactionVolume',
+    options: ({chartVars}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker
+        }
+      }
+    }
   }),
   pure
 )

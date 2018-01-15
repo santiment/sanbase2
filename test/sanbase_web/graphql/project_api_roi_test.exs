@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
 
   alias Sanbase.Model.Project
   alias Sanbase.Model.LatestCoinmarketcapData
@@ -10,18 +10,19 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Utils.Config
 
   import Plug.Conn
 
-  defp query_skeleton(query, query_name) do
+  defp query_skeleton(query, query_name, variable_defs \\"", variables \\ "{}") do
     %{
       "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
+      "query" => "query #{query_name}#{variable_defs} #{query}",
+      "variables" => "#{variables}"
     }
   end
 
-  setup do
+  defp setup do
     Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
     |> Keyword.get(:database)
     |> Instream.Admin.Database.create()
@@ -70,13 +71,15 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
         })
     |> Repo.insert!()
 
-    :ok
+    project.id
   end
 
   test "fetch project ROI", context do
+    project_id = setup()
+
     query = """
     {
-      allProjects {
+      project(id: $id) {
         name,
         roiUsd
       }
@@ -86,10 +89,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     result =
       context.conn
       |> put_req_header("authorization", get_authorization_header())
-      |> post("/graphql", query_skeleton(query, "allProjects"))
+      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}"))
 
-    assert json_response(result, 200)["data"]["allProjects"] ==
-      [%{"name" => "Project", "roiUsd" => "4"}]
+    assert json_response(result, 200)["data"]["project"] ==
+      %{"name" => "Project", "roiUsd" => "4"}
   end
 
   defp get_authorization_header do
@@ -100,8 +103,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   end
 
   defp context_config(key) do
-    Application.get_env(:sanbase, SanbaseWeb.Graphql.ContextPlug)
-    |> Keyword.get(key)
-    |> parse_config_value()
+    Config.module_get(SanbaseWeb.Graphql.ContextPlug, key)
   end
 end

@@ -24,7 +24,9 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     |> Timex.to_datetime
 
     orgs = Github.available_projects
-    |> Enum.map(&get_project_org/1)
+    |> Enum.map(fn project ->
+      {Github.get_project_org(project), project}
+    end)
     |> Enum.reject(&is_nil/1)
     |> Map.new()
 
@@ -118,20 +120,6 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     |> Enum.reduce(%{}, fn repo, counts ->
       reduce_repos_to_counts(repo, counts, orgs)
     end)
-  end
-
-  defp get_project_org(%Project{github_link: github_link} = project) do
-    case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
-      [_, github_path] ->
-        org = github_path
-        |> String.downcase
-        |> String.split("/")
-        |> hd
-
-        {org, project}
-      nil ->
-        nil
-    end
   end
 
   defp reduce_repos_to_counts(repo, counts, orgs) do

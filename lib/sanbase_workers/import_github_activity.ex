@@ -27,7 +27,6 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     |> Enum.map(fn project ->
       {Github.get_project_org(project), project}
     end)
-    |> Enum.reject(&is_nil/1)
     |> Map.new()
 
     Logger.info("Scanning activity for github users #{Map.keys(orgs) |> inspect}")

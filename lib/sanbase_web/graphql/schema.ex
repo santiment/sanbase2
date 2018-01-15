@@ -39,6 +39,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve &ProjectResolver.project/3
     end
 
+    field :project_private, :project do
+      arg :id, non_null(:id)
+      arg :only_project_transparency, :boolean # this is to filter the wallets
+
+      middleware MultipleAuth, [BasicAuth, JWTAuth]
+      resolve &ProjectResolver.project/3
+    end
+
     field :all_projects_with_eth_contract_info, list_of(:project_with_eth_contract_info) do
       middleware BasicAuth
       resolve &ProjectResolver.all_projects_with_eth_contract_info/3

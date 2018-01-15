@@ -86,7 +86,7 @@
 
 .chart-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-top: 10px;
 }
@@ -96,24 +96,20 @@
   align-items: center;
 }
 
-.chart-footer-filters div {
-  margin-right: 2px;
-}
-
 .trademark {
   color: #e3e3e3;
 }
 
 .time-filter,
 .currency-filter,
-.marketcap-toggle {
+.chart-footer-filters {
   display: flex;
   user-select: none;
 }
 
 .time-filter div,
 .currency-filter div,
-.marketcap-toggle div {
+.chart-footer-filters div {
   cursor: pointer;
   width: 40px;
   text-align: center;
@@ -121,17 +117,18 @@
 
 .time-filter .activated,
 .currency-filter .activated,
-.marketcap-toggle .activated {
+.chart-footer-filters .activated {
   background: gray;
-  color: white !important;
+  color: white;
 }
 
 .time-filter .disabled,
 .currency-filter .disabled,
-.marketcap-toggle .disabled {
+.chart-footer-filters .disabled {
   color: #888;
 }
 
-.marketcap-toggle div {
+.chart-footer-filters div {
   width: 100px;
+  margin-right: 2px;
 }

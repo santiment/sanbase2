@@ -63,20 +63,28 @@ defmodule Sanbase.Graphql.ProjectApiTest do
   end
 
   test "fetch funds raised from icos", context do
-    currency1 = %Currency{}
+    currency_eth = %Currency{}
     |> Currency.changeset(%{code: "ETH"})
     |> Repo.insert!
 
-    currency2 = %Currency{}
+    currency_btc = %Currency{}
     |> Currency.changeset(%{code: "BTC"})
+    |> Repo.insert!
+
+    currency_usd = %Currency{}
+    |> Currency.changeset(%{code: "USD"})
     |> Repo.insert!
 
     project1 = %Project{}
     |> Project.changeset(%{name: "Project1"})
     |> Repo.insert!
 
-    %Ico{}
-    |> Ico.changeset(%{project_id: project1.id, funds_raised_usd: 123.45})
+    ico1_1 = %Ico{}
+    |> Ico.changeset(%{project_id: project1.id})
+    |> Repo.insert!
+
+    %IcoCurrencies{}
+    |> IcoCurrencies.changeset(%{ico_id: ico1_1.id, currency_id: currency_usd.id, amount: 123.45})
     |> Repo.insert!
 
     project2 = %Project{}
@@ -84,19 +92,27 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     |> Repo.insert!
 
     ico2_1 = %Ico{}
-    |> Ico.changeset(%{project_id: project2.id, funds_raised_usd: 100})
-    |> Repo.insert!
-
-    %Ico{}
-    |> Ico.changeset(%{project_id: project2.id, funds_raised_usd: 200})
+    |> Ico.changeset(%{project_id: project2.id})
     |> Repo.insert!
 
     %IcoCurrencies{}
-    |> IcoCurrencies.changeset(%{ico_id: ico2_1.id, currency_id: currency1.id, amount: 50})
+    |> IcoCurrencies.changeset(%{ico_id: ico2_1.id, currency_id: currency_usd.id, amount: 100})
     |> Repo.insert!
 
     %IcoCurrencies{}
-    |> IcoCurrencies.changeset(%{ico_id: ico2_1.id, currency_id: currency2.id, amount: 300})
+    |> IcoCurrencies.changeset(%{ico_id: ico2_1.id, currency_id: currency_eth.id, amount: 50})
+    |> Repo.insert!
+
+    %IcoCurrencies{}
+    |> IcoCurrencies.changeset(%{ico_id: ico2_1.id, currency_id: currency_btc.id, amount: 300})
+    |> Repo.insert!
+
+    ico2_2 = %Ico{}
+    |> Ico.changeset(%{project_id: project2.id})
+    |> Repo.insert!
+
+    %IcoCurrencies{}
+    |> IcoCurrencies.changeset(%{ico_id: ico2_2.id, currency_id: currency_usd.id, amount: 200})
     |> Repo.insert!
 
     query = """
@@ -116,20 +132,20 @@ defmodule Sanbase.Graphql.ProjectApiTest do
       |> put_req_header("authorization", get_authorization_header())
       |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project1.id}}"))
 
+    assert json_response(result, 200)["data"]["project"] ==
+      %{"name" => "Project1", "fundsRaisedIcos" =>
+        [%{"currencyCode" => "USD", "amount" => "123.45"}]}
+
+    result =
+      context.conn
+      |> put_req_header("authorization", get_authorization_header())
+      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project2.id}}"))
+
       assert json_response(result, 200)["data"]["project"] ==
-        %{"name" => "Project1", "fundsRaisedIcos" =>
-          [%{"currencyCode" => "USD", "amount" => "123.45"}]}
-
-      result =
-        context.conn
-        |> put_req_header("authorization", get_authorization_header())
-        |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project2.id}}"))
-
-        assert json_response(result, 200)["data"]["project"] ==
-          %{"name" => "Project2", "fundsRaisedIcos" =>
-            [%{"currencyCode" => "BTC", "amount" => "300"},
-              %{"currencyCode" => "ETH", "amount" => "50"},
-              %{"currencyCode" => "USD", "amount" => "200"}]}
+        %{"name" => "Project2", "fundsRaisedIcos" =>
+          [%{"currencyCode" => "BTC", "amount" => "300"},
+            %{"currencyCode" => "ETH", "amount" => "50"},
+            %{"currencyCode" => "USD", "amount" => "300"}]}
   end
 
   defp get_authorization_header do

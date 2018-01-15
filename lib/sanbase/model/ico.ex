@@ -18,9 +18,6 @@ defmodule Sanbase.Model.Ico do
     field :token_btc_ico_price, :decimal
     field :tokens_issued_at_ico, :decimal
     field :tokens_sold_at_ico, :decimal
-    field :funds_raised_btc, :decimal
-    field :funds_raised_usd, :decimal
-    field :funds_raised_eth, :decimal
     field :minimal_cap_amount, :decimal
     field :maximal_cap_amount, :decimal
     field :main_contract_address, :string
@@ -34,7 +31,7 @@ defmodule Sanbase.Model.Ico do
   @doc false
   def changeset(%Ico{} = ico, attrs \\ %{}) do
     ico
-    |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id, :contract_block_number, :contract_abi, :token_usd_ico_price, :token_eth_ico_price, :token_btc_ico_price])
+    |> cast(attrs, [:start_date, :end_date, :tokens_issued_at_ico, :tokens_sold_at_ico, :minimal_cap_amount, :maximal_cap_amount, :main_contract_address, :comments, :project_id, :cap_currency_id, :contract_block_number, :contract_abi, :token_usd_ico_price, :token_eth_ico_price, :token_btc_ico_price])
     |> validate_required([:project_id])
   end
 
@@ -46,9 +43,6 @@ defmodule Sanbase.Model.Ico do
     |> ModelUtils.removeThousandsSeparator(:token_btc_ico_price)
     |> ModelUtils.removeThousandsSeparator(:tokens_issued_at_ico)
     |> ModelUtils.removeThousandsSeparator(:tokens_sold_at_ico)
-    |> ModelUtils.removeThousandsSeparator(:funds_raised_btc)
-    |> ModelUtils.removeThousandsSeparator(:funds_raised_usd)
-    |> ModelUtils.removeThousandsSeparator(:funds_raised_eth)
     |> ModelUtils.removeThousandsSeparator(:minimal_cap_amount)
     |> ModelUtils.removeThousandsSeparator(:maximal_cap_amount)
 

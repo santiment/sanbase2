@@ -124,9 +124,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       token_btc_ico_price: ico_spreadsheet_row.token_btc_ico_price,
       tokens_issued_at_ico: ico_spreadsheet_row.tokens_issued_at_ico,
       tokens_sold_at_ico: ico_spreadsheet_row.tokens_sold_at_ico,
-      funds_raised_btc: ico_spreadsheet_row.funds_raised_btc,
-      funds_raised_usd: ico_spreadsheet_row.funds_raised_usd,
-      funds_raised_eth: ico_spreadsheet_row.funds_raised_eth,
       minimal_cap_amount: ico_spreadsheet_row.minimal_cap_amount,
       maximal_cap_amount: ico_spreadsheet_row.maximal_cap_amount,
       main_contract_address: ico_spreadsheet_row.ico_main_contract_address,
@@ -154,10 +151,12 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     currency_ids = Enum.map(currencies, &Map.fetch!(&1, :id))
     Repo.delete_all(from c in IcoCurrencies, where: c.ico_id == ^ico.id and c.currency_id not in ^currency_ids)
 
-    Repo.preload(ico, [ico_currencies: [:currency]])
+    ico
   end
 
   defp move_funds_raised_to_details(ico, ico_spreadsheet_row, main_currencies) do
+    ico = Repo.preload(ico, [ico_currencies: [:currency]])
+
     ico_currency = funds_raised_try_from_existing_ico_currencies(ico, ico_spreadsheet_row, main_currencies)
       || funds_raised_try_from_totals(ico, ico_spreadsheet_row, main_currencies)
 

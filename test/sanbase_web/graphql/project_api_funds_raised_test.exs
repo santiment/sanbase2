@@ -65,6 +65,14 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       }
     ])
 
+    currency_eth = %Currency{}
+    |> Currency.changeset(%{code: "ETH"})
+    |> Repo.insert!
+
+    currency_btc = %Currency{}
+    |> Currency.changeset(%{code: "BTC"})
+    |> Repo.insert!
+
     currency = %Currency{}
     |> Currency.changeset(%{code: "TEST"})
     |> Repo.insert!
@@ -76,22 +84,28 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     ico1 = %Ico{}
     |> Ico.changeset(
       %{project_id: project.id,
-        end_date: date1,
-        funds_raised_eth: 150
+        end_date: date1
         })
     |> Repo.insert!()
+
+    %IcoCurrencies{}
+    |> IcoCurrencies.changeset(%{ico_id: ico1.id, currency_id: currency_eth.id, amount: 150})
+    |> Repo.insert!
 
     %IcoCurrencies{}
     |> IcoCurrencies.changeset(%{ico_id: ico1.id, currency_id: currency.id, amount: 50})
     |> Repo.insert!
 
-    %Ico{}
+    ico2 = %Ico{}
     |> Ico.changeset(
       %{project_id: project.id,
-        end_date: date2,
-        funds_raised_btc: 200
+        end_date: date2
         })
     |> Repo.insert!()
+
+    %IcoCurrencies{}
+    |> IcoCurrencies.changeset(%{ico_id: ico2.id, currency_id: currency_btc.id, amount: 200})
+    |> Repo.insert!
 
     project.id
   end

@@ -59,9 +59,6 @@ defmodule Sanbase.Model.Ico do
     |> ModelUtils.removeThousandsSeparator(:token_btc_ico_price)
     |> ModelUtils.removeThousandsSeparator(:tokens_issued_at_ico)
     |> ModelUtils.removeThousandsSeparator(:tokens_sold_at_ico)
-    |> ModelUtils.removeThousandsSeparator(:funds_raised_btc)
-    |> ModelUtils.removeThousandsSeparator(:funds_raised_usd)
-    |> ModelUtils.removeThousandsSeparator(:funds_raised_eth)
     |> ModelUtils.removeThousandsSeparator(:minimal_cap_amount)
     |> ModelUtils.removeThousandsSeparator(:maximal_cap_amount)
 

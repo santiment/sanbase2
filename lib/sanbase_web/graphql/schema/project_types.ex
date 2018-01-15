@@ -423,8 +423,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :cap_currency, :string do
       resolve &IcoResolver.cap_currency/3
     end
-    field :currency_amounts, list_of(:currency_amount) do
-      resolve &IcoResolver.currency_amounts/3
+    field :funds_raised, list_of(:currency_amount) do
+      resolve &IcoResolver.funds_raised/3
     end
   end
 

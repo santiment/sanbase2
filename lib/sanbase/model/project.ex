@@ -102,7 +102,7 @@ defmodule Sanbase.Model.Project do
       zero = Decimal.new(0)
 
       project.icos
-      |> Enum.reduce({project, 0, zero}, &roi_usd_accumulator/2)
+      |> Enum.reduce({project, 0, zero}, &roi_usd_total_paid_accumulator/2)
       |> case do
         {_, _, ^zero} -> nil
         {_, count, total_paid} ->
@@ -116,20 +116,29 @@ defmodule Sanbase.Model.Project do
   end
   def roi_usd(_), do: nil
 
-  defp roi_usd_accumulator(%Ico{end_date: nil}, {project, count, total_paid}), do: {project, count, total_paid}
-  defp roi_usd_accumulator(%Ico{end_date: end_date}, {project, count, total_paid}) do
-    with :gt <- Ecto.DateTime.compare(project.latest_coinmarketcap_data.update_time, Ecto.DateTime.from_date(end_date)),
-        {:ok, timestamp, _} <- Ecto.Date.to_iso8601(end_date) <> "T00:00:00Z" |> DateTime.from_iso8601() do
+  defp roi_usd_total_paid_accumulator(ico, {project, count, total_paid}) do
+    (ico.token_usd_ico_price
+        || token_usd_ico_price(ico.token_eth_ico_price, "ETH", ico.start_date, project.latest_coinmarketcap_data.update_time)
+        || token_usd_ico_price(ico.token_btc_ico_price, "BTC", ico.start_date, project.latest_coinmarketcap_data.update_time))
+    |> case do
+      nil -> {project, count, total_paid}
+      0 -> {project, count, total_paid}
+      price_usd -> {project, count+1, Decimal.add(total_paid, Decimal.new(price_usd))}
+    end
+  end
 
-      Store.fetch_last_known_price_point(project.ticker <> "_USD", timestamp)
+  defp token_usd_ico_price(nil, _currency_from, _ico_start_date, _current_datetime), do: nil
+  defp token_usd_ico_price(_price_from, _currency_from, nil, _current_datetime), do: nil
+  defp token_usd_ico_price(price_from, currency_from, ico_start_date, current_datetime) do
+    with :gt <- Ecto.DateTime.compare(current_datetime, Ecto.DateTime.from_date(ico_start_date)),
+        {:ok, timestamp, _} <- Ecto.Date.to_iso8601(ico_start_date) <> "T00:00:00Z" |> DateTime.from_iso8601() do
+      Store.fetch_last_known_price_point(currency_from <> "_USD", timestamp)
       |> case do
-        nil -> {project, count, total_paid}
-        {_, nil, _, _} -> {project, count, total_paid}
-        {_, 0, _, _} -> {project, count, total_paid}
-        {_, price_at_ico_end, _, _} -> {project, count+1, Decimal.add(total_paid, Decimal.new(price_at_ico_end))}
+        nil -> nil
+        {_, price, _, _} -> Decimal.mult(price_from, Decimal.new(price))
       end
     else
-      _ -> {project, count, total_paid}
+      _ -> nil
     end
   end
 end

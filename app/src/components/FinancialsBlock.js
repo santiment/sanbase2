@@ -38,11 +38,11 @@ const FinancialsBlock = ({
         Collected
       </div>
       <div className='value'>
-        {fundsRaisedIcos.map((amountIco, index) => {
+        {fundsRaisedIcos ? fundsRaisedIcos.map((amountIco, index) => {
           return <div key={index} >{
             collectedField(amountIco.currencyCode, amountIco.amount)
           }</div>
-        })}
+        }) : '-'}
       </div>
     </div>
     <div className={cx({

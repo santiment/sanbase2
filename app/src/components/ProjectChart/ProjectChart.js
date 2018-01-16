@@ -6,6 +6,7 @@ import { Bar, Chart } from 'react-chartjs-2'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
 import { formatNumber, formatBTC } from '../../utils/formatting'
+import 'chartjs-plugin-datalabels'
 import './ProjectChart.css'
 import './react-dates-override.css'
 
@@ -81,6 +82,11 @@ const getChartDataFromHistory = (
     backgroundColor: 'rgba(239, 242, 236, 0.5)',
     hitRadius: 2,
     yAxisID: 'y-axis-1',
+    datalabels: {
+      display: context => {
+        return context.dataIndex === 705 || context.dataIndex === 180
+      }
+    },
     data: history ? history.map(data => {
       if (isToggledBTC) {
         const price = parseFloat(data.priceBtc)
@@ -93,6 +99,9 @@ const getChartDataFromHistory = (
     fill: false,
     type: 'bar',
     yAxisID: 'y-axis-2',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.volume,
     backgroundColor: COLORS.volume,
     borderWidth: 4,
@@ -108,6 +117,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-3',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.marketcap,
     backgroundColor: COLORS.marketcap,
     borderWidth: 1,
@@ -123,6 +135,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-4',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.githubActivity,
     backgroundColor: COLORS.githubActivity,
     borderWidth: 1,
@@ -139,6 +154,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-5',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.twitter,
     backgroundColor: COLORS.twitter,
     borderWidth: 1,
@@ -155,6 +173,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-6',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.burnRate,
     backgroundColor: COLORS.burnRate,
     borderWidth: 1,
@@ -171,6 +192,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-7',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.transactionVolume,
     backgroundColor: COLORS.transactionVolume,
     borderWidth: 1,
@@ -218,6 +242,24 @@ const makeOptionsFromProps = props => ({
   scaleFontSize: 0,
   animation: false,
   pointRadius: 0,
+  plugins: {
+    datalabels: {
+      backgroundColor: context => {
+        return 'rgba(96, 76, 141, 0)'
+      },
+      borderRadius: 2,
+      padding: 0,
+      offset: 0,
+      color: 'black',
+      font: {
+        size: 16,
+        weight: 'bold'
+      },
+      formatter: () => {
+        return '🔥'
+      }
+    }
+  },
   hover: {
     mode: 'x',
     intersect: false

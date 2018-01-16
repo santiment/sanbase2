@@ -39,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve &ProjectResolver.project/3
     end
 
-    field :project_private, :project do
+    field :project_full, :project_full do
       arg :id, non_null(:id)
       arg :only_project_transparency, :boolean # this is to filter the wallets
 

@@ -6,7 +6,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
 
-  object :project do
+  # Includes all available fields
+  object :project_full do
     field :id, non_null(:id)
     field :name, non_null(:string)
     field :ticker, :string
@@ -90,6 +91,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :icos, list_of(:ico), resolve: assoc(:icos)
   end
 
+  # Used in the project list query (public), so heavy computed fields are omitted
   object :project_listing do
     field :id, non_null(:id)
     field :name, non_null(:string)
@@ -155,6 +157,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
   end
 
+  # Used in public details query, so only easily publicly available fields are included
+  # Currently only icos & initial_ico fields are omitted
   object :project_public do
     field :id, non_null(:id)
     field :name, non_null(:string)

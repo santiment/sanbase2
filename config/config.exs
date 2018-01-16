@@ -62,7 +62,7 @@ config :sanbase, Sanbase.Etherbi.Store,
   host: {:system, "IFNLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
-  database_in: "transactions",
+  database: "transactions"
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
@@ -129,6 +129,9 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
   apikey: {:system, "TWITTERCOUNTER_API_KEY"},
   update_interval: 1000 * 60 * 60 * 24, # 1 day
   sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
+
+config :sanbase, Sanbase.Etherbi.Transactions,
+  sync_enabled: {:system, "ETHERBI_TRANSACTIONS_ENABLED", false}
 
 config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},

@@ -1,7 +1,8 @@
 defmodule Sanbase.Etherbi.Store do
   use Sanbase.Influxdb.Store
+
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Github.Store
+  alias Sanbase.Etherbi.Store
 
   def last_datetime(measurement) do
     ~s/SELECT LAST(*) FROM "#{measurement}"/

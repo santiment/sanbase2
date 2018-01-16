@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
-    etherbi_url = Config.get(:url)
+    etherbi_url = Config.module_get(Sanbase.Etherbi, :url)
     url = "#{etherbi_url}/transaction_volume?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}"
 
     options = [recv_timeout: @recv_timeout]

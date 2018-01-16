@@ -379,6 +379,7 @@ const mapDataToProps = ({ProjectQuery}) => {
   const isError = !!ProjectQuery.error
   const errorMessage = ProjectQuery.error ? ProjectQuery.error.message : ''
   const isUnauthorized = ProjectQuery.error ? /\bunauthorized/.test(ProjectQuery.error.message) : false
+  console.log('check', ProjectQuery)
   if (ProjectQuery.error && !isUnauthorized) {
     // If our API server is not reponed with ProjectQuery
     throw new Error(ProjectQuery.error.message)
@@ -391,7 +392,8 @@ const mapDataToProps = ({ProjectQuery}) => {
 const mapPropsToOptions = ({match, projects, user}) => {
   const project = getProjectByTicker(match, projects)
   return {
-    skip: !project || !user.token,
+    skip: !project,
+    errorPolicy: 'all',
     variables: {
       id: project ? project.id : 0
     }

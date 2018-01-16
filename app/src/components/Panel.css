@@ -10,6 +10,10 @@
   padding-top: 0;
 }
 
+.panel-zero {
+  padding: 0;
+}
+
 @media (max-width: 768px) {
   .panel {
     margin: 0;

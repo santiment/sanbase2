@@ -162,10 +162,9 @@ export const Detailed = ({
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>
-            <h1>
-              <ProjectIcon name={project.name} size={28} />&nbsp;
-              {project.name} ({project.ticker.toUpperCase()})
-            </h1>
+            <h1>{project.name}</h1>
+            <ProjectIcon name={project.name} size={28} />&nbsp;
+            <span className='tickerName'>{project.ticker.toUpperCase()}</span>
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&
@@ -379,7 +378,6 @@ const mapDataToProps = ({ProjectQuery}) => {
   const isError = !!ProjectQuery.error
   const errorMessage = ProjectQuery.error ? ProjectQuery.error.message : ''
   const isUnauthorized = ProjectQuery.error ? /\bunauthorized/.test(ProjectQuery.error.message) : false
-  console.log('check', ProjectQuery)
   if (ProjectQuery.error && !isUnauthorized) {
     // If our API server is not reponed with ProjectQuery
     throw new Error(ProjectQuery.error.message)

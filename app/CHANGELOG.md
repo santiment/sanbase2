@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+- 2018-13-01 | v.0.3.3:
+
+  Opened general info for anonym users
+  Improved looks and feel of pdp
+  Added categories
+
 - 2018-13-01 | v.0.3.2:
 
   Added Twitter, Burn Rate

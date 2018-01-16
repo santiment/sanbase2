@@ -187,7 +187,7 @@ export const Detailed = ({
             </div>
           </HiddenElements>
         </div>
-        <Panel withoutHeader>
+        <Panel zero>
           <ProjectChartContainer
             isDesktop={isDesktop}
             twitter={twitter}

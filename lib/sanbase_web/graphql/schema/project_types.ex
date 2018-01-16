@@ -321,6 +321,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
   end
 
+  # Used in the project list query (public), so heavy computed fields are omitted
   object :project_listing do
     field :id, non_null(:id)
     field :name, non_null(:string)
@@ -386,6 +387,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
   end
 
+  # Used in public details query, so only easily publicly available fields are included
+  # Currently only icos & initial_ico fields are omitted
   object :project_public do
     field :id, non_null(:id)
     field :name, non_null(:string)

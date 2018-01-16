@@ -1,6 +1,6 @@
 import React from 'react'
 import cx from 'classnames'
-import { Popup, Icon } from 'semantic-ui-react'
+import { Popup, Icon, Label } from 'semantic-ui-react'
 import './ProjectChartFooter.css'
 
 export const ToggleBtn = ({
@@ -43,11 +43,13 @@ const ProjectChartFooter = (props) => (
         <ToggleBtn
           isToggled={props.isToggledMarketCap}
           toggle={props.toggleMarketcap}>
+          <Label circular className='marketcapLabel' empty />
           Marketcap
         </ToggleBtn>
         <ToggleBtn
           isToggled={props.isToggledVolume}
           toggle={props.toggleVolume}>
+          <Label circular className='volumeLabel' empty />
           Volume
         </ToggleBtn>
       </FilterCategory>
@@ -58,6 +60,7 @@ const ProjectChartFooter = (props) => (
           isToggled={props.isToggledGithubActivity &&
             props.github.history.items.length !== 0}
           toggle={props.toggleGithubActivity}>
+          <Label circular className='githubActivityLabel' empty />
           Github Activity
         </ToggleBtn>
       </FilterCategory>
@@ -68,6 +71,7 @@ const ProjectChartFooter = (props) => (
           isToggled={props.isToggledBurnRate &&
             props.burnRate.items.length !== 0}
           toggle={props.toggleBurnRate}>
+          <Label circular className='burnRateLabel' empty />
           Burn Rate&nbsp;
           <Popup
             trigger={<Icon name='info circle' />}
@@ -83,7 +87,8 @@ const ProjectChartFooter = (props) => (
           isToggled={props.isToggledTransactionVolume &&
             props.transactionVolume.items.length !== 0}
           toggle={props.toggleTransactionVolume}>
-          Transaction Volume&nbsp;
+          <Label circular className='transactionVolumeLabel' empty />
+          Transaction Volume
           <Popup
             trigger={<Icon name='info circle' />}
             content='Total amount of tokens that were transacted on the blockchain'
@@ -98,6 +103,7 @@ const ProjectChartFooter = (props) => (
           isToggled={props.isToggledTwitter &&
             props.twitter.history.items.length !== 0}
           toggle={props.toggleTwitter}>
+          <Label circular className='twitterLabel' empty />
           Twitter
         </ToggleBtn>
       </FilterCategory>

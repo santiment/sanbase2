@@ -14,9 +14,13 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   @max_redirects 10
 
   def fetch_address_page(address) do
-    %Tesla.Env{status: 200, body: body} = get("/address/#{address}")
-
-    body
+    case get("/address/#{address}") do
+      %Tesla.Env{status: 200, body: body} ->
+        body
+      response ->
+        Logger.warn("Invalid response from etherscan for address #{address}: #{inspect(response)}")
+        nil
+    end
   end
 
   def fetch_token_page(token_name, redirects \\ 0)
@@ -36,6 +40,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         nil
     end
   end
+
+  def parse_address_page(nil, project_info), do: project_info
 
   def parse_address_page(html, project_info) do
     %ProjectInfo{project_info |

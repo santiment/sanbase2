@@ -50,13 +50,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
-    query =
+    projects =
       Project
       |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
+      |> Repo.all
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Repo.all(query),
+      projects,
       &fetch_project_info/1,
       ordered: false,
       max_concurrency: 5,
@@ -66,7 +67,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Repo.all(query),
+      projects,
       &fetch_price_data/1,
       ordered: false,
       max_concurrency: 5,

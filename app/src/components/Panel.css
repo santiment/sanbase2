@@ -12,6 +12,7 @@
 
 .panel-zero {
   padding: 0;
+  margin-top: 0;
 }
 
 @media (max-width: 768px) {

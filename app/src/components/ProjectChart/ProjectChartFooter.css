@@ -1,17 +1,54 @@
 .toggleBtn {
+  display: flex;
   padding: 2px 10px;
+  align-items: center;
+  user-select: none;
 }
 
-.marketcapColor {
-  color: 'rgb(200, 47, 63)' !important;
-  background-color: 'rgb(200, 47, 63)' !important;
-  border-color: 'rgb(200, 47, 63)' !important;
+.toggleBtn .label {
+  margin-right: 5px !important;
+  font-size: 10px;
 }
 
-.volumeColor {
-  color: 'rgb(49, 107, 174)' !important;
-  background-color: 'rgb(49, 107, 174)' !important;
-  border-color: 'rgb(49, 107, 174)' !important;
+.toggleBtn .icon {
+  margin-bottom: 6px;
+  margin-left: 3px;
+}
+
+.marketcapLabel {
+  color: rgb(200, 47, 63) !important;
+  background-color: rgb(200, 47, 63) !important;
+  border-color: rgb(200, 47, 63) !important;
+}
+
+.volumeLabel {
+  color: rgb(49, 107, 174) !important;
+  background-color: rgb(49, 107, 174) !important;
+  border-color: rgb(49, 107, 174) !important;
+}
+
+.githubActivityLabel {
+  color: rgb(96, 76, 141) !important;
+  background-color: rgb(96, 76, 141) !important;
+  border-color: rgb(96, 76, 141) !important;
+}
+
+.burnRateLabel {
+  color: rgb(252, 138, 23) !important;
+  background-color: rgb(252, 138, 23) !important;
+  border-color: rgb(252, 138, 23) !important;
+}
+
+.transactionVolumeLabel {
+  color: rgb(39, 166, 153) !important;
+  background-color: rgb(39, 166, 153) !important;
+  border-color: rgb(39, 166, 153) !important;
+}
+
+.twitterLabel {
+  color: rgb(16, 195, 245) !important;
+  background-color: rgb(16, 195, 245) !important;
+  border-color: rgb(16, 195, 245) !important;
 }
 
 .filter-category {
@@ -20,6 +57,7 @@
   border-right: 1px solid rgb(231, 231, 231);
   margin: 15px 0;
   padding: 5px 20px;
+  user-select: none;
 }
 
 .filter-category:last-child {

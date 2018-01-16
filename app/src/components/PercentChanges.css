@@ -1,3 +1,7 @@
+.percent-changes {
+  font-size: 0.7em;
+}
+
 .percent-changes--positive {
   color: green;
 }

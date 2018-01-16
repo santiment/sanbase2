@@ -4,6 +4,7 @@ import './PercentChanges.css'
 
 export const PercentChanges = ({changes}) => (
   <div className={cx({
+    'percent-changes': true,
     'percent-changes--positive': changes >= 0,
     'percent-changes--negative': changes < 0
   })}>

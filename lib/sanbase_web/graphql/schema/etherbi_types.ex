@@ -10,4 +10,10 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
     field(:datetime, non_null(:datetime))
     field(:transaction_volume, :decimal)
   end
+
+  object :transaction do
+    field(:datetime, non_null(:datetime))
+    field(:transaction_volume, :decimal)
+    field(:token, :string)
+  end
 end

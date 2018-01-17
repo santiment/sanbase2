@@ -1,0 +1,49 @@
+ul.menu-list {
+  margin-top: 16px;
+  padding: 0;
+  list-style: none;
+  width: 50%;
+  text-align: right;
+}
+
+.menu-list li {
+  display: inline;
+  margin: 0;
+  padding: 10px 22px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.menu-list li:hover {
+  background-color: #4f5b69;
+  transition: all 1s ease;
+}
+
+.menu-list li a {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.8);
+  display: list-item;
+  list-style-type: none;
+}
+
+.menu-list .fa {
+  margin-right: 12px;
+}
+
+.menu-list .sub-menu {
+  margin: 0;
+}
+
+.menu-list .sub-menu li {
+  margin: 0;
+  padding-left: 8px;
+}
+
+.menu-list .sub-menu li:hover {
+  background-color: rgba(255, 255, 255, 1.0);
+}
+
+.menu-list .sub-menu li .fa {
+  font-size: 6px;
+  margin-right: 10px;
+}

@@ -134,24 +134,25 @@ defmodule Sanbase.Model.Project do
   end
 
   def funds_raised_usd_ico_end_price(project) do
-    Repo.preload(project, :icos).icos
-    |> Enum.reduce(nil, fn(ico, acc) ->
-      add_if_not_nil(acc, Ico.funds_raised_usd_ico_end_price(ico))
-    end)
+    funds_raised_ico_end_price(project, &Ico.funds_raised_usd_ico_end_price/1)
   end
 
   def funds_raised_eth_ico_end_price(project) do
-    Repo.preload(project, :icos).icos
-    |> Enum.reduce(nil, fn(ico, acc) ->
-      add_if_not_nil(acc, Ico.funds_raised_eth_ico_end_price(ico))
-    end)
+    funds_raised_ico_end_price(project, &Ico.funds_raised_eth_ico_end_price/1)
   end
 
   def funds_raised_btc_ico_end_price(project) do
+    funds_raised_ico_end_price(project, &Ico.funds_raised_btc_ico_end_price/1)
+  end
+
+  defp funds_raised_ico_end_price(project, ico_funds_raised_fun) do
     Repo.preload(project, :icos).icos
-    |> Enum.reduce(nil, fn(ico, acc) ->
-      add_if_not_nil(acc, Ico.funds_raised_btc_ico_end_price(ico))
-    end)
+    |> Enum.map(ico_funds_raised_fun)
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> nil
+      amounts -> Enum.reduce(amounts, Decimal.new(0), &Decimal.add/2)
+    end
   end
 
   @doc """
@@ -163,17 +164,14 @@ defmodule Sanbase.Model.Project do
             inner_join: c in Currency, on: c.id == ic.currency_id,
             where: i.project_id == ^id,
             group_by: c.code,
+            order_by: fragment("case
+                            			when ? = 'BTC' then '_'
+                            			when ? = 'ETH' then '__'
+                            			when ? = 'USD' then '___'
+                            		  else ?
+                            		end", c.code, c.code, c.code, c.code),
             select: %{currency_code: c.code, amount: sum(ic.amount)}
 
     Repo.all(query)
-  end
-
-  defp add_if_not_nil(first, second) do
-    cond do
-      !is_nil(first) and !is_nil(second) -> Decimal.add(first, second)
-      !is_nil(first) -> first
-      !is_nil(second) -> second
-      true -> nil
-    end
   end
 end

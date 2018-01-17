@@ -29,42 +29,48 @@ defmodule Sanbase.Prices.Utils do
   def fetch_last_price_before(ticker_from, "USD", timestamp) do
     fetch_last_price_before(ticker_from <> "_USD", timestamp)
     |> case do
-      nil ->
-        with price_btc <- fetch_last_price_before(ticker_from <> "_BTC", timestamp),
-            true <- !is_nil(price_btc),
-            price_btc_usd <- fetch_last_price_before("BTC_USD", timestamp),
-            true <- !is_nil(price_btc_usd) do
-          Decimal.mult(price_btc, price_btc_usd)
-        else
-          _ -> nil
-        end
+      nil -> fetch_last_price_usd_before_convert_via_btc(ticker_from, timestamp)
       price -> price
     end
   end
   def fetch_last_price_before(ticker_from, "BTC", timestamp) do
     fetch_last_price_before(ticker_from <> "_BTC", timestamp)
     |> case do
-      nil ->
-        with price_usd <- fetch_last_price_before(ticker_from <> "_USD", timestamp),
-            true <- !is_nil(price_usd),
-            price_btc_usd <- fetch_last_price_before("BTC_USD", timestamp),
-            true <- !is_nil(price_btc_usd) and price_btc_usd != Decimal.new(0) do
-          Decimal.div(price_usd, price_btc_usd)
-        else
-          _ -> nil
-        end
+      nil -> fetch_last_price_btc_before_convert_via_usd(ticker_from, timestamp)
       price -> price
     end
   end
   def fetch_last_price_before(ticker_from, ticker_to, timestamp) when ticker_to != "USD" and ticker_to != "BTC" do
-    fetch_last_price_before_intermediate(ticker_from, ticker_to, "USD", timestamp)
+    fetch_last_price_before_convert_via_intermediate(ticker_from, ticker_to, "USD", timestamp)
     |> case do
-      nil -> fetch_last_price_before_intermediate(ticker_from, ticker_to, "BTC", timestamp)
+      nil -> fetch_last_price_before_convert_via_intermediate(ticker_from, ticker_to, "BTC", timestamp)
       price -> price
     end
   end
 
-  defp fetch_last_price_before_intermediate(ticker_from, ticker_to, ticker_interm, timestamp) do
+  defp fetch_last_price_usd_before_convert_via_btc(ticker_from, timestamp) do
+    with price_btc <- fetch_last_price_before(ticker_from <> "_BTC", timestamp),
+        true <- !is_nil(price_btc),
+        price_btc_usd <- fetch_last_price_before("BTC_USD", timestamp),
+        true <- !is_nil(price_btc_usd) do
+      Decimal.mult(price_btc, price_btc_usd)
+    else
+      _ -> nil
+    end
+  end
+
+  defp fetch_last_price_btc_before_convert_via_usd(ticker_from, timestamp) do
+    with price_usd <- fetch_last_price_before(ticker_from <> "_USD", timestamp),
+        true <- !is_nil(price_usd),
+        price_btc_usd <- fetch_last_price_before("BTC_USD", timestamp),
+        true <- !is_nil(price_btc_usd) and price_btc_usd != Decimal.new(0) do
+      Decimal.div(price_usd, price_btc_usd)
+    else
+      _ -> nil
+    end
+  end
+
+  defp fetch_last_price_before_convert_via_intermediate(ticker_from, ticker_to, ticker_interm, timestamp) do
     with price_from_interm <- fetch_last_price_before(ticker_from, ticker_interm, timestamp),
         true <- !is_nil(price_from_interm),
         price_to_interm <- fetch_last_price_before(ticker_to, ticker_interm, timestamp),

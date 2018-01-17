@@ -131,12 +131,9 @@ defmodule Sanbase.Model.Project do
   defp token_usd_ico_price(_price_from, _currency_from, nil, _current_datetime), do: nil
   defp token_usd_ico_price(price_from, currency_from, ico_start_date, current_datetime) do
     with :gt <- Ecto.DateTime.compare(current_datetime, Ecto.DateTime.from_date(ico_start_date)),
-        {:ok, timestamp, _} <- Ecto.Date.to_iso8601(ico_start_date) <> "T00:00:00Z" |> DateTime.from_iso8601() do
-      Store.fetch_last_known_price_point(currency_from <> "_USD", timestamp)
-      |> case do
-        nil -> nil
-        {_, price, _, _} -> Decimal.mult(price_from, Decimal.new(price))
-      end
+        {:ok, timestamp, _} <- Ecto.Date.to_iso8601(ico_start_date) <> "T00:00:00Z" |> DateTime.from_iso8601(),
+        {_, price, _, _} <- Store.fetch_last_known_price_point(currency_from <> "_USD", timestamp) do
+      Decimal.mult(price_from, Decimal.new(price))
     else
       _ -> nil
     end

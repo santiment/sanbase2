@@ -62,6 +62,8 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input project, :market_segment, collection: from(m in MarketSegment, order_by: m.name) |> Sanbase.Repo.all()
         input project, :infrastructure, collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
         input project, :coinmarketcap_id
+        input project, :token_decimals
+        input project, :token_supply
       end
     end
 

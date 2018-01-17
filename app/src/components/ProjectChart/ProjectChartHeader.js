@@ -4,6 +4,7 @@ import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { DateRangePicker } from 'react-dates'
 import { formatNumber } from '../../utils/formatting'
+import './ProjectChartHeader.css'
 
 export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
   let cls = interval === value ? 'activated' : ''
@@ -57,6 +58,7 @@ const ProjectChartHeader = ({
         <TimeFilter
           interval={interval}
           setFilter={setFilter} />
+        {isDesktop &&
         <DateRangePicker
           small
           startDateId='startDate'
@@ -72,13 +74,13 @@ const ProjectChartHeader = ({
             const today = moment().endOf('day')
             return day > today
           }}
-        />
+        />}
       </div>
       <CurrencyFilter
         isToggledBTC={isToggledBTC}
         toggleBTC={toggleBTC} />
-      {!isDesktop && [
-        <div className='selected-value'>{selected &&
+      {!isDesktop && selected && [
+        <div key='selected-datetime' className='selected-value'>{selected &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
@@ -88,7 +90,7 @@ const ProjectChartHeader = ({
               {moment(history[selected].datetime).utc().format('MMMM DD, YYYY')}
             </span>
           </Merge>}</div>,
-        <div className='selected-value'>{selected &&
+        <div key='selected-value' className='selected-value'>{selected &&
           <Merge
             one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
             two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}

@@ -116,7 +116,9 @@ class ProjectChartContainer extends Component {
           setFilter={this.setFilter}
           toggleBTC={this.toggleBTC}
           isToggledBTC={this.state.isToggledBTC}
-          interval={this.state.interval} />
+          interval={this.state.interval}
+          isDesktop={this.props.isDesktop}
+        />
         <ProjectChart
           setSelected={this.setSelected}
           isToggledBTC={this.state.isToggledBTC}

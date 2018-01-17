@@ -155,9 +155,7 @@ export const Detailed = ({
 
   return (
     <div className='page detailed'>
-      <Search
-        onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
-        projects={projects} />
+
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>

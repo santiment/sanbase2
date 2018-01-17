@@ -20,9 +20,9 @@ import './ProjectChart.css'
 import './react-dates-override.css'
 
 const COLORS = {
-  price: '#00a05a',
-  volume: 'rgba(49, 107, 174, 0.4)',
-  marketcap: 'rgb(200, 47, 63)',
+  price: 'rgb(52, 171, 107)',
+  volume: 'rgba(38, 43, 51, 0.25)',
+  marketcap: 'rgb(52, 118, 153)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
   twitter: 'rgba(16, 195, 245, 0.7)', // Ultra Violet color #604c8d'
   burnRate: 'rgba(252, 138, 23, 0.7)',
@@ -200,10 +200,10 @@ const getChartDataFromHistory = (
   const priceDataset = {
     label: 'Price',
     type: 'LineWithLine',
-    fill: false,
+    fill: true,
     borderColor: COLORS.price,
     borderWidth: 1,
-    backgroundColor: 'rgba(239, 242, 236, 0.5)',
+    backgroundColor: 'rgba(52, 171, 107, 0.03)',
     hitRadius: 2,
     yAxisID: 'y-axis-1',
     data: history ? history.map(data => {
@@ -234,7 +234,7 @@ const getChartDataFromHistory = (
     fill: false,
     yAxisID: 'y-axis-3',
     borderColor: COLORS.marketcap,
-    backgroundColor: COLORS.marketcap,
+    backgroundColor: 'rgba(52, 118, 153, 0.03)',
     borderWidth: 1,
     pointBorderWidth: 2,
     data: history.map(data => {
@@ -350,16 +350,16 @@ const makeOptionsFromProps = props => ({
   tooltips: {
     mode: 'x',
     intersect: false,
-    titleMarginBottom: 8,
+    titleMarginBottom: 16,
     titleFontSize: 14,
-    titleFontColor: '#000',
+    titleFontColor: '#3d4450',
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     cornerRadius: 3,
-    borderColor: '#d3d3d3',
-    borderWidth: 2,
+    borderColor: 'rgba(38, 43, 51, 0.7)',
+    borderWidth: 1,
     bodyFontSize: 14,
-    bodySpacing: 4,
-    bodyFontColor: '#000',
+    bodySpacing: 8,
+    bodyFontColor: '#3d4450',
     displayColors: true,
     callbacks: {
       title: item => {
@@ -403,7 +403,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: `Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
-        fontColor: COLORS.price
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -423,7 +423,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: false,
         labelString: 'Volume',
-        fontColor: COLORS.volume
+        fontColor: '#3d4450'
       },
       ticks: {
         // 2.2 is not a magic constant. We need to make volume
@@ -441,7 +441,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: `MarketCap ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
-        fontColor: COLORS.marketcap
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -458,7 +458,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Github Activity',
-        fontColor: COLORS.githubActivity
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -482,7 +482,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Twitter',
-        fontColor: COLORS.twitter
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true
@@ -503,7 +503,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Burn Rate',
-        fontColor: COLORS.burnRate
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -528,7 +528,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Transaction Volume',
-        fontColor: COLORS.transactionVolume
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -581,7 +581,7 @@ export const ProjectChart = ({
   if (isError) {
     return (
       <div>
-        <h2>We can't get the data from our server now... ;(</h2>
+        <h2> No data was returned </h2>
         <p>{errorMessage}</p>
       </div>
     )
@@ -606,7 +606,7 @@ export const ProjectChart = ({
       <ProjectChartHeader {...props} />
       <div className='project-chart-body'>
         {isLoading && <div className='project-chart__isLoading'> Loading... </div>}
-        {!isLoading && isEmpty && <div className='project-chart__isEmpty'> We don't have any data </div>}
+        {!isLoading && isEmpty && <div className='project-chart__isEmpty'> No data was returned </div>}
         <Bar
           data={chartData}
           options={chartOptions}
@@ -619,60 +619,77 @@ export const ProjectChart = ({
       </div>
       <div className='chart-footer'>
         <div className='chart-footer-filters'>
-          <ToggleBtn
-            isToggled={props.isToggledMarketCap}
-            toggle={props.toggleMarketcap}>
-            Marketcap
-          </ToggleBtn>
-          <ToggleBtn
-            isToggled={props.isToggledVolume}
-            toggle={props.toggleVolume}>
-            Volume
-          </ToggleBtn>
-          <ToggleBtn
-            loading={props.github.history.loading}
-            disabled={props.github.history.items.length === 0}
-            isToggled={props.isToggledGithubActivity &&
-              props.github.history.items.length !== 0}
-            toggle={props.toggleGithubActivity}>
-            Github Activity
-          </ToggleBtn>
-          <ToggleBtn
-            loading={props.twitter.history.loading}
-            disabled={props.twitter.history.items.length === 0}
-            isToggled={props.isToggledTwitter &&
+
+          <div class="filter-cat">
+            <div class="filter-cat-title">Financial</div>
+            <ToggleBtn
+              isToggled={props.isToggledMarketCap}
+              toggle={props.toggleMarketcap}>
+              Marketcap
+            </ToggleBtn>
+            <ToggleBtn
+              isToggled={props.isToggledVolume}
+              toggle={props.toggleVolume}>
+              Volume
+            </ToggleBtn>
+          </div>
+
+          <div class="filter-cat">
+            <div class="filter-cat-title">Development</div>
+            <ToggleBtn
+              loading={props.github.history.loading}
+              disabled={props.github.history.items.length === 0}
+              isToggled={props.isToggledGithubActivity &&
+                props.github.history.items.length !== 0}
+              toggle={props.toggleGithubActivity}>
+              Github Activity
+            </ToggleBtn>
+          </div>
+
+          <div class="filter-cat">
+            <div class="filter-cat-title">Blockchain</div>
+            <ToggleBtn
+              loading={props.burnRate.loading}
+              disabled={props.burnRate.items.length === 0}
+              isToggled={props.isToggledBurnRate &&
+                props.burnRate.items.length !== 0}
+              toggle={props.toggleBurnRate}>
+              Burn Rate&nbsp;
+              <Popup
+                trigger={<Icon name='info circle' />}
+                content='Token Burn Rate shows the amount of movement
+                of tokens between addresses. One use for this metric is
+                to spot large amounts of tokens moving after sitting for long periods of time'
+                position='top left'
+              />
+            </ToggleBtn>
+            <ToggleBtn
+              loading={props.transactionVolume.loading}
+              disabled={props.transactionVolume.items.length === 0}
+              isToggled={props.isToggledTransactionVolume &&
+                props.transactionVolume.items.length !== 0}
+              toggle={props.toggleTransactionVolume}>
+              Transaction Volume&nbsp;
+              <Popup
+                trigger={<Icon name='info circle' />}
+                content='Total amount of tokens that were transacted on the blockchain'
+                position='top left'
+              />
+            </ToggleBtn>
+          </div>
+
+          <div class="filter-cat">
+            <div class="filter-cat-title">Social</div>
+            <ToggleBtn
+              loading={props.twitter.history.loading}
+              disabled={props.twitter.history.items.length === 0}
+              isToggled={props.isToggledTwitter &&
               props.twitter.history.items.length !== 0}
-            toggle={props.toggleTwitter}>
-            Twitter
-          </ToggleBtn>
-          <ToggleBtn
-            loading={props.burnRate.loading}
-            disabled={props.burnRate.items.length === 0}
-            isToggled={props.isToggledBurnRate &&
-              props.burnRate.items.length !== 0}
-            toggle={props.toggleBurnRate}>
-            Burn Rate&nbsp;
-            <Popup
-              trigger={<Icon name='info circle' />}
-              content='Token Burn Rate shows the amount of movement
-              of tokens between addresses. One use for this metric is
-              to spot large amounts of tokens moving after sitting for long periods of time'
-              position='top left'
-            />
-          </ToggleBtn>
-          <ToggleBtn
-            loading={props.transactionVolume.loading}
-            disabled={props.transactionVolume.items.length === 0}
-            isToggled={props.isToggledTransactionVolume &&
-              props.transactionVolume.items.length !== 0}
-            toggle={props.toggleTransactionVolume}>
-            Transaction Volume&nbsp;
-            <Popup
-              trigger={<Icon name='info circle' />}
-              content='Total amount of tokens that were transacted on the blockchain'
-              position='top left'
-            />
-          </ToggleBtn>
+              toggle={props.toggleTwitter}>
+              Twitter
+            </ToggleBtn>
+          </div>
+
         </div>
         <div>
           <small className='trademark'>santiment.net</small>

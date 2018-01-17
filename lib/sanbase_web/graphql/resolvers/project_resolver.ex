@@ -18,8 +18,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.Repo
 
-  def all_projects(_parent, args, resolution) do
-    only_project_transparency = Map.get(args, :only_project_transparency, false)
+  def all_projects(_parent, args, resolution, only_project_transparency \\ nil) do
+    only_project_transparency = case only_project_transparency do
+      nil -> Map.get(args, :only_project_transparency, false)
+      value -> value
+    end
 
     query = from p in Project,
     where: not is_nil(p.coinmarketcap_id)
@@ -69,9 +72,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_balance(%Project{id: id}, _args, resolution) do
-    only_project_transparency = get_parent_args(resolution)
-    |> Map.get(:only_project_transparency, false)
+  def eth_balance(%Project{id: id}, _args, resolution, only_project_transparency \\ nil) do
+    only_project_transparency = case only_project_transparency do
+      nil ->
+        get_parent_args(resolution)
+        |> Map.get(:only_project_transparency, false)
+      value -> value
+    end
 
     batch({__MODULE__, :eth_balances_by_id, only_project_transparency}, id, fn batch_results ->
       {:ok, Map.get(batch_results, id)}
@@ -90,9 +97,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Map.new(balances, fn balance -> {balance.project_id, balance.balance} end)
   end
 
-  def btc_balance(%Project{id: id}, _args, resolution) do
-    only_project_transparency = get_parent_args(resolution)
-    |> Map.get(:only_project_transparency, false)
+  def btc_balance(%Project{id: id}, _args, resolution, only_project_transparency \\ nil) do
+    only_project_transparency = case only_project_transparency do
+      nil ->
+        get_parent_args(resolution)
+        |> Map.get(:only_project_transparency, false)
+      value -> value
+    end
 
     batch({__MODULE__, :btc_balances_by_id, only_project_transparency}, id, fn batch_results ->
       {:ok, Map.get(batch_results, id)}

@@ -1,22 +1,30 @@
 .detailed-head {
-  margin-top: 0;
-  margin-right: 16px;
+  margin: 0 16px;
   min-height: 84px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .panel-chart {
   padding-top: 0;
 }
 
-.detailed-name h1 {
-  margin-top: 0;
-  font-size: 2em;
+.detailed-name {
+  display: flex;
+  align-items: center;
 }
 
-.detailed-name {
-  width: 50%;
+.detailed-name h1 {
+  margin: 0 15px 3px 0;
+  font-size: 1.8em;
+  letter-spacing: 0.5px;
+}
+
+.detailed-name span {
+  font-size: 1.6em;
+  font-weight: 300;
+  margin-left: 5px;
 }
 
 .detailed-name p {
@@ -31,13 +39,14 @@
 .detailed-price {
   display: flex;
   flex-direction: column;
-  font-size: 2em;
+  font-size: 1.6em;
   font-weight: 300;
   z-index: -1;
 }
 
 .detailed-price-usd {
   display: flex;
+  align-items: baseline;
 }
 
 .detailed-name img {

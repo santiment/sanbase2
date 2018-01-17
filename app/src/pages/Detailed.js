@@ -162,10 +162,9 @@ export const Detailed = ({
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>
-            <h1>
-              <ProjectIcon name={project.name} size={28} />&nbsp;
-              {project.name} ({project.ticker.toUpperCase()})
-            </h1>
+            <h1>{project.name}</h1>
+            <ProjectIcon name={project.name} size={28} />&nbsp;
+            <span className='tickerName'>{project.ticker.toUpperCase()}</span>
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&
@@ -187,7 +186,7 @@ export const Detailed = ({
             </div>
           </HiddenElements>
         </div>
-        <Panel withoutHeader>
+        <Panel zero>
           <ProjectChartContainer
             isDesktop={isDesktop}
             twitter={twitter}
@@ -391,7 +390,8 @@ const mapDataToProps = ({ProjectQuery}) => {
 const mapPropsToOptions = ({match, projects, user}) => {
   const project = getProjectByTicker(match, projects)
   return {
-    skip: !project || !user.token,
+    skip: !project,
+    errorPolicy: 'all',
     variables: {
       id: project ? project.id : 0
     }

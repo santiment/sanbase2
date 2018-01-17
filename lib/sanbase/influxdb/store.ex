@@ -28,7 +28,7 @@ defmodule Sanbase.Influxdb.Store do
         |> Stream.chunk_every(288)
         |> Stream.map(fn data_for_import ->
              :ok = __MODULE__.write(data_for_import)
-           end)
+            end)
         |> Stream.run()
       end
 

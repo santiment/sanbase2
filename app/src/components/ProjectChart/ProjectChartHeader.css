@@ -1,0 +1,14 @@
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+  min-height: 60px;
+  border-bottom: 1px solid rgb(216, 216, 218);
+}
+
+@media (min-width: 1024px) {
+  .chart-header {
+    padding: 0 20px;
+  }
+}

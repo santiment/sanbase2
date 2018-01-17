@@ -154,6 +154,23 @@ export const Detailed = ({
     items: TransactionVolume.transactionVolume || []
   }
 
+  const projectContainerChart = <ProjectChartContainer
+    isDesktop={isDesktop}
+    twitter={twitter}
+    price={price}
+    github={github}
+    burnRate={burnRate}
+    transactionVolume={transactionVolume}
+    onDatesChange={(from, to, interval, ticker) => {
+      changeChartVars({
+        from,
+        to,
+        interval,
+        ticker
+      })
+    }}
+    ticker={project.ticker} />
+
   return (
     <div className='page detailed'>
       <Search
@@ -169,12 +186,15 @@ export const Detailed = ({
 
           {!PriceQuery.loading && PriceQuery.price &&
             <div className='detailed-price'>
+              <div className='detailed-price-description'>Today's changes</div>
               <div className='detailed-price-usd'>
                 {formatNumber(PriceQuery.price.priceUsd, 'USD')}&nbsp;
                 {!generalInfo.isLoading && generalInfo.project &&
                   <PercentChanges changes={generalInfo.project.percentChange24h} />}
               </div>
-              <div>BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}</div>
+              <div className='detailed-price-btc'>
+                BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}
+              </div>
             </div>}
 
           <HiddenElements>
@@ -186,24 +206,9 @@ export const Detailed = ({
             </div>
           </HiddenElements>
         </div>
-        <Panel zero>
-          <ProjectChartContainer
-            isDesktop={isDesktop}
-            twitter={twitter}
-            price={price}
-            github={github}
-            burnRate={burnRate}
-            transactionVolume={transactionVolume}
-            onDatesChange={(from, to, interval, ticker) => {
-              changeChartVars({
-                from,
-                to,
-                interval,
-                ticker
-              })
-            }}
-            ticker={project.ticker} />
-        </Panel>
+        {isDesktop
+          ? <Panel zero>{projectContainerChart}</Panel>
+          : <div>{projectContainerChart}</div>}
         <div className='information'>
           <PanelBlock
             isUnauthorized={generalInfo.isUnauthorized}

@@ -1,21 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import cx from 'classnames'
 import moment from 'moment'
-import {
-  compose,
-  pure,
-  withState,
-  withHandlers
-} from 'recompose'
-import { Popup, Icon } from 'semantic-ui-react'
-import { Merge } from 'animate-components'
-import { fadeIn, slideUp } from 'animate-keyframes'
+import { pure } from 'recompose'
 import { Bar, Chart } from 'react-chartjs-2'
-import { DateRangePicker } from 'react-dates'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
 import { formatNumber, formatBTC } from '../../utils/formatting'
+import { findIndexByDatetime } from '../../utils/utils'
+import 'chartjs-plugin-datalabels'
 import './ProjectChart.css'
 import './react-dates-override.css'
 
@@ -67,136 +59,23 @@ Chart.controllers.LineWithLine = Chart.controllers.line.extend({
   }
 })
 
-export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
-  let cls = interval === value ? 'activated' : ''
-  if (disabled) {
-    cls += ' disabled'
-  }
-  return (
-    <div
-      className={cls}
-      onClick={() => !disabled && setFilter(value)}>{value}</div>
-  )
-}
-
-export const TimeFilter = props => (
-  <div className='time-filter'>
-    <TimeFilterItem value={'1d'} {...props} />
-    <TimeFilterItem value={'1w'} {...props} />
-    <TimeFilterItem value={'2w'} {...props} />
-    <TimeFilterItem value={'1m'} {...props} />
-  </div>
-)
-
-export const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
-  <div className='currency-filter'>
-    <div
-      className={isToggledBTC ? 'activated' : ''}
-      onClick={showBTC}>BTC</div>
-    <div
-      className={!isToggledBTC ? 'activated' : ''}
-      onClick={showUSD}>USD</div>
-  </div>
-)
-
-export const ToggleBtn = ({
-  loading,
-  disabled,
-  isToggled,
-  toggle,
-  children
-}) => (
-  <div className={cx({
-    'toggleBtn': true,
-    'activated': isToggled,
-    'disabled': disabled || loading
-  })}
-    onClick={() => !disabled && !loading && toggle(!isToggled)}>
-    {disabled
-      ? <Popup
-        trigger={<span>{children}</span>}
-        content="Looks like we don't have any data"
-        position='top center'
-      />
-    : children}
-    {loading && '(loading...)'}
-  </div>
-)
-
-const ProjectChartHeader = ({
-  startDate,
-  endDate,
-  focusedInput,
-  onFocusChange,
-  changeDates,
-  isDesktop,
-  selected,
-  history,
-  ...props
-}) => {
-  return (
-    <div className='chart-header'>
-      <div className='chart-datetime-settings'>
-        <TimeFilter {...props} />
-        <DateRangePicker
-          small
-          startDateId='startDate'
-          endDateId='endDate'
-          startDate={startDate}
-          endDate={endDate}
-          onDatesChange={({ startDate, endDate }) => changeDates(startDate, endDate)}
-          focusedInput={focusedInput}
-          onFocusChange={onFocusChange}
-          displayFormat={() => moment.localeData().longDateFormat('L')}
-          hideKeyboardShortcutsPanel
-          isOutsideRange={day => {
-            const today = moment().endOf('day')
-            return day > today
-          }}
-        />
-      </div>
-      <CurrencyFilter {...props} />
-      {!isDesktop && [
-        <div className='selected-value'>{selected &&
-          <Merge
-            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-            two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
-            as='div'
-          >
-            <span className='selected-value-datetime'>
-              {moment(history[selected].datetime).utc().format('MMMM DD, YYYY')}
-            </span>
-          </Merge>}</div>,
-        <div className='selected-value'>{selected &&
-          <Merge
-            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-            two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
-            as='div'
-          >
-            <span className='selected-value-data'>Price:
-              {formatNumber(history[selected].priceUsd, 'USD')}</span>
-            <span className='selected-value-data'>Volume:
-              {formatNumber(history[selected].volume, 'USD')}</span>
-          </Merge>}</div> ]}
-    </div>
-  )
-}
-
-const getChartDataFromHistory = (
+const makeChartDataFromHistory = ({
   history = [],
-  twitter = [],
-  github = [],
-  burnRate = [],
-  transactionVolume = [],
   isToggledBTC,
   isToggledMarketCap,
   isToggledGithubActivity,
   isToggledVolume,
   isToggledTwitter,
   isToggledBurnRate,
-  isToggledTransactionVolume
-) => {
+  isToggledTransactionVolume,
+  ...props
+}) => {
+  const twitter = props.twitter.history.items || []
+  const github = props.github.history.items || []
+  const burnRate = props.burnRate.items || []
+  const transactionVolume = props.transactionVolume.items || []
   const labels = history ? history.map(data => moment(data.datetime).utc()) : []
+  const eventIndex = findIndexByDatetime(labels, '2018-01-13T18:00:00Z')
   const priceDataset = {
     label: 'Price',
     type: 'LineWithLine',
@@ -206,6 +85,11 @@ const getChartDataFromHistory = (
     backgroundColor: 'rgba(52, 171, 107, 0.03)',
     hitRadius: 2,
     yAxisID: 'y-axis-1',
+    datalabels: {
+      display: context => {
+        return props.ticker === 'SAN' && context.dataIndex === eventIndex
+      }
+    },
     data: history ? history.map(data => {
       if (isToggledBTC) {
         const price = parseFloat(data.priceBtc)
@@ -218,6 +102,9 @@ const getChartDataFromHistory = (
     fill: false,
     type: 'bar',
     yAxisID: 'y-axis-2',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.volume,
     backgroundColor: COLORS.volume,
     borderWidth: 4,
@@ -233,6 +120,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-3',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.marketcap,
     backgroundColor: 'rgba(52, 118, 153, 0.03)',
     borderWidth: 1,
@@ -248,6 +138,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-4',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.githubActivity,
     backgroundColor: COLORS.githubActivity,
     borderWidth: 1,
@@ -264,6 +157,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-5',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.twitter,
     backgroundColor: COLORS.twitter,
     borderWidth: 1,
@@ -280,6 +176,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-6',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.burnRate,
     backgroundColor: COLORS.burnRate,
     borderWidth: 1,
@@ -296,6 +195,9 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-7',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.transactionVolume,
     backgroundColor: COLORS.transactionVolume,
     borderWidth: 1,
@@ -343,6 +245,27 @@ const makeOptionsFromProps = props => ({
   scaleFontSize: 0,
   animation: false,
   pointRadius: 0,
+  plugins: {
+    datalabels: {
+      display: false,
+      anchor: 'end',
+      align: 'top',
+      backgroundColor: context => {
+        return 'rgba(96, 76, 141, 0)'
+      },
+      borderRadius: 1,
+      borderColor: 'black',
+      borderWidth: 1,
+      offset: 0,
+      color: 'black',
+      font: {
+        size: 12
+      },
+      formatter: () => {
+        return 'Tokens distributed to advisors'
+      }
+    }
+  },
   hover: {
     mode: 'x',
     intersect: false
@@ -571,6 +494,7 @@ const makeOptionsFromProps = props => ({
 })
 
 export const ProjectChart = ({
+  isDesktop,
   isError,
   isEmpty,
   isLoading,
@@ -586,139 +510,32 @@ export const ProjectChart = ({
       </div>
     )
   }
-  const chartData = getChartDataFromHistory(
-    props.history,
-    props.twitter.history.items,
-    props.github.history.items,
-    props.burnRate.items,
-    props.transactionVolume.items,
-    props.isToggledBTC,
-    props.isToggledMarketCap,
-    props.isToggledGithubActivity,
-    props.isToggledVolume,
-    props.isToggledTwitter,
-    props.isToggledBurnRate,
-    props.isToggledTransactionVolume)
+  const chartData = makeChartDataFromHistory(props)
   const chartOptions = makeOptionsFromProps(props)
 
   return (
-    <div className='project-dp-chart'>
-      <ProjectChartHeader {...props} />
-      <div className='project-chart-body'>
-        {isLoading && <div className='project-chart__isLoading'> Loading... </div>}
-        {!isLoading && isEmpty && <div className='project-chart__isEmpty'> No data was returned </div>}
-        <Bar
-          data={chartData}
-          options={chartOptions}
-          height={100}
-          onElementsClick={elems => {
-            !props.isDesktop && elems[0] && setSelected(elems[0]._index)
-          }}
-          style={{ transition: 'opacity 0.25s ease' }}
-        />
-      </div>
-      <div className='chart-footer'>
-        <div className='chart-footer-filters'>
-
-          <div class="filter-cat">
-            <div class="filter-cat-title">Financial</div>
-            <ToggleBtn
-              isToggled={props.isToggledMarketCap}
-              toggle={props.toggleMarketcap}>
-              Marketcap
-            </ToggleBtn>
-            <ToggleBtn
-              isToggled={props.isToggledVolume}
-              toggle={props.toggleVolume}>
-              Volume
-            </ToggleBtn>
-          </div>
-
-          <div class="filter-cat">
-            <div class="filter-cat-title">Development</div>
-            <ToggleBtn
-              loading={props.github.history.loading}
-              disabled={props.github.history.items.length === 0}
-              isToggled={props.isToggledGithubActivity &&
-                props.github.history.items.length !== 0}
-              toggle={props.toggleGithubActivity}>
-              Github Activity
-            </ToggleBtn>
-          </div>
-
-          <div class="filter-cat">
-            <div class="filter-cat-title">Blockchain</div>
-            <ToggleBtn
-              loading={props.burnRate.loading}
-              disabled={props.burnRate.items.length === 0}
-              isToggled={props.isToggledBurnRate &&
-                props.burnRate.items.length !== 0}
-              toggle={props.toggleBurnRate}>
-              Burn Rate&nbsp;
-              <Popup
-                trigger={<Icon name='info circle' />}
-                content='Token Burn Rate shows the amount of movement
-                of tokens between addresses. One use for this metric is
-                to spot large amounts of tokens moving after sitting for long periods of time'
-                position='top left'
-              />
-            </ToggleBtn>
-            <ToggleBtn
-              loading={props.transactionVolume.loading}
-              disabled={props.transactionVolume.items.length === 0}
-              isToggled={props.isToggledTransactionVolume &&
-                props.transactionVolume.items.length !== 0}
-              toggle={props.toggleTransactionVolume}>
-              Transaction Volume&nbsp;
-              <Popup
-                trigger={<Icon name='info circle' />}
-                content='Total amount of tokens that were transacted on the blockchain'
-                position='top left'
-              />
-            </ToggleBtn>
-          </div>
-
-          <div class="filter-cat">
-            <div class="filter-cat-title">Social</div>
-            <ToggleBtn
-              loading={props.twitter.history.loading}
-              disabled={props.twitter.history.items.length === 0}
-              isToggled={props.isToggledTwitter &&
-              props.twitter.history.items.length !== 0}
-              toggle={props.toggleTwitter}>
-              Twitter
-            </ToggleBtn>
-          </div>
-
-        </div>
-        <div>
-          <small className='trademark'>santiment.net</small>
-        </div>
-      </div>
+    <div className='project-chart-body'>
+      {isLoading && <div className='project-chart__isLoading'> Loading... </div>}
+      {!isLoading && isEmpty && <div className='project-chart__isEmpty'> We don't have any data </div>}
+      <Bar
+        data={chartData}
+        options={chartOptions}
+        height={isDesktop ? 100 : undefined}
+        onElementsClick={elems => {
+          !props.isDesktop && elems[0] && setSelected(elems[0]._index)
+        }}
+        style={{ transition: 'opacity 0.25s ease' }}
+      />
     </div>
   )
 }
-
-const enhance = compose(
-  withState('isToggledBTC', 'currencyToggle', false),
-  withHandlers({
-    showBTC: ({ currencyToggle }) => e => currencyToggle(true),
-    showUSD: ({ currencyToggle }) => e => currencyToggle(false)
-  }),
-  withState('isToggledMarketCap', 'toggleMarketcap', false),
-  withState('isToggledGithubActivity', 'toggleGithubActivity', false),
-  withState('isToggledVolume', 'toggleVolume', true),
-  withState('isToggledTwitter', 'toggleTwitter', false),
-  withState('isToggledBurnRate', 'toggleBurnRate', false),
-  withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
-  pure
-)
 
 ProjectChart.propTypes = {
   isLoading: PropTypes.bool.isRequired,
   isError: PropTypes.bool.isRequired,
   history: PropTypes.array.isRequired,
   isEmpty: PropTypes.bool,
+  isToggledBTC: PropTypes.bool,
   selected: PropTypes.number,
   isDesktop: PropTypes.bool.isRequired,
   changeDates: PropTypes.func,
@@ -738,4 +555,4 @@ ProjectChart.defaultProps = {
   focusedInput: null
 }
 
-export default enhance(ProjectChart)
+export default pure(ProjectChart)

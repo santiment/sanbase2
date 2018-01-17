@@ -20,6 +20,8 @@
   margin-right: -15px;
   padding: 16px;
   position: relative;
+  /* padding: 10px 20px;
+  background-color: rgba(250, 251, 255, 0.8); Y */
 }
 
 .project-chart__isLoading,
@@ -37,13 +39,14 @@
   justify-content: center;
 }
 
-.chart-header {
+/* .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  /* min-height: 60px; */
-}
+  padding: 0 20px;
+  min-height: 60px;
+  padding: 8px 0; - K
+} Y removed this */
 
 .chart-datetime-settings {
   display: flex;
@@ -90,35 +93,26 @@
   }
 }
 
-.chart-footer {
+/* .chart-footer {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 16px;
+  margin-top: 10px;
+  margin-top: 16px - k
 }
 
 .chart-footer-filters {
   display: flex;
   align-items: center;
-  width: 90%;
-}
-
-.filter-cat {
-  width: 25%;
-}
-.filter-cat-title {
-  text-align: center;
-  text-transform: uppercase;
 }
 
 .trademark {
   color: #e3e3e3;
-  display: none;
-}
+} Y removed these */
 
 .time-filter,
-.currency-filter,
-.chart-footer-filters {
+.currency-filter
+/* .chart-footer-filters Y removed */ {
   display: flex;
   user-select: none;
 }
@@ -127,6 +121,9 @@
 .currency-filter div,
 .chart-footer-filters div {
   cursor: pointer;
+  /* min-width: 32px;
+  text-align: center;
+  border-radius: 4px; Y */
   width: inherit;
   padding: 1px 8px 2px 8px;
   border-radius: 4px;

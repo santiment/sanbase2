@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { makeItervalBounds } from './ProjectChartContainer'
+import { makeItervalBounds } from './utils.js'
 
 describe('ProjectChartContainer', () => {
   it('makeIntervalBounds should works', () => {

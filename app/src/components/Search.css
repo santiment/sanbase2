@@ -1,13 +1,14 @@
 .search-panel {
-  padding: 16px;
+  padding: 12px;
 }
 
 @media (min-width: 768px) {
   .search-panel .input {
-    min-width: 425px;
+    /* min-width: 425px; */
   }
 }
 
-.search-panel input {
+.search-panel .ui.input input {
   border-radius: 4px !important;
+  border: none !important;
 }

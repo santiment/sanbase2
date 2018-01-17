@@ -10,7 +10,6 @@ const AuthControl = ({user, login, logout}) => {
   if (user.username) {
     return (
       <div className='user-auth-control'>
-        You are logged in!
         <Balance user={user} />
         <a href='#' onClick={logout}>
           Logout

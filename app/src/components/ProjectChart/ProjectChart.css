@@ -13,12 +13,18 @@
 }
 
 .project-chart-body {
+  background: rgba(245, 249, 255, 0.6);
+  border-bottom: 1px solid rgba(38, 43, 51, 0.2);
+  border-top: 1px solid rgba(38, 43, 51, 0.2);
+  margin-left: -15px;
+  margin-right: -15px;
+  padding: 16px;
   position: relative;
 }
 
 .project-chart__isLoading,
 .project-chart__isEmpty {
-  color: black;
+  color: rgba(38, 43, 51, 1.0);
   font-size: 2em;
   font-weight: 300;
   position: absolute;
@@ -35,8 +41,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
-  min-height: 60px;
+  padding: 8px 0;
+  /* min-height: 60px; */
 }
 
 .chart-datetime-settings {
@@ -88,16 +94,26 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 16px;
 }
 
 .chart-footer-filters {
   display: flex;
   align-items: center;
+  width: 90%;
+}
+
+.filter-cat {
+  width: 25%;
+}
+.filter-cat-title {
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .trademark {
   color: #e3e3e3;
+  display: none;
 }
 
 .time-filter,
@@ -111,14 +127,16 @@
 .currency-filter div,
 .chart-footer-filters div {
   cursor: pointer;
-  width: 40px;
-  text-align: center;
+  width: inherit;
+  padding: 1px 8px 2px 8px;
+  border-radius: 4px;
+  margin: 0 2px;
 }
 
 .time-filter .activated,
 .currency-filter .activated,
 .chart-footer-filters .activated {
-  background: gray;
+  background: rgba(38, 43, 51, 0.8);
   color: white;
 }
 
@@ -126,9 +144,4 @@
 .currency-filter .disabled,
 .chart-footer-filters .disabled {
   color: #888;
-}
-
-.chart-footer-filters div {
-  width: 100px;
-  margin-right: 2px;
 }

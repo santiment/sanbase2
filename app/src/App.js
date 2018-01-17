@@ -14,6 +14,7 @@ import Signals from './pages/Signals'
 import Detailed from './pages/Detailed'
 import Account from './pages/Account'
 import SideMenu from './components/SideMenu'
+import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
@@ -22,7 +23,7 @@ import ProjectChartContainer from './components/ProjectChart/ProjectChartContain
 export const App = ({isDesktop}) => (
   <div className='App'>
     {isDesktop
-      ? <SideMenu />
+      ? <TopMenu />
       : <MobileMenu />}
     <ErrorBoundary>
       <Switch>

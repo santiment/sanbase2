@@ -6,7 +6,7 @@ defmodule Sanbase.Etherbi.FundsMovement do
   @etherbi_url Config.module_get(Sanbase.Etherbi, :url)
   @http_client Mockery.of("HTTPoison")
 
-  def transactions_in(from, to, wallets) do
+  def transactions_in(wallets, from, to) do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
@@ -15,11 +15,11 @@ defmodule Sanbase.Etherbi.FundsMovement do
         inspect(wallets)
       }"
 
-    options = [recv_timeout: 15_000]
+    options = [recv_timeout: 150_000]
     get(url, options)
   end
 
-  def transactions_out(from, to, wallets) do
+  def transactions_out(wallets, from, to) do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
@@ -29,19 +29,11 @@ defmodule Sanbase.Etherbi.FundsMovement do
       "#{@etherbi_url}/transactions_in?from_timestamp=#{from_unix}&to_timestamp=#{to_unix}&wallets=#{
         inspect(wallets)
       }"
+    |> IO.inspect()
 
     Logger.info("#{inspect(url)}")
-    options = [recv_timeout: 15_000]
+    options = [recv_timeout: 150_000]
     get(url, options)
-  end
-
-  defp get(_, _) do
-    [
-      {DateTime.from_unix!(1_514_765_134), 400_000_000_000_000_000_000,
-       "0xfe9e8709d3215310075d67e3ed32a380ccf451c8", "SAN"},
-      {DateTime.from_unix!(1_514_765_415), 400_000_000_000_000_000_000,
-       "0xfe9e8709d3215310075d67e3ed32a380ccf451c8", "SAN"}
-    ]
   end
 
   defp get(url, options) do

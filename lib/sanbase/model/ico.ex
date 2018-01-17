@@ -67,16 +67,11 @@ defmodule Sanbase.Model.Ico do
     timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
 
     Repo.preload(ico, [ico_currencies: [:currency]]).ico_currencies
-    |> Enum.reduce(nil, fn(ic, acc) ->
-      Sanbase.Prices.Utils.convert_amount(ic.amount, ic.currency.code, target_ticker, timestamp)
-      |> case do
-        nil -> acc
-        converted_amount ->
-          case acc do
-            nil -> converted_amount
-            res -> Decimal.add(res, converted_amount)
-          end
-      end
-    end)
+    |> Enum.map(fn(ic) -> Sanbase.Prices.Utils.convert_amount(ic.amount, ic.currency.code, target_ticker, timestamp) end)
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> nil
+      amounts -> Enum.reduce(amounts, Decimal.new(0), &Decimal.add/2)
+    end
   end
 end

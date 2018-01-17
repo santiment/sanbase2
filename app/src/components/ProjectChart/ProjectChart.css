@@ -33,15 +33,6 @@
   justify-content: center;
 }
 
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  min-height: 60px;
-  border-bottom: 1px solid rgb(216, 216, 218);
-}
-
 .chart-datetime-settings {
   display: flex;
   align-items: center;
@@ -87,25 +78,8 @@
   }
 }
 
-.chart-footer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-top: 1px solid rgb(216, 216, 218);
-}
-
-.chart-footer-filters {
-  display: flex;
-  align-items: center;
-}
-
-.trademark {
-  color: #e3e3e3;
-}
-
 .time-filter,
-.currency-filter,
-.chart-footer-filters {
+.currency-filter {
   display: flex;
   user-select: none;
 }

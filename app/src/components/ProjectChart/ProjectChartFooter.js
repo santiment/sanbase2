@@ -27,8 +27,8 @@ export const ToggleBtn = ({
   </div>
 )
 
-const FilterCategory = ({children, name}) => (
-  <div className='filter-category'>
+const FilterCategory = ({children, name, className = ''}) => (
+  <div className={'filter-category ' + className}>
     <h5 className='filter-category-title'>{name.toUpperCase()}</h5>
     <div className='filter-category-body'>
       {children}
@@ -64,7 +64,7 @@ const ProjectChartFooter = (props) => (
           Github Activity
         </ToggleBtn>
       </FilterCategory>
-      <FilterCategory name='Blockchain'>
+      <FilterCategory className='filter-category-blockchain' name='Blockchain'>
         <ToggleBtn
           loading={props.burnRate.loading}
           disabled={props.burnRate.items.length === 0}

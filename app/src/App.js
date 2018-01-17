@@ -18,7 +18,6 @@ import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
-import ProjectChartContainer from './components/ProjectChart/ProjectChartContainer'
 
 export const App = ({isDesktop}) => (
   <div className='App'>
@@ -30,11 +29,8 @@ export const App = ({isDesktop}) => (
         <Route exact path='/projects' component={Cashflow} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
-        <Route exact path='/projects/:ticker' component={Detailed} />
-        <Route exact path='/charts/:ticker' render={({match}) => {
-          const ticker = match.params.ticker
-          return (<ProjectChartContainer ticker={ticker} />)
-        }} />
+        <Route exact path='/projects/:ticker' render={(props) => (
+          <Detailed isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
         <Route path='/login' component={Login} />
         <Route exact path='/' component={Cashflow} />

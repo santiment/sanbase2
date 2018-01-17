@@ -50,14 +50,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
-    query =
+    projects =
       Project
       |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
+      |> Repo.all
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Repo.all(query),
-      &fetch_project_data/1,
+      projects,
+      &fetch_project_info/1,
+      ordered: false,
+      max_concurrency: 5,
+      timeout: 60_000
+    )
+    |> Stream.run()
+
+    Task.Supervisor.async_stream_nolink(
+      Sanbase.TaskSupervisor,
+      projects,
+      &fetch_price_data/1,
       ordered: false,
       max_concurrency: 5,
       timeout: :infinity
@@ -72,11 +83,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   def handle_info(msg, state) do
     Logger.warn("Unknown message received: #{msg}")
     {:noreply, state}
-  end
-
-  defp fetch_project_data(project) do
-    fetch_project_info(project)
-    fetch_price_data(project)
   end
 
   defp fetch_project_info(project) do

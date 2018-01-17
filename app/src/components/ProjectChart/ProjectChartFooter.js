@@ -1,6 +1,6 @@
 import React from 'react'
 import cx from 'classnames'
-import { Popup, Icon, Label } from 'semantic-ui-react'
+import { Popup, Icon, Label, Loader } from 'semantic-ui-react'
 import './ProjectChartFooter.css'
 
 export const ToggleBtn = ({
@@ -23,7 +23,7 @@ export const ToggleBtn = ({
         position='top center'
       />
     : children}
-    {loading && '(loading...)'}
+    {loading && <Loader active inline size='mini' />}
   </div>
 )
 
@@ -72,7 +72,7 @@ const ProjectChartFooter = (props) => (
             props.burnRate.items.length !== 0}
           toggle={props.toggleBurnRate}>
           <Label circular className='burnRateLabel' empty />
-          Burn Rate&nbsp;
+          Burn Rate
           <Popup
             trigger={<Icon name='info circle' />}
             content='Token Burn Rate shows the amount of movement

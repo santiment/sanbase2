@@ -46,25 +46,21 @@ defmodule Sanbase.Etherbi.FundsMovement do
 
   defp get(url, options) do
     case @http_client.get(url, [], options) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} = res ->
-        IO.inspect(res)
-        {:ok, result} = Poison.decode(body)
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        with {:ok, result} <- Poison.decode(body) do
+          result =
+            result
+            |> Enum.map(fn [timestamp, volume, address, token] ->
+              {DateTime.from_unix!(timestamp), volume, address, token}
+            end)
 
-        result =
-          result
-          |> Enum.map(fn [timestamp, volume, address, token] ->
-            {DateTime.from_unix!(timestamp), volume, address, token}
-          end)
+          {:ok, result}
+        end
 
-        {:ok, result}
-
-      {:error, %HTTPoison.Response{status_code: status, body: body}} = res ->
-        IO.inspect(res)
-
-        {:error, "Error status #{status} fetching data: #{body}"}
+      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+        {:error, "Error status #{status} fetching data from url #{url}: #{body}"}
 
       error ->
-        IO.inspect(error)
         {:error, "Error fetching data: #{inspect(error)}"}
     end
   end

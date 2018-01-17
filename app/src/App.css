@@ -1,6 +1,6 @@
 .App {
   display: flex;
-  font-family: Helvetica, sans-serif;
+  flex-direction: column; /* adding for top menu - kc */
 }
 
 @media (max-width: 768px) {
@@ -52,11 +52,16 @@
 
 .page {
   flex: 1;
-  padding: 0 15px;
-  height: 100vh;
+  padding: 0 36px;
+  /* height: 100vh; hiding for non-fixed top menu - kc */
   overflow-y: auto;
   overflow: scroll;
   -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 767px) {
+  .page {
+    padding: 0 15px;
+  }
 }
 
 .page-head {
@@ -67,7 +72,6 @@
 .page h1 {
   font-size: 32px;
   font-weight: 400;
-  font-family: "Helvetica", sans-serif;
   margin: 32px 0 32px 16px;
   line-height: 51px;
   color: #171717;

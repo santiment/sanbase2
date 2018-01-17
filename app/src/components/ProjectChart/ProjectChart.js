@@ -6,6 +6,7 @@ import { Bar, Chart } from 'react-chartjs-2'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
 import { formatNumber, formatBTC } from '../../utils/formatting'
+import { findIndexByDatetime } from '../../utils/utils'
 import 'chartjs-plugin-datalabels'
 import './ProjectChart.css'
 import './react-dates-override.css'
@@ -58,21 +59,23 @@ Chart.controllers.LineWithLine = Chart.controllers.line.extend({
   }
 })
 
-const getChartDataFromHistory = (
+const makeChartDataFromHistory = ({
   history = [],
-  twitter = [],
-  github = [],
-  burnRate = [],
-  transactionVolume = [],
   isToggledBTC,
   isToggledMarketCap,
   isToggledGithubActivity,
   isToggledVolume,
   isToggledTwitter,
   isToggledBurnRate,
-  isToggledTransactionVolume
-) => {
+  isToggledTransactionVolume,
+  ...props
+}) => {
+  const twitter = props.twitter.history.items || []
+  const github = props.github.history.items || []
+  const burnRate = props.burnRate.items || []
+  const transactionVolume = props.transactionVolume.items || []
   const labels = history ? history.map(data => moment(data.datetime).utc()) : []
+  const eventIndex = findIndexByDatetime(labels, '2018-01-13T18:00:00Z')
   const priceDataset = {
     label: 'Price',
     type: 'LineWithLine',
@@ -84,7 +87,7 @@ const getChartDataFromHistory = (
     yAxisID: 'y-axis-1',
     datalabels: {
       display: context => {
-        return context.dataIndex === 705 || context.dataIndex === 180
+        return props.ticker === 'SAN' && context.dataIndex === eventIndex
       }
     },
     data: history ? history.map(data => {
@@ -244,19 +247,22 @@ const makeOptionsFromProps = props => ({
   pointRadius: 0,
   plugins: {
     datalabels: {
+      display: false,
+      anchor: 'end',
+      align: 'top',
       backgroundColor: context => {
         return 'rgba(96, 76, 141, 0)'
       },
-      borderRadius: 2,
-      padding: 0,
+      borderRadius: 1,
+      borderColor: 'black',
+      borderWidth: 1,
       offset: 0,
       color: 'black',
       font: {
-        size: 16,
-        weight: 'bold'
+        size: 12
       },
       formatter: () => {
-        return '🔥'
+        return 'Tokens distributed to advisors'
       }
     }
   },
@@ -504,19 +510,7 @@ export const ProjectChart = ({
       </div>
     )
   }
-  const chartData = getChartDataFromHistory(
-    props.history,
-    props.twitter.history.items,
-    props.github.history.items,
-    props.burnRate.items,
-    props.transactionVolume.items,
-    props.isToggledBTC,
-    props.isToggledMarketCap,
-    props.isToggledGithubActivity,
-    props.isToggledVolume,
-    props.isToggledTwitter,
-    props.isToggledBurnRate,
-    props.isToggledTransactionVolume)
+  const chartData = makeChartDataFromHistory(props)
   const chartOptions = makeOptionsFromProps(props)
 
   return (

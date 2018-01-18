@@ -32,7 +32,10 @@ defmodule Sanbase.Etherbi.Transactions do
     end
   end
 
-  def handle_cast(:sync, %{update_interval_ms: update_interval_ms, token_decimals: token_decimals} = state) do
+  def handle_cast(
+        :sync,
+        %{update_interval_ms: update_interval_ms, token_decimals: token_decimals} = state
+      ) do
     exchange_wallets_addrs = Repo.all(from(addr in ExchangeEthAddress, select: addr.address))
 
     Task.Supervisor.async_stream_nolink(
@@ -40,7 +43,7 @@ defmodule Sanbase.Etherbi.Transactions do
       exchange_wallets_addrs,
       &fetch_and_store(&1, token_decimals),
       ordered: false,
-      max_concurency: System.schedulers_online() * 2,
+      max_concurency: 1,
       timeout: 1000 * 60
     )
     |> Stream.run()
@@ -53,18 +56,16 @@ defmodule Sanbase.Etherbi.Transactions do
     last_datetime = Store.last_datetime(address) || DateTime.from_unix!(0, :seconds)
     now_datetime = DateTime.utc_now()
 
-    transactions_in = FundsMovement.transactions_in([address], last_datetime, now_datetime)
-
+    {:ok, transactions_in} = FundsMovement.transactions_in([address], last_datetime, now_datetime)
     convert_to_measurement(transactions_in, address, "in", token_decimals)
     |> Store.import()
 
-    transactions_out = FundsMovement.transactions_out([address], last_datetime, now_datetime)
-
+    {:ok, transactions_out} = FundsMovement.transactions_out([address], last_datetime, now_datetime)
     convert_to_measurement(transactions_out, address, "out", token_decimals)
     |> Store.import()
   end
 
-  def build_token_decimals_map() do
+  defp build_token_decimals_map() do
     query =
       from(
         p in Project,

@@ -178,8 +178,7 @@ export const Detailed = ({
         <div className='detailed-head'>
           <div className='detailed-name'>
             <h1>{project.name}</h1>
-            <ProjectIcon name={project.name} size={28} />&nbsp;
-            <span className='tickerName'>{project.ticker.toUpperCase()}</span>
+            <span className='tickerName'><ProjectIcon name={project.name} size={24} />{project.ticker.toUpperCase()}</span>
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&

@@ -5,7 +5,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
 
   test "fetching the first price datetime of a token" do
     Tesla.Mock.mock fn
-      %{method: :get, url: "https://graphs.coinmarketcap.com/currencies/santiment/"} ->
+      %{method: :get, url: "https://graphs2.coinmarketcap.com/currencies/santiment/"} ->
         %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
     end
 
@@ -14,7 +14,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
 
   test "fetching prices of a token" do
     Tesla.Mock.mock fn
-      %{method: :get, url: "https://graphs.coinmarketcap.com/currencies/santiment/1507991665000/1508078065000/"} ->
+      %{method: :get, url: "https://graphs2.coinmarketcap.com/currencies/santiment/1507991665000/1508078065000/"} ->
         %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
     end
 

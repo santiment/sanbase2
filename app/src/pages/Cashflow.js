@@ -19,6 +19,7 @@ import {
   simpleSort
 } from './../utils/sortMethods'
 import { retrieveProjects } from './Cashflow.actions.js'
+import Panel from './../components/Panel'
 import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
@@ -89,7 +90,8 @@ export const Cashflow = ({
   onSearch,
   history,
   search,
-  tableInfo
+  tableInfo,
+  preload
 }) => {
   const columns = [{
     Header: 'Project',
@@ -102,7 +104,9 @@ export const Cashflow = ({
       ticker: d.ticker
     }),
     Cell: ({value}) => (
-      <div onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)}>
+      <div
+        onMouseOver={() => preload()}
+        onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)} >
         <ProjectIcon name={value.name} /> {value.name} ({value.ticker})
       </div>
     ),
@@ -165,7 +169,7 @@ export const Cashflow = ({
             We give no guarantee data is correct as we are in active development.
           </p>
         </div>
-        <div className='panel'>
+        <Panel>
           <div className='row'>
             <div className='datatables-info'>
               <label>
@@ -206,7 +210,7 @@ export const Cashflow = ({
             columns={columns}
             filtered={getFilter(search)}
           />
-        </div>
+        </Panel>
       </FadeIn>
     </div>
   )

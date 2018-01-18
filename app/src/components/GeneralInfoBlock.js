@@ -103,7 +103,7 @@ const GeneralInfoBlock = ({
         ROI since ICO
       </div>
       <div>
-        {roiUsd}
+        {roiUsd && parseFloat(roiUsd).toFixed(2)}
       </div>
     </div>
   </div>

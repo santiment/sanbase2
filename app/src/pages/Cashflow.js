@@ -189,7 +189,7 @@ export const Cashflow = ({
             showPagination={false}
             showPaginationTop={false}
             showPaginationBottom={false}
-            defaultPageSize={projects.items ? projects.items.length : 32}
+            pageSize={projects && projects.length}
             sortable={false}
             resizable
             defaultSorted={[

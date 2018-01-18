@@ -113,6 +113,31 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
         name,
         fundsRaisedUsdIcoEndPrice,
         fundsRaisedEthIcoEndPrice,
+        fundsRaisedBtcIcoEndPrice
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}"))
+
+    assert json_response(result, 200)["data"]["project"] ==
+      %{"name" => "Project",
+        "fundsRaisedUsdIcoEndPrice" => "1200",
+        "fundsRaisedEthIcoEndPrice" => "250.0",
+        "fundsRaisedBtcIcoEndPrice" => "300"}
+  end
+
+  test "fetch project full funds raised", context do
+    project_id = setup()
+
+    query = """
+    {
+      projectFull(id: $id) {
+        name,
+        fundsRaisedUsdIcoEndPrice,
+        fundsRaisedEthIcoEndPrice,
         fundsRaisedBtcIcoEndPrice,
         icos {
           endDate,

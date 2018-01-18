@@ -22,3 +22,14 @@
     min-width: 425px;
   }
 }
+
+@media (min-width: 1024px) {
+  .search-panel .input {
+    min-width: 425px;
+    margin: 16px 16px 0 16px;
+  }
+
+  .search-panel .ui .input {
+    min-width: 425px;
+  }
+}

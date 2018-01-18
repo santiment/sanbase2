@@ -16,10 +16,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
-  alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
-  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Prices.Store
+  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices

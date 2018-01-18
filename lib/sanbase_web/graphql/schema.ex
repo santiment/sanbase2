@@ -26,14 +26,25 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.current_user/3)
     end
 
-    field :all_projects, list_of(:project_basic) do
+    field :all_projects, list_of(:project_listing) do
       arg :only_project_transparency, :boolean
 
-      middleware MultipleAuth, [BasicAuth, JWTAuth]
       resolve &ProjectResolver.all_projects/3
     end
 
-    field :project, :project do
+    field :all_projects_project_transparency, list_of(:project_project_transparency_listing) do
+      middleware BasicAuth
+      resolve &(ProjectResolver.all_projects(&1, &2, &3, true))
+    end
+
+    field :project, :project_public do
+      arg :id, non_null(:id)
+      arg :only_project_transparency, :boolean # this is to filter the wallets
+
+      resolve &ProjectResolver.project/3
+    end
+
+    field :project_full, :project_full do
       arg :id, non_null(:id)
       arg :only_project_transparency, :boolean # this is to filter the wallets
 

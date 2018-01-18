@@ -14,6 +14,8 @@
 
 .project-chart-body {
   position: relative;
+  padding: 10px 20px;
+  background-color: rgba(250, 251, 255, 0.8);
 }
 
 .project-chart__isLoading,
@@ -29,14 +31,6 @@
   background: rgba(227, 227, 227, 0.4);
   border-radius: 4px;
   justify-content: center;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  min-height: 60px;
 }
 
 .chart-datetime-settings {
@@ -84,25 +78,8 @@
   }
 }
 
-.chart-footer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 10px;
-}
-
-.chart-footer-filters {
-  display: flex;
-  align-items: center;
-}
-
-.trademark {
-  color: #e3e3e3;
-}
-
 .time-filter,
-.currency-filter,
-.chart-footer-filters {
+.currency-filter {
   display: flex;
   user-select: none;
 }
@@ -111,14 +88,15 @@
 .currency-filter div,
 .chart-footer-filters div {
   cursor: pointer;
-  width: 40px;
+  min-width: 32px;
   text-align: center;
+  border-radius: 4px;
 }
 
 .time-filter .activated,
 .currency-filter .activated,
 .chart-footer-filters .activated {
-  background: gray;
+  background: rgb(71, 72, 76);
   color: white;
 }
 
@@ -129,6 +107,5 @@
 }
 
 .chart-footer-filters div {
-  width: 100px;
   margin-right: 2px;
 }

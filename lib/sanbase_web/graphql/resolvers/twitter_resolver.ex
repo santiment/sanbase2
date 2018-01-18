@@ -7,6 +7,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   import Ecto.Query
   import SanbaseWeb.Graphql.Helpers.Async
 
+  import Ecto.Query
+
   def twitter_data(_root, %{ticker: ticker}, _resolution) do
     Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}).()
   end

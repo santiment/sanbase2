@@ -34,9 +34,7 @@ exports[`Cashflow container it should render correctly 1`] = `
         NOTE: This app is in development. We give no guarantee data is correct as we are in active development.
       </p>
     </div>
-    <div
-      className="panel"
-    >
+    <Panel>
       <div
         className="row"
       >
@@ -205,7 +203,7 @@ exports[`Cashflow container it should render correctly 1`] = `
         defaultExpanded={Object {}}
         defaultFilterMethod={[Function]}
         defaultFiltered={Array []}
-        defaultPageSize={32}
+        defaultPageSize={20}
         defaultResized={Array []}
         defaultSortDesc={false}
         defaultSortMethod={[Function]}
@@ -261,6 +259,7 @@ exports[`Cashflow container it should render correctly 1`] = `
         ofText="of"
         onFetchData={[Function]}
         originalKey="_original"
+        pageSize={2}
         pageSizeOptions={
           Array [
             5,
@@ -287,7 +286,7 @@ exports[`Cashflow container it should render correctly 1`] = `
         style={Object {}}
         subRowsKey="_subRows"
       />
-    </div>
+    </Panel>
   </FadeIn>
 </div>
 `;

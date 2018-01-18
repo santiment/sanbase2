@@ -154,7 +154,6 @@ exports[`Project detail page container it should render correctly 1`] = `
       className="information"
     >
       <PanelBlock
-        classes=""
         isLoading={true}
         isUnauthorized={true}
         title="General Info"
@@ -162,7 +161,6 @@ exports[`Project detail page container it should render correctly 1`] = `
         <GeneralInfoBlock />
       </PanelBlock>
       <PanelBlock
-        classes=""
         isUnauthorized={true}
         title="Financials"
       >

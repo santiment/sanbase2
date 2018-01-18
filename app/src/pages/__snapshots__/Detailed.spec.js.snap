@@ -72,16 +72,18 @@ exports[`Project detail page container it should render correctly 1`] = `
         className="detailed-name"
       >
         <h1>
-          <ProjectIcon
-            name="Aragon"
-            size={28}
-          />
-           
           Aragon
-           (
-          ANT
-          )
         </h1>
+        <ProjectIcon
+          name="Aragon"
+          size={28}
+        />
+         
+        <span
+          className="tickerName"
+        >
+          ANT
+        </span>
       </div>
       <Component>
         <div
@@ -98,10 +100,8 @@ exports[`Project detail page container it should render correctly 1`] = `
         </div>
       </Component>
     </div>
-    <Panel
-      withoutHeader={true}
-    >
-      <ProjectChartContainer
+    <div>
+      <withState(withState(withState(withState(withState(withState(ProjectChartContainer))))))
         burnRate={
           Object {
             "error": false,
@@ -149,7 +149,7 @@ exports[`Project detail page container it should render correctly 1`] = `
           }
         }
       />
-    </Panel>
+    </div>
     <div
       className="information"
     >

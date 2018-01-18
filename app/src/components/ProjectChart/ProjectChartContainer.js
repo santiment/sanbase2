@@ -1,35 +1,13 @@
 import React, { Component } from 'react'
 import moment from 'moment'
+import {
+  compose,
+  withState
+} from 'recompose'
+import ProjectChartHeader from './ProjectChartHeader'
+import ProjectChartFooter from './ProjectChartFooter'
 import ProjectChart from './ProjectChart'
-
-export const makeItervalBounds = interval => {
-  switch (interval) {
-    case '1d':
-      return {
-        from: moment().subtract(1, 'd').utc().format('YYYY-MM-DD') + 'T00:00:00Z',
-        to: moment().utc().format(),
-        minInterval: '5m'
-      }
-    case '1w':
-      return {
-        from: moment().subtract(1, 'weeks').utc().format(),
-        to: moment().utc().format(),
-        minInterval: '1h'
-      }
-    case '2w':
-      return {
-        from: moment().subtract(2, 'weeks').utc().format(),
-        to: moment().utc().format(),
-        minInterval: '1h'
-      }
-    default:
-      return {
-        from: moment().subtract(1, 'months').utc().format(),
-        to: moment().utc().format(),
-        minInterval: '1h'
-      }
-  }
-}
+import { makeItervalBounds } from './utils'
 
 class ProjectChartContainer extends Component {
   constructor (props) {
@@ -42,7 +20,8 @@ class ProjectChartContainer extends Component {
       selected: undefined,
       startDate: moment(from),
       endDate: moment(to),
-      focusedInput: null
+      focusedInput: null,
+      isToggledBTC: false
     }
 
     this.setFilter = this.setFilter.bind(this)
@@ -50,6 +29,7 @@ class ProjectChartContainer extends Component {
     this.onDatesChange = this.onDatesChange.bind(this)
     this.onFocusChange = this.onFocusChange.bind(this)
     this.updateHistoryData = this.updateHistoryData.bind(this)
+    this.toggleBTC = this.toggleBTC.bind(this)
   }
 
   onFocusChange (focusedInput) {
@@ -95,6 +75,10 @@ class ProjectChartContainer extends Component {
     })
   }
 
+  toggleBTC (isToggledBTC) {
+    this.setState({isToggledBTC})
+  }
+
   updateHistoryData (ticker) {
     const { interval } = this.state
     const { from, to, minInterval } = makeItervalBounds(interval)
@@ -122,12 +106,22 @@ class ProjectChartContainer extends Component {
 
   render () {
     return (
-      <div style={{width: '100%'}}>
-        <ProjectChart
-          setFilter={this.setFilter}
-          setSelected={this.setSelected}
+      <div className='project-dp-chart'>
+        <ProjectChartHeader
+          startDate={this.state.startDate}
+          endDate={this.state.endDate}
           changeDates={this.onDatesChange}
+          focusedInput={this.state.focusedInput}
           onFocusChange={this.onFocusChange}
+          setFilter={this.setFilter}
+          toggleBTC={this.toggleBTC}
+          isToggledBTC={this.state.isToggledBTC}
+          interval={this.state.interval}
+          isDesktop={this.props.isDesktop}
+        />
+        <ProjectChart
+          setSelected={this.setSelected}
+          isToggledBTC={this.state.isToggledBTC}
           twitter={this.props.twitter}
           github={this.props.github}
           burnRate={this.props.burnRate}
@@ -135,10 +129,20 @@ class ProjectChartContainer extends Component {
           history={this.props.price.history.items}
           isLoading={this.props.price.history.loading}
           isEmpty={this.props.price.history.items.length === 0}
-          {...this.state} />
+          {...this.props} />
+        <ProjectChartFooter {...this.props} />
       </div>
     )
   }
 }
 
-export default ProjectChartContainer
+const enhance = compose(
+  withState('isToggledMarketCap', 'toggleMarketcap', false),
+  withState('isToggledGithubActivity', 'toggleGithubActivity', false),
+  withState('isToggledVolume', 'toggleVolume', true),
+  withState('isToggledTwitter', 'toggleTwitter', false),
+  withState('isToggledBurnRate', 'toggleBurnRate', false),
+  withState('isToggledTransactionVolume', 'toggleTransactionVolume', false)
+)
+
+export default enhance(ProjectChartContainer)

@@ -110,12 +110,37 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     project.id
   end
 
-  test "fetch project funds raised", context do
+  test "fetch project public funds raised", context do
     project_id = setup()
 
     query = """
     {
       project(id: $id) {
+        name,
+        fundsRaisedUsdIcoEndPrice,
+        fundsRaisedEthIcoEndPrice,
+        fundsRaisedBtcIcoEndPrice
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}"))
+
+    assert json_response(result, 200)["data"]["project"] ==
+      %{"name" => "Project",
+        "fundsRaisedUsdIcoEndPrice" => "1200",
+        "fundsRaisedEthIcoEndPrice" => "250.0",
+        "fundsRaisedBtcIcoEndPrice" => "300"}
+  end
+
+  test "fetch project full funds raised", context do
+    project_id = setup()
+
+    query = """
+    {
+      projectFull(id: $id) {
         name,
         fundsRaisedUsdIcoEndPrice,
         fundsRaisedEthIcoEndPrice,
@@ -133,9 +158,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     result =
       context.conn
       |> put_req_header("authorization", get_authorization_header())
-      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}"))
+      |> post("/graphql", query_skeleton(query, "projectFull", "($id:ID!)", "{\"id\": #{project_id}}"))
 
-    assert json_response(result, 200)["data"]["project"] ==
+    assert json_response(result, 200)["data"]["projectFull"] ==
       %{"name" => "Project",
         "fundsRaisedUsdIcoEndPrice" => "1200",
         "fundsRaisedEthIcoEndPrice" => "250.0",

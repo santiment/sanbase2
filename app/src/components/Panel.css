@@ -4,6 +4,8 @@
   background-color: #fff;
   border-radius: 4px;
   box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
+  font: 14px/1.6 "Source Sans Pro", sans-serif;
+  font-weight: 400;
 }
 
 .panel-without-header {

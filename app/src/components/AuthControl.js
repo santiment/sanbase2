@@ -17,7 +17,7 @@ const AuthControl = ({user, login, logout}) => {
           <ul>
             <li>
               <div className='account-name'>
-                <a href="#">0x34fb639b95d13a492da0d3e8a20de803c2d02dcf</a>
+                <a href='#'>0x34fb639b95d13a492da0d3e8a20de803c2d02dcf</a>
               </div>
             </li>
             <li>

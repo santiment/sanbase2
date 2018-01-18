@@ -2,7 +2,7 @@ import React from 'react'
 import './AppMenuTop.css'
 
 const AppMenuTop = ({handleNavigation}) => (
-  <ul className='menu-list'>
+  <ul className='menu-list-top'>
     <li
       onClick={() => handleNavigation('projects')}>
       Projects

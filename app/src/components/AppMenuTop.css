@@ -1,25 +1,25 @@
-ul.menu-list {
-  margin-top: 16px;
+ul.menu-list-top {
+  margin-top: 16px !important;
   padding: 0;
   list-style: none;
   width: 50%;
   text-align: right;
 }
 
-.menu-list li {
-  display: inline;
-  margin: 0;
+.menu-list-top li {
+  display: inline !important;
+  margin: 0 !important;
   padding: 10px 22px;
   align-items: center;
   cursor: pointer;
 }
 
-.menu-list li:hover {
+.menu-list-top li:hover {
   background-color: #4f5b69;
   transition: all 1s ease;
 }
 
-.menu-list li a {
+.menu-list-top li a {
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   display: list-item;

@@ -20,7 +20,7 @@ export const TopMenu = ({
                            projects
                          }) => (
   <div className='top-menu'>
-    <div className='acct'>
+    <div className='left'>
       <div
         onClick={() => history.push('/')}
         className='brand'>
@@ -33,6 +33,8 @@ export const TopMenu = ({
       <Search
         onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
         projects={projects} />
+    </div>
+    <div className='right'>
       <AppMenuTop
         handleNavigation={nextRoute => {
           history.push(`/${nextRoute}`)

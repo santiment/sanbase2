@@ -28,6 +28,15 @@ defmodule Sanbase.Github.TwitterApiTest do
     })
     |> Repo.insert!()
 
+    # All tests implicitly test for when more than one record has the same ticker
+    %Project{}
+    |> Project.changeset(%{
+      name: "Santiment2",
+      ticker: "SAN",
+      twitter_link: ""
+    })
+    |> Repo.insert!()
+
     %Project{}
     |> Project.changeset(%{
       name: "TestProj",

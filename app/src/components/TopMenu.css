@@ -1,37 +1,32 @@
 .top-menu {
-  /* box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.08); */
-  display: flex;
-  flex-direction: column;
-  height: auto;
-  min-height: auto;
-  width: 100%;
-  font-size: 13px;
-
-}
-
-.acct {
   background: linear-gradient(270deg, #c82f3f, #316bae, #309d81);
   background-size: 300% 300%;
   display: flex;
+  font-size: 13px;
   padding: 0 48px;
+  position: relative;
 }
-.nav {
+
+.top-menu .left {
   display: flex;
-  background: rgba(38, 43, 51, 0.1);
-  padding: 0 36px;
+  width: 50%;
+}
+.top-menu .right {
+  display: flex;
+  justify-content: flex-end;
+  width: 50%;
 }
 
 .top-menu .brand {
+  cursor: pointer;
   font-size: 18px;
   padding: 16px 16px 0 0;
 }
-
 
 .top-menu ul li {
   line-height: 1.8em;
   margin-left: 0;
   cursor: pointer;
-  width: 50%;
   color: rgba(255,255,255,0.8);
   text-transform: uppercase;
 }
@@ -43,18 +38,39 @@
 
 
 .top-menu .user-auth-control {
-  text-align: right;
-  display: inline-flex;
-}
-
-.top-menu .user-auth-control a {
-  color: #fff !important;
-  cursor: pointer;
+  margin: 10px 0 0 20px;
+  position: relative;
 }
 
 .top-menu .user-auth-control button,
-.top-menu .user-auth-control .ui.basic.green.button {
-  border: none !important;
+.top-menu .user-auth-control .acct {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.8);
+  border-radius: 4px;
   box-shadow: none !important;
-  width: 20%;
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  font-weight: 300;
+  padding: 5px 24px;
+  text-transform: uppercase;
+}
+
+.top-menu .user-auth-control .address {
+  display: none;
+}
+
+.top-menu .user-auth-control .acct-links {
+  display: none;
+
+  position: absolute;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  right: 0;
+  width: 200px;
+}
+
+.acct-links ul {
+  margin: 0;
+  padding: 0;
 }

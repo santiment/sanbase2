@@ -10,20 +10,30 @@ const AuthControl = ({user, login, logout}) => {
   if (user.username) {
     return (
       <div className='user-auth-control'>
-        <Balance user={user} />
-        <a href='#' onClick={logout}>
-          Logout
-        </a>
-        <br />
-        <Link to='/account' >Settings</Link>
+        <div className='acct'>
+          <Balance user={user} />
+        </div>
+        <div className='acct-links'>
+          <ul>
+            <li>
+              <div className='account-name'>
+                <a href="#">0x34fb639b95d13a492da0d3e8a20de803c2d02dcf</a>
+              </div>
+            </li>
+            <li>
+              <Link to='/account' >Settings</Link>
+            </li>
+            <li><a href='#' onClick={logout}>
+              Logout
+            </a></li>
+          </ul>
+        </div>
       </div>
     )
   }
   return (
     <div className='user-auth-control'>
       <Button
-        basic
-        color='green'
         onClick={login}>
         Login
       </Button>

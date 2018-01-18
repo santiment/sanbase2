@@ -20,30 +20,11 @@ ul.menu-list {
 }
 
 .menu-list li a {
-  text-decoration: none;
   color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
   display: list-item;
+  line-height: 1.8em;
   list-style-type: none;
-}
-
-.menu-list .fa {
-  margin-right: 12px;
-}
-
-.menu-list .sub-menu {
-  margin: 0;
-}
-
-.menu-list .sub-menu li {
-  margin: 0;
-  padding-left: 8px;
-}
-
-.menu-list .sub-menu li:hover {
-  background-color: rgba(255, 255, 255, 1.0);
-}
-
-.menu-list .sub-menu li .fa {
-  font-size: 6px;
-  margin-right: 10px;
+  text-decoration: none;
+  text-transform: uppercase;
 }

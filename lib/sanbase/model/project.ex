@@ -101,13 +101,17 @@ defmodule Sanbase.Model.Project do
 
       zero = Decimal.new(0)
 
-      project.icos
-      |> Enum.reduce({project, 0, zero}, &roi_usd_total_paid_accumulator/2)
+      paid_by_ico = project.icos
+      |> Enum.map(&(token_usd_ico_price(project, &1)))
+      |> Enum.reject(fn(price) -> is_nil(price) or price == zero end)
+
+      paid_by_ico
+      |> Enum.reduce(zero, &Decimal.add/2)
       |> case do
-        {_, _, ^zero} -> nil
-        {_, count, total_paid} ->
+        ^zero -> nil
+        total_paid ->
           project.latest_coinmarketcap_data.price_usd
-          |> Decimal.mult(Decimal.new(count))
+          |> Decimal.mult(Decimal.new(length(paid_by_ico)))
           |> Decimal.div(total_paid)
       end
     else
@@ -116,15 +120,10 @@ defmodule Sanbase.Model.Project do
   end
   def roi_usd(_), do: nil
 
-  defp roi_usd_total_paid_accumulator(ico, {project, count, total_paid}) do
-    (ico.token_usd_ico_price
+  defp token_usd_ico_price(project, ico) do
+    ico.token_usd_ico_price
         || token_usd_ico_price(ico.token_eth_ico_price, "ETH", ico.start_date, project.latest_coinmarketcap_data.update_time)
-        || token_usd_ico_price(ico.token_btc_ico_price, "BTC", ico.start_date, project.latest_coinmarketcap_data.update_time))
-    |> case do
-      nil -> {project, count, total_paid}
-      0 -> {project, count, total_paid}
-      price_usd -> {project, count+1, Decimal.add(total_paid, Decimal.new(price_usd))}
-    end
+        || token_usd_ico_price(ico.token_btc_ico_price, "BTC", ico.start_date, project.latest_coinmarketcap_data.update_time)
   end
 
   defp token_usd_ico_price(nil, _currency_from, _ico_start_date, _current_datetime), do: nil

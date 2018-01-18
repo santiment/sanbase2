@@ -457,13 +457,17 @@ defmodule Sanbase.Model.Project do
 
       zero = Decimal.new(0)
 
-      project.icos
-      |> Enum.reduce({project, 0, zero}, &roi_usd_total_paid_accumulator/2)
+      paid_by_ico = project.icos
+      |> Enum.map(&(token_usd_ico_price(project, &1)))
+      |> Enum.reject(fn(price) -> is_nil(price) or price == zero end)
+
+      paid_by_ico
+      |> Enum.reduce(zero, &Decimal.add/2)
       |> case do
-        {_, _, ^zero} -> nil
-        {_, count, total_paid} ->
+        ^zero -> nil
+        total_paid ->
           project.latest_coinmarketcap_data.price_usd
-          |> Decimal.mult(Decimal.new(count))
+          |> Decimal.mult(Decimal.new(length(paid_by_ico)))
           |> Decimal.div(total_paid)
       end
     else

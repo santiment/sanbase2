@@ -59,7 +59,7 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data"
 
 config :sanbase, Sanbase.Etherbi.Store,
-  host: {:system, "IFNLUXDB_HOST", "localhost"},
+  host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "transactions"

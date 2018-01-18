@@ -15,7 +15,7 @@ defmodule Sanbase.Etherbi.FundsMovement do
         inspect(wallets)
       }"
 
-    options = [recv_timeout: 150_000]
+    options = [recv_timeout: 45_000]
     get(url, options)
   end
 
@@ -29,10 +29,9 @@ defmodule Sanbase.Etherbi.FundsMovement do
       "#{@etherbi_url}/transactions_in?from_timestamp=#{from_unix}&to_timestamp=#{to_unix}&wallets=#{
         inspect(wallets)
       }"
-    |> IO.inspect()
 
     Logger.info("#{inspect(url)}")
-    options = [recv_timeout: 150_000]
+    options = [recv_timeout: 45_000]
     get(url, options)
   end
 

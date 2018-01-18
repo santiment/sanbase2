@@ -13,12 +13,12 @@ import Search from './Search'
 import './TopMenu.css'
 
 export const TopMenu = ({
-                           user,
-                           loading,
-                           logout,
-                           history,
-                           projects
-                         }) => (
+   user,
+   loading,
+   logout,
+   history,
+   projects
+ }) => (
   <div className='top-menu'>
     <div className='left'>
       <div

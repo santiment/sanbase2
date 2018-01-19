@@ -1,30 +1,24 @@
-ul.menu-list-top {
-  margin-top: 16px !important;
+.menu-list-top {
+  margin-top: 16px;
   padding: 0;
-  list-style: none;
-  width: 50%;
   text-align: right;
+  user-select: none;
 }
 
 .menu-list-top li {
-  display: inline !important;
-  margin: 0 !important;
+  display: inline;
+  margin: 0;
   padding: 10px 22px;
-  align-items: center;
   cursor: pointer;
 }
 
 .menu-list-top li:hover {
   background-color: #4f5b69;
-  transition: all 1s ease;
+  transition: all 0.5s ease;
 }
 
 .menu-list-top li a {
   color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  display: list-item;
   line-height: 1.8em;
-  list-style-type: none;
-  text-decoration: none;
   text-transform: uppercase;
 }

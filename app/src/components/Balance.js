@@ -15,10 +15,11 @@ export const Balance = ({user}) => {
           </a>
         </div>
         <div className='account-balance'>
-          {formatNumber(account.sanBalance, 'SAN')} <i class='fa fa-caret-down'></i>
+          {formatNumber(account.sanBalance, 'SAN')} <i className='fa fa-caret-down' />
         </div>
       </div>
-    ))}</div>
+    ))}
+    </div>
   )
 }
 

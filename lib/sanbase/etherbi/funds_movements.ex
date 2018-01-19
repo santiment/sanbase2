@@ -11,9 +11,8 @@ defmodule Sanbase.Etherbi.FundsMovement do
     to_unix = DateTime.to_unix(to, :seconds)
 
     url = "#{@etherbi_url}/transactions_in"
-
     options = [
-      recv_timeout: 45_000,
+      recv_timeout: 60_000,
       params: [
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
@@ -28,12 +27,9 @@ defmodule Sanbase.Etherbi.FundsMovement do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
-    wallets = Poison.encode!(wallets)
-
     url = "#{@etherbi_url}/transactions_out"
-
     options = [
-      recv_timeout: 45_000,
+      recv_timeout: 60_000,
       params: [
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},

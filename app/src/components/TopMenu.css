@@ -11,6 +11,7 @@
   display: flex;
   width: 50%;
 }
+
 .top-menu .right {
   display: flex;
   justify-content: flex-end;
@@ -27,15 +28,14 @@
   line-height: 1.8em;
   margin-left: 0;
   cursor: pointer;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
   text-transform: uppercase;
 }
 
 .top-menu .selected {
-  color: rgba(255,255,255,1.0);
+  color: rgba(255, 255, 255, 1);
   font-size: bold;
 }
-
 
 .top-menu .user-auth-control {
   margin: 10px 0 0 20px;
@@ -45,10 +45,9 @@
 .top-menu .user-auth-control button,
 .top-menu .user-auth-control .acct {
   background: none;
-  border: 1px solid rgba(255,255,255,0.8);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 4px;
-  box-shadow: none !important;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
   font-weight: 300;
   padding: 8px 24px;
@@ -60,8 +59,6 @@
 }
 
 .top-menu .user-auth-control .acct-links {
-  /* display: none; */
-
   position: absolute;
   background-color: #fff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

@@ -14,6 +14,7 @@ defmodule Sanbase.Etherbi.Transactions do
   alias Sanbase.Model.Project
 
   @default_update_interval 5 * 60_000
+  @month_in_seconds 60 * 60 * 24 * 30
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -55,19 +56,20 @@ defmodule Sanbase.Etherbi.Transactions do
   # The etherbi transactions API allows querying multiple wallets at once.
   # For now send a list with just one wallet.
   defp fetch_and_store(address, token_decimals) do
-    last_datetime = Store.last_datetime(address) || DateTime.from_unix!(0, :seconds)
-    now_datetime = DateTime.utc_now()
+    from_datetime = Store.last_datetime(address) || DateTime.from_unix!(0, :seconds)
+    # to_datetime = adjust_datetimes(from_datetime, DateTime.utc_now())
+    to_datetime = DateTime.utc_now()
 
-    {:ok, transactions_in} = FundsMovement.transactions_in([address], last_datetime, now_datetime)
+    {:ok, transactions_in} = FundsMovement.transactions_in([address], from_datetime, to_datetime)
 
     convert_to_measurement(transactions_in, address, "in", token_decimals)
     |> Store.import()
 
-    {:ok, transactions_out} =
-      FundsMovement.transactions_out([address], last_datetime, now_datetime)
+    # {:ok, transactions_out} =
+    #   FundsMovement.transactions_out([address], from_datetime, to_datetime)
 
-    convert_to_measurement(transactions_out, address, "out", token_decimals)
-    |> Store.import()
+    # convert_to_measurement(transactions_out, address, "out", token_decimals)
+    # |> Store.import()
   end
 
   defp build_token_decimals_map() do
@@ -105,4 +107,15 @@ defmodule Sanbase.Etherbi.Transactions do
       end
     end)
   end
+
+  # If the difference between the datetimes is too large the query will be too big
+  # Allow the max difference between the datetimes to be 1 month
+  defp adjust_datetimes(from_datetime, to_datetime) do
+    if DateTime.diff(to_datetime, from_datetime, :seconds) > @month_in_seconds do
+      Sanbase.DateTimeUtils.days_after(30, from_datetime)
+    else
+      to_datetime
+    end
+  end
+
 end

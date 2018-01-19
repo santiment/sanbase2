@@ -3,16 +3,18 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
   require Logger
 
-  import Sanbase.Utils, only: [parse_config_value: 1]
+  require Sanbase.Utils.Config
 
   alias Sanbase.Model.Project
   alias Sanbase.Github
   alias Sanbase.Github.Store
   alias Sanbase.Influxdb.Measurement
   alias ExAws.S3
+  alias Sanbase.Utils.Config
+
   @github_archive "http://data.githubarchive.org/"
 
-  faktory_options queue: "github_activity", retry: -1, reserve_for: 900
+  faktory_options queue: "default", retry: -1, reserve_for: 900
 
   def perform(archive) do
     Temp.track!
@@ -22,8 +24,9 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     |> Timex.to_datetime
 
     orgs = Github.available_projects
-    |> Enum.map(&get_project_org/1)
-    |> Enum.reject(&is_nil/1)
+    |> Enum.map(fn project ->
+      {Github.get_project_org(project), project}
+    end)
     |> Map.new()
 
     Logger.info("Scanning activity for github users #{Map.keys(orgs) |> inspect}")
@@ -48,8 +51,8 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   defp download_from_s3(archive) do
     {:ok, temp_filepath} = Temp.path(%{prefix: archive, suffix: ".json.gz"})
 
-    with {:ok, _} <- S3.head_object(s3_bucket(), s3_path(archive)) |> ExAws.request,
-      {:ok, :done} <- S3.download_file(s3_bucket(), s3_path(archive), temp_filepath) |> ExAws.request do
+    with {:ok, _} <- S3.head_object(Config.get(:s3_bucket), s3_path(archive)) |> ExAws.request,
+      {:ok, :done} <- S3.download_file(Config.get(:s3_bucket), s3_path(archive), temp_filepath) |> ExAws.request do
       Logger.info("Downloaded #{archive} from S3 into #{temp_filepath}")
       {:ok, temp_filepath}
     else
@@ -74,7 +77,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
     temp_filepath
     |> S3.Upload.stream_file()
-    |> S3.upload(s3_bucket(), s3_path(archive), content_type: "application/json", content_encoding: "gzip")
+    |> S3.upload(Config.get(:s3_bucket), s3_path(archive), content_type: "application/json", content_encoding: "gzip")
     |> ExAws.request!
 
     temp_filepath
@@ -118,20 +121,6 @@ defmodule SanbaseWorkers.ImportGithubActivity do
     end)
   end
 
-  defp get_project_org(%Project{github_link: github_link} = project) do
-    case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
-      [_, github_path] ->
-        org = github_path
-        |> String.downcase
-        |> String.split("/")
-        |> hd
-
-        {org, project}
-      nil ->
-        nil
-    end
-  end
-
   defp reduce_repos_to_counts(repo, counts, orgs) do
     repo_org = repo
     |> String.downcase
@@ -167,11 +156,5 @@ defmodule SanbaseWorkers.ImportGithubActivity do
       }
     end)
     |> Store.import
-  end
-
-  defp s3_bucket do
-    Application.fetch_env!(:sanbase, __MODULE__)
-    |> Keyword.fetch!(:s3_bucket)
-    |> parse_config_value
   end
 end

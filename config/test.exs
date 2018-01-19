@@ -43,6 +43,9 @@ config :faktory_worker_ex,
 config :sanbase, Sanbase.Github.Store,
   database: "github_activity_test"
 
+config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
+  database: "twitter_followers_data_test"
+
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"

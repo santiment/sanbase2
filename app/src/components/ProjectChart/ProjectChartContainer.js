@@ -1,146 +1,13 @@
 import React, { Component } from 'react'
-import { withApollo } from 'react-apollo'
-import gql from 'graphql-tag'
 import moment from 'moment'
+import {
+  compose,
+  withState
+} from 'recompose'
+import ProjectChartHeader from './ProjectChartHeader'
+import ProjectChartFooter from './ProjectChartFooter'
 import ProjectChart from './ProjectChart'
-
-export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
-  return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
-}
-
-export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
-  return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
-}
-
-const getHistoryGQL = gql`
-  query history($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
-    historyPrice(
-      ticker: $ticker,
-      from: $from,
-      to: $to,
-      interval: $interval
-    ) {
-      priceBtc,
-      priceUsd,
-      volume,
-      datetime,
-      marketcap
-    }
-}`
-
-export const makeItervalBounds = interval => {
-  switch (interval) {
-    case '1d':
-      return {
-        from: moment().subtract(1, 'd').utc().format('YYYY-MM-DD') + 'T00:00:00Z',
-        to: moment().utc().format(),
-        minInterval: '5m'
-      }
-    case '1w':
-      return {
-        from: moment().subtract(1, 'weeks').utc().format(),
-        to: moment().utc().format(),
-        minInterval: '1h'
-      }
-    case '2w':
-      return {
-        from: moment().subtract(2, 'weeks').utc().format(),
-        to: moment().utc().format(),
-        minInterval: '1h'
-      }
-    default:
-      return {
-        from: moment().subtract(1, 'months').utc().format(),
-        to: moment().utc().format(),
-        minInterval: '1h'
-      }
-  }
-}
-
-const fetchGithubActivityHistoryFromStartToEndDate = (
-  client,
-  ticker,
-  startDate,
-  endDate,
-  minInterval = '1h'
-) => {
-  return new Promise((resolve, reject) => {
-    client.query({
-      query: gql`
-        query githubActivityQuery($repository: String, $from: DateTime, $to: DateTime, $interval: String) {
-          githubActivity(
-            repository: $repository,
-            from: $from,
-            to: $to,
-            interval: $interval
-          ) {
-            datetime,
-            activity
-          }
-      }`,
-      variables: {
-        'repository': ticker.toUpperCase(),
-        'from': startDate,
-        'to': endDate,
-        'interval': minInterval
-      }
-    })
-    .then(response => {
-      const history = response.data.githubActivity || []
-      resolve(history)
-    })
-    .catch(error => reject(error))
-  })
-}
-
-const fetchPriceHistoryFromStartToEndDate = (
-  client,
-  ticker,
-  startDate,
-  endDate,
-  minInterval = '1h'
-) => {
-  return new Promise((resolve, reject) => {
-    client.query({
-      query: getHistoryGQL,
-      variables: {
-        'ticker': ticker,
-        'from': startDate,
-        'to': endDate,
-        'interval': minInterval
-      }
-    })
-    .then(async response => {
-      const history = response.data.historyPrice || []
-      let historyGithubActivity = []
-      try {
-        historyGithubActivity = await fetchGithubActivityHistoryFromStartToEndDate(
-          client, ticker, startDate, endDate, minInterval)
-      } catch (e) {
-        /* pass */
-      }
-      const indexes = historyGithubActivity.map(obj => obj.datetime)
-      resolve(history.map(item => {
-        const volumeBTC = calculateBTCVolume(item)
-        const marketcapBTC = calculateBTCMarketcap(item)
-        if (historyGithubActivity.length > 0) {
-          const index = indexes.indexOf(item.datetime)
-          const githubActivity = index > -1
-            ? historyGithubActivity[index].activity
-            : 0
-          return {...item, volumeBTC, marketcapBTC, githubActivity}
-        }
-        return {...item, volumeBTC, marketcapBTC}
-      }))
-    })
-    .catch(error => reject(error))
-  })
-}
-
-const fetchPriceHistory = (client, ticker, interval = '1m') => {
-  const { from, to, minInterval } = makeItervalBounds(interval)
-  return fetchPriceHistoryFromStartToEndDate(client, ticker, from, to, minInterval)
-}
+import { makeItervalBounds } from './utils'
 
 class ProjectChartContainer extends Component {
   constructor (props) {
@@ -148,15 +15,13 @@ class ProjectChartContainer extends Component {
     const { from, to } = makeItervalBounds('1m')
     this.state = {
       interval: '1m',
-      isLoading: true,
       isError: false,
-      isEmpty: true,
       errorMessage: '',
       selected: undefined,
-      history: [],
       startDate: moment(from),
       endDate: moment(to),
-      focusedInput: null
+      focusedInput: null,
+      isToggledBTC: false
     }
 
     this.setFilter = this.setFilter.bind(this)
@@ -164,6 +29,7 @@ class ProjectChartContainer extends Component {
     this.onDatesChange = this.onDatesChange.bind(this)
     this.onFocusChange = this.onFocusChange.bind(this)
     this.updateHistoryData = this.updateHistoryData.bind(this)
+    this.toggleBTC = this.toggleBTC.bind(this)
   }
 
   onFocusChange (focusedInput) {
@@ -178,37 +44,22 @@ class ProjectChartContainer extends Component {
       endDate
     })
     if (!startDate || !endDate) { return }
-    const { client, ticker } = this.props
     this.setState({
-      interval: undefined,
-      isLoading: true,
-      selected: undefined,
-      startDate,
-      endDate
+      interval: undefined
     })
     let interval = '1h'
     const diffInDays = moment(endDate).diff(startDate, 'days')
-    if (diffInDays > 200 && diffInDays < 900) {
+    if (diffInDays > 32 && diffInDays < 900) {
       interval = '1d'
     } else if (diffInDays >= 900) {
       interval = '1w'
     }
-    fetchPriceHistoryFromStartToEndDate(client, ticker, startDate, endDate, interval).then(historyPrice => {
-      this.setState({
-        isLoading: false,
-        isEmpty: historyPrice.length === 0,
-        history: historyPrice,
-        startDate: startDate,
-        endDate: endDate
-      })
-    }).catch(e => {
-      this.setState({
-        isLoading: false,
-        isEmpty: true,
-        history: [],
-        isError: false
-      })
-    })
+    this.props.onDatesChange(
+      startDate.utc().format(),
+      endDate.utc().format(),
+      interval,
+      this.props.ticker
+    )
   }
 
   setSelected (selected) {
@@ -217,47 +68,32 @@ class ProjectChartContainer extends Component {
 
   setFilter (interval) {
     if (interval === this.state.interval) { return }
-    const { client, ticker } = this.props
-    const { from, to } = makeItervalBounds(interval)
     this.setState({
-      interval,
-      isLoading: true,
-      selected: undefined,
-      startDate: moment(from),
-      endDate: moment(to)
-    })
-    fetchPriceHistory(client, ticker, interval).then(historyPrice => {
-      this.setState({
-        isLoading: false,
-        isEmpty: historyPrice.length === 0,
-        history: historyPrice
-      })
+      interval
+    }, () => {
+      this.updateHistoryData(this.props.ticker)
     })
   }
 
+  toggleBTC (isToggledBTC) {
+    this.setState({isToggledBTC})
+  }
+
   updateHistoryData (ticker) {
-    const { client } = this.props
     const { interval } = this.state
-    fetchPriceHistory(client, ticker, interval).then(historyPrice => {
-      this.setState({
-        isLoading: false,
-        isEmpty: historyPrice.length === 0,
-        history: historyPrice
-      })
+    const { from, to, minInterval } = makeItervalBounds(interval)
+    this.setState({
+      interval,
+      startDate: moment(from),
+      endDate: moment(to)
     })
-    .catch(error =>
-      this.setState({
-        isLoading: false,
-        isError: true,
-        errorMessage: error
-      })
-    )
+    this.props.onDatesChange(from, to, minInterval, ticker)
   }
 
   componentWillReceiveProps (nextProps) {
     if (nextProps.ticker !== this.props.ticker) {
       this.setState({
-        isLoading: true
+        interval: '1m'
       })
       this.updateHistoryData(nextProps.ticker)
     }
@@ -269,20 +105,44 @@ class ProjectChartContainer extends Component {
   }
 
   render () {
-    const { isEmpty, isLoading } = this.state.history
     return (
-      <div style={{width: '100%'}}>
-        {!isLoading && isEmpty
-          ? 'We can\'t find any project with such ticker symbol.'
-          : <ProjectChart
-            setFilter={this.setFilter}
-            setSelected={this.setSelected}
-            changeDates={this.onDatesChange}
-            onFocusChange={this.onFocusChange}
-            {...this.state} />}
+      <div className='project-dp-chart'>
+        <ProjectChartHeader
+          startDate={this.state.startDate}
+          endDate={this.state.endDate}
+          changeDates={this.onDatesChange}
+          focusedInput={this.state.focusedInput}
+          onFocusChange={this.onFocusChange}
+          setFilter={this.setFilter}
+          toggleBTC={this.toggleBTC}
+          isToggledBTC={this.state.isToggledBTC}
+          interval={this.state.interval}
+          isDesktop={this.props.isDesktop}
+        />
+        <ProjectChart
+          setSelected={this.setSelected}
+          isToggledBTC={this.state.isToggledBTC}
+          twitter={this.props.twitter}
+          github={this.props.github}
+          burnRate={this.props.burnRate}
+          transactionVolume={this.props.transactionVolume}
+          history={this.props.price.history.items}
+          isLoading={this.props.price.history.loading}
+          isEmpty={this.props.price.history.items.length === 0}
+          {...this.props} />
+        <ProjectChartFooter {...this.props} />
       </div>
     )
   }
 }
 
-export default withApollo(ProjectChartContainer)
+const enhance = compose(
+  withState('isToggledMarketCap', 'toggleMarketcap', false),
+  withState('isToggledGithubActivity', 'toggleGithubActivity', false),
+  withState('isToggledVolume', 'toggleVolume', true),
+  withState('isToggledTwitter', 'toggleTwitter', false),
+  withState('isToggledBurnRate', 'toggleBurnRate', false),
+  withState('isToggledTransactionVolume', 'toggleTransactionVolume', false)
+)
+
+export default enhance(ProjectChartContainer)

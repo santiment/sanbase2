@@ -9,20 +9,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   use GenServer, restart: :permanent, shutdown: 5_000
 
   import Ecto.Query
-  import Sanbase.Utils, only: [parse_config_value: 1]
 
+  require Sanbase.Utils.Config
   require Logger
 
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
-  alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
-  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Prices.Store
+  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices
+  alias Sanbase.Utils.Config
 
   # 5 minutes
   @default_update_interval 1000 * 60 * 5
@@ -32,9 +32,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def init(:ok) do
-    update_interval = get_config(:update_interval, @default_update_interval)
+    update_interval = Config.get(:update_interval, @default_update_interval)
 
-    if get_config(:sync_enabled, false) do
+    if Config.get(:sync_enabled, false) do
       Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
       |> Keyword.get(:database)
       |> Instream.Admin.Database.create()
@@ -49,14 +49,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
-    query =
+    projects =
       Project
       |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
+      |> Repo.all
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Repo.all(query),
-      &fetch_project_data/1,
+      projects,
+      &fetch_project_info/1,
+      ordered: false,
+      max_concurrency: 5,
+      timeout: 60_000
+    )
+    |> Stream.run()
+
+    Task.Supervisor.async_stream_nolink(
+      Sanbase.TaskSupervisor,
+      projects,
+      &fetch_price_data/1,
       ordered: false,
       max_concurrency: 5,
       timeout: :infinity
@@ -73,15 +84,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     {:noreply, state}
   end
 
-  defp fetch_project_data(project) do
-    fetch_project_info(project)
-    fetch_price_data(project)
-  end
-
-  defp fetch_project_info(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+  defp fetch_project_info(project) do
     if project_info_missing?(project) do
-      {:ok, _project} = %ProjectInfo{coinmarketcap_id: coinmarketcap_id}
+      {:ok, _project} = ProjectInfo.from_project(project)
       |> ProjectInfo.fetch_coinmarketcap_info()
+      |> ProjectInfo.fetch_etherscan_token_summary()
       |> ProjectInfo.fetch_contract_info()
       |> ProjectInfo.update_project(project)
     end
@@ -161,14 +168,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       datetime ->
         datetime
     end
-  end
-
-  defp get_config(key, default) do
-    Keyword.get(config(), key, default)
-    |> parse_config_value()
-  end
-
-  def config do
-    Application.get_env(:sanbase, __MODULE__)
   end
 end

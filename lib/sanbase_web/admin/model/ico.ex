@@ -1,6 +1,8 @@
 defmodule Sanbase.ExAdmin.Model.Ico do
   use ExAdmin.Register
 
+  import Ecto.Query, warn: false
+
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
   alias Sanbase.Model.Project
@@ -27,7 +29,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
 
     form ico do
       inputs do
-        input ico, :project, collection: Sanbase.Repo.all(Project)
+        input ico, :project, collection: from(p in Project, order_by: p.name) |> Sanbase.Repo.all()
         input ico, :start_date
         input ico, :end_date
         input ico, :token_usd_ico_price
@@ -46,12 +48,12 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input ico, :contract_block_number
         input ico, :contract_abi
         input ico, :comments
-        input ico, :cap_currency, collection: Sanbase.Repo.all(Currency)
+        input ico, :cap_currency, collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
       end
 
       inputs "Ico Currencies" do
         has_many ico, :ico_currencies, fn(c) ->
-          inputs :currency, collection: Sanbase.Repo.all(Currency)
+          inputs :currency, collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
           input c, :amount
         end
       end

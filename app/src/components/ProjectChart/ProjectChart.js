@@ -1,20 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {
-  compose,
-  pure,
-  withState,
-  withHandlers,
-  lifecycle
-} from 'recompose'
-import { Merge } from 'animate-components'
-import { fadeIn, slideUp } from 'animate-keyframes'
+import moment from 'moment'
+import { pure } from 'recompose'
 import { Bar, Chart } from 'react-chartjs-2'
-import { DateRangePicker } from 'react-dates'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
-import moment from 'moment'
 import { formatNumber, formatBTC } from '../../utils/formatting'
+import { findIndexByDatetime } from '../../utils/utils'
+import 'chartjs-plugin-datalabels'
 import './ProjectChart.css'
 import './react-dates-override.css'
 
@@ -22,131 +15,67 @@ const COLORS = {
   price: '#00a05a',
   volume: 'rgba(49, 107, 174, 0.4)',
   marketcap: 'rgb(200, 47, 63)',
-  githubActivity: 'rgba(96, 76, 141, 0.7)' // Ultra Violet color #604c8d'
+  githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
+  twitter: 'rgba(16, 195, 245, 0.7)', // Ultra Violet color #604c8d'
+  burnRate: 'rgba(252, 138, 23, 0.7)',
+  transactionVolume: 'rgba(39, 166, 153, 0.7)'
 }
 
-export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
-  let cls = interval === value ? 'activated' : ''
-  if (disabled) {
-    cls += ' disabled'
+// Fix X mode in Chart.js lib. Monkey loves this.
+const originalX = Chart.Interaction.modes.x
+Chart.Interaction.modes.x = function (chart, e, options) {
+  const activePoints = originalX.apply(this, arguments)
+  return activePoints.reduce((acc, item) => {
+    const i = acc.findIndex(x => x._datasetIndex === item._datasetIndex)
+    if (i <= -1) {
+      acc.push(item)
+    }
+    return acc
+  }, [])
+}
+
+// Draw a vertical line in our Chart, when tooltip is activated.
+Chart.defaults.LineWithLine = Chart.defaults.line
+Chart.controllers.LineWithLine = Chart.controllers.line.extend({
+  draw: function (ease) {
+    Chart.controllers.line.prototype.draw.call(this, ease)
+
+    if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
+      const activePoint = this.chart.tooltip._active[0]
+      const ctx = this.chart.ctx
+      const x = activePoint.tooltipPosition().x
+      const topY = this.chart.scales['y-axis-1'].top
+      const bottomY = this.chart.scales['y-axis-1'].bottom
+
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(x, topY)
+      ctx.lineTo(x, bottomY)
+      ctx.lineWidth = 1
+      ctx.strokeStyle = '#adadad'
+      ctx.stroke()
+      ctx.restore()
+    }
   }
-  return (
-    <div
-      className={cls}
-      onClick={() => !disabled && setFilter(value)}>{value}</div>
-  )
-}
+})
 
-export const TimeFilter = props => (
-  <div className='time-filter'>
-    <TimeFilterItem value={'1d'} {...props} />
-    <TimeFilterItem value={'1w'} {...props} />
-    <TimeFilterItem value={'2w'} {...props} />
-    <TimeFilterItem value={'1m'} {...props} />
-  </div>
-)
-
-export const CurrencyFilter = ({isToggledBTC, showBTC, showUSD}) => (
-  <div className='currency-filter'>
-    <div
-      className={isToggledBTC ? 'activated' : ''}
-      onClick={showBTC}>BTC</div>
-    <div
-      className={!isToggledBTC ? 'activated' : ''}
-      onClick={showUSD}>USD</div>
-  </div>
-)
-
-const MarketcapToggle = ({isToggledMarketCap, toggleMarketcap}) => (
-  <div className='marketcap-toggle'>
-    <div
-      className={isToggledMarketCap ? 'activated' : ''}
-      onClick={() => toggleMarketcap(!isToggledMarketCap)}>MarketCap</div>
-  </div>
-)
-
-const GithubActivityToggle = ({isToggledGithubActivity, toggleGithubActivity}) => (
-  <div className='marketcap-toggle'>
-    <div
-      className={isToggledGithubActivity ? 'activated' : ''}
-      onClick={() => toggleGithubActivity(!isToggledGithubActivity)}>Github Activity</div>
-  </div>
-)
-
-const VolumeToggle = ({isToggledVolume, toggleVolume}) => (
-  <div className='marketcap-toggle'>
-    <div
-      className={isToggledVolume ? 'activated' : ''}
-      onClick={() => toggleVolume(!isToggledVolume)}>Volume</div>
-  </div>
-)
-
-const ProjectChartHeader = ({
-  startDate,
-  endDate,
-  focusedInput,
-  onFocusChange,
-  changeDates,
-  isDesktop,
-  selected,
-  history,
-  ...props
-}) => {
-  return (
-    <div className='chart-header'>
-      <div className='chart-datetime-settings'>
-        <TimeFilter {...props} />
-        <DateRangePicker
-          small
-          startDateId='startDate'
-          endDateId='endDate'
-          startDate={startDate}
-          endDate={endDate}
-          onDatesChange={({ startDate, endDate }) => changeDates(startDate, endDate)}
-          focusedInput={focusedInput}
-          onFocusChange={onFocusChange}
-          displayFormat={() => moment.localeData().longDateFormat('L')}
-          hideKeyboardShortcutsPanel
-          isOutsideRange={day => {
-            const today = moment().endOf('day')
-            return day > today
-          }}
-        />
-      </div>
-      <CurrencyFilter {...props} />
-      {!isDesktop && [
-        <div className='selected-value'>{selected &&
-          <Merge
-            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-            two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
-            as='div'
-          >
-            <span className='selected-value-datetime'>
-              {moment(history[selected].datetime).utc().format('MMMM DD, YYYY')}
-            </span>
-          </Merge>}</div>,
-        <div className='selected-value'>{selected &&
-          <Merge
-            one={{ name: fadeIn, duration: '0.3s', timingFunction: 'ease-in' }}
-            two={{ name: slideUp, duration: '0.5s', timingFunction: 'ease-out' }}
-            as='div'
-          >
-            <span className='selected-value-data'>Price:
-              {formatNumber(history[selected].priceUsd, 'USD')}</span>
-            <span className='selected-value-data'>Volume:
-              {formatNumber(history[selected].volume, 'USD')}</span>
-          </Merge>}</div> ]}
-    </div>
-  )
-}
-
-const getChartDataFromHistory = (
+const makeChartDataFromHistory = ({
   history = [],
   isToggledBTC,
   isToggledMarketCap,
   isToggledGithubActivity,
-  isToggledVolume
-) => {
+  isToggledVolume,
+  isToggledTwitter,
+  isToggledBurnRate,
+  isToggledTransactionVolume,
+  ...props
+}) => {
+  const twitter = props.twitter.history.items || []
+  const github = props.github.history.items || []
+  const burnRate = props.burnRate.items || []
+  const transactionVolume = props.transactionVolume.items || []
+  const labels = history ? history.map(data => moment(data.datetime).utc()) : []
+  const eventIndex = findIndexByDatetime(labels, '2018-01-13T18:00:00Z')
   const priceDataset = {
     label: 'Price',
     type: 'LineWithLine',
@@ -154,8 +83,13 @@ const getChartDataFromHistory = (
     borderColor: COLORS.price,
     borderWidth: 1,
     backgroundColor: 'rgba(239, 242, 236, 0.5)',
-    pointBorderWidth: 2,
+    hitRadius: 2,
     yAxisID: 'y-axis-1',
+    datalabels: {
+      display: context => {
+        return props.ticker === 'SAN' && context.dataIndex === eventIndex
+      }
+    },
     data: history ? history.map(data => {
       if (isToggledBTC) {
         const price = parseFloat(data.priceBtc)
@@ -168,10 +102,13 @@ const getChartDataFromHistory = (
     fill: false,
     type: 'bar',
     yAxisID: 'y-axis-2',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.volume,
     backgroundColor: COLORS.volume,
     borderWidth: 4,
-    pointBorderWidth: 1,
+    pointBorderWidth: 2,
     data: history ? history.map(data => {
       if (isToggledBTC) {
         return parseFloat(data.volumeBTC)
@@ -183,31 +120,106 @@ const getChartDataFromHistory = (
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-3',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.marketcap,
     backgroundColor: COLORS.marketcap,
     borderWidth: 1,
     pointBorderWidth: 2,
-    data: history ? history.map(data => {
+    data: history.map(data => {
       if (isToggledBTC) {
         return parseFloat(data.marketcapBTC)
       }
       return parseFloat(data.marketcap)
-    }) : []}
+    })}
   const githubActivityDataset = !isToggledGithubActivity ? null : {
     label: 'Github Activity',
     type: 'line',
     fill: false,
     yAxisID: 'y-axis-4',
+    datalabels: {
+      display: false
+    },
     borderColor: COLORS.githubActivity,
     backgroundColor: COLORS.githubActivity,
     borderWidth: 1,
     pointBorderWidth: 2,
-    data: history ? history.map(data => {
-      return parseInt(data.githubActivity)
-    }) : []}
+    pointRadius: 2,
+    data: github.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.activity
+      }
+    })}
+  const twitterDataset = !isToggledTwitter ? null : {
+    label: 'Twitter',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-5',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.twitter,
+    backgroundColor: COLORS.twitter,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: twitter.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.followersCount
+      }
+    })}
+  const burnrateDataset = !isToggledBurnRate ? null : {
+    label: 'Burn Rate',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-6',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.burnRate,
+    backgroundColor: COLORS.burnRate,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: burnRate.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.burnRate / 10e8
+      }
+    })}
+  const transactionVolumeDataset = !isToggledTransactionVolume ? null : {
+    label: 'Transaction Volume',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-7',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.transactionVolume,
+    backgroundColor: COLORS.transactionVolume,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: transactionVolume.map(data => {
+      return {
+        x: moment(data.datetime),
+        y: data.transactionVolume / 10e8
+      }
+    })}
   return {
-    labels: history ? history.map(data => moment(data.datetime).utc()) : [],
-    datasets: [priceDataset, marketcapDataset, githubActivityDataset, volumeDataset].reduce((acc, curr) => {
+    labels,
+    datasets: [
+      priceDataset,
+      marketcapDataset,
+      githubActivityDataset,
+      volumeDataset,
+      twitterDataset,
+      burnrateDataset,
+      transactionVolumeDataset
+    ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
     }, [])
@@ -228,16 +240,38 @@ const makeOptionsFromProps = props => ({
   showTooltips: true,
   pointDot: false,
   scaleShowLabels: false,
+  pointHitDetectionRadius: 2,
   datasetFill: false,
   scaleFontSize: 0,
   animation: false,
   pointRadius: 0,
+  plugins: {
+    datalabels: {
+      display: false,
+      anchor: 'end',
+      align: 'top',
+      backgroundColor: context => {
+        return 'rgba(96, 76, 141, 0)'
+      },
+      borderRadius: 1,
+      borderColor: 'black',
+      borderWidth: 1,
+      offset: 0,
+      color: 'black',
+      font: {
+        size: 12
+      },
+      formatter: () => {
+        return 'Tokens distributed to advisors'
+      }
+    }
+  },
   hover: {
-    mode: 'nearest',
-    intersect: true
+    mode: 'x',
+    intersect: false
   },
   tooltips: {
-    mode: 'index',
+    mode: 'x',
     intersect: false,
     titleMarginBottom: 8,
     titleFontSize: 14,
@@ -256,8 +290,16 @@ const makeOptionsFromProps = props => ({
       },
       label: (tooltipItem, data) => {
         const label = data.datasets[tooltipItem.datasetIndex].label.toString()
-        if (label === 'Github Activity') {
+        if (label === 'Github Activity' ||
+          label === 'Burn Rate'
+        ) {
           return `${label}: ${tooltipItem.yLabel}`
+        }
+        if (label === 'Transaction Volume') {
+          return `${label}: ${tooltipItem.yLabel / 10e8} tokens`
+        }
+        if (label === 'Twitter') {
+          return `${label}: ${tooltipItem.yLabel} followers`
         }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
@@ -344,16 +386,94 @@ const makeOptionsFromProps = props => ({
       ticks: {
         display: true,
         // same hack as in volume.
-        max: parseInt(Math.max(...props.history.map(data => data.githubActivity)) * 2.2)
+        max: parseInt(
+          Math.max(...props.github.history.items.map(data => data.activity)) * 2.2, 10)
       },
       gridLines: {
         display: false
       },
-      display: props.isToggledGithubActivity,
+      display: props.isToggledGithubActivity &&
+        props.github.history.items.length !== 0,
+      position: 'right'
+    }, {
+      id: 'y-axis-5',
+      type: 'linear',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'Twitter',
+        fontColor: COLORS.twitter
+      },
+      ticks: {
+        display: true
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledTwitter &&
+        props.twitter.history.items.length !== 0,
+      position: 'right'
+    }, {
+      id: 'y-axis-6',
+      type: 'linear',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'Burn Rate',
+        fontColor: COLORS.burnRate
+      },
+      ticks: {
+        display: true,
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return value / 10e8
+        }
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledBurnRate &&
+        props.burnRate.items.length !== 0,
+      position: 'right'
+    }, {
+      id: 'y-axis-7',
+      type: 'linear',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'Transaction Volume',
+        fontColor: COLORS.transactionVolume
+      },
+      ticks: {
+        display: true,
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return value / 10e8
+        }
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledTransactionVolume &&
+        props.transactionVolume.items.length !== 0,
       position: 'right'
     }],
     xAxes: [{
       type: 'time',
+      time: {
+        min: props.history && props.history.length > 0
+          ? moment(props.history[0].datetime)
+          : moment()
+      },
       ticks: {
         autoSkipPadding: 1,
         callback: function (value, index, values) {
@@ -374,6 +494,7 @@ const makeOptionsFromProps = props => ({
 })
 
 export const ProjectChart = ({
+  isDesktop,
   isError,
   isEmpty,
   isLoading,
@@ -389,89 +510,32 @@ export const ProjectChart = ({
       </div>
     )
   }
-  const chartData = getChartDataFromHistory(
-    props.history,
-    props.isToggledBTC,
-    props.isToggledMarketCap,
-    props.isToggledGithubActivity,
-    props.isToggledVolume)
+  const chartData = makeChartDataFromHistory(props)
   const chartOptions = makeOptionsFromProps(props)
 
   return (
-    <div className='project-dp-chart'>
-      <ProjectChartHeader {...props} />
-      <div className='project-chart-body'>
-        {isLoading && <div className='project-chart__isLoading'> Loading... </div>}
-        {!isLoading && isEmpty && <div className='project-chart__isEmpty'> We don't have any data </div>}
-        <Bar
-          data={chartData}
-          options={chartOptions}
-          redraw
-          height={100}
-          onElementsClick={elems => {
-            !props.isDesktop && elems[0] && setSelected(elems[0]._index)
-          }}
-          style={{ transition: 'opacity 0.25s ease' }}
-        />
-      </div>
-      <div className='chart-footer'>
-        <div className='chart-footer-filters'>
-          <MarketcapToggle {...props} />
-          <GithubActivityToggle {...props} />
-          <VolumeToggle {...props} />
-        </div>
-        <div>
-          <small className='trademark'>santiment.net</small>
-        </div>
-      </div>
+    <div className='project-chart-body'>
+      {isLoading && <div className='project-chart__isLoading'> Loading... </div>}
+      {!isLoading && isEmpty && <div className='project-chart__isEmpty'> We don't have any data </div>}
+      <Bar
+        data={chartData}
+        options={chartOptions}
+        height={isDesktop ? 100 : undefined}
+        onElementsClick={elems => {
+          !props.isDesktop && elems[0] && setSelected(elems[0]._index)
+        }}
+        style={{ transition: 'opacity 0.25s ease' }}
+      />
     </div>
   )
 }
-
-const enhance = compose(
-  withState('isToggledBTC', 'currencyToggle', false),
-  withHandlers({
-    showBTC: ({ currencyToggle }) => e => currencyToggle(true),
-    showUSD: ({ currencyToggle }) => e => currencyToggle(false)
-  }),
-  withState('isToggledMarketCap', 'toggleMarketcap', false),
-  withState('isToggledGithubActivity', 'toggleGithubActivity', false),
-  withState('isToggledVolume', 'toggleVolume', true),
-  lifecycle({
-    componentWillMount () {
-      Chart.defaults.LineWithLine = Chart.defaults.line
-      Chart.controllers.LineWithLine = Chart.controllers.line.extend({
-        draw: function (ease) {
-          Chart.controllers.line.prototype.draw.call(this, ease)
-
-          if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
-            const activePoint = this.chart.tooltip._active[0]
-            const ctx = this.chart.ctx
-            const x = activePoint.tooltipPosition().x
-            const topY = this.chart.scales['y-axis-1'].top
-            const bottomY = this.chart.scales['y-axis-1'].bottom
-
-            ctx.save()
-            ctx.beginPath()
-            ctx.moveTo(x, topY)
-            ctx.lineTo(x, bottomY)
-            ctx.lineWidth = 1
-            ctx.strokeStyle = '#adadad'
-            ctx.stroke()
-            ctx.restore()
-          }
-        }
-      })
-    }
-  }),
-  pure
-)
 
 ProjectChart.propTypes = {
   isLoading: PropTypes.bool.isRequired,
   isError: PropTypes.bool.isRequired,
   history: PropTypes.array.isRequired,
   isEmpty: PropTypes.bool,
+  isToggledBTC: PropTypes.bool,
   selected: PropTypes.number,
   isDesktop: PropTypes.bool.isRequired,
   changeDates: PropTypes.func,
@@ -491,4 +555,4 @@ ProjectChart.defaultProps = {
   focusedInput: null
 }
 
-export default enhance(ProjectChart)
+export default pure(ProjectChart)

@@ -183,10 +183,6 @@
   text-align: right;
 }
 
-.panel .diff {
-  font-size: 12px;
-}
-
 .detailed .information {
   display: flex;
   margin: 0;

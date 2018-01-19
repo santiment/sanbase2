@@ -68,16 +68,17 @@ config :ex_admin,
   modules: [
     Sanbase.ExAdmin.Dashboard,
     Sanbase.ExAdmin.Model.Project,
-    Sanbase.ExAdmin.Model.LatestCoinmarketcapData,
-    Sanbase.ExAdmin.Model.LatestEthWalletData,
-    Sanbase.ExAdmin.Model.LatestBtcWalletData,
     Sanbase.ExAdmin.Model.ProjectBtcAddress,
     Sanbase.ExAdmin.Model.ProjectEthAddress,
+    Sanbase.ExAdmin.Model.Ico,
+    Sanbase.ExAdmin.Model.ExchangeEthAddress,
     Sanbase.ExAdmin.Model.Currency,
     Sanbase.ExAdmin.Model.Infrastructure,
     Sanbase.ExAdmin.Model.MarketSegment,
-    Sanbase.ExAdmin.Model.Ico,
     Sanbase.ExAdmin.Model.ProjectTransparencyStatus,
+    Sanbase.ExAdmin.Model.LatestCoinmarketcapData,
+    Sanbase.ExAdmin.Model.LatestEthWalletData,
+    Sanbase.ExAdmin.Model.LatestBtcWalletData,
     Sanbase.ExAdmin.Notifications.Type
   ],
   basic_auth: [
@@ -120,7 +121,7 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
   update_interval: 1000 * 60 * 60 * 24, # 1 day
   sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
 
-config :sanbase, Sanbase.Notifications.CheckPrice,
+config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
   notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"}
 
@@ -142,11 +143,11 @@ config :faktory_worker_ex,
   host: {:system, "FAKTORY_HOST", "localhost"},
   port: {:system, "FAKTORY_PORT", 7419},
   client: [
-    pool: 5,
+    pool: 1,
   ],
   worker: [
-    concurrency: 5,
-    queues: ["github_activity", "data_migrations"],
+    concurrency: 1,
+    queues: ["default", "data_migrations"],
   ],
   start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
 
@@ -158,6 +159,9 @@ config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
   region: "eu-central-1"
+
+config :sanbase, SanbaseWeb.Graphql.Resolvers.EtherbiResolver,
+  url: {:system, "ETHERBI_URL"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

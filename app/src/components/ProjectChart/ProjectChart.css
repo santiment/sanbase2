@@ -14,6 +14,8 @@
 
 .project-chart-body {
   position: relative;
+  padding: 10px 20px;
+  background-color: rgba(250, 251, 255, 0.8);
 }
 
 .project-chart__isLoading,
@@ -29,14 +31,6 @@
   background: rgba(227, 227, 227, 0.4);
   border-radius: 4px;
   justify-content: center;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  min-height: 60px;
 }
 
 .chart-datetime-settings {
@@ -84,54 +78,34 @@
   }
 }
 
-.chart-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-}
-
-.chart-footer-filters {
-  display: flex;
-  align-items: center;
-}
-
-.chart-footer-filters div {
-  margin-right: 2px;
-}
-
-.trademark {
-  color: #e3e3e3;
-}
-
 .time-filter,
-.currency-filter,
-.marketcap-toggle {
+.currency-filter {
   display: flex;
   user-select: none;
 }
 
 .time-filter div,
 .currency-filter div,
-.marketcap-toggle div {
+.chart-footer-filters div {
   cursor: pointer;
-  width: 40px;
+  min-width: 32px;
   text-align: center;
+  border-radius: 4px;
 }
 
 .time-filter .activated,
 .currency-filter .activated,
-.marketcap-toggle .activated {
-  background: gray;
-  color: white !important;
+.chart-footer-filters .activated {
+  background: rgb(71, 72, 76);
+  color: white;
 }
 
 .time-filter .disabled,
 .currency-filter .disabled,
-.marketcap-toggle .disabled {
+.chart-footer-filters .disabled {
   color: #888;
 }
 
-.marketcap-toggle div {
-  width: 100px;
+.chart-footer-filters div {
+  margin-right: 2px;
 }

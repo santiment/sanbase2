@@ -18,7 +18,11 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     :ticker,
     :creation_transaction,
     :contract_block_number,
-    :contract_abi
+    :contract_abi,
+    :etherscan_token_name,
+    :whitepaper_link,
+    :token_decimals,
+    :total_supply
   ]
 
   alias Sanbase.ExternalServices.Coinmarketcap
@@ -29,6 +33,11 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   alias Sanbase.Model.{Project, Ico}
 
   require Logger
+
+  def from_project(project) do
+    struct(__MODULE__, Map.to_list(project))
+    |> struct(Map.to_list(find_or_create_initial_ico(project)))
+  end
 
   def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: coinmarketcap_id} = project_info) do
     Coinmarketcap.Scraper.fetch_project_page(coinmarketcap_id)
@@ -42,6 +51,13 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     |> Etherscan.Scraper.parse_address_page(project_info)
     |> fetch_block_number()
     |> fetch_abi()
+  end
+
+  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: nil} = project_info), do: project_info
+
+  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: etherscan_token_name} = project_info) do
+    Etherscan.Scraper.fetch_token_page(etherscan_token_name)
+    |> Etherscan.Scraper.parse_token_page(project_info)
   end
 
   def update_project(project_info, project) do
@@ -63,6 +79,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       ico -> ico
     end
   end
+
+  defp fetch_block_number(%ProjectInfo{creation_transaction: nil} = project_info), do: project_info
 
   defp fetch_block_number(%ProjectInfo{creation_transaction: creation_transaction} = project_info) do
     %{"blockNumber" => "0x" <> block_number_hex} = Parity.get_transaction_by_hash!(creation_transaction)

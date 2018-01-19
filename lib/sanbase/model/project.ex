@@ -34,6 +34,8 @@ defmodule Sanbase.Model.Project do
     field(:token_address, :string)
     field(:team_token_wallet, :string)
     field(:project_transparency, :boolean, default: false)
+    field(:token_decimals, :integer)
+    field(:total_supply, :decimal)
     belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
     field(:project_transparency_description, :string)
     has_many(:eth_addresses, ProjectEthAddress)
@@ -77,7 +79,9 @@ defmodule Sanbase.Model.Project do
          :team_token_wallet,
          :project_transparency,
          :project_transparency_status_id,
-         :project_transparency_description
+         :project_transparency_description,
+         :token_decimals,
+         :total_supply
        ])
     |> validate_required([:name])
     |> unique_constraint(:name)

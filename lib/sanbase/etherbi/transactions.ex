@@ -22,10 +22,11 @@ defmodule Sanbase.Etherbi.Transactions do
   def init(:ok) do
     if Config.get(:sync_enabled, false) do
       Store.create_db()
+
       update_interval_ms = Config.get(:update_interval, @default_update_interval)
+      token_decimals = build_token_decimals_map()
 
       GenServer.cast(self(), :sync)
-      token_decimals = build_token_decimals_map()
       {:ok, %{update_interval_ms: update_interval_ms, token_decimals: token_decimals}}
     else
       :ignore
@@ -51,15 +52,20 @@ defmodule Sanbase.Etherbi.Transactions do
     {:noreply, state}
   end
 
+  # The etherbi transactions API allows querying multiple wallets at once.
+  # For now send a list with just one wallet.
   defp fetch_and_store(address, token_decimals) do
     last_datetime = Store.last_datetime(address) || DateTime.from_unix!(0, :seconds)
     now_datetime = DateTime.utc_now()
 
     {:ok, transactions_in} = FundsMovement.transactions_in([address], last_datetime, now_datetime)
+
     convert_to_measurement(transactions_in, address, "in", token_decimals)
     |> Store.import()
 
-    {:ok, transactions_out} = FundsMovement.transactions_out([address], last_datetime, now_datetime)
+    {:ok, transactions_out} =
+      FundsMovement.transactions_out([address], last_datetime, now_datetime)
+
     convert_to_measurement(transactions_out, address, "out", token_decimals)
     |> Store.import()
   end
@@ -79,7 +85,8 @@ defmodule Sanbase.Etherbi.Transactions do
     |> Map.new()
   end
 
-  # Influxdb has 64 bytes integer which is not always sufficient for the volume
+  # Better return no information than wrong information. If we have no data for the
+  # number of decimal places `nil` is written instead and it gets filtered by the Store.import()
   defp convert_to_measurement(
          transactions_data,
          measurement_name,
@@ -88,12 +95,14 @@ defmodule Sanbase.Etherbi.Transactions do
        ) do
     transactions_data
     |> Enum.map(fn {datetime, volume, _address, token} ->
-      %Measurement{
-        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: volume / Map.get(token_decimals, token, 1)},
-        tags: [transaction_type: transaction_type],
-        name: measurement_name
-      }
+      if decimal_places = Map.has_key?(token_decimals, token) do
+        %Measurement{
+          timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+          fields: %{volume: volume / decimal_places},
+          tags: [transaction_type: transaction_type],
+          name: measurement_name
+        }
+      end
     end)
   end
 end

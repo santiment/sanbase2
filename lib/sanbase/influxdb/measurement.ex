@@ -15,6 +15,8 @@ defmodule Sanbase.Influxdb.Measurement do
   """
   def convert_measurement_for_import(nil), do: nil
 
+  def convert_measurement_for_import(nil), do: nil
+
   def convert_measurement_for_import(%Measurement{
         timestamp: timestamp,
         fields: fields,

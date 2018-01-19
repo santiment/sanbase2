@@ -43,7 +43,5 @@ defmodule Sanbase.Github.EtherbiFundsMovementTest do
     FundsMovement.transactions_in([context.wallet], datetime1, datetime2)
 
     transactions = Store.transactions([context.wallet], datetime1, datetime2, "1h", "in")
-    |> IO.inspect()
   end
-
 end

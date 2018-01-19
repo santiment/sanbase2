@@ -19,38 +19,39 @@ export const TopMenu = ({
   history,
   projects
  }) => (
-  <div className='top-menu'>
-    <div className='left'>
-      <div
-        onClick={() => history.push('/')}
-        className='brand'>
-        <img
-          src={logo}
-          width='115'
-          height='22'
-          alt='SANbase' />
-      </div>
-      <Search
-        onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
-        projects={projects} />
-    </div>
-    <div className='right'>
-      <AppMenuTop
-        handleNavigation={nextRoute => {
-          history.push(`/${nextRoute}`)
-        }} />
-      <AuthControl
-        login={() => history.push('/login')}
-        user={user}
-        logout={logout} />
-    </div>
-  </div>
+   <div className='top-menu'>
+     <div className='left'>
+       <div
+         onClick={() => history.push('/')}
+         className='brand'>
+         <img
+           src={logo}
+           width='115'
+           height='22'
+           alt='SANbase' />
+       </div>
+       <Search
+         onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+         projects={projects} />
+     </div>
+     <div className='right'>
+       <AppMenuTop
+         handleNavigation={nextRoute => {
+           history.push(`/${nextRoute}`)
+         }} />
+       <AuthControl
+         login={() => history.push('/login')}
+         user={user}
+         logout={logout} />
+     </div>
+   </div>
 )
 
 const mapStateToProps = state => {
   return {
     user: state.user.data,
-    loading: state.user.isLoading
+    loading: state.user.isLoading,
+    projects: state.projects.items
   }
 }
 

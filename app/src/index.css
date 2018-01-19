@@ -3,7 +3,6 @@ body {
   padding: 0;
   background-color: #f5f9ff;
   font: 14px/1.6 "Source+Sans+Pro", sans-serif;
-  /* font-family: sans-serif; can we remove this - kc */
   font-weight: 400;
   color: #3d4450;
 }

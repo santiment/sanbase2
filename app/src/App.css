@@ -53,11 +53,13 @@
 .page {
   flex: 1;
   padding: 0 36px;
+
   /* height: 100vh; hiding for non-fixed top menu - kc */
   overflow-y: auto;
   overflow: scroll;
   -webkit-overflow-scrolling: touch;
 }
+
 @media (max-width: 767px) {
   .page {
     padding: 0 15px;

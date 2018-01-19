@@ -22,7 +22,7 @@
 
 .project-chart__isLoading,
 .project-chart__isEmpty {
-  color: rgba(38, 43, 51, 1.0);
+  color: rgb(38, 43, 51);
   font-size: 2em;
   font-weight: 300;
   position: absolute;

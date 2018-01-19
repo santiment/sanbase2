@@ -5,6 +5,8 @@ defmodule Sanbase.Etherbi.Transactions do
 
   import Ecto.Query
 
+  require Logger
+
   alias Sanbase.Repo
   alias Sanbase.Utils.Config
   alias Sanbase.Etherbi.Store
@@ -104,6 +106,9 @@ defmodule Sanbase.Etherbi.Transactions do
           tags: [transaction_type: transaction_type],
           name: measurement_name
         }
+      else
+        Logger.warn("Token decimal places missing for #{token}")
+        nil
       end
     end)
   end

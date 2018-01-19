@@ -6,13 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   import Ecto.Query
 
   def twitter_data(_root, %{ticker: ticker}, _resolution) do
-    with query <-
-           from(
-             p in Project,
-             where: p.ticker == ^ticker and not is_nil(p.twitter_link),
-             select: p.twitter_link
-           ),
-         [twitter_link|_] <- Repo.all(query),
+    with twitter_link <- get_twitter_link(ticker),
          twitter_name <- extract_twitter_name(twitter_link),
          {datetime, followers_count} <- Store.last_record_for_measurement(twitter_name) do
       {:ok,
@@ -36,13 +30,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
         %{ticker: ticker, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with query <-
-           from(
-             p in Project,
-             where: p.ticker == ^ticker and not is_nil(p.twitter_link),
-             select: p.twitter_link
-           ),
-         [twitter_link|_] <- Repo.all(query),
+    with twitter_link <- get_twitter_link(ticker),
          twitter_name <- extract_twitter_name(twitter_link),
          twitter_historical_data <-
            Store.all_records_for_measurement!(twitter_name, from, to, interval) do
@@ -64,5 +52,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
 
   defp extract_twitter_name("https://twitter.com/" <> twitter_name) do
     String.split(twitter_name, "/") |> hd
+  end
+
+  defp get_twitter_link(ticker) do
+    query =
+      from(
+        p in Project,
+        where: p.ticker == ^ticker and not is_nil(p.twitter_link),
+        select: p.twitter_link
+      )
+
+    [twitter_link | _] = Repo.all(query)
+
+    twitter_link
   end
 end

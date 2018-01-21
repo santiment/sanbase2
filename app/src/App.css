@@ -88,3 +88,9 @@
 .fa-disabled {
   color: #d3d3d3;
 }
+
+@media (min-width: 1024px) {
+  .page {
+    margin: 0 auto;
+  }
+}

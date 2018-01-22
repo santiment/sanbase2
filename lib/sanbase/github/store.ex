@@ -88,11 +88,12 @@ defmodule Sanbase.Github.Store do
     |> Enum.map(fn [iso8601_datetime, activity] ->
       {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
-      if is_float(activity) do
-        activity = activity
-          |> Float.ceil()
-          |> Kernel.trunc()
-      end
+      activity =
+        if is_float(activity) do
+          activity |> Float.ceil() |> Kernel.trunc()
+        else
+          activity
+        end
 
       {datetime, activity}
     end)

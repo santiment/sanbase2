@@ -22,10 +22,9 @@ defmodule Sanbase.DateTimeUtils do
   def str_to_sec(interval) do
     interval_type = String.last(interval)
 
-    interval_seconds =
-      String.slice(interval, 0..-2)
-      |> String.to_integer()
-      |> str_to_sec(interval_type)
+    String.slice(interval, 0..-2)
+    |> String.to_integer()
+    |> str_to_sec(interval_type)
   end
 
   def str_to_hours(interval) do

@@ -5,7 +5,6 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
   require Sanbase.Utils.Config
 
-  alias Sanbase.Model.Project
   alias Sanbase.Github
   alias Sanbase.Github.Store
   alias Sanbase.Influxdb.Measurement

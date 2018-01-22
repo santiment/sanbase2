@@ -9,13 +9,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.ContextPlug
 
-  defp mutation_skeleton(query) do
-    %{
-      "operationName" => "",
-      "query" => "#{query}",
-      "variables" => ""
-    }
-  end
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     user =

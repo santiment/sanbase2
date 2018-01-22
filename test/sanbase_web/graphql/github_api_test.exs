@@ -5,6 +5,8 @@ defmodule Sanbase.Github.GithubApiTest do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Github
 
+  import SanbaseWeb.Graphql.TestHelpers
+
   setup do
     Github.Store.create_db()
 
@@ -184,13 +186,5 @@ defmodule Sanbase.Github.GithubApiTest do
     assert %{"activity" => 9} in activities
     assert %{"activity" => 12} in activities
     assert %{"activity" => 14} in activities
-  end
-
-  defp query_skeleton(query, query_name) do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
-    }
   end
 end

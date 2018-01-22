@@ -31,7 +31,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   end
 
   # TODO: get column indices from the header row
-  defp parse_header_row(header_row) do
+  defp parse_header_row(_header_row) do
     IcoSpreadsheetRow.get_column_indices
   end
 
@@ -110,19 +110,6 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   end
 
   defp parse_decimal(value, _context), do: value
-
-  defp parse_boolean(value, {project_name, column}) do
-    value = if(is_binary(value)) do String.downcase(value) else value end
-
-    case value do
-      v when v in ["yes", "true", 1] -> true
-      v when v in ["no", "false", 0] -> false
-      nil -> nil
-      _ -> #TODO: return error
-        Logger.warn("[#{project_name}|#{column}] parse_boolean error: #{inspect value}")
-        nil
-    end
-  end
 
   defp parse_date(value, _context) when is_integer(value) do
     #the -2 is to account for an Excel bug (search in internet)

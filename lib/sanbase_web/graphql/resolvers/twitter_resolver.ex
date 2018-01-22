@@ -6,8 +6,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   import Ecto.Query
 
   def twitter_data(_root, %{ticker: ticker}, _resolution) do
-    with twitter_link <- get_twitter_link(ticker),
-         twitter_name <- extract_twitter_name(twitter_link),
+    with {:ok, twitter_link} <- get_twitter_link(ticker),
+         {:ok, twitter_name} <- extract_twitter_name(twitter_link),
          {datetime, followers_count} <- Store.last_record_for_measurement(twitter_name) do
       {:ok,
        %{
@@ -30,8 +30,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
         %{ticker: ticker, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with twitter_link <- get_twitter_link(ticker),
-         twitter_name <- extract_twitter_name(twitter_link),
+    with {:ok, twitter_link} <- get_twitter_link(ticker),
+         {:ok, twitter_name} <- extract_twitter_name(twitter_link),
          twitter_historical_data <-
            Store.all_records_for_measurement!(twitter_name, from, to, interval) do
       result =
@@ -50,8 +50,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     end
   end
 
-  defp extract_twitter_name("https://twitter.com/" <> twitter_name) do
-    String.split(twitter_name, "/") |> hd
+  defp extract_twitter_name("https://twitter.com/" <> twitter_name = twitter_link) do
+    case String.split(twitter_name, "/") |> hd do
+      "" -> {:error, "Twitter name must not be empty or the twitter link has wrong format: #{twitter_link}"}
+      name -> {:ok, name}
+    end
   end
 
   defp get_twitter_link(ticker) do
@@ -62,8 +65,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
         select: p.twitter_link
       )
 
-    [twitter_link | _] = Repo.all(query)
-
-    twitter_link
+    case Repo.all(query) do
+      [] -> {:error, "There is no project with ticker #{ticker}"}
+      [twitter_link | _] -> {:ok, twitter_link}
+    end
   end
 end

@@ -54,6 +54,7 @@ const MobileMenu = ({
             toggleMenu(opened => !opened)
             history.push('/login')
           }}
+          isDesktop={false}
           user={user}
           logout={() => {
             logout()

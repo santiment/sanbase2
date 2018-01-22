@@ -1,6 +1,37 @@
+.user-auth-control {
+  padding: 10px 20px;
+}
+
+.acct {
+  display: flex;
+  align-items: center;
+}
+
+.acct i {
+  margin-left: 5px;
+}
+
+.acct-links ul {
+  list-style: none;
+}
+
+.acct-links ul li {
+  margin-top: 10px;
+}
+
+.acct-links a {
+  cursor: pointer;
+}
+
 .account-name {
   width: 50%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (min-width: 1024px) {
+  .user-auth-control {
+    padding: 0;
+  }
 }

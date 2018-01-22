@@ -41,7 +41,8 @@ config :faktory_worker_ex,
   start_workers: false
 
 config :sanbase, Sanbase.Notifications.CheckPrices,
-  webhook_url: "http://example.com/webhook_url"
+  webhook_url: "http://example.com/webhook_url",
+  slack_notifications_enabled: true
 
 config :sanbase, Sanbase.Github.Store,
   database: "github_activity_test"

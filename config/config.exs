@@ -123,7 +123,8 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
 
 config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
-  notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"}
+  notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"},
+  slack_notifications_enabled: {:system, "SLACK_NOTIFICATIONS_ENABLED", false}
 
 config :sanbase, SanbaseWeb.Guardian,
   issuer: "santiment",

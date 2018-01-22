@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     only_project_transparency = Map.get(args, :only_project_transparency, false)
 
     query = from p in Project,
-    where: not is_nil(p.coinmarketcap_id)
+    where: (^only_project_transparency or not is_nil(p.coinmarketcap_id))
         and (not ^only_project_transparency or p.project_transparency)
 
     projects = case coinmarketcap_requested?(resolution) do

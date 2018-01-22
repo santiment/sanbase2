@@ -27,9 +27,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   defp all_projects(parent, args) do
     only_project_transparency = Map.get(args, :only_project_transparency, false)
 
-    query = from p in Project,
-    where: (^only_project_transparency or not is_nil(p.coinmarketcap_id))
-        and (not ^only_project_transparency or p.project_transparency)
+    query = cond do
+      only_project_transparency ->
+        from p in Project,
+        where: p.project_transparency
+      true ->
+        from p in Project,
+        where: not is_nil(p.coinmarketcap_id)
+    end
 
     projects = case coinmarketcap_requested?(resolution) do
       true -> Repo.all(query) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])

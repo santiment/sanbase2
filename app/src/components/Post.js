@@ -1,4 +1,5 @@
 import React from 'react'
+import Username from './Username'
 import './Post.css'
 
 export const getSourceLink = link => {
@@ -22,7 +23,7 @@ const Post = ({
       <div>
         <a className='event-storylink' href={link}>{title}</a> ({getSourceLink(link)})
         <div className='event-post-info'>
-          by {author} {createdAt} &nbsp;
+          by&nbsp;<Username address={author} /> {createdAt} &nbsp;
           <div className='event-post-votes'>
             <i className='fa fa-caret-up' />&nbsp;
             {votes}

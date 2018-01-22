@@ -22,8 +22,8 @@ defmodule Sanbase.Github.EtherbiFundsMovementTest do
 
   test "fetch in transactions and store them with the token decimal corrections", context do
     transactions = [
-      [context.timestamp1, 18_000_000, context.wallet, context.ticker],
-      [context.timestamp2, 36_000_000, context.wallet, context.ticker],
+      [context.timestamp1, 18_000_000_000_000_000_000, context.wallet, context.ticker],
+      [context.timestamp2, 36_000_000_000_000_000_000, context.wallet, context.ticker],
     ]
 
     mock(
@@ -38,14 +38,14 @@ defmodule Sanbase.Github.EtherbiFundsMovementTest do
 
     datetime1 = DateTime.from_unix!(context.timestamp1)
     datetime2 = DateTime.from_unix!(context.timestamp2)
-    token_decimals = %{"SAN" => 18}
+    token_decimals = %{"SAN" => :math.pow(10, 18)}
 
     # Inserts into the DB. Must delete it at the end of the test
     Transactions.fetch_and_store(context.wallet, token_decimals)
     {:ok, transactions} = Store.transactions([context.wallet], datetime1, datetime2, "1h", "in")
 
-    assert {datetime1, 1000000, "SAN"} in transactions
-    assert {datetime2, 2000000, "SAN"} in transactions
+    assert {datetime1, 18, "SAN"} in transactions
+    assert {datetime2, 36, "SAN"} in transactions
 
     Store.drop_measurement(context.wallet)
   end

@@ -39,6 +39,7 @@ defmodule Sanbase.Etherbi.Transactions do
         :sync,
         %{update_interval_ms: update_interval_ms} = state
       ) do
+    # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
     token_decimals = build_token_decimals_map()
     exchange_wallets_addrs = Repo.all(from(addr in ExchangeEthAddress, select: addr.address))
 
@@ -83,7 +84,7 @@ defmodule Sanbase.Etherbi.Transactions do
 
     Repo.all(query)
     |> Enum.map(fn %{ticker: ticker, token_decimals: token_decimals} ->
-      {ticker, token_decimals}
+      {ticker, :math.pow(10,token_decimals)}
     end)
     |> Map.new()
   end

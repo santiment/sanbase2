@@ -16,4 +16,10 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
     field(:transaction_volume, :decimal)
     field(:token, :string)
   end
+
+  enum :transaction_type do
+    value :in
+    value :out
+    value :all
+  end
 end

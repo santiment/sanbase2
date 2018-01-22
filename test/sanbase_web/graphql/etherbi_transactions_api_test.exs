@@ -5,6 +5,8 @@ defmodule Sanbase.Github.EtherbiTransactionsApiTest do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.Store
 
+  import SanbaseWeb.Graphql.TestHelpers
+
   setup do
     Store.create_db()
 
@@ -106,7 +108,7 @@ defmodule Sanbase.Github.EtherbiTransactionsApiTest do
         wallet: "#{context.wallet}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}",
-        transaction_type: "in") {
+        transaction_type: IN) {
           datetime
           transactionVolume
           token
@@ -158,7 +160,7 @@ defmodule Sanbase.Github.EtherbiTransactionsApiTest do
         wallet: "#{context.wallet}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}",
-        transaction_type: "out") {
+        transaction_type: OUT) {
           datetime
           transactionVolume
           token
@@ -195,13 +197,5 @@ defmodule Sanbase.Github.EtherbiTransactionsApiTest do
              "token" => context.token,
              "transactionVolume" => "10000"
            } in transactions_out
-  end
-
-  defp query_skeleton(query, query_name) do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
-    }
   end
 end

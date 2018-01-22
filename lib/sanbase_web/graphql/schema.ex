@@ -153,7 +153,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1h")
-      arg(:transaction_type, :string)
+      arg(:transaction_type, :transaction_type, default_value: :all)
 
       resolve(&EtherbiResolver.transactions/3)
 

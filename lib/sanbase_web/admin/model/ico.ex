@@ -37,11 +37,6 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input ico, :token_btc_ico_price
         input ico, :tokens_issued_at_ico
         input ico, :tokens_sold_at_ico
-        input ico, :funds_raised_btc
-        input ico, :funds_raised_usd
-        input ico, :funds_raised_eth
-        input ico, :usd_btc_icoend
-        input ico, :usd_eth_icoend
         input ico, :minimal_cap_amount
         input ico, :maximal_cap_amount
         input ico, :main_contract_address

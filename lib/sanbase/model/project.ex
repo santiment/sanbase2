@@ -2,13 +2,14 @@ defmodule Sanbase.Model.Project do
   use Ecto.Schema
   import Ecto.Changeset
   alias Sanbase.Repo
-  alias Sanbase.Prices.Store
 
   alias Sanbase.Model.{
     Project,
     ProjectEthAddress,
     ProjectBtcAddress,
     Ico,
+    IcoCurrencies,
+    Currency,
     MarketSegment,
     Infrastructure,
     LatestCoinmarketcapData,
@@ -119,17 +120,58 @@ defmodule Sanbase.Model.Project do
   defp roi_usd_accumulator(%Ico{end_date: nil}, {project, count, total_paid}), do: {project, count, total_paid}
   defp roi_usd_accumulator(%Ico{end_date: end_date}, {project, count, total_paid}) do
     with :gt <- Ecto.DateTime.compare(project.latest_coinmarketcap_data.update_time, Ecto.DateTime.from_date(end_date)),
-        {:ok, timestamp, _} <- Ecto.Date.to_iso8601(end_date) <> "T00:00:00Z" |> DateTime.from_iso8601() do
+        timestamp <- Sanbase.DateTimeUtils.ecto_date_to_datetime(end_date) do
 
-      Store.fetch_last_known_price_point(project.ticker <> "_USD", timestamp)
+      Sanbase.Prices.Utils.fetch_last_price_before(project.ticker, "USD", timestamp)
       |> case do
         nil -> {project, count, total_paid}
-        {_, nil, _, _} -> {project, count, total_paid}
-        {_, 0, _, _} -> {project, count, total_paid}
-        {_, price_at_ico_end, _, _} -> {project, count+1, Decimal.add(total_paid, Decimal.new(price_at_ico_end))}
+        0 -> {project, count, total_paid}
+        price_at_ico_end -> {project, count+1, Decimal.add(total_paid, Decimal.new(price_at_ico_end))}
       end
     else
       _ -> {project, count, total_paid}
     end
+  end
+
+  def funds_raised_usd_ico_end_price(project) do
+    funds_raised_ico_end_price(project, &Ico.funds_raised_usd_ico_end_price/1)
+  end
+
+  def funds_raised_eth_ico_end_price(project) do
+    funds_raised_ico_end_price(project, &Ico.funds_raised_eth_ico_end_price/1)
+  end
+
+  def funds_raised_btc_ico_end_price(project) do
+    funds_raised_ico_end_price(project, &Ico.funds_raised_btc_ico_end_price/1)
+  end
+
+  defp funds_raised_ico_end_price(project, ico_funds_raised_fun) do
+    Repo.preload(project, :icos).icos
+    |> Enum.map(ico_funds_raised_fun)
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> nil
+      amounts -> Enum.reduce(amounts, Decimal.new(0), &Decimal.add/2)
+    end
+  end
+
+  @doc """
+  For every currency aggregates all amounts for every ICO of the given project
+  """
+  def funds_raised_icos(%Project{id: id}) do
+    query = from i in Ico,
+            inner_join: ic in IcoCurrencies, on: ic.ico_id == i.id and not is_nil(ic.amount),
+            inner_join: c in Currency, on: c.id == ic.currency_id,
+            where: i.project_id == ^id,
+            group_by: c.code,
+            order_by: fragment("case
+                            			when ? = 'BTC' then '_'
+                            			when ? = 'ETH' then '__'
+                            			when ? = 'USD' then '___'
+                            		  else ?
+                            		end", c.code, c.code, c.code, c.code),
+            select: %{currency_code: c.code, amount: sum(ic.amount)}
+
+    Repo.all(query)
   end
 end

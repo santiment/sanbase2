@@ -22,13 +22,12 @@ defmodule Sanbase.Etherbi.Store do
     |> parse_transactions_time_series()
   end
 
+  # To be able to group by time an additional grouping by token should be done
   defp transactions_from_to_query(measurement, from, to, _resolution, transaction_type) do
-
     ~s/SELECT volume, token FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
-    # GROUP BY time(#{resolution}) fill(none)/
   end
 
   defp parse_transactions_time_series(%{results: [%{error: error}]}) do

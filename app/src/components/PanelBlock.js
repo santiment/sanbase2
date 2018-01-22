@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Message } from 'semantic-ui-react'
-import './PanelBlock.css'
 
 const propTypes = {
   title: PropTypes.string.isRequired,
@@ -11,11 +10,11 @@ const propTypes = {
 }
 
 const PanelBlock = ({
-  title,
-  classes,
+  title = '',
+  classes = '',
   children,
-  isUnauthorized,
-  isLoading
+  isUnauthorized = false,
+  isLoading = true
 }) => (
   <div className={'panel ' + classes}>
     <h4>{title}</h4>
@@ -32,12 +31,5 @@ const PanelBlock = ({
 )
 
 PanelBlock.propTypes = propTypes
-
-PanelBlock.defaultProps = {
-  classes: '',
-  title: '',
-  children: null,
-  isUnauthorized: false
-}
 
 export default PanelBlock

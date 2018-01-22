@@ -94,8 +94,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp project_info_missing?(%Project{website_link: website_link, github_link: github_link, ticker: ticker, name: name} = project) do
-    !website_link or !github_link or !ticker or !name or missing_main_contract_address?(project)
+  defp project_info_missing?(
+       %Project{
+         website_link: website_link,
+         github_link: github_link,
+         ticker: ticker,
+         name: name,
+         token_decimals: token_decimals
+       } = project
+     ) do
+    !website_link or !github_link or !ticker or !name
+    or missing_main_contract_address?(project) or !token_decimals
   end
 
   defp missing_main_contract_address?(project) do

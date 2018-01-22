@@ -406,7 +406,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :token_address, :string
     field :team_token_wallet, :string
     field :token_decimals, :integer
-    field :total_supply, :integer
     field :market_segment, :string do
       resolve &ProjectResolver.market_segment/3
     end
@@ -483,7 +482,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :token_address, :string
     field :team_token_wallet, :string
     field :token_decimals, :integer
-    field :total_supply, :integer
     field :market_segment, :string do
       resolve &ProjectResolver.market_segment/3
     end
@@ -564,7 +562,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :token_address, :string
     field :team_token_wallet, :string
     field :token_decimals, :integer
-    field :total_supply, :integer
     field :market_segment, :string do
       resolve &ProjectResolver.market_segment/3
     end
@@ -641,7 +638,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :token_address, :string
     field :team_token_wallet, :string
     field :token_decimals, :integer
-    field :total_supply, :integer
     field :market_segment, :string do
       resolve &ProjectResolver.market_segment/3
     end

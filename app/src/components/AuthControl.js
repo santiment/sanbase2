@@ -3,32 +3,39 @@ import {
   Button,
   Popup
 } from 'semantic-ui-react'
-import { Link } from 'react-router-dom'
 import Balance from './../components/Balance'
 import './AuthControl.css'
 
-const AccountLinks = ({logout, username}) => {
-  return (
-    <div className='acct-links'>
-      <ul>
-        {username &&
-          <li>
-            <div className='account-name'>
-              <a href='#'>{username}</a>
-            </div>
-          </li>}
+const AccountLinks = ({
+  logout,
+  openSettings,
+  username
+}) => (
+  <div className='acct-links'>
+    <ul>
+      {username &&
         <li>
-          <Link to='/account' >Settings</Link>
-        </li>
-        <li><a href='#' onClick={logout}>
-          Logout
-        </a></li>
-      </ul>
-    </div>
-  )
-}
+          <div className='account-name'>
+            <a href='#'>{username}</a>
+          </div>
+        </li>}
+      <li>
+        <a href='#' onClick={openSettings}>Settings</a>
+      </li>
+      <li>
+        <a href='#' onClick={logout}>Logout</a>
+      </li>
+    </ul>
+  </div>
+)
 
-const AuthControl = ({user, login, logout, isDesktop = true}) => {
+const AuthControl = ({
+  user,
+  login,
+  logout,
+  openSettings,
+  isDesktop = true
+}) => {
   if (user.username && isDesktop) {
     return (
       <div className='user-auth-control'>
@@ -38,7 +45,10 @@ const AuthControl = ({user, login, logout, isDesktop = true}) => {
             <i className='fa fa-caret-down' />
           </div>
         } on='click'>
-          <AccountLinks username={user.username} logout={logout} />
+          <AccountLinks
+            username={user.username}
+            openSettings={openSettings}
+            logout={logout} />
         </Popup>
       </div>
     )
@@ -49,7 +59,9 @@ const AuthControl = ({user, login, logout, isDesktop = true}) => {
         <div className='acct'>
           <Balance user={user} />
         </div>
-        <AccountLinks logout={logout} />
+        <AccountLinks
+          openSettings={openSettings}
+          logout={logout} />
       </div>
     )
   }

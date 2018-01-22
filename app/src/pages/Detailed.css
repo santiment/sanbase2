@@ -1,6 +1,4 @@
 .detailed-head {
-  margin-top: 36px;
-  margin-right: 16px;
   display: flex;
   justify-content: space-between;
   min-height: 84px;
@@ -15,7 +13,7 @@
 .detailed-name {
   display: flex;
   align-items: center;
-  padding-top: 24px;
+  padding-top: 12px;
 }
 
 .detailed-name h1 {
@@ -51,11 +49,12 @@
 }
 
 .detailed-price-description {
-  font-size: 0.5em;
+  font-size: 0.6em;
   font-weight: 300;
   line-height: 1;
   text-transform: uppercase;
   text-align: center;
+  margin-bottom: 10px;
 }
 
 .detailed-price-usd {
@@ -68,6 +67,7 @@
 .detailed-price-btc {
   display: flex;
   font-size: 16px;
+  justify-content: center;
 }
 
 .detailed-name img {
@@ -210,7 +210,6 @@
   }
 
   .detailed-price {
-    margin: 0;
     line-height: 1.4;
   }
 
@@ -225,6 +224,9 @@
 
   .detailed-price-description {
     text-align: left;
+    font-size: 0.5em;
+    font-weight: 300;
+    margin-bottom: 0;
   }
 
   .detailed .information {

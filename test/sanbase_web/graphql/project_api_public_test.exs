@@ -2,15 +2,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiPublicTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
-  import Plug.Conn
-
-  defp query_skeleton(query, query_name, variable_defs \\"", variables \\ "{}") do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name}#{variable_defs} #{query}",
-      "variables" => "#{variables}"
-    }
-  end
+  import SanbaseWeb.Graphql.TestHelpers
 
   test "public project listing forbidden fields", context do
     query = """

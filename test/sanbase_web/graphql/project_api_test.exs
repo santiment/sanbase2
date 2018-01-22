@@ -14,14 +14,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
   alias Sanbase.Utils.Config
 
   import Plug.Conn
-
-  defp query_skeleton(query, query_name, variable_defs \\"", variables \\ "{}") do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name}#{variable_defs} #{query}",
-      "variables" => "#{variables}"
-    }
-  end
+  import SanbaseWeb.Graphql.TestHelpers
 
   test "fetch wallet balance for project transparency", context do
     project1 = %Project{}

@@ -9,6 +9,8 @@ defmodule Sanbase.Github.GithubApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
+  import SanbaseWeb.Graphql.TestHelpers
+
   setup do
     Github.Store.create_db()
 

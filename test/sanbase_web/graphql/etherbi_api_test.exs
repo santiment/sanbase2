@@ -3,6 +3,7 @@ defmodule Sanbase.Github.EtherbiApiTest do
   use Phoenix.ConnTest
 
   import Mockery
+  import SanbaseWeb.Graphql.TestHelpers
 
   test "fetch burn rate", context do
     burn_rate = [
@@ -20,8 +21,6 @@ defmodule Sanbase.Github.EtherbiApiTest do
       ticker = "SAN"
       datetime1 = DateTime.from_naive!(~N[2018-01-01 12:00:00], "Etc/UTC")
       datetime2 = DateTime.from_naive!(~N[2017-01-01 21:45:00], "Etc/UTC")
-      datetime1_unix = DateTime.to_unix(datetime1, :second)
-      datetime2_unix = DateTime.to_unix(datetime2, :second)
 
       query = """
       {
@@ -63,8 +62,6 @@ defmodule Sanbase.Github.EtherbiApiTest do
       ticker = "SAN"
       datetime1 = DateTime.from_naive!(~N[2018-01-01 12:00:00], "Etc/UTC")
       datetime2 = DateTime.from_naive!(~N[2017-01-01 21:45:00], "Etc/UTC")
-      datetime1_unix = DateTime.to_unix(datetime1, :second)
-      datetime2_unix = DateTime.to_unix(datetime2, :second)
 
       query = """
       {
@@ -101,8 +98,6 @@ defmodule Sanbase.Github.EtherbiApiTest do
       ticker = "SAN"
       datetime1 = DateTime.from_naive!(~N[2018-01-01 12:00:00], "Etc/UTC")
       datetime2 = DateTime.from_naive!(~N[2017-01-01 21:45:00], "Etc/UTC")
-      datetime1_unix = DateTime.to_unix(datetime1, :second)
-      datetime2_unix = DateTime.to_unix(datetime2, :second)
 
       query = """
       {
@@ -123,13 +118,5 @@ defmodule Sanbase.Github.EtherbiApiTest do
       transaction_volumes = json_response(result, 200)["data"]["transactionVolume"]
 
       assert length(transaction_volumes) == 500
-  end
-
-  defp query_skeleton(query, query_name) do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
-    }
   end
 end

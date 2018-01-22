@@ -50,7 +50,7 @@ defmodule Sanbase.Influxdb.Store do
       end
 
       def drop_measurement(measurement_name) do
-        "DROP MEASUREMENT #{measurement_name}"
+        "DROP MEASUREMENT \"#{measurement_name}\""
         |> __MODULE__.execute()
       end
 

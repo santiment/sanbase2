@@ -29,13 +29,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         and (not ^only_project_transparency or p.project_transparency)
 
     projects = case coinmarketcap_requested?(resolution) do
-      true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
+      true -> Repo.all(query) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
       _ -> Repo.all(query)
-    end
-
-    projects = case funds_raised_ico_end_price_requested?(resolution) do
-      true -> Repo.preload(projects, [icos: [ico_currencies: [:currency]]])
-      _ -> projects
     end
 
     {:ok, projects}
@@ -45,13 +40,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     id = Map.get(args, :id)
 
     project = case coinmarketcap_requested?(resolution) do
-      true -> Repo.get(Project, id) |> Repo.preload(:latest_coinmarketcap_data)
+      true -> Repo.get(Project, id) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
       _ -> Repo.get(Project, id)
-    end
-
-    project = case funds_raised_ico_end_price_requested?(resolution) do
-      true -> Repo.preload(project, [icos: [ico_currencies: [:currency]]])
-      _ -> project
     end
 
     {:ok, project}
@@ -75,13 +65,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     select: p
 
     projects = case coinmarketcap_requested?(resolution) do
-      true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
+      true -> Repo.all(query) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
       _ -> Repo.all(query)
-    end
-
-    projects = case funds_raised_ico_end_price_requested?(resolution) do
-      true -> Repo.preload(projects, [icos: [ico_currencies: [:currency]]])
-      _ -> projects
     end
 
     {:ok, projects}
@@ -258,24 +243,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, result}
   end
 
-  def initial_ico(%Project{} = project, _args, resolution) do
+  def initial_ico(%Project{} = project, _args, _resolution) do
     ico = Project.initial_ico(project)
-
-    ico = case funds_raised_ico_end_price_requested?(resolution) do
-      true -> Repo.preload(ico, [ico_currencies: [:currency]])
-      _ -> ico
-    end
+    |> Repo.preload([ico_currencies: [:currency]])
 
     {:ok, ico}
-  end
-
-  def icos(%Project{} = project, _args, resolution) do
-    project = case funds_raised_ico_end_price_requested?(resolution) do
-      true -> Repo.preload(project, [icos: [ico_currencies: [:currency]]])
-      _ -> Repo.preload(project, :icos)
-    end
-
-    {:ok, project.icos}
   end
 
   defp coinmarketcap_requested?(resolution) do
@@ -290,15 +262,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       %{percent_change_1h: true} -> true
       %{percent_change_24h: true} -> true
       %{percent_change_7d: true} -> true
-      _ -> false
-    end
-  end
-
-  defp funds_raised_ico_end_price_requested?(resolution) do
-    case requested_fields(resolution) do
-      %{fundsRaisedUsdIcoEndPrice: true} -> true
-      %{fundsRaisedEthIcoEndPrice: true} -> true
-      %{fundsRaisedBtcIcoEndPrice: true} -> true
       _ -> false
     end
   end

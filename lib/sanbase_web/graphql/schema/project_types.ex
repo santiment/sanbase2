@@ -98,9 +98,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :initial_ico, :ico do
       resolve &ProjectResolver.initial_ico/3
     end
-    field :icos, list_of(:ico) do
-      resolve &ProjectResolver.icos/3
-    end
+    field :icos, list_of(:ico), resolve: assoc(:icos)
   end
 
   # Used in the project list query (public), so heavy computed fields are omitted

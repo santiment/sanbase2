@@ -5,6 +5,7 @@
 .acct {
   display: flex;
   align-items: center;
+  cursor: pointer;
 }
 
 .acct i {

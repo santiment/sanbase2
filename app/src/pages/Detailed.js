@@ -18,6 +18,7 @@ import GeneralInfoBlock from './../components/GeneralInfoBlock'
 import FinancialsBlock from './../components/FinancialsBlock'
 import ProjectChartContainer from './../components/ProjectChart/ProjectChartContainer'
 import Panel from './../components/Panel'
+import Search from './../components/Search'
 import PercentChanges from './../components/PercentChanges'
 import { formatNumber, formatBTC } from '../utils/formatting'
 import './Detailed.css'
@@ -172,7 +173,10 @@ export const Detailed = ({
 
   return (
     <div className='page detailed'>
-
+      {!isDesktop &&
+        <Search
+          onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+          projects={projects} />}
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>

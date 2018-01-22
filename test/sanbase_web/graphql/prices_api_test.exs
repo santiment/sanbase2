@@ -6,14 +6,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   alias Sanbase.Influxdb.Measurement
 
   import Plug.Conn
-
-  defp query_skeleton(query, query_name) do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
-    }
-  end
+  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     Application.fetch_env!(:sanbase, Sanbase.Prices.Store)

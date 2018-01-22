@@ -153,7 +153,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp insert_or_update_eth_wallets(_project, %IcoSpreadsheetRow{eth_wallets: nil}), do: nil
   defp insert_or_update_eth_wallets(project, %IcoSpreadsheetRow{eth_wallets: eth_wallets}) do
-    wallets = ensure_eth_wallets(project, eth_wallets)
+    ensure_eth_wallets(project, eth_wallets)
     |> Enum.map(fn(wallet) ->
       Ecto.Changeset.change(wallet)
       |> Repo.insert_or_update!()
@@ -162,7 +162,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   defp insert_or_update_btc_wallets(_project, %IcoSpreadsheetRow{btc_wallets: nil}), do: nil
   defp insert_or_update_btc_wallets(project, %IcoSpreadsheetRow{btc_wallets: btc_wallets}) do
-    wallets = ensure_btc_wallets(project, btc_wallets)
+    ensure_btc_wallets(project, btc_wallets)
     |> Enum.map(fn(wallet) ->
       Ecto.Changeset.change(wallet)
       |> Repo.insert_or_update!()
@@ -258,7 +258,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Enum.map(&ensure_eth_wallet(project, &1))
   end
 
-  defp ensure_eth_wallet(project, nil), do: nil
+  defp ensure_eth_wallet(_project, nil), do: nil
   defp ensure_eth_wallet(project, wallet_address) do
     Repo.get_by(ProjectEthAddress, address: wallet_address)
     |> Repo.preload([:project])
@@ -277,7 +277,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Enum.map(&ensure_btc_wallet(project, &1))
   end
 
-  defp ensure_btc_wallet(project, nil), do: nil
+  defp ensure_btc_wallet(_project, nil), do: nil
   defp ensure_btc_wallet(project, wallet_address) do
     Repo.get_by(ProjectBtcAddress, address: wallet_address)
     |> Repo.preload([:project])

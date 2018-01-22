@@ -1,3 +1,14 @@
-.account .panel form {
-  width: 40%;
+.account-control {
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (min-width: 1024px) {
+  .account .panel form {
+    width: 40%;
+  }
+
+  .account-control {
+    display: block;
+  }
 }

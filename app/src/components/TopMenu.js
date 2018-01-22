@@ -41,6 +41,9 @@ export const TopMenu = ({
          }} />
        <AuthControl
          login={() => history.push('/login')}
+         openSettings={() => {
+           history.push('/account')
+         }}
          user={user}
          logout={logout} />
      </div>

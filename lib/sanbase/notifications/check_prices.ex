@@ -33,18 +33,18 @@ defmodule Sanbase.Notifications.CheckPrices do
   end
 
   def send_notification({notification, price_difference, project}, counter_currency) do
-    send_slack_notification(Config.get(:webhook_url), price_difference, project, counter_currency)
+    if slack_notifications_enabled?() do
+      send_slack_notification(price_difference, project, counter_currency)
+    end
 
     Repo.insert!(notification)
   end
 
   def send_notification(_, _), do: false
 
-  def send_slack_notification(nil, _, _, _), do: :ok
-
-  def send_slack_notification(webhook_url, price_difference, project, counter_currency) do
+  def send_slack_notification(price_difference, project, counter_currency) do
     %{status: 200} = @http_service.post(
-      webhook_url,
+      webhook_url(),
       notification_payload(price_difference, project, counter_currency),
       headers: %{"Content-Type" => "application/json"}
     )
@@ -72,5 +72,13 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   defp notification_emoji(price_difference) when price_difference > 0, do: ":signal_up:"
   defp notification_emoji(price_difference) when price_difference < 0, do: ":signal_down:"
+
+  defp webhook_url() do
+    Config.get(:webhook_url)
+  end
+
+  defp slack_notifications_enabled?() do
+    Config.get(:slack_notifications_enabled)
+  end
 
 end

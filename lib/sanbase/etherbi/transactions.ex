@@ -57,7 +57,7 @@ defmodule Sanbase.Etherbi.Transactions do
 
   # The etherbi transactions API allows querying multiple wallets at once.
   # For now send a list with just one wallet.
-  defp fetch_and_store(address, token_decimals) do
+  def fetch_and_store(address, token_decimals) do
     from_datetime = Store.last_datetime(address) || DateTime.from_unix!(0, :seconds)
     to_datetime = DateTime.utc_now()
 
@@ -101,7 +101,7 @@ defmodule Sanbase.Etherbi.Transactions do
       if decimal_places = Map.get(token_decimals, token) do
         %Measurement{
           timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-          fields: %{volume: volume / decimal_places},
+          fields: %{volume: volume / decimal_places, token: token},
           tags: [transaction_type: transaction_type],
           name: measurement_name
         }

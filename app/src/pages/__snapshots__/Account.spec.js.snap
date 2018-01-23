@@ -77,16 +77,20 @@ exports[`Account container it should render correctly 1`] = `
         Sessions
       </h3>
       <Divider />
-      <p>
-        Your current session
-      </p>
-      <Button
-        as="button"
-        basic={true}
-        color="red"
+      <div
+        className="account-control"
       >
-        Log out
-      </Button>
+        <p>
+          Your current session
+        </p>
+        <Button
+          as="button"
+          basic={true}
+          color="red"
+        >
+          Log out
+        </Button>
+      </div>
     </Form>
   </div>
 </div>

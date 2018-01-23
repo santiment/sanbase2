@@ -13,14 +13,16 @@
 }
 
 .project-chart-body {
+  background: rgba(245, 249, 255, 0.6);
+  border-bottom: 1px solid rgba(38, 43, 51, 0.2);
+  border-top: 1px solid rgba(38, 43, 51, 0.2);
   position: relative;
-  padding: 10px 20px;
-  background-color: rgba(250, 251, 255, 0.8);
+  padding: 10px 20px 24px 20px;
 }
 
 .project-chart__isLoading,
 .project-chart__isEmpty {
-  color: black;
+  color: rgb(38, 43, 51);
   font-size: 2em;
   font-weight: 300;
   position: absolute;
@@ -96,7 +98,7 @@
 .time-filter .activated,
 .currency-filter .activated,
 .chart-footer-filters .activated {
-  background: rgb(71, 72, 76);
+  background: rgba(38, 43, 51, 0.8);
   color: white;
 }
 
@@ -104,8 +106,4 @@
 .currency-filter .disabled,
 .chart-footer-filters .disabled {
   color: #888;
-}
-
-.chart-footer-filters div {
-  margin-right: 2px;
 }

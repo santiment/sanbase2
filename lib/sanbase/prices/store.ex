@@ -74,18 +74,18 @@ defmodule Sanbase.Prices.Store do
     |> parse_record
   end
 
-  def fetch_last_known_price_point(pair, timestamp) do
+  def last_price_datetime(pair) do
+    ~s/SELECT LAST(price) FROM "#{pair}"/
+    |> Store.query()
+    |> parse_price_datetime
+  end
+
+  def fetch_last_price_point_before(pair, timestamp) do
     ~s/SELECT LAST(price), marketcap, volume
     FROM "#{pair}"
     WHERE time <= #{DateTime.to_unix(timestamp, :nanoseconds)}/
     |> Store.query()
     |> parse_record
-  end
-
-  def last_price_datetime(pair) do
-    ~s/SELECT LAST(price) FROM "#{pair}"/
-    |> Store.query()
-    |> parse_price_datetime
   end
 
   defp parse_price_datetime(%{

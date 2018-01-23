@@ -74,14 +74,13 @@ exports[`Project detail page container it should render correctly 1`] = `
         <h1>
           Aragon
         </h1>
-        <ProjectIcon
-          name="Aragon"
-          size={28}
-        />
-         
         <span
           className="tickerName"
         >
+          <ProjectIcon
+            name="Aragon"
+            size={24}
+          />
           ANT
         </span>
       </div>

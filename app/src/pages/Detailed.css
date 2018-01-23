@@ -1,9 +1,9 @@
 .detailed-head {
   display: flex;
   justify-content: space-between;
+  min-height: 84px;
   align-items: center;
   flex-direction: column;
-  min-height: 84px;
 }
 
 .panel-chart {
@@ -13,17 +13,17 @@
 .detailed-name {
   display: flex;
   align-items: center;
+  padding-top: 12px;
 }
 
 .detailed-name h1 {
   margin: 0;
   margin-right: 5px;
   font-size: 1.2em;
-  letter-spacing: 0.5px;
 }
 
 .detailed-name span {
-  font-size: 1.6em;
+  font-size: 1.4em;
   font-weight: 300;
   margin-left: 5px;
 }
@@ -44,15 +44,17 @@
   font-weight: 300;
   z-index: -1;
   margin: 10px 0;
-  line-height: 1.7em;
+  line-height: 1.4em;
+  padding-top: 8px;
 }
 
 .detailed-price-description {
   font-size: 0.6em;
   font-weight: 300;
+  line-height: 1;
   text-transform: uppercase;
   text-align: center;
-  letter-spacing: 2px;
+  margin-bottom: 10px;
 }
 
 .detailed-price-usd {
@@ -63,7 +65,9 @@
 }
 
 .detailed-price-btc {
-  text-align: center;
+  display: flex;
+  font-size: 16px;
+  justify-content: center;
 }
 
 .detailed-name img {
@@ -206,8 +210,7 @@
   }
 
   .detailed-price {
-    margin: 0;
-    line-height: inherit;
+    line-height: 1.4;
   }
 
   .detailed-price-usd {
@@ -221,6 +224,9 @@
 
   .detailed-price-description {
     text-align: left;
+    font-size: 0.5em;
+    font-weight: 300;
+    margin-bottom: 0;
   }
 
   .detailed .information {

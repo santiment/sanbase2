@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.6
--- Dumped by pg_dump version 9.6.6
+-- Dumped from database version 9.6.1
+-- Dumped by pg_dump version 9.6.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -169,6 +169,8 @@ CREATE TABLE icos (
     tokens_issued_at_ico numeric,
     tokens_sold_at_ico numeric,
     funds_raised_btc numeric,
+    usd_btc_icoend numeric,
+    usd_eth_icoend numeric,
     minimal_cap_amount numeric,
     maximal_cap_amount numeric,
     cap_currency_id bigint,
@@ -178,8 +180,6 @@ CREATE TABLE icos (
     funds_raised_eth numeric,
     contract_block_number integer,
     contract_abi text,
-    usd_btc_icoend numeric,
-    usd_eth_icoend numeric,
     token_usd_ico_price numeric,
     token_eth_ico_price numeric,
     token_btc_ico_price numeric
@@ -434,6 +434,73 @@ ALTER SEQUENCE notification_type_id_seq OWNED BY notification_type.id;
 
 
 --
+-- Name: polls; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE polls (
+    id bigint NOT NULL,
+    start_at timestamp without time zone NOT NULL,
+    end_at timestamp without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: polls_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE polls_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: polls_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE polls_id_seq OWNED BY polls.id;
+
+
+--
+-- Name: posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE posts (
+    id bigint NOT NULL,
+    poll_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    title character varying(255) NOT NULL,
+    link character varying(255) NOT NULL,
+    approved_at timestamp without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE posts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE posts_id_seq OWNED BY posts.id;
+
+
+--
 -- Name: processed_github_archives; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -658,7 +725,10 @@ CREATE TABLE users (
     email character varying(255),
     salt character varying(255) NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    san_tokens integer,
+    san_balance integer,
+    san_balance_updated_at timestamp without time zone
 );
 
 
@@ -679,6 +749,38 @@ CREATE SEQUENCE users_id_seq
 --
 
 ALTER SEQUENCE users_id_seq OWNED BY users.id;
+
+
+--
+-- Name: votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE votes (
+    id bigint NOT NULL,
+    post_id bigint,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: votes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE votes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: votes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE votes_id_seq OWNED BY votes.id;
 
 
 --
@@ -766,6 +868,20 @@ ALTER TABLE ONLY notification_type ALTER COLUMN id SET DEFAULT nextval('notifica
 
 
 --
+-- Name: polls id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY polls ALTER COLUMN id SET DEFAULT nextval('polls_id_seq'::regclass);
+
+
+--
+-- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
+
+
+--
 -- Name: processed_github_archives id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -812,6 +928,13 @@ ALTER TABLE ONLY user_followed_project ALTER COLUMN id SET DEFAULT nextval('user
 --
 
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
+
+
+--
+-- Name: votes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY votes ALTER COLUMN id SET DEFAULT nextval('votes_id_seq'::regclass);
 
 
 --
@@ -911,6 +1034,22 @@ ALTER TABLE ONLY notification_type
 
 
 --
+-- Name: polls polls_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY polls
+    ADD CONSTRAINT polls_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: posts posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts
+    ADD CONSTRAINT posts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: processed_github_archives processed_github_archives_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -972,6 +1111,14 @@ ALTER TABLE ONLY user_followed_project
 
 ALTER TABLE ONLY users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: votes votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY votes
+    ADD CONSTRAINT votes_pkey PRIMARY KEY (id);
 
 
 --
@@ -1066,6 +1213,13 @@ CREATE UNIQUE INDEX notification_type_name_index ON notification_type USING btre
 
 
 --
+-- Name: polls_start_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX polls_start_at_index ON polls USING btree (start_at);
+
+
+--
 -- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1150,6 +1304,13 @@ CREATE UNIQUE INDEX users_email_index ON users USING btree (email);
 
 
 --
+-- Name: votes_post_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_post_id_user_id_index ON votes USING btree (post_id, user_id);
+
+
+--
 -- Name: eth_accounts eth_accounts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1203,6 +1364,22 @@ ALTER TABLE ONLY notification
 
 ALTER TABLE ONLY notification
     ADD CONSTRAINT notification_type_id_fkey FOREIGN KEY (type_id) REFERENCES notification_type(id);
+
+
+--
+-- Name: posts posts_poll_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts
+    ADD CONSTRAINT posts_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES polls(id);
+
+
+--
+-- Name: posts posts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts
+    ADD CONSTRAINT posts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
 
 --
@@ -1270,8 +1447,24 @@ ALTER TABLE ONLY user_followed_project
 
 
 --
+-- Name: votes votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY votes
+    ADD CONSTRAINT votes_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts(id);
+
+
+--
+-- Name: votes votes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY votes
+    ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910), (20180114095310);
+INSERT INTO "schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910), (20180114095310), (20180122122441);
 

@@ -12,12 +12,17 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
   def import(ico_spreadsheet) when is_list(ico_spreadsheet) do
     Logger.info("Starting ICO spreadsheet import...")
+    usd = ensure_currency("USD") |> Repo.insert_or_update!()
+    eth = ensure_currency("ETH") |> Repo.insert_or_update!()
+    btc = ensure_currency("BTC") |> Repo.insert_or_update!()
+    main_currencies = %{usd: usd, eth: eth, btc: btc}
+
     ico_spreadsheet
     |> Enum.reverse()
     |> Enum.uniq_by(fn row -> row.project_name end)
     |> Enum.reverse()
     |> put_presales_in_front()
-    |> Enum.each(&import_row(&1))
+    |> Enum.each(&import_row(&1, main_currencies))
     Logger.info("Finished ICO spreadsheet import.")
   end
 
@@ -47,7 +52,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     end)
   end
 
-  defp import_row(ico_spreadsheet_row = %IcoSpreadsheetRow{}) do
+  defp import_row(ico_spreadsheet_row = %IcoSpreadsheetRow{}, main_currencies) do
     ico_spreadsheet_row = ico_spreadsheet_row
     |> set_infrastructure_default()
 
@@ -57,6 +62,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       project
       |> insert_or_update_ico(ico_spreadsheet_row)
       |> insert_or_update_ico_currencies(ico_spreadsheet_row)
+      |> move_funds_raised_to_details(ico_spreadsheet_row, main_currencies)
 
       project
       |> insert_or_update_eth_wallets(ico_spreadsheet_row)
@@ -118,11 +124,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
       token_btc_ico_price: ico_spreadsheet_row.token_btc_ico_price,
       tokens_issued_at_ico: ico_spreadsheet_row.tokens_issued_at_ico,
       tokens_sold_at_ico: ico_spreadsheet_row.tokens_sold_at_ico,
-      usd_btc_icoend: ico_spreadsheet_row.usd_btc_icoend,
-      funds_raised_btc: ico_spreadsheet_row.funds_raised_btc,
-      funds_raised_usd: ico_spreadsheet_row.funds_raised_usd,
-      funds_raised_eth: ico_spreadsheet_row.funds_raised_eth,
-      usd_eth_icoend: ico_spreadsheet_row.usd_eth_icoend,
       minimal_cap_amount: ico_spreadsheet_row.minimal_cap_amount,
       maximal_cap_amount: ico_spreadsheet_row.maximal_cap_amount,
       main_contract_address: ico_spreadsheet_row.ico_main_contract_address,
@@ -134,7 +135,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Ico.changeset(values)
   end
 
-  defp insert_or_update_ico_currencies(_ico, %IcoSpreadsheetRow{ico_currencies: nil}), do: nil
+  defp insert_or_update_ico_currencies(ico, %IcoSpreadsheetRow{ico_currencies: []}), do: ico
   defp insert_or_update_ico_currencies(ico, %IcoSpreadsheetRow{ico_currencies: ico_currencies}) do
     currencies = ensure_currencies(ico_currencies)
     |> Enum.map(fn(currency) ->
@@ -149,20 +150,74 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
 
     currency_ids = Enum.map(currencies, &Map.fetch!(&1, :id))
     Repo.delete_all(from c in IcoCurrencies, where: c.ico_id == ^ico.id and c.currency_id not in ^currency_ids)
+
+    ico
   end
 
-  defp insert_or_update_eth_wallets(_project, %IcoSpreadsheetRow{eth_wallets: nil}), do: nil
+  defp move_funds_raised_to_details(ico, ico_spreadsheet_row, main_currencies) do
+    ico = Repo.preload(ico, [ico_currencies: [:currency]])
+
+    ico_currency = funds_raised_try_from_existing_ico_currencies(ico, ico_spreadsheet_row, main_currencies)
+      || funds_raised_try_from_totals(ico, ico_spreadsheet_row, main_currencies)
+
+    if !is_nil(ico_currency) do
+      Repo.insert_or_update!(ico_currency)
+    end
+  end
+
+  defp funds_raised_try_from_existing_ico_currencies(ico,
+                                                    %IcoSpreadsheetRow{funds_raised_usd: funds_raised_usd,
+                                                                      funds_raised_eth: funds_raised_eth,
+                                                                      funds_raised_btc: funds_raised_btc},
+                                                    %{usd: usd, eth: eth, btc: btc}) do
+    funds_raised_try_from_existing_ico_currency(ico, eth, funds_raised_eth)
+      || funds_raised_try_from_existing_ico_currency(ico, btc, funds_raised_btc)
+      || funds_raised_try_from_existing_ico_currency(ico, usd, funds_raised_usd)
+  end
+
+  defp funds_raised_try_from_existing_ico_currency(ico, currency, funds_raised_total) do
+    funds_raised_total && Enum.find(ico.ico_currencies, &(&1.currency_id == currency.id))
+    |> case do
+      nil -> nil
+      ic -> IcoCurrencies.changeset(ic, %{amount: funds_raised_total})
+    end
+  end
+
+  defp funds_raised_try_from_totals(ico,
+                                    %IcoSpreadsheetRow{funds_raised_usd: funds_raised_usd,
+                                                      funds_raised_eth: funds_raised_eth,
+                                                      funds_raised_btc: funds_raised_btc},
+                                    %{usd: usd, eth: eth, btc: btc}) do
+    funds_raised_try_from_total(ico, eth, funds_raised_eth)
+      || funds_raised_try_from_total(ico, btc, funds_raised_btc)
+      || funds_raised_try_from_total(ico, usd, funds_raised_usd)
+  end
+
+  defp funds_raised_try_from_total(ico, currency, funds_raised_total) do
+    funds_raised_total
+    |> case do
+      nil -> nil
+      amount ->
+        %IcoCurrencies{}
+        |> IcoCurrencies.changeset(
+          %{ico_id: ico.id,
+            currency_id: currency.id,
+            amount: amount})
+    end
+  end
+
+  defp insert_or_update_eth_wallets(_project, %IcoSpreadsheetRow{eth_wallets: []}), do: []
   defp insert_or_update_eth_wallets(project, %IcoSpreadsheetRow{eth_wallets: eth_wallets}) do
-    wallets = ensure_eth_wallets(project, eth_wallets)
+    ensure_eth_wallets(project, eth_wallets)
     |> Enum.map(fn(wallet) ->
       Ecto.Changeset.change(wallet)
       |> Repo.insert_or_update!()
     end)
   end
 
-  defp insert_or_update_btc_wallets(_project, %IcoSpreadsheetRow{btc_wallets: nil}), do: nil
+  defp insert_or_update_btc_wallets(_project, %IcoSpreadsheetRow{btc_wallets: []}), do: []
   defp insert_or_update_btc_wallets(project, %IcoSpreadsheetRow{btc_wallets: btc_wallets}) do
-    wallets = ensure_btc_wallets(project, btc_wallets)
+    ensure_btc_wallets(project, btc_wallets)
     |> Enum.map(fn(wallet) ->
       Ecto.Changeset.change(wallet)
       |> Repo.insert_or_update!()
@@ -234,7 +289,9 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
   defp ensure_currency(currency_code) do
     Repo.get_by(Currency, code: currency_code)
     |> case do
-      result = %Currency{} -> result
+      result = %Currency{} ->
+        result
+        |> Ecto.Changeset.change()
       nil ->
         %Currency{}
         |> Currency.changeset(%{code: currency_code})
@@ -258,7 +315,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Enum.map(&ensure_eth_wallet(project, &1))
   end
 
-  defp ensure_eth_wallet(project, nil), do: nil
+  defp ensure_eth_wallet(_project, nil), do: nil
   defp ensure_eth_wallet(project, wallet_address) do
     Repo.get_by(ProjectEthAddress, address: wallet_address)
     |> Repo.preload([:project])
@@ -277,7 +334,7 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
     |> Enum.map(&ensure_btc_wallet(project, &1))
   end
 
-  defp ensure_btc_wallet(project, nil), do: nil
+  defp ensure_btc_wallet(_project, nil), do: nil
   defp ensure_btc_wallet(project, wallet_address) do
     Repo.get_by(ProjectBtcAddress, address: wallet_address)
     |> Repo.preload([:project])

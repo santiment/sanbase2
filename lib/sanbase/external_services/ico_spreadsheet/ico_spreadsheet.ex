@@ -31,7 +31,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   end
 
   # TODO: get column indices from the header row
-  defp parse_header_row(header_row) do
+  defp parse_header_row(_header_row) do
     IcoSpreadsheetRow.get_column_indices
   end
 
@@ -79,7 +79,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
         parse_date(value, {project_name, column})
       c when c in [:tokens_issued_at_ico] ->
         parse_int(value, {project_name, column})
-      c when c in [:tokens_sold_at_ico, :usd_btc_icoend, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :token_btc_ico_price, :token_usd_ico_price, :token_eth_ico_price] ->
+      c when c in [:tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :minimal_cap_amount, :maximal_cap_amount, :token_btc_ico_price, :token_usd_ico_price, :token_eth_ico_price] ->
         parse_decimal(value, {project_name, column})
       c when c in [:ico_currencies] ->
         parse_comma_delimited(value, {project_name, column})
@@ -110,19 +110,6 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
   end
 
   defp parse_decimal(value, _context), do: value
-
-  defp parse_boolean(value, {project_name, column}) do
-    value = if(is_binary(value)) do String.downcase(value) else value end
-
-    case value do
-      v when v in ["yes", "true", 1] -> true
-      v when v in ["no", "false", 0] -> false
-      nil -> nil
-      _ -> #TODO: return error
-        Logger.warn("[#{project_name}|#{column}] parse_boolean error: #{inspect value}")
-        nil
-    end
-  end
 
   defp parse_date(value, _context) when is_integer(value) do
     #the -2 is to account for an Excel bug (search in internet)

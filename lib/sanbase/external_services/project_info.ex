@@ -80,6 +80,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     end
   end
 
+  defp fetch_block_number(%ProjectInfo{creation_transaction: nil} = project_info), do: project_info
+
   defp fetch_block_number(%ProjectInfo{creation_transaction: creation_transaction} = project_info) do
     %{"blockNumber" => "0x" <> block_number_hex} = Parity.get_transaction_by_hash!(creation_transaction)
 

@@ -22,10 +22,9 @@ defmodule Sanbase.DateTimeUtils do
   def str_to_sec(interval) do
     interval_type = String.last(interval)
 
-    interval_seconds =
-      String.slice(interval, 0..-2)
-      |> String.to_integer()
-      |> str_to_sec(interval_type)
+    String.slice(interval, 0..-2)
+    |> String.to_integer()
+    |> str_to_sec(interval_type)
   end
 
   def str_to_hours(interval) do
@@ -37,4 +36,9 @@ defmodule Sanbase.DateTimeUtils do
   defp str_to_sec(hours, "h"), do: hours * 60 * 60
   defp str_to_sec(days, "d"), do: days * 60 * 60 * 24
   defp str_to_sec(weeks, "w"), do: weeks * 60 * 60 * 24 * 7
+
+  def ecto_date_to_datetime(ecto_date) do
+    {:ok, datetime, _} = Ecto.Date.to_iso8601(ecto_date) <> "T00:00:00Z" |> DateTime.from_iso8601()
+    datetime
+  end
 end

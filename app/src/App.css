@@ -1,6 +1,6 @@
 .App {
   display: flex;
-  font-family: Helvetica, sans-serif;
+  flex-direction: column; /* adding for top menu - kc */
 }
 
 @media (max-width: 768px) {
@@ -52,33 +52,54 @@
 
 .page {
   flex: 1;
-  padding: 0 15px;
-  height: 100vh;
+  padding: 0 36px;
+
+  /* height: 100vh; hiding for non-fixed top menu - kc */
   overflow-y: auto;
   overflow: scroll;
   -webkit-overflow-scrolling: touch;
 }
 
+.page::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 0 15px;
+  }
+}
+
 .page-head {
-  margin-top: 45px;
+  margin-top: 35px;
   margin-right: 20px;
 }
 
 .page h1 {
   font-size: 32px;
   font-weight: 400;
-  font-family: "Helvetica", sans-serif;
-  margin: 32px 0 32px 16px;
+  margin-bottom: 8px;
   line-height: 51px;
   color: #171717;
-  margin-bottom: 8px;
 }
 
 .page-head p {
-  margin-left: 16px;
+  margin-left: 0;
   margin-bottom: 30px;
 }
 
 .fa-disabled {
   color: #d3d3d3;
+}
+
+@media (min-width: 1024px) {
+  .page-head {
+    margin-top: 25px;
+    margin-right: 20px;
+  }
+
+  .page-head p {
+    margin-left: 16px;
+    margin-bottom: 30px;
+  }
 }

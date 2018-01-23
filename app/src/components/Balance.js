@@ -18,7 +18,8 @@ export const Balance = ({user}) => {
           {formatNumber(account.sanBalance, 'SAN')}
         </div>
       </div>
-    ))}</div>
+    ))}
+    </div>
   )
 }
 

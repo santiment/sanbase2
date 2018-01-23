@@ -19,7 +19,7 @@ defmodule Sanbase.Utils.Config do
     end
   end
 
-  defmacro get(key, default \\ nil) do
+  defmacro get(key, default) do
     quote bind_quoted: [key: key, default: default] do
       Application.fetch_env!(:sanbase, __MODULE__)
       |> Keyword.get(key, default)
@@ -35,7 +35,7 @@ defmodule Sanbase.Utils.Config do
     end
   end
 
-  defmacro module_get(module, key, default \\ nil) do
+  defmacro module_get(module, key, default) do
     quote bind_quoted: [module: module, key: key, default: default] do
       Application.fetch_env!(:sanbase, module)
       |> Keyword.get(key, default)

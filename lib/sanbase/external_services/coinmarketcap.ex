@@ -16,10 +16,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
-  alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
-  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Prices.Store
+  alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices
@@ -50,14 +49,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
-    query =
+    projects =
       Project
       |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
+      |> Repo.all
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      Repo.all(query),
-      &fetch_project_data/1,
+      projects,
+      &fetch_project_info/1,
+      ordered: false,
+      max_concurrency: 5,
+      timeout: 60_000
+    )
+    |> Stream.run()
+
+    Task.Supervisor.async_stream_nolink(
+      Sanbase.TaskSupervisor,
+      projects,
+      &fetch_price_data/1,
       ordered: false,
       max_concurrency: 5,
       timeout: :infinity
@@ -74,11 +84,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     {:noreply, state}
   end
 
-  defp fetch_project_data(project) do
-    fetch_project_info(project)
-    fetch_price_data(project)
-  end
-
   defp fetch_project_info(project) do
     if project_info_missing?(project) do
       {:ok, _project} = ProjectInfo.from_project(project)
@@ -89,8 +94,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp project_info_missing?(%Project{website_link: website_link, github_link: github_link, ticker: ticker, name: name} = project) do
-    !website_link or !github_link or !ticker or !name or missing_main_contract_address?(project)
+  defp project_info_missing?(
+       %Project{
+         website_link: website_link,
+         github_link: github_link,
+         ticker: ticker,
+         name: name,
+         token_decimals: token_decimals
+       } = project
+     ) do
+    !website_link or !github_link or !ticker or !name
+    or missing_main_contract_address?(project) or !token_decimals
   end
 
   defp missing_main_contract_address?(project) do

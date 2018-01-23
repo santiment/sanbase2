@@ -11,7 +11,7 @@ defmodule Sanbase.Github do
     |> Enum.filter(&get_project_org/1)
   end
 
-  def get_project_org(%Project{github_link: github_link} = project) do
+  def get_project_org(%Project{github_link: github_link}) do
     case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
       [_, github_path] ->
         org = github_path

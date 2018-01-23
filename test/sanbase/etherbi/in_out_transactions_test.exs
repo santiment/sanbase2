@@ -41,7 +41,7 @@ defmodule Sanbase.Github.EtherbiFundsMovementTest do
     token_decimals = %{"SAN" => :math.pow(10, 18)}
 
     # Inserts into the DB. Must delete it at the end of the test
-    Transactions.fetch_and_store(context.wallet, token_decimals)
+    Transactions.fetch_and_store_in(context.wallet, token_decimals)
     {:ok, transactions} = Store.transactions([context.wallet], datetime1, datetime2, "1h", "in")
 
     assert {datetime1, 18, "SAN"} in transactions

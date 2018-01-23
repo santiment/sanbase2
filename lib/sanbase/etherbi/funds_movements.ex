@@ -12,11 +12,15 @@ defmodule Sanbase.Etherbi.FundsMovement do
     to_unix = DateTime.to_unix(to, :seconds)
 
     url = "#{@etherbi_url}/transactions_in"
-    options = [recv_timeout: 120_000, params: %{
-      from_timestamp: from_unix,
-      to_timestamp: to_unix,
-      wallets: Poison.encode!(wallets)
-   }]
+
+    options = [
+      recv_timeout: 120_000,
+      params: %{
+        from_timestamp: from_unix,
+        to_timestamp: to_unix,
+        wallets: Poison.encode!(wallets)
+      }
+    ]
 
     get(url, options)
   end
@@ -27,11 +31,15 @@ defmodule Sanbase.Etherbi.FundsMovement do
     to_unix = DateTime.to_unix(to, :seconds)
 
     url = "#{@etherbi_url}/transactions_out"
-    options = [recv_timeout: 120_000, params: %{
-      from_timestamp: from_unix,
-      to_timestamp: to_unix,
-      wallets: Poison.encode!(wallets)
-   }]
+
+    options = [
+      recv_timeout: 120_000,
+      params: %{
+        from_timestamp: from_unix,
+        to_timestamp: to_unix,
+        wallets: Poison.encode!(wallets)
+      }
+    ]
 
     get(url, options)
   end
@@ -39,21 +47,25 @@ defmodule Sanbase.Etherbi.FundsMovement do
   defp get(url, options) do
     case @http_client.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        with {:ok, result} <- Poison.decode(body) do
-          result =
-            result
-            |> Enum.map(fn [timestamp, volume, address, token] ->
-              {DateTime.from_unix!(timestamp), volume, address, token}
-            end)
-
-          {:ok, result}
-        end
+        convert_response(body)
 
       {:error, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching data from url #{url}: #{body}"}
 
       error ->
         {:error, "Error fetching data: #{inspect(error)}"}
+    end
+  end
+
+  defp convert_response(body) do
+    with {:ok, decoded_body} <- Poison.decode(body) do
+      result =
+        decoded_body
+        |> Enum.map(fn [timestamp, volume, address, token] ->
+          {DateTime.from_unix!(timestamp), volume, address, token}
+        end)
+
+      {:ok, result}
     end
   end
 end

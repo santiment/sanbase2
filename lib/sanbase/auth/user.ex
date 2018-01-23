@@ -1,15 +1,21 @@
 defmodule Sanbase.Auth.User do
   use Ecto.Schema
   import Ecto.Changeset
+  use Timex.Ecto.Timestamps
 
   alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Repo
 
   @salt_length 64
+
+  @san_balance_cache_seconds 60 * 5 # 5 minutes
 
   schema "users" do
     field(:email, :string)
     field(:username, :string)
     field(:salt, :string)
+    field(:san_balance, :integer)
+    field(:san_balance_updated_at, Timex.Ecto.DateTime)
 
     has_many(:eth_accounts, EthAccount)
 
@@ -26,9 +32,32 @@ defmodule Sanbase.Auth.User do
     |> unique_constraint(:email)
   end
 
-  def san_balance(%User{eth_accounts: eth_accounts}) do
+  def san_balance_cache_stale?(%User{san_balance_updated_at: nil}), do: true
+
+  def san_balance_cache_stale?(%User{san_balance_updated_at: san_balance_updated_at}) do
+    Timex.diff(Timex.now(), san_balance_updated_at, :seconds) > @san_balance_cache_seconds
+  end
+
+  def update_san_balance_changeset(%User{eth_accounts: eth_accounts} = user) do
+    san_balance = san_balance_for_eth_accounts(eth_accounts)
+
+    user
+    |> change(san_balance: san_balance, san_balance_updated_at: Timex.now())
+  end
+
+  def san_balance!(%User{san_balance: san_balance} = user) do
+    if san_balance_cache_stale?(user) do
+      update_san_balance_changeset(user)
+      |> Repo.update!
+      |> Map.get(:san_balance)
+    else
+      san_balance
+    end
+  end
+
+  defp san_balance_for_eth_accounts(eth_accounts) do
     eth_accounts
-    |> EthAccount.san_balance()
+    |> Enum.map(&EthAccount.san_balance/1)
     |> Enum.sum()
   end
 end

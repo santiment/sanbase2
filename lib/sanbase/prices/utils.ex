@@ -19,10 +19,11 @@ defmodule Sanbase.Prices.Utils do
     fetch_last_price_before("BTC_USD", timestamp)
   end
   def fetch_last_price_before("USD", "BTC", timestamp) do
+    zero = Decimal.new(0)
     fetch_last_price_before("BTC_USD", timestamp)
     |> case do
       nil -> nil
-      0 -> nil
+      ^zero -> nil
       price -> Decimal.div(Decimal.new(1),price)
     end
   end

@@ -16,7 +16,7 @@ const COLORS = {
   volume: 'rgba(38, 43, 51, 0.25)',
   marketcap: 'rgb(52, 118, 153)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
-  twitter: 'rgba(16, 195, 245, 0.7)', // Ultra Violet color #604c8d'
+  twitter: 'rgba(16, 195, 245, 0.7)',
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)'
 }

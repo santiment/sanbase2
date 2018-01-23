@@ -1,10 +1,46 @@
 import React from 'react'
 import moment from 'moment'
+import {
+  Button,
+  Popup,
+  Input
+} from 'semantic-ui-react'
+import { withState } from 'recompose'
+import copy from 'copy-to-clipboard'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { DateRangePicker } from 'react-dates'
 import { formatNumber } from '../../utils/formatting'
 import './ProjectChartHeader.css'
+
+const ShareChartBtn = withState('isSaved', 'save', false)(
+  ({shareableURL, save, isSaved = false}) => {
+    return (
+      <Popup
+        position='bottom right'
+        size='large'
+        trigger={
+          <Button positive>
+            Share <i className='fa fa-caret-down' />
+          </Button>
+      } on='click'>
+        <div className='shareable-inner'>
+          <Input
+            input={{readOnly: true}}
+            defaultValue={shareableURL} />
+            &nbsp;
+          <Button icon='clipboard' onClick={() => {
+            const result = copy(shareableURL)
+            setTimeout(() => {
+              save(false)
+            }, 1000)
+            save(result)
+          }} />
+          &nbsp;{isSaved && 'Saved!'}
+        </div>
+      </Popup>
+    )
+  })
 
 export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
   let cls = interval === value ? 'activated' : ''
@@ -50,7 +86,8 @@ const ProjectChartHeader = ({
   toggleBTC,
   isToggledBTC,
   interval,
-  setFilter
+  setFilter,
+  shareableURL
 }) => {
   return (
     <div className='chart-header'>
@@ -76,9 +113,12 @@ const ProjectChartHeader = ({
           }}
         />}
       </div>
-      <CurrencyFilter
-        isToggledBTC={isToggledBTC}
-        toggleBTC={toggleBTC} />
+      <div className='chart-header-actions'>
+        <CurrencyFilter
+          isToggledBTC={isToggledBTC}
+          toggleBTC={toggleBTC} />
+        <ShareChartBtn shareableURL={shareableURL} />
+      </div>
       {!isDesktop && selected && [
         <div key='selected-datetime' className='selected-value'>{selected &&
           <Merge

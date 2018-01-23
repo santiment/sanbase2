@@ -7,7 +7,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
   alias Sanbase.Model.IcoCurrencies
-  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Ico
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
@@ -39,8 +38,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
 
     date2 = "2017-10-17"
     date2_unix = 1508198400000000000
-
-    now = Ecto.DateTime.utc()
 
     Store.import([
       %Measurement{

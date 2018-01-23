@@ -82,4 +82,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
         {:error, "Can't remove vote"}
     end
   end
+
+  def vote(_root, %{post_id: post_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+
+    %Vote{}
+    |> Vote.changeset(%{post_id: post_id, user_id: user.id})
+    |> Repo.insert
+
+    {:ok, Repo.get(Post, post_id)}
+  end
 end

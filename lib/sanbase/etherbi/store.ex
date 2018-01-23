@@ -79,6 +79,10 @@ defmodule Sanbase.Etherbi.Store do
     {:ok, []}
   end
 
+  defp parse_measurement_datetime(%{results: [%{error: error}]}) do
+    {:error, error}
+  end
+
   defp parse_measurement_datetime(%{
          results: [
            %{
@@ -92,8 +96,10 @@ defmodule Sanbase.Etherbi.Store do
        }) do
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
-    datetime
+    {:ok, datetime}
   end
 
-  defp parse_measurement_datetime(_), do: nil
+  defp parse_measurement_datetime(_) do
+    {:ok, nil}
+  end
 end

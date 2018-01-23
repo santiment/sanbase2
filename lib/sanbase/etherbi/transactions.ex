@@ -21,7 +21,6 @@ defmodule Sanbase.Etherbi.Transactions do
   alias Sanbase.Model.Project
 
   @default_update_interval 1000 * 60 * 60
-  @month_in_seconds 60 * 60 * 24 * 30
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -71,27 +70,16 @@ defmodule Sanbase.Etherbi.Transactions do
   end
 
   def fetch_and_store_in(address, token_decimals) do
-    from_datetime =
-      Store.last_datetime_with_tag(address, "transaction_type", "in") ||
-        DateTime.from_unix!(0, :seconds)
-
-    to_datetime = DateTime.utc_now()
-
-    {:ok, transactions_in} = FundsMovement.transactions_in([address], from_datetime, to_datetime)
+    {:ok, transactions_in} =
+      FundsMovement.transactions_in(address)
 
     convert_to_measurement(transactions_in, address, "in", token_decimals)
     |> Store.import()
   end
 
   def fetch_and_store_out(address, token_decimals) do
-    from_datetime =
-      Store.last_datetime_with_tag(address, "transaction_type", "out") ||
-        DateTime.from_unix!(0, :seconds)
-
-    to_datetime = DateTime.utc_now()
-
     {:ok, transactions_out} =
-      FundsMovement.transactions_out([address], from_datetime, to_datetime)
+      FundsMovement.transactions_out(address)
 
     convert_to_measurement(transactions_out, address, "out", token_decimals)
     |> Store.import()
@@ -134,15 +122,5 @@ defmodule Sanbase.Etherbi.Transactions do
         nil
       end
     end)
-  end
-
-  # If the difference between the datetimes is too large the query will be too big
-  # Allow the max difference between the datetimes to be 1 month
-  defp adjust_datetimes(from_datetime, to_datetime) do
-    if DateTime.diff(to_datetime, from_datetime, :seconds) > @month_in_seconds do
-      Sanbase.DateTimeUtils.days_after(30, from_datetime)
-    else
-      to_datetime
-    end
   end
 end

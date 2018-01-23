@@ -1,4 +1,4 @@
-defmodule Sanbase.Github.EtherbiFundsMovementTest do
+defmodule Sanbase.Etherbi.EtherbiFundsMovementTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
@@ -16,24 +16,32 @@ defmodule Sanbase.Github.EtherbiFundsMovementTest do
       wallet: "0xfe9e8709d3215310075d67e3ed32a380ccf451c8",
       ticker: "SAN",
       timestamp1: 1_514_765_134,
-      timestamp2: 1_514_965_515
+      timestamp2: 1_514_965_515,
+      volume1: 18_000_000_000_000_000_000,
+      expected_volume1: 18,
+      volume2: 36_000_000_000_000_000_000,
+      expected_volume2: 36,
     ]
   end
 
   test "fetch in transactions and store them with the token decimal corrections", context do
     transactions = [
-      [context.timestamp1, 18_000_000_000_000_000_000, context.wallet, context.ticker],
-      [context.timestamp2, 36_000_000_000_000_000_000, context.wallet, context.ticker],
+      {DateTime.from_unix!(context.timestamp1), context.volume1, context.wallet,
+       context.ticker},
+      {DateTime.from_unix!(context.timestamp2), context.volume2, context.wallet,
+       context.ticker}
     ]
 
     mock(
-      HTTPoison,
-      :get,
-      {:ok,
-       %HTTPoison.Response{
-         status_code: 200,
-         body: transactions |> Poison.encode!()
-       }}
+      Sanbase.Etherbi.EtherbiApi,
+      :get_first_transaction_timestamp,
+      DateTime.from_unix(context.timestamp1)
+    )
+
+    mock(
+      Sanbase.Etherbi.EtherbiApi,
+      :get_transactions,
+      {:ok, transactions}
     )
 
     datetime1 = DateTime.from_unix!(context.timestamp1)
@@ -44,8 +52,8 @@ defmodule Sanbase.Github.EtherbiFundsMovementTest do
     Transactions.fetch_and_store_in(context.wallet, token_decimals)
     {:ok, transactions} = Store.transactions([context.wallet], datetime1, datetime2, "1h", "in")
 
-    assert {datetime1, 18, "SAN"} in transactions
-    assert {datetime2, 36, "SAN"} in transactions
+    assert {datetime1, context.expected_volume1, "SAN"} in transactions
+    assert {datetime2, context.expected_volume2, "SAN"} in transactions
 
     Store.drop_measurement(context.wallet)
   end

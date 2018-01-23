@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import moment from 'moment'
+import * as qs from 'query-string'
 import {
   compose,
   withState
@@ -12,6 +13,7 @@ import { makeItervalBounds } from './utils'
 class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
+    const shareableState = qs.parse(props.location.search)
     const { from, to } = makeItervalBounds('1m')
     this.state = {
       interval: '1m',
@@ -21,8 +23,14 @@ class ProjectChartContainer extends Component {
       startDate: moment(from),
       endDate: moment(to),
       focusedInput: null,
-      isToggledBTC: false
+      isToggledBTC: shareableState.currency && shareableState.currency === 'BTC'
     }
+    this.props.toggleVolume(shareableState.volume)
+    this.props.toggleMarketcap(shareableState.marketcap)
+    this.props.toggleGithubActivity(shareableState.github)
+    this.props.toggleTwitter(shareableState.twitter)
+    this.props.toggleBurnRate(shareableState.tbr)
+    this.props.toggleTransactionVolume(shareableState.tv)
 
     this.setFilter = this.setFilter.bind(this)
     this.setSelected = this.setSelected.bind(this)
@@ -101,10 +109,31 @@ class ProjectChartContainer extends Component {
 
   componentDidMount () {
     const { ticker } = this.props
-    this.updateHistoryData(ticker)
+    const shareableState = qs.parse(this.props.location.search)
+    if (shareableState.from && shareableState.to) {
+      this.onDatesChange(moment(shareableState.from), moment(shareableState.to))
+    } else {
+      this.updateHistoryData(ticker)
+    }
   }
 
   render () {
+    const newShareableState = {
+      volume: this.props.isToggledVolume,
+      marketcap: this.props.isToggledMarketCap,
+      github: this.props.isToggledGithubActivity,
+      twitter: this.props.isToggledTwitter,
+      tbr: this.props.isToggledBurnRate,
+      tv: this.props.isToggledTransactionVolume,
+      currency: this.state.isToggledBTC ? 'BTC' : 'USD',
+      from: this.state.startDate.utc().format(),
+      to: this.state.endDate.utc().format()
+    }
+    let fullpath = window.location.href
+    if (window.location.href.indexOf('?') > -1) {
+      fullpath = window.location.href.split('?')[0]
+    }
+    const shareableURL = fullpath + '?' + qs.stringify(newShareableState)
     return (
       <div className='project-dp-chart'>
         <ProjectChartHeader
@@ -117,6 +146,7 @@ class ProjectChartContainer extends Component {
           toggleBTC={this.toggleBTC}
           isToggledBTC={this.state.isToggledBTC}
           interval={this.state.interval}
+          shareableURL={shareableURL}
           isDesktop={this.props.isDesktop}
         />
         <ProjectChart

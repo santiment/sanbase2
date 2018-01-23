@@ -7,21 +7,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   alias Sanbase.Model.Project
   alias Sanbase.Model.Currency
   alias Sanbase.Model.IcoCurrencies
-  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Ico
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
   import Plug.Conn
-
-  defp query_skeleton(query, query_name, variable_defs \\"", variables \\ "{}") do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name}#{variable_defs} #{query}",
-      "variables" => "#{variables}"
-    }
-  end
+  import SanbaseWeb.Graphql.TestHelpers
 
   defp setup do
     Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
@@ -39,8 +31,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
 
     date2 = "2017-10-17"
     date2_unix = 1508198400000000000
-
-    now = Ecto.DateTime.utc()
 
     Store.import([
       %Measurement{

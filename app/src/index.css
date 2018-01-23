@@ -1,11 +1,10 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #e5e5e5;
+  background-color: #f5f9ff;
   font: 14px/1.6 "Source+Sans+Pro", sans-serif;
-  font-family: sans-serif;
   font-weight: 400;
-  color: "#3D4051";
+  color: #3d4450;
 }
 
 a {
@@ -17,7 +16,7 @@ h2,
 h3,
 h4,
 h5 {
-  font-family: Helvetica, sans-serif;
+  font-family: "Source+Sans+Pro", sans-serif;
 }
 
 h1 {
@@ -26,21 +25,21 @@ h1 {
   margin-left: 16px;
   margin-top: 32px;
   line-height: inherit;
-  color: #171717;
+  color: #262b33;
 }
 
 h2 {
   font-size: 24px;
   font-weight: 300;
   line-height: inherit;
-  color: #171717;
+  color: #262b33;
 }
 
 h3 {
   font-size: 21px;
   font-weight: 300;
   line-height: inherit;
-  color: #171717;
+  color: #262b33;
 }
 
 p {

@@ -79,7 +79,7 @@ defmodule Sanbase.ExternalServices.IcoSpreadsheet do
         parse_date(value, {project_name, column})
       c when c in [:tokens_issued_at_ico] ->
         parse_int(value, {project_name, column})
-      c when c in [:tokens_sold_at_ico, :usd_btc_icoend, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :usd_eth_icoend, :minimal_cap_amount, :maximal_cap_amount, :token_btc_ico_price, :token_usd_ico_price, :token_eth_ico_price] ->
+      c when c in [:tokens_sold_at_ico, :funds_raised_btc, :funds_raised_usd, :funds_raised_eth, :minimal_cap_amount, :maximal_cap_amount, :token_btc_ico_price, :token_usd_ico_price, :token_eth_ico_price] ->
         parse_decimal(value, {project_name, column})
       c when c in [:ico_currencies] ->
         parse_comma_delimited(value, {project_name, column})

@@ -33,17 +33,17 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
       %Measurement{
         timestamp: date1_unix,
         fields: %{price: 5, volume: 200, marketcap: 500},
-        name: "TEST_USD"
+        name: "ETH_USD"
       },
       %Measurement{
         timestamp: date2_unix,
-        fields: %{price: 20, volume: 200, marketcap: 500},
-        name: "TEST_USD"
+        fields: %{price: 5, volume: 200, marketcap: 500},
+        name: "ETH_USD"
       }
     ])
 
     %LatestCoinmarketcapData{}
-    |> LatestCoinmarketcapData.changeset(%{coinmarketcap_id: "TEST_ID", price_usd: 50, update_time: now})
+    |> LatestCoinmarketcapData.changeset(%{coinmarketcap_id: "TEST_ID", price_usd: 50, available_supply: 500, update_time: now})
     |> Repo.insert!
 
     project = %Project{}
@@ -53,14 +53,23 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     %Ico{}
     |> Ico.changeset(
       %{project_id: project.id,
-        end_date: date1
+        token_usd_ico_price: 10,
+        tokens_sold_at_ico: 100
         })
     |> Repo.insert!()
 
     %Ico{}
     |> Ico.changeset(
       %{project_id: project.id,
-        end_date: date2
+        start_date: date1
+        })
+    |> Repo.insert!()
+
+    %Ico{}
+    |> Ico.changeset(
+      %{project_id: project.id,
+        start_date: date2,
+        token_eth_ico_price: 5
         })
     |> Repo.insert!()
 
@@ -85,7 +94,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
       |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}"))
 
     assert json_response(result, 200)["data"]["project"] ==
-      %{"name" => "Project", "roiUsd" => "4"}
+      %{"name" => "Project", "roiUsd" => "2.5"}
   end
 
   defp get_authorization_header do

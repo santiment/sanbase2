@@ -12,7 +12,7 @@ import Cashflow from './pages/Cashflow'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
-import SideMenu from './components/SideMenu'
+import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
@@ -36,7 +36,7 @@ const CashflowPage = props => (
 export const App = ({isDesktop}) => (
   <div className='App'>
     {isDesktop
-      ? <SideMenu />
+      ? <TopMenu />
       : <MobileMenu />}
     <ErrorBoundary>
       <Switch>

@@ -62,12 +62,14 @@ export const Account = ({user, loading, logout}) => {
           <Balance user={user} />
           <h3>Sessions</h3>
           <Divider />
-          <p>Your current session</p>
-          <Button
-            basic
-            color='red'
-            onClick={logout}
-          >Log out</Button>
+          <div className='account-control'>
+            <p>Your current session</p>
+            <Button
+              basic
+              color='red'
+              onClick={logout}
+            >Log out</Button>
+          </div>
         </Form>
       </div>
     </div>

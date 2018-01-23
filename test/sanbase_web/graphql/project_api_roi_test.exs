@@ -13,14 +13,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   alias Sanbase.Utils.Config
 
   import Plug.Conn
-
-  defp query_skeleton(query, query_name, variable_defs \\"", variables \\ "{}") do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name}#{variable_defs} #{query}",
-      "variables" => "#{variables}"
-    }
-  end
+  import SanbaseWeb.Graphql.TestHelpers
 
   defp setup do
     Application.fetch_env!(:sanbase, Sanbase.Prices.Store)

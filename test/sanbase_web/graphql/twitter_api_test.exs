@@ -7,6 +7,8 @@ defmodule Sanbase.Github.TwitterApiTest do
   alias Sanbase.Repo
   alias Sanbase.Model.Project
 
+  import SanbaseWeb.Graphql.TestHelpers
+
   setup do
     Store.create_db()
     Store.drop_measurement("SAN")
@@ -25,6 +27,15 @@ defmodule Sanbase.Github.TwitterApiTest do
       name: "Santiment",
       ticker: "SAN",
       twitter_link: "https://twitter.com/santimentfeed"
+    })
+    |> Repo.insert!()
+
+    # All tests implicitly test for when more than one record has the same ticker
+    %Project{}
+    |> Project.changeset(%{
+      name: "Santiment2",
+      ticker: "SAN",
+      twitter_link: ""
     })
     |> Repo.insert!()
 
@@ -114,13 +125,5 @@ defmodule Sanbase.Github.TwitterApiTest do
     assert %{"followersCount" => 500} in history_twitter_data
     assert %{"followersCount" => 1000} in history_twitter_data
     assert %{"followersCount" => 1500} in history_twitter_data
-  end
-
-  defp query_skeleton(query, query_name) do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "{}"
-    }
   end
 end

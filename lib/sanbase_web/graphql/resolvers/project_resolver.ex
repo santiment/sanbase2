@@ -18,15 +18,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.Repo
 
-  def all_projects(_parent, args, resolution) do
-    only_project_transparency = Map.get(args, :only_project_transparency, false)
+  def all_projects(_parent, args, resolution, only_project_transparency \\ nil) do
+    only_project_transparency = case only_project_transparency do
+      nil -> Map.get(args, :only_project_transparency, false)
+      value -> value
+    end
 
-    query = from p in Project,
-    where: not is_nil(p.coinmarketcap_id)
-        and (not ^only_project_transparency or p.project_transparency)
+    query = cond do
+      only_project_transparency ->
+        from p in Project,
+        where: p.project_transparency
+      true ->
+        from p in Project,
+        where: not is_nil(p.coinmarketcap_id)
+    end
 
     projects = case coinmarketcap_requested?(resolution) do
-      true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
+      true -> Repo.all(query) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
       _ -> Repo.all(query)
     end
 
@@ -37,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     id = Map.get(args, :id)
 
     project = case coinmarketcap_requested?(resolution) do
-      true -> Repo.get(Project, id) |> Repo.preload(:latest_coinmarketcap_data)
+      true -> Repo.get(Project, id) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
       _ -> Repo.get(Project, id)
     end
 
@@ -62,16 +70,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     select: p
 
     projects = case coinmarketcap_requested?(resolution) do
-      true -> Repo.all(query) |> Repo.preload(:latest_coinmarketcap_data)
+      true -> Repo.all(query) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
       _ -> Repo.all(query)
     end
 
     {:ok, projects}
   end
 
-  def eth_balance(%Project{id: id}, _args, resolution) do
-    only_project_transparency = get_parent_args(resolution)
-    |> Map.get(:only_project_transparency, false)
+  def eth_balance(%Project{id: id}, _args, resolution, only_project_transparency \\ nil) do
+    only_project_transparency = case only_project_transparency do
+      nil ->
+        get_parent_args(resolution)
+        |> Map.get(:only_project_transparency, false)
+      value -> value
+    end
 
     batch({__MODULE__, :eth_balances_by_id, only_project_transparency}, id, fn batch_results ->
       {:ok, Map.get(batch_results, id)}
@@ -90,9 +102,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Map.new(balances, fn balance -> {balance.project_id, balance.balance} end)
   end
 
-  def btc_balance(%Project{id: id}, _args, resolution) do
-    only_project_transparency = get_parent_args(resolution)
-    |> Map.get(:only_project_transparency, false)
+  def btc_balance(%Project{id: id}, _args, resolution, only_project_transparency \\ nil) do
+    only_project_transparency = case only_project_transparency do
+      nil ->
+        get_parent_args(resolution)
+        |> Map.get(:only_project_transparency, false)
+      value -> value
+    end
 
     batch({__MODULE__, :btc_balances_by_id, only_project_transparency}, id, fn batch_results ->
       {:ok, Map.get(batch_results, id)}
@@ -111,54 +127,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Map.new(balances, fn balance -> {balance.project_id, balance.balance} end)
   end
 
-  # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
-  def funds_raised_icos(%Project{id: id}, _args, _resolution) do
-    # We have to aggregate all amounts for every currency for every ICO of the given project, this is the last part of the query (after the with clause).
-    # The data to be aggreagated has to be fetched and unioned from two different sources (the "union all" inside the with clause):
-    #   * For ICOs that have raw data entered for at least one currency we aggregate it by currency (the first query)
-    #   * For ICOs that don't have that data entered (currently everything imported from the spreadsheet) we fall back to a precalculated total (the second query)
-    query =
-      '''
-      with data as (select c.code currency_code, ic.amount
-      from icos i
-      join ico_currencies ic
-      	on ic.ico_id = i.id
-      		and ic.amount is not null
-      join currencies c
-      	on c.id = ic.currency_id
-      where i.project_id = $1
-      union all
-      select case
-      		when i.funds_raised_usd is not null then 'USD'
-      		when i.funds_raised_btc is not null then 'BTC'
-      		when i.funds_raised_eth is not null then 'ETH'
-      		else null
-      	end currency_code
-      	, coalesce(i.funds_raised_usd, i.funds_raised_btc, i.funds_raised_eth) amount
-      from icos i
-      where i.project_id = $1
-      	and not exists (select 1
-      		from ico_currencies ic
-      		where ic.ico_id = i.id
-      			and ic.amount is not null))
-      select d.currency_code, sum(d.amount) amount
-      from data d
-      where d.currency_code is not null
-      group by d.currency_code
-      order by case
-          			when d.currency_code = 'BTC' then '_'
-          			when d.currency_code = 'ETH' then '__'
-          			when d.currency_code = 'USD' then '___'
-          			else d.currency_code
-          		end
-      '''
-
-      %{rows: rows} = Ecto.Adapters.SQL.query!(Sanbase.Repo, query, [id])
-
-      funds_raised = rows
-      |> Enum.map(fn([currency_code, amount]) -> %{currency_code: currency_code, amount: amount} end)
-
-      {:ok, funds_raised}
+  def funds_raised_icos(%Project{} = project, _args, _resolution) do
+    funds_raised = Project.funds_raised_icos(project)
+    {:ok, funds_raised}
   end
 
   def market_segment(%Project{market_segment_id: nil}, _args, _resolution), do: {:ok, nil}
@@ -259,40 +230,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
   def percent_change_7d(_parent, _args, _resolution), do: {:ok, nil}
 
+  def funds_raised_usd_ico_end_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_usd_ico_end_price(project)
+
+    {:ok, result}
+  end
+
+  def funds_raised_eth_ico_end_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_eth_ico_end_price(project)
+
+    {:ok, result}
+  end
+
+  def funds_raised_btc_ico_end_price(%Project{} = project, _args, _resolution) do
+    result = Project.funds_raised_btc_ico_end_price(project)
+
+    {:ok, result}
+  end
+
   def initial_ico(%Project{} = project, _args, _resolution) do
     ico = Project.initial_ico(project)
+    |> Repo.preload([ico_currencies: [:currency]])
 
     {:ok, ico}
-  end
-
-  def ico_cap_currency(%Ico{cap_currency_id: nil}, _args, _resolution), do: {:ok, nil}
-  def ico_cap_currency(%Ico{cap_currency_id: cap_currency_id}, _args, _resolution) do
-    batch({__MODULE__, :currencies_by_id}, cap_currency_id, fn batch_results ->
-      {:ok, Map.get(batch_results, cap_currency_id)}
-    end)
-  end
-  def currencies_by_id(_, currency_ids) do
-    currencies = from(i in Currency,
-    where: i.id in ^currency_ids)
-    |> Repo.all()
-
-    Map.new(currencies, fn currency -> {currency.id, currency.code} end)
-  end
-
-  def ico_currency_amounts(%Ico{id: id}, _args, _resolution) do
-    batch({__MODULE__, :ico_currency_amounts_by_id}, id, fn batch_results ->
-      {:ok, Map.get(batch_results, id)}
-    end)
-  end
-  def ico_currency_amounts_by_id(_, ico_ids) do
-    query = from i in Ico,
-    left_join: ic in assoc(i, :ico_currencies),
-    inner_join: c in assoc(ic, :currency),
-    where: i.id in ^ico_ids,
-    select: %{ico_id: i.id, currency_code: c.code, amount: ic.amount}
-
-    Repo.all(query)
-    |> Enum.group_by(&(&1.ico_id), &(%{currency_code: &1.currency_code, amount: &1.amount}))
   end
 
   defp coinmarketcap_requested?(resolution) do

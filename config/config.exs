@@ -131,6 +131,7 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
   sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
 
 config :sanbase, Sanbase.Etherbi.Transactions,
+  update_interval: 1000 * 60 * 60,
   sync_enabled: {:system, "ETHERBI_TRANSACTIONS_ENABLED", false}
 
 config :sanbase, Sanbase.Notifications.CheckPrices,

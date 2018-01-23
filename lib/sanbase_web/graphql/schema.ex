@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     GithubResolver,
     TwitterResolver,
     EtherbiResolver,
+    VotingResolver
   }
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
@@ -20,6 +21,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types SanbaseWeb.Graphql.GithubTypes
   import_types SanbaseWeb.Graphql.TwitterTypes
   import_types SanbaseWeb.Graphql.EtherbiTypes
+  import_types SanbaseWeb.Graphql.VotingTypes
 
   query do
     field :current_user, :user do
@@ -140,6 +142,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&EtherbiResolver.transaction_volume/3)
     end
 
+    @desc "Returns the currently running poll"
+    field :current_poll, :poll do
+      resolve(&VotingResolver.current_poll/3)
+    end
   end
 
   mutation do
@@ -170,6 +176,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&AccountResolver.unfollow_project/3)
+    end
+
+    field :vote, :post do
+      arg :post_id, non_null(:integer)
+
+      middleware(JWTAuth)
+      resolve(&VotingResolver.vote/3)
     end
   end
 end

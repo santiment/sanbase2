@@ -3,6 +3,7 @@ defmodule Sanbase.Auth.User do
   use Timex.Ecto.Timestamps
 
   import Ecto.Changeset
+  use Timex.Ecto.Timestamps
 
   alias Sanbase.Auth.{
     User,
@@ -37,6 +38,8 @@ defmodule Sanbase.Auth.User do
   defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
   @salt_length 64
+
+  @san_balance_cache_seconds 60 * 5 # 5 minutes
 
   schema "users" do
     field(:email, :string)

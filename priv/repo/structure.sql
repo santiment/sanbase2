@@ -297,8 +297,6 @@ CREATE TABLE public.icos (
     comments text,
     contract_block_number integer,
     contract_abi text,
-    usd_btc_icoend numeric,
-    usd_eth_icoend numeric,
     token_usd_ico_price numeric,
     token_eth_ico_price numeric,
     token_btc_ico_price numeric
@@ -695,6 +693,73 @@ ALTER SEQUENCE public.posts_tags_id_seq OWNED BY public.posts_tags.id;
 
 
 --
+-- Name: polls; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE polls (
+    id bigint NOT NULL,
+    start_at timestamp without time zone NOT NULL,
+    end_at timestamp without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: polls_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE polls_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: polls_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE polls_id_seq OWNED BY polls.id;
+
+
+--
+-- Name: posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE posts (
+    id bigint NOT NULL,
+    poll_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    title character varying(255) NOT NULL,
+    link character varying(255) NOT NULL,
+    approved_at timestamp without time zone,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE posts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE posts_id_seq OWNED BY posts.id;
+
+
+--
 -- Name: processed_github_archives; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -922,7 +987,10 @@ CREATE TABLE public.user_api_key_tokens (
     user_id bigint,
     token character varying(255) NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    san_tokens integer,
+    san_balance integer,
+    san_balance_updated_at timestamp without time zone
 );
 
 
@@ -1178,6 +1246,20 @@ ALTER TABLE ONLY public.posts_tags ALTER COLUMN id SET DEFAULT nextval('public.p
 
 
 --
+-- Name: polls id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY polls ALTER COLUMN id SET DEFAULT nextval('polls_id_seq'::regclass);
+
+
+--
+-- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
+
+
+--
 -- Name: processed_github_archives id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1267,6 +1349,13 @@ ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_
 
 ALTER TABLE ONLY cryptocompare_prices
     ADD CONSTRAINT cryptocompare_prices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: votes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY votes ALTER COLUMN id SET DEFAULT nextval('votes_id_seq'::regclass);
 
 
 --
@@ -1669,6 +1758,13 @@ CREATE UNIQUE INDEX project_btc_address_address_index ON public.project_btc_addr
 
 
 --
+-- Name: polls_start_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX polls_start_at_index ON polls USING btree (start_at);
+
+
+--
 -- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1799,6 +1895,13 @@ CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
 --
 
 CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (post_id, user_id);
+
+
+--
+-- Name: votes_post_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_post_id_user_id_index ON votes USING btree (post_id, user_id);
 
 
 --
@@ -1938,6 +2041,22 @@ ALTER TABLE ONLY public.processed_github_archives
 
 
 --
+-- Name: posts posts_poll_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts
+    ADD CONSTRAINT posts_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES polls(id);
+
+
+--
+-- Name: posts posts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts
+    ADD CONSTRAINT posts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+
+
+--
 -- Name: processed_github_archives processed_github_archives_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2039,6 +2158,22 @@ ALTER TABLE ONLY user_followed_project
 
 ALTER TABLE ONLY user_followed_project
     ADD CONSTRAINT user_followed_project_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY votes
+    ADD CONSTRAINT votes_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts(id);
+
+
+--
+-- Name: votes votes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY votes
+    ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
 
 --

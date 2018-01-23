@@ -42,13 +42,14 @@ defmodule Sanbase.Etherbi.Transactions do
     # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
     token_decimals = build_token_decimals_map()
     exchange_wallets_addrs = Repo.all(from(addr in ExchangeEthAddress, select: addr.address))
+    |> Enum.at(1)
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      exchange_wallets_addrs,
+      [exchange_wallets_addrs],
       &fetch_and_store(&1, token_decimals),
       max_concurency: 1,
-      timeout: 1000 * 60 * 2
+      timeout: 150_000,
     )
     |> Stream.run()
 

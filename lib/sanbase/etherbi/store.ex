@@ -10,6 +10,20 @@ defmodule Sanbase.Etherbi.Store do
     |> parse_measurement_datetime()
   end
 
+  def last_datetime_with_tag(measurement, tag_name, tag_value) when is_binary(tag_value) do
+    ~s/SELECT LAST(*) FROM "#{measurement}"
+    WHERE "#{tag_name}" = "#{tag_value}"/
+    |> Store.query()
+    |> parse_measurement_datetime()
+  end
+
+  def last_datetime_with_tag(measurement, tag_name, tag_value) do
+    ~s/SELECT LAST(*) FROM "#{measurement}"
+    WHERE "#{tag_name}" = #{tag_value}/
+    |> Store.query()
+    |> parse_measurement_datetime()
+  end
+
   def first_datetime(measurement) do
     ~s/SELECT FIRST(*) FROM "#{measurement}"/
     |> Store.query()

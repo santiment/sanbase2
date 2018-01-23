@@ -1,21 +1,26 @@
 defmodule Sanbase.Etherbi.Transactions do
+  @moduledoc ~S"""
+    This module is a GenServer that periodically sends requests to etherbi API.
+    In and out transactions are fetched and saved in a time series database for
+    easier aggregation and querying.
+  """
+
   use GenServer
 
+  require Logger
   require Sanbase.Utils.Config
 
   import Ecto.Query
-
-  require Logger
 
   alias Sanbase.Repo
   alias Sanbase.Utils.Config
   alias Sanbase.Etherbi.Store
   alias Sanbase.Etherbi.FundsMovement
-  alias Sanbase.Model.ExchangeEthAddress
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Model.ExchangeEthAddress
   alias Sanbase.Model.Project
 
-  @default_update_interval 5 * 60_000
+  @default_update_interval 1000 * 60 * 60
   @month_in_seconds 60 * 60 * 24 * 30
 
   def start_link(_state) do
@@ -42,14 +47,22 @@ defmodule Sanbase.Etherbi.Transactions do
     # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
     token_decimals = build_token_decimals_map()
     exchange_wallets_addrs = Repo.all(from(addr in ExchangeEthAddress, select: addr.address))
-    |> Enum.at(1)
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      [exchange_wallets_addrs],
-      &fetch_and_store(&1, token_decimals),
+      exchange_wallets_addrs,
+      &fetch_and_store_in(&1, token_decimals),
       max_concurency: 1,
-      timeout: 150_000,
+      timeout: 150_000
+    )
+    |> Stream.run()
+
+    Task.Supervisor.async_stream_nolink(
+      Sanbase.TaskSupervisor,
+      exchange_wallets_addrs,
+      &fetch_and_store_out(&1, token_decimals),
+      max_concurency: 1,
+      timeout: 150_000
     )
     |> Stream.run()
 
@@ -57,16 +70,25 @@ defmodule Sanbase.Etherbi.Transactions do
     {:noreply, state}
   end
 
-  # The etherbi transactions API allows querying multiple wallets at once.
-  # For now send a list with just one wallet.
-  def fetch_and_store(address, token_decimals) do
-    from_datetime = Store.last_datetime(address) || DateTime.from_unix!(0, :seconds)
+  def fetch_and_store_in(address, token_decimals) do
+    from_datetime =
+      Store.last_datetime_with_tag(address, "transaction_type", "in") ||
+        DateTime.from_unix!(0, :seconds)
+
     to_datetime = DateTime.utc_now()
 
     {:ok, transactions_in} = FundsMovement.transactions_in([address], from_datetime, to_datetime)
 
     convert_to_measurement(transactions_in, address, "in", token_decimals)
     |> Store.import()
+  end
+
+  def fetch_and_store_out(address, token_decimals) do
+    from_datetime =
+      Store.last_datetime_with_tag(address, "transaction_type", "out") ||
+        DateTime.from_unix!(0, :seconds)
+
+    to_datetime = DateTime.utc_now()
 
     {:ok, transactions_out} =
       FundsMovement.transactions_out([address], from_datetime, to_datetime)
@@ -85,7 +107,7 @@ defmodule Sanbase.Etherbi.Transactions do
 
     Repo.all(query)
     |> Enum.map(fn %{ticker: ticker, token_decimals: token_decimals} ->
-      {ticker, :math.pow(10,token_decimals)}
+      {ticker, :math.pow(10, token_decimals)}
     end)
     |> Map.new()
   end
@@ -123,5 +145,4 @@ defmodule Sanbase.Etherbi.Transactions do
       to_datetime
     end
   end
-
 end

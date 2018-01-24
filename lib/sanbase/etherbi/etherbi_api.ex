@@ -32,10 +32,19 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         convert_timestamp_response(body)
 
       {:error, %HTTPoison.Response{status_code: status, body: body}} ->
-        {:error, "Error status #{status} fetching data from url #{url}: #{body}"}
+        {:error,
+         "Error status #{status} fetching first transaction timestamp for #{address}: #{
+           body
+         }"}
+
+      {:error, %HTTPoison.Error{reason: :timeout}} ->
+        {:error, "Timeout trying to fetch the first transaction timestamp for #{address}"}
 
       error ->
-        {:error, "Error fetching first transaction timestamp data: #{inspect(error)}"}
+        {:error,
+         "Error fetching first transaction timestamp data for address #{address}: #{
+           inspect(error)
+         }"}
     end
   end
 
@@ -46,21 +55,28 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
       otherwise.
   """
-  @spec get_transactions(binary(), Keyword.t) :: {:ok, list()} | {:error, binary()}
+  @spec get_transactions(binary(), Keyword.t()) :: {:ok, list()} | {:error, binary()}
   def get_transactions(url, options) do
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         convert_transactions_response(body)
 
       {:error, %HTTPoison.Response{status_code: status, body: body}} ->
-        {:error, "Error status #{status} fetching data from url #{url}: #{body}"}
+        {:error, "Error status #{status} fetching for #{extract_address(options)}: #{body}"}
+
+      {:error, %HTTPoison.Error{reason: :timeout}} ->
+        {:error, "Timeout trying to fetch transactions for #{extract_address(options)}"}
 
       error ->
-        {:error, "Error fetching transactions data: #{inspect(error)}"}
+        {:error, "Error fetching transactions data for #{extract_address(options)}: #{inspect(error)}"}
     end
   end
 
   # Private functions
+
+  defp extract_address(options) do
+    options[:params][:wallets]
+  end
 
   defp convert_timestamp_response("[]") do
     {:ok, nil}

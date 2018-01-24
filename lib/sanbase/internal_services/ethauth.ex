@@ -12,21 +12,11 @@ defmodule Sanbase.InternalServices.Ethauth do
     String.downcase(address) == String.downcase(recovered)
   end
 
-  if Mix.env == :test do
-    # Special method that are used in test mode
-
-    def san_balance("0x" <> address) do
-      String.to_integer(address)
-    end
-
-  end
-
   def san_balance(address) do
     %Tesla.Env{status: 200, body: body} = get(client(), "san_balance", query: [addr: address])
 
     body
-    |> String.to_integer()
-    |> Kernel.div(100000000)
+    |> Decimal.new()
   end
 
   defp client() do

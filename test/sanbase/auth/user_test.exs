@@ -1,6 +1,8 @@
 defmodule Sanbase.Auth.UserTest do
   use Sanbase.DataCase, async: false
 
+  import Mockery
+
   alias Sanbase.Auth.{User, EthAccount}
 
   test "san balance cache is stale when the cache is never updated" do
@@ -22,7 +24,9 @@ defmodule Sanbase.Auth.UserTest do
   end
 
   test "update_san_balance_changeset is returning a changeset with updated san balance" do
-    user = %User{san_balance: 0, eth_accounts: [%EthAccount{address: "0x05"}]}
+    mock Sanbase.InternalServices.Ethauth, :san_balance, 5
+
+    user = %User{san_balance: 0, eth_accounts: [%EthAccount{address: "0x000000000001"}]}
 
     changeset = User.update_san_balance_changeset(user)
 
@@ -40,7 +44,9 @@ defmodule Sanbase.Auth.UserTest do
     user = %User{san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10), salt: User.generate_salt()}
     |> Repo.insert!
 
-    %EthAccount{address: "0x10", user_id: user.id}
+    mock Sanbase.InternalServices.Ethauth, :san_balance, 10
+
+    %EthAccount{address: "0x000000000001", user_id: user.id}
     |> Repo.insert!
 
     user = Repo.get(User, user.id)

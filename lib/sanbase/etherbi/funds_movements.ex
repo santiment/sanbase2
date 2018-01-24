@@ -63,6 +63,7 @@ defmodule Sanbase.Etherbi.FundsMovement do
         {:ok, []}
     end
   end
+
   # Get a tuple `{from_unix, to_unix}` to use in a query or `nil` if there is no info.
   # If there is no record in the DB for that address and Etherbi's
   # first transaction timestamp API returns no result then there are no transactions

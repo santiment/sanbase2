@@ -119,9 +119,6 @@ defmodule Sanbase.Etherbi.Transactions do
           tags: [transaction_type: transaction_type, token: token],
           name: measurement_name
         }
-      else
-        Logger.warn("Transaction for address #{measurement_name} failed. Token decimal places missing for #{token}")
-        nil
       end
     end)
   end

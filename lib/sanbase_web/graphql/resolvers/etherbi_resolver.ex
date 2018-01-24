@@ -85,18 +85,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
           wallet: wallet,
           from: from,
           to: to,
-          interval: interval,
           transaction_type: transaction_type
         },
         _resolution
       ) do
-    with {:ok, transactions} <- Store.transactions(wallet, from, to, interval, transaction_type) do
+    with {:ok, transactions} <- Store.transactions(wallet, from, to, transaction_type) do
       result =
         transactions
         |> Enum.map(fn {datetime, volume, token} ->
           %{
             datetime: datetime,
-            transaction_volume: volume |> String.to_integer() |> Decimal.new(),
+            transaction_volume: volume |> Decimal.new(),
             token: token
           }
         end)

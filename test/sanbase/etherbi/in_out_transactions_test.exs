@@ -50,7 +50,7 @@ defmodule Sanbase.Etherbi.EtherbiFundsMovementTest do
 
     # Inserts into the DB. Must delete it at the end of the test
     Transactions.fetch_and_store_in(context.wallet, token_decimals)
-    {:ok, transactions} = Store.transactions([context.wallet], datetime1, datetime2, "1h", "in")
+    {:ok, transactions} = Store.transactions([context.wallet], datetime1, datetime2, "in")
 
     assert {datetime1, context.expected_volume1, "SAN"} in transactions
     assert {datetime2, context.expected_volume2, "SAN"} in transactions

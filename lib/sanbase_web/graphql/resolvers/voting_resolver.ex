@@ -90,7 +90,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     %Vote{}
     |> Vote.changeset(%{post_id: post_id, user_id: user.id})
     |> Repo.insert
+    |> case do
+      {:ok, _vote} -> {:ok, Repo.get(Post, post_id)}
+      {:error, error} -> {:error, error}
+    end
+  end
 
-    {:ok, Repo.get(Post, post_id)}
+  def unvote(_root, %{post_id: post_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+
+    with {:ok, vote} <- Repo.get_by(Vote, post_id: post_id, user_id: user.id),
+         {:ok, _vote} <- Repo.delete(vote) do
+      {:ok, Repo.get(Post, post_id)}
+    else
+      _ ->
+        {:error, "Can't unvote this post"}
+    end
   end
 end

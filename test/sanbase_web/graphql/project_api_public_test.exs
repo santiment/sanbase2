@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiPublicTest do
   use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
 
   import SanbaseWeb.Graphql.TestHelpers
 

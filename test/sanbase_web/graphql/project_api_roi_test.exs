@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
 
   require Sanbase.Utils.Config
 

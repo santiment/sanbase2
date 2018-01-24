@@ -52,6 +52,7 @@ const getProjectByTicker = (match, projects) => {
 export const Detailed = ({
   match,
   history,
+  location,
   projects,
   loading,
   PriceQuery,
@@ -155,6 +156,8 @@ export const Detailed = ({
   }
 
   const projectContainerChart = <ProjectChartContainer
+    routerHistory={history}
+    location={location}
     isDesktop={isDesktop}
     twitter={twitter}
     price={price}

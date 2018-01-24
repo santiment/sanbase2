@@ -1,9 +1,15 @@
 defmodule Sanbase.Etherbi.EtherbiApi do
   @moduledoc ~S"""
-    All communication with the Etherbi API are done via this module
+    All communication with the Etherbi API are done via this module. It supports:
+    1. Query for fetching the timestamp for a transaction that happened in our out of
+    a given wallet
+    2. Query for fetching all in transactions for a wallet and given time period
+    3. Query for fetching all out transactions for a wallet and given time period
   """
 
+  require Logger
   require Sanbase.Utils.Config
+
   alias Sanbase.Utils.Config
 
   @etherbi_url Config.module_get(Sanbase.Etherbi, :url)
@@ -13,15 +19,13 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     transactions for addresses in a the given time period
 
     Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
-      otherwise.
+    otherwise.
   """
   @spec get_first_transaction_timestamp(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_transaction_timestamp(address) do
-    url = "#{@etherbi_url}/first_transaction_timestamp"
-    options = [
-      recv_timeout: 15_000,
-      params: %{ address: address }
-    ]
+    Logger.info("Getting the first transaction timestamp for address #{address}")
+    url = "#{@etherbi_url}/first_transaction_timestamp?address=#{address}"
+    options = [recv_timeout: 45_000]
 
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -58,9 +62,14 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
   # Private functions
 
+  defp convert_timestamp_response("[]") do
+    {:ok, nil}
+  end
+
+  # Body is a string in the format `"[timestamp]"`
   defp convert_timestamp_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do
-      result = decoded_body |> String.to_integer() |> DateTime.from_unix!()
+      result = decoded_body |> hd |> DateTime.from_unix!()
       {:ok, result}
     end
   end

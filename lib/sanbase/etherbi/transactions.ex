@@ -52,7 +52,7 @@ defmodule Sanbase.Etherbi.Transactions do
       exchange_wallets_addrs,
       &fetch_and_store_in(&1, token_decimals),
       max_concurency: 1,
-      timeout: 150_000
+      timeout: 165_000
     )
     |> Stream.run()
 
@@ -84,6 +84,8 @@ defmodule Sanbase.Etherbi.Transactions do
     convert_to_measurement(transactions_out, address, "out", token_decimals)
     |> Store.import()
   end
+
+  # Private functions
 
   defp build_token_decimals_map() do
     query =
@@ -118,7 +120,7 @@ defmodule Sanbase.Etherbi.Transactions do
           name: measurement_name
         }
       else
-        Logger.warn("Token decimal places missing for #{token}")
+        Logger.warn("Transaction for address #{measurement_name} failed. Token decimal places missing for #{token}")
         nil
       end
     end)

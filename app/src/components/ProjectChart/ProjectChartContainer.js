@@ -147,15 +147,12 @@ class ProjectChartContainer extends Component {
           isToggledBTC={this.state.isToggledBTC}
           interval={this.state.interval}
           shareableURL={shareableURL}
+          ticker={this.props.ticker}
           isDesktop={this.props.isDesktop}
         />
         <ProjectChart
           setSelected={this.setSelected}
           isToggledBTC={this.state.isToggledBTC}
-          twitter={this.props.twitter}
-          github={this.props.github}
-          burnRate={this.props.burnRate}
-          transactionVolume={this.props.transactionVolume}
           history={this.props.price.history.items}
           isLoading={this.props.price.history.loading}
           isEmpty={this.props.price.history.items.length === 0}

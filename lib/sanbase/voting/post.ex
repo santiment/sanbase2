@@ -3,12 +3,13 @@ defmodule Sanbase.Voting.Post do
   import Ecto.Changeset
   use Timex.Ecto.Timestamps
 
-  alias Sanbase.Voting.{Poll, Post}
+  alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Auth.User
 
   schema "posts" do
     belongs_to(:poll, Poll)
     belongs_to(:user, User)
+    has_many(:votes, Vote)
 
     field(:title, :string)
     field(:link, :string)

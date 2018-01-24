@@ -184,5 +184,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
       resolve(&VotingResolver.vote/3)
     end
+
+    field :unvote, :post do
+      arg :post_id, non_null(:integer)
+
+      middleware(JWTAuth)
+      resolve(&VotingResolver.unvote/3)
+    end
   end
 end

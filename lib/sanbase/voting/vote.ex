@@ -17,6 +17,6 @@ defmodule Sanbase.Voting.Vote do
     vote
     |> cast(attrs, [:post_id, :user_id])
     |> validate_required([:post_id, :user_id])
-    |> unique_constraint([:post_id, :user_id])
+    |> unique_constraint(:post_id, name: :votes_post_id_user_id_index)
   end
 end

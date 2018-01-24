@@ -20,7 +20,14 @@ defmodule Sanbase.Voting.Post do
 
   def changeset(%Post{} = post, attrs \\ %{}) do
     post
-    |> cast(attrs, [:poll_id, :user_id, :title, :link])
+    |> cast(attrs, [:title, :link])
+    |> validate_required([:poll_id, :user_id, :title, :link])
+    |> unique_constraint(:poll_id, name: :posts_poll_id_title_index)
+  end
+
+  def admin_changeset(%Post{} = post, attrs \\ %{}) do
+    post
+    |> cast(attrs, [:poll_id, :title, :link, :approved_at])
     |> validate_required([:poll_id, :user_id, :title, :link])
     |> unique_constraint(:poll_id, name: :posts_poll_id_title_index)
   end

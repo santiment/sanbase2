@@ -49,4 +49,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
         {:error, "Can't remove vote"}
     end
   end
+
+  def create_post(_root, post_args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+
+    %Post{user_id: user.id, poll_id: Poll.find_or_insert_current_poll!().id}
+    |> Post.changeset(post_args)
+    |> Repo.insert
+    |> case do
+      {:ok, post} ->
+        {:ok, post |> Repo.preload([:votes, :user])}
+      {:error, %{errors: errors}} ->
+        {:error, errors}
+    end
+  end
 end

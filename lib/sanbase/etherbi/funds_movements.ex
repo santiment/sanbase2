@@ -24,21 +24,7 @@ defmodule Sanbase.Etherbi.FundsMovement do
   """
   @spec transactions_in(binary()) :: {:ok, list()} | {:error, binary()}
   def transactions_in(address) do
-    Logger.info("Getting in transactions for #{address}")
-
-    {from_unix, to_unix} = generate_from_to_interval_unix(address, "in")
-
-    url = "#{@etherbi_url}/transactions_in"
-    options = [
-      recv_timeout: 120_000,
-      params: %{
-        from_timestamp: from_unix,
-        to_timestamp: to_unix,
-        wallets: Poison.encode!([address])
-      }
-    ]
-
-    @etherbi_api.get_transactions(url, options)
+    transactions(address, "in")
   end
 
   @doc ~S"""
@@ -50,43 +36,61 @@ defmodule Sanbase.Etherbi.FundsMovement do
   """
   @spec transactions_out(binary()) :: {:ok, list()} | {:error, binary()}
   def transactions_out(address) do
-    Logger.info("Getting out transactions for #{address}")
-
-    {from_unix, to_unix} = generate_from_to_interval_unix(address, "in")
-
-    url = "#{@etherbi_url}/transactions_out"
-
-    options = [
-      recv_timeout: 120_000,
-      params: %{
-        from_timestamp: from_unix,
-        to_timestamp: to_unix,
-        wallets: Poison.encode!([address])
-      }
-    ]
-
-    @etherbi_api.get_transactions(url, options)
+    transactions(address, "out")
   end
 
   # Private functions
 
-  # Allow querying for max to one month
+  defp transactions(address, transaction_type) do
+    Logger.info("Getting #{transaction_type} transactions for #{address}")
+
+    case generate_from_to_interval_unix(address, transaction_type) do
+      {from_unix, to_unix} ->
+        url = "#{@etherbi_url}/transactions_#{transaction_type}"
+
+        options = [
+          recv_timeout: 120_000,
+          params: %{
+            from_timestamp: from_unix,
+            to_timestamp: to_unix,
+            wallets: Poison.encode!([address])
+          }
+        ]
+
+        @etherbi_api.get_transactions(url, options)
+
+      _ ->
+        {:ok, []}
+    end
+  end
+  # Get a tuple `{from_unix, to_unix}` to use in a query or `nil` if there is no info.
+  # If there is no record in the DB for that address and Etherbi's
+  # first transaction timestamp API returns no result then there are no transactions
+  # In that case return `nil` and detect in the caller that no query should be made
   defp generate_from_to_interval_unix(address, transaction_type) do
     # Returns {:ok, nil} if there are no records for that measurement
-    {:ok, from_datetime} = Store.last_datetime_with_tag(address, "transaction_type", transaction_type)
-    {:ok, from_datetime} = from_datetime || @etherbi_api.get_first_transaction_timestamp(address)
+    {:ok, from_datetime} =
+      Store.last_datetime_with_tag(address, "transaction_type", transaction_type)
 
-    to_datetime = get_to_datetime(from_datetime, DateTime.utc_now())
+    if !from_datetime do
+      {:ok, from_datetime} = @etherbi_api.get_first_transaction_timestamp(address)
+    end
 
-    from_unix = DateTime.to_unix(from_datetime, :seconds)
-    to_unix = DateTime.to_unix(to_datetime, :seconds)
+    if from_datetime do
+      to_datetime = calculate_to_datetime(from_datetime, DateTime.utc_now())
 
-    {from_unix, to_unix}
+      from_unix = DateTime.to_unix(from_datetime, :seconds)
+      to_unix = DateTime.to_unix(to_datetime, :seconds)
+
+      {from_unix, to_unix}
+    else
+      nil
+    end
   end
 
   # If the difference between the datetimes is too large the query will be too big
   # Allow the max difference between the datetimes to be 1 month
-  defp get_to_datetime(from_datetime, to_datetime) do
+  defp calculate_to_datetime(from_datetime, to_datetime) do
     if DateTime.diff(to_datetime, from_datetime, :seconds) > @month_in_seconds do
       Sanbase.DateTimeUtils.days_after(30, from_datetime)
     else

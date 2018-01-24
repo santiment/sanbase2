@@ -1,63 +1,11 @@
 import React from 'react'
 import moment from 'moment'
-import {
-  Button,
-  Popup,
-  Input
-} from 'semantic-ui-react'
-import { withState } from 'recompose'
-import copy from 'copy-to-clipboard'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { DateRangePicker } from 'react-dates'
 import { formatNumber } from '../../utils/formatting'
+import ShareableBtn from './ShareableBtn'
 import './ProjectChartHeader.css'
-
-const ShareChartBtn = withState('isSaved', 'save', false)(
-  ({shareableURL, save, isSaved = false}) => {
-    if (window.navigator.share) {
-      return (
-        <Button
-          onClick={
-            () => {
-              window.navigator.share({
-                title: 'Sanbase',
-                text: 'Check out the insight of crypto world in Sanbase.',
-                url: shareableURL
-              })
-            }
-          }
-          positive >
-          Share
-        </Button>
-      )
-    }
-    return (
-      <Popup
-        position='bottom right'
-        size='large'
-        trigger={
-          <Button positive>
-            Share <i className='fa fa-caret-down' />
-          </Button>
-      } on='click'>
-        <div className='shareable-inner'>
-          <Input
-            input={{readOnly: true}}
-            defaultValue={shareableURL} />
-            &nbsp;
-          <Button icon='clipboard' onClick={() => {
-            const result = copy(shareableURL)
-            setTimeout(() => {
-              save(false)
-            }, 1000)
-            save(result)
-          }} />
-          &nbsp;{isSaved && 'Saved!'}
-        </div>
-      </Popup>
-    )
-  })
 
 export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
   let cls = interval === value ? 'activated' : ''
@@ -104,7 +52,9 @@ const ProjectChartHeader = ({
   isToggledBTC,
   interval,
   setFilter,
-  shareableURL
+  shareableURL,
+  sanbaseChart,
+  ticker
 }) => {
   return (
     <div className='chart-header'>
@@ -134,7 +84,10 @@ const ProjectChartHeader = ({
         <CurrencyFilter
           isToggledBTC={isToggledBTC}
           toggleBTC={toggleBTC} />
-        <ShareChartBtn shareableURL={shareableURL} />
+        <ShareableBtn
+          ticker={ticker}
+          sanbaseChart={sanbaseChart}
+          shareableURL={shareableURL} />
       </div>
       {!isDesktop && selected && [
         <div key='selected-datetime' className='selected-value'>{selected &&

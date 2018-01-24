@@ -13,7 +13,7 @@ defmodule Sanbase.Etherbi.FundsMovement do
 
   @etherbi_api Mockery.of("Sanbase.Etherbi.EtherbiApi")
   @etherbi_url Config.module_get(Sanbase.Etherbi, :url)
-  @month_in_seconds 60 * 60 * 24 * 30
+  @seconds_in_month 60 * 60 * 24 * 30
 
   @doc ~S"""
     Fetches all in transactions for a single address via the Etherbi API.
@@ -72,9 +72,13 @@ defmodule Sanbase.Etherbi.FundsMovement do
     {:ok, from_datetime} =
       Store.last_datetime_with_tag(address, "transaction_type", transaction_type)
 
-    if !from_datetime do
-      {:ok, from_datetime} = @etherbi_api.get_first_transaction_timestamp(address)
-    end
+    from_datetime =
+      if from_datetime do
+        from_datetime
+      else
+        {:ok, from_datetime} = @etherbi_api.get_first_transaction_timestamp(address)
+        from_datetime
+      end
 
     if from_datetime do
       to_datetime = calculate_to_datetime(from_datetime, DateTime.utc_now())
@@ -91,8 +95,8 @@ defmodule Sanbase.Etherbi.FundsMovement do
   # If the difference between the datetimes is too large the query will be too big
   # Allow the max difference between the datetimes to be 1 month
   defp calculate_to_datetime(from_datetime, to_datetime) do
-    if DateTime.diff(to_datetime, from_datetime, :seconds) > @month_in_seconds do
-      Sanbase.DateTimeUtils.days_after(30, from_datetime)
+    if DateTime.diff(to_datetime, from_datetime, :seconds) > @seconds_in_month do
+      Sanbase.DateTimeUtils.seconds_after(@seconds_in_month, from_datetime)
     else
       to_datetime
     end

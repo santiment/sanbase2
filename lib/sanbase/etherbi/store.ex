@@ -30,24 +30,30 @@ defmodule Sanbase.Etherbi.Store do
     |> parse_measurement_datetime()
   end
 
-  def transactions(measurement, from, to, resolution, transaction_type) do
-    transactions_from_to_query(measurement, from, to, resolution, transaction_type)
+  def transactions(measurement, from, to, transaction_type) do
+    transactions_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
     |> parse_transactions_time_series()
   end
 
-  defp transactions_from_to_query(measurement, from, to, _resolution, "all") do
-    ~s/SELECT volume, token FROM "#{measurement}"
+  defp transactions_from_to_query(measurement, from, to, "all") do
+    ~s/SELECT volume, token
+    FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   # To be able to group by time an additional grouping by token should be done
-  defp transactions_from_to_query(measurement, from, to, _resolution, transaction_type) do
-    ~s/SELECT volume, token FROM "#{measurement}"
+  defp transactions_from_to_query(measurement, from, to, transaction_type) do
+    ~s/SELECT volume, token
+    FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp parse_transactions_time_series(%{error: error}) do
+    {:error, error}
   end
 
   defp parse_transactions_time_series(%{results: [%{error: error}]}) do
@@ -88,7 +94,7 @@ defmodule Sanbase.Etherbi.Store do
            %{
              series: [
                %{
-                 values: [[iso8601_datetime | _rest]]
+                 values: [iso8601_datetime | _rest]
                }
              ]
            }

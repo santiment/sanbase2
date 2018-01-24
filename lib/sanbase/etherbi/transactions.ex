@@ -115,8 +115,8 @@ defmodule Sanbase.Etherbi.Transactions do
       if decimal_places = Map.get(token_decimals, token) do
         %Measurement{
           timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-          fields: %{volume: volume / decimal_places, token: token},
-          tags: [transaction_type: transaction_type],
+          fields: %{volume: volume / decimal_places},
+          tags: [transaction_type: transaction_type, token: token],
           name: measurement_name
         }
       else

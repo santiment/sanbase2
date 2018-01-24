@@ -100,12 +100,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
         context: %{auth: %{current_user: user}}
       }) do
 
-    with {:ok, vote} <- Repo.get_by(Vote, post_id: post_id, user_id: user.id),
+    with %Vote{} = vote <- Repo.get_by(Vote, post_id: post_id, user_id: user.id),
          {:ok, _vote} <- Repo.delete(vote) do
+
       {:ok, Repo.get(Post, post_id)}
     else
-      _ ->
-        {:error, "Can't unvote this post"}
+      _error ->
+        {:error, "Can't remove vote"}
     end
   end
 end

@@ -30,7 +30,7 @@ defmodule Sanbase.Repo.Migrations.AddPostsAndPolls do
     create unique_index(:votes, [:post_id, :user_id])
 
     alter table(:users) do
-      add :san_balance, :integer
+      add :san_balance, :decimal
       add :san_balance_updated_at, :naive_datetime
     end
   end

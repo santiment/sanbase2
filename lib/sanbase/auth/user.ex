@@ -14,7 +14,7 @@ defmodule Sanbase.Auth.User do
     field(:email, :string)
     field(:username, :string)
     field(:salt, :string)
-    field(:san_balance, :integer)
+    field(:san_balance, :decimal)
     field(:san_balance_updated_at, Timex.Ecto.DateTime)
 
     has_many(:eth_accounts, EthAccount)

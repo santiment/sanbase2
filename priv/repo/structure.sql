@@ -722,7 +722,7 @@ CREATE TABLE users (
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     san_tokens integer,
-    san_balance integer,
+    san_balance numeric,
     san_balance_updated_at timestamp without time zone
 );
 

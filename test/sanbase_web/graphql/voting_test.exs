@@ -207,4 +207,32 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
     assert sanbasePost["votes"]["totalSanVotes"] == 0
   end
+
+  test "adding a new post to the current poll", %{user: user, conn: conn} do
+    query = """
+    mutation {
+      createPost(title: "Awesome post", link: "http://example.com") {
+        id,
+        title,
+        link,
+        user {
+          id
+        },
+        totalSanVotes,
+        approvedAt
+      }
+    }
+    """
+
+    result = conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    sanbasePost = json_response(result, 200)["data"]["createPost"]
+
+    assert sanbasePost["id"] != nil
+    assert sanbasePost["title"] == "Awesome post"
+    assert sanbasePost["approvedAt"] == nil
+    assert sanbasePost["user"]["id"] == Integer.to_string(user.id)
+    assert sanbasePost["totalSanVotes"] == "0"
+  end
 end

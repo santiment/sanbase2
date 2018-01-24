@@ -4,34 +4,20 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
 
   require Sanbase.Utils.Config
 
-  alias Ecto.Changeset
-  alias Sanbase.Graphql.ProjectInfo
   alias Sanbase.Model.Project
   alias Sanbase.Model.Ico
-  alias Sanbase.Model.Currency
-  alias Sanbase.Model.IcoCurrencies
-  alias Sanbase.Model.ProjectEthAddress
-  alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Repo
   alias Sanbase.Utils.Config
 
   import Plug.Conn
-  import ExUnit.CaptureLog
-
-  defp query_skeleton(query, query_name, variables \\ "{}") do
-    %{
-      "operationName" => "#{query_name}",
-      "query" => "query #{query_name} #{query}",
-      "variables" => "#{variables}"
-    }
-  end
+  import SanbaseWeb.Graphql.TestHelpers
 
   test "fetch wallet projects with ethereum contract info", context do
     project1 = %Project{}
     |> Project.changeset(%{name: "Project1", ticker: "P1", coinmarketcap_id: "P1_id"})
     |> Repo.insert!
 
-    ico1_1 = %Ico{}
+    %Ico{}
     |> Ico.changeset(
       %{project_id: project1.id,
         start_date: "2017-01-01",
@@ -41,7 +27,7 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
         })
     |> Repo.insert!
 
-    ico1_2 = %Ico{}
+    %Ico{}
     |> Ico.changeset(
       %{project_id: project1.id,
         start_date: "2018-01-01",
@@ -55,14 +41,14 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
     |> Project.changeset(%{name: "Project2", ticker: "P2", coinmarketcap_id: "P2_id"})
     |> Repo.insert!
 
-    ico2_1 = %Ico{}
+    %Ico{}
     |> Ico.changeset(
       %{project_id: project2.id,
         start_date: "2017-01-01"
         })
     |> Repo.insert!
 
-    ico2_1 = %Ico{}
+    %Ico{}
     |> Ico.changeset(
       %{project_id: project2.id,
         start_date: "2018-01-01",

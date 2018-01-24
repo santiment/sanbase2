@@ -1,6 +1,6 @@
 .App {
   display: flex;
-  font-family: Helvetica, sans-serif;
+  flex-direction: column; /* adding for top menu - kc */
 }
 
 @media (max-width: 768px) {
@@ -45,15 +45,9 @@
   font-size: bold;
 }
 
-/* FIXME: 2017-12-06 14:54 Zatsepin | This is from the old styles hack. */
-.toggle-btn {
-  display: none;
-}
-
 .page {
   flex: 1;
   padding: 0 15px;
-  height: 100vh;
   max-width: 1024px;
   overflow-y: auto;
   overflow: scroll;
@@ -64,23 +58,27 @@
   display: none;
 }
 
+@media (max-width: 767px) {
+  .page {
+    padding: 0 15px;
+  }
+}
+
 .page-head {
-  margin-top: 45px;
+  margin-top: 35px;
   margin-right: 20px;
 }
 
 .page h1 {
   font-size: 32px;
   font-weight: 400;
-  font-family: "Helvetica", sans-serif;
-  margin: 32px 0 32px 16px;
+  margin-bottom: 8px;
   line-height: 51px;
   color: #171717;
-  margin-bottom: 8px;
 }
 
 .page-head p {
-  margin-left: 16px;
+  margin-left: 0;
   margin-bottom: 30px;
 }
 
@@ -91,5 +89,15 @@
 @media (min-width: 1024px) {
   .page {
     margin: 0 auto;
+  }
+
+  .page-head {
+    margin-top: 25px;
+    margin-right: 20px;
+  }
+
+  .page-head p {
+    margin-left: 16px;
+    margin-bottom: 30px;
   }
 }

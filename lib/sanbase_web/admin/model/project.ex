@@ -29,11 +29,6 @@ defmodule Sanbase.ExAdmin.Model.Project do
           column :token_btc_ico_price
           column :tokens_issued_at_ico
           column :tokens_sold_at_ico
-          column :funds_raised_btc
-          column :funds_raised_usd
-          column :funds_raised_eth
-          column :usd_btc_icoend
-          column :usd_eth_icoend
           column :minimal_cap_amount
           column :maximal_cap_amount
           column :main_contract_address

@@ -25,15 +25,15 @@
 }
 
 .marketcapLabel {
-  color: rgb(200, 47, 63) !important;
-  background-color: rgb(200, 47, 63) !important;
-  border-color: rgb(200, 47, 63) !important;
+  color: rgb(52, 118, 153) !important;
+  background-color: rgb(52, 118, 153) !important;
+  border-color: rgb(52, 118, 153) !important;
 }
 
 .volumeLabel {
-  color: rgb(49, 107, 174) !important;
-  background-color: rgb(49, 107, 174) !important;
-  border-color: rgb(49, 107, 174) !important;
+  color: rgba(38, 43, 51, 0.25) !important;
+  background-color: rgba(38, 43, 51, 0.25) !important;
+  border-color: rgba(38, 43, 51, 0.25) !important;
 }
 
 .githubActivityLabel {

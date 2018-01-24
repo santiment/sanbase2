@@ -14,18 +14,17 @@ import Signals from './pages/Signals'
 import Account from './pages/Account'
 import EventVotes from './pages/EventVotes'
 import EventVotesNew from './pages/EventVotesNew/EventVotesNew'
-import SideMenu from './components/SideMenu'
+import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
+import PageLoader from './components/PageLoader'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
   loader: () => import('./pages/Detailed'),
   loading: () => (
-    <div className='page detailed'>
-      <h2>Loading...</h2>
-    </div>
+    <PageLoader />
   )
 })
 
@@ -38,7 +37,7 @@ const CashflowPage = props => (
 export const App = ({isDesktop}) => (
   <div className='App'>
     {isDesktop
-      ? <SideMenu />
+      ? <TopMenu />
       : <MobileMenu />}
     <ErrorBoundary>
       <Switch>

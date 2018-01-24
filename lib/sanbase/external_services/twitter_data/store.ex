@@ -35,16 +35,6 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
     GROUP BY time(#{interval}) fill(none)/
   end
 
-  defp select_last_tag_value_query(measurement_name, tag_name, tag_value) when is_bitstring(tag_value) do
-    ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"
-    WHERE #{tag_name} = '#{tag_value}'/
-  end
-
-  defp select_last_tag_value_query(measurement_name, tag_name, tag_value) when is_integer(tag_value) do
-    ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"
-    WHERE #{tag_name} = #{tag_value}/
-  end
-
   defp select_last_record_query(measurement_name) do
     ~s/SELECT LAST(followers_count) FROM "#{measurement_name}"/
   end

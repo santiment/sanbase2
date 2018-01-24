@@ -12,11 +12,11 @@ import './ProjectChart.css'
 import './react-dates-override.css'
 
 const COLORS = {
-  price: '#00a05a',
-  volume: 'rgba(49, 107, 174, 0.4)',
-  marketcap: 'rgb(200, 47, 63)',
+  price: 'rgb(52, 171, 107)',
+  volume: 'rgba(38, 43, 51, 0.25)',
+  marketcap: 'rgb(52, 118, 153)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
-  twitter: 'rgba(16, 195, 245, 0.7)', // Ultra Violet color #604c8d'
+  twitter: 'rgba(16, 195, 245, 0.7)',
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)'
 }
@@ -79,10 +79,10 @@ const makeChartDataFromHistory = ({
   const priceDataset = {
     label: 'Price',
     type: 'LineWithLine',
-    fill: false,
+    fill: true,
     borderColor: COLORS.price,
     borderWidth: 1,
-    backgroundColor: 'rgba(239, 242, 236, 0.5)',
+    backgroundColor: 'rgba(52, 171, 107, 0.03)',
     hitRadius: 2,
     yAxisID: 'y-axis-1',
     datalabels: {
@@ -124,7 +124,7 @@ const makeChartDataFromHistory = ({
       display: false
     },
     borderColor: COLORS.marketcap,
-    backgroundColor: COLORS.marketcap,
+    backgroundColor: 'rgba(52, 118, 153, 0.03)',
     borderWidth: 1,
     pointBorderWidth: 2,
     data: history.map(data => {
@@ -273,16 +273,16 @@ const makeOptionsFromProps = props => ({
   tooltips: {
     mode: 'x',
     intersect: false,
-    titleMarginBottom: 8,
+    titleMarginBottom: 16,
     titleFontSize: 14,
-    titleFontColor: '#000',
+    titleFontColor: '#3d4450',
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     cornerRadius: 3,
-    borderColor: '#d3d3d3',
-    borderWidth: 2,
+    borderColor: 'rgba(38, 43, 51, 0.7)',
+    borderWidth: 1,
     bodyFontSize: 14,
-    bodySpacing: 4,
-    bodyFontColor: '#000',
+    bodySpacing: 8,
+    bodyFontColor: '#3d4450',
     displayColors: true,
     callbacks: {
       title: item => {
@@ -326,7 +326,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: `Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
-        fontColor: COLORS.price
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -346,7 +346,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: false,
         labelString: 'Volume',
-        fontColor: COLORS.volume
+        fontColor: '#3d4450'
       },
       ticks: {
         // 2.2 is not a magic constant. We need to make volume
@@ -364,7 +364,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: `MarketCap ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
-        fontColor: COLORS.marketcap
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -381,7 +381,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Github Activity',
-        fontColor: COLORS.githubActivity
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -405,7 +405,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Twitter',
-        fontColor: COLORS.twitter
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true
@@ -426,7 +426,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Burn Rate',
-        fontColor: COLORS.burnRate
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -451,7 +451,7 @@ const makeOptionsFromProps = props => ({
       scaleLabel: {
         display: true,
         labelString: 'Transaction Volume',
-        fontColor: COLORS.transactionVolume
+        fontColor: '#3d4450'
       },
       ticks: {
         display: true,
@@ -505,7 +505,7 @@ export const ProjectChart = ({
   if (isError) {
     return (
       <div>
-        <h2>We can't get the data from our server now... ;(</h2>
+        <h2> No data was returned </h2>
         <p>{errorMessage}</p>
       </div>
     )
@@ -520,7 +520,7 @@ export const ProjectChart = ({
       <Bar
         data={chartData}
         options={chartOptions}
-        height={isDesktop ? 100 : undefined}
+        height={isDesktop ? 80 : undefined}
         onElementsClick={elems => {
           !props.isDesktop && elems[0] && setSelected(elems[0]._index)
         }}

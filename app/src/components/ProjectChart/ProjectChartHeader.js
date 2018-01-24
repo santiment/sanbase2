@@ -4,6 +4,7 @@ import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { DateRangePicker } from 'react-dates'
 import { formatNumber } from '../../utils/formatting'
+import ShareableBtn from './ShareableBtn'
 import './ProjectChartHeader.css'
 
 export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
@@ -50,7 +51,10 @@ const ProjectChartHeader = ({
   toggleBTC,
   isToggledBTC,
   interval,
-  setFilter
+  setFilter,
+  shareableURL,
+  sanbaseChart,
+  ticker
 }) => {
   return (
     <div className='chart-header'>
@@ -76,9 +80,15 @@ const ProjectChartHeader = ({
           }}
         />}
       </div>
-      <CurrencyFilter
-        isToggledBTC={isToggledBTC}
-        toggleBTC={toggleBTC} />
+      <div className='chart-header-actions'>
+        <CurrencyFilter
+          isToggledBTC={isToggledBTC}
+          toggleBTC={toggleBTC} />
+        <ShareableBtn
+          ticker={ticker}
+          sanbaseChart={sanbaseChart}
+          shareableURL={shareableURL} />
+      </div>
       {!isDesktop && selected && [
         <div key='selected-datetime' className='selected-value'>{selected &&
           <Merge

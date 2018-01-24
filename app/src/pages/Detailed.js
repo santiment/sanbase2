@@ -20,6 +20,7 @@ import ProjectChartContainer from './../components/ProjectChart/ProjectChartCont
 import Panel from './../components/Panel'
 import Search from './../components/Search'
 import PercentChanges from './../components/PercentChanges'
+import PageLoader from './../components/PageLoader'
 import { formatNumber, formatBTC } from '../utils/formatting'
 import './Detailed.css'
 
@@ -52,6 +53,7 @@ const getProjectByTicker = (match, projects) => {
 export const Detailed = ({
   match,
   history,
+  location,
   projects,
   loading,
   PriceQuery,
@@ -92,9 +94,7 @@ export const Detailed = ({
 }) => {
   if (loading) {
     return (
-      <div className='page detailed'>
-        <h2>Loading...</h2>
-      </div>
+      <PageLoader />
     )
   }
   const project = getProjectByTicker(match, projects)
@@ -155,6 +155,8 @@ export const Detailed = ({
   }
 
   const projectContainerChart = <ProjectChartContainer
+    routerHistory={history}
+    location={location}
     isDesktop={isDesktop}
     twitter={twitter}
     price={price}
@@ -173,15 +175,20 @@ export const Detailed = ({
 
   return (
     <div className='page detailed'>
-      <Search
-        onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
-        projects={projects} />
+      {!isDesktop &&
+        <Search
+          onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+          projects={projects} />}
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
           <div className='detailed-name'>
             <h1>{project.name}</h1>
-            <ProjectIcon name={project.name} size={28} />&nbsp;
-            <span className='tickerName'>{project.ticker.toUpperCase()}</span>
+            <ProjectIcon
+              name={project.name}
+              size={24} />
+            <div className='detailed-ticker-name'>
+              {project.ticker.toUpperCase()}
+            </div>
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&

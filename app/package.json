@@ -29,6 +29,7 @@
     "graphql-tag": "^2.5.0",
     "lodash.debounce": "^4.0.8",
     "moment": "^2.19.3",
+    "query-string": "^5.0.1",
     "raven-for-redux": "^1.1.1",
     "raven-js": "^3.20.1",
     "react": "^16.2.0",

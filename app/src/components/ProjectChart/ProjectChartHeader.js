@@ -15,6 +15,23 @@ import './ProjectChartHeader.css'
 
 const ShareChartBtn = withState('isSaved', 'save', false)(
   ({shareableURL, save, isSaved = false}) => {
+    if (window.navigator.share) {
+      return (
+        <Button
+          onClick={
+            () => {
+              window.navigator.share({
+                title: 'Sanbase',
+                text: 'Check out the insight of crypto world in Sanbase.',
+                url: shareableURL
+              })
+            }
+          }
+          positive >
+          Share
+        </Button>
+      )
+    }
     return (
       <Popup
         position='bottom right'

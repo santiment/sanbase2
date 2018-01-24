@@ -12,10 +12,8 @@ defmodule Sanbase.Voting.PostTest do
     user = %User{salt: User.generate_salt()}
     |> Repo.insert!
 
-    post = %Post{}
+    post = %Post{user_id: user.id, poll_id: poll.id}
     |> Post.changeset(%{
-      poll_id: poll.id,
-      user_id: user.id,
       link: "http://example.com",
       title: "Awesome article!",
       approved_at: Timex.now()

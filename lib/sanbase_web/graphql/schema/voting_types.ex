@@ -6,7 +6,14 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
   object :poll do
     field(:start_at, non_null(:datetime))
     field(:end_at, non_null(:datetime))
-    field(:posts, list_of(:post))
+    field(:posts, list_of(:post)) do
+      resolve fn poll, _, _ ->
+        approved_posts = poll.posts
+        |> Enum.reject(&is_nil(&1.approved_at))
+
+        {:ok, approved_posts}
+      end
+    end
   end
 
   object :post do
@@ -15,6 +22,7 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:poll, non_null(:poll))
     field(:title, non_null(:string))
     field(:link, non_null(:string))
+    field(:approved_at, :datetime)
     field(:total_san_votes, :integer) do
       resolve &VotingResolver.total_san_votes/3
     end

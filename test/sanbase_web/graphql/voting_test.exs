@@ -41,7 +41,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
 
   test "getting the current poll with some posts and votes", %{user: user} do
     poll = Poll.find_or_insert_current_poll!()
-    sanbase_post = %Post{
+    approved_post = %Post{
       poll_id: poll.id,
       user_id: user.id,
       title: "Awesome analysis",
@@ -50,7 +50,16 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     }
     |> Repo.insert!
 
-    %Vote{post_id: sanbase_post.id, user_id: user.id}
+    _unapproved_post = %Post{
+      poll_id: poll.id,
+      user_id: user.id,
+      title: "Awesome analysis",
+      link: "http://example.com",
+      approved_at: nil
+    }
+    |> Repo.insert!
+
+    %Vote{post_id: approved_post.id, user_id: user.id}
     |> Repo.insert!
 
     query = """
@@ -72,7 +81,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     currentPoll = json_response(result, 200)["data"]["currentPoll"]
 
     assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") == Timex.beginning_of_week(Timex.now())
-    assert currentPoll["posts"] == [%{"id" => Integer.to_string(sanbase_post.id), "totalSanVotes" => Integer.to_string(user.san_balance)}]
+    assert currentPoll["posts"] == [%{"id" => Integer.to_string(approved_post.id), "totalSanVotes" => Integer.to_string(user.san_balance)}]
   end
 
   test "voting for a post", %{conn: conn, user: user} do
@@ -133,6 +142,34 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     sanbasePost = json_response(result, 200)["data"]["unvote"]
 
     assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
+    assert sanbasePost["totalSanVotes"] == "0"
+  end
+
+  test "adding a new post to the current poll", %{user: user, conn: conn} do
+    query = """
+    mutation {
+      createPost(title: "Awesome post", link: "http://example.com") {
+        id,
+        title,
+        link,
+        user {
+          id
+        },
+        totalSanVotes,
+        approvedAt
+      }
+    }
+    """
+
+    result = conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    sanbasePost = json_response(result, 200)["data"]["createPost"]
+
+    assert sanbasePost["id"] != nil
+    assert sanbasePost["title"] == "Awesome post"
+    assert sanbasePost["approvedAt"] == nil
+    assert sanbasePost["user"]["id"] == Integer.to_string(user.id)
     assert sanbasePost["totalSanVotes"] == "0"
   end
 end

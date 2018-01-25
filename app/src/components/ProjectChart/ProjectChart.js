@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import moment from 'moment'
 import { pure } from 'recompose'
 import { Bar, Chart } from 'react-chartjs-2'
+import millify from 'millify'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
 import { formatNumber, formatBTC } from '../../utils/formatting'
@@ -148,7 +149,7 @@ const makeChartDataFromHistory = ({
     pointRadius: 2,
     data: github.map(data => {
       return {
-        x: moment(data.datetime),
+        x: data.datetime,
         y: data.activity
       }
     })}
@@ -167,7 +168,7 @@ const makeChartDataFromHistory = ({
     pointRadius: 2,
     data: twitter.map(data => {
       return {
-        x: moment(data.datetime),
+        x: data.datetime,
         y: data.followersCount
       }
     })}
@@ -186,13 +187,13 @@ const makeChartDataFromHistory = ({
     pointRadius: 2,
     data: burnRate.map(data => {
       return {
-        x: moment(data.datetime),
-        y: data.burnRate / 10e8
+        x: data.datetime,
+        y: data.burnRate
       }
     })}
   const transactionVolumeDataset = !isToggledTransactionVolume ? null : {
     label: 'Transaction Volume',
-    type: 'line',
+    type: 'bar',
     fill: false,
     yAxisID: 'y-axis-7',
     datalabels: {
@@ -205,8 +206,8 @@ const makeChartDataFromHistory = ({
     pointRadius: 2,
     data: transactionVolume.map(data => {
       return {
-        x: moment(data.datetime),
-        y: data.transactionVolume / 10e8
+        x: data.datetime,
+        y: data.transactionVolume
       }
     })}
   return {
@@ -245,6 +246,7 @@ const makeOptionsFromProps = props => ({
   scaleFontSize: 0,
   animation: false,
   pointRadius: 0,
+  maintainAspectRatio: true,
   plugins: {
     datalabels: {
       display: false,
@@ -286,20 +288,20 @@ const makeOptionsFromProps = props => ({
     displayColors: true,
     callbacks: {
       title: item => {
-        return item[0].xLabel.format('dddd, MMM DD YYYY, HH:mm:ss UTC')
+        return moment(item[0].xLabel).format('dddd, MMM DD YYYY, HH:mm:ss UTC')
       },
       label: (tooltipItem, data) => {
         const label = data.datasets[tooltipItem.datasetIndex].label.toString()
         if (label === 'Github Activity' ||
           label === 'Burn Rate'
         ) {
-          return `${label}: ${tooltipItem.yLabel}`
+          return `${label}: ${millify(tooltipItem.yLabel)} tokens`
         }
         if (label === 'Transaction Volume') {
-          return `${label}: ${tooltipItem.yLabel / 10e8} tokens`
+          return `${label}: ${millify(tooltipItem.yLabel)} tokens`
         }
         if (label === 'Twitter') {
-          return `${label}: ${tooltipItem.yLabel} followers`
+          return `${label}: ${millify(tooltipItem.yLabel)} followers`
         }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
@@ -331,6 +333,7 @@ const makeOptionsFromProps = props => ({
       ticks: {
         display: true,
         beginAtZero: true,
+        maxRotation: 20,
         callback: renderTicks(props)
       },
       gridLines: {
@@ -383,6 +386,10 @@ const makeOptionsFromProps = props => ({
         labelString: 'Github Activity',
         fontColor: '#3d4450'
       },
+      afterTickToLabelConversion: scaleInstance => {
+        scaleInstance.ticks[0] = null
+        scaleInstance.ticksAsNumbers[0] = null
+      },
       ticks: {
         display: true,
         // same hack as in volume.
@@ -428,12 +435,20 @@ const makeOptionsFromProps = props => ({
         labelString: 'Burn Rate',
         fontColor: '#3d4450'
       },
+      afterTickToLabelConversion: scaleInstance => {
+        scaleInstance.ticks[0] = null
+        scaleInstance.ticksAsNumbers[0] = null
+      },
       ticks: {
         display: true,
+        // same hack as in volume.
+        max: parseInt(
+          Math.max(...props.burnRate.items.map(data => data.burnRate)) * 2.2, 10),
         callback: (value, index, values) => {
           if (!values[index]) { return }
-          return value / 10e8
-        }
+          return millify(value)
+        },
+        maxRotation: 20
       },
       gridLines: {
         display: false
@@ -453,11 +468,17 @@ const makeOptionsFromProps = props => ({
         labelString: 'Transaction Volume',
         fontColor: '#3d4450'
       },
+      afterTickToLabelConversion: scaleInstance => {
+        scaleInstance.ticks[0] = null
+        scaleInstance.ticksAsNumbers[0] = null
+      },
       ticks: {
         display: true,
+        max: parseInt(
+          Math.max(...props.transactionVolume.items.map(data => data.transactionVolume)) * 2.2, 10),
         callback: (value, index, values) => {
           if (!values[index]) { return }
-          return value / 10e8
+          return millify(value)
         }
       },
       gridLines: {
@@ -469,6 +490,9 @@ const makeOptionsFromProps = props => ({
     }],
     xAxes: [{
       type: 'time',
+      maxBarThickness: 10,
+      categoryPercentage: 0.6,
+      barPercentage: 0.6,
       time: {
         min: props.history && props.history.length > 0
           ? moment(props.history[0].datetime)
@@ -476,6 +500,7 @@ const makeOptionsFromProps = props => ({
       },
       ticks: {
         autoSkipPadding: 1,
+        maxRotation: 20,
         callback: function (value, index, values) {
           if (!values[index]) { return }
           const time = moment.utc(values[index]['value'])
@@ -483,9 +508,11 @@ const makeOptionsFromProps = props => ({
             return time.format('HH:mm')
           }
           return time.format('D MMM')
-        }},
+        }
+      },
       gridLines: {
         drawBorder: true,
+        offsetGridLines: true,
         display: true,
         color: '#f0f0f0'
       }

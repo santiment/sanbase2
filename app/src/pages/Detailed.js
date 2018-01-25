@@ -22,6 +22,7 @@ import Search from './../components/Search'
 import PercentChanges from './../components/PercentChanges'
 import PageLoader from './../components/PageLoader'
 import { formatNumber, formatBTC } from '../utils/formatting'
+import { normalizeData } from './../components/ProjectChart/utils'
 import './Detailed.css'
 
 const propTypes = {
@@ -75,7 +76,7 @@ export const Detailed = ({
   GithubActivity = {
     loading: true,
     error: false,
-    burnRate: []
+    githubActivity: []
   },
   BurnRate = {
     loading: true,
@@ -145,13 +146,23 @@ export const Detailed = ({
   const burnRate = {
     loading: BurnRate.loading,
     error: BurnRate.error || false,
-    items: BurnRate.burnRate || []
+    items: normalizeData({
+      data: BurnRate.burnRate,
+      fieldName: 'burnRate',
+      tokenDecimals: generalInfo.project ? generalInfo.project.tokenDecimals : undefined,
+      onlyOutliers: false
+    })
   }
 
   const transactionVolume = {
     loading: TransactionVolume.loading,
     error: TransactionVolume.error || false,
-    items: TransactionVolume.transactionVolume || []
+    items: normalizeData({
+      data: TransactionVolume.transactionVolume,
+      fieldName: 'transactionVolume',
+      tokenDecimals: generalInfo.project ? generalInfo.project.tokenDecimals : undefined,
+      onlyOutliers: false
+    })
   }
 
   const projectContainerChart = <ProjectChartContainer
@@ -298,6 +309,7 @@ const queryProject = gql`
       volumeUsd,
       ethBalance,
       marketcapUsd,
+      tokenDecimals,
       rank,
       totalSupply,
       percentChange24h,

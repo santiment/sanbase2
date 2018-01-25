@@ -4,12 +4,18 @@ defmodule SanbaseWeb.Graphql.VotingTest do
   alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Auth.User
   alias Sanbase.Repo
+  alias Sanbase.InternalServices.Ethauth
 
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     user =
-      %User{salt: User.generate_salt(), san_balance: 10, san_balance_updated_at: Timex.now()}
+      %User{
+        salt: User.generate_salt(),
+        san_balance:
+          Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
+        san_balance_updated_at: Timex.now()
+      }
       |> Repo.insert!()
 
     conn = setup_jwt_auth(build_conn(), user)
@@ -30,37 +36,43 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     }
     """
 
-    result = build_conn()
+    result =
+      build_conn()
       |> post("/graphql", query_skeleton(query, "currentPoll"))
 
     currentPoll = json_response(result, 200)["data"]["currentPoll"]
 
-    assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") == Timex.beginning_of_week(Timex.now())
+    assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") ==
+             Timex.beginning_of_week(Timex.now())
+
     assert currentPoll["posts"] == []
   end
 
   test "getting the current poll with some posts and votes", %{user: user} do
     poll = Poll.find_or_insert_current_poll!()
-    approved_post = %Post{
-      poll_id: poll.id,
-      user_id: user.id,
-      title: "Awesome analysis",
-      link: "http://example.com",
-      approved_at: Timex.now()
-    }
-    |> Repo.insert!
 
-    _unapproved_post = %Post{
-      poll_id: poll.id,
-      user_id: user.id,
-      title: "Awesome analysis",
-      link: "http://example.com",
-      approved_at: nil
-    }
-    |> Repo.insert!
+    approved_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        link: "http://example.com",
+        approved_at: Timex.now()
+      }
+      |> Repo.insert!()
+
+    _unapproved_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        link: "http://example.com",
+        approved_at: nil
+      }
+      |> Repo.insert!()
 
     %Vote{post_id: approved_post.id, user_id: user.id}
-    |> Repo.insert!
+    |> Repo.insert!()
 
     query = """
     {
@@ -75,25 +87,36 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     }
     """
 
-    result = build_conn()
+    result =
+      build_conn()
       |> post("/graphql", query_skeleton(query, "currentPoll"))
 
     currentPoll = json_response(result, 200)["data"]["currentPoll"]
 
-    assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") == Timex.beginning_of_week(Timex.now())
-    assert currentPoll["posts"] == [%{"id" => Integer.to_string(approved_post.id), "totalSanVotes" => Integer.to_string(user.san_balance)}]
+    assert Timex.parse!(currentPoll["startAt"], "{ISO:Extended}") ==
+             Timex.beginning_of_week(Timex.now())
+
+    assert currentPoll["posts"] == [
+             %{
+               "id" => Integer.to_string(approved_post.id),
+               "totalSanVotes" =>
+                 Decimal.to_string(Decimal.div(user.san_balance, Ethauth.san_token_decimals()))
+             }
+           ]
   end
 
   test "voting for a post", %{conn: conn, user: user} do
     poll = Poll.find_or_insert_current_poll!()
-    sanbase_post = %Post{
-      poll_id: poll.id,
-      user_id: user.id,
-      title: "Awesome analysis",
-      link: "http://example.com",
-      approved_at: Timex.now()
-    }
-    |> Repo.insert!
+
+    sanbase_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        link: "http://example.com",
+        approved_at: Timex.now()
+      }
+      |> Repo.insert!()
 
     query = """
     mutation {
@@ -104,28 +127,33 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     }
     """
 
-    result = conn
+    result =
+      conn
       |> post("/graphql", mutation_skeleton(query))
 
     sanbasePost = json_response(result, 200)["data"]["vote"]
 
     assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
-    assert sanbasePost["totalSanVotes"] == Integer.to_string(user.san_balance)
+
+    assert sanbasePost["totalSanVotes"] ==
+             Decimal.to_string(Decimal.div(user.san_balance, Ethauth.san_token_decimals()))
   end
 
   test "unvoting for a post", %{conn: conn, user: user} do
     poll = Poll.find_or_insert_current_poll!()
-    sanbase_post = %Post{
-      poll_id: poll.id,
-      user_id: user.id,
-      title: "Awesome analysis",
-      link: "http://example.com",
-      approved_at: Timex.now()
-    }
-    |> Repo.insert!
+
+    sanbase_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        link: "http://example.com",
+        approved_at: Timex.now()
+      }
+      |> Repo.insert!()
 
     %Vote{post_id: sanbase_post.id, user_id: user.id}
-    |> Repo.insert!
+    |> Repo.insert!()
 
     query = """
     mutation {
@@ -136,13 +164,14 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     }
     """
 
-    result = conn
+    result =
+      conn
       |> post("/graphql", mutation_skeleton(query))
 
     sanbasePost = json_response(result, 200)["data"]["unvote"]
 
     assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
-    assert sanbasePost["totalSanVotes"] == "0"
+    assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
   end
 
   test "adding a new post to the current poll", %{user: user, conn: conn} do
@@ -161,7 +190,8 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     }
     """
 
-    result = conn
+    result =
+      conn
       |> post("/graphql", mutation_skeleton(query))
 
     sanbasePost = json_response(result, 200)["data"]["createPost"]
@@ -170,6 +200,6 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert sanbasePost["title"] == "Awesome post"
     assert sanbasePost["approvedAt"] == nil
     assert sanbasePost["user"]["id"] == Integer.to_string(user.id)
-    assert sanbasePost["totalSanVotes"] == "0"
+    assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
   end
 end

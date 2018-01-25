@@ -21,8 +21,7 @@ defmodule Sanbase.InternalServices.Ethauth do
   end
 
   def san_token_decimals() do
-    :math.pow(10, 18)
-    |> round()
+    Decimal.new(:math.pow(10, 18))
   end
 
   defp client() do

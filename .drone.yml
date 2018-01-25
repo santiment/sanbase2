@@ -3,8 +3,8 @@ pipeline:
     group: build
     image: elixir:1.6.0-alpine
     environment:
-      - DATABASE_URL=postgres://postgres:password@test_db:5432/postgres
-      - INFLUXDB_HOST=test_influxdb
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/postgres
+      - INFLUXDB_HOST=influxdb
     commands:
       - apk add --update git postgresql-client
       - mix local.hex --force
@@ -18,7 +18,7 @@ pipeline:
     commands:
       - cd app
       - yarn
-      - yarn test
+      - yarn test --ci
 
 services:
   postgres:

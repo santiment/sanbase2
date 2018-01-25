@@ -1,4 +1,12 @@
 pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount:
+      - deps
+    volumes:
+      - /tmp/cache:/cache
+
   backend:
     group: build
     image: elixir:1.6.0-alpine
@@ -12,6 +20,7 @@ pipeline:
       - mix deps.get
       - mix deps.compile
       - mix test
+
   frontend:
     group: build
     image: node:latest
@@ -19,6 +28,14 @@ pipeline:
       - cd app
       - yarn
       - yarn test --ci
+
+  rebuild-cache:
+    image: drillster/drone-volume-cache
+    rebuild: true
+    mount:
+      - deps
+    volumes:
+      - /tmp/cache:/cache
 
 services:
   postgres:

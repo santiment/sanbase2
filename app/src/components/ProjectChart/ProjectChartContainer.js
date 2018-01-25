@@ -126,8 +126,8 @@ class ProjectChartContainer extends Component {
       tbr: this.props.isToggledBurnRate,
       tv: this.props.isToggledTransactionVolume,
       currency: this.state.isToggledBTC ? 'BTC' : 'USD',
-      from: this.state.startDate.utc().format(),
-      to: this.state.endDate.utc().format()
+      from: moment(this.state.startDate).utc().format(),
+      to: moment(this.state.endDate).utc().format()
     }
     let fullpath = window.location.href
     if (window.location.href.indexOf('?') > -1) {

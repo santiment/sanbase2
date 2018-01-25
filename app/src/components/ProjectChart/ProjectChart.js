@@ -173,7 +173,7 @@ const makeChartDataFromHistory = ({
     })}
   const burnrateDataset = !isToggledBurnRate ? null : {
     label: 'Burn Rate',
-    type: 'line',
+    type: 'bar',
     fill: false,
     yAxisID: 'y-axis-6',
     datalabels: {

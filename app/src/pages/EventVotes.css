@@ -35,3 +35,9 @@
 .event-votes-navigation a:last-child {
   border: none;
 }
+
+@media (min-width: 1024px) {
+  .event-votes {
+    min-width: 720px;
+  }
+}

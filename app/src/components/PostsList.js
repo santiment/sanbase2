@@ -11,8 +11,6 @@ const PostsList = ({posts}) => {
           key={index}
           {...posts[postKey]} />
       ))}
-      <hr />
-      Counts: {Object.keys(posts).length}
     </div>
   )
 }

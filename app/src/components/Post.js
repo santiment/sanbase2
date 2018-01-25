@@ -1,5 +1,6 @@
 import React from 'react'
 import Username from './Username'
+import LikeBtn from './../pages/EventVotesNew/LikeBtn'
 import './Post.css'
 
 export const getSourceLink = link => {
@@ -11,6 +12,7 @@ const Post = ({
   title,
   link,
   votes = 0,
+  liked = false,
   author,
   createdAt,
   commentCounts = 0
@@ -20,14 +22,17 @@ const Post = ({
       <div className='event-post-index'>
         {index}.
       </div>
-      <div>
-        <a className='event-storylink' href={link}>{title}</a> ({getSourceLink(link)})
+      <div className='event-post-body'>
+        <a className='event-storylink' href={link}>
+          {title}
+        </a>&nbsp;
+        ({getSourceLink(link)})
         <div className='event-post-info'>
           by&nbsp;<Username address={author} /> {createdAt} &nbsp;
-          <div className='event-post-votes'>
-            <i className='fa fa-caret-up' />&nbsp;
-            {votes}
-          </div>
+          <LikeBtn
+            onLike={liked => console.log('like')}
+            liked={liked}
+            votes={votes} />
           <div className='event-post-votes'>
             {commentCounts} {commentCounts === 1 ? 'comment' : 'comments'}
           </div>

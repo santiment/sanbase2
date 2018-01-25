@@ -53,6 +53,10 @@
 }
 
 @media (min-width: 1024px) {
+  .event-posts-new {
+    min-width: 720px;
+  }
+
   .event-posts-new h2 {
     margin: 0 0 40px 15px;
   }

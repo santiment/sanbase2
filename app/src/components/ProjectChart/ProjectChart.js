@@ -292,12 +292,10 @@ const makeOptionsFromProps = props => ({
       },
       label: (tooltipItem, data) => {
         const label = data.datasets[tooltipItem.datasetIndex].label.toString()
-        if (label === 'Github Activity' ||
-          label === 'Burn Rate'
-        ) {
-          return `${label}: ${millify(tooltipItem.yLabel)} tokens`
+        if (label === 'Github Activity') {
+          return `${label}: ${millify(tooltipItem.yLabel)}`
         }
-        if (label === 'Transaction Volume') {
+        if (label === 'Transaction Volume' || label === 'Burn Rate') {
           return `${label}: ${millify(tooltipItem.yLabel)} tokens`
         }
         if (label === 'Twitter') {

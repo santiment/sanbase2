@@ -12,18 +12,19 @@ import Cashflow from './pages/Cashflow'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
+import EventVotes from './pages/EventVotes'
+import EventVotesNew from './pages/EventVotesNew/EventVotesNew'
 import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
+import PageLoader from './components/PageLoader'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
   loader: () => import('./pages/Detailed'),
   loading: () => (
-    <div className='page detailed'>
-      <h2>Loading...</h2>
-    </div>
+    <PageLoader />
   )
 })
 
@@ -43,6 +44,10 @@ export const App = ({isDesktop}) => (
         <Route exact path='/projects' render={CashflowPage} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
+        <Route exact path='/events/votes' component={EventVotes} />
+        <Route path='/events/votes/new' component={EventVotesNew} />
+        <Route exact path='/events/votes/:filter' component={EventVotes} />
+        <Redirect from='/events' to='/events/votes' />
         <Route exact path='/projects/:ticker' render={(props) => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />

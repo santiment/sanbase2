@@ -45,16 +45,10 @@
   font-size: bold;
 }
 
-/* FIXME: 2017-12-06 14:54 Zatsepin | This is from the old styles hack. */
-.toggle-btn {
-  display: none;
-}
-
 .page {
   flex: 1;
-  padding: 0 36px;
-
-  /* height: 100vh; hiding for non-fixed top menu - kc */
+  padding: 0 15px;
+  max-width: 1024px;
   overflow-y: auto;
   overflow: scroll;
   -webkit-overflow-scrolling: touch;
@@ -93,6 +87,10 @@
 }
 
 @media (min-width: 1024px) {
+  .page {
+    margin: 0 auto;
+  }
+
   .page-head {
     margin-top: 25px;
     margin-right: 20px;

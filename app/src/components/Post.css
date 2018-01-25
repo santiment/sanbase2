@@ -1,0 +1,39 @@
+.event-post {
+  display: flex;
+}
+
+.event-post-index {
+  margin-right: 4px;
+}
+
+.event-post .event-storylink {
+  color: black;
+  font-size: 1.2em;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.event-post .event-storylink:visited {
+  color: #828282;
+}
+
+.event-post .event-post-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #828282;
+  font-size: 0.8em;
+  margin-top: 2px;
+}
+
+.event-post-votes {
+  padding: 5px 7px;
+  margin-right: 5px;
+  box-shadow: 0 0 0 0.5px rgba(50, 50, 93, 0.17), 0 2px 5px 0 rgba(50, 50, 93, 0.1);
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 16px;
+  color: #000;
+  cursor: pointer;
+}

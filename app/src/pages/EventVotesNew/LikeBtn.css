@@ -1,0 +1,10 @@
+.like-btn {
+  cursor: pointer;
+  user-select: none;
+  text-align: left;
+  transition: font-size 0.1s ease;
+}
+
+.like-btn:hover {
+  font-size: 1.2em;
+}

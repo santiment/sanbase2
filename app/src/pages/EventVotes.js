@@ -11,6 +11,7 @@ const posts = {
     link: 'https://medium.com',
     votes: 25,
     author: 'sdfefw',
+    liked: true,
     created: new Date()
   },
   'a23429r3f': {
@@ -24,6 +25,7 @@ const posts = {
     title: 'Gcoin pump!',
     link: 'https://medium.com',
     votes: 15,
+    liked: true,
     author: 'jcasdfiu',
     created: new Date()
   }

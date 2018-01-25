@@ -19,11 +19,12 @@
 }
 
 .event-post .event-post-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: #828282;
   font-size: 0.8em;
-  display: flex;
   margin-top: 2px;
-  align-items: center;
 }
 
 .event-post-votes {

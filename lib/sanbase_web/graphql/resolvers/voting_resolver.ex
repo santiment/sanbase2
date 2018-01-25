@@ -23,6 +23,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     {:ok, total_san_votes}
   end
 
+  def approved_posts(poll, _args, _context) do
+    approved_posts = poll.posts
+    |> Enum.reject(&is_nil(&1.approved_at))
+
+    {:ok, approved_posts}
+  end
+
   def vote(_root, %{post_id: post_id}, %{
         context: %{auth: %{current_user: user}}
       }) do

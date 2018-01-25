@@ -39,7 +39,8 @@ defmodule Sanbase.Auth.User do
 
   @salt_length 64
 
-  @san_balance_cache_seconds 60 * 5 # 5 minutes
+  # 5 minutes
+  @san_balance_cache_seconds 60 * 5
 
   schema "users" do
     field(:email, :string)

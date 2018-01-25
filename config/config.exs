@@ -79,7 +79,10 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.LatestCoinmarketcapData,
     Sanbase.ExAdmin.Model.LatestEthWalletData,
     Sanbase.ExAdmin.Model.LatestBtcWalletData,
-    Sanbase.ExAdmin.Notifications.Type
+    Sanbase.ExAdmin.Notifications.Type,
+    Sanbase.ExAdmin.Auth.User,
+    Sanbase.ExAdmin.Voting.Poll,
+    Sanbase.ExAdmin.Voting.Post
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

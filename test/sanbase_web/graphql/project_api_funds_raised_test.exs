@@ -1,6 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
 
   import Sanbase.Utils.Config, only: [parse_config_value: 1]
 

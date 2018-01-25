@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
   alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Auth.User
   alias Sanbase.Repo
+  alias Sanbase.InternalServices.Ethauth
 
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -224,7 +225,8 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     }
     """
 
-    result = conn
+    result =
+      conn
       |> post("/graphql", mutation_skeleton(query))
 
     sanbasePost = json_response(result, 200)["data"]["createPost"]
@@ -233,6 +235,6 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert sanbasePost["title"] == "Awesome post"
     assert sanbasePost["approvedAt"] == nil
     assert sanbasePost["user"]["id"] == Integer.to_string(user.id)
-    assert sanbasePost["totalSanVotes"] == "0"
+    assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
   end
 end

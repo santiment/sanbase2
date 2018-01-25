@@ -98,8 +98,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     |> Vote.changeset(%{post_id: post_id, user_id: user.id})
     |> Repo.insert()
     |> case do
-      {:ok, _vote} -> {:ok, Repo.get(Post, post_id)}
-      {:error, error} -> {:error, error}
+      {:ok, _vote} ->
+        {:ok, Repo.get(Post, post_id)}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Can't vote for post #{post_id}", details: Helpers.error_details(changeset)
+        }
     end
   end
 
@@ -125,8 +131,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
       {:ok, post} ->
         {:ok, post |> Repo.preload([:votes, :user])}
 
-      {:error, %{errors: errors}} ->
-        {:error, errors}
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Can't create post", details: Helpers.error_details(changeset)
+        }
     end
   end
 end

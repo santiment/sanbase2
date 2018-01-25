@@ -6,8 +6,9 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
   object :poll do
     field(:start_at, non_null(:datetime))
     field(:end_at, non_null(:datetime))
-    field(:posts, list_of(:post)) do
-      resolve &VotingResolver.approved_posts/3
+
+    field :posts, list_of(:post) do
+      resolve(&VotingResolver.approved_posts/3)
     end
   end
 
@@ -18,8 +19,9 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:title, non_null(:string))
     field(:link, non_null(:string))
     field(:approved_at, :datetime)
-    field(:total_san_votes, :integer) do
-      resolve &VotingResolver.total_san_votes/3
+
+    field :total_san_votes, :integer do
+      resolve(&VotingResolver.total_san_votes/3)
     end
   end
 end

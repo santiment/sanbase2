@@ -27,7 +27,7 @@ defmodule Sanbase.Voting.Poll do
 
   def find_or_insert_current_poll!() do
     case current_poll() do
-      nil -> current_poll_changeset() |> Repo.insert!
+      nil -> current_poll_changeset() |> Repo.insert!()
       poll -> poll
     end
   end
@@ -35,7 +35,7 @@ defmodule Sanbase.Voting.Poll do
   def current_poll do
     Poll
     |> where([p], p.start_at <= ^Timex.now() and p.end_at > ^Timex.now())
-    |> Repo.one
+    |> Repo.one()
   end
 
   def last_poll_end_at do

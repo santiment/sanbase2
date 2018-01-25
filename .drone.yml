@@ -4,6 +4,8 @@ pipeline:
     restore: true
     mount:
       - deps
+      - _build
+      - app/node_modules
     volumes:
       - /tmp/cache:/cache
 
@@ -34,6 +36,8 @@ pipeline:
     rebuild: true
     mount:
       - deps
+      - _build
+      - app/node_modules
     volumes:
       - /tmp/cache:/cache
 

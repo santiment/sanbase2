@@ -1,9 +1,18 @@
+.detailed {
+  min-width: 100%;
+}
+
 .detailed-head {
   display: flex;
   justify-content: space-between;
   min-height: 84px;
   align-items: center;
   flex-direction: column;
+}
+
+.detailed-ticker-name {
+  margin-left: 5px;
+  font-size: 20px;
 }
 
 .panel-chart {
@@ -22,19 +31,8 @@
   font-size: 1.2em;
 }
 
-.detailed-name span {
-  font-size: 1.4em;
-  font-weight: 300;
-  margin-left: 5px;
-}
-
-.detailed-name p {
-  font-size: 1.25em;
-  font-weight: 500;
-  line-height: 1.1;
-  color: #3d4051;
-  margin-bottom: 0.5em;
-  margin-left: 52px;
+.detailed-name img {
+  margin-bottom: 4px;
 }
 
 .detailed-price {
@@ -68,11 +66,6 @@
   display: flex;
   font-size: 16px;
   justify-content: center;
-}
-
-.detailed-name img {
-  display: inline-block;
-  vertical-align: middle;
 }
 
 .detailed-buttons {
@@ -186,6 +179,7 @@
 .detailed .information {
   display: flex;
   margin: 0;
+  margin-bottom: 16px;
   justify-content: space-between;
   flex-direction: column;
 }
@@ -204,7 +198,6 @@
   }
 
   .detailed-name h1 {
-    margin: 0 15px 3px 0;
     font-size: 1.8em;
     letter-spacing: 0.5px;
   }
@@ -231,12 +224,12 @@
 
   .detailed .information {
     flex-direction: row;
-    margin-right: 7px;
+    margin-right: 16px;
   }
 
   .detailed .information .panel {
     margin-top: 0;
-    margin-right: 9px;
+    margin-right: 0;
     margin-left: 16px;
   }
 }

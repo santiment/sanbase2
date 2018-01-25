@@ -20,7 +20,9 @@ import ProjectChartContainer from './../components/ProjectChart/ProjectChartCont
 import Panel from './../components/Panel'
 import Search from './../components/Search'
 import PercentChanges from './../components/PercentChanges'
+import PageLoader from './../components/PageLoader'
 import { formatNumber, formatBTC } from '../utils/formatting'
+import { normalizeData } from './../components/ProjectChart/utils'
 import './Detailed.css'
 
 const propTypes = {
@@ -74,7 +76,7 @@ export const Detailed = ({
   GithubActivity = {
     loading: true,
     error: false,
-    burnRate: []
+    githubActivity: []
   },
   BurnRate = {
     loading: true,
@@ -93,9 +95,7 @@ export const Detailed = ({
 }) => {
   if (loading) {
     return (
-      <div className='page detailed'>
-        <h2>Loading...</h2>
-      </div>
+      <PageLoader />
     )
   }
   const project = getProjectByTicker(match, projects)
@@ -146,13 +146,23 @@ export const Detailed = ({
   const burnRate = {
     loading: BurnRate.loading,
     error: BurnRate.error || false,
-    items: BurnRate.burnRate || []
+    items: normalizeData({
+      data: BurnRate.burnRate,
+      fieldName: 'burnRate',
+      tokenDecimals: generalInfo.project ? generalInfo.project.tokenDecimals : undefined,
+      onlyOutliers: false
+    })
   }
 
   const transactionVolume = {
     loading: TransactionVolume.loading,
     error: TransactionVolume.error || false,
-    items: TransactionVolume.transactionVolume || []
+    items: normalizeData({
+      data: TransactionVolume.transactionVolume,
+      fieldName: 'transactionVolume',
+      tokenDecimals: generalInfo.project ? generalInfo.project.tokenDecimals : undefined,
+      onlyOutliers: false
+    })
   }
 
   const projectContainerChart = <ProjectChartContainer
@@ -184,7 +194,12 @@ export const Detailed = ({
         <div className='detailed-head'>
           <div className='detailed-name'>
             <h1>{project.name}</h1>
-            <span className='tickerName'><ProjectIcon name={project.name} size={24} />{project.ticker.toUpperCase()}</span>
+            <ProjectIcon
+              name={project.name}
+              size={24} />
+            <div className='detailed-ticker-name'>
+              {project.ticker.toUpperCase()}
+            </div>
           </div>
 
           {!PriceQuery.loading && PriceQuery.price &&
@@ -294,6 +309,7 @@ const queryProject = gql`
       volumeUsd,
       ethBalance,
       marketcapUsd,
+      tokenDecimals,
       rank,
       totalSupply,
       percentChange24h,

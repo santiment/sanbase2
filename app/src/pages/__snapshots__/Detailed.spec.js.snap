@@ -74,15 +74,15 @@ exports[`Project detail page container it should render correctly 1`] = `
         <h1>
           Aragon
         </h1>
-        <span
-          className="tickerName"
+        <ProjectIcon
+          name="Aragon"
+          size={24}
+        />
+        <div
+          className="detailed-ticker-name"
         >
-          <ProjectIcon
-            name="Aragon"
-            size={24}
-          />
           ANT
-        </span>
+        </div>
       </div>
       <Component>
         <div

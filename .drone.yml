@@ -10,6 +10,7 @@ pipeline:
   backend:
     group: build
     image: elixir:1.6.0-alpine
+    privileged: true
     environment:
       - DATABASE_URL=postgres://postgres:password@postgres:5432/postgres
       - INFLUXDB_HOST=influxdb

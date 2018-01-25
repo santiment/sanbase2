@@ -2,6 +2,9 @@ pipeline:
   backend:
     group: build
     image: elixir:1.6.0-alpine
+    environment:
+      - DATABASE_URL=postgres://postgres:password@test_db:5432/postgres
+      - INFLUXDB_HOST=test_influxdb
     commands:
       - apk add --update git postgresql-client
       - mix local.hex --force

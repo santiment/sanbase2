@@ -8,7 +8,8 @@ defmodule Sanbase.Auth.User do
 
   @salt_length 64
 
-  @san_balance_cache_seconds 60 * 5 # 5 minutes
+  # 5 minutes
+  @san_balance_cache_seconds 60 * 5
 
   schema "users" do
     field(:email, :string)
@@ -48,7 +49,7 @@ defmodule Sanbase.Auth.User do
   def san_balance!(%User{san_balance: san_balance} = user) do
     if san_balance_cache_stale?(user) do
       update_san_balance_changeset(user)
-      |> Repo.update!
+      |> Repo.update!()
       |> Map.get(:san_balance)
     else
       san_balance

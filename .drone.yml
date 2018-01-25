@@ -12,6 +12,7 @@ pipeline:
     group: build
     image: node:latest
     commands:
+      - cd app
       - yarn
       - yarn test
 

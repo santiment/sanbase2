@@ -28,7 +28,6 @@
     "graphql": "^0.11.7",
     "graphql-tag": "^2.5.0",
     "lodash.debounce": "^4.0.8",
-    "millify": "^2.0.1",
     "moment": "^2.19.3",
     "outliers": "^0.0.3",
     "query-string": "^5.0.1",

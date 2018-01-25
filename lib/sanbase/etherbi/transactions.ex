@@ -61,7 +61,7 @@ defmodule Sanbase.Etherbi.Transactions do
       exchange_wallets_addrs,
       &fetch_and_store_out(&1, token_decimals),
       max_concurency: 1,
-      timeout: 150_000
+      timeout: 165_000
     )
     |> Stream.run()
 
@@ -70,19 +70,23 @@ defmodule Sanbase.Etherbi.Transactions do
   end
 
   def fetch_and_store_in(address, token_decimals) do
-    {:ok, transactions_in} =
-      FundsMovement.transactions_in(address)
-
-    convert_to_measurement(transactions_in, address, "in", token_decimals)
-    |> Store.import()
+    with {:ok, transactions_in} <- FundsMovement.transactions_in(address) do
+      convert_to_measurement(transactions_in, "in", token_decimals)
+      |> Store.import()
+    else
+      {:error, reason} ->
+        Logger.warn("Could not fetch and store in transactions for #{address}: #{reason}")
+    end
   end
 
   def fetch_and_store_out(address, token_decimals) do
-    {:ok, transactions_out} =
-      FundsMovement.transactions_out(address)
-
-    convert_to_measurement(transactions_out, address, "out", token_decimals)
-    |> Store.import()
+    with {:ok, transactions_out} <-FundsMovement.transactions_out(address) do
+      convert_to_measurement(transactions_out, "out", token_decimals)
+      |> Store.import()
+    else
+      {:error, reason} ->
+        Logger.warn("Could not fetch and store out transactions for #{address}: #{reason}")
+    end
   end
 
   # Private functions
@@ -106,19 +110,21 @@ defmodule Sanbase.Etherbi.Transactions do
   # number of decimal places `nil` is written instead and it gets filtered by the Store.import()
   defp convert_to_measurement(
          transactions_data,
-         measurement_name,
          transaction_type,
          token_decimals
        ) do
     transactions_data
-    |> Enum.map(fn {datetime, volume, _address, token} ->
+    |> Enum.map(fn {datetime, volume, address, token} ->
       if decimal_places = Map.get(token_decimals, token) do
         %Measurement{
           timestamp: datetime |> DateTime.to_unix(:nanoseconds),
           fields: %{volume: volume / decimal_places},
-          tags: [transaction_type: transaction_type, token: token],
-          name: measurement_name
+          tags: [transaction_type: transaction_type, address: address],
+          name: token
         }
+      else
+        Logger.warn("Missing token decimals for #{token}")
+        nil
       end
     end)
   end

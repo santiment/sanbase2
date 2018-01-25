@@ -1,7 +1,6 @@
 pipeline:
   restore-cache:
     image: drillster/drone-volume-cache
-    privileged: true
     restore: true
     mount:
       - deps
@@ -32,7 +31,6 @@ pipeline:
 
   rebuild-cache:
     image: drillster/drone-volume-cache
-    privileged: true
     rebuild: true
     mount:
       - deps

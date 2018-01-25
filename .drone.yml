@@ -3,6 +3,8 @@ pipeline:
     group: build
     image: elixir:1.5.2-alpine
     commands:
+      - mix local.hex --force
+      - mix local.rebar --force
       - mix deps.get
       - mix deps.compile
       - mix test

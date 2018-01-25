@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Repo
+  alias Sanbase.InternalServices.Ethauth
 
   def current_poll(_root, _args, _context) do
     poll =
@@ -22,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
       |> Enum.map(&User.san_balance!/1)
       |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
-    {:ok, total_san_votes}
+    {:ok, Decimal.div(total_san_votes, Decimal.new(Ethauth.san_token_decimals()))}
   end
 
   def approved_posts(poll, _args, _context) do

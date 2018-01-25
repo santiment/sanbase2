@@ -84,8 +84,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   end
 
   def approved_posts(poll, _args, _context) do
-    approved_posts = poll.posts
-    |> Enum.reject(&is_nil(&1.approved_at))
+    approved_posts =
+      poll.posts
+      |> Enum.reject(&is_nil(&1.approved_at))
 
     {:ok, approved_posts}
   end
@@ -93,10 +94,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   def vote(_root, %{post_id: post_id}, %{
         context: %{auth: %{current_user: user}}
       }) do
-
     %Vote{}
     |> Vote.changeset(%{post_id: post_id, user_id: user.id})
-    |> Repo.insert
+    |> Repo.insert()
     |> case do
       {:ok, _vote} -> {:ok, Repo.get(Post, post_id)}
       {:error, error} -> {:error, error}
@@ -106,10 +106,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   def unvote(_root, %{post_id: post_id}, %{
         context: %{auth: %{current_user: user}}
       }) do
-
     with %Vote{} = vote <- Repo.get_by(Vote, post_id: post_id, user_id: user.id),
          {:ok, _vote} <- Repo.delete(vote) do
-
       {:ok, Repo.get(Post, post_id)}
     else
       _error ->
@@ -120,13 +118,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   def create_post(_root, post_args, %{
         context: %{auth: %{current_user: user}}
       }) do
-
     %Post{user_id: user.id, poll_id: Poll.find_or_insert_current_poll!().id}
     |> Post.changeset(post_args)
-    |> Repo.insert
+    |> Repo.insert()
     |> case do
       {:ok, post} ->
         {:ok, post |> Repo.preload([:votes, :user])}
+
       {:error, %{errors: errors}} ->
         {:error, errors}
     end

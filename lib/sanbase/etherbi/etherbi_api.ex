@@ -31,14 +31,15 @@ defmodule Sanbase.Etherbi.EtherbiApi do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         convert_timestamp_response(body)
 
+      {:error, %HTTPoison.Error{reason: :timeout}} ->
+        Logger.warn("Timeout trying to fetch the first transaction timestamp for #{address}")
+        {:ok, nil}
+
       {:error, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
          "Error status #{status} fetching first transaction timestamp for #{address}: #{
            body
          }"}
-
-      {:error, %HTTPoison.Error{reason: :timeout}} ->
-        {:error, "Timeout trying to fetch the first transaction timestamp for #{address}"}
 
       error ->
         {:error,
@@ -61,11 +62,12 @@ defmodule Sanbase.Etherbi.EtherbiApi do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         convert_transactions_response(body)
 
+      {:error, %HTTPoison.Error{reason: :timeout}} ->
+        Logger.warn("Timeout trying to fetch transactions for #{extract_address(options)}")
+        {:ok, []}
+
       {:error, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching for #{extract_address(options)}: #{body}"}
-
-      {:error, %HTTPoison.Error{reason: :timeout}} ->
-        {:error, "Timeout trying to fetch transactions for #{extract_address(options)}"}
 
       error ->
         {:error, "Error fetching transactions data for #{extract_address(options)}: #{inspect(error)}"}

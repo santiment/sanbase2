@@ -1,6 +1,5 @@
 defmodule Sanbase.Github.TwitterApiTest do
   use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.TwitterData.Store

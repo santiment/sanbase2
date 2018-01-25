@@ -1,13 +1,9 @@
 defmodule SanbaseWeb.Graphql.AccountTest do
   use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
-
-  import Plug.Conn
 
   alias Sanbase.Model.Project
   alias Sanbase.Auth.User
   alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.ContextPlug
 
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -16,17 +12,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       %User{salt: User.generate_salt()}
       |> Repo.insert!()
 
-    {:ok, token, _claims} = SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt})
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer " <> token)
-
-    conn = ContextPlug.call(conn, %{})
-
-    assert conn.private[:absinthe] == %{
-             context: %{auth: %{auth_method: :user_token, current_user: user}}
-           }
+    conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn}
   end

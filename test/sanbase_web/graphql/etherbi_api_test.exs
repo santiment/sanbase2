@@ -1,6 +1,5 @@
 defmodule Sanbase.Github.EtherbiApiTest do
   use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
 
   import Mockery
   import SanbaseWeb.Graphql.TestHelpers

@@ -37,15 +37,14 @@ defmodule Sanbase.Etherbi.Store do
   end
 
   defp transactions_from_to_query(measurement, from, to, "all") do
-    ~s/SELECT volume, token
+    ~s/SELECT volume, address
     FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  # To be able to group by time an additional grouping by token should be done
   defp transactions_from_to_query(measurement, from, to, transaction_type) do
-    ~s/SELECT volume, token
+    ~s/SELECT volume, address
     FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
@@ -73,9 +72,9 @@ defmodule Sanbase.Etherbi.Store do
        }) do
     result =
       transactions
-      |> Enum.map(fn [iso8601_datetime, volume, token] ->
+      |> Enum.map(fn [iso8601_datetime, volume, address] ->
         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-        {datetime, volume, token}
+        {datetime, volume, address}
       end)
 
     {:ok, result}

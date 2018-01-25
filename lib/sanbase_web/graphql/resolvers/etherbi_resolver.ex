@@ -82,21 +82,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   def transactions(
         _root,
         %{
-          wallet: wallet,
+          ticker: ticker,
           from: from,
           to: to,
           transaction_type: transaction_type
         },
         _resolution
       ) do
-    with {:ok, transactions} <- Store.transactions(wallet, from, to, transaction_type) do
+    with {:ok, transactions} <- Store.transactions(ticker, from, to, transaction_type) do
       result =
         transactions
-        |> Enum.map(fn {datetime, volume, token} ->
+        |> Enum.map(fn {datetime, volume, address} ->
           %{
             datetime: datetime,
             transaction_volume: volume |> Decimal.new(),
-            token: token
+            address: address
           }
         end)
 

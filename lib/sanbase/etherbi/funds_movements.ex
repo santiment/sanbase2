@@ -81,7 +81,7 @@ defmodule Sanbase.Etherbi.FundsMovement do
         from_datetime
       end
 
-    if from_datetime do
+    if  from_datetime do
       to_datetime = calculate_to_datetime(from_datetime, DateTime.utc_now())
 
       from_unix = DateTime.to_unix(from_datetime, :seconds)

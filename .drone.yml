@@ -43,9 +43,10 @@ pipeline:
 
   ecr:
     image: plugins/ecr
-    repo: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase
+    repo: sanbase
     registry: 913750763724.dkr.ecr.eu-central-1.amazonaws.com
     secrets: [ ecr_access_key, ecr_secret_key ]
+    region: eu-central-1
     tags:
       - "${DRONE_COMMIT_SHA}"
     # when:

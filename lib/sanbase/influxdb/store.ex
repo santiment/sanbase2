@@ -208,6 +208,53 @@ defmodule Sanbase.Influxdb.Store do
         {:ok, []}
       end
 
+      def last_datetime(measurement) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1/
+        |> __MODULE__.query()
+        |> parse_measurement_datetime()
+      end
+
+      def last_datetime!(measurement) do
+        case last_datetime(measurement) do
+          {:ok, datetime} -> datetime
+          {:error, error} -> raise(error)
+        end
+      end
+
+      def last_datetime_with_tag(measurement, tag_name, tag_value) when is_binary(tag_value) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1
+        WHERE "#{tag_name}" = '#{tag_value}'/
+        |> __MODULE__.query()
+        |> parse_measurement_datetime()
+      end
+
+      def last_datetime_with_tag(measurement, tag_name, tag_value) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1
+        WHERE "#{tag_name}" = #{tag_value}/
+        |> __MODULE__.query()
+        |> parse_measurement_datetime()
+      end
+
+      def last_datetime_with_tag!(measurement, tag_name, tag_value) do
+        case last_datetime_with_tag(measurement, tag_name, tag_value) do
+          {:ok, datetime} -> datetime
+          {:error, error} -> raise(error)
+        end
+      end
+
+      def first_datetime(measurement) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time ASC LIMIT 1/
+        |> __MODULE__.query()
+        |> parse_measurement_datetime()
+      end
+
+      def first_datetime!(measurement) do
+        case first_datetime(measurement) do
+          {:ok, datetime} -> datetime
+          {:error, error} -> raise(error)
+        end
+      end
+
       # Private functions
 
       defp parse_measurements_list(%{results: [%{error: error}]}), do: {:error, error}

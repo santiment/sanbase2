@@ -2045,7 +2045,7 @@ ALTER TABLE ONLY public.processed_github_archives
 --
 
 ALTER TABLE ONLY posts
-    ADD CONSTRAINT posts_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES polls(id);
+    ADD CONSTRAINT posts_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE;
 
 
 --
@@ -2053,7 +2053,7 @@ ALTER TABLE ONLY posts
 --
 
 ALTER TABLE ONLY posts
-    ADD CONSTRAINT posts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT posts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
@@ -2165,7 +2165,7 @@ ALTER TABLE ONLY user_followed_project
 --
 
 ALTER TABLE ONLY votes
-    ADD CONSTRAINT votes_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts(id);
+    ADD CONSTRAINT votes_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE;
 
 
 --
@@ -2173,7 +2173,7 @@ ALTER TABLE ONLY votes
 --
 
 ALTER TABLE ONLY votes
-    ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --

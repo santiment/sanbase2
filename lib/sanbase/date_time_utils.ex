@@ -1,4 +1,15 @@
 defmodule Sanbase.DateTimeUtils do
+  def seconds_after(seconds, datetime \\ DateTime.utc_now()) do
+    datetime
+    |> DateTime.to_unix()
+    |> Kernel.+(seconds)
+    |> DateTime.from_unix!()
+  end
+
+  def days_after(days, datetime \\ DateTime.utc_now()) do
+    seconds_after(days * 60 * 60 * 24, datetime)
+  end
+
   def seconds_ago(seconds) do
     DateTime.utc_now()
     |> DateTime.to_unix()

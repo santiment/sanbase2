@@ -2,7 +2,7 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 import Panel from './../components/Panel'
 import PostsList from './../components/PostsList'
-import { Icon } from 'semantic-ui-react'
+import { Icon, Message } from 'semantic-ui-react'
 import './EventVotes.css'
 
 const posts = {
@@ -31,9 +31,14 @@ const posts = {
   }
 }
 
-const EventVotes = () => {
+const EventVotes = ({location}) => {
   return (
     <div className='page event-votes'>
+      {location.state && location.state.postCreated &&
+        <Message positive>
+          <Message.Header>Post created</Message.Header>
+          <p>We need some time to approve your insight.</p>
+        </Message>}
       <Panel>
         <div className='event-votes-header'>
           <span>Insights</span>

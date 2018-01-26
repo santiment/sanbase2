@@ -14,6 +14,10 @@ defmodule Sanbase.Influxdb.Store do
 
       alias Sanbase.Influxdb.Measurement
 
+      def import(nil) do
+        :ok
+      end
+
       def import(%Measurement{} = measurement) do
         :ok =
           measurement
@@ -25,10 +29,11 @@ defmodule Sanbase.Influxdb.Store do
         # 1 day of 5 min resolution data
         measurements
         |> Stream.map(&Measurement.convert_measurement_for_import/1)
+        |> Stream.reject(&is_nil/1)
         |> Stream.chunk_every(288)
         |> Stream.map(fn data_for_import ->
              :ok = __MODULE__.write(data_for_import)
-           end)
+            end)
         |> Stream.run()
       end
 
@@ -45,7 +50,7 @@ defmodule Sanbase.Influxdb.Store do
       end
 
       def drop_measurement(measurement_name) do
-        "DROP MEASUREMENT #{measurement_name}"
+        "DROP MEASUREMENT \"#{measurement_name}\""
         |> __MODULE__.execute()
       end
 

@@ -146,6 +146,17 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :current_poll, :poll do
       resolve(&VotingResolver.current_poll/3)
     end
+
+    @desc "Shows the flow of funds in an exchange wallet"
+    field :transactions, list_of(:transaction) do
+      arg(:ticker, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:transaction_type, :transaction_type, default_value: :all)
+
+      resolve(&EtherbiResolver.transactions/3)
+
+    end
   end
 
   mutation do

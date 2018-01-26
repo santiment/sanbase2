@@ -9,7 +9,7 @@ defmodule Sanbase.Voting.Post do
   schema "posts" do
     belongs_to(:poll, Poll)
     belongs_to(:user, User)
-    has_many(:votes, Vote)
+    has_many(:votes, Vote, on_delete: :delete_all)
 
     field(:title, :string)
     field(:link, :string)

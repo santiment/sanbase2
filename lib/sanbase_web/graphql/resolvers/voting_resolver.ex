@@ -27,14 +27,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     {:ok, Decimal.div(total_san_votes, Ethauth.san_token_decimals())}
   end
 
-  def approved_posts(poll, _args, _context) do
-    approved_posts =
-      poll.posts
-      |> Enum.reject(&is_nil(&1.approved_at))
-
-    {:ok, approved_posts}
-  end
-
   def vote(_root, %{post_id: post_id}, %{
         context: %{auth: %{current_user: user}}
       }) do
@@ -80,6 +72,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
           :error,
           message: "Can't create post", details: Helpers.error_details(changeset)
         }
+    end
+  end
+
+  def delete_post(_root, %{id: post_id}, %{
+        context: %{auth: %{current_user: %User{id: user_id}}}
+      }) do
+    case Repo.get(Post, post_id) do
+      %Post{user_id: ^user_id} = post ->
+        Repo.delete(post)
+        {:ok, post}
+
+      post ->
+        {:error, "You don't own post #{post.id}"}
     end
   end
 end

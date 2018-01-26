@@ -22,7 +22,6 @@ import Search from './../components/Search'
 import PercentChanges from './../components/PercentChanges'
 import PageLoader from './../components/PageLoader'
 import { formatNumber, formatBTC } from '../utils/formatting'
-import { normalizeData } from './../components/ProjectChart/utils'
 import './Detailed.css'
 
 const propTypes = {
@@ -146,23 +145,13 @@ export const Detailed = ({
   const burnRate = {
     loading: BurnRate.loading,
     error: BurnRate.error || false,
-    items: normalizeData({
-      data: BurnRate.burnRate,
-      fieldName: 'burnRate',
-      tokenDecimals: generalInfo.project ? generalInfo.project.tokenDecimals : undefined,
-      onlyOutliers: false
-    })
+    items: BurnRate.burnRate || []
   }
 
   const transactionVolume = {
     loading: TransactionVolume.loading,
     error: TransactionVolume.error || false,
-    items: normalizeData({
-      data: TransactionVolume.transactionVolume,
-      fieldName: 'transactionVolume',
-      tokenDecimals: generalInfo.project ? generalInfo.project.tokenDecimals : undefined,
-      onlyOutliers: false
-    })
+    items: TransactionVolume.transactionVolume || []
   }
 
   const projectContainerChart = <ProjectChartContainer
@@ -173,6 +162,7 @@ export const Detailed = ({
     price={price}
     github={github}
     burnRate={burnRate}
+    tokenDecimals={generalInfo.project ? generalInfo.project.tokenDecimals : undefined}
     transactionVolume={transactionVolume}
     onDatesChange={(from, to, interval, ticker) => {
       changeChartVars({

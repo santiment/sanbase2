@@ -1,30 +1,12 @@
 import React, { Component } from 'react'
 import { Route, Redirect } from 'react-router-dom'
 import { connect } from 'react-redux'
-import { Button } from 'semantic-ui-react'
 import Panel from './../../components/Panel'
-import Post from './../../components/Post'
 import PostsNewHeader from './EventVotesNewHeader'
+import ConfirmPost from './ConfirmNewInsight'
 import CreateLink from './CreateLink'
 import CreateTitle from './CreateTitle'
 import './EventVotesNew.css'
-
-const ConfirmPost = ({post, addPost}) => {
-  return (
-    <div className='event-posts-new-step'>
-      <Panel>
-        <Post {...post} />
-      </Panel>
-      <div className='event-posts-new-step-control'>
-        <Button
-          positive
-          onClick={addPost}>
-          Click && Confirm
-        </Button>
-      </div>
-    </div>
-  )
-}
 
 class EventVotesNew extends Component {
   state = { // eslint-disable-line

@@ -50,7 +50,7 @@ config :sanbase, Sanbase.Github.Store,
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data_test"
 
-config :sanbase, Sanbase.Etherbi.Store,
+config :sanbase, Sanbase.Etherbi.Transactions.STore,
   database: "transactions_test"
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,

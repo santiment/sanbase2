@@ -58,11 +58,17 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   pool: [ max_overflow: 10, size: 20 ],
   database: "twitter_followers_data"
 
-config :sanbase, Sanbase.Etherbi.Store,
+config :sanbase, Sanbase.Etherbi.Transactions.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "transactions"
+
+config :sanbase, Sanbase.Etherbi.BurnRate.Store,
+  host: {:system, "INFLUXDB_HOST", "localhost"},
+  port: {:system, "INFLUXDB_PORT", 8086},
+  pool: [max_overflow: 10, size: 20],
+  database: "burn_rate"
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,

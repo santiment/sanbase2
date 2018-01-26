@@ -30,7 +30,7 @@ defmodule Sanbase.Application do
       Sanbase.Github.Store.child_spec(),
 
       # Time series transactions DB connection
-      Sanbase.Etherbi.Store.child_spec(),
+      Sanbase.Etherbi.Transactions.Store.child_spec(),
 
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(

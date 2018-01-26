@@ -5,7 +5,8 @@ defmodule Sanbase.Etherbi.EtherbiFundsMovementTest do
   import Mockery
 
   alias Sanbase.Model.Project
-  alias Sanbase.Etherbi.{Store, Transactions}
+  alias Sanbase.Etherbi.Transactions
+  alias Sanbase.Etherbi.Transactions.Store
 
   setup do
     %Project{}

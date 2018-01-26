@@ -59,7 +59,7 @@ const FinancialsBlock = ({
       'info-disabled': !wallets
     })}>
       <div>Transactions</div>
-      <div>
+      <div style={{textAlign: 'right'}}>
         <div>
           Last outgoing TX: {formatLastOutgoingWallet(wallets)}
         </div>

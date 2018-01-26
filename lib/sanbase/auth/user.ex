@@ -4,6 +4,7 @@ defmodule Sanbase.Auth.User do
   use Timex.Ecto.Timestamps
 
   alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Voting.Vote
   alias Sanbase.Repo
 
   @salt_length 64
@@ -19,6 +20,7 @@ defmodule Sanbase.Auth.User do
     field(:san_balance_updated_at, Timex.Ecto.DateTime)
 
     has_many(:eth_accounts, EthAccount)
+    has_many(:votes, Vote, on_delete: :delete_all)
 
     timestamps()
   end

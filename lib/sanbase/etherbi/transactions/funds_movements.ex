@@ -9,7 +9,7 @@ defmodule Sanbase.Etherbi.FundsMovement do
   require Logger
 
   alias Sanbase.Utils.Config
-  alias Sanbase.Etherbi.Store
+  alias Sanbase.Etherbi.Transactions.Store
 
   @etherbi_api Mockery.of("Sanbase.Etherbi.EtherbiApi")
   @seconds_in_month 60 * 60 * 24 * 30

@@ -1,8 +1,7 @@
-defmodule Sanbase.Etherbi.Store do
+defmodule Sanbase.Etherbi.Transactions.Store do
   use Sanbase.Influxdb.Store
 
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Etherbi.Store
+  alias Sanbase.Etherbi.Transactions.Store
 
   def transactions(measurement, from, to, transaction_type) do
     transactions_from_to_query(measurement, from, to, transaction_type)

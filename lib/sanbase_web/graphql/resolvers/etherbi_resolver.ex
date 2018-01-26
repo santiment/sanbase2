@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
-  alias Sanbase.Etherbi.Store
+  alias Sanbase.Etherbi.Transactions.Store
 
   @http_client Mockery.of("HTTPoison")
   @recv_timeout 15_000

@@ -1,7 +1,7 @@
-defmodule Sanbase.Etherbi.Transactions do
+defmodule Sanbase.Etherbi.BurnRate do
   @moduledoc ~S"""
     This module is a GenServer that periodically sends requests to etherbi API.
-    In and out transactions are fetched and saved in a time series database for
+    Token burn rate is fetched and saved in a time series database for
     easier aggregation and querying.
   """
 
@@ -10,55 +10,29 @@ defmodule Sanbase.Etherbi.Transactions do
 
   import Ecto.Query
 
-  alias Sanbase.Etherbi.Transactions.Store
-  alias Sanbase.Etherbi.FundsMovement
+  alias Sanbase.Etherbi.BurnRate.Store
   alias Sanbase.Repo
-
+  alias Sanbase.Model.Project
 
   def work() do
     # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
     token_decimals = build_token_decimals_map()
 
-    exchange_wallets_addrs =
-      Repo.all(from(addr in Sanbase.Model.ExchangeEthAddress, select: addr.address))
+    query = from(p in Project, where: not is_nil(p.ticker), select: p.ticker)
+    tickers = Repo.all(query)
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      exchange_wallets_addrs,
-      &fetch_and_store_in(&1, token_decimals),
-      max_concurency: 1,
-      timeout: 165_000
-    )
-    |> Stream.run()
-
-    Task.Supervisor.async_stream_nolink(
-      Sanbase.TaskSupervisor,
-      exchange_wallets_addrs,
-      &fetch_and_store_out(&1, token_decimals),
+      tickers,
+      &fetch_and_store(&1, token_decimals),
       max_concurency: 1,
       timeout: 165_000
     )
     |> Stream.run()
   end
 
-  def fetch_and_store_in(address, token_decimals) do
-    with {:ok, transactions_in} <- FundsMovement.transactions_in(address) do
-      convert_to_measurement(transactions_in, "in", token_decimals)
-      |> Store.import()
-    else
-      {:error, reason} ->
-        Logger.warn("Could not fetch and store in transactions for #{address}: #{reason}")
-    end
-  end
+  def fetch_and_store(ticker, token_decimals) do
 
-  def fetch_and_store_out(address, token_decimals) do
-    with {:ok, transactions_out} <- FundsMovement.transactions_out(address) do
-      convert_to_measurement(transactions_out, "out", token_decimals)
-      |> Store.import()
-    else
-      {:error, reason} ->
-        Logger.warn("Could not fetch and store out transactions for #{address}: #{reason}")
-    end
   end
 
   # Private functions

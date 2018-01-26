@@ -300,6 +300,9 @@ const makeOptionsFromProps = props => ({
         if (label === 'Twitter') {
           return `${label}: ${millify(tooltipItem.yLabel)} followers`
         }
+        if (label === 'Marketcap') {
+          return `${label}: ${millify(tooltipItem.yLabel)}`
+        }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
           : formatNumber(tooltipItem.yLabel, 'USD')}`
@@ -368,7 +371,10 @@ const makeOptionsFromProps = props => ({
       },
       ticks: {
         display: true,
-        callback: renderTicks(props)
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return millify(value)
+        }
       },
       gridLines: {
         display: false

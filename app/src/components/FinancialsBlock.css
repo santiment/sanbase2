@@ -1,3 +1,4 @@
 .financials-transactions-amount {
   display: flex;
+  flex-direction: column;
 }

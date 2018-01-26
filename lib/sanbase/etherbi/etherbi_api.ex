@@ -13,6 +13,14 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   alias Sanbase.Utils.Config
 
   @doc ~S"""
+    Returns the etherbi url
+  """
+  @spec etherbi_url() :: binary()
+  def etherbi_url() do
+    Config.module_get(Sanbase.Etherbi, :url)
+  end
+
+  @doc ~S"""
     Issues a GET request to Etherbi REST transactions API to fetch all in or out
     transactions for addresses in a the given time period
 
@@ -99,9 +107,5 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
       {:ok, result}
     end
-  end
-
-  defp etherbi_url do
-    Config.module_get(Sanbase.Etherbi, :url)
   end
 end

@@ -170,7 +170,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   defp last_price_datetime(pair, %Project{coinmarketcap_id: coinmarketcap_id}) do
-    case Store.last_price_datetime(pair) do
+    case Store.last_datetime!(pair) do
       nil ->
         GraphData.fetch_first_price_datetime(coinmarketcap_id)
 

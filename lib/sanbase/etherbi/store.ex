@@ -4,32 +4,6 @@ defmodule Sanbase.Etherbi.Store do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.Store
 
-  def last_datetime(measurement) do
-    ~s/SELECT LAST(*) FROM "#{measurement}"/
-    |> Store.query()
-    |> parse_measurement_datetime()
-  end
-
-  def last_datetime_with_tag(measurement, tag_name, tag_value) when is_binary(tag_value) do
-    ~s/SELECT LAST(*) FROM "#{measurement}"
-    WHERE "#{tag_name}" = "#{tag_value}"/
-    |> Store.query()
-    |> parse_measurement_datetime()
-  end
-
-  def last_datetime_with_tag(measurement, tag_name, tag_value) do
-    ~s/SELECT LAST(*) FROM "#{measurement}"
-    WHERE "#{tag_name}" = #{tag_value}/
-    |> Store.query()
-    |> parse_measurement_datetime()
-  end
-
-  def first_datetime(measurement) do
-    ~s/SELECT FIRST(*) FROM "#{measurement}"/
-    |> Store.query()
-    |> parse_measurement_datetime()
-  end
-
   def transactions(measurement, from, to, transaction_type) do
     transactions_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
@@ -84,27 +58,4 @@ defmodule Sanbase.Etherbi.Store do
     {:ok, []}
   end
 
-  defp parse_measurement_datetime(%{results: [%{error: error}]}) do
-    {:error, error}
-  end
-
-  defp parse_measurement_datetime(%{
-         results: [
-           %{
-             series: [
-               %{
-                 values: [[iso8601_datetime|_]|_rest]
-               }
-             ]
-           }
-         ]
-       }) do
-    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-
-    {:ok, datetime}
-  end
-
-  defp parse_measurement_datetime(_) do
-    {:ok, nil}
-  end
 end

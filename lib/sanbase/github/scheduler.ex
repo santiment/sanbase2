@@ -66,10 +66,10 @@ defmodule Sanbase.Github.Scheduler do
   end
 
   defp get_initial_scrape_datetime(%Project{ticker: ticker}) do
-    if Github.Store.first_activity_datetime(ticker) do
-      Github.Store.last_activity_datetime(ticker)
+    if Github.Store.first_datetime!(ticker) do
+      Github.Store.last_datetime!(ticker)
     else
-      Prices.Store.first_price_datetime(ticker <> "_USD")
+      Prices.Store.first_datetime!(ticker <> "_USD")
     end
   end
 

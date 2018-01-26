@@ -100,7 +100,7 @@ exports[`Project detail page container it should render correctly 1`] = `
       </Component>
     </div>
     <div>
-      <withState(withState(withState(withState(withState(withState(ProjectChartContainer))))))
+      <withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))
         burnRate={
           Object {
             "error": false,

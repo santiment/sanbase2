@@ -12,8 +12,6 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
   alias Sanbase.Utils.Config
 
-  @etherbi_url Config.module_get(Sanbase.Etherbi, :url)
-
   @doc ~S"""
     Issues a GET request to Etherbi REST transactions API to fetch all in or out
     transactions for addresses in a the given time period
@@ -24,7 +22,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   @spec get_first_transaction_timestamp(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_transaction_timestamp(address) do
     Logger.info("Getting the first transaction timestamp for address #{address}")
-    url = "#{@etherbi_url}/first_transaction_timestamp?address=#{address}"
+    url = "#{etherbi_url()}/first_transaction_timestamp?address=#{address}"
     options = [recv_timeout: 45_000]
 
     case HTTPoison.get(url, [], options) do
@@ -37,9 +35,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
       {:error, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
-         "Error status #{status} fetching first transaction timestamp for #{address}: #{
-           body
-         }"}
+         "Error status #{status} fetching first transaction timestamp for #{address}: #{body}"}
 
       error ->
         {:error,
@@ -70,7 +66,8 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         {:error, "Error status #{status} fetching for #{extract_address(options)}: #{body}"}
 
       error ->
-        {:error, "Error fetching transactions data for #{extract_address(options)}: #{inspect(error)}"}
+        {:error,
+         "Error fetching transactions data for #{extract_address(options)}: #{inspect(error)}"}
     end
   end
 
@@ -102,5 +99,9 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
       {:ok, result}
     end
+  end
+
+  defp etherbi_url do
+    Config.module_get(Sanbase.Etherbi, :url)
   end
 end

@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
-  def transactions(
+  def exchange_fund_flow(
         _root,
         %{
           ticker: ticker,

@@ -103,7 +103,7 @@ defmodule Sanbase.Github.EtherbiTransactionsApiTest do
   test "fetch in transactions", context do
     query = """
     {
-      transactions(
+      exchangeFundFlow(
         ticker: "#{context.ticker}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}",
@@ -117,9 +117,9 @@ defmodule Sanbase.Github.EtherbiTransactionsApiTest do
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "transactions"))
+      |> post("/graphql", query_skeleton(query, "exchangeFundFlow"))
 
-    transactions_in = json_response(result, 200)["data"]["transactions"]
+    transactions_in = json_response(result, 200)["data"]["exchangeFundFlow"]
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
@@ -155,7 +155,7 @@ defmodule Sanbase.Github.EtherbiTransactionsApiTest do
   test "fetch out transactions", context do
     query = """
     {
-      transactions(
+      exchangeFundFlow(
         ticker: "#{context.ticker}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}",
@@ -169,9 +169,9 @@ defmodule Sanbase.Github.EtherbiTransactionsApiTest do
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "transactions"))
+      |> post("/graphql", query_skeleton(query, "exchangeFundFlow"))
 
-    transactions_out = json_response(result, 200)["data"]["transactions"]
+    transactions_out = json_response(result, 200)["data"]["exchangeFundFlow"]
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),

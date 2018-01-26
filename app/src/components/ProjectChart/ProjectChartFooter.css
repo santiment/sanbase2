@@ -97,6 +97,19 @@
   text-align: left;
 }
 
+.blockchain-settings {
+  display: flex;
+  flex-direction: column;
+}
+
+.blockchain-settings .checkbox {
+  margin-bottom: 5px;
+}
+
+.blockchain-settings .checkbox:last-child {
+  margin-bottom: 0;
+}
+
 @media (min-width: 1024px) {
   .chart-footer {
     display: flex;

@@ -1,6 +1,12 @@
 import React from 'react'
 import cx from 'classnames'
-import { Popup, Icon, Label, Loader } from 'semantic-ui-react'
+import {
+  Popup,
+  Icon,
+  Label,
+  Loader,
+  Checkbox
+} from 'semantic-ui-react'
 import './ProjectChartFooter.css'
 
 export const ToggleBtn = ({
@@ -20,16 +26,24 @@ export const ToggleBtn = ({
       ? <Popup
         trigger={<div>{children}</div>}
         content="Looks like we don't have any data"
-        position='top center'
+        position='bottom left'
       />
     : children}
     {loading && <Loader active inline size='mini' />}
   </div>
 )
 
-const FilterCategory = ({children, name, className = ''}) => (
+const FilterCategory = ({
+  children,
+  name,
+  className = '',
+  settings
+}) => (
   <div className={'filter-category ' + className}>
-    <h5 className='filter-category-title'>{name.toUpperCase()}</h5>
+    <h5 className='filter-category-title'>
+      {name.toUpperCase()}&nbsp;
+      {settings && settings()}
+    </h5>
     <div className='filter-category-body'>
       {children}
     </div>
@@ -64,7 +78,36 @@ const ProjectChartFooter = (props) => (
           Github Activity
         </ToggleBtn>
       </FilterCategory>
-      <FilterCategory className='filter-category-blockchain' name='Blockchain'>
+      <FilterCategory
+        className='filter-category-blockchain'
+        settings={() => (
+          <Popup
+            position='top center'
+            size='large'
+            trigger={<Icon name='cogs' />} on='click'>
+            <div className='blockchain-settings'>
+              <Checkbox
+                label={{ children: 'all' }}
+                value='all'
+                checked={props.blockchainFilter === 'all'}
+                onChange={() => props.setBlockchainFilter('all')}
+                radio />
+              <Checkbox
+                label={{ children: 'only outliers' }}
+                checked={props.blockchainFilter === 'only'}
+                onChange={() => props.setBlockchainFilter('only')}
+                value='only'
+                radio />
+              <Checkbox
+                label={{ children: 'without outliers' }}
+                checked={props.blockchainFilter === 'rest'}
+                onChange={() => props.setBlockchainFilter('rest')}
+                value='rest'
+                radio />
+            </div>
+          </Popup>
+        )}
+        name='Blockchain'>
         <ToggleBtn
           loading={props.burnRate.loading}
           disabled={props.burnRate.items.length === 0}

@@ -93,7 +93,7 @@ defmodule Sanbase.Etherbi.Store do
            %{
              series: [
                %{
-                 values: [iso8601_datetime | _rest]
+                 values: [[iso8601_datetime|_]|_rest]
                }
              ]
            }

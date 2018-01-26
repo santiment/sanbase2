@@ -8,18 +8,6 @@ defmodule Sanbase.Github.Store do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Github.Store
 
-  def first_activity_datetime(ticker) do
-    ~s/SELECT FIRST(activity) FROM "#{ticker}"/
-    |> Store.query()
-    |> parse_measurement_datetime()
-  end
-
-  def last_activity_datetime(ticker) do
-    ~s/SELECT LAST(activity) FROM "#{ticker}"/
-    |> Store.query()
-    |> parse_measurement_datetime()
-  end
-
   def fetch_activity_with_resolution!(ticker, from, to, resolution) do
     activity_with_resolution_query(ticker, from, to, resolution)
     |> Store.query()
@@ -101,21 +89,4 @@ defmodule Sanbase.Github.Store do
 
   defp parse_moving_average_series!(_), do: []
 
-  defp parse_measurement_datetime(%{
-         results: [
-           %{
-             series: [
-               %{
-                 values: [[iso8601_datetime, _activity]]
-               }
-             ]
-           }
-         ]
-       }) do
-    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-
-    datetime
-  end
-
-  defp parse_measurement_datetime(_), do: nil
 end

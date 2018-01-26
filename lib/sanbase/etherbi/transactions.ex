@@ -20,7 +20,7 @@ defmodule Sanbase.Etherbi.Transactions do
   alias Sanbase.Model.ExchangeEthAddress
   alias Sanbase.Model.Project
 
-  @default_update_interval 1000 * 60 * 60
+  @default_update_interval 1000 * 60 * 5
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)

@@ -12,7 +12,6 @@ defmodule Sanbase.Etherbi.FundsMovement do
   alias Sanbase.Etherbi.Store
 
   @etherbi_api Mockery.of("Sanbase.Etherbi.EtherbiApi")
-  @etherbi_url Config.module_get(Sanbase.Etherbi, :url)
   @seconds_in_month 60 * 60 * 24 * 30
 
   @doc ~S"""
@@ -46,7 +45,8 @@ defmodule Sanbase.Etherbi.FundsMovement do
 
     case generate_from_to_interval_unix(address, transaction_type) do
       {from_unix, to_unix} ->
-        url = "#{@etherbi_url}/transactions_#{transaction_type}"
+        etherbi_url = @etherbi_api.etherbi_url()
+        url = "#{etherbi_url}/transactions_#{transaction_type}"
 
         options = [
           recv_timeout: 120_000,

@@ -28,7 +28,7 @@ describe('normalizeOutliers', () => {
     const normalizedBurnRate = normalizeData({
       data: burnRate,
       fieldName: 'burnRate',
-      onlyOutliers: true
+      filter: 'only'
     })
     expect(normalizedBurnRate.length).toBe(2)
     expect(normalizedBurnRate[0].datetime).toBe('2017-12-25T15:44:16Z')

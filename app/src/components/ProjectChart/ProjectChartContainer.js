@@ -8,7 +8,7 @@ import {
 import ProjectChartHeader from './ProjectChartHeader'
 import ProjectChartFooter from './ProjectChartFooter'
 import ProjectChart from './ProjectChart'
-import { makeItervalBounds } from './utils'
+import { normalizeData, makeItervalBounds } from './utils'
 
 class ProjectChartContainer extends Component {
   constructor (props) {
@@ -134,6 +134,24 @@ class ProjectChartContainer extends Component {
       fullpath = window.location.href.split('?')[0]
     }
     const shareableURL = fullpath + '?' + qs.stringify(newShareableState)
+    const burnRate = {
+      ...this.props.burnRate,
+      items: normalizeData({
+        data: this.props.burnRate.items,
+        fieldName: 'burnRate',
+        tokenDecimals: this.props.tokenDecimals,
+        filter: this.props.blockchainFilter
+      })
+    }
+    const transactionVolume = {
+      ...this.props.transactionVolume,
+      items: normalizeData({
+        data: this.props.transactionVolume.items,
+        fieldName: 'transactionVolume',
+        tokenDecimals: this.props.tokenDecimals,
+        filter: this.props.blockchainFilter
+      })
+    }
     return (
       <div className='project-dp-chart'>
         <ProjectChartHeader
@@ -151,12 +169,14 @@ class ProjectChartContainer extends Component {
           isDesktop={this.props.isDesktop}
         />
         <ProjectChart
+          {...this.props}
           setSelected={this.setSelected}
           isToggledBTC={this.state.isToggledBTC}
           history={this.props.price.history.items}
+          burnRate={burnRate}
+          transactionVolume={transactionVolume}
           isLoading={this.props.price.history.loading}
-          isEmpty={this.props.price.history.items.length === 0}
-          {...this.props} />
+          isEmpty={this.props.price.history.items.length === 0} />
         <ProjectChartFooter {...this.props} />
       </div>
     )
@@ -169,7 +189,8 @@ const enhance = compose(
   withState('isToggledVolume', 'toggleVolume', true),
   withState('isToggledTwitter', 'toggleTwitter', false),
   withState('isToggledBurnRate', 'toggleBurnRate', false),
-  withState('isToggledTransactionVolume', 'toggleTransactionVolume', false)
+  withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
+  withState('blockchainFilter', 'setBlockchainFilter', 'all')
 )
 
 export default enhance(ProjectChartContainer)

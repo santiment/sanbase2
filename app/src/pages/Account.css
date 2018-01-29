@@ -4,6 +4,10 @@
 }
 
 @media (min-width: 1024px) {
+  .account {
+    width: 720px;
+  }
+
   .account .panel form {
     width: 40%;
   }

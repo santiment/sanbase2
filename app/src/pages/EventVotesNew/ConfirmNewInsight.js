@@ -1,9 +1,11 @@
 import React from 'react'
+import Raven from 'raven-js'
+import { compose } from 'recompose'
+import { connect } from 'react-redux'
 import { Button } from 'semantic-ui-react'
 import { withRouter } from 'react-router-dom'
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
-import Panel from './../../components/Panel'
 import Post from './../../components/Post'
 
 const createPostGQL = gql`
@@ -19,13 +21,12 @@ const createPostGQL = gql`
 const ConfirmPost = ({
   history,
   post,
-  createPost
+  createPost,
+  user
 }) => {
   return (
     <div className='event-posts-new-step'>
-      <Panel>
-        <Post {...post} />
-      </Panel>
+      <Post user={user} {...post} />
       <div className='event-posts-new-step-control'>
         <Button
           positive
@@ -36,8 +37,7 @@ const ConfirmPost = ({
               postCreated: true,
               ...data
             }))
-            .catch(error =>
-            console.log(error))}>
+            .catch(error => Raven.captureException(error))}>
           Click && Confirm
         </Button>
       </div>
@@ -45,7 +45,21 @@ const ConfirmPost = ({
   )
 }
 
-export default withRouter(graphql(createPostGQL, {
-  name: 'createPost',
-  options: { fetchPolicy: 'network-only' }
-})(ConfirmPost))
+const mapStateToProps = state => {
+  return {
+    user: state.user.data
+  }
+}
+
+const enhance = compose(
+  withRouter,
+  connect(
+    mapStateToProps
+  ),
+  graphql(createPostGQL, {
+    name: 'createPost',
+    options: { fetchPolicy: 'network-only' }
+  })
+)
+
+export default enhance(ConfirmPost)

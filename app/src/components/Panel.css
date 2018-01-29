@@ -17,6 +17,15 @@
   margin-top: 0;
 }
 
+.panel-header {
+  background-color: black;
+  color: white;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
 @media (max-width: 1024px) {
   .panel {
     margin: 0;

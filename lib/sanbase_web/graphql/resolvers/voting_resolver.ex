@@ -83,6 +83,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     end
   end
 
+  def voted_at(%Post{} = post, _args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    case Repo.get_by(Vote, post_id: post.id, user_id: user.id) do
+      nil -> {:ok, nil}
+      vote -> {:ok, vote.inserted_at}
+    end
+  end
+
+  def voted_at(%Post{}, _args, _context), do: {:ok, nil}
+
   def vote(_root, %{post_id: post_id}, %{
         context: %{auth: %{current_user: user}}
       }) do

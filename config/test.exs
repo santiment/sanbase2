@@ -53,6 +53,12 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
 config :sanbase, Sanbase.Etherbi.Transactions.Store,
   database: "transactions_test"
 
+config :sanbase, Sanbase.Etherbi.BurnRate.Store,
+  database: "burn_rate_test"
+
+config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
+  database: "transaction_volume_test"
+
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"

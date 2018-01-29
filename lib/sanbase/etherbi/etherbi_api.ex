@@ -21,14 +21,46 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   end
 
   @doc ~S"""
-    Issues a GET request to Etherbi REST transactions API to fetch all in or out
-    transactions for addresses in a the given time period
+    Issues a GET request to Etherbi REST API to fetch the first burn rate
+    record timestamp for a ticker.
 
     Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
     otherwise.
   """
-  @spec get_first_transaction_timestamp(binary()) :: {:ok, list()} | {:error, binary()}
-  def get_first_transaction_timestamp(address) do
+  @spec get_first_burn_rate_timestamp(binary()) :: {:ok, list()} | {:error, binary()}
+  def get_first_burn_rate_timestamp(ticker) do
+    url = "#{etherbi_url()}/first_transaction_timestamp"
+    options = [recv_timeout: 45_000, params: %{ticker: ticker}]
+
+    case HTTPoison.get(url, [], options) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        convert_timestamp_response(body)
+
+      {:error, %HTTPoison.Error{reason: :timeout}} ->
+        Logger.warn("Timeout trying to fetch the first burn rate timestamp for #{ticker}")
+        {:ok, nil}
+
+      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+        {:error,
+         "Error status #{status} fetching first burn rate timestamp for #{ticker}: #{body}"}
+
+      error ->
+        {:error,
+         "Error fetching first burn rate timestamp for #{ticker}: #{
+           inspect(error)
+         }"}
+    end
+  end
+
+  @doc ~S"""
+    Issues a GET request to Etherbi REST transactions API to fetch the first
+    transaction timestamp for an address
+
+    Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
+    otherwise.
+  """
+  @spec get_first_transaction_timestamp_addr(binary()) :: {:ok, list()} | {:error, binary()}
+  def get_first_transaction_timestamp_addr(address) do
     url = "#{etherbi_url()}/first_transaction_timestamp"
     options = [recv_timeout: 45_000, params: %{address: address}]
 
@@ -53,8 +85,79 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   end
 
   @doc ~S"""
-    Issues a GET request to Etherbi REST first transaction timestamp API to get
-    the timestamp of the first transaction made for the given address
+    Issues a GET request to Etherbi REST API to fetch the first
+    transaction timestamp for a ticker in a the given time period
+
+    Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
+    otherwise.
+  """
+  @spec get_first_transaction_timestamp_ticker(binary()) :: {:ok, list()} | {:error, binary()}
+  def get_first_transaction_timestamp_ticker(ticker) do
+    url = "#{etherbi_url()}/first_transaction_timestamp_ticker"
+    options = [recv_timeout: 45_000, params: %{ticker: ticker}]
+
+    case HTTPoison.get(url, [], options) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        convert_timestamp_response(body)
+
+      {:error, %HTTPoison.Error{reason: :timeout}} ->
+        Logger.warn("Timeout trying to fetch the first transaction timestamp for #{ticker}")
+        {:ok, nil}
+
+      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+        {:error,
+         "Error status #{status} fetching first transaction timestamp for #{ticker}: #{body}"}
+
+      error ->
+        {:error,
+         "Error fetching first transaction timestamp for #{ticker}: #{
+           inspect(error)
+         }"}
+    end
+  end
+
+  @doc ~S"""
+    Issues a GET request to Etherbi REST API to get the transaction volume for
+    a given ticker and a time period
+
+    Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
+    otherwise.
+  """
+  @spec get_transaction_volume(binary(), %DateTime{}, %DateTime{}) :: {:ok, list()} | {:error, binary()}
+  def get_transaction_volume(ticker, from, to) do
+    from_unix = DateTime.to_unix(from, :seconds)
+    to_unix = DateTime.to_unix(to, :seconds)
+    url = "#{etherbi_url()}/transaction_volume"
+
+    options = [
+      recv_timeout: 120_000,
+      params: %{
+        from_timestamp: from_unix,
+        to_timestamp: to_unix,
+        ticker: ticker
+      }
+    ]
+
+    case HTTPoison.get(url, [], options) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        convert_transactions_response(body)
+
+      {:error, %HTTPoison.Error{reason: :timeout}} ->
+        Logger.warn("Timeout trying to fetch transaction volume for #{ticker}")
+        {:ok, []}
+
+      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+        {:error, "Error status #{status} fetching transaction volume for #{ticker}: #{body}"}
+
+      error ->
+        {:error,
+         "Error fetching transactions data for #{ticker}: #{inspect(error)}"}
+    end
+  end
+
+  @doc ~S"""
+    Issues a GET request to Etherbi REST API to get all in or out transactions
+    for a given address and time period
 
     Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
     otherwise.
@@ -80,15 +183,15 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         convert_transactions_response(body)
 
       {:error, %HTTPoison.Error{reason: :timeout}} ->
-        Logger.warn("Timeout trying to fetch transactions for #{extract_address(options)}")
+        Logger.warn("Timeout trying to fetch transactions for #{address}}")
         {:ok, []}
 
       {:error, %HTTPoison.Response{status_code: status, body: body}} ->
-        {:error, "Error status #{status} fetching for #{extract_address(options)}: #{body}"}
+        {:error, "Error status #{status} fetching transactions for #{address}: #{body}"}
 
       error ->
         {:error,
-         "Error fetching transactions data for #{extract_address(options)}: #{inspect(error)}"}
+         "Error fetching transactions data for #{address}: #{inspect(error)}"}
     end
   end
 
@@ -127,10 +230,6 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   end
 
   # Private functions
-
-  defp extract_address(options) do
-    options[:params][:wallets]
-  end
 
   # Body is a string in the format `"[timestamp]"`
   defp convert_timestamp_response("[]"), do: {:ok, nil}

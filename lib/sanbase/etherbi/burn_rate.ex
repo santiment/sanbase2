@@ -6,7 +6,6 @@ defmodule Sanbase.Etherbi.BurnRate do
   """
 
   @default_update_interval 1000 * 60 * 5
-  @etherbi_api Sanbase.Etherbi.EtherbiApi
 
   use Sanbase.Etherbi.EtherbiFetcher
 
@@ -14,8 +13,8 @@ defmodule Sanbase.Etherbi.BurnRate do
 
   require Logger
 
-  alias Sanbase.Etherbi.BurnRate.Store
   alias Sanbase.Repo
+  alias Sanbase.Etherbi.BurnRate.{Store, Fetcher}
   alias Sanbase.Model.Project
 
   def work() do
@@ -36,12 +35,12 @@ defmodule Sanbase.Etherbi.BurnRate do
   end
 
   def fetch_and_store(ticker, token_decimals) do
-    with {:ok, transactions_out} <- @etherbi_api.get_burn_rate(ticker) do
-      convert_to_measurement(transactions_out, "out", token_decimals)
+    with {:ok, burn_rates} <- Fetcher.burn_rate(ticker) do
+      convert_to_measurement(burn_rates, ticker, token_decimals)
       |> Store.import()
     else
       {:error, reason} ->
-        Logger.warn("Could not fetch and store out transactions for #{address}: #{reason}")
+        Logger.warn("Could not fetch and store out transactions for #{ticker}: #{reason}")
     end
   end
 
@@ -50,9 +49,9 @@ defmodule Sanbase.Etherbi.BurnRate do
   # Better return no information than wrong information. If we have no data for the
   # number of decimal places `nil` is written instead and it gets filtered by the Store.import()
   defp convert_to_measurement(
-         transactions_data,
-         token_decimals,
-         ticker
+         burn_rates,
+         ticker,
+         token_decimals
        ) do
     burn_rates
     |> Enum.map(fn {datetime, burn_rate} ->

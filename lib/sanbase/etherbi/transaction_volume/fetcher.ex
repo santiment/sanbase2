@@ -35,7 +35,7 @@ defmodule Sanbase.Etherbi.TransactionVolume.Fetcher do
       if from_datetime do
         from_datetime
       else
-        {:ok, datetime} = @etherbi_api.get_first_transaction_volume_timestamp(ticker)
+        {:ok, datetime} = @etherbi_api.get_first_transaction_timestamp_ticker(ticker)
         datetime
       end
 

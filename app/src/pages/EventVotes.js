@@ -1,37 +1,20 @@
 import React from 'react'
+import {
+  compose,
+  pure
+} from 'recompose'
+import { graphql } from 'react-apollo'
+import gql from 'graphql-tag'
 import { NavLink } from 'react-router-dom'
 import Panel from './../components/Panel'
 import PostsList from './../components/PostsList'
 import { Icon, Message } from 'semantic-ui-react'
 import './EventVotes.css'
 
-const posts = {
-  'asffe2f2f': {
-    title: 'Ripple pump!',
-    link: 'https://medium.com',
-    votes: 25,
-    author: 'sdfefw',
-    liked: true,
-    created: new Date()
-  },
-  'a23429r3f': {
-    title: 'Eth pump!',
-    link: 'https://medium.com',
-    votes: 95,
-    author: 'jcasdfiu',
-    created: new Date()
-  },
-  'asf2342ff': {
-    title: 'Gcoin pump!',
-    link: 'https://medium.com',
-    votes: 15,
-    liked: true,
-    author: 'jcasdfiu',
-    created: new Date()
-  }
-}
-
-const EventVotes = ({location}) => {
+const EventVotes = ({
+  Posts,
+  location
+}) => {
   return (
     <div className='page event-votes'>
       {location.state && location.state.postCreated &&
@@ -64,10 +47,49 @@ const EventVotes = ({location}) => {
             </NavLink>
           </div>
         </div>
-        <PostsList posts={posts} />
+        <PostsList {...Posts} />
       </Panel>
     </div>
   )
 }
 
-export default EventVotes
+const currentPollGQL = gql`{
+  currentPoll {
+    endAt
+    posts {
+      id
+      title
+      approvedAt
+      link
+      user {
+        username
+      }
+      totalSanVotes
+    }
+    startAt
+  }
+}`
+
+const mapDataToProps = ({Poll}) => {
+  return {
+    Posts: {
+      loading: Poll.loading,
+      isEmpty: Poll.currentPoll &&
+        Poll.currentPoll.posts &&
+        Poll.currentPoll.posts.length === 0,
+      isError: !!Poll.error || false,
+      errorMessage: Poll.error ? Poll.error.message : '',
+      posts: (Poll.currentPoll && Poll.currentPoll.posts) || []
+    }
+  }
+}
+
+const enhance = compose(
+  graphql(currentPollGQL, {
+    name: 'Poll',
+    props: mapDataToProps
+  }),
+  pure
+)
+
+export default enhance(EventVotes)

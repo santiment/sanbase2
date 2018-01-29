@@ -6,20 +6,20 @@ defmodule Sanbase.Etherbi.Transactions do
   """
 
   @default_update_interval 1000 * 60 * 5
-  use Sanbase.Etherbi.EtherbiFetcher
+  use Sanbase.Etherbi.EtherbiGenServer
 
   import Ecto.Query
 
+  alias Sanbase.Etherbi.Utils
   alias Sanbase.Etherbi.Transactions.{Store, Fetcher}
-  alias Sanbase.Repo
 
 
   def work() do
     # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
-    token_decimals = build_token_decimals_map()
+    token_decimals = Utils.build_token_decimals_map()
 
     exchange_wallets_addrs =
-      Repo.all(from(addr in Sanbase.Model.ExchangeEthAddress, select: addr.address))
+      Sanbase.Repo.all(from(addr in Sanbase.Model.ExchangeEthAddress, select: addr.address))
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,

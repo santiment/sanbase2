@@ -1,4 +1,7 @@
 defmodule Sanbase.Etherbi.BurnRate.Store do
+  @moduledoc ~S"""
+    Module with functions for working with burn rate influx database
+  """
   use Sanbase.Influxdb.Store
 
   alias Sanbase.Etherbi.BurnRate.Store

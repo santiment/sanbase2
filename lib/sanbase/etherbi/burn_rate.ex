@@ -7,29 +7,24 @@ defmodule Sanbase.Etherbi.BurnRate do
 
   @default_update_interval 1000 * 60 * 5
 
-  use Sanbase.Etherbi.EtherbiFetcher
-
-  import Ecto.Query
+  use Sanbase.Etherbi.EtherbiGenServer
 
   require Logger
 
-  alias Sanbase.Repo
+  alias Sanbase.Etherbi.Utils
   alias Sanbase.Etherbi.BurnRate.{Store, Fetcher}
-  alias Sanbase.Model.Project
 
   def work() do
     # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
-    token_decimals = build_token_decimals_map()
-
-    query = from(p in Project, where: not is_nil(p.ticker), select: p.ticker)
-    tickers = Repo.all(query)
+    token_decimals = Utils.build_token_decimals_map()
+    tickers = Utils.get_tickers()
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
       tickers,
       &fetch_and_store(&1, token_decimals),
       max_concurency: 1,
-      timeout: 165_000
+      timeout: 170_000
     )
     |> Stream.run()
   end

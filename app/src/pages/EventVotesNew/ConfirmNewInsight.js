@@ -16,7 +16,8 @@ const createPostGQL = gql`
     ) {
       id
     }
-}`
+  }
+`
 
 const ConfirmPost = ({
   history,
@@ -26,7 +27,10 @@ const ConfirmPost = ({
 }) => {
   return (
     <div className='event-posts-new-step'>
-      <Post user={user} {...post} />
+      <Post
+        votePost={() => {}}
+        unvotePost={() => {}}
+        user={user} {...post} />
       <div className='event-posts-new-step-control'>
         <Button
           positive

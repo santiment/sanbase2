@@ -5,7 +5,7 @@ import LikeBtn from './../pages/EventVotesNew/LikeBtn'
 import { createSkeletonElement } from '@trainline/react-skeletor'
 import './Post.css'
 
-export const getSourceLink = link => {
+export const getSourceLink = (link = '') => {
   return link.split('/')[2]
 }
 
@@ -22,7 +22,9 @@ const Post = ({
   liked = false,
   user,
   approvedAt,
-  votePost
+  votedAt,
+  votePost,
+  unvotePost
 }) => {
   return (
     <div className='event-post'>
@@ -40,8 +42,14 @@ const Post = ({
           by&nbsp;{user && <Username address={user.username} />}
         </Div>
         <LikeBtn
-          onLike={liked => votePost(id)}
-          liked={liked}
+          onLike={() => {
+            if (votedAt) {
+              unvotePost(id)
+            } else {
+              votePost(id)
+            }
+          }}
+          liked={!!votedAt}
           votes={totalSanVotes} />
       </div>
     </div>

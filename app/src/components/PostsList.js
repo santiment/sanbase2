@@ -8,7 +8,8 @@ const PostsList = ({
   loading = true,
   isError = false,
   isEmpty = true,
-  votePost
+  votePost,
+  unvotePost
 }) => {
   return (
     <div className='event-posts-list'>
@@ -17,6 +18,7 @@ const PostsList = ({
           index={index + 1}
           key={index}
           votePost={votePost}
+          unvotePost={unvotePost}
           {...posts[postKey]} />
       ))}
     </div>

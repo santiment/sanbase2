@@ -16,6 +16,7 @@ import './EventVotes.css'
 const EventVotes = ({
   Posts,
   votePost,
+  unvotePost,
   location,
   match,
   user
@@ -56,12 +57,21 @@ const EventVotes = ({
             </NavLink>}
         </div>
         <PostsList {...Posts}
-          votePost={postId =>
+          votePost={postId => {
             votePost({
-              variables: {postId}
+              variables: {postId: parseInt(postId)}
             })
-            .then(data => console.log('toggle like'))
-            .catch(e => console.log(e))} />
+            .then(data => Posts.refetch())
+            .catch(e => console.log(e))
+          }}
+          unvotePost={postId => {
+            unvotePost({
+              variables: {postId: parseInt(postId)}
+            })
+            .then(data => Posts.refetch())
+            .catch(e => console.log(e))
+          }}
+        />
       </Panel>
     </div>
   )
@@ -74,11 +84,12 @@ const currentPollGQL = gql`{
       id
       title
       approvedAt
+      votedAt
       link
+      totalSanVotes
       user {
         username
       }
-      totalSanVotes
     }
     startAt
   }
@@ -87,6 +98,14 @@ const currentPollGQL = gql`{
 const votePostGQL = gql`
   mutation vote($postId: Int!){
     vote(postId: $postId) {
+      id
+    }
+  }
+`
+
+const unvotePostGQL = gql`
+  mutation unvote($postId: Int!){
+    unvote(postId: $postId) {
       id
     }
   }
@@ -111,13 +130,18 @@ const mapDataToProps = props => {
   const { Poll, ownProps } = props
   const filter = ownProps.match.params.filter || 'popular'
   const posts = ((posts = []) => {
+    const normalizedPosts = posts.filter(post => post.approvedAt)
+    .map(post => {
+      return {totalSanVotes: post.totalSanVotes || 0, ...post}
+    })
     if (filter === 'popular') {
-      return sortByPopular(posts)
+      return sortByPopular(normalizedPosts)
     }
-    return sortByNewest(posts)
+    return sortByNewest(normalizedPosts)
   })(Poll.currentPoll && Poll.currentPoll.posts)
   return {
     Posts: {
+      ...Poll,
       loading: Poll.loading,
       isEmpty: Poll.currentPoll &&
         Poll.currentPoll.posts &&
@@ -141,10 +165,15 @@ const enhance = compose(
   ),
   graphql(currentPollGQL, {
     name: 'Poll',
-    props: mapDataToProps
+    props: mapDataToProps,
+    options: { pollInterval: 2000 }
   }),
   graphql(votePostGQL, {
     name: 'votePost',
+    options: { fetchPolicy: 'network-only' }
+  }),
+  graphql(unvotePostGQL, {
+    name: 'unvotePost',
     options: { fetchPolicy: 'network-only' }
   }),
   pure

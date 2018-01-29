@@ -7,7 +7,10 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Voting.Vote
   alias Sanbase.Repo
 
+  @login_email_template "Login"
+
   @salt_length 64
+  @email_token_length 64
 
   # 5 minutes
   @san_balance_cache_seconds 60 * 5
@@ -18,6 +21,8 @@ defmodule Sanbase.Auth.User do
     field(:salt, :string)
     field(:san_balance, :decimal)
     field(:san_balance_updated_at, Timex.Ecto.DateTime)
+    field(:email_token, :string)
+    field(:email_token_generated_at, Timex.Ecto.DateTime)
 
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -27,6 +32,10 @@ defmodule Sanbase.Auth.User do
 
   def generate_salt do
     :crypto.strong_rand_bytes(@salt_length) |> Base.url_encode64() |> binary_part(0, @salt_length)
+  end
+
+  def generate_email_token do
+    :crypto.strong_rand_bytes(@email_token_length) |> Base.url_encode64()
   end
 
   def changeset(%User{} = user, attrs \\ %{}) do
@@ -62,5 +71,30 @@ defmodule Sanbase.Auth.User do
     eth_accounts
     |> Enum.map(&EthAccount.san_balance/1)
     |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+  end
+
+  def find_or_insert_by_email(email, username \\ nil) do
+    case Repo.get_by(User, email: email) do
+      nil ->
+        %User{email: email, username: username, salt: generate_salt()}
+        |> Repo.insert()
+
+      user ->
+        {:ok, user}
+    end
+  end
+
+  def update_email_token(user) do
+    user
+    |> change(email_token: generate_email_token(), email_token_generated_at: Timex.now())
+    |> Repo.update()
+  end
+
+  def send_login_email(user) do
+    ElasticEmail.send(@login_email_template, [
+      {:to, user.email},
+      {:valid_minutes, @login_email_valid_minutes},
+      {:login_token, user.email_token}
+    ])
   end
 end

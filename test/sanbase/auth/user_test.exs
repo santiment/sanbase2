@@ -62,4 +62,34 @@ defmodule Sanbase.Auth.UserTest do
     user = Repo.get(User, user.id)
     assert Timex.diff(Timex.now(), user.san_balance_updated_at, :seconds) == 0
   end
+
+  test "find_or_insert_by_email when the user does not exist" do
+    {:ok, user} = User.find_or_insert_by_email("test@example.com", "john_snow")
+
+    assert user.email == "test@example.com"
+    assert user.username == "john_snow"
+  end
+
+  test "find_or_insert_by_email when the user exists" do
+    existing_user =
+      %User{email: "test@example.com", username: "cersei", salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    {:ok, user} = User.find_or_insert_by_email(existing_user.email, "john_snow")
+
+    assert user.id == existing_user.id
+    assert user.email == existing_user.email
+    assert user.username == existing_user.username
+  end
+
+  test "update_email_token updates the email_token and the email_token_generated_at" do
+    user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    {:ok, user} = User.update_email_token(user)
+
+    assert user.email_token != nil
+    assert Timex.diff(Timex.now(), user.email_token_generated_at, :seconds) == 0
+  end
 end

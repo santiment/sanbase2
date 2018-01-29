@@ -158,7 +158,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:transaction_type, :transaction_type, default_value: :all)
 
       resolve(&EtherbiResolver.exchange_fund_flow/3)
-
     end
   end
 
@@ -169,6 +168,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:message_hash, non_null(:string))
 
       resolve(&AccountResolver.eth_login/2)
+    end
+
+    field :email_login, :login do
+      arg(:email, non_null(:string))
+      arg(:username, :string)
+
+      resolve(&AccountResolver.email_login/2)
     end
 
     field :change_email, :user do

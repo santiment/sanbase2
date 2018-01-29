@@ -14,6 +14,7 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "@trainline/react-skeletor": "^1.0.2",
     "animate-components": "^1.4.8",
     "apollo-cache-inmemory": "^1.1.2",
     "apollo-client": "^2.1.0",

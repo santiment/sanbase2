@@ -1,9 +1,14 @@
+.event-posts-new .panel {
+  padding: 0;
+}
+
 .event-posts-new-navigation {
   margin: 0;
-  padding: 0;
+  padding: 8px 16px;
   width: 100%;
   display: flex;
   justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .event-posts-new-navigation ol {
@@ -35,6 +40,7 @@
 .event-posts-new-step {
   display: flex;
   flex-direction: column;
+  padding: 8px 16px;
 }
 
 .event-posts-new-step label,

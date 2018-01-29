@@ -41,10 +41,11 @@ class EventVotesNew extends Component {
     const last = paths[paths.length - 1]
     return (
       <div className='page event-posts-new'>
-        <h2>Post new insight</h2>
         <Panel>
+          <div className='panel-header'>
+            Post new insight
+          </div>
           <PostsNewHeader location={last} />
-          <hr />
           <Route
             exact
             path='/events/votes/new'

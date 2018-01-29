@@ -138,7 +138,11 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
 
 config :sanbase, Sanbase.Etherbi.Transactions,
   update_interval: 1000 * 60 * 5,
-  sync_enabled: {:system, "ETHERBI_TRANSACTIONS_ENABLED", false}
+  sync_enabled: {:system, "ETHERBI_TRANSACTIONS_SYNC_ENABLED", false}
+
+config :sanbase, Sanbase.Etherbi.BurnRate,
+  update_interval: 1000 * 60 * 5,
+  sync_enabled: {:system, "ETHERBI_BURN_RATE_SYNC_ENABLED", false}
 
 config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},

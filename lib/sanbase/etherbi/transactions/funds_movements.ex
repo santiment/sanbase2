@@ -41,23 +41,10 @@ defmodule Sanbase.Etherbi.FundsMovement do
   # Private functions
 
   defp transactions(address, transaction_type) do
-    Logger.info("Getting #{transaction_type} transactions for #{address}")
-
     case generate_from_to_interval_unix(address, transaction_type) do
-      {from_unix, to_unix} ->
-        etherbi_url = @etherbi_api.etherbi_url()
-        url = "#{etherbi_url}/transactions_#{transaction_type}"
-
-        options = [
-          recv_timeout: 120_000,
-          params: %{
-            from_timestamp: from_unix,
-            to_timestamp: to_unix,
-            wallets: Poison.encode!([address])
-          }
-        ]
-
-        @etherbi_api.get_transactions(url, options)
+      {from_datetime, to_datetime} ->
+        Logger.info("Getting #{transaction_type} transactions for #{address}")
+        @etherbi_api.get_transactions(address, from_datetime, to_datetime, transaction_type)
 
       _ ->
         {:ok, []}
@@ -81,13 +68,10 @@ defmodule Sanbase.Etherbi.FundsMovement do
         from_datetime
       end
 
-    if  from_datetime do
+    if from_datetime do
       to_datetime = calculate_to_datetime(from_datetime, DateTime.utc_now())
 
-      from_unix = DateTime.to_unix(from_datetime, :seconds)
-      to_unix = DateTime.to_unix(to_datetime, :seconds)
-
-      {from_unix, to_unix}
+      {from_datetime, to_datetime}
     else
       nil
     end

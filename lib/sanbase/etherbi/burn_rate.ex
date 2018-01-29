@@ -6,9 +6,13 @@ defmodule Sanbase.Etherbi.BurnRate do
   """
 
   @default_update_interval 1000 * 60 * 5
+  @etherbi_api Sanbase.Etherbi.EtherbiApi
+
   use Sanbase.Etherbi.EtherbiFetcher
 
   import Ecto.Query
+
+  require Logger
 
   alias Sanbase.Etherbi.BurnRate.Store
   alias Sanbase.Repo
@@ -32,7 +36,13 @@ defmodule Sanbase.Etherbi.BurnRate do
   end
 
   def fetch_and_store(ticker, token_decimals) do
-
+    with {:ok, transactions_out} <- @etherbi_api.get_burn_rate(ticker) do
+      convert_to_measurement(transactions_out, "out", token_decimals)
+      |> Store.import()
+    else
+      {:error, reason} ->
+        Logger.warn("Could not fetch and store out transactions for #{address}: #{reason}")
+    end
   end
 
   # Private functions
@@ -41,20 +51,20 @@ defmodule Sanbase.Etherbi.BurnRate do
   # number of decimal places `nil` is written instead and it gets filtered by the Store.import()
   defp convert_to_measurement(
          transactions_data,
-         transaction_type,
-         token_decimals
+         token_decimals,
+         ticker
        ) do
-    transactions_data
-    |> Enum.map(fn {datetime, volume, address, token} ->
-      if decimal_places = Map.get(token_decimals, token) do
+    burn_rates
+    |> Enum.map(fn {datetime, burn_rate} ->
+      if decimal_places = Map.get(token_decimals, ticker) do
         %Sanbase.Influxdb.Measurement{
           timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-          fields: %{volume: volume / decimal_places},
-          tags: [transaction_type: transaction_type, address: address],
-          name: token
+          fields: %{burn_rate: burn_rate / decimal_places},
+          tags: [],
+          name: ticker
         }
       else
-        Logger.warn("Missing token decimals for #{token}")
+        Logger.warn("Missing token decimals for #{ticker}")
         nil
       end
     end)

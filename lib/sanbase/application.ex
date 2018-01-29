@@ -32,6 +32,9 @@ defmodule Sanbase.Application do
       # Time series transactions DB connection
       Sanbase.Etherbi.Transactions.Store.child_spec(),
 
+      # Time series burn rate DB connection
+      Sanbase.Etherbi.BurnRate.Store.child_spec(),
+
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :etherscan_rate_limiter,
@@ -97,6 +100,9 @@ defmodule Sanbase.Application do
 
       # Store wallets' in and out transactions in time series database
       Sanbase.Etherbi.Transactions.child_spec(%{}),
+
+      # Store tickers' burn rate in time series database
+      Sanbase.Etherbi.BurnRate.child_spec(%{}),
     ] ++ faktory_supervisor() ++ [
       # Github activity scraping scheduler
       Sanbase.ExternalServices.Github.child_spec(%{}),

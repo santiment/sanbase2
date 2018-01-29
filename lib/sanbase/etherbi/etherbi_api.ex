@@ -29,9 +29,8 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   """
   @spec get_first_transaction_timestamp(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_transaction_timestamp(address) do
-    Logger.info("Getting the first transaction timestamp for address #{address}")
-    url = "#{etherbi_url()}/first_transaction_timestamp?address=#{address}"
-    options = [recv_timeout: 45_000]
+    url = "#{etherbi_url()}/first_transaction_timestamp"
+    options = [recv_timeout: 45_000, params: %{address: address}]
 
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -58,10 +57,24 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     the timestamp of the first transaction made for the given address
 
     Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
-      otherwise.
+    otherwise.
   """
-  @spec get_transactions(binary(), Keyword.t()) :: {:ok, list()} | {:error, binary()}
-  def get_transactions(url, options) do
+  @spec get_transactions(binary(), %DateTime{}, %DateTime{}, binary()) :: {:ok, list()} | {:error, binary()}
+  def get_transactions(address, from, to, transaction_type) do
+    transaction_type = transaction_type |> String.downcase()
+    from_unix = DateTime.to_unix(from, :seconds)
+    to_unix = DateTime.to_unix(to, :seconds)
+    url = "#{etherbi_url()}/transactions_#{transaction_type}"
+
+    options = [
+      recv_timeout: 120_000,
+      params: %{
+        from_timestamp: from_unix,
+        to_timestamp: to_unix,
+        wallets: Poison.encode!([address])
+      }
+    ]
+
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         convert_transactions_response(body)
@@ -79,17 +92,48 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     end
   end
 
+  @doc ~S"""
+    Issues a GET request to Etherbi REST burn rate API to get
+    the burn rate for a given ticker
+
+    Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
+    otherwise.
+  """
+  @spec get_burn_rate(binary(), %DateTime{}, %DateTime{}) :: {:ok, list()} | {:error, binary()}
+  def get_burn_rate(ticker, from, to) do
+    from_unix = DateTime.to_unix(from, :seconds)
+    to_unix = DateTime.to_unix(to, :seconds)
+    url = "#{etherbi_url()}/burn_rate"
+
+    options = [
+      recv_timeout: 45_000,
+      params: %{ticker: ticker, from_timestamp: from_unix, to_timestamp: to_unix}
+    ]
+
+    case HTTPoison.get(url, [], options) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        convert_burn_rate_response(body)
+
+      {:error, %HTTPoison.Error{reason: :timeout}} ->
+        Logger.warn("Timeout trying to fetch burn rate for #{ticker}")
+        {:ok, []}
+
+      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+        {:error, "Error status #{status} fetching burn rate for #{ticker}: #{body}"}
+
+      error ->
+        {:error, "Error fetching burn rate for #{ticker}: #{inspect(error)}"}
+    end
+  end
+
   # Private functions
 
   defp extract_address(options) do
     options[:params][:wallets]
   end
 
-  defp convert_timestamp_response("[]") do
-    {:ok, nil}
-  end
-
   # Body is a string in the format `"[timestamp]"`
+  defp convert_timestamp_response("[]"), do: {:ok, nil}
   defp convert_timestamp_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do
       result = decoded_body |> hd |> DateTime.from_unix!()
@@ -97,12 +141,28 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     end
   end
 
+  # Body is a string in the format `[[timestamp,volume,address,token], [timestamp,...]]
+  defp convert_transactions_response("[]"), do: {:ok, nil}
   defp convert_transactions_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do
       result =
         decoded_body
         |> Enum.map(fn [timestamp, volume, address, token] ->
           {DateTime.from_unix!(timestamp), volume, address, token}
+        end)
+
+      {:ok, result}
+    end
+  end
+
+  # Body is a string in the format `[[timestamp,volume], [timestamp, volume], ...]
+  defp convert_burn_rate_response("[]"), do: {:ok, nil}
+  defp convert_burn_rate_response(body) do
+    with {:ok, decoded_body} <- Poison.decode(body) do
+      result =
+        decoded_body
+        |> Enum.map(fn [timestamp, volume] ->
+          {DateTime.from_unix!(timestamp), volume}
         end)
 
       {:ok, result}

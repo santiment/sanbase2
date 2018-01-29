@@ -38,6 +38,7 @@ defmodule Sanbase.Auth.User do
   defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
   @salt_length 64
+  @email_token_length 64
 
   # 5 minutes
   @san_balance_cache_seconds 60 * 5

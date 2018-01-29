@@ -990,7 +990,9 @@ CREATE TABLE public.user_api_key_tokens (
     updated_at timestamp without time zone NOT NULL,
     san_tokens integer,
     san_balance numeric,
-    san_balance_updated_at timestamp without time zone
+    san_balance_updated_at timestamp without time zone,
+    email_token character varying(255),
+    email_token_generated_at timestamp without time zone
 );
 
 
@@ -1895,6 +1897,13 @@ CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
 --
 
 CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (post_id, user_id);
+
+
+--
+-- Name: users_email_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_email_token_index ON users USING btree (email_token);
 
 
 --

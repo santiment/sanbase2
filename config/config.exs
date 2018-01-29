@@ -74,7 +74,7 @@ config :sanbase, SanbaseWorkers.ImportGithubActivity,
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [ max_overflow: 10, size: 20 ],
+  pool: [max_overflow: 10, size: 20],
   database: "twitter_followers_data"
 
 config :sanbase, Sanbase.Etherbi.Transactions.Store,
@@ -187,7 +187,8 @@ config :hammer,
                                  cleanup_interval_ms: 60_000 * 10]}
 
 config :sanbase, Sanbase.ExternalServices.Github,
-  update_interval: 60 * 1000 * 60, # 60 minutes
+  # 60 minutes
+  update_interval: 60 * 1000 * 60,
   sync_enabled: {:system, "GITHUB_SCHEDULER_ENABLED", false}
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
@@ -196,12 +197,14 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
 config :sanbase, Sanbase.ExternalServices.TwitterData.Worker,
   consumer_key: {:system, "TWITTER_CONSUMER_KEY"},
   consumer_secret: {:system, "TWITTER_CONSUMER_SECRET"},
-  update_interval: 1000 * 60 * 60 * 6, # 6 hours
+  # 6 hours
+  update_interval: 1000 * 60 * 60 * 6,
   sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
 
 config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
   apikey: {:system, "TWITTERCOUNTER_API_KEY"},
-  update_interval: 1000 * 60 * 60 * 24, # 1 day
+  # 1 day
+  update_interval: 1000 * 60 * 60 * 24,
   sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
 
 config :sanbase, Sanbase.Etherbi.Transactions,
@@ -239,11 +242,11 @@ config :faktory_worker_ex,
   host: {:system, "FAKTORY_HOST", "localhost"},
   port: {:system, "FAKTORY_PORT", 7419},
   client: [
-    pool: 1,
+    pool: 1
   ],
   worker: [
     concurrency: 1,
-    queues: ["default", "data_migrations"],
+    queues: ["default", "data_migrations"]
   ],
   start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
 
@@ -256,8 +259,11 @@ config :ex_aws,
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
   region: "eu-central-1"
 
-config :sanbase, Sanbase.Etherbi,
-  url: {:system, "ETHERBI_URL"}
+config :sanbase, Sanbase.Etherbi, url: {:system, "ETHERBI_URL"}
+
+config :sanbase, Sanbase.ElasticEmail,
+  apikey: {:system, "ELASTICEMAIL_APIKEY"},
+  from: {:system, "ELASTICEMAIL_FROM_EMAIL", "admin@santiment.net"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

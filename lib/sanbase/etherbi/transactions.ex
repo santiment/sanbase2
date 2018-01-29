@@ -10,8 +10,7 @@ defmodule Sanbase.Etherbi.Transactions do
 
   import Ecto.Query
 
-  alias Sanbase.Etherbi.Transactions.Store
-  alias Sanbase.Etherbi.FundsMovement
+  alias Sanbase.Etherbi.Transactions.{Store, Fetcher}
   alias Sanbase.Repo
 
 
@@ -42,7 +41,7 @@ defmodule Sanbase.Etherbi.Transactions do
   end
 
   def fetch_and_store_in(address, token_decimals) do
-    with {:ok, transactions_in} <- FundsMovement.transactions_in(address) do
+    with {:ok, transactions_in} <- Fetcher.transactions_in(address) do
       convert_to_measurement(transactions_in, "in", token_decimals)
       |> Store.import()
     else
@@ -52,7 +51,7 @@ defmodule Sanbase.Etherbi.Transactions do
   end
 
   def fetch_and_store_out(address, token_decimals) do
-    with {:ok, transactions_out} <- FundsMovement.transactions_out(address) do
+    with {:ok, transactions_out} <- Fetcher.transactions_out(address) do
       convert_to_measurement(transactions_out, "out", token_decimals)
       |> Store.import()
     else

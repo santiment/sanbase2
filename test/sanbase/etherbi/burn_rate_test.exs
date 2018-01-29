@@ -9,14 +9,18 @@ defmodule Sanbase.Etherbi.BurnRateTest do
   alias Sanbase.Etherbi.BurnRate.Store
 
   setup do
+    ticker = "SAN"
+
+    Store.create_db()
+    Store.drop_measurement(ticker)
     %Project{}
-    |> Project.changeset(%{name: "Santiment", ticker: "SAN", token_decimals: 18})
+    |> Project.changeset(%{name: "Santiment", ticker: ticker, token_decimals: 18})
     |> Sanbase.Repo.insert!()
 
     [
-      ticker: "SAN",
-      timestamp1: 1_514_765_134,
-      timestamp2: 1_514_965_515,
+      ticker: ticker,
+      timestamp1: 1_514_765_100,
+      timestamp2: 1_514_965_500,
       burn_rate1: 18_000_000_000_000_000_000,
       expected_burn_rate1: 18,
       burn_rate2: 36_000_000_000_000_000_000,

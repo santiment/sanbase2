@@ -19,11 +19,11 @@ defmodule Sanbase.Etherbi.BurnRate.Store do
   # Private functions
 
   defp burn_rate_from_to_query(measurement, from, to, resolution) do
-    ~s/SELECT burn_rate
+    ~s/SELECT SUM(burn_rate)
     FROM "#{measurement}"
-    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    GROUP BY time(#{resolution}) fill(none/
+    GROUP BY time(#{resolution}) fill(none)/
   end
 
   defp parse_burn_rate_time_series(%{error: error}) do
@@ -55,7 +55,7 @@ defmodule Sanbase.Etherbi.BurnRate.Store do
     {:ok, result}
   end
 
-  defp parse_transactions_time_series(_) do
+  defp parse_burn_rate_time_series(_) do
     {:ok, []}
   end
 end

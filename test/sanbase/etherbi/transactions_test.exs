@@ -9,6 +9,10 @@ defmodule Sanbase.Etherbi.TransactionsTest do
   alias Sanbase.Etherbi.Transactions.Store
 
   setup do
+    ticker = "SAN"
+    Store.create_db()
+    Store.drop_measurement(ticker)
+
     %Project{}
     |> Project.changeset(%{name: "Santiment", ticker: "SAN", token_decimals: 18})
     |> Sanbase.Repo.insert!()
@@ -35,7 +39,7 @@ defmodule Sanbase.Etherbi.TransactionsTest do
 
     mock(
       Sanbase.Etherbi.EtherbiApi,
-      :get_first_transaction_timestamp,
+      :get_first_transaction_timestamp_addr,
       DateTime.from_unix(context.timestamp1)
     )
 

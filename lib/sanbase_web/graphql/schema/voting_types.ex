@@ -17,6 +17,10 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:link, non_null(:string))
     field(:approved_at, :datetime)
 
+    field :voted_at, :datetime do
+      resolve(&VotingResolver.voted_at/3)
+    end
+
     field :total_san_votes, :integer do
       resolve(&VotingResolver.total_san_votes/3)
     end

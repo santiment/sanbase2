@@ -24,35 +24,40 @@ defmodule Sanbase.Auth.UserTest do
   end
 
   test "update_san_balance_changeset is returning a changeset with updated san balance" do
-    mock Sanbase.InternalServices.Ethauth, :san_balance, 5
+    mock(Sanbase.InternalServices.Ethauth, :san_balance, Decimal.new(5))
 
     user = %User{san_balance: 0, eth_accounts: [%EthAccount{address: "0x000000000001"}]}
 
     changeset = User.update_san_balance_changeset(user)
 
-    assert changeset.changes[:san_balance] == 5
+    assert changeset.changes[:san_balance] == Decimal.new(5)
     assert Timex.diff(Timex.now(), changeset.changes[:san_balance_updated_at], :seconds) == 0
   end
 
   test "san_balance! does not update the balance if the balance cache is not stale" do
-    user = %User{san_balance_updated_at: Timex.now(), san_balance: 5}
+    user = %User{san_balance_updated_at: Timex.now(), san_balance: Decimal.new(5)}
 
-    assert User.san_balance!(user) == 5
+    assert User.san_balance!(user) == Decimal.new(5)
   end
 
   test "san_balance! updates the balance if the balance cache is stale" do
-    user = %User{san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10), salt: User.generate_salt()}
-    |> Repo.insert!
+    user =
+      %User{
+        san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10),
+        salt: User.generate_salt()
+      }
+      |> Repo.insert!()
 
-    mock Sanbase.InternalServices.Ethauth, :san_balance, 10
+    mock(Sanbase.InternalServices.Ethauth, :san_balance, Decimal.new(10))
 
     %EthAccount{address: "0x000000000001", user_id: user.id}
-    |> Repo.insert!
+    |> Repo.insert!()
 
-    user = Repo.get(User, user.id)
-    |> Repo.preload(:eth_accounts)
+    user =
+      Repo.get(User, user.id)
+      |> Repo.preload(:eth_accounts)
 
-    assert User.san_balance!(user) == 10
+    assert User.san_balance!(user) == Decimal.new(10)
 
     user = Repo.get(User, user.id)
     assert Timex.diff(Timex.now(), user.san_balance_updated_at, :seconds) == 0

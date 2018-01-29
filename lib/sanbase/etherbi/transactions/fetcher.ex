@@ -5,10 +5,8 @@ defmodule Sanbase.Etherbi.Transactions.Fetcher do
     interval for the query.
   """
 
-  require Sanbase.Utils.Config
   require Logger
 
-  alias Sanbase.Utils.Config
   alias Sanbase.Etherbi.Transactions.Store
 
   @etherbi_api Mockery.of("Sanbase.Etherbi.EtherbiApi")

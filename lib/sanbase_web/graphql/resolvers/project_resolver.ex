@@ -53,21 +53,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def all_projects_with_eth_contract_info(_parent, _args, resolution) do
-    all_icos_query = from i in Ico,
-    select: %{project_id: i.project_id,
-              main_contract_address: i.main_contract_address,
-              contract_block_number: i.contract_block_number,
-              contract_abi: i.contract_abi,
-              rank: fragment("row_number() over(partition by ? order by ? asc)", i.project_id, i.start_date)}
-
-    query = from d in subquery(all_icos_query),
-    inner_join: p in Project, on: p.id == d.project_id,
-    where: not is_nil(p.coinmarketcap_id)
-          and d.rank == 1
-          and not is_nil(d.main_contract_address)
-          and not is_nil(d.contract_block_number)
-          and not is_nil(d.contract_abi),
-    select: p
+    query = Project.all_projects_with_eth_contract_query()
 
     projects = case coinmarketcap_requested?(resolution) do
       true -> Repo.all(query) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])

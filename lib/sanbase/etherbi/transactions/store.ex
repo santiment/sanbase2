@@ -1,4 +1,7 @@
 defmodule Sanbase.Etherbi.Transactions.Store do
+  @moduledoc ~S"""
+    Module with functions for working with transactions influx database
+  """
   use Sanbase.Influxdb.Store
 
   alias Sanbase.Etherbi.Transactions.Store

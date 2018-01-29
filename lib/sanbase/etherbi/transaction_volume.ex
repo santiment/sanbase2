@@ -9,20 +9,15 @@ defmodule Sanbase.Etherbi.TransactionVolume do
 
   use Sanbase.Etherbi.EtherbiGenServer
 
-  import Ecto.Query
-
   require Logger
 
-  alias Sanbase.Etherbi.TransactionVolume.Store
-  alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Etherbi.Utils
+  alias Sanbase.Etherbi.TransactionVolume.{Store, Fetcher}
 
   def work() do
     # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
-    token_decimals = build_token_decimals_map()
-
-    query = from(p in Project, where: not is_nil(p.ticker), select: p.ticker)
-    tickers = Repo.all(query)
+    token_decimals = Utils.build_token_decimals_map()
+    tickers = Utils.get_tickers()
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
@@ -35,8 +30,8 @@ defmodule Sanbase.Etherbi.TransactionVolume do
   end
 
   def fetch_and_store(ticker, token_decimals) do
-    with {:ok, transaction_volume} <- Sanbase.Etherbi.TransactionVolume.Fetcher.transaction_volume(ticker) do
-      convert_to_measurement(transaction_volume, ticker, token_decimals)
+    with {:ok, transaction_volumes} <- Fetcher.transaction_volume(ticker) do
+      convert_to_measurement(transaction_volumes, ticker, token_decimals)
       |> Store.import()
     else
       {:error, reason} ->

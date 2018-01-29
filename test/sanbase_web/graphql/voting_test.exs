@@ -95,6 +95,47 @@ defmodule SanbaseWeb.Graphql.VotingTest do
            ]
   end
 
+  test "getting the current poll with the dates when the current user voted", %{
+    user: user,
+    conn: conn
+  } do
+    poll = Poll.find_or_insert_current_poll!()
+
+    approved_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        link: "http://example.com",
+        approved_at: Timex.now()
+      }
+      |> Repo.insert!()
+
+    vote =
+      %Vote{post_id: approved_post.id, user_id: user.id}
+      |> Repo.insert!()
+
+    query = """
+    {
+      currentPoll {
+        posts {
+          id,
+          voted_at
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentPoll"))
+
+    currentPoll = json_response(result, 200)["data"]["currentPoll"]
+    [post] = currentPoll["posts"]
+
+    assert Timex.parse!(post["voted_at"], "{ISO:Extended}") == vote.inserted_at
+  end
+
   test "voting for a post", %{conn: conn, user: user} do
     poll = Poll.find_or_insert_current_poll!()
 

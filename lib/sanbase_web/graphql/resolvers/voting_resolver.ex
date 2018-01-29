@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   def total_san_votes(%Post{} = post, _args, _context) do
     total_san_votes =
       post
-      |> Repo.preload(votes: [:user])
+      |> Repo.preload(votes: [user: :eth_accounts])
       |> Map.get(:votes)
       |> Enum.map(&Map.get(&1, :user))
       |> Enum.map(&User.san_balance!/1)
@@ -26,6 +26,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
 
     {:ok, Decimal.div(total_san_votes, Ethauth.san_token_decimals())}
   end
+
+  def voted_at(%Post{} = post, _args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    case Repo.get_by(Vote, post_id: post.id, user_id: user.id) do
+      nil -> {:ok, nil}
+      vote -> {:ok, vote.inserted_at}
+    end
+  end
+
+  def voted_at(%Post{}, _args, _context), do: {:ok, nil}
 
   def vote(_root, %{post_id: post_id}, %{
         context: %{auth: %{current_user: user}}

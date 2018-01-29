@@ -3,7 +3,7 @@ defmodule Sanbase.Etherbi.EtherbiGenServer do
     This module is a GenServer that periodically sends requests to etherbi API.
 
     It requires that there is module `MOD.Store` where `MOD` is the name of the module
-    that uses the EtherbiFetcher. For now all modules will use InfluxDB. In the future
+    that uses the EtherbiGenServer. For now all modules will use InfluxDB. In the future
     if there is need for not having an InfluxDB this module could be reworked and
     inject different behaviour based on arguments passed via `options` in the `__using__/1`
     macro

@@ -133,6 +133,40 @@ defmodule Sanbase.Model.Project do
   def roi_usd(_), do: nil
 
   @doc ~S"""
+    Returns an Ecto query that selects all projects with eth contract
+  """
+  @spec all_projects_with_eth_contract_query() :: %Ecto.Query{}
+  def all_projects_with_eth_contract_query() do
+    all_icos_query =
+      from(
+        i in Ico,
+        select: %{
+          project_id: i.project_id,
+          main_contract_address: i.main_contract_address,
+          contract_block_number: i.contract_block_number,
+          contract_abi: i.contract_abi,
+          rank:
+            fragment("row_number() over(partition by ? order by ? asc)", i.project_id, i.start_date)
+        }
+      )
+
+    query =
+      from(
+        d in subquery(all_icos_query),
+        inner_join: p in Project,
+        on: p.id == d.project_id,
+        where:
+          not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(d.main_contract_address) and
+            not is_nil(d.contract_block_number) and not is_nil(d.contract_abi),
+        select: p
+      )
+
+    query
+  end
+
+  # Private functions
+
+  @doc ~S"""
   Heuristic: fills empty ico.tokens_sold_at_ico by evenly distributing the rest of the circulating supply
   TODO:
   Currently uses latest_coinmarketcap_data.available_supply, which also includes coins not issued at any ICO

@@ -9,23 +9,16 @@ import './AuthControl.css'
 const AccountLinks = ({
   logout,
   openSettings,
-  username
+  username,
+  isDesktop
 }) => (
   <div className='acct-links'>
-    <ul>
-      {username &&
-        <li>
-          <div className='account-name'>
-            <a href='#'>{username}</a>
-          </div>
-        </li>}
-      <li>
-        <a href='#' onClick={openSettings}>Settings</a>
-      </li>
-      <li>
-        <a href='#' onClick={logout}>Logout</a>
-      </li>
-    </ul>
+    {username &&
+    <div className='account-name'>
+      {username}
+    </div>}
+    <Button basic={isDesktop} onClick={logout}>Logout</Button>
+    <Button basic={isDesktop} onClick={openSettings}>Settings</Button>
   </div>
 )
 
@@ -46,6 +39,7 @@ const AuthControl = ({
           </div>
         } on='click'>
           <AccountLinks
+            isDesktop={isDesktop}
             username={user.username}
             openSettings={openSettings}
             logout={logout} />

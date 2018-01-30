@@ -1,5 +1,4 @@
 import React from 'react'
-import Raven from 'raven-js'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import { Button } from 'semantic-ui-react'
@@ -7,6 +6,7 @@ import { withRouter } from 'react-router-dom'
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
 import Post from './../../components/Post'
+import ErrorBoundary from './../../ErrorBoundary'
 
 const createPostGQL = gql`
   mutation createPost($link: String!, $title: String!) {
@@ -26,26 +26,31 @@ const ConfirmPost = ({
   user
 }) => {
   return (
-    <div className='event-posts-new-step'>
-      <Post
-        votePost={() => {}}
-        unvotePost={() => {}}
-        user={user} {...post} />
-      <div className='event-posts-new-step-control'>
-        <Button
-          positive
-          onClick={() => createPost({
-            variables: {title: post.title, link: post.link}
-          }).then(data =>
-            history.push('/events/votes', {
-              postCreated: true,
-              ...data
-            }))
-            .catch(error => Raven.captureException(error))}>
-          Click && Confirm
-        </Button>
+    <ErrorBoundary>
+      <div className='event-posts-new-step'>
+        <Post
+          votePost={() => {}}
+          unvotePost={() => {}}
+          user={user} {...post} />
+        <div className='event-posts-new-step-control'>
+          <Button
+            positive
+            onClick={() => createPost({
+              variables: {title: post.title, link: post.link}
+            })
+            .then(data =>
+              history.push('/events/votes', {
+                postCreated: true,
+                ...data
+              }))
+            .catch(error => {
+              throw new Error(error)
+            })}>
+            Click && Confirm
+          </Button>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   )
 }
 

@@ -1,4 +1,5 @@
 import React from 'react'
+import * as qs from 'query-string'
 import { Redirect } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { graphql, withApollo } from 'react-apollo'
@@ -38,8 +39,13 @@ export const Login = ({
   appLoaded,
   checkMetamask,
   authWithSAN,
+  location,
   client
 }) => {
+  const qsData = qs.parse(location.search)
+  if (qsData && qsData.redirect_to && user.token) {
+    return <Redirect to={qsData.redirect_to} />
+  }
   if (user.data.hasOwnProperty('username')) {
     return <Redirect to='/' />
   }

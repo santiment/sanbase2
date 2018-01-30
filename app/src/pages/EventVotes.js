@@ -1,6 +1,9 @@
-import React from 'react'
+import React, { Fragment } from 'react'
+import debounce from 'lodash.debounce'
+import Raven from 'raven-js'
 import {
   compose,
+  withState,
   pure
 } from 'recompose'
 import { connect } from 'react-redux'
@@ -10,19 +13,50 @@ import { NavLink } from 'react-router-dom'
 import Panel from './../components/Panel'
 import PostsList from './../components/PostsList'
 import { simpleSort } from './../utils/sortMethods'
-import { Message } from 'semantic-ui-react'
+import { Button, Header, Icon, Modal, Message } from 'semantic-ui-react'
 import './EventVotes.css'
+
+const POLLING_INTERVAL = 10000
+
+const voteMutationHelper = ({postId, action = 'vote'}) => ({
+  variables: {postId: parseInt(postId, 10)},
+  optimisticResponse: {
+    __typename: 'Mutation',
+    [action]: {
+      __typename: 'Post',
+      id: postId
+    }
+  },
+  update: (proxy, { data: { vote, unvote } }) => {
+    const changedPost = action === 'vote' ? vote : unvote
+    const data = proxy.readQuery({ query: currentPollGQL })
+    const newPosts = [...data.currentPoll.posts]
+    const postIndex = newPosts.findIndex(post => post.id === changedPost.id)
+    newPosts[postIndex].votedAt = action === 'vote' ? new Date() : null
+    data.currentPoll.posts = newPosts
+    proxy.writeQuery({ query: currentPollGQL, data })
+  }
+})
 
 const EventVotes = ({
   Posts,
   votePost,
   unvotePost,
   location,
+  history,
   match,
-  user
+  user,
+  toggleLoginRequest,
+  isToggledLoginRequest
 }) => {
-  return (
-    <div className='page event-votes'>
+  return ([
+    <Fragment key='modal-login-request'>
+      {isToggledLoginRequest &&
+        <ModalRequestLogin
+          toggleLoginRequest={toggleLoginRequest}
+          history={history} />}
+    </Fragment>,
+    <div className='page event-votes' key='page-event-votes'>
       {location.state && location.state.postCreated &&
         <Message positive>
           <Message.Header>Insight created</Message.Header>
@@ -49,33 +83,56 @@ const EventVotes = ({
               NEWEST
             </NavLink>
           </div>
-          {user.token &&
-            <NavLink
+          {user.token
+            ? <NavLink
               className='event-votes-navigation__add-link'
               to={'/events/votes/new'}>
               Add new insight
-            </NavLink>}
+            </NavLink>
+            : <a
+              onClick={() => toggleLoginRequest(!isToggledLoginRequest)}
+              className='event-votes-navigation__add-link'>
+                Add new insight
+              </a>}
         </div>
         <PostsList {...Posts}
-          votePost={postId => {
-            votePost({
-              variables: {postId: parseInt(postId)}
-            })
-            .then(data => Posts.refetch())
-            .catch(e => console.log(e))
-          }}
-          unvotePost={postId => {
-            unvotePost({
-              variables: {postId: parseInt(postId)}
-            })
-            .then(data => Posts.refetch())
-            .catch(e => console.log(e))
-          }}
+          votePost={debounce(postId => {
+            user.token
+              ? votePost(voteMutationHelper({postId, action: 'vote'}))
+              .then(data => Posts.refetch())
+              .catch(e => Raven.captureException(e))
+              : toggleLoginRequest(!isToggledLoginRequest)
+          }, 100)}
+          unvotePost={debounce(postId => {
+            user.token
+              ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
+              .then(data => Posts.refetch())
+              .catch(e => Raven.captureException(e))
+              : toggleLoginRequest(!isToggledLoginRequest)
+          }, 100)}
         />
       </Panel>
     </div>
-  )
+  ])
 }
+
+const ModalRequestLogin = ({history, toggleLoginRequest}) => (
+  <Modal defaultOpen onClose={() => toggleLoginRequest(false)} closeIcon>
+    <Header content='Create an account to get your Sanbase experience.' />
+    <Modal.Content>
+      <p>By having a Sanbase account, you can see more data and insights about crypto projects.
+      You can vote and comment on all you favorite insights and more.</p>
+    </Modal.Content>
+    <Modal.Actions>
+      <Button
+        onClick={() =>
+          history.push(`/login?redirect_to=${history.location.pathname}`)}
+        color='green'>
+        <Icon name='checkmark' /> Login or Sign up
+      </Button>
+    </Modal.Actions>
+  </Modal>
+)
 
 const currentPollGQL = gql`{
   currentPoll {
@@ -163,10 +220,11 @@ const enhance = compose(
   connect(
     mapStateToProps
   ),
+  withState('isToggledLoginRequest', 'toggleLoginRequest', false),
   graphql(currentPollGQL, {
     name: 'Poll',
     props: mapDataToProps,
-    options: { pollInterval: 2000 }
+    options: { pollInterval: POLLING_INTERVAL }
   }),
   graphql(votePostGQL, {
     name: 'votePost',

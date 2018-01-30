@@ -18,6 +18,7 @@ import App from './App'
 import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
+import { hasMetamask } from './web3Helpers'
 import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
@@ -97,7 +98,8 @@ const handleLoad = () => {
   .then(response => {
     store.dispatch({
       type: 'CHANGE_USER_DATA',
-      user: response.data.currentUser
+      user: response.data.currentUser,
+      hasMetamask: hasMetamask()
     })
   })
   .catch(error => console.error(error))

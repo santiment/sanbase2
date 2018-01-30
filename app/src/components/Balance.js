@@ -1,10 +1,10 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { formatNumber } from './../utils/formatting.js'
 
 export const Balance = ({user}) => {
   return (
     <div>{user.ethAccounts.map((account, index) => (
-      <div key={index}>
+      <Fragment key={index}>
         <div
           type='text'
           className='account-name'>
@@ -17,7 +17,7 @@ export const Balance = ({user}) => {
         <div className='account-balance'>
           {formatNumber(account.sanBalance, 'SAN')}
         </div>
-      </div>
+      </Fragment>
     ))}
     </div>
   )

@@ -12,14 +12,6 @@
   margin-left: 5px;
 }
 
-.acct-links ul {
-  list-style: none;
-}
-
-.acct-links ul li {
-  margin-top: 10px;
-}
-
 .acct-links a {
   cursor: pointer;
 }
@@ -29,10 +21,15 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 10px;
 }
 
 @media (min-width: 1024px) {
   .user-auth-control {
     padding: 0;
+  }
+
+  .account-name {
+    display: none;
   }
 }

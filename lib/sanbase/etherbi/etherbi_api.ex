@@ -61,7 +61,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   """
   @spec get_first_transaction_timestamp_addr(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_transaction_timestamp_addr(address) do
-    url = "#{etherbi_url()}/first_transaction_timestamp"
+    url = "#{etherbi_url()}/first_transaction_timestamp_addr"
     options = [recv_timeout: 45_000, params: %{address: address}]
 
     case HTTPoison.get(url, [], options) do

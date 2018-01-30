@@ -45,10 +45,12 @@ defmodule Sanbase.Etherbi.Utils do
     |> Map.new()
   end
 
-  # Get a tuple `{from, to}` to use in a query or `nil` if there is no info.
-  # If there is no record in the DB for that address and Etherbi's
-  # first transaction volume timestamp API returns no result then there are no transactions
-  # In that case return `nil` and detect in the caller that no query should be made
+  @doc ~S"""
+    Get a tuple `{from, to}` to use in a query or `nil` if there is no info.
+    If there is no record in the DB for that address and Etherbi's
+    first transaction volume timestamp API returns no result then there are no transactions
+    In that case return `nil` and detect in the caller that no query should be made
+  """
   def generate_from_to_interval_unix(
         ticker,
         [

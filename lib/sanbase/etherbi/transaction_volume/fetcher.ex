@@ -6,7 +6,8 @@ defmodule Sanbase.Etherbi.TransactionVolume.Fetcher do
   @etherbi_api Mockery.of("Sanbase.Etherbi.EtherbiApi")
 
   @doc ~S"""
-    Uses the etherbi API to fetch the transaction volume for a given ticker
+    Uses the etherbi API to fetch the transaction volume for a given ticker.
+    The `from-to` time period could no exceed 1 month by default.
   """
   @spec transaction_volume(binary()) :: {:ok, list()} | {:error, binary()}
   def transaction_volume(ticker) do

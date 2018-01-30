@@ -12,6 +12,7 @@ import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import { createHttpLink } from 'apollo-link-http'
 import { setContext } from 'apollo-link-context'
+import { from } from 'apollo-link'
 import { InMemoryCache } from 'apollo-cache-inmemory'
 import { ApolloProvider } from 'react-apollo'
 import App from './App'
@@ -54,7 +55,7 @@ const handleLoad = () => {
   })
 
   const client = new ApolloClient({
-    link: authLink.concat(httpLink),
+    link: from([authLink, httpLink]),
     cache: new InMemoryCache()
   })
 

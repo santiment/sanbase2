@@ -6,8 +6,12 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Voting.Vote
   alias Sanbase.Repo
+  alias Sanbase.MandrillApi
 
-  @login_email_template "Login"
+  @login_email_template "login"
+
+  # The Login links will be valid 1 day
+  @login_email_valid_minutes 24 * 60
 
   @salt_length 64
   @email_token_length 64
@@ -90,11 +94,15 @@ defmodule Sanbase.Auth.User do
     |> Repo.update()
   end
 
+  def email_token_valid?(user, token) do
+    user.email_token == token and
+      Timex.diff(Timex.now(), user.email_token_generated_at, :minutes) <=
+        @login_email_valid_minutes
+  end
+
   def send_login_email(user) do
-    ElasticEmail.send(@login_email_template, [
-      {:to, user.email},
-      {:valid_minutes, @login_email_valid_minutes},
-      {:login_token, user.email_token}
-    ])
+    MandrillApi.send(@login_email_template, user.email, %{
+      login_link: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
+    })
   end
 end

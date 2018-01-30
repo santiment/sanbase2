@@ -1,4 +1,4 @@
-defmodule Sanbase.Github.EtherbiTransactionsApiTest do
+defmodule Sanbase.Etherbi.TransactionsApiTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 

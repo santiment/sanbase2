@@ -76,4 +76,83 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     assert followed_projects == nil || [%{"ticker" => "#{project.id}"}] not in followed_projects
   end
+
+  test "trying to login using invalid token for a user", context do
+    user =
+      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      |> Repo.insert!()
+
+    query = """
+    mutation {
+      emailLoginVerify(email: "#{user.email}", token: "invalid_token") {
+        user {
+          email
+        },
+        token
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["errors"] != nil
+  end
+
+  test "trying to login with a valid email token", context do
+    {:ok, user} =
+      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      |> Repo.insert!()
+      |> User.update_email_token()
+
+    query = """
+    mutation {
+      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
+        user {
+          email
+        },
+        token
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    loginData = json_response(result, 200)["data"]["emailLoginVerify"]
+
+    assert loginData["token"] != nil
+    assert loginData["user"]["email"] == user.email
+  end
+
+  test "trying to login with a valid email token after more than 1 day", context do
+    {:ok, user} =
+      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      |> Repo.insert!()
+      |> User.update_email_token()
+
+    user =
+      user
+      |> Ecto.Changeset.change(email_token_generated_at: Timex.shift(Timex.now(), days: -2))
+      |> Repo.update!()
+
+    query = """
+    mutation {
+      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
+        user {
+          email
+        }
+        token
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["errors"] != nil
+  end
 end

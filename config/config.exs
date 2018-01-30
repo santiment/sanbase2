@@ -261,9 +261,9 @@ config :ex_aws,
 
 config :sanbase, Sanbase.Etherbi, url: {:system, "ETHERBI_URL"}
 
-config :sanbase, Sanbase.ElasticEmail,
-  apikey: {:system, "ELASTICEMAIL_APIKEY"},
-  from: {:system, "ELASTICEMAIL_FROM_EMAIL", "admin@santiment.net"}
+config :sanbase, Sanbase.MandrillApi,
+  apikey: {:system, "MANDRILL_APIKEY"},
+  from_email: {:system, "MANDRILL_FROM_EMAIL", "admin@santiment.net"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

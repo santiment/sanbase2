@@ -43,16 +43,6 @@ const handleLoad = () => {
   }
 
   const httpLink = createHttpLink({ uri: `${origin}/graphql` })
-  const errorLink = onError(({ graphQLErrors, networkError }) => {
-    if (graphQLErrors) {
-      graphQLErrors.map(({ message, locations, path }) =>
-        console.log(
-          `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
-        )
-      )
-    }
-    if (networkError) { console.log(`[Network error]: ${networkError}`) }
-  })
   const authLink = setContext((_, { headers }) => {
     // get the authentication token from local storage if it exists
     const token = loadState() ? loadState().token : undefined
@@ -66,7 +56,7 @@ const handleLoad = () => {
   })
 
   const client = new ApolloClient({
-    link: from([authLink, errorLink, httpLink]),
+    link: from([authLink, httpLink]),
     cache: new InMemoryCache()
   })
 

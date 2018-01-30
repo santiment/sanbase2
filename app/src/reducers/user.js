@@ -53,7 +53,10 @@ export default (state = initialState, action) => {
       }
     case 'CHANGE_USER_DATA':
       if (!action.user) {
-        return initialState
+        return {
+          ...initialState,
+          hasMetamask: action.hasMetamask,
+          isLoading: false}
       }
       return {
         ...state,

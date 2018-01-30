@@ -8,6 +8,9 @@ import { Login } from './Login'
 describe('Login container', () => {
   it('it should render correctly', () => {
     const login = renderer.create(<Login
+      location={{
+        search: ''
+      }}
       user={{
         account: null,
         data: {},
@@ -22,6 +25,9 @@ describe('Login container', () => {
 
   it('it should render any loader while not loaded', () => {
     const login = shallow(<Login
+      location={{
+        search: ''
+      }}
       user={{
         account: null,
         data: {},
@@ -35,6 +41,9 @@ describe('Login container', () => {
 
   it('it should render message about metamask was not detected', () => {
     const login = mount(<Login
+      location={{
+        search: ''
+      }}
       user={{
         account: null,
         data: {},
@@ -48,6 +57,9 @@ describe('Login container', () => {
 
   it('it should render message with metamask user account address', () => {
     const login = mount(<Login
+      location={{
+        search: ''
+      }}
       user={{
         account: '0x23942983bc298374cjh',
         data: {},

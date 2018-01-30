@@ -26,7 +26,6 @@ defmodule Sanbase.Etherbi.Utils do
     Sanbase.Repo.all(query)
   end
 
-
   @doc ~s"""
     Build a map that contains tickers as keys and :math.pow(10, decimal_places) as value
   """
@@ -44,5 +43,37 @@ defmodule Sanbase.Etherbi.Utils do
       {ticker, :math.pow(10, token_decimals)}
     end)
     |> Map.new()
+  end
+
+  # Get a tuple `{from, to}` to use in a query or `nil` if there is no info.
+  # If there is no record in the DB for that address and Etherbi's
+  # first transaction volume timestamp API returns no result then there are no transactions
+  # In that case return `nil` and detect in the caller that no query should be made
+  def generate_from_to_interval_unix(
+        ticker,
+        [
+          db_last_datetime: last_datetime_func,
+          etherbi_first_timestamp: first_timestamp_func
+        ]
+      ) do
+    # Returns {:ok, nil} if there are no records for that measurement
+    {:ok, from_datetime} = last_datetime_func.(ticker)
+
+    from_datetime =
+      if from_datetime do
+        from_datetime
+      else
+        # {:ok, from_datetime} = @etherbi_api.get_first_burn_rate_timestamp(ticker)
+        {:ok, from_datetime} = first_timestamp_func.(ticker)
+        from_datetime
+      end
+
+    if from_datetime do
+      to_datetime = calculate_to_datetime(from_datetime, DateTime.utc_now())
+
+      {from_datetime, to_datetime}
+    else
+      nil
+    end
   end
 end

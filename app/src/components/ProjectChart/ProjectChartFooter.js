@@ -23,19 +23,20 @@ export const ToggleBtn = ({
     'disabled': disabled || loading
   })}
     onClick={() => !disabled && !loading && toggle(!isToggled)}>
-    {disabled && !error &&
+    {!loading && disabled && !error &&
       <Popup
         trigger={<div>{children}</div>}
         content="We don't have the data for this project"
         position='bottom left'
       />}
-    {!!error &&
+    {!loading && !!error &&
       <Popup
         trigger={<div>{children}</div>}
         content='There was a problem fetching the data. Please, try again or come back later...'
         position='bottom left'
     />}
-    {!disabled && !error && children}
+    {!loading && !disabled && !error && children}
+    {loading && children}
     {loading && <Loader active inline size='mini' />}
   </div>
 )

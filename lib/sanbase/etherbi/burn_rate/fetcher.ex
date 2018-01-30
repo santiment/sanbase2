@@ -5,6 +5,11 @@ defmodule Sanbase.Etherbi.BurnRate.Fetcher do
 
   alias Sanbase.Etherbi.Utils
 
+  @doc ~S"""
+    Queries the etherbi rest api for the burn rate of a ticker in a given period.
+    The `from-to` time period could no exceed 1 month by default.
+  """
+  @spec burn_rate(binary()) :: {:ok, list()} | {:error, binary()}
   def burn_rate(ticker) do
     case Utils.generate_from_to_interval_unix(
            ticker,

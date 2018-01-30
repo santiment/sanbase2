@@ -6,11 +6,30 @@ defmodule Sanbase.Etherbi.Transactions.Store do
 
   alias Sanbase.Etherbi.Transactions.Store
 
+  @doc ~S"""
+    Get all in and/or out transactions that happened with a given address.
+    Returns a tuple `{:ok, result}` on success, `{:error, error}` otherwise
+  """
+  @spec transactions(binary(), %DateTime{}, %DateTime{}, binary()) :: {:ok, list()} | {:error, binary()}
   def transactions(measurement, from, to, transaction_type) do
     transactions_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
     |> parse_transactions_time_series()
   end
+
+  @doc ~S"""
+    Get all in and/or out transactions that happened with a given address. Retunrs `result`
+    on success, raises and error otherwise
+  """
+  @spec transactions!(binary(), %DateTime{}, %DateTime{}, binary()) :: list() | no_return()
+  def transactions!(measurement, from, to, transaction_type) do
+    case transactions(measurement, from, to, transaction_type) do
+      {:ok, result} -> result
+      {:error, error} -> raise(error)
+    end
+  end
+
+  # Private functions
 
   defp transactions_from_to_query(measurement, from, to, "all") do
     ~s/SELECT volume, address

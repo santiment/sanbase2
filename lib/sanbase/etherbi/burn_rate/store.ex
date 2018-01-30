@@ -6,12 +6,22 @@ defmodule Sanbase.Etherbi.BurnRate.Store do
 
   alias Sanbase.Etherbi.BurnRate.Store
 
+  @doc ~S"""
+    Get the burn rate for a given ticker and time period.
+    Returns a tuple `{:ok, result}` on success, `{:error, error}` otherwise
+  """
+  @spec burn_rate(binary(), %DateTime{}, %DateTime{}, binary()) :: {:ok, list()} | {:error, binary()}
   def burn_rate(measurement, from, to, resolution) do
     burn_rate_from_to_query(measurement, from, to, resolution)
     |> Store.query()
     |> parse_burn_rate_time_series()
   end
 
+  @doc ~S"""
+    Get the burn rate for a given ticker and time period.
+    Retunrs `result` on success, raises and error otherwise
+  """
+  @spec burn_rate!(binary(), %DateTime{}, %DateTime{}, binary()) :: list() | no_return()
   def burn_rate!(measurement, from, to, resolution) do
     case burn_rate(measurement, from, to, resolution) do
       {:ok, result} -> result

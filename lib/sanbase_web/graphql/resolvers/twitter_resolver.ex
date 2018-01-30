@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     query =
       from(
         p in Project,
-        where: p.ticker == ^ticker and not is_nil(p.twitter_link),
+        where: p.ticker == ^ticker and not is_nil(p.twitter_link) and not is_nil(p.coinmarketcap_id),
         select: p.twitter_link
       )
 

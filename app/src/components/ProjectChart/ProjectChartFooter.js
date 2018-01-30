@@ -26,13 +26,13 @@ export const ToggleBtn = ({
     {disabled && !error &&
       <Popup
         trigger={<div>{children}</div>}
-        content="Looks like we don't have any data"
+        content="We don't have the data for this project"
         position='bottom left'
       />}
     {!!error &&
       <Popup
         trigger={<div>{children}</div>}
-        content='Looks like we have some problems with our server'
+        content='There was a problem fetching the data. Please, try again or come back later...'
         position='bottom left'
     />}
     {!disabled && !error && children}

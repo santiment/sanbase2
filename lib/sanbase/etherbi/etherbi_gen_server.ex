@@ -52,7 +52,7 @@ defmodule Sanbase.Etherbi.EtherbiGenServer do
       end
 
       @doc ~s"""
-      Requires the function `work/0` to be available and calls it at the given period of time
+        Requires the function `work/0` to be available and calls it at the given period of time
       """
       @spec handle_cast(:sync, map()) :: {:noreply, map()}
       def handle_cast(
@@ -62,25 +62,6 @@ defmodule Sanbase.Etherbi.EtherbiGenServer do
         work()
         Process.send_after(self(), {:"$gen_cast", :sync}, update_interval_ms)
         {:noreply, state}
-      end
-
-      @doc ~s"""
-      TODO
-      """
-      @spec build_token_decimals_map() :: map()
-      def build_token_decimals_map() do
-        query =
-          Ecto.Query.from(
-            p in Sanbase.Model.Project,
-            where: not is_nil(p.token_decimals),
-            select: %{ticker: p.ticker, token_decimals: p.token_decimals}
-          )
-
-        Sanbase.Repo.all(query)
-        |> Enum.map(fn %{ticker: ticker, token_decimals: token_decimals} ->
-          {ticker, :math.pow(10, token_decimals)}
-        end)
-        |> Map.new()
       end
     end
   end

@@ -244,6 +244,6 @@
 
 .status-progress {
   background-color: rgba(0, 150, 99, 0.8);
-  border-radius: 4px 0 0 4px;
+  border-radius: 4px;
   height: 10px;
 }

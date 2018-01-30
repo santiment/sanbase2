@@ -48,10 +48,10 @@ const Roadmap = props => {
                 <div className='status-row' id='low-orbit'>
                   <span className='status-item'>Develop SANbase backend architecture and wireframe UI</span>
                   <span className='status'>
-                    <div className='status-percent'>90%</div>
+                    <div className='status-percent'>100%</div>
                     <div className='status-border'>
                       <div
-                        style={{width: '90%'}}
+                        style={{width: '100%'}}
                         className='status-progress' />
                     </div>
                   </span>
@@ -62,10 +62,10 @@ const Roadmap = props => {
                     <div className='status-row embedded' id='crypto-projects-item'>
                       <span className='status-item'>Crypto projects with key metrics</span>
                       <span className='status'>
-                        <div className='status-percent'>30%</div>
+                        <div className='status-percent'>90%</div>
                         <div className='status-border'>
                           <div
-                            style={{width: '30%'}}
+                            style={{width: '90%'}}
                             className='status-progress' />
                         </div>
                       </span>
@@ -75,10 +75,10 @@ const Roadmap = props => {
                     <div className='status-row embedded' id='detailed-views-item'>
                       <span className='status-item'>Detailed views of each project</span>
                       <span className='status'>
-                        <div className='status-percent'>30%</div>
+                        <div className='status-percent'>90%</div>
                         <div className='status-border'>
                           <div
-                            style={{width: '30%'}}
+                            style={{width: '90%'}}
                             className='status-progress' />
                         </div>
                       </span>
@@ -183,12 +183,12 @@ const Roadmap = props => {
                 <ul>
                   <li>
                     <div className='status-row embedded'>
-                      <span className='status-item'>Authentification with SAN token</span>
+                      <span className='status-item'>Authentication with SAN token</span>
                       <span className='status'>
-                        <div className='status-percent'>95%</div>
+                        <div className='status-percent'>100%</div>
                         <div className='status-border'>
                           <div
-                            style={{width: '96%'}}
+                            style={{width: '100%'}}
                             className='status-progress' />
                         </div>
                       </span>

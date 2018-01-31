@@ -40,7 +40,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         Logger.warn("Timeout trying to fetch the first burn rate timestamp for #{ticker}")
         {:ok, nil}
 
-      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
          "Error status #{status} fetching first burn rate timestamp for #{ticker}: #{body}"}
 
@@ -69,7 +69,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         Logger.warn("Timeout trying to fetch the first transaction timestamp for #{address}")
         {:ok, nil}
 
-      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
          "Error status #{status} fetching first transaction timestamp for #{address}: #{body}"}
 
@@ -101,7 +101,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         Logger.warn("Timeout trying to fetch the first transaction timestamp for #{ticker}")
         {:ok, nil}
 
-      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
          "Error status #{status} fetching first transaction timestamp for #{ticker}: #{body}"}
 
@@ -141,7 +141,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         Logger.warn("Timeout trying to fetch transaction volume for #{ticker}")
         {:ok, []}
 
-      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching transaction volume for #{ticker}: #{body}"}
 
       error ->
@@ -181,7 +181,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         Logger.warn("Timeout trying to fetch transactions for #{address}}")
         {:ok, []}
 
-      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching transactions for #{address}: #{body}"}
 
       error ->
@@ -215,7 +215,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         Logger.warn("Timeout trying to fetch burn rate for #{ticker}")
         {:ok, []}
 
-      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching burn rate for #{ticker}: #{body}"}
 
       error ->

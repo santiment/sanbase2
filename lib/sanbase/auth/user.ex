@@ -10,8 +10,11 @@ defmodule Sanbase.Auth.User do
 
   @login_email_template "login"
 
-  # The Login links will be valid 1 day
-  @login_email_valid_minutes 24 * 60
+  # The Login links will be valid 1 hour
+  @login_email_valid_minutes 60
+
+  # The login link will be valid for 10
+  @login_email_valid_after_validation_minutes 10
 
   @salt_length 64
   @email_token_length 64
@@ -27,6 +30,7 @@ defmodule Sanbase.Auth.User do
     field(:san_balance_updated_at, Timex.Ecto.DateTime)
     field(:email_token, :string)
     field(:email_token_generated_at, Timex.Ecto.DateTime)
+    field(:email_token_validated_at, Timex.Ecto.DateTime)
 
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -90,14 +94,39 @@ defmodule Sanbase.Auth.User do
 
   def update_email_token(user) do
     user
-    |> change(email_token: generate_email_token(), email_token_generated_at: Timex.now())
+    |> change(
+      email_token: generate_email_token(),
+      email_token_generated_at: Timex.now(),
+      email_token_validated_at: nil
+    )
+    |> Repo.update()
+  end
+
+  def mark_email_token_as_validated(user) do
+    user
+    |> change(email_token_validated_at: user.email_token_validated_at || Timex.now())
     |> Repo.update()
   end
 
   def email_token_valid?(user, token) do
-    user.email_token == token and
-      Timex.diff(Timex.now(), user.email_token_generated_at, :minutes) <=
-        @login_email_valid_minutes
+    cond do
+      user.email_token != token ->
+        false
+
+      Timex.diff(Timex.now(), user.email_token_generated_at, :minutes) >
+          @login_email_valid_minutes ->
+        false
+
+      user.email_token_validated_at == nil ->
+        true
+
+      Timex.diff(Timex.now(), user.email_token_validated_at, :minutes) >
+          @login_email_valid_after_validation_minutes ->
+        false
+
+      true ->
+        true
+    end
   end
 
   def send_login_email(user) do

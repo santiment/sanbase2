@@ -33,11 +33,11 @@ defmodule Sanbase.MandrillApi do
           }
         ],
         global_merge_vars: build_global_merge_vars(variables),
-        from_email: Config.module_get(__MODULE__, :from_email),
+        from_email: Config.get(:from_email),
         from_name: "Santiment Sanbase"
       },
       tags: [@environment, template],
-      key: Config.module_get(__MODULE__, :apikey)
+      key: Config.get(:apikey)
     }
   end
 

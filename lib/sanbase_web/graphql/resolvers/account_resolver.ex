@@ -28,11 +28,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
       {:error, reason} ->
         Logger.warn("Login failed: #{reason}")
 
-        {:error, :login_failed}
+        {:error, message: "Login failed"}
 
       _ ->
         Logger.warn("Login failed: invalid signature")
-        {:error, :login_failed}
+        {:error, message: "Login failed"}
     end
   end
 
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
          {:ok, user} <- User.mark_email_token_as_validated(user) do
       {:ok, %{user: user, token: token}}
     else
-      _ -> {:error, :login_failed}
+      _ -> {:error, message: "Login failed"}
     end
   end
 
@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
       end
     else
       _ ->
-        {:error, "Project with the given ID does not exist."}
+        {:error, message: "Project with the given ID does not exist."}
     end
   end
 
@@ -149,7 +149,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     |> Repo.transaction()
     |> case do
       {:ok, %{add_user: user}} -> {:ok, user}
-      {:error, _, reason, _} -> {:error, reason}
+      {:error, _, reason, _} -> {:error, message: reason}
     end
   end
 

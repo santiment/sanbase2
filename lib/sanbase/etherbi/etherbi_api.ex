@@ -29,7 +29,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   """
   @spec get_first_burn_rate_timestamp(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_burn_rate_timestamp(ticker) do
-    url = "#{etherbi_url()}/first_transaction_timestamp"
+    url = "#{etherbi_url()}/first_burn_rate_timestamp"
     options = [recv_timeout: 45_000, params: %{ticker: ticker}]
 
     case HTTPoison.get(url, [], options) do
@@ -135,7 +135,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        convert_transactions_response(body)
+        convert_timestamp_integer_response(body)
 
       {:error, %HTTPoison.Error{reason: :timeout}} ->
         Logger.warn("Timeout trying to fetch transaction volume for #{ticker}")
@@ -209,7 +209,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        convert_burn_rate_response(body)
+        convert_timestamp_integer_response(body)
 
       {:error, %HTTPoison.Error{reason: :timeout}} ->
         Logger.warn("Timeout trying to fetch burn rate for #{ticker}")
@@ -250,15 +250,15 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     end
   end
 
-  # Body is a string in the format `[[timestamp,volume], [timestamp, volume], ...]
-  defp convert_burn_rate_response("[]"), do: {:ok, nil}
+  # Body is a string in the format `[[timestamp, integer], [timestamp, integer], ...]
+  defp convert_timestamp_integer_response("[]"), do: {:ok, nil}
 
-  defp convert_burn_rate_response(body) do
+  defp convert_timestamp_integer_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do
       result =
         decoded_body
-        |> Enum.map(fn [timestamp, volume] ->
-          {DateTime.from_unix!(timestamp), volume}
+        |> Enum.map(fn [timestamp, integer] ->
+          {DateTime.from_unix!(timestamp), integer}
         end)
 
       {:ok, result}

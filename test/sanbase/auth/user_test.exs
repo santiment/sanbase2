@@ -92,4 +92,41 @@ defmodule Sanbase.Auth.UserTest do
     assert user.email_token != nil
     assert Timex.diff(Timex.now(), user.email_token_generated_at, :seconds) == 0
   end
+
+  test "mark_email_token_as_validated updates the email_token_validated_at" do
+    user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    {:ok, user} = User.mark_email_token_as_validated(user)
+
+    assert Timex.diff(Timex.now(), user.email_token_validated_at, :seconds) == 0
+  end
+
+  test "email_token_valid? validates the token properly" do
+    user = %User{email_token: "test_token"}
+    refute User.email_token_valid?(user, "wrong_token")
+
+    user = %User{
+      email_token: "test_token",
+      email_token_generated_at: Timex.shift(Timex.now(), days: -2)
+    }
+
+    refute User.email_token_valid?(user, "test_token")
+
+    user = %User{
+      email_token: "test_token",
+      email_token_generated_at: Timex.now(),
+      email_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
+    }
+
+    refute User.email_token_valid?(user, "test_token")
+
+    user = %User{
+      email_token: "test_token",
+      email_token_generated_at: Timex.now()
+    }
+
+    assert User.email_token_valid?(user, "test_token")
+  end
 end

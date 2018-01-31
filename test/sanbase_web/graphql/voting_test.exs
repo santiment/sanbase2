@@ -61,16 +61,6 @@ defmodule SanbaseWeb.Graphql.VotingTest do
       }
       |> Repo.insert!()
 
-    _unapproved_post =
-      %Post{
-        poll_id: poll.id,
-        user_id: user.id,
-        title: "Awesome analysis",
-        link: "http://example.com",
-        approved_at: nil
-      }
-      |> Repo.insert!()
-
     %Vote{post_id: approved_post.id, user_id: user.id}
     |> Repo.insert!()
 
@@ -103,6 +93,47 @@ defmodule SanbaseWeb.Graphql.VotingTest do
                  Decimal.to_string(Decimal.div(user.san_balance, Ethauth.san_token_decimals()))
              }
            ]
+  end
+
+  test "getting the current poll with the dates when the current user voted", %{
+    user: user,
+    conn: conn
+  } do
+    poll = Poll.find_or_insert_current_poll!()
+
+    approved_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        link: "http://example.com",
+        approved_at: Timex.now()
+      }
+      |> Repo.insert!()
+
+    vote =
+      %Vote{post_id: approved_post.id, user_id: user.id}
+      |> Repo.insert!()
+
+    query = """
+    {
+      currentPoll {
+        posts {
+          id,
+          voted_at
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentPoll"))
+
+    currentPoll = json_response(result, 200)["data"]["currentPoll"]
+    [post] = currentPoll["posts"]
+
+    assert Timex.parse!(post["voted_at"], "{ISO:Extended}") == vote.inserted_at
   end
 
   test "voting for a post", %{conn: conn, user: user} do
@@ -201,5 +232,73 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert sanbasePost["approvedAt"] == nil
     assert sanbasePost["user"]["id"] == Integer.to_string(user.id)
     assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
+  end
+
+  test "deleting a post", %{user: user, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    sanbase_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        link: "http://example.com",
+        approved_at: Timex.now()
+      }
+      |> Repo.insert!()
+
+    %Vote{post_id: sanbase_post.id, user_id: user.id}
+    |> Repo.insert!()
+
+    query = """
+    mutation {
+      deletePost(id: #{sanbase_post.id}) {
+        id
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    sanbasePost = json_response(result, 200)["data"]["deletePost"]
+
+    assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
+  end
+
+  test "deleting a post which does not belong to the user", %{conn: conn} do
+    other_user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    poll = Poll.find_or_insert_current_poll!()
+
+    sanbase_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: other_user.id,
+        title: "Awesome analysis",
+        link: "http://example.com",
+        approved_at: Timex.now()
+      }
+      |> Repo.insert!()
+
+    query = """
+    mutation {
+      deletePost(id: #{sanbase_post.id}) {
+        id
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    data = json_response(result, 200)
+
+    assert data["errors"] != nil
+    assert data["data"]["deletePost"] == nil
   end
 end

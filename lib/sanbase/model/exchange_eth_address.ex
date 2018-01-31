@@ -3,11 +3,10 @@ defmodule Sanbase.Model.ExchangeEthAddress do
   import Ecto.Changeset
   alias Sanbase.Model.ExchangeEthAddress
 
-
   schema "exchange_eth_addresses" do
-    field :address, :string
-    field :name, :string
-    field :comments, :string
+    field(:address, :string)
+    field(:name, :string)
+    field(:comments, :string)
   end
 
   @doc false

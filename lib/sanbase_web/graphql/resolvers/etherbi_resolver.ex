@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
+  alias Sanbase.Etherbi.Store
 
   @http_client Mockery.of("HTTPoison")
   @recv_timeout 15_000
@@ -10,13 +11,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
-    etherbi_url = Config.get(:url)
-    url = "#{etherbi_url}/burn_rate?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}"
+    etherbi_url = Config.module_get(Sanbase.Etherbi, :url)
+
+    url =
+      "#{etherbi_url}/burn_rate?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{
+        to_unix
+      }"
 
     options = [recv_timeout: @recv_timeout]
+
     case @http_client.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Poison.decode(body)
+
         result =
           result
           |> reduce_result_size(&average/1)
@@ -38,10 +45,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
-    etherbi_url = Config.get(:url)
-    url = "#{etherbi_url}/transaction_volume?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}"
+    etherbi_url = Config.module_get(Sanbase.Etherbi, :url)
+
+    url =
+      "#{etherbi_url}/transaction_volume?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{
+        to_unix
+      }"
 
     options = [recv_timeout: @recv_timeout]
+
     case @http_client.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Poison.decode(body)
@@ -50,16 +62,45 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
           result
           |> reduce_result_size(&Enum.sum/1)
           |> Enum.map(fn [timestamp, trx_volume] ->
-            %{datetime: DateTime.from_unix!(timestamp), transaction_volume: Decimal.new(trx_volume)}
+            %{
+              datetime: DateTime.from_unix!(timestamp),
+              transaction_volume: Decimal.new(trx_volume)
+            }
           end)
 
         {:ok, result}
 
       {:error, %HTTPoison.Response{status_code: status, body: body}} ->
-        {:error, "Error status #{status} fetching transaction volume for ticker #{ticker}: #{body}"}
+        {:error,
+         "Error status #{status} fetching transaction volume for ticker #{ticker}: #{body}"}
 
       _ ->
         {:error, "Cannot fetch burn transaction volume for ticker #{ticker}"}
+    end
+  end
+
+  def exchange_fund_flow(
+        _root,
+        %{
+          ticker: ticker,
+          from: from,
+          to: to,
+          transaction_type: transaction_type
+        },
+        _resolution
+      ) do
+    with {:ok, transactions} <- Store.transactions(ticker, from, to, transaction_type) do
+      result =
+        transactions
+        |> Enum.map(fn {datetime, volume, address} ->
+          %{
+            datetime: datetime,
+            transaction_volume: volume |> Decimal.new(),
+            address: address
+          }
+        end)
+
+      {:ok, result}
     end
   end
 
@@ -81,7 +122,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   defp min_timestamp(chunk) do
     chunk
     |> Enum.map(&hd/1)
-    |> Enum.min
+    |> Enum.min()
   end
 
   defp reduced_value(chunk, reduce_function) do

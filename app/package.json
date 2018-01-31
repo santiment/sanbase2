@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "start": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -14,6 +14,7 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "@trainline/react-skeletor": "^1.0.2",
     "animate-components": "^1.4.8",
     "apollo-cache-inmemory": "^1.1.2",
     "apollo-client": "^2.1.0",

@@ -4,6 +4,8 @@
 
 .event-post-index {
   margin-right: 4px;
+  margin-top: 2px;
+  height: 22px;
 }
 
 .event-post .event-storylink {
@@ -21,10 +23,13 @@
 .event-post .event-post-info {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   color: #828282;
   font-size: 0.8em;
   margin-top: 2px;
+}
+
+.event-post .event-post-info .account-name {
+  margin: 0;
 }
 
 .event-post-votes {
@@ -36,4 +41,37 @@
   line-height: 16px;
   color: #000;
   cursor: pointer;
+}
+
+@keyframes skeletonAnimation {
+  0% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 0.8;
+  }
+}
+
+.pending {
+  color: #bdc3c7 !important;
+  background-color: #bdc3c7 !important;
+  border-color: #bdc3c7 !important;
+  animation-name: skeletonAnimation;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+.pending-home {
+  color: white;
+  background-color: white;
+  animation-name: skeletonAnimation;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
 }

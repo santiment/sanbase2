@@ -1,30 +1,12 @@
 import React, { Component } from 'react'
 import { Route, Redirect } from 'react-router-dom'
 import { connect } from 'react-redux'
-import { Button } from 'semantic-ui-react'
 import Panel from './../../components/Panel'
-import Post from './../../components/Post'
 import PostsNewHeader from './EventVotesNewHeader'
+import ConfirmPost from './ConfirmNewInsight'
 import CreateLink from './CreateLink'
 import CreateTitle from './CreateTitle'
 import './EventVotesNew.css'
-
-const ConfirmPost = ({post, addPost}) => {
-  return (
-    <div className='event-posts-new-step'>
-      <Panel>
-        <Post {...post} />
-      </Panel>
-      <div className='event-posts-new-step-control'>
-        <Button
-          positive
-          onClick={addPost}>
-          Click && Confirm
-        </Button>
-      </div>
-    </div>
-  )
-}
 
 class EventVotesNew extends Component {
   state = { // eslint-disable-line
@@ -59,10 +41,11 @@ class EventVotesNew extends Component {
     const last = paths[paths.length - 1]
     return (
       <div className='page event-posts-new'>
-        <h2>Post new insight</h2>
         <Panel>
+          <div className='panel-header'>
+            Post new insight
+          </div>
           <PostsNewHeader location={last} />
-          <hr />
           <Route
             exact
             path='/events/votes/new'

@@ -10,7 +10,7 @@ const errorValidator = values => {
   return {
     link: !values.link ||
       !values.link.match(/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9]\.[^\s]{2,})/)
-        ? 'Input must contain a valid URL' : null
+        ? 'Input must contain a valid URL. (e.g. https://twitter/insight)' : null
   }
 }
 

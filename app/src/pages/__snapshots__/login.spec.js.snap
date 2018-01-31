@@ -57,6 +57,11 @@ exports[`Login container it should render correctly 1`] = `
 
 exports[`Login container it should render message about metamask was not detected 1`] = `
 <Component
+  location={
+    Object {
+      "search": "",
+    }
+  }
   user={
     Object {
       "account": null,
@@ -114,6 +119,11 @@ exports[`Login container it should render message about metamask was not detecte
 
 exports[`Login container it should render message with metamask user account address 1`] = `
 <Component
+  location={
+    Object {
+      "search": "",
+    }
+  }
   user={
     Object {
       "account": "0x23942983bc298374cjh",

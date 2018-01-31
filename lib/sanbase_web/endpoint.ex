@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :sanbase
+  alias Sanbase.Utils.Config
+  require Sanbase.Utils.Config
 
   socket("/socket", SanbaseWeb.UserSocket)
 
@@ -57,5 +59,13 @@ defmodule SanbaseWeb.Endpoint do
     else
       {:ok, config}
     end
+  end
+
+  def website_url() do
+    Config.get(:website_url)
+  end
+
+  def login_url(token, email) do
+    website_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
   end
 end

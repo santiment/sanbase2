@@ -6,8 +6,18 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Voting.Vote
   alias Sanbase.Repo
+  alias Sanbase.MandrillApi
+
+  @login_email_template "login"
+
+  # The Login links will be valid 1 hour
+  @login_email_valid_minutes 60
+
+  # The login link will be valid for 10
+  @login_email_valid_after_validation_minutes 10
 
   @salt_length 64
+  @email_token_length 64
 
   # 5 minutes
   @san_balance_cache_seconds 60 * 5
@@ -18,6 +28,9 @@ defmodule Sanbase.Auth.User do
     field(:salt, :string)
     field(:san_balance, :decimal)
     field(:san_balance_updated_at, Timex.Ecto.DateTime)
+    field(:email_token, :string)
+    field(:email_token_generated_at, Timex.Ecto.DateTime)
+    field(:email_token_validated_at, Timex.Ecto.DateTime)
 
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -27,6 +40,10 @@ defmodule Sanbase.Auth.User do
 
   def generate_salt do
     :crypto.strong_rand_bytes(@salt_length) |> Base.url_encode64() |> binary_part(0, @salt_length)
+  end
+
+  def generate_email_token do
+    :crypto.strong_rand_bytes(@email_token_length) |> Base.url_encode64()
   end
 
   def changeset(%User{} = user, attrs \\ %{}) do
@@ -62,5 +79,59 @@ defmodule Sanbase.Auth.User do
     eth_accounts
     |> Enum.map(&EthAccount.san_balance/1)
     |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+  end
+
+  def find_or_insert_by_email(email, username \\ nil) do
+    case Repo.get_by(User, email: email) do
+      nil ->
+        %User{email: email, username: username, salt: generate_salt()}
+        |> Repo.insert()
+
+      user ->
+        {:ok, user}
+    end
+  end
+
+  def update_email_token(user) do
+    user
+    |> change(
+      email_token: generate_email_token(),
+      email_token_generated_at: Timex.now(),
+      email_token_validated_at: nil
+    )
+    |> Repo.update()
+  end
+
+  def mark_email_token_as_validated(user) do
+    user
+    |> change(email_token_validated_at: user.email_token_validated_at || Timex.now())
+    |> Repo.update()
+  end
+
+  def email_token_valid?(user, token) do
+    cond do
+      user.email_token != token ->
+        false
+
+      Timex.diff(Timex.now(), user.email_token_generated_at, :minutes) >
+          @login_email_valid_minutes ->
+        false
+
+      user.email_token_validated_at == nil ->
+        true
+
+      Timex.diff(Timex.now(), user.email_token_validated_at, :minutes) >
+          @login_email_valid_after_validation_minutes ->
+        false
+
+      true ->
+        true
+    end
+  end
+
+  def send_login_email(user) do
+    MandrillApi.send(@login_email_template, user.email, %{
+      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
+    })
   end
 end

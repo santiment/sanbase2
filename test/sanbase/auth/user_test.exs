@@ -62,4 +62,71 @@ defmodule Sanbase.Auth.UserTest do
     user = Repo.get(User, user.id)
     assert Timex.diff(Timex.now(), user.san_balance_updated_at, :seconds) == 0
   end
+
+  test "find_or_insert_by_email when the user does not exist" do
+    {:ok, user} = User.find_or_insert_by_email("test@example.com", "john_snow")
+
+    assert user.email == "test@example.com"
+    assert user.username == "john_snow"
+  end
+
+  test "find_or_insert_by_email when the user exists" do
+    existing_user =
+      %User{email: "test@example.com", username: "cersei", salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    {:ok, user} = User.find_or_insert_by_email(existing_user.email, "john_snow")
+
+    assert user.id == existing_user.id
+    assert user.email == existing_user.email
+    assert user.username == existing_user.username
+  end
+
+  test "update_email_token updates the email_token and the email_token_generated_at" do
+    user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    {:ok, user} = User.update_email_token(user)
+
+    assert user.email_token != nil
+    assert Timex.diff(Timex.now(), user.email_token_generated_at, :seconds) == 0
+  end
+
+  test "mark_email_token_as_validated updates the email_token_validated_at" do
+    user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    {:ok, user} = User.mark_email_token_as_validated(user)
+
+    assert Timex.diff(Timex.now(), user.email_token_validated_at, :seconds) == 0
+  end
+
+  test "email_token_valid? validates the token properly" do
+    user = %User{email_token: "test_token"}
+    refute User.email_token_valid?(user, "wrong_token")
+
+    user = %User{
+      email_token: "test_token",
+      email_token_generated_at: Timex.shift(Timex.now(), days: -2)
+    }
+
+    refute User.email_token_valid?(user, "test_token")
+
+    user = %User{
+      email_token: "test_token",
+      email_token_generated_at: Timex.now(),
+      email_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
+    }
+
+    refute User.email_token_valid?(user, "test_token")
+
+    user = %User{
+      email_token: "test_token",
+      email_token_generated_at: Timex.now()
+    }
+
+    assert User.email_token_valid?(user, "test_token")
+  end
 end

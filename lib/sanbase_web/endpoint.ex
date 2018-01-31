@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def website_url() do
-    Config.module_get(__MODULE__, :website_url)
+    Config.get(:website_url)
   end
 
   def login_url(token, email) do

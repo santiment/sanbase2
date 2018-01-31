@@ -1,13 +1,18 @@
-defmodule Sanbase.Etherbi.EtherbiFundsMovementTest do
+defmodule Sanbase.Etherbi.TransactionsTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
   import Mockery
 
   alias Sanbase.Model.Project
-  alias Sanbase.Etherbi.{Store, Transactions}
+  alias Sanbase.Etherbi.Transactions
+  alias Sanbase.Etherbi.Transactions.Store
 
   setup do
+    ticker = "SAN"
+    Store.create_db()
+    Store.drop_measurement(ticker)
+
     %Project{}
     |> Project.changeset(%{name: "Santiment", ticker: "SAN", token_decimals: 18})
     |> Sanbase.Repo.insert!()
@@ -20,7 +25,7 @@ defmodule Sanbase.Etherbi.EtherbiFundsMovementTest do
       volume1: 18_000_000_000_000_000_000,
       expected_volume1: 18,
       volume2: 36_000_000_000_000_000_000,
-      expected_volume2: 36,
+      expected_volume2: 36
     ]
   end
 
@@ -28,15 +33,13 @@ defmodule Sanbase.Etherbi.EtherbiFundsMovementTest do
     token_decimals = %{context.ticker => :math.pow(10, 18)}
 
     transactions = [
-      {DateTime.from_unix!(context.timestamp1), context.volume1, context.wallet,
-       context.ticker},
-      {DateTime.from_unix!(context.timestamp2), context.volume2, context.wallet,
-       context.ticker}
+      {DateTime.from_unix!(context.timestamp1), context.volume1, context.wallet, context.ticker},
+      {DateTime.from_unix!(context.timestamp2), context.volume2, context.wallet, context.ticker}
     ]
 
     mock(
       Sanbase.Etherbi.EtherbiApi,
-      :get_first_transaction_timestamp,
+      :get_first_transaction_timestamp_addr,
       DateTime.from_unix(context.timestamp1)
     )
 
@@ -50,7 +53,7 @@ defmodule Sanbase.Etherbi.EtherbiFundsMovementTest do
     datetime2 = DateTime.from_unix!(context.timestamp2)
 
     # Inserts into the DB. Must delete it at the end of the test
-    Transactions.fetch_and_store_in(context.wallet,   token_decimals)
+    Transactions.fetch_and_store_in(context.wallet, token_decimals)
     {:ok, transactions} = Store.transactions(context.ticker, datetime1, datetime2, "in")
 
     assert {datetime1, context.expected_volume1, context.wallet} in transactions

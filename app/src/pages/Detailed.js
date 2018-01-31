@@ -497,7 +497,7 @@ const enhance = compose(
     name: 'GithubActivity',
     options: ({match, chartVars}) => {
       const {from, to, ticker} = chartVars
-      let fromIncludingMA = from;
+      let fromIncludingMA = from
 
       if (from) {
         fromIncludingMA = moment(from).subtract(7, 'days')

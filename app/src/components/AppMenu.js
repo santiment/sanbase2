@@ -2,22 +2,23 @@ import React from 'react'
 import { Icon } from 'react-fa'
 import './AppMenu.css'
 
-const AppMenu = ({handleNavigation}) => (
-  <ul className='menu-list'>
+const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) => (
+  <ul className={showIcons ? 'menu-list' : 'menu-list-top'} >
     <li onClick={() => handleNavigation('projects')}>
-      <Icon name='list 2x' />
+      {showIcons && <Icon name='list 2x' />}
       Projects
     </li>
+    {showInsights &&
     <li onClick={() => handleNavigation('events')}>
-      <i className='fa fa-newspaper-o' />
+      {showIcons && <i className='fa fa-newspaper-o' />}
       Insights
-    </li>
+    </li>}
     <li onClick={() => handleNavigation('signals')}>
-      <Icon name='th 2x' />
+      {showIcons && <Icon name='th 2x' />}
       Signals
     </li>
     <li onClick={() => handleNavigation('roadmap')}>
-      <Icon name='map 2x' />
+      {showIcons && <Icon name='map 2x' />}
       Roadmap
     </li>
   </ul>

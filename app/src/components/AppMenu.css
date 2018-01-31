@@ -4,12 +4,24 @@ ul.menu-list {
   list-style: none;
 }
 
+.menu-list-top li {
+  display: inline;
+  margin: 0;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+
 .menu-list li {
   margin: 0;
   padding: 10px 22px;
   display: flex;
   align-items: center;
   cursor: pointer;
+}
+
+.menu-list-top li:hover {
+  background-color: #4f5b69;
+  transition: all 0.5s ease;
 }
 
 .menu-list li:hover {
@@ -44,4 +56,17 @@ ul.menu-list {
 .menu-list .sub-menu li .fa {
   font-size: 6px;
   margin-right: 10px;
+}
+
+.menu-list-top {
+  margin-top: 16px;
+  padding: 0;
+  text-align: right;
+  user-select: none;
+}
+
+.menu-list-top li a {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.8em;
+  text-transform: uppercase;
 }

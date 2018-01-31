@@ -30,7 +30,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   @spec get_first_transaction_timestamp(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_transaction_timestamp(address) do
     Logger.info("Getting the first transaction timestamp for address #{address}")
-    url = "#{etherbi_url()}/first_transaction_timestamp?address=#{address}"
+    url = "#{etherbi_url()}/first_transaction_timestamp_addr?address=#{address}"
     options = [recv_timeout: 45_000]
 
     case HTTPoison.get(url, [], options) do

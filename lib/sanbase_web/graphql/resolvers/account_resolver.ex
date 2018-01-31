@@ -52,7 +52,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   def email_login_verify(%{token: token, email: email}, _resolution) do
     with {:ok, user} <- User.find_or_insert_by_email(email),
          true <- User.email_token_valid?(user, token),
-         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}) do
+         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
+         {:ok, user} <- User.mark_email_token_as_validated(user) do
       {:ok, %{user: user, token: token}}
     else
       _ -> {:error, :login_failed}

@@ -50,17 +50,12 @@ defmodule Sanbase.Etherbi.BurnRate do
        ) do
     burn_rates
     |> Enum.map(fn {datetime, burn_rate} ->
-      if decimal_places = Map.get(token_decimals, ticker) do
-        %Sanbase.Influxdb.Measurement{
-          timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-          fields: %{burn_rate: burn_rate / decimal_places},
-          tags: [],
-          name: ticker
-        }
-      else
-        Logger.warn("Missing token decimals for #{ticker}")
-        nil
-      end
+      %Sanbase.Influxdb.Measurement{
+        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+        fields: %{burn_rate: burn_rate / Map.get(token_decimals, ticker)},
+        tags: [],
+        name: ticker
+      }
     end)
   end
 end

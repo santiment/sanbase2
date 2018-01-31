@@ -234,6 +234,25 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
   end
 
+  test "adding a new post with a very long title", %{conn: conn} do
+    long_title = Stream.cycle(["a"]) |> Enum.take(200) |> Enum.join()
+
+    query = """
+    mutation {
+      createPost(title: "#{long_title}", link: "http://example.com") {
+        id,
+        title
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["errors"]
+  end
+
   test "deleting a post", %{user: user, conn: conn} do
     poll = Poll.find_or_insert_current_poll!()
 

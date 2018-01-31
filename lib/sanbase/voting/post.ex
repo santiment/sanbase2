@@ -22,6 +22,7 @@ defmodule Sanbase.Voting.Post do
     post
     |> cast(attrs, [:title, :link])
     |> validate_required([:poll_id, :user_id, :title, :link])
+    |> validate_length(:title, max: 140)
     |> unique_constraint(:poll_id, name: :posts_poll_id_title_index)
   end
 

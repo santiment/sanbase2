@@ -13,7 +13,7 @@ const AccountLinks = ({
   isDesktop
 }) => (
   <div className='acct-links'>
-    {username &&
+    {username && !isDesktop &&
     <div className='account-name'>
       {username}
     </div>}
@@ -34,7 +34,7 @@ const AuthControl = ({
       <div className='user-auth-control'>
         <Popup wide trigger={
           <div className='acct'>
-            <Balance user={user} />
+            <Balance user={user} onlyBalance />
             <i className='fa fa-caret-down' />
           </div>
         } on='click'>

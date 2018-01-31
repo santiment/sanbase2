@@ -66,6 +66,6 @@ defmodule SanbaseWeb.Endpoint do
   end
 
   def login_url(token, email) do
-    website_url() <> "/login?" <> URI.encode_query(token: token, email: email)
+    website_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
   end
 end

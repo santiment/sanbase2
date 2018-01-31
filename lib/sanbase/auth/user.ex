@@ -102,7 +102,7 @@ defmodule Sanbase.Auth.User do
 
   def send_login_email(user) do
     MandrillApi.send(@login_email_template, user.email, %{
-      login_link: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
+      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
     })
   end
 end

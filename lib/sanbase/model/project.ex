@@ -529,18 +529,23 @@ defmodule Sanbase.Model.Project do
   For every currency aggregates all amounts for every ICO of the given project
   """
   def funds_raised_icos(%Project{id: id}) do
-    query = from i in Ico,
-            inner_join: ic in IcoCurrencies, on: ic.ico_id == i.id and not is_nil(ic.amount),
-            inner_join: c in Currency, on: c.id == ic.currency_id,
-            where: i.project_id == ^id,
-            group_by: c.code,
-            order_by: fragment("case
+    query =
+      from(
+        i in Ico,
+        inner_join: ic in IcoCurrencies,
+        on: ic.ico_id == i.id and not is_nil(ic.amount),
+        inner_join: c in Currency,
+        on: c.id == ic.currency_id,
+        where: i.project_id == ^id,
+        group_by: c.code,
+        order_by: fragment("case
                             			when ? = 'BTC' then '_'
                             			when ? = 'ETH' then '__'
                             			when ? = 'USD' then '___'
                             		  else ?
                             		end", c.code, c.code, c.code, c.code),
-            select: %{currency_code: c.code, amount: sum(ic.amount)}
+        select: %{currency_code: c.code, amount: sum(ic.amount)}
+      )
 
     Repo.all(query)
   end

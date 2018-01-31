@@ -18,8 +18,8 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
   end
 
   enum :transaction_type do
-    value :in
-    value :out
-    value :all
+    value(:in)
+    value(:out)
+    value(:all)
   end
 end

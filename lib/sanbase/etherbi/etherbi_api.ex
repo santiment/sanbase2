@@ -45,10 +45,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
          "Error status #{status} fetching first burn rate timestamp for #{ticker}: #{body}"}
 
       error ->
-        {:error,
-         "Error fetching first burn rate timestamp for #{ticker}: #{
-           inspect(error)
-         }"}
+        {:error, "Error fetching first burn rate timestamp for #{ticker}: #{inspect(error)}"}
     end
   end
 
@@ -109,10 +106,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
          "Error status #{status} fetching first transaction timestamp for #{ticker}: #{body}"}
 
       error ->
-        {:error,
-         "Error fetching first transaction timestamp for #{ticker}: #{
-           inspect(error)
-         }"}
+        {:error, "Error fetching first transaction timestamp for #{ticker}: #{inspect(error)}"}
     end
   end
 
@@ -123,7 +117,8 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
     otherwise.
   """
-  @spec get_transaction_volume(binary(), %DateTime{}, %DateTime{}) :: {:ok, list()} | {:error, binary()}
+  @spec get_transaction_volume(binary(), %DateTime{}, %DateTime{}) ::
+          {:ok, list()} | {:error, binary()}
   def get_transaction_volume(ticker, from, to) do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
@@ -150,8 +145,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         {:error, "Error status #{status} fetching transaction volume for #{ticker}: #{body}"}
 
       error ->
-        {:error,
-         "Error fetching transactions data for #{ticker}: #{inspect(error)}"}
+        {:error, "Error fetching transactions data for #{ticker}: #{inspect(error)}"}
     end
   end
 
@@ -162,7 +156,8 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     Returns `{:ok, list()}` if the request is successful, `{:error, reason}`
     otherwise.
   """
-  @spec get_transactions(binary(), %DateTime{}, %DateTime{}, binary()) :: {:ok, list()} | {:error, binary()}
+  @spec get_transactions(binary(), %DateTime{}, %DateTime{}, binary()) ::
+          {:ok, list()} | {:error, binary()}
   def get_transactions(address, from, to, transaction_type) do
     transaction_type = transaction_type |> String.downcase()
     from_unix = DateTime.to_unix(from, :seconds)
@@ -190,8 +185,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
         {:error, "Error status #{status} fetching transactions for #{address}: #{body}"}
 
       error ->
-        {:error,
-         "Error fetching transactions data for #{address}: #{inspect(error)}"}
+        {:error, "Error fetching transactions data for #{address}: #{inspect(error)}"}
     end
   end
 
@@ -233,6 +227,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
   # Body is a string in the format `"[timestamp]"`
   defp convert_timestamp_response("[]"), do: {:ok, nil}
+
   defp convert_timestamp_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do
       result = decoded_body |> hd |> DateTime.from_unix!()
@@ -242,6 +237,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
   # Body is a string in the format `[[timestamp,volume,address,token], [timestamp,...]]
   defp convert_transactions_response("[]"), do: {:ok, nil}
+
   defp convert_transactions_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do
       result =
@@ -256,6 +252,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
   # Body is a string in the format `[[timestamp,volume], [timestamp, volume], ...]
   defp convert_burn_rate_response("[]"), do: {:ok, nil}
+
   defp convert_burn_rate_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do
       result =

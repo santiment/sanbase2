@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     put_private(conn, :absinthe, %{context: context})
   end
 
-  defp build_context(conn, [auth_method|rest]) do
+  defp build_context(conn, [auth_method | rest]) do
     auth_method.(conn)
     |> case do
       :skip -> build_context(conn, rest)
@@ -49,7 +49,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp bearer_authorize(token) do
-    with {:ok, %User{salt: salt} = user, %{"salt" => salt}} <- SanbaseWeb.Guardian.resource_from_token(token) do
+    with {:ok, %User{salt: salt} = user, %{"salt" => salt}} <-
+           SanbaseWeb.Guardian.resource_from_token(token) do
       {:ok, user}
     else
       _ ->

@@ -87,28 +87,42 @@ defmodule Sanbase.ExAdmin.Model.Ico do
 
     form ico do
       inputs do
-        input ico, :project, collection: from(p in Project, order_by: p.name) |> Sanbase.Repo.all()
-        input ico, :start_date
-        input ico, :end_date
-        input ico, :token_usd_ico_price
-        input ico, :token_eth_ico_price
-        input ico, :token_btc_ico_price
-        input ico, :tokens_issued_at_ico
-        input ico, :tokens_sold_at_ico
-        input ico, :minimal_cap_amount
-        input ico, :maximal_cap_amount
-        input ico, :main_contract_address
-        input ico, :contract_block_number
-        input ico, :contract_abi
-        input ico, :comments
-        input ico, :cap_currency, collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
+        input(
+          ico,
+          :project,
+          collection: from(p in Project, order_by: p.name) |> Sanbase.Repo.all()
+        )
+
+        input(ico, :start_date)
+        input(ico, :end_date)
+        input(ico, :token_usd_ico_price)
+        input(ico, :token_eth_ico_price)
+        input(ico, :token_btc_ico_price)
+        input(ico, :tokens_issued_at_ico)
+        input(ico, :tokens_sold_at_ico)
+        input(ico, :minimal_cap_amount)
+        input(ico, :maximal_cap_amount)
+        input(ico, :main_contract_address)
+        input(ico, :contract_block_number)
+        input(ico, :contract_abi)
+        input(ico, :comments)
+
+        input(
+          ico,
+          :cap_currency,
+          collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
+        )
       end
 
       inputs "Ico Currencies" do
-        has_many ico, :ico_currencies, fn(c) ->
-          inputs :currency, collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
-          input c, :amount
-        end
+        has_many(ico, :ico_currencies, fn c ->
+          inputs(
+            :currency,
+            collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
+          )
+
+          input(c, :amount)
+        end)
       end
     end
 
@@ -209,17 +223,26 @@ defmodule Sanbase.ExAdmin.Model.Ico do
   end
 
   def run_query_impl(repo, defn, :index, id) do
-    query = %Sanbase.ExAdmin.Model.Ico{}
-    |> Map.get(:resource_model)
-    |> ExAdmin.Query.run_query(repo, defn, :index, id, @query)
+    query =
+      %Sanbase.ExAdmin.Model.Ico{}
+      |> Map.get(:resource_model)
+      |> ExAdmin.Query.run_query(repo, defn, :index, id, @query)
 
     List.keyfind(id, :project_name, 0)
     |> case do
       {:project_name, project_name} when is_binary(project_name) ->
         query
         |> join(:inner, [i], p in assoc(i, :project))
-        |> where([i, p], like(fragment("lower(?)", p.name), ^"%#{String.replace(String.downcase(project_name), "%", "\\%")}%"))
-      _ -> query
+        |> where(
+          [i, p],
+          like(
+            fragment("lower(?)", p.name),
+            ^"%#{String.replace(String.downcase(project_name), "%", "\\%")}%"
+          )
+        )
+
+      _ ->
+        query
     end
   end
 

@@ -53,14 +53,15 @@ defmodule Sanbase.Model.Ico do
 
   @doc false
   def changeset_ex_admin(%Ico{} = ico, attrs \\ %{}) do
-    attrs = attrs
-    |> ModelUtils.removeThousandsSeparator(:token_usd_ico_price)
-    |> ModelUtils.removeThousandsSeparator(:token_eth_ico_price)
-    |> ModelUtils.removeThousandsSeparator(:token_btc_ico_price)
-    |> ModelUtils.removeThousandsSeparator(:tokens_issued_at_ico)
-    |> ModelUtils.removeThousandsSeparator(:tokens_sold_at_ico)
-    |> ModelUtils.removeThousandsSeparator(:minimal_cap_amount)
-    |> ModelUtils.removeThousandsSeparator(:maximal_cap_amount)
+    attrs =
+      attrs
+      |> ModelUtils.removeThousandsSeparator(:token_usd_ico_price)
+      |> ModelUtils.removeThousandsSeparator(:token_eth_ico_price)
+      |> ModelUtils.removeThousandsSeparator(:token_btc_ico_price)
+      |> ModelUtils.removeThousandsSeparator(:tokens_issued_at_ico)
+      |> ModelUtils.removeThousandsSeparator(:tokens_sold_at_ico)
+      |> ModelUtils.removeThousandsSeparator(:minimal_cap_amount)
+      |> ModelUtils.removeThousandsSeparator(:maximal_cap_amount)
 
     ico
     |> changeset(attrs)
@@ -163,8 +164,10 @@ defmodule Sanbase.Model.Ico do
   defp funds_raised_ico_end_price_from_currencies(ico, target_ticker, date) do
     timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
 
-    Repo.preload(ico, [ico_currencies: [:currency]]).ico_currencies
-    |> Enum.map(fn(ic) -> Sanbase.Prices.Utils.convert_amount(ic.amount, ic.currency.code, target_ticker, timestamp) end)
+    Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
+    |> Enum.map(fn ic ->
+      Sanbase.Prices.Utils.convert_amount(ic.amount, ic.currency.code, target_ticker, timestamp)
+    end)
     |> Enum.reject(&is_nil/1)
     |> case do
       [] -> nil

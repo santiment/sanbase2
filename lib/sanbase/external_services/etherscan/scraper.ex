@@ -168,20 +168,20 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   defp total_supply(html) do
     Floki.find(html, ~s/td:fl-contains('Total Supply') + td/)
     |> hd
-    |> Floki.text
+    |> Floki.text()
     |> parse_total_supply
   end
 
   defp main_contract_address(html) do
     Floki.find(html, ~s/td:fl-contains('Contract Address') + td/)
     |> hd
-    |> Floki.text
+    |> Floki.text()
   end
 
   defp token_decimals(html) do
     Floki.find(html, ~s/td:fl-contains('Token Decimals') + td/)
     |> hd
-    |> Floki.text
+    |> Floki.text()
     |> parse_token_decimals
   end
 
@@ -200,7 +200,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> String.trim()
     |> String.replace(",", "")
     |> String.split()
-    |> List.first
-    |> D.new
+    |> List.first()
+    |> D.new()
   end
 end

@@ -41,7 +41,8 @@ defmodule Sanbase.Etherbi.Transactions.Fetcher do
   defp transactions(address, transaction_type) do
     case Utils.generate_from_to_interval_unix(
            address,
-           db_last_datetime: &Store.last_datetime_with_tag(&1, "transaction_type", transaction_type),
+           db_last_datetime:
+             &Store.last_datetime_with_tag(&1, "transaction_type", transaction_type),
            etherbi_first_timestamp: &@etherbi_api.get_first_transaction_timestamp_addr/1
          ) do
       {from_datetime, to_datetime} ->

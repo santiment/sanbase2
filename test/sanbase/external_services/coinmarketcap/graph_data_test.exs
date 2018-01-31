@@ -4,22 +4,28 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
 
   test "fetching the first price datetime of a token" do
-    Tesla.Mock.mock fn
-      %{method: :get, url: "https://graphs2.coinmarketcap.com/currencies/santiment/"} ->
-        %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
-    end
+    Tesla.Mock.mock(fn %{
+                         method: :get,
+                         url: "https://graphs2.coinmarketcap.com/currencies/santiment/"
+                       } ->
+      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
+    end)
 
-    assert GraphData.fetch_first_price_datetime("santiment") == DateTime.from_unix!(1507991665000, :millisecond)
+    assert GraphData.fetch_first_price_datetime("santiment") ==
+             DateTime.from_unix!(1_507_991_665_000, :millisecond)
   end
 
   test "fetching prices of a token" do
-    Tesla.Mock.mock fn
-      %{method: :get, url: "https://graphs2.coinmarketcap.com/currencies/santiment/1507991665000/1508078065000/"} ->
-        %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
-    end
+    Tesla.Mock.mock(fn %{
+                         method: :get,
+                         url:
+                           "https://graphs2.coinmarketcap.com/currencies/santiment/1507991665000/1508078065000/"
+                       } ->
+      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
+    end)
 
-    from_datetime = DateTime.from_unix!(1507991665000, :millisecond)
-    to_datetime = DateTime.from_unix!(1508078065000, :millisecond)
+    from_datetime = DateTime.from_unix!(1_507_991_665_000, :millisecond)
+    to_datetime = DateTime.from_unix!(1_508_078_065_000, :millisecond)
 
     GraphData.fetch_prices("santiment", from_datetime, to_datetime)
     |> Stream.take(1)

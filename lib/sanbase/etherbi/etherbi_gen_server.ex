@@ -26,7 +26,7 @@ defmodule Sanbase.Etherbi.EtherbiGenServer do
       @doc ~s"""
         Starts the GenServer
       """
-      @spec start_link(any()) :: { :ok, pid }
+      @spec start_link(any()) :: {:ok, pid}
       def start_link(_state) do
         GenServer.start_link(__MODULE__, :ok)
       end

@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
           }
         end)
 
-        {:ok, result}
+      {:ok, result}
     end
   end
 
@@ -26,8 +26,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Return the transaction volume for the given ticker and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
-  def transaction_volume(_root, %{ticker: ticker, from: from, to: to, interval: interval}, _resolution) do
-    with {:ok, trx_volumes} <- TransactionVolume.Store.transaction_volume(ticker, from, to, interval) do
+  def transaction_volume(
+        _root,
+        %{ticker: ticker, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, trx_volumes} <-
+           TransactionVolume.Store.transaction_volume(ticker, from, to, interval) do
       result =
         trx_volumes
         |> Enum.map(fn {datetime, trx_volume} ->
@@ -37,11 +42,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
           }
         end)
 
-        {:ok, result}
+      {:ok, result}
     end
   end
 
-   @doc ~S"""
+  @doc ~S"""
     Return the transactions that happend in or out of an exchange wallet for a given ticker
     and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
@@ -56,7 +61,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         },
         _resolution
       ) do
-    with {:ok, transactions} <- Transactions.Store.transactions(ticker, from, to, transaction_type) do
+    with {:ok, transactions} <-
+           Transactions.Store.transactions(ticker, from, to, transaction_type) do
       result =
         transactions
         |> Enum.map(fn {datetime, volume, address} ->

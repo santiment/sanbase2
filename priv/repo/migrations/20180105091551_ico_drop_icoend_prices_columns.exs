@@ -17,8 +17,8 @@ defmodule Sanbase.Repo.Migrations.IcoDropIcoendPricesColumns do
 
   def down do
     alter table(:icos) do
-      add :usd_btc_icoend, :decimal
-      add :usd_eth_icoend, :decimal
+      add(:usd_btc_icoend, :decimal)
+      add(:usd_eth_icoend, :decimal)
     end
   end
 end

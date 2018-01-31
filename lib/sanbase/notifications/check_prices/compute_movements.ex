@@ -19,7 +19,7 @@ defmodule Sanbase.Notifications.CheckPrices.ComputeMovements do
 
     diff = price_difference(prices)
 
-    if (Kernel.abs(diff) >= change_threshold_percent) do
+    if Kernel.abs(diff) >= change_threshold_percent do
       {
         %Notification{
           project_id: project.id,
@@ -34,7 +34,8 @@ defmodule Sanbase.Notifications.CheckPrices.ComputeMovements do
   defp price_difference([]), do: 0
 
   defp price_difference(prices) do
-    {[ts1, low_price | _], [ts2, high_price | _]} = Enum.min_max_by(prices, fn [_ts, price | _] -> price end)
+    {[ts1, low_price | _], [ts2, high_price | _]} =
+      Enum.min_max_by(prices, fn [_ts, price | _] -> price end)
 
     difference_sign(ts2, ts1) * (high_price - low_price) * 100 / low_price
   end

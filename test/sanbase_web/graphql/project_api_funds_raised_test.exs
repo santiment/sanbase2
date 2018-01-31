@@ -33,10 +33,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     Store.drop_measurement("ETH_USD")
 
     date1 = "2017-08-19"
-    date1_unix = 1503100800000000000
+    date1_unix = 1_503_100_800_000_000_000
 
     date2 = "2017-10-17"
-    date2_unix = 1508198400000000000
+    date2_unix = 1_508_198_400_000_000_000
 
     Store.import([
       %Measurement{
@@ -61,42 +61,37 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       }
     ])
 
-    currency_eth = %Currency{}
-    |> Currency.changeset(%{code: "ETH"})
-    |> Repo.insert!
+    currency_eth =
+      %Currency{}
+      |> Currency.changeset(%{code: "ETH"})
+      |> Repo.insert!()
 
-    currency_btc = %Currency{}
-    |> Currency.changeset(%{code: "BTC"})
-    |> Repo.insert!
+    currency_btc =
+      %Currency{}
+      |> Currency.changeset(%{code: "BTC"})
+      |> Repo.insert!()
 
-    currency = %Currency{}
-    |> Currency.changeset(%{code: "TEST"})
-    |> Repo.insert!
+    currency =
+      %Currency{}
+      |> Currency.changeset(%{code: "TEST"})
+      |> Repo.insert!()
 
-    project = %Project{}
-    |> Project.changeset(%{name: "Project"})
-    |> Repo.insert!()
+    project =
+      %Project{}
+      |> Project.changeset(%{name: "Project"})
+      |> Repo.insert!()
 
-    ico1 = %Ico{}
-    |> Ico.changeset(
-      %{project_id: project.id,
-        end_date: date1
-        })
-    |> Repo.insert!()
+    ico1 =
+      %Ico{}
+      |> Ico.changeset(%{project_id: project.id, end_date: date1})
+      |> Repo.insert!()
 
     %IcoCurrencies{}
     |> IcoCurrencies.changeset(%{ico_id: ico1.id, currency_id: currency_eth.id, amount: 150})
-    |> Repo.insert!
+    |> Repo.insert!()
 
     %IcoCurrencies{}
     |> IcoCurrencies.changeset(%{ico_id: ico1.id, currency_id: currency.id, amount: 50})
-    |> Repo.insert!
-
-    ico2 = %Ico{}
-    |> Ico.changeset(
-      %{project_id: project.id,
-        end_date: date2
-        })
     |> Repo.insert!()
 
     :ok
@@ -116,13 +111,18 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}"))
+      |> post(
+        "/graphql",
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
+      )
 
     assert json_response(result, 200)["data"]["project"] ==
-      %{"name" => "Project",
-        "fundsRaisedUsdIcoEndPrice" => "1200",
-        "fundsRaisedEthIcoEndPrice" => "250.0",
-        "fundsRaisedBtcIcoEndPrice" => "300"}
+             %{
+               "name" => "Project",
+               "fundsRaisedUsdIcoEndPrice" => "1200",
+               "fundsRaisedEthIcoEndPrice" => "250.0",
+               "fundsRaisedBtcIcoEndPrice" => "300"
+             }
   end
 
   test "fetch project full funds raised", context do

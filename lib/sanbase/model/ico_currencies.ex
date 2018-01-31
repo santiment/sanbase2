@@ -76,14 +76,15 @@ defmodule Sanbase.Model.IcoCurrencies do
   defp set_currency_id(attrs) do
     {currency_code, attrs} = Map.pop(attrs, :currency)
 
-    currency_id = case currency_code do
-      nil -> nil
-      c -> Sanbase.Repo.get_by(Currency, code: c)
-    end
-    |> case do
-      %Currency{id: id} -> id
-      _ -> nil
-    end
+    currency_id =
+      case currency_code do
+        nil -> nil
+        c -> Sanbase.Repo.get_by(Currency, code: c)
+      end
+      |> case do
+        %Currency{id: id} -> id
+        _ -> nil
+      end
 
     Map.put(attrs, :currency_id, currency_id)
   end

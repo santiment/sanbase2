@@ -235,10 +235,12 @@ defmodule Sanbase.Github.SchedulerTest do
         archive_name = Scheduler.archive_name_for(from_datetime)
         Github.ProcessedGithubArchive.mark_as_processed(project_id, archive_name)
 
-        next_datetime = from_datetime
-        |> Timex.shift(hours: 1)
+        next_datetime =
+          from_datetime
+          |> Timex.shift(hours: 1)
 
         mark_as_processed_interval(project_id, next_datetime, to_datetime)
+
       _ ->
         :ok
     end

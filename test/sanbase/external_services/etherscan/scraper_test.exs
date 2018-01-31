@@ -40,9 +40,9 @@ defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
     html = File.read!(Path.join(__DIR__, "token_summary_page.html"))
 
     assert Scraper.parse_token_page(html, %ProjectInfo{}) == %ProjectInfo{
-      total_supply: 6804870174878168246198837603,
-      main_contract_address: "0x744d70fdbe2ba4cf95131626614a1763df805b9e",
-      token_decimals: 18
-    }
+             total_supply: 6_804_870_174_878_168_246_198_837_603,
+             main_contract_address: "0x744d70fdbe2ba4cf95131626614a1763df805b9e",
+             token_decimals: 18
+           }
   end
 end

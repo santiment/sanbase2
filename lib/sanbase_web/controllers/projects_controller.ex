@@ -7,11 +7,12 @@ defmodule SanbaseWeb.ProjectsController do
   import Ecto.Query
 
   def index(conn, _params) do
-    projects = Project
-    |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
-    |> preload(:latest_coinmarketcap_data)
-    |> Repo.all
+    projects =
+      Project
+      |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
+      |> preload(:latest_coinmarketcap_data)
+      |> Repo.all()
 
-    render conn, "index.json", projects: projects
+    render(conn, "index.json", projects: projects)
   end
 end

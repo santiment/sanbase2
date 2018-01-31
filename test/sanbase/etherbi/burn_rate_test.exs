@@ -13,6 +13,7 @@ defmodule Sanbase.Etherbi.BurnRateTest do
 
     Store.create_db()
     Store.drop_measurement(ticker)
+
     %Project{}
     |> Project.changeset(%{name: "Santiment", ticker: ticker, token_decimals: 18})
     |> Sanbase.Repo.insert!()

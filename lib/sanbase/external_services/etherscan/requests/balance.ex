@@ -1,5 +1,4 @@
 defmodule Sanbase.ExternalServices.Etherscan.Requests.Balance do
-
   alias Sanbase.ExternalServices.Etherscan.Requests
   alias __MODULE__
 
@@ -10,15 +9,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Balance do
       module: "account",
       action: "balance",
       address: address,
-      tag: "latest",
+      tag: "latest"
     ]
   end
 
   def get(address) do
     Requests.get("/", query: get_query(address))
     |> case do
-         %{status: 200, body: body} -> Poison.Decode.decode(body, as: %Balance{})
-       end
+      %{status: 200, body: body} -> Poison.Decode.decode(body, as: %Balance{})
+    end
   end
-
 end

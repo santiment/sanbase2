@@ -56,11 +56,12 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   end
 
   test "creating project info from a project" do
-    project = %Project{coinmarketcap_id: "coinmarketcap_id", name: "Name"}
-    |> Repo.insert!
+    project =
+      %Project{coinmarketcap_id: "coinmarketcap_id", name: "Name"}
+      |> Repo.insert!()
 
     %Ico{main_contract_address: "address", project_id: project.id}
-    |> Repo.insert!
+    |> Repo.insert!()
 
     expected_project_info = %ProjectInfo{
       coinmarketcap_id: "coinmarketcap_id",

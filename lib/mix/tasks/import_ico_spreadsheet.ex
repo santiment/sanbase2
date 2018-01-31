@@ -24,9 +24,12 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
   alias Sanbase.ExternalServices.IcoSpreadsheet
 
   def run(args) do
-    parsed_args = OptionParser.parse(args,
-      strict: [document_id: :string, api_key: :string, dry_run: :boolean],
-      aliases: [d: :document_id, a: :api_key])
+    parsed_args =
+      OptionParser.parse(
+        args,
+        strict: [document_id: :string, api_key: :string, dry_run: :boolean],
+        aliases: [d: :document_id, a: :api_key]
+      )
 
     {switches, project_names, errors} = parsed_args
 
@@ -35,11 +38,15 @@ defmodule Mix.Tasks.ImportIcoSpreadsheet do
     |> case do
       [document_id: document_id, api_key: api_key, dry_run: dry_run] ->
         cond do
-          Enum.empty?(errors) -> import(document_id, api_key, dry_run, project_names)
+          Enum.empty?(errors) ->
+            import(document_id, api_key, dry_run, project_names)
+
           true ->
             IO.puts("Missing or invalid arguments")
         end
-      _ -> IO.puts("Missing or invalid arguments")
+
+      _ ->
+        IO.puts("Missing or invalid arguments")
     end
   end
 

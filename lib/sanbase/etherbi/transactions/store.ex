@@ -10,7 +10,8 @@ defmodule Sanbase.Etherbi.Transactions.Store do
     Get all in and/or out transactions that happened with a given address.
     Returns a tuple `{:ok, result}` on success, `{:error, error}` otherwise
   """
-  @spec transactions(binary(), %DateTime{}, %DateTime{}, binary()) :: {:ok, list()} | {:error, binary()}
+  @spec transactions(binary(), %DateTime{}, %DateTime{}, binary()) ::
+          {:ok, list()} | {:error, binary()}
   def transactions(measurement, from, to, transaction_type) do
     transactions_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
@@ -78,5 +79,4 @@ defmodule Sanbase.Etherbi.Transactions.Store do
   defp parse_transactions_time_series(_) do
     {:ok, []}
   end
-
 end

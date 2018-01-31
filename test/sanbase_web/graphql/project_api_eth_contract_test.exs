@@ -12,50 +12,49 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   test "fetch wallet projects with ethereum contract info", context do
-    project1 = %Project{}
-    |> Project.changeset(%{name: "Project1", ticker: "P1", coinmarketcap_id: "P1_id"})
-    |> Repo.insert!
+    project1 =
+      %Project{}
+      |> Project.changeset(%{name: "Project1", ticker: "P1", coinmarketcap_id: "P1_id"})
+      |> Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(
-      %{project_id: project1.id,
-        start_date: "2017-01-01",
-        main_contract_address: "main_contract_address1",
-        contract_block_number: 1234,
-        contract_abi: "contract_abi1"
-        })
-    |> Repo.insert!
+    |> Ico.changeset(%{
+      project_id: project1.id,
+      start_date: "2017-01-01",
+      main_contract_address: "main_contract_address1",
+      contract_block_number: 1234,
+      contract_abi: "contract_abi1"
+    })
+    |> Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(
-      %{project_id: project1.id,
-        start_date: "2018-01-01",
-        main_contract_address: "main_contract_address111",
-        contract_block_number: 1234444,
-        contract_abi: "contract_abi111"
-        })
-    |> Repo.insert!
+    |> Ico.changeset(%{
+      project_id: project1.id,
+      start_date: "2018-01-01",
+      main_contract_address: "main_contract_address111",
+      contract_block_number: 1_234_444,
+      contract_abi: "contract_abi111"
+    })
+    |> Repo.insert!()
 
-    project2 = %Project{}
-    |> Project.changeset(%{name: "Project2", ticker: "P2", coinmarketcap_id: "P2_id"})
-    |> Repo.insert!
-
-    %Ico{}
-    |> Ico.changeset(
-      %{project_id: project2.id,
-        start_date: "2017-01-01"
-        })
-    |> Repo.insert!
+    project2 =
+      %Project{}
+      |> Project.changeset(%{name: "Project2", ticker: "P2", coinmarketcap_id: "P2_id"})
+      |> Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(
-      %{project_id: project2.id,
-        start_date: "2018-01-01",
-        main_contract_address: "main_contract_address2222",
-        contract_block_number: 5678,
-        contract_abi: "contract_abi22"
-        })
-    |> Repo.insert!
+    |> Ico.changeset(%{project_id: project2.id, start_date: "2017-01-01"})
+    |> Repo.insert!()
+
+    %Ico{}
+    |> Ico.changeset(%{
+      project_id: project2.id,
+      start_date: "2018-01-01",
+      main_contract_address: "main_contract_address2222",
+      contract_block_number: 5678,
+      contract_abi: "contract_abi22"
+    })
+    |> Repo.insert!()
 
     query = """
     {
@@ -72,15 +71,22 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
     """
 
     result =
-    context.conn
-    |> put_req_header("authorization", get_authorization_header())
-    |> post("/graphql", query_skeleton(query, "allProjects"))
+      context.conn
+      |> put_req_header("authorization", get_authorization_header())
+      |> post("/graphql", query_skeleton(query, "allProjects"))
 
     assert json_response(result, 200)["data"]["allProjectsWithEthContractInfo"] ==
-      [%{"name" => "Project1", "ticker" => "P1", "initialIco" =>
-        %{"mainContractAddress" => "main_contract_address1",
-        "contractBlockNumber" => 1234,
-        "contractAbi" => "contract_abi1"}}]
+             [
+               %{
+                 "name" => "Project1",
+                 "ticker" => "P1",
+                 "initialIco" => %{
+                   "mainContractAddress" => "main_contract_address1",
+                   "contractBlockNumber" => 1234,
+                   "contractAbi" => "contract_abi1"
+                 }
+               }
+             ]
   end
 
   defp get_authorization_header do

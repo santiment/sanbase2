@@ -128,55 +128,73 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
       panel "Icos" do
         markup_contents do
-          a ".btn .btn-primary", href: "/admin/icos/new?project_id="<>to_string(project.id) do
+          a ".btn .btn-primary", href: "/admin/icos/new?project_id=" <> to_string(project.id) do
             "New Ico"
           end
         end
 
         table_for Sanbase.Repo.preload(project.icos, :cap_currency) do
-          column :id, link: true
-          column :start_date
-          column :end_date
-          column :token_usd_ico_price
-          column :token_eth_ico_price
-          column :token_btc_ico_price
-          column :tokens_issued_at_ico
-          column :tokens_sold_at_ico
-          column :minimal_cap_amount
-          column :maximal_cap_amount
-          column :main_contract_address
-          column :comments
-          column :cap_currency
+          column(:id, link: true)
+          column(:start_date)
+          column(:end_date)
+          column(:token_usd_ico_price)
+          column(:token_eth_ico_price)
+          column(:token_btc_ico_price)
+          column(:tokens_issued_at_ico)
+          column(:tokens_sold_at_ico)
+          column(:minimal_cap_amount)
+          column(:maximal_cap_amount)
+          column(:main_contract_address)
+          column(:comments)
+          column(:cap_currency)
         end
       end
     end
 
     form project do
       inputs do
-        input project, :name
-        input project, :ticker
-        input project, :logo_url
-        input project, :website_link
-        input project, :btt_link
-        input project, :facebook_link
-        input project, :github_link
-        input project, :reddit_link
-        input project, :twitter_link
-        input project, :whitepaper_link
-        input project, :blog_link
-        input project, :slack_link
-        input project, :linkedin_link
-        input project, :telegram_link
-        input project, :token_address
-        input project, :team_token_wallet
-        input project, :project_transparency
-        input project, :project_transparency_status, collection: from(pt in ProjectTransparencyStatus, order_by: pt.name) |> Sanbase.Repo.all()
-        input project, :project_transparency_description
-        input project, :market_segment, collection: from(m in MarketSegment, order_by: m.name) |> Sanbase.Repo.all()
-        input project, :infrastructure, collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
-        input project, :coinmarketcap_id
-        input project, :token_decimals
-        input project, :token_supply
+        input(project, :name)
+        input(project, :ticker)
+        input(project, :logo_url)
+        input(project, :website_link)
+        input(project, :btt_link)
+        input(project, :facebook_link)
+        input(project, :github_link)
+        input(project, :reddit_link)
+        input(project, :twitter_link)
+        input(project, :whitepaper_link)
+        input(project, :blog_link)
+        input(project, :slack_link)
+        input(project, :linkedin_link)
+        input(project, :telegram_link)
+        input(project, :token_address)
+        input(project, :team_token_wallet)
+        input(project, :project_transparency)
+
+        input(
+          project,
+          :project_transparency_status,
+          collection:
+            from(pt in ProjectTransparencyStatus, order_by: pt.name) |> Sanbase.Repo.all()
+        )
+
+        input(project, :project_transparency_description)
+
+        input(
+          project,
+          :market_segment,
+          collection: from(m in MarketSegment, order_by: m.name) |> Sanbase.Repo.all()
+        )
+
+        input(
+          project,
+          :infrastructure,
+          collection: from(i in Infrastructure, order_by: i.code) |> Sanbase.Repo.all()
+        )
+
+        input(project, :coinmarketcap_id)
+        input(project, :token_decimals)
+        input(project, :token_supply)
       end
     end
 

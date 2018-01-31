@@ -294,7 +294,10 @@ const makeOptionsFromProps = props => ({
         if (label === 'Github Activity') {
           return `${label}: ${millify(tooltipItem.yLabel)}`
         }
-        if (label === 'Transaction Volume' || label === 'Burn Rate') {
+        if (label === 'Burn Rate') {
+          return `${label}: ${millify(tooltipItem.yLabel)} tokens × blocks`
+        }
+        if (label === 'Transaction Volume') {
           return `${label}: ${millify(tooltipItem.yLabel)} tokens`
         }
         if (label === 'Twitter') {

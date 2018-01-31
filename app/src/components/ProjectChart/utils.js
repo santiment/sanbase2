@@ -38,10 +38,10 @@ export const normalizeData = ({
 }) => {
   if (data.length === 0) { return [] }
   const normalizedData = data.map(el => {
-    const newFieldName = parseFloat(el[`${fieldName}`]) / Math.pow(10, tokenDecimals)
+    const normalizedField = parseFloat(el[`${fieldName}`]) / Math.pow(10, tokenDecimals)
     return {
       ...el,
-      [fieldName]: newFieldName
+      [fieldName]: normalizedField
     }
   })
   // https://github.com/matthewmueller/outliers/blob/9d9725ce75b55018a0b25f93d92538d7ff24b36c/index.js#L26

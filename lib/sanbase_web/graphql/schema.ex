@@ -11,17 +11,18 @@ defmodule SanbaseWeb.Graphql.Schema do
     EtherbiResolver,
     VotingResolver
   }
+
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
 
-  import_types Absinthe.Type.Custom
-  import_types SanbaseWeb.Graphql.AccountTypes
-  import_types SanbaseWeb.Graphql.PriceTypes
-  import_types SanbaseWeb.Graphql.ProjectTypes
-  import_types SanbaseWeb.Graphql.GithubTypes
-  import_types SanbaseWeb.Graphql.TwitterTypes
-  import_types SanbaseWeb.Graphql.EtherbiTypes
-  import_types SanbaseWeb.Graphql.VotingTypes
+  import_types(Absinthe.Type.Custom)
+  import_types(SanbaseWeb.Graphql.AccountTypes)
+  import_types(SanbaseWeb.Graphql.PriceTypes)
+  import_types(SanbaseWeb.Graphql.ProjectTypes)
+  import_types(SanbaseWeb.Graphql.GithubTypes)
+  import_types(SanbaseWeb.Graphql.TwitterTypes)
+  import_types(SanbaseWeb.Graphql.EtherbiTypes)
+  import_types(SanbaseWeb.Graphql.VotingTypes)
 
   query do
     field :current_user, :user do
@@ -29,34 +30,36 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     field :all_projects, list_of(:project_listing) do
-      arg :only_project_transparency, :boolean
+      arg(:only_project_transparency, :boolean)
 
-      resolve &ProjectResolver.all_projects/3
+      resolve(&ProjectResolver.all_projects/3)
     end
 
     field :all_projects_project_transparency, list_of(:project_project_transparency_listing) do
-      middleware BasicAuth
-      resolve &(ProjectResolver.all_projects(&1, &2, &3, true))
+      middleware(BasicAuth)
+      resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
     end
 
     field :project, :project_public do
-      arg :id, non_null(:id)
-      arg :only_project_transparency, :boolean # this is to filter the wallets
+      arg(:id, non_null(:id))
+      # this is to filter the wallets
+      arg(:only_project_transparency, :boolean)
 
-      resolve &ProjectResolver.project/3
+      resolve(&ProjectResolver.project/3)
     end
 
     field :project_full, :project_full do
-      arg :id, non_null(:id)
-      arg :only_project_transparency, :boolean # this is to filter the wallets
+      arg(:id, non_null(:id))
+      # this is to filter the wallets
+      arg(:only_project_transparency, :boolean)
 
-      middleware MultipleAuth, [BasicAuth, JWTAuth]
-      resolve &ProjectResolver.project/3
+      middleware(MultipleAuth, [BasicAuth, JWTAuth])
+      resolve(&ProjectResolver.project/3)
     end
 
     field :all_projects_with_eth_contract_info, list_of(:project_with_eth_contract_info) do
-      middleware BasicAuth
-      resolve &ProjectResolver.all_projects_with_eth_contract_info/3
+      middleware(BasicAuth)
+      resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
     end
 
     @desc "Historical information for the price"
@@ -146,6 +149,17 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :current_poll, :poll do
       resolve(&VotingResolver.current_poll/3)
     end
+
+    @desc "Shows the flow of funds in an exchange wallet"
+    field :exchange_fund_flow, list_of(:transaction) do
+      arg(:ticker, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:transaction_type, :transaction_type, default_value: :all)
+
+      resolve(&EtherbiResolver.exchange_fund_flow/3)
+
+    end
   end
 
   mutation do
@@ -158,46 +172,53 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     field :change_email, :user do
-      arg :email, non_null(:string)
+      arg(:email, non_null(:string))
 
       middleware(JWTAuth)
       resolve(&AccountResolver.change_email/3)
     end
 
     field :follow_project, :user do
-      arg :project_id, non_null(:integer)
+      arg(:project_id, non_null(:integer))
 
       middleware(JWTAuth)
       resolve(&AccountResolver.follow_project/3)
     end
 
     field :unfollow_project, :user do
-      arg :project_id, non_null(:integer)
+      arg(:project_id, non_null(:integer))
 
       middleware(JWTAuth)
       resolve(&AccountResolver.unfollow_project/3)
     end
 
     field :vote, :post do
-      arg :post_id, non_null(:integer)
+      arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
       resolve(&VotingResolver.vote/3)
     end
 
     field :unvote, :post do
-      arg :post_id, non_null(:integer)
+      arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
       resolve(&VotingResolver.unvote/3)
     end
 
     field :create_post, :post do
-      arg :title, non_null(:string)
-      arg :link, non_null(:string)
+      arg(:title, non_null(:string))
+      arg(:link, non_null(:string))
 
       middleware(JWTAuth)
       resolve(&VotingResolver.create_post/3)
+    end
+
+    field :delete_post, :post do
+      arg(:id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&VotingResolver.delete_post/3)
     end
   end
 end

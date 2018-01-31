@@ -13,7 +13,7 @@ defmodule Sanbase.Voting.Poll do
     field(:start_at, Timex.Ecto.DateTime)
     field(:end_at, Timex.Ecto.DateTime)
 
-    has_many(:posts, Post)
+    has_many(:posts, Post, on_delete: :delete_all)
 
     timestamps()
   end

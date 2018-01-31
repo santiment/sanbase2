@@ -143,6 +143,7 @@ export const Detailed = ({
   }
 
   const burnRate = {
+    ...BurnRate,
     loading: BurnRate.loading,
     error: BurnRate.error || false,
     items: BurnRate.burnRate || []

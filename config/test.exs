@@ -50,6 +50,9 @@ config :sanbase, Sanbase.Github.Store,
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data_test"
 
+config :sanbase, Sanbase.Etherbi.Store,
+  database: "transactions_test"
+
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"

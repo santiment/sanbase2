@@ -29,6 +29,9 @@ defmodule Sanbase.Application do
       # Time series Github DB connection
       Sanbase.Github.Store.child_spec(),
 
+      # Time series transactions DB connection
+      Sanbase.Etherbi.Store.child_spec(),
+
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :etherscan_rate_limiter,
@@ -91,6 +94,9 @@ defmodule Sanbase.Application do
 
       # Twitter account historical data
       Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
+
+      # Store wallets' in and out transactions in time series database
+      Sanbase.Etherbi.Transactions.child_spec(%{}),
     ] ++ faktory_supervisor() ++ [
       # Github activity scraping scheduler
       Sanbase.ExternalServices.Github.child_spec(%{}),

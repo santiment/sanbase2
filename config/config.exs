@@ -58,6 +58,12 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   pool: [ max_overflow: 10, size: 20 ],
   database: "twitter_followers_data"
 
+config :sanbase, Sanbase.Etherbi.Store,
+  host: {:system, "INFLUXDB_HOST", "localhost"},
+  port: {:system, "INFLUXDB_PORT", 8086},
+  pool: [max_overflow: 10, size: 20],
+  database: "transactions"
+
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
                                  cleanup_interval_ms: 60_000 * 10]}
@@ -124,6 +130,10 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
   update_interval: 1000 * 60 * 60 * 24, # 1 day
   sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
 
+config :sanbase, Sanbase.Etherbi.Transactions,
+  update_interval: 1000 * 60 * 5,
+  sync_enabled: {:system, "ETHERBI_TRANSACTIONS_ENABLED", false}
+
 config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
   notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"},
@@ -164,7 +174,7 @@ config :ex_aws,
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
   region: "eu-central-1"
 
-config :sanbase, SanbaseWeb.Graphql.Resolvers.EtherbiResolver,
+config :sanbase, Sanbase.Etherbi,
   url: {:system, "ETHERBI_URL"}
 
 # Import environment specific config. This must remain at the bottom

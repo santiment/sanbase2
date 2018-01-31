@@ -11,6 +11,7 @@ import './ProjectChartFooter.css'
 
 export const ToggleBtn = ({
   loading,
+  error = false,
   disabled,
   isToggled,
   toggle,
@@ -22,13 +23,20 @@ export const ToggleBtn = ({
     'disabled': disabled || loading
   })}
     onClick={() => !disabled && !loading && toggle(!isToggled)}>
-    {disabled
-      ? <Popup
+    {!loading && disabled && !error &&
+      <Popup
         trigger={<div>{children}</div>}
-        content="Looks like we don't have any data"
+        content="We don't have the data for this project"
         position='bottom left'
-      />
-    : children}
+      />}
+    {!loading && !!error &&
+      <Popup
+        trigger={<div>{children}</div>}
+        content='There was a problem fetching the data. Please, try again or come back later...'
+        position='bottom left'
+    />}
+    {!loading && !disabled && !error && children}
+    {loading && children}
     {loading && <Loader active inline size='mini' />}
   </div>
 )
@@ -110,7 +118,8 @@ const ProjectChartFooter = (props) => (
         name='Blockchain'>
         <ToggleBtn
           loading={props.burnRate.loading}
-          disabled={props.burnRate.items.length === 0}
+          error={props.burnRate.error}
+          disabled={props.burnRate.items.length === 0 || props.burnRate.error}
           isToggled={props.isToggledBurnRate &&
             props.burnRate.items.length !== 0}
           toggle={props.toggleBurnRate}>
@@ -126,7 +135,9 @@ const ProjectChartFooter = (props) => (
         </ToggleBtn>
         <ToggleBtn
           loading={props.transactionVolume.loading}
-          disabled={props.transactionVolume.items.length === 0}
+          error={props.transactionVolume.error}
+          disabled={props.transactionVolume.items.length === 0 ||
+            props.transactionVolume.error}
           isToggled={props.isToggledTransactionVolume &&
             props.transactionVolume.items.length !== 0}
           toggle={props.toggleTransactionVolume}>

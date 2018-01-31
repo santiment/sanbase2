@@ -14,7 +14,7 @@ defmodule Sanbase.DateTimeUtils do
     DateTime.utc_now()
     |> DateTime.to_unix()
     |> Kernel.-(seconds)
-    |> DateTime.from_unix!
+    |> DateTime.from_unix!()
   end
 
   def minutes_ago(minutes) do
@@ -49,7 +49,9 @@ defmodule Sanbase.DateTimeUtils do
   defp str_to_sec(weeks, "w"), do: weeks * 60 * 60 * 24 * 7
 
   def ecto_date_to_datetime(ecto_date) do
-    {:ok, datetime, _} = Ecto.Date.to_iso8601(ecto_date) <> "T00:00:00Z" |> DateTime.from_iso8601()
+    {:ok, datetime, _} =
+      (Ecto.Date.to_iso8601(ecto_date) <> "T00:00:00Z") |> DateTime.from_iso8601()
+
     datetime
   end
 end

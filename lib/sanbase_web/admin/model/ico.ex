@@ -9,54 +9,69 @@ defmodule Sanbase.ExAdmin.Model.Ico do
 
   register_resource Sanbase.Model.Ico do
     query do
-      %{all: [preload: [:project, :cap_currency, ico_currencies: [:currency]]] }
+      %{all: [preload: [:project, :cap_currency, ico_currencies: [:currency]]]}
     end
 
-    create_changeset :changeset_ex_admin
-    update_changeset :changeset_ex_admin
+    create_changeset(:changeset_ex_admin)
+    update_changeset(:changeset_ex_admin)
 
     index do
       selectable_column()
 
-      column :id
-      column :project
-      column :start_date
-      column :end_date
-      column :tokens_issued_at_ico
-      column :main_contract_address
-      actions()     # display the default actions column
+      column(:id)
+      column(:project)
+      column(:start_date)
+      column(:end_date)
+      column(:tokens_issued_at_ico)
+      column(:main_contract_address)
+      # display the default actions column
+      actions()
     end
 
     form ico do
       inputs do
-        input ico, :project, collection: from(p in Project, order_by: p.name) |> Sanbase.Repo.all()
-        input ico, :start_date
-        input ico, :end_date
-        input ico, :token_usd_ico_price
-        input ico, :token_eth_ico_price
-        input ico, :token_btc_ico_price
-        input ico, :tokens_issued_at_ico
-        input ico, :tokens_sold_at_ico
-        input ico, :minimal_cap_amount
-        input ico, :maximal_cap_amount
-        input ico, :main_contract_address
-        input ico, :contract_block_number
-        input ico, :contract_abi
-        input ico, :comments
-        input ico, :cap_currency, collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
+        input(
+          ico,
+          :project,
+          collection: from(p in Project, order_by: p.name) |> Sanbase.Repo.all()
+        )
+
+        input(ico, :start_date)
+        input(ico, :end_date)
+        input(ico, :token_usd_ico_price)
+        input(ico, :token_eth_ico_price)
+        input(ico, :token_btc_ico_price)
+        input(ico, :tokens_issued_at_ico)
+        input(ico, :tokens_sold_at_ico)
+        input(ico, :minimal_cap_amount)
+        input(ico, :maximal_cap_amount)
+        input(ico, :main_contract_address)
+        input(ico, :contract_block_number)
+        input(ico, :contract_abi)
+        input(ico, :comments)
+
+        input(
+          ico,
+          :cap_currency,
+          collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
+        )
       end
 
       inputs "Ico Currencies" do
-        has_many ico, :ico_currencies, fn(c) ->
-          inputs :currency, collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
-          input c, :amount
-        end
+        has_many(ico, :ico_currencies, fn c ->
+          inputs(
+            :currency,
+            collection: from(c in Currency, order_by: c.code) |> Sanbase.Repo.all()
+          )
+
+          input(c, :amount)
+        end)
       end
     end
 
     controller do
       # doc: https://hexdocs.pm/ex_admin/ExAdmin.Register.html#after_filter/2
-      after_filter :set_defaults, only: [:new]
+      after_filter(:set_defaults, only: [:new])
     end
 
     # We want to add project name to the filters on the index page
@@ -94,31 +109,41 @@ defmodule Sanbase.ExAdmin.Model.Ico do
   end
 
   def run_query_impl(repo, defn, :index, id) do
-    query = %Sanbase.ExAdmin.Model.Ico{}
-    |> Map.get(:resource_model)
-    |> ExAdmin.Query.run_query(repo, defn, :index, id, @query)
+    query =
+      %Sanbase.ExAdmin.Model.Ico{}
+      |> Map.get(:resource_model)
+      |> ExAdmin.Query.run_query(repo, defn, :index, id, @query)
 
     List.keyfind(id, :project_name, 0)
     |> case do
       {:project_name, project_name} when is_binary(project_name) ->
         query
         |> join(:inner, [i], p in assoc(i, :project))
-        |> where([i, p], like(fragment("lower(?)", p.name), ^"%#{String.replace(String.downcase(project_name), "%", "\\%")}%"))
-      _ -> query
+        |> where(
+          [i, p],
+          like(
+            fragment("lower(?)", p.name),
+            ^"%#{String.replace(String.downcase(project_name), "%", "\\%")}%"
+          )
+        )
+
+      _ ->
+        query
     end
   end
 
   def set_defaults(conn, params, resource, :new) do
-    resource = resource
-    |> set_cap_currency_default()
-    |> set_start_date_default()
-    |> set_end_date_default()
-    |> set_project_default(params)
+    resource =
+      resource
+      |> set_cap_currency_default()
+      |> set_start_date_default()
+      |> set_end_date_default()
+      |> set_project_default(params)
 
     {conn, params, resource}
   end
 
-  defp set_project_default(%Ico{project_id: nil}=ico, params) do
+  defp set_project_default(%Ico{project_id: nil} = ico, params) do
     Map.get(params, :project_id, nil)
     |> case do
       nil -> ico
@@ -126,9 +151,9 @@ defmodule Sanbase.ExAdmin.Model.Ico do
     end
   end
 
-  defp set_project_default(%Ico{}=ico), do: ico
+  defp set_project_default(%Ico{} = ico), do: ico
 
-  defp set_cap_currency_default(%Ico{cap_currency_id: nil}=ico) do
+  defp set_cap_currency_default(%Ico{cap_currency_id: nil} = ico) do
     currency = Currency.get("ETH")
 
     case currency do
@@ -137,17 +162,17 @@ defmodule Sanbase.ExAdmin.Model.Ico do
     end
   end
 
-  defp set_cap_currency_default(%Ico{}=ico), do: ico
+  defp set_cap_currency_default(%Ico{} = ico), do: ico
 
-  defp set_start_date_default(%Ico{start_date: nil}=ico) do
+  defp set_start_date_default(%Ico{start_date: nil} = ico) do
     Map.put(ico, :start_date, Ecto.Date.utc())
   end
 
-  defp set_start_date_default(%Ico{}=ico), do: ico
+  defp set_start_date_default(%Ico{} = ico), do: ico
 
-  defp set_end_date_default(%Ico{end_date: nil}=ico) do
+  defp set_end_date_default(%Ico{end_date: nil} = ico) do
     Map.put(ico, :end_date, Ecto.Date.utc())
   end
 
-  defp set_end_date_default(%Ico{}=ico), do: ico
+  defp set_end_date_default(%Ico{} = ico), do: ico
 end

@@ -4,10 +4,10 @@ defmodule SanbaseWeb.CashflowView do
   alias Decimal, as: D
 
   def render("index.json", %{eth_price: eth_price, projects: projects}) do
-
-    projects = projects
-    |> Enum.group_by(&Map.take(&1, [:project, :coinmarketcap]), &(&1.wallet_data))
-    |> Enum.map(&construct_project_data(&1))
+    projects =
+      projects
+      |> Enum.group_by(&Map.take(&1, [:project, :coinmarketcap]), & &1.wallet_data)
+      |> Enum.map(&construct_project_data(&1))
 
     %{eth_price: eth_price, projects: projects}
 
@@ -42,11 +42,11 @@ defmodule SanbaseWeb.CashflowView do
   end
 
   defp construct_project_data({%{project: project, coinmarketcap: coinmarketcap}, wallets}) do
-    market_cap_usd = if (coinmarketcap !== nil), do: coinmarketcap.market_cap_usd, else: nil
+    market_cap_usd = if coinmarketcap !== nil, do: coinmarketcap.market_cap_usd, else: nil
 
     wallets = construct_wallet_data(wallets)
 
-    balance = Enum.reduce(wallets, D.new(0), fn(x, acc) -> D.add(x.balance, acc) end) |> D.round(2)
+    balance = Enum.reduce(wallets, D.new(0), fn x, acc -> D.add(x.balance, acc) end) |> D.round(2)
 
     %{
       id: project.id,
@@ -77,6 +77,6 @@ defmodule SanbaseWeb.CashflowView do
   end
 
   defp round_decimal(num) do
-    D.round(num,2)
+    D.round(num, 2)
   end
 end

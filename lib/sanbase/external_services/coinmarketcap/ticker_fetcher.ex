@@ -14,7 +14,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
   alias Sanbase.Utils.Config
 
-  @default_update_interval 1000 * 60 * 5 # 5 minutes
+  # 5 minutes
+  @default_update_interval 1000 * 60 * 5
   @top_projects_to_follow 25
 
   def start_link(_state) do
@@ -51,7 +52,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   defp get_or_create_ticker(coinmarketcap_id) do
     case Repo.get_by(LatestCoinmarketcapData, coinmarketcap_id: coinmarketcap_id) do
-      nil  -> %LatestCoinmarketcapData{coinmarketcap_id: coinmarketcap_id}
+      nil -> %LatestCoinmarketcapData{coinmarketcap_id: coinmarketcap_id}
       entry -> entry
     end
   end
@@ -59,33 +60,38 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   defp store_ticker(ticker) do
     ticker.id
     |> get_or_create_ticker()
-    |> LatestCoinmarketcapData.changeset(
-      %{
-        market_cap_usd: ticker.market_cap_usd,
-	name: ticker.name,
-	price_usd: ticker.price_usd,
-  rank: ticker.rank,
-  volume_usd: ticker.'24h_volume_usd',
-  available_supply: ticker.available_supply,
-  total_supply: ticker.total_supply,
-	symbol: ticker.symbol,
-  percent_change_1h: ticker.percent_change_1h,
-  percent_change_24h: ticker.percent_change_24h,
-  percent_change_7d: ticker.percent_change_7d,
-	update_time: DateTime.from_unix!(ticker.last_updated)
-      })
-    |> Repo.insert_or_update!
+    |> LatestCoinmarketcapData.changeset(%{
+      market_cap_usd: ticker.market_cap_usd,
+      name: ticker.name,
+      price_usd: ticker.price_usd,
+      rank: ticker.rank,
+      volume_usd: ticker."24h_volume_usd",
+      available_supply: ticker.available_supply,
+      total_supply: ticker.total_supply,
+      symbol: ticker.symbol,
+      percent_change_1h: ticker.percent_change_1h,
+      percent_change_24h: ticker.percent_change_24h,
+      percent_change_7d: ticker.percent_change_7d,
+      update_time: DateTime.from_unix!(ticker.last_updated)
+    })
+    |> Repo.insert_or_update!()
   end
 
   defp insert_or_create_project(%Ticker{id: coinmarketcap_id, name: name, symbol: ticker}) do
     find_or_init_project(%Project{name: name, coinmarketcap_id: coinmarketcap_id, ticker: ticker})
-    |> Repo.insert_or_update!
+    |> Repo.insert_or_update!()
   end
 
   defp find_or_init_project(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
     case Repo.get_by(Project, coinmarketcap_id: coinmarketcap_id) do
-      nil -> Project.changeset(project)
-      existing_project -> Project.changeset(existing_project, %{coinmarketcap_id: coinmarketcap_id, ticker: project.ticker})
+      nil ->
+        Project.changeset(project)
+
+      existing_project ->
+        Project.changeset(existing_project, %{
+          coinmarketcap_id: coinmarketcap_id,
+          ticker: project.ticker
+        })
     end
   end
 end

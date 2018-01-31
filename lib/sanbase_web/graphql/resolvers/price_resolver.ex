@@ -19,14 +19,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     with {datetime, price_usd, marketcap, volume} <-
            Store.last_record(String.upcase(ticker) <> "_USD"),
          {_, price_btc, _, _} <- Store.last_record(String.upcase(ticker) <> "_BTC") do
-      {:ok, %{
-        datetime: datetime,
-        price_btc: Decimal.new(price_btc),
-        price_usd: Decimal.new(price_usd),
-        marketcap: Decimal.new(marketcap),
-        volume: Decimal.new(volume),
-        ticker: ticker
-      }}
+      {:ok,
+       %{
+         datetime: datetime,
+         price_btc: Decimal.new(price_btc),
+         price_usd: Decimal.new(price_usd),
+         marketcap: Decimal.new(marketcap),
+         volume: Decimal.new(volume),
+         ticker: ticker
+       }}
     else
       {:error, reason} ->
         {:error, "Cannot fetch price for ticker #{ticker}: #{reason}"}
@@ -38,11 +39,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   def current_prices(_root, %{tickers: tickers}, _resolution) do
     prices =
-    tickers
-    |> Enum.map(fn ticker ->
-      {:ok, price_point} = current_price(nil, %{ticker: ticker}, nil)
-      price_point
-    end)
+      tickers
+      |> Enum.map(fn ticker ->
+        {:ok, price_point} = current_price(nil, %{ticker: ticker}, nil)
+        price_point
+      end)
 
     {:ok, prices}
   end
@@ -80,8 +81,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     result =
       Enum.zip(result_btc, result_usd)
       |> Enum.map(fn {btc_map, %{price_usd: price_usd}} ->
-           Map.put(btc_map, :price_usd, price_usd)
-         end)
+        Map.put(btc_map, :price_usd, price_usd)
+      end)
 
     {:ok, result}
   end

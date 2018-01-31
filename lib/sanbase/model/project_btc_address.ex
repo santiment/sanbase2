@@ -4,9 +4,9 @@ defmodule Sanbase.Model.ProjectBtcAddress do
   alias Sanbase.Model.{ProjectBtcAddress, Project}
 
   schema "project_btc_address" do
-    field :address, :string
-    belongs_to :project, Project
-    field :project_transparency, :boolean, default: false
+    field(:address, :string)
+    belongs_to(:project, Project)
+    field(:project_transparency, :boolean, default: false)
   end
 
   @doc false

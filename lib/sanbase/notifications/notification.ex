@@ -7,8 +7,8 @@ defmodule Sanbase.Notifications.Notification do
   alias Sanbase.Model.Project
 
   schema "notification" do
-    belongs_to :project, Project
-    belongs_to :type, Type
+    belongs_to(:project, Project)
+    belongs_to(:type, Type)
 
     timestamps()
   end

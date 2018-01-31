@@ -3,11 +3,10 @@ defmodule Sanbase.Model.ProjectEthAddress do
   import Ecto.Changeset
   alias Sanbase.Model.{ProjectEthAddress, Project}
 
-
   schema "project_eth_address" do
-    field :address, :string
-    belongs_to :project, Project
-    field :project_transparency, :boolean, default: false
+    field(:address, :string)
+    belongs_to(:project, Project)
+    field(:project_transparency, :boolean, default: false)
   end
 
   @doc false

@@ -69,6 +69,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   test "no information is available for a ticker", context do
     Store.drop_measurement("SAN_USD")
+
     query = """
     {
       historyPrice(ticker: "SAN", from: "#{context.datetime1}", to: "#{context.datetime2}", interval: "1h") {
@@ -201,7 +202,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "availablePrices"))
 
-    resp_data = json_response(result,200)["data"]["availablePrices"]
+    resp_data = json_response(result, 200)["data"]["availablePrices"]
     assert Enum.count(resp_data) == 2
     assert "TEST" in resp_data
     assert "XYZ" in resp_data

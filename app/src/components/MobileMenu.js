@@ -1,5 +1,6 @@
 import React from 'react'
 import { withRouter } from 'react-router-dom'
+import * as qs from 'query-string'
 import { connect } from 'react-redux'
 import { Icon } from 'react-fa'
 import {
@@ -19,12 +20,18 @@ const appMenuCls = isMenuOpened => {
     : defaultCls
 }
 
+const hasInsights = location => {
+  const qsData = qs.parse(location.search)
+  return qsData && qsData.insights
+}
+
 const MobileMenu = ({
   toggleMenu,
   isMenuOpened,
   history,
   loading,
   user,
+  location,
   logout
 }) => (
   <div className={appMenuCls(isMenuOpened)}>
@@ -45,6 +52,8 @@ const MobileMenu = ({
     {isMenuOpened &&
       <div className='overlay-content'>
         <AppMenu
+          showIcons
+          showInsights={hasInsights(location)}
           handleNavigation={nextRoute => {
             toggleMenu(opened => !opened)
             history.push(`/${nextRoute}`)

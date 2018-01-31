@@ -32,6 +32,5 @@ defmodule :"Elixir.Sanbase.Repo.Migrations.Fix-project-logos" do
   end
 
   def down do
-
   end
 end

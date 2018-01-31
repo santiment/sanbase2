@@ -5,7 +5,7 @@ defmodule Sanbase.Notifications.Type do
   alias Sanbase.Notifications.Type
 
   schema "notification_type" do
-    field :name, :string
+    field(:name, :string)
 
     timestamps()
   end

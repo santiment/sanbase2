@@ -5,24 +5,26 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   alias SanbaseWeb.Graphql.Resolvers.{AccountResolver, EthAccountResolver}
 
   object :user do
-    field :id, non_null(:id)
-    field :email, :string
-    field :username, :string
-    field :eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts)
+    field(:id, non_null(:id))
+    field(:email, :string)
+    field(:username, :string)
+    field(:eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts))
+
     field :followed_projects, list_of(:project_public) do
-      resolve &AccountResolver.followed_projects/3
+      resolve(&AccountResolver.followed_projects/3)
     end
   end
 
   object :eth_account do
-    field :address, non_null(:string)
+    field(:address, non_null(:string))
+
     field :san_balance, non_null(:integer) do
-      resolve &EthAccountResolver.san_balance/3
+      resolve(&EthAccountResolver.san_balance/3)
     end
   end
 
   object :login do
-    field :token, non_null(:string)
-    field :user, non_null(:user)
+    field(:token, non_null(:string))
+    field(:user, non_null(:user))
   end
 end

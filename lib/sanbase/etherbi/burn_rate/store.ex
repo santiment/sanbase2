@@ -10,7 +10,8 @@ defmodule Sanbase.Etherbi.BurnRate.Store do
     Get the burn rate for a given ticker and time period.
     Returns a tuple `{:ok, result}` on success, `{:error, error}` otherwise
   """
-  @spec burn_rate(binary(), %DateTime{}, %DateTime{}, binary()) :: {:ok, list()} | {:error, binary()}
+  @spec burn_rate(binary(), %DateTime{}, %DateTime{}, binary()) ::
+          {:ok, list()} | {:error, binary()}
   def burn_rate(measurement, from, to, resolution) do
     burn_rate_from_to_query(measurement, from, to, resolution)
     |> Store.query()
@@ -59,7 +60,7 @@ defmodule Sanbase.Etherbi.BurnRate.Store do
          ]
        }) do
     result =
-    burn_rate
+      burn_rate
       |> Enum.map(fn [iso8601_datetime, burn_rate] ->
         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
         {datetime, burn_rate}

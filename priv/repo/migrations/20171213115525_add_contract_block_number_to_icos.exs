@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.AddContractBlockNumberToIcos do
 
   def change do
     alter table(:icos) do
-      add :contract_block_number, :integer
+      add(:contract_block_number, :integer)
     end
   end
 end

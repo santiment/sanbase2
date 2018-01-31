@@ -3,18 +3,17 @@ defmodule Sanbase.Repo.Migrations.RemoveNonnullConstraintForCoinmarketcapId do
 
   def up do
     alter table("project") do
-      modify :coinmarketcap_id, :string, null: true
+      modify(:coinmarketcap_id, :string, null: true)
     end
 
-    drop unique_index(:project, [:coinmarketcap_id])
+    drop(unique_index(:project, [:coinmarketcap_id]))
   end
 
   def down do
     alter table("project") do
-      modify :coinmarketcap_id, :string, null: false
+      modify(:coinmarketcap_id, :string, null: false)
     end
 
-    create unique_index(:project, [:coinmarketcap_id])
+    create(unique_index(:project, [:coinmarketcap_id]))
   end
-
 end

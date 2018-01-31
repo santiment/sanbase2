@@ -160,7 +160,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:transaction_type, :transaction_type, default_value: :all)
 
       resolve(&EtherbiResolver.exchange_fund_flow/3)
-
     end
   end
 

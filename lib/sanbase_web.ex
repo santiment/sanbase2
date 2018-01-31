@@ -28,8 +28,9 @@ defmodule SanbaseWeb do
 
   def view do
     quote do
-      use Phoenix.View, root: "lib/sanbase_web/templates",
-                        namespace: SanbaseWeb
+      use Phoenix.View,
+        root: "lib/sanbase_web/templates",
+        namespace: SanbaseWeb
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]

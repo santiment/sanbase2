@@ -4,8 +4,8 @@ defmodule Sanbase.Model.UserFollowedProject do
   alias Sanbase.Model.UserFollowedProject
 
   schema "user_followed_project" do
-    field :project_id, :integer
-    field :user_id, :integer
+    field(:project_id, :integer)
+    field(:user_id, :integer)
   end
 
   def changeset(%UserFollowedProject{} = user_projects, attrs \\ %{}) do

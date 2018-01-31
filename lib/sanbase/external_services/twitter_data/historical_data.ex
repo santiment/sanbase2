@@ -122,12 +122,16 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
         %{}
 
       %Tesla.Env{status: status, body: body} ->
-        Logger.warn("Error status #{status} fetching twittercounter data for twitter id #{twitter_id_str}: #{body}")
+        Logger.warn(
+          "Error status #{status} fetching twittercounter data for twitter id #{twitter_id_str}: #{
+            body
+          }"
+        )
+
         %{}
 
       _ ->
         %{}
-
     end
   end
 
@@ -148,13 +152,13 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
        ) do
     user_data
     |> Enum.map(fn {datetime, followers_count} ->
-         %Measurement{
-           timestamp: from_twittercounter_date(datetime),
-           fields: %{followers_count: followers_count},
-           tags: [source: "twittercounter"],
-           name: measurement_name
-         }
-       end)
+      %Measurement{
+        timestamp: from_twittercounter_date(datetime),
+        fields: %{followers_count: followers_count},
+        tags: [source: "twittercounter"],
+        name: measurement_name
+      }
+    end)
   end
 
   defp from_twittercounter_date("date" <> date) do

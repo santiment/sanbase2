@@ -9,13 +9,13 @@ defmodule Sanbase.ReleaseTasks.Migrate do
   def repos, do: Application.get_env(:sanbase, :ecto_repos, [])
 
   def run do
-    IO.puts "Starting dependencies.."
+    IO.puts("Starting dependencies..")
     # Start apps necessary for executing migrations
     Enum.each(@start_apps, &Application.ensure_all_started/1)
 
     # Start the Repo(s) for myapp
-    IO.puts "Starting repos.."
-    Enum.each(repos(), &(&1.start_link(pool_size: 1)))
+    IO.puts("Starting repos..")
+    Enum.each(repos(), & &1.start_link(pool_size: 1))
 
     # Run migrations
     Enum.each(repos(), &run_migrations_for/1)
@@ -23,7 +23,7 @@ defmodule Sanbase.ReleaseTasks.Migrate do
 
   defp run_migrations_for(repo) do
     app = Keyword.get(repo.config, :otp_app)
-    IO.puts "Running migrations for #{app}"
+    IO.puts("Running migrations for #{app}")
     Ecto.Migrator.run(repo, migrations_path(repo), :up, all: true)
   end
 
@@ -31,7 +31,7 @@ defmodule Sanbase.ReleaseTasks.Migrate do
 
   defp priv_path_for(repo, filename) do
     app = Keyword.get(repo.config, :otp_app)
-    repo_underscore = repo |> Module.split |> List.last |> Macro.underscore
+    repo_underscore = repo |> Module.split() |> List.last() |> Macro.underscore()
     Path.join([priv_dir(app), repo_underscore, filename])
   end
 

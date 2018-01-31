@@ -53,10 +53,8 @@ defmodule Sanbase.Etherbi.Utils do
   """
   def generate_from_to_interval_unix(
         ticker,
-        [
-          db_last_datetime: last_datetime_func,
-          etherbi_first_timestamp: first_timestamp_func
-        ]
+        db_last_datetime: last_datetime_func,
+        etherbi_first_timestamp: first_timestamp_func
       ) do
     # Returns {:ok, nil} if there are no records for that measurement
     {:ok, from_datetime} = last_datetime_func.(ticker)

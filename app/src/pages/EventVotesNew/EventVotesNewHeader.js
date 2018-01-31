@@ -18,7 +18,7 @@ const PostsNewHeader = ({location}) => (
         title='1. Link'
         active={location === 'new'} />
       <HeaderLink
-        title='2. Title'
+        title='2. Short description'
         active={location === 'title'} />
       <HeaderLink
         title='3. Confirm'

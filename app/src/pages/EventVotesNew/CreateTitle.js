@@ -9,11 +9,11 @@ import ReactFormInput from '../../components/react-form-semantic-ui-react/ReactF
 const TITLE_MAX_LENGTH = 140
 
 const errorValidator = ({title}) => ({
-  title: !title || title.length < 3 || title.length > TITLE_MAX_LENGTH ? 'Title should be normal' : null
+  title: !title || title.length < 3 || title.length > TITLE_MAX_LENGTH ? 'Short description should be normal' : null
 })
 
 const successValidator = ({title}) => ({
-  title: title && title.length > 3 && title.length <= TITLE_MAX_LENGTH ? 'Thank you for entering title' : null
+  title: title && title.length > 3 && title.length <= TITLE_MAX_LENGTH ? 'Thank you for entering short description' : null
 })
 
 const isError = formApi => (
@@ -40,7 +40,7 @@ const CreateTitle = ({post, changePost}) => {
         className='event-posts-new-step'
         onSubmit={formApi.submitForm}
         autoComplete='off'>
-        <label>Title
+        <label>Short description
           {formApi.values.title &&
             formApi.values.title.length > TITLE_MAX_LENGTH &&
             <LimitSizeOfTitle
@@ -52,7 +52,7 @@ const CreateTitle = ({post, changePost}) => {
           initvalue={post.title}
           field='title'
           error={isError(formApi)}
-          placeholder='Add a title' />
+          placeholder='Add a short description' />
         {isError(formApi) &&
           <Message negative>
             {formApi.getError().title}

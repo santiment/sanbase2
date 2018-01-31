@@ -13,7 +13,6 @@ defmodule Sanbase.Etherbi.Transactions do
   alias Sanbase.Etherbi.Utils
   alias Sanbase.Etherbi.Transactions.{Store, Fetcher}
 
-
   def work() do
     # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
     token_decimals = Utils.build_token_decimals_map()
@@ -71,17 +70,12 @@ defmodule Sanbase.Etherbi.Transactions do
        ) do
     transactions_data
     |> Enum.map(fn {datetime, volume, address, token} ->
-      if decimal_places = Map.get(token_decimals, token) do
-        %Sanbase.Influxdb.Measurement{
-          timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-          fields: %{volume: volume / decimal_places},
-          tags: [transaction_type: transaction_type, address: address],
-          name: token
-        }
-      else
-        Logger.warn("Missing token decimals for #{token}")
-        nil
-      end
+      %Sanbase.Influxdb.Measurement{
+        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+        fields: %{volume: volume / Map.get(token_decimals, token)},
+        tags: [transaction_type: transaction_type, address: address],
+        name: token
+      }
     end)
   end
 end

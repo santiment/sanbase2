@@ -48,19 +48,14 @@ defmodule Sanbase.Etherbi.TransactionVolume do
          ticker,
          token_decimals
        ) do
-        transaction_volumes
+    transaction_volumes
     |> Enum.map(fn {datetime, transaction_volume} ->
-      if decimal_places = Map.get(token_decimals, ticker) do
-        %Sanbase.Influxdb.Measurement{
-          timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-          fields: %{transaction_volume: transaction_volume / decimal_places},
-          tags: [],
-          name: ticker
-        }
-      else
-        Logger.warn("Missing token decimals for #{ticker}")
-        nil
-      end
+      %Sanbase.Influxdb.Measurement{
+        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+        fields: %{transaction_volume: transaction_volume / Map.get(token_decimals, ticker)},
+        tags: [],
+        name: ticker
+      }
     end)
   end
 end

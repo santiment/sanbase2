@@ -8,7 +8,8 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
   # (This is for testing purposes. For production
   @default_scale 1000
   @default_limit 5
-  @default_time_between_requests 1000 #miliseconds
+  # miliseconds
+  @default_time_between_requests 1000
 
   def child_spec(name, options \\ []) do
     %{
@@ -28,12 +29,15 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
   def init(options) do
     scale = Keyword.get(options, :scale, @default_scale)
     limit = Keyword.get(options, :limit, @default_limit)
-    time_between_requests = Keyword.get(options, :time_between_requests, @default_time_between_requests)
+
+    time_between_requests =
+      Keyword.get(options, :time_between_requests, @default_time_between_requests)
+
     bucket = Keyword.get(options, :name)
 
-    Logger.info fn ->
+    Logger.info(fn ->
       "Rate limiter started. Bucket: #{bucket}"
-    end
+    end)
 
     {:ok, {bucket, scale, limit, time_between_requests}}
   end
@@ -42,16 +46,17 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
     GenServer.call(name, :wait, :infinity)
   end
 
-  def sleep_algorithm({_bucket,_,_,time_between_requests}, {:allow, count}) do
+  def sleep_algorithm({_bucket, _, _, time_between_requests}, {:allow, count}) do
     Process.sleep(time_between_requests)
     {:ok, count}
   end
 
   def sleep_algorithm({bucket, scale, limit, _} = state, {:deny, _}) do
-    {:ok, {_,_,wait_period, _, _}} = Hammer.inspect_bucket(bucket, scale, limit)
-    Logger.info fn ->
+    {:ok, {_, _, wait_period, _, _}} = Hammer.inspect_bucket(bucket, scale, limit)
+
+    Logger.info(fn ->
       "Rate limit exceeded. bucket: #{bucket}, wait_period: #{wait_period}"
-    end
+    end)
 
     Process.sleep(wait_period)
     sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))

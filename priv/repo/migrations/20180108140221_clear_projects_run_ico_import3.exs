@@ -10,7 +10,7 @@ defmodule Sanbase.Repo.Migrations.ClearProjectsRunIcoImport3 do
 
     if !is_nil(faktory_host) do
       opts = [strategy: :one_for_one, name: Sanbase.Supervisor, max_restarts: 5, max_seconds: 1]
-      Faktory.Configuration.init
+      Faktory.Configuration.init()
       Supervisor.start_link([supervisor(Faktory.Supervisor, [])], opts)
 
       SanbaseWorkers.DataMigrations.ClearProjectsRunIcoImport.perform_async([])

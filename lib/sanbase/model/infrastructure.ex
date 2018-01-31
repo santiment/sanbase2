@@ -9,8 +9,8 @@ defmodule Sanbase.Model.Infrastructure do
   alias Sanbase.Model.Project
 
   schema "infrastructures" do
-    field :code, :string
-    has_many :projects, Project
+    field(:code, :string)
+    has_many(:projects, Project)
   end
 
   @doc false
@@ -32,13 +32,14 @@ defmodule Sanbase.Model.Infrastructure do
   end
 
   def get_or_insert(infrastructure_code) do
-    {:ok, infrastructure} = Repo.transaction(fn ->
-      get(infrastructure_code)
-      |> case do
-        nil -> insert!(infrastructure_code)
-        infrastructure -> infrastructure
-      end
-    end)
+    {:ok, infrastructure} =
+      Repo.transaction(fn ->
+        get(infrastructure_code)
+        |> case do
+          nil -> insert!(infrastructure_code)
+          infrastructure -> infrastructure
+        end
+      end)
 
     infrastructure
   end

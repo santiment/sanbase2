@@ -4,10 +4,9 @@ defmodule Sanbase.Model.MarketSegment do
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.Project
 
-
   schema "market_segments" do
-    field :name, :string
-    has_many :projects, Project
+    field(:name, :string)
+    has_many(:projects, Project)
   end
 
   @doc false

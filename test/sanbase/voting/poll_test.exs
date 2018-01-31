@@ -19,7 +19,7 @@ defmodule Sanbase.Voting.PollTest do
 
   test "current_poll returns the current poll if there is one" do
     Poll.current_poll_changeset()
-    |> Repo.insert!
+    |> Repo.insert!()
 
     assert Poll.current_poll() != nil
   end

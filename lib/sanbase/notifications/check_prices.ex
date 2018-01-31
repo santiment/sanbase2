@@ -13,15 +13,27 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   @http_service Mockery.of("Tesla")
 
-  @cooldown_period_in_sec 60 * 60 # 60 minutes
-  @check_interval_in_sec 60 * 60 # 60 minutes
-  @price_change_threshold 5 # percent
+  # 60 minutes
+  @cooldown_period_in_sec 60 * 60
+  # 60 minutes
+  @check_interval_in_sec 60 * 60
+  # percent
+  @price_change_threshold 5
 
   def exec(project, counter_currency) do
-    unless ComputeMovements.recent_notification?(project, seconds_ago(@cooldown_period_in_sec), counter_currency) do
+    unless ComputeMovements.recent_notification?(
+             project,
+             seconds_ago(@cooldown_period_in_sec),
+             counter_currency
+           ) do
       prices = fetch_price_points(project, counter_currency)
 
-      ComputeMovements.build_notification(project, counter_currency, prices, @price_change_threshold)
+      ComputeMovements.build_notification(
+        project,
+        counter_currency,
+        prices,
+        @price_change_threshold
+      )
       |> send_notification(counter_currency)
     end
   end
@@ -43,20 +55,28 @@ defmodule Sanbase.Notifications.CheckPrices do
   def send_notification(_, _), do: false
 
   def send_slack_notification(price_difference, project, counter_currency) do
-    %{status: 200} = @http_service.post(
-      webhook_url(),
-      notification_payload(price_difference, project, counter_currency),
-      headers: %{"Content-Type" => "application/json"}
-    )
+    %{status: 200} =
+      @http_service.post(
+        webhook_url(),
+        notification_payload(price_difference, project, counter_currency),
+        headers: %{"Content-Type" => "application/json"}
+      )
   end
 
   defp price_ticker(%Project{ticker: ticker}, counter_currency) do
     "#{ticker}_#{String.upcase(counter_currency)}"
   end
 
-  defp notification_payload(price_difference, %Project{name: name, coinmarketcap_id: coinmarketcap_id}, counter_currency) do
+  defp notification_payload(
+         price_difference,
+         %Project{name: name, coinmarketcap_id: coinmarketcap_id},
+         counter_currency
+       ) do
     Poison.encode!(%{
-      text: "#{name}: #{notification_emoji(price_difference)} #{Float.round(price_difference, 2)}% #{String.upcase(counter_currency)} in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
+      text:
+        "#{name}: #{notification_emoji(price_difference)} #{Float.round(price_difference, 2)}% #{
+          String.upcase(counter_currency)
+        } in last hour. <https://coinmarketcap.com/currencies/#{coinmarketcap_id}/|price graph>",
       channel: notification_channel(counter_currency)
     })
   end
@@ -80,5 +100,4 @@ defmodule Sanbase.Notifications.CheckPrices do
   defp slack_notifications_enabled?() do
     Config.get(:slack_notifications_enabled)
   end
-
 end

@@ -4,7 +4,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.MultipleAuthTest do
   alias SanbaseWeb.Graphql.Middlewares.MultipleAuth
 
   defmodule TestResolvingAuth do
-    def call(resolution, _), do: Absinthe.Resolution.put_result(resolution, {:error, :you_shall_not_pass})
+    def call(resolution, _),
+      do: Absinthe.Resolution.put_result(resolution, {:error, :you_shall_not_pass})
   end
 
   defmodule TestNotResolvingAuth do

@@ -12,11 +12,12 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_transaction_by_hash(transaction_hash) do
-    with %Tesla.Env{status: 200, body: body} <- post(client(), "/", json_rpc_call("eth_getTransactionByHash", [transaction_hash])),
-      %{"result" => result} <- body do
-        {:ok, result}
-      else
-        error -> {:error, error}
+    with %Tesla.Env{status: 200, body: body} <-
+           post(client(), "/", json_rpc_call("eth_getTransactionByHash", [transaction_hash])),
+         %{"result" => result} <- body do
+      {:ok, result}
+    else
+      error -> {:error, error}
     end
   end
 
@@ -28,12 +29,13 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_latest_block_number do
-    with %Tesla.Env{status: 200, body: body} <- post(client(), "/", json_rpc_call("eth_blockNumber", [])),
-      "0x" <> number <- body["result"],
-      {blockNumber, ""} <- Integer.parse(number, 16) do
-        {:ok, blockNumber}
-      else
-        error -> {:error, error}
+    with %Tesla.Env{status: 200, body: body} <-
+           post(client(), "/", json_rpc_call("eth_blockNumber", [])),
+         "0x" <> number <- body["result"],
+         {blockNumber, ""} <- Integer.parse(number, 16) do
+      {:ok, blockNumber}
+    else
+      error -> {:error, error}
     end
   end
 
@@ -42,12 +44,12 @@ defmodule Sanbase.InternalServices.Parity do
     basic_auth_username = Config.get(:basic_auth_username)
     basic_auth_password = Config.get(:basic_auth_password)
 
-    Tesla.build_client [
+    Tesla.build_client([
       {Tesla.Middleware.BaseUrl, parity_url},
       {Tesla.Middleware.BasicAuth, username: basic_auth_username, password: basic_auth_password},
       Tesla.Middleware.JSON,
       Tesla.Middleware.Logger
-    ]
+    ])
   end
 
   defp json_rpc_call(method, params) do

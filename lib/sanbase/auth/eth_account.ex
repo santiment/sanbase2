@@ -6,8 +6,8 @@ defmodule Sanbase.Auth.EthAccount do
   @ethauth Mockery.of("Sanbase.InternalServices.Ethauth")
 
   schema "eth_accounts" do
-    field :address, :string
-    belongs_to :user, User
+    field(:address, :string)
+    belongs_to(:user, User)
 
     timestamps()
   end

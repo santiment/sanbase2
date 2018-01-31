@@ -17,7 +17,9 @@ config :sanbase, SanbaseWeb.Endpoint,
       cd: Path.expand("../app", __DIR__)
     ],
     node: [
-      "node_modules/brunch/bin/brunch", "watch", "--stdin",
+      "node_modules/brunch/bin/brunch",
+      "watch",
+      "--stdin",
       cd: Path.expand("../assets", __DIR__)
     ]
   ]
@@ -39,8 +41,7 @@ config :sanbase, SanbaseWeb.Endpoint,
 # different ports.
 
 # Do not include metadata nor timestamps in development logs
-config :logger, :console,
-  format: "[$level] $message\n"
+config :logger, :console, format: "[$level] $message\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

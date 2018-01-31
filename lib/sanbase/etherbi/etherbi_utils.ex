@@ -22,7 +22,7 @@ defmodule Sanbase.Etherbi.Utils do
   @spec get_tickers() :: list(binary())
   def get_tickers() do
     projects = Sanbase.Model.Project.all_projects_with_eth_contract_query()
-    query = from(p in subquery(projects), select: p.ticker)
+    query = from(p in subquery(projects), where: not is_nil(p.token_decimals), select: p.ticker)
     Sanbase.Repo.all(query)
   end
 

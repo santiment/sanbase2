@@ -18,7 +18,8 @@ config :sanbase, SanbaseWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
   render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
-  pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2],
+  website_url: {:system, "WEBSITE_URL", "http://localhost:4000"}
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false
@@ -198,6 +199,10 @@ config :ex_aws,
   region: "eu-central-1"
 
 config :sanbase, Sanbase.Etherbi, url: {:system, "ETHERBI_URL"}
+
+config :sanbase, Sanbase.MandrillApi,
+  apikey: {:system, "MANDRILL_APIKEY"},
+  from_email: {:system, "MANDRILL_FROM_EMAIL", "admin@santiment.net"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

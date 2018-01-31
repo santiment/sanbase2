@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.AddValuesToIcoCurrencies do
 
   def change do
     alter table(:ico_currencies) do
-      add :value, :decimal
+      add(:value, :decimal)
     end
   end
 end

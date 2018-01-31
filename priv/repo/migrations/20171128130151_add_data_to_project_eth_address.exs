@@ -16,8 +16,10 @@ defmodule Sanbase.Repo.Migrations.AddDataToProjectEthAddress do
 
   def store(%ProjectEthAddress{} = project_eth_address) do
     case Repo.get_by(ProjectEthAddress, address: project_eth_address.address) do
-      nil -> Repo.insert!(project_eth_address)
-      %ProjectEthAddress{} = result->
+      nil ->
+        Repo.insert!(project_eth_address)
+
+      %ProjectEthAddress{} = result ->
         Logger.info("Address #{project_eth_address.address} already in ProjectEthAddress table.")
     end
   end
@@ -31,5 +33,4 @@ defmodule Sanbase.Repo.Migrations.AddDataToProjectEthAddress do
     |> Enum.flat_map(&make_eth_address/1)
     |> Enum.each(&store/1)
   end
-
 end

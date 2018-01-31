@@ -6,12 +6,12 @@ defmodule Sanbase.Model.IcoCurrencies do
   alias Sanbase.Model.Ico
   alias Sanbase.Model.Currency
 
-
   schema "ico_currencies" do
-    belongs_to :ico, Ico
-    belongs_to :currency, Currency, on_replace: :nilify
-    field :amount, :decimal
-    field :_destroy, :boolean, virtual: true # used by ex_admin
+    belongs_to(:ico, Ico)
+    belongs_to(:currency, Currency, on_replace: :nilify)
+    field(:amount, :decimal)
+    # used by ex_admin
+    field(:_destroy, :boolean, virtual: true)
   end
 
   @doc false
@@ -24,8 +24,9 @@ defmodule Sanbase.Model.IcoCurrencies do
 
   @doc false
   def changeset_ex_admin(%IcoCurrencies{} = ico_currencies, attrs \\ %{}) do
-    attrs = set_currency_id(attrs)
-    |> ModelUtils.removeThousandsSeparator(:amount)
+    attrs =
+      set_currency_id(attrs)
+      |> ModelUtils.removeThousandsSeparator(:amount)
 
     ico_currencies
     |> cast(attrs, [:ico_id, :currency_id, :amount, :_destroy])
@@ -38,14 +39,15 @@ defmodule Sanbase.Model.IcoCurrencies do
   defp set_currency_id(attrs) do
     {currency_code, attrs} = Map.pop(attrs, :currency)
 
-    currency_id = case currency_code do
-      nil -> nil
-      c -> Sanbase.Repo.get_by(Currency, code: c)
-    end
-    |> case do
-      %Currency{id: id} -> id
-      _ -> nil
-    end
+    currency_id =
+      case currency_code do
+        nil -> nil
+        c -> Sanbase.Repo.get_by(Currency, code: c)
+      end
+      |> case do
+        %Currency{id: id} -> id
+        _ -> nil
+      end
 
     Map.put(attrs, :currency_id, currency_id)
   end

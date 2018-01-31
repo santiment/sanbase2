@@ -19,6 +19,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.MultipleAuth do
       nil ->
         resolution
         |> Resolution.put_result({:error, :unauthorized})
+
       resolution ->
         resolution
     end

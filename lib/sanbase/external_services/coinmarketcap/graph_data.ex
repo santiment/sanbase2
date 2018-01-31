@@ -7,12 +7,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
 
-  plug RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter
-  plug Tesla.Middleware.BaseUrl, "https://graphs2.coinmarketcap.com"
-  plug Tesla.Middleware.Compression
-  plug Tesla.Middleware.Logger
+  plug(RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter)
+  plug(Tesla.Middleware.BaseUrl, "https://graphs2.coinmarketcap.com")
+  plug(Tesla.Middleware.Compression)
+  plug(Tesla.Middleware.Logger)
 
-  @seconds_in_day 24 * 60 * 60 # Number of seconds in a day
+  # Number of seconds in a day
+  @seconds_in_day 24 * 60 * 60
 
   def fetch_first_price_datetime(coinmarketcap_id) do
     fetch_all_time_prices(coinmarketcap_id)
@@ -23,7 +24,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   def fetch_prices(coinmarketcap_id, from_datetime, to_datetime) do
     daily_ranges(from_datetime, to_datetime)
-    |> Stream.flat_map(&extract_prices_for_interval_with_rate_limit(coinmarketcap_id, &1, &1 + @seconds_in_day))
+    |> Stream.flat_map(
+      &extract_prices_for_interval_with_rate_limit(coinmarketcap_id, &1, &1 + @seconds_in_day)
+    )
   end
 
   defp parse_json(json) do
@@ -42,11 +45,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   end
 
   defp convert_to_price_points(%GraphData{
-    market_cap_by_available_supply: market_cap_by_available_supply,
-    price_usd: price_usd,
-    volume_usd: volume_usd,
-    price_btc: price_btc
-  }) do
+         market_cap_by_available_supply: market_cap_by_available_supply,
+         price_usd: price_usd,
+         volume_usd: volume_usd,
+         price_btc: price_btc
+       }) do
     List.zip([market_cap_by_available_supply, price_usd, volume_usd, price_btc])
     |> Stream.map(fn {[dt, marketcap], [dt, price_usd], [dt, volume_usd], [dt, price_btc]} ->
       %PricePoint{
@@ -72,20 +75,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end
   end
 
-  defp daily_ranges(from_datetime, to_datetime) when not is_number(from_datetime) and not is_number(to_datetime) do
+  defp daily_ranges(from_datetime, to_datetime)
+       when not is_number(from_datetime) and not is_number(to_datetime) do
     daily_ranges(DateTime.to_unix(from_datetime), DateTime.to_unix(to_datetime))
   end
 
   defp daily_ranges(from_datetime, to_datetime) do
-    Stream.unfold(
-      from_datetime,
-      fn start_interval ->
-        cond do
-          start_interval <= to_datetime ->
-            {start_interval, start_interval + @seconds_in_day}
-          true -> nil
-        end
-      end)
+    Stream.unfold(from_datetime, fn start_interval ->
+      cond do
+        start_interval <= to_datetime ->
+          {start_interval, start_interval + @seconds_in_day}
+
+        true ->
+          nil
+      end
+    end)
   end
 
   defp graph_data_all_time_url(ticker) do

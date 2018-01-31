@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.AddContractAbiToIcos do
 
   def change do
     alter table(:icos) do
-      add :contract_abi, :text
+      add(:contract_abi, :text)
     end
   end
 end

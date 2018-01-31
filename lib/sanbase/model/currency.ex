@@ -7,9 +7,8 @@ defmodule Sanbase.Model.Currency do
 
   alias Sanbase.Model.Currency
 
-
   schema "currencies" do
-    field :code, :string
+    field(:code, :string)
   end
 
   @doc false
@@ -31,13 +30,14 @@ defmodule Sanbase.Model.Currency do
   end
 
   def get_or_insert(currency_code) do
-    {:ok, currency} = Repo.transaction(fn ->
-      get(currency_code)
-      |> case do
-        nil -> insert!(currency_code)
-        currency -> currency
-      end
-    end)
+    {:ok, currency} =
+      Repo.transaction(fn ->
+        get(currency_code)
+        |> case do
+          nil -> insert!(currency_code)
+          currency -> currency
+        end
+      end)
 
     currency
   end

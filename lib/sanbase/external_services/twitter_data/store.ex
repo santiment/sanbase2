@@ -54,9 +54,9 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
        }) do
     twitter_data_series
     |> Enum.map(fn [iso8601_datetime, followers_count] ->
-         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-         {datetime, followers_count}
-       end)
+      {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+      {datetime, followers_count}
+    end)
   end
 
   defp parse_twitter_data_series!(_), do: []
@@ -78,5 +78,4 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
   end
 
   defp parse_twitter_record(_), do: nil
-
 end

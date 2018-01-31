@@ -10,7 +10,8 @@ defmodule Sanbase.Etherbi.TransactionVolume.Store do
     Get the transaction volume for a given ticker and time period.
     Returns a tuple `{:ok, result}` on success, `{:error, error}` otherwise
   """
-  @spec transaction_volume(binary(), %DateTime{}, %DateTime{}, binary()) :: {:ok, list()} | {:error, binary()}
+  @spec transaction_volume(binary(), %DateTime{}, %DateTime{}, binary()) ::
+          {:ok, list()} | {:error, binary()}
   def transaction_volume(measurement, from, to, resolution) do
     transaction_volume_from_to_query(measurement, from, to, resolution)
     |> Store.query()

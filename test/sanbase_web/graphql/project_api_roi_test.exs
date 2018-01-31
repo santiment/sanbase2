@@ -21,10 +21,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     |> Store.execute()
 
     date1 = "2017-08-19"
-    date1_unix = 1503100800000000000
+    date1_unix = 1_503_100_800_000_000_000
 
     date2 = "2017-10-17"
-    date2_unix = 1508198400000000000
+    date2_unix = 1_508_198_400_000_000_000
 
     now = Ecto.DateTime.utc()
 
@@ -42,34 +42,29 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     ])
 
     %LatestCoinmarketcapData{}
-    |> LatestCoinmarketcapData.changeset(%{coinmarketcap_id: "TEST_ID", price_usd: 50, available_supply: 500, update_time: now})
-    |> Repo.insert!
+    |> LatestCoinmarketcapData.changeset(%{
+      coinmarketcap_id: "TEST_ID",
+      price_usd: 50,
+      available_supply: 500,
+      update_time: now
+    })
+    |> Repo.insert!()
 
-    project = %Project{}
-    |> Project.changeset(%{name: "Project", ticker: "TEST", coinmarketcap_id: "TEST_ID"})
+    project =
+      %Project{}
+      |> Project.changeset(%{name: "Project", ticker: "TEST", coinmarketcap_id: "TEST_ID"})
+      |> Repo.insert!()
+
+    %Ico{}
+    |> Ico.changeset(%{project_id: project.id, token_usd_ico_price: 10, tokens_sold_at_ico: 100})
     |> Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(
-      %{project_id: project.id,
-        token_usd_ico_price: 10,
-        tokens_sold_at_ico: 100
-        })
+    |> Ico.changeset(%{project_id: project.id, start_date: date1})
     |> Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(
-      %{project_id: project.id,
-        start_date: date1
-        })
-    |> Repo.insert!()
-
-    %Ico{}
-    |> Ico.changeset(
-      %{project_id: project.id,
-        start_date: date2,
-        token_eth_ico_price: 5
-        })
+    |> Ico.changeset(%{project_id: project.id, start_date: date2, token_eth_ico_price: 5})
     |> Repo.insert!()
 
     project.id
@@ -90,10 +85,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     result =
       context.conn
       |> put_req_header("authorization", get_authorization_header())
-      |> post("/graphql", query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}"))
+      |> post(
+        "/graphql",
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
+      )
 
     assert json_response(result, 200)["data"]["project"] ==
-      %{"name" => "Project", "roiUsd" => "2.5"}
+             %{"name" => "Project", "roiUsd" => "2.5"}
   end
 
   defp get_authorization_header do

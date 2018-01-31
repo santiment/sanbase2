@@ -8,7 +8,7 @@ defmodule Sanbase.Repo.Migrations.SetProjectsDefaults do
   alias Sanbase.Model.Infrastructure
 
   def change do
-    infrastructure = Infrastructure.get_or_insert("ETH");
+    infrastructure = Infrastructure.get_or_insert("ETH")
 
     from(p in Project, where: is_nil(p.infrastructure_id))
     |> Repo.update_all(set: [infrastructure_id: infrastructure.id])

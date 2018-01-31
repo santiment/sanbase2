@@ -7,6 +7,7 @@ import {
   withState,
   pure
 } from 'recompose'
+import moment from 'moment'
 import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
 import gql from 'graphql-tag'
@@ -349,12 +350,14 @@ const queryHistoryPrice = gql`
 }`
 
 const queryGithubActivity = gql`
-  query queryGithubActivity($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
+  query queryGithubActivity($ticker: String, $from: DateTime, $to: DateTime, $interval: String, $transform: String, $movingAverageInterval: Int) {
     githubActivity(
       ticker: $ticker,
       from: $from,
       to: $to,
-      interval: $interval
+      interval: $interval,
+      transform: $transform,
+      movingAverageInterval: $movingAverageInterval
     ) {
       datetime,
       activity
@@ -494,13 +497,21 @@ const enhance = compose(
     name: 'GithubActivity',
     options: ({match, chartVars}) => {
       const {from, to, ticker} = chartVars
+      let fromIncludingMA = from;
+
+      if (from) {
+        fromIncludingMA = moment(from).subtract(7, 'days')
+      }
+
       return {
         skip: !from,
         variables: {
-          from,
+          from: fromIncludingMA,
           to,
           ticker,
-          interval: '1d'
+          interval: '1d',
+          transform: 'movingAverage',
+          movingAverageInterval: 7
         }
       }
     }

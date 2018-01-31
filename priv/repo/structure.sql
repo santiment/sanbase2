@@ -992,7 +992,8 @@ CREATE TABLE public.user_api_key_tokens (
     san_balance numeric,
     san_balance_updated_at timestamp without time zone,
     email_token character varying(255),
-    email_token_generated_at timestamp without time zone
+    email_token_generated_at timestamp without time zone,
+    email_token_validated_at timestamp without time zone
 );
 
 

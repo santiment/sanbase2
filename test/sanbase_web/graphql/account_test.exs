@@ -482,7 +482,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     assert json_response(result, 200)["data"]["emailLogin"]["success"]
   end
 
-  test "trying to login using invalid token for a user", context do
+  test "trying to login using invalid token for a user", %{conn: conn} do
     user =
       %User{salt: User.generate_salt(), email: "example@santiment.net"}
       |> Repo.insert!()
@@ -499,13 +499,13 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     """
 
     result =
-      context.conn
+      conn
       |> post("/graphql", mutation_skeleton(query))
 
     assert json_response(result, 200)["errors"] != nil
   end
 
-  test "trying to login with a valid email token", context do
+  test "trying to login with a valid email token", %{conn: conn} do
     {:ok, user} =
       %User{salt: User.generate_salt(), email: "example@santiment.net"}
       |> Repo.insert!()
@@ -523,16 +523,19 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     """
 
     result =
-      context.conn
+      conn
       |> post("/graphql", mutation_skeleton(query))
 
     loginData = json_response(result, 200)["data"]["emailLoginVerify"]
 
+    {:ok, user} = User.find_or_insert_by_email(user.email)
+
     assert loginData["token"] != nil
     assert loginData["user"]["email"] == user.email
+    assert Timex.diff(Timex.now(), user.email_token_validated_at, :seconds) == 0
   end
 
-  test "trying to login with a valid email token after more than 1 day", context do
+  test "trying to login with a valid email token after more than 1 day", %{conn: conn} do
     {:ok, user} =
       %User{salt: User.generate_salt(), email: "example@santiment.net"}
       |> Repo.insert!()
@@ -555,7 +558,76 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     """
 
     result =
-      context.conn
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["errors"] != nil
+  end
+
+  test "trying to login again with a valid email token after one validation", %{conn: conn} do
+    {:ok, user} =
+      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      |> Repo.insert!()
+      |> User.update_email_token()
+
+    user =
+      user
+      |> Ecto.Changeset.change(
+        email_token_generated_at: Timex.now(),
+        email_token_validated_at: Timex.now()
+      )
+      |> Repo.update!()
+
+    query = """
+    mutation {
+      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
+        user {
+          email
+        }
+        token
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    loginData = json_response(result, 200)["data"]["emailLoginVerify"]
+
+    assert loginData["token"] != nil
+    assert loginData["user"]["email"] == user.email
+  end
+
+  test "trying to login again with a valid email token after it has been validated 20 min ago", %{
+    conn: conn
+  } do
+    {:ok, user} =
+      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      |> Repo.insert!()
+      |> User.update_email_token()
+
+    user =
+      user
+      |> Ecto.Changeset.change(
+        email_token_generated_at: Timex.now(),
+        email_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
+      )
+      |> Repo.update!()
+
+    query = """
+    mutation {
+      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
+        user {
+          email
+        }
+        token
+      }
+    }
+    """
+
+    result =
+      conn
       |> post("/graphql", mutation_skeleton(query))
 
     assert json_response(result, 200)["errors"] != nil

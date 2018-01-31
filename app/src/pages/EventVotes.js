@@ -196,6 +196,9 @@ const mapDataToProps = props => {
     }
     return sortByNewest(normalizedPosts)
   })(Poll.currentPoll && Poll.currentPoll.posts)
+  if (Poll.error) {
+    throw new Error(Poll.error)
+  }
   return {
     Posts: {
       ...Poll,

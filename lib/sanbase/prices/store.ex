@@ -36,8 +36,7 @@ defmodule Sanbase.Prices.Store do
     ~s/SELECT time, price, volume, marketcap
     FROM "#{pair}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)
-    }/
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   defp parse_price_series(%{results: [%{error: error}]}), do: raise(error)
@@ -55,9 +54,9 @@ defmodule Sanbase.Prices.Store do
        }) do
     price_series
     |> Enum.map(fn [iso8601_datetime | tail] ->
-         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-         [datetime | tail]
-       end)
+      {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+      [datetime | tail]
+    end)
   end
 
   defp parse_price_series(_), do: []

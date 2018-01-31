@@ -240,6 +240,12 @@
     react-treebeard "^2.1.0"
     redux "^3.7.2"
 
+"@trainline/react-skeletor@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@trainline/react-skeletor/-/react-skeletor-1.0.2.tgz#a5cab1482ae59b187cb4e60de905cdb552b15b06"
+  dependencies:
+    prop-types "^15.5.10"
+
 "@types/async@2.0.45":
   version "2.0.45"
   resolved "https://registry.yarnpkg.com/@types/async/-/async-2.0.45.tgz#0cfe971d7ed5542695740338e0455c91078a0e83"

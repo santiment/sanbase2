@@ -52,8 +52,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
 
   defp extract_twitter_name("https://twitter.com/" <> twitter_name = twitter_link) do
     case String.split(twitter_name, "/") |> hd do
-      "" -> {:error, "Twitter name must not be empty or the twitter link has wrong format: #{twitter_link}"}
-      name -> {:ok, name}
+      "" ->
+        {:error,
+         "Twitter name must not be empty or the twitter link has wrong format: #{twitter_link}"}
+
+      name ->
+        {:ok, name}
     end
   end
 
@@ -61,7 +65,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     query =
       from(
         p in Project,
-        where: p.ticker == ^ticker and not is_nil(p.twitter_link),
+        where:
+          p.ticker == ^ticker and not is_nil(p.twitter_link) and not is_nil(p.coinmarketcap_id),
         select: p.twitter_link
       )
 

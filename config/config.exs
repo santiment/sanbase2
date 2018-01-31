@@ -57,11 +57,23 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   pool: [max_overflow: 10, size: 20],
   database: "twitter_followers_data"
 
-config :sanbase, Sanbase.Etherbi.Store,
+config :sanbase, Sanbase.Etherbi.Transactions.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "transactions"
+
+config :sanbase, Sanbase.Etherbi.BurnRate.Store,
+  host: {:system, "INFLUXDB_HOST", "localhost"},
+  port: {:system, "INFLUXDB_PORT", 8086},
+  pool: [max_overflow: 10, size: 20],
+  database: "burn_rate"
+
+config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
+  host: {:system, "INFLUXDB_HOST", "localhost"},
+  port: {:system, "INFLUXDB_PORT", 8086},
+  pool: [max_overflow: 10, size: 20],
+  database: "transaction_volume"
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
@@ -136,7 +148,15 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
 
 config :sanbase, Sanbase.Etherbi.Transactions,
   update_interval: 1000 * 60 * 5,
-  sync_enabled: {:system, "ETHERBI_TRANSACTIONS_ENABLED", false}
+  sync_enabled: {:system, "ETHERBI_TRANSACTIONS_SYNC_ENABLED", false}
+
+config :sanbase, Sanbase.Etherbi.BurnRate,
+  update_interval: 1000 * 60 * 5,
+  sync_enabled: {:system, "ETHERBI_BURN_RATE_SYNC_ENABLED", false}
+
+config :sanbase, Sanbase.Etherbi.TransactionVolume,
+  update_interval: 1000 * 60 * 5,
+  sync_enabled: {:system, "ETHERBI_TRANSACTION_VOLUME_SYNC_ENABLED", false}
 
 config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},

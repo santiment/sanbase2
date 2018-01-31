@@ -44,33 +44,39 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     |> Coinmarketcap.Scraper.parse_project_page(project_info)
   end
 
-  def fetch_contract_info(%ProjectInfo{main_contract_address: nil} = project_info), do: project_info
+  def fetch_contract_info(%ProjectInfo{main_contract_address: nil} = project_info),
+    do: project_info
 
-  def fetch_contract_info(%ProjectInfo{main_contract_address: main_contract_address} = project_info) do
+  def fetch_contract_info(
+        %ProjectInfo{main_contract_address: main_contract_address} = project_info
+      ) do
     Etherscan.Scraper.fetch_address_page(main_contract_address)
     |> Etherscan.Scraper.parse_address_page(project_info)
     |> fetch_block_number()
     |> fetch_abi()
   end
 
-  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: nil} = project_info), do: project_info
+  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: nil} = project_info),
+    do: project_info
 
-  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: etherscan_token_name} = project_info) do
+  def fetch_etherscan_token_summary(
+        %ProjectInfo{etherscan_token_name: etherscan_token_name} = project_info
+      ) do
     Etherscan.Scraper.fetch_token_page(etherscan_token_name)
     |> Etherscan.Scraper.parse_token_page(project_info)
   end
 
   def update_project(project_info, project) do
-    Repo.transaction fn ->
+    Repo.transaction(fn ->
       project
       |> find_or_create_initial_ico()
       |> Ico.changeset(Map.from_struct(project_info))
-      |> Repo.insert_or_update!
+      |> Repo.insert_or_update!()
 
       project
       |> Project.changeset(Map.from_struct(project_info))
-      |> Repo.update!
-    end
+      |> Repo.update!()
+    end)
   end
 
   defp find_or_create_initial_ico(project) do
@@ -80,10 +86,12 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     end
   end
 
-  defp fetch_block_number(%ProjectInfo{creation_transaction: nil} = project_info), do: project_info
+  defp fetch_block_number(%ProjectInfo{creation_transaction: nil} = project_info),
+    do: project_info
 
   defp fetch_block_number(%ProjectInfo{creation_transaction: creation_transaction} = project_info) do
-    %{"blockNumber" => "0x" <> block_number_hex} = Parity.get_transaction_by_hash!(creation_transaction)
+    %{"blockNumber" => "0x" <> block_number_hex} =
+      Parity.get_transaction_by_hash!(creation_transaction)
 
     {block_number, ""} = Integer.parse(block_number_hex, 16)
 
@@ -92,7 +100,9 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
 
   defp fetch_abi(%ProjectInfo{main_contract_address: main_contract_address} = project_info) do
     case Etherscan.Requests.get_abi(main_contract_address) do
-      {:ok, abi} -> %ProjectInfo{project_info | contract_abi: abi}
+      {:ok, abi} ->
+        %ProjectInfo{project_info | contract_abi: abi}
+
       {:error, error} ->
         Logger.info("Can't get the ABI for address #{main_contract_address}: #{error}")
         project_info

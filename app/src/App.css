@@ -45,7 +45,7 @@
   font-size: bold;
 }
 
-.page {
+.App .page {
   flex: 1;
   padding: 0 15px;
   max-width: 1024px;
@@ -54,12 +54,12 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.page::-webkit-scrollbar {
+.App .page::-webkit-scrollbar {
   display: none;
 }
 
 @media (max-width: 767px) {
-  .page {
+  .App .page {
     padding: 0 15px;
   }
 }
@@ -69,7 +69,7 @@
   margin-right: 20px;
 }
 
-.page h1 {
+.App .page h1 {
   font-size: 32px;
   font-weight: 400;
   margin-bottom: 8px;
@@ -87,7 +87,7 @@
 }
 
 @media (min-width: 1024px) {
-  .page {
+  .App .page {
     margin: 0 auto;
   }
 

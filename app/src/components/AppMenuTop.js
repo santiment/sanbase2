@@ -7,6 +7,9 @@ const AppMenuTop = ({handleNavigation}) => (
       onClick={() => handleNavigation('projects')}>
       Projects
     </li>
+    <li onClick={() => handleNavigation('events')}>
+      Insights
+    </li>
     <li
       onClick={() => handleNavigation('signals')}>
       Signals

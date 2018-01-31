@@ -34,7 +34,7 @@ defmodule Sanbase.ExternalServices.Github do
   end
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
-    Faktory.info
+    Faktory.info()
     |> schedule_jobs_if_free
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
@@ -46,7 +46,7 @@ defmodule Sanbase.ExternalServices.Github do
     if default_size > 0 do
       :ok
     else
-      Sanbase.Github.Scheduler.schedule_scrape
+      Sanbase.Github.Scheduler.schedule_scrape()
     end
   end
 end

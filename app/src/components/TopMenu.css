@@ -38,7 +38,8 @@
 }
 
 .top-menu .user-auth-control {
-  margin: 10px 0 0 20px;
+  margin: 8px;
+  margin-top: 12px;
   position: relative;
 }
 
@@ -50,7 +51,7 @@
   color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
   font-weight: 300;
-  padding: 8px 24px;
+  padding: 7px 24px;
   text-transform: uppercase;
 }
 

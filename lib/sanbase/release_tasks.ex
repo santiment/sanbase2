@@ -5,10 +5,10 @@ defmodule Sanbase.ReleaseTasks do
     # Load the code for myapp, but don't start it
     :ok = Application.load(:sanbase)
 
-    Migrate.run
+    Migrate.run()
 
     # Signal shutdown
-    IO.puts "Success!"
+    IO.puts("Success!")
     :init.stop()
   end
 end

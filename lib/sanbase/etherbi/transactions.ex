@@ -5,47 +5,20 @@ defmodule Sanbase.Etherbi.Transactions do
     easier aggregation and querying.
   """
 
-  use GenServer
-
-  require Logger
-  require Sanbase.Utils.Config
+  @default_update_interval 1000 * 60 * 5
+  use Sanbase.Etherbi.EtherbiGenServer
 
   import Ecto.Query
 
-  alias Sanbase.Repo
-  alias Sanbase.Utils.Config
-  alias Sanbase.Etherbi.Store
-  alias Sanbase.Etherbi.FundsMovement
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Model.ExchangeEthAddress
-  alias Sanbase.Model.Project
+  alias Sanbase.Etherbi.Utils
+  alias Sanbase.Etherbi.Transactions.{Store, Fetcher}
 
-  @default_update_interval 1000 * 60 * 5
-
-  def start_link(_state) do
-    GenServer.start_link(__MODULE__, :ok)
-  end
-
-  def init(:ok) do
-    if Config.get(:sync_enabled, false) do
-      Store.create_db()
-
-      update_interval_ms = Config.get(:update_interval, @default_update_interval)
-
-      GenServer.cast(self(), :sync)
-      {:ok, %{update_interval_ms: update_interval_ms}}
-    else
-      :ignore
-    end
-  end
-
-  def handle_cast(
-        :sync,
-        %{update_interval_ms: update_interval_ms} = state
-      ) do
+  def work() do
     # Precalculate the number by which we have to divide, that is pow(10, decimal_places)
-    token_decimals = build_token_decimals_map()
-    exchange_wallets_addrs = Repo.all(from(addr in ExchangeEthAddress, select: addr.address))
+    token_decimals = Utils.build_token_decimals_map()
+
+    exchange_wallets_addrs =
+      Sanbase.Repo.all(from(addr in Sanbase.Model.ExchangeEthAddress, select: addr.address))
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
@@ -64,13 +37,10 @@ defmodule Sanbase.Etherbi.Transactions do
       timeout: 165_000
     )
     |> Stream.run()
-
-    Process.send_after(self(), {:"$gen_cast", :sync}, update_interval_ms)
-    {:noreply, state}
   end
 
   def fetch_and_store_in(address, token_decimals) do
-    with {:ok, transactions_in} <- FundsMovement.transactions_in(address) do
+    with {:ok, transactions_in} <- Fetcher.transactions_in(address) do
       convert_to_measurement(transactions_in, "in", token_decimals)
       |> Store.import()
     else
@@ -80,7 +50,7 @@ defmodule Sanbase.Etherbi.Transactions do
   end
 
   def fetch_and_store_out(address, token_decimals) do
-    with {:ok, transactions_out} <-FundsMovement.transactions_out(address) do
+    with {:ok, transactions_out} <- Fetcher.transactions_out(address) do
       convert_to_measurement(transactions_out, "out", token_decimals)
       |> Store.import()
     else
@@ -91,21 +61,6 @@ defmodule Sanbase.Etherbi.Transactions do
 
   # Private functions
 
-  defp build_token_decimals_map() do
-    query =
-      from(
-        p in Project,
-        where: not is_nil(p.token_decimals),
-        select: %{ticker: p.ticker, token_decimals: p.token_decimals}
-      )
-
-    Repo.all(query)
-    |> Enum.map(fn %{ticker: ticker, token_decimals: token_decimals} ->
-      {ticker, :math.pow(10, token_decimals)}
-    end)
-    |> Map.new()
-  end
-
   # Better return no information than wrong information. If we have no data for the
   # number of decimal places `nil` is written instead and it gets filtered by the Store.import()
   defp convert_to_measurement(
@@ -115,17 +70,12 @@ defmodule Sanbase.Etherbi.Transactions do
        ) do
     transactions_data
     |> Enum.map(fn {datetime, volume, address, token} ->
-      if decimal_places = Map.get(token_decimals, token) do
-        %Measurement{
-          timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-          fields: %{volume: volume / decimal_places},
-          tags: [transaction_type: transaction_type, address: address],
-          name: token
-        }
-      else
-        Logger.warn("Missing token decimals for #{token}")
-        nil
-      end
+      %Sanbase.Influxdb.Measurement{
+        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+        fields: %{volume: volume / Map.get(token_decimals, token)},
+        tags: [transaction_type: transaction_type, address: address],
+        name: token
+      }
     end)
   end
 end

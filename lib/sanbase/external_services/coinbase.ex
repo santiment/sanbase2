@@ -1,8 +1,8 @@
 defmodule Sanbase.ExternalServices.Coinbase do
   use Tesla
 
-  plug Tesla.Middleware.Tuples
-  plug Tesla.Middleware.JSON
+  plug(Tesla.Middleware.Tuples)
+  plug(Tesla.Middleware.JSON)
 
   def get_eth_price do
     response = get("https://api.coinbase.com/v2/prices/ETH-USD/sell")
@@ -17,7 +17,9 @@ defmodule Sanbase.ExternalServices.Coinbase do
         else
           nil
         end
-      _ -> nil
+
+      _ ->
+        nil
     end
   end
 end

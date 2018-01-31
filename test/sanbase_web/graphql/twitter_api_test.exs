@@ -25,7 +25,8 @@ defmodule Sanbase.Github.TwitterApiTest do
     |> Project.changeset(%{
       name: "Santiment",
       ticker: "SAN",
-      twitter_link: "https://twitter.com/santimentfeed"
+      twitter_link: "https://twitter.com/santimentfeed",
+      coinmarketcap_id: "santiment"
     })
     |> Repo.insert!()
 

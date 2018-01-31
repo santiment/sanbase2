@@ -4,10 +4,9 @@ defmodule Sanbase.Model.ProjectTransparencyStatus do
   alias Sanbase.Model.ProjectTransparencyStatus
   alias Sanbase.Model.Project
 
-
   schema "project_transparency_statuses" do
-    field :name, :string
-    has_many :projects, Project
+    field(:name, :string)
+    has_many(:projects, Project)
   end
 
   @doc false

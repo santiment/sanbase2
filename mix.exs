@@ -6,9 +6,9 @@ defmodule Sanbase.Mixfile do
       app: :sanbase,
       version: "0.0.1",
       elixir: "~> 1.4",
-      elixirc_paths: elixirc_paths(Mix.env),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers,
-      start_permanent: Mix.env == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
     ]
@@ -27,7 +27,7 @@ defmodule Sanbase.Mixfile do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_),     do: ["lib"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
   #
@@ -84,6 +84,7 @@ defmodule Sanbase.Mixfile do
       "ecto.reset": ["load_dotenv", "ecto.drop", "ecto.setup"],
       "ecto.migrate": ["load_dotenv", "ecto.migrate", "ecto.dump"],
       "ecto.rollback": ["load_dotenv", "ecto.rollback", "ecto.dump"],
-      "test": ["load_dotenv", "ecto.create --quiet", "ecto.load", "test"]    ]
+      test: ["load_dotenv", "ecto.create --quiet", "ecto.load", "test"]
+    ]
   end
 end

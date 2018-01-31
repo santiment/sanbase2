@@ -3,7 +3,7 @@ defmodule SanbaseWeb.ProjectsView do
 
   def render("index.json", %{projects: projects}) do
     projects
-    |> Enum.filter(&(&1.latest_coinmarketcap_data))
+    |> Enum.filter(& &1.latest_coinmarketcap_data)
     |> Enum.map(fn project ->
       %{
         name: project.name,

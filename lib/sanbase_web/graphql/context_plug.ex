@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     put_private(conn, :absinthe, %{context: context})
   end
 
-  defp build_context(conn, [auth_method|rest]) do
+  defp build_context(conn, [auth_method | rest]) do
     auth_method.(conn)
     |> case do
       :skip -> build_context(conn, rest)
@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   def bearer_authentication(conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-    {:ok, current_user} <- bearer_authorize(token) do
+         {:ok, current_user} <- bearer_authorize(token) do
       %{auth_method: :user_token, current_user: current_user}
     else
       _ -> :skip
@@ -41,7 +41,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   def basic_authentication(conn) do
     with ["Basic " <> auth_attempt] <- get_req_header(conn, "authorization"),
-    {:ok, current_user} <- basic_authorize(auth_attempt) do
+         {:ok, current_user} <- basic_authorize(auth_attempt) do
       %{auth_method: :basic, current_user: current_user}
     else
       _ -> :skip
@@ -49,7 +49,8 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp bearer_authorize(token) do
-    with {:ok, %User{salt: salt} = user, %{"salt" => salt}} <- SanbaseWeb.Guardian.resource_from_token(token) do
+    with {:ok, %User{salt: salt} = user, %{"salt" => salt}} <-
+           SanbaseWeb.Guardian.resource_from_token(token) do
       {:ok, user}
     else
       _ ->
@@ -64,7 +65,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
     Base.encode64(username <> ":" <> password)
     |> case do
-      ^auth_attempt -> {:ok, username}
+      ^auth_attempt ->
+        {:ok, username}
+
       _ ->
         Logger.warn("Invalid basic auth credentials in request")
         {:error, :invalid_credentials}

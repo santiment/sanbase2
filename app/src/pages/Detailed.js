@@ -9,6 +9,7 @@ import {
   withState,
   pure
 } from 'recompose'
+import moment from 'moment'
 import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs'

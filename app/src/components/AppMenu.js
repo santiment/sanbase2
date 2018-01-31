@@ -4,8 +4,7 @@ import './AppMenu.css'
 
 const AppMenu = ({handleNavigation}) => (
   <ul className='menu-list'>
-    <li
-      onClick={() => handleNavigation('projects')}>
+    <li onClick={() => handleNavigation('projects')}>
       <Icon name='list 2x' />
       Projects
     </li>
@@ -14,10 +13,8 @@ const AppMenu = ({handleNavigation}) => (
       <Icon name='th 2x' />
       Signals
     </li>
-    <li
-      onClick={() => handleNavigation('roadmap')}>
-      <Icon
-        name='map 2x' />
+    <li onClick={() => handleNavigation('roadmap')}>
+      <Icon name='map 2x' />
       Roadmap
     </li>
   </ul>

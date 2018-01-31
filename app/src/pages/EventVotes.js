@@ -59,8 +59,8 @@ const EventVotes = ({
     <div className='page event-votes' key='page-event-votes'>
       {location.state && location.state.postCreated &&
         <Message positive>
-          <Message.Header>Insight created</Message.Header>
-          <p>We need some time to approve your insight.</p>
+          <Message.Header>👏👏👏 Insight was created</Message.Header>
+          <p>We need some time to approve your insight...</p>
         </Message>}
       <Panel>
         <div className='panel-header'>

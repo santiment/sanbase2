@@ -38,9 +38,10 @@ const Post = ({
         <br />
         <Span>{getSourceLink(link)}</Span>&nbsp;&#8226;&nbsp;
         <Span>{moment(approvedAt).format('MMM DD, YYYY')}</Span>
-        <Div className='event-post-info'>
-          by&nbsp;{user && <Username address={user.username} />}
-        </Div>
+        {user &&
+          <Div className='event-post-info'>
+            by&nbsp; <Username address={user.username} />
+          </Div>}
         <LikeBtn
           onLike={() => {
             if (votedAt) {

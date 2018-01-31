@@ -3,7 +3,9 @@ defmodule Sanbase.Model.ModelUtils do
     attrs
     |> Map.get(key)
     |> case do
-      nil -> attrs
+      nil ->
+        attrs
+
       value ->
         Map.put(attrs, key, String.replace(value, ",", ""))
     end

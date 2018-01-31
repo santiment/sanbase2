@@ -17,26 +17,22 @@ config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test"
 
-config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  sync_enabled: false
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,
   limit: 5,
   time_between_requests: 1000
 
-config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
-  apikey: "myapikey"
+config :sanbase, Sanbase.ExternalServices.Etherscan.Requests, apikey: "myapikey"
 
-config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
-  sync_enabled: false
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, sync_enabled: false
 
-config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
-  sync_enabled: false
+config :sanbase, Sanbase.ExternalServices.Etherscan.Worker, sync_enabled: false
 
 config :faktory_worker_ex,
   client: [
-    pool: 0,
+    pool: 0
   ],
   start_workers: false
 
@@ -44,21 +40,22 @@ config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: "http://example.com/webhook_url",
   slack_notifications_enabled: true
 
-config :sanbase, Sanbase.Github.Store,
-  database: "github_activity_test"
+config :sanbase, Sanbase.Github.Store, database: "github_activity_test"
 
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data_test"
 
-config :sanbase, Sanbase.Etherbi.Store,
-  database: "transactions_test"
+config :sanbase, Sanbase.Etherbi.Transactions.Store, database: "transactions_test"
+
+config :sanbase, Sanbase.Etherbi.BurnRate.Store, database: "burn_rate_test"
+
+config :sanbase, Sanbase.Etherbi.TransactionVolume.Store, database: "transaction_volume_test"
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
-config :sanbase, Sanbase.Prices.Store,
-  database: "prices_test"
+config :sanbase, Sanbase.Prices.Store, database: "prices_test"
 
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"

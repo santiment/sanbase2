@@ -88,5 +88,4 @@ defmodule Sanbase.Github.Store do
   end
 
   defp parse_moving_average_series!(_), do: []
-
 end

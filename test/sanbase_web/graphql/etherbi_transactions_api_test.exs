@@ -1,9 +1,9 @@
-defmodule Sanbase.Github.EtherbiTransactionsApiTest do
+defmodule Sanbase.Etherbi.TransactionsApiTest do
   use SanbaseWeb.ConnCase
   use Phoenix.ConnTest
 
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Etherbi.Store
+  alias Sanbase.Etherbi.Transactions.Store
 
   import SanbaseWeb.Graphql.TestHelpers
 

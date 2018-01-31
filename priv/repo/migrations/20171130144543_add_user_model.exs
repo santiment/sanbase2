@@ -3,21 +3,21 @@ defmodule Sanbase.Repo.Migrations.AddUserModel do
 
   def change do
     create table(:users) do
-      add :username, :string
-      add :email, :string
-      add :salt, :string, null: false
+      add(:username, :string)
+      add(:email, :string)
+      add(:salt, :string, null: false)
 
       timestamps()
     end
 
     create table(:eth_accounts) do
-      add :user_id, references(:users), null: false, on_delete: :delete_all
-      add :address, :string, null: false
+      add(:user_id, references(:users), null: false, on_delete: :delete_all)
+      add(:address, :string, null: false)
 
       timestamps()
     end
 
-    create unique_index(:users, :email)
-    create unique_index(:eth_accounts, :address)
+    create(unique_index(:users, :email))
+    create(unique_index(:eth_accounts, :address))
   end
 end

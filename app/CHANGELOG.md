@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-30-01 | v.0.4.0:
+
+  Added Insights
+  We can create and vote for user generated insight
+
 - 2018-13-01 | v.0.3.3:
 
   Opened general info for anonym users

@@ -9,7 +9,7 @@ defmodule SanbaseWeb.DailyPricesView do
         convert_to_price_array(data)
       }
     end)
-    |> Map.new
+    |> Map.new()
   end
 
   defp convert_to_price_array(data) do

@@ -23,7 +23,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTAuth do
   alias Absinthe.Resolution
   alias Sanbase.Auth.User
 
-  def call(%Resolution{context: %{auth: %{auth_method: :user_token, current_user: current_user}}} = resolution, config) do
+  def call(
+        %Resolution{context: %{auth: %{auth_method: :user_token, current_user: current_user}}} =
+          resolution,
+        config
+      ) do
     required_san_tokens = Keyword.get(config, :san_tokens, 0)
 
     if has_enough_san_tokens?(current_user, required_san_tokens) do

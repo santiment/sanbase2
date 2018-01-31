@@ -2,12 +2,13 @@ defmodule Sanbase.ExAdmin.Dashboard do
   use ExAdmin.Register
 
   register_page "Dashboard" do
-    menu priority: 1, label: "Dashboard"
+    menu(priority: 1, label: "Dashboard")
+
     content do
       div ".blank_slate_container#dashboard_default_message" do
         span ".blank_slate" do
-          span "Welcome to ExAdmin. This is the default dashboard page."
-          small "To add dashboard sections, checkout '${web_path}/admin/dashboards.ex'"
+          span("Welcome to ExAdmin. This is the default dashboard page.")
+          small("To add dashboard sections, checkout '${web_path}/admin/dashboards.ex'")
         end
       end
     end

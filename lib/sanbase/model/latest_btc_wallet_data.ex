@@ -4,9 +4,9 @@ defmodule Sanbase.Model.LatestBtcWalletData do
   alias Sanbase.Model.LatestBtcWalletData
 
   schema "latest_btc_wallet_data" do
-    field :address, :string
-    field :satoshi_balance, :decimal
-    field :update_time, Ecto.DateTime
+    field(:address, :string)
+    field(:satoshi_balance, :decimal)
+    field(:update_time, Ecto.DateTime)
   end
 
   @doc false

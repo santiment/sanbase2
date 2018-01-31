@@ -132,6 +132,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, :datetime)
       arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, :string, default_value: "1h")
 
       resolve(&EtherbiResolver.burn_rate/3)
     end
@@ -141,6 +142,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, :datetime)
       arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, :string, default_value: "1h")
 
       resolve(&EtherbiResolver.transaction_volume/3)
     end

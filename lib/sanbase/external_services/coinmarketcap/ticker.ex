@@ -1,15 +1,29 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   # A module which fetches the ticker data from coinmarketcap
-  defstruct [:id, :name, :symbol, :price_usd, :rank, :'24h_volume_usd', :market_cap_usd, :last_updated, :available_supply, :total_supply, :percent_change_1h, :percent_change_24h, :percent_change_7d]
+  defstruct [
+    :id,
+    :name,
+    :symbol,
+    :price_usd,
+    :rank,
+    :"24h_volume_usd",
+    :market_cap_usd,
+    :last_updated,
+    :available_supply,
+    :total_supply,
+    :percent_change_1h,
+    :percent_change_24h,
+    :percent_change_7d
+  ]
 
   alias Sanbase.ExternalServices.RateLimiting
 
   use Tesla
 
-  plug RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter
-  plug Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v1/ticker"
-  plug Tesla.Middleware.Compression
-  plug Tesla.Middleware.Logger
+  plug(RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
+  plug(Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v1/ticker")
+  plug(Tesla.Middleware.Compression)
+  plug(Tesla.Middleware.Logger)
 
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
 
@@ -17,9 +31,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     "/?limit=1000"
     |> get()
     |> case do
-	 %{status: 200, body: body} ->
-	   parse_json(body)
-       end
+      %{status: 200, body: body} ->
+        parse_json(body)
+    end
   end
 
   def parse_json(json) do
@@ -30,6 +44,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   defp make_timestamp_integer(ticker) do
     {ts, ""} = Integer.parse(ticker.last_updated)
-    %{ticker| last_updated: ts}
+    %{ticker | last_updated: ts}
   end
 end

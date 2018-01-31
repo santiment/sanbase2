@@ -132,8 +132,8 @@ defmodule Sanbase.Github.GithubApiTest do
     """
 
     result =
-    context.conn
-    |> post("/graphql", query_skeleton(query, "githubAvailablesRepos"))
+      context.conn
+      |> post("/graphql", query_skeleton(query, "githubAvailablesRepos"))
 
     repos = json_response(result, 200)["data"]["githubAvailablesRepos"]
 
@@ -154,8 +154,8 @@ defmodule Sanbase.Github.GithubApiTest do
     """
 
     result =
-    context.conn
-    |> post("/graphql", query_skeleton(query, "githubActivity"))
+      context.conn
+      |> post("/graphql", query_skeleton(query, "githubActivity"))
 
     activities = json_response(result, 200)["data"]["githubActivity"]
 
@@ -177,8 +177,8 @@ defmodule Sanbase.Github.GithubApiTest do
     """
 
     result =
-    context.conn
-    |> post("/graphql", query_skeleton(query, "githubActivity"))
+      context.conn
+      |> post("/graphql", query_skeleton(query, "githubActivity"))
 
     activities = json_response(result, 200)["data"]["githubActivity"]
     assert %{"activity" => 7} in activities

@@ -52,7 +52,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     projects =
       Project
       |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
-      |> Repo.all
+      |> Repo.all()
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
@@ -86,30 +86,31 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   defp fetch_project_info(project) do
     if project_info_missing?(project) do
-      {:ok, _project} = ProjectInfo.from_project(project)
-      |> ProjectInfo.fetch_coinmarketcap_info()
-      |> ProjectInfo.fetch_etherscan_token_summary()
-      |> ProjectInfo.fetch_contract_info()
-      |> ProjectInfo.update_project(project)
+      {:ok, _project} =
+        ProjectInfo.from_project(project)
+        |> ProjectInfo.fetch_coinmarketcap_info()
+        |> ProjectInfo.fetch_etherscan_token_summary()
+        |> ProjectInfo.fetch_contract_info()
+        |> ProjectInfo.update_project(project)
     end
   end
 
   defp project_info_missing?(
-       %Project{
-         website_link: website_link,
-         github_link: github_link,
-         ticker: ticker,
-         name: name,
-         token_decimals: token_decimals
-       } = project
-     ) do
-    !website_link or !github_link or !ticker or !name
-    or missing_main_contract_address?(project) or !token_decimals
+         %Project{
+           website_link: website_link,
+           github_link: github_link,
+           ticker: ticker,
+           name: name,
+           token_decimals: token_decimals
+         } = project
+       ) do
+    !website_link or !github_link or !ticker or !name or missing_main_contract_address?(project) or
+      !token_decimals
   end
 
   defp missing_main_contract_address?(project) do
     project
-    |> Project.initial_ico
+    |> Project.initial_ico()
     |> case do
       nil -> true
       %Ico{} = ico -> missing_ico_info?(ico)
@@ -117,7 +118,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp missing_ico_info?(%Ico{main_contract_address: main_contract_address, contract_abi: contract_abi, contract_block_number: contract_block_number}) do
+  defp missing_ico_info?(%Ico{
+         main_contract_address: main_contract_address,
+         contract_abi: contract_abi,
+         contract_block_number: contract_block_number
+       }) do
     !main_contract_address or !contract_abi or !contract_block_number
   end
 
@@ -128,11 +133,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       DateTime.utc_now()
     )
     |> Stream.flat_map(fn price_point ->
-         [
-           convert_to_measurement(price_point, "_usd", "#{ticker}_USD"),
-           convert_to_measurement(price_point, "_btc", "#{ticker}_BTC")
-         ]
-       end)
+      [
+        convert_to_measurement(price_point, "_usd", "#{ticker}_USD"),
+        convert_to_measurement(price_point, "_btc", "#{ticker}_BTC")
+      ]
+    end)
     |> Store.import()
 
     CheckPrices.exec(project, "usd")

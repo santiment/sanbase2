@@ -8,8 +8,8 @@
     width: 720px;
   }
 
-  .account .panel form {
-    width: 40%;
+  .account h3 {
+    margin-top: 15px;
   }
 
   .account-control {

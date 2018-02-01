@@ -145,7 +145,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
   defp get_token_decimals(ticker) do
     query =
       from(
-        p in Sanbase.Model.Project,
+        p in subquery(Sanbase.Model.Project.all_projects_with_eth_contract_query()),
         where: p.ticker == ^ticker and not is_nil(p.token_decimals),
         select: p.token_decimals
       )

@@ -6,7 +6,6 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Voting.Vote
   alias Sanbase.Repo
-  alias Sanbase.MandrillApi
 
   @login_email_template "login"
 
@@ -21,6 +20,8 @@ defmodule Sanbase.Auth.User do
 
   # 5 minutes
   @san_balance_cache_seconds 60 * 5
+
+  @mandrill_api Mockery.of("Sanbase.MandrillApi")
 
   schema "users" do
     field(:email, :string)
@@ -130,7 +131,7 @@ defmodule Sanbase.Auth.User do
   end
 
   def send_login_email(user) do
-    MandrillApi.send(@login_email_template, user.email, %{
+    @mandrill_api.send(@login_email_template, user.email, %{
       LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
     })
   end

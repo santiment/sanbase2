@@ -4,7 +4,7 @@ defmodule Sanbase.Github.EtherbiApiTest do
   import Mockery
   import SanbaseWeb.Graphql.TestHelpers
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
 
   setup do
@@ -14,12 +14,23 @@ defmodule Sanbase.Github.EtherbiApiTest do
     datetime1 = DateTime.from_naive!(~N[2018-01-01 12:00:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-01-01 21:45:00], "Etc/UTC")
 
-    %Project{}
-    |> Project.changeset(%{
-      name: "Santiment",
-      ticker: ticker,
-      coinmarketcap_id: "santiment",
-      token_decimals: 18
+    p =
+      %Project{}
+      |> Project.changeset(%{
+        name: "Santiment",
+        ticker: ticker,
+        token_decimals: 18,
+        coinmarketcap_id: "santiment"
+      })
+      |> Repo.insert!()
+
+    %Ico{}
+    |> Ico.changeset(%{
+      project_id: p.id,
+      main_contract_address: "0x1232",
+      contract_block_number: 55,
+      contract_abi: "0x321",
+      rank: 1
     })
     |> Repo.insert!()
 

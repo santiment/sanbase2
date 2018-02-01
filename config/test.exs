@@ -45,8 +45,6 @@ config :sanbase, Sanbase.Github.Store, database: "github_activity_test"
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data_test"
 
-config :sanbase, Sanbase.Etherbi, use_cache: true
-
 config :sanbase, Sanbase.Etherbi.Transactions.Store, database: "transactions_test"
 
 config :sanbase, Sanbase.Etherbi.BurnRate.Store, database: "burn_rate_test"

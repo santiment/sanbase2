@@ -198,7 +198,9 @@ config :ex_aws,
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
   region: "eu-central-1"
 
-config :sanbase, Sanbase.Etherbi, url: {:system, "ETHERBI_URL"}
+config :sanbase, Sanbase.Etherbi,
+  url: {:system, "ETHERBI_URL"},
+  use_cache: {:system, "ETHERBI_USE_CACHE", false}
 
 config :sanbase, Sanbase.MandrillApi,
   apikey: {:system, "MANDRILL_APIKEY"},

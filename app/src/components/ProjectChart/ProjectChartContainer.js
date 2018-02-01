@@ -115,7 +115,6 @@ class ProjectChartContainer extends Component {
       items: normalizeData({
         data: this.props.burnRate.items,
         fieldName: 'burnRate',
-        tokenDecimals: this.props.tokenDecimals,
         filter: this.props.blockchainFilter
       })
     }
@@ -124,7 +123,6 @@ class ProjectChartContainer extends Component {
       items: normalizeData({
         data: this.props.transactionVolume.items,
         fieldName: 'transactionVolume',
-        tokenDecimals: this.props.tokenDecimals,
         filter: this.props.blockchainFilter
       })
     }

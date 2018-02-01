@@ -14,6 +14,7 @@ import Signals from './pages/Signals'
 import Account from './pages/Account'
 import EventVotes from './pages/EventVotes'
 import EventVotesNew from './pages/EventVotesNew/EventVotesNew'
+import EmailLoginVerification from './pages/EmailLoginVerification'
 import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
@@ -53,6 +54,10 @@ export const App = ({isDesktop}) => (
         <Route exact path='/account' component={Account} />
         <Route path='/login' component={Login} />
         <Route exact path='/' render={CashflowPage} />
+        <Route
+          exact
+          path='/email_login'
+          component={EmailLoginVerification} />
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>

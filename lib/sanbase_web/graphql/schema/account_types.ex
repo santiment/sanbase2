@@ -27,4 +27,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:token, non_null(:string))
     field(:user, non_null(:user))
   end
+
+  object :email_login_request do
+    field(:success, non_null(:boolean))
+  end
 end

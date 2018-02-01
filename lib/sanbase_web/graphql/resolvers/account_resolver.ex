@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
          {:ok, _user} <- User.send_login_email(user) do
       {:ok, %{success: true}}
     else
-      error -> {:error, message: "Can't login"}
+      _ -> {:error, message: "Can't login"}
     end
   end
 

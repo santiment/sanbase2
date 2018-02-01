@@ -8,7 +8,7 @@ defmodule Sanbase.Etherbi.Utils do
   import Ecto.Query
 
   @spec calculate_to_datetime(%DateTime{}, %DateTime{}) :: %DateTime{}
-  def calculate_to_datetime(from_datetime, to_datetime, limit_sec \\ 60 * 60 * 24) do
+  def calculate_to_datetime(from_datetime, to_datetime, limit_sec \\ 60 * 60 * 24 * 30) do
     if DateTime.diff(to_datetime, from_datetime, :seconds) > limit_sec do
       Sanbase.DateTimeUtils.seconds_after(limit_sec, from_datetime)
     else

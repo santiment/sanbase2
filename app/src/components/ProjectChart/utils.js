@@ -33,12 +33,11 @@ export const makeItervalBounds = interval => {
 export const normalizeData = ({
   data = [],
   fieldName,
-  tokenDecimals = 18,
   filter = 'all'
 }) => {
   if (data.length === 0) { return [] }
   const normalizedData = data.map(el => {
-    const normalizedField = parseFloat(el[`${fieldName}`]) / Math.pow(10, tokenDecimals)
+    const normalizedField = parseFloat(el[`${fieldName}`])
     return {
       ...el,
       [fieldName]: normalizedField

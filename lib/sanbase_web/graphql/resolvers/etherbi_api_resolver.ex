@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
 
         {:ok, result}
 
-      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching burn rate for ticker #{ticker}: #{body}"}
 
       _ ->
@@ -74,7 +74,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
 
         {:ok, result}
 
-      {:error, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
          "Error status #{status} fetching transaction volume for ticker #{ticker}: #{body}"}
 
@@ -154,6 +154,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
   end
 
   defp etherbi_url() do
-    Config.module_get(Sanbase.Etherbi, :etherbi_url)
+    Config.module_get(Sanbase.Etherbi, :url)
   end
 end

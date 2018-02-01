@@ -14,7 +14,6 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Voting.{Vote, Post}
   alias Sanbase.UserLists.UserList
   alias Sanbase.Repo
-  alias Sanbase.MandrillApi
 
   @login_email_template "login"
   @verification_email_template "verify email"

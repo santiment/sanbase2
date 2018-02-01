@@ -632,4 +632,26 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     assert json_response(result, 200)["errors"] != nil
   end
+
+  test "emailLogin returns true if the login email was sent successfully", %{
+    conn: conn
+  } do
+    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
+
+    query = """
+    mutation {
+      emailLogin(email: "john@example.com") {
+        success
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert Repo.get_by(User, email: "john@example.com")
+
+    assert json_response(result, 200)["data"]["emailLogin"]["success"]
+  end
 end

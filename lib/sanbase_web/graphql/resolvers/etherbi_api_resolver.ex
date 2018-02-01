@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
-  alias Sanbase.Etherbi.Store
+  alias Sanbase.Etherbi.Transactions.Store
 
   import Ecto.Query
 
@@ -13,10 +13,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
-    etherbi_url = Config.module_get(Sanbase.Etherbi, :url)
-
     url =
-      "#{etherbi_url}/burn_rate?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{
+      "#{etherbi_url()}/burn_rate?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{
         to_unix
       }"
 
@@ -50,10 +48,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
     from_unix = DateTime.to_unix(from, :seconds)
     to_unix = DateTime.to_unix(to, :seconds)
 
-    etherbi_url = Config.module_get(Sanbase.Etherbi, :url)
+    token_decimals = get_token_decimals(ticker)
+    divide_by = :math.pow(10, token_decimals)
 
     url =
-      "#{etherbi_url}/transaction_volume?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{
+      "#{etherbi_url()}/transaction_volume?ticker=#{ticker}&from_timestamp=#{from_unix}&to_timestamp=#{
         to_unix
       }"
 
@@ -69,7 +68,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
           |> Enum.map(fn [timestamp, trx_volume] ->
             %{
               datetime: DateTime.from_unix!(timestamp),
-              transaction_volume: Decimal.new(trx_volume)
+              transaction_volume: Decimal.new(trx_volume / divide_by)
             }
           end)
 
@@ -152,5 +151,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
       )
 
     Sanbase.Repo.all(query) |> hd
+  end
+
+  defp etherbi_url() do
+    Config.module_get(Sanbase.Etherbi, :etherbi_url)
   end
 end

@@ -56,10 +56,12 @@ export default (state = initialState, action) => {
         return {
           ...initialState,
           hasMetamask: action.hasMetamask,
-          isLoading: false}
+          isLoading: false
+        }
       }
       return {
         ...state,
+        isLoading: false,
         data: {
           ...action.user
         }

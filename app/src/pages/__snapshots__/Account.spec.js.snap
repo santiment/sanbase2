@@ -40,7 +40,7 @@ exports[`Account container it should render correctly 1`] = `
       </FormField>
       <FormField>
         <label>
-          Username ( Eth Public Key )
+          Username or Eth Public Key
         </label>
         <Input
           action={

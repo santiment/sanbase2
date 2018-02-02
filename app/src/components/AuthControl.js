@@ -1,7 +1,8 @@
 import React from 'react'
 import {
   Button,
-  Popup
+  Popup,
+  Icon
 } from 'semantic-ui-react'
 import Balance from './../components/Balance'
 import './AuthControl.css'
@@ -32,11 +33,11 @@ const AuthControl = ({
   if (user.username && isDesktop) {
     return (
       <div className='user-auth-control'>
-        <Popup wide trigger={
-          <div className='acct'>
-            <Balance user={user} onlyBalance />
-            <i className='fa fa-caret-down' />
-          </div>
+        <Popup basic wide trigger={
+          <Icon
+            style={{color: 'white'}}
+            size='large'
+            name='user circle' />
         } on='click'>
           <AccountLinks
             isDesktop={isDesktop}

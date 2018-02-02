@@ -5,7 +5,7 @@ import {
   Button,
   Icon
 } from 'semantic-ui-react'
-import metamaskIcon from '../assets/metamask-icon-64.png'
+import metamaskIcon from '../../assets/metamask-icon-64.png'
 import './AuthForm.css'
 
 export default ({account, handleAuth}) => {

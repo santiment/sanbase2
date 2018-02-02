@@ -1,4 +1,6 @@
 import React from 'react'
+import { connect } from 'react-redux'
+import setAuthorizationToken from './../utils/setAuthorizationToken'
 import {
   compose,
   withState,
@@ -16,9 +18,13 @@ const emailLoginVerifyGQL = gql`
     ) {
       token
       user {
-        id
-        email
-        username
+        id,
+        email,
+        username,
+        ethAccounts {
+          address,
+          sanBalance
+        }
       }
     }
   }
@@ -41,13 +47,48 @@ export const EmailLoginVerification = ({verificationStatus = 'pending'}) => {
   }
   return (
     <div>
-      <h2>Email address confirmed!</h2>
+      <h2>Email address confirmed</h2>
     </div>
   )
 }
 
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    authWithEmail: (qsData, props) => {
+      props.verify(qsData)
+        .then(({data}) => {
+          const { token, user } = data.emailLoginVerify
+          dispatch({
+            type: 'SUCCESS_LOGIN',
+            token,
+            user
+          })
+          props.changeVerificationStatus('verified')
+          props.history.push('/')
+        })
+        .catch(error => {
+          dispatch({
+            type: 'FAILED_LOGIN',
+            errorMessage: error
+          })
+          props.changeVerificationStatus('failed')
+        })
+    }
+  }
+}
+
 const enhance = compose(
   withState('verificationStatus', 'changeVerificationStatus', 'pending'),
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  ),
   graphql(emailLoginVerifyGQL, {
     name: 'emailLoginVerify',
     props: ({ emailLoginVerify }) => ({
@@ -58,19 +99,7 @@ const enhance = compose(
   lifecycle({
     componentDidMount () {
       const qsData = qs.parse(this.props.location.search)
-      this.props.verify(qsData)
-        .then(data => {
-          const { token, user } = data.emailLoginVerify
-          console.log(token, user)
-          this.props.changeVerificationStatus('verified')
-        })
-        .catch(error => {
-          if (/\bLogin failed/.test(error)) {
-            this.props.changeVerificationStatus('failed')
-          } else {
-            throw new Error(error)
-          }
-        })
+      this.props.authWithEmail(qsData, this.props)
     }
   })
 )

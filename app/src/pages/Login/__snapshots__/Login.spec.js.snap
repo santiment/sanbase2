@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Login container it should render loader while not loaded 1`] = `
+<div
+  className="page wrapper"
+>
+  <div
+    className="login-container"
+  >
+    <div>
+      Loading
+    </div>
+    <AuthFormWithEmail />
+  </div>
+</div>
+`;

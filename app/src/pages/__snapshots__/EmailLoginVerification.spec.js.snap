@@ -2,8 +2,8 @@
 
 exports[`EmailLoginVerification it should render correctly 1`] = `
 <div>
-  <h1>
+  <h2>
     Verification...
-  </h1>
+  </h2>
 </div>
 `;

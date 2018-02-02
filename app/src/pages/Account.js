@@ -44,7 +44,7 @@ export const Account = ({user, loading, logout}) => {
               />}
           </Form.Field>
           <Form.Field>
-            <label>Username ( Eth Public Key )</label>
+            <label>Username or Eth Public Key</label>
             <Input
               input={{readOnly: true}}
               action={{

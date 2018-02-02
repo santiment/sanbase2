@@ -1,0 +1,11 @@
+.auth-form-with-email-wrapper {
+  margin-top: 1em;
+}
+
+.auth-form-with-email-wrapper .sign-in-btn {
+  padding: 10px;
+}
+
+.auth-form-with-email-wrapper .sign-in-btn i {
+  margin-left: 10px;
+}

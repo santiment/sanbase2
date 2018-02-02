@@ -103,7 +103,7 @@ const handleLoad = () => {
       hasMetamask: hasMetamask()
     })
   })
-  .catch(error => console.error(error))
+  .catch(error => Raven.captureException(error))
 
   store.subscribe(() => {
     // TODO: Yura Zatsepin: 2017-12-07 11:23:

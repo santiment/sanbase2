@@ -7,7 +7,7 @@ import {
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
 import { compose } from 'recompose'
-import Login from './pages/Login'
+import Login from './pages/Login/Login'
 import Cashflow from './pages/Cashflow'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'

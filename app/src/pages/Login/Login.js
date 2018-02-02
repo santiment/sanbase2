@@ -4,9 +4,7 @@ import { Redirect } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { graphql, withApollo } from 'react-apollo'
 import gql from 'graphql-tag'
-import {
-  Message
-} from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import {
   lifecycle,
@@ -17,9 +15,9 @@ import {
   setupWeb3,
   hasMetamask,
   signMessage
-} from '../web3Helpers'
-import AuthForm from './AuthForm'
-import metamaskDownloadImg from './../assets/download-metamask.png'
+} from '../../web3Helpers'
+import metamaskIcon from '../../assets/metamask-icon-64.png'
+import Panel from './../../components/Panel'
 import './Login.css'
 
 const propTypes = {
@@ -40,45 +38,54 @@ export const Login = ({
   checkMetamask,
   authWithSAN,
   location,
-  client
+  client,
+  isDesktop
 }) => {
-  const qsData = qs.parse(location.search)
-  if (qsData && qsData.redirect_to && user.token) {
-    return <Redirect to={qsData.redirect_to} />
+  if (location) {
+    const qsData = qs.parse(location.search)
+    if (qsData && qsData.redirect_to && user.token) {
+      return <Redirect to={qsData.redirect_to} />
+    }
   }
-  if (user.data.hasOwnProperty('username')) {
+  if (user.data.hasOwnProperty('username') || user.token) {
     return <Redirect to='/' />
   }
   return (
-    <div className='page wrapper'>
-      <div className='login-container'>
-        {user.isLoading && !user.hasMetamask && <div>Loading</div>}
-        {!user.hasMetamask && !user.isLoading &&
-          <Message warning>
-            <h4>We can't detect Metamask!</h4>
-            <p>We can auth you with Metamask account. It's secure and easy.</p>
-            <div className='help-links'>
-              <a
-                target='_blank'
-                rel='noopener noreferrer'
-                href='https://metamask.io/#how-it-works'>How Metamask works?</a>
-              <a href='https://metamask.io/'>
-                <img width={128} src={metamaskDownloadImg} alt='Metamask link' />
-              </a>
-            </div>
-          </Message>
-        }
-        {user.hasMetamask && !user.token &&
-          <AuthForm
-            account={user.account}
-            handleAuth={() => requestAuth(user.account, authWithSAN, client)} />}
-        {user.token &&
-          <div>
-            You are logged in! Redirecting...
-            <Redirect to={'/'} />
-          </div>
-        }
-      </div>
+    <div className='page login wrapper'>
+      <Panel className='login-inner'>
+        <h1>
+          Welcome to Sanbase
+        </h1>
+        <p>
+          By having a Sanbase account, you can see more data and insights about crypto projects.
+          You can vote and comment on all your favorite insights and more.
+        </p>
+        <div className='login-actions'>
+          <Button
+            basic
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              paddingTop: '5px',
+              paddingBottom: '5px'
+            }}
+          >
+            <img
+              src={metamaskIcon}
+              alt='metamask logo'
+              width={32}
+              height={32} />
+            Sign in with Metamask
+          </Button>
+          <Button
+            basic
+            className='sign-in-btn'
+          >
+            <Icon size='large' name='mail outline' />
+            <span>Sign in with email</span>
+          </Button>
+        </div>
+      </Panel>
     </div>
   )
 }
@@ -133,16 +140,11 @@ const mapDispatchToProps = dispatch => {
         type: 'INIT_WEB3_ACCOUNT',
         account
       })
-    },
-    appLoaded: () => {
-      dispatch({
-        type: 'APP_LOADING_SUCCESS'
-      })
     }
   }
 }
 
-const requestAuthGQL = gql`
+const ethLoginGQL = gql`
   mutation ethLogin($signature: String!, $address: String!, $messageHash: String!) {
     ethLogin(
       signature: $signature,
@@ -167,14 +169,13 @@ export default compose(
     mapDispatchToProps
   ),
   withApollo,
-  graphql(requestAuthGQL, {
+  graphql(ethLoginGQL, {
     name: 'authWithSAN',
     options: { fetchPolicy: 'network-only' }
   }),
   lifecycle({
     componentDidMount () {
       this.props.checkMetamask(hasMetamask())
-      this.props.appLoaded()
       setupWeb3((error, account) => {
         if (!error && this.props.account !== account) {
           this.props.changeAccount(account)

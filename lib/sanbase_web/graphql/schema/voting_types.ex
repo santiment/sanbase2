@@ -15,7 +15,8 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:poll, non_null(:poll))
     field(:title, non_null(:string))
     field(:link, non_null(:string))
-    field(:approved_at, :datetime)
+    field(:state, :string)
+    field(:moderation_comment, :string)
 
     field :voted_at, :datetime do
       resolve(&VotingResolver.voted_at/3)

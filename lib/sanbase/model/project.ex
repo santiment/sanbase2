@@ -78,6 +78,7 @@ defmodule Sanbase.Model.Project do
       :slack_link,
       :linkedin_link,
       :telegram_link,
+      :token_address,
       :team_token_wallet,
       :project_transparency,
       :project_transparency_status_id,

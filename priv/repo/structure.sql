@@ -734,9 +734,10 @@ CREATE TABLE posts (
     user_id bigint NOT NULL,
     title character varying(255) NOT NULL,
     link character varying(255) NOT NULL,
-    approved_at timestamp without time zone,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    state character varying(255),
+    moderation_comment character varying(255)
 );
 
 

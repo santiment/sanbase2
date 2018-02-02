@@ -179,4 +179,8 @@ defmodule Sanbase.Voting.Post do
       post.user_id == user_id || post.ready_state == published()
     end)
   end
+
+  def approved_state(), do: @approved
+
+  def declined_state(), do: @declined
 end

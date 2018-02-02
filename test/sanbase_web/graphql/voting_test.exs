@@ -149,7 +149,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         user_id: user.id,
         title: "Awesome analysis",
         link: "http://example.com",
-        approved_at: Timex.now()
+        state: Post.approved_state()
       }
       |> Repo.insert!()
 
@@ -261,7 +261,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
           id
         },
         totalSanVotes,
-        approvedAt
+        state
       }
     }
     """
@@ -274,7 +274,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
 
     assert sanbasePost["id"] != nil
     assert sanbasePost["title"] == "Awesome post"
-    assert sanbasePost["approvedAt"] == nil
+    assert sanbasePost["state"] == nil
     assert sanbasePost["user"]["id"] == Integer.to_string(user.id)
     assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
   end
@@ -307,7 +307,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         user_id: user.id,
         title: "Awesome analysis",
         link: "http://example.com",
-        approved_at: Timex.now()
+        state: Post.approved_state()
       }
       |> Repo.insert!()
 
@@ -344,7 +344,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         user_id: other_user.id,
         title: "Awesome analysis",
         link: "http://example.com",
-        approved_at: Timex.now()
+        state: Post.approved_state()
       }
       |> Repo.insert!()
 

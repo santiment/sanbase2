@@ -2,15 +2,55 @@
 
 exports[`Login container it should render loader while not loaded 1`] = `
 <div
-  className="page wrapper"
+  className="page login wrapper"
 >
-  <div
-    className="login-container"
+  <Panel
+    className="login-inner"
   >
-    <div>
-      Loading
+    <h1>
+      Welcome to Sanbase
+    </h1>
+    <p>
+      By having a Sanbase account, you can see more data and insights about crypto projects. You can vote and comment on all your favorite insights and more.
+    </p>
+    <div
+      className="login-actions"
+    >
+      <Button
+        as="button"
+        basic={true}
+        style={
+          Object {
+            "alignItems": "center",
+            "display": "flex",
+            "paddingBottom": "5px",
+            "paddingTop": "5px",
+          }
+        }
+      >
+        <img
+          alt="metamask logo"
+          height={32}
+          src="metamask-icon-64.png"
+          width={32}
+        />
+        Sign in with Metamask
+      </Button>
+      <Button
+        as="button"
+        basic={true}
+        className="sign-in-btn"
+      >
+        <Icon
+          as="i"
+          name="mail outline"
+          size="large"
+        />
+        <span>
+          Sign in with email
+        </span>
+      </Button>
     </div>
-    <AuthFormWithEmail />
-  </div>
+  </Panel>
 </div>
 `;

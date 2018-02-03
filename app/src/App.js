@@ -7,7 +7,7 @@ import {
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
 import { compose } from 'recompose'
-import Login from './pages/Login/Login'
+import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
@@ -49,15 +49,20 @@ export const App = ({isDesktop}) => (
         <Route path='/events/votes/new' component={EventVotesNew} />
         <Route exact path='/events/votes/:filter' component={EventVotes} />
         <Redirect from='/events' to='/events/votes' />
-        <Route exact path='/projects/:ticker' render={(props) => (
+        <Route exact path='/projects/:ticker' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
-        <Route path='/login' component={Login} />
-        <Route exact path='/' render={CashflowPage} />
+        <Route path='/email_login' component={EmailLoginVerification} />
         <Route
           exact
-          path='/email_login'
-          component={EmailLoginVerification} />
+          path='/login'
+          render={props => (
+            <LoginPage
+              isDesktop={isDesktop}
+              {...props} />
+          )}
+        />
+        <Route exact path='/' render={CashflowPage} />
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>

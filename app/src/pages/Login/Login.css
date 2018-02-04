@@ -16,10 +16,12 @@
   box-shadow: none;
 }
 
-.login-inner h1 {
+.login-inner h2 {
   margin: 0;
   margin-bottom: 20px;
-  color: rgba(0, 0, 0, 0.85);
+  font-size: 24px;
+  font-weight: 400 !important;
+  color: rgba(0, 0, 0, 0.85) !important;
 }
 
 .login-inner p {
@@ -27,7 +29,8 @@
   line-height: 24px;
   width: 70%;
   margin: 0 auto;
-  color: rgba(0, 0, 0, 0.75);
+  margin-bottom: 25px;
+  color: rgba(0, 0, 0, 0.75) !important;
 }
 
 .login-actions {
@@ -43,6 +46,11 @@
 .login-actions button {
   margin-top: 1em !important;
   padding-left: 6px !important;
+}
+
+.auth-goto-back-button {
+  margin-top: 20px !important;
+  box-shadow: none !important;
 }
 
 .sign-in-btn {
@@ -73,6 +81,8 @@
 @media (min-width: 1024px) {
   .login-inner {
     max-width: 70%;
+    min-width: 700px;
+    min-height: 300px;
     background-color: rgba(227, 227, 227, 0.4);
     border-radius: 2px;
     box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);

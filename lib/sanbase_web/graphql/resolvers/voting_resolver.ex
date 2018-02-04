@@ -72,7 +72,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
         context: %{auth: %{current_user: user}}
       }) do
     %Post{user_id: user.id, poll_id: Poll.find_or_insert_current_poll!().id}
-    |> Post.changeset(post_args)
+    |> Post.create_changeset(post_args)
     |> Repo.insert()
     |> case do
       {:ok, post} ->

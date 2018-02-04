@@ -52,7 +52,8 @@
     "redux": "^3.7.2",
     "redux-persist": "^5.4.0",
     "semantic-ui-css": "^2.2.12",
-    "semantic-ui-react": "^0.77.0"
+    "semantic-ui-react": "^0.77.0",
+    "validate.js": "^0.12.0"
   },
   "devDependencies": {
     "@storybook/addon-viewport": "^3.3.3",

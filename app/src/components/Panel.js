@@ -1,19 +1,21 @@
 import React from 'react'
+import cx from 'classnames'
 import './Panel.css'
 
-const Panel = ({children, withoutHeader, zero}) => {
-  let cls = 'panel'
-  if (withoutHeader) {
-    cls += ' panel-without-header'
-  }
-  if (zero) {
-    cls += ' panel-zero'
-  }
-  return (
-    <div className={cls}>
-      {children}
-    </div>
-  )
-}
+const Panel = ({
+  children,
+  withoutHeader,
+  zero,
+  className
+}) => (
+  <div className={cx({
+    'panel': true,
+    'panel-without-header': withoutHeader,
+    'panel-zero': zero,
+    [className]: className
+  })}>
+    {children}
+  </div>
+)
 
 export default Panel

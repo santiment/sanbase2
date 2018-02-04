@@ -103,11 +103,20 @@ const handleLoad = () => {
       hasMetamask: hasMetamask()
     })
   })
-  .catch(error => console.error(error))
+  .catch(error => Raven.captureException(error))
+
+  let prevToken = loadState().token
+  setInterval(() => {
+    if (prevToken !== loadState().token) {
+      prevToken = loadState().token
+      window.location.reload()
+    }
+  }, 2000)
 
   store.subscribe(() => {
     // TODO: Yura Zatsepin: 2017-12-07 11:23:
     // we need add throttle when save action was hapenned
+    console.log(store.getState())
     saveState(store.getState().user)
   })
 

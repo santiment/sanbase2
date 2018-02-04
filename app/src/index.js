@@ -116,7 +116,6 @@ const handleLoad = () => {
   store.subscribe(() => {
     // TODO: Yura Zatsepin: 2017-12-07 11:23:
     // we need add throttle when save action was hapenned
-    console.log(store.getState())
     saveState(store.getState().user)
   })
 

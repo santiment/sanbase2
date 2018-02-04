@@ -1,0 +1,90 @@
+.page.login.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-inner {
+  padding: 1em;
+  margin: 0;
+  width: 100%;
+  text-align: center;
+  background-color: initial;
+  border-radius: 0 !important;
+  border: 0 !important;
+  box-shadow: none;
+}
+
+.login-inner h2 {
+  margin: 0;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 400 !important;
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.login-inner p {
+  font-size: 19px;
+  line-height: 24px;
+  width: 70%;
+  margin: 0 auto;
+  margin-bottom: 25px;
+  color: rgba(0, 0, 0, 0.75) !important;
+}
+
+.login-actions {
+  width: 300px;
+  margin: 0 auto;
+  margin-top: 1em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.login-actions button {
+  margin-top: 1em !important;
+  padding-left: 6px !important;
+}
+
+.auth-goto-back-button {
+  margin-top: 20px !important;
+  box-shadow: none !important;
+}
+
+.sign-in-btn {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.sign-in-btn i {
+  margin-left: 2px !important;
+  margin-right: 5px !important;
+}
+
+.sign-in-btn span {
+  padding-top: 3px;
+}
+
+.login-inner .content {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.login-inner .help-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .login-inner {
+    max-width: 70%;
+    min-width: 700px;
+    min-height: 300px;
+    background-color: rgba(227, 227, 227, 0.4);
+    border-radius: 2px;
+    box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
+  }
+}

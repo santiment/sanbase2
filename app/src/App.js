@@ -7,13 +7,14 @@ import {
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
 import { compose } from 'recompose'
-import Login from './pages/Login'
+import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
 import EventVotes from './pages/EventVotes'
 import EventVotesNew from './pages/EventVotesNew/EventVotesNew'
+import EmailLoginVerification from './pages/EmailLoginVerification'
 import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
@@ -48,10 +49,19 @@ export const App = ({isDesktop}) => (
         <Route path='/events/votes/new' component={EventVotesNew} />
         <Route exact path='/events/votes/:filter' component={EventVotes} />
         <Redirect from='/events' to='/events/votes' />
-        <Route exact path='/projects/:ticker' render={(props) => (
+        <Route exact path='/projects/:ticker' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
-        <Route path='/login' component={Login} />
+        <Route path='/email_login' component={EmailLoginVerification} />
+        <Route
+          exact
+          path='/login'
+          render={props => (
+            <LoginPage
+              isDesktop={isDesktop}
+              {...props} />
+          )}
+        />
         <Route exact path='/' render={CashflowPage} />
         <Redirect from='/' to='/projects' />
       </Switch>

@@ -1,6 +1,5 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import setAuthorizationToken from './../utils/setAuthorizationToken'
 import {
   compose,
   withState,

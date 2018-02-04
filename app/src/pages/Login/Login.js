@@ -21,8 +21,10 @@ const AuthProvider = ({children, gotoBack}) => {
     <Fragment>
       <h2>Authenticate</h2>
       {children}
-      <Button onClick={gotoBack} basic >
-        All login options
+      <Button
+        className='auth-goto-back-button'
+        onClick={gotoBack} basic >
+        <Icon name='long arrow left' /> All login options
       </Button>
     </Fragment>
   )
@@ -34,9 +36,9 @@ const ChooseAuthProvider = ({
   gotoMetamask
 }) => (
   <Fragment>
-    <h1>
+    <h2>
       Welcome to Sanbase
-    </h1>
+    </h2>
     <p>
       By having a Sanbase account, you can see more data and insights about crypto projects.
       You can vote and comment on all your favorite insights and more.

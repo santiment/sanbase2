@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-06-02 | v.0.4.1:
+
+  Added cashflow UG link for missing wallets
+
 - 2018-30-01 | v.0.4.0:
 
   Added Insights

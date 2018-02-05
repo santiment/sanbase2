@@ -18,6 +18,12 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:state, :string)
     field(:moderation_comment, :string)
 
+    field :created_at, non_null(:datetime) do
+      resolve(fn %{inserted_at: inserted_at}, _, _ ->
+        {:ok, inserted_at}
+      end)
+    end
+
     field :voted_at, :datetime do
       resolve(&VotingResolver.voted_at/3)
     end

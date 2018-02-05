@@ -43,13 +43,13 @@
   cursor: pointer;
 }
 
-.event-post .status span {
+.event-post .post-status span {
   font-weight: 600;
   color: black;
   text-transform: lowercase;
 }
 
-.event-post .status {
+.event-post .post-status {
   color: #3e3e3e;
   padding: 10px 0;
   margin: 10px 0;

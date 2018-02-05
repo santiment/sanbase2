@@ -29,7 +29,7 @@ const Status = ({status = STATES.waiting, moderationComment}) => {
     return 'orange'
   })(status)
   return (
-    <Div className='status'>
+    <Div className='post-status'>
       <div>
         <span>Status:</span> &nbsp;
         <Label

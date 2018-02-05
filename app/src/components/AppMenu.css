@@ -24,6 +24,10 @@ ul.menu-list {
   transition: all 0.5s ease;
 }
 
+.user-generated {
+  border-bottom: 1px solid white;
+}
+
 .menu-list li:hover {
   background-color: #4f5b69;
   transition: all 1s ease;
@@ -69,4 +73,11 @@ ul.menu-list {
   color: rgba(255, 255, 255, 0.8);
   line-height: 1.8em;
   text-transform: uppercase;
+}
+
+@media (min-width: 1024px) {
+  .user-generated {
+    border-right: 1px solid white;
+    border-bottom: none;
+  }
 }

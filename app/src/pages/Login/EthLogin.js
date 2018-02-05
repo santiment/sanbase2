@@ -1,6 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import { graphql, withApollo } from 'react-apollo'
+import Raven from 'raven-js'
 import gql from 'graphql-tag'
 import {
   lifecycle,
@@ -40,9 +41,12 @@ const EthLogin = ({
           </div>
         </Message>
       }
+
       {user.hasMetamask && !user.token &&
         <AuthForm
           account={user.account}
+          pending={user.isLoading}
+          error={user.error}
           handleAuth={() => requestAuth(user.account, authWithSAN, client)} />}
     </div>
   )
@@ -64,6 +68,9 @@ const mapDispatchToProps = dispatch => {
     },
     requestAuth: (address, authWithSAN, client) => {
       signMessage(address).then(({messageHash, signature}) => {
+        dispatch({
+          type: 'PENDING_LOGIN'
+        })
         authWithSAN({variables: { signature, address, messageHash }})
         .then(({ data }) => {
           const { token, user } = data.ethLogin
@@ -78,7 +85,7 @@ const mapDispatchToProps = dispatch => {
             type: 'FAILED_LOGIN',
             errorMessage: error
           })
-          throw new Error(error)
+          Raven.captureException(error)
         })
       }).catch(error => {
         // TODO: 2017-12-05 16:05 | Yura Zatsepin:

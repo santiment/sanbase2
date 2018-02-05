@@ -4,17 +4,23 @@ import Post from './Post.js'
 import './PostsList.css'
 
 const PostsList = ({
-  posts = [],
+  posts = {},
+  userId = null,
   loading = true,
   isError = false,
   isEmpty = true,
   votePost,
   unvotePost
 }) => {
+  const postKeys = userId
+    ? Object.keys(posts)
+        .filter(postKey => posts[postKey].user.id === userId)
+    : Object.keys(posts)
   return (
     <div className='event-posts-list'>
-      {Object.keys(posts).map((postKey, index) => (
+      {postKeys.map((postKey, index) => (
         <Post
+          showStatus={!!userId}
           index={index + 1}
           key={index}
           votePost={votePost}

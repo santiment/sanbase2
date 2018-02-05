@@ -7,19 +7,19 @@ const unsortedPosts = [{
   title: 'check',
   link: 'https://asdfjhj.startrack',
   totalSanVotes: 0,
-  approvedAt: moment().utc().format()
+  createdAt: moment().utc().format()
 }, {
   id: 2,
   title: 'check 2',
   link: 'https://asdfjhj.startrack',
   totalSanVotes: 3,
-  approvedAt: moment().day(-1).utc().format()
+  createdAt: moment().day(-1).utc().format()
 }, {
   id: 3,
   title: 'check 3',
   link: 'https://asdfjhj.startrack',
   totalSanVotes: 1,
-  approvedAt: moment().day(-5).utc().format()
+  createdAt: moment().day(-5).utc().format()
 }]
 
 describe('sorts should work', () => {

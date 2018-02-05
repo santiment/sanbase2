@@ -49,6 +49,7 @@ const EventVotes = ({
   toggleLoginRequest,
   isToggledLoginRequest
 }) => {
+  const showedMyPosts = match.params.filter === 'my' && !!user.data.id && user.data.id
   return ([
     <Fragment key='modal-login-request'>
       {isToggledLoginRequest &&
@@ -83,34 +84,51 @@ const EventVotes = ({
               NEWEST
             </NavLink>
           </div>
-          {user.token
-            ? <NavLink
-              className='event-votes-navigation__add-link'
-              to={'/events/votes/new'}>
-              Add new insight
-            </NavLink>
-            : <a
-              onClick={() => toggleLoginRequest(!isToggledLoginRequest)}
-              className='event-votes-navigation__add-link'>
+          <div>
+            {user.token &&
+              Posts.currentPoll &&
+              Posts.currentPoll.posts.filter(post => post.user.id === user.data.id).length > 0 &&
+              <Fragment>
+                <NavLink
+                  className='event-votes-navigation__add-link'
+                  to={'/events/votes/my'}>
+                  My Insights
+                </NavLink>
+                &nbsp;|&nbsp;
+              </Fragment>}
+            {user.token
+              ? <NavLink
+                className='event-votes-navigation__add-link'
+                to={'/events/votes/new'}>
                 Add new insight
-              </a>}
+              </NavLink>
+              : <a
+                onClick={() => toggleLoginRequest(!isToggledLoginRequest)}
+                className='event-votes-navigation__add-link'>
+                  Add new insight
+                </a>}
+          </div>
         </div>
-        <PostsList {...Posts}
-          votePost={debounce(postId => {
-            user.token
-              ? votePost(voteMutationHelper({postId, action: 'vote'}))
-              .then(data => Posts.refetch())
-              .catch(e => Raven.captureException(e))
-              : toggleLoginRequest(!isToggledLoginRequest)
-          }, 100)}
-          unvotePost={debounce(postId => {
-            user.token
-              ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
-              .then(data => Posts.refetch())
-              .catch(e => Raven.captureException(e))
-              : toggleLoginRequest(!isToggledLoginRequest)
-          }, 100)}
-        />
+        {Posts.isEmpty
+          ? <Message><h2>We don't have any insights yet.</h2></Message>
+          : <PostsList {...Posts}
+            posts={Posts.currentPoll && showedMyPosts ? Posts.currentPoll.posts : Posts.posts}
+            userId={showedMyPosts}
+            votePost={debounce(postId => {
+              user.token
+                ? votePost(voteMutationHelper({postId, action: 'vote'}))
+                .then(data => Posts.refetch())
+                .catch(e => Raven.captureException(e))
+                : toggleLoginRequest(!isToggledLoginRequest)
+            }, 100)}
+            unvotePost={debounce(postId => {
+              user.token
+                ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
+                .then(data => Posts.refetch())
+                .catch(e => Raven.captureException(e))
+                : toggleLoginRequest(!isToggledLoginRequest)
+            }, 100)}
+        />}
       </Panel>
     </div>
   ])
@@ -140,11 +158,14 @@ const currentPollGQL = gql`{
     posts {
       id
       title
-      approvedAt
-      votedAt
+      state
+      moderationComment
       link
+      createdAt
+      votedAt
       totalSanVotes
       user {
+        id
         username
       }
     }
@@ -177,8 +198,8 @@ export const sortByPopular = posts => {
 export const sortByNewest = posts => {
   return posts.sort((postA, postB) =>
     simpleSort(
-      new Date(postA.approvedAt).getTime(),
-      new Date(postB.approvedAt).getTime()
+      new Date(postA.createdAt).getTime(),
+      new Date(postB.createdAt).getTime()
     )
   )
 }
@@ -187,9 +208,12 @@ const mapDataToProps = props => {
   const { Poll, ownProps } = props
   const filter = ownProps.match.params.filter || 'popular'
   const posts = ((posts = []) => {
-    const normalizedPosts = posts.filter(post => post.approvedAt)
+    const normalizedPosts = posts.filter(post => post.state === 'approved')
     .map(post => {
-      return {totalSanVotes: post.totalSanVotes || 0, ...post}
+      return {
+        totalSanVotes: post.totalSanVotes || 0,
+        madeByCurrentUser: ownProps.user.data && post.user.id === ownProps.user.data.id,
+        ...post}
     })
     if (filter === 'popular') {
       return sortByPopular(normalizedPosts)
@@ -204,8 +228,8 @@ const mapDataToProps = props => {
       ...Poll,
       loading: Poll.loading,
       isEmpty: Poll.currentPoll &&
-        Poll.currentPoll.posts &&
-        Poll.currentPoll.posts.length === 0,
+        posts &&
+        posts.length === 0,
       isError: !!Poll.error || false,
       errorMessage: Poll.error ? Poll.error.message : '',
       posts

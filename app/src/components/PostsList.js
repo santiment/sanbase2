@@ -36,14 +36,14 @@ export default createSkeletonProvider(
     posts: [{
       title: '_____',
       link: 'https://sanbase.net',
-      approvedAt: new Date(),
+      createdAt: new Date(),
       user: {
         username: ''
       }
     }, {
       title: '_____',
       link: 'https://sanbase.net',
-      approvedAt: new Date(),
+      createdAt: new Date(),
       user: {
         username: ''
       }

@@ -24,6 +24,11 @@ export default (state = initialState, action) => {
         ...state,
         isLoading: false
       }
+    case 'PENDING_LOGIN':
+      return {
+        ...state,
+        isLoading: true
+      }
     case 'SUCCESS_LOGIN':
       return {
         ...state,

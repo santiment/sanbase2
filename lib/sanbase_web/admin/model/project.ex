@@ -81,6 +81,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input(project, :coinmarketcap_id)
         input(project, :token_decimals)
         input(project, :token_supply)
+        input(project, :description)
       end
     end
 

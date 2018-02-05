@@ -35,9 +35,10 @@ defmodule Sanbase.Model.Project do
     field(:telegram_link, :string)
     field(:token_address, :string)
     field(:team_token_wallet, :string)
-    field(:project_transparency, :boolean, default: false)
     field(:token_decimals, :integer)
     field(:total_supply, :decimal)
+    field(:description, :string)
+    field(:project_transparency, :boolean, default: false)
     belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
     field(:project_transparency_description, :string)
     has_many(:eth_addresses, ProjectEthAddress)
@@ -80,6 +81,7 @@ defmodule Sanbase.Model.Project do
       :telegram_link,
       :token_address,
       :team_token_wallet,
+      :description,
       :project_transparency,
       :project_transparency_status_id,
       :project_transparency_description,

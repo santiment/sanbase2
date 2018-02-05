@@ -216,7 +216,8 @@ defmodule SanbaseWeb.Graphql.VotingTest do
           id
         },
         totalSanVotes,
-        state
+        state,
+        createdAt
       }
     }
     """
@@ -232,6 +233,9 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert sanbasePost["state"] == nil
     assert sanbasePost["user"]["id"] == Integer.to_string(user.id)
     assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
+
+    createdAt = Timex.parse!(sanbasePost["createdAt"], "{ISO:Extended}")
+    assert Timex.diff(Timex.now(), createdAt, :seconds) == 0
   end
 
   test "adding a new post with a very long title", %{conn: conn} do

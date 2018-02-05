@@ -60,6 +60,7 @@ export const formatBalanceWallet = ({wallets, ethPrice}) => {
               trigger={<div style={{display: 'inline-block'}}>{
                 <a
                   target='_blank'
+                  rel='noopener noreferrer'
                   href='https://santiment.typeform.com/to/bT0Dgu'>
                   <Icon color='red' name='question circle outline' />
                 </a>}

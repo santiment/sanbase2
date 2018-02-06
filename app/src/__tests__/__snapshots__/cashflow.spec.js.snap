@@ -32,6 +32,18 @@ exports[`Cashflow container it should render correctly 1`] = `
         </a>
         <br />
         NOTE: This app is in development. We give no guarantee data is correct as we are in active development.
+        <br />
+        <Icon
+          as="i"
+          color="red"
+          name="question circle outline"
+        />
+        Automated data not available. 
+        <span
+          className="cashflow-head-community-help"
+        >
+          Community help locating correct wallet is welcome!
+        </span>
       </p>
     </div>
     <Panel>

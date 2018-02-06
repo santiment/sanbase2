@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "scripts": {
     "start": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -73,7 +73,8 @@
   "standard": {
     "parser": "babel-eslint",
     "ignore": [
-      "src/registerServiceWorker.js"
+      "src/registerServiceWorker.js",
+      "build"
     ]
   }
 }

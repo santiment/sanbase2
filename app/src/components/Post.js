@@ -1,6 +1,6 @@
 import React from 'react'
 import moment from 'moment'
-import Username from './Username'
+import { Label } from 'semantic-ui-react'
 import LikeBtn from './../pages/EventVotesNew/LikeBtn'
 import { createSkeletonElement } from '@trainline/react-skeletor'
 import './Post.css'
@@ -13,6 +13,39 @@ const A = createSkeletonElement('a', 'pending-home')
 const Span = createSkeletonElement('span', 'pending-home')
 const Div = createSkeletonElement('div', 'pending-home')
 
+const STATES = {
+  approved: 'approved',
+  declined: 'declined',
+  waiting: 'waiting'
+}
+
+const Status = ({status = STATES.waiting, moderationComment}) => {
+  const color = (status => {
+    if (status === STATES.approved) {
+      return 'green'
+    } else if (status === STATES.declined) {
+      return 'red'
+    }
+    return 'orange'
+  })(status)
+  return (
+    <Div className='post-status'>
+      <div>
+        <span>Status:</span> &nbsp;
+        <Label
+          size='tiny'
+          basic
+          color={color}>
+          {status}
+        </Label>
+      </div>
+      {moderationComment && <div>
+        <span>Comment:</span> {moderationComment}
+      </div>}
+    </Div>
+  )
+}
+
 const Post = ({
   index = 1,
   id,
@@ -21,10 +54,13 @@ const Post = ({
   totalSanVotes = 0,
   liked = false,
   user,
-  approvedAt,
+  createdAt,
   votedAt,
   votePost,
-  unvotePost
+  unvotePost,
+  moderationComment = null,
+  state = STATES.waiting,
+  showStatus = false
 }) => {
   return (
     <div className='event-post'>
@@ -37,10 +73,10 @@ const Post = ({
         </A>
         <br />
         <Span>{getSourceLink(link)}</Span>&nbsp;&#8226;&nbsp;
-        <Span>{moment(approvedAt).format('MMM DD, YYYY')}</Span>
+        <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
         {user &&
           <Div className='event-post-info'>
-            by&nbsp; <Username address={user.username} />
+            by&nbsp; {user.username}
           </Div>}
         <LikeBtn
           onLike={() => {
@@ -52,6 +88,9 @@ const Post = ({
           }}
           liked={!!votedAt}
           votes={totalSanVotes} />
+        {showStatus && <Status
+          moderationComment={moderationComment}
+          status={!state ? STATES.waiting : state} />}
       </div>
     </div>
   )

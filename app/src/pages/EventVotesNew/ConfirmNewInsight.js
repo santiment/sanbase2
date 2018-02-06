@@ -1,4 +1,5 @@
 import React from 'react'
+import axios from 'axios'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import { Button } from 'semantic-ui-react'
@@ -38,11 +39,24 @@ const ConfirmPost = ({
             onClick={() => createPost({
               variables: {title: post.title, link: post.link}
             })
-            .then(data =>
+            .then(data => {
+              axios({
+                method: 'post',
+                url: 'https://us-central1-cryptofolio-15d92.cloudfunctions.net/alerts',
+                headers: {
+                  'authorization': ''
+                },
+                data: {
+                  title: post.title,
+                  link: post.link,
+                  user: user.id
+                }
+              })
               history.push('/events/votes', {
                 postCreated: true,
                 ...data
-              }))
+              })
+            })
             .catch(error => {
               throw new Error(error)
             })}>

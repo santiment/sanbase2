@@ -8,7 +8,7 @@ import {
 import metamaskIcon from '../../assets/metamask-icon-64.png'
 import './AuthForm.css'
 
-export default ({account, handleAuth}) => {
+export default ({account, error = false, pending = false, handleAuth}) => {
   return (
     <Form>
       <Message
@@ -19,6 +19,13 @@ export default ({account, handleAuth}) => {
           ...[account && `Your selected wallet public key is ${account}`]
         ]}
       />
+      {error && <div>
+        <Message
+          style={{marginBottom: 10}}
+          negative
+          header='We have problem with our Blockchain Authetication'
+          content='Try again later or another login option' />
+      </div>}
       {!account &&
         <Icon
           className='help-arrow-extension'
@@ -28,14 +35,16 @@ export default ({account, handleAuth}) => {
       {account &&
         <Button
           color='green'
+          disabled={pending}
           style={{
             display: 'flex',
             alignItems: 'center',
             paddingTop: '5px',
-            paddingBottom: '5px'
+            paddingBottom: '5px',
+            margin: '0 auto'
           }}
           onClick={handleAuth}
-        >Sign in with Metamask &nbsp;
+        >{pending ? 'Waiting...' : 'Sign in with Metamask'}&nbsp;
           <img
             src={metamaskIcon}
             alt='metamask logo'

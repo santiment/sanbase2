@@ -1,5 +1,6 @@
 .event-votes .panel {
   padding: 0;
+  padding-bottom: 1px;
 }
 
 .event-votes .ui.message {
@@ -33,6 +34,7 @@
 
 .event-votes-navigation__add-link {
   color: #999;
+  cursor: pointer;
 }
 
 .event-votes-navigation__link:hover {

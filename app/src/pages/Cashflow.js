@@ -2,6 +2,7 @@ import React from 'react'
 import ReactTable from 'react-table'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
+import { Icon, Popup } from 'semantic-ui-react'
 import {
   compose,
   pure,
@@ -54,6 +55,20 @@ export const formatBalanceWallet = ({wallets, ethPrice}) => {
       <div className='wallet' key={index}>
         <div className='usd first'>{formatNumber((balance * ethPrice), 'USD')}</div>
         <div className='eth'>
+          {parseFloat(balance) === 0 &&
+            <Popup
+              trigger={<div style={{display: 'inline-block'}}>{
+                <a
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  href='https://santiment.typeform.com/to/bT0Dgu'>
+                  <Icon color='red' name='question circle outline' />
+                </a>}
+              </div>}
+              content='Community help locating correct wallet is welcome!'
+              position='top center'
+            />
+          }
           <a
             className='address'
             href={'https://etherscan.io/address/' + wallet.address}
@@ -167,6 +182,10 @@ export const Cashflow = ({
             <br />
             NOTE: This app is in development.
             We give no guarantee data is correct as we are in active development.
+            <br />
+            <Icon color='red' name='question circle outline' />Automated data not available.&nbsp;
+            <span className='cashflow-head-community-help'>
+            Community help locating correct wallet is welcome!</span>
           </p>
         </div>
         <Panel>

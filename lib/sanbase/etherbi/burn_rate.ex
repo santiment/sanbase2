@@ -24,7 +24,7 @@ defmodule Sanbase.Etherbi.BurnRate do
       tickers,
       &fetch_and_store(&1, token_decimals),
       max_concurency: 1,
-      timeout: 170_000
+      timeout: 10 * 60_000
     )
     |> Stream.run()
   end

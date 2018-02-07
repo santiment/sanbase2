@@ -25,7 +25,7 @@ defmodule Sanbase.Etherbi.Transactions do
       exchange_wallets_addrs,
       &fetch_and_store_in(&1, token_decimals),
       max_concurency: 1,
-      timeout: 165_000
+      timeout: 10 * 60_000
     )
     |> Stream.run()
 

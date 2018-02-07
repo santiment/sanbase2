@@ -30,7 +30,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   @spec get_first_burn_rate_timestamp(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_burn_rate_timestamp(ticker) do
     url = "#{etherbi_url()}/first_burn_rate_timestamp"
-    options = [recv_timeout: 45_000, params: %{ticker: ticker}]
+    options = [recv_timeout: 7 * 60_000, params: %{ticker: ticker}]
 
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -59,7 +59,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   @spec get_first_transaction_timestamp_addr(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_transaction_timestamp_addr(address) do
     url = "#{etherbi_url()}/first_transaction_timestamp_addr"
-    options = [recv_timeout: 45_000, params: %{address: address}]
+    options = [recv_timeout: 7 * 60_000, params: %{address: address}]
 
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -91,7 +91,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   @spec get_first_transaction_timestamp_ticker(binary()) :: {:ok, list()} | {:error, binary()}
   def get_first_transaction_timestamp_ticker(ticker) do
     url = "#{etherbi_url()}/first_transaction_timestamp_ticker"
-    options = [recv_timeout: 45_000, params: %{ticker: ticker}]
+    options = [recv_timeout: 7 * 60_000, params: %{ticker: ticker}]
 
     case HTTPoison.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -125,7 +125,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     url = "#{etherbi_url()}/transaction_volume"
 
     options = [
-      recv_timeout: 120_000,
+      recv_timeout: 180_000,
       params: %{
         from_timestamp: from_unix,
         to_timestamp: to_unix,
@@ -165,7 +165,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     url = "#{etherbi_url()}/transactions_#{transaction_type}"
 
     options = [
-      recv_timeout: 120_000,
+      recv_timeout: 180_000,
       params: %{
         from_timestamp: from_unix,
         to_timestamp: to_unix,
@@ -203,7 +203,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
     url = "#{etherbi_url()}/burn_rate"
 
     options = [
-      recv_timeout: 45_000,
+      recv_timeout: 180_000,
       params: %{ticker: ticker, from_timestamp: from_unix, to_timestamp: to_unix}
     ]
 

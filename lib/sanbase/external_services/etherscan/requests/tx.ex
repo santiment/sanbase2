@@ -1,6 +1,11 @@
 defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
+  @moduledoc ~s"""
+    Module for fetching transactions from etherscan.io for a given address.
+  """
   alias Sanbase.ExternalServices.Etherscan.Requests
   alias __MODULE__
+
+  require Logger
 
   defstruct [
     :blockNumber,
@@ -23,6 +28,32 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
     :confirmations
   ]
 
+  @doc ~s"""
+    Issues a HTTP GET request to etherscan.io api to get the transactions from
+    `startblock` to `endblock` in ascending order.
+    Returns `{:ok, list()}` on success, `{:error, String.t}` otherwise
+  """
+  @spec get_all_transactions(String.t(), Integer.t(), Integer.t()) ::
+          {:ok, list()} | {:error, String.t()}
+  def get_all_transactions(address, startblock, endblock) do
+    String.downcase(address) |> get(startblock, endblock)
+  end
+
+  # Private functions
+
+  defp get(address, startblock, endblock) do
+    Requests.get("/", query: get_query(address, startblock, endblock))
+    |> case do
+      %{status: 200, body: body} ->
+        {:ok, parse_tx_json(body)}
+
+      %{status: status, body: body} ->
+        error = "Error fetching transactions for #{address}. Status code: #{status}: #{body}"
+        Logger.warn(error)
+        {:error, error}
+    end
+  end
+
   defp get_query(address, startblock, endblock) do
     [
       module: "account",
@@ -36,14 +67,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
     ]
   end
 
-  def get(address, startblock, endblock) do
-    Requests.get("/", query: get_query(address, startblock, endblock))
-    |> case do
-      %{status: 200, body: body} ->
-        parse_tx_json(body)
-    end
-  end
-
   defp parse_tx_json(body) do
     response = Poison.Decode.decode(body, as: %{"result" => [%Tx{}]})
 
@@ -52,19 +75,5 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
       {ts, ""} = Integer.parse(tx.timeStamp)
       %{tx | timeStamp: ts}
     end)
-  end
-
-  def get_last_outgoing_transaction(address, startblock, endblock) do
-    normalized_address = String.downcase(address)
-
-    get(address, startblock, endblock)
-    |> Enum.find(fn tx ->
-      String.downcase(tx.from) == normalized_address
-    end)
-  end
-
-  def get_all_transactions(address, startblock, endblock) do
-    normalized_address = String.downcase(address)
-    {:ok, get(address, startblock, endblock)}
   end
 end

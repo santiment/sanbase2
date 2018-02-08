@@ -34,6 +34,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     end
   end
 
+  def twitter_data(%Project{ticker: ticker}, _args, resolution) do
+    twitter_data(nil, %{ticker: ticker}, resolution)
+  end
+
   def history_twitter_data(
         _root,
         %{ticker: ticker, from: from, to: to, interval: interval},

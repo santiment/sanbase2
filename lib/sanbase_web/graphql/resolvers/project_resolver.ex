@@ -10,11 +10,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.LatestBtcWalletData
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Model.Ico
-  alias Sanbase.Model.Currency
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.Infrastructure
   alias Sanbase.Model.ProjectTransparencyStatus
+  alias Sanbase.Prices
+  alias Sanbase.Github
 
   alias Sanbase.Repo
 
@@ -54,14 +54,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     id = Map.get(args, :id)
 
     project =
-      case coinmarketcap_requested?(resolution) do
-        true ->
-          Repo.get(Project, id)
-          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
-
-        _ ->
-          Repo.get(Project, id)
-      end
+      Project
+      |> Repo.get(id)
+      |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
 
     {:ok, project}
   end
@@ -70,14 +65,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     query = Project.all_projects_with_eth_contract_query()
 
     projects =
-      case coinmarketcap_requested?(resolution) do
-        true ->
-          Repo.all(query)
-          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
-
-        _ ->
-          Repo.all(query)
-      end
+      query
+      |> Repo.all()
+      |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
 
     {:ok, projects}
   end
@@ -264,6 +254,35 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
 
+  def volume_change_24h(%Project{ticker: ticker}, _args, _resolution) do
+    two_days_ago = Timex.shift(Timex.now(), days: -1)
+
+    case Prices.Store.fetch_prices_with_resolution(
+           "#{ticker}_USD",
+           two_days_ago,
+           Timex.now(),
+           "1d"
+         ) do
+      [[_dt1, _price1, volume1, _mcap1], [_dt2, _price2, volume2, _mcap2]] ->
+        {:ok, (volume2 - volume1) * 100 / volume1}
+
+      [] ->
+        {:ok, nil}
+    end
+  end
+
+  def average_dev_activity(%Project{ticker: ticker}, _args, _resolution) do
+    month_ago = Timex.shift(Timex.now(), days: -30)
+
+    case Github.Store.fetch_activity_with_resolution!(ticker, month_ago, Timex.now(), "30d") do
+      [%{"SUM(activity)" => total_activity}] ->
+        {:ok, total_activity / 30}
+
+      [] ->
+        {:ok, nil}
+    end
+  end
+
   def marketcap_usd(
         %Project{
           latest_coinmarketcap_data: %LatestCoinmarketcapData{market_cap_usd: market_cap_usd}
@@ -275,6 +294,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
+
+  def marketcap_change24h(%Project{ticker: ticker}, _args, _resolution) do
+    two_days_ago = Timex.shift(Timex.now(), days: -2)
+
+    case Prices.Store.fetch_prices_with_resolution(
+           "#{ticker}_USD",
+           two_days_ago,
+           Timex.now(),
+           "1d"
+         ) do
+      [[_dt1, _price1, _volume1, mcap1], [_dt2, _price2, _volume2, mcap2]] ->
+        {:ok, (mcap2 - mcap1) * 100 / mcap1}
+
+      [] ->
+        {:ok, nil}
+    end
+  end
 
   def available_supply(
         %Project{
@@ -307,7 +343,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, percent_change_1h}
+    {:ok, percent_change_1h |> Decimal.to_float()}
   end
 
   def percent_change_1h(_parent, _args, _resolution), do: {:ok, nil}
@@ -321,7 +357,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, percent_change_24h}
+    {:ok, percent_change_24h |> Decimal.to_float()}
   end
 
   def percent_change_24h(_parent, _args, _resolution), do: {:ok, nil}
@@ -335,7 +371,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, percent_change_7d}
+    {:ok, percent_change_7d |> Decimal.to_float()}
   end
 
   def percent_change_7d(_parent, _args, _resolution), do: {:ok, nil}
@@ -364,22 +400,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Repo.preload(ico_currencies: [:currency])
 
     {:ok, ico}
-  end
-
-  defp coinmarketcap_requested?(resolution) do
-    case requested_fields(resolution) do
-      %{symbol: true} -> true
-      %{rank: true} -> true
-      %{priceUsd: true} -> true
-      %{volumeUsd: true} -> true
-      %{marketcapUsd: true} -> true
-      %{availableSupply: true} -> true
-      %{totalSupply: true} -> true
-      %{percent_change_1h: true} -> true
-      %{percent_change_24h: true} -> true
-      %{percent_change_7d: true} -> true
-      _ -> false
-    end
   end
 
   defp requested_fields(resolution) do

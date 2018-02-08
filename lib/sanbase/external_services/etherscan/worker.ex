@@ -19,10 +19,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   alias Sanbase.ExternalServices.Etherscan.Store
 
   @default_update_interval_ms 1000 * 60 * 5
-  # Actually it's close to 15s
-  @average_block_time_ms 10000
-  # 30 days
-  @default_timespan_ms 30 * 24 * 60 * 60 * 1000
   @confirmations 10
   @num_18_zeroes 1_000_000_000_000_000_000
 
@@ -49,7 +45,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   def handle_cast(:sync, %{update_interval_ms: update_interval_ms} = state) do
-    # 1. Get current block number
     endblock = Parity.get_latest_block_number!() - @confirmations
 
     query =
@@ -68,7 +63,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
       max_concurrency: 5,
       on_timeout: :kill_task,
       ordered: false,
-      timeout: 30_000
+      timeout: 35_000
     )
     |> Stream.run()
 
@@ -81,6 +76,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     Logger.warn("Unknown message received: #{msg}")
     {:noreply, state}
   end
+
+  # Private functions
 
   defp convert_to_eth(wei) do
     Decimal.div(Decimal.new(wei), Decimal.new(@num_18_zeroes))
@@ -112,17 +109,16 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
       balance: convert_to_eth(Balance.get(address).result)
     }
 
-    changeset =
-      case last_trx do
-        %Tx{timeStamp: ts, value: value} ->
-          Map.merge(changeset, %{
-            last_outgoing: DateTime.from_unix!(ts),
-            tx_out: convert_to_eth(value)
-          })
+    case last_trx do
+      %Tx{timeStamp: ts, value: value} ->
+        Map.merge(changeset, %{
+          last_outgoing: DateTime.from_unix!(ts),
+          tx_out: convert_to_eth(value)
+        })
 
-        nil ->
-          changeset
-      end
+      nil ->
+        changeset
+    end
   end
 
   defp fetch(address, measurement_name, endblock) do
@@ -132,9 +128,11 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
       {:ok, list} ->
         list
 
-      error ->
+      {:error, error} ->
         Logger.warn(
-          "Cannot fetch transactions for #{measurement_name}'s wallet:. Reason: #{inspect(error)}"
+          "Cannot fetch transactions for #{measurement_name}'s wallet: #{address}. Reason: #{
+            inspect(error)
+          }"
         )
 
         []
@@ -176,7 +174,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
            value: value,
            blockNumber: bn,
            transactionIndex: trx_index
-         } = tx,
+         },
          address,
          measurement_name
        ) do

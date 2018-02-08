@@ -92,7 +92,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     |> Store.import()
   end
 
-  defp import_latest_eth_wallet_data(transactions, address) do
+  defp import_latest_eth_wallet_data(transactions, address, id) do
     normalized_address = address |> String.downcase()
 
     last_trx =
@@ -125,26 +125,40 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
       end
   end
 
-  defp fetch(address, endblock) do
+  defp fetch(address, measurement_name, endblock) do
     last_block_with_data = Store.last_block_number!(address) || 0
 
     case Tx.get_all_transactions(address, last_block_with_data, endblock) do
       {:ok, list} ->
         list
-        |> Enum.reject(fn %Tx{isError: error} -> error == "1" end)
 
       error ->
-        Logger.warn("Cannot fetch transactions for #{address}. Reason: #{inspect(error)}")
+        Logger.warn(
+          "Cannot fetch transactions for #{measurement_name}'s wallet:. Reason: #{inspect(error)}"
+        )
+
         []
     end
   end
 
   defp fetch_and_store(%{address: address, coinmarketcap_id: id}, endblock) do
-    transactions = fetch(address, endblock)
+    transactions = fetch(address, id, endblock) |> Enum.reverse()
 
-    import_all_transactions_influxdb(transactions, address, id)
+    filtered_transactions =
+      transactions
+      |> Enum.reject(fn %Tx{isError: error, txreceipt_status: status, value: value} ->
+        error == "1" || status == "0" || value == "0"
+      end)
 
-    import_latest_eth_wallet_data(transactions, address)
+    import_all_transactions_influxdb(filtered_transactions, address, id)
+
+    import_latest_eth_wallet_data(filtered_transactions, address, id)
+
+    import_last_block_number(address, List.first(transactions))
+  end
+
+  defp import_last_block_number(address, %Tx{blockNumber: bn}) do
+    Store.import_last_block_number(address, bn)
   end
 
   defp get_or_create_entry(address) do
@@ -155,12 +169,19 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   defp convert_to_measurement(
-         %Tx{timeStamp: ts, from: from, to: to, value: value, blockNumber: bn},
+         %Tx{
+           timeStamp: ts,
+           from: from,
+           to: to,
+           value: value,
+           blockNumber: bn,
+           transactionIndex: trx_index
+         } = tx,
          address,
          measurement_name
        ) do
     transaction_type =
-      if from == address do
+      if to == address do
         "in"
       else
         "out"
@@ -168,8 +189,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
     %Sanbase.Influxdb.Measurement{
       timestamp: ts * 1_000_000_000,
-      fields: %{trx_value: (value |> String.to_integer()) / @num_18_zeroes, from: from, to: to},
-      tags: [block_number: bn, transaction_type: transaction_type],
+      fields: %{
+        trx_value: (value |> String.to_integer()) / @num_18_zeroes,
+        block_number: bn |> String.to_integer(),
+        transaction_index: trx_index |> String.to_integer(),
+        from_addr: from,
+        to_addr: to
+      },
+      tags: [transaction_type: transaction_type],
       name: measurement_name
     }
   end

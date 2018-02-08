@@ -26,7 +26,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.InternalTx do
       address: address,
       startblock: 0,
       endblock: 99_999_999,
-      sort: "desc"
+      sort: "asc"
     ]
   end
 

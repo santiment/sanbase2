@@ -60,4 +60,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
       String.downcase(tx.from) == normalized_address
     end)
   end
+
+  def get_all_transactions(address, startblock, endblock) do
+    normalized_address = String.downcase(address)
+    {:ok, get(address, startblock, endblock)}
+  end
 end

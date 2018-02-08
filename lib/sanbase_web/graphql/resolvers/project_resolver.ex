@@ -287,23 +287,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def marketcap_change24h(%Project{ticker: ticker}, _args, _resolution) do
-    two_days_ago = Timex.shift(Timex.now(), days: -2)
-
-    case Prices.Store.fetch_prices_with_resolution(
-           "#{ticker}_USD",
-           two_days_ago,
-           Timex.now(),
-           "1d"
-         ) do
-      [[_dt1, _price1, _volume1, mcap1], [_dt2, _price2, _volume2, mcap2]] ->
-        {:ok, (mcap2 - mcap1) * 100 / mcap1}
-
-      [] ->
-        {:ok, nil}
-    end
-  end
-
   def available_supply(
         %Project{
           latest_coinmarketcap_data: %LatestCoinmarketcapData{available_supply: available_supply}

@@ -304,10 +304,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.marketcap_usd/3)
     end
 
-    field :marketcap_change24h, :float do
-      resolve(&ProjectResolver.marketcap_change24h/3)
-    end
-
     field :available_supply, :decimal do
       resolve(&ProjectResolver.available_supply/3)
     end
@@ -418,10 +414,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :marketcap_usd, :decimal do
       resolve(&ProjectResolver.marketcap_usd/3)
-    end
-
-    field :marketcap_change24h, :float do
-      resolve(&ProjectResolver.marketcap_change24h/3)
     end
 
     field :available_supply, :decimal do

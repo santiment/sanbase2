@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
   alias SanbaseWeb.Graphql.Resolvers.IcoResolver
+  alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
 
   # Includes all available fields
   object :project_full do
@@ -79,6 +80,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.volume_usd/3)
     end
 
+    field :volume_change_24h, :float, name: "volume_change24h" do
+      resolve(&ProjectResolver.volume_change_24h/3)
+    end
+
+    field :average_dev_activity, :float do
+      description("Average dev activity for the last 30 days")
+      resolve(&ProjectResolver.average_dev_activity/3)
+    end
+
+    field :twitter_data, :twitter_data do
+      resolve(&TwitterResolver.twitter_data/3)
+    end
+
     field :marketcap_usd, :decimal do
       resolve(&ProjectResolver.marketcap_usd/3)
     end
@@ -91,15 +105,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change_1h, :decimal, name: "percent_change1h" do
+    field :percent_change_1h, :float, name: "percent_change1h" do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change_24h, :decimal, name: "percent_change24h" do
+    field :percent_change_24h, :float, name: "percent_change24h" do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change_7d, :decimal, name: "percent_change7d" do
+    field :percent_change_7d, :float, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
 
@@ -178,6 +192,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.volume_usd/3)
     end
 
+    field :volume_change_24h, :float, name: "volume_change24h" do
+      resolve(&ProjectResolver.volume_change_24h/3)
+    end
+
+    field :average_dev_activity, :float do
+      description("Average dev activity for the last 30 days")
+      resolve(&ProjectResolver.average_dev_activity/3)
+    end
+
+    field :twitter_data, :twitter_data do
+      resolve(&TwitterResolver.twitter_data/3)
+    end
+
     field :marketcap_usd, :decimal do
       resolve(&ProjectResolver.marketcap_usd/3)
     end
@@ -190,15 +217,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change_1h, :decimal, name: "percent_change1h" do
+    field :percent_change_1h, :float, name: "percent_change1h" do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change_24h, :decimal, name: "percent_change24h" do
+    field :percent_change_24h, :float, name: "percent_change24h" do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change_7d, :decimal, name: "percent_change7d" do
+    field :percent_change_7d, :float, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
   end
@@ -277,6 +304,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.marketcap_usd/3)
     end
 
+    field :marketcap_change24h, :float do
+      resolve(&ProjectResolver.marketcap_change24h/3)
+    end
+
     field :available_supply, :decimal do
       resolve(&ProjectResolver.available_supply/3)
     end
@@ -285,15 +316,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change_1h, :decimal, name: "percent_change1h" do
+    field :percent_change_1h, :float, name: "percent_change1h" do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change_24h, :decimal, name: "percent_change24h" do
+    field :percent_change_24h, :float, name: "percent_change24h" do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change_7d, :decimal, name: "percent_change7d" do
+    field :percent_change_7d, :float, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
   end
@@ -372,8 +403,25 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.volume_usd/3)
     end
 
+    field :volume_change_24h, :float, name: "volume_change24h" do
+      resolve(&ProjectResolver.volume_change_24h/3)
+    end
+
+    field :average_dev_activity, :float do
+      description("Average dev activity for the last 30 days")
+      resolve(&ProjectResolver.average_dev_activity/3)
+    end
+
+    field :twitter_data, :twitter_data do
+      resolve(&TwitterResolver.twitter_data/3)
+    end
+
     field :marketcap_usd, :decimal do
       resolve(&ProjectResolver.marketcap_usd/3)
+    end
+
+    field :marketcap_change24h, :float do
+      resolve(&ProjectResolver.marketcap_change24h/3)
     end
 
     field :available_supply, :decimal do
@@ -384,15 +432,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change_1h, :decimal, name: "percent_change1h" do
+    field :percent_change_1h, :float, name: "percent_change1h" do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change_24h, :decimal, name: "percent_change24h" do
+    field :percent_change_24h, :float, name: "percent_change24h" do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change_7d, :decimal, name: "percent_change7d" do
+    field :percent_change_7d, :float, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
 

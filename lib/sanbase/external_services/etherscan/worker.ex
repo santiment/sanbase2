@@ -89,7 +89,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     |> Store.import()
   end
 
-  defp import_latest_eth_wallet_data(transactions, address, id) do
+  defp import_latest_eth_wallet_data(transactions, address) do
     normalized_address = address |> String.downcase()
 
     last_trx =
@@ -121,7 +121,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     end
   end
 
-  defp fetch(address, measurement_name, endblock) do
+  defp fetch_all_transactions(address, measurement_name, endblock) do
     last_block_with_data = Store.last_block_number!(address) || 0
 
     case Tx.get_all_transactions(address, last_block_with_data, endblock) do
@@ -140,7 +140,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   defp fetch_and_store(%{address: address, coinmarketcap_id: id}, endblock) do
-    transactions = fetch(address, id, endblock) |> Enum.reverse()
+    transactions = fetch_all_transactions(address, id, endblock)
 
     filtered_transactions =
       transactions
@@ -150,9 +150,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
     import_all_transactions_influxdb(filtered_transactions, address, id)
 
-    import_latest_eth_wallet_data(filtered_transactions, address, id)
+    import_latest_eth_wallet_data(filtered_transactions, address)
 
-    import_last_block_number(address, List.first(transactions))
+    import_last_block_number(address, List.last(transactions))
   end
 
   defp import_last_block_number(address, %Tx{blockNumber: bn}) do

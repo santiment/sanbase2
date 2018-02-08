@@ -25,6 +25,12 @@ defmodule Sanbase.Influxdb.Store do
           |> __MODULE__.write()
       end
 
+      def delete_by_tag(measurement, tag_key, tag_value) do
+        ~s/DELETE from "#{measurement}"
+        WHERE #{tag_key} = '#{tag_value}'/
+        |> __MODULE__.query()
+      end
+
       def import(measurements) do
         # 1 day of 5 min resolution data
         measurements

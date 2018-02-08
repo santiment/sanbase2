@@ -35,8 +35,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     end
   end
 
-  def transactions(measurement, from, to) do
-    select_from_to_query(measurement, from, to)
+  def transactions(measurement, from, to, interval, transaction_type) do
+    select_from_to_query(measurement, from, to, interval, transaction_type)
     |> Store.query()
     |> parse_transactions_time_series()
   end
@@ -48,11 +48,13 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     WHERE address = '#{address}'/
   end
 
-  defp select_from_to_query(measurement, from, to) do
-    ~s/SELECT time, trx_value, from_addr, to_addr
+  defp select_from_to_query(measurement, from, to, interval, transaction_type) do
+    ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    WHERE transaction_type = '#{transaction_type}'
+    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    GROUP BY time(#{interval})/
   end
 
   defp parse_transactions_time_series(%{results: [%{error: error}]}) do
@@ -72,9 +74,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
        }) do
     result =
       transactions
-      |> Enum.map(fn [iso8601_datetime, trx_value, from_addr, to_addr] ->
+      |> Enum.map(fn [iso8601_datetime, trx_value] ->
         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-        {datetime, trx_value, from_addr, to_addr}
+        {datetime, trx_value}
       end)
 
     {:ok, result}

@@ -174,6 +174,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:project_transparency_description, :string)
 
+    field :eth_balance, :decimal do
+      resolve(&ProjectResolver.eth_balance/3)
+    end
+
+    field :btc_balance, :decimal do
+      resolve(&ProjectResolver.btc_balance/3)
+    end
+
     field(:coinmarketcap_id, :string)
 
     field :symbol, :string do

@@ -115,7 +115,7 @@ config :ex_admin,
 
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
-config :tesla, adapter: :hackney
+config :tesla, adapter: :hackney, recv_timeout: 30_000
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
   # 5 minutes

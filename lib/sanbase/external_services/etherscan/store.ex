@@ -8,14 +8,28 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.Etherscan.Store
 
-  def last_block_number(measurement) do
-    select_last_block_number(measurement)
+  @last_block_measurement "sanbase-internal-last-blocks-measurement"
+
+  def import_last_block_number(address, block_number) do
+    Store.delete_by_tag(@last_block_measurement, "address", address)
+
+    %Sanbase.Influxdb.Measurement{
+      timestamp: DateTime.utc_now() |> DateTime.to_unix(:nanoseconds),
+      fields: %{block_number: block_number |> String.to_integer()},
+      tags: [address: address],
+      name: @last_block_measurement
+    }
+    |> Store.import()
+  end
+
+  def last_block_number(address) do
+    select_last_block_number(address)
     |> Store.query()
     |> parse_last_block_number()
   end
 
-  def last_block_number!(measurement) do
-    case last_block_number(measurement) do
+  def last_block_number!(address) do
+    case last_block_number(address) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end
@@ -29,8 +43,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
   # Private functions
 
-  defp select_last_block_number(measurement) do
-    ~s/SELECT MAX(block_number) from "#{measurement}"/
+  defp select_last_block_number(address) do
+    ~s/SELECT block_number from "sanbase-internal-last-blocks-measurement"
+    WHERE address = '#{address}'/
   end
 
   defp select_from_to_query(measurement, from, to) do
@@ -82,10 +97,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
            }
          ]
        }) do
-    block_number
-    |> Enum.map(fn [_iso8601_datetime, block_number] ->
-      {:ok, block_number}
-    end)
+    [[_iso8601_datetime, block_number] | _] = block_number
+    {:ok, block_number}
   end
 
   defp parse_last_block_number(_), do: {:ok, nil}

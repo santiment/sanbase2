@@ -30,7 +30,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   # Private functions
 
   defp select_last_block_number(measurement) do
-    ~s/SELECT LAST(block_number) from "#{measurement}"/
+    ~s/SELECT MAX(block_number) from "#{measurement}"/
   end
 
   defp select_from_to_query(measurement, from, to) do

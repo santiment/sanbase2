@@ -75,6 +75,12 @@ config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
   pool: [max_overflow: 10, size: 20],
   database: "transaction_volume"
 
+config :sanbase, Sanbase.ExternalServices.Etherscan.Store,
+  host: {:system, "INFLUXDB_HOST", "localhost"},
+  port: {:system, "INFLUXDB_PORT", 8086},
+  pool: [max_overflow: 10, size: 20],
+  database: "etherscan_transactions"
+
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 

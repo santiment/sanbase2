@@ -1,4 +1,7 @@
 defmodule Sanbase.ExternalServices.Etherscan.Requests do
+  @moduledoc ~s"""
+    Module which is used to send requests to etherscan.io
+  """
   use Tesla
 
   require Sanbase.Utils.Config

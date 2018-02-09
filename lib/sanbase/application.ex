@@ -39,6 +39,9 @@ defmodule Sanbase.Application do
         # Time series transaction volume DB connection
         Sanbase.Etherbi.TransactionVolume.Store.child_spec(),
 
+        # Time series ethscan team wallet transactions DB connection
+        Sanbase.ExternalServices.Etherscan.Store.child_spec(),
+
         # Etherscan rate limiter
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(
           :etherscan_rate_limiter,

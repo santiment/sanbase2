@@ -120,6 +120,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field(:icos, list_of(:ico), resolve: assoc(:icos))
+
+    field :eth_spent, :decimal do
+      arg(:days, :integer, default_value: 30)
+      resolve(&ProjectResolver.eth_spent/3)
+    end
   end
 
   # Used in the project list query (public), so heavy computed fields are omitted
@@ -200,6 +205,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
+    end
+
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+      resolve(&ProjectResolver.eth_spent/3)
     end
   end
 
@@ -295,6 +305,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
+    end
+
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+      resolve(&ProjectResolver.eth_spent/3)
     end
   end
 
@@ -406,6 +421,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :funds_raised_btc_ico_end_price, :decimal do
       resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
+    end
+
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+      resolve(&ProjectResolver.eth_spent/3)
     end
   end
 

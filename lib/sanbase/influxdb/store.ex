@@ -67,23 +67,6 @@ defmodule Sanbase.Influxdb.Store do
         |> __MODULE__.execute()
       end
 
-      def create_db_with_retention_policy(
-            name \\ "sanbase_rp",
-            duration \\ "2w",
-            replication \\ 1,
-            default \\ true
-          ) do
-        database = Sanbase.Utils.Config.get(:database)
-
-        database
-        |> Sanbase.Utils.Config.get()
-        |> Instream.Admin.Database.create()
-        |> __MODULE__.execute()
-
-        Instream.Admin.RetentionPolicy.create(name, database, duration, replication, default)
-        |> __MODULE__.execute()
-      end
-
       def last_datetime(measurement) do
         ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1/
         |> __MODULE__.query()

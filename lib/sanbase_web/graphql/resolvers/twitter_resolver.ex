@@ -17,12 +17,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
          followers_count: followers_count
        }}
     else
-      {:error, reason} ->
-        {:error, "Cannot fetch twitter data for ticker #{ticker}: #{reason}"}
-
-      error ->
-        {:error, "Cannot fetch twitter data for ticker #{ticker}: #{inspect(error)}"}
+      _error ->
+        {:ok, nil}
     end
+  end
+
+  def twitter_data(%Project{ticker: ticker}, _args, resolution) do
+    twitter_data(nil, %{ticker: ticker}, resolution)
   end
 
   def history_twitter_data(

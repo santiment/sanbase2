@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.Infrastructure
   alias Sanbase.Model.ProjectTransparencyStatus
+  alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Prices
   alias Sanbase.Github
 
@@ -36,7 +37,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     projects =
       query
       |> Repo.all()
-      |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+      |> Repo.preload([
+        :latest_coinmarketcap_data,
+        icos: [ico_currencies: [:currency]]
+      ])
 
     {:ok, projects}
   end
@@ -402,6 +406,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _ ->
           {:ok, []}
       end
+    end)
+  end
+
+  def eth_address_balance(%ProjectEthAddress{} = eth_address, _args, %{
+        context: %{loader: loader}
+      }) do
+    loader
+    |> Dataloader.load(SanbaseRepo, :latest_eth_wallet_data, eth_address)
+    |> on_load(fn loader ->
+      latest_eth_wallet_data =
+        Dataloader.get(loader, SanbaseRepo, :latest_eth_wallet_data, eth_address)
+
+      {:ok, latest_eth_wallet_data.balance}
     end)
   end
 end

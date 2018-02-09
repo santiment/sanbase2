@@ -22,11 +22,4 @@ describe('ProjectIcon component', () => {
     expect(toJson(icon)).toMatchSnapshot()
     expect(icon.prop('src')).toEqual('dao-casino.png')
   })
-
-  it('DefaultIcon should render correctly', () => {
-    const icon = mount(<ProjectIcon name='Any Not Available Name' />)
-    expect(toJson(icon)).toMatchSnapshot()
-    expect(icon.children().children().prop('width')).toEqual(16)
-    expect(icon.children().children().prop('className')).toEqual('project-icon-default')
-  })
 })

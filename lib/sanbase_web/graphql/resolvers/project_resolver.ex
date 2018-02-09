@@ -93,11 +93,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
-  def eth_spent(%Project{id: id}, %{days: days}, _resolution) do
+  def eth_spent(%Project{coinmarketcap_id: coinmarketcap_id}, %{days: days}, _resolution) do
     async(fn ->
-      coinmarketcap_id =
-        Repo.one(from(p in Project, where: p.id == ^id, select: p.coinmarketcap_id))
-
       today = Timex.now()
       days_ago = Timex.shift(today, days: -days)
 

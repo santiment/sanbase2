@@ -879,6 +879,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
   end
 
+  object :eth_address do
+    field(:address, non_null(:string))
+
+    field :balance, :decimal do
+      resolve(&ProjectResolver.eth_address_balance/3)
+    end
+  end
+
   object :ico do
     field(:id, non_null(:id))
     field(:start_date, :ecto_date)

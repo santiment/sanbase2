@@ -90,11 +90,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   defp import_latest_eth_wallet_data(transactions, address) do
-    normalized_address = address |> String.downcase()
-
     last_trx =
       transactions
-      |> Enum.find(fn tx -> String.downcase(tx.from) == normalized_address end)
+      |> Enum.find(fn tx -> String.downcase(tx.from) == address end)
 
     changeset = latest_eth_wallet_changeset(last_trx, address)
 
@@ -141,6 +139,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
   defp fetch_and_store(%{address: address, coinmarketcap_id: id}, endblock) do
     transactions = fetch_all_transactions(address, id, endblock)
+    address = address |> String.downcase()
 
     filtered_transactions =
       transactions
@@ -178,6 +177,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
          address,
          measurement_name
        ) do
+    from = from |> String.downcase()
+    to = to |> String.downcase()
+
     transaction_type =
       if to == address do
         "in"

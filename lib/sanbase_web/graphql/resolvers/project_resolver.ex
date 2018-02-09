@@ -268,15 +268,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def average_dev_activity(%Project{ticker: ticker}, _args, _resolution) do
-    month_ago = Timex.shift(Timex.now(), days: -30)
+    async(fn ->
+      month_ago = Timex.shift(Timex.now(), days: -30)
 
-    case Github.Store.fetch_activity_with_resolution!(ticker, month_ago, Timex.now(), "30d") do
-      {_dt, total_activity} ->
-        {:ok, total_activity / 30}
+      case Github.Store.fetch_total_activity!(ticker, month_ago, Timex.now()) do
+        {_dt, total_activity} ->
+          {:ok, total_activity / 30}
 
-      _ ->
-        {:ok, nil}
-    end
+        _ ->
+          {:ok, nil}
+      end
+    end)
   end
 
   def marketcap_usd(

@@ -27,6 +27,15 @@ defmodule Sanbase.Prices.Store do
     |> q()
   end
 
+  def fetch_mean_volume_with_resolution(pair, from, to, resolution) do
+    ~s/SELECT MEAN(volume)
+    FROM "#{pair}"
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    GROUP BY time(#{resolution}) fill(none)/
+    |> q()
+  end
+
   def q(query) do
     Store.query(query)
     |> parse_price_series

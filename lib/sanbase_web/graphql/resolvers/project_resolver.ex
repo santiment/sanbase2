@@ -272,20 +272,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
 
   def volume_change_24h(%Project{ticker: ticker}, _args, _resolution) do
-    two_days_ago = Timex.shift(Timex.now(), days: -1)
+    async(fn ->
+      two_days_ago = Timex.shift(Timex.now(), days: -2)
 
-    case Prices.Store.fetch_prices_with_resolution(
-           "#{ticker}_USD",
-           two_days_ago,
-           Timex.now(),
-           "1d"
-         ) do
-      [[_dt1, _price1, volume1, _mcap1], [_dt2, _price2, volume2, _mcap2]] ->
-        {:ok, (volume2 - volume1) * 100 / volume1}
+      Prices.Store.fetch_mean_volume_with_resolution(
+        "#{ticker}_USD",
+        two_days_ago,
+        Timex.now(),
+        "1d"
+      )
+      |> Enum.reverse()
+      |> case do
+        [[_dt1, today_volume], [_dt2, yesterday_volume] | _rest] ->
+          {:ok, (today_volume - yesterday_volume) * 100 / yesterday_volume}
 
-      [] ->
-        {:ok, nil}
-    end
+        [] ->
+          {:ok, nil}
+      end
+    end)
   end
 
   def average_dev_activity(%Project{ticker: ticker}, _args, _resolution) do

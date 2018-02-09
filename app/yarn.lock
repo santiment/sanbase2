@@ -13535,6 +13535,14 @@ react-loadable@^5.3.1:
   dependencies:
     prop-types "^15.5.0"
 
+react-mfb@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/react-mfb/-/react-mfb-0.6.0.tgz#5c4243398f21cb4b33b0d32de8a49b74b9b2d5cf"
+  dependencies:
+    classnames "^1.2.0"
+    prop-types "^15.5.10"
+    react-dom "^15.3.1"
+
 react-modal@^3.1.10:
   version "3.1.10"
   resolved "https://registry.yarnpkg.com/react-modal/-/react-modal-3.1.10.tgz#8898b5cc4ebba78adbb8dea4c55a69818aa682cc"

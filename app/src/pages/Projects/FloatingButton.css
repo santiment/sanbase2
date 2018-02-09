@@ -1,0 +1,59 @@
+.container {
+  width: 320px;
+  height: 200px;
+  background: #ececec;
+}
+
+.floating-btn {
+  width: 45px;
+  height: 45px;
+  position: fixed;
+  bottom: 35px;
+  right: 30px;
+  line-height: 45px;
+  vertical-align: middle;
+  color: white;
+  padding-left: 2px;
+  background: rgb(0, 150, 99);
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  transition: color 0.2s;
+  cursor: pointer;
+  animation: fromBottom 1.6s 1;
+}
+
+.floating-btn-items {
+  position: fixed;
+  bottom: calc(35px + 45px + 35px);
+  right: 30px;
+}
+
+.floating-btn:hover {
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+}
+
+.mfb-component--br {
+  animation: fromBottom 1.6s 1;
+}
+
+@keyframes fromBottom {
+  0% {
+    transform: translateY(250px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fromTop {
+  0% {
+    transform: translateY(-250px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}

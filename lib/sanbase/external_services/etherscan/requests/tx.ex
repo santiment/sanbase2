@@ -54,6 +54,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
     end
   end
 
+  # The offset is the max number of transactions that will be returned. As we are
+  # making the next query with a recalculated starblock so we are effectivly
+  # exploiting the offset to be used only for limiting the number of fetched transactions
+  # and not for pagination
   defp get_query(address, startblock, endblock) do
     [
       module: "account",

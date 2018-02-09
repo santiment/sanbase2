@@ -19,12 +19,13 @@ defmodule SanbaseWeb.Graphql.ProjectSpentEthTest do
       |> Project.changeset(%{name: "Santiment", coinmarketcap_id: name})
       |> Repo.insert!()
 
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 15:00:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-10 16:00:00], "Etc/UTC")
-    datetime3 = DateTime.from_naive!(~N[2017-05-05 17:00:00], "Etc/UTC")
-    datetime4 = DateTime.from_naive!(~N[2017-05-01 18:00:00], "Etc/UTC")
-    datetime5 = DateTime.from_naive!(~N[2017-04-25 19:00:00], "Etc/UTC")
-    datetime6 = DateTime.from_naive!(~N[2017-04-14 20:00:00], "Etc/UTC")
+    today = Timex.now()
+    datetime1 = today
+    datetime2 = Timex.shift(today, days: -5)
+    datetime3 = Timex.shift(today, days: -10)
+    datetime4 = Timex.shift(today, days: -15)
+    datetime5 = Timex.shift(today, days: -20)
+    datetime6 = Timex.shift(today, days: -25)
 
     [
       %Measurement{
@@ -75,9 +76,10 @@ defmodule SanbaseWeb.Graphql.ProjectSpentEthTest do
     [
       project: p,
       name: name,
-      datetime_from: datetime6,
-      datetime_mid: datetime4,
-      datetime_to: datetime1
+      dates_day_diff1: Timex.diff(datetime1, datetime6, :days) + 1,
+      expected_sum1: 20000,
+      dates_day_diff2: Timex.diff(datetime1, datetime3, :days) + 1,
+      expected_sum2: 4500
     ]
   end
 
@@ -85,7 +87,7 @@ defmodule SanbaseWeb.Graphql.ProjectSpentEthTest do
     query = """
     {
       project(id: #{context.project.id}) {
-        ethSpent(from: "#{context.datetime_from}", to: "#{context.datetime_to}")
+        ethSpent(days: #{context.dates_day_diff1})
       }
     }
     """
@@ -96,14 +98,14 @@ defmodule SanbaseWeb.Graphql.ProjectSpentEthTest do
 
     trx_sum = json_response(result, 200)["data"]["project"]
 
-    assert trx_sum == %{"ethSpent" => "20000"}
+    assert trx_sum == %{"ethSpent" => context.expected_sum1}
   end
 
   test "project total eth spent part of interval", context do
     query = """
     {
       project(id: #{context.project.id}) {
-        ethSpent(from: "#{context.datetime_mid}", to: "#{context.datetime_to}")
+        ethSpent(days: #{context.dates_day_diff2})
       }
     }
     """
@@ -114,6 +116,6 @@ defmodule SanbaseWeb.Graphql.ProjectSpentEthTest do
 
     trx_sum = json_response(result, 200)["data"]["project"]
 
-    assert trx_sum == %{"ethSpent" => "8000"}
+    assert trx_sum == %{"ethSpent" => context.expected_sum2}
   end
 end

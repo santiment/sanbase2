@@ -93,19 +93,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
-  def eth_spent(%Project{id: id}, %{from: from, to: to}, _resolution) do
-    coinmarketcap_id =
-      Repo.one(from(p in Project, where: p.id == ^id, select: p.coinmarketcap_id))
+  def eth_spent(%Project{id: id}, %{days: days}, _resolution) do
+    async(fn ->
+      coinmarketcap_id =
+        Repo.one(from(p in Project, where: p.id == ^id, select: p.coinmarketcap_id))
 
-    [{_datetime, eth_spent}] =
-      Sanbase.ExternalServices.Etherscan.Store.trx_sum_in_interval!(
-        coinmarketcap_id,
-        from,
-        to,
-        "out"
-      )
+      today = Timex.now()
+      days_ago = Timex.shift(today, days: -days)
 
-    {:ok, eth_spent |> Decimal.new()}
+      eth_spent =
+        Sanbase.ExternalServices.Etherscan.Store.trx_sum_in_interval!(
+          coinmarketcap_id,
+          days_ago,
+          today,
+          "out"
+        )
+
+      {:ok, eth_spent}
+    end)
   end
 
   def eth_balances_by_id(only_project_transparency, project_ids) do

@@ -10,6 +10,11 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
   @last_block_measurement "sanbase-internal-last-blocks-measurement"
 
+  @doc ~s"""
+    Updates the point for `address` in the special measurement used for saving
+    the last queried block number for a given address.
+  """
+  @spec import_last_block_number(String.t(), String.t()) :: :ok | no_return()
   def import_last_block_number(address, block_number) do
     Store.delete_by_tag(@last_block_measurement, "address", address)
 
@@ -55,7 +60,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   def trx_sum_in_interval(measurement, from, to, transaction_type) do
     sum_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
-    |> parse_transactions_time_series()
+    |> parse_trx_sum_time_series()
   end
 
   @doc ~s"""
@@ -87,11 +92,11 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp parse_transactions_time_series(%{results: [%{error: error}]}) do
+  defp parse_trx_sum_time_series(%{results: [%{error: error}]}) do
     {:error, error}
   end
 
-  defp parse_transactions_time_series(%{
+  defp parse_trx_sum_time_series(%{
          results: [
            %{
              series: [
@@ -102,17 +107,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
            }
          ]
        }) do
-    result =
-      transactions
-      |> Enum.map(fn [iso8601_datetime, trx_value] ->
-        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-        {datetime, trx_value}
-      end)
+    [[_iso8601_datetime, trx_value]] = transactions
 
-    {:ok, result}
+    {:ok, trx_value}
   end
 
-  defp parse_transactions_time_series(_), do: {:ok, []}
+  defp parse_trx_sum_time_series(_), do: {:ok, []}
 
   defp parse_last_block_number(%{results: [%{error: error}]}) do
     {:error, error}

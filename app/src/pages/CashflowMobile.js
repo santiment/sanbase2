@@ -20,12 +20,22 @@ const CashflowMobile = ({
   },
   history,
   isSearchFocused = false,
-  focusSearch
+  focusSearch,
+  filterName = null,
+  filterByName
 }) => {
   const { projects = [] } = Projects
   if (Projects.loading) {
     return (<Loader active size='large' />)
   }
+
+  const filteredProjects = isSearchFocused && filterName
+    ? projects.filter(project => {
+      return project.name.toLowerCase().indexOf(filterName) !== -1 ||
+          project.ticker.toLowerCase().indexOf(filterName) !== -1
+    })
+    : projects
+
   return (
     <div className='cashflow-mobile'>
       {isSearchFocused &&
@@ -33,7 +43,7 @@ const CashflowMobile = ({
           <div className='cashflow-mobile-search'>
             <Search
               focus={focusSearch}
-              onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+              onSelectProject={ticker => filterByName(ticker.toLowerCase())}
               projects={projects} />
           </div>
         </SlideDown>}
@@ -43,17 +53,22 @@ const CashflowMobile = ({
         }}
         runwayItems={7}
         runwayItemsOpposite={5}
-        aveCellHeight={420}
+        aveCellHeight={460}
       >
-        {projects.map((project, index) => (
-          <ListViewItem height={440} key={index}>
+        {filteredProjects.map((project, index) => (
+          <ListViewItem height={500} key={index}>
             <div className='ListItem-project' >
-              <ProjectCard {...project} />
+              <ProjectCard
+                onClick={() => history.push(`/projects/${project.ticker.toLowerCase()}`)}
+                {...project} />
             </div>
           </ListViewItem>
         ))}
       </ListView>
-      <FloatingButton handleSearchClick={() => focusSearch(!isSearchFocused)} />
+      <FloatingButton handleSearchClick={() => {
+        filterByName(null)
+        focusSearch(!isSearchFocused)
+      }} />
     </div>
   )
 }
@@ -76,10 +91,13 @@ const allProjectsGQL = gql`{
     btcBalance
     ethAddresses {
       address
-      balance
     }
     twitterData {
       followersCount
+    }
+    signals {
+      name
+      description
     }
   }
 }`
@@ -88,16 +106,19 @@ const mapDataToProps = ({allProjects}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = ((projects = []) => {
+  const projects = (({projects = []}) => {
     return projects.filter(project => {
-      return project.ethAddresses &&
+      const defaultFilter = project.ethAddresses &&
         project.ethAddresses.length > 0 &&
         project.rank
+      return defaultFilter
     })
     .sort((a, b) => {
       return simpleSort(parseInt(a.marketcapUsd, 10), parseInt(b.marketcapUsd, 10))
     })
-  })(allProjects.allProjects)
+  })({
+    projects: allProjects.allProjects
+  })
   const isEmpty = projects.length === 0
   return {
     Projects: {
@@ -112,6 +133,7 @@ const mapDataToProps = ({allProjects}) => {
 
 const enhance = compose(
   withState('isSearchFocused', 'focusSearch', false),
+  withState('filterName', 'filterByName', null),
   lifecycle({
     componentDidUpdate (prevProps, prevState) {
       if (this.props.isSearchFocused !== prevProps.isSearchFocused) {

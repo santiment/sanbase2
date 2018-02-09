@@ -16,6 +16,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Prices
   alias Sanbase.Github
 
+  alias SanbaseWeb.Graphql.SanbaseRepo
+  alias SanbaseWeb.Graphql.PriceStore
+  alias SanbaseWeb.Graphql.Resolvers.PriceResolver
+
   alias Sanbase.Repo
 
   def all_projects(_parent, args, _resolution, only_project_transparency \\ nil) do
@@ -64,72 +68,60 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_balance(%Project{id: id}, _args, resolution, only_project_transparency \\ nil) do
-    only_project_transparency =
-      case only_project_transparency do
-        nil ->
-          get_parent_args(resolution)
-          |> Map.get(:only_project_transparency, false)
+  def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseRepo, :eth_addresses, project)
+    |> on_load(&eth_balance_from_loader(&1, project))
+  end
 
-        value ->
-          value
-      end
+  defp eth_balance_from_loader(loader, project) do
+    balance =
+      loader
+      |> Dataloader.get(SanbaseRepo, :eth_addresses, project)
+      |> Enum.map(& &1.latest_eth_wallet_data)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(& &1.balance)
+      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
-    batch({__MODULE__, :eth_balances_by_id, only_project_transparency}, id, fn batch_results ->
-      {:ok, Map.get(batch_results, id)}
+    {:ok, balance}
+  end
+
+  def btc_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseRepo, :btc_addresses, project)
+    |> on_load(&btc_balance_from_loader(&1, project))
+  end
+
+  def btc_balance_from_loader(loader, project) do
+    balance =
+      loader
+      |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
+      |> Enum.map(& &1.latest_btc_wallet_data)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(& &1.balance)
+      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+
+    {:ok, balance}
+  end
+
+  def usd_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseRepo, :eth_addresses, project)
+    |> Dataloader.load(SanbaseRepo, :btc_addresses, project)
+    |> Dataloader.load(PriceStore, "ETH_USD", :last)
+    |> Dataloader.load(PriceStore, "BTC_USD", :last)
+    |> on_load(fn loader ->
+      {:ok, eth_balance} = eth_balance_from_loader(loader, project)
+      {:ok, btc_balance} = btc_balance_from_loader(loader, project)
+      eth_price = Dataloader.get(loader, PriceStore, "ETH_USD", :last)
+      btc_price = Dataloader.get(loader, PriceStore, "BTC_USD", :last)
+
+      {:ok,
+       Decimal.add(
+         Decimal.mult(eth_balance, eth_price),
+         Decimal.mult(btc_balance, btc_price)
+       )}
     end)
-  end
-
-  def eth_balances_by_id(only_project_transparency, project_ids) do
-    query =
-      from(
-        a in ProjectEthAddress,
-        inner_join: wd in LatestEthWalletData,
-        on: wd.address == a.address,
-        where:
-          a.project_id in ^project_ids and
-            (not (^only_project_transparency) or a.project_transparency),
-        group_by: a.project_id,
-        select: %{project_id: a.project_id, balance: sum(wd.balance)}
-      )
-
-    balances = Repo.all(query)
-
-    Map.new(balances, fn balance -> {balance.project_id, balance.balance} end)
-  end
-
-  def btc_balance(%Project{id: id}, _args, resolution, only_project_transparency \\ nil) do
-    only_project_transparency =
-      case only_project_transparency do
-        nil ->
-          get_parent_args(resolution)
-          |> Map.get(:only_project_transparency, false)
-
-        value ->
-          value
-      end
-
-    batch({__MODULE__, :btc_balances_by_id, only_project_transparency}, id, fn batch_results ->
-      {:ok, Map.get(batch_results, id)}
-    end)
-  end
-
-  def btc_balances_by_id(only_project_transparency, project_ids) do
-    query =
-      from(
-        a in ProjectBtcAddress,
-        inner_join: wd in LatestBtcWalletData,
-        on: wd.address == a.address,
-        where:
-          a.project_id in ^project_ids and
-            (not (^only_project_transparency) or a.project_transparency),
-        group_by: a.project_id,
-        select: %{project_id: a.project_id, balance: sum(wd.satoshi_balance)}
-      )
-
-    balances = Repo.all(query)
-
-    Map.new(balances, fn balance -> {balance.project_id, balance.balance} end)
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
@@ -375,6 +367,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Repo.preload(ico_currencies: [:currency])
 
     {:ok, ico}
+  end
+
+  def signals(%Project{ticker: ticker} = project, _args, _resolution) do
+    market_cap = marketcap_usd(project, nil, nil)
+
+    usd_balance = usd_balance(project, nil, nil)
+
+    if market_cap < usd_balance do
+      {:ok,
+       [
+         %{
+           name: "balance_bigger_than_mcap",
+           description: "The balance of the project is bigger than it's market capitalization"
+         }
+       ]}
+    else
+      {:ok, []}
+    end
   end
 
   defp requested_fields(resolution) do

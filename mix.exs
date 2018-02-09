@@ -68,7 +68,8 @@ defmodule Sanbase.Mixfile do
       {:ex_aws_s3, "~> 2.0"},
       {:sweet_xml, "~> 0.6"},
       {:ex_unit_notifier, "~> 0.1", only: :test},
-      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false}
+      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
+      {:dataloader, "~> 1.0.0"}
     ]
   end
 

@@ -1,11 +1,20 @@
 defmodule Sanbase.Model.ProjectEthAddress do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Sanbase.Model.{ProjectEthAddress, Project}
+  alias Sanbase.Model.{ProjectEthAddress, Project, LatestEthWalletData}
 
   schema "project_eth_address" do
     field(:address, :string)
     belongs_to(:project, Project)
+
+    belongs_to(
+      :latest_eth_wallet_data,
+      LatestEthWalletData,
+      foreign_key: :address,
+      references: :address,
+      define_field: false
+    )
+
     field(:project_transparency, :boolean, default: false)
   end
 

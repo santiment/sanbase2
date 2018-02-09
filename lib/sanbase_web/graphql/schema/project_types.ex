@@ -2,11 +2,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
+  import Absinthe.Resolution.Helpers
+
   import_types(SanbaseWeb.Graphql.CustomTypes)
 
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
   alias SanbaseWeb.Graphql.Resolvers.IcoResolver
   alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
+  alias SanbaseWeb.Graphql.SanbaseRepo
 
   # Includes all available fields
   object :project_full do
@@ -165,6 +168,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:team_token_wallet, :string)
     field(:token_decimals, :integer)
     field(:description, :string)
+    field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
 
     field :market_segment, :string do
       resolve(&ProjectResolver.market_segment/3)
@@ -496,6 +500,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :initial_ico, :ico_with_eth_contract_info do
       resolve(&ProjectResolver.initial_ico/3)
+    end
+  end
+
+  object :eth_address do
+    field(:address, non_null(:string))
+
+    field :balance, :decimal do
+      resolve(&ProjectResolver.eth_address_balance/3)
     end
   end
 

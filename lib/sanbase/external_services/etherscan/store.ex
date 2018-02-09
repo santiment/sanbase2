@@ -22,12 +22,22 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     |> Store.import()
   end
 
+  @doc ~s"""
+    Returns the last block number that was quried for that particular address.
+    Returns `{:ok, result}` on successs, `{:error, reason}` otherwise
+  """
+  @spec last_block_number(String.t()) :: {:ok, Integer} | {:ok, nil} | {:error, String.t()}
   def last_block_number(address) do
     select_last_block_number(address)
     |> Store.query()
     |> parse_last_block_number()
   end
 
+  @doc ~s"""
+    Returns the last block number that was quried for that particular address.
+    Returns `result` on result, raises an error otherwise
+  """
+  @spec last_block_number!(String.t()) :: Integer | nil | no_return()
   def last_block_number!(address) do
     case last_block_number(address) do
       {:ok, result} -> result
@@ -35,10 +45,31 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     end
   end
 
-  def transactions(measurement, from, to, interval, transaction_type) do
-    select_from_to_query(measurement, from, to, interval, transaction_type)
+  @doc ~s"""
+    Returns the sum of transactions over the specified period of time.
+    The `transaction_type` should be either `in` or `out` string.
+    Returns `{:ok, result}` on success, `{:error, reason}` otherwise
+  """
+  @spec trx_sum_in_interval(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
+          {:ok, list()} | {:error, String.t()}
+  def trx_sum_in_interval(measurement, from, to, transaction_type) do
+    sum_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
     |> parse_transactions_time_series()
+  end
+
+  @doc ~s"""
+    Returns the sum of transactions over the specified period of time.
+    The `transaction_type` should be either `in` or `out` string.
+    Returns `result` on success, raises an error otherwise
+  """
+  @spec trx_sum_in_interval!(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
+          list() | nil | no_return()
+  def trx_sum_in_interval!(measurement, from, to, transaction_type) do
+    case trx_sum_in_interval(measurement, from, to, transaction_type) do
+      {:ok, result} -> result
+      {:error, error} -> raise(error)
+    end
   end
 
   # Private functions
@@ -48,13 +79,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     WHERE address = '#{address}'/
   end
 
-  defp select_from_to_query(measurement, from, to, interval, transaction_type) do
+  defp sum_from_to_query(measurement, from, to, transaction_type) do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    GROUP BY time(#{interval})/
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   defp parse_transactions_time_series(%{results: [%{error: error}]}) do

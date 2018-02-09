@@ -407,6 +407,13 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :funds_raised_btc_ico_end_price, :decimal do
       resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
     end
+
+    field :eth_spent, :decimal do
+      arg(:from, :datetime, default_value: Sanbase.DateTimeUtils.days_ago(30))
+      arg(:to, :datetime, default_value: Timex.now())
+
+      resolve(&ProjectResolver.eth_spent/3)
+    end
   end
 
   object :project_with_eth_contract_info do

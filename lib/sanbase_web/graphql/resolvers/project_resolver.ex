@@ -10,8 +10,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.LatestBtcWalletData
   alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Model.Ico
-  alias Sanbase.Model.Currency
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.Infrastructure
   alias Sanbase.Model.ProjectTransparencyStatus
@@ -93,6 +91,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     batch({__MODULE__, :eth_balances_by_id, only_project_transparency}, id, fn batch_results ->
       {:ok, Map.get(batch_results, id)}
     end)
+  end
+
+  def eth_spent(%Project{id: id}, %{from: from, to: to}, _resolution) do
+    coinmarketcap_id =
+      Repo.one(from(p in Project, where: p.id == ^id, select: p.coinmarketcap_id))
+
+    [{_datetime, eth_spent}] =
+      Sanbase.ExternalServices.Etherscan.Store.trx_sum_in_interval!(
+        coinmarketcap_id,
+        from,
+        to,
+        "out"
+      )
+
+    {:ok, eth_spent |> Decimal.new()}
   end
 
   def eth_balances_by_id(only_project_transparency, project_ids) do

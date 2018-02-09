@@ -1,16 +1,16 @@
 import React from 'react'
-import { Card, Button, Statistic, Label } from 'semantic-ui-react'
+import { Card, Button, Statistic, Label, Icon } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import { formatNumber } from '../../utils/formatting'
 import { millify } from '../../utils/utils'
 
+const HiddenElements = () => ''
 // Project Name
 // Market Cap
 // Crypto Balance (ETH) - the current Balance column
 // ETH Spent (30d) - total change in ETH balance for the last 30 days
 // Dev Activity (30d) - total dev activity for the last 30 days
 // Flag - signals flag. For now we only show it when Crypto Balance > Market Cap
-//
 
 const MARKET_SEGMENT_COLORS = {
   'Financial': 'violet',
@@ -27,6 +27,15 @@ const MARKET_SEGMENT_COLORS = {
   'Data': 'black'
 }
 
+const StatisticElement = ({name, value, disabled = false}) => (
+  <Statistic style={{
+    color: disabled ? '#d3d3d3' : 'initial'
+  }}>
+    <Statistic.Label>{name}</Statistic.Label>
+    <Statistic.Value>{value}</Statistic.Value>
+  </Statistic>
+)
+
 const ProjectCard = ({
   name,
   rank,
@@ -36,14 +45,17 @@ const ProjectCard = ({
   priceUsd,
   percentChange24h,
   volumeUsd,
-  githubData = null,
+  volumeUsd24h,
+  githubData,
+  twitterData,
   btcBalance = 0,
   ethBalance = 0,
   marketcapUsd,
-  teamTokenWallet
+  teamTokenWallet,
+  warning = false
 }) => {
   return (
-    <Card fluid color={MARKET_SEGMENT_COLORS[marketSegment]}>
+    <Card fluid >
       <Card.Content>
         <Card.Header>
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
@@ -51,7 +63,16 @@ const ProjectCard = ({
               <ProjectIcon name={ticker} />
               {name}
             </div>
-            <small>rank: {rank}</small>
+            <div style={{
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              top: '12px',
+              fontSize: '12px',
+              position: 'absolute',
+              right: '14px',
+              color: 'rgba(0,0,0,.68)'
+            }}
+            ><span>rank</span> {rank}</div>
           </div>
         </Card.Header>
         {marketSegment && <Card.Meta>
@@ -68,40 +89,53 @@ const ProjectCard = ({
         </Card.Description>
       </Card.Content>
       <Card.Content extra>
-        <Statistic.Group size='mini' widths='two'>
+        {warning &&
+        <Label color='orange' ribbon>
+          <Icon name='warning sign' />
+        </Label>}
+        <Statistic.Group size='mini' widths='two' style={{paddingBottom: '1em'}}>
           <Statistic >
             <Statistic.Label>Price</Statistic.Label>
             <Statistic.Value>{formatNumber(priceUsd, 'USD')}</Statistic.Value>
-          </Statistic>
-          <Statistic >
-            <Statistic.Label>24h Price</Statistic.Label>
-            <Statistic.Value>{percentChange24h}%</Statistic.Value>
           </Statistic>
           <Statistic>
             <Statistic.Label>Volume</Statistic.Label>
             <Statistic.Value>{millify(parseFloat(volumeUsd))}</Statistic.Value>
           </Statistic>
-          <Statistic>
-            <Statistic.Label>MarketCap</Statistic.Label>
-            <Statistic.Value>{millify(parseFloat(marketcapUsd))}</Statistic.Value>
+          <Statistic >
+            <Statistic.Label>24h Price</Statistic.Label>
+            <Statistic.Value>{percentChange24h}%</Statistic.Value>
           </Statistic>
-          {!!githubData && <Statistic>
-            <Statistic.Label>Dev Activity</Statistic.Label>
-            <Statistic.Value>{githubData}</Statistic.Value>
-          </Statistic>}
-          <Statistic>
-            <Statistic.Label>Crypto Balance</Statistic.Label>
-            <Statistic.Value>ETH {ethBalance}</Statistic.Value>
-          </Statistic>
+          <StatisticElement
+            name='24h Volume'
+            value={volumeUsd24h || '---'}
+            disabled={!volumeUsd24h} />
+          <StatisticElement
+            name='MarketCap'
+            value={marketcapUsd ? millify(parseFloat(marketcapUsd)) : '---'}
+            disabled={!marketcapUsd} />
+          <StatisticElement
+            name='Crypto Balance'
+            value={ethBalance ? millify(parseFloat(ethBalance)) : '---'}
+            disabled={!ethBalance} />
+          <StatisticElement
+            name='Dev Activity 30d'
+            value={githubData || '---'}
+            disabled={!githubData} />
+          <StatisticElement
+            name='Twitter 30d'
+            value={twitterData || '---'}
+            disabled={!twitterData} />
         </Statistic.Group>
       </Card.Content>
-      <Card.Content extra>
-        <div className='ui three buttons'>
-          <Button basic size='large' icon='warning sign' />
-          <Button basic size='large' icon='pencil' />
-          <Button basic size='large' icon='star' />
-        </div>
-      </Card.Content>
+      <HiddenElements>
+        <Card.Content extra>
+          <div className='ui two buttons'>
+            <Button basic size='large' icon='star' />
+            <Button basic size='large'>more...</Button>
+          </div>
+        </Card.Content>
+      </HiddenElements>
     </Card>
   )
 }

@@ -15,8 +15,6 @@ defmodule Sanbase.ExAdmin.Model.ProjectEthAddress do
           :project,
           collection: from(p in Project, order_by: p.name) |> Sanbase.Repo.all()
         )
-
-        input(project, :project_transparency)
       end
     end
   end

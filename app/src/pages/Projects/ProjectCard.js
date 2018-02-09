@@ -1,6 +1,13 @@
 import React from 'react'
 import cx from 'classnames'
-import { Card, Button, Statistic, Label, Icon } from 'semantic-ui-react'
+import {
+  Card,
+  Button,
+  Statistic,
+  Label,
+  Icon,
+  Popup
+} from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import { formatNumber } from '../../utils/formatting'
@@ -60,8 +67,10 @@ const ProjectCard = ({
   ethBalance = 0,
   marketcapUsd,
   teamTokenWallet,
-  warning = false
+  signals,
+  onClick
 }) => {
+  const warning = signals && signals.length > 0
   return (
     <Card fluid >
       <Card.Content>
@@ -95,11 +104,25 @@ const ProjectCard = ({
             : description}
         </Card.Description>
       </Card.Content>
-      <Card.Content extra>
+      <Card.Content extra style={{position: 'relative'}}>
         {warning &&
-        <Label color='orange' ribbon>
-          <Icon name='warning sign' />
-        </Label>}
+        <Popup basic
+          position='right center'
+          hideOnScroll
+          wide
+          inverted
+          trigger={
+            <Label
+              style={{
+                position: 'absolute',
+                top: '10px',
+                left: '-14px'
+              }}
+              color='orange' ribbon>
+              <Icon name='warning sign' />
+            </Label>} on='click'>
+          {signals[0] && signals[0].description}
+        </Popup>}
         <Statistic.Group size='mini' widths='two' style={{paddingBottom: '1em'}}>
           <StatisticElement
             name='Price'
@@ -135,7 +158,9 @@ const ProjectCard = ({
             disabled={!ethBalance} />
           <StatisticElement
             name='ETH Spent 30d'
-            value={ethSpent ? millify(parseFloat(ethSpent)) : '---'}
+            value={ethSpent
+              ? `ETH ${millify(parseFloat(parseFloat(ethSpent).toFixed(2)))}`
+              : '---'}
             disabled={!ethSpent} />
           <StatisticElement
             name='Dev Activity 30d'
@@ -149,14 +174,14 @@ const ProjectCard = ({
           </HiddenElements>
         </Statistic.Group>
       </Card.Content>
-      <HiddenElements>
-        <Card.Content extra>
-          <div className='ui two buttons'>
+      <Card.Content extra>
+        <div className='ui two buttons'>
+          <HiddenElements>
             <Button basic size='large' icon='star' />
-            <Button basic size='large'>more...</Button>
-          </div>
-        </Card.Content>
-      </HiddenElements>
+          </HiddenElements>
+          <Button basic size='large' onClick={onClick}>more...</Button>
+        </div>
+      </Card.Content>
     </Card>
   )
 }

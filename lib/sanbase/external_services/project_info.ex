@@ -50,8 +50,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   def fetch_contract_info(
         %ProjectInfo{main_contract_address: main_contract_address} = project_info
       ) do
-    Etherscan.Scraper.fetch_address_page(main_contract_address)
-    |> Etherscan.Scraper.parse_address_page(project_info)
+    Etherscan.Scraper.fetch_address_page!(main_contract_address)
+    |> Etherscan.Scraper.parse_address_page!(project_info)
     |> fetch_block_number()
     |> fetch_abi()
   end
@@ -62,8 +62,8 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   def fetch_etherscan_token_summary(
         %ProjectInfo{etherscan_token_name: etherscan_token_name} = project_info
       ) do
-    Etherscan.Scraper.fetch_token_page(etherscan_token_name)
-    |> Etherscan.Scraper.parse_token_page(project_info)
+    Etherscan.Scraper.fetch_token_page!(etherscan_token_name)
+    |> Etherscan.Scraper.parse_token_page!(project_info)
   end
 
   def update_project(project_info, project) do

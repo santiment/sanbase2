@@ -73,6 +73,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     |> on_load(&eth_balance_from_loader(&1, project))
   end
 
+  def eth_spent(%Project{coinmarketcap_id: coinmarketcap_id}, %{days: days}, _resolution) do
+    async(fn ->
+      today = Timex.now()
+      days_ago = Timex.shift(today, days: -days)
+
+      eth_spent =
+        Sanbase.ExternalServices.Etherscan.Store.trx_sum_in_interval!(
+          coinmarketcap_id,
+          days_ago,
+          today,
+          "out"
+        )
+
+      {:ok, eth_spent}
+    end)
+  end
+
   defp eth_balance_loader(loader, project) do
     loader
     |> Dataloader.load(SanbaseRepo, :eth_addresses, project)
@@ -86,9 +103,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.balance)
       |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
-
-    {:ok, balance}
-  end
 
   def btc_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader

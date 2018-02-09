@@ -13,7 +13,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
   @max_redirects 10
 
-  def fetch_address_page(address) do
+  def fetch_address_page!(address) do
     case get("/address/#{address}") do
       %Tesla.Env{status: 200, body: body} ->
         body
@@ -29,20 +29,20 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     end
   end
 
-  def fetch_token_page(token_name, redirects \\ 0)
+  def fetch_token_page!(token_name, redirects \\ 0)
 
-  def fetch_token_page(_, @max_redirects) do
+  def fetch_token_page!(_, @max_redirects) do
     Logger.warn("Too many redirects")
     nil
   end
 
-  def fetch_token_page(token_name, redirects) do
+  def fetch_token_page!(token_name, redirects) do
     case get("/token/#{token_name}") do
       %Tesla.Env{status: 200, body: body} ->
         body
 
       %Tesla.Env{status: 302, headers: %{"location" => "/token/" <> name}} ->
-        fetch_token_page(name, redirects + 1)
+        fetch_token_page!(name, redirects + 1)
 
       %Tesla.Env{status: status, body: body} ->
         Logger.warn(
@@ -55,15 +55,15 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     end
   end
 
-  def parse_address_page(nil, project_info), do: project_info
+  def parse_address_page!(nil, project_info), do: project_info
 
-  def parse_address_page(html, project_info) do
+  def parse_address_page!(html, project_info) do
     %ProjectInfo{project_info | creation_transaction: creation_transaction(html)}
   end
 
-  def parse_token_page(nil, project_info), do: project_info
+  def parse_token_page!(nil, project_info), do: project_info
 
-  def parse_token_page(html, project_info) do
+  def parse_token_page!(html, project_info) do
     %ProjectInfo{
       project_info
       | total_supply:

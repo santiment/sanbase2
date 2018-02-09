@@ -145,6 +145,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :signals, list_of(:signal) do
       resolve(&ProjectResolver.signals/3)
     end
+
+    field :eth_spent, :decimal do
+      arg(:days, :integer, default_value: 30)
+
+      resolve(&ProjectResolver.eth_spent/3)
+    end
   end
 
   # Used in the project list query (public), so heavy computed fields are omitted
@@ -256,6 +262,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :signals, list_of(:signal) do
       resolve(&ProjectResolver.signals/3)
     end
+
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+
+      resolve(&ProjectResolver.eth_spent/3)
+    end
   end
 
   # Used in the project transparency list query
@@ -358,6 +370,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :signals, list_of(:signal) do
       resolve(&ProjectResolver.signals/3)
+    end
+    
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+
+      resolve(&ProjectResolver.eth_spent/3)
     end
   end
 
@@ -490,6 +508,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :signals, list_of(:signal) do
       resolve(&ProjectResolver.signals/3)
+    end
+    
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+
+      resolve(&ProjectResolver.eth_spent/3)
     end
   end
 

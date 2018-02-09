@@ -319,15 +319,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change_1h, :float, name: "percent_change1h" do
+    field :percent_change_1h, :decimal, name: "percent_change1h" do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change_24h, :float, name: "percent_change24h" do
+    field :percent_change_24h, :decimal, name: "percent_change24h" do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change_7d, :float, name: "percent_change7d" do
+    field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
 
@@ -536,15 +536,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change_1h, :float, name: "percent_change1h" do
+    field :percent_change_1h, :decimal, name: "percent_change1h" do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change_24h, :float, name: "percent_change24h" do
+    field :percent_change_24h, :decimal, name: "percent_change24h" do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change_7d, :float, name: "percent_change7d" do
+    field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
 
@@ -719,15 +719,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change_1h, :float, name: "percent_change1h" do
+    field :percent_change_1h, :decimal, name: "percent_change1h" do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change_24h, :float, name: "percent_change24h" do
+    field :percent_change_24h, :decimal, name: "percent_change24h" do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change_7d, :float, name: "percent_change7d" do
+    field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
 
@@ -839,15 +839,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.total_supply/3)
     end
 
-    field :percent_change_1h, :float, name: "percent_change1h" do
+    field :percent_change_1h, :decimal, name: "percent_change1h" do
       resolve(&ProjectResolver.percent_change_1h/3)
     end
 
-    field :percent_change_24h, :float, name: "percent_change24h" do
+    field :percent_change_24h, :decimal, name: "percent_change24h" do
       resolve(&ProjectResolver.percent_change_24h/3)
     end
 
-    field :percent_change_7d, :float, name: "percent_change7d" do
+    field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
 

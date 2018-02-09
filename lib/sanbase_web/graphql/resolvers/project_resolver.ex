@@ -280,7 +280,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
           {:ok, total_activity / 30}
 
         _ ->
-          {:ok, nil}
+          {:ok, 0}
       end
     end)
   end

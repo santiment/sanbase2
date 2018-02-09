@@ -345,7 +345,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, percent_change_1h |> Decimal.to_float()}
+    {:ok, percent_change_1h}
   end
 
   def percent_change_1h(_parent, _args, _resolution), do: {:ok, nil}
@@ -359,7 +359,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, percent_change_24h |> Decimal.to_float()}
+    {:ok, percent_change_24h}
   end
 
   def percent_change_24h(_parent, _args, _resolution), do: {:ok, nil}
@@ -373,7 +373,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, percent_change_7d |> Decimal.to_float()}
+    {:ok, percent_change_7d}
   end
 
   def percent_change_7d(_parent, _args, _resolution), do: {:ok, nil}

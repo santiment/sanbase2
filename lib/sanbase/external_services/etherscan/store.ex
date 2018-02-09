@@ -10,6 +10,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
   @last_block_measurement "sanbase-internal-last-blocks-measurement"
 
+  def import_last_block_number(_, nil), do: :ok
+
   @doc ~s"""
     Updates the point for `address` in the special measurement used for saving
     the last queried block number for a given address.
@@ -112,7 +114,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     {:ok, trx_value}
   end
 
-  defp parse_trx_sum_time_series(_), do: {:ok, []}
+  defp parse_trx_sum_time_series(_), do: {:ok, nil}
 
   defp parse_last_block_number(%{results: [%{error: error}]}) do
     {:error, error}

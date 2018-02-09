@@ -105,7 +105,8 @@ const handleLoad = () => {
   })
   .catch(error => Raven.captureException(error))
 
-  let prevToken = loadState().token
+  const oldState = loadState()
+  let prevToken = oldState ? oldState.token : null
   setInterval(() => {
     if (prevToken !== loadState().token) {
       prevToken = loadState().token

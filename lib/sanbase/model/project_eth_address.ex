@@ -14,14 +14,12 @@ defmodule Sanbase.Model.ProjectEthAddress do
       references: :address,
       define_field: false
     )
-
-    field(:project_transparency, :boolean, default: false)
   end
 
   @doc false
   def changeset(%ProjectEthAddress{} = project_eth_address, attrs \\ %{}) do
     project_eth_address
-    |> cast(attrs, [:address, :project_id, :project_transparency])
+    |> cast(attrs, [:address, :project_id])
     |> validate_required([:address, :project_id])
     |> unique_constraint(:address)
   end

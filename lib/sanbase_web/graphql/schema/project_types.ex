@@ -432,6 +432,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
+
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+      resolve(&ProjectResolver.eth_spent/3)
+    end
   end
 
   # Used in the project transparency list query
@@ -858,10 +863,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
     end
 
-    field :eth_spent, :decimal do
-      arg(:from, :datetime, default_value: Sanbase.DateTimeUtils.days_ago(30))
-      arg(:to, :datetime, default_value: Timex.now())
-
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
       resolve(&ProjectResolver.eth_spent/3)
     end
   end

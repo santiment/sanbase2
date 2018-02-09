@@ -18,22 +18,6 @@ exports[`ProjectIcon component DAO.Casino icon should render correctly 1`] = `
 />
 `;
 
-exports[`ProjectIcon component DefaultIcon should render correctly 1`] = `
-<ProjectIcon
-  name="Any Not Available Name"
-  size={16}
->
-  <Component
-    size={16}
-  >
-    <span
-      className="project-icon-default"
-      width={16}
-    />
-  </Component>
-</ProjectIcon>
-`;
-
 exports[`ProjectIcon component SAN icon should render correctly 1`] = `
 <img
   alt="Santiment"

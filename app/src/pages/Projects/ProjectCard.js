@@ -110,12 +110,12 @@ const ProjectCard = ({
           <StatisticElement
             name='24h Price'
             up={percentChange24h > 0}
-            value={percentChange24h ? percentChange24h : '---'}
+            value={percentChange24h || '---'}
             disabled={!percentChange24h} />
           <StatisticElement
             name='24h Volume'
             up={volumeUsd24h > 0}
-            value={volumeUsd24h ? volumeUsd24h : '---'}
+            value={volumeUsd24h || '---'}
             disabled={!volumeUsd24h} />
           <StatisticElement
             name='MarketCap'

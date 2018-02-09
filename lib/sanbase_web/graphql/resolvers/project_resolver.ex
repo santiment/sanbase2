@@ -125,9 +125,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     balance =
       loader
       |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
-      |> Enum.map(& &1.latest_btc_wallet_data)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.map(& &1.balance)
+      |> Stream.map(& &1.latest_btc_wallet_data)
+      |> Stream.reject(&is_nil/1)
+      |> Stream.map(& &1.balance)
       |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
     {:ok, balance}

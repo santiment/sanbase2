@@ -69,8 +69,8 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     assert json_response(result, 200)["data"]["project"] == %{
              "name" => "Project1",
-             "btcBalance" => nil,
-             "ethBalance" => "500"
+             "btcBalance" => "0",
+             "ethBalance" => "1300"
            }
   end
 

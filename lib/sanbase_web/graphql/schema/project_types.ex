@@ -54,6 +54,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.btc_balance/3)
     end
 
+    field :usd_balance, :decimal do
+      resolve(&ProjectResolver.usd_balance/3)
+    end
+
     field :funds_raised_icos, list_of(:currency_amount) do
       resolve(&ProjectResolver.funds_raised_icos/3)
     end
@@ -134,6 +138,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field(:icos, list_of(:ico), resolve: assoc(:icos))
+
+    field :signals, list_of(:signal) do
+      resolve(&ProjectResolver.signals/3)
+    end
   end
 
   # Used in the project list query (public), so heavy computed fields are omitted
@@ -180,6 +188,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :btc_balance, :decimal do
       resolve(&ProjectResolver.btc_balance/3)
+    end
+
+    field :usd_balance, :decimal do
+      resolve(&ProjectResolver.usd_balance/3)
     end
 
     field(:coinmarketcap_id, :string)
@@ -236,6 +248,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :percent_change_7d, :float, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
+
+    field :signals, list_of(:signal) do
+      resolve(&ProjectResolver.signals/3)
+    end
   end
 
   # Used in the project transparency list query
@@ -278,11 +294,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:project_transparency_description, :string)
 
     field :eth_balance, :decimal do
-      resolve(&ProjectResolver.eth_balance(&1, &2, &3, true))
+      resolve(&ProjectResolver.eth_balance/3)
     end
 
     field :btc_balance, :decimal do
-      resolve(&ProjectResolver.btc_balance(&1, &2, &3, true))
+      resolve(&ProjectResolver.btc_balance/3)
+    end
+
+    field :usd_balance, :decimal do
+      resolve(&ProjectResolver.usd_balance/3)
     end
 
     # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
@@ -331,6 +351,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :percent_change_7d, :float, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
+
+    field :signals, list_of(:signal) do
+      resolve(&ProjectResolver.signals/3)
+    end
   end
 
   # Used in public details query, so only easily publicly available fields are included
@@ -378,6 +402,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :btc_balance, :decimal do
       resolve(&ProjectResolver.btc_balance/3)
+    end
+
+    field :usd_balance, :decimal do
+      resolve(&ProjectResolver.usd_balance/3)
     end
 
     # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
@@ -455,6 +483,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :funds_raised_btc_ico_end_price, :decimal do
       resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
     end
+
+    field :signals, list_of(:signal) do
+      resolve(&ProjectResolver.signals/3)
+    end
   end
 
   object :project_with_eth_contract_info do
@@ -517,5 +549,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :currency_amount do
     field(:currency_code, :string)
     field(:amount, :decimal)
+  end
+
+  object :signal do
+    field(:name, non_null(:string))
+    field(:description, non_null(:string))
   end
 end

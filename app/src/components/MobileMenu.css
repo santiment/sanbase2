@@ -1,3 +1,7 @@
+.mobile-app-menu {
+  z-index: 99999;
+}
+
 .app-bar {
   display: flex;
   justify-content: space-between;

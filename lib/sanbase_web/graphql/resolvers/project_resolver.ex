@@ -72,12 +72,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> eth_balance_loader(project)
-    |> on_load(&eth_balance_from_loader(&1, project))
-  end
-
   def eth_spent(%Project{coinmarketcap_id: coinmarketcap_id}, %{days: days}, _resolution) do
     async(fn ->
       today = Timex.now()
@@ -109,6 +103,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       )
 
     balances = Repo.all(query)
+
+    {:ok, balance}
+  end
 
     {:ok, balance}
   end

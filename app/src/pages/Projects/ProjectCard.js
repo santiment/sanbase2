@@ -80,13 +80,13 @@ const ProjectCard = ({
             ><span>rank</span> {rank}</div>
           </div>
         </Card.Header>
-        {marketSegment && <Card.Meta>
+        <Card.Meta>
           <Label
             size='mini'
             color={MARKET_SEGMENT_COLORS[marketSegment]} tag>
-            {marketSegment}
+            {marketSegment || 'unknown market segment yet'}
           </Label>
-        </Card.Meta>}
+        </Card.Meta>
         <Card.Description>
           {!description
             ? "We don't have any description about this project yet."

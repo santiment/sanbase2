@@ -12,8 +12,8 @@
 }
 
 .ListView-content span {
-  padding: 0 10px !important;
-  padding-top: 10px !important;
+  padding: 10px !important;
+  margin-top: 10px !important;
 }
 
 .ListView-content span:first-child {
@@ -22,8 +22,8 @@
 
 .ListView-runway {
   position: absolute;
-  height: 5px;
-  width: 5px;
+  height: 1px;
+  width: 1px;
 }
 
 .ListItem-project {

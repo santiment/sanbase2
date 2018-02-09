@@ -41,7 +41,7 @@ const CashflowMobile = ({
         aveCellHeight={420}
       >
         {projects.map((project, index) => (
-          <ListViewItem height={420} key={index}>
+          <ListViewItem height={440} key={index}>
             <div className='ListItem-project' >
               <ProjectCard {...project} />
             </div>

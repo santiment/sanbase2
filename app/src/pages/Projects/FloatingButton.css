@@ -1,9 +1,3 @@
-.container {
-  width: 320px;
-  height: 200px;
-  background: #ececec;
-}
-
 .floating-btn {
   outline: none;
   user-select: none;
@@ -12,7 +6,7 @@
   position: fixed;
   bottom: 35px;
   right: 30px;
-  line-height: 40px;
+  line-height: 44px;
   vertical-align: middle;
   color: white;
   padding-left: 2px;

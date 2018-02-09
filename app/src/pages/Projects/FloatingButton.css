@@ -5,12 +5,14 @@
 }
 
 .floating-btn {
-  width: 45px;
-  height: 45px;
+  outline: none;
+  user-select: none;
+  width: 47px;
+  height: 47px;
   position: fixed;
   bottom: 35px;
   right: 30px;
-  line-height: 45px;
+  line-height: 40px;
   vertical-align: middle;
   color: white;
   padding-left: 2px;
@@ -19,19 +21,25 @@
   border: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   text-align: center;
-  transition: color 0.2s;
   cursor: pointer;
+  transition: color 0.2s;
   animation: fromBottom 1.6s 1;
+}
+
+.floating-btn:hover,
+.floating-btn:focus {
+  outline: none;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.36);
+}
+
+.floating-btn--rotation i {
+  animation: rotate 0.6s 1;
 }
 
 .floating-btn-items {
   position: fixed;
   bottom: calc(35px + 45px + 35px);
   right: 30px;
-}
-
-.floating-btn:hover {
-  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
 }
 
 .mfb-component--br {
@@ -48,12 +56,12 @@
   }
 }
 
-@keyframes fromTop {
+@keyframes rotate {
   0% {
-    transform: translateY(-250px);
+    transform: rotate(0deg);
   }
 
   100% {
-    transform: translateY(0);
+    transform: rotate(360deg);
   }
 }

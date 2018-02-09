@@ -1,5 +1,32 @@
 .cashflow-mobile {
-  padding: 20px;
-  padding-top: 10px;
   position: relative;
+}
+
+.cashflow-mobile-search {
+  padding: 0 10px 10px 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ListView {
+  height: 90vh;
+}
+
+.ListView-content span {
+  padding: 0 10px !important;
+  padding-top: 10px !important;
+}
+
+.ListView-content span:first-child {
+  padding-top: 20px !important;
+}
+
+.ListView-runway {
+  position: absolute;
+  height: 5px;
+  width: 5px;
+}
+
+.ListItem-project {
+  max-height: 420px;
+  min-height: 420px;
 }

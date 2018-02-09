@@ -1,6 +1,7 @@
 import React from 'react'
 import { Card, Button, Statistic, Label, Icon } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
+import PercentChanges from './../../components/PercentChanges'
 import { formatNumber } from '../../utils/formatting'
 import { millify } from '../../utils/utils'
 
@@ -27,12 +28,16 @@ const MARKET_SEGMENT_COLORS = {
   'Data': 'black'
 }
 
-const StatisticElement = ({name, value, disabled = false}) => (
+const StatisticElement = ({name, value, up = undefined, disabled = false}) => (
   <Statistic style={{
     color: disabled ? '#d3d3d3' : 'initial'
   }}>
     <Statistic.Label>{name}</Statistic.Label>
-    <Statistic.Value>{value}</Statistic.Value>
+    <Statistic.Value>
+      {typeof up !== 'undefined' && value !== '---'
+        ? <PercentChanges changes={value} />
+        : value}
+    </Statistic.Value>
   </Statistic>
 )
 
@@ -94,21 +99,23 @@ const ProjectCard = ({
           <Icon name='warning sign' />
         </Label>}
         <Statistic.Group size='mini' widths='two' style={{paddingBottom: '1em'}}>
-          <Statistic >
-            <Statistic.Label>Price</Statistic.Label>
-            <Statistic.Value>{formatNumber(priceUsd, 'USD')}</Statistic.Value>
-          </Statistic>
-          <Statistic>
-            <Statistic.Label>Volume</Statistic.Label>
-            <Statistic.Value>{millify(parseFloat(volumeUsd))}</Statistic.Value>
-          </Statistic>
-          <Statistic >
-            <Statistic.Label>24h Price</Statistic.Label>
-            <Statistic.Value>{percentChange24h}%</Statistic.Value>
-          </Statistic>
+          <StatisticElement
+            name='Price'
+            value={priceUsd ? formatNumber(priceUsd, 'USD') : '---'}
+            disabled={!priceUsd} />
+          <StatisticElement
+            name='Volume'
+            value={volumeUsd ? millify(parseFloat(volumeUsd)) : '---'}
+            disabled={!volumeUsd} />
+          <StatisticElement
+            name='24h Price'
+            up={percentChange24h > 0}
+            value={percentChange24h ? percentChange24h : '---'}
+            disabled={!percentChange24h} />
           <StatisticElement
             name='24h Volume'
-            value={volumeUsd24h || '---'}
+            up={volumeUsd24h > 0}
+            value={volumeUsd24h ? volumeUsd24h : '---'}
             disabled={!volumeUsd24h} />
           <StatisticElement
             name='MarketCap'

@@ -5,10 +5,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   import Absinthe.Resolution.Helpers
 
   alias Sanbase.Model.Project
-  alias Sanbase.Model.ProjectEthAddress
-  alias Sanbase.Model.ProjectBtcAddress
-  alias Sanbase.Model.LatestBtcWalletData
-  alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.Infrastructure
@@ -18,7 +14,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore
-  alias SanbaseWeb.Graphql.Resolvers.PriceResolver
 
   alias Sanbase.Repo
 
@@ -57,7 +52,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, project}
   end
 
-  def all_projects_with_eth_contract_info(_parent, _args, resolution) do
+  def all_projects_with_eth_contract_info(_parent, _args, _resolution) do
     query = Project.all_projects_with_eth_contract_query()
 
     projects =
@@ -70,8 +65,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(SanbaseRepo, :eth_addresses, project)
+    |> eth_balance_loader(project)
     |> on_load(&eth_balance_from_loader(&1, project))
+  end
+
+  defp eth_balance_loader(loader, project) do
+    loader
+    |> Dataloader.load(SanbaseRepo, :eth_addresses, project)
   end
 
   defp eth_balance_from_loader(loader, project) do
@@ -88,8 +88,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def btc_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(SanbaseRepo, :btc_addresses, project)
+    |> btc_balance_loader(project)
     |> on_load(&btc_balance_from_loader(&1, project))
+  end
+
+  defp btc_balance_loader(loader, project) do
+    loader
+    |> Dataloader.load(SanbaseRepo, :btc_addresses, project)
   end
 
   def btc_balance_from_loader(loader, project) do
@@ -106,22 +111,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def usd_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(SanbaseRepo, :eth_addresses, project)
-    |> Dataloader.load(SanbaseRepo, :btc_addresses, project)
+    |> usd_balance_loader(project)
+    |> on_load(&usd_balance_from_loader(&1, project))
+  end
+
+  defp usd_balance_loader(loader, project) do
+    loader
+    |> eth_balance_loader(project)
+    |> btc_balance_loader(project)
     |> Dataloader.load(PriceStore, "ETH_USD", :last)
     |> Dataloader.load(PriceStore, "BTC_USD", :last)
-    |> on_load(fn loader ->
-      {:ok, eth_balance} = eth_balance_from_loader(loader, project)
-      {:ok, btc_balance} = btc_balance_from_loader(loader, project)
-      eth_price = Dataloader.get(loader, PriceStore, "ETH_USD", :last)
-      btc_price = Dataloader.get(loader, PriceStore, "BTC_USD", :last)
+  end
 
-      {:ok,
-       Decimal.add(
-         Decimal.mult(eth_balance, eth_price),
-         Decimal.mult(btc_balance, btc_price)
-       )}
-    end)
+  defp usd_balance_from_loader(loader, project) do
+    {:ok, eth_balance} = eth_balance_from_loader(loader, project)
+    {:ok, btc_balance} = btc_balance_from_loader(loader, project)
+    eth_price = Dataloader.get(loader, PriceStore, "ETH_USD", :last)
+    btc_price = Dataloader.get(loader, PriceStore, "BTC_USD", :last)
+
+    {:ok,
+     Decimal.add(
+       Decimal.mult(eth_balance, eth_price),
+       Decimal.mult(btc_balance, btc_price)
+     )}
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
@@ -259,10 +271,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     month_ago = Timex.shift(Timex.now(), days: -30)
 
     case Github.Store.fetch_activity_with_resolution!(ticker, month_ago, Timex.now(), "30d") do
-      [%{"SUM(activity)" => total_activity}] ->
+      {_dt, total_activity} ->
         {:ok, total_activity / 30}
 
-      [] ->
+      _ ->
         {:ok, nil}
     end
   end
@@ -369,34 +381,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, ico}
   end
 
-  def signals(%Project{ticker: ticker} = project, _args, _resolution) do
-    market_cap = marketcap_usd(project, nil, nil)
-
-    usd_balance = usd_balance(project, nil, nil)
-
-    if market_cap < usd_balance do
-      {:ok,
-       [
-         %{
-           name: "balance_bigger_than_mcap",
-           description: "The balance of the project is bigger than it's market capitalization"
-         }
-       ]}
-    else
-      {:ok, []}
-    end
-  end
-
-  defp requested_fields(resolution) do
-    resolution.definition.selections
-    |> Enum.map(&(Map.get(&1, :name) |> String.to_atom()))
-    |> Enum.into(%{}, fn field -> {field, true} end)
-  end
-
-  defp get_parent_args(resolution) do
-    case resolution do
-      %{path: [_, %{argument_data: parent_args} | _]} -> parent_args
-      _ -> %{}
-    end
+  def signals(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> usd_balance_loader(project)
+    |> on_load(fn loader ->
+      with {:ok, usd_balance} <- usd_balance_from_loader(loader, project),
+           {:ok, market_cap} <- marketcap_usd(project, nil, nil),
+           false <- is_nil(usd_balance) || is_nil(market_cap),
+           :lt <- Decimal.cmp(market_cap, usd_balance) do
+        {:ok,
+         [
+           %{
+             name: "balance_bigger_than_mcap",
+             description: "The balance of the project is bigger than it's market capitalization"
+           }
+         ]}
+      else
+        _ ->
+          {:ok, []}
+      end
+    end)
   end
 end

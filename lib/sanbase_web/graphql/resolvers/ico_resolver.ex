@@ -62,10 +62,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.IcoResolver do
 
     {:ok, result}
   end
-
-  defp requested_fields(resolution) do
-    resolution.definition.selections
-    |> Enum.map(&(Map.get(&1, :name) |> String.to_atom()))
-    |> Enum.into(%{}, fn field -> {field, true} end)
-  end
 end

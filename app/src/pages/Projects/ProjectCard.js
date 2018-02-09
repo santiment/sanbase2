@@ -1,9 +1,11 @@
 import React from 'react'
+import cx from 'classnames'
 import { Card, Button, Statistic, Label, Icon } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import { formatNumber } from '../../utils/formatting'
 import { millify } from '../../utils/utils'
+import './ProjectCard.css'
 
 const HiddenElements = () => ''
 // Project Name
@@ -29,9 +31,9 @@ const MARKET_SEGMENT_COLORS = {
 }
 
 const StatisticElement = ({name, value, up = undefined, disabled = false}) => (
-  <Statistic style={{
-    color: disabled ? '#d3d3d3' : 'initial'
-  }}>
+  <Statistic className={cx({
+    'statistic-disabled': disabled
+  })}>
     <Statistic.Label>{name}</Statistic.Label>
     <Statistic.Value>
       {typeof up !== 'undefined' && value !== '---'
@@ -50,9 +52,10 @@ const ProjectCard = ({
   priceUsd,
   percentChange24h,
   volumeUsd,
-  volumeUsd24h,
-  githubData,
+  volumeChange24h,
+  averageDevActivity,
   twitterData,
+  ethSpent,
   btcBalance = 0,
   ethBalance = 0,
   marketcapUsd,
@@ -65,8 +68,7 @@ const ProjectCard = ({
         <Card.Header>
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
             <div style={{display: 'flex', alignItems: 'center'}}>
-              <ProjectIcon name={ticker} />
-              {name}
+              <ProjectIcon name={name} /> &nbsp;{name}
             </div>
             <div style={{
               textTransform: 'uppercase',
@@ -105,7 +107,9 @@ const ProjectCard = ({
             disabled={!priceUsd} />
           <StatisticElement
             name='Volume'
-            value={volumeUsd ? millify(parseFloat(volumeUsd)) : '---'}
+            value={volumeUsd
+              ? `$${millify(parseFloat(volumeUsd))}`
+              : '---'}
             disabled={!volumeUsd} />
           <StatisticElement
             name='24h Price'
@@ -114,25 +118,35 @@ const ProjectCard = ({
             disabled={!percentChange24h} />
           <StatisticElement
             name='24h Volume'
-            up={volumeUsd24h > 0}
-            value={volumeUsd24h || '---'}
-            disabled={!volumeUsd24h} />
+            up={volumeChange24h > 0}
+            value={volumeChange24h || '---'}
+            disabled={!volumeChange24h} />
           <StatisticElement
             name='MarketCap'
-            value={marketcapUsd ? millify(parseFloat(marketcapUsd)) : '---'}
+            value={marketcapUsd
+              ? `$${millify(parseFloat(marketcapUsd))}`
+              : '---'}
             disabled={!marketcapUsd} />
           <StatisticElement
             name='Crypto Balance'
-            value={ethBalance ? millify(parseFloat(ethBalance)) : '---'}
+            value={ethBalance
+              ? `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
+              : '---'}
             disabled={!ethBalance} />
           <StatisticElement
-            name='Dev Activity 30d'
-            value={githubData || '---'}
-            disabled={!githubData} />
+            name='ETH Spent 30d'
+            value={ethSpent ? millify(parseFloat(ethSpent)) : '---'}
+            disabled={!ethSpent} />
           <StatisticElement
-            name='Twitter 30d'
-            value={twitterData || '---'}
-            disabled={!twitterData} />
+            name='Dev Activity 30d'
+            value={averageDevActivity ? parseFloat(averageDevActivity).toFixed(2) : '---'}
+            disabled={!averageDevActivity} />
+          <HiddenElements>
+            <StatisticElement
+              name='Twitter 30d'
+              value={twitterData || '---'}
+              disabled={!twitterData} />
+          </HiddenElements>
         </Statistic.Group>
       </Card.Content>
       <HiddenElements>

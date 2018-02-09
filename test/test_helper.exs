@@ -1,3 +1,3 @@
 ExUnit.start()
 
-Ecto.Adapters.SQL.Sandbox.mode(Sanbase.Repo, :auto)
+Ecto.Adapters.SQL.Sandbox.mode(Sanbase.Repo, {:shared, self()})

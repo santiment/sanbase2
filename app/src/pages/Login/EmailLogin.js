@@ -114,7 +114,7 @@ const EmailLogin = ({
     return (
       <div>
         <p>Something going wrong on our server.</p>
-        <p>Please try again.</p>
+        <p>Please try again later.</p>
       </div>
     )
   }
@@ -124,6 +124,10 @@ const EmailLogin = ({
       <Form
         validateError={errorValidator}
         validateSuccess={successValidator}
+        onSubmitFailure={error => {
+          onError(true)
+          Raven.captureException(error)
+        }}
         onSubmit={values => {
           onPending(true)
           emailLogin({variables: {...values}})

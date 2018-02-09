@@ -46,8 +46,7 @@ defmodule Sanbase.Github.Store do
     ~s/SELECT SUM(activity)
     FROM "#{ticker}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    fill(none)/
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   defp activity_with_resolution_query(ticker, from, to, resolution) do

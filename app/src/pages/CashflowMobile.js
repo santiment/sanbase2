@@ -2,10 +2,12 @@ import React from 'react'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import { SlideDown } from 'animate-components'
+import { Loader } from 'semantic-ui-react'
 import { compose, withState, lifecycle } from 'recompose'
 import { ListView, ListViewItem } from './../components/ListView'
 import ProjectCard from './Projects/ProjectCard'
 import FloatingButton from './Projects/FloatingButton'
+import { simpleSort } from './../utils/sortMethods'
 import Search from './../components/Search'
 import './CashflowMobile.css'
 
@@ -21,6 +23,9 @@ const CashflowMobile = ({
   focusSearch
 }) => {
   const { projects = [] } = Projects
+  if (Projects.loading) {
+    return (<Loader active size='large' />)
+  }
   return (
     <div className='cashflow-mobile'>
       {isSearchFocused &&
@@ -63,15 +68,37 @@ const allProjectsGQL = gql`{
     priceUsd
     percentChange24h
     volumeUsd
+    volumeChange24h
+    ethSpent
+    averageDevActivity
+    marketcapUsd
+    ethBalance
+    btcBalance
+    ethAddresses {
+      address
+      balance
+    }
+    twitterData {
+      followersCount
+    }
   }
 }`
 
 const mapDataToProps = ({allProjects}) => {
   const loading = allProjects.loading
-  const isEmpty = !!allProjects.project
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = allProjects.allProjects || []
+  const projects = ((projects = []) => {
+    return projects.filter(project => {
+      return project.ethAddresses &&
+        project.ethAddresses.length > 0 &&
+        project.rank
+    })
+    .sort((a, b) => {
+      return simpleSort(parseInt(a.marketcapUsd, 10), parseInt(b.marketcapUsd, 10))
+    })
+  })(allProjects.allProjects)
+  const isEmpty = projects.length === 0
   return {
     Projects: {
       loading,

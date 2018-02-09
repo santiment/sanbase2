@@ -1,0 +1,4 @@
+.statistic-disabled .value,
+.statistic-disabled .label {
+  color: #d3d3d3 !important;
+}

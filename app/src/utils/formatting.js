@@ -1,4 +1,9 @@
-const formatBTC = price => price > 1 ? price.toFixed(2) : parseFloat(price.toFixed(8))
+const formatBTC = price => {
+  const _price = parseFloat(price)
+  return _price > 1
+    ? parseFloat(_price.toFixed(2))
+    : parseFloat(_price.toFixed(8))
+}
 
 const formatNumber = (amount, currency, options = {}) => {
   if (currency === 'SAN') {

@@ -15,7 +15,7 @@ const FloatingButton = ({
         toggle(!isToggled)
         handleSearchClick()
       }}
-      className='floating-btn'>
+      className={isToggled ? 'floating-btn floating-btn--rotation' : 'floating-btn'}>
       <Icon size='large' name={isToggled ? 'remove' : 'search'} />
     </div>
   </div>

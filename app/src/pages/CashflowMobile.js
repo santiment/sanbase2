@@ -3,6 +3,7 @@ import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import { SlideDown } from 'animate-components'
 import { compose, withState, lifecycle } from 'recompose'
+import { ListView, ListViewItem } from './../components/ListView'
 import ProjectCard from './Projects/ProjectCard'
 import FloatingButton from './Projects/FloatingButton'
 import Search from './../components/Search'
@@ -24,14 +25,29 @@ const CashflowMobile = ({
     <div className='cashflow-mobile'>
       {isSearchFocused &&
         <SlideDown duration='0.3s' timingFunction='ease-out' as='div'>
-          <Search
-            focus={focusSearch}
-            onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
-            projects={projects} />
+          <div className='cashflow-mobile-search'>
+            <Search
+              focus={focusSearch}
+              onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+              projects={projects} />
+          </div>
         </SlideDown>}
-      {projects.map((project, index) => (
-        <ProjectCard key={index} {...project} />
-      ))}
+      <ListView
+        style={{
+          top: isSearchFocused ? 60 : 0
+        }}
+        runwayItems={7}
+        runwayItemsOpposite={5}
+        aveCellHeight={420}
+      >
+        {projects.map((project, index) => (
+          <ListViewItem height={420} key={index}>
+            <div className='ListItem-project' >
+              <ProjectCard {...project} />
+            </div>
+          </ListViewItem>
+        ))}
+      </ListView>
       <FloatingButton handleSearchClick={() => focusSearch(!isSearchFocused)} />
     </div>
   )
@@ -55,9 +71,7 @@ const mapDataToProps = ({allProjects}) => {
   const isEmpty = !!allProjects.project
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = allProjects.allProjects ? allProjects.allProjects.filter((_, index) => {
-    return index < 10  // TODO: !
-  }) : []
+  const projects = allProjects.allProjects || []
   return {
     Projects: {
       loading,

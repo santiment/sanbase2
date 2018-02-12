@@ -92,8 +92,7 @@ const enhance = compose(
     name: 'emailLoginVerify',
     props: ({ emailLoginVerify }) => ({
       verify: ({token, email}) => emailLoginVerify({ variables: { token, email } })
-    }),
-    options: { fetchPolicy: 'network-only' }
+    })
   }),
   lifecycle({
     componentDidMount () {

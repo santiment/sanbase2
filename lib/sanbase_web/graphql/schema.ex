@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.PriceStore
 
   import_types(Absinthe.Type.Custom)
+  import_types(SanbaseWeb.Graphql.CustomTypes)
   import_types(SanbaseWeb.Graphql.AccountTypes)
   import_types(SanbaseWeb.Graphql.PriceTypes)
   import_types(SanbaseWeb.Graphql.ProjectTypes)
@@ -18,6 +19,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.VotingTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
+  import_types(SanbaseWeb.Graphql.TransactionTypes)
 
   def context(ctx) do
     loader =
@@ -141,7 +143,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Shows the flow of funds in an exchange wallet"
-    field :exchange_fund_flow, list_of(:transaction) do
+    field :exchange_fund_flow, list_of(:exchange_transaction) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())

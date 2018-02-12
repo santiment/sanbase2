@@ -79,6 +79,26 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     end
   end
 
+  @doc ~s"""
+    TODO
+  """
+  def transactions(measurement, from, to, transaction_type) do
+    select_transactions(measurement, from, to, transaction_type)
+    |> Store.query()
+    |> IO.inspect()
+    |> parse_transactions_time_series()
+  end
+
+  @doc ~s"""
+    TODO
+  """
+  def transactions!(measurement, from, to, transaction_type) do
+    case transactions(measurement, from, to, transaction_type) do
+      {:ok, result} -> result
+      {:error, error} -> raise(error)
+    end
+  end
+
   # Private functions
 
   defp select_last_block_number(address) do
@@ -90,6 +110,19 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
+    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp select_transactions(measurement, from, to, "all") do
+    ~s/SELECT trx_value, transaction_type, from_addr, to_addr FROM "#{measurement}"
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp select_transactions(measurement, from, to, transaction_type) do
+    ~s/SELECT trx_value, transaction_type, from_addr, to_addr FROM "#{measurement}"
+    WHERE transaction_type='#{transaction_type}'
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -136,4 +169,31 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   end
 
   defp parse_last_block_number(_), do: {:ok, nil}
+
+  defp parse_transactions_time_series(%{results: [%{error: error}]}) do
+    {:error, error}
+  end
+
+  defp parse_transactions_time_series(%{
+         results: [
+           %{
+             series: [
+               %{
+                 values: transactions
+               }
+             ]
+           }
+         ]
+       }) do
+    result =
+      transactions
+      |> Enum.map(fn [iso8601_datetime, trx_volume, trx_type, from_addr, to_addr] ->
+        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+        {datetime, trx_volume, trx_type, from_addr, to_addr}
+      end)
+
+    {:ok, result}
+  end
+
+  defp parse_transactions_time_series(_), do: {:ok, nil}
 end

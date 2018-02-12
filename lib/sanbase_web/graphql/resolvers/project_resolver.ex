@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Prices
   alias Sanbase.Github
+  alias Sanbase.ExternalServices.Etherscan
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore
@@ -78,7 +79,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       days_ago = Timex.shift(today, days: -days)
 
       eth_spent =
-        Sanbase.ExternalServices.Etherscan.Store.trx_sum_in_interval!(
+        Etherscan.Store.trx_sum_in_interval!(
           coinmarketcap_id,
           days_ago,
           today,

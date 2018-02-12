@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Prices
   alias Sanbase.Github
+  alias Sanbase.ExternalServices.Etherscan
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore
@@ -73,7 +74,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       days_ago = Timex.shift(today, days: -days)
 
       eth_spent =
-        Sanbase.ExternalServices.Etherscan.Store.trx_sum_in_interval!(
+        Etherscan.Store.trx_sum_in_interval!(
           coinmarketcap_id,
           days_ago,
           today,
@@ -81,6 +82,37 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         )
 
       {:ok, eth_spent}
+    end)
+  end
+
+  def eth_transactions(
+        %Project{coinmarketcap_id: coinmarketcap_id},
+        %{from: from, to: to, transaction_type: trx_type},
+        _resolution
+      ) do
+    async(fn ->
+      eth_transactions =
+        Etherscan.Store.transactions!(
+          coinmarketcap_id,
+          from,
+          to,
+          trx_type |> Atom.to_string()
+        )
+
+      result =
+        eth_transactions
+        |> Enum.map(fn {datetime, trx_volume, trx_type, from_addr, to_addr} ->
+          %{
+            datetime: datetime,
+            transaction_volume: trx_volume |> Decimal.new(),
+            transaction_type: trx_type,
+            from_address: from_addr,
+            to_address: to_addr
+          }
+        end)
+        |> IO.inspect()
+
+      {:ok, result}
     end)
   end
 

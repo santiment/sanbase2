@@ -6,37 +6,32 @@
 }
 
 .login-inner {
-  padding: 1em;
+  padding: 4em 1em !important;
   margin: 0;
   width: 100%;
   text-align: center;
-  background-color: initial;
-  border-radius: 0 !important;
-  border: 0 !important;
-  box-shadow: none;
+  background-color: rgba(255, 255, 255, 1);
+  border-radius: 2px;
+  box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
+  /* min-height: 300px; */
+  margin-top: -80px !important;
 }
 
 .login-inner h2 {
   margin: 0;
-  margin-bottom: 20px;
   font-size: 24px;
   font-weight: 400 !important;
-  color: rgba(0, 0, 0, 0.85) !important;
 }
 
 .login-inner p {
-  font-size: 19px;
-  line-height: 24px;
-  width: 70%;
+  /* width: 70%; */
   margin: 0 auto;
-  margin-bottom: 25px;
-  color: rgba(0, 0, 0, 0.75) !important;
+  /* margin-bottom: 25px; */
 }
 
 .login-actions {
   width: 300px;
-  margin: 0 auto;
-  margin-top: 1em;
+  margin: 0 auto 2em auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -45,7 +40,7 @@
 
 .login-actions button {
   margin-top: 1em !important;
-  padding-left: 6px !important;
+  /* padding-left: 6px !important; */
 }
 
 .auth-goto-back-button {
@@ -80,11 +75,8 @@
 
 @media (min-width: 1024px) {
   .login-inner {
+    margin-top: -50px;
     max-width: 70%;
     min-width: 700px;
-    min-height: 300px;
-    background-color: rgba(227, 227, 227, 0.4);
-    border-radius: 2px;
-    box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
   }
 }

@@ -124,9 +124,9 @@ const EmailLogin = ({
       <Form
         validateError={errorValidator}
         validateSuccess={successValidator}
-        onSubmitFailure={error => {
+        onSubmitFailure={(error, ...rest) => {
           onError(true)
-          Raven.captureException(error)
+          Raven.captureException(`Login by Email: ${error} ${rest}`)
         }}
         onSubmit={values => {
           onPending(true)
@@ -181,7 +181,6 @@ export default compose(
   withState('isError', 'onError', false),
   withState('isSuccess', 'onSuccess', false),
   graphql(emailLoginGQL, {
-    name: 'emailLogin',
-    options: { fetchPolicy: 'network-only' }
+    name: 'emailLogin'
   })
 )(EmailLogin)

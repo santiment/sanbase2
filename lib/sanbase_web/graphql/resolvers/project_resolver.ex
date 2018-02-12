@@ -273,20 +273,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def volume_change_24h(%Project{ticker: ticker}, _args, _resolution) do
     async(fn ->
-      two_days_ago = Timex.shift(Timex.now(), days: -2)
+      pair = "#{ticker}_USD"
+      yesterday = Timex.shift(Timex.now(), days: -1)
+      the_other_day = Timex.shift(Timex.now(), days: -2)
 
-      Prices.Store.fetch_mean_volume_with_resolution(
-        "#{ticker}_USD",
-        two_days_ago,
-        Timex.now(),
-        "1d"
-      )
-      |> Enum.reverse()
-      |> case do
-        [[_dt1, today_volume], [_dt2, yesterday_volume] | _rest] ->
-          {:ok, (today_volume - yesterday_volume) * 100 / yesterday_volume}
-
-        [] ->
+      with [[_dt, today_vol]] <- Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
+           [[_dt, yesterday_vol]] <-
+             Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
+           true <- yesterday_vol > 0 do
+        {:ok, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+      else
+        _ ->
           {:ok, nil}
       end
     end)

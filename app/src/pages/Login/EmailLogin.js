@@ -114,7 +114,7 @@ const EmailLogin = ({
     return (
       <div>
         <p>Something going wrong on our server.</p>
-        <p>Please try again.</p>
+        <p>Please try again later.</p>
       </div>
     )
   }

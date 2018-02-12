@@ -85,7 +85,8 @@ end
   {"DAO.Casino", "BET", "dao-casino.png", "dao-casino", "ETH"},
   {"Centra", "CTR", "centra.png", "centra", "ETH"},
   {"Tierion", "TNT", "tierion.png", "tierion", "ETH"},
-  {"Matchpool", "GUP", "guppy.png", "guppy", "ETH"}
+  {"Matchpool", "GUP", "guppy.png", "guppy", "ETH"},
+  {"Nebulas", "NAS", "nebulas.png", "nebulas-token", "ETH"}
 ]
 |> Enum.map(make_project)
 |> Enum.each(&Repo.insert!/1)
@@ -118,7 +119,8 @@ end
   {"DAO.Casino", "0x1446bf7AF9dF857b23a725646D94f9Ec49802227"},
   {"Centra", "0x96A65609a7B84E8842732DEB08f56C3E21aC6f8a"},
   {"Tierion", "0x0C4b367e876d18d5c102023D9240DD7e9C11b380"},
-  {"Matchpool", "0x1c10aD0b5f1b4013173f05B4cc05a60cBBAa6536"}
+  {"Matchpool", "0x1c10aD0b5f1b4013173f05B4cc05a60cBBAa6536"},
+  {"Nebulas", "0x5d65D971895Edc438f465c17DB6992698a52318D"}
 ]
 |> Enum.flat_map(make_eth_address)
 |> Enum.each(&Repo.insert!/1)

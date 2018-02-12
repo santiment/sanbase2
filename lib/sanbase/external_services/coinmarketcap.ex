@@ -148,7 +148,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     %Measurement{
       timestamp: DateTime.to_unix(datetime, :nanosecond),
       fields: price_point_to_fields(point, suffix),
-      tags: [source: "coinmarketcap"],
+      tags: [],
       name: name
     }
   end

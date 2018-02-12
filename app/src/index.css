@@ -1,8 +1,8 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #f5f9ff;
-  font: 14px/1.6 "Source+Sans+Pro", sans-serif;
+  background-color: #f0f4f8;
+  font: 14px/1.6 "Source Sans Pro", sans-serif;
   font-weight: 400;
   color: #3d4450;
 }
@@ -16,7 +16,7 @@ h2,
 h3,
 h4,
 h5 {
-  font-family: "Source+Sans+Pro", sans-serif;
+  font-family: "Source Sans Pro", sans-serif;
 }
 
 h1 {
@@ -72,4 +72,31 @@ hr {
     margin: 16px 0;
     padding: 8px;
   }
+}
+
+.ui.button {
+  font-family: 'Nunito Sans', sans serif;
+  font-weight: initial;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.ui.positive.button{
+  background-color: #26a987;
+}
+.ui.basic.button {
+  background: rgba(45, 121, 208, 1) !important;
+  color: #fff !important;
+  font-family: 'Nunito Sans', sans serif;
+  letter-spacing: 0.03em;
+  text-align: center !important;
+  text-transform: uppercase;
+}
+
+.ui.basic.button.metamask-btn {
+  background: rgba(235, 133, 37, 1) !important;
+}
+
+.ui.active.button:active, .ui.button:active {
+  background-color: #3d4450;
+  color: #fff;
 }

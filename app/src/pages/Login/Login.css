@@ -16,6 +16,10 @@
   box-shadow: none;
 }
 
+.login-inner .ui.negative.message.content {
+  text-align: left !important;
+}
+
 .login-inner h2 {
   margin: 0;
   margin-bottom: 20px;

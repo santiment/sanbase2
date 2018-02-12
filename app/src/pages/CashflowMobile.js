@@ -2,7 +2,7 @@ import React from 'react'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import { SlideDown } from 'animate-components'
-import { Loader } from 'semantic-ui-react'
+import { Loader, Message } from 'semantic-ui-react'
 import { compose, withState, lifecycle } from 'recompose'
 import { ListView, ListViewItem } from './../components/ListView'
 import ProjectCard from './Projects/ProjectCard'
@@ -28,7 +28,16 @@ const CashflowMobile = ({
   if (Projects.loading) {
     return (<Loader active size='large' />)
   }
-
+  if (Projects.isError) {
+    return (
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
+        <Message warning>
+          <Message.Header>Something going wrong on our server.</Message.Header>
+          <p>Please try again later.</p>
+        </Message>
+      </div>
+    )
+  }
   const filteredProjects = isSearchFocused && filterName
     ? projects.filter(project => {
       return project.name.toLowerCase().indexOf(filterName) !== -1 ||
@@ -144,7 +153,12 @@ const enhance = compose(
   }),
   graphql(allProjectsGQL, {
     name: 'allProjects',
-    props: mapDataToProps
+    props: mapDataToProps,
+    options: () => {
+      return {
+        errorPolicy: 'all'
+      }
+    }
   })
 )
 

@@ -124,6 +124,10 @@ const EmailLogin = ({
       <Form
         validateError={errorValidator}
         validateSuccess={successValidator}
+        onSubmitFailure={error => {
+          onError(true)
+          Raven.captureException(error)
+        }}
         onSubmit={values => {
           onPending(true)
           emailLogin({variables: {...values}})

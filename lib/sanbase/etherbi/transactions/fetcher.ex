@@ -39,18 +39,26 @@ defmodule Sanbase.Etherbi.Transactions.Fetcher do
   # Private functions
 
   defp transactions(address, transaction_type) do
-    case Utils.generate_from_to_interval_unix(
-           address,
-           db_last_datetime:
-             &Store.last_datetime_with_tag(&1, "transaction_type", transaction_type),
-           etherbi_first_timestamp: &@etherbi_api.get_first_transaction_timestamp_addr/1
-         ) do
-      {from_datetime, to_datetime} ->
+    from_datetime = choose_starting_time(address, transaction_type)
+
+    case Utils.generate_from_to_interval_unix(from_datetime) do
+      {from, to} ->
         Logger.info("Getting #{transaction_type} transactions for #{address}")
-        @etherbi_api.get_transactions(address, from_datetime, to_datetime, transaction_type)
+        @etherbi_api.get_transactions(address, from, to, transaction_type)
 
       _ ->
         {:ok, []}
+    end
+  end
+
+  defp choose_starting_time(address, trx_type) do
+    {:ok, from_datetime} = Store.last_address_datetime(address, trx_type)
+
+    if from_datetime do
+      from_datetime
+    else
+      {:ok, from_datetime} = @etherbi_api.get_first_transaction_timestamp_addr(address)
+      from_datetime
     end
   end
 end

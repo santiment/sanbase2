@@ -82,7 +82,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   # Private functions
 
   defp select_last_block_number(address) do
-    ~s/SELECT block_number from "sanbase-internal-last-blocks-measurement"
+    ~s/SELECT block_number from "#{@last_block_measurement}"
     WHERE address = '#{address}'/
   end
 

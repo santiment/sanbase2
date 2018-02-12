@@ -127,7 +127,7 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
     %Measurement{
       timestamp: DateTime.to_unix(DateTime.utc_now(), :nanosecond),
       fields: %{followers_count: followers_count},
-      tags: [source: "twitter"],
+      tags: [],
       name: measurement_name
     }
   end

@@ -175,7 +175,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
       %Measurement{
         timestamp: DateTime.to_unix(datetime, :nanosecond),
         fields: %{activity: count},
-        tags: [source: "githubarchive"],
+        tags: [],
         name: orgs[org].ticker
       }
     end)

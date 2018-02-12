@@ -13,6 +13,7 @@ import gql from 'graphql-tag'
 import { createHttpLink } from 'apollo-link-http'
 import { setContext } from 'apollo-link-context'
 import { from } from 'apollo-link'
+import { onError } from 'apollo-link-error'
 import { InMemoryCache } from 'apollo-cache-inmemory'
 import { ApolloProvider } from 'react-apollo'
 import App from './App'
@@ -55,8 +56,28 @@ const handleLoad = () => {
     }
   })
 
+  const linkError = onError(({graphQLErrors, networkError, operation}) => {
+    if (graphQLErrors) {
+      graphQLErrors.forEach(({ message, locations, path }) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
+          )
+        }
+        Raven.captureException(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`)
+      })
+    }
+
+    if (networkError) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(networkError)
+      }
+      Raven.captureException(`[Network error]: ${networkError} ${operation}`)
+    }
+  })
+
   const client = new ApolloClient({
-    link: from([authLink, httpLink]),
+    link: from([authLink, linkError, httpLink]),
     cache: new InMemoryCache()
   })
 

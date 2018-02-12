@@ -133,8 +133,7 @@ export default compose(
   ),
   withApollo,
   graphql(ethLoginGQL, {
-    name: 'authWithSAN',
-    options: { fetchPolicy: 'network-only' }
+    name: 'authWithSAN'
   }),
   lifecycle({
     componentDidMount () {

@@ -28,10 +28,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     query =
       cond do
         only_project_transparency ->
-          from(p in Project, where: p.project_transparency)
+          from(p in Project, where: p.project_transparency, order_by: p.name)
 
         true ->
-          from(p in Project, where: not is_nil(p.coinmarketcap_id))
+          from(p in Project, where: not is_nil(p.coinmarketcap_id), order_by: p.name)
       end
 
     projects =

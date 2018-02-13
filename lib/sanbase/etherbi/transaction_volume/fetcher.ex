@@ -11,17 +11,26 @@ defmodule Sanbase.Etherbi.TransactionVolume.Fetcher do
   """
   @spec transaction_volume(binary()) :: {:ok, list()} | {:error, binary()}
   def transaction_volume(ticker) do
-    case Utils.generate_from_to_interval_unix(
-           ticker,
-           db_last_datetime: &Sanbase.Etherbi.TransactionVolume.Store.last_datetime/1,
-           etherbi_first_timestamp: &@etherbi_api.get_first_transaction_timestamp_ticker/1
-         ) do
-      {from_datetime, to_datetime} ->
+    from_datetime = choose_starting_time(ticker)
+
+    case Utils.generate_from_to_interval_unix(from_datetime) do
+      {from, to} ->
         Logger.info("Getting transaction volume for #{ticker}")
-        @etherbi_api.get_transaction_volume(ticker, from_datetime, to_datetime)
+        @etherbi_api.get_transaction_volume(ticker, from, to)
 
       _ ->
         {:ok, []}
+    end
+  end
+
+  defp choose_starting_time(ticker) do
+    {:ok, from_datetime} = Sanbase.Etherbi.TransactionVolume.Store.last_datetime(ticker)
+
+    if from_datetime do
+      from_datetime
+    else
+      {:ok, from_datetime} = @etherbi_api.get_first_transaction_timestamp_ticker(ticker)
+      from_datetime
     end
   end
 end

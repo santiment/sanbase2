@@ -146,6 +146,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.signals/3)
     end
 
+    field :price_to_book_ratio, :decimal do
+      resolve(&ProjectResolver.price_to_book_ratio/3)
+    end
+
     field :eth_spent, :decimal do
       arg(:days, :integer, default_value: 30)
 
@@ -263,6 +267,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.signals/3)
     end
 
+    field :price_to_book_ratio, :decimal do
+      resolve(&ProjectResolver.price_to_book_ratio/3)
+    end
+
     field :eth_spent, :float do
       arg(:days, :integer, default_value: 30)
 
@@ -370,6 +378,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :signals, list_of(:signal) do
       resolve(&ProjectResolver.signals/3)
+    end
+
+    field :price_to_book_ratio, :decimal do
+      resolve(&ProjectResolver.price_to_book_ratio/3)
     end
 
     field :eth_spent, :float do
@@ -508,6 +520,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :signals, list_of(:signal) do
       resolve(&ProjectResolver.signals/3)
+    end
+
+    field :price_to_book_ratio, :decimal do
+      resolve(&ProjectResolver.price_to_book_ratio/3)
     end
 
     field :eth_spent, :float do

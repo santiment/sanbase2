@@ -175,6 +175,7 @@ defmodule Sanbase.Model.Project do
         where:
           not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(d.main_contract_address) and
             not is_nil(d.contract_block_number) and not is_nil(d.contract_abi),
+        order_by: p.name,
         select: p
       )
 

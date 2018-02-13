@@ -9,7 +9,10 @@ import ProjectCard from './Projects/ProjectCard'
 import FloatingButton from './Projects/FloatingButton'
 import { simpleSort } from './../utils/sortMethods'
 import Search from './../components/Search'
-import Filters from './Projects/Filters'
+import Filters, {
+  DEFAULT_SORT_BY,
+  DEFAULT_FILTER_BY
+} from './Projects/Filters'
 import './CashflowMobile.css'
 
 const CashflowMobile = ({
@@ -25,7 +28,11 @@ const CashflowMobile = ({
   filterName = null,
   filterByName,
   isFilterOpened = false,
-  toggleFilter
+  toggleFilter,
+  changeFilter,
+  changeSort,
+  filterBy = DEFAULT_FILTER_BY,
+  sortBy = DEFAULT_SORT_BY
 }) => {
   const { projects = [] } = Projects
   if (Projects.loading) {
@@ -84,10 +91,14 @@ const CashflowMobile = ({
         ))}
       </ListView>
       {isFilterOpened &&
-        <Filters onFilterChanged={filters => {
-          toggleFilter(!isFilterOpened)
-          console.log(filters)
-        }} />
+        <Filters
+          filterBy={DEFAULT_FILTER_BY}
+          sortBy={DEFAULT_SORT_BY}
+          changeFilter={changeFilter}
+          changeSort={changeSort}
+          onFilterChanged={filters => {
+            toggleFilter(!isFilterOpened)
+          }} />
       }
       <FloatingButton handleSearchClick={() => {
         filterByName(null)
@@ -126,7 +137,7 @@ const allProjectsGQL = gql`{
   }
 }`
 
-const mapDataToProps = ({allProjects}) => {
+const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
@@ -158,6 +169,8 @@ const mapDataToProps = ({allProjects}) => {
 const enhance = compose(
   withState('isSearchFocused', 'focusSearch', false),
   withState('filterName', 'filterByName', null),
+  withState('sortBy', 'changeSort', DEFAULT_SORT_BY),
+  withState('filterBy', 'changeFilter', DEFAULT_FILTER_BY),
   withState('isFilterOpened', 'toggleFilter', false),
   lifecycle({
     componentDidUpdate (prevProps, prevState) {

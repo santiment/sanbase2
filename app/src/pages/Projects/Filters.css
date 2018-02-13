@@ -1,0 +1,63 @@
+.cashflow-mobile-filters {
+  height: 70%;
+  width: 100%;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 30%;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  background-color: rgb(239, 239, 244);
+  animation: fromBottom 0.6s 1;
+}
+
+.cashflow-mobile-filters-overlay {
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  z-index: 99999;
+  left: 0;
+  top: 0;
+  background-color: rgba(75, 75, 75, 0.6);
+}
+
+.cashflow-mobile-filters__header {
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid rgb(210, 210, 210);
+  background-color: white;
+}
+
+.cashflow-mobile-filters__header h4 {
+  margin: 0;
+}
+
+.cashflow-mobile-filters__divider {
+  color: rgb(162, 168, 171);
+  padding: 10px;
+  letter-spacing: 1.1px;
+  border-bottom: 1px solid rgb(210, 210, 210);
+}
+
+.cashflow-mobile-filters__item {
+  display: flex;
+  background-color: white;
+  padding: 10px;
+  border-bottom: 1px solid rgb(210, 210, 210);
+}
+
+.cashflow-mobile-filters__item button {
+  flex: 1;
+}
+
+@keyframes fromBottom {
+  0% {
+    transform: translateY(100%);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}

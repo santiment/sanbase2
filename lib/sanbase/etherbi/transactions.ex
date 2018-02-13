@@ -73,7 +73,7 @@ defmodule Sanbase.Etherbi.Transactions do
       if decimals = Map.get(token_decimals, token) do
         %Sanbase.Influxdb.Measurement{
           timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-          fields: %{volume: volume / Map.get(token_decimals, token)},
+          fields: %{volume: volume / decimals},
           tags: [transaction_type: transaction_type, address: address],
           name: token
         }

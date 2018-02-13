@@ -18,6 +18,7 @@ import './CashflowMobile.css'
 const CashflowMobile = ({
   Projects = {
     projects: [],
+    filteredProjects: [],
     loading: true,
     isError: false,
     isEmpty: true
@@ -48,12 +49,6 @@ const CashflowMobile = ({
       </div>
     )
   }
-  const filteredProjects = isSearchFocused && filterName
-    ? projects.filter(project => {
-      return project.name.toLowerCase().indexOf(filterName) !== -1 ||
-          project.ticker.toLowerCase().indexOf(filterName) !== -1
-    })
-    : projects
 
   return (
     <div className='cashflow-mobile'>
@@ -80,7 +75,7 @@ const CashflowMobile = ({
         runwayItemsOpposite={5}
         aveCellHeight={460}
       >
-        {filteredProjects.map((project, index) => (
+        {Projects.filteredProjects.map((project, index) => (
           <ListViewItem height={500} key={index}>
             <div className='ListItem-project' >
               <ProjectCard
@@ -92,8 +87,8 @@ const CashflowMobile = ({
       </ListView>
       {isFilterOpened &&
         <Filters
-          filterBy={DEFAULT_FILTER_BY}
-          sortBy={DEFAULT_SORT_BY}
+          filterBy={filterBy}
+          sortBy={sortBy}
           changeFilter={changeFilter}
           changeSort={changeSort}
           onFilterChanged={filters => {
@@ -141,19 +136,45 @@ const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = (({projects = []}) => {
-    return projects.filter(project => {
+  const projects = (allProjects.allProjects || [])
+    .filter(project => {
       const defaultFilter = project.ethAddresses &&
         project.ethAddresses.length > 0 &&
         project.rank
       return defaultFilter
     })
+
+  let filteredProjects = projects
     .sort((a, b) => {
-      return simpleSort(parseInt(a.marketcapUsd, 10), parseInt(b.marketcapUsd, 10))
+      if (ownProps.sortBy === 'github_activity') {
+        return simpleSort(
+          parseInt(a.averageDevActivity, 10),
+          parseInt(b.averageDevActivity, 10)
+        )
+      }
+      return simpleSort(
+        parseInt(a.marketcapUsd, 10),
+        parseInt(b.marketcapUsd, 10)
+      )
     })
-  })({
-    projects: allProjects.allProjects
-  })
+    .filter(project => {
+      const hasSignals = project.signals && project.signals.length > 0
+      const withSignals = ownProps.filterBy['signals']
+      return withSignals ? hasSignals : true
+    })
+    .filter(project => {
+      const hasSpentETH = project.ethSpent > 0
+      const withSpentETH = ownProps.filterBy['spent_eth_30d']
+      return withSpentETH ? hasSpentETH : true
+    })
+
+  if (ownProps.isSearchFocused && ownProps.filterName) {
+    filteredProjects = filteredProjects.filter(project => {
+      return project.name.toLowerCase().indexOf(ownProps.filterName) !== -1 ||
+          project.ticker.toLowerCase().indexOf(ownProps.filterName) !== -1
+    })
+  }
+
   const isEmpty = projects.length === 0
   return {
     Projects: {
@@ -161,6 +182,7 @@ const mapDataToProps = ({allProjects, ownProps}) => {
       isEmpty,
       isError,
       projects,
+      filteredProjects,
       errorMessage
     }
   }

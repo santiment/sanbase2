@@ -128,7 +128,14 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     assert loginData["token"] != nil
     assert loginData["user"]["email"] == user.email
-    assert Timex.diff(Timex.now(), user.email_token_validated_at, :seconds) == 0
+
+    # Assert that now() and validated_at do not differ by more than 2 seconds
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             user.email_token_validated_at,
+             2,
+             :seconds
+           )
   end
 
   test "trying to login with a valid email token after more than 1 day", %{conn: conn} do

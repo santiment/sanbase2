@@ -16,12 +16,13 @@ defmodule Sanbase.Etherbi.Transactions.Store do
   def import_last_address_time(_, _, nil), do: :ok
 
   def import_last_address_time(address, trx_type, last_datetime) do
-    Store.delete_by_tag(@last_address_measurement, "address", address)
+    address_trx_type = "#{address}_#{trx_type}"
+    Store.delete_by_tag(@last_address_measurement, "address_trx_type", address_trx_type)
 
     %Sanbase.Influxdb.Measurement{
       timestamp: DateTime.utc_now() |> DateTime.to_unix(:nanoseconds),
-      fields: %{last_datetime: last_datetime |> DateTime.to_unix(:nanoseconds)},
-      tags: [address: address, transaction_type: trx_type],
+      fields: %{last_datetime: last_datetime |> DateTime.to_unix()},
+      tags: [address_trx_type: address_trx_type],
       name: @last_address_measurement
     }
     |> Store.import()
@@ -66,10 +67,11 @@ defmodule Sanbase.Etherbi.Transactions.Store do
   # Private functions
 
   defp select_last_address_datetime(address, trx_type) do
-    ~s/SELECT LAST(address)
+    address_trx_type = "#{address}_#{trx_type}"
+
+    ~s/SELECT LAST(last_datetime)
     FROM "#{@last_address_measurement}"
-    WHERE address='#{address}'
-    AND transaction_type='#{trx_type}/
+    WHERE address_trx_type='#{address_trx_type}'/
   end
 
   defp transactions_from_to_query(measurement, from, to, "all") do
@@ -135,9 +137,8 @@ defmodule Sanbase.Etherbi.Transactions.Store do
            }
          ]
        }) do
-    [[iso8601_datetime, _]] = last_address
-    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-    {:ok, datetime}
+    [[_datetime, iso8601_last_datetime]] = last_address
+    DateTime.from_unix(iso8601_last_datetime)
   end
 
   defp parse_last_address_datetime(_), do: {:ok, nil}

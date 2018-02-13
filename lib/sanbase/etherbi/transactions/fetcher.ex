@@ -44,7 +44,15 @@ defmodule Sanbase.Etherbi.Transactions.Fetcher do
     case Utils.generate_from_to_interval_unix(from_datetime) do
       {from, to} ->
         Logger.info("Getting #{transaction_type} transactions for #{address}")
-        @etherbi_api.get_transactions(address, from, to, transaction_type)
+
+        case @etherbi_api.get_transactions(address, from, to, transaction_type) do
+          {:ok, result} ->
+            Store.import_last_address_time(address, transaction_type, to)
+            {:ok, result}
+
+          {:error, error} ->
+            {:error, error}
+        end
 
       _ ->
         {:ok, []}

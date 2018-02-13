@@ -38,7 +38,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
       {:error, %HTTPoison.Error{reason: :timeout}} ->
         Logger.warn("Timeout trying to fetch the first burn rate timestamp for #{ticker}")
-        {:ok, nil}
+        {:ok, []}
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
@@ -67,7 +67,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
       {:error, %HTTPoison.Error{reason: :timeout}} ->
         Logger.warn("Timeout trying to fetch the first transaction timestamp for #{address}")
-        {:ok, nil}
+        {:ok, []}
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
@@ -99,7 +99,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
 
       {:error, %HTTPoison.Error{reason: :timeout}} ->
         Logger.warn("Timeout trying to fetch the first transaction timestamp for #{ticker}")
-        {:ok, nil}
+        {:ok, []}
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error,
@@ -236,7 +236,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   end
 
   # Body is a string in the format `[[timestamp,volume,address,token], [timestamp,...]]
-  defp convert_transactions_response("[]"), do: {:ok, nil}
+  defp convert_transactions_response("[]"), do: {:ok, []}
 
   defp convert_transactions_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do
@@ -251,7 +251,7 @@ defmodule Sanbase.Etherbi.EtherbiApi do
   end
 
   # Body is a string in the format `[[timestamp, integer], [timestamp, integer], ...]
-  defp convert_timestamp_integer_response("[]"), do: {:ok, nil}
+  defp convert_timestamp_integer_response("[]"), do: {:ok, []}
 
   defp convert_timestamp_integer_response(body) do
     with {:ok, decoded_body} <- Poison.decode(body) do

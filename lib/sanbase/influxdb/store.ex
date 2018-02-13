@@ -36,7 +36,7 @@ defmodule Sanbase.Influxdb.Store do
         measurements
         |> Stream.map(&Measurement.convert_measurement_for_import/1)
         |> Stream.reject(&is_nil/1)
-        |> Stream.chunk_every(288)
+        |> Stream.chunk_every(2500)
         |> Stream.map(fn data_for_import ->
           :ok = __MODULE__.write(data_for_import)
         end)

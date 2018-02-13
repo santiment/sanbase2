@@ -2,13 +2,14 @@ import React from 'react'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import { SlideDown } from 'animate-components'
-import { Loader, Message } from 'semantic-ui-react'
+import { Loader, Message, Button } from 'semantic-ui-react'
 import { compose, withState, lifecycle } from 'recompose'
 import { ListView, ListViewItem } from './../components/ListView'
 import ProjectCard from './Projects/ProjectCard'
 import FloatingButton from './Projects/FloatingButton'
 import { simpleSort } from './../utils/sortMethods'
 import Search from './../components/Search'
+import Filters from './Projects/Filters'
 import './CashflowMobile.css'
 
 const CashflowMobile = ({
@@ -22,7 +23,9 @@ const CashflowMobile = ({
   isSearchFocused = false,
   focusSearch,
   filterName = null,
-  filterByName
+  filterByName,
+  isFilterOpened = false,
+  toggleFilter
 }) => {
   const { projects = [] } = Projects
   if (Projects.loading) {
@@ -54,6 +57,12 @@ const CashflowMobile = ({
               focus={focusSearch}
               onSelectProject={ticker => filterByName(ticker.toLowerCase())}
               projects={projects} />
+            <Button
+              basic
+              onClick={() => toggleFilter(!isFilterOpened)}
+              className='cashflow-mobile-search__filter'>
+              Filter
+            </Button>
           </div>
         </SlideDown>}
       <ListView
@@ -74,6 +83,12 @@ const CashflowMobile = ({
           </ListViewItem>
         ))}
       </ListView>
+      {isFilterOpened &&
+        <Filters onFilterChanged={filters => {
+          toggleFilter(!isFilterOpened)
+          console.log(filters)
+        }} />
+      }
       <FloatingButton handleSearchClick={() => {
         filterByName(null)
         focusSearch(!isSearchFocused)
@@ -143,6 +158,7 @@ const mapDataToProps = ({allProjects}) => {
 const enhance = compose(
   withState('isSearchFocused', 'focusSearch', false),
   withState('filterName', 'filterByName', null),
+  withState('isFilterOpened', 'toggleFilter', false),
   lifecycle({
     componentDidUpdate (prevProps, prevState) {
       if (this.props.isSearchFocused !== prevProps.isSearchFocused) {

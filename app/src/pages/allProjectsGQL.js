@@ -17,6 +17,7 @@ const allProjectsGQL = gql`{
     ethBalance
     btcBalance
     usdBalance
+    priceToBookRatio
     ethAddresses {
       address
     }

@@ -29,6 +29,7 @@
     "font-awesome": "^4.7.0",
     "graphql": "^0.11.7",
     "graphql-tag": "^2.5.0",
+    "intl": "^1.2.5",
     "lodash.debounce": "^4.0.8",
     "moment": "^2.19.3",
     "outliers": "^0.0.3",

@@ -77,7 +77,7 @@ export const formatBalanceWallet = ({wallets, ethPrice}) => {
 
 const formatBalance = ({ethBalance, usdBalance}) => (
   <div className='wallet'>
-    <div className='usd first'>{formatNumber((usdBalance), 'USD')}</div>
+    <div className='usd first'>{`$${millify(parseFloat(usdBalance))}`}</div>
     <div className='eth'>
       {parseFloat(ethBalance) === 0 &&
         <Popup
@@ -93,14 +93,16 @@ const formatBalance = ({ethBalance, usdBalance}) => (
           position='top center'
         />
       }
-      {`ETH ${formatNumber(ethBalance)}`}
+      {ethBalance
+        ? `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
+        : '---'}
     </div>
   </div>
 )
 
-const formatMarketCapProject = cap => {
-  if (cap !== null) {
-    return formatNumber(cap, 'USD')
+const formatMarketCapProject = marketcapUsd => {
+  if (marketcapUsd !== null) {
+    return `$${millify(parseFloat(marketcapUsd))}`
   } else {
     return 'No data'
   }
@@ -155,31 +157,8 @@ export const Cashflow = ({
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
   }, {
-    Header: 'Signals',
-    id: 'signals',
-    minWidth: 60,
-    accessor: d => ({
-      warning: d.signals && d.signals.length > 0,
-      description: d.signals[0] && d.signals[0].description
-    }),
-    Cell: ({value}) => <div style={{textAlign: 'center'}}>
-      {value.warning &&
-        <Popup basic
-          position='right center'
-          hideOnScroll
-          wide
-          inverted
-          trigger={<Icon color='orange' fitted name='warning sign' />}
-          on='hover'>
-          {value.description}
-        </Popup>}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(a.warning, b.warning)
-  }, {
     Header: 'Price',
     id: 'price',
-    minWidth: 90,
     accessor: d => ({
       priceUsd: d.priceUsd,
       change24h: d.percentChange24h
@@ -199,7 +178,6 @@ export const Cashflow = ({
   }, {
     Header: 'Volume',
     id: 'volume',
-    minWidth: 150,
     accessor: d => ({
       volumeUsd: d.volumeUsd,
       change24h: d.volumeChange24h
@@ -210,7 +188,9 @@ export const Cashflow = ({
       flexDirection: 'column',
       alignItems: 'center'
     }}>
-      {value.volumeUsd ? formatNumber(value.volumeUsd, 'USD') : '---'}
+      {value.volumeUsd
+        ? `$${millify(parseFloat(value.volumeUsd))}`
+        : '---'}
       &nbsp;
       {<PercentChanges changes={value.change24h} />}
     </div>,
@@ -223,7 +203,6 @@ export const Cashflow = ({
   }, {
     Header: 'Market Cap',
     id: 'marketcapUsd',
-    minWidth: 150,
     accessor: 'marketcapUsd',
     Cell: ({value}) => <div className='market-cap'>{formatMarketCapProject(value)}</div>,
     sortable: true,
@@ -231,7 +210,6 @@ export const Cashflow = ({
   }, {
     Header: 'Balance (USD/ETH)',
     id: 'balance',
-    minWidth: 250,
     accessor: d => ({
       ethBalance: d.ethBalance,
       usdBalance: d.usdBalance
@@ -246,7 +224,6 @@ export const Cashflow = ({
   }, {
     Header: 'Price/Book Ratio',
     id: 'pbr',
-    minWidth: 150,
     accessor: 'priceToBookRatio',
     Cell: ({value}) => <div>{value &&
       ((value) => {
@@ -272,7 +249,6 @@ export const Cashflow = ({
     accessor: d => d.ethSpent,
     Cell: ({value}) => <div>{`ETH ${formatNumber(value)}`}</div>,
     sortable: true,
-    minWidth: 140,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
     Header: 'Dev activity 30D',
@@ -280,23 +256,41 @@ export const Cashflow = ({
     accessor: d => d.averageDevActivity,
     Cell: ({value}) => <div>{value ? parseFloat(value).toFixed(2) : '---'}</div>,
     sortable: true,
-    minWidth: 140,
     sortMethod: (a, b) => simpleSort(a, b)
+  }, {
+    Header: 'Signals',
+    id: 'signals',
+    maxWidth: 40,
+    accessor: d => ({
+      warning: d.signals && d.signals.length > 0,
+      description: d.signals[0] && d.signals[0].description
+    }),
+    Cell: ({value}) => <div >
+      {value.warning &&
+        <Popup basic
+          position='right center'
+          hideOnScroll
+          wide
+          inverted
+          trigger={<Icon color='orange' fitted name='warning sign' />}
+          on='hover'>
+          {value.description}
+        </Popup>}
+    </div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(a.warning, b.warning)
   }]
 
   return (
     <div className='page cashflow'>
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
-          <h1>Projects: Cash Flow</h1>
+          <h1>Projects</h1>
           <p>
             brought to you by <a
               href='https://santiment.net'
               rel='noopener noreferrer'
               target='_blank'>Santiment</a>
-            <br />
-            NOTE: This app is in development.
-            We give no guarantee data is correct as we are in active development.
             <br />
             <Icon color='red' name='question circle outline' />Automated data not available.&nbsp;
             <span className='cashflow-head-community-help'>
@@ -356,6 +350,10 @@ export const Cashflow = ({
           />
         </Panel>
       </FadeIn>
+      <div className='cashflow-indev-message'>
+        NOTE: This app is in development.
+        We give no guarantee data is correct as we are in active development.
+      </div>
     </div>
   )
 }

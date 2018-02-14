@@ -179,6 +179,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1d")
 
+      complexity(&TechIndicatorsComplexity.macd/3)
       resolve(&TechIndicatorsResolver.macd/3)
     end
 
@@ -192,6 +193,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:rsi_interval, non_null(:integer))
 
+      complexity(&TechIndicatorsComplexity.rsi/3)
       resolve(&TechIndicatorsResolver.rsi/3)
     end
 
@@ -204,6 +206,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1d")
 
+      complexity(&TechIndicatorsComplexity.price_volume_diff/3)
       resolve(&TechIndicatorsResolver.price_volume_diff/3)
     end
   end

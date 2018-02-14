@@ -19,7 +19,7 @@ exports[`Cashflow container it should render correctly 1`] = `
       className="cashflow-head"
     >
       <h1>
-        Projects: Cash Flow
+        Projects
       </h1>
       <p>
         brought to you by 
@@ -30,8 +30,6 @@ exports[`Cashflow container it should render correctly 1`] = `
         >
           Santiment
         </a>
-        <br />
-        NOTE: This app is in development. We give no guarantee data is correct as we are in active development.
         <br />
         <Icon
           as="i"
@@ -130,19 +128,9 @@ exports[`Cashflow container it should render correctly 1`] = `
             },
             Object {
               "Cell": [Function],
-              "Header": "Signals",
-              "accessor": [Function],
-              "id": "signals",
-              "minWidth": 60,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
               "Header": "Price",
               "accessor": [Function],
               "id": "price",
-              "minWidth": 90,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -151,7 +139,6 @@ exports[`Cashflow container it should render correctly 1`] = `
               "Header": "Volume",
               "accessor": [Function],
               "id": "volume",
-              "minWidth": 150,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -160,7 +147,6 @@ exports[`Cashflow container it should render correctly 1`] = `
               "Header": "Market Cap",
               "accessor": "marketcapUsd",
               "id": "marketcapUsd",
-              "minWidth": 150,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -169,7 +155,6 @@ exports[`Cashflow container it should render correctly 1`] = `
               "Header": "Balance (USD/ETH)",
               "accessor": [Function],
               "id": "balance",
-              "minWidth": 250,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -178,7 +163,6 @@ exports[`Cashflow container it should render correctly 1`] = `
               "Header": "Price/Book Ratio",
               "accessor": "priceToBookRatio",
               "id": "pbr",
-              "minWidth": 150,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -187,7 +171,6 @@ exports[`Cashflow container it should render correctly 1`] = `
               "Header": "ETH spent 30D",
               "accessor": [Function],
               "id": "tx",
-              "minWidth": 140,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -196,7 +179,15 @@ exports[`Cashflow container it should render correctly 1`] = `
               "Header": "Dev activity 30D",
               "accessor": [Function],
               "id": "github_activity",
-              "minWidth": 140,
+              "sortMethod": [Function],
+              "sortable": true,
+            },
+            Object {
+              "Cell": [Function],
+              "Header": "Signals",
+              "accessor": [Function],
+              "id": "signals",
+              "maxWidth": 40,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -291,5 +282,10 @@ exports[`Cashflow container it should render correctly 1`] = `
       />
     </Panel>
   </FadeIn>
+  <div
+    className="cashflow-indev-message"
+  >
+    NOTE: This app is in development. We give no guarantee data is correct as we are in active development.
+  </div>
 </div>
 `;

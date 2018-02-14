@@ -3,6 +3,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   # updates the last outgoing transactions in the database
 
   use GenServer, restart: :permanent, shutdown: 5_000
+
   require Logger
 
   require Sanbase.Utils.Config
@@ -21,6 +22,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   @default_update_interval_ms 1000 * 60 * 5
   @confirmations 10
   @num_18_zeroes 1_000_000_000_000_000_000
+  @tx Mockery.of("Sanbase.ExternalServices.Etherscan.Requests.Tx")
+  @internal_tx Mockery.of("Sanbase.ExternalServices.Etherscan.Requests.InternalTx")
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -72,6 +75,20 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     {:noreply, state}
   end
 
+  def fetch_and_store(%{address: address, coinmarketcap_id: cmc_id} = wallet, endblock) do
+    address = address |> String.downcase()
+
+    transactions = fetch_transactions(address, cmc_id, endblock)
+    store_transactions(transactions, address, cmc_id)
+
+    internal_transactions = fetch_internal_transactions(address, cmc_id, endblock)
+    store_transactions(internal_transactions, address, cmc_id)
+
+    # TODO: Revist and remove this one once the new overview page is rolled out and
+    # the latest eth wallet data is no longer needed
+    process_last_out_transactions(address, transactions, internal_transactions)
+  end
+
   def handle_info(msg, state) do
     Logger.warn("Unknown message received: #{msg}")
     {:noreply, state}
@@ -118,7 +135,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   defp fetch_internal_transactions(address, measurement_name, endblock) do
     last_block_with_data = Store.last_block_number!(address <> "_in") || 0
 
-    case InternalTx.get(address, last_block_with_data, endblock) do
+    case @internal_tx.get(address, last_block_with_data, endblock) do
       {:ok, list} ->
         list
 
@@ -136,7 +153,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   defp fetch_transactions(address, measurement_name, endblock) do
     last_block_with_data = Store.last_block_number!(address) || 0
 
-    case Tx.get(address, last_block_with_data, endblock) do
+    case @tx.get(address, last_block_with_data, endblock) do
       {:ok, list} ->
         list
 
@@ -149,20 +166,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
         []
     end
-  end
-
-  defp fetch_and_store(%{address: address, coinmarketcap_id: cmc_id}, endblock) do
-    address = address |> String.downcase()
-
-    transactions = fetch_transactions(address, cmc_id, endblock)
-    store_transactions(transactions, address, cmc_id)
-
-    internal_transactions = fetch_internal_transactions(address, cmc_id, endblock)
-    store_transactions(internal_transactions, address, cmc_id)
-
-    # TODO: Revist and remove this one once the new overview page is rolled out and
-    # the latest eth wallet data is no longer needed
-    process_last_out_transactions(address, transactions, internal_transactions)
   end
 
   defp store_transactions(transactions, address, cmc_id) do
@@ -214,6 +217,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
 
     import_last_block_number(address, last_in_trx)
 
+    # The transaction could be `nil`
     if timestamp_or_zero(last_trx) > timestamp_or_zero(last_in_trx) do
       import_latest_eth_wallet_data(last_trx, address)
     else

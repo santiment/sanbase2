@@ -57,7 +57,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         )
       end
 
-      inputs "Ico Currencies" do
+      inputs "Currency used and collected amount" do
         has_many(ico, :ico_currencies, fn c ->
           inputs(
             :currency,

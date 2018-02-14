@@ -47,7 +47,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
       address: address,
       startblock: startblock,
       endblock: endblock,
-      sort: "desc",
+      sort: "asc",
       page: 1,
       offset: 2500
     ]

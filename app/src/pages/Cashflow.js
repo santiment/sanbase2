@@ -9,6 +9,7 @@ import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
 import moment from 'moment'
 import { formatNumber } from '../utils/formatting'
+import { millify } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
 import Panel from './../components/Panel'
@@ -242,6 +243,29 @@ export const Cashflow = ({
         parseFloat(a.ethBalance || 0),
         parseFloat(b.ethBalance || 0)
       )
+  }, {
+    Header: 'Price/Book Ratio',
+    id: 'pbr',
+    minWidth: 150,
+    accessor: 'priceToBookRatio',
+    Cell: ({value}) => <div>{value &&
+      ((value) => {
+        if (value > 1000000000000) {
+          return ''
+        }
+        return value < 1000 ? formatNumber(parseFloat(value).toFixed(3)) : millify(parseFloat(value))
+      })(value)
+    }</div>,
+    sortable: true,
+    sortMethod: (a, b) => {
+      if (a > 1000000000000) {
+        return 1
+      }
+      return simpleSort(
+        parseFloat(a || 0),
+        parseFloat(b || 0)
+      )
+    }
   }, {
     Header: 'ETH spent 30D',
     id: 'tx',

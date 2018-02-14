@@ -52,18 +52,7 @@ exports[`Cashflow container it should render correctly 1`] = `
       >
         <div
           className="datatables-info"
-        >
-          <label>
-            Showing 
-            1
-             to 
-            32
-             of 
-            32
-             entries 
-            (filtered from 0 total entries)
-          </label>
-        </div>
+        />
         <div
           className="datatables-filter"
         >
@@ -181,6 +170,15 @@ exports[`Cashflow container it should render correctly 1`] = `
               "accessor": [Function],
               "id": "balance",
               "minWidth": 250,
+              "sortMethod": [Function],
+              "sortable": true,
+            },
+            Object {
+              "Cell": [Function],
+              "Header": "Price/Book Ratio",
+              "accessor": "priceToBookRatio",
+              "id": "pbr",
+              "minWidth": 150,
               "sortMethod": [Function],
               "sortable": true,
             },

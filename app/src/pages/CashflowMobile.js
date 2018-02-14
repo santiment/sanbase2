@@ -1,5 +1,4 @@
 import React from 'react'
-import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import { SlideDown } from 'animate-components'
 import { Loader, Message, Button } from 'semantic-ui-react'
@@ -13,6 +12,7 @@ import Filters, {
   DEFAULT_SORT_BY,
   DEFAULT_FILTER_BY
 } from './Projects/Filters'
+import allProjectsGQL from './allProjectsGQL'
 import './CashflowMobile.css'
 
 const CashflowMobile = ({
@@ -102,35 +102,6 @@ const CashflowMobile = ({
     </div>
   )
 }
-
-const allProjectsGQL = gql`{
-  allProjects {
-    name
-    rank
-    description
-    ticker
-    marketSegment
-    priceUsd
-    percentChange24h
-    volumeUsd
-    volumeChange24h
-    ethSpent
-    averageDevActivity
-    marketcapUsd
-    ethBalance
-    btcBalance
-    ethAddresses {
-      address
-    }
-    twitterData {
-      followersCount
-    }
-    signals {
-      name
-      description
-    }
-  }
-}`
 
 const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading

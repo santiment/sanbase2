@@ -9,11 +9,12 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
   alias Sanbase.Repo
 
   setup do
-    Store.create_db()
-
     ticker = "SAN"
     address = "0x123245678910"
     cmc_id = "santiment"
+
+    Store.create_db()
+    Store.drop_measurement(ticker)
 
     p =
       %Project{}
@@ -49,7 +50,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            timeStamp: 1_509_541_164,
            to: "0xd1ea8853619aaad66f3f6c14ca22430ce6954476",
            txreceipt_status: "1",
-           value: "0"
+           value: 10 |> ether_to_wei_str()
          },
          %Tx{
            blockNumber: "4463670",
@@ -58,7 +59,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            timeStamp: 1_509_448_322,
            to: "0xd1ea8853619aaad66f3f6c14ca22430ce6954476",
            txreceipt_status: "1",
-           value: "1000000000000000000"
+           value: 10 |> ether_to_wei_str()
          },
          %Tx{
            blockNumber: "4463588",
@@ -67,7 +68,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            timeStamp: 1_509_447_419,
            to: "0x123245678910",
            txreceipt_status: "1",
-           value: "680000000000000000"
+           value: 500 |> ether_to_wei_str()
          }
        ]}
     )
@@ -84,7 +85,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            isError: "0",
            timeStamp: 1_510_746_716,
            to: "0x949342479c00fccd65fee93a6b5a4fbd9b4abcea",
-           value: "4000000000000000000000"
+           value: 50 |> ether_to_wei_str()
          },
          %InternalTx{
            blockNumber: "4379313",
@@ -93,7 +94,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            isError: "0",
            timeStamp: 1_508_276_361,
            to: "0x123245678910",
-           value: "3000000000000000000000"
+           value: 1000 |> ether_to_wei_str()
          },
          %Sanbase.ExternalServices.Etherscan.Requests.InternalTx{
            blockNumber: "4173006",
@@ -102,7 +103,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            isError: "0",
            timeStamp: 1_503_053_188,
            to: "0x123245678910",
-           value: "10000000000000000000000"
+           value: 200 |> ether_to_wei_str()
          }
        ]}
     )
@@ -113,7 +114,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
         __module__: Sanbase.ExternalServices.Etherscan.Requests,
         body: %{
           "message" => "OK",
-          "result" => "198474700000000000000000",
+          "result" => 11111 |> ether_to_wei_str(),
           "status" => "1"
         },
         headers: %{
@@ -144,24 +145,32 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
     endblock = 999_999_999
 
     Worker.fetch_and_store(
-      %{address: context.address, coinmarketcap_id: context.cmc_id},
+      %{address: context.address, ticker: context.ticker},
       endblock
     )
 
-    assert {:ok, 113_000.68} =
+    assert {:ok, 1700} =
              Store.trx_sum_in_interval(
-               context.cmc_id,
+               context.ticker,
                DateTime.from_unix!(0),
                DateTime.utc_now(),
                "in"
              )
 
-    assert {:ok, 24001} =
+    assert {:ok, 70} =
              Store.trx_sum_in_interval(
-               context.cmc_id,
+               context.ticker,
                DateTime.from_unix!(0),
                DateTime.utc_now(),
                "out"
              )
+  end
+
+  # Helper functions
+  def ether_to_wei_str(num) when is_number(num) do
+    # Do not use scientifix notation, otherwise to_string fails
+    (num * :math.pow(10, 18))
+    |> Kernel.trunc()
+    |> Integer.to_string()
   end
 end

@@ -405,6 +405,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, ico}
   end
 
+  def price_to_book_ratio(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> usd_balance_loader(project)
+    |> on_load(fn loader ->
+      with {:ok, usd_balance} <- usd_balance_from_loader(loader, project),
+           {:ok, market_cap} <- marketcap_usd(project, nil, nil),
+           false <- is_nil(usd_balance) || is_nil(market_cap),
+           false <- Decimal.cmp(usd_balance, Decimal.new(0)) == :eq do
+        {:ok, Decimal.div(market_cap, usd_balance)}
+      else
+        _ ->
+          {:ok, nil}
+      end
+    end)
+  end
+
   def signals(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
     |> usd_balance_loader(project)

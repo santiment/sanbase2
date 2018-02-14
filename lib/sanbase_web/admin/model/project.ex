@@ -129,7 +129,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
       panel "Icos" do
         markup_contents do
           a ".btn .btn-primary", href: "/admin/icos/new?project_id=" <> to_string(project.id) do
-            "New Ico"
+            "New ICO"
           end
         end
 

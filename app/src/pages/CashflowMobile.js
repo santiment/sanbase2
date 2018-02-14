@@ -1,19 +1,24 @@
 import React from 'react'
-import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import { SlideDown } from 'animate-components'
-import { Loader, Message } from 'semantic-ui-react'
+import { Loader, Message, Button } from 'semantic-ui-react'
 import { compose, withState, lifecycle } from 'recompose'
 import { ListView, ListViewItem } from './../components/ListView'
 import ProjectCard from './Projects/ProjectCard'
 import FloatingButton from './Projects/FloatingButton'
 import { simpleSort } from './../utils/sortMethods'
 import Search from './../components/Search'
+import Filters, {
+  DEFAULT_SORT_BY,
+  DEFAULT_FILTER_BY
+} from './Projects/Filters'
+import allProjectsGQL from './allProjectsGQL'
 import './CashflowMobile.css'
 
 const CashflowMobile = ({
   Projects = {
     projects: [],
+    filteredProjects: [],
     loading: true,
     isError: false,
     isEmpty: true
@@ -22,7 +27,13 @@ const CashflowMobile = ({
   isSearchFocused = false,
   focusSearch,
   filterName = null,
-  filterByName
+  filterByName,
+  isFilterOpened = false,
+  toggleFilter,
+  changeFilter,
+  changeSort,
+  filterBy = DEFAULT_FILTER_BY,
+  sortBy = DEFAULT_SORT_BY
 }) => {
   const { projects = [] } = Projects
   if (Projects.loading) {
@@ -38,12 +49,6 @@ const CashflowMobile = ({
       </div>
     )
   }
-  const filteredProjects = isSearchFocused && filterName
-    ? projects.filter(project => {
-      return project.name.toLowerCase().indexOf(filterName) !== -1 ||
-          project.ticker.toLowerCase().indexOf(filterName) !== -1
-    })
-    : projects
 
   return (
     <div className='cashflow-mobile'>
@@ -54,6 +59,12 @@ const CashflowMobile = ({
               focus={focusSearch}
               onSelectProject={ticker => filterByName(ticker.toLowerCase())}
               projects={projects} />
+            <Button
+              basic
+              onClick={() => toggleFilter(!isFilterOpened)}
+              className='cashflow-mobile-search__filter'>
+              Filter
+            </Button>
           </div>
         </SlideDown>}
       <ListView
@@ -64,7 +75,7 @@ const CashflowMobile = ({
         runwayItemsOpposite={5}
         aveCellHeight={460}
       >
-        {filteredProjects.map((project, index) => (
+        {Projects.filteredProjects.map((project, index) => (
           <ListViewItem height={500} key={index}>
             <div className='ListItem-project' >
               <ProjectCard
@@ -74,6 +85,16 @@ const CashflowMobile = ({
           </ListViewItem>
         ))}
       </ListView>
+      {isFilterOpened &&
+        <Filters
+          filterBy={filterBy}
+          sortBy={sortBy}
+          changeFilter={changeFilter}
+          changeSort={changeSort}
+          onFilterChanged={filters => {
+            toggleFilter(!isFilterOpened)
+          }} />
+      }
       <FloatingButton handleSearchClick={() => {
         filterByName(null)
         focusSearch(!isSearchFocused)
@@ -82,52 +103,49 @@ const CashflowMobile = ({
   )
 }
 
-const allProjectsGQL = gql`{
-  allProjects {
-    name
-    rank
-    description
-    ticker
-    marketSegment
-    priceUsd
-    percentChange24h
-    volumeUsd
-    volumeChange24h
-    ethSpent
-    averageDevActivity
-    marketcapUsd
-    ethBalance
-    btcBalance
-    ethAddresses {
-      address
-    }
-    twitterData {
-      followersCount
-    }
-    signals {
-      name
-      description
-    }
-  }
-}`
-
-const mapDataToProps = ({allProjects}) => {
+const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = (({projects = []}) => {
-    return projects.filter(project => {
+  const projects = (allProjects.allProjects || [])
+    .filter(project => {
       const defaultFilter = project.ethAddresses &&
         project.ethAddresses.length > 0 &&
         project.rank
       return defaultFilter
     })
+
+  let filteredProjects = projects
     .sort((a, b) => {
-      return simpleSort(parseInt(a.marketcapUsd, 10), parseInt(b.marketcapUsd, 10))
+      if (ownProps.sortBy === 'github_activity') {
+        return simpleSort(
+          parseInt(a.averageDevActivity, 10),
+          parseInt(b.averageDevActivity, 10)
+        )
+      }
+      return simpleSort(
+        parseInt(a.marketcapUsd, 10),
+        parseInt(b.marketcapUsd, 10)
+      )
     })
-  })({
-    projects: allProjects.allProjects
-  })
+    .filter(project => {
+      const hasSignals = project.signals && project.signals.length > 0
+      const withSignals = ownProps.filterBy['signals']
+      return withSignals ? hasSignals : true
+    })
+    .filter(project => {
+      const hasSpentETH = project.ethSpent > 0
+      const withSpentETH = ownProps.filterBy['spent_eth_30d']
+      return withSpentETH ? hasSpentETH : true
+    })
+
+  if (ownProps.isSearchFocused && ownProps.filterName) {
+    filteredProjects = filteredProjects.filter(project => {
+      return project.name.toLowerCase().indexOf(ownProps.filterName) !== -1 ||
+          project.ticker.toLowerCase().indexOf(ownProps.filterName) !== -1
+    })
+  }
+
   const isEmpty = projects.length === 0
   return {
     Projects: {
@@ -135,6 +153,7 @@ const mapDataToProps = ({allProjects}) => {
       isEmpty,
       isError,
       projects,
+      filteredProjects,
       errorMessage
     }
   }
@@ -143,6 +162,9 @@ const mapDataToProps = ({allProjects}) => {
 const enhance = compose(
   withState('isSearchFocused', 'focusSearch', false),
   withState('filterName', 'filterByName', null),
+  withState('sortBy', 'changeSort', DEFAULT_SORT_BY),
+  withState('filterBy', 'changeFilter', DEFAULT_FILTER_BY),
+  withState('isFilterOpened', 'toggleFilter', false),
   lifecycle({
     componentDidUpdate (prevProps, prevState) {
       if (this.props.isSearchFocused !== prevProps.isSearchFocused) {

@@ -1,26 +1,19 @@
 import React from 'react'
 import ReactTable from 'react-table'
+import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { Icon, Popup } from 'semantic-ui-react'
-import {
-  compose,
-  pure,
-  lifecycle
-} from 'recompose'
+import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
 import moment from 'moment'
 import { formatNumber } from '../utils/formatting'
 import ProjectIcon from './../components/ProjectIcon'
-import {
-  sortDate,
-  sortBalances,
-  sortTxOut,
-  simpleSort
-} from './../utils/sortMethods'
-import { retrieveProjects } from './Cashflow.actions.js'
+import { simpleSort } from './../utils/sortMethods'
 import Panel from './../components/Panel'
+import allProjectsGQL from './allProjectsGQL'
+import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
 
 const formatDate = date => moment(date).format('YYYY-MM-DD')
@@ -81,6 +74,29 @@ export const formatBalanceWallet = ({wallets, ethPrice}) => {
   })
 }
 
+const formatBalance = ({ethBalance, usdBalance}) => (
+  <div className='wallet'>
+    <div className='usd first'>{formatNumber((usdBalance), 'USD')}</div>
+    <div className='eth'>
+      {parseFloat(ethBalance) === 0 &&
+        <Popup
+          trigger={<div style={{display: 'inline-block'}}>{
+            <a
+              target='_blank'
+              rel='noopener noreferrer'
+              href='https://santiment.typeform.com/to/bT0Dgu'>
+              <Icon color='red' name='question circle outline' />
+            </a>}
+          </div>}
+          content='Community help locating correct wallet is welcome!'
+          position='top center'
+        />
+      }
+      {`ETH ${formatNumber(ethBalance)}`}
+    </div>
+  </div>
+)
+
 const formatMarketCapProject = cap => {
   if (cap !== null) {
     return formatNumber(cap, 'USD')
@@ -100,20 +116,26 @@ const getFilter = search => {
 }
 
 export const Cashflow = ({
-  projects,
-  loading,
+  Projects = {
+    projects: [],
+    filteredProjects: [],
+    loading: true,
+    isError: false,
+    isEmpty: true
+  },
   onSearch,
   history,
   search,
   tableInfo,
   preload
 }) => {
+  const { projects, loading } = Projects
   const columns = [{
     Header: 'Project',
     id: 'project',
     filterable: true,
     sortable: true,
-    minWidth: 250,
+    minWidth: 190,
     accessor: d => ({
       name: d.name,
       ticker: d.ticker
@@ -132,10 +154,76 @@ export const Cashflow = ({
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
   }, {
-    Header: 'Market Cap',
-    id: 'market_cap_usd',
+    Header: 'Signals',
+    id: 'signals',
+    minWidth: 60,
+    accessor: d => ({
+      warning: d.signals && d.signals.length > 0,
+      description: d.signals[0] && d.signals[0].description
+    }),
+    Cell: ({value}) => <div style={{textAlign: 'center'}}>
+      {value.warning &&
+        <Popup basic
+          position='right center'
+          hideOnScroll
+          wide
+          inverted
+          trigger={<Icon color='orange' fitted name='warning sign' />}
+          on='hover'>
+          {value.description}
+        </Popup>}
+    </div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(a.warning, b.warning)
+  }, {
+    Header: 'Price',
+    id: 'price',
+    minWidth: 90,
+    accessor: d => ({
+      priceUsd: d.priceUsd,
+      change24h: d.percentChange24h
+    }),
+    Cell: ({value}) => <div style={{
+      fontSize: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    }}>
+      {value.priceUsd ? formatNumber(value.priceUsd, 'USD') : '---'}
+      &nbsp;
+      {<PercentChanges changes={value.change24h} />}
+    </div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
+  }, {
+    Header: 'Volume',
+    id: 'volume',
     minWidth: 150,
-    accessor: 'market_cap_usd',
+    accessor: d => ({
+      volumeUsd: d.volumeUsd,
+      change24h: d.volumeChange24h
+    }),
+    Cell: ({value}) => <div style={{
+      fontSize: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    }}>
+      {value.volumeUsd ? formatNumber(value.volumeUsd, 'USD') : '---'}
+      &nbsp;
+      {<PercentChanges changes={value.change24h} />}
+    </div>,
+    sortable: true,
+    sortMethod: (a, b) =>
+      simpleSort(
+        parseFloat(a.volumeUsd || 0),
+        parseFloat(b.volumeUsd || 0)
+      )
+  }, {
+    Header: 'Market Cap',
+    id: 'marketcapUsd',
+    minWidth: 150,
+    accessor: 'marketcapUsd',
     Cell: ({value}) => <div className='market-cap'>{formatMarketCapProject(value)}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(parseInt(a, 10), parseInt(b, 10))
@@ -144,29 +232,32 @@ export const Cashflow = ({
     id: 'balance',
     minWidth: 250,
     accessor: d => ({
-      ethPrice: d.ethPrice,
-      wallets: d.wallets
+      ethBalance: d.ethBalance,
+      usdBalance: d.usdBalance
     }),
-    Cell: ({value}) => <div>{formatBalanceWallet(value)}</div>,
+    Cell: ({value}) => <div>{formatBalance(value)}</div>,
     sortable: true,
-    sortMethod: (a, b) => sortBalances(a, b)
+    sortMethod: (a, b) =>
+      simpleSort(
+        parseFloat(a.ethBalance || 0),
+        parseFloat(b.ethBalance || 0)
+      )
   }, {
-    Header: 'Last outgoing TX',
+    Header: 'ETH spent 30D',
     id: 'tx',
-    accessor: d => d.wallets,
-    Cell: ({value}) => <div>{formatLastOutgoingWallet(value)}</div>,
+    accessor: d => d.ethSpent,
+    Cell: ({value}) => <div>{`ETH ${formatNumber(value)}`}</div>,
     sortable: true,
     minWidth: 140,
-    sortMethod: (a, b, isDesc) => (
-      sortDate(a[0].last_outgoing, b[0].last_outgoing, isDesc)
-    )
+    sortMethod: (a, b) => simpleSort(a, b)
   }, {
-    Header: 'ETH sent',
-    id: 'sent',
-    accessor: d => d.wallets,
-    Cell: ({value}) => <div className='eth-sent-item'>{formatTxOutWallet(value)}</div>,
+    Header: 'Dev activity 30D',
+    id: 'github_activity',
+    accessor: d => d.averageDevActivity,
+    Cell: ({value}) => <div>{value ? parseFloat(value).toFixed(2) : '---'}</div>,
     sortable: true,
-    sortMethod: (a, b) => sortTxOut(a, b)
+    minWidth: 140,
+    sortMethod: (a, b) => simpleSort(a, b)
   }]
 
   return (
@@ -228,6 +319,16 @@ export const Cashflow = ({
             data={projects}
             columns={columns}
             filtered={getFilter(search)}
+            getTdProps={(state, rowInfo, column, instance) => {
+              return {
+                onClick: (e, handleOriginal) => {
+                  if (handleOriginal) {
+                    handleOriginal()
+                  }
+                  history.push(`/projects/${rowInfo.original.ticker.toLowerCase()}`)
+                }
+              }
+            }}
           />
         </Panel>
       </FadeIn>
@@ -237,8 +338,6 @@ export const Cashflow = ({
 
 const mapStateToProps = state => {
   return {
-    projects: state.projects.items,
-    loading: state.projects.loading,
     search: state.projects.search,
     tableInfo: state.projects.tableInfo
   }
@@ -246,7 +345,6 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    retrieveProjects: () => dispatch(retrieveProjects),
     onSearch: (event) => {
       dispatch({
         type: 'SET_SEARCH',
@@ -258,15 +356,44 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
+const mapDataToProps = ({allProjects, ownProps}) => {
+  const loading = allProjects.loading
+  const isError = !!allProjects.error
+  const errorMessage = allProjects.error ? allProjects.error.message : ''
+  const projects = (allProjects.allProjects || [])
+    .filter(project => {
+      const defaultFilter = project.ethAddresses &&
+        project.ethAddresses.length > 0 &&
+        project.rank &&
+        project.volumeUsd > 0
+      return defaultFilter
+    })
+
+  const isEmpty = projects.length === 0
+  return {
+    Projects: {
+      loading,
+      isEmpty,
+      isError,
+      projects,
+      errorMessage
+    }
+  }
+}
+
 const enhance = compose(
   connect(
     mapStateToProps,
     mapDispatchToProps
   ),
   withRouter,
-  lifecycle({
-    componentDidMount () {
-      this.props.retrieveProjects()
+  graphql(allProjectsGQL, {
+    name: 'allProjects',
+    props: mapDataToProps,
+    options: () => {
+      return {
+        errorPolicy: 'all'
+      }
     }
   }),
   pure

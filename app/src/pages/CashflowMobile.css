@@ -5,6 +5,17 @@
 .cashflow-mobile-search {
   padding: 0 10px 10px 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+}
+
+.cashflow-mobile-search .search-panel {
+  flex: 1;
+}
+
+.cashflow-mobile-search .cashflow-mobile-search__filter {
+  margin-top: 10px !important;
+  margin-left: 10px !important;
 }
 
 .ListView {

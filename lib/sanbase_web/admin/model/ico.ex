@@ -151,8 +151,6 @@ defmodule Sanbase.ExAdmin.Model.Ico do
     end
   end
 
-  defp set_project_default(%Ico{} = ico), do: ico
-
   defp set_cap_currency_default(%Ico{cap_currency_id: nil} = ico) do
     currency = Currency.get("ETH")
 

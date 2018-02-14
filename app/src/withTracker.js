@@ -13,8 +13,6 @@ const withTracker = (WrappedComponent, options = {}) => {
         ...options
       })
       GoogleAnalytics.pageview(page)
-    } else {
-      console.log('track page', page)
     }
   }
 

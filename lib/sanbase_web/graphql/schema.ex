@@ -15,6 +15,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
+  alias SanbaseWeb.Graphql.SanbaseRepo
+  alias SanbaseWeb.Graphql.PriceStore
 
   import_types(Absinthe.Type.Custom)
   import_types(SanbaseWeb.Graphql.AccountTypes)
@@ -25,6 +27,19 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.VotingTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
+
+  def context(ctx) do
+    loader =
+      Dataloader.new()
+      |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
+      |> Dataloader.add_source(PriceStore, PriceStore.data())
+
+    Map.put(ctx, :loader, loader)
+  end
+
+  def plugins do
+    [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
+  end
 
   query do
     field :current_user, :user do

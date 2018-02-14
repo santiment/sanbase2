@@ -80,8 +80,7 @@ const enhance = compose(
     mapStateToProps
   ),
   graphql(createPostGQL, {
-    name: 'createPost',
-    options: { fetchPolicy: 'network-only' }
+    name: 'createPost'
   })
 )
 

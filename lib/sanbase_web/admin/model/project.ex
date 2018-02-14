@@ -35,6 +35,32 @@ defmodule Sanbase.ExAdmin.Model.Project do
           column(:cap_currency)
         end
       end
+
+      panel "ETH Addresses" do
+        markup_contents do
+          a ".btn .btn-primary", href: "/admin/project_eth_addresses/new?project_id=" <> to_string(project.id) do
+            "New ETH Address"
+          end
+        end
+
+        table_for project.eth_addresses do
+          column(:id, link: true)
+          column(:address)
+        end
+      end
+
+      panel "BTC Addresses" do
+        markup_contents do
+          a ".btn .btn-primary", href: "/admin/project_btc_addresses/new?project_id=" <> to_string(project.id) do
+            "New BTC Address"
+          end
+        end
+
+        table_for project.btc_addresses do
+          column(:id, link: true)
+          column(:address)
+        end
+      end
     end
 
     form project do

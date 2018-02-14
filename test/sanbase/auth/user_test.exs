@@ -31,7 +31,13 @@ defmodule Sanbase.Auth.UserTest do
     changeset = User.update_san_balance_changeset(user)
 
     assert changeset.changes[:san_balance] == Decimal.new(5)
-    assert Timex.diff(Timex.now(), changeset.changes[:san_balance_updated_at], :seconds) == 0
+    #
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             changeset.changes[:san_balance_updated_at],
+             2,
+             :seconds
+           )
   end
 
   test "san_balance! does not update the balance if the balance cache is not stale" do
@@ -60,7 +66,8 @@ defmodule Sanbase.Auth.UserTest do
     assert User.san_balance!(user) == Decimal.new(10)
 
     user = Repo.get(User, user.id)
-    assert Timex.diff(Timex.now(), user.san_balance_updated_at, :seconds) == 0
+
+    assert Sanbase.TestUtils.date_close_to(Timex.now(), user.san_balance_updated_at, 2, :seconds)
   end
 
   test "find_or_insert_by_email when the user does not exist" do
@@ -90,7 +97,13 @@ defmodule Sanbase.Auth.UserTest do
     {:ok, user} = User.update_email_token(user)
 
     assert user.email_token != nil
-    assert Timex.diff(Timex.now(), user.email_token_generated_at, :seconds) == 0
+
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             user.email_token_generated_at,
+             2,
+             :seconds
+           )
   end
 
   test "mark_email_token_as_validated updates the email_token_validated_at" do
@@ -100,7 +113,12 @@ defmodule Sanbase.Auth.UserTest do
 
     {:ok, user} = User.mark_email_token_as_validated(user)
 
-    assert Timex.diff(Timex.now(), user.email_token_validated_at, :seconds) == 0
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             user.email_token_validated_at,
+             2,
+             :seconds
+           )
   end
 
   test "email_token_valid? validates the token properly" do

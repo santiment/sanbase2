@@ -9,11 +9,10 @@ import withSizes from 'react-sizes'
 import { compose } from 'recompose'
 import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
+import CashflowMobile from './pages/CashflowMobile'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
-import EventVotes from './pages/EventVotes'
-import EventVotesNew from './pages/EventVotesNew/EventVotesNew'
 import EmailLoginVerification from './pages/EmailLoginVerification'
 import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
@@ -29,11 +28,19 @@ const LoadableDetailedPage = Loadable({
   )
 })
 
-const CashflowPage = props => (
-  <Cashflow
-    preload={() => LoadableDetailedPage.preload()}
-    {...props} />
-)
+const LoadableInsights = Loadable({
+  loader: () => import('./pages/EventVotes'),
+  loading: () => (
+    <PageLoader />
+  )
+})
+
+const LoadableInsightsNew = Loadable({
+  loader: () => import('./pages/EventVotesNew/EventVotesNew'),
+  loading: () => (
+    <PageLoader />
+  )
+})
 
 export const App = ({isDesktop}) => (
   <div className='App'>
@@ -42,13 +49,25 @@ export const App = ({isDesktop}) => (
       : <MobileMenu />}
     <ErrorBoundary>
       <Switch>
-        <Route exact path='/projects' render={CashflowPage} />
+        <Route exact path='/projects' render={props => {
+          if (isDesktop) {
+            return (
+              <Cashflow
+                preload={() => LoadableDetailedPage.preload()}
+                {...props} />
+            )
+          }
+          return (
+            <CashflowMobile {...props} />
+          )
+        }} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
-        <Route exact path='/events/votes' component={EventVotes} />
-        <Route path='/events/votes/new' component={EventVotesNew} />
-        <Route exact path='/events/votes/:filter' component={EventVotes} />
+        <Route exact path='/events/votes' component={LoadableInsights} />
+        <Route path='/events/votes/new' component={LoadableInsightsNew} />
+        <Route exact path='/events/votes/:filter' component={LoadableInsights} />
         <Redirect from='/events' to='/events/votes' />
+        <Redirect from='/insights' to='/events/votes' />
         <Route exact path='/projects/:ticker' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
@@ -62,7 +81,6 @@ export const App = ({isDesktop}) => (
               {...props} />
           )}
         />
-        <Route exact path='/' render={CashflowPage} />
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>

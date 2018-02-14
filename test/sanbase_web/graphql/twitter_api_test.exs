@@ -43,8 +43,19 @@ defmodule Sanbase.Github.TwitterApiTest do
     |> Project.changeset(%{
       name: "TestProj",
       ticker: "TEST1",
-      twitter_link: "https://twitter.com/some_test_acc"
+      twitter_link: "https://twitter.com/some_test_acc",
+      coinmarketcap_id: "test1"
     })
+    |> Repo.insert!()
+
+    %Project{}
+    |> Project.changeset(%{
+      name: "TestProj2",
+      ticker: "TEST2",
+      twitter_link: "https://m.twitter.com/some_test_acc2",
+      coinmarketcap_id: "test2"
+    })
+    |> Repo.insert!()
 
     Store.import([
       %Measurement{
@@ -70,7 +81,7 @@ defmodule Sanbase.Github.TwitterApiTest do
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{followers_count: 10},
-        name: "some_test_acc  "
+        name: "some_test_acc"
       }
     ])
 
@@ -102,6 +113,27 @@ defmodule Sanbase.Github.TwitterApiTest do
 
     assert twitter_data["followersCount"] == 1500
     assert twitter_data["twitterName"] == "santimentfeed"
+  end
+
+  test "fetching last twitter data for a ticker with invalid twitter link", context do
+    query = """
+    {
+      twitterData(
+        ticker: "TEST2") {
+          twitterName
+          followersCount
+        }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "twitterData"))
+
+    twitter_data = json_response(result, 200)["data"]["twitterData"]
+
+    assert twitter_data["followersCount"] == nil
+    assert twitter_data["twitterName"] == nil
   end
 
   test "fetch history twitter data", context do

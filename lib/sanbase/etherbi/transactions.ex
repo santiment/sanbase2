@@ -70,12 +70,14 @@ defmodule Sanbase.Etherbi.Transactions do
        ) do
     transactions_data
     |> Enum.map(fn {datetime, volume, address, token} ->
-      %Sanbase.Influxdb.Measurement{
-        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: volume / Map.get(token_decimals, token)},
-        tags: [transaction_type: transaction_type, address: address],
-        name: token
-      }
+      if decimals = Map.get(token_decimals, token) do
+        %Sanbase.Influxdb.Measurement{
+          timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+          fields: %{volume: volume / decimals},
+          tags: [transaction_type: transaction_type, address: address],
+          name: token
+        }
+      end
     end)
   end
 end

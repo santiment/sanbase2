@@ -24,6 +24,18 @@ import { hasMetamask } from './web3Helpers'
 import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
+const run = (client, store, App) => {
+  ReactDOM.render(
+    <ApolloProvider client={client}>
+      <Provider store={store}>
+        <Router>
+          <Route path='/' component={App} />
+        </Router>
+      </Provider>
+    </ApolloProvider>,
+    document.getElementById('root'))
+}
+
 const handleLoad = () => {
   if (!window.env) {
     window.env = {
@@ -129,8 +141,8 @@ const handleLoad = () => {
   const oldState = loadState()
   let prevToken = oldState ? oldState.token : null
   setInterval(() => {
-    if (prevToken !== loadState().token) {
-      prevToken = loadState().token
+    if (prevToken !== (loadState() || {}).token) {
+      prevToken = (loadState() || {}).token
       window.location.reload()
     }
   }, 2000)
@@ -141,15 +153,18 @@ const handleLoad = () => {
     saveState(store.getState().user)
   })
 
-  ReactDOM.render(
-    <ApolloProvider client={client}>
-      <Provider store={store}>
-        <Router>
-          <Route path='/' component={App} />
-        </Router>
-      </Provider>
-    </ApolloProvider>,
-    document.getElementById('root'))
+  if (!window.Intl) {
+    require.ensure([
+      'intl',
+      'intl/locale-data/jsonp/en.js'
+    ], () => {
+      require('intl')
+      require('intl/locale-data/jsonp/en.js')
+      run(client, store, App)
+    })
+  } else {
+    run(client, store, App)
+  }
 }
 
 if (process.env.NODE_ENV === 'development') {

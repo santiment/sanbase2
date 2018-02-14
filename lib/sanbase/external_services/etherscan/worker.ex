@@ -173,6 +173,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     |> Enum.reject(&reject_transaction?/1)
     |> Enum.map(&convert_to_measurement(&1, address, cmc_id))
     |> Store.import()
+
+    last_trx = List.first(transactions)
+    import_last_block_number(address, last_trx)
   end
 
   defp reject_transaction?(%Tx{isError: error, txreceipt_status: status, value: value}) do
@@ -205,23 +208,19 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   # TODO: Revist and remove this one once the new overview page is rolled out and
   # the latest eth wallet data is no longer needed
   defp process_last_out_transactions(address, transactions, internal_transactions) do
-    last_trx =
+    last_out_trx =
       transactions
       |> Enum.find(fn x -> String.downcase(x.from) == address end)
 
-    import_last_block_number(address, last_trx)
-
-    last_in_trx =
+    last_internal_out_trx =
       internal_transactions
       |> Enum.find(fn x -> String.downcase(x.from) == address end)
 
-    import_last_block_number(address, last_in_trx)
-
     # The transaction could be `nil`
-    if timestamp_or_zero(last_trx) > timestamp_or_zero(last_in_trx) do
-      import_latest_eth_wallet_data(last_trx, address)
+    if timestamp_or_zero(last_out_trx) > timestamp_or_zero(last_internal_out_trx) do
+      import_latest_eth_wallet_data(last_out_trx, address)
     else
-      import_latest_eth_wallet_data(last_in_trx, address)
+      import_latest_eth_wallet_data(last_internal_out_trx, address)
     end
   end
 

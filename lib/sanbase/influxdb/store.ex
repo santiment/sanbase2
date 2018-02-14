@@ -11,6 +11,7 @@ defmodule Sanbase.Influxdb.Store do
     quote do
       use Instream.Connection, otp_app: :sanbase
       require Sanbase.Utils.Config
+      require Logger
 
       alias Sanbase.Influxdb.Measurement
 
@@ -25,13 +26,7 @@ defmodule Sanbase.Influxdb.Store do
           |> __MODULE__.write()
       end
 
-      def delete_by_tag(measurement, tag_key, tag_value) do
-        ~s/DELETE from "#{measurement}"
-        WHERE #{tag_key} = '#{tag_value}'/
-        |> __MODULE__.query()
-      end
-
-      def import(measurements) do
+      def import(measurements) when is_list(measurements) do
         # 1 day of 5 min resolution data
         measurements
         |> Stream.map(&Measurement.convert_measurement_for_import/1)
@@ -41,6 +36,17 @@ defmodule Sanbase.Influxdb.Store do
           :ok = __MODULE__.write(data_for_import)
         end)
         |> Stream.run()
+      end
+
+      def import(arg) do
+        Logger.warn("Trying to import not valid data in Influxdb: #{inspect(arg)}")
+        :ok
+      end
+
+      def delete_by_tag(measurement, tag_key, tag_value) do
+        ~s/DELETE from "#{measurement}"
+        WHERE #{tag_key} = '#{tag_value}'/
+        |> __MODULE__.query()
       end
 
       def list_measurements() do

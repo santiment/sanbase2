@@ -10,22 +10,11 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
   defstruct [
     :blockNumber,
     :timeStamp,
-    :hash,
-    :nonce,
-    :blockHash,
-    :transactionIndex,
     :from,
     :to,
     :value,
-    :gas,
-    :gasPrice,
     :isError,
-    :txreceipt_status,
-    :input,
-    :contractAddress,
-    :cumulativeGasUsed,
-    :gasUsed,
-    :confirmations
+    :txreceipt_status
   ]
 
   @doc ~s"""
@@ -33,15 +22,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
     `startblock` to `endblock` in ascending order.
     Returns `{:ok, list()}` on success, `{:error, String.t}` otherwise
   """
-  @spec get_all_transactions(String.t(), Integer.t(), Integer.t()) ::
-          {:ok, list()} | {:error, String.t()}
-  def get_all_transactions(address, startblock, endblock) do
-    String.downcase(address) |> get(startblock, endblock)
-  end
-
-  # Private functions
-
-  defp get(address, startblock, endblock) do
+  @spec get(String.t(), Integer.t(), Integer.t()) :: {:ok, list()} | {:error, String.t()}
+  def get(address, startblock, endblock) do
     Requests.get("/", query: get_query(address, startblock, endblock))
     |> case do
       %{status: 200, body: body} ->
@@ -65,7 +47,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
       address: address,
       startblock: startblock,
       endblock: endblock,
-      sort: "asc",
+      sort: "desc",
       page: 1,
       offset: 2500
     ]

@@ -235,7 +235,9 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
 
     createdAt = Timex.parse!(sanbasePost["createdAt"], "{ISO:Extended}")
-    assert Timex.diff(Timex.now(), createdAt, :seconds) == 0
+
+    # Assert that now() and createdAt do not differ by more than 2 seconds.
+    assert Sanbase.TestUtils.date_close_to(Timex.now(), createdAt, 2, :seconds)
   end
 
   test "adding a new post with a very long title", %{conn: conn} do

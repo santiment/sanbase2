@@ -2,10 +2,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
+  import Absinthe.Resolution.Helpers
+
   import_types(SanbaseWeb.Graphql.CustomTypes)
 
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
   alias SanbaseWeb.Graphql.Resolvers.IcoResolver
+  alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
+  alias SanbaseWeb.Graphql.SanbaseRepo
 
   # Includes all available fields
   object :project_full do
@@ -53,6 +57,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.btc_balance/3)
     end
 
+    field :usd_balance, :decimal do
+      resolve(&ProjectResolver.usd_balance/3)
+    end
+
     field :funds_raised_icos, list_of(:currency_amount) do
       resolve(&ProjectResolver.funds_raised_icos/3)
     end
@@ -77,6 +85,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :volume_usd, :decimal do
       resolve(&ProjectResolver.volume_usd/3)
+    end
+
+    field :volume_change_24h, :float, name: "volume_change24h" do
+      resolve(&ProjectResolver.volume_change_24h/3)
+    end
+
+    field :average_dev_activity, :float do
+      description("Average dev activity for the last 30 days")
+      resolve(&ProjectResolver.average_dev_activity/3)
+    end
+
+    field :twitter_data, :twitter_data do
+      resolve(&TwitterResolver.twitter_data/3)
     end
 
     field :marketcap_usd, :decimal do
@@ -120,6 +141,20 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field(:icos, list_of(:ico), resolve: assoc(:icos))
+
+    field :signals, list_of(:signal) do
+      resolve(&ProjectResolver.signals/3)
+    end
+
+    field :price_to_book_ratio, :decimal do
+      resolve(&ProjectResolver.price_to_book_ratio/3)
+    end
+
+    field :eth_spent, :decimal do
+      arg(:days, :integer, default_value: 30)
+
+      resolve(&ProjectResolver.eth_spent/3)
+    end
   end
 
   # Used in the project list query (public), so heavy computed fields are omitted
@@ -143,6 +178,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:team_token_wallet, :string)
     field(:token_decimals, :integer)
     field(:description, :string)
+    field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
 
     field :market_segment, :string do
       resolve(&ProjectResolver.market_segment/3)
@@ -160,6 +196,18 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:project_transparency_description, :string)
 
+    field :eth_balance, :decimal do
+      resolve(&ProjectResolver.eth_balance/3)
+    end
+
+    field :btc_balance, :decimal do
+      resolve(&ProjectResolver.btc_balance/3)
+    end
+
+    field :usd_balance, :decimal do
+      resolve(&ProjectResolver.usd_balance/3)
+    end
+
     field(:coinmarketcap_id, :string)
 
     field :symbol, :string do
@@ -176,6 +224,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :volume_usd, :decimal do
       resolve(&ProjectResolver.volume_usd/3)
+    end
+
+    field :volume_change_24h, :float, name: "volume_change24h" do
+      resolve(&ProjectResolver.volume_change_24h/3)
+    end
+
+    field :average_dev_activity, :float do
+      description("Average dev activity for the last 30 days")
+      resolve(&ProjectResolver.average_dev_activity/3)
+    end
+
+    field :twitter_data, :twitter_data do
+      resolve(&TwitterResolver.twitter_data/3)
     end
 
     field :marketcap_usd, :decimal do
@@ -200,6 +261,20 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
+    end
+
+    field :signals, list_of(:signal) do
+      resolve(&ProjectResolver.signals/3)
+    end
+
+    field :price_to_book_ratio, :decimal do
+      resolve(&ProjectResolver.price_to_book_ratio/3)
+    end
+
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+
+      resolve(&ProjectResolver.eth_spent/3)
     end
   end
 
@@ -243,11 +318,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:project_transparency_description, :string)
 
     field :eth_balance, :decimal do
-      resolve(&ProjectResolver.eth_balance(&1, &2, &3, true))
+      resolve(&ProjectResolver.eth_balance/3)
     end
 
     field :btc_balance, :decimal do
-      resolve(&ProjectResolver.btc_balance(&1, &2, &3, true))
+      resolve(&ProjectResolver.btc_balance/3)
+    end
+
+    field :usd_balance, :decimal do
+      resolve(&ProjectResolver.usd_balance/3)
     end
 
     # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
@@ -295,6 +374,20 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :percent_change_7d, :decimal, name: "percent_change7d" do
       resolve(&ProjectResolver.percent_change_7d/3)
+    end
+
+    field :signals, list_of(:signal) do
+      resolve(&ProjectResolver.signals/3)
+    end
+
+    field :price_to_book_ratio, :decimal do
+      resolve(&ProjectResolver.price_to_book_ratio/3)
+    end
+
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+
+      resolve(&ProjectResolver.eth_spent/3)
     end
   end
 
@@ -345,6 +438,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.btc_balance/3)
     end
 
+    field :usd_balance, :decimal do
+      resolve(&ProjectResolver.usd_balance/3)
+    end
+
     # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)
     field :funds_raised_icos, list_of(:currency_amount) do
       resolve(&ProjectResolver.funds_raised_icos/3)
@@ -370,6 +467,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :volume_usd, :decimal do
       resolve(&ProjectResolver.volume_usd/3)
+    end
+
+    field :volume_change_24h, :float, name: "volume_change24h" do
+      resolve(&ProjectResolver.volume_change_24h/3)
+    end
+
+    field :average_dev_activity, :float do
+      description("Average dev activity for the last 30 days")
+      resolve(&ProjectResolver.average_dev_activity/3)
+    end
+
+    field :twitter_data, :twitter_data do
+      resolve(&TwitterResolver.twitter_data/3)
     end
 
     field :marketcap_usd, :decimal do
@@ -407,6 +517,20 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :funds_raised_btc_ico_end_price, :decimal do
       resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
     end
+
+    field :signals, list_of(:signal) do
+      resolve(&ProjectResolver.signals/3)
+    end
+
+    field :price_to_book_ratio, :decimal do
+      resolve(&ProjectResolver.price_to_book_ratio/3)
+    end
+
+    field :eth_spent, :float do
+      arg(:days, :integer, default_value: 30)
+
+      resolve(&ProjectResolver.eth_spent/3)
+    end
   end
 
   object :project_with_eth_contract_info do
@@ -416,6 +540,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field :initial_ico, :ico_with_eth_contract_info do
       resolve(&ProjectResolver.initial_ico/3)
+    end
+  end
+
+  object :eth_address do
+    field(:address, non_null(:string))
+
+    field :balance, :decimal do
+      resolve(&ProjectResolver.eth_address_balance/3)
     end
   end
 
@@ -469,5 +601,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :currency_amount do
     field(:currency_code, :string)
     field(:amount, :decimal)
+  end
+
+  object :signal do
+    field(:name, non_null(:string))
+    field(:description, non_null(:string))
   end
 end

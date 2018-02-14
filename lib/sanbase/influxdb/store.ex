@@ -25,12 +25,18 @@ defmodule Sanbase.Influxdb.Store do
           |> __MODULE__.write()
       end
 
+      def delete_by_tag(measurement, tag_key, tag_value) do
+        ~s/DELETE from "#{measurement}"
+        WHERE #{tag_key} = '#{tag_value}'/
+        |> __MODULE__.query()
+      end
+
       def import(measurements) do
         # 1 day of 5 min resolution data
         measurements
         |> Stream.map(&Measurement.convert_measurement_for_import/1)
         |> Stream.reject(&is_nil/1)
-        |> Stream.chunk_every(288)
+        |> Stream.chunk_every(2500)
         |> Stream.map(fn data_for_import ->
           :ok = __MODULE__.write(data_for_import)
         end)

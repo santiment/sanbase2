@@ -3,11 +3,7 @@ import PropTypes from 'prop-types'
 import { setDisplayName } from 'recompose'
 import './ProjectIcon.css'
 
-export const DefaultIcon = ({size}) => (
-  <span
-    width={size}
-    className='project-icon-default' />
-)
+export const DefaultIcon = () => ('')
 
 export const ProjectIcon = ({name, size}) => {
   if (!name) {

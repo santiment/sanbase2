@@ -254,12 +254,10 @@ const enhance = compose(
     options: { pollInterval: POLLING_INTERVAL }
   }),
   graphql(votePostGQL, {
-    name: 'votePost',
-    options: { fetchPolicy: 'network-only' }
+    name: 'votePost'
   }),
   graphql(unvotePostGQL, {
-    name: 'unvotePost',
-    options: { fetchPolicy: 'network-only' }
+    name: 'unvotePost'
   }),
   pure
 )

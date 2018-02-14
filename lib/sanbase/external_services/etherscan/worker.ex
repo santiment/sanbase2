@@ -74,13 +74,19 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     {:noreply, state}
   end
 
-  def fetch_and_store(%{address: address, ticker: ticker} = wallet, endblock) do
+  def fetch_and_store(%{address: address, ticker: ticker}, endblock) do
     address = address |> String.downcase()
 
-    transactions = fetch_transactions(address, ticker, endblock)
+    transactions =
+      fetch_transactions(address, ticker, endblock)
+      |> Enum.reverse()
+
     store_transactions(transactions, address, ticker)
 
-    internal_transactions = fetch_internal_transactions(address, ticker, endblock)
+    internal_transactions =
+      fetch_internal_transactions(address, ticker, endblock)
+      |> Enum.reverse()
+
     store_transactions(internal_transactions, address, ticker)
 
     process_last_out_transactions(address, transactions, internal_transactions)

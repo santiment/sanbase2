@@ -55,8 +55,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
         eth_addr in ProjectEthAddress,
         inner_join: p in Sanbase.Model.Project,
         on: eth_addr.project_id == p.id,
-        where: not is_nil(p.coinmarketcap_id),
-        select: %{address: eth_addr.address, coinmarketcap_id: p.coinmarketcap_id}
+        select: %{address: eth_addr.address, ticker: p.ticker}
       )
 
     Task.Supervisor.async_stream_nolink(
@@ -75,17 +74,15 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     {:noreply, state}
   end
 
-  def fetch_and_store(%{address: address, coinmarketcap_id: cmc_id} = wallet, endblock) do
+  def fetch_and_store(%{address: address, ticker: ticker} = wallet, endblock) do
     address = address |> String.downcase()
 
-    transactions = fetch_transactions(address, cmc_id, endblock)
-    store_transactions(transactions, address, cmc_id)
+    transactions = fetch_transactions(address, ticker, endblock)
+    store_transactions(transactions, address, ticker)
 
-    internal_transactions = fetch_internal_transactions(address, cmc_id, endblock)
-    store_transactions(internal_transactions, address, cmc_id)
+    internal_transactions = fetch_internal_transactions(address, ticker, endblock)
+    store_transactions(internal_transactions, address, ticker)
 
-    # TODO: Revist and remove this one once the new overview page is rolled out and
-    # the latest eth wallet data is no longer needed
     process_last_out_transactions(address, transactions, internal_transactions)
   end
 
@@ -168,10 +165,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     end
   end
 
-  defp store_transactions(transactions, address, cmc_id) do
+  defp store_transactions(transactions, address, ticker) do
     transactions
     |> Enum.reject(&reject_transaction?/1)
-    |> Enum.map(&convert_to_measurement(&1, address, cmc_id))
+    |> Enum.map(&convert_to_measurement(&1, address, ticker))
     |> Store.import()
 
     last_trx = List.first(transactions)
@@ -205,8 +202,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     end
   end
 
-  # TODO: Revist and remove this one once the new overview page is rolled out and
-  # the latest eth wallet data is no longer needed
   defp process_last_out_transactions(address, transactions, internal_transactions) do
     last_out_trx =
       transactions

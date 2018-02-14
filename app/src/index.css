@@ -75,18 +75,20 @@ hr {
 }
 
 .ui.button {
-  font-family: 'Nunito Sans', sans serif;
+  font-family: 'Nunito Sans', sans-serif;
   font-weight: initial;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
-.ui.positive.button{
+
+.ui.positive.button {
   background-color: #26a987;
 }
+
 .ui.basic.button {
   background: rgba(45, 121, 208, 1) !important;
   color: #fff !important;
-  font-family: 'Nunito Sans', sans serif;
+  font-family: 'Nunito Sans', sans-serif;
   letter-spacing: 0.03em;
   text-align: center !important;
   text-transform: uppercase;
@@ -96,7 +98,8 @@ hr {
   background: rgba(235, 133, 37, 1) !important;
 }
 
-.ui.active.button:active, .ui.button:active {
+.ui.active.button:active,
+.ui.button:active {
   background-color: #3d4450;
   color: #fff;
 }

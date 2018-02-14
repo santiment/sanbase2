@@ -77,7 +77,7 @@ const ProjectCard = ({
         <Card.Header>
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
             <div style={{display: 'flex', alignItems: 'center'}}>
-               {name}&nbsp;<ProjectIcon name={name} />
+              {name}&nbsp;<ProjectIcon name={name} />
             </div>
             <div style={{
               textTransform: 'uppercase',

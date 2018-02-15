@@ -6,20 +6,18 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Balance do
 
   defstruct [:status, :message, :result]
 
-  defp get_query(address) do
-    [
-      module: "account",
-      action: "balance",
-      address: address,
-      tag: "latest"
-    ]
+  def get_balance!(address) do
+    case get_balance(address) do
+      {:ok, result} -> result
+      {:error, error} -> raise(error)
+    end
   end
 
-  def get(address) do
+  def get_balance(address) do
     Requests.get("/", query: get_query(address))
     |> case do
       %{status: 200, body: body} ->
-        Poison.Decode.decode(body, as: %Balance{})
+        {:ok, Poison.Decode.decode(body, as: %Balance{})}
 
       %{status: status, body: body} ->
         error = "Error fetching transactions for #{address}. Status code: #{status}: #{body}"
@@ -31,5 +29,16 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Balance do
         Logger.warn(error)
         {:error, error}
     end
+  end
+
+  # Helper functions
+
+  defp get_query(address) do
+    [
+      module: "account",
+      action: "balance",
+      address: address,
+      tag: "latest"
+    ]
   end
 end

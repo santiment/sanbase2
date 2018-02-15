@@ -1,5 +1,6 @@
 import React from 'react'
 import { withRouter } from 'react-router-dom'
+import { graphql } from 'react-apollo'
 import * as qs from 'query-string'
 import {
   compose,
@@ -9,6 +10,7 @@ import { connect } from 'react-redux'
 import 'font-awesome/css/font-awesome.css'
 import logo from '../assets/logo_sanbase.png'
 import AppMenu from './AppMenu'
+import allProjectsGQL from './../pages/allProjectsGQL'
 import AuthControl from './AuthControl'
 import Search from './Search'
 import './TopMenu.css'
@@ -59,8 +61,7 @@ export const TopMenu = ({
 const mapStateToProps = state => {
   return {
     user: state.user.data,
-    loading: state.user.isLoading,
-    projects: state.projects.items
+    loading: state.user.isLoading
   }
 }
 
@@ -74,12 +75,36 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
+const mapDataToProps = ({allProjects, ownProps}) => {
+  const projects = (allProjects.allProjects || [])
+    .filter(project => {
+      const defaultFilter = project.ethAddresses &&
+        project.ethAddresses.length > 0 &&
+        project.rank &&
+        project.volumeUsd > 0
+      return defaultFilter
+    })
+
+  return {
+    projects
+  }
+}
+
 const enhance = compose(
   connect(
     mapStateToProps,
     mapDispatchToProps
   ),
   withRouter,
+  graphql(allProjectsGQL, {
+    name: 'allProjects',
+    props: mapDataToProps,
+    options: () => {
+      return {
+        errorPolicy: 'all'
+      }
+    }
+  }),
   pure
 )
 

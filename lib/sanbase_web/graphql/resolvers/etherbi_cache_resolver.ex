@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiCacheResolver do
         _resolution
       ) do
     with {:ok, transactions} <-
-           Transactions.Store.transactions(ticker, from, to, transaction_type) do
+           Transactions.Store.transactions(ticker, from, to, transaction_type |> Atom.to_string()) do
       result =
         transactions
         |> Enum.map(fn {datetime, volume, address} ->

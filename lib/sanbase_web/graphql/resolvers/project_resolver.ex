@@ -91,12 +91,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _resolution
       ) do
     async(fn ->
+      trx_type = trx_type |> Atom.to_string()
+
       eth_transactions =
         Etherscan.Store.transactions!(
           coinmarketcap_id,
           from,
           to,
-          trx_type |> Atom.to_string()
+          trx_type
         )
 
       result =

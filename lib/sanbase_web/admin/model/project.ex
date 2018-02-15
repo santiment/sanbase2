@@ -19,7 +19,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
           end
         end
 
-        table_for Sanbase.Repo.preload(project.icos, :cap_currency) do
+        table_for Sanbase.Repo.preload(project.icos, [:cap_currency, ico_currencies: [:currency]]) do
           column(:id, link: true)
           column(:start_date)
           column(:end_date)
@@ -33,12 +33,19 @@ defmodule Sanbase.ExAdmin.Model.Project do
           column(:main_contract_address)
           column(:comments)
           column(:cap_currency)
+
+          column("Currency used and collected amount", [], fn ico ->
+            ico.ico_currencies
+            |> Enum.map(fn ic -> "#{ic.currency.code}: #{ic.amount}" end)
+            |> Enum.join("<br/>")
+          end)
         end
       end
 
       panel "ETH Addresses" do
         markup_contents do
-          a ".btn .btn-primary", href: "/admin/project_eth_addresses/new?project_id=" <> to_string(project.id) do
+          a ".btn .btn-primary",
+            href: "/admin/project_eth_addresses/new?project_id=" <> to_string(project.id) do
             "New ETH Address"
           end
         end
@@ -51,7 +58,8 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
       panel "BTC Addresses" do
         markup_contents do
-          a ".btn .btn-primary", href: "/admin/project_btc_addresses/new?project_id=" <> to_string(project.id) do
+          a ".btn .btn-primary",
+            href: "/admin/project_btc_addresses/new?project_id=" <> to_string(project.id) do
             "New BTC Address"
           end
         end

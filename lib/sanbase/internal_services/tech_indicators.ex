@@ -9,12 +9,18 @@ defmodule Sanbase.InternalServices.TechIndicators do
     from_unix = DateTime.to_unix(from_datetime, :nanoseconds)
     to_unix = DateTime.to_unix(to_datetime, :nanoseconds)
 
-    url =
-      "#{tech_indicators_url()}/indicator/macd?ticker=#{ticker}&currency=#{currency}&from_timestamp=#{
-        from_unix
-      }&to_timestamp=#{to_unix}&aggregate_interval=#{aggregate_interval}"
+    url = "#{tech_indicators_url()}/indicator/macd"
 
-    options = [recv_timeout: @recv_timeout]
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"ticker", ticker},
+        {"currency", currency},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"aggregate_interval", aggregate_interval}
+      ]
+    ]
 
     case @http_client.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -44,14 +50,19 @@ defmodule Sanbase.InternalServices.TechIndicators do
     from_unix = DateTime.to_unix(from_datetime, :nanoseconds)
     to_unix = DateTime.to_unix(to_datetime, :nanoseconds)
 
-    url =
-      "#{tech_indicators_url()}/indicator/rsi?ticker=#{ticker}&currency=#{currency}&from_timestamp=#{
-        from_unix
-      }&to_timestamp=#{to_unix}&aggregate_interval=#{aggregate_interval}&rsi_interval=#{
-        rsi_interval
-      }"
+    url = "#{tech_indicators_url()}/indicator/rsi"
 
-    options = [recv_timeout: @recv_timeout]
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"ticker", ticker},
+        {"currency", currency},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"aggregate_interval", aggregate_interval},
+        {"rsi_interval", rsi_interval}
+      ]
+    ]
 
     case @http_client.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -81,12 +92,18 @@ defmodule Sanbase.InternalServices.TechIndicators do
     from_unix = DateTime.to_unix(from_datetime, :nanoseconds)
     to_unix = DateTime.to_unix(to_datetime, :nanoseconds)
 
-    url =
-      "#{tech_indicators_url()}/indicator/pricevolumediff?ticker=#{ticker}&currency=#{currency}&from_timestamp=#{
-        from_unix
-      }&to_timestamp=#{to_unix}&aggregate_interval=#{aggregate_interval}"
+    url = "#{tech_indicators_url()}/indicator/pricevolumediff"
 
-    options = [recv_timeout: @recv_timeout]
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"ticker", ticker},
+        {"currency", currency},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"aggregate_interval", aggregate_interval}
+      ]
+    ]
 
     case @http_client.get(url, [], options) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->

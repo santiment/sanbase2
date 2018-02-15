@@ -152,7 +152,8 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
       panel "ETH Addresses" do
         markup_contents do
-          a ".btn .btn-primary", href: "/admin/project_eth_addresses/new?project_id=" <> to_string(project.id) do
+          a ".btn .btn-primary",
+            href: "/admin/project_eth_addresses/new?project_id=" <> to_string(project.id) do
             "New ETH Address"
           end
         end
@@ -165,7 +166,8 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
       panel "BTC Addresses" do
         markup_contents do
-          a ".btn .btn-primary", href: "/admin/project_btc_addresses/new?project_id=" <> to_string(project.id) do
+          a ".btn .btn-primary",
+            href: "/admin/project_btc_addresses/new?project_id=" <> to_string(project.id) do
             "New BTC Address"
           end
         end

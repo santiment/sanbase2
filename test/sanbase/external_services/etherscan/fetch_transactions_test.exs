@@ -37,7 +37,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
     ]
   end
 
-  test "fetch internal transactions", context do
+  test "fetch transactions", context do
     mock(
       Sanbase.ExternalServices.Etherscan.Requests.Tx,
       :get,

@@ -114,7 +114,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   defp latest_eth_wallet_changeset(last_trx, address) do
     changeset = %{
       update_time: DateTime.utc_now(),
-      balance: convert_to_eth(Balance.get(address).result)
+      balance: convert_to_eth(Balance.get_balance!(address).result)
     }
 
     case last_trx do

@@ -13,6 +13,10 @@
   flex: 1;
 }
 
+.cashflow-mobile-search .search-panel input {
+  font-size: 16px !important;
+}
+
 .cashflow-mobile-search .cashflow-mobile-search__filter {
   margin-top: 10px !important;
   margin-left: 10px !important;

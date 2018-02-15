@@ -21,6 +21,7 @@ defmodule Sanbase.Model.ProjectEthAddress do
     project_eth_address
     |> cast(attrs, [:address, :project_id])
     |> validate_required([:address, :project_id])
+    |> update_change(:address, &String.downcase/1)
     |> unique_constraint(:address)
   end
 end

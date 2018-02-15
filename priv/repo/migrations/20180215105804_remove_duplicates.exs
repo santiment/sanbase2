@@ -30,8 +30,8 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
 
     filtered_eth_data =
       latest_eth_data
-      |> Enum.reject(fn %LatestEthWalletData{address: address} ->
-        count_address(latest_eth_data, address) > 1 && address != String.downcase(address)
+      |> Enum.reject(fn %LatestEthWalletData{address: address} = wallet_data ->
+        count_address(latest_eth_data, wallet_data) > 1 && address != String.downcase(address)
       end)
       |> Enum.map(&Map.from_struct/1)
       |> Enum.map(&Map.drop(&1, [:__meta__]))
@@ -54,8 +54,8 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
 
     filtered_btc_data =
       latest_btc_data
-      |> Enum.reject(fn %LatestBtcWalletData{address: address} ->
-        count_address(latest_btc_data, address) > 1 && address != String.downcase(address)
+      |> Enum.reject(fn %LatestBtcWalletData{address: address} = wallet_data ->
+        count_address(latest_btc_data, wallet_data) > 1 && address != String.downcase(address)
       end)
       |> Enum.map(&Map.from_struct/1)
       |> Enum.map(&Map.drop(&1, [:__meta__]))
@@ -70,13 +70,13 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
     Repo.insert_all(LatestBtcWalletData, filtered_btc_data)
   end
 
-  defp count_address(map, addr) do
+  defp count_address(map, %LatestEthWalletData{address: addr}) do
     Enum.count(map, fn %LatestEthWalletData{address: address} ->
       String.downcase(addr) == String.downcase(address)
     end)
   end
 
-  defp count_address(map, addr) do
+  defp count_address(map, %LatestBtcWalletData{address: addr}) do
     Enum.count(map, fn %LatestBtcWalletData{address: address} ->
       String.downcase(addr) == String.downcase(address)
     end)

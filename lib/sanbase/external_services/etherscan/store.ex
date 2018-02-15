@@ -80,17 +80,20 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   end
 
   @doc ~s"""
-    TODO
+    Return list of all transactions for the given measurement, time period and
+    transaction type. Supported transaction types are `all`, `in` and `out`. Returns
+    `{:ok, result}` on success, `{:error, error}` otherwise.
   """
   def transactions(measurement, from, to, transaction_type) do
     select_transactions(measurement, from, to, transaction_type)
     |> Store.query()
-    |> IO.inspect()
     |> parse_transactions_time_series()
   end
 
   @doc ~s"""
-    TODO
+    Return list of all transactions for the given measurement, time period and
+    transaction type. Supported transaction types are `all`, `in` and `out`. Returns
+    `result` on success, raises an error otherwise.
   """
   def transactions!(measurement, from, to, transaction_type) do
     case transactions(measurement, from, to, transaction_type) do

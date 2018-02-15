@@ -26,6 +26,7 @@ defmodule Sanbase.Model.LatestEthWalletData do
       :tx_out
     ])
     |> validate_required([:address, :balance, :update_time])
+    |> update_change(:address, &String.downcase/1)
     |> unique_constraint(:address)
   end
 end

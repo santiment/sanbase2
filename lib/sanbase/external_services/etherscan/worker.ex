@@ -3,6 +3,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   # updates the last outgoing transactions in the database
 
   use GenServer, restart: :permanent, shutdown: 5_000
+
   require Logger
 
   require Sanbase.Utils.Config
@@ -13,7 +14,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Repo
   alias Sanbase.InternalServices.Parity
-  alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx}
+  alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx, InternalTx}
   alias Sanbase.Utils.Config
 
   alias Sanbase.ExternalServices.Etherscan.Store
@@ -21,6 +22,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   @default_update_interval_ms 1000 * 60 * 5
   @confirmations 10
   @num_18_zeroes 1_000_000_000_000_000_000
+  @tx Mockery.of("Sanbase.ExternalServices.Etherscan.Requests.Tx")
+  @internal_tx Mockery.of("Sanbase.ExternalServices.Etherscan.Requests.InternalTx")
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -52,8 +55,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
         eth_addr in ProjectEthAddress,
         inner_join: p in Sanbase.Model.Project,
         on: eth_addr.project_id == p.id,
-        where: not is_nil(p.coinmarketcap_id),
-        select: %{address: eth_addr.address, coinmarketcap_id: p.coinmarketcap_id}
+        select: %{address: eth_addr.address, ticker: p.ticker}
       )
 
     Task.Supervisor.async_stream_nolink(
@@ -72,6 +74,24 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     {:noreply, state}
   end
 
+  def fetch_and_store(%{address: address, ticker: ticker}, endblock) do
+    address = address |> String.downcase()
+
+    transactions =
+      fetch_transactions(address, ticker, endblock)
+      |> Enum.reverse()
+
+    store_transactions(transactions, address, ticker)
+
+    internal_transactions =
+      fetch_internal_transactions(address, ticker, endblock)
+      |> Enum.reverse()
+
+    store_transactions(internal_transactions, address, ticker)
+
+    process_last_out_transactions(address, transactions, internal_transactions)
+  end
+
   def handle_info(msg, state) do
     Logger.warn("Unknown message received: #{msg}")
     {:noreply, state}
@@ -83,17 +103,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     Decimal.div(Decimal.new(wei), Decimal.new(@num_18_zeroes))
   end
 
-  defp import_all_transactions_influxdb(transactions, address, id) do
-    transactions
-    |> Enum.map(&convert_to_measurement(&1, address, id))
-    |> Store.import()
-  end
-
-  defp import_latest_eth_wallet_data(transactions, address) do
-    last_trx =
-      transactions
-      |> Enum.find(fn tx -> String.downcase(tx.from) == address end)
-
+  defp import_latest_eth_wallet_data(last_trx, address) do
     changeset = latest_eth_wallet_changeset(last_trx, address)
 
     get_or_create_entry(address)
@@ -104,11 +114,17 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   defp latest_eth_wallet_changeset(last_trx, address) do
     changeset = %{
       update_time: DateTime.utc_now(),
-      balance: convert_to_eth(Balance.get(address).result)
+      balance: convert_to_eth(Balance.get_balance!(address).result)
     }
 
     case last_trx do
       %Tx{timeStamp: ts, value: value} ->
+        Map.merge(changeset, %{
+          last_outgoing: DateTime.from_unix!(ts),
+          tx_out: convert_to_eth(value)
+        })
+
+      %InternalTx{timeStamp: ts, value: value} ->
         Map.merge(changeset, %{
           last_outgoing: DateTime.from_unix!(ts),
           tx_out: convert_to_eth(value)
@@ -119,10 +135,28 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     end
   end
 
-  defp fetch_all_transactions(address, measurement_name, endblock) do
+  defp fetch_internal_transactions(address, measurement_name, endblock) do
+    last_block_with_data = Store.last_block_number!(address <> "_in") || 0
+
+    case @internal_tx.get(address, last_block_with_data, endblock) do
+      {:ok, list} ->
+        list
+
+      {:error, error} ->
+        Logger.warn(
+          "Cannot fetch internal transactions for #{measurement_name}'s wallet: #{address}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        []
+    end
+  end
+
+  defp fetch_transactions(address, measurement_name, endblock) do
     last_block_with_data = Store.last_block_number!(address) || 0
 
-    case Tx.get_all_transactions(address, last_block_with_data, endblock) do
+    case @tx.get(address, last_block_with_data, endblock) do
       {:ok, list} ->
         list
 
@@ -137,21 +171,30 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     end
   end
 
-  defp fetch_and_store(%{address: address, coinmarketcap_id: id}, endblock) do
-    transactions = fetch_all_transactions(address, id, endblock)
-    address = address |> String.downcase()
+  defp store_transactions(transactions, address, ticker) do
+    transactions
+    |> Enum.reject(&reject_transaction?/1)
+    |> Enum.map(&convert_to_measurement(&1, address, ticker))
+    |> Store.import()
 
-    filtered_transactions =
-      transactions
-      |> Enum.reject(fn %Tx{isError: error, txreceipt_status: status, value: value} ->
-        error == "1" || status == "0" || value == "0"
-      end)
+    last_trx = List.first(transactions)
+    import_last_block_number(address, last_trx)
+  end
 
-    import_all_transactions_influxdb(filtered_transactions, address, id)
+  defp reject_transaction?(%Tx{isError: error, txreceipt_status: status, value: value}) do
+    error == "1" || status == "0" || value == "0"
+  end
 
-    import_latest_eth_wallet_data(filtered_transactions, address)
+  defp reject_transaction?(%InternalTx{isError: error, errCode: err_code, value: value}) do
+    error == "1" || err_code != "" || value == "0"
+  end
 
-    import_last_block_number(address, List.last(transactions))
+  defp reject_transaction?(_), do: true
+
+  defp import_last_block_number(_address, nil), do: :ok
+
+  defp import_last_block_number(address, %InternalTx{blockNumber: bn}) do
+    Store.import_last_block_number(address <> "_in", bn)
   end
 
   defp import_last_block_number(address, %Tx{blockNumber: bn}) do
@@ -165,18 +208,42 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     end
   end
 
+  defp process_last_out_transactions(address, transactions, internal_transactions) do
+    last_out_trx =
+      transactions
+      |> Enum.find(fn x -> String.downcase(x.from) == address end)
+
+    last_internal_out_trx =
+      internal_transactions
+      |> Enum.find(fn x -> String.downcase(x.from) == address end)
+
+    # The transaction could be `nil`
+    if timestamp_or_zero(last_out_trx) > timestamp_or_zero(last_internal_out_trx) do
+      import_latest_eth_wallet_data(last_out_trx, address)
+    else
+      import_latest_eth_wallet_data(last_internal_out_trx, address)
+    end
+  end
+
+  defp timestamp_or_zero(nil), do: 0
+  defp timestamp_or_zero(%Tx{timeStamp: ts}), do: ts
+  defp timestamp_or_zero(%InternalTx{timeStamp: ts}), do: ts
+
+  # Convert a transaction to measurement
   defp convert_to_measurement(
-         %Tx{
-           timeStamp: ts,
-           from: from,
-           to: to,
-           value: value,
-           blockNumber: bn,
-           transactionIndex: trx_index
-         },
+         tx,
          address,
          measurement_name
        ) do
+    # Extract the fields from either %Tx{} or %InternalTx{}
+    %{
+      timeStamp: ts,
+      from: from,
+      to: to,
+      value: value,
+      blockNumber: bn
+    } = Map.from_struct(tx)
+
     from = from |> String.downcase()
     to = to |> String.downcase()
 
@@ -192,7 +259,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
       fields: %{
         trx_value: (value |> String.to_integer()) / @num_18_zeroes,
         block_number: bn |> String.to_integer(),
-        transaction_index: trx_index |> String.to_integer(),
         from_addr: from,
         to_addr: to
       },

@@ -212,8 +212,7 @@ config :sanbase, Sanbase.MandrillApi,
   apikey: {:system, "MANDRILL_APIKEY"},
   from_email: {:system, "MANDRILL_FROM_EMAIL", "admin@santiment.net"}
 
-config :sanbase, Sanbase.TechIndicators,
-  url: {:system, "TECH_INDICATORS_URL"}
+config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

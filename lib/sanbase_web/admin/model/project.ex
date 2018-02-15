@@ -147,6 +147,12 @@ defmodule Sanbase.ExAdmin.Model.Project do
           column(:main_contract_address)
           column(:comments)
           column(:cap_currency)
+
+          column("Currency used and collected amount", [], fn ico ->
+            ico.ico_currencies
+            |> Enum.map(fn ic -> "#{ic.currency.code}: #{ic.amount}" end)
+            |> Enum.join("<br/>")
+          end)
         end
       end
 

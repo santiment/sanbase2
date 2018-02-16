@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   import Absinthe.Resolution.Helpers
 
-  import_types(SanbaseWeb.Graphql.CustomTypes)
-
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
   alias SanbaseWeb.Graphql.Resolvers.IcoResolver
   alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
@@ -155,6 +153,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
       resolve(&ProjectResolver.eth_spent/3)
     end
+
+    field :eth_transactions, list_of(:wallet_transaction) do
+      arg(:from, :datetime)
+      arg(:to, :datetime)
+      arg(:transaction_type, :transaction_type)
+
+      resolve(&ProjectResolver.eth_transactions/3)
+    end
   end
 
   # Used in the project list query (public), so heavy computed fields are omitted
@@ -276,6 +282,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
       resolve(&ProjectResolver.eth_spent/3)
     end
+
+    field :eth_transactions, list_of(:wallet_transaction) do
+      arg(:from, :datetime)
+      arg(:to, :datetime)
+      arg(:transaction_type, :transaction_type, default_value: :all)
+
+      resolve(&ProjectResolver.eth_transactions/3)
+    end
   end
 
   # Used in the project transparency list query
@@ -388,6 +402,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:days, :integer, default_value: 30)
 
       resolve(&ProjectResolver.eth_spent/3)
+    end
+
+    field :eth_transactions, list_of(:wallet_transaction) do
+      arg(:from, :datetime)
+      arg(:to, :datetime)
+      arg(:transaction_type, :transaction_type, default_value: :all)
+
+      resolve(&ProjectResolver.eth_transactions/3)
     end
   end
 
@@ -530,6 +552,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:days, :integer, default_value: 30)
 
       resolve(&ProjectResolver.eth_spent/3)
+    end
+
+    field :eth_transactions, list_of(:wallet_transaction) do
+      arg(:from, :datetime)
+      arg(:to, :datetime)
+      arg(:transaction_type, :transaction_type, default_value: :all)
+
+      resolve(&ProjectResolver.eth_transactions/3)
     end
   end
 

@@ -93,7 +93,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiApiResolver do
         },
         _resolution
       ) do
-    with {:ok, transactions} <- Store.transactions(ticker, from, to, transaction_type) do
+    with {:ok, transactions} <-
+           Store.transactions(ticker, from, to, transaction_type |> Atom.to_string()) do
       result =
         transactions
         |> Enum.map(fn {datetime, volume, address} ->

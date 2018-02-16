@@ -20,15 +20,18 @@ defmodule Sanbase.Github.Store do
     |> parse_moving_average_series!()
   end
 
-  def fetch_total_activity!(ticker, from, to) do
+  def fetch_total_activity(ticker, from, to) do
     total_activity_query(ticker, from, to)
     |> Store.query()
-    |> parse_activity_series!()
+    |> parse_activity_series()
     |> case do
-      [] ->
-        nil
+      {:ok, []} ->
+        {:ok, nil}
 
-      [result] ->
+      {:ok, [result]} ->
+        {:ok, result}
+
+      result ->
         result
     end
   end
@@ -57,9 +60,17 @@ defmodule Sanbase.Github.Store do
     GROUP BY time(#{resolution}) fill(none)/
   end
 
-  defp parse_activity_series!(%{results: [%{error: error}]}), do: raise(error)
+  defp parse_activity_series!(result) do
+    case parse_activity_series(result) do
+      {:ok, result} ->
+        result
 
-  defp parse_activity_series!(%{
+      {:error, error} ->
+        raise(error)
+    end
+  end
+
+  defp parse_activity_series(%{
          results: [
            %{
              series: [
@@ -70,14 +81,40 @@ defmodule Sanbase.Github.Store do
            }
          ]
        }) do
-    activity_series
-    |> Enum.map(fn [iso8601_datetime, activity] ->
-      {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-      {datetime, activity}
-    end)
+    result =
+      activity_series
+      |> Enum.map(fn [iso8601_datetime, activity] ->
+        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+        {datetime, activity}
+      end)
+
+    {:ok, result}
   end
 
-  defp parse_activity_series!(_), do: []
+  defp parse_activity_series(%{results: [%{error: error}]}), do: {:error, error}
+
+  defp parse_activity_series(%{
+         results: [
+           %{
+             series: [
+               %{
+                 values: activity_series
+               }
+             ]
+           }
+         ]
+       }) do
+    result =
+      activity_series
+      |> Enum.map(fn [iso8601_datetime, activity] ->
+        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+        {datetime, activity}
+      end)
+
+    {:ok, result}
+  end
+
+  defp parse_activity_series(_), do: {:ok, []}
 
   defp parse_moving_average_series!(%{results: [%{error: error}]}), do: raise(error)
 

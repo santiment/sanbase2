@@ -64,6 +64,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
 
   defp extract_twitter_name(_), do: {:error, "Can't parse twitter link"}
 
+  defp get_twitter_link(nil), do: nil
+
   defp get_twitter_link(ticker) do
     query =
       from(

@@ -21,6 +21,7 @@ import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import { hasMetamask } from './web3Helpers'
+import * as serviceWorker from './serviceWorker'
 import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
@@ -34,6 +35,7 @@ const run = (client, store, App) => {
       </Provider>
     </ApolloProvider>,
     document.getElementById('root'))
+  serviceWorker.register()
 }
 
 const handleLoad = () => {

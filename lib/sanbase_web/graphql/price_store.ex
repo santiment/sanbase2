@@ -11,6 +11,10 @@ defmodule SanbaseWeb.Graphql.PriceStore do
     Decimal.new(price)
   end
 
+  def fetch_price(pair, %{from: from, to: to, interval: interval}) do
+    Prices.Store.fetch_prices_with_resolution(pair, from, to, interval)
+  end
+
   def query(pair, ids) when is_list(ids) do
     ids
     |> Enum.uniq()

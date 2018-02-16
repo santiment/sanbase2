@@ -10,7 +10,10 @@ defmodule Sanbase.Repo.Migrations.RemoveDuplicates do
   }
 
   def up do
-    execute("CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;")
+    # Leaving this `execute` as a note that the migrations do not have permission
+    # to execute such commands. If something similiar is needed it should be
+    # carefully analyzed
+    # execute("CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;")
 
     migrate_eth()
 

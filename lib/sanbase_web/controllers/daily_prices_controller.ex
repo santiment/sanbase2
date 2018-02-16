@@ -19,7 +19,7 @@ defmodule SanbaseWeb.DailyPricesController do
         acc
         |> Map.put(
           pair,
-          Store.fetch_prices_with_resolution(
+          Store.fetch_prices_with_resolution!(
             pair,
             seconds_ago(@days_limit),
             DateTime.utc_now(),

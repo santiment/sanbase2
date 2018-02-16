@@ -3,7 +3,7 @@ import ReactTable from 'react-table'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
-import { Icon, Popup } from 'semantic-ui-react'
+import { Icon, Popup, Message } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
@@ -74,6 +74,16 @@ export const Cashflow = ({
   preload
 }) => {
   const { projects, loading } = Projects
+  if (Projects.isError) {
+    return (
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
+        <Message warning>
+          <Message.Header>Something going wrong on our server.</Message.Header>
+          <p>Please try again later.</p>
+        </Message>
+      </div>
+    )
+  }
   const columns = [{
     Header: 'Project',
     id: 'project',

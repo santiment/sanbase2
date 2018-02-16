@@ -7,7 +7,6 @@ import { Icon, Popup } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
-import moment from 'moment'
 import { formatNumber } from '../utils/formatting'
 import { millify } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
@@ -17,65 +16,7 @@ import allProjectsGQL from './allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
 
-const formatDate = date => moment(date).format('YYYY-MM-DD')
-
-export const formatLastOutgoingWallet = wallets => {
-  return wallets.map((wallet, index) => {
-    const lastOutgoing = wallet.last_outgoing !== null
-      ? formatDate(wallet.last_outgoing) : 'No recent transfers'
-    return (
-      <div key={index}>
-        { lastOutgoing }
-      </div>
-    )
-  })
-}
-
-export const formatTxOutWallet = wallets => {
-  return wallets.map((wallet, index) => {
-    const txOut = wallet.tx_out || '0.00'
-    return (
-      <div key={index}>
-        {formatNumber(txOut)}
-      </div>
-    )
-  })
-}
-
-export const formatBalanceWallet = ({wallets, ethPrice}) => {
-  return wallets.map((wallet, index) => {
-    const balance = wallet.balance || 0
-    return (
-      <div className='wallet' key={index}>
-        <div className='usd first'>{formatNumber((balance * ethPrice), 'USD')}</div>
-        <div className='eth'>
-          {parseFloat(balance) === 0 &&
-            <Popup
-              trigger={<div style={{display: 'inline-block'}}>{
-                <a
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  href='https://santiment.typeform.com/to/bT0Dgu'>
-                  <Icon color='red' name='question circle outline' />
-                </a>}
-              </div>}
-              content='Community help locating correct wallet is welcome!'
-              position='top center'
-            />
-          }
-          <a
-            className='address'
-            href={'https://etherscan.io/address/' + wallet.address}
-            target='_blank'>Ξ{formatNumber(balance)}&nbsp;
-            <i className='fa fa-external-link' />
-          </a>
-        </div>
-      </div>
-    )
-  })
-}
-
-const formatBalance = ({ethBalance, usdBalance}) => (
+const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
   <div className='wallet'>
     <div className='usd first'>{`$${millify(parseFloat(usdBalance))}`}</div>
     <div className='eth'>
@@ -85,7 +26,7 @@ const formatBalance = ({ethBalance, usdBalance}) => (
             <a
               target='_blank'
               rel='noopener noreferrer'
-              href='https://santiment.typeform.com/to/bT0Dgu'>
+              href={`https://santiment.typeform.com/to/bT0Dgu?project=${project}&ticker=${ticker}`}>
               <Icon color='red' name='question circle outline' />
             </a>}
           </div>}
@@ -211,6 +152,8 @@ export const Cashflow = ({
     Header: 'Balance (USD/ETH)',
     id: 'balance',
     accessor: d => ({
+      project: d.name,
+      ticker: d.ticker,
       ethBalance: d.ethBalance,
       usdBalance: d.usdBalance
     }),

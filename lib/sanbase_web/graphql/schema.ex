@@ -88,26 +88,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PriceResolver.history_price/3)
     end
 
-    @desc "Current price for a ticker"
-    field :price, :price_point do
-      arg(:ticker, non_null(:string))
-
-      resolve(&PriceResolver.current_price/3)
-    end
-
-    @desc "Current price for a list of tickers"
-    field :prices, list_of(:price_point) do
-      arg(:tickers, non_null(list_of(:string)))
-
-      complexity(&PriceComplexity.current_prices/3)
-      resolve(&PriceResolver.current_prices/3)
-    end
-
-    @desc "Returns a list of available tickers"
-    field :available_prices, list_of(:string) do
-      resolve(&PriceResolver.available_prices/3)
-    end
-
     @desc "Returns a list of available github repositories"
     field :github_availables_repos, list_of(:string) do
       resolve(&GithubResolver.available_repos/3)

@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ProjectSpentEthTest do
+defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   use SanbaseWeb.ConnCase
 
   alias Sanbase.Influxdb.Measurement
@@ -11,12 +11,12 @@ defmodule SanbaseWeb.Graphql.ProjectSpentEthTest do
   setup do
     Store.create_db()
 
-    name = "santiment"
-    Store.drop_measurement(name)
+    ticker = "SAN"
+    Store.drop_measurement(ticker)
 
     p =
       %Project{}
-      |> Project.changeset(%{name: "Santiment", coinmarketcap_id: name})
+      |> Project.changeset(%{name: "Santiment", ticker: ticker})
       |> Repo.insert!()
 
     today = Timex.now()
@@ -32,50 +32,50 @@ defmodule SanbaseWeb.Graphql.ProjectSpentEthTest do
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 500},
         tags: [transaction_type: "out"],
-        name: name
+        name: ticker
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 1500},
         tags: [transaction_type: "out"],
-        name: name
+        name: ticker
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 2500},
         tags: [transaction_type: "out"],
-        name: name
+        name: ticker
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 3500},
         tags: [transaction_type: "out"],
-        name: name
+        name: ticker
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 100_000},
         tags: [transaction_type: "in"],
-        name: name
+        name: ticker
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 5500},
         tags: [transaction_type: "out"],
-        name: name
+        name: ticker
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 6500},
         tags: [transaction_type: "out"],
-        name: name
+        name: ticker
       }
     ]
     |> Store.import()
 
     [
       project: p,
-      name: name,
+      ticker: ticker,
       dates_day_diff1: Timex.diff(datetime1, datetime6, :days) + 1,
       expected_sum1: 20000,
       dates_day_diff2: Timex.diff(datetime1, datetime3, :days) + 1,

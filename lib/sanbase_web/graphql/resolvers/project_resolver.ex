@@ -73,14 +73,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_spent(%Project{coinmarketcap_id: coinmarketcap_id}, %{days: days}, _resolution) do
+  def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
     async(fn ->
       today = Timex.now()
       days_ago = Timex.shift(today, days: -days)
 
       eth_spent =
         Etherscan.Store.trx_sum_in_interval!(
-          coinmarketcap_id,
+          ticker,
           days_ago,
           today,
           "out"

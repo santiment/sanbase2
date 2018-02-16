@@ -293,8 +293,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     async(fn ->
       month_ago = Timex.shift(Timex.now(), days: -30)
 
-      case Github.Store.fetch_total_activity!(ticker, month_ago, Timex.now()) do
-        {_dt, total_activity} ->
+      case Github.Store.fetch_total_activity(ticker, month_ago, Timex.now()) do
+        {:ok, {_dt, total_activity}} ->
           {:ok, total_activity / 30}
 
         _ ->

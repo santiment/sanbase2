@@ -28,6 +28,17 @@ defmodule Sanbase.ExAdmin.Model.Ico do
       actions()
     end
 
+    show ico do
+      attributes_table
+
+      panel "Currency used and collected amount" do
+        table_for ico.ico_currencies do
+          column(:currency)
+          column(:amount)
+        end
+      end
+    end
+
     form ico do
       inputs do
         input(

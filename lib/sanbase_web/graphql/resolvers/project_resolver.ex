@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Prices
   alias Sanbase.Github
+  alias Sanbase.ExternalServices.Etherscan
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore
@@ -67,20 +68,48 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_spent(%Project{coinmarketcap_id: coinmarketcap_id}, %{days: days}, _resolution) do
+  def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
     async(fn ->
       today = Timex.now()
       days_ago = Timex.shift(today, days: -days)
 
       eth_spent =
-        Sanbase.ExternalServices.Etherscan.Store.trx_sum_in_interval!(
-          coinmarketcap_id,
+        Etherscan.Store.trx_sum_in_interval!(
+          ticker,
           days_ago,
           today,
           "out"
         )
 
       {:ok, eth_spent}
+    end)
+  end
+
+  def eth_transactions(
+        %Project{ticker: ticker},
+        %{from: from, to: to, transaction_type: trx_type},
+        _resolution
+      ) do
+    async(fn ->
+      with trx_type <- trx_type |> Atom.to_string(),
+           {:ok, eth_transactions} <- Etherscan.Store.transactions(ticker, from, to, trx_type) do
+        result =
+          eth_transactions
+          |> Enum.map(fn {datetime, trx_volume, trx_type, from_addr, to_addr} ->
+            %{
+              datetime: datetime,
+              transaction_volume: trx_volume |> Decimal.new(),
+              transaction_type: trx_type,
+              from_address: from_addr,
+              to_address: to_addr
+            }
+          end)
+
+        {:ok, result}
+      else
+        _error ->
+          {:error, nil}
+      end
     end)
   end
 

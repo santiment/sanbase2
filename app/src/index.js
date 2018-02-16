@@ -35,7 +35,14 @@ const run = (client, store, App) => {
       </Provider>
     </ApolloProvider>,
     document.getElementById('root'))
-  serviceWorker.register()
+  serviceWorker.register({
+    onUpdate: registration => {
+      console.log('App updated... Refresh your browser, please.')
+    },
+    onSuccess: registration => {
+      console.log('Your browser makes cached SANbase version')
+    }
+  })
 }
 
 const handleLoad = () => {

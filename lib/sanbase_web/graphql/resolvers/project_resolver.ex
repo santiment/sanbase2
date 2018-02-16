@@ -68,14 +68,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_spent(%Project{coinmarketcap_id: coinmarketcap_id}, %{days: days}, _resolution) do
+  def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
     async(fn ->
       today = Timex.now()
       days_ago = Timex.shift(today, days: -days)
 
       eth_spent =
         Etherscan.Store.trx_sum_in_interval!(
-          coinmarketcap_id,
+          ticker,
           days_ago,
           today,
           "out"
@@ -86,35 +86,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def eth_transactions(
-        %Project{coinmarketcap_id: coinmarketcap_id},
+        %Project{ticker: ticker},
         %{from: from, to: to, transaction_type: trx_type},
         _resolution
       ) do
     async(fn ->
-      trx_type = trx_type |> Atom.to_string()
+      with trx_type <- trx_type |> Atom.to_string(),
+           {:ok, eth_transactions} <- Etherscan.Store.transactions(ticker, from, to, trx_type) do
+        result =
+          eth_transactions
+          |> Enum.map(fn {datetime, trx_volume, trx_type, from_addr, to_addr} ->
+            %{
+              datetime: datetime,
+              transaction_volume: trx_volume |> Decimal.new(),
+              transaction_type: trx_type,
+              from_address: from_addr,
+              to_address: to_addr
+            }
+          end)
 
-      eth_transactions =
-        Etherscan.Store.transactions!(
-          coinmarketcap_id,
-          from,
-          to,
-          trx_type
-        )
-
-      result =
-        eth_transactions
-        |> Enum.map(fn {datetime, trx_volume, trx_type, from_addr, to_addr} ->
-          %{
-            datetime: datetime,
-            transaction_volume: trx_volume |> Decimal.new(),
-            transaction_type: trx_type,
-            from_address: from_addr,
-            to_address: to_addr
-          }
-        end)
-        |> IO.inspect()
-
-      {:ok, result}
+        {:ok, result}
+      else
+        _error ->
+          {:error, nil}
+      end
     end)
   end
 

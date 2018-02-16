@@ -198,5 +198,5 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     {:ok, result}
   end
 
-  defp parse_transactions_time_series(_), do: {:ok, nil}
+  defp parse_transactions_time_series(_), do: {:ok, []}
 end

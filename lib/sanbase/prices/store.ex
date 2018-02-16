@@ -12,9 +12,16 @@ defmodule Sanbase.Prices.Store do
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
-  def fetch_price_points(pair, from, to) do
+  def fetch_price_points!(pair, from, to) do
     fetch_query(pair, from, to)
     |> q()
+    |> case do
+      {:ok, result} ->
+        result
+
+      {:error, error} ->
+        raise(error)
+    end
   end
 
   def fetch_prices_with_resolution(pair, from, to, resolution) do
@@ -25,6 +32,16 @@ defmodule Sanbase.Prices.Store do
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
     GROUP BY time(#{resolution}) fill(none)/
     |> q()
+  end
+
+  def fetch_prices_with_resolution!(pair, from, to, resolution) do
+    case fetch_prices_with_resolution(pair, from, to, resolution) do
+      {:ok, result} ->
+        result
+
+      {:error, error} ->
+        raise(error)
+    end
   end
 
   def fetch_mean_volume(pair, from, to) do
@@ -47,7 +64,7 @@ defmodule Sanbase.Prices.Store do
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp parse_price_series(%{results: [%{error: error}]}), do: raise(error)
+  defp parse_price_series(%{results: [%{error: error}]}), do: {:error, error}
 
   defp parse_price_series(%{
          results: [
@@ -60,14 +77,17 @@ defmodule Sanbase.Prices.Store do
            }
          ]
        }) do
-    price_series
-    |> Enum.map(fn [iso8601_datetime | tail] ->
-      {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-      [datetime | tail]
-    end)
+    result =
+      price_series
+      |> Enum.map(fn [iso8601_datetime | tail] ->
+        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+        [datetime | tail]
+      end)
+
+    {:ok, result}
   end
 
-  defp parse_price_series(_), do: []
+  defp parse_price_series(_), do: {:ok, []}
 
   def last_record(pair) do
     ~s/SELECT LAST(price), marketcap, volume from "#{pair}"/

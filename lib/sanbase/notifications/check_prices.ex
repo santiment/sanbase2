@@ -41,7 +41,7 @@ defmodule Sanbase.Notifications.CheckPrices do
   defp fetch_price_points(project, counter_currency) do
     ticker = price_ticker(project, counter_currency)
 
-    Store.fetch_price_points(ticker, seconds_ago(@check_interval_in_sec), DateTime.utc_now())
+    Store.fetch_price_points!(ticker, seconds_ago(@check_interval_in_sec), DateTime.utc_now())
   end
 
   def send_notification({notification, price_difference, project}, counter_currency) do

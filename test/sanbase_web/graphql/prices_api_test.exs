@@ -86,24 +86,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert json_response(result, 200)["data"]["historyPrice"] == []
   end
 
-  test "fetch current price for a ticker", context do
-    query = """
-    {
-      price(ticker: "TEST") {
-        priceUsd
-        priceBtc
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "price"))
-
-    assert json_response(result, 200)["data"]["price"]["priceUsd"] == "22"
-    assert json_response(result, 200)["data"]["price"]["priceBtc"] == "1200"
-  end
-
   test "data aggregation for larger intervals", context do
     query = """
     {
@@ -189,45 +171,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     assert json_response(result, 200)["data"] != nil
-  end
-
-  test "fetch all available prices", context do
-    query = """
-    {
-      availablePrices
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "availablePrices"))
-
-    resp_data = json_response(result, 200)["data"]["availablePrices"]
-    assert Enum.count(resp_data) == 2
-    assert "TEST" in resp_data
-    assert "XYZ" in resp_data
-  end
-
-  test "fetch price for a list of tickers", context do
-    query = """
-    {
-      prices(tickers: ["TEST", "XYZ"]){
-        ticker
-        priceUsd
-        priceBtc
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> put_req_header("authorization", "Basic " <> basic_auth())
-      |> post("/graphql", query_skeleton(query, "prices"))
-
-    resp_data = json_response(result, 200)["data"]["prices"]
-
-    assert %{"priceBtc" => "1200", "priceUsd" => "22", "ticker" => "TEST"} in resp_data
-    assert %{"priceBtc" => "1", "priceUsd" => "20", "ticker" => "XYZ"} in resp_data
   end
 
   defp basic_auth() do

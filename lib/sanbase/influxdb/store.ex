@@ -26,7 +26,7 @@ defmodule Sanbase.Influxdb.Store do
           |> __MODULE__.write()
       end
 
-      def import(measurements) when is_list(measurements) do
+      def import(measurements) do
         # 1 day of 5 min resolution data
         measurements
         |> Stream.map(&Measurement.convert_measurement_for_import/1)
@@ -36,11 +36,6 @@ defmodule Sanbase.Influxdb.Store do
           :ok = __MODULE__.write(data_for_import)
         end)
         |> Stream.run()
-      end
-
-      def import(arg) do
-        Logger.warn("Trying to import not valid data in Influxdb: #{inspect(arg)}")
-        :ok
       end
 
       def delete_by_tag(measurement, tag_key, tag_value) do

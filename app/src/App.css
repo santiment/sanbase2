@@ -48,7 +48,6 @@
 .App .page {
   flex: 1;
   padding: 0 15px;
-  max-width: 1024px;
   overflow-y: auto;
   overflow: scroll;
   -webkit-overflow-scrolling: touch;

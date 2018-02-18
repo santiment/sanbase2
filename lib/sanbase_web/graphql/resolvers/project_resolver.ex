@@ -73,15 +73,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       today = Timex.now()
       days_ago = Timex.shift(today, days: -days)
 
-      eth_spent =
-        Etherscan.Store.trx_sum_in_interval!(
-          ticker,
-          days_ago,
-          today,
-          "out"
-        )
-
-      {:ok, eth_spent}
+      with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
+        {:ok, eth_spent}
+      else
+        _error ->
+          {:ok, nil}
+      end
     end)
   end
 

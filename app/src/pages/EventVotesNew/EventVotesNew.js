@@ -19,7 +19,7 @@ class EventVotesNew extends Component {
 
   changePost = (post, nextStepURL = '') => { // eslint-disable-line
     this.setState({...post}, () => {
-      this.props.history.push(`/events/votes/new/${nextStepURL}`)
+      this.props.history.push(`/insights/new/${nextStepURL}`)
     })
   }
 
@@ -29,10 +29,10 @@ class EventVotesNew extends Component {
 
   render () {
     if (!this.state.link &&
-      this.props.history.location.pathname !== '/events/votes/new') {
+      this.props.history.location.pathname !== '/insights/new') {
       return (
         <Redirect to={{
-          pathname: '/events/votes/new'
+          pathname: '/insights/new'
         }} />
       )
     }
@@ -48,7 +48,7 @@ class EventVotesNew extends Component {
           <PostsNewHeader location={last} />
           <Route
             exact
-            path='/events/votes/new'
+            path='/insights/new'
             render={() => (
               <CreateLink
                 changePost={this.changePost}
@@ -56,7 +56,7 @@ class EventVotesNew extends Component {
             )} />
           <Route
             exact
-            path='/events/votes/new/title'
+            path='/insights/new/title'
             render={() => (
               <CreateTitle
                 changePost={this.changePost}
@@ -64,7 +64,7 @@ class EventVotesNew extends Component {
             )} />
           <Route
             exact
-            path='/events/votes/new/confirm'
+            path='/insights/new/confirm'
             render={() => (
               <ConfirmPost
                 addPost={addPost}

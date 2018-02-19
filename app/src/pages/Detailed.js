@@ -57,7 +57,6 @@ export const Detailed = ({
   location,
   projects,
   loading,
-  PriceQuery,
   TwitterData = {
     loading: true,
     error: false,
@@ -194,17 +193,19 @@ export const Detailed = ({
             </div>
           </div>
 
-          {!PriceQuery.loading && PriceQuery.price &&
+          {!generalInfo.isLoading && generalInfo.project.priceUsd &&
             <div className='detailed-price'>
               <div className='detailed-price-description'>Today's changes</div>
               <div className='detailed-price-usd'>
-                {formatNumber(PriceQuery.price.priceUsd, 'USD')}&nbsp;
+                {formatNumber(generalInfo.project.priceUsd, 'USD')}&nbsp;
                 {!generalInfo.isLoading && generalInfo.project &&
                   <PercentChanges changes={generalInfo.project.percentChange24h} />}
               </div>
-              <div className='detailed-price-btc'>
-                BTC {formatBTC(parseFloat(PriceQuery.price.priceBtc))}
-              </div>
+              <HiddenElements>
+                <div className='detailed-price-btc'>
+                  BTC {formatBTC(parseFloat(generalInfo.project.priceBtc))}
+                </div>
+              </HiddenElements>
             </div>}
 
           <HiddenElements>
@@ -222,7 +223,7 @@ export const Detailed = ({
         <div className='information'>
           <PanelBlock
             isUnauthorized={generalInfo.isUnauthorized}
-            isLoading={generalInfo.isLoading || PriceQuery.loading}
+            isLoading={generalInfo.isLoading}
             title='General Info'>
             <GeneralInfoBlock {...generalInfo.project} />
           </PanelBlock>
@@ -261,19 +262,6 @@ const mapDispatchToProps = dispatch => {
     retrieveProjects: () => dispatch(retrieveProjects)
   }
 }
-
-const queryPrice = gql`
-  query queryPrice($ticker: String!) {
-    price (
-      ticker: $ticker
-    ) {
-      priceBtc,
-      priceUsd,
-      volume,
-      datetime,
-      marketcap
-    }
-}`
 
 const queryProject = gql`
   query queryProject($id: ID!) {
@@ -430,18 +418,6 @@ const enhance = compose(
   lifecycle({
     componentDidMount () {
       this.props.retrieveProjects()
-    }
-  }),
-  graphql(queryPrice, {
-    name: 'PriceQuery',
-    options: ({match, projects}) => {
-      const project = getProjectByTicker(match, projects)
-      return {
-        skip: !project,
-        variables: {
-          'ticker': project ? project.ticker.toUpperCase() : 'SAN'
-        }
-      }
     }
   }),
   graphql(queryProject, {

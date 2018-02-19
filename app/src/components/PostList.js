@@ -1,9 +1,9 @@
 import React from 'react'
 import { createSkeletonProvider } from '@trainline/react-skeletor'
 import Post from './Post.js'
-import './PostsList.css'
+import './PostList.css'
 
-const PostsList = ({
+const PostList = ({
   posts = {},
   userId = null,
   loading = true,
@@ -11,25 +11,19 @@ const PostsList = ({
   isEmpty = true,
   votePost,
   unvotePost
-}) => {
-  const postKeys = userId
-    ? Object.keys(posts)
-        .filter(postKey => posts[postKey].user.id === userId)
-    : Object.keys(posts)
-  return (
-    <div className='event-posts-list'>
-      {postKeys.map((postKey, index) => (
-        <Post
-          showStatus={!!userId}
-          index={index + 1}
-          key={index}
-          votePost={votePost}
-          unvotePost={unvotePost}
-          {...posts[postKey]} />
-      ))}
-    </div>
-  )
-}
+}) => (
+  <div className='event-posts-list'>
+    {Object.keys(posts).map((key, index) => (
+      <Post
+        showStatus={!!userId}
+        index={index + 1}
+        key={index}
+        votePost={votePost}
+        unvotePost={unvotePost}
+        {...posts[key]} />
+    ))}
+  </div>
+)
 
 export default createSkeletonProvider(
   {
@@ -54,4 +48,4 @@ export default createSkeletonProvider(
     backgroundColor: '#bdc3c7',
     color: '#bdc3c7'
   })
-)(PostsList)
+)(PostList)

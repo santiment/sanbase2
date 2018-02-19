@@ -174,6 +174,8 @@ defmodule Sanbase.Prices.Store do
     WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
   end
 
+  defp parse_record(%{results: [%{error: error}]}), do: {:error, error}
+
   defp parse_record(%{
          results: [
            %{
@@ -187,10 +189,10 @@ defmodule Sanbase.Prices.Store do
        }) do
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
-    {datetime, price, marketcap, volume}
+    {:ok, {datetime, price, marketcap, volume}}
   end
 
   defp parse_record(_) do
-    nil
+    {:ok, nil}
   end
 end

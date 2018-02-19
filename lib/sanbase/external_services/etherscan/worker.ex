@@ -55,6 +55,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
         eth_addr in ProjectEthAddress,
         inner_join: p in Sanbase.Model.Project,
         on: eth_addr.project_id == p.id,
+        # That's the name of the measurement
+        where: not is_nil(p.ticker),
         select: %{address: eth_addr.address, ticker: p.ticker}
       )
 

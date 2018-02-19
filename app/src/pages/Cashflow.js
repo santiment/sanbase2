@@ -30,7 +30,8 @@ const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
     {((Array.isArray(children) ? children[0] : {}).props || {}).children === 'P/B'
       ? <Popup
         trigger={<div>{children}</div>}
-        content='Price/Book ratio'
+        content='Ratio between the market cap and the current crypto balance.
+          Companies with low P/B ratio might be undervalued.'
         inverted
         position='top left'
       />
@@ -141,10 +142,10 @@ export const Cashflow = ({
       priceUsd: d.priceUsd,
       change24h: d.percentChange24h
     }),
-    Cell: ({value}) => <div>
-      {value.priceUsd ? formatNumber(value.priceUsd, 'USD') : '---'}
+    Cell: ({value: {priceUsd, change24h}}) => <div>
+      {priceUsd ? formatNumber(priceUsd, 'USD') : '---'}
       &nbsp;
-      {<PercentChanges changes={value.change24h} />}
+      {<PercentChanges changes={change24h} />}
     </div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
@@ -155,13 +156,13 @@ export const Cashflow = ({
       volumeUsd: d.volumeUsd,
       change24h: d.volumeChange24h
     }),
-    Cell: ({value}) => <div>
-      {value.volumeUsd
-        ? `$${millify(parseFloat(value.volumeUsd))}`
-        : '---'}
+    Cell: ({value: {volumeUsd, change24h}}) => <div>
+      {volumeUsd
+        ? `$${millify(parseFloat(volumeUsd))}`
+        : ''}
       &nbsp;
-      {value.change24
-        ? <PercentChanges changes={value.change24h} />
+      {change24h
+        ? <PercentChanges changes={change24h} />
         : ''}
     </div>,
     sortable: true,
@@ -208,7 +209,7 @@ export const Cashflow = ({
       })(value)
     }</div>,
     sortable: true,
-    sortMethod: (a, b, desc) => {
+    sortMethod: (a, b) => {
       return simpleSort(
         parseFloat(a || 0),
         parseFloat(b || 0)
@@ -225,7 +226,7 @@ export const Cashflow = ({
     Header: 'Dev activity 30D',
     id: 'github_activity',
     accessor: d => d.averageDevActivity,
-    Cell: ({value}) => <div>{value ? parseFloat(value).toFixed(2) : '---'}</div>,
+    Cell: ({value}) => <div>{value ? parseFloat(value).toFixed(2) : ''}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
@@ -236,16 +237,19 @@ export const Cashflow = ({
       warning: d.signals && d.signals.length > 0,
       description: d.signals[0] && d.signals[0].description
     }),
-    Cell: ({value}) => <div className='cell-signals'>
-      {value.warning &&
+    Cell: ({value: {warning, description}}) => <div className='cell-signals'>
+      {warning &&
         <Popup basic
           position='right center'
           hideOnScroll
           wide
           inverted
-          trigger={<Icon color='orange' fitted name='warning sign' />}
+          trigger={
+            <div style={{width: '100%', height: '100%'}}>
+              <Icon color='orange' fitted name='warning sign' />
+            </div>}
           on='hover'>
-          {value.description}
+          {description}
         </Popup>}
     </div>,
     sortable: true,
@@ -300,7 +304,7 @@ export const Cashflow = ({
             resizable
             defaultSorted={[
               {
-                id: 'market_cap_usd',
+                id: 'marketcapUsd',
                 desc: false
               }
             ]}

@@ -207,7 +207,7 @@ exports[`Cashflow container it should render correctly 1`] = `
           Array [
             Object {
               "desc": false,
-              "id": "market_cap_usd",
+              "id": "marketcapUsd",
             },
           ]
         }

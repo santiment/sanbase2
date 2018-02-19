@@ -11,7 +11,7 @@ import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
 import { NavLink } from 'react-router-dom'
 import Panel from './../components/Panel'
-import PostsList from './../components/PostsList'
+import PostList from './../components/PostList'
 import { simpleSort } from './../utils/sortMethods'
 import { Button, Header, Icon, Modal, Message } from 'semantic-ui-react'
 import './EventVotes.css'
@@ -39,7 +39,17 @@ const voteMutationHelper = ({postId, action = 'vote'}) => ({
 })
 
 const EventVotes = ({
-  Posts,
+  Posts = {
+    posts: [],
+    filteredPosts: [],
+    userPosts: [],
+    loading: true,
+    isEmpty: false,
+    hasUserInsights: false,
+    isError: false,
+    errorMessage: '',
+    refetch: null
+  },
   votePost,
   unvotePost,
   location,
@@ -49,7 +59,7 @@ const EventVotes = ({
   toggleLoginRequest,
   isToggledLoginRequest
 }) => {
-  const showedMyPosts = match.params.filter === 'my' && !!user.data.id && user.data.id
+  const showedMyPosts = match.params.filter === 'my' && Posts.hasUserInsights
   return ([
     <Fragment key='modal-login-request'>
       {isToggledLoginRequest &&
@@ -78,25 +88,23 @@ const EventVotes = ({
               className='event-votes-navigation__link'
               activeClassName='event-votes-navigation__link--active'
               exact
-              to={'/events/votes'}>
+              to={'/insights'}>
               POPULAR
             </NavLink>
             <NavLink
               className='event-votes-navigation__link'
               activeClassName='event-votes-navigation__link--active'
               exact
-              to={'/events/votes/newest'}>
+              to={'/insights/newest'}>
               NEWEST
             </NavLink>
           </div>
           <div>
-            {user.token &&
-              Posts.currentPoll &&
-              Posts.currentPoll.posts.filter(post => post.user.id === user.data.id).length > 0 &&
+            {Posts.hasUserInsights &&
               <Fragment>
                 <NavLink
                   className='event-votes-navigation__add-link'
-                  to={'/events/votes/my'}>
+                  to={'/insights/my'}>
                   My Insights
                 </NavLink>
                 &nbsp;|&nbsp;
@@ -104,7 +112,7 @@ const EventVotes = ({
             {user.token
               ? <NavLink
                 className='event-votes-navigation__add-link'
-                to={'/events/votes/new'}>
+                to={'/insights/new'}>
                 Add new insight
               </NavLink>
               : <a
@@ -114,11 +122,11 @@ const EventVotes = ({
                 </a>}
           </div>
         </div>
-        {Posts.isEmpty
+        {Posts.isEmpty && !showedMyPosts
           ? <Message><h2>We don't have any insights yet.</h2></Message>
-          : <PostsList {...Posts}
-            posts={Posts.currentPoll && showedMyPosts ? Posts.currentPoll.posts : Posts.posts}
-            userId={showedMyPosts}
+          : <PostList {...Posts}
+            posts={showedMyPosts ? Posts.userPosts : Posts.filteredPosts}
+            userId={showedMyPosts ? user.data.id : undefined}
             votePost={debounce(postId => {
               user.token
                 ? votePost(voteMutationHelper({postId, action: 'vote'}))
@@ -212,32 +220,40 @@ export const sortByNewest = posts => {
 const mapDataToProps = props => {
   const { Poll, ownProps } = props
   const filter = ownProps.match.params.filter || 'popular'
-  const posts = ((posts = []) => {
-    const normalizedPosts = posts.filter(post => post.state === 'approved')
+  const posts = (Poll.currentPoll || {}).posts || []
+  let filteredPosts = posts
+    .filter(post => post.state === 'approved')
     .map(post => {
       return {
         totalSanVotes: post.totalSanVotes || 0,
-        madeByCurrentUser: ownProps.user.data && post.user.id === ownProps.user.data.id,
         ...post}
     })
-    if (filter === 'popular') {
-      return sortByPopular(normalizedPosts)
-    }
-    return sortByNewest(normalizedPosts)
-  })(Poll.currentPoll && Poll.currentPoll.posts)
+  if (filter === 'popular') {
+    filteredPosts = sortByPopular(filteredPosts)
+  }
+  filteredPosts = sortByNewest(filteredPosts)
+
+  const userPosts = sortByNewest(
+    posts.filter(post => post.user.id === ownProps.user.data.id)
+  )
+
   if (Poll.error) {
     throw new Error(Poll.error)
   }
+
   return {
     Posts: {
-      ...Poll,
+      posts,
+      filteredPosts,
+      userPosts,
+      refetch: Poll.refetch,
       loading: Poll.loading,
       isEmpty: Poll.currentPoll &&
-        posts &&
-        posts.length === 0,
+        filteredPosts &&
+        filteredPosts.length === 0,
+      hasUserInsights: userPosts.length > 0,
       isError: !!Poll.error || false,
-      errorMessage: Poll.error ? Poll.error.message : '',
-      posts
+      errorMessage: Poll.error ? Poll.error.message : ''
     }
   }
 }

@@ -63,11 +63,9 @@ export const App = ({isDesktop}) => (
         }} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
-        <Route exact path='/events/votes' component={LoadableInsights} />
-        <Route path='/events/votes/new' component={LoadableInsightsNew} />
-        <Route exact path='/events/votes/:filter' component={LoadableInsights} />
-        <Redirect from='/events' to='/events/votes' />
-        <Redirect from='/insights' to='/events/votes' />
+        <Route exact path='/insights' component={LoadableInsights} />
+        <Route path='/insights/new' component={LoadableInsightsNew} />
+        <Route exact path='/insights/:filter' component={LoadableInsights} />
         <Route exact path='/projects/:ticker' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />

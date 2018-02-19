@@ -292,6 +292,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def price_usd(_parent, _args, _resolution), do: {:ok, nil}
 
+  def price_btc(
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_btc: price_btc}},
+        _args,
+        _resolution
+      ) do
+    {:ok, price_btc}
+  end
+
+  def price_btc(_parent, _args, _resolution), do: {:ok, nil}
+
   def volume_usd(
         %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{volume_usd: volume_usd}},
         _args,

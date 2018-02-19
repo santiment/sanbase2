@@ -5,6 +5,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     :name,
     :symbol,
     :price_usd,
+    :price_btc,
     :rank,
     :"24h_volume_usd",
     :market_cap_usd,

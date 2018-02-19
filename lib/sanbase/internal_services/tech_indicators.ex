@@ -5,9 +5,16 @@ defmodule Sanbase.InternalServices.TechIndicators do
   @http_client Mockery.of("HTTPoison")
   @recv_timeout 15_000
 
-  def macd(ticker, currency, from_datetime, to_datetime, aggregate_interval) do
-    from_unix = DateTime.to_unix(from_datetime, :nanoseconds)
-    to_unix = DateTime.to_unix(to_datetime, :nanoseconds)
+  def macd(
+        ticker,
+        currency,
+        from_datetime,
+        to_datetime,
+        aggregate_interval,
+        last_positions_count \\ 0
+      ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
 
     url = "#{tech_indicators_url()}/indicator/macd"
 
@@ -18,7 +25,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {"currency", currency},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
-        {"aggregate_interval", aggregate_interval}
+        {"aggregate_interval", aggregate_interval},
+        {"last_positions_count", last_positions_count}
       ]
     ]
 
@@ -30,10 +38,10 @@ defmodule Sanbase.InternalServices.TechIndicators do
           result
           |> Enum.map(fn
             %{"timestamp" => timestamp, "macd" => nil} ->
-              %{datetime: DateTime.from_unix!(timestamp, :nanoseconds), macd: nil}
+              %{datetime: DateTime.from_unix!(timestamp), macd: nil}
 
             %{"timestamp" => timestamp, "macd" => macd} ->
-              %{datetime: DateTime.from_unix!(timestamp, :nanoseconds), macd: Decimal.new(macd)}
+              %{datetime: DateTime.from_unix!(timestamp), macd: Decimal.new(macd)}
           end)
 
         {:ok, result}
@@ -41,14 +49,22 @@ defmodule Sanbase.InternalServices.TechIndicators do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching macd for ticker #{ticker}: #{body}"}
 
-      res ->
+      _ ->
         {:error, "Cannot fetch macd data for ticker #{ticker}"}
     end
   end
 
-  def rsi(ticker, currency, from_datetime, to_datetime, aggregate_interval, rsi_interval) do
-    from_unix = DateTime.to_unix(from_datetime, :nanoseconds)
-    to_unix = DateTime.to_unix(to_datetime, :nanoseconds)
+  def rsi(
+        ticker,
+        currency,
+        from_datetime,
+        to_datetime,
+        aggregate_interval,
+        rsi_interval,
+        last_positions_count \\ 0
+      ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
 
     url = "#{tech_indicators_url()}/indicator/rsi"
 
@@ -60,7 +76,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
         {"aggregate_interval", aggregate_interval},
-        {"rsi_interval", rsi_interval}
+        {"rsi_interval", rsi_interval},
+        {"last_positions_count", last_positions_count}
       ]
     ]
 
@@ -72,10 +89,10 @@ defmodule Sanbase.InternalServices.TechIndicators do
           result
           |> Enum.map(fn
             %{"timestamp" => timestamp, "rsi" => nil} ->
-              %{datetime: DateTime.from_unix!(timestamp, :nanoseconds), rsi: nil}
+              %{datetime: DateTime.from_unix!(timestamp), rsi: nil}
 
             %{"timestamp" => timestamp, "rsi" => rsi} ->
-              %{datetime: DateTime.from_unix!(timestamp, :nanoseconds), rsi: Decimal.new(rsi)}
+              %{datetime: DateTime.from_unix!(timestamp), rsi: Decimal.new(rsi)}
           end)
 
         {:ok, result}
@@ -83,14 +100,21 @@ defmodule Sanbase.InternalServices.TechIndicators do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching rsi for ticker #{ticker}: #{body}"}
 
-      res ->
+      _ ->
         {:error, "Cannot fetch rsi data for ticker #{ticker}"}
     end
   end
 
-  def price_volume_diff(ticker, currency, from_datetime, to_datetime, aggregate_interval) do
-    from_unix = DateTime.to_unix(from_datetime, :nanoseconds)
-    to_unix = DateTime.to_unix(to_datetime, :nanoseconds)
+  def price_volume_diff(
+        ticker,
+        currency,
+        from_datetime,
+        to_datetime,
+        aggregate_interval,
+        last_positions_count \\ 0
+      ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
 
     url = "#{tech_indicators_url()}/indicator/pricevolumediff"
 
@@ -101,7 +125,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {"currency", currency},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
-        {"aggregate_interval", aggregate_interval}
+        {"aggregate_interval", aggregate_interval},
+        {"last_positions_count", last_positions_count}
       ]
     ]
 
@@ -113,11 +138,11 @@ defmodule Sanbase.InternalServices.TechIndicators do
           result
           |> Enum.map(fn
             %{"timestamp" => timestamp, "price_volume_diff" => nil} ->
-              %{datetime: DateTime.from_unix!(timestamp, :nanoseconds), price_volume_diff: nil}
+              %{datetime: DateTime.from_unix!(timestamp), price_volume_diff: nil}
 
             %{"timestamp" => timestamp, "price_volume_diff" => price_volume_diff} ->
               %{
-                datetime: DateTime.from_unix!(timestamp, :nanoseconds),
+                datetime: DateTime.from_unix!(timestamp),
                 price_volume_diff: Decimal.new(price_volume_diff)
               }
           end)
@@ -128,7 +153,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {:error,
          "Error status #{status} fetching price-volume diff for ticker #{ticker}: #{body}"}
 
-      res ->
+      _ ->
         {:error, "Cannot fetch price-volume diff data for ticker #{ticker}"}
     end
   end

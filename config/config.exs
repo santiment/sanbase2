@@ -165,9 +165,13 @@ config :sanbase, Sanbase.Etherbi.TransactionVolume,
   sync_enabled: {:system, "ETHERBI_TRANSACTION_VOLUME_SYNC_ENABLED", false}
 
 config :sanbase, Sanbase.Notifications.CheckPrices,
-  webhook_url: {:system, "NOTIFICATIONS_WEBHOOK_URL"},
-  notification_channel: {:system, "NOTIFICATIONS_CHANNEL", "#signals-stage"},
-  slack_notifications_enabled: {:system, "SLACK_NOTIFICATIONS_ENABLED", false}
+  webhook_url: {:system, "CHECK_PRICES_WEBHOOK_URL"},
+  notification_channel: {:system, "CHECK_PRICES_CHANNEL", "#signals-stage"},
+  slack_notifications_enabled: {:system, "CHECK_PRICES_NOTIFICATIONS_ENABLED", false}
+
+config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
+  webhook_url: {:system, "PRICE_VOLUME_DIFF_WEBHOOK_URL"},
+  notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}
 
 config :sanbase, SanbaseWeb.Guardian,
   issuer: "santiment",

@@ -22,6 +22,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices
+  alias Sanbase.Notifications.PriceVolumeDiff
   alias Sanbase.Utils.Config
 
   # 5 minutes
@@ -142,6 +143,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
     CheckPrices.exec(project, "usd")
     CheckPrices.exec(project, "btc")
+
+    PriceVolumeDiff.exec(project, "USD")
+    PriceVolumeDiff.exec(project, "BTC")
   end
 
   defp convert_to_measurement(%PricePoint{datetime: datetime} = point, suffix, name) do

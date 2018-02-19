@@ -12,7 +12,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   @notification_type_name "price_volume_diff"
   # roughly 3 months
-  @calculation_interval_in_sec 3 * 30 * 24 * 60 * 60
+  @calculation_interval_in_days 3 * 30
   # 60 minutes
   @cooldown_period_in_sec 60 * 60
   @price_volume_diff_threshold 0.1
@@ -53,9 +53,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
-
-    from_datetime =
-      DateTime.from_unix!(DateTime.to_unix(to_datetime) - @calculation_interval_in_sec)
+    from_datetime = Timex.shift(to_datetime, days: -@calculation_interval_in_days)
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end

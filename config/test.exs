@@ -52,6 +52,10 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: "http://example.com/webhook_url",
   notifications_enabled: true
 
+config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
+  webhook_url: "http://example.com/webhook_url",
+  notifications_enabled: true
+
 config :sanbase, Sanbase.Github.Store, database: "github_activity_test"
 
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,

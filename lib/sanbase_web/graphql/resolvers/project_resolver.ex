@@ -81,7 +81,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
         {:ok, eth_spent}
       else
-        _error ->
+        error ->
+          Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
           {:ok, nil}
       end
     end)
@@ -123,6 +124,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     balance =
       loader
       |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
+      |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.latest_btc_wallet_data)
       |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.balance)
@@ -158,7 +160,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
          Decimal.mult(btc_balance, btc_price)
        )}
     else
-      _error ->
+      error ->
+        Logger.warn("Cannot calculate USD balance. Reason: #{inspect(error)}")
         {:ok, nil}
     end
   end

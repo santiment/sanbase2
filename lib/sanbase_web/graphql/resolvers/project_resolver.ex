@@ -171,16 +171,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   defp usd_balance_from_loader(loader, project) do
-    {:ok, eth_balance} = eth_balance_from_loader(loader, project)
-    {:ok, btc_balance} = btc_balance_from_loader(loader, project)
-    eth_price = Dataloader.get(loader, PriceStore, "ETH_USD", :last)
-    btc_price = Dataloader.get(loader, PriceStore, "BTC_USD", :last)
-
-    {:ok,
-     Decimal.add(
-       Decimal.mult(eth_balance, eth_price),
-       Decimal.mult(btc_balance, btc_price)
-     )}
+    with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
+         {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
+         eth_price when not is_nil(eth_price) <-
+           Dataloader.get(loader, PriceStore, "ETH_USD", :last),
+         btc_price when not is_nil(btc_price) <-
+           Dataloader.get(loader, PriceStore, "BTC_USD", :last) do
+      {:ok,
+       Decimal.add(
+         Decimal.mult(eth_balance, eth_price),
+         Decimal.mult(btc_balance, btc_price)
+       )}
+    else
+      _error ->
+        {:ok, nil}
+    end
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do

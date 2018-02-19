@@ -84,6 +84,30 @@ exports[`Project detail page container it should render correctly 1`] = `
           ANT
         </div>
       </div>
+      <div
+        className="detailed-price"
+      >
+        <div
+          className="detailed-price-description"
+        >
+          Today's changes
+        </div>
+        <div
+          className="detailed-price-usd"
+        >
+          $10.00
+           
+          <Component />
+        </div>
+        <Component>
+          <div
+            className="detailed-price-btc"
+          >
+            BTC 
+            NaN
+          </div>
+        </Component>
+      </div>
       <Component>
         <div
           className="detailed-buttons"
@@ -153,17 +177,19 @@ exports[`Project detail page container it should render correctly 1`] = `
       className="information"
     >
       <PanelBlock
-        isLoading={true}
         isUnauthorized={true}
         title="General Info"
       >
-        <GeneralInfoBlock />
+        <GeneralInfoBlock
+          priceUsd={10}
+        />
       </PanelBlock>
       <PanelBlock
         isUnauthorized={true}
         title="Financials"
       >
         <FinancialsBlock
+          priceUsd={10}
           wallets={
             Array [
               Object {

@@ -74,7 +74,10 @@ describe('Project detail page container', () => {
     const pdp = shallow(<Detailed
       projects={projects}
       generalInfo={{
-        isUnauthorized: true
+        isUnauthorized: true,
+        project: {
+          priceUsd: 10
+        }
       }}
       loading={false}
       price={{

@@ -36,12 +36,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
 
         result =
           result
-          |> Enum.map(fn
-            %{"timestamp" => timestamp, "macd" => nil} ->
-              %{datetime: DateTime.from_unix!(timestamp), macd: nil}
-
-            %{"timestamp" => timestamp, "macd" => macd} ->
-              %{datetime: DateTime.from_unix!(timestamp), macd: Decimal.new(macd)}
+          |> Enum.map(fn %{"timestamp" => timestamp, "macd" => macd} ->
+            %{datetime: DateTime.from_unix!(timestamp), macd: decimal_or_nil(macd)}
           end)
 
         {:ok, result}
@@ -87,12 +83,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
 
         result =
           result
-          |> Enum.map(fn
-            %{"timestamp" => timestamp, "rsi" => nil} ->
-              %{datetime: DateTime.from_unix!(timestamp), rsi: nil}
-
-            %{"timestamp" => timestamp, "rsi" => rsi} ->
-              %{datetime: DateTime.from_unix!(timestamp), rsi: Decimal.new(rsi)}
+          |> Enum.map(fn %{"timestamp" => timestamp, "rsi" => rsi} ->
+            %{datetime: DateTime.from_unix!(timestamp), rsi: decimal_or_nil(rsi)}
           end)
 
         {:ok, result}
@@ -136,15 +128,18 @@ defmodule Sanbase.InternalServices.TechIndicators do
 
         result =
           result
-          |> Enum.map(fn
-            %{"timestamp" => timestamp, "price_volume_diff" => nil} ->
-              %{datetime: DateTime.from_unix!(timestamp), price_volume_diff: nil}
-
-            %{"timestamp" => timestamp, "price_volume_diff" => price_volume_diff} ->
-              %{
-                datetime: DateTime.from_unix!(timestamp),
-                price_volume_diff: Decimal.new(price_volume_diff)
-              }
+          |> Enum.map(fn %{
+                           "timestamp" => timestamp,
+                           "price_volume_diff" => price_volume_diff,
+                           "price_change" => price_change,
+                           "volume_change" => volume_change
+                         } ->
+            %{
+              datetime: DateTime.from_unix!(timestamp),
+              price_volume_diff: decimal_or_nil(price_volume_diff),
+              price_change: decimal_or_nil(price_change),
+              volume_change: decimal_or_nil(volume_change)
+            }
           end)
 
         {:ok, result}
@@ -157,6 +152,9 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {:error, "Cannot fetch price-volume diff data for ticker #{ticker}"}
     end
   end
+
+  defp decimal_or_nil(nil), do: nil
+  defp decimal_or_nil(value), do: Decimal.new(value)
 
   defp tech_indicators_url() do
     Config.module_get(Sanbase.TechIndicators, :url)

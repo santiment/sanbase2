@@ -5,7 +5,7 @@ import {
   withState
 } from 'recompose'
 import { Button, Icon } from 'semantic-ui-react'
-import metamaskIcon from '../../assets/metamask-icon-64.png'
+import metamaskIcon from '../../assets/metamask-icon-64-2.png'
 import EmailLogin from './EmailLogin'
 import EthLogin from './EthLogin'
 import './Login.css'
@@ -39,15 +39,12 @@ const ChooseAuthProvider = ({
     <h2>
       Welcome to Sanbase
     </h2>
-    <p>
-      By having a Sanbase account, you can see more data and insights about crypto projects.
-      You can vote and comment on all your favorite insights and more.
-    </p>
     <div className='login-actions'>
       {isDesktop &&
       <Button
         onClick={gotoMetamask}
         basic
+        className='metamask-btn'
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -58,19 +55,23 @@ const ChooseAuthProvider = ({
         <img
           src={metamaskIcon}
           alt='metamask logo'
-          width={32}
-          height={32} />
-        Sign in with Metamask
+          width={28}
+          height={28} />&nbsp;
+        Login with Metamask
       </Button>}
       <Button
         onClick={gotoEmail}
         basic
         className='sign-in-btn'
       >
-        <Icon size='large' name='mail outline' />
-        <span>Sign in with email</span>
+        <Icon size='large' name='mail outline' />&nbsp;
+        <span>Login with email</span>
       </Button>
     </div>
+    <p><strong>Why Log In?</strong><br />
+      <Icon name='signal' style={{color: '#bbb'}} /> See more crypto data and insights.<br />
+      <Icon name='heart empty' style={{color: '#bbb'}} /> Vote on all your favorite insights and more.
+    </p>
   </Fragment>
 )
 

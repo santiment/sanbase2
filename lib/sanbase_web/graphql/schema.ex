@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
-  alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
+  alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth, ProjectPermissions}
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore
 
@@ -49,26 +49,30 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.current_user/3)
     end
 
-    field :all_projects, list_of(:project_listing) do
+    field :all_projects, list_of(:project) do
       arg(:only_project_transparency, :boolean)
 
+      middleware(ProjectPermissions)
       resolve(&ProjectResolver.all_projects/3)
     end
 
-    field :all_projects_project_transparency, list_of(:project_project_transparency_listing) do
+    field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)
+
+      middleware(ProjectPermissions)
       resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
     end
 
-    field :project, :project_public do
+    field :project, :project do
       arg(:id, non_null(:id))
       # this is to filter the wallets
       arg(:only_project_transparency, :boolean)
 
+      middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
 
-    field :project_full, :project_full do
+    field :project_full, :project do
       arg(:id, non_null(:id))
       # this is to filter the wallets
       arg(:only_project_transparency, :boolean)
@@ -77,7 +81,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&ProjectResolver.project/3)
     end
 
-    field :all_projects_with_eth_contract_info, list_of(:project_with_eth_contract_info) do
+    field :all_projects_with_eth_contract_info, list_of(:project) do
       middleware(BasicAuth)
       resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
     end

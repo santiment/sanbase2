@@ -1,6 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiCacheResolver do
-  require Sanbase.Utils.Config
-  alias Sanbase.Utils.Config
   alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume}
 
   @doc ~S"""

@@ -634,6 +634,9 @@ defmodule Sanbase.InternalServices.TechIndicators do
     {:error, "[#{log_id}] Error executing query. See logs for details."}
   end
 
+  defp decimal_or_nil(nil), do: nil
+  defp decimal_or_nil(value), do: Decimal.new(value)
+
   defp tech_indicators_url() do
     Config.module_get(Sanbase.TechIndicators, :url)
   end

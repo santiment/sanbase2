@@ -9,6 +9,7 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
     field(:symbol, :string)
     field(:rank, :integer)
     field(:price_usd, :decimal)
+    field(:price_btc, :decimal)
     field(:volume_usd, :decimal)
     field(:market_cap_usd, :decimal)
     field(:available_supply, :decimal)
@@ -27,6 +28,7 @@ defmodule Sanbase.Model.LatestCoinmarketcapData do
       :name,
       :symbol,
       :price_usd,
+      :price_btc,
       :market_cap_usd,
       :rank,
       :volume_usd,

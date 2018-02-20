@@ -27,12 +27,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       end
 
     query =
-      cond do
-        only_project_transparency ->
-          from(p in Project, where: p.project_transparency, order_by: p.name)
-
-        true ->
-          from(p in Project, where: not is_nil(p.coinmarketcap_id), order_by: p.name)
+      if only_project_transparency do
+        from(p in Project, where: p.project_transparency, order_by: p.name)
+      else
+        from(p in Project, where: not is_nil(p.coinmarketcap_id), order_by: p.name)
       end
 
     projects =
@@ -76,7 +74,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
         {:ok, eth_spent}
       else
-        _error ->
+        error ->
+          Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
           {:ok, nil}
       end
     end)
@@ -104,8 +103,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
         {:ok, result}
       else
-        _error ->
-          {:error, nil}
+        error ->
+          Logger.warn("Cannot fetch ETH transactions for #{ticker}. Reason: #{inspect(error)}")
+          {:ok, nil}
       end
     end)
   end
@@ -125,6 +125,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     balance =
       loader
       |> Dataloader.get(SanbaseRepo, :eth_addresses, project)
+      |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.latest_eth_wallet_data)
       |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.balance)
@@ -148,6 +149,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     balance =
       loader
       |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
+      |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.latest_btc_wallet_data)
       |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.balance)
@@ -171,16 +173,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   defp usd_balance_from_loader(loader, project) do
-    {:ok, eth_balance} = eth_balance_from_loader(loader, project)
-    {:ok, btc_balance} = btc_balance_from_loader(loader, project)
-    eth_price = Dataloader.get(loader, PriceStore, "ETH_USD", :last)
-    btc_price = Dataloader.get(loader, PriceStore, "BTC_USD", :last)
-
-    {:ok,
-     Decimal.add(
-       Decimal.mult(eth_balance, eth_price),
-       Decimal.mult(btc_balance, btc_price)
-     )}
+    with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
+         {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
+         eth_price when not is_nil(eth_price) <-
+           Dataloader.get(loader, PriceStore, "ETH_USD", :last),
+         btc_price when not is_nil(btc_price) <-
+           Dataloader.get(loader, PriceStore, "BTC_USD", :last) do
+      {:ok,
+       Decimal.add(
+         Decimal.mult(eth_balance, eth_price),
+         Decimal.mult(btc_balance, btc_price)
+       )}
+    else
+      error ->
+        Logger.warn("Cannot calculate USD balance. Reason: #{inspect(error)}")
+        {:ok, nil}
+    end
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
@@ -286,6 +294,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def price_usd(_parent, _args, _resolution), do: {:ok, nil}
+
+  def price_btc(
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{price_btc: price_btc}},
+        _args,
+        _resolution
+      ) do
+    {:ok, price_btc}
+  end
+
+  def price_btc(_parent, _args, _resolution), do: {:ok, nil}
 
   def volume_usd(
         %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{volume_usd: volume_usd}},

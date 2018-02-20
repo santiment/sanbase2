@@ -18,34 +18,43 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   @price_volume_diff_threshold 0.1
 
   def exec(project, currency) do
-    unless not notifications_enabled?() or
-             Utils.recent_notification?(
-               project,
-               seconds_ago(@cooldown_period_in_sec),
-               notification_type_name(currency)
-             ) do
-      %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
+    if notifications_enabled?() and
+         not Utils.recent_notification?(
+           project,
+           seconds_ago(@cooldown_period_in_sec),
+           notification_type_name(currency)
+         ) do
+      price_volume_diff = get_price_volume_diff(project.ticker, currency)
 
-      price_volume_diff =
-        TechIndicators.price_volume_diff(
-          project.ticker,
-          currency,
-          from_datetime,
-          to_datetime,
-          "1d",
-          1
-        )
-        |> case do
-          {:ok, [%{price_volume_diff: nil}]} -> Decimal.new(0)
-          {:ok, [%{price_volume_diff: price_volume_diff}]} -> price_volume_diff
-          _ -> Decimal.new(0)
-        end
-
-      Decimal.cmp(price_volume_diff, Decimal.new(@price_volume_diff_threshold))
-      |> case do
-        :lt -> nil
-        _ -> send_notification(project, currency, price_volume_diff)
+      if check_notification(price_volume_diff) do
+        send_notification(project, currency, price_volume_diff)
       end
+    end
+  end
+
+  defp get_price_volume_diff(ticker, currency) do
+    %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
+
+    TechIndicators.price_volume_diff(
+      ticker,
+      currency,
+      from_datetime,
+      to_datetime,
+      "1d",
+      1
+    )
+    |> case do
+      {:ok, [%{price_volume_diff: nil}]} -> Decimal.new(0)
+      {:ok, [%{price_volume_diff: price_volume_diff}]} -> price_volume_diff
+      _ -> Decimal.new(0)
+    end
+  end
+
+  defp check_notification(price_volume_diff) do
+    Decimal.cmp(price_volume_diff, Decimal.new(@price_volume_diff_threshold))
+    |> case do
+      :lt -> false
+      _ -> true
     end
   end
 

@@ -64,6 +64,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       market_cap_usd: ticker.market_cap_usd,
       name: ticker.name,
       price_usd: ticker.price_usd,
+      price_btc: ticker.price_btc,
       rank: ticker.rank,
       volume_usd: ticker."24h_volume_usd",
       available_supply: ticker.available_supply,

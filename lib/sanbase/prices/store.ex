@@ -92,7 +92,7 @@ defmodule Sanbase.Prices.Store do
   def last_record(pair) do
     ~s/SELECT LAST(price), marketcap, volume from "#{pair}"/
     |> Store.query()
-    |> parse_record
+    |> parse_record()
   end
 
   def fetch_last_price_point_before(pair, timestamp) do
@@ -100,8 +100,10 @@ defmodule Sanbase.Prices.Store do
     FROM "#{pair}"
     WHERE time <= #{DateTime.to_unix(timestamp, :nanoseconds)}/
     |> Store.query()
-    |> parse_record
+    |> parse_record()
   end
+
+  defp parse_record(%{results: [%{error: error}]}), do: {:error, error}
 
   defp parse_record(%{
          results: [
@@ -116,10 +118,10 @@ defmodule Sanbase.Prices.Store do
        }) do
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
-    {datetime, price, marketcap, volume}
+    {:ok, {datetime, price, marketcap, volume}}
   end
 
   defp parse_record(_) do
-    nil
+    {:ok, nil}
   end
 end

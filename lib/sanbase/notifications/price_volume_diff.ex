@@ -24,15 +24,15 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
            seconds_ago(@cooldown_period_in_sec),
            notification_type_name(currency)
          ) do
-      price_volume_diff = get_price_volume_diff(project.ticker, currency)
+      indicator = get_indicator(project.ticker, currency)
 
-      if check_notification(price_volume_diff) do
-        send_notification(project, currency, price_volume_diff)
+      if check_notification(indicator) do
+        send_notification(project, currency, indicator)
       end
     end
   end
 
-  defp get_price_volume_diff(ticker, currency) do
+  defp get_indicator(ticker, currency) do
     %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
 
     TechIndicators.price_volume_diff(
@@ -44,13 +44,30 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       1
     )
     |> case do
-      {:ok, [%{price_volume_diff: nil}]} -> Decimal.new(0)
-      {:ok, [%{price_volume_diff: price_volume_diff}]} -> price_volume_diff
-      _ -> Decimal.new(0)
+      {:ok,
+       [
+         %{
+           price_volume_diff: price_volume_diff,
+           price_change: price_change,
+           volume_change: volume_change
+         }
+       ]} ->
+        %{
+          price_volume_diff: nil_to_zero(price_volume_diff),
+          price_change: nil_to_zero(price_change),
+          volume_change: nil_to_zero(volume_change)
+        }
+
+      _ ->
+        %{
+          price_volume_diff: Decimal.new(0),
+          price_change: Decimal.new(0),
+          volume_change: Decimal.new(0)
+        }
     end
   end
 
-  defp check_notification(price_volume_diff) do
+  defp check_notification(%{price_volume_diff: price_volume_diff}) do
     Decimal.cmp(price_volume_diff, Decimal.new(@price_volume_diff_threshold))
     |> case do
       :lt -> false
@@ -67,30 +84,40 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end
 
-  defp send_notification(project, currency, price_volume_diff) do
+  defp send_notification(project, currency, indicator) do
     {:ok, %HTTPoison.Response{status_code: 204}} =
-      @http_service.post(
-        webhook_url(),
-        notification_payload(project, currency, price_volume_diff),
-        [{"Content-Type", "application/json"}]
-      )
+      @http_service.post(webhook_url(), notification_payload(project, currency, indicator), [
+        {"Content-Type", "application/json"}
+      ])
 
     Utils.insert_notification(project, notification_type_name(currency))
   end
 
   defp notification_payload(
-         %Project{name: name, coinmarketcap_id: coinmarketcap_id},
+         %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id},
          currency,
-         _price_volume_diff
+         %{price_change: price_change, volume_change: volume_change}
        ) do
     Poison.encode!(%{
       content:
-        "#{name}: price-volume difference in #{String.upcase(currency)}. https://coinmarketcap.com/currencies/#{
-          coinmarketcap_id
-        }",
+        "#{name}: #{ticker}/#{String.upcase(currency)} #{notification_emoji(price_change)} Price #{
+          notification_emoji(volume_change)
+        } Volume. https://coinmarketcap.com/currencies/#{coinmarketcap_id}",
       username: "Price-Volume Difference"
     })
   end
+
+  defp notification_emoji(value) do
+    Decimal.cmp(value, Decimal.new(0))
+    |> case do
+      :lt -> ":small_red_triangle_down:"
+      :gt -> ":small_red_triangle:"
+      :eq -> " "
+    end
+  end
+
+  defp nil_to_zero(nil), do: Decimal.new(0)
+  defp nil_to_zero(value), do: value
 
   defp webhook_url() do
     Config.get(:webhook_url)

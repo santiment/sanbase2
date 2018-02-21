@@ -81,7 +81,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   defp notification_type_name(currency), do: @notification_type_name <> "_" <> currency
 
   defp get_calculation_interval() do
-    to_datetime = DateTime.utc_now() |> Timex.beginning_of_day()
+    to_datetime = DateTime.utc_now()
     from_datetime = Timex.shift(to_datetime, days: -@approximation_window - @comparison_window)
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}

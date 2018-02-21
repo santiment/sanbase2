@@ -6,7 +6,7 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
   <Fragment>
     {showInsights &&
     <ul className={showIcons ? 'menu-list user-generated' : 'menu-list-top user-generated'} >
-      <li onClick={() => handleNavigation('events')}>
+      <li onClick={() => handleNavigation('insights')}>
         {showIcons && <i className='fa fa-newspaper-o' />}
         Insights
       </li>

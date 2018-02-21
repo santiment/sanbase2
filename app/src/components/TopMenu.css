@@ -1,5 +1,5 @@
 .top-menu {
-  background: linear-gradient(270deg, #c82f3f, #316bae, #309d81);
+  background: linear-gradient(270deg, #26a987, #2d79d0, #309d81);
   background-size: 300% 300%;
   display: flex;
   font-size: 13px;
@@ -26,6 +26,8 @@
 }
 
 .top-menu ul li {
+  font-family: 'Nunito Sans', sans-serif;
+  letter-spacing: 0.03em;
   line-height: 1.8em;
   margin-left: 0;
   cursor: pointer;
@@ -35,12 +37,10 @@
 
 .top-menu .selected {
   color: rgba(255, 255, 255, 1);
-  font-size: bold;
 }
 
 .top-menu .user-auth-control {
   margin: 8px;
-  margin-top: 12px;
   position: relative;
 }
 
@@ -50,8 +50,7 @@
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 4px;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 13px;
-  font-weight: 300;
+  font-size: 12px;
   padding: 7px 24px;
   margin: 0;
   text-transform: uppercase;

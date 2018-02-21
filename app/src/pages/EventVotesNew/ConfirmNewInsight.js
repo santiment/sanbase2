@@ -52,7 +52,7 @@ const ConfirmPost = ({
                   user: user.id
                 }
               })
-              history.push('/events/votes', {
+              history.push('/insights', {
                 postCreated: true,
                 ...data
               })

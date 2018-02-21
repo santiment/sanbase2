@@ -147,6 +147,7 @@ exports[`Cashflow container it should render correctly 1`] = `
               "Header": "Market Cap",
               "accessor": "marketcapUsd",
               "id": "marketcapUsd",
+              "maxWidth": 100,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -160,9 +161,10 @@ exports[`Cashflow container it should render correctly 1`] = `
             },
             Object {
               "Cell": [Function],
-              "Header": "Price/Book Ratio",
+              "Header": "P/B",
               "accessor": "priceToBookRatio",
               "id": "pbr",
+              "maxWidth": 80,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -187,7 +189,7 @@ exports[`Cashflow container it should render correctly 1`] = `
               "Header": "Signals",
               "accessor": [Function],
               "id": "signals",
-              "maxWidth": 40,
+              "maxWidth": 80,
               "sortMethod": [Function],
               "sortable": true,
             },
@@ -205,7 +207,7 @@ exports[`Cashflow container it should render correctly 1`] = `
           Array [
             Object {
               "desc": false,
-              "id": "market_cap_usd",
+              "id": "marketcapUsd",
             },
           ]
         }

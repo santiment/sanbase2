@@ -1797,6 +1797,13 @@ CREATE UNIQUE INDEX project_coinmarketcap_id_index ON public.project USING btree
 
 
 --
+-- Name: project_coinmarketcap_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_coinmarketcap_id_index ON project USING btree (coinmarketcap_id);
+
+
+--
 -- Name: project_eth_address_address_index; Type: INDEX; Schema: public; Owner: -
 --
 

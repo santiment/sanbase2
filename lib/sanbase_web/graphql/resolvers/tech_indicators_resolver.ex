@@ -3,6 +3,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
 
   alias Sanbase.InternalServices.TechIndicators
 
+  @price_volume_diff_ma_approximation_window 14
+  @price_volume_diff_ma_comparison_window 7
+
   def macd(
         _root,
         %{

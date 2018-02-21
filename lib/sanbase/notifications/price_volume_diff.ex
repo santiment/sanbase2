@@ -19,6 +19,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   @price_volume_diff_threshold 0.1
 
   def exec(project, currency) do
+    currency = String.upcase(currency)
+
     if notifications_enabled?() and
          not Utils.recent_notification?(
            project,

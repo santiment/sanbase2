@@ -97,18 +97,20 @@ defmodule Sanbase.InternalServices.TechIndicators do
     end
   end
 
-  def price_volume_diff(
+  def price_volume_diff_ma(
         ticker,
         currency,
         from_datetime,
         to_datetime,
         aggregate_interval,
+        approximation_window,
+        comparison_window,
         result_tail_size \\ 0
       ) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
-    url = "#{tech_indicators_url()}/indicator/pricevolumediff"
+    url = "#{tech_indicators_url()}/indicator/pricevolumediff/ma"
 
     options = [
       recv_timeout: @recv_timeout,
@@ -118,6 +120,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
         {"aggregate_interval", aggregate_interval},
+        {"approximation_window", approximation_window},
+        {"comparison_window", comparison_window},
         {"result_tail_size", result_tail_size}
       ]
     ]

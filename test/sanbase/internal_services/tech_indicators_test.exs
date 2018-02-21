@@ -114,12 +114,14 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
     )
 
     result =
-      TechIndicators.price_volume_diff(
+      TechIndicators.price_volume_diff_ma(
         "XYZ",
         "USD",
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_752_000),
-        "1d"
+        "1d",
+        14,
+        7
       )
 
     assert result ==

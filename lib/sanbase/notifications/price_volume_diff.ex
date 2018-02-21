@@ -11,10 +11,11 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   @http_service Mockery.of("HTTPoison")
 
   @notification_type_name "price_volume_diff"
-  # roughly 3 months
-  @calculation_interval_in_days 3 * 30
   # 60 minutes
   @cooldown_period_in_sec 60 * 60
+
+  @approximation_window 14
+  @comparison_window 7
   @price_volume_diff_threshold 0.1
 
   def exec(project, currency) do
@@ -35,12 +36,14 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   defp get_indicator(ticker, currency) do
     %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
 
-    TechIndicators.price_volume_diff(
+    TechIndicators.price_volume_diff_ma(
       ticker,
       currency,
       from_datetime,
       to_datetime,
       "1d",
+      @approximation_window,
+      @comparison_window,
       1
     )
     |> case do
@@ -78,8 +81,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   defp notification_type_name(currency), do: @notification_type_name <> "_" <> currency
 
   defp get_calculation_interval() do
-    to_datetime = DateTime.utc_now()
-    from_datetime = Timex.shift(to_datetime, days: -@calculation_interval_in_days)
+    to_datetime = DateTime.utc_now() |> Timex.beginning_of_day()
+    from_datetime = Timex.shift(to_datetime, days: -@approximation_window - @comparison_window)
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end

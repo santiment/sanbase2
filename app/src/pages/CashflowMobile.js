@@ -165,20 +165,20 @@ const enhance = compose(
   withState('sortBy', 'changeSort', DEFAULT_SORT_BY),
   withState('filterBy', 'changeFilter', DEFAULT_FILTER_BY),
   withState('isFilterOpened', 'toggleFilter', false),
-  lifecycle({
-    componentDidUpdate (prevProps, prevState) {
-      if (this.props.isSearchFocused !== prevProps.isSearchFocused) {
-        const searchInput = document.querySelector('.search div input')
-        searchInput && searchInput.focus()
-      }
-    }
-  }),
   graphql(allProjectsGQL, {
     name: 'allProjects',
     props: mapDataToProps,
     options: () => {
       return {
         errorPolicy: 'all'
+      }
+    }
+  }),
+  lifecycle({
+    componentDidUpdate (prevProps, prevState) {
+      if (this.props.isSearchFocused !== prevProps.isSearchFocused) {
+        const searchInput = document.querySelector('.search div input')
+        searchInput && searchInput.focus()
       }
     }
   })

@@ -168,6 +168,7 @@ export class ListView extends React.Component {
         lastScreenItem.index + this.props.runwayItems
       )
     }
+    this.props.onScroll(isScrollUp)
   }
 
   attachResizeHandler() {
@@ -605,6 +606,7 @@ ListView.defaultProps = {
   },
   loadMoreItemOffset: 5,
   hasMore: false,
+  onScroll: () => {}
 }
 
 const createItemWithType = type => {

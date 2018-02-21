@@ -92,10 +92,15 @@
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
-  border-bottom: solid 1px rgba(0,0,0,0.14);
+  border-bottom: solid 1px rgba(0, 0, 0, 0.14);
 }
+
+.rt-td:hover {
+  cursor: pointer;
+}
+
 .ReactTable .rt-tbody .rt-td {
-  border-right: 1px solid rgba(0,0,0,0.05);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .rt-tr:hover {
@@ -118,9 +123,11 @@
 .ReactTable .rt-thead .rt-tr {
   text-align: right;
 }
+
 .ReactTable .rt-thead .rt-tr .rt-th:nth-child(2) {
   text-align: left;
 }
+
 .ReactTable .rt-thead .rt-tr .rt-th:nth-child(7),
 .ReactTable .rt-thead .rt-tr .rt-th:last-child {
   text-align: center;
@@ -130,10 +137,6 @@
   font-size: 18px;
   line-height: 1.2;
   padding: 5px;
-}
-
-.rt-td:hover {
-  cursor: pointer;
 }
 
 .-sort-desc,
@@ -148,6 +151,7 @@
   text-overflow: ellipsis;
   text-decoration: underline;
 }
+
 .rt-td .overview-price,
 .rt-td .overview-volume,
 .rt-td .overview-marketcap,
@@ -156,20 +160,24 @@
 .rt-td .overview-devactivity {
   text-align: right;
 }
+
 .rt-td .overview-pb {
   padding-top: 15px;
   text-align: center;
 }
+
 .rt-td .overview-marketcap,
 .rt-td .overview-ethspent,
 .rt-td .overview-devactivity {
   padding-top: 15px;
 }
+
 .rt-td .overview-ticker {
   font-size: 14px;
   padding-top: 8px;
   text-align: center;
 }
+
 .ReactTable .wallet {
   display: flex;
   flex-direction: column;
@@ -199,10 +207,12 @@
     font-size: 16px;
     padding: 0;
   }
+
   .rt-td .overview-ticker {
     font-size: 12px;
     padding-top: 4px;
   }
+
   .rt-td .overview-name,
   .rt-td .overview-marketcap,
   .rt-td .overview-ethspent,

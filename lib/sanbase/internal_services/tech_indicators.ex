@@ -11,7 +11,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         from_datetime,
         to_datetime,
         aggregate_interval,
-        result_tail_size \\ 0
+        result_size_tail \\ 0
       ) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
@@ -26,7 +26,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
         {"aggregate_interval", aggregate_interval},
-        {"result_tail_size", result_tail_size}
+        {"result_size_tail", result_size_tail}
       ]
     ]
 
@@ -57,7 +57,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         to_datetime,
         aggregate_interval,
         rsi_interval,
-        result_tail_size \\ 0
+        result_size_tail \\ 0
       ) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
@@ -73,7 +73,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {"to_timestamp", to_unix},
         {"aggregate_interval", aggregate_interval},
         {"rsi_interval", rsi_interval},
-        {"result_tail_size", result_tail_size}
+        {"result_size_tail", result_size_tail}
       ]
     ]
 
@@ -105,7 +105,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         aggregate_interval,
         approximation_window,
         comparison_window,
-        result_tail_size \\ 0
+        result_size_tail \\ 0
       ) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
@@ -122,7 +122,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {"aggregate_interval", aggregate_interval},
         {"approximation_window", approximation_window},
         {"comparison_window", comparison_window},
-        {"result_tail_size", result_tail_size}
+        {"result_size_tail", result_size_tail}
       ]
     ]
 

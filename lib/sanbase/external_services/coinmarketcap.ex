@@ -144,8 +144,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     CheckPrices.exec(project, "usd")
     CheckPrices.exec(project, "btc")
 
-    PriceVolumeDiff.exec(project, "USD")
-    PriceVolumeDiff.exec(project, "BTC")
+    PriceVolumeDiff.exec(project, "usd")
+    PriceVolumeDiff.exec(project, "btc")
   end
 
   defp convert_to_measurement(%PricePoint{datetime: datetime} = point, suffix, name) do

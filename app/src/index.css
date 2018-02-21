@@ -85,23 +85,6 @@ hr {
   background-color: #26a987;
 }
 
-.ui.basic.button .santiment-primary {
-  background: rgba(45, 121, 208, 1) !important;
-  color: #fff !important;
-  font-family: 'Nunito Sans', sans-serif;
-  letter-spacing: 0.03em;
-  text-align: center !important;
-  text-transform: uppercase;
-}
-
-.ui.basic.button.metamask-btn {
-  background: rgba(235, 133, 37, 1) !important;
-}
-
-.ui.basic.button.metamask-btn:hover {
-  color: white !important;
-}
-
 .ui.active.button:active,
 .ui.button:active {
   background-color: #3d4450;

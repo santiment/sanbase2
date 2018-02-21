@@ -12,11 +12,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
           from: from,
           to: to,
           interval: interval,
-          result_tail_size: result_tail_size
+          result_size_tail: result_size_tail
         },
         _resolution
       ) do
-    TechIndicators.macd(ticker, currency, from, to, interval, result_tail_size)
+    TechIndicators.macd(ticker, currency, from, to, interval, result_size_tail)
   end
 
   def rsi(
@@ -28,11 +28,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
           to: to,
           interval: interval,
           rsi_interval: rsi_interval,
-          result_tail_size: result_tail_size
+          result_size_tail: result_size_tail
         },
         _resolution
       ) do
-    TechIndicators.rsi(ticker, currency, from, to, interval, rsi_interval, result_tail_size)
+    TechIndicators.rsi(ticker, currency, from, to, interval, rsi_interval, result_size_tail)
   end
 
   def price_volume_diff(
@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
           from: from,
           to: to,
           interval: interval,
-          result_tail_size: result_tail_size
+          result_size_tail: result_size_tail
         },
         _resolution
       ) do
@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
       interval,
       @price_volume_diff_ma_approximation_window,
       @price_volume_diff_ma_comparison_window,
-      result_tail_size
+      result_size_tail
     )
   end
 end

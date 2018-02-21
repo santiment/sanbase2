@@ -4,8 +4,8 @@ defmodule Sanbase.Prices.Utils do
   def fetch_last_price_before(pair, timestamp) do
     Store.fetch_last_price_point_before(pair, timestamp)
     |> case do
-      {_, nil, _, _} -> nil
-      {_, price, _, _} -> Decimal.new(price)
+      {:ok, nil} -> nil
+      {:ok, {_, price, _, _}} -> Decimal.new(price)
       _ -> nil
     end
   end

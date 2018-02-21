@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactTable from 'react-table'
+import classnames from 'classnames'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
@@ -16,12 +17,39 @@ import allProjectsGQL from './allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
 
+const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
+  <div
+    className={classnames('rt-th', className)}
+    onClick={e => (
+      toggleSort && toggleSort(e)
+    )}
+    role='columnheader'
+    tabIndex='-1'
+    {...rest}
+  >
+    {((Array.isArray(children) ? children[0] : {}).props || {}).children === 'P/B'
+      ? <Popup
+        trigger={<div>{children}</div>}
+        content='Ratio between the market cap and the current crypto balance.
+          Companies with low P/B ratio might be undervalued.'
+        inverted
+        position='top left'
+      />
+      : children}
+  </div>
+)
+
 const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
   <div className='wallet'>
-    <div className='usd first'>{`$${millify(parseFloat(usdBalance))}`}</div>
+    <div className='usd first'>
+      {usdBalance
+        ? `$${millify(parseFloat(parseFloat(usdBalance).toFixed(2)))}`
+        : '---'}
+    </div>
     <div className='eth'>
       {parseFloat(ethBalance) === 0 &&
         <Popup
+          inverted
           trigger={<div style={{display: 'inline-block'}}>{
             <a
               target='_blank'
@@ -35,7 +63,7 @@ const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
         />
       }
       {ethBalance
-        ? `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
+        ? `E ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
         : '---'}
     </div>
   </div>
@@ -114,15 +142,10 @@ export const Cashflow = ({
       priceUsd: d.priceUsd,
       change24h: d.percentChange24h
     }),
-    Cell: ({value}) => <div style={{
-      fontSize: '16px',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center'
-    }}>
-      {value.priceUsd ? formatNumber(value.priceUsd, 'USD') : '---'}
+    Cell: ({value: {priceUsd, change24h}}) => <div>
+      {priceUsd ? formatNumber(priceUsd, 'USD') : '---'}
       &nbsp;
-      {<PercentChanges changes={value.change24h} />}
+      {<PercentChanges changes={change24h} />}
     </div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
@@ -133,17 +156,14 @@ export const Cashflow = ({
       volumeUsd: d.volumeUsd,
       change24h: d.volumeChange24h
     }),
-    Cell: ({value}) => <div style={{
-      fontSize: '16px',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center'
-    }}>
-      {value.volumeUsd
-        ? `$${millify(parseFloat(value.volumeUsd))}`
-        : '---'}
+    Cell: ({value: {volumeUsd, change24h}}) => <div>
+      {volumeUsd
+        ? `$${millify(parseFloat(volumeUsd))}`
+        : ''}
       &nbsp;
-      {<PercentChanges changes={value.change24h} />}
+      {change24h
+        ? <PercentChanges changes={change24h} />
+        : ''}
     </div>,
     sortable: true,
     sortMethod: (a, b) =>
@@ -154,8 +174,9 @@ export const Cashflow = ({
   }, {
     Header: 'Market Cap',
     id: 'marketcapUsd',
+    maxWidth: 100,
     accessor: 'marketcapUsd',
-    Cell: ({value}) => <div className='market-cap'>{formatMarketCapProject(value)}</div>,
+    Cell: ({value}) => <div>{formatMarketCapProject(value)}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(parseInt(a, 10), parseInt(b, 10))
   }, {
@@ -175,22 +196,20 @@ export const Cashflow = ({
         parseFloat(b.ethBalance || 0)
       )
   }, {
-    Header: 'Price/Book Ratio',
+    Header: 'P/B',
     id: 'pbr',
+    maxWidth: 80,
     accessor: 'priceToBookRatio',
     Cell: ({value}) => <div>{value &&
       ((value) => {
         if (value > 1000000000000) {
-          return ''
+          return '∞'
         }
         return value < 1000 ? formatNumber(parseFloat(value).toFixed(3)) : millify(parseFloat(value))
       })(value)
     }</div>,
     sortable: true,
     sortMethod: (a, b) => {
-      if (a > 1000000000000) {
-        return 1
-      }
       return simpleSort(
         parseFloat(a || 0),
         parseFloat(b || 0)
@@ -200,34 +219,37 @@ export const Cashflow = ({
     Header: 'ETH spent 30D',
     id: 'tx',
     accessor: d => d.ethSpent,
-    Cell: ({value}) => <div>{`ETH ${formatNumber(value)}`}</div>,
+    Cell: ({value}) => <div>{`E ${formatNumber(value)}`}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
     Header: 'Dev activity 30D',
     id: 'github_activity',
     accessor: d => d.averageDevActivity,
-    Cell: ({value}) => <div>{value ? parseFloat(value).toFixed(2) : '---'}</div>,
+    Cell: ({value}) => <div>{value ? parseFloat(value).toFixed(2) : ''}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
     Header: 'Signals',
     id: 'signals',
-    maxWidth: 40,
+    maxWidth: 80,
     accessor: d => ({
       warning: d.signals && d.signals.length > 0,
       description: d.signals[0] && d.signals[0].description
     }),
-    Cell: ({value}) => <div >
-      {value.warning &&
+    Cell: ({value: {warning, description}}) => <div className='cell-signals'>
+      {warning &&
         <Popup basic
           position='right center'
           hideOnScroll
           wide
           inverted
-          trigger={<Icon color='orange' fitted name='warning sign' />}
+          trigger={
+            <div style={{width: '100%', height: '100%'}}>
+              <Icon color='orange' fitted name='warning sign' />
+            </div>}
           on='hover'>
-          {value.description}
+          {description}
         </Popup>}
     </div>,
     sortable: true,
@@ -282,7 +304,7 @@ export const Cashflow = ({
             resizable
             defaultSorted={[
               {
-                id: 'market_cap_usd',
+                id: 'marketcapUsd',
                 desc: false
               }
             ]}
@@ -290,6 +312,7 @@ export const Cashflow = ({
             data={projects}
             columns={columns}
             filtered={getFilter(search)}
+            ThComponent={CustomThComponent}
             getTdProps={(state, rowInfo, column, instance) => {
               return {
                 onClick: (e, handleOriginal) => {

@@ -37,20 +37,26 @@ make_project = fn {name, ticker, logo_url, coinmarkecap_id, infrastructure_code}
 end
 
 make_btc_address = fn {name, address} ->
+  project = Repo.get_by(Project, name: name)
+
   [
-    %ProjectBtcAddress{
-      project: Repo.get_by(Project, name: name),
-      address: address |> String.downcase()
-    }
+    %ProjectBtcAddress{}
+    |> ProjectBtcAddress.changeset(%{
+      address: address,
+      project_id: project.id
+    })
   ]
 end
 
 make_eth_address = fn {name, address} ->
+  project = Repo.get_by(Project, name: name)
+
   [
-    %ProjectEthAddress{
-      project: Repo.get_by(Project, name: name),
-      address: address |> String.downcase()
-    }
+    %ProjectEthAddress{}
+    |> ProjectEthAddress.changeset(%{
+      address: address,
+      project_id: project.id
+    })
   ]
 end
 
@@ -176,7 +182,7 @@ user =
   |> Repo.insert!()
 
 %EthAccount{
-  address: "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a" |> String.downcase(),
+  address: "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a",
   user_id: user.id
 }
 |> Repo.insert!()
@@ -194,7 +200,7 @@ defmodule SeedsGithubActivityImporter do
     |> DateTime.from_unix!()
   end
 
-  def import_gh_activity(datetime, _activity, _ticker, to_import, 0) do
+  def import_gh_activity(_datetime, _activity, _ticker, to_import, 0) do
     Github.Store.import(to_import)
     :ok
   end
@@ -227,7 +233,7 @@ defmodule InsertExchangeEthAddresses do
   alias Sanbase.Model.ExchangeEthAddress
 
   def run do
-    address_data
+    address_data()
     |> Enum.map(&update_or_create_eth_address/1)
     |> Enum.each(&Repo.insert_or_update!/1)
   end
@@ -238,7 +244,7 @@ defmodule InsertExchangeEthAddresses do
       nil ->
         %ExchangeEthAddress{}
         |> ExchangeEthAddress.changeset(%{
-          address: address |> String.downcase(),
+          address: address,
           name: name,
           comments: comments
         })
@@ -249,7 +255,7 @@ defmodule InsertExchangeEthAddresses do
     end
   end
 
-  defp address_data do
+  defp address_data() do
     [
       {"Binance contract owner wallet", "0x00c5e04176d95a286fcce0e68c683ca0bfec8454",
        "This is the owner of the BNB contract and is the #1 owner of BNB."},

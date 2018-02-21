@@ -89,7 +89,7 @@ defmodule Sanbase.Model.Project do
       :total_supply
     ])
     |> validate_required([:name])
-    |> unique_constraint(:name)
+    |> unique_constraint(:coinmarketcap_id)
   end
 
   def initial_ico(%Project{id: id}) do

@@ -222,7 +222,8 @@ const mapDataToProps = props => {
   const filter = ownProps.match.params.filter || 'popular'
   const posts = (Poll.currentPoll || {}).posts || []
   let filteredPosts = posts
-    .filter(post => post.state === 'approved')
+    // TODO: We should return this filter in the near future
+    // .filter(post => post.state === 'approved')
     .map(post => {
       return {
         totalSanVotes: post.totalSanVotes || 0,

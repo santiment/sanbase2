@@ -10137,6 +10137,15 @@ medium-draft@^0.5.6:
     prop-types "^15.5.8"
     react-transition-group "^1.1.2"
 
+medium-draft@^0.5.6:
+  version "0.5.6"
+  resolved "https://registry.yarnpkg.com/medium-draft/-/medium-draft-0.5.6.tgz#e46ec4059bd7e4f710ec82c574646fd4e5c0a802"
+  dependencies:
+    draft-js "^0.10.0"
+    immutable "^3.7.6"
+    prop-types "^15.5.8"
+    react-transition-group "^1.1.2"
+
 mem@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/mem/-/mem-1.1.0.tgz#5edd52b485ca1d900fe64895505399a0dfa45f76"

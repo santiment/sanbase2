@@ -1,0 +1,15 @@
+.md-side-toolbar {
+  left: -40px;
+}
+
+.md-add-button {
+  border: none;
+}
+
+.md-open-button {
+  border: none;
+}
+
+.md-sb-img-button {
+  border: none !important;
+}

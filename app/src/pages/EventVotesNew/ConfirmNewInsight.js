@@ -1,6 +1,7 @@
 import React from 'react'
+import Raven from 'raven-js'
 import axios from 'axios'
-import { compose } from 'recompose'
+import { compose, withState } from 'recompose'
 import { connect } from 'react-redux'
 import { Button } from 'semantic-ui-react'
 import { withRouter } from 'react-router-dom'
@@ -24,7 +25,9 @@ const ConfirmPost = ({
   history,
   post,
   createPost,
-  user
+  user,
+  isPending,
+  onPending
 }) => {
   return (
     <ErrorBoundary>
@@ -36,31 +39,41 @@ const ConfirmPost = ({
         <div className='event-posts-new-step-control'>
           <Button
             positive
-            onClick={() => createPost({
-              variables: {title: post.title, link: post.link}
-            })
-            .then(data => {
-              axios({
-                method: 'post',
-                url: 'https://us-central1-cryptofolio-15d92.cloudfunctions.net/alerts',
-                headers: {
-                  'authorization': ''
-                },
-                data: {
-                  title: post.title,
-                  link: post.link,
-                  user: user.id
+            disabled={isPending}
+            onClick={() => {
+              onPending(true)
+              createPost({
+                variables: {title: post.title, link: post.link}
+              })
+              .then(data => {
+                if (process.env.NODE_ENV === 'production') {
+                  try {
+                    axios({
+                      method: 'post',
+                      url: 'https://us-central1-cryptofolio-15d92.cloudfunctions.net/alerts',
+                      headers: {
+                        'authorization': ''
+                      },
+                      data: {
+                        title: post.title,
+                        link: post.link,
+                        user: user.id
+                      }
+                    })
+                  } catch (error) {
+                    Raven.captureException('Alert about new insight ' + JSON.stringify(error))
+                  }
                 }
+                history.push('/insights', {
+                  postCreated: true,
+                  ...data
+                })
               })
-              history.push('/insights', {
-                postCreated: true,
-                ...data
+              .catch(error => {
+                Raven.captureException('User try to confirm new insight. ' + JSON.stringify(error))
               })
-            })
-            .catch(error => {
-              throw new Error(error)
-            })}>
-            Click && Confirm
+            }}>
+            {isPending ? 'Waiting' : 'Click && Confirm'}
           </Button>
         </div>
       </div>
@@ -79,6 +92,7 @@ const enhance = compose(
   connect(
     mapStateToProps
   ),
+  withState('isPending', 'onPending', false),
   graphql(createPostGQL, {
     name: 'createPost'
   })

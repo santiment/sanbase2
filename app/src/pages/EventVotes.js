@@ -226,13 +226,13 @@ const mapDataToProps = props => {
     // .filter(post => post.state === 'approved')
     .map(post => {
       return {
-        totalSanVotes: post.totalSanVotes || 0,
+        totalSanVotes: parseFloat(post.totalSanVotes) || 0,
         ...post}
     })
+  filteredPosts = sortByNewest(filteredPosts)
   if (filter === 'popular') {
     filteredPosts = sortByPopular(filteredPosts)
   }
-  filteredPosts = sortByNewest(filteredPosts)
 
   const userPosts = sortByNewest(
     posts.filter(post => post.user.id === ownProps.user.data.id)

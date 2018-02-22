@@ -69,7 +69,7 @@ exports[`Project detail page container it should render correctly 1`] = `
       className="detailed-head"
     >
       <div
-        className="detailed-name"
+        className="detailed-project-about"
       >
         <h1>
           Aragon

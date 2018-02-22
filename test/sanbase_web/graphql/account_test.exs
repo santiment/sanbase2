@@ -36,6 +36,24 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     assert json_response(result, 200)["data"]["changeEmail"]["email"] == new_email
   end
 
+  test "change username of current user", %{conn: conn} do
+    new_username = "new_username_changed"
+
+    query = """
+    mutation {
+      changeUsername(username: "#{new_username}") {
+        username
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["data"]["changeUsername"]["username"] == new_username
+  end
+
   test "follow and unfollow a project", %{conn: conn} do
     project =
       %Project{name: "TestProjectName"}

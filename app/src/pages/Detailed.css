@@ -19,6 +19,14 @@
   padding-top: 0;
 }
 
+.detailed-project-about {
+  margin-bottom: 10px;
+}
+
+.datailed-project-description {
+  font-size: 16px;
+}
+
 .detailed-name {
   display: flex;
   align-items: center;

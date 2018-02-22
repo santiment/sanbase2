@@ -69,19 +69,23 @@ exports[`Project detail page container it should render correctly 1`] = `
       className="detailed-head"
     >
       <div
-        className="detailed-name"
+        className="detailed-project-about"
       >
-        <h1>
-          Aragon
-        </h1>
-        <ProjectIcon
-          name="Aragon"
-          size={24}
-        />
         <div
-          className="detailed-ticker-name"
+          className="detailed-name"
         >
-          ANT
+          <h1>
+            Aragon
+          </h1>
+          <ProjectIcon
+            name="Aragon"
+            size={24}
+          />
+          <div
+            className="detailed-ticker-name"
+          >
+            ANT
+          </div>
         </div>
       </div>
       <div

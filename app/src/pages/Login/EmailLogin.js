@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react'
 import Raven from 'raven-js'
+import GoogleAnalytics from 'react-ga'
 import {
   Button,
   Message
@@ -141,6 +142,10 @@ const EmailLogin = ({
             .then(data => {
               onPending(false)
               onSuccess(true)
+              GoogleAnalytics.event({
+                category: 'User',
+                action: 'User requested email for verification'
+              })
             })
             .catch(error => {
               onPending(false)

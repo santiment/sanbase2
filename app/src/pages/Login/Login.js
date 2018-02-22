@@ -4,6 +4,7 @@ import {
   pure,
   withState
 } from 'recompose'
+import GoogleAnalytics from 'react-ga'
 import { Button, Icon } from 'semantic-ui-react'
 import metamaskIcon from '../../assets/metamask-icon-64-2.png'
 import EmailLogin from './EmailLogin'
@@ -75,6 +76,14 @@ const ChooseAuthProvider = ({
   </Fragment>
 )
 
+const gotoBack = changeStep => {
+  GoogleAnalytics.event({
+    category: 'User',
+    action: 'Goto list of auth options'
+  })
+  changeStep(STEPS.signin)
+}
+
 export const Login = ({
   currentStep,
   changeStep,
@@ -82,21 +91,33 @@ export const Login = ({
 }) => {
   if (currentStep === STEPS.metamask) {
     return (
-      <AuthProvider gotoBack={() => changeStep(STEPS.signin)}>
+      <AuthProvider gotoBack={() => gotoBack(changeStep)}>
         <EthLogin />
       </AuthProvider>
     )
   } else if (currentStep === STEPS.email) {
     return (
-      <AuthProvider gotoBack={() => changeStep(STEPS.signin)}>
+      <AuthProvider gotoBack={() => gotoBack(changeStep)}>
         <EmailLogin />
       </AuthProvider>
     )
   }
   return (
     <ChooseAuthProvider
-      gotoMetamask={() => changeStep(STEPS.metamask)}
-      gotoEmail={() => changeStep(STEPS.email)}
+      gotoMetamask={() => {
+        GoogleAnalytics.event({
+          category: 'User',
+          action: 'Choose an metamask provider'
+        })
+        changeStep(STEPS.metamask)
+      }}
+      gotoEmail={() => {
+        GoogleAnalytics.event({
+          category: 'User',
+          action: 'Choose an email provider'
+        })
+        changeStep(STEPS.email)
+      }}
       isDesktop={isDesktop} />
   )
 }

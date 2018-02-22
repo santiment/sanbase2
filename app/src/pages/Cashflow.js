@@ -348,7 +348,9 @@ export const Cashflow = ({
                   if (handleOriginal) {
                     handleOriginal()
                   }
-                  history.push(`/projects/${rowInfo.original.ticker.toLowerCase()}`)
+                  if (rowInfo && rowInfo.original && rowInfo.original.ticker) {
+                    history.push(`/projects/${rowInfo.original.ticker.toLowerCase()}`)
+                  }
                 }
               }
             }}

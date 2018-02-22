@@ -1,6 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import { graphql, withApollo } from 'react-apollo'
+import GoogleAnalytics from 'react-ga'
 import Raven from 'raven-js'
 import gql from 'graphql-tag'
 import {
@@ -74,6 +75,10 @@ const mapDispatchToProps = dispatch => {
         authWithSAN({variables: { signature, address, messageHash }})
         .then(({ data }) => {
           const { token, user } = data.ethLogin
+          GoogleAnalytics.event({
+            category: 'User',
+            action: 'Success login with metamask'
+          })
           dispatch({
             type: 'SUCCESS_LOGIN',
             token,
@@ -92,6 +97,10 @@ const mapDispatchToProps = dispatch => {
         // Remove console.error.
         // Added User denied, Account error messages in UI
         console.log(error)
+        GoogleAnalytics.event({
+          category: 'User',
+          action: 'User denied login with metamask'
+        })
         dispatch({
           type: 'FAILED_LOGIN',
           errorMessage: error

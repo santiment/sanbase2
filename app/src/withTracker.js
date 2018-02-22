@@ -2,7 +2,9 @@ import React, { Component } from 'react'
 import GoogleAnalytics from 'react-ga'
 
 if (process.env.NODE_ENV === 'production') {
-  GoogleAnalytics.initialize('UA-100571693-1')
+  GoogleAnalytics.initialize('UA-100571693-2')
+} else {
+  GoogleAnalytics.initialize('foo', { testMode: true })
 }
 
 const withTracker = (WrappedComponent, options = {}) => {

@@ -1,5 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux'
+import GoogleAnalytics from 'react-ga'
 import {
   compose,
   withState,
@@ -63,6 +64,10 @@ const mapDispatchToProps = dispatch => {
       props.verify(qsData)
         .then(({data}) => {
           const { token, user } = data.emailLoginVerify
+          GoogleAnalytics.event({
+            category: 'User',
+            action: 'Success login with email'
+          })
           dispatch({
             type: 'SUCCESS_LOGIN',
             token,
@@ -72,6 +77,10 @@ const mapDispatchToProps = dispatch => {
           props.history.push('/')
         })
         .catch(error => {
+          GoogleAnalytics.event({
+            category: 'User',
+            action: 'Failed login with email'
+          })
           dispatch({
             type: 'FAILED_LOGIN',
             errorMessage: error

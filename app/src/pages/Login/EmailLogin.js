@@ -55,23 +55,30 @@ const isErrorUsername = formApi => (
     !!formApi.getError().username
 )
 
-const EmailField = ({formApi}) => (
-  <Fragment>
+export const EmailField = ({
+  formApi,
+  className = undefined,
+  disabled = false,
+  autoFocus = true,
+  placeholder = 'you@domain.com'
+}) => (
+  <div className={className}>
     <label>Email</label>
     <ReactFormInput
       fluid
-      autoFocus
+      disabled={disabled}
+      autoFocus={autoFocus}
       initvalue=''
       type='email'
       field='email'
       error={isErrorEmail(formApi)}
       className='email-input'
-      placeholder='you@domain.com' />
+      placeholder={placeholder} />
     {isErrorEmail(formApi) &&
       <Message negative>
         {formApi.getError().email}
       </Message>}
-  </Fragment>
+  </div>
 )
 
 const UsernameField = ({formApi}) => {

@@ -11,33 +11,30 @@ exports[`Account container it should render correctly 1`] = `
       Account settings
     </h1>
   </div>
+  <Message
+    className="account-message"
+    header="Email is not added yet!"
+    list={
+      Array [
+        "For acces your dashboard from mobile device, you should add email address.",
+      ]
+    }
+    warning={true}
+  />
   <div
     className="panel"
   >
+    <t
+      onSubmit={[Function]}
+      onSubmitFailure={[Function]}
+      validateError={[Function]}
+      validateSuccess={[Function]}
+    />
+    <br />
     <Form
       as="form"
       loading={false}
     >
-      <FormField
-        disabled={true}
-      >
-        <label>
-          Email
-        </label>
-        <Input
-          placeholder=""
-          type="text"
-        />
-        <Message
-          header="Email is not added yet!"
-          list={
-            Array [
-              "For acces your dashboard from mobile device, you should add email address.",
-            ]
-          }
-          warning={true}
-        />
-      </FormField>
       <FormField>
         <label>
           Username or Eth Public Key
@@ -61,37 +58,37 @@ exports[`Account container it should render correctly 1`] = `
           type="text"
         />
       </FormField>
-      <h3>
-        Wallets
-      </h3>
-      <Divider />
-      <Component
-        user={
-          Object {
-            "email": null,
-            "username": "0xjsadhf92fhk2fjhe",
-          }
-        }
-      />
-      <h3>
-        Sessions
-      </h3>
-      <Divider />
-      <div
-        className="account-control"
-      >
-        <p>
-          Your current session
-        </p>
-        <Button
-          as="button"
-          basic={true}
-          color="red"
-        >
-          Log out
-        </Button>
-      </div>
     </Form>
+    <h3>
+      Wallets
+    </h3>
+    <Divider />
+    <Component
+      user={
+        Object {
+          "email": null,
+          "username": "0xjsadhf92fhk2fjhe",
+        }
+      }
+    />
+    <h3>
+      Sessions
+    </h3>
+    <Divider />
+    <div
+      className="account-control"
+    >
+      <p>
+        Your current session
+      </p>
+      <Button
+        as="button"
+        basic={true}
+        color="red"
+      >
+        Log out
+      </Button>
+    </div>
   </div>
 </div>
 `;

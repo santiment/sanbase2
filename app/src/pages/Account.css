@@ -3,6 +3,18 @@
   justify-content: space-between;
 }
 
+.account-settings-email {
+  width: 100%;
+}
+
+.account-settings-email__button-container {
+  display: flex;
+}
+
+.account-settings-email .button {
+  margin-top: 15px !important;
+}
+
 @media (min-width: 1024px) {
   .account {
     width: 720px;
@@ -14,5 +26,9 @@
 
   .account-control {
     display: block;
+  }
+
+  .account-message {
+    margin: 16px !important;
   }
 }

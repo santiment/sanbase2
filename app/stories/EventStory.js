@@ -2,7 +2,7 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 // import { action } from '@storybook/addon-actions'
 import Post from './../src/components/Post'
-import PostsList from './../src/components/PostsList'
+import PostList from './../src/components/PostList'
 import EventVotesNew from './../src/pages/EventVotesNew/EventVotesNew.js'
 
 const posts = {
@@ -64,12 +64,12 @@ storiesOf('Event Votes', module)
   ))
   .add('Posts List', () => (
     <div style={{margin: 20}}>
-      <PostsList posts={posts} />
+      <PostList posts={posts} />
     </div>
   ))
   .add("User's list of insights", () => (
     <div style={{margin: 20}}>
-      <PostsList userId={23} posts={posts} />
+      <PostList userId={23} posts={posts} />
     </div>
   ))
   .add('Post Create Form', () => (

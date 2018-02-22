@@ -56,6 +56,14 @@ export default (state = initialState, action) => {
         token: null,
         errorMessage: action.error
       }
+    case 'CHANGE_EMAIL':
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          email: action.email
+        }
+      }
     case 'CHANGE_USER_DATA':
       if (!action.user) {
         return {

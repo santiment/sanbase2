@@ -233,6 +233,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.change_email/3)
     end
 
+    field :change_username, :user do
+      arg(:username, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&AccountResolver.change_username/3)
+    end
+
     field :follow_project, :user do
       arg(:project_id, non_null(:integer))
 

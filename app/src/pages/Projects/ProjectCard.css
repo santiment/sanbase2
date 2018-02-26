@@ -2,3 +2,16 @@
 .statistic-disabled .label {
   color: #d3d3d3 !important;
 }
+
+.project-card-rank-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.68);
+  width: 50%;
+  text-align: right;
+}
+
+.project-card-rank-label div {
+  display: inline-block;
+}

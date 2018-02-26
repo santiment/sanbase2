@@ -43,9 +43,9 @@ defmodule SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity do
     get_complexity(from, to, interval)
   end
 
-  @doc ~S"""
-  For max complexity 5000 we allow 1000 values
-  """
+  # Helper functions
+
+  # For max complexity 5000 we allow 1000 values
   defp get_complexity(from_datetime, to_datetime, interval) do
     get_number_of_intervals(from_datetime, to_datetime, interval)
     |> case do

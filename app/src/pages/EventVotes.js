@@ -222,16 +222,17 @@ const mapDataToProps = props => {
   const filter = ownProps.match.params.filter || 'popular'
   const posts = (Poll.currentPoll || {}).posts || []
   let filteredPosts = posts
-    .filter(post => post.state === 'approved')
+    // TODO: We should return this filter in the near future
+    // .filter(post => post.state === 'approved')
     .map(post => {
       return {
-        totalSanVotes: post.totalSanVotes || 0,
+        totalSanVotes: parseFloat(post.totalSanVotes) || 0,
         ...post}
     })
+  filteredPosts = sortByNewest(filteredPosts)
   if (filter === 'popular') {
     filteredPosts = sortByPopular(filteredPosts)
   }
-  filteredPosts = sortByNewest(filteredPosts)
 
   const userPosts = sortByNewest(
     posts.filter(post => post.user.id === ownProps.user.data.id)

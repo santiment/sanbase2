@@ -2,7 +2,7 @@ import React from 'react'
 import moment from 'moment'
 import { storiesOf } from '@storybook/react'
 import { action } from '@storybook/addon-actions'
-import ProjectChart, { TimeFilter } from './../src/components/ProjectChart/ProjectChart'
+import ProjectChart from './../src/components/ProjectChart/ProjectChart'
 import Panel from './../src/components/Panel'
 
 const historyOneWeek = require('./history_1week.json')
@@ -89,22 +89,4 @@ storiesOf('ProjectChart', module)
         showBTC={action('showBTC')}
         showUSD={action('showUSD')} />
     </Panel>
-  ))
-
-storiesOf('PC - TimeFilter', module)
-  .add('default', () => (
-    <TimeFilter
-      setFilter={action('setFilter')}
-      disabled={false}
-       />
-  ))
-  .add('picked 1w', () => (
-    <TimeFilter
-      setFilter={action('setFilter')}
-      interval='1w'
-      disabled={false}
-       />
-  ))
-  .add('disabled', () => (
-    <TimeFilter disabled />
   ))

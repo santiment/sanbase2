@@ -16,7 +16,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
 
   # 5 minutes
   @default_update_interval 1000 * 60 * 5
-  @top_projects_to_follow 25
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -42,7 +41,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Enum.each(&store_ticker/1)
 
     tickers
-    |> Enum.take(@top_projects_to_follow)
+    |> Enum.take(top_projects_to_follow)
     |> Enum.each(&insert_or_create_project/1)
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
@@ -64,6 +63,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
       market_cap_usd: ticker.market_cap_usd,
       name: ticker.name,
       price_usd: ticker.price_usd,
+      price_btc: ticker.price_btc,
       rank: ticker.rank,
       volume_usd: ticker."24h_volume_usd",
       available_supply: ticker.available_supply,
@@ -93,5 +93,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
           ticker: project.ticker
         })
     end
+  end
+
+  defp top_projects_to_follow do
+    Config.get(:top_projects_to_follow, "25") |> String.to_integer()
   end
 end

@@ -79,6 +79,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     end
   end
 
+  def change_username(_root, %{username: new_username}, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
+    Repo.get!(User, user.id)
+    |> User.changeset(%{username: new_username})
+    |> Repo.update()
+    |> case do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot update current user's username to #{new_username}",
+          details: Helpers.error_details(changeset)
+        }
+    end
+  end
+
   def unfollow_project(_root, %{project_id: project_id}, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do

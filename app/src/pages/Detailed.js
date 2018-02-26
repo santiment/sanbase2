@@ -183,14 +183,20 @@ export const Detailed = ({
           projects={projects} />}
       <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
         <div className='detailed-head'>
-          <div className='detailed-name'>
-            <h1>{project.name}</h1>
-            <ProjectIcon
-              name={project.name}
-              size={24} />
-            <div className='detailed-ticker-name'>
-              {project.ticker.toUpperCase()}
+          <div className='detailed-project-about'>
+            <div className='detailed-name'>
+              <h1>{project.name}</h1>
+              <ProjectIcon
+                name={project.name}
+                size={24} />
+              <div className='detailed-ticker-name'>
+                {project.ticker.toUpperCase()}
+              </div>
             </div>
+            {(generalInfo.project || {}).description &&
+              <div className='datailed-project-description'>
+                {generalInfo.project.description}
+              </div>}
           </div>
 
           {!generalInfo.isLoading && generalInfo.project.priceUsd &&
@@ -271,6 +277,7 @@ const queryProject = gql`
       id,
       name,
       ticker,
+      description,
       websiteLink,
       facebookLink,
       githubLink,

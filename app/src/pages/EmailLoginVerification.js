@@ -1,5 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux'
+import GoogleAnalytics from 'react-ga'
 import {
   compose,
   withState,
@@ -8,6 +9,7 @@ import {
 import * as qs from 'query-string'
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
+import { savePrevAuthProvider } from './../utils/localStorage'
 
 const emailLoginVerifyGQL = gql`
   mutation emailLoginVerify($email: String!, $token: String!) {
@@ -63,6 +65,11 @@ const mapDispatchToProps = dispatch => {
       props.verify(qsData)
         .then(({data}) => {
           const { token, user } = data.emailLoginVerify
+          GoogleAnalytics.event({
+            category: 'User',
+            action: 'Success login with email'
+          })
+          savePrevAuthProvider('email')
           dispatch({
             type: 'SUCCESS_LOGIN',
             token,
@@ -72,6 +79,10 @@ const mapDispatchToProps = dispatch => {
           props.history.push('/')
         })
         .catch(error => {
+          GoogleAnalytics.event({
+            category: 'User',
+            action: 'Failed login with email'
+          })
           dispatch({
             type: 'FAILED_LOGIN',
             errorMessage: error

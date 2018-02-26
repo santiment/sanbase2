@@ -1,21 +1,20 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import {
-  Form,
   Message,
   Button,
   Icon
 } from 'semantic-ui-react'
-import metamaskIcon from '../../assets/metamask-icon-64.png'
+import metamaskIcon from '../../assets/metamask-icon-64-2.png'
 import './AuthForm.css'
 
 export default ({account, error = false, pending = false, handleAuth}) => {
   return (
-    <Form>
+    <Fragment>
       <Message
         header='We detect you have Metamask 🎉🎉🎉'
         list={[
           'We can auth you with Metamask account. It\'s secure and easy.',
-          ...[!account && `You need to unlock any Metamask account.`],
+          ...[!account && `Please unlock any Metamask account.`],
           ...[account && `Your selected wallet public key is ${account}`]
         ]}
       />
@@ -23,7 +22,7 @@ export default ({account, error = false, pending = false, handleAuth}) => {
         <Message
           style={{marginBottom: 10}}
           negative
-          header='We have problem with our Blockchain Authetication'
+          header='Apologies, there was a problem with blockchain authetication'
           content='Try again later or another login option' />
       </div>}
       {!account &&
@@ -34,7 +33,8 @@ export default ({account, error = false, pending = false, handleAuth}) => {
           name='long arrow up' />}
       {account &&
         <Button
-          color='green'
+          basic
+          className='metamask-btn'
           disabled={pending}
           style={{
             display: 'flex',
@@ -44,13 +44,14 @@ export default ({account, error = false, pending = false, handleAuth}) => {
             margin: '0 auto'
           }}
           onClick={handleAuth}
-        >{pending ? 'Waiting...' : 'Sign in with Metamask'}&nbsp;
-          <img
-            src={metamaskIcon}
-            alt='metamask logo'
-            width={32}
-            height={32} />
+        ><img
+          src={metamaskIcon}
+          alt='metamask logo'
+          width={28}
+          height={28} />&nbsp;
+          {pending ? 'Waiting...' : 'Sign in with Metamask'}
+
         </Button>}
-    </Form>
+    </Fragment>
   )
 }

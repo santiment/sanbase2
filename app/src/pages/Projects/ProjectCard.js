@@ -77,25 +77,29 @@ const ProjectCard = ({
         <Card.Header>
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
             <div style={{display: 'flex', alignItems: 'center'}}>
-              <ProjectIcon name={name} /> &nbsp;{name}
+              {name}&nbsp;<ProjectIcon name={name} />
             </div>
-            <div style={{
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              top: '12px',
-              fontSize: '12px',
-              position: 'absolute',
-              right: '14px',
-              color: 'rgba(0,0,0,.68)'
-            }}
-            ><span>rank</span> {rank}</div>
+            <Popup
+              position='left center'
+              hideOnScroll
+              wide
+              inverted
+              trigger={
+                <div className='project-card-rank-label'>
+                  <div>rank by market cap</div>
+                  <div>&nbsp;{rank}</div>
+                </div>
+              } on='click'>
+              Market capitalisation in a cryptocurrency world is a mulpitle
+              of amount of tokens in the circulation * token price
+            </Popup>
           </div>
         </Card.Header>
         <Card.Meta>
           <Label
             size='mini'
             color={MARKET_SEGMENT_COLORS[marketSegment]} tag>
-            {marketSegment || 'unknown market segment yet'}
+            {marketSegment || 'unknown yet'}
           </Label>
         </Card.Meta>
         <Card.Description>

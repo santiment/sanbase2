@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   import Absinthe.Resolution.Helpers
 
-  alias Sanbase.Prices.Store
   alias SanbaseWeb.Graphql.PriceStore
 
   @doc """

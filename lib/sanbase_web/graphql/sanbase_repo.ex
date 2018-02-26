@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.SanbaseRepo do
   alias Sanbase.Repo
-  alias Sanbase.Model.{ProjectEthAddress, ProjectBtcAddress, LatestEthWalletData}
+  alias Sanbase.Model.{ProjectEthAddress, ProjectBtcAddress}
 
   import Ecto.Query
 

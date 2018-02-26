@@ -72,6 +72,21 @@
   align-items: center;
 }
 
+.auth-provider-button {
+  position: relative;
+}
+
+.last-auth-provider-label {
+  user-select: none;
+  position: absolute;
+  top: 22px;
+  left: -120px;
+}
+
+.auth-provider-button .ui.basic.button {
+  width: 100%;
+}
+
 .ui.basic.button.metamask-btn {
   color: white !important;
   background: rgba(235, 133, 37, 1) !important;
@@ -84,9 +99,14 @@
 @media (min-width: 1024px) {
   .login-inner {
     max-width: 30%;
-    min-width: 500px;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    min-width: 600px;
+  }
+
+  @-moz-document url-prefix() {
+    .login-inner {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
   }
 }

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { connect } from 'react-redux'
 import { graphql, withApollo } from 'react-apollo'
 import GoogleAnalytics from 'react-ga'
@@ -15,6 +15,7 @@ import {
   signMessage
 } from '../../web3Helpers'
 import AuthForm from './AuthForm'
+import { savePrevAuthProvider } from './../../utils/localStorage'
 import metamaskDownloadImg from './../../assets/download-metamask.png'
 
 const EthLogin = ({
@@ -25,7 +26,7 @@ const EthLogin = ({
   client
 }) => {
   return (
-    <div>
+    <Fragment>
       {user.isLoading && !user.hasMetamask && <div>Loading</div>}
       {!user.hasMetamask && !user.isLoading &&
         <Message warning>
@@ -49,7 +50,7 @@ const EthLogin = ({
           pending={user.isLoading}
           error={user.error}
           handleAuth={() => requestAuth(user.account, authWithSAN, client)} />}
-    </div>
+    </Fragment>
   )
 }
 
@@ -75,6 +76,7 @@ const mapDispatchToProps = dispatch => {
         authWithSAN({variables: { signature, address, messageHash }})
         .then(({ data }) => {
           const { token, user } = data.ethLogin
+          savePrevAuthProvider('metamask')
           GoogleAnalytics.event({
             category: 'User',
             action: 'Success login with metamask'

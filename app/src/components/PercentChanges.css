@@ -4,12 +4,10 @@
 
 .percent-changes--positive {
   color: rgb(48, 157, 129);
-  font-size: 16px;
-  padding-top: 6px;
+  font-size: 14px;
 }
 
 .percent-changes--negative {
   color: rgb(200, 47, 63);
-  font-size: 16px;
-  padding-top: 6px;
+  font-size: 14px;
 }

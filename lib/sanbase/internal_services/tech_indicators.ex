@@ -1,4 +1,5 @@
 defmodule Sanbase.InternalServices.TechIndicators do
+  require Logger
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
 
@@ -43,10 +44,14 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {:ok, result}
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        {:error, "Error status #{status} fetching macd for ticker #{ticker}: #{body}"}
+        message = "Error status #{status} fetching macd for ticker #{ticker}: #{body}"
+        Logger.error(message)
+        {:error, message}
 
-      _ ->
-        {:error, "Cannot fetch macd data for ticker #{ticker}"}
+      {:error, %HTTPoison.Error{} = error} ->
+        message = "Cannot fetch macd data for ticker #{ticker}: #{HTTPoison.Error.message(error)}"
+        Logger.error(message)
+        {:error, message}
     end
   end
 
@@ -90,10 +95,14 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {:ok, result}
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        {:error, "Error status #{status} fetching rsi for ticker #{ticker}: #{body}"}
+        message = "Error status #{status} fetching rsi for ticker #{ticker}: #{body}"
+        Logger.error(message)
+        {:error, message}
 
-      _ ->
-        {:error, "Cannot fetch rsi data for ticker #{ticker}"}
+      {:error, %HTTPoison.Error{} = error} ->
+        message = "Cannot fetch rsi data for ticker #{ticker}: #{HTTPoison.Error.message(error)}"
+        Logger.error(message)
+        {:error, message}
     end
   end
 
@@ -149,11 +158,20 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {:ok, result}
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        {:error,
-         "Error status #{status} fetching price-volume diff for ticker #{ticker}: #{body}"}
+        message =
+          "Error status #{status} fetching price-volume diff for ticker #{ticker}: #{body}"
 
-      _ ->
-        {:error, "Cannot fetch price-volume diff data for ticker #{ticker}"}
+        Logger.error(message)
+        {:error, message}
+
+      {:error, %HTTPoison.Error{} = error} ->
+        message =
+          "Cannot fetch price-volume diff data for ticker #{ticker}: #{
+            HTTPoison.Error.message(error)
+          }"
+
+        Logger.error(message)
+        {:error, message}
     end
   end
 

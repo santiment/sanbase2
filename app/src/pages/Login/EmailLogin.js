@@ -144,7 +144,7 @@ const EmailLogin = ({
               onSuccess(true)
               GoogleAnalytics.event({
                 category: 'User',
-                action: 'User requested email for verification'
+                action: 'User requested an email for verification'
               })
             })
             .catch(error => {

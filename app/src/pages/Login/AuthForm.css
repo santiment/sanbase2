@@ -17,7 +17,7 @@
 }
 
 .help-arrow-extension {
-  position: fixed;
+  position: absolute;
   top: 20px;
   right: 20px;
   animation: bounce 2s infinite;

@@ -1,6 +1,5 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import {
-  Form,
   Message,
   Button,
   Icon
@@ -10,7 +9,7 @@ import './AuthForm.css'
 
 export default ({account, error = false, pending = false, handleAuth}) => {
   return (
-    <Form>
+    <Fragment>
       <Message
         header='We detect you have Metamask 🎉🎉🎉'
         list={[
@@ -53,6 +52,6 @@ export default ({account, error = false, pending = false, handleAuth}) => {
           {pending ? 'Waiting...' : 'Sign in with Metamask'}
 
         </Button>}
-    </Form>
+    </Fragment>
   )
 }

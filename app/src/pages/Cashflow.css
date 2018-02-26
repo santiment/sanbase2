@@ -89,6 +89,7 @@
   margin-left: -16px;
   margin-right: -16px;
   overflow-y: hidden;
+  min-height: 350px;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
@@ -133,7 +134,7 @@
   text-align: center;
 }
 
-.rt-td > div {
+.ReactTable .rt-td > div {
   font-size: 18px;
   line-height: 1.2;
   padding: 5px;

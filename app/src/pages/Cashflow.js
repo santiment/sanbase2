@@ -4,7 +4,7 @@ import classnames from 'classnames'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
-import { Icon, Popup, Message } from 'semantic-ui-react'
+import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
@@ -341,6 +341,16 @@ export const Cashflow = ({
             data={projects}
             columns={columns}
             filtered={getFilter(search)}
+            LoadingComponent={({ className, loading, loadingText, ...rest }) => (
+              <div
+                className={classnames('-loading', { '-active': loading }, className)}
+                {...rest}
+              >
+                <div className='-loading-inner'>
+                  <Loader active size='large' />
+                </div>
+              </div>
+            )}
             ThComponent={CustomThComponent}
             getTdProps={(state, rowInfo, column, instance) => {
               return {

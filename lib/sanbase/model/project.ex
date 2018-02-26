@@ -184,12 +184,10 @@ defmodule Sanbase.Model.Project do
 
   # Private functions
 
-  @doc ~S"""
-  Heuristic: fills empty ico.tokens_sold_at_ico by evenly distributing the rest of the circulating supply
-  TODO:
-  Currently uses latest_coinmarketcap_data.available_supply, which also includes coins not issued at any ICO
-  Maybe it's better to keep historical data of available_supply so that we can calculate it better
-  """
+  # Heuristic: fills empty ico.tokens_sold_at_ico by evenly distributing the rest of the circulating supply
+  # TODO:
+  # Currently uses latest_coinmarketcap_data.available_supply, which also includes coins not issued at any ICO
+  # Maybe it's better to keep historical data of available_supply so that we can calculate it better
   defp fill_missing_tokens_sold_at_icos(project) do
     with tokens_sold_at_icos <- Enum.map(project.icos, & &1.tokens_sold_at_ico),
          unknown_count <- Enum.filter(tokens_sold_at_icos, &is_nil/1) |> length(),

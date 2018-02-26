@@ -41,7 +41,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching macd for ticker #{ticker}: #{body}"}
 
-      res ->
+      _res ->
         {:error, "Cannot fetch macd data for ticker #{ticker}"}
     end
   end
@@ -83,7 +83,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Error status #{status} fetching rsi for ticker #{ticker}: #{body}"}
 
-      res ->
+      _res ->
         {:error, "Cannot fetch rsi data for ticker #{ticker}"}
     end
   end
@@ -128,7 +128,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {:error,
          "Error status #{status} fetching price-volume diff for ticker #{ticker}: #{body}"}
 
-      res ->
+      _res ->
         {:error, "Cannot fetch price-volume diff data for ticker #{ticker}"}
     end
   end

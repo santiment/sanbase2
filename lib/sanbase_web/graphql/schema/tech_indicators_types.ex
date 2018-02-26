@@ -14,5 +14,7 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
   object :price_volume_diff do
     field(:datetime, non_null(:datetime))
     field(:price_volume_diff, :decimal)
+    field(:price_change, :decimal)
+    field(:volume_change, :decimal)
   end
 end

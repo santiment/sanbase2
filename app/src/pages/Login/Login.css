@@ -3,17 +3,16 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
+  overflow: hidden;
 }
 
 .login-inner {
-  padding: 1em;
-  margin: 0;
+  padding: 4em 1em !important;
   width: 100%;
   text-align: center;
-  background-color: initial;
-  border-radius: 0 !important;
-  border: 0 !important;
-  box-shadow: none;
+  background-color: rgba(255, 255, 255, 1);
+  border-radius: 2px;
+  box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
 }
 
 .login-inner .ui.negative.message.content {
@@ -22,25 +21,17 @@
 
 .login-inner h2 {
   margin: 0;
-  margin-bottom: 20px;
   font-size: 24px;
   font-weight: 400 !important;
-  color: rgba(0, 0, 0, 0.85) !important;
 }
 
 .login-inner p {
-  font-size: 19px;
-  line-height: 24px;
-  width: 70%;
   margin: 0 auto;
-  margin-bottom: 25px;
-  color: rgba(0, 0, 0, 0.75) !important;
 }
 
 .login-actions {
   width: 300px;
-  margin: 0 auto;
-  margin-top: 1em;
+  margin: 0 auto 2em auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -49,7 +40,6 @@
 
 .login-actions button {
   margin-top: 1em !important;
-  padding-left: 6px !important;
 }
 
 .auth-goto-back-button {
@@ -82,13 +72,41 @@
   align-items: center;
 }
 
+.auth-provider-button {
+  position: relative;
+}
+
+.last-auth-provider-label {
+  user-select: none;
+  position: absolute;
+  top: 22px;
+  left: -120px;
+}
+
+.auth-provider-button .ui.basic.button {
+  width: 100%;
+}
+
+.ui.basic.button.metamask-btn {
+  color: white !important;
+  background: rgba(235, 133, 37, 1) !important;
+}
+
+.ui.basic.button.metamask-btn:hover {
+  border-color: rgba(235, 133, 37, 1) !important;
+}
+
 @media (min-width: 1024px) {
   .login-inner {
-    max-width: 70%;
-    min-width: 700px;
-    min-height: 300px;
-    background-color: rgba(227, 227, 227, 0.4);
-    border-radius: 2px;
-    box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
+    max-width: 30%;
+    min-width: 600px;
+  }
+
+  @-moz-document url-prefix() {
+    .login-inner {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
   }
 }

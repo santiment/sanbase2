@@ -37,20 +37,26 @@ make_project = fn {name, ticker, logo_url, coinmarkecap_id, infrastructure_code}
 end
 
 make_btc_address = fn {name, address} ->
+  project = Repo.get_by(Project, name: name)
+
   [
-    %ProjectBtcAddress{
-      project: Repo.get_by(Project, name: name),
-      address: address
-    }
+    %ProjectBtcAddress{}
+    |> ProjectBtcAddress.changeset(%{
+      address: address,
+      project_id: project.id
+    })
   ]
 end
 
 make_eth_address = fn {name, address} ->
+  project = Repo.get_by(Project, name: name)
+
   [
-    %ProjectEthAddress{
-      project: Repo.get_by(Project, name: name),
-      address: address
-    }
+    %ProjectEthAddress{}
+    |> ProjectEthAddress.changeset(%{
+      address: address,
+      project_id: project.id
+    })
   ]
 end
 
@@ -175,7 +181,10 @@ user =
   }
   |> Repo.insert!()
 
-%EthAccount{address: "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a", user_id: user.id}
+%EthAccount{
+  address: "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a",
+  user_id: user.id
+}
 |> Repo.insert!()
 
 ### Import random Github activity for SAN ticker
@@ -191,25 +200,31 @@ defmodule SeedsGithubActivityImporter do
     |> DateTime.from_unix!()
   end
 
-  def import_gh_activity(datetime, _activity, _ticker, 0), do: :ok
+  def import_gh_activity(_datetime, _activity, _ticker, to_import, 0) do
+    Github.Store.import(to_import)
+    :ok
+  end
 
-  def import_gh_activity(datetime, activity, ticker, n) do
-    Github.Store.import(%Measurement{
-      timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-      fields: %{activity: activity},
-      name: ticker
-    })
+  def import_gh_activity(datetime, activity, ticker, to_import, n) do
+    to_import = [
+      %Measurement{
+        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+        fields: %{activity: activity},
+        name: ticker
+      }
+      | to_import
+    ]
 
     datetime = previous_hour(datetime)
     activity = :rand.uniform(100)
-    import_gh_activity(datetime, activity, ticker, n - 1)
+    import_gh_activity(datetime, activity, ticker, to_import, n - 1)
   end
 end
 
 Github.Store.create_db()
 Github.Store.drop_measurement("SAN")
 
-SeedsGithubActivityImporter.import_gh_activity(DateTime.utc_now(), 50, "SAN", 500)
+SeedsGithubActivityImporter.import_gh_activity(DateTime.utc_now(), 50, "SAN", [], 500)
 
 #########
 # Exchange addresses
@@ -218,7 +233,7 @@ defmodule InsertExchangeEthAddresses do
   alias Sanbase.Model.ExchangeEthAddress
 
   def run do
-    address_data
+    address_data()
     |> Enum.map(&update_or_create_eth_address/1)
     |> Enum.each(&Repo.insert_or_update!/1)
   end
@@ -228,7 +243,11 @@ defmodule InsertExchangeEthAddresses do
     |> case do
       nil ->
         %ExchangeEthAddress{}
-        |> ExchangeEthAddress.changeset(%{address: address, name: name, comments: comments})
+        |> ExchangeEthAddress.changeset(%{
+          address: address,
+          name: name,
+          comments: comments
+        })
 
       exch_address ->
         exch_address
@@ -236,7 +255,7 @@ defmodule InsertExchangeEthAddresses do
     end
   end
 
-  defp address_data do
+  defp address_data() do
     [
       {"Binance contract owner wallet", "0x00c5e04176d95a286fcce0e68c683ca0bfec8454",
        "This is the owner of the BNB contract and is the #1 owner of BNB."},

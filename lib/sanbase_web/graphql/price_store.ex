@@ -6,9 +6,11 @@ defmodule SanbaseWeb.Graphql.PriceStore do
   end
 
   def fetch_price(pair, :last) do
-    {_dt, price, _, _} = Prices.Store.last_record(pair)
-
-    Decimal.new(price)
+    with {:ok, {_dt, price, _mcap, _volume}} <- Prices.Store.last_record(pair) do
+      Decimal.new(price)
+    else
+      _error -> nil
+    end
   end
 
   def fetch_price(pair, %{from: from, to: to, interval: interval}) do

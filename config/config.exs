@@ -124,7 +124,8 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
   update_interval: 5 * 1000 * 60,
-  sync_enabled: {:system, "COINMARKETCAP_TICKERS_ENABLED", false}
+  sync_enabled: {:system, "COINMARKETCAP_TICKERS_ENABLED", false},
+  top_projects_to_follow: {:system, "TOP_PROJECTS_TO_FOLLOW", "25"}
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
   # 5 minutes

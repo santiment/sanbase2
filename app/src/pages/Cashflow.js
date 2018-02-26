@@ -4,7 +4,7 @@ import classnames from 'classnames'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
-import { Icon, Popup, Message } from 'semantic-ui-react'
+import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
@@ -63,7 +63,7 @@ const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
         />
       }
       {ethBalance
-        ? `E ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
+        ? `Ξ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
         : '---'}
     </div>
   </div>
@@ -113,11 +113,11 @@ export const Cashflow = ({
     )
   }
   const columns = [{
-    Header: 'Project',
-    id: 'project',
+    Header: '',
+    id: 'icon',
     filterable: true,
     sortable: true,
-    minWidth: 190,
+    minWidth: 44,
     accessor: d => ({
       name: d.name,
       ticker: d.ticker
@@ -125,8 +125,32 @@ export const Cashflow = ({
     Cell: ({value}) => (
       <div
         onMouseOver={() => preload()}
-        onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)} >
-        <ProjectIcon name={value.name} /> {value.name} ({value.ticker})
+        onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)}
+        className='overview-ticker' >
+        <ProjectIcon name={value.name} /><br />{value.ticker}
+      </div>
+    ),
+    filterMethod: (filter, row) => {
+      const name = row[filter.id].name || ''
+      const ticker = row[filter.id].ticker || ''
+      return name.toLowerCase().indexOf(filter.value) !== -1 ||
+        ticker.toLowerCase().indexOf(filter.value) !== -1
+    }
+  }, {
+    Header: 'Project',
+    id: 'project',
+    filterable: true,
+    sortable: true,
+    accessor: d => ({
+      name: d.name,
+      ticker: d.ticker
+    }),
+    Cell: ({value}) => (
+      <div
+        onMouseOver={() => preload()}
+        onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)}
+        className='overview-name' >
+        {value.name}
       </div>
     ),
     filterMethod: (filter, row) => {
@@ -138,11 +162,12 @@ export const Cashflow = ({
   }, {
     Header: 'Price',
     id: 'price',
+    maxWidth: 100,
     accessor: d => ({
       priceUsd: d.priceUsd,
       change24h: d.percentChange24h
     }),
-    Cell: ({value: {priceUsd, change24h}}) => <div>
+    Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
       {priceUsd ? formatNumber(priceUsd, 'USD') : '---'}
       &nbsp;
       {<PercentChanges changes={change24h} />}
@@ -152,11 +177,12 @@ export const Cashflow = ({
   }, {
     Header: 'Volume',
     id: 'volume',
+    maxWidth: 100,
     accessor: d => ({
       volumeUsd: d.volumeUsd,
       change24h: d.volumeChange24h
     }),
-    Cell: ({value: {volumeUsd, change24h}}) => <div>
+    Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
       {volumeUsd
         ? `$${millify(parseFloat(volumeUsd))}`
         : ''}
@@ -174,13 +200,14 @@ export const Cashflow = ({
   }, {
     Header: 'Market Cap',
     id: 'marketcapUsd',
-    maxWidth: 100,
+    maxWidth: 130,
     accessor: 'marketcapUsd',
-    Cell: ({value}) => <div>{formatMarketCapProject(value)}</div>,
+    Cell: ({value}) => <div className='overview-marketcap'>{formatMarketCapProject(value)}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(parseInt(a, 10), parseInt(b, 10))
   }, {
     Header: 'Balance (USD/ETH)',
+    maxWidth: 110,
     id: 'balance',
     accessor: d => ({
       project: d.name,
@@ -188,7 +215,7 @@ export const Cashflow = ({
       ethBalance: d.ethBalance,
       usdBalance: d.usdBalance
     }),
-    Cell: ({value}) => <div>{formatBalance(value)}</div>,
+    Cell: ({value}) => <div className='overview-balance'>{formatBalance(value)}</div>,
     sortable: true,
     sortMethod: (a, b) =>
       simpleSort(
@@ -198,9 +225,9 @@ export const Cashflow = ({
   }, {
     Header: 'P/B',
     id: 'pbr',
-    maxWidth: 80,
+    maxWidth: 100,
     accessor: 'priceToBookRatio',
-    Cell: ({value}) => <div>{value &&
+    Cell: ({value}) => <div className='overview-pb'>{value &&
       ((value) => {
         if (value > 1000000000000) {
           return '∞'
@@ -216,23 +243,25 @@ export const Cashflow = ({
       )
     }
   }, {
-    Header: 'ETH spent 30D',
+    Header: 'ETH spent (30D)',
+    maxWidth: 110,
     id: 'tx',
     accessor: d => d.ethSpent,
-    Cell: ({value}) => <div>{`E ${formatNumber(value)}`}</div>,
+    Cell: ({value}) => <div className='overview-ethspent'>{`Ξ${formatNumber(value)}`}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
-    Header: 'Dev activity 30D',
+    Header: 'Dev activity (30D)',
     id: 'github_activity',
+    maxWidth: 110,
     accessor: d => d.averageDevActivity,
-    Cell: ({value}) => <div>{value ? parseFloat(value).toFixed(2) : ''}</div>,
+    Cell: ({value}) => <div className='overview-devactivity'>{value ? parseFloat(value).toFixed(2) : ''}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
     Header: 'Signals',
     id: 'signals',
-    maxWidth: 80,
+    minWidth: 64,
     accessor: d => ({
       warning: d.signals && d.signals.length > 0,
       description: d.signals[0] && d.signals[0].description
@@ -312,6 +341,16 @@ export const Cashflow = ({
             data={projects}
             columns={columns}
             filtered={getFilter(search)}
+            LoadingComponent={({ className, loading, loadingText, ...rest }) => (
+              <div
+                className={classnames('-loading', { '-active': loading }, className)}
+                {...rest}
+              >
+                <div className='-loading-inner'>
+                  <Loader active size='large' />
+                </div>
+              </div>
+            )}
             ThComponent={CustomThComponent}
             getTdProps={(state, rowInfo, column, instance) => {
               return {
@@ -319,7 +358,9 @@ export const Cashflow = ({
                   if (handleOriginal) {
                     handleOriginal()
                   }
-                  history.push(`/projects/${rowInfo.original.ticker.toLowerCase()}`)
+                  if (rowInfo && rowInfo.original && rowInfo.original.ticker) {
+                    history.push(`/projects/${rowInfo.original.ticker.toLowerCase()}`)
+                  }
                 }
               }
             }}

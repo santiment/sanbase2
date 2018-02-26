@@ -18,3 +18,23 @@ export const saveState = (state) => {
     // Ignore write errors.
   }
 }
+
+export const loadPrevAuthProvider = () => {
+  try {
+    const authProviderType = window.localStorage.getItem('prev_auth_provider')
+    if (authProviderType === null) {
+      return undefined
+    }
+    return authProviderType
+  } catch (error) {
+    return undefined
+  }
+}
+
+export const savePrevAuthProvider = (authProviderType = 'email') => {
+  try {
+    window.localStorage.setItem('prev_auth_provider', authProviderType)
+  } catch (error) {
+    // Ignore write errors.
+  }
+}

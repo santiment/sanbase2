@@ -8,6 +8,8 @@ pipeline:
       - app/node_modules
     volumes:
       - /tmp/cache:/cache
+    when:
+      event: [push, pull_request, tag]
 
   backend:
     group: build
@@ -22,6 +24,8 @@ pipeline:
       - mix deps.get
       - mix deps.compile
       - mix test
+    when:
+      event: [push, pull_request, tag]
 
   frontend:
     group: build
@@ -30,6 +34,8 @@ pipeline:
       - cd app
       - yarn
       - yarn test --ci
+    when:
+      event: [push, pull_request, tag]
 
   rebuild-cache:
     image: drillster/drone-volume-cache
@@ -40,17 +46,81 @@ pipeline:
       - app/node_modules
     volumes:
       - /tmp/cache:/cache
+    when:
+      event: [push, pull_request, tag]
+
+  build_docker_image:
+    image: plugins/docker
+    repo: sanbase
+    dry_run: true
+    when:
+      event: [push, pull_request]
+      branch:
+        exclude: [master]
 
   ecr:
     image: plugins/ecr
     repo: sanbase
-    registry: 913750763724.dkr.ecr.eu-central-1.amazonaws.com
-    secrets: [ ecr_access_key, ecr_secret_key ]
-    region: eu-central-1
+    registry: "$ecr_domain"
+    secrets: [ecr_access_key, ecr_secret_key, ecr_region]
     tags:
+      - "${DRONE_BRANCH}"
+      - "${DRONE_TAG=latest}"
       - "${DRONE_COMMIT_SHA}"
-    # when:
-    #   branch: master
+    when:
+      event: [push, tag]
+      branch: master
+
+  deploy_to_staging:
+    #TODO: use a custom image that simplifies the config and also tags the docker image with stage and the timestamp
+    image: quay.io/honestbee/drone-kubernetes
+    secrets:
+      - source: ecr_domain
+        target: ecr_domain
+      - source: k8s_stage_server
+        target: kubernetes_server
+      - source: k8s_stage_cert
+        target: kubernetes_cert
+      - source: k8s_stage_token
+        target: kubernetes_token
+    environment:
+      - PLUGIN_NAMESPACE=default
+      - PLUGIN_DEPLOYMENT=sanbase
+      - PLUGIN_CONTAINER=sanbase
+      - PLUGIN_TAG=${DRONE_COMMIT_SHA}
+    commands:
+      - export PLUGIN_REPO="$ECR_DOMAIN/sanbase"
+      - /bin/update.sh
+    when:
+      event: [push, tag, deployment]
+      branch: master
+      environment:
+        exclude: [production]
+
+  deploy_to_production:
+    #TODO: use a custom image that simplifies the config and also tags the docker image with prod and the timestamp
+    image: quay.io/honestbee/drone-kubernetes
+    secrets:
+      - source: ecr_domain
+        target: ecr_domain
+      - source: k8s_prod_server
+        target: kubernetes_server
+      - source: k8s_prod_cert
+        target: kubernetes_cert
+      - source: k8s_prod_token
+        target: kubernetes_token
+    environment:
+      - PLUGIN_NAMESPACE=default
+      - PLUGIN_DEPLOYMENT=sanbase
+      - PLUGIN_CONTAINER=sanbase
+      - PLUGIN_TAG=${DRONE_COMMIT_SHA}
+    commands:
+      - export PLUGIN_REPO="$ECR_DOMAIN/sanbase"
+      - /bin/update.sh
+    when:
+      event: deployment
+      branch: master
+      environment: production
 
 services:
   postgres:

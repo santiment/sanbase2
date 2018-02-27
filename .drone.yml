@@ -127,4 +127,4 @@ services:
   postgres:
     image: postgres:9.6-alpine
   influxdb:
-    image: influxdb:1.3-alpine
+    image: influxdb:1.4-alpine

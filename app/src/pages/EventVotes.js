@@ -14,6 +14,8 @@ import Panel from './../components/Panel'
 import PostList from './../components/PostList'
 import { simpleSort } from './../utils/sortMethods'
 import { Button, Header, Icon, Modal, Message } from 'semantic-ui-react'
+import ModalConfirmDeletePost from './Insights/ConfirmDeletePostModal'
+import currentPollGQL from './Insights/currentPollGQL'
 import './EventVotes.css'
 
 const POLLING_INTERVAL = 10000
@@ -57,7 +59,11 @@ const EventVotes = ({
   match,
   user,
   toggleLoginRequest,
-  isToggledLoginRequest
+  isToggledLoginRequest,
+  toggleDeletePostRequest,
+  isToggledDeletePostRequest,
+  setDeletePostId,
+  deletePostId = undefined
 }) => {
   const showedMyPosts = match.params.filter === 'my' && Posts.hasUserInsights
   return ([
@@ -66,6 +72,17 @@ const EventVotes = ({
         <ModalRequestLogin
           toggleLoginRequest={toggleLoginRequest}
           history={history} />}
+    </Fragment>,
+    <Fragment key='modal-delete-post-request'>
+      {isToggledDeletePostRequest &&
+        <ModalConfirmDeletePost
+          deletePostId={deletePostId}
+          toggleForm={() => {
+            if (isToggledDeletePostRequest) {
+              setDeletePostId(undefined)
+            }
+            toggleDeletePostRequest(!isToggledDeletePostRequest)
+          }} />}
     </Fragment>,
     <div className='page event-votes' key='page-event-votes'>
       {location.state && location.state.postCreated &&
@@ -127,6 +144,10 @@ const EventVotes = ({
           : <PostList {...Posts}
             posts={showedMyPosts ? Posts.userPosts : Posts.filteredPosts}
             userId={showedMyPosts ? user.data.id : undefined}
+            deletePost={postId => {
+              setDeletePostId(postId)
+              toggleDeletePostRequest(true)
+            }}
             votePost={debounce(postId => {
               user.token
                 ? votePost(voteMutationHelper({postId, action: 'vote'}))
@@ -164,27 +185,6 @@ const ModalRequestLogin = ({history, toggleLoginRequest}) => (
     </Modal.Actions>
   </Modal>
 )
-
-const currentPollGQL = gql`{
-  currentPoll {
-    endAt
-    posts {
-      id
-      title
-      state
-      moderationComment
-      link
-      createdAt
-      votedAt
-      totalSanVotes
-      user {
-        id
-        username
-      }
-    }
-    startAt
-  }
-}`
 
 const votePostGQL = gql`
   mutation vote($postId: Int!){
@@ -270,6 +270,8 @@ const enhance = compose(
     mapStateToProps
   ),
   withState('isToggledLoginRequest', 'toggleLoginRequest', false),
+  withState('isToggledDeletePostRequest', 'toggleDeletePostRequest', false),
+  withState('deletePostId', 'setDeletePostId', undefined),
   graphql(currentPollGQL, {
     name: 'Poll',
     props: mapDataToProps,

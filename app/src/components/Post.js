@@ -1,6 +1,6 @@
 import React from 'react'
 import moment from 'moment'
-import { Label } from 'semantic-ui-react'
+import { Label, Button } from 'semantic-ui-react'
 import LikeBtn from './../pages/EventVotesNew/LikeBtn'
 import { createSkeletonElement } from '@trainline/react-skeletor'
 import './Post.css'
@@ -58,6 +58,7 @@ const Post = ({
   votedAt,
   votePost,
   unvotePost,
+  deletePost,
   moderationComment = null,
   state = STATES.waiting,
   showStatus = false
@@ -91,6 +92,15 @@ const Post = ({
         {showStatus && <Status
           moderationComment={moderationComment}
           status={!state ? STATES.waiting : state} />}
+        {showStatus && <Button
+          size='mini'
+          onClick={() => deletePost(id)}
+          style={{
+            fontWeight: '700',
+            color: '#db2828'
+          }}>
+          Delete this insight
+        </Button>}
       </div>
     </div>
   )

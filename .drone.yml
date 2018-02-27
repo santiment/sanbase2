@@ -1,4 +1,5 @@
 pipeline:
+  # For this to work, the build must be set as trusted
   restore-cache:
     image: drillster/drone-volume-cache
     restore: true

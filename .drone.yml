@@ -1,0 +1,59 @@
+pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount:
+      - deps
+      - _build
+      - app/node_modules
+    volumes:
+      - /tmp/cache:/cache
+
+  backend:
+    group: build
+    image: elixir:1.6.0-alpine
+    environment:
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/postgres
+      - INFLUXDB_HOST=influxdb
+    commands:
+      - apk add --update git postgresql-client
+      - mix local.hex --force
+      - mix local.rebar --force
+      - mix deps.get
+      - mix deps.compile
+      - mix test
+
+  frontend:
+    group: build
+    image: node:latest
+    commands:
+      - cd app
+      - yarn
+      - yarn test --ci
+
+  rebuild-cache:
+    image: drillster/drone-volume-cache
+    rebuild: true
+    mount:
+      - deps
+      - _build
+      - app/node_modules
+    volumes:
+      - /tmp/cache:/cache
+
+  ecr:
+    image: plugins/ecr
+    repo: sanbase
+    registry: 913750763724.dkr.ecr.eu-central-1.amazonaws.com
+    secrets: [ ecr_access_key, ecr_secret_key ]
+    region: eu-central-1
+    tags:
+      - "${DRONE_COMMIT_SHA}"
+    # when:
+    #   branch: master
+
+services:
+  postgres:
+    image: postgres:9.6-alpine
+  influxdb:
+    image: influxdb:1.3-alpine

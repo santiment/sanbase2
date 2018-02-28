@@ -39,7 +39,7 @@ pipeline:
     when:
       event: [push, pull_request, tag]
 
-  build_docker_image:
+  test_build_docker_image:
     group: build
     image: plugins/docker
     repo: sanbase
@@ -48,8 +48,7 @@ pipeline:
       - MIX_ENV=dev
     when:
       event: [pull_request]
-      branch:
-        exclude: [master]
+      branch: master
 
   rebuild-cache:
     image: drillster/drone-volume-cache

@@ -39,17 +39,6 @@ pipeline:
     when:
       event: [push, pull_request, tag]
 
-  test_build_docker_image:
-    group: build
-    image: plugins/docker
-    repo: sanbase
-    dry_run: true
-    build_args:
-      - MIX_ENV=dev
-    when:
-      event: [pull_request]
-      branch: master
-
   rebuild-cache:
     image: drillster/drone-volume-cache
     rebuild: true

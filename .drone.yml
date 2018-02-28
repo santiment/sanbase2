@@ -14,11 +14,12 @@ pipeline:
 
   backend:
     group: build
-    image: elixir:1.6.0-alpine
+    image: elixir:1.6.1-alpine
     environment:
       - DATABASE_URL=postgres://postgres:password@postgres:5432/postgres
       - INFLUXDB_HOST=influxdb
     commands:
+      - mix format --check-formatted
       - apk add --update git postgresql-client
       - mix local.hex --force
       - mix local.rebar --force
@@ -38,6 +39,18 @@ pipeline:
     when:
       event: [push, pull_request, tag]
 
+  build_docker_image:
+    group: build
+    image: plugins/docker
+    repo: sanbase
+    dry_run: true
+    build_args:
+      - MIX_ENV=dev
+    when:
+      event: [pull_request]
+      branch:
+        exclude: [master]
+
   rebuild-cache:
     image: drillster/drone-volume-cache
     rebuild: true
@@ -49,15 +62,6 @@ pipeline:
       - /tmp/cache:/cache
     when:
       event: [push, pull_request, tag]
-
-  build_docker_image:
-    image: plugins/docker
-    repo: sanbase
-    dry_run: true
-    when:
-      event: [push, pull_request]
-      branch:
-        exclude: [master]
 
   ecr:
     image: plugins/ecr

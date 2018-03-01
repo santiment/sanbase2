@@ -287,7 +287,7 @@ export const Cashflow = ({
 
   return (
     <div className='page cashflow'>
-      <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
+      <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
           <h1>Projects</h1>
           <p>

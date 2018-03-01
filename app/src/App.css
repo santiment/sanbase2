@@ -49,18 +49,18 @@
   flex: 1;
   padding: 0 15px;
   max-width: 1024px;
-  overflow-y: auto;
-  overflow: scroll;
-  -webkit-overflow-scrolling: touch;
-}
-
-.App .page::-webkit-scrollbar {
-  display: none;
 }
 
 @media (max-width: 767px) {
   .App .page {
     padding: 0 15px;
+    overflow-y: auto;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .App .page::-webkit-scrollbar {
+    display: none;
   }
 }
 

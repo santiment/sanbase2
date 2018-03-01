@@ -67,9 +67,7 @@
 }
 
 .detailed-price-btc {
-  display: flex;
   font-size: 16px;
-  justify-content: center;
 }
 
 .detailed-buttons {
@@ -213,10 +211,6 @@
   .detailed-price-usd {
     justify-content: flex-start;
     font-size: 0.8em;
-  }
-
-  .detailed-price-btc {
-    text-align: left;
   }
 
   .detailed-price-description {

@@ -6,21 +6,17 @@ import {
   withState
 } from 'recompose'
 import moment from 'moment'
-import { FadeIn } from 'animate-components'
 import { Redirect } from 'react-router-dom'
 import { graphql, withApollo } from 'react-apollo'
-import ProjectIcon from './../../components/ProjectIcon'
 import PanelBlock from './../../components/PanelBlock'
 import GeneralInfoBlock from './../../components/GeneralInfoBlock'
 import FinancialsBlock from './../../components/FinancialsBlock'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
-import PercentChanges from './../../components/PercentChanges'
-import PageLoader from './../../components/PageLoader'
-import { formatNumber, formatBTC } from '../../utils/formatting'
 import { calculateBTCVolume, calculateBTCMarketcap } from '../../utils/utils'
 import allProjectsGQL from './../Projects/allProjectsGQL'
+import DetailedHeader from './DetailedHeader'
 import {
   projectGQL,
   queryTwitterData,
@@ -97,11 +93,6 @@ export const Detailed = ({
       }} />
     )
   }
-  if (!project) {
-    return (
-      <PageLoader />
-    )
-  }
 
   const twitter = {
     history: {
@@ -151,60 +142,31 @@ export const Detailed = ({
     items: TransactionVolume.transactionVolume || []
   }
 
-  const projectContainerChart = <ProjectChartContainer
-    routerHistory={history}
-    location={location}
-    isDesktop={isDesktop}
-    twitter={twitter}
-    price={price}
-    github={github}
-    burnRate={burnRate}
-    tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
-    transactionVolume={transactionVolume}
-    onDatesChange={(from, to, interval, ticker) => {
-      changeChartVars({
-        from,
-        to,
-        interval,
-        ticker
-      })
-    }}
-    ticker={project.ticker} />
+  const projectContainerChart = project &&
+    <ProjectChartContainer
+      routerHistory={history}
+      location={location}
+      isDesktop={isDesktop}
+      twitter={twitter}
+      price={price}
+      github={github}
+      burnRate={burnRate}
+      tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
+      transactionVolume={transactionVolume}
+      onDatesChange={(from, to, interval, ticker) => {
+        changeChartVars({
+          from,
+          to,
+          interval,
+          ticker
+        })
+      }}
+      ticker={project.ticker} />
 
   return (
     <div className='page detailed'>
       {!isDesktop && <Search />}
-      <div className='detailed-head'>
-        <div className='detailed-project-about'>
-          <div className='detailed-name'>
-            <h1>{project.name}</h1>
-            <ProjectIcon
-              name={project.name}
-              size={24} />
-            <div className='detailed-ticker-name'>
-              {project.ticker.toUpperCase()}
-            </div>
-          </div>
-          {(Project.project || {}).description &&
-            <div className='datailed-project-description'>
-              {Project.project.description}
-            </div>}
-        </div>
-
-        {!Project.loading && Project.project.priceUsd &&
-          <div className='detailed-price'>
-            <div className='detailed-price-description'>Today's changes</div>
-            <div className='detailed-price-usd'>
-              {formatNumber(Project.project.priceUsd, 'USD')}&nbsp;
-              {!Project.loading && Project.project &&
-                <PercentChanges changes={Project.project.percentChange24h} />}
-            </div>
-            {Project.project.priceBtc &&
-              <div className='detailed-price-btc'>
-                BTC {formatBTC(parseFloat(Project.project.priceBtc))}
-              </div>}
-          </div>}
-      </div>
+      <DetailedHeader {...Project} />
       {isDesktop
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
@@ -266,7 +228,7 @@ const enhance = compose(
     props: ({Project}) => ({
       Project: {
         loading: Project.loading,
-        empty: !!Project.project,
+        empty: !Project.hasOwnProperty('project'),
         error: Project.error,
         errorMessage: Project.error ? Project.error.message : '',
         project: Project.project

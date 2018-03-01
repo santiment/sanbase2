@@ -31,6 +31,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:description, :string)
     field(:token_decimals, :integer)
     field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
+    field(:related_posts, list_of(:post), resolve: dataloader(SanbaseRepo))
 
     field :market_segment, :string do
       resolve(&ProjectResolver.market_segment/3)

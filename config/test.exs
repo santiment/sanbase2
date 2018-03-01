@@ -63,6 +63,10 @@ config :sanbase, Sanbase.Prices.Store, database: "prices_test"
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Store, database: "etherscan_transactions_test"
 
+config :arc,
+  storage: Arc.Storage.Local,
+  storage_dir: "/tmp/sanbase/filestore-test/"
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

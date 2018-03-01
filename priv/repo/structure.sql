@@ -725,6 +725,39 @@ ALTER SEQUENCE polls_id_seq OWNED BY polls.id;
 
 
 --
+-- Name: post_images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE post_images (
+    id bigint NOT NULL,
+    file_name text,
+    image_url text NOT NULL,
+    content_hash text NOT NULL,
+    hash_algorithm text NOT NULL,
+    post_id bigint
+);
+
+
+--
+-- Name: post_images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE post_images_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: post_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE post_images_id_seq OWNED BY post_images.id;
+
+
+--
 -- Name: posts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -733,11 +766,13 @@ CREATE TABLE posts (
     poll_id bigint NOT NULL,
     user_id bigint NOT NULL,
     title character varying(255) NOT NULL,
-    link character varying(255) NOT NULL,
+    link text,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     state character varying(255),
-    moderation_comment character varying(255)
+    moderation_comment character varying(255),
+    short_desc text,
+    text text
 );
 
 
@@ -758,6 +793,36 @@ CREATE SEQUENCE posts_id_seq
 --
 
 ALTER SEQUENCE posts_id_seq OWNED BY posts.id;
+
+
+--
+-- Name: posts_projects; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE posts_projects (
+    id bigint NOT NULL,
+    post_id bigint,
+    project_id bigint
+);
+
+
+--
+-- Name: posts_projects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE posts_projects_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_projects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE posts_projects_id_seq OWNED BY posts_projects.id;
 
 
 --
@@ -1257,10 +1322,24 @@ ALTER TABLE ONLY polls ALTER COLUMN id SET DEFAULT nextval('polls_id_seq'::regcl
 
 
 --
+-- Name: post_images id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY post_images ALTER COLUMN id SET DEFAULT nextval('post_images_id_seq'::regclass);
+
+
+--
 -- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
+
+
+--
+-- Name: posts_projects id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts_projects ALTER COLUMN id SET DEFAULT nextval('posts_projects_id_seq'::regclass);
 
 
 --
@@ -1769,6 +1848,20 @@ CREATE UNIQUE INDEX polls_start_at_index ON polls USING btree (start_at);
 
 
 --
+-- Name: post_images_image_url_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX post_images_image_url_index ON post_images USING btree (image_url);
+
+
+--
+-- Name: posts_projects_post_id_project_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX posts_projects_post_id_project_id_index ON posts_projects USING btree (post_id, project_id);
+
+
+--
 -- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2059,11 +2152,35 @@ ALTER TABLE ONLY public.processed_github_archives
 
 
 --
+-- Name: post_images post_images_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY post_images
+    ADD CONSTRAINT post_images_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: posts posts_poll_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY posts
     ADD CONSTRAINT posts_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE;
+
+
+--
+-- Name: posts_projects posts_projects_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts_projects
+    ADD CONSTRAINT posts_projects_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts(id);
+
+
+--
+-- Name: posts_projects posts_projects_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts_projects
+    ADD CONSTRAINT posts_projects_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(id);
 
 
 --

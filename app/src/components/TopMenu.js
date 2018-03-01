@@ -1,18 +1,13 @@
 import React from 'react'
 import { withRouter } from 'react-router-dom'
-import { graphql } from 'react-apollo'
 import * as qs from 'query-string'
-import {
-  compose,
-  pure
-} from 'recompose'
+import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import 'font-awesome/css/font-awesome.css'
 import logo from '../assets/logo_sanbase.png'
 import AppMenu from './AppMenu'
-import allProjectsGQL from './../pages/allProjectsGQL'
 import AuthControl from './AuthControl'
-import Search from './Search'
+import Search from './SearchContainer'
 import './TopMenu.css'
 
 export const TopMenu = ({
@@ -21,7 +16,7 @@ export const TopMenu = ({
   logout,
   history,
   location,
-  projects
+  projects = []
  }) => {
   const qsData = qs.parse(location.search)
   return (
@@ -36,9 +31,7 @@ export const TopMenu = ({
             height='22'
             alt='SANbase' />
         </div>
-        <Search
-          onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
-          projects={projects} />
+        <Search />
       </div>
       <div className='right'>
         <AppMenu
@@ -75,37 +68,12 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const mapDataToProps = ({allProjects, ownProps}) => {
-  const projects = (allProjects.allProjects || [])
-    .filter(project => {
-      const defaultFilter = project.ethAddresses &&
-        project.ethAddresses.length > 0 &&
-        project.rank &&
-        project.volumeUsd > 0
-      return defaultFilter
-    })
-
-  return {
-    projects
-  }
-}
-
 const enhance = compose(
   connect(
     mapStateToProps,
     mapDispatchToProps
   ),
-  withRouter,
-  graphql(allProjectsGQL, {
-    name: 'allProjects',
-    props: mapDataToProps,
-    options: () => {
-      return {
-        errorPolicy: 'all'
-      }
-    }
-  }),
-  pure
+  withRouter
 )
 
 export default enhance(TopMenu)

@@ -6,11 +6,12 @@ import './Search.css'
 
 const resultRenderer = ({ name, ticker }) => {
   return (
-    <div>{name} ({ticker})</div>
+    <div id='search-result'>{name} ({ticker})</div>
   )
 }
 
 const CustomInput = <Input
+  id='search-input'
   iconPosition='left'
   placeholder='Search...' />
 

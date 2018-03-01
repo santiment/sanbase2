@@ -13,10 +13,6 @@
   padding-top: 0;
 }
 
-.detailed-project-about {
-  margin-bottom: 10px;
-}
-
 .datailed-project-description {
   font-size: 16px;
 }
@@ -29,6 +25,7 @@
 
 .detailed-name h1 {
   margin: 0;
+  margin-bottom: 0 !important;
   margin-right: 5px;
   font-size: 1.2em;
   letter-spacing: 0.5px;
@@ -208,7 +205,7 @@
 @media (min-width: 1024px) {
   .detailed-head {
     margin: 0 16px;
-    margin-bottom: 4px;
+    margin-bottom: 1em;
     flex-direction: row;
   }
 

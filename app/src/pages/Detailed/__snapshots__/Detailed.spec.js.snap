@@ -15,45 +15,7 @@ exports[`Project detail page container it should render correctly 1`] = `
 <div
   className="page detailed"
 >
-  <SearchPanel
-    onSelectProject={[Function]}
-    projects={
-      Array [
-        Object {
-          "balance": "41994.09",
-          "id": 12,
-          "logo_url": "aeternity.png",
-          "market_cap_usd": "133759577.0",
-          "name": "Aeternity",
-          "ticker": "AE",
-          "wallets": Array [
-            Object {
-              "address": "0x15c19E6c203E2c34D1EDFb26626bfc4F65eF96F0",
-              "balance": "41994.09",
-              "last_outgoing": null,
-              "tx_out": null,
-            },
-          ],
-        },
-        Object {
-          "balance": "264617.29",
-          "id": 15,
-          "logo_url": "aragon.png",
-          "market_cap_usd": "66649211.0",
-          "name": "Aragon",
-          "ticker": "ANT",
-          "wallets": Array [
-            Object {
-              "address": "0xcafE1A77e84698c83CA8931F54A755176eF75f2C",
-              "balance": "264617.29",
-              "last_outgoing": null,
-              "tx_out": null,
-            },
-          ],
-        },
-      ]
-    }
-  />
+  <withRouter(Apollo(SearchContainer)) />
   <FadeIn
     as="div"
     backfaceVisible="visible"
@@ -75,16 +37,16 @@ exports[`Project detail page container it should render correctly 1`] = `
           className="detailed-name"
         >
           <h1>
-            Aragon
+            Aragorn
           </h1>
           <ProjectIcon
-            name="Aragon"
+            name="Aragorn"
             size={24}
           />
           <div
             className="detailed-ticker-name"
           >
-            ANT
+            AE
           </div>
         </div>
       </div>
@@ -103,29 +65,7 @@ exports[`Project detail page container it should render correctly 1`] = `
            
           <Component />
         </div>
-        <Component>
-          <div
-            className="detailed-price-btc"
-          >
-            BTC 
-            NaN
-          </div>
-        </Component>
       </div>
-      <Component>
-        <div
-          className="detailed-buttons"
-        >
-          <button
-            className="add-to-dashboard"
-          >
-            <i
-              className="fa fa-plus"
-            />
-              Add to Dashboard
-          </button>
-        </div>
-      </Component>
     </div>
     <div>
       <withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))
@@ -153,7 +93,7 @@ exports[`Project detail page container it should render correctly 1`] = `
             },
           }
         }
-        ticker="ANT"
+        ticker="AE"
         transactionVolume={
           Object {
             "error": false,
@@ -176,36 +116,6 @@ exports[`Project detail page container it should render correctly 1`] = `
           }
         }
       />
-    </div>
-    <div
-      className="information"
-    >
-      <PanelBlock
-        isUnauthorized={true}
-        title="General Info"
-      >
-        <GeneralInfoBlock
-          priceUsd={10}
-        />
-      </PanelBlock>
-      <PanelBlock
-        isUnauthorized={true}
-        title="Financials"
-      >
-        <FinancialsBlock
-          priceUsd={10}
-          wallets={
-            Array [
-              Object {
-                "address": "0xcafE1A77e84698c83CA8931F54A755176eF75f2C",
-                "balance": "264617.29",
-                "last_outgoing": null,
-                "tx_out": null,
-              },
-            ]
-          }
-        />
-      </PanelBlock>
     </div>
   </FadeIn>
 </div>

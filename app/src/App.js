@@ -22,7 +22,7 @@ import PageLoader from './components/PageLoader'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
-  loader: () => import('./pages/Detailed'),
+  loader: () => import('./pages/Detailed/Detailed'),
   loading: () => (
     <PageLoader />
   )

@@ -12,7 +12,7 @@ import Filters, {
   DEFAULT_SORT_BY,
   DEFAULT_FILTER_BY
 } from './Projects/Filters'
-import allProjectsGQL from './allProjectsGQL'
+import allProjectsGQL from './Projects/allProjectsGQL'
 import './CashflowMobile.css'
 
 const CashflowMobile = ({

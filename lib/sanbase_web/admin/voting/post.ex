@@ -7,7 +7,9 @@ defmodule Sanbase.ExAdmin.Voting.Post do
     form post do
       inputs do
         input(post, :title)
+        input(post, :short_desc)
         input(post, :link)
+        input(post, :text)
         input(post, :state, collection: [Post.approved_state(), Post.declined_state()])
         input(post, :moderation_comment)
       end

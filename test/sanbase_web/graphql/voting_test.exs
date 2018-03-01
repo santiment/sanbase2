@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
-        link: "http://example.com",
+        text: "http://example.com",
         state: Post.approved_state()
       }
       |> Repo.insert!()
@@ -106,7 +106,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
-        link: "http://example.com",
+        text: "http://example.com",
         state: Post.approved_state()
       }
       |> Repo.insert!()
@@ -144,7 +144,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
-        link: "http://example.com",
+        text: "Example MD text of the analysis",
         state: Post.approved_state()
       }
       |> Repo.insert!()
@@ -178,7 +178,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
-        link: "http://example.com",
+        text: "Some text here",
         state: Post.approved_state()
       }
       |> Repo.insert!()
@@ -206,21 +206,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
   end
 
   test "adding a new post to the current poll", %{user: user, conn: conn} do
-    query = """
-    mutation {
-      createPost(title: "Awesome post", link: "http://example.com") {
-        id,
-        title,
-        link,
-        user {
-          id
-        },
-        totalSanVotes,
-        state,
-        createdAt
-      }
-    }
-    """
+    query = create_post_query("Awesome post", "http://example.com")
 
     result =
       conn
@@ -245,7 +231,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
 
     query = """
     mutation {
-      createPost(title: "#{long_title}", link: "http://example.com") {
+      createPost(title: "#{long_title}", text: "http://example.com") {
         id,
         title
       }
@@ -267,7 +253,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
-        link: "http://example.com",
+        text: "Another example of MD text of the analysis",
         state: Post.approved_state()
       }
       |> Repo.insert!()
@@ -304,7 +290,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         poll_id: poll.id,
         user_id: other_user.id,
         title: "Awesome analysis",
-        link: "http://example.com",
+        text: "Text in body",
         state: Post.approved_state()
       }
       |> Repo.insert!()
@@ -325,5 +311,25 @@ defmodule SanbaseWeb.Graphql.VotingTest do
 
     assert data["errors"] != nil
     assert data["data"]["deletePost"] == nil
+  end
+
+  # Helper functions
+
+  defp create_post_query(title, text) do
+    """
+    mutation {
+      createPost(title: "#{title}", text: "#{text}") {
+        id,
+        title,
+        text,
+        user {
+          id
+        },
+        totalSanVotes,
+        state,
+        createdAt
+      }
+    }
+    """
   end
 end

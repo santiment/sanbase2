@@ -16,6 +16,8 @@ defmodule Sanbase.Model.Project do
     ProjectTransparencyStatus
   }
 
+  alias Sanbase.Voting.Post
+
   import Ecto.Query
 
   schema "project" do
@@ -56,6 +58,8 @@ defmodule Sanbase.Model.Project do
     )
 
     has_many(:icos, Ico)
+
+    many_to_many(:related_posts, Post, join_through: "posts_projects")
   end
 
   @doc false

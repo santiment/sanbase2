@@ -15,13 +15,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     {:ok, poll}
   end
 
+  def post(_root, %{id: post_id}, _resolution) do
+    case Repo.get(Post, post_id) do
+      nil -> {:error, "There is no post with id #{post_id}"}
+      post -> {:ok, post}
+    end
+  end
+
   def total_san_votes(%Post{} = post, _args, _context) do
     total_san_votes =
       post
       |> Repo.preload(votes: [user: :eth_accounts])
       |> Map.get(:votes)
-      |> Enum.map(&Map.get(&1, :user))
-      |> Enum.map(&User.san_balance!/1)
+      |> Stream.map(&Map.get(&1, :user))
+      |> Stream.map(&User.san_balance!/1)
       |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
     {:ok, Decimal.div(total_san_votes, Ethauth.san_token_decimals())}
@@ -76,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     |> Repo.insert()
     |> case do
       {:ok, post} ->
-        {:ok, post |> Repo.preload([:votes, :user])}
+        {:ok, post}
 
       {:error, changeset} ->
         {
@@ -91,11 +98,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
       }) do
     case Repo.get(Post, post_id) do
       %Post{user_id: ^user_id} = post ->
-        Repo.delete(post)
-        {:ok, post}
+        # Delete the images from the S3/Local store.
+        delete_post_images(post)
 
-      post ->
-        {:error, "You don't own post #{post.id}"}
+        # Note: When ecto changeset middleware is implemented return just `Repo.delete(post)`
+        case Repo.delete(post) do
+          {:ok, post} ->
+            {:ok, post}
+
+          {:error, changeset} ->
+            {
+              :error,
+              message: "Can't delete post with id #{post_id}",
+              details: Helpers.error_details(changeset)
+            }
+        end
+
+      _post ->
+        {:error, "You don't own the post with id #{post_id}"}
     end
+  end
+
+  # Helper functions
+
+  defp delete_post_images(%Post{} = post) do
+    extract_image_url_from_post(post)
+    |> Enum.map(&Sanbase.FileStore.delete/1)
+  end
+
+  defp extract_image_url_from_post(%Post{} = post) do
+    post
+    |> Repo.preload(:images)
+    |> Map.get(:images, [])
+    |> Enum.map(fn %{image_url: image_url} -> image_url end)
   end
 end

@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.SanbaseRepo do
   alias Sanbase.Repo
   alias Sanbase.Model.{ProjectEthAddress, ProjectBtcAddress}
+  alias Sanbase.Voting.Post
 
   import Ecto.Query
 
@@ -16,6 +17,11 @@ defmodule SanbaseWeb.Graphql.SanbaseRepo do
   def query(ProjectBtcAddress, _params) do
     ProjectBtcAddress
     |> preload([:latest_btc_wallet_data])
+  end
+
+  def query(Post, _params) do
+    Post
+    |> preload([:votes])
   end
 
   def query(queryable, _params) do

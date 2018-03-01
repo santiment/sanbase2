@@ -219,6 +219,12 @@ config :sanbase, Sanbase.MandrillApi,
 
 config :sanbase, Sanbase.TechIndicators, url: {:system, "TECH_INDICATORS_URL"}
 
+config :arc,
+  storage: Arc.Storage.S3,
+  # To support AWS regions other than US Standard
+  virtual_host: true,
+  bucket: {:system, "POSTS_IMAGE_BUCKET", "sanbase-images"}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

@@ -16,7 +16,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   @approximation_window 14
   @comparison_window 7
-  @price_volume_diff_threshold 0.1
+  @price_volume_diff_threshold 0.2
 
   def exec(project, currency) do
     currency = String.upcase(currency)
@@ -107,7 +107,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       content:
         "#{name}: #{ticker}/#{String.upcase(currency)} #{notification_emoji(price_change)} Price #{
           notification_emoji(volume_change)
-        } Volume. https://coinmarketcap.com/currencies/#{coinmarketcap_id}",
+        } Volume opposite trends. https://coinmarketcap.com/currencies/#{coinmarketcap_id}",
       username: "Price-Volume Difference"
     })
   end

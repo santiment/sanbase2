@@ -111,7 +111,8 @@ const mapDataToProps = ({allProjects, ownProps}) => {
     .filter(project => {
       const defaultFilter = project.ethAddresses &&
         project.ethAddresses.length > 0 &&
-        project.rank
+        project.rank &&
+        project.volumeUsd > 0
       return defaultFilter
     })
 

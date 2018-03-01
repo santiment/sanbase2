@@ -174,61 +174,59 @@ export const Detailed = ({
   return (
     <div className='page detailed'>
       {!isDesktop && <Search />}
-      <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
-        <div className='detailed-head'>
-          <div className='detailed-project-about'>
-            <div className='detailed-name'>
-              <h1>{project.name}</h1>
-              <ProjectIcon
-                name={project.name}
-                size={24} />
-              <div className='detailed-ticker-name'>
-                {project.ticker.toUpperCase()}
-              </div>
+      <div className='detailed-head'>
+        <div className='detailed-project-about'>
+          <div className='detailed-name'>
+            <h1>{project.name}</h1>
+            <ProjectIcon
+              name={project.name}
+              size={24} />
+            <div className='detailed-ticker-name'>
+              {project.ticker.toUpperCase()}
             </div>
-            {(Project.project || {}).description &&
-              <div className='datailed-project-description'>
-                {Project.project.description}
-              </div>}
           </div>
-
-          {!Project.loading && Project.project.priceUsd &&
-            <div className='detailed-price'>
-              <div className='detailed-price-description'>Today's changes</div>
-              <div className='detailed-price-usd'>
-                {formatNumber(Project.project.priceUsd, 'USD')}&nbsp;
-                {!Project.loading && Project.project &&
-                  <PercentChanges changes={Project.project.percentChange24h} />}
-              </div>
-              {Project.project.priceBtc &&
-                <div className='detailed-price-btc'>
-                  BTC {formatBTC(parseFloat(Project.project.priceBtc))}
-                </div>}
+          {(Project.project || {}).description &&
+            <div className='datailed-project-description'>
+              {Project.project.description}
             </div>}
         </div>
-        {isDesktop
-          ? <Panel zero>{projectContainerChart}</Panel>
-          : <div>{projectContainerChart}</div>}
-        {
-        //<div className='information'>
-          //<PanelBlock
-            //isUnauthorized={generalInfo.isUnauthorized}
-            //isLoading={generalInfo.isLoading}
-            //title='General Info'>
-            //<GeneralInfoBlock {...generalInfo.project} />
-          //</PanelBlock>
-          //<PanelBlock
-            //isUnauthorized={generalInfo.isUnauthorized}
-            //isLoading={generalInfo.isLoading}
-            //title='Financials'>
-            //<FinancialsBlock
-              //ethPrice={project.ethPrice}
-              //wallets={project.wallets}
-              //{...generalInfo.project} />
-          //</PanelBlock>
-        //</div>
-        }
-      </FadeIn>
+
+        {!Project.loading && Project.project.priceUsd &&
+          <div className='detailed-price'>
+            <div className='detailed-price-description'>Today's changes</div>
+            <div className='detailed-price-usd'>
+              {formatNumber(Project.project.priceUsd, 'USD')}&nbsp;
+              {!Project.loading && Project.project &&
+                <PercentChanges changes={Project.project.percentChange24h} />}
+            </div>
+            {Project.project.priceBtc &&
+              <div className='detailed-price-btc'>
+                BTC {formatBTC(parseFloat(Project.project.priceBtc))}
+              </div>}
+          </div>}
+      </div>
+      {isDesktop
+        ? <Panel zero>{projectContainerChart}</Panel>
+        : <div>{projectContainerChart}</div>}
+      {
+      //<div className='information'>
+        //<PanelBlock
+          //isUnauthorized={generalInfo.isUnauthorized}
+          //isLoading={generalInfo.isLoading}
+          //title='General Info'>
+          //<GeneralInfoBlock {...generalInfo.project} />
+        //</PanelBlock>
+        //<PanelBlock
+          //isUnauthorized={generalInfo.isUnauthorized}
+          //isLoading={generalInfo.isLoading}
+          //title='Financials'>
+          //<FinancialsBlock
+            //ethPrice={project.ethPrice}
+            //wallets={project.wallets}
+            //{...generalInfo.project} />
+        //</PanelBlock>
+      //</div>
+      }
     </div>
   )
 }

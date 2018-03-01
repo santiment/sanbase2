@@ -13,7 +13,7 @@ import { millify } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
 import Panel from './../components/Panel'
-import allProjectsGQL from './allProjectsGQL'
+import allProjectsGQL from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
 

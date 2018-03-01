@@ -21,7 +21,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   def exec(project, currency) do
     currency = String.upcase(currency)
 
-    if notifications_enabled?() and
+    if notifications_enabled?() &&
          not Utils.recent_notification?(
            project,
            seconds_ago(@cooldown_period_in_sec),

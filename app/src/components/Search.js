@@ -67,7 +67,7 @@ class SearchPanel extends Component {
       <div className='search-panel'>
         <Search
           key={'search'}
-          loading={this.state.isLoading}
+          loading={this.state.isLoading || this.props.loading}
           onResultSelect={this.handleResultSelect}
           onSearchChange={this.handleSearchChange}
           results={this.state.results}

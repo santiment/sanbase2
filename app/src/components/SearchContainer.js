@@ -10,7 +10,13 @@ const SearchContainer = ({
   projects = []
 }) => {
   if (projects.length === 0) {
-    return ('Loading...')
+    return (
+      <Search
+        loading
+        onSelectProject={() => {}}
+        projects={[]}
+      />
+    )
   }
   return (
     <Search

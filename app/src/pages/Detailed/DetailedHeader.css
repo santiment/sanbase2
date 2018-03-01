@@ -1,0 +1,39 @@
+@keyframes skeletonAnimation {
+  0% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 0.8;
+  }
+}
+
+.pending-header {
+  color: white;
+  background-color: white;
+  animation-name: skeletonAnimation;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+.detailed-ticker-name.pending-header {
+  margin-bottom: 5px;
+  border-radius: 40px;
+  min-width: 20px;
+  height: 20px;
+}
+
+.datailed-project-description.pending-header.pending-div {
+  margin-top: 5px;
+}
+
+.pending-h1 {
+  height: 1em;
+  font-size: 28px !important;
+  margin-bottom: 5px;
+}

@@ -14,9 +14,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
     hash_algorithm = :sha256
 
     image_data =
-      for arg <- images, into: [] do
+      for %{filename: file_name} = arg <- images, into: [] do
+        arg = %{arg | filename: milliseconds_str() <> "_" <> file_name}
         content_hash = image_content_hash!(arg, hash_algorithm)
+
         {:ok, file_name} = FileStore.store({arg, content_hash})
+
         image_url = FileStore.url({file_name, content_hash})
 
         %{
@@ -51,5 +54,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
       |> PostImage.changeset(Map.put(image, :post_id, nil))
       |> Sanbase.Repo.insert!()
     end)
+  end
+
+  defp milliseconds_str() do
+    DateTime.utc_now()
+    |> DateTime.to_unix(:milliseconds)
+    |> Integer.to_string()
   end
 end

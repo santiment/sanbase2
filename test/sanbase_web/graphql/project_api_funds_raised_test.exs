@@ -129,12 +129,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
              }
   end
 
-  test "fetch project full funds raised", context do
+  test "fetch project funds raised", context do
     project_id = setup()
 
     query = """
     {
-      projectFull(id: $id) {
+      project(id: $id) {
         name,
         fundsRaisedUsdIcoEndPrice,
         fundsRaisedEthIcoEndPrice,
@@ -154,10 +154,10 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       |> put_req_header("authorization", get_authorization_header())
       |> post(
         "/graphql",
-        query_skeleton(query, "projectFull", "($id:ID!)", "{\"id\": #{project_id}}")
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
       )
 
-    assert json_response(result, 200)["data"]["projectFull"] ==
+    assert json_response(result, 200)["data"]["project"] ==
              %{
                "name" => "Project",
                "fundsRaisedUsdIcoEndPrice" => "1200",

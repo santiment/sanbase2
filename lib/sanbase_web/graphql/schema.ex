@@ -53,6 +53,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.current_user/3)
     end
 
+    @desc "Fetch all projects or only those in project transparency based on the argument"
     field :all_projects, list_of(:project) do
       arg(:only_project_transparency, :boolean)
 
@@ -60,28 +61,19 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&ProjectResolver.all_projects/3)
     end
 
+    @desc "Fetch all project transparency projects. Requires basic authentication"
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)
-
-      middleware(ProjectPermissions)
       resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
     end
 
+    @desc "Fetch a project by its ID"
     field :project, :project do
       arg(:id, non_null(:id))
       # this is to filter the wallets
       arg(:only_project_transparency, :boolean)
 
       middleware(ProjectPermissions)
-      resolve(&ProjectResolver.project/3)
-    end
-
-    field :project_full, :project do
-      arg(:id, non_null(:id))
-      # this is to filter the wallets
-      arg(:only_project_transparency, :boolean)
-
-      middleware(MultipleAuth, [BasicAuth, JWTAuth])
       resolve(&ProjectResolver.project/3)
     end
 

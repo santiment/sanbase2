@@ -48,7 +48,7 @@ describe('Detailed page', () => {
 
   it('Search should works correctly', async () => {
     await page.goto('http://localhost:3000/projects/eos')
-    await page.waitForSelector('#search-input')
+    await page.waitForSelector('.search-data-loaded')
     await page.focus('#search-input')
     await page.keyboard.type('san')
     await page.waitForSelector('#search-result')
@@ -58,7 +58,6 @@ describe('Detailed page', () => {
     })
     expect(searchResult).toBe('Santiment Network Token (SAN)')
     await page.screenshot({path: '.screenshots/eos-detailed-page-desktop.png'})
-
     await page.keyboard.press('Enter')
     await page.waitFor(4000)
     await page.screenshot({path: '.screenshots/san-detailed-page-desktop.png'})

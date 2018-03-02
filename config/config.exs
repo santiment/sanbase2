@@ -172,6 +172,7 @@ config :sanbase, Sanbase.Notifications.CheckPrices,
 
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: {:system, "PRICE_VOLUME_DIFF_WEBHOOK_URL"},
+  notification_threshold: {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_THRESHOLD"},
   notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}
 
 config :sanbase, SanbaseWeb.Guardian,

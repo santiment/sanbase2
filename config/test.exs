@@ -42,6 +42,7 @@ config :sanbase, Sanbase.Notifications.CheckPrices,
 
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: "http://example.com/webhook_url",
+  notification_threshold: "0.1",
   notifications_enabled: true
 
 config :sanbase, Sanbase.Github.Store, database: "github_activity_test"

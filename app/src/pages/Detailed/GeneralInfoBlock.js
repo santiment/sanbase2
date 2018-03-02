@@ -1,5 +1,5 @@
 import React from 'react'
-import { formatNumber } from '../utils/formatting'
+import { formatNumber } from '../../utils/formatting'
 import './GeneralInfoBlock.css'
 
 const GeneralInfoBlock = ({

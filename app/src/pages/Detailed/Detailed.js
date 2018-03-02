@@ -9,8 +9,8 @@ import moment from 'moment'
 import { Redirect } from 'react-router-dom'
 import { graphql, withApollo } from 'react-apollo'
 import PanelBlock from './../../components/PanelBlock'
-import GeneralInfoBlock from './../../components/GeneralInfoBlock'
-import FinancialsBlock from './../../components/FinancialsBlock'
+import GeneralInfoBlock from './GeneralInfoBlock'
+import FinancialsBlock from './FinancialsBlock'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
@@ -170,25 +170,18 @@ export const Detailed = ({
       {isDesktop
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
-      {
-      //<div className='information'>
-        //<PanelBlock
-          //isUnauthorized={generalInfo.isUnauthorized}
-          //isLoading={generalInfo.isLoading}
-          //title='General Info'>
-          //<GeneralInfoBlock {...generalInfo.project} />
-        //</PanelBlock>
-        //<PanelBlock
-          //isUnauthorized={generalInfo.isUnauthorized}
-          //isLoading={generalInfo.isLoading}
-          //title='Financials'>
-          //<FinancialsBlock
-            //ethPrice={project.ethPrice}
-            //wallets={project.wallets}
-            //{...generalInfo.project} />
-        //</PanelBlock>
-      //</div>
-      }
+      <div className='information'>
+        <PanelBlock
+          isLoading={Project.loading}
+          title='General Info'>
+          <GeneralInfoBlock {...Project.project} />
+        </PanelBlock>
+        <PanelBlock
+          isLoading={Project.loading}
+          title='Financials'>
+          <FinancialsBlock {...Project.project} />
+        </PanelBlock>
+      </div>
     </div>
   )
 }

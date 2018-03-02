@@ -27,6 +27,7 @@ export const projectGQL = gql`
       priceBtc,
       volumeUsd,
       ethBalance,
+      ethSpent,
       marketcapUsd,
       tokenDecimals,
       rank,

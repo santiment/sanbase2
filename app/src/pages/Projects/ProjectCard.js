@@ -164,7 +164,7 @@ const ProjectCard = ({
             name='ETH Spent 30d'
             value={ethSpent
               ? `ETH ${millify(parseFloat(parseFloat(ethSpent).toFixed(2)))}`
-              : '---'}
+              : 0}
             disabled={!ethSpent} />
           <StatisticElement
             name='Dev Activity 30d'

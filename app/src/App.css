@@ -86,6 +86,25 @@
   color: #d3d3d3;
 }
 
+@supports (--css: variables) {
+  :root {
+    --progress-bg-color: #d3d3d3;
+  }
+
+  #nprogress .bar {
+    background: var(--progress-bg-color);
+  }
+
+  #nprogress .peg {
+    box-shadow: 0 0 10px var(--progress-bg-color), 0 0 5px var(--progress-bg-color);
+  }
+
+  #nprogress .spinner-icon {
+    border-top-color: var(--progress-bg-color);
+    border-left-color: var(--progress-bg-color);
+  }
+}
+
 @media (min-width: 1024px) {
   .App .page {
     margin: 0 auto;

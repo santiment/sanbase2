@@ -16,12 +16,11 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   @approximation_window 14
   @comparison_window 7
-  @price_volume_diff_threshold 0.2
 
   def exec(project, currency) do
     currency = String.upcase(currency)
 
-    if notifications_enabled?() &&
+    if notifications_enabled?() && notification_threshold() &&
          not Utils.recent_notification?(
            project,
            seconds_ago(@cooldown_period_in_sec),
@@ -73,7 +72,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   end
 
   defp check_notification(%{price_volume_diff: price_volume_diff}) do
-    Decimal.cmp(price_volume_diff, Decimal.new(@price_volume_diff_threshold))
+    Decimal.cmp(price_volume_diff, notification_threshold())
     |> case do
       :lt -> false
       _ -> true
@@ -126,6 +125,14 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp webhook_url() do
     Config.get(:webhook_url)
+  end
+
+  defp notification_threshold() do
+    Config.get(:notification_threshold)
+    |> case do
+      nil -> nil
+      threshold -> Decimal.new(threshold)
+    end
   end
 
   defp notifications_enabled?() do

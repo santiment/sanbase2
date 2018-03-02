@@ -223,7 +223,7 @@ config :arc,
   storage: Arc.Storage.S3,
   # To support AWS regions other than US Standard
   virtual_host: true,
-  bucket: {:system, "POSTS_IMAGE_BUCKET", "sanbase-images"}
+  bucket: {:system, "POSTS_IMAGE_BUCKET"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

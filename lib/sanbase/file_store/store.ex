@@ -18,7 +18,6 @@ defmodule Sanbase.FileStore do
   """
   def filename(_version, {file, scope}) do
     file_name = Path.basename(file.file_name, Path.extname(file.file_name))
-    timestamp = DateTime.utc_now() |> DateTime.to_unix(:milliseconds)
-    "#{scope}_#{timestamp}_#{file_name}"
+    "#{scope}_#{file_name}"
   end
 end

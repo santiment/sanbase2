@@ -56,7 +56,8 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
-        text: "http://example.com",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
         state: Post.approved_state()
       }
       |> Repo.insert!()
@@ -106,7 +107,8 @@ defmodule SanbaseWeb.Graphql.VotingTest do
         poll_id: poll.id,
         user_id: user.id,
         title: "Awesome analysis",
-        text: "http://example.com",
+        link: "http://example.com",
+        text: "Text of the post",
         state: Post.approved_state()
       }
       |> Repo.insert!()
@@ -206,7 +208,21 @@ defmodule SanbaseWeb.Graphql.VotingTest do
   end
 
   test "adding a new post to the current poll", %{user: user, conn: conn} do
-    query = create_post_query("Awesome post", "http://example.com")
+    query = """
+    mutation {
+      createPost(title: "Awesome post", text: "Example body") {
+        id,
+        title,
+        text,
+        user {
+          id
+        },
+        totalSanVotes,
+        state,
+        createdAt
+      }
+    }
+    """
 
     result =
       conn
@@ -217,8 +233,9 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert sanbasePost["id"] != nil
     assert sanbasePost["title"] == "Awesome post"
     assert sanbasePost["state"] == nil
-    assert sanbasePost["user"]["id"] == Integer.to_string(user.id)
-    assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
+    assert sanbasePost["user"]["id"] == user.id |> Integer.to_string()
+    {total_san_votes, _after_decimal_point} = sanbasePost["totalSanVotes"] |> Integer.parse()
+    assert total_san_votes == 0
 
     createdAt = Timex.parse!(sanbasePost["createdAt"], "{ISO:Extended}")
 
@@ -231,7 +248,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
 
     query = """
     mutation {
-      createPost(title: "#{long_title}", text: "http://example.com") {
+      createPost(title: "#{long_title}", text: "This is the body of the post") {
         id,
         title
       }
@@ -313,23 +330,85 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert data["data"]["deletePost"] == nil
   end
 
-  # Helper functions
+  @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
+  test "create post with image and retrieve the image hash and url", %{conn: conn} do
+    image_url = upload_image(conn)
 
-  defp create_post_query(title, text) do
-    """
+    mutation = """
     mutation {
-      createPost(title: "#{title}", text: "#{text}") {
-        id,
-        title,
-        text,
-        user {
-          id
-        },
-        totalSanVotes,
-        state,
-        createdAt
+      createPost(title: "Awesome post", text: "Example body", imageUrls: ["#{image_url}"]) {
+        images{
+          imageUrl
+          contentHash
+        }
       }
     }
     """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [image] = json_response(result, 200)["data"]["createPost"]["images"]
+
+    assert image["imageUrl"] == image_url
+    assert image["contentHash"] == @test_file_hash
+
+    # assert that the file exists
+    assert true == File.exists?(image_url)
+  end
+
+  test "cannot reuse images", %{conn: conn} do
+    image_url = upload_image(conn)
+
+    mutation = """
+    mutation {
+      createPost(title: "Awesome post", text: "Example body", imageUrls: ["#{image_url}"]) {
+        images{
+          imageUrl
+          contentHash
+        }
+      }
+    }
+    """
+
+    _ =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    result2 =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [error] = json_response(result2, 200)["errors"]
+    assert String.contains?(error["details"]["images"] |> hd, "already used")
+  end
+
+  # Helper functions
+
+  @test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image.png"
+  defp upload_image(conn) do
+    mutation = """
+      mutation {
+        uploadImage(images: ["img"]){
+          fileName
+          contentHash,
+          imageUrl
+        }
+      }
+    """
+
+    upload = %Plug.Upload{
+      content_type: "application/octet-stream",
+      filename: "image.png",
+      path: @test_file_path
+    }
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => mutation, "img" => upload})
+
+    [imageData] = json_response(result, 200)["data"]["uploadImage"]
+    imageData["imageUrl"]
   end
 end

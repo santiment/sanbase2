@@ -11,8 +11,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   @http_service Mockery.of("HTTPoison")
 
   @notification_type_name "price_volume_diff"
-  # 60 minutes
-  @cooldown_period_in_sec 60 * 60
 
   @approximation_window 14
   @comparison_window 7
@@ -20,10 +18,10 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   def exec(project, currency) do
     currency = String.upcase(currency)
 
-    if notifications_enabled?() && notification_threshold() &&
+    if notifications_enabled?() &&
          not Utils.recent_notification?(
            project,
-           seconds_ago(@cooldown_period_in_sec),
+           seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
          ) do
       indicator = get_indicator(project.ticker, currency)
@@ -129,10 +127,15 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp notification_threshold() do
     Config.get(:notification_threshold)
-    |> case do
-      nil -> nil
-      threshold -> Decimal.new(threshold)
-    end
+    |> Decimal.new()
+  end
+
+  defp notifications_cooldown() do
+    {res, _} =
+      Config.get(:notifications_cooldown)
+      |> Integer.parse()
+
+    res
   end
 
   defp notifications_enabled?() do

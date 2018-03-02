@@ -125,12 +125,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
              }
   end
 
-  test "fetch project full funds raised", context do
+  test "fetch project funds raised", context do
     project_id = setup()
 
     query = """
     {
-      projectFull(id: $id) {
+      project(id: $id) {
         name,
         fundsRaisedUsdIcoEndPrice,
         fundsRaisedEthIcoEndPrice,

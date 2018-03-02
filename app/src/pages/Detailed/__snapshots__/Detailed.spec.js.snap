@@ -76,5 +76,29 @@ exports[`Project detail page container it should render correctly 1`] = `
       }
     />
   </div>
+  <div
+    className="information"
+  >
+    <PanelBlock
+      title="General Info"
+    >
+      <GeneralInfoBlock
+        id={12}
+        name="Aragorn"
+        priceUsd={10}
+        ticker="AE"
+      />
+    </PanelBlock>
+    <PanelBlock
+      title="Financials"
+    >
+      <FinancialsBlock
+        id={12}
+        name="Aragorn"
+        priceUsd={10}
+        ticker="AE"
+      />
+    </PanelBlock>
+  </div>
 </div>
 `;

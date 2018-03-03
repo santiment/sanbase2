@@ -259,6 +259,10 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     res
   end
 
+  defp debug_url() do
+    Config.get(:debug_url)
+  end
+
   defp notifications_enabled?() do
     Config.get(:notifications_enabled)
   end

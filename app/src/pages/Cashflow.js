@@ -12,8 +12,9 @@ import { formatNumber } from '../utils/formatting'
 import { millify } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
+import { getProjects } from './Projects/projectSelectors'
 import Panel from './../components/Panel'
-import allProjectsGQL from './allProjectsGQL'
+import allProjectsGQL from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
 
@@ -287,7 +288,7 @@ export const Cashflow = ({
 
   return (
     <div className='page cashflow'>
-      <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
+      <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
           <h1>Projects</h1>
           <p>
@@ -399,14 +400,7 @@ const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = (allProjects.allProjects || [])
-    .filter(project => {
-      const defaultFilter = project.ethAddresses &&
-        project.ethAddresses.length > 0 &&
-        project.rank &&
-        project.volumeUsd > 0
-      return defaultFilter
-    })
+  const projects = getProjects(allProjects.allProjects)
 
   const isEmpty = projects.length === 0
   return {

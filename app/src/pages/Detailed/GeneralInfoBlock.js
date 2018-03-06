@@ -1,6 +1,5 @@
 import React from 'react'
-import { formatNumber } from '../utils/formatting'
-import { HiddenElements } from '../pages/Detailed'
+import { formatNumber } from '../../utils/formatting'
 import './GeneralInfoBlock.css'
 
 const GeneralInfoBlock = ({
@@ -64,12 +63,6 @@ const GeneralInfoBlock = ({
       </div>
       <div>
         {formatNumber(volumeUsd, 'USD')}
-        <HiddenElements>
-          <span className='diff down'>
-            <i className='fa fa-caret-down' />
-            &nbsp; 8.87%
-          </span>
-        </HiddenElements>
       </div>
     </div>
     <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>

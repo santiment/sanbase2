@@ -18,16 +18,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
         arg = %{arg | filename: milliseconds_str() <> "_" <> file_name}
         content_hash = image_content_hash!(arg, hash_algorithm)
 
-        {:ok, file_name} = FileStore.store({arg, content_hash})
+        with {:ok, file_name} <- FileStore.store({arg, content_hash}) do
+          image_url = FileStore.url({file_name, content_hash})
 
-        image_url = FileStore.url({file_name, content_hash})
-
-        %{
-          file_name: file_name,
-          image_url: image_url,
-          content_hash: content_hash,
-          hash_algorithm: hash_algorithm |> Atom.to_string()
-        }
+          %{
+            file_name: file_name,
+            image_url: image_url,
+            content_hash: content_hash,
+            hash_algorithm: hash_algorithm |> Atom.to_string()
+          }
+        else
+          {:error, error} ->
+            %{
+              file_name: file_name,
+              error: error
+            }
+        end
       end
 
     save_images_pg(image_data)
@@ -48,12 +54,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
   end
 
   defp save_images_pg(images) do
-    images
-    |> Enum.map(fn image ->
+    for {:ok, image} <- images do
       %PostImage{}
       |> PostImage.changeset(Map.put(image, :post_id, nil))
       |> Sanbase.Repo.insert!()
-    end)
+    end
   end
 
   defp milliseconds_str() do

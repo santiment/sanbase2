@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+- 2018-06-03 | v.0.5:
+
+  Added more projects
+  Added mobile friendly views
+  New styles
+
 - 2018-06-02 | v.0.4.1:
 
   Added cashflow UG link for missing wallets

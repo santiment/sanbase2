@@ -6,11 +6,12 @@ import './Search.css'
 
 const resultRenderer = ({ name, ticker }) => {
   return (
-    <div>{name} ({ticker})</div>
+    <div id='search-result'>{name} ({ticker})</div>
   )
 }
 
 const CustomInput = <Input
+  id='search-input'
   iconPosition='left'
   placeholder='Search...' />
 
@@ -65,8 +66,9 @@ class SearchPanel extends Component {
     return (
       <div className='search-panel'>
         <Search
+          className={this.props.loading ? '' : 'search-data-loaded'}
           key={'search'}
-          loading={this.state.isLoading}
+          loading={this.state.isLoading || this.props.loading}
           onResultSelect={this.handleResultSelect}
           onSearchChange={this.handleSearchChange}
           results={this.state.results}

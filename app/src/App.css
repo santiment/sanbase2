@@ -49,18 +49,18 @@
   flex: 1;
   padding: 0 15px;
   max-width: 1024px;
-  overflow-y: auto;
-  overflow: scroll;
-  -webkit-overflow-scrolling: touch;
-}
-
-.App .page::-webkit-scrollbar {
-  display: none;
 }
 
 @media (max-width: 767px) {
   .App .page {
     padding: 0 15px;
+    overflow-y: auto;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .App .page::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -84,6 +84,25 @@
 
 .fa-disabled {
   color: #d3d3d3;
+}
+
+@supports (--css: variables) {
+  :root {
+    --progress-bg-color: #d3d3d3;
+  }
+
+  #nprogress .bar {
+    background: var(--progress-bg-color);
+  }
+
+  #nprogress .peg {
+    box-shadow: 0 0 10px var(--progress-bg-color), 0 0 5px var(--progress-bg-color);
+  }
+
+  #nprogress .spinner-icon {
+    border-top-color: var(--progress-bg-color);
+    border-left-color: var(--progress-bg-color);
+  }
 }
 
 @media (min-width: 1024px) {

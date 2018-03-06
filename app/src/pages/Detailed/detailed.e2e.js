@@ -12,11 +12,11 @@ beforeAll(async() => {
     : {headless: true, slowMo: 5, ignoreHTTPSErrors: true}
 
   // Workaround till https://github.com/GoogleChrome/puppeteer/issues/290 is fixed
-  if (process.env.LAUNCH_CHROME_NO_SANDBOX) {
-    console.warn('Launching Chrome with "--no-sandbox" option. ' +
-      'This is not recommended due to security reasons!')
-    Object.assign(launchOptions, { args: ['--no-sandbox'] })
-  }
+  // if (process.env.LAUNCH_CHROME_NO_SANDBOX) {
+    // console.warn('Launching Chrome with "--no-sandbox" option. ' +
+      // 'This is not recommended due to security reasons!')
+  Object.assign(launchOptions, { args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+  // }
 
   browser = await puppeteer.launch(launchOptions)
   page = await browser.newPage()
@@ -36,7 +36,7 @@ afterAll(async () => {
   await browser.close()
 })
 
-describe('Detailed page', () => {
+const detailedPageTests = () => {
   it('it should loads correctly', async () => {
     await page.goto('http://localhost:3000/projects/ppt')
     await mobilePage.goto('http://localhost:3000/projects/ppt')
@@ -62,4 +62,10 @@ describe('Detailed page', () => {
     await page.waitFor(4000)
     await page.screenshot({path: '.screenshots/san-detailed-page-desktop.png'})
   })
-})
+}
+
+if (process.env.CI === true) {
+  describe.skip('Detailed page', detailedPageTests)
+} else {
+  describe('Detailed page', detailedPageTests)
+}

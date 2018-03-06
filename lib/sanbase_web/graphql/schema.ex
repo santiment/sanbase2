@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch all projects or only those in project transparency based on the argument"
     field :all_projects, list_of(:project) do
-      arg(:only_project_transparency, :boolean)
+      arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.all_projects/3)
@@ -71,12 +71,22 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :project, :project do
       arg(:id, non_null(:id))
       # this is to filter the wallets
-      arg(:only_project_transparency, :boolean)
+      arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
 
+    @desc "Fetch a project by its Coinmarketcap ID"
+    field :project_cmc_id, :project do
+      arg(:cmc_id, non_null(:string))
+      arg(:only_project_transparency, :boolean, default_value: false)
+
+      middleware(ProjectPermissions)
+      resolve(&ProjectResolver.project_cmc_id/3)
+    end
+
+    @desc "Fetch all projects that have ETH contract info"
     field :all_projects_with_eth_contract_info, list_of(:project) do
       middleware(BasicAuth)
       resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)

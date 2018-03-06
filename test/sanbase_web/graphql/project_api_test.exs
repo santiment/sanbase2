@@ -180,6 +180,8 @@ defmodule Sanbase.Graphql.ProjectApiTest do
              }
   end
 
+  # Helper functions
+
   defp get_authorization_header do
     username = context_config(:basic_auth_username)
     password = context_config(:basic_auth_password)

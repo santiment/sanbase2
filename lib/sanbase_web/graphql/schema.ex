@@ -53,38 +53,40 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.current_user/3)
     end
 
+    @desc "Fetch all projects or only those in project transparency based on the argument"
     field :all_projects, list_of(:project) do
-      arg(:only_project_transparency, :boolean)
+      arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.all_projects/3)
     end
 
+    @desc "Fetch all project transparency projects. Requires basic authentication"
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)
-
-      middleware(ProjectPermissions)
       resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
     end
 
+    @desc "Fetch a project by its ID"
     field :project, :project do
       arg(:id, non_null(:id))
       # this is to filter the wallets
-      arg(:only_project_transparency, :boolean)
+      arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
 
-    field :project_full, :project do
-      arg(:id, non_null(:id))
-      # this is to filter the wallets
-      arg(:only_project_transparency, :boolean)
+    @desc "Fetch a project by a unique identifier"
+    field :project_by_slug, :project do
+      arg(:slug, non_null(:string))
+      arg(:only_project_transparency, :boolean, default_value: false)
 
-      middleware(MultipleAuth, [BasicAuth, JWTAuth])
-      resolve(&ProjectResolver.project/3)
+      middleware(ProjectPermissions)
+      resolve(&ProjectResolver.project_by_slug/3)
     end
 
+    @desc "Fetch all projects that have ETH contract info"
     field :all_projects_with_eth_contract_info, list_of(:project) do
       middleware(BasicAuth)
       resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)

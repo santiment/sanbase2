@@ -3,6 +3,7 @@ import { withRouter } from 'react-router-dom'
 import { graphql } from 'react-apollo'
 import { compose } from 'recompose'
 import allProjectsGQL from './../pages/Projects/allProjectsGQL'
+import { getProjects } from './../pages/Projects/projectSelectors'
 import Search from './Search'
 
 const SearchContainer = ({
@@ -25,18 +26,9 @@ const SearchContainer = ({
   )
 }
 
-const mapDataToProps = ({allProjects}) => {
-  const projects = (allProjects.allProjects || [])
-    .filter(project => {
-      return project.ethAddresses &&
-        project.ethAddresses.length > 0 &&
-        project.rank &&
-        project.volumeUsd > 0
-    })
-  return {
-    projects
-  }
-}
+const mapDataToProps = ({allProjects}) => ({
+  projects: getProjects(allProjects.allProjects)
+})
 
 const enhance = compose(
   withRouter,

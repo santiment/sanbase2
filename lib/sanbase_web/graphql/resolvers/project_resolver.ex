@@ -62,6 +62,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, project}
   end
 
+  def project_cmc_id(_parent, %{cmc_id: cmc_id}, _resolution) do
+    project =
+      Project
+      |> Repo.get_by(coinmarketcap_id: cmc_id)
+      |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+
+    {:ok, project}
+  end
+
   def all_projects_with_eth_contract_info(_parent, _args, _resolution) do
     query = Project.all_projects_with_eth_contract_query()
 

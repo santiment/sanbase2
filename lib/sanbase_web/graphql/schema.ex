@@ -77,13 +77,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&ProjectResolver.project/3)
     end
 
-    @desc "Fetch a project by its Coinmarketcap ID"
-    field :project_cmc_id, :project do
-      arg(:cmc_id, non_null(:string))
+    @desc "Fetch a project by a unique identifier"
+    field :project_by_slug, :project do
+      arg(:slug, non_null(:string))
       arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
-      resolve(&ProjectResolver.project_cmc_id/3)
+      resolve(&ProjectResolver.project_by_slug/3)
     end
 
     @desc "Fetch all projects that have ETH contract info"

@@ -2,6 +2,7 @@ defmodule Sanbase.FileStore do
   use Arc.Definition
 
   @versions [:original]
+  @acl :public_read
 
   @doc ~s"""
     Whitelist file extensions. Now allowing only images.

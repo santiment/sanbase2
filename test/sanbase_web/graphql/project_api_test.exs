@@ -180,6 +180,54 @@ defmodule Sanbase.Graphql.ProjectApiTest do
              }
   end
 
+  test "fetch project by coinmarketcap id", context do
+    cmc_id = "santiment1"
+    name = "Santiment1"
+
+    %Project{}
+    |> Project.changeset(%{name: name, coinmarketcap_id: cmc_id})
+    |> Repo.insert!()
+
+    query = """
+    {
+      projectCmcId(cmcId: "#{cmc_id}") {
+        name,
+        coinmarketcapId
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "projectCmcId"))
+
+    project = json_response(result, 200)["data"]["projectCmcId"]
+
+    assert project["name"] == name
+    assert project["coinmarketcapId"] == cmc_id
+  end
+
+  test "fetch non existing project by coinmarketcap id", context do
+    cmc_id = "project_does_not_exist_cmc_id"
+
+    query = """
+    {
+      projectCmcId(cmcId: "#{cmc_id}") {
+        name,
+        coinmarketcapId
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "projectCmcId"))
+
+    [project_error] = json_response(result, 200)["errors"]
+
+    assert String.contains?(project_error["message"], "not found")
+  end
+
   # Helper functions
 
   defp get_authorization_header do

@@ -190,7 +190,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     query = """
     {
-      projectCmcId(cmcId: "#{cmc_id}") {
+      projectBySlug(slug: "#{cmc_id}") {
         name,
         coinmarketcapId
       }
@@ -199,9 +199,9 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "projectCmcId"))
+      |> post("/graphql", query_skeleton(query, "projectBySlug"))
 
-    project = json_response(result, 200)["data"]["projectCmcId"]
+    project = json_response(result, 200)["data"]["projectBySlug"]
 
     assert project["name"] == name
     assert project["coinmarketcapId"] == cmc_id
@@ -212,7 +212,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     query = """
     {
-      projectCmcId(cmcId: "#{cmc_id}") {
+      projectBySlug(slug: "#{cmc_id}") {
         name,
         coinmarketcapId
       }
@@ -221,7 +221,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "projectCmcId"))
+      |> post("/graphql", query_skeleton(query, "projectBySlug"))
 
     [project_error] = json_response(result, 200)["errors"]
 

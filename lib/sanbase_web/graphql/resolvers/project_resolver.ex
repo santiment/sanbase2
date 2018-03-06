@@ -53,13 +53,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, project}
   end
 
-  def project_cmc_id(_parent, %{cmc_id: cmc_id}, _resolution) do
+  def project_by_slug(_parent, %{slug: slug}, _resolution) do
     project =
       Project
-      |> Repo.get_by(coinmarketcap_id: cmc_id)
+      |> Repo.get_by(coinmarketcap_id: slug)
       |> case do
         nil ->
-          {:error, "Project with coinmarketcap id '#{cmc_id}' not found."}
+          {:error, "Project with slug '#{slug}' not found."}
 
         project ->
           project =

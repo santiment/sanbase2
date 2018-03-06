@@ -57,9 +57,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     project =
       Project
       |> Repo.get_by(coinmarketcap_id: cmc_id)
-      |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+      |> case do
+        nil ->
+          {:error, "Project with coinmarketcap id '#{cmc_id}' not found."}
 
-    {:ok, project}
+        project ->
+          project =
+            project
+            |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+
+          {:ok, project}
+      end
   end
 
   def all_projects_with_eth_contract_info(_parent, _args, _resolution) do

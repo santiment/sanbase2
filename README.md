@@ -14,6 +14,7 @@ This is the source of the sanbase project of [`https://santiment.net`](https://s
   * Install JS dependencies for the next.js frontend with `cd app && yarn && cd ..`
   * If you don't have a database, run `createdb sanbase_dev`
   * Create a file `.env` and put your PostgreSQL setup there. Example:
+  * To enable phoenix live reloading you should have inotify-tools. This package requires to be [manualy installed](https://github.com/rvoicilas/inotify-tools/wiki) on Linux and requires no installation on Windows and Mac OS X.
 
 ```
 DATABASE_URL=postgres://johnsnow:@localhost:5432/sanbase_dev

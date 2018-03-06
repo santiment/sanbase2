@@ -8,8 +8,6 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Application.put_env(:sanbase, Sanbase.Etherbi, use_cache: true)
-
     Store.create_db()
 
     ticker = "SAN"

@@ -44,12 +44,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def project(_parent, args, _resolution) do
-    id = Map.get(args, :id)
-
+  def project(_parent, %{id: id}, _resolution) do
     project =
       Project
       |> Repo.get(id)
+      |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+
+    {:ok, project}
+  end
+
+  def project_cmc_id(_parent, %{cmc_id: cmc_id}, _resolution) do
+    project =
+      Project
+      |> Repo.get_by(coinmarketcap_id: cmc_id)
       |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
 
     {:ok, project}

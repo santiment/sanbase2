@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.ProjectApiPublicTest do
+defmodule SanbaseWeb.Graphql.ProjectApiForbiddenFieldsTest do
   use SanbaseWeb.ConnCase
 
   import SanbaseWeb.Graphql.TestHelpers

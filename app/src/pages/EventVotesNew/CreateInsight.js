@@ -1,30 +1,12 @@
 import React from 'react'
 import 'medium-draft/lib/index.css'
-import './CreateInsight.css'
-
+import { convertToRaw } from 'draft-js'
 import {
   Editor,
-  Block,
-  addNewBlock,
-  createEditorState,
-  ImageSideButton
+  createEditorState
 } from 'medium-draft'
-
-class CustomImageSideButton extends ImageSideButton {
-  onChange (e) {
-    const file = e.target.files[0]
-    if (file.type.indexOf('image/') === 0) {
-      console.log(file)
-      this.props.setEditorState(addNewBlock(
-        this.props.getEditorState(),
-        Block.IMAGE, {
-          src: file
-        }
-      ))
-    }
-    this.props.close()
-  }
-}
+import CustomImageSideButton from './CustomImageSideButton'
+import './CreateInsight.css'
 
 export class CreateInsight extends React.Component {
   state = { // eslint-disable-line
@@ -33,6 +15,10 @@ export class CreateInsight extends React.Component {
 
   onChange = editorState => { // eslint-disable-line
     this.setState({ editorState })
+    const raw = convertToRaw(editorState.getCurrentContent())
+    if (raw.blocks[0].text.length > 2 || raw.blocks.length > 0) {
+      this.props.changePost(raw)
+    }
   }
 
   componentDidMount () {

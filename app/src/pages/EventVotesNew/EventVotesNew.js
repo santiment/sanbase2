@@ -6,6 +6,7 @@ import PostsNewHeader from './EventVotesNewHeader'
 import ConfirmPost from './ConfirmNewInsight'
 import CreateLink from './CreateLink'
 import CreateTitle from './CreateTitle'
+import CreateBody from './CreateBody'
 import './EventVotesNew.css'
 
 class EventVotesNew extends Component {
@@ -50,10 +51,16 @@ class EventVotesNew extends Component {
             exact
             path='/insights/new'
             render={() => (
-              <CreateLink
-                changePost={this.changePost}
-                post={{...this.state}} />
-            )} />
+              <div>
+                <CreateLink
+                  changePost={this.changePost}
+                  post={{...this.state}} />
+                <hr />
+                <CreateBody
+                  changePost={this.changePost}
+                  post={{...this.state}} />
+              </div>
+          )} />
           <Route
             exact
             path='/insights/new/title'

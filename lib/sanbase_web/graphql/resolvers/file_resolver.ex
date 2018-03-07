@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
       %PostImage{}
       |> PostImage.changeset(Map.put(image, :post_id, nil))
       |> Sanbase.Repo.insert!()
-    end
+    end)
   end
 
   defp image_upload_error?(%{error: error}) when not is_nil(error), do: true

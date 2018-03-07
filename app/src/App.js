@@ -19,6 +19,7 @@ import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
 import PageLoader from './components/PageLoader'
+import ImageUpload from './components/ImageUpload'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -64,6 +65,7 @@ export const App = ({isDesktop}) => (
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route exact path='/insights' component={LoadableInsights} />
+        <Route exact path='/uploader' component={ImageUpload} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
         <Route exact path='/insights/:filter' component={LoadableInsights} />
         <Route exact path='/projects/:ticker' render={props => (

@@ -10,10 +10,14 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-alias Sanbase.Model.Project
-alias Sanbase.Model.ProjectEthAddress
-alias Sanbase.Model.ProjectBtcAddress
-alias Sanbase.Model.Infrastructure
+alias Sanbase.Model.{
+  Project,
+  ProjectEthAddress,
+  ProjectBtcAddress,
+  Infrastructure,
+  LatestEthWalletData
+}
+
 alias Sanbase.Repo
 alias Sanbase.Auth.{User, EthAccount}
 
@@ -299,3 +303,20 @@ defmodule InsertExchangeEthAddresses do
 end
 
 InsertExchangeEthAddresses.run()
+
+# Import some LatestEthWalletData
+%LatestEthWalletData{}
+|> LatestEthWalletData.changeset(%{
+  address: "0x123123123123123",
+  update_time: NaiveDateTime.utc_now(),
+  balance: 500
+})
+|> Repo.insert!()
+
+%LatestEthWalletData{}
+|> LatestEthWalletData.changeset(%{
+  address: "0x9876543210",
+  update_time: NaiveDateTime.utc_now(),
+  balance: 5000
+})
+|> Repo.insert!()

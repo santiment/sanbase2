@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
   end
 
   @test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image.png"
-
+  @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
   test "upload an image", %{conn: conn} do
     mutation = """
       mutation {
@@ -50,8 +50,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
     test_file_content = File.read!(@test_file_path)
     saved_file_content = File.read!(imageData["imageUrl"])
 
-    assert imageData["contentHash"] ==
-             "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
+    assert imageData["contentHash"] == @test_file_hash
 
     assert imageData["fileName"] != nil
     assert test_file_content == saved_file_content

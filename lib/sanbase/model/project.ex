@@ -248,11 +248,7 @@ defmodule Sanbase.Model.Project do
   defp token_usd_ico_price(_price_from, _currency_from, nil, _current_datetime), do: nil
 
   defp token_usd_ico_price(price_from, currency_from, ico_start_date, current_datetime) do
-    erl_date = ico_start_date |> Date.to_erl()
-
-    ico_start_datetime =
-      NaiveDateTime.from_erl!({erl_date, {0, 0, 0}})
-      |> DateTime.from_naive!("Etc/UTC")
+    ico_start_datetime = Sanbase.DateTimeUtils.datetime_from_date(ico_start_date)
 
     with :gt <- Date.compare(NaiveDateTime.to_date(current_datetime), ico_start_date),
          price <-

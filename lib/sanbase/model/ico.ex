@@ -80,11 +80,7 @@ defmodule Sanbase.Model.Ico do
   end
 
   defp funds_raised_ico_end_price_from_currencies(ico, target_ticker, date) do
-    erl_date = date |> Date.to_erl()
-
-    datetime =
-      NaiveDateTime.from_erl!({erl_date, {0, 0, 0}})
-      |> DateTime.from_naive!("Etc/UTC")
+    datetime = Sanbase.DateTimeUtils.datetime_from_date(date)
 
     Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
     |> Enum.map(fn ic ->

@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
 
   alias Sanbase.Auth.User
   alias Sanbase.Repo
+  alias Sanbase.Voting.PostImage
   alias Sanbase.InternalServices.Ethauth
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -25,6 +26,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
   @test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image.png"
   @test_file_name "image.png"
   @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
+  @test_file_hash_algorithm "sha256"
   @invalid_test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image_not_supported_extension.vxml"
   @invalid_test_file_name "image_not_supported_extension.vxml"
 
@@ -85,7 +87,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
     [imageData] = json_response(result, 200)["data"]["uploadImage"]
 
     assert imageData["error"] != nil
-    assert imageData["fileName"] == @invalid_test_file_name
+    assert String.ends_with?(imageData["fileName"], @invalid_test_file_name)
     assert imageData["imageUrl"] == nil
     assert imageData["contentHash"] == nil
   end
@@ -131,5 +133,38 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
 
     assert image1["imageUrl"] == nil
     assert image2["imageUrl"] != nil
+  end
+
+  test "upload metadata is correctly stored in postgres", %{conn: conn} do
+    mutation = """
+      mutation {
+        uploadImage(images: ["img"]){
+          fileName
+          contentHash,
+          imageUrl,
+          error
+        }
+      }
+    """
+
+    upload = %Plug.Upload{
+      content_type: "application/octet-stream",
+      filename: @test_file_name,
+      path: @test_file_path
+    }
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => mutation, "img" => upload})
+
+    [imageData] = json_response(result, 200)["data"]["uploadImage"]
+    image_url = imageData["imageUrl"]
+
+    image_meta_data = Repo.one(PostImage, image_url: image_url)
+
+    assert image_meta_data.image_url == image_url
+    assert String.ends_with?(image_meta_data.file_name, @test_file_name)
+    assert image_meta_data.content_hash == @test_file_hash
+    assert image_meta_data.hash_algorithm == @test_file_hash_algorithm
   end
 end

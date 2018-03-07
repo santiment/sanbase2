@@ -6,11 +6,11 @@ defmodule Sanbase.Model.LatestEthWalletData do
   schema "latest_eth_wallet_data" do
     field(:address, :string)
     field(:balance, :decimal)
-    field(:last_incoming, Ecto.DateTime)
-    field(:last_outgoing, Ecto.DateTime)
+    field(:last_incoming, :naive_datetime)
+    field(:last_outgoing, :naive_datetime)
     field(:tx_in, :decimal)
     field(:tx_out, :decimal)
-    field(:update_time, Ecto.DateTime)
+    field(:update_time, :naive_datetime)
   end
 
   @doc false

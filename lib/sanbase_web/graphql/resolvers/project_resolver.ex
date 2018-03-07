@@ -54,20 +54,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def project_by_slug(_parent, %{slug: slug}, _resolution) do
-    project =
-      Project
-      |> Repo.get_by(coinmarketcap_id: slug)
-      |> case do
-        nil ->
-          {:error, "Project with slug '#{slug}' not found."}
+    Project
+    |> Repo.get_by(coinmarketcap_id: slug)
+    |> case do
+      nil ->
+        {:error, "Project with slug '#{slug}' not found."}
 
-        project ->
-          project =
-            project
-            |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+      project ->
+        project =
+          project
+          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
 
-          {:ok, project}
-      end
+        {:ok, project}
+    end
   end
 
   def all_projects_with_eth_contract_info(_parent, _args, _resolution) do

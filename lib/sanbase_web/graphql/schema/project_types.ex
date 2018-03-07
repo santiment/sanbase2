@@ -179,8 +179,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   object :ico do
     field(:id, non_null(:id))
-    field(:start_date, :ecto_date)
-    field(:end_date, :ecto_date)
+    field(:start_date, :date)
+    field(:end_date, :date)
     field(:token_usd_ico_price, :decimal)
     field(:token_eth_ico_price, :decimal)
     field(:token_btc_ico_price, :decimal)
@@ -217,8 +217,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   object :ico_with_eth_contract_info do
     field(:id, non_null(:id))
-    field(:start_date, :ecto_date)
-    field(:end_date, :ecto_date)
+    field(:start_date, :date)
+    field(:end_date, :date)
     field(:main_contract_address, :string)
     field(:contract_block_number, :integer)
     field(:contract_abi, :string)

@@ -41,7 +41,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     |> Enum.each(&store_ticker/1)
 
     tickers
-    |> Enum.take(top_projects_to_follow)
+    |> Enum.take(top_projects_to_follow())
     |> Enum.each(&insert_or_create_project/1)
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)

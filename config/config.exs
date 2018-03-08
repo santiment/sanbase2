@@ -59,19 +59,19 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
 
 config :sanbase, Sanbase.Etherbi.Transactions.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_HOST", 8086},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "erc20_exchange_transactions"
 
 config :sanbase, Sanbase.Etherbi.BurnRate.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_HOST", 8086},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "erc20_burn_rate"
 
 config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_HOST", 8086},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "erc20_transaction_volume"
 

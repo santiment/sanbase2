@@ -173,7 +173,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :exchange_fund_flow, list_of(:exchange_transaction) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:transaction_type, :transaction_type, default_value: :all)
 
       resolve(&EtherbiResolver.exchange_fund_flow/3)

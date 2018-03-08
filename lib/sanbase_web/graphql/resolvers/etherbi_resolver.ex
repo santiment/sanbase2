@@ -67,8 +67,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         },
         _resolution
       ) do
-    with {:ok, transactions} <-
-           Transactions.Store.transactions(ticker, from, to, transaction_type |> Atom.to_string()) do
+    with {:ok, contract_address} <- ticker_to_contract_address(ticker),
+         {:ok, transactions} <-
+           Transactions.Store.transactions(
+             contract_address,
+             from,
+             to,
+             transaction_type |> Atom.to_string()
+           ) do
       result =
         transactions
         |> Enum.map(fn {datetime, volume, address} ->
@@ -80,6 +86,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         end)
 
       {:ok, result}
+    else
+      _ -> {:error, "Can't fetch the exchange funds for #{ticker}"}
     end
   end
 

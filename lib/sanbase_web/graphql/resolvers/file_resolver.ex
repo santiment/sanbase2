@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
   alias Sanbase.FileStore
   alias Sanbase.Voting.PostImage
 
+  @hash_algorithm :sha256
+
   @doc ~s"""
     Receives a list of `%Plug.Upload{}` representing the images and uploads them.
     The files are first uploaded to an AWS S3 bucket and then then the image url,
@@ -13,15 +15,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
     # In S3 there are no folders so the file name just contains some random text
     # and a slash in it. Locally (in test and dev mode) the files are treaded as if
     # they are located in a folder called `scope`
-    hash_algorithm = :sha256
 
     image_data =
-      for %{filename: file_name} = arg <- images, into: [] do
+      images
+      |> Enum.map(fn %{filename: file_name} = arg ->
         # Prepend the timestamp in milliseconds to the name to avoid name collision
         # when uploading images with the same hash and name
         arg = %{arg | filename: milliseconds_str() <> "_" <> file_name}
-        save_image_content(arg, hash_algorithm)
-      end
+        save_image_content(arg)
+      end)
 
     save_image_meta_data(image_data)
 
@@ -32,11 +34,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
 
   # There is no `File.stream` (no bang function). Rescue the error and transform it
   # to `{:error, reason}` tuple
-  defp image_content_hash(%Plug.Upload{path: file_path}, hash_algorithm) do
+  defp image_content_hash(%Plug.Upload{path: file_path}) do
     try do
       hash =
         File.stream!(file_path, [], 8192)
-        |> Enum.reduce(:crypto.hash_init(hash_algorithm), fn line, acc ->
+        |> Enum.reduce(:crypto.hash_init(@hash_algorithm), fn line, acc ->
           :crypto.hash_update(acc, line)
         end)
         |> :crypto.hash_final()
@@ -51,9 +53,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
     end
   end
 
-  defp save_image_content(%Plug.Upload{filename: file_name} = arg, hash_algorithm)
-       when is_atom(hash_algorithm) do
-    with {:ok, content_hash} <- image_content_hash(arg, hash_algorithm),
+  defp save_image_content(%Plug.Upload{filename: file_name} = arg) do
+    with {:ok, content_hash} <- image_content_hash(arg),
          {:ok, file_name} <- FileStore.store({arg, content_hash}) do
       image_url = FileStore.url({file_name, content_hash})
 
@@ -61,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
         file_name: file_name,
         image_url: image_url,
         content_hash: content_hash,
-        hash_algorithm: hash_algorithm |> Atom.to_string()
+        hash_algorithm: @hash_algorithm |> Atom.to_string()
       }
     else
       {:error, error} ->

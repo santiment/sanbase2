@@ -1,12 +1,15 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume}
+  alias Sanbase.Repo
+  alias Sanbase.Model.Project
 
   @doc ~S"""
     Return the token burn rate for the given ticker and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
   def burn_rate(_root, %{ticker: ticker, from: from, to: to, interval: interval}, _resolution) do
-    with {:ok, burn_rates} <- BurnRate.Store.burn_rate(ticker, from, to, interval) do
+    with {:ok, contract_address} <- ticker_to_contract_address(ticker),
+         {:ok, burn_rates} <- BurnRate.Store.burn_rate(contract_address, from, to, interval) do
       result =
         burn_rates
         |> Enum.map(fn {datetime, burn_rate} ->
@@ -17,6 +20,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         end)
 
       {:ok, result}
+    else
+      _ -> {:error, "Can't fetch burn rate for #{ticker}"}
     end
   end
 
@@ -29,8 +34,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{ticker: ticker, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, trx_volumes} <-
-           TransactionVolume.Store.transaction_volume(ticker, from, to, interval) do
+    with {:ok, contract_address} <- ticker_to_contract_address(ticker),
+         {:ok, trx_volumes} <-
+           TransactionVolume.Store.transaction_volume(contract_address, from, to, interval) do
       result =
         trx_volumes
         |> Enum.map(fn {datetime, trx_volume} ->
@@ -41,6 +47,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         end)
 
       {:ok, result}
+    else
+      _ -> {:error, "Can't fetch transaction volume for #{ticker}"}
     end
   end
 
@@ -72,6 +80,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         end)
 
       {:ok, result}
+    end
+  end
+
+  defp ticker_to_contract_address(ticker) do
+    with project when not is_nil(project) <- Repo.get_by(Project, ticker: ticker),
+         initial_ico when not is_nil(initial_ico) <- Project.initial_ico(project),
+         contract_address when not is_nil(contract_address) <- initial_ico.main_contract_address do
+      {:ok, contract_address |> String.downcase()}
+    else
+      _ -> {:error, "Can't find ticker contract address"}
     end
   end
 end

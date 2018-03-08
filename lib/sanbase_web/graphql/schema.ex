@@ -140,8 +140,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Burn rate for a ticker and given time period"
     field :burn_rate, list_of(:burn_rate_data) do
       arg(:ticker, non_null(:string))
-      arg(:from, :datetime)
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
 
       resolve(&EtherbiResolver.burn_rate/3)
@@ -150,8 +150,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Transaction volume for a ticker and given time period"
     field :transaction_volume, list_of(:transaction_volume) do
       arg(:ticker, non_null(:string))
-      arg(:from, :datetime)
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
 
       resolve(&EtherbiResolver.transaction_volume/3)

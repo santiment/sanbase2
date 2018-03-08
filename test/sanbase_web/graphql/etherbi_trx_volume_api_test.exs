@@ -4,6 +4,8 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.TransactionVolume.Store
+  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -11,7 +13,15 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     Store.create_db()
 
     ticker = "SAN"
-    Store.drop_measurement(ticker)
+    contract_address = "0x1234"
+    Store.drop_measurement(contract_address)
+
+    project =
+      %Project{name: "Santiment", ticker: ticker}
+      |> Repo.insert!()
+
+    %Ico{project_id: project.id, main_contract_address: contract_address}
+    |> Repo.insert!()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
@@ -27,49 +37,49 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
         fields: %{transaction_volume: 1000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{transaction_volume: 555},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{transaction_volume: 123},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
         fields: %{transaction_volume: 6643},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
         fields: %{transaction_volume: 64123},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
         fields: %{transaction_volume: 1232},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
         fields: %{transaction_volume: 555},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime8 |> DateTime.to_unix(:nanoseconds),
         fields: %{transaction_volume: 12111},
         tags: [],
-        name: ticker
+        name: contract_address
       }
     ])
 

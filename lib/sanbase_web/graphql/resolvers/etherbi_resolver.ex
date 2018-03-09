@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         |> Enum.map(fn {datetime, burn_rate} ->
           %{
             datetime: datetime,
-            burn_rate: burn_rate |> Decimal.new()
+            burn_rate: burn_rate
           }
         end)
 
@@ -44,7 +44,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         |> Enum.map(fn {datetime, trx_volume} ->
           %{
             datetime: datetime,
-            transaction_volume: trx_volume |> Decimal.new()
+            transaction_volume: trx_volume
           }
         end)
 

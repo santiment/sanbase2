@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume}
   alias Sanbase.Repo
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{Project, ExchangeEthAddress}
 
   import Ecto.Query
 

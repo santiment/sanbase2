@@ -10,4 +10,9 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
     field(:datetime, non_null(:datetime))
     field(:transaction_volume, :float)
   end
+
+  object :wallet do
+    field(:name, non_null(:string))
+    field(:address, non_null(:string))
+  end
 end

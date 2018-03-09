@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
 
   object :exchange_transaction do
     field(:datetime, non_null(:datetime))
-    field(:transaction_volume, :decimal)
+    field(:transaction_volume, :float)
     field(:address, :string)
   end
 end

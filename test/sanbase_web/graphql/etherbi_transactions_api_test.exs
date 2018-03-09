@@ -134,31 +134,31 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
              "address" => context.exchange_address,
-             "transactionVolume" => 5000
+             "transactionVolume" => 5000.0
            } in transactions_in
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
              "address" => context.exchange_address,
-             "transactionVolume" => 6000
+             "transactionVolume" => 6000.0
            } in transactions_in
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime3),
              "address" => context.exchange_address,
-             "transactionVolume" => 9000
+             "transactionVolume" => 9000.0
            } in transactions_in
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime4),
              "address" => context.exchange_address,
-             "transactionVolume" => 15000
+             "transactionVolume" => 15000.0
            } in transactions_in
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime6),
              "address" => context.exchange_address,
-             "transactionVolume" => 1000
+             "transactionVolume" => 1000.0
            } in transactions_in
   end
 
@@ -186,25 +186,25 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
              "address" => context.exchange_address,
-             "transactionVolume" => 3000
+             "transactionVolume" => 3000.0
            } in transactions_out
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
              "address" => context.exchange_address,
-             "transactionVolume" => 4000
+             "transactionVolume" => 4000.0
            } in transactions_out
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
              "address" => context.exchange_address,
-             "transactionVolume" => 18000
+             "transactionVolume" => 18000.0
            } in transactions_out
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime7),
              "address" => context.exchange_address,
-             "transactionVolume" => 10000
+             "transactionVolume" => 10000.0
            } in transactions_out
   end
 end

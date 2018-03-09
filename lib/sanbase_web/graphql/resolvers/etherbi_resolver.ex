@@ -82,7 +82,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         |> Enum.map(fn {datetime, volume, address} ->
           %{
             datetime: datetime,
-            transaction_volume: volume |> Decimal.new(),
+            transaction_volume: volume,
             address: address
           }
         end)

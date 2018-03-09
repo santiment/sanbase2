@@ -36,61 +36,61 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     Store.import([
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "5000", ticker: ticker},
+        fields: %{volume: 5000, ticker: ticker},
         tags: [transaction_type: "in", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "3000", ticker: ticker},
+        fields: %{volume: 3000, ticker: ticker},
         tags: [transaction_type: "out", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "6000", ticker: ticker},
+        fields: %{volume: 6000, ticker: ticker},
         tags: [transaction_type: "in", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "4000", ticker: ticker},
+        fields: %{volume: 4000, ticker: ticker},
         tags: [transaction_type: "out", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "9000", ticker: ticker},
+        fields: %{volume: 9000, ticker: ticker},
         tags: [transaction_type: "in", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "15000", ticker: ticker},
+        fields: %{volume: 15000, ticker: ticker},
         tags: [transaction_type: "in", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "18000", ticker: ticker},
+        fields: %{volume: 18000, ticker: ticker},
         tags: [transaction_type: "out", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "1000", ticker: ticker},
+        fields: %{volume: 1000, ticker: ticker},
         tags: [transaction_type: "in", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "10000", ticker: ticker},
+        fields: %{volume: 10000, ticker: ticker},
         tags: [transaction_type: "out", address: exchange_address],
         name: contract_address
       },
       %Measurement{
         timestamp: datetime8 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: "50000", ticker: ticker},
+        fields: %{volume: 50000, ticker: ticker},
         tags: [transaction_type: "in", address: exchange_address],
         name: contract_address
       }
@@ -134,31 +134,31 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
              "address" => context.exchange_address,
-             "transactionVolume" => "5000"
+             "transactionVolume" => 5000.0
            } in transactions_in
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
              "address" => context.exchange_address,
-             "transactionVolume" => "6000"
+             "transactionVolume" => 6000.0
            } in transactions_in
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime3),
              "address" => context.exchange_address,
-             "transactionVolume" => "9000"
+             "transactionVolume" => 9000.0
            } in transactions_in
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime4),
              "address" => context.exchange_address,
-             "transactionVolume" => "15000"
+             "transactionVolume" => 15000.0
            } in transactions_in
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime6),
              "address" => context.exchange_address,
-             "transactionVolume" => "1000"
+             "transactionVolume" => 1000.0
            } in transactions_in
   end
 
@@ -186,25 +186,25 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
              "address" => context.exchange_address,
-             "transactionVolume" => "3000"
+             "transactionVolume" => 3000.0
            } in transactions_out
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
              "address" => context.exchange_address,
-             "transactionVolume" => "4000"
+             "transactionVolume" => 4000.0
            } in transactions_out
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
              "address" => context.exchange_address,
-             "transactionVolume" => "18000"
+             "transactionVolume" => 18000.0
            } in transactions_out
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime7),
              "address" => context.exchange_address,
-             "transactionVolume" => "10000"
+             "transactionVolume" => 10000.0
            } in transactions_out
   end
 end

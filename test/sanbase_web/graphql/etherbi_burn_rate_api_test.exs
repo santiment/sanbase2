@@ -118,42 +118,42 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
-             "burnRate" => "5000"
+             "burnRate" => 5000.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
-             "burnRate" => "1000"
+             "burnRate" => 1000.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime3),
-             "burnRate" => "500"
+             "burnRate" => 500.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime4),
-             "burnRate" => "15000"
+             "burnRate" => 15000.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
-             "burnRate" => "65000"
+             "burnRate" => 65000.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime6),
-             "burnRate" => "50"
+             "burnRate" => 50.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime7),
-             "burnRate" => "5"
+             "burnRate" => 5.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime8),
-             "burnRate" => "5000"
+             "burnRate" => 5000.0
            } in burn_rates
   end
 
@@ -179,17 +179,17 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
     assert %{
              "datetime" => "2017-05-13T21:30:00Z",
-             "burnRate" => "6000"
+             "burnRate" => 6000.0
            } in burn_rates
 
     assert %{
              "datetime" => "2017-05-13T22:00:00Z",
-             "burnRate" => "80500"
+             "burnRate" => 80500.0
            } in burn_rates
 
     assert %{
              "datetime" => "2017-05-13T22:30:00Z",
-             "burnRate" => "5055"
+             "burnRate" => 5055.0
            } in burn_rates
   end
 end

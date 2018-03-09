@@ -3,6 +3,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   alias Sanbase.Repo
   alias Sanbase.Model.Project
 
+  import Ecto.Query
+
   @doc ~S"""
     Return the token burn rate for the given ticker and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
@@ -92,12 +94,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   defp ticker_to_contract_address(ticker) do
-    with project when not is_nil(project) <- Repo.get_by(Project, ticker: ticker),
+    with project when not is_nil(project) <- get_project_by_ticker(ticker),
          initial_ico when not is_nil(initial_ico) <- Project.initial_ico(project),
          contract_address when not is_nil(contract_address) <- initial_ico.main_contract_address do
       {:ok, contract_address |> String.downcase()}
     else
       _ -> {:error, "Can't find ticker contract address"}
     end
+  end
+
+  defp get_project_by_ticker(ticker) do
+    Project
+    |> where([p], p.ticker == ^ticker and not is_nil(p.coinmarketcap_id))
+    |> Repo.one()
   end
 end

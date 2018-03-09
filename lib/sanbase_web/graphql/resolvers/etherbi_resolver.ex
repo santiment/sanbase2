@@ -10,14 +10,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
   def burn_rate(_root, %{ticker: ticker, from: from, to: to, interval: interval}, _resolution) do
-    with {:ok, contract_address} <- ticker_to_contract_address(ticker),
+    with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, burn_rates} <- BurnRate.Store.burn_rate(contract_address, from, to, interval) do
       result =
         burn_rates
         |> Enum.map(fn {datetime, burn_rate} ->
           %{
             datetime: datetime,
-            burn_rate: burn_rate
+            burn_rate: burn_rate / :math.pow(10, token_decimals)
           }
         end)
 
@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{ticker: ticker, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, contract_address} <- ticker_to_contract_address(ticker),
+    with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, trx_volumes} <-
            TransactionVolume.Store.transaction_volume(contract_address, from, to, interval) do
       result =
@@ -44,7 +44,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         |> Enum.map(fn {datetime, trx_volume} ->
           %{
             datetime: datetime,
-            transaction_volume: trx_volume
+            transaction_volume: trx_volume / :math.pow(10, token_decimals)
           }
         end)
 
@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         },
         _resolution
       ) do
-    with {:ok, contract_address} <- ticker_to_contract_address(ticker),
+    with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, transactions} <-
            Transactions.Store.transactions(
              contract_address,
@@ -82,7 +82,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         |> Enum.map(fn {datetime, volume, address} ->
           %{
             datetime: datetime,
-            transaction_volume: volume,
+            transaction_volume: volume / :math.pow(10, token_decimals),
             address: address
           }
         end)
@@ -93,11 +93,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
-  defp ticker_to_contract_address(ticker) do
+  def exchange_wallets(_root, _args, _resolution) do
+    {:ok, ExchangeEthAddress |> Repo.all()}
+  end
+
+  defp ticker_to_contract_info(ticker) do
     with project when not is_nil(project) <- get_project_by_ticker(ticker),
          initial_ico when not is_nil(initial_ico) <- Project.initial_ico(project),
          contract_address when not is_nil(contract_address) <- initial_ico.main_contract_address do
-      {:ok, contract_address |> String.downcase()}
+      {:ok, String.downcase(contract_address), project.token_decimals || 0}
     else
       _ -> {:error, "Can't find ticker contract address"}
     end

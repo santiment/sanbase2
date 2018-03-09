@@ -3,13 +3,14 @@ defmodule Sanbase.FileStore do
 
   @versions [:original]
   @acl :public_read
+  @extension_whitelist ~w(.jpg .jpeg .gif .png)
+  @max_file_size 5 * 1024 * 1024
 
   @doc ~s"""
     Whitelist file extensions. Now allowing only images.
   """
   def validate({file, _}) do
-    ~w(.jpg .jpeg .gif .png)
-    |> Enum.member?(Path.extname(file.file_name |> String.downcase()))
+    allowed_extenstion?(file) && allowed_size?(file)
   end
 
   @doc ~s"""
@@ -20,5 +21,22 @@ defmodule Sanbase.FileStore do
   def filename(_version, {file, scope}) do
     file_name = Path.basename(file.file_name, Path.extname(file.file_name))
     "#{scope}_#{file_name}"
+  end
+
+  # Helper functions
+
+  defp allowed_extenstion?(file) do
+    @extension_whitelist
+    |> Enum.member?(Path.extname(file.file_name |> String.downcase()))
+  end
+
+  defp allowed_size?(file) do
+    case File.stat(file.path) do
+      {:ok, %{size: size}} when size <= @max_file_size ->
+        true
+
+      _ ->
+        false
+    end
   end
 end

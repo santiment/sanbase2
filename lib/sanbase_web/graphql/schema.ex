@@ -221,6 +221,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       complexity(&TechIndicatorsComplexity.price_volume_diff/3)
       resolve(&TechIndicatorsResolver.price_volume_diff/3)
     end
+
+    @desc "Returns a list of all exchange wallets. Internal API."
+    field :exchange_wallets, list_of(:wallet) do
+      middleware(BasicAuth)
+
+      resolve(&EtherbiResolver.exchange_wallets/3)
+    end
   end
 
   mutation do

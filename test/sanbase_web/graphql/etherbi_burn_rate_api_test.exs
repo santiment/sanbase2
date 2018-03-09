@@ -4,16 +4,24 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.BurnRate.Store
+  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Application.put_env(:sanbase, Sanbase.Etherbi, use_cache: true)
-
     Store.create_db()
 
     ticker = "SAN"
-    Store.drop_measurement(ticker)
+    contract_address = "0x1234"
+    Store.drop_measurement(contract_address)
+
+    project =
+      %Project{name: "Santiment", ticker: ticker, coinmarketcap_id: "santiment"}
+      |> Repo.insert!()
+
+    %Ico{project_id: project.id, main_contract_address: contract_address}
+    |> Repo.insert!()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
@@ -29,49 +37,49 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 5000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 1000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 500},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 15000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 65000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 50},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 5},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime8 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 5000},
         tags: [],
-        name: ticker
+        name: contract_address
       }
     ])
 

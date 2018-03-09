@@ -26,4 +26,12 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> put_req_header("authorization", "Bearer " <> token)
     |> ContextPlug.call(%{})
   end
+
+  def setup_basic_auth(conn, user, pass) do
+    token = Base.encode64(user <> ":" <> pass)
+
+    conn
+    |> put_req_header("authorization", "Basic " <> token)
+    |> ContextPlug.call(%{})
+  end
 end

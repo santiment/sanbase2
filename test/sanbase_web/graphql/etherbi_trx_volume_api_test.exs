@@ -118,42 +118,42 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
-             "transactionVolume" => "1000"
+             "transactionVolume" => 1000
            } in trx_volumes
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
-             "transactionVolume" => "555"
+             "transactionVolume" => 555
            } in trx_volumes
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime3),
-             "transactionVolume" => "123"
+             "transactionVolume" => 123
            } in trx_volumes
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime4),
-             "transactionVolume" => "6643"
+             "transactionVolume" => 6643
            } in trx_volumes
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
-             "transactionVolume" => "64123"
+             "transactionVolume" => 64123
            } in trx_volumes
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime6),
-             "transactionVolume" => "1232"
+             "transactionVolume" => 1232
            } in trx_volumes
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime7),
-             "transactionVolume" => "555"
+             "transactionVolume" => 555
            } in trx_volumes
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime8),
-             "transactionVolume" => "12111"
+             "transactionVolume" => 12111
            } in trx_volumes
   end
 
@@ -179,27 +179,27 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
 
     assert %{
              "datetime" => "2017-05-13T21:45:00Z",
-             "transactionVolume" => "1555"
+             "transactionVolume" => 1555
            } in trx_volumes
 
     assert %{
              "datetime" => "2017-05-13T22:00:00Z",
-             "transactionVolume" => "123"
+             "transactionVolume" => 123
            } in trx_volumes
 
     assert %{
              "datetime" => "2017-05-13T22:15:00Z",
-             "transactionVolume" => "70766"
+             "transactionVolume" => 70766
            } in trx_volumes
 
     assert %{
              "datetime" => "2017-05-13T22:30:00Z",
-             "transactionVolume" => "1232"
+             "transactionVolume" => 1232
            } in trx_volumes
 
     assert %{
              "datetime" => "2017-05-13T22:45:00Z",
-             "transactionVolume" => "12666"
+             "transactionVolume" => 12666
            } in trx_volumes
   end
 end

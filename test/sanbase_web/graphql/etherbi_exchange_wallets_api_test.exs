@@ -13,7 +13,7 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
     ]
   end
 
-  test "returning an error when there is no bacis auth" do
+  test "returning an error when there is no basic auth" do
     query = """
     {
       exchangeWallets{
@@ -27,7 +27,9 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
       build_conn()
       |> post("/graphql", query_skeleton(query, "exchangeWallets"))
 
-    assert result.status_code == 403
+    error = json_response(result, 200)["errors"] |> hd
+
+    assert error["message"] == "unauthorized"
   end
 
   test "returning an empty list of wallets if there are none in the DB", context do
@@ -50,11 +52,11 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   end
 
   test "returning a list of wallets from the DB", context do
-    [
-      %ExchangeEthAddress{name: "Binance", address: "0x12345"},
-      %ExchangeEthAddress{name: "Kraken", address: "0x54321"}
-    ]
-    |> Repo.insert_all()
+    %ExchangeEthAddress{name: "Binance", address: "0x12345"}
+    |> Repo.insert!()
+
+    %ExchangeEthAddress{name: "Kraken", address: "0x54321"}
+    |> Repo.insert!()
 
     query = """
     {
@@ -71,7 +73,7 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
 
     exchange_wallets = json_response(result, 200)["data"]["exchangeWallets"]
 
-    assert %{name: "Binance", address: "0x12345"} in exchange_wallets
-    assert %{name: "Kraken", address: "0x54321"} in exchange_wallets
+    assert %{"name" => "Binance", "address" => "0x12345"} in exchange_wallets
+    assert %{"name" => "Kraken", "address" => "0x54321"} in exchange_wallets
   end
 end

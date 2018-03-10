@@ -8,6 +8,7 @@ import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
+import Sticky from 'react-stickynode'
 import { formatNumber } from '../utils/formatting'
 import { millify } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
@@ -17,6 +18,11 @@ import Panel from './../components/Panel'
 import allProjectsGQL from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
+
+export const Tips = () =>
+  <div style={{ textAlign: 'center' }}>
+    <em>Tip: Hold shift when sorting to multi-sort!</em>
+  </div>
 
 const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
   <div
@@ -38,6 +44,14 @@ const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
       />
       : children}
   </div>
+)
+
+const CustomHeadComponent = ({ children, className, ...rest }) => (
+  <Sticky enabled >
+    <div className={classnames('rt-thead', className)} {...rest}>
+      {children}
+    </div>
+  </Sticky>
 )
 
 const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
@@ -353,6 +367,7 @@ export const Cashflow = ({
               </div>
             )}
             ThComponent={CustomThComponent}
+            TheadComponent={CustomHeadComponent}
             getTdProps={(state, rowInfo, column, instance) => {
               return {
                 onClick: (e, handleOriginal) => {
@@ -368,6 +383,7 @@ export const Cashflow = ({
           />
         </Panel>
       </FadeIn>
+      <Tips />
       <div className='cashflow-indev-message'>
         NOTE: This app is in development.
         We give no guarantee data is correct as we are in active development.

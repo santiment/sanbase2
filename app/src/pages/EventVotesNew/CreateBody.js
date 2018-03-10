@@ -17,8 +17,7 @@ const CreateBody = ({changePost, post, postBody = null, setPostBody}) => (
             ...post,
             text: postBody
           }
-          console.log(newPost)
-          //changePost(newPost, 'title')
+          changePost(newPost, 'title')
         }}>
         Next
       </Button>

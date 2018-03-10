@@ -15,7 +15,7 @@ const PostsNewHeader = ({location}) => (
   <div className='event-posts-new-navigation'>
     <ol>
       <HeaderLink
-        title='1. Link'
+        title="1. Your insight's text"
         active={location === 'new'} />
       <HeaderLink
         title='2. Short description'

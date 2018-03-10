@@ -27,6 +27,7 @@
     "chartjs-plugin-datalabels": "^0.2.0",
     "classnames": "^2.2.5",
     "copy-to-clipboard": "^3",
+    "draftjs-md-converter": "^0.1.6",
     "font-awesome": "^4.7.0",
     "graphql": "^0.11.7",
     "graphql-tag": "^2.5.0",

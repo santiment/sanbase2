@@ -43,7 +43,7 @@ const ConfirmPost = ({
             onClick={() => {
               onPending(true)
               createPost({
-                variables: {title: post.title, link: post.link}
+                variables: {title: post.title, text: post.text}
               })
               .then(data => {
                 if (process.env.NODE_ENV === 'production') {

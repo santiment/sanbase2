@@ -4,7 +4,6 @@ import { connect } from 'react-redux'
 import Panel from './../../components/Panel'
 import PostsNewHeader from './EventVotesNewHeader'
 import ConfirmPost from './ConfirmNewInsight'
-import CreateLink from './CreateLink'
 import CreateTitle from './CreateTitle'
 import CreateBody from './CreateBody'
 import './EventVotesNew.css'
@@ -13,6 +12,7 @@ class EventVotesNew extends Component {
   state = { // eslint-disable-line
     title: '',
     link: '',
+    text: '',
     votes: 0,
     author: this.props.username,
     created: new Date()
@@ -20,6 +20,7 @@ class EventVotesNew extends Component {
 
   changePost = (post, nextStepURL = '') => { // eslint-disable-line
     this.setState({...post}, () => {
+      console.log('check')
       this.props.history.push(`/insights/new/${nextStepURL}`)
     })
   }
@@ -29,7 +30,7 @@ class EventVotesNew extends Component {
   }
 
   render () {
-    if (!this.state.link &&
+    if (!this.state.text &&
       this.props.history.location.pathname !== '/insights/new') {
       return (
         <Redirect to={{
@@ -51,15 +52,9 @@ class EventVotesNew extends Component {
             exact
             path='/insights/new'
             render={() => (
-              <div>
-                <CreateLink
-                  changePost={this.changePost}
-                  post={{...this.state}} />
-                <hr />
-                <CreateBody
-                  changePost={this.changePost}
-                  post={{...this.state}} />
-              </div>
+              <CreateBody
+                changePost={this.changePost}
+                post={{...this.state}} />
           )} />
           <Route
             exact

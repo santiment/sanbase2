@@ -298,6 +298,7 @@ exports[`Cashflow container it should render correctly 1`] = `
       />
     </Panel>
   </FadeIn>
+  <Component />
   <div
     className="cashflow-indev-message"
   >

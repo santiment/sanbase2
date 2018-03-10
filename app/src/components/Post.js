@@ -6,7 +6,7 @@ import { createSkeletonElement } from '@trainline/react-skeletor'
 import './Post.css'
 
 export const getSourceLink = (link = '') => {
-  return link.split('/')[2]
+  return link.split('/')[2] || 'sanbase.net'
 }
 
 const A = createSkeletonElement('a', 'pending-home')

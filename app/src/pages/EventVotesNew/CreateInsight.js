@@ -1,6 +1,7 @@
 import React from 'react'
 import 'medium-draft/lib/index.css'
 import { convertToRaw } from 'draft-js'
+import { draftjsToMd } from 'draftjs-md-converter'
 import {
   Editor,
   createEditorState
@@ -15,9 +16,9 @@ export class CreateInsight extends React.Component {
 
   onChange = editorState => { // eslint-disable-line
     this.setState({ editorState })
-    const raw = convertToRaw(editorState.getCurrentContent())
-    if (raw.blocks[0].text.length > 2 || raw.blocks.length > 0) {
-      this.props.changePost(raw)
+    const markdown = draftjsToMd(convertToRaw(editorState.getCurrentContent()))
+    if (markdown.length > 2) {
+      this.props.changePost(markdown)
     }
   }
 

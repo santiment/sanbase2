@@ -13,3 +13,7 @@
 .md-sb-img-button {
   border: none !important;
 }
+
+.public-DraftEditor-content .md-block-paragraph {
+  margin: 10px 0;
+}

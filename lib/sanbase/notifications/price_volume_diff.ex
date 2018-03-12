@@ -12,6 +12,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   @notification_type_name "price_volume_diff"
 
+  @window_type "bohman"
   @approximation_window 14
   @comparison_window 7
 
@@ -42,6 +43,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         from_datetime,
         to_datetime,
         "1d",
+        @window_type,
         @approximation_window,
         @comparison_window,
         1

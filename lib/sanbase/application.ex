@@ -103,16 +103,7 @@ defmodule Sanbase.Application do
         Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
 
         # Twitter account historical data
-        Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
-
-        # Store wallets' in and out transactions in time series database
-        Sanbase.Etherbi.Transactions.child_spec(%{}),
-
-        # Store tickers' burn rate in time series database
-        Sanbase.Etherbi.BurnRate.child_spec(%{}),
-
-        # Store tickers' transaction volume in time series database
-        Sanbase.Etherbi.TransactionVolume.child_spec(%{})
+        Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{})
       ] ++
         faktory_supervisor() ++
         [

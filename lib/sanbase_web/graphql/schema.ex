@@ -53,38 +53,40 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.current_user/3)
     end
 
+    @desc "Fetch all projects or only those in project transparency based on the argument"
     field :all_projects, list_of(:project) do
-      arg(:only_project_transparency, :boolean)
+      arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.all_projects/3)
     end
 
+    @desc "Fetch all project transparency projects. Requires basic authentication"
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)
-
-      middleware(ProjectPermissions)
       resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
     end
 
+    @desc "Fetch a project by its ID"
     field :project, :project do
       arg(:id, non_null(:id))
       # this is to filter the wallets
-      arg(:only_project_transparency, :boolean)
+      arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
 
-    field :project_full, :project do
-      arg(:id, non_null(:id))
-      # this is to filter the wallets
-      arg(:only_project_transparency, :boolean)
+    @desc "Fetch a project by a unique identifier"
+    field :project_by_slug, :project do
+      arg(:slug, non_null(:string))
+      arg(:only_project_transparency, :boolean, default_value: false)
 
-      middleware(MultipleAuth, [BasicAuth, JWTAuth])
-      resolve(&ProjectResolver.project/3)
+      middleware(ProjectPermissions)
+      resolve(&ProjectResolver.project_by_slug/3)
     end
 
+    @desc "Fetch all projects that have ETH contract info"
     field :all_projects_with_eth_contract_info, list_of(:project) do
       middleware(BasicAuth)
       resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
@@ -138,8 +140,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Burn rate for a ticker and given time period"
     field :burn_rate, list_of(:burn_rate_data) do
       arg(:ticker, non_null(:string))
-      arg(:from, :datetime)
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
 
       resolve(&EtherbiResolver.burn_rate/3)
@@ -148,8 +150,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Transaction volume for a ticker and given time period"
     field :transaction_volume, list_of(:transaction_volume) do
       arg(:ticker, non_null(:string))
-      arg(:from, :datetime)
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
 
       resolve(&EtherbiResolver.transaction_volume/3)
@@ -171,7 +173,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :exchange_fund_flow, list_of(:exchange_transaction) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:transaction_type, :transaction_type, default_value: :all)
 
       resolve(&EtherbiResolver.exchange_fund_flow/3)
@@ -218,6 +220,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&TechIndicatorsComplexity.price_volume_diff/3)
       resolve(&TechIndicatorsResolver.price_volume_diff/3)
+    end
+
+    @desc "Returns a list of all exchange wallets. Internal API."
+    field :exchange_wallets, list_of(:wallet) do
+      middleware(BasicAuth)
+
+      resolve(&EtherbiResolver.exchange_wallets/3)
     end
   end
 

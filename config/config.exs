@@ -58,22 +58,22 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data"
 
 config :sanbase, Sanbase.Etherbi.Transactions.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
+  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
-  database: "transactions"
+  database: "erc20_exchange_transactions"
 
 config :sanbase, Sanbase.Etherbi.BurnRate.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
+  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
-  database: "burn_rate"
+  database: "erc20_burn_rate"
 
 config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
+  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
-  database: "transaction_volume"
+  database: "erc20_transaction_volume"
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
@@ -153,18 +153,6 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
   update_interval: 1000 * 60 * 60 * 24,
   sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
 
-config :sanbase, Sanbase.Etherbi.Transactions,
-  update_interval: 1000 * 60 * 5,
-  sync_enabled: {:system, "ETHERBI_TRANSACTIONS_SYNC_ENABLED", false}
-
-config :sanbase, Sanbase.Etherbi.BurnRate,
-  update_interval: 1000 * 60 * 5,
-  sync_enabled: {:system, "ETHERBI_BURN_RATE_SYNC_ENABLED", false}
-
-config :sanbase, Sanbase.Etherbi.TransactionVolume,
-  update_interval: 1000 * 60 * 5,
-  sync_enabled: {:system, "ETHERBI_TRANSACTION_VOLUME_SYNC_ENABLED", false}
-
 config :sanbase, Sanbase.Notifications.CheckPrices,
   webhook_url: {:system, "CHECK_PRICES_WEBHOOK_URL"},
   notification_channel: {:system, "CHECK_PRICES_CHANNEL", "#signals-stage"},
@@ -172,6 +160,9 @@ config :sanbase, Sanbase.Notifications.CheckPrices,
 
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: {:system, "PRICE_VOLUME_DIFF_WEBHOOK_URL"},
+  notification_threshold: {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_THRESHOLD", "0.1"},
+  notifications_cooldown: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_COOLDOWN", "86400"},
+  debug_url: {:system, "PRICE_VOLUME_DIFF_DEBUG_URL"},
   notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}
 
 config :sanbase, SanbaseWeb.Guardian,
@@ -209,10 +200,6 @@ config :ex_aws,
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
   region: "eu-central-1"
 
-config :sanbase, Sanbase.Etherbi,
-  url: {:system, "ETHERBI_URL"},
-  use_cache: {:system, "ETHERBI_USE_CACHE", false}
-
 config :sanbase, Sanbase.MandrillApi,
   apikey: {:system, "MANDRILL_APIKEY"},
   from_email: {:system, "MANDRILL_FROM_EMAIL", "admin@santiment.net"}
@@ -223,7 +210,7 @@ config :arc,
   storage: Arc.Storage.S3,
   # To support AWS regions other than US Standard
   virtual_host: true,
-  bucket: {:system, "POSTS_IMAGE_BUCKET", "sanbase-images"}
+  bucket: {:system, "POSTS_IMAGE_BUCKET"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -1,0 +1,112 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Project detail page container it should redirect to / 1`] = `
+<Redirect
+  push={false}
+  to={
+    Object {
+      "pathname": "/",
+    }
+  }
+/>
+`;
+
+exports[`Project detail page container it should render correctly 1`] = `
+<div
+  className="page detailed"
+>
+  <HelmetWrapper
+    defer={true}
+    encodeSpecialCharacters={true}
+  >
+    <title>
+      AE project page
+    </title>
+  </HelmetWrapper>
+  <withRouter(Apollo(SearchContainer)) />
+  <ExportedComponent
+    project={
+      Object {
+        "id": 12,
+        "name": "Aragorn",
+        "priceUsd": 10,
+        "ticker": "AE",
+      }
+    }
+  />
+  <div>
+    <withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))
+      burnRate={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": true,
+        }
+      }
+      github={
+        Object {
+          "history": Object {
+            "items": Array [],
+            "loading": true,
+          },
+        }
+      }
+      onDatesChange={[Function]}
+      price={
+        Object {
+          "history": Object {
+            "items": Array [],
+            "loading": true,
+          },
+        }
+      }
+      ticker="AE"
+      transactionVolume={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": true,
+        }
+      }
+      twitter={
+        Object {
+          "data": Object {
+            "error": false,
+            "followersCount": undefined,
+            "loading": true,
+          },
+          "history": Object {
+            "error": false,
+            "items": Array [],
+            "loading": true,
+          },
+        }
+      }
+    />
+  </div>
+  <div
+    className="information"
+  >
+    <PanelBlock
+      title="General Info"
+    >
+      <GeneralInfoBlock
+        id={12}
+        name="Aragorn"
+        priceUsd={10}
+        ticker="AE"
+      />
+    </PanelBlock>
+    <PanelBlock
+      title="Financials"
+    >
+      <FinancialsBlock
+        id={12}
+        name="Aragorn"
+        priceUsd={10}
+        ticker="AE"
+      />
+    </PanelBlock>
+  </div>
+</div>
+`;

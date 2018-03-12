@@ -1,12 +1,14 @@
 import React from 'react'
 import {
-  Route,
+  Route as BasicRoute,
   Switch,
   Redirect
 } from 'react-router-dom'
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
 import { compose } from 'recompose'
+import nprogress from 'nprogress'
+import 'nprogress/nprogress.css'
 import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import CashflowMobile from './pages/CashflowMobile'
@@ -23,7 +25,7 @@ import ImageUpload from './components/ImageUpload'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
-  loader: () => import('./pages/Detailed'),
+  loader: () => import('./pages/Detailed/Detailed'),
   loading: () => (
     <PageLoader />
   )
@@ -42,6 +44,22 @@ const LoadableInsightsNew = Loadable({
     <PageLoader />
   )
 })
+
+class Route extends React.Component {
+  componentWillMount () {
+    nprogress.start()
+  }
+
+  componentDidMount () {
+    nprogress.done()
+  }
+
+  render () {
+    return (
+      <BasicRoute {...this.props} />
+    )
+  }
+}
 
 export const App = ({isDesktop}) => (
   <div className='App'>

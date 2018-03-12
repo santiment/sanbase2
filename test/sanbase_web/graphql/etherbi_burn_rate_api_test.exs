@@ -4,16 +4,24 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.BurnRate.Store
+  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Application.put_env(:sanbase, Sanbase.Etherbi, use_cache: true)
-
     Store.create_db()
 
     ticker = "SAN"
-    Store.drop_measurement(ticker)
+    contract_address = "0x1234"
+    Store.drop_measurement(contract_address)
+
+    project =
+      %Project{name: "Santiment", ticker: ticker, coinmarketcap_id: "santiment"}
+      |> Repo.insert!()
+
+    %Ico{project_id: project.id, main_contract_address: contract_address}
+    |> Repo.insert!()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
@@ -29,49 +37,49 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 5000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 1000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 500},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 15000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 65000},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 50},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 5},
         tags: [],
-        name: ticker
+        name: contract_address
       },
       %Measurement{
         timestamp: datetime8 |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 5000},
         tags: [],
-        name: ticker
+        name: contract_address
       }
     ])
 
@@ -110,42 +118,42 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
-             "burnRate" => "5000"
+             "burnRate" => 5000.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
-             "burnRate" => "1000"
+             "burnRate" => 1000.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime3),
-             "burnRate" => "500"
+             "burnRate" => 500.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime4),
-             "burnRate" => "15000"
+             "burnRate" => 15000.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
-             "burnRate" => "65000"
+             "burnRate" => 65000.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime6),
-             "burnRate" => "50"
+             "burnRate" => 50.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime7),
-             "burnRate" => "5"
+             "burnRate" => 5.0
            } in burn_rates
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime8),
-             "burnRate" => "5000"
+             "burnRate" => 5000.0
            } in burn_rates
   end
 
@@ -171,17 +179,17 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
     assert %{
              "datetime" => "2017-05-13T21:30:00Z",
-             "burnRate" => "6000"
+             "burnRate" => 6000.0
            } in burn_rates
 
     assert %{
              "datetime" => "2017-05-13T22:00:00Z",
-             "burnRate" => "80500"
+             "burnRate" => 80500.0
            } in burn_rates
 
     assert %{
              "datetime" => "2017-05-13T22:30:00Z",
-             "burnRate" => "5055"
+             "burnRate" => 5055.0
            } in burn_rates
   end
 end

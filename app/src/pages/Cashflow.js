@@ -4,18 +4,26 @@ import classnames from 'classnames'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
+import { Helmet } from 'react-helmet'
 import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
+import Sticky from 'react-stickynode'
 import { formatNumber } from '../utils/formatting'
-import { millify } from '../utils/utils'
+import { millify, getOrigin } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
+import { getProjects } from './Projects/projectSelectors'
 import Panel from './../components/Panel'
-import allProjectsGQL from './allProjectsGQL'
+import allProjectsGQL from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
+
+export const Tips = () =>
+  <div style={{ textAlign: 'center' }}>
+    <em>Tip: Hold shift when sorting to multi-sort!</em>
+  </div>
 
 const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
   <div
@@ -37,6 +45,14 @@ const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
       />
       : children}
   </div>
+)
+
+const CustomHeadComponent = ({ children, className, ...rest }) => (
+  <Sticky enabled >
+    <div className={classnames('rt-thead', className)} {...rest}>
+      {children}
+    </div>
+  </Sticky>
 )
 
 const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
@@ -287,7 +303,11 @@ export const Cashflow = ({
 
   return (
     <div className='page cashflow'>
-      <FadeIn duration='0.7s' timingFunction='ease-in' as='div'>
+      <Helmet>
+        <title>SANbase: Projects</title>
+        <link rel='canonical' href={`${getOrigin()}/projects`} />
+      </Helmet>
+      <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
           <h1>Projects</h1>
           <p>
@@ -352,6 +372,7 @@ export const Cashflow = ({
               </div>
             )}
             ThComponent={CustomThComponent}
+            TheadComponent={CustomHeadComponent}
             getTdProps={(state, rowInfo, column, instance) => {
               return {
                 onClick: (e, handleOriginal) => {
@@ -367,6 +388,7 @@ export const Cashflow = ({
           />
         </Panel>
       </FadeIn>
+      <Tips />
       <div className='cashflow-indev-message'>
         NOTE: This app is in development.
         We give no guarantee data is correct as we are in active development.
@@ -399,14 +421,7 @@ const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = (allProjects.allProjects || [])
-    .filter(project => {
-      const defaultFilter = project.ethAddresses &&
-        project.ethAddresses.length > 0 &&
-        project.rank &&
-        project.volumeUsd > 0
-      return defaultFilter
-    })
+  const projects = getProjects(allProjects.allProjects)
 
   const isEmpty = projects.length === 0
   return {

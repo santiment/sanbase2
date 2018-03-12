@@ -5,8 +5,8 @@ import LikeBtn from './../pages/EventVotesNew/LikeBtn'
 import { createSkeletonElement } from '@trainline/react-skeletor'
 import './Post.css'
 
-export const getSourceLink = (link = '') => {
-  return link.split('/')[2] || 'sanbase.net'
+export const getSourceLink = link => {
+  return link ? link.split('/')[2] : 'SANbase.net'
 }
 
 const A = createSkeletonElement('a', 'pending-home')

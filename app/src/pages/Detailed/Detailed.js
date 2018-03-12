@@ -7,6 +7,7 @@ import {
 } from 'recompose'
 import moment from 'moment'
 import { Redirect } from 'react-router-dom'
+import { Helmet } from 'react-helmet'
 import { graphql, withApollo } from 'react-apollo'
 import PanelBlock from './../../components/PanelBlock'
 import GeneralInfoBlock from './GeneralInfoBlock'
@@ -165,6 +166,12 @@ export const Detailed = ({
 
   return (
     <div className='page detailed'>
+      <Helmet>
+        <title>{Project.loading
+          ? 'SANbase...'
+          : `${Project.project.ticker} project page`}
+        </title>
+      </Helmet>
       {!isDesktop && <Search />}
       <DetailedHeader {...Project} />
       {isDesktop

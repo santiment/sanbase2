@@ -1,8 +1,14 @@
 import React from 'react'
+import { Helmet } from 'react-helmet'
+import { getOrigin } from './../utils/utils'
 import './Signals.css'
 
 const Signals = () => (
   <div className='page signals'>
+    <Helmet>
+      <title>SANbase: Signals</title>
+      <link rel='canonical' href={`${getOrigin()}/roadmap`} />
+    </Helmet>
     <div className='page-head'>
       <h1>Signals</h1>
       <p>SANbase will generate signals when actionable intelligence or events occur in the crypto-markets.</p>

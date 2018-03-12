@@ -1,5 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux'
+import { Helmet } from 'react-helmet'
 import Raven from 'raven-js'
 import { Redirect } from 'react-router-dom'
 import { graphql } from 'react-apollo'
@@ -69,6 +70,11 @@ export const Account = ({
   }
   return (
     <div className='page account'>
+      <Helmet>
+        <title>
+          SANbase: Settings
+        </title>
+      </Helmet>
       <div className='page-head'>
         <h1>Account settings</h1>
       </div>

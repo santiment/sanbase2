@@ -41,3 +41,11 @@ export const calculateBTCVolume = ({volume, priceUsd, priceBtc}) => {
 export const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
   return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
 }
+
+export const getOrigin = () => {
+  const origin = (window.env || {}).WEBSITE_URL || ''
+  if (process.env.production) {
+    return window.location.origin
+  }
+  return origin
+}

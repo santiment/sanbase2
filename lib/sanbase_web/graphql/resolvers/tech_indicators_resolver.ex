@@ -2,10 +2,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.InternalServices.TechIndicators
+  alias Sanbase.Utils.Config
 
-  @price_volume_diff_ma_window_type "bohman"
-  @price_volume_diff_ma_approximation_window 14
-  @price_volume_diff_ma_comparison_window 7
+  require Sanbase.Utils.Config
 
   def macd(
         _root,

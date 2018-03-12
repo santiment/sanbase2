@@ -4,13 +4,14 @@ import classnames from 'classnames'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
+import { Helmet } from 'react-helmet'
 import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
 import Sticky from 'react-stickynode'
 import { formatNumber } from '../utils/formatting'
-import { millify } from '../utils/utils'
+import { millify, getOrigin } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
 import { getProjects } from './Projects/projectSelectors'
@@ -302,6 +303,10 @@ export const Cashflow = ({
 
   return (
     <div className='page cashflow'>
+      <Helmet>
+        <title>SANbase: Projects</title>
+        <link rel='canonical' href={`${getOrigin()}/projects`} />
+      </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
           <h1>Projects</h1>

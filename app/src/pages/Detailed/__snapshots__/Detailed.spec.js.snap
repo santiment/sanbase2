@@ -15,6 +15,14 @@ exports[`Project detail page container it should render correctly 1`] = `
 <div
   className="page detailed"
 >
+  <HelmetWrapper
+    defer={true}
+    encodeSpecialCharacters={true}
+  >
+    <title>
+      AE project page
+    </title>
+  </HelmetWrapper>
   <withRouter(Apollo(SearchContainer)) />
   <ExportedComponent
     project={

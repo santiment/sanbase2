@@ -4,12 +4,24 @@ exports[`Cashflow container it should render correctly 1`] = `
 <div
   className="page cashflow"
 >
+  <HelmetWrapper
+    defer={true}
+    encodeSpecialCharacters={true}
+  >
+    <title>
+      SANbase: Projects
+    </title>
+    <link
+      href="/projects"
+      rel="canonical"
+    />
+  </HelmetWrapper>
   <FadeIn
     as="div"
     backfaceVisible="visible"
     delay="0s"
     direction="normal"
-    duration="0.7s"
+    duration="0.3s"
     fillMode="none"
     iterations="1"
     playState="running"
@@ -298,6 +310,7 @@ exports[`Cashflow container it should render correctly 1`] = `
       />
     </Panel>
   </FadeIn>
+  <Component />
   <div
     className="cashflow-indev-message"
   >

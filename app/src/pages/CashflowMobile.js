@@ -7,12 +7,13 @@ import { ListView, ListViewItem } from './../components/ListView'
 import ProjectCard from './Projects/ProjectCard'
 import FloatingButton from './Projects/FloatingButton'
 import { simpleSort } from './../utils/sortMethods'
+import { getProjects } from './Projects/projectSelectors'
 import Search from './../components/Search'
 import Filters, {
   DEFAULT_SORT_BY,
   DEFAULT_FILTER_BY
 } from './Projects/Filters'
-import allProjectsGQL from './allProjectsGQL'
+import allProjectsGQL from './Projects/allProjectsGQL'
 import './CashflowMobile.css'
 
 const CashflowMobile = ({
@@ -107,13 +108,7 @@ const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = (allProjects.allProjects || [])
-    .filter(project => {
-      const defaultFilter = project.ethAddresses &&
-        project.ethAddresses.length > 0 &&
-        project.rank
-      return defaultFilter
-    })
+  const projects = getProjects(allProjects.allProjects)
 
   let filteredProjects = projects
     .sort((a, b) => {

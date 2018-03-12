@@ -1,9 +1,15 @@
 import React from 'react'
+import { Helmet } from 'react-helmet'
+import { getOrigin } from './../utils/utils'
 import './Roadmap.css'
 
 const Roadmap = props => {
   return (
     <div className='page roadmap'>
+      <Helmet>
+        <title>SANbase: Roadmap</title>
+        <link rel='canonical' href={`${getOrigin()}/roadmap`} />
+      </Helmet>
       <div className='page-head'>
         <h1>SANbase Roadmap</h1>
         <p>Please see our SANbase roadmap below. It is a living document; milestones may adjust.</p>

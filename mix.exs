@@ -72,7 +72,8 @@ defmodule Sanbase.Mixfile do
       {:dataloader, "~> 1.0.0"},
       {:csv, "~> 2.0.0"},
       {:arc, git: "https://github.com/marinho10/arc"},
-      {:uuid, "~> 1.1"}
+      {:uuid, "~> 1.1"},
+      {:phoenix_live_reload, "~> 1.1", only: :dev}
     ]
   end
 

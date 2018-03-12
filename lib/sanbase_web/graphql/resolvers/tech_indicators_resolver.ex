@@ -1,9 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   alias Sanbase.InternalServices.TechIndicators
+  alias Sanbase.Utils.Config
 
-  @price_volume_diff_ma_window_type "bohman"
-  @price_volume_diff_ma_approximation_window 14
-  @price_volume_diff_ma_comparison_window 7
+  require Sanbase.Utils.Config
 
   def macd(
         _root,
@@ -54,10 +53,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
       from,
       to,
       interval,
-      @price_volume_diff_ma_window_type,
-      @price_volume_diff_ma_approximation_window,
-      @price_volume_diff_ma_comparison_window,
+      price_volume_diff_ma_window_type(),
+      price_volume_diff_ma_approximation_window(),
+      price_volume_diff_ma_comparison_window(),
       result_size_tail
     )
+  end
+
+  defp price_volume_diff_ma_window_type() do
+    Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :window_type)
+  end
+
+  defp price_volume_diff_ma_approximation_window() do
+    {res, _} =
+      Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :approximation_window)
+      |> Integer.parse()
+
+    res
+  end
+
+  defp price_volume_diff_ma_comparison_window() do
+    {res, _} =
+      Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :comparison_window)
+      |> Integer.parse()
+
+    res
   end
 end

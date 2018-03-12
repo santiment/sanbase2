@@ -19,6 +19,7 @@ import { ApolloProvider } from 'react-apollo'
 import App from './App'
 import reducers from './reducers/rootReducers.js'
 import { loadState, saveState } from './utils/localStorage'
+import { getOrigin } from './utils/utils'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import { hasMetamask } from './web3Helpers'
 import * as serviceWorker from './serviceWorker'
@@ -59,10 +60,7 @@ const handleLoad = () => {
       git_commit: process.env.REACT_APP_VERSION.split('-')[1]
     }
   }).install()
-  let origin = window.env.WEBSITE_URL || ''
-  if (process.env.production) {
-    origin = window.location.origin
-  }
+  const origin = getOrigin()
 
   const httpLink = createHttpLink({ uri: `${origin}/graphql` })
   const authLink = setContext((_, { headers }) => {

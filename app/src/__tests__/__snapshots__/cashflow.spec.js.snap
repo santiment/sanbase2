@@ -4,6 +4,18 @@ exports[`Cashflow container it should render correctly 1`] = `
 <div
   className="page cashflow"
 >
+  <HelmetWrapper
+    defer={true}
+    encodeSpecialCharacters={true}
+  >
+    <title>
+      SANbase: Projects
+    </title>
+    <link
+      href="/projects"
+      rel="canonical"
+    />
+  </HelmetWrapper>
   <FadeIn
     as="div"
     backfaceVisible="visible"

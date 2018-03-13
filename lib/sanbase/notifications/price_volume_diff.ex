@@ -12,9 +12,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   @notification_type_name "price_volume_diff"
 
-  @approximation_window 14
-  @comparison_window 7
-
   def exec(project, currency) do
     currency = String.upcase(currency)
 
@@ -42,8 +39,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         from_datetime,
         to_datetime,
         "1d",
-        @approximation_window,
-        @comparison_window,
+        window_type(),
+        approximation_window(),
+        comparison_window(),
         1
       )
       |> case do
@@ -76,8 +74,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         from_datetime,
         to_datetime,
         "1d",
-        @approximation_window,
-        @comparison_window
+        window_type(),
+        approximation_window(),
+        comparison_window()
       )
 
     {indicator, debug_info}
@@ -95,7 +94,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
-    from_datetime = Timex.shift(to_datetime, days: -@approximation_window - @comparison_window)
+    from_datetime = Timex.shift(to_datetime, days: -approximation_window() - comparison_window())
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end
@@ -145,6 +144,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         from_datetime,
         to_datetime,
         aggregate_interval,
+        window_type,
         approximation_window,
         comparison_window
       ) do
@@ -159,9 +159,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         debug_url =
           "#{debug_url}?ticker=#{ticker}&currency=#{currency}&from_timestamp=#{from_unix}&to_timestamp=#{
             to_unix
-          }&aggregate_interval=#{aggregate_interval}&approximation_window=#{approximation_window}&comparison_window=#{
-            comparison_window
-          }"
+          }&aggregate_interval=#{aggregate_interval}&window_type=#{window_type}&approximation_window=#{
+            approximation_window
+          }&comparison_window=#{comparison_window}"
 
         "[DEBUG INFO: #{debug_url}]"
     end
@@ -172,6 +172,26 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp webhook_url() do
     Config.get(:webhook_url)
+  end
+
+  defp window_type() do
+    Config.get(:window_type)
+  end
+
+  defp approximation_window() do
+    {res, _} =
+      Config.get(:approximation_window)
+      |> Integer.parse()
+
+    res
+  end
+
+  defp comparison_window() do
+    {res, _} =
+      Config.get(:comparison_window)
+      |> Integer.parse()
+
+    res
   end
 
   defp notification_threshold() do

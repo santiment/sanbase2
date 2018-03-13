@@ -112,6 +112,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         from_datetime,
         to_datetime,
         aggregate_interval,
+        window_type,
         approximation_window,
         comparison_window,
         result_size_tail \\ 0
@@ -129,6 +130,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
         {"aggregate_interval", aggregate_interval},
+        {"window_type", window_type},
         {"approximation_window", approximation_window},
         {"comparison_window", comparison_window},
         {"result_size_tail", result_size_tail}

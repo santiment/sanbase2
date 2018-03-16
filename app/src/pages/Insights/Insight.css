@@ -1,0 +1,10 @@
+.insight {
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .insight {
+    min-width: 720px;
+    width: 720px;
+  }
+}

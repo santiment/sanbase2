@@ -7,9 +7,17 @@ import moment from 'moment'
 import Panel from './../../components/Panel'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
+import {
+  createSkeletonProvider,
+  createSkeletonElement
+} from '@trainline/react-skeletor'
 import './Insight.css'
 
 const POLLING_INTERVAL = 100000
+
+const H2 = createSkeletonElement('h2', 'pending-home')
+const Span = createSkeletonElement('span', 'pending-home')
+const Div = createSkeletonElement('div', 'pending-home')
 
 const Insight = ({
   Post = {
@@ -17,32 +25,27 @@ const Insight = ({
     post: null
   }
 }) => {
-  const { post = {
+  const {post = {
     title: '',
     text: '',
     createdAt: null,
     username: null
-  }, loading } = Post
-  if (loading) {
-    return (
-      'Loading...'
-    )
-  }
+  }} = Post
   return (
     <div className='page insight'>
       <Panel>
-        <h2>
+        <H2>
           {post.title}
-        </h2>
-        <span style={{marginLeft: 2}}>
+        </H2>
+        <Span style={{marginLeft: 2}}>
           by {post.username
             ? `${post.username}`
             : 'unknown author'}
-        </span>
+        </Span>
         &nbsp;&#8226;&nbsp;
         {post.createdAt &&
-          <span>{moment(post.createdAt).format('MMM DD, YYYY')}</span>}
-        <p>{post.text}</p>
+          <Span>{moment(post.createdAt).format('MMM DD, YYYY')}</Span>}
+        <Div>{post.text}</Div>
       </Panel>
     </div>
   )
@@ -86,4 +89,25 @@ const enhance = compose(
   pure
 )
 
-export default enhance(Insight)
+const withSkeleton = createSkeletonProvider(
+  {
+    Post: {
+      loading: true,
+      post: {
+        title: '_____',
+        link: 'https://sanbase.net',
+        createdAt: new Date(),
+        user: {
+          username: ''
+        }
+      }
+    }
+  },
+  ({ Post }) => Post.loading,
+  () => ({
+    backgroundColor: '#bdc3c7',
+    color: '#bdc3c7'
+  })
+)(Insight)
+
+export default enhance(withSkeleton)

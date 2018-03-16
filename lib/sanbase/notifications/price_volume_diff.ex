@@ -76,7 +76,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         "1d",
         window_type(),
         approximation_window(),
-        comparison_window()
+        comparison_window(),
+        notification_threshold()
       )
 
     {indicator, debug_info}
@@ -146,7 +147,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         aggregate_interval,
         window_type,
         approximation_window,
-        comparison_window
+        comparison_window,
+        notification_threshold
       ) do
     case debug_url() do
       nil ->
@@ -161,7 +163,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
             to_unix
           }&aggregate_interval=#{aggregate_interval}&window_type=#{window_type}&approximation_window=#{
             approximation_window
-          }&comparison_window=#{comparison_window}"
+          }&comparison_window=#{comparison_window}&notification_threshold=#{
+            notification_threshold
+          }"
 
         "[DEBUG INFO: #{debug_url}]"
     end

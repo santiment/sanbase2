@@ -65,7 +65,8 @@ const EventVotes = ({
   setDeletePostId,
   deletePostId = undefined
 }) => {
-  const showedMyPosts = match.params.filter === 'my' && Posts.hasUserInsights
+  const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
+
   return ([
     <Fragment key='modal-login-request'>
       {isToggledLoginRequest &&
@@ -219,7 +220,7 @@ export const sortByNewest = posts => {
 
 const mapDataToProps = props => {
   const { Poll, ownProps } = props
-  const filter = ownProps.match.params.filter || 'popular'
+  const filter = ownProps.match.path.split('/')[2] || 'popular'
   const posts = (Poll.currentPoll || {}).posts || []
   let filteredPosts = posts
     // TODO: We should return this filter in the near future

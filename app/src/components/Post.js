@@ -69,7 +69,7 @@ const Post = ({
         {index}.
       </div>
       <div className='event-post-body'>
-        <A className='event-storylink' href={link || `/insights/ug/${id}`}>
+        <A className='event-storylink' href={link || `/insights/${id}`}>
           {title}
         </A>
         <br />

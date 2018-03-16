@@ -89,11 +89,13 @@ export const App = ({isDesktop}) => (
         }} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
-        <Route exact path='/insights' component={LoadableInsights} />
         <Route exact path='/uploader' component={ImageUpload} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
-        <Route exact path='/insights/:filter' component={LoadableInsights} />
-        <Route exact path='/insights/ug/:insightId' component={LoadableInsight} />
+        <Route exact path='/insights' component={LoadableInsights} />
+        <Route exact path='/insights/newest' component={LoadableInsights} />
+        <Route exact path='/insights/popular' component={LoadableInsights} />
+        <Route exact path='/insights/my' component={LoadableInsights} />
+        <Route exact path='/insights/:insightId' component={LoadableInsight} />
         <Route exact path='/projects/:ticker' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />

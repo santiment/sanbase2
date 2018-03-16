@@ -11,10 +11,10 @@ import Post from './../../components/Post'
 import ErrorBoundary from './../../ErrorBoundary'
 
 const createPostGQL = gql`
-  mutation createPost($link: String!, $title: String!) {
+  mutation createPost($title: String!, $text: String!) {
     createPost(
-      link: $link,
       title: $title
+      text: $text
     ) {
       id
     }

@@ -38,6 +38,13 @@ const LoadableInsights = Loadable({
   )
 })
 
+const LoadableInsight = Loadable({
+  loader: () => import('./pages/Insights/Insight'),
+  loading: () => (
+    <PageLoader />
+  )
+})
+
 const LoadableInsightsNew = Loadable({
   loader: () => import('./pages/EventVotesNew/EventVotesNew'),
   loading: () => (
@@ -86,6 +93,7 @@ export const App = ({isDesktop}) => (
         <Route exact path='/uploader' component={ImageUpload} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
         <Route exact path='/insights/:filter' component={LoadableInsights} />
+        <Route exact path='/insights/ug/:insightId' component={LoadableInsight} />
         <Route exact path='/projects/:ticker' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />

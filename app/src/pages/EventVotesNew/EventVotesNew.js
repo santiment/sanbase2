@@ -20,7 +20,6 @@ class EventVotesNew extends Component {
 
   changePost = (post, nextStepURL = '') => { // eslint-disable-line
     this.setState({...post}, () => {
-      console.log('check')
       this.props.history.push(`/insights/new/${nextStepURL}`)
     })
   }
@@ -89,7 +88,6 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
   return {
     addPost: post => {
-      console.log('add post')
       dispatch({
         type: 'ADD_EVENT_POST',
         payload: {

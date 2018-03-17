@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react'
 import debounce from 'lodash.debounce'
+import { Helmet } from 'react-helmet'
 import Raven from 'raven-js'
 import {
   compose,
@@ -86,6 +87,9 @@ const EventVotes = ({
           }} />}
     </Fragment>,
     <div className='page event-votes' key='page-event-votes'>
+      <Helmet>
+        <title>SANbase: Insights</title>
+      </Helmet>
       {location.state && location.state.postCreated &&
         <Message positive>
           <Message.Header>

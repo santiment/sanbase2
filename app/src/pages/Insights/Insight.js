@@ -1,9 +1,9 @@
 import React, { createElement } from 'react'
+import { Helmet } from 'react-helmet'
 import {
   compose,
   pure
 } from 'recompose'
-import { Redirect } from 'react-router-dom'
 import moment from 'moment'
 import Panel from './../../components/Panel'
 import gql from 'graphql-tag'
@@ -35,9 +35,6 @@ const Insight = ({
       username: null
     }
   }} = Post
-  if (!Post.loading && !post.text) {
-    return <Redirect to='/' />
-  }
   const compile = marksy({
     createElement,
     h1 (props) {
@@ -46,6 +43,9 @@ const Insight = ({
   })
   return (
     <div className='page insight'>
+      <Helmet>
+        <title>SANbase: Insight - {post.title}</title>
+      </Helmet>
       <Panel>
         <H2>
           {post.title}

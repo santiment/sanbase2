@@ -33,6 +33,7 @@
     "graphql-tag": "^2.5.0",
     "intl": "^1.2.5",
     "lodash.debounce": "^4.0.8",
+    "marksy": "^6.0.3",
     "medium-draft": "^0.5.6",
     "moment": "^2.19.3",
     "nprogress": "^0.2.0",

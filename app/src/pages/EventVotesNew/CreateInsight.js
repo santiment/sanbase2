@@ -1,7 +1,7 @@
 import React from 'react'
 import 'medium-draft/lib/index.css'
 import { convertToRaw } from 'draft-js'
-import { draftjsToMd } from 'draftjs-md-converter'
+import { draftjsToMd } from './../../utils/draftjsToMd'
 import {
   Editor,
   createEditorState

@@ -4,6 +4,14 @@ exports[`Account container it should render correctly 1`] = `
 <div
   className="page account"
 >
+  <HelmetWrapper
+    defer={true}
+    encodeSpecialCharacters={true}
+  >
+    <title>
+      SANbase: Settings
+    </title>
+  </HelmetWrapper>
   <div
     className="page-head"
   >

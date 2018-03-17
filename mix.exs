@@ -70,7 +70,10 @@ defmodule Sanbase.Mixfile do
       {:ex_unit_notifier, "~> 0.1", only: :test},
       {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
       {:dataloader, "~> 1.0.0"},
-      {:csv, "~> 2.0.0"}
+      {:csv, "~> 2.0.0"},
+      {:arc, git: "https://github.com/marinho10/arc"},
+      {:uuid, "~> 1.1"},
+      {:phoenix_live_reload, "~> 1.1", only: :dev}
     ]
   end
 

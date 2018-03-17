@@ -2,6 +2,7 @@ import gql from 'graphql-tag'
 
 const allProjectsGQL = gql`{
   allProjects {
+    id
     name
     rank
     description

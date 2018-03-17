@@ -11,26 +11,20 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   @http_service Mockery.of("HTTPoison")
 
   @notification_type_name "price_volume_diff"
-  # 60 minutes
-  @cooldown_period_in_sec 60 * 60
-
-  @approximation_window 14
-  @comparison_window 7
-  @price_volume_diff_threshold 0.1
 
   def exec(project, currency) do
     currency = String.upcase(currency)
 
-    if notifications_enabled?() and
+    if notifications_enabled?() &&
          not Utils.recent_notification?(
            project,
-           seconds_ago(@cooldown_period_in_sec),
+           seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
          ) do
-      indicator = get_indicator(project.ticker, currency)
+      {indicator, debug_info} = get_indicator(project.ticker, currency)
 
       if check_notification(indicator) do
-        send_notification(project, currency, indicator)
+        send_notification(project, currency, indicator, debug_info)
       end
     end
   end
@@ -38,42 +32,59 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   defp get_indicator(ticker, currency) do
     %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
 
-    TechIndicators.price_volume_diff_ma(
-      ticker,
-      currency,
-      from_datetime,
-      to_datetime,
-      "1d",
-      @approximation_window,
-      @comparison_window,
-      1
-    )
-    |> case do
-      {:ok,
-       [
-         %{
-           price_volume_diff: price_volume_diff,
-           price_change: price_change,
-           volume_change: volume_change
-         }
-       ]} ->
-        %{
-          price_volume_diff: nil_to_zero(price_volume_diff),
-          price_change: nil_to_zero(price_change),
-          volume_change: nil_to_zero(volume_change)
-        }
+    indicator =
+      TechIndicators.price_volume_diff_ma(
+        ticker,
+        currency,
+        from_datetime,
+        to_datetime,
+        "1d",
+        window_type(),
+        approximation_window(),
+        comparison_window(),
+        1
+      )
+      |> case do
+        {:ok,
+         [
+           %{
+             price_volume_diff: price_volume_diff,
+             price_change: price_change,
+             volume_change: volume_change
+           }
+         ]} ->
+          %{
+            price_volume_diff: nil_to_zero(price_volume_diff),
+            price_change: nil_to_zero(price_change),
+            volume_change: nil_to_zero(volume_change)
+          }
 
-      _ ->
-        %{
-          price_volume_diff: Decimal.new(0),
-          price_change: Decimal.new(0),
-          volume_change: Decimal.new(0)
-        }
-    end
+        _ ->
+          %{
+            price_volume_diff: Decimal.new(0),
+            price_change: Decimal.new(0),
+            volume_change: Decimal.new(0)
+          }
+      end
+
+    debug_info =
+      debug_info(
+        ticker,
+        currency,
+        from_datetime,
+        to_datetime,
+        "1d",
+        window_type(),
+        approximation_window(),
+        comparison_window(),
+        notification_threshold()
+      )
+
+    {indicator, debug_info}
   end
 
   defp check_notification(%{price_volume_diff: price_volume_diff}) do
-    Decimal.cmp(price_volume_diff, Decimal.new(@price_volume_diff_threshold))
+    Decimal.cmp(price_volume_diff, notification_threshold())
     |> case do
       :lt -> false
       _ -> true
@@ -84,16 +95,20 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
-    from_datetime = Timex.shift(to_datetime, days: -@approximation_window - @comparison_window)
+    from_datetime = Timex.shift(to_datetime, days: -approximation_window() - comparison_window())
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end
 
-  defp send_notification(project, currency, indicator) do
+  defp send_notification(project, currency, indicator, debug_info) do
     {:ok, %HTTPoison.Response{status_code: 204}} =
-      @http_service.post(webhook_url(), notification_payload(project, currency, indicator), [
-        {"Content-Type", "application/json"}
-      ])
+      @http_service.post(
+        webhook_url(),
+        notification_payload(project, currency, indicator, debug_info),
+        [
+          {"Content-Type", "application/json"}
+        ]
+      )
 
     Utils.insert_notification(project, notification_type_name(currency))
   end
@@ -101,13 +116,16 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   defp notification_payload(
          %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id},
          currency,
-         %{price_change: price_change, volume_change: volume_change}
+         %{price_change: price_change, volume_change: volume_change},
+         debug_info
        ) do
     Poison.encode!(%{
       content:
         "#{name}: #{ticker}/#{String.upcase(currency)} #{notification_emoji(price_change)} Price #{
           notification_emoji(volume_change)
-        } Volume. https://coinmarketcap.com/currencies/#{coinmarketcap_id}",
+        } Volume opposite trends. https://coinmarketcap.com/currencies/#{coinmarketcap_id} #{
+          debug_info
+        }",
       username: "Price-Volume Difference"
     })
   end
@@ -121,11 +139,80 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
+  def debug_info(
+        ticker,
+        currency,
+        from_datetime,
+        to_datetime,
+        aggregate_interval,
+        window_type,
+        approximation_window,
+        comparison_window,
+        notification_threshold
+      ) do
+    case debug_url() do
+      nil ->
+        nil
+
+      debug_url ->
+        from_unix = DateTime.to_unix(from_datetime)
+        to_unix = DateTime.to_unix(to_datetime)
+
+        debug_url =
+          "#{debug_url}?ticker=#{ticker}&currency=#{currency}&from_timestamp=#{from_unix}&to_timestamp=#{
+            to_unix
+          }&aggregate_interval=#{aggregate_interval}&window_type=#{window_type}&approximation_window=#{
+            approximation_window
+          }&comparison_window=#{comparison_window}&notification_threshold=#{
+            notification_threshold
+          }"
+
+        "[DEBUG INFO: #{debug_url}]"
+    end
+  end
+
   defp nil_to_zero(nil), do: Decimal.new(0)
   defp nil_to_zero(value), do: value
 
   defp webhook_url() do
     Config.get(:webhook_url)
+  end
+
+  defp window_type() do
+    Config.get(:window_type)
+  end
+
+  defp approximation_window() do
+    {res, _} =
+      Config.get(:approximation_window)
+      |> Integer.parse()
+
+    res
+  end
+
+  defp comparison_window() do
+    {res, _} =
+      Config.get(:comparison_window)
+      |> Integer.parse()
+
+    res
+  end
+
+  defp notification_threshold() do
+    Config.get(:notification_threshold)
+    |> Decimal.new()
+  end
+
+  defp notifications_cooldown() do
+    {res, _} =
+      Config.get(:notifications_cooldown)
+      |> Integer.parse()
+
+    res
+  end
+
+  defp debug_url() do
+    Config.get(:debug_url)
   end
 
   defp notifications_enabled?() do

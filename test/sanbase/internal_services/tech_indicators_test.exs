@@ -120,6 +120,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_752_000),
         "1d",
+        "bohman",
         14,
         7
       )

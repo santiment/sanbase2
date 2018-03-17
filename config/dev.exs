@@ -70,6 +70,10 @@ config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
+config :arc,
+  storage: Arc.Storage.Local,
+  storage_dir: "/tmp/sanbase/filestore/"
+
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

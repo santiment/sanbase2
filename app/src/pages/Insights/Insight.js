@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { createElement } from 'react'
 import {
   compose,
   pure
 } from 'recompose'
+import { Redirect } from 'react-router-dom'
 import moment from 'moment'
 import Panel from './../../components/Panel'
 import gql from 'graphql-tag'
@@ -11,6 +12,7 @@ import {
   createSkeletonProvider,
   createSkeletonElement
 } from '@trainline/react-skeletor'
+import marksy from 'marksy'
 import './Insight.css'
 
 const POLLING_INTERVAL = 100000
@@ -29,23 +31,37 @@ const Insight = ({
     title: '',
     text: '',
     createdAt: null,
-    username: null
+    user: {
+      username: null
+    }
   }} = Post
+  if (!Post.loading && !post.text) {
+    return <Redirect to='/' />
+  }
+  const compile = marksy({
+    createElement,
+    h1 (props) {
+      return <h1 style={{ textDecoration: 'underline' }}>{props.children}</h1>
+    }
+  })
   return (
     <div className='page insight'>
       <Panel>
         <H2>
           {post.title}
         </H2>
-        <Span style={{marginLeft: 2}}>
-          by {post.username
-            ? `${post.username}`
+        <Span>
+          by {post.user.username
+            ? `${post.user.username}`
             : 'unknown author'}
         </Span>
         &nbsp;&#8226;&nbsp;
         {post.createdAt &&
           <Span>{moment(post.createdAt).format('MMM DD, YYYY')}</Span>}
-        <Div>{post.text}</Div>
+        <Div className='insight-content' style={{ marginTop: '1em' }}>
+          {post.text &&
+            compile(post.text).tree}
+        </Div>
       </Panel>
     </div>
   )

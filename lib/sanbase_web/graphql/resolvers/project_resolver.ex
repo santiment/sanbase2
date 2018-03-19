@@ -96,6 +96,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
+  def eth_spent_over_time(
+        %Project{ticker: ticker},
+        %{from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    async(fn ->
+      with {:ok, eth_spent} <-
+             Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
+        {:ok, eth_spent}
+      else
+        error ->
+          Logger.warn(
+            "Cannot calculate ETH spent over time for #{ticker}. Reason: #{inspect(error)}"
+          )
+
+          {:ok, nil}
+      end
+    end)
+  end
+
   def eth_transactions(
         %Project{ticker: ticker},
         %{from: from, to: to, transaction_type: trx_type},

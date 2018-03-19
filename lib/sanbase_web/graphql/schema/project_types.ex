@@ -168,12 +168,13 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.eth_spent_over_time/3)
     end
 
-    field :eth_transactions, list_of(:wallet_transaction) do
+    field :eth_top_transactions, list_of(:wallet_transaction) do
       arg(:from, :datetime)
       arg(:to, :datetime)
       arg(:transaction_type, :transaction_type, default_value: :all)
+      arg(:limit, :integer, default_value: 10)
 
-      resolve(&ProjectResolver.eth_transactions/3)
+      resolve(&ProjectResolver.eth_top_transactions/3)
     end
   end
 

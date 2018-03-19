@@ -7,9 +7,14 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
     value(:all)
   end
 
+  enum :transactions_order_type do
+    value(:time)
+    value(:trx_volume)
+  end
+
   object :wallet_transaction do
     field(:datetime, non_null(:datetime))
-    field(:transaction_volume, :decimal)
+    field(:trx_volume, :decimal)
     field(:transaction_type, :string)
     field(:from_address, :string)
     field(:to_address, :string)

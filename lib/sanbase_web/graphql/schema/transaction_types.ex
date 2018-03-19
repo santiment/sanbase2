@@ -14,7 +14,8 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
 
   object :wallet_transaction do
     field(:datetime, non_null(:datetime))
-    field(:trx_volume, :decimal)
+    field(:trx_hash, :string)
+    field(:trx_value, :decimal)
     field(:transaction_type, :string)
     field(:from_address, :string)
     field(:to_address, :string)

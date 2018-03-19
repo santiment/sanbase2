@@ -90,7 +90,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     query = """
     {
       project(id: #{context.project.id}) {
-        ethTransactions(
+        ethTopTransactions(
           from: "#{context.datetime_from}",
           to: "#{context.datetime_to}",
           transaction_type: IN){
@@ -107,7 +107,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "project"))
 
-    trx_in = json_response(result, 200)["data"]["project"]["ethTransactions"]
+    trx_in = json_response(result, 200)["data"]["project"]["ethTopTransactions"]
 
     assert %{
              "datetime" => "2017-05-16T18:00:00Z",
@@ -128,7 +128,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     query = """
     {
       project(id: #{context.project.id}) {
-        ethTransactions(
+        ethTopTransactions(
           from: "#{context.datetime_from}",
           to: "#{context.datetime_to}",
           transaction_type: OUT){
@@ -145,7 +145,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "project"))
 
-    trx_out = json_response(result, 200)["data"]["project"]["ethTransactions"]
+    trx_out = json_response(result, 200)["data"]["project"]["ethTopTransactions"]
 
     assert %{
              "datetime" => "2017-05-13T15:00:00Z",
@@ -194,7 +194,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     query = """
     {
       project(id: #{context.project.id}) {
-        ethTransactions(
+        ethTopTransactions(
           from: "#{context.datetime_from}",
           to: "#{context.datetime_to}",
           transaction_type: ALL){
@@ -211,7 +211,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "project"))
 
-    trx_all = json_response(result, 200)["data"]["project"]["ethTransactions"]
+    trx_all = json_response(result, 200)["data"]["project"]["ethTopTransactions"]
 
     assert %{
              "datetime" => "2017-05-13T15:00:00Z",

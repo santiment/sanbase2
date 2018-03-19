@@ -125,8 +125,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     transaction type. Supported transaction types are `all`, `in` and `out`. Returns
     `{:ok, result}` on success, `{:error, error}` otherwise.
   """
-  def transactions(measurement, from, to, transaction_type, limit) do
-    select_transactions(measurement, from, to, transaction_type, limit)
+  def top_transactions(measurement, from, to, transaction_type, limit) do
+    select_top_transactions(measurement, from, to, transaction_type, limit)
     |> Store.query()
     |> parse_transactions_time_series()
   end
@@ -136,8 +136,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     transaction type. Supported transaction types are `all`, `in` and `out`. Returns
     `result` on success, raises an error otherwise.
   """
-  def transactions!(measurement, from, to, transaction_type, limit) do
-    case transactions(measurement, from, to, transaction_type, limit) do
+  def top_transactions!(measurement, from, to, transaction_type, limit) do
+    case top_transactions(measurement, from, to, transaction_type, limit) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end

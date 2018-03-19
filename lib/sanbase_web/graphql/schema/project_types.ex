@@ -914,7 +914,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:transaction_type, :transaction_type, default_value: :all)
       arg(:limit, :integer, default_value: 10)
 
-      resolve(&ProjectResolver.eth_transactions/3)
+      resolve(&ProjectResolver.eth_top_transactions/3)
     end
   end
 

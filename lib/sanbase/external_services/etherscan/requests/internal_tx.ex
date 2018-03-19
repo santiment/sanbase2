@@ -39,7 +39,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.InternalTx do
       endblock: endblock,
       sort: "asc",
       page: 1,
-      offset: 2500
+      offset: 5000
     ]
   end
 

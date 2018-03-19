@@ -106,10 +106,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
            {:ok, eth_transactions} <- Etherscan.Store.transactions(ticker, from, to, trx_type) do
         result =
           eth_transactions
-          |> Enum.map(fn {datetime, trx_volume, trx_type, from_addr, to_addr} ->
+          |> Enum.map(fn {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr} ->
             %{
               datetime: datetime,
-              transaction_volume: trx_volume |> Decimal.new(),
+              trx_hash: trx_hash,
+              trx_value: trx_value |> Decimal.new(),
               transaction_type: trx_type,
               from_address: from_addr,
               to_address: to_addr

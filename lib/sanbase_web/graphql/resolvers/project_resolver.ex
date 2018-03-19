@@ -96,14 +96,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
-  def eth_transactions(
+  def eth_top_transactions(
         %Project{ticker: ticker},
-        %{from: from, to: to, transaction_type: trx_type},
+        %{from: from, to: to, transaction_type: trx_type, limit: limit},
         _resolution
       ) do
     async(fn ->
       with trx_type <- trx_type |> Atom.to_string(),
-           {:ok, eth_transactions} <- Etherscan.Store.transactions(ticker, from, to, trx_type) do
+           {:ok, eth_transactions} <-
+             Etherscan.Store.top_transactions(ticker, from, to, trx_type, limit) do
         result =
           eth_transactions
           |> Enum.map(fn {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr} ->

@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
           to: "#{context.datetime_to}",
           transaction_type: IN){
             datetime,
-            transaction_volume,
+            trxValue,
             fromAddress,
             toAddress
         }
@@ -113,14 +113,14 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
              "datetime" => "2017-05-16T18:00:00Z",
              "fromAddress" => "0x2",
              "toAddress" => "0x1",
-             "transaction_volume" => "100000"
+             "trxValue" => "100000"
            } in trx_in
 
     assert %{
              "datetime" => "2017-05-17T19:00:00Z",
              "fromAddress" => "0x2",
              "toAddress" => "0x1",
-             "transaction_volume" => "45000"
+             "trxValue" => "45000"
            } in trx_in
   end
 
@@ -133,7 +133,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
           to: "#{context.datetime_to}",
           transaction_type: OUT){
             datetime,
-            transaction_volume,
+            trxValue,
             fromAddress,
             toAddress
         }
@@ -151,42 +151,42 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
              "datetime" => "2017-05-13T15:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "500"
+             "trxValue" => "500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-14T16:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "1500"
+             "trxValue" => "1500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-15T17:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "2500"
+             "trxValue" => "2500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-16T18:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "3500"
+             "trxValue" => "3500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-17T19:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "5500"
+             "trxValue" => "5500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-18T20:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "6500"
+             "trxValue" => "6500"
            } in trx_out
   end
 
@@ -199,7 +199,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
           to: "#{context.datetime_to}",
           transaction_type: ALL){
             datetime,
-            transaction_volume,
+            trxValue,
             fromAddress,
             toAddress
         }
@@ -217,56 +217,56 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
              "datetime" => "2017-05-13T15:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "500"
+             "trxValue" => "500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-14T16:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "1500"
+             "trxValue" => "1500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-15T17:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "2500"
+             "trxValue" => "2500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-16T18:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "3500"
+             "trxValue" => "3500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-17T19:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "5500"
+             "trxValue" => "5500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-18T20:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "6500"
+             "trxValue" => "6500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-16T18:00:00Z",
              "fromAddress" => "0x2",
              "toAddress" => "0x1",
-             "transaction_volume" => "100000"
+             "trxValue" => "100000"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-17T19:00:00Z",
              "fromAddress" => "0x2",
              "toAddress" => "0x1",
-             "transaction_volume" => "45000"
+             "trxValue" => "45000"
            } in trx_all
   end
 end

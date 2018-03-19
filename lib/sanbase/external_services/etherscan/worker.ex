@@ -239,6 +239,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
        ) do
     # Extract the fields from either %Tx{} or %InternalTx{}
     %{
+      hash: hash,
       timeStamp: ts,
       from: from,
       to: to,
@@ -259,6 +260,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
     %Sanbase.Influxdb.Measurement{
       timestamp: ts * 1_000_000_000,
       fields: %{
+        trx_hash: hash,
         trx_value: (value |> String.to_integer()) / @num_18_zeroes,
         block_number: bn |> String.to_integer(),
         from_addr: from,

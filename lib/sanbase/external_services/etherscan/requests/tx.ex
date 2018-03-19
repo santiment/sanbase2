@@ -8,6 +8,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
   require Logger
 
   defstruct [
+    :hash,
     :blockNumber,
     :timeStamp,
     :from,

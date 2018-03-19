@@ -84,8 +84,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     transaction type. Supported transaction types are `all`, `in` and `out`. Returns
     `{:ok, result}` on success, `{:error, error}` otherwise.
   """
-  def transactions(measurement, from, to, transaction_type, order_by, limit) do
-    select_transactions(measurement, from, to, transaction_type, order_by, limit)
+  def transactions(measurement, from, to, transaction_type, limit) do
+    select_transactions(measurement, from, to, transaction_type, limit)
     |> Store.query()
     |> parse_transactions_time_series()
   end
@@ -95,8 +95,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     transaction type. Supported transaction types are `all`, `in` and `out`. Returns
     `result` on success, raises an error otherwise.
   """
-  def transactions!(measurement, from, to, transaction_type, order_by, limit) do
-    case transactions(measurement, from, to, transaction_type, order_by, limit) do
+  def transactions!(measurement, from, to, transaction_type, limit) do
+    case transactions(measurement, from, to, transaction_type, limit) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end
@@ -117,21 +117,19 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp select_transactions(measurement, from, to, "all", order_by, limit) do
-    ~s/SELECT trx_hash, trx_value, transaction_type, from_addr, to_addr FROM "#{measurement}"
+  defp select_transactions(measurement, from, to, "all", limit) do
+    ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
+    FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    ORDER BY #{order_by}
-    LIMIT #{limit}/
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp select_transactions(measurement, from, to, transaction_type, order_by, limit) do
-    ~s/SELECT trx_hash, trx_value, transaction_type, from_addr, to_addr FROM "#{measurement}"
+  defp select_transactions(measurement, from, to, transaction_type, limit) do
+    ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
+    FROM "#{measurement}"
     WHERE transaction_type='#{transaction_type}'
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)},
-    ORDER BY #{order_by}
-    LIMIT #{limit}/
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   defp parse_trx_sum_time_series(%{results: [%{error: error}]}) do

@@ -164,7 +164,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:from, :datetime)
       arg(:to, :datetime)
       arg(:transaction_type, :transaction_type, default_value: :all)
-      arg(:order_by, :transactions_order_type, default_value: :time)
       arg(:limit, :integer, default_value: 10)
 
       resolve(&ProjectResolver.eth_transactions/3)

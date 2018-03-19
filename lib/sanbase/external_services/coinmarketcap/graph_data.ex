@@ -166,7 +166,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> get()
     |> case do
       %{status: 200, body: body} ->
-        parse_json(body)
+        body |> json_to_price_points()
     end
   end
 

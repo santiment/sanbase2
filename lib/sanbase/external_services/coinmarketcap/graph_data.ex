@@ -27,16 +27,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   end
 
   def fetch_prices(coinmarketcap_id, from_datetime, to_datetime) do
-    daily_ranges(from_datetime, to_datetime)
-    |> Stream.flat_map(
-      &extract_prices_for_interval_with_rate_limit(coinmarketcap_id, &1, &1 + @seconds_in_day)
-    )
+    day_ranges(from_datetime, to_datetime)
+    |> Stream.flat_map(&extract_prices_for_interval(coinmarketcap_id, &1))
   end
 
-  defp parse_json(json) do
+  # Helper functions
+
+  defp json_to_price_points(json) do
     json
     |> Poison.decode!(as: %GraphData{})
-    |> convert_to_price_points
+    |> convert_to_price_points()
   end
 
   defp fetch_all_time_prices(coinmarketcap_id) do
@@ -44,7 +44,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> get()
     |> case do
       %{status: 200, body: body} ->
-        parse_json(body)
+        body |> json_to_price_points()
     end
   end
 
@@ -66,16 +66,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end)
   end
 
-  defp extract_prices_for_interval_with_rate_limit(coinmarketcap_id, start_interval, end_interval) do
-    extract_prices_for_interval(coinmarketcap_id, start_interval, end_interval)
-  end
-
-  defp extract_prices_for_interval(coinmarketcap_id, start_interval, end_interval) do
+  defp extract_prices_for_interval(coinmarketcap_id, {start_interval, end_interval}) do
     graph_data_interval_url(coinmarketcap_id, start_interval * 1000, end_interval * 1000)
     |> get()
     |> case do
       %{status: 200, body: body} ->
-        parse_json(body)
+        body |> json_to_price_points()
 
       _ ->
         Logger.error("Failed to fetch graph data for interval")
@@ -83,19 +79,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end
   end
 
-  defp daily_ranges(from_datetime, to_datetime)
+  defp day_ranges(from_datetime, to_datetime)
        when not is_number(from_datetime) and not is_number(to_datetime) do
-    daily_ranges(DateTime.to_unix(from_datetime), DateTime.to_unix(to_datetime))
+    day_ranges(DateTime.to_unix(from_datetime), DateTime.to_unix(to_datetime))
   end
 
-  defp daily_ranges(from_datetime, to_datetime) do
+  defp day_ranges(from_datetime, to_datetime) do
     Stream.unfold(from_datetime, fn start_interval ->
-      cond do
-        start_interval <= to_datetime ->
-          {start_interval, start_interval + @seconds_in_day}
-
-        true ->
-          nil
+      if start_interval <= to_datetime do
+        {
+          {start_interval, start_interval + @seconds_in_day},
+          start_interval + @seconds_in_day
+        }
+      else
+        nil
       end
     end)
   end

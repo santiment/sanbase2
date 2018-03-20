@@ -102,9 +102,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _resolution
       ) do
     async(fn ->
-      with {:ok, eth_spent} <-
+      with {:ok, eth_spent_over_time} <-
              Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
-        {:ok, eth_spent}
+        result =
+          eth_spent_over_time
+          |> Enum.map(fn {datetime, eth_spent} ->
+            %{datetime: datetime, eth_spent: eth_spent}
+          end)
+
+        {:ok, result}
       else
         error ->
           Logger.warn(

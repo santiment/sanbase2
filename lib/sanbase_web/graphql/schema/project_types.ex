@@ -245,6 +245,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   object :eth_spent_data do
     field(:datetime, non_null(:datetime))
-    field(:amount, :float)
+    field(:eth_spent, :float)
   end
 end

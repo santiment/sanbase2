@@ -63,6 +63,11 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     sum_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
     |> parse_trx_sum_time_series()
+    |> case do
+      {:ok, [{_datetime, amount}]} -> {:ok, amount}
+      {:ok, []} -> {:ok, nil}
+      res -> res
+    end
   end
 
   @doc ~s"""
@@ -74,6 +79,43 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
           list() | nil | no_return()
   def trx_sum_in_interval!(measurement, from, to, transaction_type) do
     case trx_sum_in_interval(measurement, from, to, transaction_type) do
+      {:ok, result} -> result
+      {:error, error} -> raise(error)
+    end
+  end
+
+  @doc ~s"""
+    Returns the sum of transactions over the specified period of time, grouped by the specified resolution.
+    The `transaction_type` should be either `in` or `out` string.
+    Returns `{:ok, result}` on success, `{:error, reason}` otherwise
+  """
+  @spec trx_sum_over_time_in_interval(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          String.t()
+        ) :: {:ok, list()} | {:error, String.t()}
+  def trx_sum_over_time_in_interval(measurement, from, to, resolution, transaction_type) do
+    sum_over_time_from_to_query(measurement, from, to, resolution, transaction_type)
+    |> Store.query()
+    |> parse_trx_sum_time_series()
+  end
+
+  @doc ~s"""
+    Returns the sum of transactions over the specified period of time, grouped by the specified resolution.
+    The `transaction_type` should be either `in` or `out` string.
+    Returns `result` on success, raises an error otherwise
+  """
+  @spec trx_sum_over_time_in_interval!(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          String.t()
+        ) :: list() | nil | no_return()
+  def trx_sum_over_time_in_interval!(measurement, from, to, resolution, transaction_type) do
+    case trx_sum_over_time_in_interval(measurement, from, to, resolution, transaction_type) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end
@@ -117,6 +159,15 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
+  defp sum_over_time_from_to_query(measurement, from, to, resolution, transaction_type) do
+    ~s/SELECT time, SUM(trx_value)
+    FROM "#{measurement}"
+    WHERE transaction_type = '#{transaction_type}'
+    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    GROUP BY TIME(#{resolution}) fill(0)/
+  end
+
   defp select_top_transactions(measurement, from, to, "all", limit) do
     ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
     FROM "#{measurement}"
@@ -130,6 +181,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     WHERE transaction_type='#{transaction_type}'
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp parse_trx_sum_time_series(%{error: error}) do
+    {:error, error}
   end
 
   defp parse_trx_sum_time_series(%{results: [%{error: error}]}) do
@@ -147,9 +202,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
            }
          ]
        }) do
-    [[_iso8601_datetime, trx_value]] = transactions
+    result =
+      transactions
+      |> Enum.map(fn [iso8601_datetime, amount] ->
+        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+        {datetime, amount}
+      end)
 
-    {:ok, trx_value}
+    {:ok, result}
   end
 
   defp parse_trx_sum_time_series(_), do: {:ok, nil}

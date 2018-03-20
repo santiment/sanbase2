@@ -164,7 +164,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     WHERE transaction_type = '#{transaction_type}'
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    GROUP BY TIME(#{resolution}) fill(none)/
+    GROUP BY TIME(#{resolution}) fill(0)/
   end
 
   defp select_top_transactions(measurement, from, to, "all", limit) do

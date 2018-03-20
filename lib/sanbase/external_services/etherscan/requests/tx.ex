@@ -25,7 +25,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
   """
   @spec get(String.t(), Integer.t(), Integer.t()) :: {:ok, list()} | {:error, String.t()}
   def get(address, startblock, endblock) do
-    Requests.get("/", query: get_query(address, startblock, endblock), opts: [recv_timeout: 1])
+    Requests.get("/", query: get_query(address, startblock, endblock))
     |> case do
       %{status: 200, body: body} ->
         {:ok, parse_tx_json(body)}

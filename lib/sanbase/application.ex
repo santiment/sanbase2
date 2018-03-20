@@ -21,6 +21,9 @@ defmodule Sanbase.Application do
         # Start the endpoint when the application starts
         supervisor(SanbaseWeb.Endpoint, []),
 
+        # Start the graphQL in-memory cache
+        supervisor(ConCache, [[], [name: :graphql_cache]]),
+
         # Time series Prices DB connection
         Sanbase.Prices.Store.child_spec(),
 

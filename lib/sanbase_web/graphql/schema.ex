@@ -133,7 +133,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :twitter_data, :twitter_data do
       arg(:ticker, non_null(:string))
 
-      resolve(&TwitterResolver.twitter_data/3)
+      resolve(Cache.resolver(&TwitterResolver.twitter_data/3, :twitter_data))
     end
 
     @desc "Historical information for a twitter account"
@@ -143,7 +143,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "6h")
 
-      resolve(&TwitterResolver.history_twitter_data/3)
+      resolve(Cache.resolver(&TwitterResolver.history_twitter_data/3, :history_twitter_data))
     end
 
     @desc "Burn rate for a ticker and given time period"

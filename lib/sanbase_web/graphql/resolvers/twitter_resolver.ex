@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.ExternalServices.TwitterData.Store
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
   import Ecto.Query
 

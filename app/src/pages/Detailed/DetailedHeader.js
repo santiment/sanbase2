@@ -8,16 +8,20 @@ import './DetailedHeader.css'
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
 const DIV = createSkeletonElement('div', 'pending-header pending-div')
 
-const DetailedHeader = ({project, loading, empty}) => (
+const DetailedHeader = ({project = {
+  ticker: '',
+  name: '',
+  description: ''
+}, loading, empty}) => (
   <div className='detailed-head'>
     <div className='detailed-project-about'>
       <div className='detailed-name'>
         <H1>{project.name}</H1>
         <ProjectIcon
-          name={project.name}
+          name={project.name || ''}
           size={24} />
         <DIV className='detailed-ticker-name'>
-          {project.ticker.toUpperCase()}
+          {(project.ticker || '').toUpperCase()}
         </DIV>
       </div>
       <DIV className='datailed-project-description'>

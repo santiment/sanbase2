@@ -17,15 +17,16 @@ import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
 import { calculateBTCVolume, calculateBTCMarketcap } from '../../utils/utils'
 import allProjectsGQL from './../Projects/allProjectsGQL'
+import { isERC20 } from './../Projects/projectSelectors'
 import DetailedHeader from './DetailedHeader'
 import {
   projectGQL,
-  queryTwitterData,
-  queryTwitterHistory,
-  queryHistoryPrice,
-  queryBurnRate,
-  queryGithubActivity,
-  queryTransactionVolume
+  TwitterDataGQL,
+  TwitterHistoryGQL,
+  HistoryPriceGQL,
+  BurnRateGQL,
+  GithubActivityGQL,
+  TransactionVolumeGQL
 } from './DetailedGQL'
 import './Detailed.css'
 
@@ -154,6 +155,7 @@ export const Detailed = ({
       burnRate={burnRate}
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
+      isERC20={project.isERC20}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
           from,
@@ -218,6 +220,7 @@ const enhance = compose(
     componentDidUpdate (prevProps, prevState) {
       if (this.props.match.params.ticker !== prevProps.match.params.ticker &&
         this.props.projects.length > 0) {
+        console.log(this.props)
         const id = getProjectIDByTicker(this.props.match, this.props.projects)
         this.props.changeProjectId(id)
       }
@@ -231,7 +234,10 @@ const enhance = compose(
         empty: !Project.hasOwnProperty('project'),
         error: Project.error,
         errorMessage: Project.error ? Project.error.message : '',
-        project: Project.project
+        project: {
+          ...Project.project,
+          isERC20: isERC20(Project.project)
+        }
       }
     }),
     options: ({projectId}) => ({
@@ -242,7 +248,7 @@ const enhance = compose(
       }
     })
   }),
-  graphql(queryTwitterData, {
+  graphql(TwitterDataGQL, {
     name: 'TwitterData',
     options: ({chartVars}) => {
       const { ticker } = chartVars
@@ -255,12 +261,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryTwitterHistory, {
+  graphql(TwitterHistoryGQL, {
     name: 'TwitterHistoryData',
     options: ({chartVars}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
@@ -270,12 +276,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryHistoryPrice, {
+  graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
     options: ({chartVars}) => {
       const {from, to, ticker, interval} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
@@ -286,12 +292,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryGithubActivity, {
+  graphql(GithubActivityGQL, {
     name: 'GithubActivity',
     options: ({match, chartVars}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker,
         variables: {
           from: from ? moment(from).subtract(7, 'days') : undefined,
           to,
@@ -303,12 +309,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryBurnRate, {
+  graphql(BurnRateGQL, {
     name: 'BurnRate',
-    options: ({chartVars}) => {
+    options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker || (Project && !Project.isERC20),
         errorPolicy: 'all',
         variables: {
           from,
@@ -318,12 +324,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryTransactionVolume, {
+  graphql(TransactionVolumeGQL, {
     name: 'TransactionVolume',
-    options: ({chartVars}) => {
+    options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker || (Project && !Project.isERC20),
         errorPolicy: 'all',
         variables: {
           from,

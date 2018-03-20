@@ -28,7 +28,14 @@ export const projectBySlugGQL = gql`
       volumeUsd,
       ethBalance,
       ethAddresses {
-        balance
+        balance,
+        address
+      },
+      ethTopTransactions(from: "2018-02-20T00:00:00Z", to: "2018-03-20T00:00:00Z", limit: 10, transactionType: OUT) {
+        fromAddress,
+        trxValue,
+        toAddress,
+        datetime
       },
       ethSpent,
       marketcapUsd,

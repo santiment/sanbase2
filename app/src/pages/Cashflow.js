@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactTable from 'react-table'
 import classnames from 'classnames'
+import throttle from 'lodash.throttle'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
@@ -19,6 +20,10 @@ import Panel from './../components/Panel'
 import allProjectsGQL from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
+
+const refetchThrottled = data => {
+  throttle(data => data.refetch(), 1000)
+}
 
 export const Tips = () =>
   <div style={{ textAlign: 'center' }}>
@@ -109,7 +114,8 @@ export const Cashflow = ({
     filteredProjects: [],
     loading: true,
     isError: false,
-    isEmpty: true
+    isEmpty: true,
+    refetch: null
   },
   onSearch,
   history,
@@ -119,6 +125,7 @@ export const Cashflow = ({
 }) => {
   const { projects, loading } = Projects
   if (Projects.isError) {
+    refetchThrottled(Projects)
     return (
       <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
         <Message warning>
@@ -430,7 +437,8 @@ const mapDataToProps = ({allProjects, ownProps}) => {
       isEmpty,
       isError,
       projects,
-      errorMessage
+      errorMessage,
+      refetch: allProjects.refetch
     }
   }
 }
@@ -446,7 +454,8 @@ const enhance = compose(
     props: mapDataToProps,
     options: () => {
       return {
-        errorPolicy: 'all'
+        errorPolicy: 'all',
+        notifyOnNetworkStatusChange: true
       }
     }
   }),

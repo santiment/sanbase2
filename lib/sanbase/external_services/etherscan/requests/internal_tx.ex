@@ -25,6 +25,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.InternalTx do
         error = "Error fetching transactions for #{address}. Status code: #{status}: #{body}"
         Logger.warn(error)
         {:error, error}
+      error ->
+        {:error, error}
     end
   end
 

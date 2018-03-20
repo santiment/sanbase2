@@ -64,7 +64,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     |> Store.query()
     |> parse_trx_sum_time_series()
     |> case do
-      {:ok, [%{datetime: _datetime, amount: amount}]} -> {:ok, amount}
+      {:ok, [{_datetime, amount}]} -> {:ok, amount}
+      {:ok, []} -> {:ok, nil}
       res -> res
     end
   end
@@ -205,7 +206,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
       transactions
       |> Enum.map(fn [iso8601_datetime, amount] ->
         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-        %{datetime: datetime, amount: amount}
+        {datetime, amount}
       end)
 
     {:ok, result}

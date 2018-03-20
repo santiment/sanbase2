@@ -47,9 +47,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
-      # Cache for 5 minutes
-      middleware(MemoryQueryCache, ttl: 5 * 60 * 1000)
-      resolve(&ProjectResolver.all_projects/3)
+      resolve(Cache.resolver(&ProjectResolver.all_projects/3, :all_projects))
     end
 
     @desc "Fetch all project transparency projects. Requires basic authentication"

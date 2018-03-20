@@ -25,6 +25,8 @@ export const TimeFilter = props => (
     <TimeFilterItem value={'1w'} {...props} />
     <TimeFilterItem value={'2w'} {...props} />
     <TimeFilterItem value={'1m'} {...props} />
+    <TimeFilterItem value={'3m'} {...props} />
+    <TimeFilterItem value={'all'} {...props} />
   </div>
 )
 

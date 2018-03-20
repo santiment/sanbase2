@@ -14,9 +14,9 @@ class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
     const shareableState = qs.parse(props.location.search)
-    const { from, to } = makeItervalBounds('1m')
+    const { from, to } = makeItervalBounds('all')
     this.state = {
-      interval: '1m',
+      interval: 'all',
       isError: false,
       errorMessage: '',
       selected: undefined,

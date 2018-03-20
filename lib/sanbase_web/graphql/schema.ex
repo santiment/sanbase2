@@ -47,6 +47,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
+      # Cache for 5 minutes
+      middleware(MemoryQueryCache, ttl: 5 * 60 * 1000)
       resolve(&ProjectResolver.all_projects/3)
     end
 

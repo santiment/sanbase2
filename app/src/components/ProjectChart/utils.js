@@ -21,6 +21,18 @@ export const makeItervalBounds = interval => {
         to: moment().utc().format(),
         minInterval: '1h'
       }
+    case '3m':
+      return {
+        from: moment().subtract(3, 'months').utc().format(),
+        to: moment().utc().format(),
+        minInterval: '1d'
+      }
+    case 'all':
+      return {
+        from: moment().subtract(2, 'years').utc().format(),
+        to: moment().utc().format(),
+        minInterval: '1d'
+      }
     default:
       return {
         from: moment().subtract(1, 'months').utc().format(),

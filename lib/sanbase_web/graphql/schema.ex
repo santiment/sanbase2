@@ -14,6 +14,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     FileResolver
   }
 
+  alias SanbaseWeb.Graphql.Helpers.Cache
+
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
@@ -21,8 +23,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     MultipleAuth,
     BasicAuth,
     JWTAuth,
-    ProjectPermissions,
-    MemoryQueryCache
+    ProjectPermissions
   }
 
   alias SanbaseWeb.Graphql.SanbaseRepo
@@ -66,9 +67,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
-      # Cache for 5 minutes
-      middleware(MemoryQueryCache, ttl: 5 * 60 * 1000)
-      resolve(&ProjectResolver.all_projects/3)
+      resolve(Cache.resolver(&ProjectResolver.all_projects/3, :all_projects))
     end
 
     @desc "Fetch all project transparency projects. Requires basic authentication"

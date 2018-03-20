@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Helpers.Cache do
   @ttl 5 * 60 * 1000
+
   def resolver(resolver_fn, name) do
     fn parent, args, resolution ->
       ConCache.get_or_store(:graphql_cache, cache_key(name, args), fn ->

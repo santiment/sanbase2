@@ -83,18 +83,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
-    async(fn ->
-      today = Timex.now()
-      days_ago = Timex.shift(today, days: -days)
+    async(Cache.func(fn -> calculate_eth_spent(ticker, days) end, {:eth_spent, ticker, days}))
+  end
 
-      with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
-        {:ok, eth_spent}
-      else
-        error ->
-          Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
-          {:ok, nil}
-      end
-    end)
+  def calculate_eth_spent(ticker, days) do
+    today = Timex.now()
+    days_ago = Timex.shift(today, days: -days)
+
+    with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
+      {:ok, eth_spent}
+    else
+      error ->
+        Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
+        {:ok, nil}
+    end
   end
 
   def eth_top_transactions(

@@ -13,6 +13,7 @@ const allProjectsGQL = gql`{
     volumeUsd
     volumeChange24h
     ethSpent
+    coinmarketcapId
     averageDevActivity
     marketcapUsd
     ethBalance

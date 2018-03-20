@@ -21,7 +21,7 @@ const SearchContainer = ({
   }
   return (
     <Search
-      onSelectProject={ticker => history.push(`/projects/${ticker.toLowerCase()}`)}
+      onSelectProject={cmcId => history.push(`/projects/${cmcId}`)}
       projects={projects} />
   )
 }

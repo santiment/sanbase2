@@ -1,9 +1,9 @@
 import gql from 'graphql-tag'
 
-export const projectGQL = gql`
-  query projectGQL($id: ID!) {
-    project(
-      id: $id,
+export const projectBySlugGQL = gql`
+  query projectBySlugGQL($slug: String!) {
+    projectBySlug(
+      slug: $slug,
     ){
       id,
       name,

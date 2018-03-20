@@ -80,7 +80,7 @@ const CashflowMobile = ({
           <ListViewItem height={500} key={index}>
             <div className='ListItem-project' >
               <ProjectCard
-                onClick={() => history.push(`/projects/${project.ticker.toLowerCase()}`)}
+                onClick={() => history.push(`/projects/${project.coinmarketcapId}`)}
                 {...project} />
             </div>
           </ListViewItem>

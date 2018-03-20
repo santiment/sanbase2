@@ -2,11 +2,10 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {
   compose,
-  lifecycle,
   withState
 } from 'recompose'
-import moment from 'moment'
 import { Redirect } from 'react-router-dom'
+import moment from 'moment'
 import { Helmet } from 'react-helmet'
 import { graphql, withApollo } from 'react-apollo'
 import PanelBlock from './../../components/PanelBlock'
@@ -16,11 +15,10 @@ import ProjectChartContainer from './../../components/ProjectChart/ProjectChartC
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
 import { calculateBTCVolume, calculateBTCMarketcap } from '../../utils/utils'
-import allProjectsGQL from './../Projects/allProjectsGQL'
 import { isERC20 } from './../Projects/projectSelectors'
 import DetailedHeader from './DetailedHeader'
 import {
-  projectGQL,
+  projectBySlugGQL,
   TwitterDataGQL,
   TwitterHistoryGQL,
   HistoryPriceGQL,
@@ -32,15 +30,6 @@ import './Detailed.css'
 
 const propTypes = {
   match: PropTypes.object.isRequired
-}
-
-const getProjectIDByTicker = (match, allProjects = null) => {
-  const selectedTicker = match.params.ticker
-  const project = (allProjects || []).find(el => {
-    const ticker = el.ticker || ''
-    return ticker.toLowerCase() === selectedTicker
-  })
-  return parseInt((project || {}).id, 10) || null
 }
 
 export const Detailed = ({
@@ -83,17 +72,12 @@ export const Detailed = ({
     error: false
   },
   changeChartVars,
-  isDesktop,
-  projectId = -1,
-  projects = []
+  isDesktop
 }) => {
   const project = Project.project
-  if (!projectId) {
-    return (
-      <Redirect to={{
-        pathname: '/'
-      }} />
-    )
+
+  if (/not found/.test(Project.errorMessage)) {
+    return <Redirect to='/' />
   }
 
   const twitter = {
@@ -205,28 +189,7 @@ const enhance = compose(
     interval: undefined,
     ticker: undefined
   }),
-  withState('projectId', 'changeProjectId', undefined),
-  withState('projects', 'changeProjects', []),
-  lifecycle({
-    componentDidMount () {
-      this.props.client.query({
-        query: allProjectsGQL
-      }).then(response => {
-        const id = getProjectIDByTicker(this.props.match, response.data.allProjects)
-        this.props.changeProjectId(id)
-        this.props.changeProjects(response.data.allProjects)
-      })
-    },
-    componentDidUpdate (prevProps, prevState) {
-      if (this.props.match.params.ticker !== prevProps.match.params.ticker &&
-        this.props.projects.length > 0) {
-        console.log(this.props)
-        const id = getProjectIDByTicker(this.props.match, this.props.projects)
-        this.props.changeProjectId(id)
-      }
-    }
-  }),
-  graphql(projectGQL, {
+  graphql(projectBySlugGQL, {
     name: 'Project',
     props: ({Project}) => ({
       Project: {
@@ -235,16 +198,14 @@ const enhance = compose(
         error: Project.error,
         errorMessage: Project.error ? Project.error.message : '',
         project: {
-          ...Project.project,
-          isERC20: isERC20(Project.project)
+          ...Project.projectBySlug,
+          isERC20: isERC20(Project.projectBySlug)
         }
       }
     }),
-    options: ({projectId}) => ({
-      skip: !projectId,
-      errorPolicy: 'all',
+    options: ({match}) => ({
       variables: {
-        id: projectId
+        slug: match.params.slug
       }
     })
   }),

@@ -29,7 +29,8 @@ const FinancialsBlock = ({
   fundsRaisedIcos,
   ethSpent,
   ethBalance,
-  btcBalance
+  btcBalance,
+  isERC20
 }) => (
   <div>
     Project Transparency:&nbsp;{showStatus(projectTransparencyStatus)}
@@ -51,7 +52,7 @@ const FinancialsBlock = ({
     </div>
     <div className={cx({
       'row-info': true,
-      'info-disabled': !ethBalance
+      'info-disabled': !isERC20 || !ethBalance
     })}>
       <div>
         Balance
@@ -60,7 +61,7 @@ const FinancialsBlock = ({
     </div>
     <div className={cx({
       'row-info': true,
-      'info-disabled': !ethBalance
+      'info-disabled': !isERC20 || !ethBalance
     })}>
       <div>ETH Spent 30d</div>
       <div style={{textAlign: 'right'}}>

@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
           to: "#{context.datetime_to}",
           interval: "1d"){
             datetime,
-            amount
+            ethSpent
         }
       }
     }
@@ -107,26 +107,36 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
 
     ethSpentOverTime = json_response(result, 200)["data"]["project"]["ethSpentOverTime"]
 
-    assert length(ethSpentOverTime) == 4
+    assert length(ethSpentOverTime) == 6
 
     assert %{
              "datetime" => "2017-05-13T00:00:00Z",
-             "amount" => 500
+             "ethSpent" => 500
            } in ethSpentOverTime
 
     assert %{
              "datetime" => "2017-05-14T00:00:00Z",
-             "amount" => 1500
+             "ethSpent" => 1500
            } in ethSpentOverTime
 
     assert %{
              "datetime" => "2017-05-15T00:00:00Z",
-             "amount" => 6000
+             "ethSpent" => 6000
+           } in ethSpentOverTime
+
+    assert %{
+             "datetime" => "2017-05-16T00:00:00Z",
+             "ethSpent" => 0
+           } in ethSpentOverTime
+
+    assert %{
+             "datetime" => "2017-05-17T00:00:00Z",
+             "ethSpent" => 0
            } in ethSpentOverTime
 
     assert %{
              "datetime" => "2017-05-18T00:00:00Z",
-             "amount" => 6500
+             "ethSpent" => 6500
            } in ethSpentOverTime
   end
 end

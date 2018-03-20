@@ -96,6 +96,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
+  def eth_spent_by_all_projects(_, %{from: from, to: to}, _resolution) do
+    with {:ok, measurements} <- Etherscan.Store.public_measurements(),
+         {:ok, measurements_list} <- gen_measurements_list(measurements),
+         {:ok, total_eth_spent} <-
+           Etherscan.Store.eth_spent_by_projects(measurements_list, from, to) do
+      {:ok, total_eth_spent}
+    end
+  end
+
   def eth_spent_over_time(
         %Project{ticker: ticker},
         %{from: from, to: to, interval: interval},
@@ -157,6 +166,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> eth_balance_loader(project)
     |> on_load(&eth_balance_from_loader(&1, project))
+  end
+
+  # Helper functions
+
+  defp gen_measurements_list(measurements) do
+    # Ugly hack to ignore the measurements with coinmarketcap_id as name. They should be removed
+    # and this should be removed, too. The tickers are only with capital letters, numbers and '/'
+    # Reject all measurements that contain a lower letter
+    list =
+      measurements
+      |> Enum.reject(fn elem -> elem =~ ~r/[a-z]/ end)
+
+    {:ok, list}
   end
 
   defp eth_balance_loader(loader, project) do

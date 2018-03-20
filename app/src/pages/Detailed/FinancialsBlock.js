@@ -62,8 +62,8 @@ const FinancialsBlock = ({
     </div>
     {isERC20 &&
       <div className='row-info'>
-        {ethAddresses.map(wallet => (
-          <div>
+        {ethAddresses.map((wallet, index) => (
+          <div key={index}>
             <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
             &nbsp;
             ETH {millify(parseFloat(parseFloat(wallet.balance).toFixed(2)))}

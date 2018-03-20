@@ -84,7 +84,7 @@ export const App = ({isDesktop}) => (
         <Route exact path='/insights' component={LoadableInsights} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
         <Route exact path='/insights/:filter' component={LoadableInsights} />
-        <Route exact path='/projects/:ticker' render={props => (
+        <Route exact path='/projects/:slug' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
         <Route path='/email_login' component={EmailLoginVerification} />

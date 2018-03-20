@@ -146,10 +146,7 @@ export const Cashflow = ({
       ticker: d.ticker
     }),
     Cell: ({value}) => (
-      <div
-        onMouseOver={() => preload()}
-        onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)}
-        className='overview-ticker' >
+      <div className='overview-ticker' >
         <ProjectIcon name={value.name} /><br />{value.ticker}
       </div>
     ),
@@ -166,12 +163,13 @@ export const Cashflow = ({
     sortable: true,
     accessor: d => ({
       name: d.name,
-      ticker: d.ticker
+      ticker: d.ticker,
+      cmcId: d.coinmarketcapId
     }),
     Cell: ({value}) => (
       <div
         onMouseOver={() => preload()}
-        onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)}
+        onClick={() => history.push(`/projects/${value.cmcId}`)}
         className='overview-name' >
         {value.name}
       </div>
@@ -387,7 +385,7 @@ export const Cashflow = ({
                     handleOriginal()
                   }
                   if (rowInfo && rowInfo.original && rowInfo.original.ticker) {
-                    history.push(`/projects/${rowInfo.original.ticker.toLowerCase()}`)
+                    history.push(`/projects/${rowInfo.original.coinmarketcapId}`)
                   }
                 }
               }

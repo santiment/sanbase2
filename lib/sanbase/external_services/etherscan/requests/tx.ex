@@ -34,8 +34,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Tx do
         error = "Error fetching transactions for #{address}. Status code: #{status}: #{body}"
         Logger.warn(error)
         {:error, error}
-      error ->
-        {:error, error}
+      %Tesla.Error{message: error_msg} ->
+        {:error, error_msg}
     end
   end
 

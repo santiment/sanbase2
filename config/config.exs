@@ -163,7 +163,7 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   window_type: {:system, "PRICE_VOLUME_DIFF_WINDOW_TYPE"},
   approximation_window: {:system, "PRICE_VOLUME_DIFF_APPROXIMATION_WINDOW", "14"},
   comparison_window: {:system, "PRICE_VOLUME_DIFF_COMPARISON_WINDOW", "7"},
-  notification_threshold: {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_THRESHOLD", "0.1"},
+  notification_threshold: {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_THRESHOLD", "0.01"},
   notifications_cooldown: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_COOLDOWN", "86400"},
   debug_url: {:system, "PRICE_VOLUME_DIFF_DEBUG_URL"},
   notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}

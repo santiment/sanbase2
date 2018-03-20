@@ -228,6 +228,14 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       resolve(&EtherbiResolver.exchange_wallets/3)
     end
+
+    @desc "Returns the ETH spent by all projects in a given time period"
+    field :eth_spent_by_all_projects, :float do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      resolve(&ProjectResolver.eth_spent_by_all_projects/3)
+    end
   end
 
   mutation do

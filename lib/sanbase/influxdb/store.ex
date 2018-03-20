@@ -115,6 +115,28 @@ defmodule Sanbase.Influxdb.Store do
         end
       end
 
+      @doc ~s"""
+        Returns a list of measurement names that are used internally and should not be exposed.
+        Should be overridden if the Store module uses internal measurements
+      """
+      def internal_measurements() do
+        {:ok, []}
+      end
+
+      @doc ~s"""
+        Returns a list of all measurements except the internal ones
+      """
+      def public_measurements() do
+        with {:ok, all_measurements} <- list_measurements(),
+             {:ok, internal_measurements} <- internal_measurements() do
+          {
+            :ok,
+            all_measurements
+            |> Enum.reject(fn x -> Enum.member?(internal_measurements, x) end)
+          }
+        end
+      end
+
       # Private functions
 
       defp parse_measurements_list(%{results: [%{error: error}]}), do: {:error, error}

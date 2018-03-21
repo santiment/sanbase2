@@ -129,15 +129,13 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     |> do_eth_spent_over_time_by_projects()
   end
 
-  defp do_eth_spent_over_time_by_projects(
-         %{
-           results: [
-             %{
-               series: series
-             }
-           ]
-         } = arg
-       ) do
+  defp do_eth_spent_over_time_by_projects(%{
+         results: [
+           %{
+             series: series
+           }
+         ]
+       }) do
     total_eth_spent_over_time =
       series
       |> Enum.map(fn %{values: values} -> values end)

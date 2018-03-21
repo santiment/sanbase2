@@ -123,6 +123,8 @@ defmodule Sanbase.Influxdb.Store do
         {:ok, []}
       end
 
+      defoverridable internal_measurements: 0
+
       @doc ~s"""
         Returns a list of all measurements except the internal ones
       """

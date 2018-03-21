@@ -86,6 +86,7 @@ const ProjectChartFooter = (props) => (
           Github Activity
         </ToggleBtn>
       </FilterCategory>
+      {props.isERC20 &&
       <FilterCategory
         className='filter-category-blockchain'
         settings={() => (
@@ -149,7 +150,7 @@ const ProjectChartFooter = (props) => (
             position='top left'
           />
         </ToggleBtn>
-      </FilterCategory>
+      </FilterCategory>}
       <FilterCategory name='Social'>
         <ToggleBtn
           loading={props.twitter.history.loading}

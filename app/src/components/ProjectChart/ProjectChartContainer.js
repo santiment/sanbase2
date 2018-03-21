@@ -150,6 +150,7 @@ class ProjectChartContainer extends Component {
           burnRate={burnRate}
           transactionVolume={transactionVolume}
           isLoading={this.props.price.history.loading}
+          isERC20={this.props.isERC20}
           isEmpty={this.props.price.history.items.length === 0} />
         <ProjectChartFooter {...this.props} />
       </div>

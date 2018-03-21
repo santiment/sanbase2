@@ -14,15 +14,11 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
     <ul className={showIcons ? 'menu-list' : 'menu-list-top'} >
       <li onClick={() => handleNavigation('projects')}>
         {showIcons && <Icon name='list 2x' />}
-        Projects
+        ERC20 Projects
       </li>
-      <li onClick={() => handleNavigation('signals')}>
-        {showIcons && <Icon name='th 2x' />}
-        Signals
-      </li>
-      <li onClick={() => handleNavigation('roadmap')}>
-        {showIcons && <Icon name='map 2x' />}
-        Roadmap
+      <li onClick={() => handleNavigation('currencies')}>
+        {showIcons && <Icon name='list 2x' />}
+        Currencies
       </li>
     </ul>
   </Fragment>

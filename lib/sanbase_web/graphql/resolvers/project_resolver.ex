@@ -117,7 +117,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
             "Cannot calculate ETH spent over time for #{ticker}. Reason: #{inspect(error)}"
           )
 
-          {:ok, nil}
+          {:ok, []}
       end
     end)
   end

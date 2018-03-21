@@ -42,7 +42,7 @@ class SearchPanel extends Component {
       return {
         name: el.name,
         ticker: el.ticker,
-        cmcId: el.coinmarketcapId,
+        cmcid: el.coinmarketcapId,
         key: index
       }
     })
@@ -55,7 +55,7 @@ class SearchPanel extends Component {
 
   handleResultSelect (e, { result }) {
     this.setState({ value: '' })
-    this.props.onSelectProject(result.cmcId)
+    this.props.onSelectProject(result.cmcid)
   }
 
   handleSearchChange (e, { value }) {

@@ -11,6 +11,7 @@ import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
 import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
+import Currencies from './pages/Currencies'
 import CashflowMobile from './pages/CashflowMobile'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
@@ -77,6 +78,13 @@ export const App = ({isDesktop}) => (
           }
           return (
             <CashflowMobile {...props} />
+          )
+        }} />
+        <Route exact path='/currencies' render={props => {
+          return (
+            <Currencies
+              preload={() => LoadableDetailedPage.preload()}
+              {...props} />
           )
         }} />
         <Route exact path='/roadmap' component={Roadmap} />

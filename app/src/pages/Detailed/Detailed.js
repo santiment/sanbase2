@@ -223,7 +223,9 @@ const enhance = compose(
     }),
     options: ({match}) => ({
       variables: {
-        slug: match.params.slug
+        slug: match.params.slug,
+        from: moment().subtract(30, 'days').utc().format(),
+        to: moment().endOf('day').utc().format()
       }
     })
   }),

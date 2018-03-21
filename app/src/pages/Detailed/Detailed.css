@@ -192,6 +192,11 @@
   margin-top: 16px;
 }
 
+.detailed .top-eth-transaction {
+  display: flex;
+  justify-content: space-between;
+}
+
 @media (min-width: 1024px) {
   .detailed-head {
     margin: 0 16px;

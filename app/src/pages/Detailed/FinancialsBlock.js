@@ -55,7 +55,7 @@ const FinancialsBlock = ({
       'info-disabled': !isERC20 || !ethBalance
     })}>
       <div>
-        Wallets
+        Wallet Balances
       </div>
     </div>}
     {isERC20 &&
@@ -74,7 +74,7 @@ const FinancialsBlock = ({
       'info-disabled': !isERC20 || !ethBalance
     })}>
       <div>
-        Balance Total
+        Total Balance
       </div>
       {ethBalance && `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`}
     </div>}

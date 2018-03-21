@@ -106,16 +106,18 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   defp import_latest_eth_wallet_data(last_trx, address) do
-    with {:ok, balance} <- Balance.get_balance(address) do
-      changeset =
-        last_trx
-        |> get_last_trx_changeset
-        |> build_latest_eth_wallet_changeset(balance)
+    case Balance.get_balance(address) do
+      {:ok, balance} ->
+        changeset =
+          last_trx
+          |> get_last_trx_changeset
+          |> build_latest_eth_wallet_changeset(balance)
 
-      address
-      |> get_or_create_entry()
-      |> LatestEthWalletData.changeset(changeset)
-      |> Repo.insert_or_update!()
+        address
+        |> get_or_create_entry()
+        |> LatestEthWalletData.changeset(changeset)
+        |> Repo.insert_or_update!()
+      {:error, _error} -> nil
     end
   end
 

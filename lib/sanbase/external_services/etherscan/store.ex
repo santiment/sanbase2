@@ -212,7 +212,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     {:ok, result}
   end
 
-  defp parse_trx_sum_time_series(_), do: {:ok, nil}
+  defp parse_trx_sum_time_series(_), do: {:ok, []}
 
   defp parse_last_block_number(%{results: [%{error: error}]}) do
     {:error, error}

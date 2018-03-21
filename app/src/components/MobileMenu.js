@@ -67,6 +67,10 @@ const MobileMenu = ({
             toggleMenu(opened => !opened)
             history.push('/account')
           }}
+          handleNavigation={nextRoute => {
+            toggleMenu(opened => !opened)
+            history.push(`/${nextRoute}`)
+          }}
           isDesktop={false}
           user={user}
           logout={() => {

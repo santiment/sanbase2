@@ -13,8 +13,27 @@
   margin-left: 5px;
 }
 
-.acct-links a {
+.acct-links {
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  max-width: 50%;
+}
+
+.acct-links button {
+  margin-top: 0.5em !important;
+}
+
+.acct-links button:first-child {
+  margin-top: 0 !important;
+}
+
+.acct-links .logoutBtn {
+  margin-top: 0 !important;
+}
+
+.acct-links hr {
+  width: 100%;
 }
 
 .account-name {
@@ -31,5 +50,9 @@
 
   .acct {
     margin-bottom: 0;
+  }
+
+  .acct-links {
+    max-width: 100%;
   }
 }

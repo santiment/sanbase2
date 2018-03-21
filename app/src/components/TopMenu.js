@@ -44,6 +44,9 @@ export const TopMenu = ({
           openSettings={() => {
             history.push('/account')
           }}
+          handleNavigation={nextRoute => {
+            history.push(`/${nextRoute}`)
+          }}
           user={user}
           logout={logout} />
       </div>

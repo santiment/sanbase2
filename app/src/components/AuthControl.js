@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import {
   Button,
   Popup,
@@ -11,6 +11,7 @@ const AccountLinks = ({
   logout,
   openSettings,
   username,
+  handleNavigation,
   isDesktop
 }) => (
   <div className='acct-links'>
@@ -18,8 +19,24 @@ const AccountLinks = ({
     <div className='account-name'>
       {username}
     </div>}
-    <Button basic={isDesktop} onClick={logout}>Logout</Button>
     <Button basic={isDesktop} onClick={openSettings}>Settings</Button>
+    {isDesktop &&
+      <Fragment>
+        <Button basic={isDesktop} onClick={() => handleNavigation('signals')}>
+          Signals
+        </Button>
+        <Button basic={isDesktop} onClick={() => handleNavigation('roadmap')}>
+          Roadmap
+        </Button>
+      </Fragment>}
+    <hr />
+    <Button
+      className='logoutBtn'
+      color='orange'
+      basic={isDesktop}
+      onClick={logout}>
+      Logout
+    </Button>
   </div>
 )
 
@@ -28,6 +45,7 @@ const AuthControl = ({
   login,
   logout,
   openSettings,
+  handleNavigation,
   isDesktop = true
 }) => {
   if (user.username && isDesktop) {
@@ -42,6 +60,7 @@ const AuthControl = ({
           <AccountLinks
             isDesktop={isDesktop}
             username={user.username}
+            handleNavigation={handleNavigation}
             openSettings={openSettings}
             logout={logout} />
         </Popup>

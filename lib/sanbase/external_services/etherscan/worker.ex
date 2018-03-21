@@ -106,35 +106,52 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   defp import_latest_eth_wallet_data(last_trx, address) do
-    changeset = latest_eth_wallet_changeset(last_trx, address)
+    case latest_eth_wallet_changeset(last_trx, address) do
+      nil ->
+        nil
 
-    get_or_create_entry(address)
-    |> LatestEthWalletData.changeset(changeset)
-    |> Repo.insert_or_update!()
+      changeset ->
+        get_or_create_entry(address)
+        |> LatestEthWalletData.changeset(changeset)
+        |> Repo.insert_or_update!()
+    end
   end
 
   defp latest_eth_wallet_changeset(last_trx, address) do
-    changeset = %{
+    Balance.get_balance(address)
+    |> build_latest_eth_wallet_changeset(last_trx |> get_last_trx)
+  end
+
+  defp build_latest_eth_wallet_changeset(nil, nil), do: nil
+  defp build_latest_eth_wallet_changeset(nil, _last_trx_changeset), do: nil
+  defp build_latest_eth_wallet_changeset(balance, nil) do
+    %{
       update_time: DateTime.utc_now(),
-      balance: convert_to_eth(Balance.get_balance!(address).result)
+      balance: convert_to_eth(balance.result)
     }
+  end
 
-    case last_trx do
-      %Tx{timeStamp: ts, value: value} ->
-        Map.merge(changeset, %{
-          last_outgoing: DateTime.from_unix!(ts),
-          tx_out: convert_to_eth(value)
-        })
+  defp build_latest_eth_wallet_changeset(balance, last_trx_changeset) do
+    Map.merge(
+      build_latest_eth_wallet_changeset(balance, nil),
+      last_trx_changeset
+    )
+  end
 
-      %InternalTx{timeStamp: ts, value: value} ->
-        Map.merge(changeset, %{
-          last_outgoing: DateTime.from_unix!(ts),
-          tx_out: convert_to_eth(value)
-        })
+  defp get_last_trx(nil), do: nil
 
-      nil ->
-        changeset
-    end
+  defp get_last_trx(%Tx{timeStamp: ts, value: value}) do
+    %{
+      last_outgoing: DateTime.from_unix!(ts),
+      tx_out: convert_to_eth(value)
+    }
+  end
+
+  defp get_last_trx(%InternalTx{timeStamp: ts, value: value}) do
+    %{
+      last_outgoing: DateTime.from_unix!(ts),
+      tx_out: convert_to_eth(value)
+    }
   end
 
   defp fetch_internal_transactions(address, measurement_name, endblock) do

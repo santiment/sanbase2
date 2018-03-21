@@ -34,12 +34,10 @@ const FinancialsBlock = ({
   isERC20
 }) => (
   <div>
-    Project Transparency:&nbsp;{showStatus(projectTransparencyStatus)}
+    Project Transparency:&nbsp;{isERC20 ? showStatus(projectTransparencyStatus) : 'Not applicable'}
     <hr />
-    <div className={cx({
-      'row-info': true,
-      'info-disabled': fundsRaisedIcos && fundsRaisedIcos.length === 0
-    })}>
+    {fundsRaisedIcos && fundsRaisedIcos.length !== 0 &&
+    <div className='row-info'>
       <div>
         Collected
       </div>
@@ -50,7 +48,8 @@ const FinancialsBlock = ({
           }</div>
         }) : '-'}
       </div>
-    </div>
+    </div>}
+    {!ethBalance &&
     <div className={cx({
       'row-info': true,
       'info-disabled': !isERC20 || !ethBalance
@@ -59,7 +58,7 @@ const FinancialsBlock = ({
         Balance Total
       </div>
       {ethBalance && `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`}
-    </div>
+    </div>}
     {isERC20 &&
       <div className='row-info'>
         {ethAddresses.map((wallet, index) => (
@@ -70,6 +69,7 @@ const FinancialsBlock = ({
           </div>
         ))}
       </div>}
+    {isERC20 &&
     <div className={cx({
       'row-info': true,
       'info-disabled': !isERC20 || !ethBalance
@@ -78,7 +78,7 @@ const FinancialsBlock = ({
       <div style={{textAlign: 'right'}}>
         {ethSpent ? `ETH ${millify(parseFloat(parseFloat(ethSpent).toFixed(2)))}` : 0}
       </div>
-    </div>
+    </div>}
   </div>
 )
 

@@ -175,24 +175,27 @@ export const Detailed = ({
           <FinancialsBlock {...Project.project} />
         </PanelBlock>
       </div>
-      <div className='information'>
-        <PanelBlock
-          isLoading={Project.loading}
-          title='Top ETH Transactions'>
-          <div>
-            {project.ethTopTransactions &&
-            project.ethTopTransactions.map((transaction, index) => (
-              <div key={index}>
-                <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
-                &nbsp;
-                {transaction.trxValue}
-                &nbsp;
-                {transaction.datetime}
-              </div>
-            ))}
-          </div>
-        </PanelBlock>
-      </div>
+      {project.isERC20 &&
+        project.ethTopTransactions &&
+        project.ethTopTransactions.length > 0 &&
+        <div className='information'>
+          <PanelBlock
+            isLoading={Project.loading}
+            title='Top ETH Transactions'>
+            <div>
+              {project.ethTopTransactions &&
+              project.ethTopTransactions.map((transaction, index) => (
+                <div key={index}>
+                  <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
+                  &nbsp;
+                  {transaction.trxValue}
+                  &nbsp;
+                  {transaction.datetime}
+                </div>
+              ))}
+            </div>
+          </PanelBlock>
+        </div>}
     </div>
   )
 }

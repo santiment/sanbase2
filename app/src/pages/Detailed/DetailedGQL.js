@@ -46,6 +46,12 @@ export const projectBySlugGQL = gql`
     }
   }
 `
+
+// ethSpentOverTime(from: $from, to: $to) {
+  // datetime,
+  // ethSpent
+// },
+
 export const TwitterHistoryGQL = gql`
   query queryTwitterHistory($ticker:String!, $from: DateTime, $to: DateTime, $interval: String) {
     historyTwitterData(

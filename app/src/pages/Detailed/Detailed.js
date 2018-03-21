@@ -14,7 +14,11 @@ import FinancialsBlock from './FinancialsBlock'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
-import { calculateBTCVolume, calculateBTCMarketcap } from '../../utils/utils'
+import {
+  calculateBTCVolume,
+  calculateBTCMarketcap,
+  millify
+} from '../../utils/utils'
 import { isERC20 } from './../Projects/projectSelectors'
 import DetailedHeader from './DetailedHeader'
 import {
@@ -26,6 +30,7 @@ import {
   GithubActivityGQL,
   TransactionVolumeGQL
 } from './DetailedGQL'
+import SpentOverTime from './SpentOverTime'
 import './Detailed.css'
 
 const propTypes = {
@@ -185,16 +190,19 @@ export const Detailed = ({
             <div>
               {project.ethTopTransactions &&
               project.ethTopTransactions.map((transaction, index) => (
-                <div key={index}>
+                <div className='top-eth-transaction' key={index}>
                   <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
-                  &nbsp;
-                  {transaction.trxValue}
-                  &nbsp;
-                  {transaction.datetime}
+                  <div>
+                    {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
+                    &nbsp; | &nbsp;
+                    {moment(transaction.datetime).fromNow()}
+                  </div>
                 </div>
               ))}
             </div>
           </PanelBlock>
+          <SpentOverTime project={project} loading={Project.loading} />
+          }
         </div>}
     </div>
   )

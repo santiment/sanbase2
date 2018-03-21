@@ -15,13 +15,15 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     ticker2 = "TESTTEST"
     ticker3 = "XYZ"
     Store.drop_measurement(ticker)
+    Store.drop_measurement(ticker2)
+    Store.drop_measurement(ticker3)
 
     p =
       %Project{}
       |> Project.changeset(%{name: "Santiment", ticker: ticker})
       |> Repo.insert!()
 
-    today = Timex.now()
+    today = Timex.now() |> Timex.beginning_of_day()
     datetime1 = today
     datetime2 = Timex.shift(today, days: -5)
     datetime3 = Timex.shift(today, days: -10)
@@ -94,7 +96,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       expected_sum1: 20000,
       dates_day_diff2: Timex.diff(datetime1, datetime3, :days) + 1,
       expected_sum2: 4500,
-      expected_total_sum: 30000,
+      expected_total_eth_spent: 30000,
       datetime_from: datetime6,
       datetime_to: datetime1
     ]
@@ -136,19 +138,46 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     assert trx_sum == %{"ethSpent" => context.expected_sum2}
   end
 
-  test "eth spent by all projects", context do
+  test "eth spent by erc20 projects", context do
     query = """
     {
-      ethSpentByAllProjects(from: "#{context.datetime_from}", to: "#{context.datetime_to}")
+      ethSpentByErc20Projects(
+        from: "#{context.datetime_from}",
+        to: "#{context.datetime_to}")
     }
     """
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "ethSpentByAllProjects"))
+      |> post("/graphql", query_skeleton(query, "ethSpentByErc20Projects"))
 
-    total_trx_sum = json_response(result, 200)["data"]["ethSpentByAllProjects"]
+    total_eth_spent = json_response(result, 200)["data"]["ethSpentByErc20Projects"]
 
-    assert total_trx_sum == context.expected_total_sum
+    assert total_eth_spent == context.expected_total_eth_spent
+  end
+
+  test "eth spent over time by erc20 projects", context do
+    query = """
+    {
+      ethSpentOverTimeByErc20Projects(
+        from: "#{context.datetime_from}",
+        to: "#{context.datetime_to}",
+        interval: "5d"){
+          ethSpent
+        }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "ethSpentOverTimeByErc20Projects"))
+
+    total_spent = json_response(result, 200)["data"]["ethSpentOverTimeByErc20Projects"]
+
+    assert %{"ethSpent" => 16500} in total_spent
+    assert %{"ethSpent" => 5500} in total_spent
+    assert %{"ethSpent" => 3500} in total_spent
+    assert %{"ethSpent" => 2500} in total_spent
+    assert %{"ethSpent" => 500} in total_spent
   end
 end

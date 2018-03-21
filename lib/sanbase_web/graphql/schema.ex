@@ -230,11 +230,20 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Returns the ETH spent by all projects in a given time period"
-    field :eth_spent_by_all_projects, :float do
+    field :eth_spent_by_erc20_projects, :float do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      resolve(&ProjectResolver.eth_spent_by_all_projects/3)
+      resolve(&ProjectResolver.eth_spent_by_erc20_projects/3)
+    end
+
+    @desc "Returns the ETH spent by all projects in a given time period for a given interval"
+    field :eth_spent_over_time_by_erc20_projects, list_of(:eth_spent_data) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      resolve(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
     end
   end
 

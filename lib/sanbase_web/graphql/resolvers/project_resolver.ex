@@ -54,20 +54,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def project_by_slug(_parent, %{slug: slug}, _resolution) do
-    project =
-      Project
-      |> Repo.get_by(coinmarketcap_id: slug)
-      |> case do
-        nil ->
-          {:error, "Project with slug '#{slug}' not found."}
+    Project
+    |> Repo.get_by(coinmarketcap_id: slug)
+    |> case do
+      nil ->
+        {:error, "Project with slug '#{slug}' not found."}
 
-        project ->
-          project =
-            project
-            |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+      project ->
+        project =
+          project
+          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
 
-          {:ok, project}
-      end
+        {:ok, project}
+    end
   end
 
   def all_projects_with_eth_contract_info(_parent, _args, _resolution) do
@@ -96,15 +95,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
-  def eth_spent_by_all_projects(_, %{from: from, to: to}, _resolution) do
-    with {:ok, measurements} <- Etherscan.Store.public_measurements(),
-         {:ok, measurements_list} <- gen_measurements_list(measurements),
-         {:ok, total_eth_spent} <-
-           Etherscan.Store.eth_spent_by_projects(measurements_list, from, to) do
-      {:ok, total_eth_spent}
-    end
-  end
-
   def eth_spent_over_time(
         %Project{ticker: ticker},
         %{from: from, to: to, interval: interval},
@@ -129,6 +119,48 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
           {:ok, []}
       end
     end)
+  end
+
+  @doc ~s"""
+
+  """
+  def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
+    with {:ok, measurements} <- Etherscan.Store.public_measurements(),
+         {:ok, measurements_list} <- gen_measurements_list(measurements),
+         {:ok, total_eth_spent} <-
+           Etherscan.Store.eth_spent_by_projects(measurements_list, from, to) do
+      {:ok, total_eth_spent}
+    end
+  end
+
+  @doc ~s"""
+
+  """
+  def eth_spent_over_time_by_erc20_projects(
+        _root,
+        %{from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, measurements} <- Etherscan.Store.public_measurements(),
+         {:ok, measurements_list} <- gen_measurements_list(measurements),
+         {:ok, total_eth_spent_over_time} <-
+           Etherscan.Store.eth_spent_over_time_by_projects(
+             measurements_list,
+             from,
+             to,
+             interval
+           ) do
+      result =
+        total_eth_spent_over_time
+        |> Enum.map(fn {datetime, eth_spent} ->
+          %{
+            datetime: datetime,
+            eth_spent: eth_spent
+          }
+        end)
+
+      {:ok, result}
+    end
   end
 
   def eth_top_transactions(

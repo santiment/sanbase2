@@ -28,11 +28,12 @@ export const TimeFilter = props => (
   </div>
 )
 
-export const CurrencyFilter = ({isToggledBTC, toggleBTC}) => (
+export const CurrencyFilter = ({ticker, isToggledBTC, toggleBTC}) => (
   <div className='currency-filter'>
+    {ticker !== 'BTC' &&
     <div
       className={isToggledBTC ? 'activated' : ''}
-      onClick={() => toggleBTC(true)}>BTC</div>
+      onClick={() => toggleBTC(true)}>BTC</div>}
     <div
       className={!isToggledBTC ? 'activated' : ''}
       onClick={() => toggleBTC(false)}>USD</div>
@@ -82,6 +83,7 @@ const ProjectChartHeader = ({
       </div>
       <div className='chart-header-actions'>
         <CurrencyFilter
+          ticker={ticker}
           isToggledBTC={isToggledBTC}
           toggleBTC={toggleBTC} />
         <ShareableBtn

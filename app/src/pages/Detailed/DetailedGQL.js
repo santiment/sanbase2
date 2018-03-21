@@ -1,7 +1,7 @@
 import gql from 'graphql-tag'
 
 export const projectBySlugGQL = gql`
-  query projectBySlugGQL($slug: String!) {
+  query projectBySlugGQL($slug: String!, $from: DateTime, $to: DateTime) {
     projectBySlug(
       slug: $slug,
     ){
@@ -31,7 +31,7 @@ export const projectBySlugGQL = gql`
         balance,
         address
       },
-      ethTopTransactions(from: "2018-02-20T00:00:00Z", to: "2018-03-20T00:00:00Z", limit: 10, transactionType: OUT) {
+      ethTopTransactions(from: $from, to: $to, limit: 10, transactionType: OUT) {
         fromAddress,
         trxValue,
         toAddress,

@@ -91,7 +91,7 @@ const handleLoad = () => {
       } else {
         if (process.env.NODE_ENV === 'development') {
           console.log(
-            `[GraphQL error]: ${JSON.stringify(graphQLErrors)}`
+            `[GraphQL error]: ${JSON.stringify(graphQLErrors)} ${JSON.stringify(operation)}`
           )
         }
         Raven.captureException(`[GraphQL error]: ${JSON.stringify(graphQLErrors)}`)
@@ -102,7 +102,7 @@ const handleLoad = () => {
       if (process.env.NODE_ENV === 'development') {
         console.log(networkError)
       }
-      Raven.captureException(`[Network error]: ${networkError} ${operation}`)
+      Raven.captureException(`[Network error]: ${networkError}`)
     }
   })
 

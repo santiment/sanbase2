@@ -29,15 +29,15 @@ const FinancialsBlock = ({
   fundsRaisedIcos,
   ethSpent,
   ethBalance,
-  btcBalance
+  btcBalance,
+  ethAddresses,
+  isERC20
 }) => (
   <div>
-    Project Transparency:&nbsp;{showStatus(projectTransparencyStatus)}
+    Project Transparency:&nbsp;{isERC20 ? showStatus(projectTransparencyStatus) : 'Not applicable'}
     <hr />
-    <div className={cx({
-      'row-info': true,
-      'info-disabled': fundsRaisedIcos && fundsRaisedIcos.length === 0
-    })}>
+    {fundsRaisedIcos && fundsRaisedIcos.length !== 0 &&
+    <div className='row-info'>
       <div>
         Collected
       </div>
@@ -48,25 +48,46 @@ const FinancialsBlock = ({
           }</div>
         }) : '-'}
       </div>
-    </div>
+    </div>}
+    {ethBalance &&
     <div className={cx({
       'row-info': true,
-      'info-disabled': !ethBalance
+      'info-disabled': !isERC20 || !ethBalance
     })}>
       <div>
-        Balance
+        Wallet Balances
       </div>
-      {ethBalance && `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`}
-    </div>
+    </div>}
+    {isERC20 &&
+    <div className='row-info wallets-balance'>
+      {ethAddresses.map((wallet, index) => (
+        <div key={index}>
+          <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
+          &nbsp;
+          ETH {millify(parseFloat(parseFloat(wallet.balance).toFixed(2)))}
+        </div>
+      ))}
+    </div>}
+    {ethBalance &&
     <div className={cx({
       'row-info': true,
-      'info-disabled': !ethBalance
+      'info-disabled': !isERC20 || !ethBalance
+    })}>
+      <div>
+        Total Balance
+      </div>
+      {ethBalance && `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`}
+    </div>}
+    {isERC20 &&
+    <div className={cx({
+      'row-info': true,
+      'info-disabled': !isERC20 || !ethBalance
     })}>
       <div>ETH Spent 30d</div>
       <div style={{textAlign: 'right'}}>
         {ethSpent ? `ETH ${millify(parseFloat(parseFloat(ethSpent).toFixed(2)))}` : 0}
       </div>
-    </div>
+    </div>}
   </div>
 )
 

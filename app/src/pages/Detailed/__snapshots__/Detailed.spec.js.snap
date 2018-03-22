@@ -75,6 +75,9 @@ exports[`Project detail page container it should render correctly 1`] = `
   </div>
   <div
     className="information"
+  />
+  <div
+    className="information"
   >
     <PanelBlock
       title="General Info"
@@ -99,17 +102,6 @@ exports[`Project detail page container it should render correctly 1`] = `
   </div>
   <div
     className="information"
-  >
-    <SpentOverTime
-      project={
-        Object {
-          "id": 12,
-          "name": "Aragorn",
-          "priceUsd": 10,
-          "ticker": "AE",
-        }
-      }
-    />
-  </div>
+  />
 </div>
 `;

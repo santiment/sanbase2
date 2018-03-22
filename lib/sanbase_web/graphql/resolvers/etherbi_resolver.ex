@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   import Ecto.Query
 
+  require Logger
+
   @doc ~S"""
     Return the token burn rate for the given ticker and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
@@ -89,7 +91,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      _ -> {:error, "Can't fetch the exchange funds for #{ticker}"}
+      error ->
+        error_message =
+          "Can't fetch the exchange fund flow for #{ticker}. Reason: #{inspect(error)}"
+
+        Logger.warn(error_message)
+
+        {:error, error_message}
     end
   end
 

@@ -30,9 +30,19 @@ exports[`Cashflow container it should render correctly 1`] = `
     <div
       className="cashflow-head"
     >
-      <h1>
-        Projects
-      </h1>
+      <div
+        className="cashflow-title"
+      >
+        <h1>
+          Projects
+        </h1>
+        <Link
+          replace={false}
+          to="/projects/ethereum"
+        >
+          More data about Ethereum
+        </Link>
+      </div>
       <p>
         brought to you by 
         <a

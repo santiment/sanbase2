@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Helpers.Cache do
-  @ttl 5 * 60 * 1000
+  @ttl :timer.minutes(5)
 
   def resolver(resolver_fn, name) do
     fn parent, args, resolution ->

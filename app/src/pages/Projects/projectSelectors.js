@@ -4,7 +4,7 @@ export const isERC20 = project => (
   project.ethAddresses.length > 0
 )
 
-const defaulFilter = project => project.rank && project.volumeUsd > 0
+const defaulFilter = project => project
 
 export const getProjects = (allProjects = []) => (
   allProjects.filter(project => (isERC20(project) &&

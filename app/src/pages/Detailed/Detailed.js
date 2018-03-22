@@ -180,30 +180,29 @@ export const Detailed = ({
           <FinancialsBlock {...Project.project} />
         </PanelBlock>
       </div>
-      {project.isERC20 &&
+      <div className='information'>
+        {project.isERC20 &&
         project.ethTopTransactions &&
         project.ethTopTransactions.length > 0 &&
-        <div className='information'>
-          <PanelBlock
-            isLoading={Project.loading}
-            title='Top ETH Transactions'>
-            <div>
-              {project.ethTopTransactions &&
-              project.ethTopTransactions.map((transaction, index) => (
-                <div className='top-eth-transaction' key={index}>
-                  <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
-                  <div>
-                    {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
-                    &nbsp; | &nbsp;
-                    {moment(transaction.datetime).fromNow()}
-                  </div>
+        <PanelBlock
+          isLoading={Project.loading}
+          title='Top ETH Transactions'>
+          <div>
+            {project.ethTopTransactions &&
+            project.ethTopTransactions.map((transaction, index) => (
+              <div className='top-eth-transaction' key={index}>
+                <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
+                <div>
+                  {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
+                  &nbsp; | &nbsp;
+                  {moment(transaction.datetime).fromNow()}
                 </div>
-              ))}
-            </div>
-          </PanelBlock>
-          <SpentOverTime project={project} loading={Project.loading} />
-          }
-        </div>}
+              </div>
+            ))}
+          </div>
+        </PanelBlock>}
+        <SpentOverTime project={project} loading={Project.loading} />
+      </div>
     </div>
   )
 }
@@ -236,7 +235,8 @@ const enhance = compose(
       variables: {
         slug: match.params.slug,
         from: moment().subtract(30, 'days').utc().format(),
-        to: moment().endOf('day').utc().format()
+        to: moment().endOf('day').utc().format(),
+        fromOverTime: moment().subtract(2, 'years').utc().format()
       }
     })
   }),

@@ -60,6 +60,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
     )
   end
 
+  def twitter_mention_count(
+        _root,
+        %{
+          ticker: ticker,
+          from: from,
+          to: to,
+          interval: interval,
+          result_size_tail: result_size_tail
+        },
+        _resolution
+      ) do
+    TechIndicators.twitter_mention_count(
+      ticker,
+      from,
+      to,
+      interval,
+      result_size_tail
+    )
+  end
+
   defp price_volume_diff_ma_window_type() do
     Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :window_type)
   end

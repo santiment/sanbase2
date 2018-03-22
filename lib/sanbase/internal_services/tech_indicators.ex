@@ -177,6 +177,65 @@ defmodule Sanbase.InternalServices.TechIndicators do
     end
   end
 
+  def twitter_mention_count(
+        ticker,
+        from_datetime,
+        to_datetime,
+        aggregate_interval,
+        result_size_tail \\ 0
+      ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/twitter_mention_count"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"ticker", ticker},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"aggregate_interval", aggregate_interval},
+        {"result_size_tail", result_size_tail}
+      ]
+    ]
+
+    case @http_client.get(url, [], options) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Poison.decode(body)
+
+        result =
+          result
+          |> Enum.map(fn %{
+                           "timestamp" => timestamp,
+                           "mention_count" => mention_count
+                         } ->
+            %{
+              datetime: DateTime.from_unix!(timestamp),
+              mention_count: decimal_or_nil(mention_count)
+            }
+          end)
+
+        {:ok, result}
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        message =
+          "Error status #{status} fetching twitter mention count for ticker #{ticker}: #{body}"
+
+        Logger.error(message)
+        {:error, message}
+
+      {:error, %HTTPoison.Error{} = error} ->
+        message =
+          "Cannot fetch twitter mention count data for ticker #{ticker}: #{
+            HTTPoison.Error.message(error)
+          }"
+
+        Logger.error(message)
+        {:error, message}
+    end
+  end
+
   defp decimal_or_nil(nil), do: nil
   defp decimal_or_nil(value), do: Decimal.new(value)
 

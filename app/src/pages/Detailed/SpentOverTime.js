@@ -9,7 +9,8 @@ const SpentOverTime = ({loading = true, project = {}}) => {
       isLoading={loading}
       title='ETH Spent Over Time'>
       {!project.ethSpentOverTime && "We don't have any data now"}
-      <div className='analytics-trend-chart'>
+      <div
+        className='analytics-trend-chart'>
         {project.ethSpentOverTime &&
         project.ethSpentOverTime
         .filter((item) => (
@@ -19,7 +20,9 @@ const SpentOverTime = ({loading = true, project = {}}) => {
         .filter((_, index) => (
           index < 10
         )).map((transaction, index) => (
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+          <div
+            key={index}
+            style={{display: 'flex', justifyContent: 'space-between'}}>
             <div>ETH {millify(parseFloat(parseFloat(transaction.ethSpent).toFixed(2)))}</div>
             <div>{moment(transaction.datetime).fromNow()}</div>
           </div>

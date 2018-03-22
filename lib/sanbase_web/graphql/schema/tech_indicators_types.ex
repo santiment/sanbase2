@@ -79,4 +79,9 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:mentions_count, :integer)
     field(:datetime, non_null(:datetime))
   end
+
+  object :twitter_mention_count do
+    field(:datetime, non_null(:datetime))
+    field(:mention_count, :decimal)
+  end
 end

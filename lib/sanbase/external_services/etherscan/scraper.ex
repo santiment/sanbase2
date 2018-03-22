@@ -16,7 +16,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
   @max_redirects 10
 
-  def fetch_address_page!(address) do
+  def fetch_address_page(address) do
     case get("/address/#{address}") do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body

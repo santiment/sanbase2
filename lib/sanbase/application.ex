@@ -48,7 +48,7 @@ defmodule Sanbase.Application do
          ]},
 
         # Start the graphQL in-memory cache
-        supervisor(ConCache, [[], [name: :graphql_cache]]),
+        worker(Cachex, [:graphql_cache, [limit: 10000]]),
 
         # Time series Prices DB connection
         Sanbase.Prices.Store.child_spec(),

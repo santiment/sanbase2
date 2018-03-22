@@ -122,7 +122,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   @doc ~s"""
-
+    Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
     with {:ok, measurements} <- Etherscan.Store.public_measurements(),
@@ -134,7 +134,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   @doc ~s"""
-
+    Returns a list of ETH spent by all ERC20 projects for a given time period,
+    grouped by the given `interval`.
   """
   def eth_spent_over_time_by_erc20_projects(
         _root,

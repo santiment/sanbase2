@@ -4,10 +4,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   alias Decimal, as: D
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.ProjectInfo
+  alias Sanbase.ExternalServices.ErrorCatcher
 
   require Logger
 
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
+  plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://etherscan.io")
   plug(Tesla.Middleware.Logger)
 
@@ -25,6 +27,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
           }"
         )
 
+        nil
+
+      %Tesla.Error{message: error_msg} ->
+        Logger.warn("Error response from etherscan for address #{address}. #{error_msg}")
         nil
     end
   end
@@ -51,6 +57,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
           }"
         )
 
+        nil
+
+      %Tesla.Error{message: error_msg} ->
+        Logger.warn("Error response from etherscan for #{token_name}. #{error_msg}")
         nil
     end
   end

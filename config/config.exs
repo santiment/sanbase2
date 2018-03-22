@@ -61,7 +61,7 @@ config :sanbase, Sanbase.Etherbi.Transactions.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
   port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
-  database: "erc20_exchange_transactions"
+  database: "erc20_exchange_funds_flow"
 
 config :sanbase, Sanbase.Etherbi.BurnRate.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},

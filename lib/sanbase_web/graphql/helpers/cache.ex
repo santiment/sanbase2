@@ -3,17 +3,33 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
 
   def resolver(resolver_fn, name) do
     fn parent, args, resolution ->
-      ConCache.get_or_store(:graphql_cache, cache_key(name, args), fn ->
-        resolver_fn.(parent, args, resolution)
-      end)
+      {_, value} =
+        Cachex.fetch(
+          :graphql_cache,
+          cache_key(name, args),
+          fn ->
+            {:commit, resolver_fn.(parent, args, resolution)}
+          end,
+          ttl: @ttl
+        )
+
+      value
     end
   end
 
   def func(cached_func, name, args \\ %{}) do
     fn ->
-      ConCache.get_or_store(:graphql_cache, cache_key(name, args), fn ->
-        cached_func.()
-      end)
+      {_, value} =
+        Cachex.fetch(
+          :graphql_cache,
+          cache_key(name, args),
+          fn ->
+            {:commit, cached_func.()}
+          end,
+          ttl: @ttl
+        )
+
+      value
     end
   end
 

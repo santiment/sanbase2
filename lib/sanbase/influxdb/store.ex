@@ -26,6 +26,10 @@ defmodule Sanbase.Influxdb.Store do
           |> __MODULE__.write()
       end
 
+      def import([]) do
+        :ok
+      end
+
       def import(measurements) do
         # 1 day of 5 min resolution data
         measurements

@@ -106,35 +106,47 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   end
 
   defp import_latest_eth_wallet_data(last_trx, address) do
-    changeset = latest_eth_wallet_changeset(last_trx, address)
+    case Balance.get_balance(address) do
+      {:ok, balance} ->
+        changeset =
+          last_trx
+          |> get_last_trx_changeset
+          |> build_latest_eth_wallet_changeset(balance)
 
-    get_or_create_entry(address)
-    |> LatestEthWalletData.changeset(changeset)
-    |> Repo.insert_or_update!()
+        address
+        |> get_or_create_entry()
+        |> LatestEthWalletData.changeset(changeset)
+        |> Repo.insert_or_update!()
+
+      {:error, _error} ->
+        nil
+    end
   end
 
-  defp latest_eth_wallet_changeset(last_trx, address) do
-    changeset = %{
-      update_time: DateTime.utc_now(),
-      balance: convert_to_eth(Balance.get_balance!(address).result)
+  defp build_latest_eth_wallet_changeset(last_trx_changeset, balance) do
+    Map.merge(
+      %{
+        update_time: DateTime.utc_now(),
+        balance: convert_to_eth(balance.result)
+      },
+      last_trx_changeset
+    )
+  end
+
+  defp get_last_trx_changeset(nil), do: %{}
+
+  defp get_last_trx_changeset(%Tx{timeStamp: ts, value: value}) do
+    %{
+      last_outgoing: DateTime.from_unix!(ts),
+      tx_out: convert_to_eth(value)
     }
+  end
 
-    case last_trx do
-      %Tx{timeStamp: ts, value: value} ->
-        Map.merge(changeset, %{
-          last_outgoing: DateTime.from_unix!(ts),
-          tx_out: convert_to_eth(value)
-        })
-
-      %InternalTx{timeStamp: ts, value: value} ->
-        Map.merge(changeset, %{
-          last_outgoing: DateTime.from_unix!(ts),
-          tx_out: convert_to_eth(value)
-        })
-
-      nil ->
-        changeset
-    end
+  defp get_last_trx_changeset(%InternalTx{timeStamp: ts, value: value}) do
+    %{
+      last_outgoing: DateTime.from_unix!(ts),
+      tx_out: convert_to_eth(value)
+    }
   end
 
   defp fetch_internal_transactions(address, measurement_name, endblock) do

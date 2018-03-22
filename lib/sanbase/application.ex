@@ -1,6 +1,7 @@
 defmodule Sanbase.Application do
   use Application
   import Supervisor.Spec
+  import Cachex.Spec
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -22,7 +23,10 @@ defmodule Sanbase.Application do
         supervisor(SanbaseWeb.Endpoint, []),
 
         # Start the graphQL in-memory cache
-        worker(Cachex, [:graphql_cache, [limit: 10000]]),
+        worker(Cachex, [
+          :graphql_cache,
+          [limit: 10000, expiration: expiration(default: :timer.minutes(5))]
+        ]),
 
         # Time series Prices DB connection
         Sanbase.Prices.Store.child_spec(),

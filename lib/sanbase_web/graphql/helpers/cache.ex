@@ -4,14 +4,9 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   def resolver(resolver_fn, name) do
     fn parent, args, resolution ->
       {_, value} =
-        Cachex.fetch(
-          :graphql_cache,
-          cache_key(name, args),
-          fn ->
-            {:commit, resolver_fn.(parent, args, resolution)}
-          end,
-          ttl: @ttl
-        )
+        Cachex.fetch(:graphql_cache, cache_key(name, args), fn ->
+          {:commit, resolver_fn.(parent, args, resolution)}
+        end)
 
       value
     end
@@ -20,14 +15,9 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   def func(cached_func, name, args \\ %{}) do
     fn ->
       {_, value} =
-        Cachex.fetch(
-          :graphql_cache,
-          cache_key(name, args),
-          fn ->
-            {:commit, cached_func.()}
-          end,
-          ttl: @ttl
-        )
+        Cachex.fetch(:graphql_cache, cache_key(name, args), fn ->
+          {:commit, cached_func.()}
+        end)
 
       value
     end

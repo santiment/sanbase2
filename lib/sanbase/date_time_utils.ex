@@ -48,10 +48,8 @@ defmodule Sanbase.DateTimeUtils do
   defp str_to_sec(days, "d"), do: days * 60 * 60 * 24
   defp str_to_sec(weeks, "w"), do: weeks * 60 * 60 * 24 * 7
 
-  def ecto_date_to_datetime(ecto_date) do
-    {:ok, datetime, _} =
-      (Ecto.Date.to_iso8601(ecto_date) <> "T00:00:00Z") |> DateTime.from_iso8601()
-
-    datetime
+  def datetime_from_date(%Date{} = date, time \\ ~T[00:00:00]) do
+    {:ok, naive_datetime} = NaiveDateTime.new(date, time)
+    datetime = DateTime.from_naive!(naive_datetime, "Etc/UTC")
   end
 end

@@ -32,7 +32,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     %LatestEthWalletData{}
     |> LatestEthWalletData.changeset(%{
       address: "abcdefg",
-      update_time: Ecto.DateTime.utc(),
+      update_time: NaiveDateTime.utc_now(),
       balance: 500
     })
     |> Repo.insert!()
@@ -44,7 +44,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     %LatestEthWalletData{}
     |> LatestEthWalletData.changeset(%{
       address: "rrrrr",
-      update_time: Ecto.DateTime.utc(),
+      update_time: NaiveDateTime.utc_now(),
       balance: 800
     })
     |> Repo.insert!()

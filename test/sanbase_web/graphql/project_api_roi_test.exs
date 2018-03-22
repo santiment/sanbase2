@@ -20,13 +20,14 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     |> Instream.Admin.Database.create()
     |> Store.execute()
 
-    date1 = "2017-08-19"
-    date1_unix = 1_503_100_800_000_000_000
+    date1 = DateTime.from_naive!(~N[2017-08-19 00:00:00], "Etc/UTC")
 
-    date2 = "2017-10-17"
-    date2_unix = 1_508_198_400_000_000_000
+    date1_unix = DateTime.to_unix(date1, :nanoseconds)
 
-    now = Ecto.DateTime.utc()
+    date2 = DateTime.from_naive!(~N[2017-10-17 00:00:00], "Etc/UTC")
+    date2_unix = DateTime.to_unix(date2, :nanoseconds)
+
+    now = NaiveDateTime.utc_now()
 
     Store.import([
       %Measurement{

@@ -25,11 +25,11 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     Store.drop_measurement("BTC_USD")
     Store.drop_measurement("ETH_USD")
 
-    date1 = "2017-08-19"
-    date1_unix = 1_503_100_800_000_000_000
+    date1 = DateTime.from_naive!(~N[2017-08-19 00:00:00], "Etc/UTC")
+    date1_unix = DateTime.to_unix(date1, :nanoseconds)
 
-    date2 = "2017-10-17"
-    date2_unix = 1_508_198_400_000_000_000
+    date2 = DateTime.from_naive!(~N[2017-10-17 00:00:00], "Etc/UTC")
+    date2_unix = DateTime.to_unix(date2, :nanoseconds)
 
     Store.import([
       %Measurement{

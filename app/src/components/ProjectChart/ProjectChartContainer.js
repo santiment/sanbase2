@@ -173,6 +173,7 @@ class ProjectChartContainer extends Component {
           history={this.props.price.history.items}
           burnRate={burnRate}
           transactionVolume={transactionVolume}
+          ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTimeByErc20Projects}
           isLoading={this.props.price.history.loading}
           isERC20={this.props.isERC20}
           isEmpty={this.props.price.history.items.length === 0} />
@@ -185,6 +186,7 @@ class ProjectChartContainer extends Component {
 const enhance = compose(
   withState('isToggledMarketCap', 'toggleMarketcap', false),
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
+  withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),
   withState('isToggledVolume', 'toggleVolume', true),
   withState('isToggledTwitter', 'toggleTwitter', false),
   withState('isToggledBurnRate', 'toggleBurnRate', false),

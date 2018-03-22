@@ -10,7 +10,7 @@ const propTypes = {
   projectTransparencyStatus: PropTypes.string
 }
 
-const collectedField = (currency, amount) => {
+export const collectedField = (currency, amount) => {
   if (currency === 'USD') {
     return formatNumber(amount, 'USD')
   }

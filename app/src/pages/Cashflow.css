@@ -13,6 +13,17 @@
   padding: 0 16px;
 }
 
+.cashflow-title {
+  display: flex;
+  align-items: center;
+}
+
+.cashflow-title a {
+  margin-left: 1em;
+  border-left: 1px solid #3e3e3e;
+  padding-left: 1em;
+}
+
 .cashflow-head h1 {
   font-family: 'Source Sans Pro', sans-serif;
   margin: 0;

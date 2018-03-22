@@ -4,7 +4,7 @@ import classnames from 'classnames'
 import throttle from 'lodash.throttle'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
-import { withRouter } from 'react-router-dom'
+import { withRouter, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet'
 import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
@@ -314,7 +314,10 @@ export const Cashflow = ({
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
-          <h1>Projects</h1>
+          <div className='cashflow-title'>
+            <h1>Projects</h1>
+            <Link to={'/projects/ethereum'}>More data about Ethereum</Link>
+          </div>
           <p>
             brought to you by <a
               href='https://santiment.net'

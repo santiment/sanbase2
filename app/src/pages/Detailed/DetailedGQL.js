@@ -132,3 +132,18 @@ export const TransactionVolumeGQL = gql`
       __typename
     }
 }`
+
+export const ExchangeFundFlowGQL = gql`
+  query exchangeFundFlowGQL($ticker:String, $from: DateTime, $to: DateTime) {
+    exchangeFundFlow(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      transactionType: ALL
+    ) {
+      datetime
+      transactionVolume
+      address
+      __typename
+    }
+}`

@@ -24,8 +24,15 @@ exports[`Project detail page container it should render correctly 1`] = `
     }
   />
   <div>
-    <withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))
+    <withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer))))))))
       burnRate={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": true,
+        }
+      }
+      ethSpentOverTimeByErc20Projects={
         Object {
           "error": false,
           "items": Array [],

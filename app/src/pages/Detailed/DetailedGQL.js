@@ -1,7 +1,7 @@
 import gql from 'graphql-tag'
 
 export const projectBySlugGQL = gql`
-  query projectBySlugGQL($slug: String!, $from: DateTime, $to: DateTime) {
+  query projectBySlugGQL($slug: String!, $from: DateTime, $fromOverTime: DateTime, $to: DateTime) {
     projectBySlug(
       slug: $slug,
     ){
@@ -37,6 +37,10 @@ export const projectBySlugGQL = gql`
         toAddress,
         datetime
       },
+      ethSpentOverTime(from: $fromOverTime, to: $to) {
+        datetime,
+        ethSpent
+      },
       ethSpent,
       marketcapUsd,
       tokenDecimals,
@@ -46,11 +50,6 @@ export const projectBySlugGQL = gql`
     }
   }
 `
-
-// ethSpentOverTime(from: $from, to: $to) {
-  // datetime,
-  // ethSpent
-// },
 
 export const TwitterHistoryGQL = gql`
   query queryTwitterHistory($ticker:String!, $from: DateTime, $to: DateTime, $interval: String) {
@@ -130,6 +129,34 @@ export const TransactionVolumeGQL = gql`
     ) {
       datetime
       transactionVolume
+      __typename
+    }
+}`
+
+export const ExchangeFundFlowGQL = gql`
+  query exchangeFundFlowGQL($ticker:String, $from: DateTime, $to: DateTime) {
+    exchangeFundFlow(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      transactionType: ALL
+    ) {
+      datetime
+      transactionVolume
+      address
+      __typename
+    }
+}`
+
+export const EthSpentOverTimeByErc20ProjectsGQL = gql`
+  query ethSpentOverTimeByErc20Projects($interval:String, $from: DateTime, $to: DateTime) {
+    ethSpentOverTimeByErc20Projects(
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime
+      ethSpent
       __typename
     }
 }`

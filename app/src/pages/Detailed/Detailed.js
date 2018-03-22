@@ -28,9 +28,12 @@ import {
   HistoryPriceGQL,
   BurnRateGQL,
   GithubActivityGQL,
-  TransactionVolumeGQL
+  TransactionVolumeGQL,
+  ExchangeFundFlowGQL,
+  EthSpentOverTimeByErc20ProjectsGQL
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
+import EthereumBlock from './EthereumBlock'
 import './Detailed.css'
 
 const propTypes = {
@@ -73,6 +76,16 @@ export const Detailed = ({
   },
   Project = {
     project: undefined,
+    loading: true,
+    error: false
+  },
+  ExchangeFundFlow = {
+    transactionVolume: [],
+    error: false,
+    loading: true
+  },
+  EthSpentOverTimeByErc20Projects = {
+    ethSpentOverTimeByErc20Projects: [],
     loading: true,
     error: false
   },
@@ -133,6 +146,18 @@ export const Detailed = ({
     items: TransactionVolume.transactionVolume || []
   }
 
+  const exchangeFundFlow = {
+    loading: ExchangeFundFlow.loading,
+    error: ExchangeFundFlow.error,
+    items: ExchangeFundFlow.transactionVolume
+  }
+
+  const ethSpentOverTimeByErc20Projects = {
+    loading: EthSpentOverTimeByErc20Projects.loading,
+    error: EthSpentOverTimeByErc20Projects.error,
+    items: EthSpentOverTimeByErc20Projects.ethSpentOverTimeByErc20Projects || []
+  }
+
   const projectContainerChart = project &&
     <ProjectChartContainer
       routerHistory={history}
@@ -144,6 +169,7 @@ export const Detailed = ({
       burnRate={burnRate}
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
+      ethSpentOverTimeByErc20Projects={ethSpentOverTimeByErc20Projects}
       isERC20={project.isERC20}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
@@ -169,6 +195,26 @@ export const Detailed = ({
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
       <div className='information'>
+        { project.ticker &&
+        project.ticker.toLowerCase() === 'eth' &&
+        <EthereumBlock
+          project={project}
+          loading={Project.loading} />}
+        {!exchangeFundFlow.loading &&
+          exchangeFundFlow.items &&
+          <PanelBlock
+            isLoading={false}
+            title='Exchange Fund Flows'>
+            <div>
+              {exchangeFundFlow.items.map((item, index) => (
+                <div key={index}>
+                  { item }
+                </div>
+              ))}
+            </div>
+          </PanelBlock>}
+      </div>
+      <div className='information'>
         <PanelBlock
           isLoading={Project.loading}
           title='General Info'>
@@ -180,30 +226,30 @@ export const Detailed = ({
           <FinancialsBlock {...Project.project} />
         </PanelBlock>
       </div>
-      {project.isERC20 &&
+      <div className='information'>
+        {project.isERC20 &&
         project.ethTopTransactions &&
         project.ethTopTransactions.length > 0 &&
-        <div className='information'>
-          <PanelBlock
-            isLoading={Project.loading}
-            title='Top ETH Transactions'>
-            <div>
-              {project.ethTopTransactions &&
-              project.ethTopTransactions.map((transaction, index) => (
-                <div className='top-eth-transaction' key={index}>
-                  <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
-                  <div>
-                    {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
-                    &nbsp; | &nbsp;
-                    {moment(transaction.datetime).fromNow()}
-                  </div>
+        <PanelBlock
+          isLoading={Project.loading}
+          title='Top ETH Transactions'>
+          <div>
+            {project.ethTopTransactions &&
+            project.ethTopTransactions.map((transaction, index) => (
+              <div className='top-eth-transaction' key={index}>
+                <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
+                <div>
+                  {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
+                  &nbsp; | &nbsp;
+                  {moment(transaction.datetime).fromNow()}
                 </div>
-              ))}
-            </div>
-          </PanelBlock>
-          <SpentOverTime project={project} loading={Project.loading} />
-          }
-        </div>}
+              </div>
+            ))}
+          </div>
+        </PanelBlock>}
+        {project.ethSpentOverTime && project.ethSpentOverTime.length > 0 &&
+          <SpentOverTime project={project} loading={Project.loading} />}
+      </div>
     </div>
   )
 }
@@ -236,7 +282,8 @@ const enhance = compose(
       variables: {
         slug: match.params.slug,
         from: moment().subtract(30, 'days').utc().format(),
-        to: moment().endOf('day').utc().format()
+        to: moment().endOf('day').utc().format(),
+        fromOverTime: moment().subtract(2, 'years').utc().format()
       }
     })
   }),
@@ -284,9 +331,24 @@ const enhance = compose(
       }
     }
   }),
+  graphql(BurnRateGQL, {
+    name: 'BurnRate',
+    options: ({chartVars, Project}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from || !ticker,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker
+        }
+      }
+    }
+  }),
   graphql(GithubActivityGQL, {
     name: 'GithubActivity',
-    options: ({match, chartVars}) => {
+    options: ({chartVars}) => {
       const {from, to, ticker} = chartVars
       return {
         skip: !from || !ticker,
@@ -301,12 +363,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(BurnRateGQL, {
-    name: 'BurnRate',
+  graphql(TransactionVolumeGQL, {
+    name: 'TransactionVolume',
     options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from || !ticker || (Project && !Project.isERC20),
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
@@ -316,17 +378,32 @@ const enhance = compose(
       }
     }
   }),
-  graphql(TransactionVolumeGQL, {
-    name: 'TransactionVolume',
-    options: ({chartVars, Project}) => {
+  graphql(ExchangeFundFlowGQL, {
+    name: 'ExchangeFundFlow',
+    options: ({chartVars}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from || !ticker || (Project && !Project.isERC20),
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
           to,
           ticker
+        }
+      }
+    }
+  }),
+  graphql(EthSpentOverTimeByErc20ProjectsGQL, {
+    name: 'EthSpentOverTimeByErc20Projects',
+    options: ({chartVars, Project}) => {
+      const {from, to} = chartVars
+      return {
+        skip: !from,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          interval: '1d'
         }
       }
     }

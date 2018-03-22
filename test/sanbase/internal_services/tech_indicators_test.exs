@@ -160,4 +160,38 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
                 }
               ]}
   end
+
+  test "fetch twitter mention count", _context do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body:
+           "[{\"mention_count\": 0, \"timestamp\": 1516406400}, {\"mention_count\": 1234, \"timestamp\": 1516492800}]",
+         status_code: 200
+       }}
+    )
+
+    result =
+      TechIndicators.twitter_mention_count(
+        "XYZ",
+        DateTime.from_unix!(1_516_406_400),
+        DateTime.from_unix!(1_516_492_800),
+        "1d"
+      )
+
+    assert result ==
+             {:ok,
+              [
+                %{
+                  mention_count: Decimal.new(0),
+                  datetime: DateTime.from_unix!(1_516_406_400)
+                },
+                %{
+                  mention_count: Decimal.new(1234),
+                  datetime: DateTime.from_unix!(1_516_492_800)
+                }
+              ]}
+  end
 end

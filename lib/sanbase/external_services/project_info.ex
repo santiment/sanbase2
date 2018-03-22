@@ -40,8 +40,15 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   end
 
   def fetch_coinmarketcap_info(%ProjectInfo{coinmarketcap_id: coinmarketcap_id} = project_info) do
-    Coinmarketcap.Scraper.fetch_project_page(coinmarketcap_id)
-    |> Coinmarketcap.Scraper.parse_project_page(project_info)
+    coinmarketcap_id
+    |> Coinmarketcap.Scraper.fetch_project_page()
+    |> case do
+      {:ok, scraped_project_info} ->
+        {:ok, Coinmarketcap.Scraper.parse_project_page(scraped_project_info, project_info)}
+
+      _ ->
+        nil
+    end
   end
 
   def fetch_contract_info(%ProjectInfo{main_contract_address: nil} = project_info),
@@ -104,7 +111,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
         %ProjectInfo{project_info | contract_abi: abi}
 
       {:error, error} ->
-        Logger.info("Can't get the ABI for address #{main_contract_address}: #{inspect(error)}")
+        Logger.warn("Can't get the ABI for address #{main_contract_address}: #{inspect(error)}")
         project_info
     end
   end

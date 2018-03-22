@@ -10,6 +10,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
   @last_block_measurement "sanbase-internal-last-blocks-measurement"
 
+  def internal_measurements() do
+    {:ok, [@last_block_measurement]}
+  end
+
   def import_last_block_number(_, nil), do: :ok
 
   @doc ~s"""
@@ -85,6 +89,68 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   end
 
   @doc ~s"""
+    Returns the sum of the total ETH spent of all projects from the `measurements_list`
+    Influxdb does _not_ support mathematics over multiple measurements. The SUM of
+    the transactions is aggreated in influxdb for each measurement and the total SUM
+    is calculated in Elixir
+  """
+  @spec eth_spent_by_projects(list(), %DateTime{}, %DateTime{}) :: number()
+  def eth_spent_by_projects(measurements_list, from, to) do
+    %{
+      results: [
+        %{
+          series: summed_series
+        }
+      ]
+    } =
+      eth_spent_by_projects_query(measurements_list, from, to)
+      |> Store.query()
+
+    total_eth_spent =
+      summed_series
+      |> Enum.reduce(0, fn %{values: [[_, sum]]}, acc ->
+        sum + acc
+      end)
+
+    {:ok, total_eth_spent}
+  end
+
+  @doc ~s"""
+    Returns the sum of 'out' transactions over the specified period of time for all projecs,
+    grouped by the specified resolution.
+    Influxdb does _not_ support mathematics over multiple measurements. The SUM of
+    the transactions is aggreated in influxdb for each measurement and the total SUM
+    is calculated in Elixir
+  """
+  @spec eth_spent_over_time_by_projects(list(), %DateTime{}, %DateTime{}, String.t()) :: number()
+  def eth_spent_over_time_by_projects(measurements_list, from, to, interval) do
+    eth_spent_over_time_by_projects_query(measurements_list, from, to, interval)
+    |> Store.query()
+    |> do_eth_spent_over_time_by_projects()
+  end
+
+  defp do_eth_spent_over_time_by_projects(%{
+         results: [
+           %{
+             series: series
+           }
+         ]
+       }) do
+    total_eth_spent_over_time =
+      series
+      |> Enum.map(fn %{values: values} -> values end)
+      |> Stream.zip()
+      |> Stream.map(&Tuple.to_list/1)
+      |> Enum.map(&reduce_values/1)
+
+    {:ok, total_eth_spent_over_time}
+  end
+
+  defp do_eth_spent_over_time_by_projects(%{results: [%{statement_id: 0}]}) do
+    {:ok, []}
+  end
+
+  @doc ~s"""
     Returns the sum of transactions over the specified period of time, grouped by the specified resolution.
     The `transaction_type` should be either `in` or `out` string.
     Returns `{:ok, result}` on success, `{:error, reason}` otherwise
@@ -145,6 +211,44 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   end
 
   # Private functions
+
+  defp reduce_values([]), do: []
+
+  defp reduce_values([[iso8601_datetime, _] | _] = values) do
+    total_eth_spent =
+      values
+      |> Enum.reduce(0, fn [_, sum], acc ->
+        sum + acc
+      end)
+
+    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+    {datetime, total_eth_spent}
+  end
+
+  defp eth_spent_by_projects_query(measurements_list, from, to) do
+    measurements_string =
+      measurements_list
+      |> Enum.map(fn elem -> "\"#{elem}\"" end)
+      |> Enum.join(",")
+
+    ~s/SELECT SUM(trx_value) from #{measurements_string}
+    WHERE transaction_type = 'out'
+    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp eth_spent_over_time_by_projects_query(measurements_list, from, to, resolution) do
+    measurements_string =
+      measurements_list
+      |> Enum.map(fn elem -> "\"#{elem}\"" end)
+      |> Enum.join(",")
+
+    ~s/SELECT SUM(trx_value) from #{measurements_string}
+    WHERE transaction_type = 'out'
+    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    GROUP BY TIME(#{resolution}) fill(0)/
+  end
 
   defp select_last_block_number(address) do
     ~s/SELECT block_number from "#{@last_block_measurement}"

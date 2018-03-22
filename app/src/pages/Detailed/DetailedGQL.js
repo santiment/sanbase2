@@ -147,3 +147,16 @@ export const ExchangeFundFlowGQL = gql`
       __typename
     }
 }`
+
+export const EthSpentOverTimeByErc20ProjectsGQL = gql`
+  query ethSpentOverTimeByErc20Projects($interval:String, $from: DateTime, $to: DateTime) {
+    ethSpentOverTimeByErc20Projects(
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime
+      ethSpent
+      __typename
+    }
+}`

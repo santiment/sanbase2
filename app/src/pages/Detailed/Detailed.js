@@ -29,7 +29,8 @@ import {
   BurnRateGQL,
   GithubActivityGQL,
   TransactionVolumeGQL,
-  ExchangeFundFlowGQL
+  ExchangeFundFlowGQL,
+  EthSpentOverTimeByErc20ProjectsGQL
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'
@@ -82,6 +83,11 @@ export const Detailed = ({
     transactionVolume: [],
     error: false,
     loading: true
+  },
+  EthSpentOverTimeByErc20Projects = {
+    ethSpentOverTimeByErc20Projects: [],
+    loading: true,
+    error: false
   },
   changeChartVars,
   isDesktop
@@ -146,6 +152,12 @@ export const Detailed = ({
     items: ExchangeFundFlow.transactionVolume
   }
 
+  const ethSpentOverTimeByErc20Projects = {
+    loading: EthSpentOverTimeByErc20Projects.loading,
+    error: EthSpentOverTimeByErc20Projects.error,
+    items: EthSpentOverTimeByErc20Projects.ethSpentOverTimeByErc20Projects || []
+  }
+
   const projectContainerChart = project &&
     <ProjectChartContainer
       routerHistory={history}
@@ -157,6 +169,7 @@ export const Detailed = ({
       burnRate={burnRate}
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
+      ethSpentOverTimeByErc20Projects={ethSpentOverTimeByErc20Projects}
       isERC20={project.isERC20}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
@@ -376,6 +389,21 @@ const enhance = compose(
           from,
           to,
           ticker
+        }
+      }
+    }
+  }),
+  graphql(EthSpentOverTimeByErc20ProjectsGQL, {
+    name: 'EthSpentOverTimeByErc20Projects',
+    options: ({chartVars, Project}) => {
+      const {from, to} = chartVars
+      return {
+        skip: !from,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          interval: '1d'
         }
       }
     }

@@ -162,6 +162,18 @@ const ProjectChartFooter = (props) => (
           Twitter
         </ToggleBtn>
       </FilterCategory>
+      {(props.isERC20 || props.ticker === 'ETH') &&
+      <FilterCategory name='Ethereum'>
+        <ToggleBtn
+          loading={props.ethSpentOverTimeByErc20Projects.loading}
+          disabled={props.ethSpentOverTimeByErc20Projects.items.length === 0}
+          isToggled={props.isToggledEthSpentOverTime &&
+            props.ethSpentOverTimeByErc20Projects.items.length !== 0}
+          toggle={props.toggleEthSpentOverTime}>
+          <Label circular className='ethSpentOverTimeLabel' empty />
+          ETH spent over time
+        </ToggleBtn>
+      </FilterCategory>}
     </div>
   </div>
 )

@@ -14,7 +14,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   plug(Tesla.Middleware.Logger)
 
   def fetch_project_page(coinmarketcap_id) do
-    case get("/#{coinmarketcap_id}/", opts: [recv_timeout: 1]) do
+    case get("/#{coinmarketcap_id}/") do
       %Tesla.Env{status: 200, body: body} ->
         {:ok, body}
 

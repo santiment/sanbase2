@@ -8,21 +8,21 @@ import { Icon, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
-import { formatNumber } from '../utils/formatting'
-import { millify, getOrigin } from '../utils/utils'
+import { getOrigin } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
 import { getCurrencies } from './Projects/projectSelectors'
 import Panel from './../components/Panel'
 import allProjectsGQL from './Projects/allProjectsGQL'
-import PercentChanges from './../components/PercentChanges'
 import {
   refetchThrottled,
-  formatMarketCapProject,
   getFilter,
   CustomThComponent,
   CustomHeadComponent,
-  Tips
+  Tips,
+  PriceColumn,
+  VolumeColumn,
+  MarketCapColumn
 } from './Cashflow.js'
 import './Cashflow.css'
 
@@ -97,53 +97,7 @@ export const Currencies = ({
       return name.toLowerCase().indexOf(filter.value) !== -1 ||
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
-  }, {
-    Header: 'Price',
-    id: 'price',
-    maxWidth: 100,
-    accessor: d => ({
-      priceUsd: d.priceUsd,
-      change24h: d.percentChange24h
-    }),
-    Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
-      {priceUsd ? formatNumber(priceUsd, 'USD') : '---'}
-      &nbsp;
-      {<PercentChanges changes={change24h} />}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
-  }, {
-    Header: 'Volume',
-    id: 'volume',
-    maxWidth: 100,
-    accessor: d => ({
-      volumeUsd: d.volumeUsd,
-      change24h: d.volumeChange24h
-    }),
-    Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
-      {volumeUsd
-        ? `$${millify(parseFloat(volumeUsd))}`
-        : ''}
-      &nbsp;
-      {change24h
-        ? <PercentChanges changes={change24h} />
-        : ''}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) =>
-      simpleSort(
-        parseFloat(a.volumeUsd || 0),
-        parseFloat(b.volumeUsd || 0)
-      )
-  }, {
-    Header: 'Market Cap',
-    id: 'marketcapUsd',
-    maxWidth: 130,
-    accessor: 'marketcapUsd',
-    Cell: ({value}) => <div className='overview-marketcap'>{formatMarketCapProject(value)}</div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(parseInt(a, 10), parseInt(b, 10))
-  }, {
+  }, PriceColumn, VolumeColumn, MarketCapColumn, {
     Header: 'Dev activity (30D)',
     id: 'github_activity',
     maxWidth: 110,

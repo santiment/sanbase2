@@ -33,4 +33,22 @@ const allProjectsGQL = gql`{
   }
 }`
 
+export const allShortProjectsGQL = gql`{
+  allProjects {
+    id
+    name
+    rank
+    ethSpent
+    coinmarketcapId
+    marketcapUsd
+    fundsRaisedIcos {
+      amount
+      currencyCode
+    }
+    ethAddresses {
+      address
+    }
+  }
+}`
+
 export default allProjectsGQL

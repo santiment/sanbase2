@@ -534,10 +534,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseRepo, :latest_eth_wallet_data, eth_address)
     |> on_load(fn loader ->
-      latest_eth_wallet_data =
-        Dataloader.get(loader, SanbaseRepo, :latest_eth_wallet_data, eth_address)
-
-      {:ok, latest_eth_wallet_data.balance}
+      with latest_eth_wallet_data <-
+             Dataloader.get(loader, SanbaseRepo, :latest_eth_wallet_data, eth_address),
+           balance when not is_nil(latest_eth_wallet_data) <- latest_eth_wallet_data.balance do
+        {:ok, balance}
+      else
+        _ -> {:ok, nil}
+      end
     end)
   end
 end

@@ -1,6 +1,7 @@
 defmodule Sanbase.Application do
   use Application
   import Supervisor.Spec
+  import Cachex.Spec
 
   import Supervisor.Spec
   import Sanbase.ApplicationUtils
@@ -48,7 +49,10 @@ defmodule Sanbase.Application do
          ]},
 
         # Start the graphQL in-memory cache
-        worker(Cachex, [:graphql_cache, [limit: 10000]]),
+        worker(Cachex, [
+          :graphql_cache,
+          [limit: 10000, expiration: expiration(default: :timer.minutes(5))]
+        ]),
 
         # Time series Prices DB connection
         Sanbase.Prices.Store.child_spec(),

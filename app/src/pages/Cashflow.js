@@ -108,6 +108,58 @@ export const getFilter = search => {
   return []
 }
 
+export const PriceColumn = {
+  Header: 'Price',
+  id: 'price',
+  maxWidth: 100,
+  accessor: d => ({
+    priceUsd: d.priceUsd,
+    change24h: d.percentChange24h
+  }),
+  Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
+    {priceUsd ? formatNumber(priceUsd, 'USD') : 'No data'}
+    &nbsp;
+    {<PercentChanges changes={change24h} />}
+  </div>,
+  sortable: true,
+  sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
+}
+
+export const VolumeColumn = {
+  Header: 'Volume',
+  id: 'volume',
+  maxWidth: 100,
+  accessor: d => ({
+    volumeUsd: d.volumeUsd,
+    change24h: d.volumeChange24h
+  }),
+  Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
+    {volumeUsd
+      ? `$${millify(parseFloat(volumeUsd))}`
+      : 'No data'}
+    &nbsp;
+    {change24h
+      ? <PercentChanges changes={change24h} />
+      : ''}
+  </div>,
+  sortable: true,
+  sortMethod: (a, b) =>
+    simpleSort(
+      parseFloat(a.volumeUsd || 0),
+      parseFloat(b.volumeUsd || 0)
+    )
+}
+
+export const MarketCapColumn = {
+  Header: 'Market Cap',
+  id: 'marketcapUsd',
+  maxWidth: 130,
+  accessor: 'marketcapUsd',
+  Cell: ({value}) => <div className='overview-marketcap'>{formatMarketCapProject(value)}</div>,
+  sortable: true,
+  sortMethod: (a, b) => simpleSort(+a, +b)
+}
+
 export const Cashflow = ({
   Projects = {
     projects: [],
@@ -180,53 +232,7 @@ export const Cashflow = ({
       return name.toLowerCase().indexOf(filter.value) !== -1 ||
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
-  }, {
-    Header: 'Price',
-    id: 'price',
-    maxWidth: 100,
-    accessor: d => ({
-      priceUsd: d.priceUsd,
-      change24h: d.percentChange24h
-    }),
-    Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
-      {priceUsd ? formatNumber(priceUsd, 'USD') : '---'}
-      &nbsp;
-      {<PercentChanges changes={change24h} />}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
-  }, {
-    Header: 'Volume',
-    id: 'volume',
-    maxWidth: 100,
-    accessor: d => ({
-      volumeUsd: d.volumeUsd,
-      change24h: d.volumeChange24h
-    }),
-    Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
-      {volumeUsd
-        ? `$${millify(parseFloat(volumeUsd))}`
-        : ''}
-      &nbsp;
-      {change24h
-        ? <PercentChanges changes={change24h} />
-        : ''}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) =>
-      simpleSort(
-        parseFloat(a.volumeUsd || 0),
-        parseFloat(b.volumeUsd || 0)
-      )
-  }, {
-    Header: 'Market Cap',
-    id: 'marketcapUsd',
-    maxWidth: 130,
-    accessor: 'marketcapUsd',
-    Cell: ({value}) => <div className='overview-marketcap'>{formatMarketCapProject(value)}</div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(parseInt(a, 10), parseInt(b, 10))
-  }, {
+  }, PriceColumn, VolumeColumn, MarketCapColumn, {
     Header: 'Balance (USD/ETH)',
     maxWidth: 110,
     id: 'balance',

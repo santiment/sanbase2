@@ -104,7 +104,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
         %ProjectInfo{project_info | contract_abi: abi}
 
       {:error, error} ->
-        Logger.info("Can't get the ABI for address #{main_contract_address}: #{error}")
+        Logger.info("Can't get the ABI for address #{main_contract_address}: #{inspect(error)}")
         project_info
     end
   end

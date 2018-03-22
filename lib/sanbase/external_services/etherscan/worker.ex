@@ -117,7 +117,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
         |> get_or_create_entry()
         |> LatestEthWalletData.changeset(changeset)
         |> Repo.insert_or_update!()
-      {:error, _error} -> nil
+
+      {:error, _error} ->
+        nil
     end
   end
 

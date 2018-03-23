@@ -44,6 +44,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
       {:ok,
        [
          %Tx{
+           hash: "0x123456788c",
            blockNumber: "4470352",
            from: "0x123245678910",
            isError: "0",
@@ -53,6 +54,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            value: 10 |> ether_to_wei_str()
          },
          %Tx{
+           hash: "0x123456788b",
            blockNumber: "4463670",
            from: "0x123245678910",
            isError: "0",
@@ -62,6 +64,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            value: 10 |> ether_to_wei_str()
          },
          %Tx{
+           hash: "0x123456788a",
            blockNumber: "4463588",
            from: "0x8e473843fd546bf203f8b96cce310bb8740a4cec",
            isError: "0",
@@ -79,6 +82,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
       {:ok,
        [
          %InternalTx{
+           hash: "0x123456789c",
            blockNumber: "4557084",
            errCode: "",
            from: "0x123245678910",
@@ -88,6 +92,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            value: 50 |> ether_to_wei_str()
          },
          %InternalTx{
+           hash: "0x123456789a",
            blockNumber: "4379313",
            errCode: "",
            from: "0x7da82c7ab4771ff031b66538d2fb9b0b047f6cf9",
@@ -97,6 +102,7 @@ defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
            value: 1000 |> ether_to_wei_str()
          },
          %Sanbase.ExternalServices.Etherscan.Requests.InternalTx{
+           hash: "0x123456789b",
            blockNumber: "4173006",
            errCode: "",
            from: "0x7da82c7ab4771ff031b66538d2fb9b0b047f6cf9",

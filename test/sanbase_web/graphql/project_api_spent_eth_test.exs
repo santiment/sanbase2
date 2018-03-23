@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     ticker = "SAN"
     ticker2 = "TESTTEST"
     ticker3 = "XYZ"
+
     Store.drop_measurement(ticker)
     Store.drop_measurement(ticker2)
     Store.drop_measurement(ticker3)
@@ -34,55 +35,55 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     [
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 500},
+        fields: %{trx_value: 500, trx_hash: "0x123a"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 1500},
+        fields: %{trx_value: 1500, trx_hash: "0x123b"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 2500},
+        fields: %{trx_value: 2500, trx_hash: "0x123c"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 3500},
+        fields: %{trx_value: 3500, trx_hash: "0x123d"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 100_000},
+        fields: %{trx_value: 100_000, trx_hash: "0x123e"},
         tags: [transaction_type: "in"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 5500},
+        fields: %{trx_value: 5500, trx_hash: "0x123f"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 6500},
+        fields: %{trx_value: 6500, trx_hash: "0x123g"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 5000},
+        fields: %{trx_value: 5000, trx_hash: "0x123h"},
         tags: [transaction_type: "out"],
         name: ticker2
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 5000},
+        fields: %{trx_value: 5000, trx_hash: "0x123i"},
         tags: [transaction_type: "out"],
         name: ticker3
       }

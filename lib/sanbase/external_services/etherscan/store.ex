@@ -246,6 +246,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
     ~s/SELECT SUM(trx_value) from #{measurements_string}
     WHERE transaction_type = 'out'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -258,6 +259,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
     ~s/SELECT SUM(trx_value) from #{measurements_string}
     WHERE transaction_type = 'out'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
     GROUP BY TIME(#{resolution}) fill(0)/
@@ -272,6 +274,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -280,6 +283,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
     GROUP BY TIME(#{resolution}) fill(0)/
@@ -294,6 +298,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   defp select_transactions(measurement, from, to, transaction_type) do
     ~s/SELECT trx_hash, trx_value, transaction_type, from_addr, to_addr FROM "#{measurement}"
     WHERE transaction_type='#{transaction_type}'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -367,7 +372,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
        }) do
     result =
       transactions
-      |> Stream.reject(fn [_, trx_hash, _, _, _, _] -> trx_hash == nil end)
       |> Enum.map(fn [iso8601_datetime, trx_hash, trx_value, trx_type, from_addr, to_addr] ->
         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
         {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr}

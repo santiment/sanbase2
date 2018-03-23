@@ -21,7 +21,6 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
     |> Ico.changeset(%{
       project_id: project1.id,
       start_date: "2017-01-01",
-      main_contract_address: "main_contract_address1",
       contract_block_number: 1234,
       contract_abi: "contract_abi1"
     })
@@ -31,7 +30,6 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
     |> Ico.changeset(%{
       project_id: project1.id,
       start_date: "2018-01-01",
-      main_contract_address: "main_contract_address111",
       contract_block_number: 1_234_444,
       contract_abi: "contract_abi111"
     })
@@ -50,7 +48,6 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
     |> Ico.changeset(%{
       project_id: project2.id,
       start_date: "2018-01-01",
-      main_contract_address: "main_contract_address2222",
       contract_block_number: 5678,
       contract_abi: "contract_abi22"
     })
@@ -62,7 +59,6 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
         name,
         ticker,
         initialIco {
-          mainContractAddress,
           contractBlockNumber,
           contractAbi
         }
@@ -81,7 +77,6 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
                  "name" => "Project1",
                  "ticker" => "P1",
                  "initialIco" => %{
-                   "mainContractAddress" => "main_contract_address1",
                    "contractBlockNumber" => 1234,
                    "contractAbi" => "contract_abi1"
                  }

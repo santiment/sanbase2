@@ -30,7 +30,6 @@ defmodule Sanbase.ExAdmin.Model.Project do
           column(:tokens_sold_at_ico)
           column(:minimal_cap_amount)
           column(:maximal_cap_amount)
-          column(:main_contract_address)
           column(:comments)
           column(:cap_currency)
 
@@ -88,6 +87,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input(project, :linkedin_link)
         input(project, :telegram_link)
         input(project, :token_address)
+        input(project, :main_contract_address)
         input(project, :team_token_wallet)
         input(project, :project_transparency)
 

@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
 
   def twitter_data(%Project{ticker: ticker}, _args, resolution) do
     Cache.func(
-      fn -> twitter_data(nil, %{ticker: ticker}, resolution) end,
+      fn -> calculate_twitter_data(ticker) end,
       {:twitter_data, ticker}
     ).()
   end

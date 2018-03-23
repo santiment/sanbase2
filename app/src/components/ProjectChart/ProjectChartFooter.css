@@ -61,9 +61,9 @@
 }
 
 .ethSpentOverTimeLabel {
-  color: yellow !important;
-  background-color: yellow !important;
-  border-color: yellow !important;
+  color: #c82f3f !important;
+  background-color: #c82f3f !important;
+  border-color: #c82f3f !important;
 }
 
 .filter-category {

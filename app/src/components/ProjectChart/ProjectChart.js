@@ -19,7 +19,7 @@ const COLORS = {
   twitter: 'rgba(16, 195, 245, 0.7)',
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
-  ethSpentOverTime: 'yellow'
+  ethSpentOverTime: '#c82f3f'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.

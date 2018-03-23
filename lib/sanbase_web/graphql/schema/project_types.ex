@@ -960,7 +960,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:minimal_cap_amount, :decimal)
     field(:maximal_cap_amount, :decimal)
-    field(:main_contract_address, :string)
     field(:contract_block_number, :integer)
     field(:contract_abi, :string)
     field(:comments, :string)

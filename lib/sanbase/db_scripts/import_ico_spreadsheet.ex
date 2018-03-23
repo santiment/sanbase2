@@ -130,7 +130,8 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
         linkedin_link: ico_spreadsheet_row.linkedin_link,
         telegram_link: ico_spreadsheet_row.telegram_link,
         project_transparency: is_project_transparency?(ico_spreadsheet_row.project_transparency),
-        team_token_wallet: ico_spreadsheet_row.team_token_wallet
+        team_token_wallet: ico_spreadsheet_row.team_token_wallet,
+        main_contract_address: ico_spreadsheet_row.ico_main_contract_address
       }
       |> remove_map_nils()
 
@@ -160,7 +161,6 @@ defmodule Sanbase.DbScripts.ImportIcoSpreadsheet do
         tokens_sold_at_ico: ico_spreadsheet_row.tokens_sold_at_ico,
         minimal_cap_amount: ico_spreadsheet_row.minimal_cap_amount,
         maximal_cap_amount: ico_spreadsheet_row.maximal_cap_amount,
-        main_contract_address: ico_spreadsheet_row.ico_main_contract_address,
         comments: ico_spreadsheet_row.comments
       }
       |> remove_map_nils()

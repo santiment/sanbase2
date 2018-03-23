@@ -202,6 +202,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input(project, :linkedin_link)
         input(project, :telegram_link)
         input(project, :token_address)
+        input(project, :main_contract_address)
         input(project, :team_token_wallet)
         input(project, :project_transparency)
 

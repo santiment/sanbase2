@@ -57,10 +57,14 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
 
   test "creating project info from a project" do
     project =
-      %Project{coinmarketcap_id: "coinmarketcap_id", name: "Name"}
+      %Project{
+        coinmarketcap_id: "coinmarketcap_id",
+        name: "Name",
+        main_contract_address: "address"
+      }
       |> Repo.insert!()
 
-    %Ico{main_contract_address: "address", project_id: project.id}
+    %Ico{project_id: project.id}
     |> Repo.insert!()
 
     expected_project_info = %ProjectInfo{
@@ -90,6 +94,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
         project
       )
 
+    IO.inspect(project)
     assert project.github_link == "https://github.com/santiment"
     assert project.token_decimals == 18
 

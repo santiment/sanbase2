@@ -504,7 +504,8 @@ CREATE TABLE public.notification_type (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    data text
 );
 
 

@@ -13,6 +13,7 @@ import { getProjects } from './../Projects/projectSelectors'
 import { CustomThComponent, CustomHeadComponent } from './../Cashflow'
 import { collectedField } from './FinancialsBlock'
 import './../Cashflow.css'
+import './EthereumBlock.css'
 
 const EthereumBlock = ({
   project = {},
@@ -25,7 +26,7 @@ const EthereumBlock = ({
 }) => {
   const projects = getProjects(Projects.allProjects)
   const columns = [{
-    Header: 'Project',
+    Header: () => <span className='header-project-column'>Projects</span>,
     id: 'project',
     maxWidth: 210,
     filterable: true,
@@ -74,8 +75,8 @@ const EthereumBlock = ({
     }</div>,
     sortable: false
   }, {
-    Header: 'ETH spent (30D)',
-    maxWidth: 110,
+    Header: () => <span className='header-eth-spent-column'>ETH spent (30D)</span>,
+    maxWidth: 150,
     id: 'tx',
     accessor: d => d.ethSpent,
     Cell: ({value}) => <div className='overview-ethspent'>{`Ξ${formatNumber(value)}`}</div>,
@@ -84,6 +85,7 @@ const EthereumBlock = ({
   }]
   return (
     <PanelBlock
+      withDelimeter={false}
       isLoading={loading}
       title='Ethereum overview'>
       <ReactTable

@@ -14,11 +14,12 @@ const PanelBlock = ({
   classes = '',
   children,
   isUnauthorized = false,
-  isLoading = true
+  isLoading = true,
+  withDelimeter = true
 }) => (
   <div className={'panel ' + classes}>
     <h4>{title}</h4>
-    <hr />
+    {withDelimeter && <hr />}
     {isLoading ? 'Loading...'
       : isUnauthorized
         ? <Message

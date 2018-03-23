@@ -21,10 +21,10 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
            seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
          ) do
-      {indicator, debug_info} = get_indicator(project.ticker, currency)
+      {indicator, notification_log} = get_indicator(project.ticker, currency)
 
       if check_notification(indicator) do
-        send_notification(project, currency, indicator, debug_info)
+        send_notification(project, currency, indicator, notification_log)
       end
     end
   end
@@ -67,8 +67,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
           }
       end
 
-    debug_info =
-      debug_info(
+    notification_log =
+      get_notification_log(
         ticker,
         currency,
         from_datetime,
@@ -80,7 +80,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         notification_threshold()
       )
 
-    {indicator, debug_info}
+    {indicator, notification_log}
   end
 
   defp check_notification(%{price_volume_diff: price_volume_diff}) do
@@ -96,7 +96,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end
 
-  defp send_notification(project, currency, indicator, debug_info) do
+  defp send_notification(project, currency, indicator, {notification_data, debug_info}) do
     {:ok, %HTTPoison.Response{status_code: 204}} =
       @http_service.post(
         webhook_url(),
@@ -106,7 +106,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         ]
       )
 
-    Utils.insert_notification(project, notification_type_name(currency))
+    Utils.insert_notification(project, notification_type_name(currency), notification_data)
   end
 
   defp notification_payload(
@@ -134,7 +134,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
-  def debug_info(
+  def get_notification_log(
         ticker,
         currency,
         from_datetime,
@@ -145,25 +145,31 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         comparison_window,
         notification_threshold
       ) do
-    case debug_url() do
-      nil ->
-        nil
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
 
-      debug_url ->
-        from_unix = DateTime.to_unix(from_datetime)
-        to_unix = DateTime.to_unix(to_datetime)
+    notification_data =
+      "ticker=#{ticker}&currency=#{currency}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}&aggregate_interval=#{
+        aggregate_interval
+      }&window_type=#{window_type}&approximation_window=#{approximation_window}&comparison_window=#{
+        comparison_window
+      }&notification_threshold=#{notification_threshold}"
 
-        debug_url =
-          "#{debug_url}?ticker=#{ticker}&currency=#{currency}&from_timestamp=#{from_unix}&to_timestamp=#{
-            to_unix
-          }&aggregate_interval=#{aggregate_interval}&window_type=#{window_type}&approximation_window=#{
-            approximation_window
-          }&comparison_window=#{comparison_window}&notification_threshold=#{
-            notification_threshold
-          }"
+    debug_info =
+      case debug_url() do
+        nil ->
+          nil
 
-        "[DEBUG INFO: #{debug_url}]"
-    end
+        debug_url ->
+          from_unix = DateTime.to_unix(from_datetime)
+          to_unix = DateTime.to_unix(to_datetime)
+
+          debug_url = "#{debug_url}?#{notification_data}"
+
+          "[DEBUG INFO: #{debug_url}]"
+      end
+
+    {notification_data, debug_info}
   end
 
   defp nil_to_zero(nil), do: 0

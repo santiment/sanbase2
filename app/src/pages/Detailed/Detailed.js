@@ -205,6 +205,18 @@ export const Detailed = ({
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
       <div className='information'>
+        <PanelBlock
+          isLoading={Project.loading}
+          title='General Info'>
+          <GeneralInfoBlock {...Project.project} />
+        </PanelBlock>
+        <PanelBlock
+          isLoading={Project.loading}
+          title='Financials'>
+          <FinancialsBlock {...Project.project} />
+        </PanelBlock>
+      </div>
+      <div className='information'>
         { project.ticker &&
         project.ticker.toLowerCase() === 'eth' &&
         <EthereumBlock
@@ -225,18 +237,6 @@ export const Detailed = ({
           </PanelBlock>}
       </div>
       <div className='information'>
-        <PanelBlock
-          isLoading={Project.loading}
-          title='General Info'>
-          <GeneralInfoBlock {...Project.project} />
-        </PanelBlock>
-        <PanelBlock
-          isLoading={Project.loading}
-          title='Financials'>
-          <FinancialsBlock {...Project.project} />
-        </PanelBlock>
-      </div>
-      <div className='information'>
         {project.isERC20 &&
         project.ethTopTransactions &&
         project.ethTopTransactions.length > 0 &&
@@ -247,7 +247,9 @@ export const Detailed = ({
             {project.ethTopTransactions &&
             project.ethTopTransactions.map((transaction, index) => (
               <div className='top-eth-transaction' key={index}>
-                <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
+                <div className='top-eth-transaction__hash'>
+                  <a href={`https://etherscan.io/address/${transaction.trxHash}`}>{transaction.trxHash}</a>
+                </div>
                 <div>
                   {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
                   &nbsp; | &nbsp;

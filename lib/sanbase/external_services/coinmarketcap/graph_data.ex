@@ -1,13 +1,17 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   defstruct [:market_cap_by_available_supply, :price_usd, :volume_usd, :price_btc]
 
+  require Logger
+
   use Tesla
 
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
+  alias Sanbase.ExternalServices.ErrorCatcher
 
   plug(RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter)
+  plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://graphs2.coinmarketcap.com")
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
@@ -72,6 +76,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       %{status: 200, body: body} ->
         parse_json(body)
+
+      _ ->
+        Logger.error("Failed to fetch graph data for interval")
+        []
     end
   end
 

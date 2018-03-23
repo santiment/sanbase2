@@ -103,6 +103,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.LatestEthWalletData,
     Sanbase.ExAdmin.Model.LatestBtcWalletData,
     Sanbase.ExAdmin.Notifications.Type,
+    Sanbase.ExAdmin.Notifications.Notification,
     Sanbase.ExAdmin.Auth.User,
     Sanbase.ExAdmin.Voting.Poll,
     Sanbase.ExAdmin.Voting.Post

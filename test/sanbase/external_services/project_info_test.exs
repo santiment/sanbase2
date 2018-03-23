@@ -44,7 +44,6 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
         project
       )
 
-    IO.inspect(project)
     assert project.github_link == "https://github.com/santiment"
     assert project.token_decimals == 18
 

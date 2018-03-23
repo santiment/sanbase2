@@ -29,49 +29,49 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     [
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 1500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 1500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123b"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 2500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 2500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123c"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 3500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 3500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123d"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 100_000, from_addr: "0x2", to_addr: "0x1"},
+        fields: %{trx_value: 100_000, from_addr: "0x2", to_addr: "0x1", trx_hash: "0x123e"},
         tags: [transaction_type: "in"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 5500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 5500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123f"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 45000, from_addr: "0x2", to_addr: "0x1"},
+        fields: %{trx_value: 45000, from_addr: "0x2", to_addr: "0x1", trx_hash: "0x123g"},
         tags: [transaction_type: "in"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 6500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 6500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123h"},
         tags: [transaction_type: "out"],
         name: ticker
       }

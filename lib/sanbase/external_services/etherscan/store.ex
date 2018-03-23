@@ -124,30 +124,42 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   """
   @spec eth_spent_over_time_by_projects(list(), %DateTime{}, %DateTime{}, String.t()) :: number()
   def eth_spent_over_time_by_projects(measurements_list, from, to, interval) do
-    eth_spent_over_time_by_projects_query(measurements_list, from, to, interval)
-    |> Store.query()
-    |> do_eth_spent_over_time_by_projects()
+    measurements_list
+    |> Enum.chunk_every(10)
+    |> Enum.map(fn measurements_list ->
+      measurements_list
+      |> eth_spent_over_time_by_projects_query(from, to, interval)
+      |> Store.query()
+    end)
+    |> Enum.flat_map(&series_from_eth_spent_over_time_by_projects/1)
+    |> reduce_eth_spent_over_time_by_projects()
   end
 
-  defp do_eth_spent_over_time_by_projects(%{
+  defp series_from_eth_spent_over_time_by_projects(%{
          results: [
            %{
              series: series
            }
          ]
        }) do
+    series
+  end
+
+  defp series_from_eth_spent_over_time_by_projects({:results, [%{statement_id: 0}]}) do
+    []
+  end
+
+  defp reduce_eth_spent_over_time_by_projects(series) do
     total_eth_spent_over_time =
       series
-      |> Enum.map(fn %{values: values} -> values end)
-      |> Stream.zip()
-      |> Stream.map(&Tuple.to_list/1)
+      |> Enum.map(fn %{values: values} ->
+        values
+      end)
+      |> Enum.zip()
+      |> Enum.map(&Tuple.to_list/1)
       |> Enum.map(&reduce_values/1)
 
     {:ok, total_eth_spent_over_time}
-  end
-
-  defp do_eth_spent_over_time_by_projects(%{results: [%{statement_id: 0}]}) do
-    {:ok, []}
   end
 
   @doc ~s"""
@@ -222,6 +234,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
       end)
 
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+
     {datetime, total_eth_spent}
   end
 
@@ -233,6 +246,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
     ~s/SELECT SUM(trx_value) from #{measurements_string}
     WHERE transaction_type = 'out'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -245,6 +259,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
     ~s/SELECT SUM(trx_value) from #{measurements_string}
     WHERE transaction_type = 'out'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
     GROUP BY TIME(#{resolution}) fill(0)/
@@ -259,6 +274,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -267,6 +283,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE transaction_type = '#{transaction_type}'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
     GROUP BY TIME(#{resolution}) fill(0)/
@@ -275,7 +292,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   defp select_top_transactions(measurement, from, to, "all", limit) do
     ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
     FROM "#{measurement}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    WHERE trx_hash != ''
+    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
@@ -283,6 +301,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
     FROM "#{measurement}"
     WHERE transaction_type='#{transaction_type}'
+    AND trx_hash != ''
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end

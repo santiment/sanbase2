@@ -61,9 +61,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
         _ ->
           %{
-            price_volume_diff: Decimal.new(0),
-            price_change: Decimal.new(0),
-            volume_change: Decimal.new(0)
+            price_volume_diff: 0,
+            price_change: 0,
+            volume_change: 0
           }
       end
 
@@ -84,11 +84,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   end
 
   defp check_notification(%{price_volume_diff: price_volume_diff}) do
-    Decimal.cmp(price_volume_diff, notification_threshold())
-    |> case do
-      :lt -> false
-      _ -> true
-    end
+    price_volume_diff >= notification_threshold()
   end
 
   defp notification_type_name(currency), do: @notification_type_name <> "_" <> currency
@@ -131,11 +127,10 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   end
 
   defp notification_emoji(value) do
-    Decimal.cmp(value, Decimal.new(0))
-    |> case do
-      :lt -> ":small_red_triangle_down:"
-      :gt -> ":small_red_triangle:"
-      :eq -> " "
+    cond do
+      value < 0 -> ":small_red_triangle_down:"
+      value > 0 -> ":small_red_triangle:"
+      true -> " "
     end
   end
 
@@ -171,7 +166,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
-  defp nil_to_zero(nil), do: Decimal.new(0)
+  defp nil_to_zero(nil), do: 0
   defp nil_to_zero(value), do: value
 
   defp webhook_url() do
@@ -199,8 +194,11 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   end
 
   defp notification_threshold() do
-    Config.get(:notification_threshold)
-    |> Decimal.new()
+    {res, _} =
+      Config.get(:notification_threshold)
+      |> Float.parse()
+
+    res
   end
 
   defp notifications_cooldown() do

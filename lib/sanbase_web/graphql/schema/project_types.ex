@@ -170,8 +170,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :eth_top_transactions, list_of(:wallet_transaction) do
-      arg(:from, :datetime)
-      arg(:to, :datetime)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
       arg(:transaction_type, :transaction_type, default_value: :all)
       arg(:limit, :integer, default_value: 10)
 

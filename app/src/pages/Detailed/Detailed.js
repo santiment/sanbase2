@@ -158,6 +158,16 @@ export const Detailed = ({
     items: EthSpentOverTimeByErc20Projects.ethSpentOverTimeByErc20Projects || []
   }
 
+  const ethSpentOverTime = {
+    loading: Project.loading,
+    error: project.errorMessage || false,
+    items: project.ethSpentOverTime || []
+  }
+
+  const _ethSpentOverTime = project.ticker === 'ETH'
+    ? ethSpentOverTimeByErc20Projects
+    : ethSpentOverTime
+
   const projectContainerChart = project &&
     <ProjectChartContainer
       routerHistory={history}
@@ -169,7 +179,7 @@ export const Detailed = ({
       burnRate={burnRate}
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
-      ethSpentOverTimeByErc20Projects={ethSpentOverTimeByErc20Projects}
+      ethSpentOverTime={_ethSpentOverTime}
       isERC20={project.isERC20}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
@@ -195,6 +205,18 @@ export const Detailed = ({
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
       <div className='information'>
+        <PanelBlock
+          isLoading={Project.loading}
+          title='General Info'>
+          <GeneralInfoBlock {...Project.project} />
+        </PanelBlock>
+        <PanelBlock
+          isLoading={Project.loading}
+          title='Financials'>
+          <FinancialsBlock {...Project.project} />
+        </PanelBlock>
+      </div>
+      <div className='information'>
         { project.ticker &&
         project.ticker.toLowerCase() === 'eth' &&
         <EthereumBlock
@@ -215,18 +237,6 @@ export const Detailed = ({
           </PanelBlock>}
       </div>
       <div className='information'>
-        <PanelBlock
-          isLoading={Project.loading}
-          title='General Info'>
-          <GeneralInfoBlock {...Project.project} />
-        </PanelBlock>
-        <PanelBlock
-          isLoading={Project.loading}
-          title='Financials'>
-          <FinancialsBlock {...Project.project} />
-        </PanelBlock>
-      </div>
-      <div className='information'>
         {project.isERC20 &&
         project.ethTopTransactions &&
         project.ethTopTransactions.length > 0 &&
@@ -237,7 +247,9 @@ export const Detailed = ({
             {project.ethTopTransactions &&
             project.ethTopTransactions.map((transaction, index) => (
               <div className='top-eth-transaction' key={index}>
-                <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
+                <div className='top-eth-transaction__hash'>
+                  <a href={`https://etherscan.io/address/${transaction.trxHash}`}>{transaction.trxHash}</a>
+                </div>
                 <div>
                   {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
                   &nbsp; | &nbsp;
@@ -278,14 +290,20 @@ const enhance = compose(
         }
       }
     }),
-    options: ({match}) => ({
-      variables: {
-        slug: match.params.slug,
-        from: moment().subtract(30, 'days').utc().format(),
-        to: moment().endOf('day').utc().format(),
-        fromOverTime: moment().subtract(2, 'years').utc().format()
+    options: ({match}) => {
+      const to = moment().endOf('day').utc().format()
+      const fromOverTime = moment().subtract(2, 'years').utc().format()
+      const interval = moment(to).diff(fromOverTime, 'days') > 300 ? '7d' : '1d'
+      return {
+        variables: {
+          slug: match.params.slug,
+          from: moment().subtract(30, 'days').utc().format(),
+          to,
+          fromOverTime,
+          interval
+        }
       }
-    })
+    }
   }),
   graphql(TwitterDataGQL, {
     name: 'TwitterData',
@@ -396,14 +414,14 @@ const enhance = compose(
   graphql(EthSpentOverTimeByErc20ProjectsGQL, {
     name: 'EthSpentOverTimeByErc20Projects',
     options: ({chartVars, Project}) => {
-      const {from, to} = chartVars
+      const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || ticker !== 'ETH',
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          interval: '1d'
+          interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
         }
       }
     }

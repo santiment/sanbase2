@@ -2,10 +2,13 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   @ttl :timer.minutes(5)
 
   def resolver(resolver_fn, name) do
-    fn parent, args, resolution ->
+    # Caching is only possible for query resolvers for now. Field resolvers are
+    # not cupported, because they are scoped on their root object, we can't get
+    # a good, general cache key for arbitrary root objects
+    fn %{}, args, resolution ->
       {_, value} =
         Cachex.fetch(:graphql_cache, cache_key(name, args), fn ->
-          {:commit, resolver_fn.(parent, args, resolution)}
+          {:commit, resolver_fn.(%{}, args, resolution)}
         end)
 
       value

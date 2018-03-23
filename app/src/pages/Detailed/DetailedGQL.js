@@ -1,7 +1,7 @@
 import gql from 'graphql-tag'
 
 export const projectBySlugGQL = gql`
-  query projectBySlugGQL($slug: String!, $from: DateTime, $fromOverTime: DateTime, $to: DateTime) {
+  query projectBySlugGQL($slug: String!, $from: DateTime, $fromOverTime: DateTime, $to: DateTime, $interval: String!) {
     projectBySlug(
       slug: $slug,
     ){
@@ -37,7 +37,7 @@ export const projectBySlugGQL = gql`
         toAddress,
         datetime
       },
-      ethSpentOverTime(from: $fromOverTime, to: $to) {
+      ethSpentOverTime(from: $fromOverTime, to: $to, interval: $interval) {
         datetime,
         ethSpent
       },

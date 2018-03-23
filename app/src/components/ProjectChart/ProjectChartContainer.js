@@ -173,11 +173,12 @@ class ProjectChartContainer extends Component {
           history={this.props.price.history.items}
           burnRate={burnRate}
           transactionVolume={transactionVolume}
-          ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTimeByErc20Projects}
+          ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
           isLoading={this.props.price.history.loading}
           isERC20={this.props.isERC20}
           isEmpty={this.props.price.history.items.length === 0} />
-        <ProjectChartFooter {...this.props} />
+        <ProjectChartFooter
+          {...this.props} />
       </div>
     )
   }

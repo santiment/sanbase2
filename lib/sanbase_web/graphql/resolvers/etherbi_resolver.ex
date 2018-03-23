@@ -107,8 +107,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   defp ticker_to_contract_info(ticker) do
     with project when not is_nil(project) <- get_project_by_ticker(ticker),
-         initial_ico when not is_nil(initial_ico) <- Project.initial_ico(project),
-         contract_address when not is_nil(contract_address) <- initial_ico.main_contract_address do
+         contract_address when not is_nil(contract_address) <- project.main_contract_address do
       {:ok, String.downcase(contract_address), project.token_decimals || 0}
     else
       _ -> {:error, "Can't find ticker contract address"}

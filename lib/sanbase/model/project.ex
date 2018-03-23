@@ -41,6 +41,7 @@ defmodule Sanbase.Model.Project do
     field(:total_supply, :decimal)
     field(:description, :string)
     field(:project_transparency, :boolean, default: false)
+    field(:main_contract_address, :string)
     belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
     field(:project_transparency_description, :string)
     has_many(:eth_addresses, ProjectEthAddress)
@@ -159,7 +160,6 @@ defmodule Sanbase.Model.Project do
         i in Ico,
         select: %{
           project_id: i.project_id,
-          main_contract_address: i.main_contract_address,
           contract_block_number: i.contract_block_number,
           contract_abi: i.contract_abi,
           rank:
@@ -177,7 +177,7 @@ defmodule Sanbase.Model.Project do
         inner_join: p in Project,
         on: p.id == d.project_id,
         where:
-          not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(d.main_contract_address) and
+          not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(p.main_contract_address) and
             not is_nil(d.contract_block_number) and not is_nil(d.contract_abi),
         order_by: p.name,
         select: p

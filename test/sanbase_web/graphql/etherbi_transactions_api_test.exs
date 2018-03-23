@@ -21,7 +21,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
       %Project{name: "Santiment", ticker: ticker, coinmarketcap_id: "santiment"}
       |> Repo.insert!()
 
-    %Ico{project_id: project.id, main_contract_address: contract_address}
+    %Ico{project_id: project.id}
     |> Repo.insert!()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")

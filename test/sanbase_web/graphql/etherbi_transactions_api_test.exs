@@ -18,7 +18,12 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     Store.drop_measurement(contract_address)
 
     project =
-      %Project{name: "Santiment", ticker: ticker, coinmarketcap_id: "santiment"}
+      %Project{
+        name: "Santiment",
+        ticker: ticker,
+        coinmarketcap_id: "santiment",
+        main_contract_address: contract_address
+      }
       |> Repo.insert!()
 
     %Ico{project_id: project.id}

@@ -13,14 +13,9 @@ This is the source of the sanbase project of [`https://santiment.net`](https://s
   * Install JS dependencies for the static frontend with `cd assets && yarn && cd ..`
   * Install JS dependencies for the next.js frontend with `cd app && yarn && cd ..`
   * If you don't have a database, run `createdb sanbase_dev`
-  * Create a file `.env` and put your PostgreSQL setup there. Example:
-  * To enable phoenix live reloading you should have inotify-tools. This package requires to be [manualy installed](https://github.com/rvoicilas/inotify-tools/wiki) on Linux and requires no installation on Windows and Mac OS X.
-
-```
-DATABASE_URL=postgres://johnsnow:@localhost:5432/sanbase_dev
-```
-
-  * Setup your database and import the seeds with `mix ecto.setup`
+  * Create a copy of `.env.example`, name it `.env` and adjust your settings there.
+  * To enable phoenix live reloading you should have inotify-tools. This package requires to be [manually installed](https://github.com/rvoicilas/inotify-tools/wiki) on Linux and requires no installation on Windows and Mac OS X.
+  * Setup your database and import the seeds with `mix ecto.setup`. If you need to reseed the database use `mix ecto.reset`
   * Start Phoenix endpoint with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser. For details how to run the frontend tests, check the section about running the frontend tests in this file.

@@ -14,9 +14,9 @@ class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
     const shareableState = qs.parse(props.location.search)
-    const { from, to } = makeItervalBounds('1m')
+    const { from, to } = makeItervalBounds('all')
     this.state = {
-      interval: '1m',
+      interval: 'all',
       isError: false,
       errorMessage: '',
       selected: undefined,
@@ -173,9 +173,12 @@ class ProjectChartContainer extends Component {
           history={this.props.price.history.items}
           burnRate={burnRate}
           transactionVolume={transactionVolume}
+          ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
           isLoading={this.props.price.history.loading}
+          isERC20={this.props.isERC20}
           isEmpty={this.props.price.history.items.length === 0} />
-        <ProjectChartFooter {...this.props} />
+        <ProjectChartFooter
+          {...this.props} />
       </div>
     )
   }
@@ -184,6 +187,7 @@ class ProjectChartContainer extends Component {
 const enhance = compose(
   withState('isToggledMarketCap', 'toggleMarketcap', false),
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
+  withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),
   withState('isToggledVolume', 'toggleVolume', true),
   withState('isToggledTwitter', 'toggleTwitter', false),
   withState('isToggledBurnRate', 'toggleBurnRate', false),

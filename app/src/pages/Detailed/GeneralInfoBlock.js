@@ -1,4 +1,5 @@
 import React from 'react'
+import cx from 'classnames'
 import { formatNumber } from '../../utils/formatting'
 import './GeneralInfoBlock.css'
 
@@ -15,7 +16,8 @@ const GeneralInfoBlock = ({
   totalSupply,
   volumeUsd,
   ticker,
-  roiUsd
+  roiUsd,
+  isERC20
 }) => (
   <div>
     <p className='social-icons'>
@@ -74,13 +76,16 @@ const GeneralInfoBlock = ({
         {formatNumber(marketcapUsd / priceUsd)}
       </div>
     </div>
-    <div className={`row-info ${!totalSupply && 'info-disabled'}`}>
+    <div className={cx({
+      'row-info': true,
+      'info-disabled': !isERC20
+    })}>
       <div>
         Total supply
       </div>
       <div>
-        {ticker}&nbsp;
-        {formatNumber(totalSupply)}
+        {isERC20 && ticker}&nbsp;
+        {isERC20 && formatNumber(totalSupply)}
       </div>
     </div>
     <div className={`row-info ${!rank && 'info-disabled'}`}>

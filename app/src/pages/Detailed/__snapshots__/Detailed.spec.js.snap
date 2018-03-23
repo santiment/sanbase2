@@ -1,16 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Project detail page container it should redirect to / 1`] = `
-<Redirect
-  push={false}
-  to={
-    Object {
-      "pathname": "/",
-    }
-  }
-/>
-`;
-
 exports[`Project detail page container it should render correctly 1`] = `
 <div
   className="page detailed"
@@ -35,12 +24,19 @@ exports[`Project detail page container it should render correctly 1`] = `
     }
   />
   <div>
-    <withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))
+    <withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer))))))))
       burnRate={
         Object {
           "error": false,
           "items": Array [],
           "loading": true,
+        }
+      }
+      ethSpentOverTime={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": undefined,
         }
       }
       github={
@@ -86,6 +82,9 @@ exports[`Project detail page container it should render correctly 1`] = `
   </div>
   <div
     className="information"
+  />
+  <div
+    className="information"
   >
     <PanelBlock
       title="General Info"
@@ -108,5 +107,8 @@ exports[`Project detail page container it should render correctly 1`] = `
       />
     </PanelBlock>
   </div>
+  <div
+    className="information"
+  />
 </div>
 `;

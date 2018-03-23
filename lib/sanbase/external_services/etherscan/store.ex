@@ -369,6 +369,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
        }) do
     result =
       transactions
+      |> Stream.reject(fn [_, trx_hash, _, _, _, _] -> trx_hash == nil end)
       |> Enum.map(fn [iso8601_datetime, trx_hash, trx_value, trx_type, from_addr, to_addr] ->
         {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
         {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr}

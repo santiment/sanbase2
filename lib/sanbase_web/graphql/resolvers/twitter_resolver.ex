@@ -5,13 +5,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   alias SanbaseWeb.Graphql.Helpers.Cache
 
   import Ecto.Query
+  import Absinthe.Resolution.Helpers
 
   def twitter_data(root, %{ticker: ticker}, resolution) do
-    calculate_twitter_data(ticker)
+    async(Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}))
   end
 
   def twitter_data(%Project{ticker: ticker}, _args, resolution) do
-    calculate_twitter_data(ticker)
+    async(Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}))
   end
 
   defp calculate_twitter_data(ticker) do

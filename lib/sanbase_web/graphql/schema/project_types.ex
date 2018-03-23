@@ -17,7 +17,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   }
 
   alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.Helpers.Cache
 
   # Includes all available fields
   @desc ~s"""
@@ -906,9 +905,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      (&ProjectResolver.eth_spent_over_time/3)
-      |> Cache.resolver(:eth_spent_over_time)
-      |> resolve()
+      resolve(&ProjectResolver.eth_spent_over_time/3)
     end
 
     field :eth_transactions, list_of(:wallet_transaction) do

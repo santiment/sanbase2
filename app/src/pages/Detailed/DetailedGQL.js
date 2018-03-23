@@ -34,6 +34,7 @@ export const projectBySlugGQL = gql`
       ethTopTransactions(from: $from, to: $to, limit: 10, transactionType: OUT) {
         fromAddress,
         trxValue,
+        trxHash,
         toAddress,
         datetime
       },

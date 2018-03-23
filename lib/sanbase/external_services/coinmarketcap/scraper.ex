@@ -1,18 +1,33 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   use Tesla
 
+  require Logger
+
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.ProjectInfo
+  alias Sanbase.ExternalServices.ErrorCatcher
 
   plug(RateLimiting.Middleware, name: :http_coinmarketcap_rate_limiter)
+  plug(ErrorCatcher.Middleware)
+  plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.BaseUrl, "https://coinmarketcap.com/currencies")
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
   def fetch_project_page(coinmarketcap_id) do
-    %Tesla.Env{status: 200, body: body} = get("/#{coinmarketcap_id}/")
+    case get("/#{coinmarketcap_id}/") do
+      %Tesla.Env{status: 200, body: body} ->
+        {:ok, body}
 
-    body
+      %Tesla.Env{status: status, body: _body} ->
+        error = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}"
+        Logger.warn(error)
+        {:error, error}
+
+      %Tesla.Error{message: error_msg} ->
+        Logger.warn(error_msg)
+        {:error, error_msg}
+    end
   end
 
   def parse_project_page(html, project_info) do

@@ -20,6 +20,10 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
         {showIcons && <Icon name='list 2x' />}
         Currencies
       </li>
+      <li onClick={() => handleNavigation('signals')}>
+        {showIcons && <Icon name='th 2x' />}
+        Signals
+      </li>
     </ul>
   </Fragment>
 )

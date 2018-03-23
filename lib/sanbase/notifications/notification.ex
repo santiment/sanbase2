@@ -9,13 +9,14 @@ defmodule Sanbase.Notifications.Notification do
   schema "notification" do
     belongs_to(:project, Project)
     belongs_to(:type, Type)
+    field(:data, :string)
 
     timestamps()
   end
 
   def changeset(%Notification{} = notification, attrs \\ %{}) do
     notification
-    |> cast(attrs, [:project_id, :type_id])
+    |> cast(attrs, [:project_id, :type_id, :data])
     |> validate_required([:project_id, :type_id])
   end
 end

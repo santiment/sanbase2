@@ -100,28 +100,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def eth_spent_over_time(
         %Project{ticker: ticker},
-        %{from: from, to: to, interval: interval},
+        %{from: from, to: to, interval: interval} = args,
         _resolution
       ) do
-    async(fn ->
-      with {:ok, eth_spent_over_time} <-
-             Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
-        result =
-          eth_spent_over_time
-          |> Enum.map(fn {datetime, eth_spent} ->
-            %{datetime: datetime, eth_spent: eth_spent}
-          end)
+    async(
+      Cache.func(
+        fn -> calculate_eth_spent_over_time(ticker, from, to, interval) end,
+        {:eth_spent_over_time, ticker},
+        args
+      )
+    )
+  end
 
-        {:ok, result}
-      else
-        error ->
-          Logger.warn(
-            "Cannot calculate ETH spent over time for #{ticker}. Reason: #{inspect(error)}"
-          )
+  defp calculate_eth_spent_over_time(ticker, from, to, interval) do
+    with {:ok, eth_spent_over_time} <-
+           Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
+      result =
+        eth_spent_over_time
+        |> Enum.map(fn {datetime, eth_spent} ->
+          %{datetime: datetime, eth_spent: eth_spent}
+        end)
 
-          {:ok, []}
-      end
-    end)
+      {:ok, result}
+    else
+      error ->
+        Logger.warn(
+          "Cannot calculate ETH spent over time for #{ticker}. Reason: #{inspect(error)}"
+        )
+
+        {:ok, []}
+    end
   end
 
   @doc ~s"""

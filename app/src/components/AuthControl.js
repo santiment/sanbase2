@@ -22,9 +22,6 @@ const AccountLinks = ({
     <Button basic={isDesktop} onClick={openSettings}>Settings</Button>
     {isDesktop &&
       <Fragment>
-        <Button basic={isDesktop} onClick={() => handleNavigation('signals')}>
-          Signals
-        </Button>
         <Button basic={isDesktop} onClick={() => handleNavigation('roadmap')}>
           Roadmap
         </Button>
@@ -53,7 +50,7 @@ const AuthControl = ({
       <div className='user-auth-control'>
         <Popup basic wide trigger={
           <Icon
-            style={{color: 'white'}}
+            style={{color: 'white', pointer: 'cursor'}}
             size='large'
             name='user circle' />
         } on='click'>

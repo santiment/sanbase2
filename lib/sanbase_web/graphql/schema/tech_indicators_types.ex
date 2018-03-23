@@ -3,18 +3,23 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
 
   object :macd do
     field(:datetime, non_null(:datetime))
-    field(:macd, :decimal)
+    field(:macd, :float)
   end
 
   object :rsi do
     field(:datetime, non_null(:datetime))
-    field(:rsi, :decimal)
+    field(:rsi, :float)
   end
 
   object :price_volume_diff do
     field(:datetime, non_null(:datetime))
-    field(:price_volume_diff, :decimal)
-    field(:price_change, :decimal)
-    field(:volume_change, :decimal)
+    field(:price_volume_diff, :float)
+    field(:price_change, :float)
+    field(:volume_change, :float)
+  end
+
+  object :twitter_mention_count do
+    field(:datetime, non_null(:datetime))
+    field(:mention_count, :integer)
   end
 end

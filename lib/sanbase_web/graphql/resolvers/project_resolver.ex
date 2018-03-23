@@ -16,6 +16,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
   alias Sanbase.Repo
 
@@ -81,44 +82,54 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
-    async(fn ->
-      today = Timex.now()
-      days_ago = Timex.shift(today, days: -days)
+    async(Cache.func(fn -> calculate_eth_spent(ticker, days) end, {:eth_spent, ticker, days}))
+  end
 
-      with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
-        {:ok, eth_spent}
-      else
-        error ->
-          Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
-          {:ok, nil}
-      end
-    end)
+  def calculate_eth_spent(ticker, days) do
+    today = Timex.now()
+    days_ago = Timex.shift(today, days: -days)
+
+    with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
+      {:ok, eth_spent}
+    else
+      error ->
+        Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
+        {:ok, nil}
+    end
   end
 
   def eth_spent_over_time(
         %Project{ticker: ticker},
-        %{from: from, to: to, interval: interval},
+        %{from: from, to: to, interval: interval} = args,
         _resolution
       ) do
-    async(fn ->
-      with {:ok, eth_spent_over_time} <-
-             Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
-        result =
-          eth_spent_over_time
-          |> Enum.map(fn {datetime, eth_spent} ->
-            %{datetime: datetime, eth_spent: eth_spent}
-          end)
+    async(
+      Cache.func(
+        fn -> calculate_eth_spent_over_time(ticker, from, to, interval) end,
+        {:eth_spent_over_time, ticker},
+        args
+      )
+    )
+  end
 
-        {:ok, result}
-      else
-        error ->
-          Logger.warn(
-            "Cannot calculate ETH spent over time for #{ticker}. Reason: #{inspect(error)}"
-          )
+  defp calculate_eth_spent_over_time(ticker, from, to, interval) do
+    with {:ok, eth_spent_over_time} <-
+           Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
+      result =
+        eth_spent_over_time
+        |> Enum.map(fn {datetime, eth_spent} ->
+          %{datetime: datetime, eth_spent: eth_spent}
+        end)
 
-          {:ok, []}
-      end
-    end)
+      {:ok, result}
+    else
+      error ->
+        Logger.warn(
+          "Cannot calculate ETH spent over time for #{ticker}. Reason: #{inspect(error)}"
+        )
+
+        {:ok, []}
+    end
   end
 
   @doc ~s"""
@@ -166,33 +177,45 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def eth_top_transactions(
         %Project{ticker: ticker},
-        %{from: from, to: to, transaction_type: trx_type, limit: limit},
+        args,
         _resolution
       ) do
-    async(fn ->
-      with trx_type <- trx_type |> Atom.to_string(),
-           {:ok, eth_transactions} <-
-             Etherscan.Store.top_transactions(ticker, from, to, trx_type, limit) do
-        result =
-          eth_transactions
-          |> Enum.map(fn {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr} ->
-            %{
-              datetime: datetime,
-              trx_hash: trx_hash,
-              trx_value: trx_value |> Decimal.new(),
-              transaction_type: trx_type,
-              from_address: from_addr,
-              to_address: to_addr
-            }
-          end)
+    async(
+      Cache.func(
+        fn -> calculate_eth_top_transactions(ticker, args) end,
+        {:eth_top_transactions, ticker},
+        args
+      )
+    )
+  end
 
-        {:ok, result}
-      else
-        error ->
-          Logger.warn("Cannot fetch ETH transactions for #{ticker}. Reason: #{inspect(error)}")
-          {:ok, nil}
-      end
-    end)
+  defp calculate_eth_top_transactions(
+         ticker,
+         %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
+       ) do
+    with trx_type <- trx_type |> Atom.to_string(),
+         {:ok, eth_transactions} <-
+           Etherscan.Store.top_transactions(ticker, from, to, trx_type, limit) do
+      result =
+        eth_transactions
+        |> Enum.map(fn {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr} ->
+          %{
+            datetime: datetime,
+            trx_hash: trx_hash,
+            trx_value: trx_value |> Decimal.new(),
+            transaction_type: trx_type,
+            from_address: from_addr,
+            to_address: to_addr
+          }
+        end)
+
+      {:ok, result}
+    else
+      error ->
+        Logger.warn("Cannot fetch ETH transactions for #{ticker}. Reason: #{inspect(error)}")
+
+        {:ok, nil}
+    end
   end
 
   def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
@@ -414,36 +437,44 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
 
   def volume_change_24h(%Project{ticker: ticker}, _args, _resolution) do
-    async(fn ->
-      pair = "#{ticker}_USD"
-      yesterday = Timex.shift(Timex.now(), days: -1)
-      the_other_day = Timex.shift(Timex.now(), days: -2)
+    async(Cache.func(fn -> calculate_volume_change_24h(ticker) end, {:volume_change_24h, ticker}))
+  end
 
-      with {:ok, [[_dt, today_vol]]} <-
-             Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
-           {:ok, [[_dt, yesterday_vol]]} <-
-             Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
-           true <- yesterday_vol > 0 do
-        {:ok, (today_vol - yesterday_vol) * 100 / yesterday_vol}
-      else
-        _ ->
-          {:ok, nil}
-      end
-    end)
+  defp calculate_volume_change_24h(ticker) do
+    pair = "#{ticker}_USD"
+    yesterday = Timex.shift(Timex.now(), days: -1)
+    the_other_day = Timex.shift(Timex.now(), days: -2)
+
+    with {:ok, [[_dt, today_vol]]} <- Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
+         {:ok, [[_dt, yesterday_vol]]} <-
+           Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
+         true <- yesterday_vol > 0 do
+      {:ok, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+    else
+      _ ->
+        {:ok, nil}
+    end
   end
 
   def average_dev_activity(%Project{ticker: ticker}, _args, _resolution) do
-    async(fn ->
-      month_ago = Timex.shift(Timex.now(), days: -30)
+    async(
+      Cache.func(
+        fn -> calculate_average_dev_activity(ticker) end,
+        {:average_dev_activity, ticker}
+      )
+    )
+  end
 
-      case Github.Store.fetch_total_activity(ticker, month_ago, Timex.now()) do
-        {:ok, {_dt, total_activity}} ->
-          {:ok, total_activity / 30}
+  defp calculate_average_dev_activity(ticker) do
+    month_ago = Timex.shift(Timex.now(), days: -30)
 
-        _ ->
-          {:ok, 0}
-      end
-    end)
+    case Github.Store.fetch_total_activity(ticker, month_ago, Timex.now()) do
+      {:ok, {_dt, total_activity}} ->
+        {:ok, total_activity / 30}
+
+      _ ->
+        {:ok, 0}
+    end
   end
 
   def marketcap_usd(
@@ -592,10 +623,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     loader
     |> Dataloader.load(SanbaseRepo, :latest_eth_wallet_data, eth_address)
     |> on_load(fn loader ->
-      latest_eth_wallet_data =
-        Dataloader.get(loader, SanbaseRepo, :latest_eth_wallet_data, eth_address)
-
-      {:ok, latest_eth_wallet_data.balance}
+      with latest_eth_wallet_data when not is_nil(latest_eth_wallet_data) <-
+             Dataloader.get(loader, SanbaseRepo, :latest_eth_wallet_data, eth_address),
+           balance <- latest_eth_wallet_data.balance do
+        {:ok, balance}
+      else
+        _ -> {:ok, nil}
+      end
     end)
   end
 end

@@ -32,11 +32,11 @@ exports[`Project detail page container it should render correctly 1`] = `
           "loading": true,
         }
       }
-      ethSpentOverTimeByErc20Projects={
+      ethSpentOverTime={
         Object {
           "error": false,
           "items": Array [],
-          "loading": true,
+          "loading": undefined,
         }
       }
       github={
@@ -82,9 +82,6 @@ exports[`Project detail page container it should render correctly 1`] = `
   </div>
   <div
     className="information"
-  />
-  <div
-    className="information"
   >
     <PanelBlock
       title="General Info"
@@ -107,6 +104,9 @@ exports[`Project detail page container it should render correctly 1`] = `
       />
     </PanelBlock>
   </div>
+  <div
+    className="information"
+  />
   <div
     className="information"
   />

@@ -1,0 +1,8 @@
+.header-project-column {
+  display: flex;
+}
+
+.header-eth-spent-column {
+  display: flex;
+  justify-content: flex-end;
+}

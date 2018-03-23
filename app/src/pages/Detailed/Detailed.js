@@ -2,11 +2,10 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {
   compose,
-  lifecycle,
   withState
 } from 'recompose'
-import moment from 'moment'
 import { Redirect } from 'react-router-dom'
+import moment from 'moment'
 import { Helmet } from 'react-helmet'
 import { graphql, withApollo } from 'react-apollo'
 import PanelBlock from './../../components/PanelBlock'
@@ -15,31 +14,30 @@ import FinancialsBlock from './FinancialsBlock'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
-import { calculateBTCVolume, calculateBTCMarketcap } from '../../utils/utils'
-import allProjectsGQL from './../Projects/allProjectsGQL'
+import {
+  calculateBTCVolume,
+  calculateBTCMarketcap,
+  millify
+} from '../../utils/utils'
+import { isERC20 } from './../Projects/projectSelectors'
 import DetailedHeader from './DetailedHeader'
 import {
-  projectGQL,
-  queryTwitterData,
-  queryTwitterHistory,
-  queryHistoryPrice,
-  queryBurnRate,
-  queryGithubActivity,
-  queryTransactionVolume
+  projectBySlugGQL,
+  TwitterDataGQL,
+  TwitterHistoryGQL,
+  HistoryPriceGQL,
+  BurnRateGQL,
+  GithubActivityGQL,
+  TransactionVolumeGQL,
+  ExchangeFundFlowGQL,
+  EthSpentOverTimeByErc20ProjectsGQL
 } from './DetailedGQL'
+import SpentOverTime from './SpentOverTime'
+import EthereumBlock from './EthereumBlock'
 import './Detailed.css'
 
 const propTypes = {
   match: PropTypes.object.isRequired
-}
-
-const getProjectIDByTicker = (match, allProjects = null) => {
-  const selectedTicker = match.params.ticker
-  const project = (allProjects || []).find(el => {
-    const ticker = el.ticker || ''
-    return ticker.toLowerCase() === selectedTicker
-  })
-  return parseInt((project || {}).id, 10) || null
 }
 
 export const Detailed = ({
@@ -81,18 +79,23 @@ export const Detailed = ({
     loading: true,
     error: false
   },
+  ExchangeFundFlow = {
+    transactionVolume: [],
+    error: false,
+    loading: true
+  },
+  EthSpentOverTimeByErc20Projects = {
+    ethSpentOverTimeByErc20Projects: [],
+    loading: true,
+    error: false
+  },
   changeChartVars,
-  isDesktop,
-  projectId = -1,
-  projects = []
+  isDesktop
 }) => {
   const project = Project.project
-  if (!projectId) {
-    return (
-      <Redirect to={{
-        pathname: '/'
-      }} />
-    )
+
+  if (/not found/.test(Project.errorMessage)) {
+    return <Redirect to='/' />
   }
 
   const twitter = {
@@ -143,6 +146,28 @@ export const Detailed = ({
     items: TransactionVolume.transactionVolume || []
   }
 
+  const exchangeFundFlow = {
+    loading: ExchangeFundFlow.loading,
+    error: ExchangeFundFlow.error,
+    items: ExchangeFundFlow.transactionVolume
+  }
+
+  const ethSpentOverTimeByErc20Projects = {
+    loading: EthSpentOverTimeByErc20Projects.loading,
+    error: EthSpentOverTimeByErc20Projects.error,
+    items: EthSpentOverTimeByErc20Projects.ethSpentOverTimeByErc20Projects || []
+  }
+
+  const ethSpentOverTime = {
+    loading: Project.loading,
+    error: project.errorMessage || false,
+    items: project.ethSpentOverTime || []
+  }
+
+  const _ethSpentOverTime = project.ticker === 'ETH'
+    ? ethSpentOverTimeByErc20Projects
+    : ethSpentOverTime
+
   const projectContainerChart = project &&
     <ProjectChartContainer
       routerHistory={history}
@@ -154,6 +179,8 @@ export const Detailed = ({
       burnRate={burnRate}
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
+      ethSpentOverTime={_ethSpentOverTime}
+      isERC20={project.isERC20}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
           from,
@@ -178,6 +205,26 @@ export const Detailed = ({
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
       <div className='information'>
+        { project.ticker &&
+        project.ticker.toLowerCase() === 'eth' &&
+        <EthereumBlock
+          project={project}
+          loading={Project.loading} />}
+        {!exchangeFundFlow.loading &&
+          exchangeFundFlow.items &&
+          <PanelBlock
+            isLoading={false}
+            title='Exchange Fund Flows'>
+            <div>
+              {exchangeFundFlow.items.map((item, index) => (
+                <div key={index}>
+                  { item }
+                </div>
+              ))}
+            </div>
+          </PanelBlock>}
+      </div>
+      <div className='information'>
         <PanelBlock
           isLoading={Project.loading}
           title='General Info'>
@@ -188,6 +235,30 @@ export const Detailed = ({
           title='Financials'>
           <FinancialsBlock {...Project.project} />
         </PanelBlock>
+      </div>
+      <div className='information'>
+        {project.isERC20 &&
+        project.ethTopTransactions &&
+        project.ethTopTransactions.length > 0 &&
+        <PanelBlock
+          isLoading={Project.loading}
+          title='Top ETH Transactions'>
+          <div>
+            {project.ethTopTransactions &&
+            project.ethTopTransactions.map((transaction, index) => (
+              <div className='top-eth-transaction' key={index}>
+                <a href={`https://etherscan.io/address/${transaction.toAddress}`}>{transaction.toAddress}</a>
+                <div>
+                  {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
+                  &nbsp; | &nbsp;
+                  {moment(transaction.datetime).fromNow()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </PanelBlock>}
+        {project.ethSpentOverTime && project.ethSpentOverTime.length > 0 &&
+          <SpentOverTime project={project} loading={Project.loading} />}
       </div>
     </div>
   )
@@ -203,27 +274,7 @@ const enhance = compose(
     interval: undefined,
     ticker: undefined
   }),
-  withState('projectId', 'changeProjectId', undefined),
-  withState('projects', 'changeProjects', []),
-  lifecycle({
-    componentDidMount () {
-      this.props.client.query({
-        query: allProjectsGQL
-      }).then(response => {
-        const id = getProjectIDByTicker(this.props.match, response.data.allProjects)
-        this.props.changeProjectId(id)
-        this.props.changeProjects(response.data.allProjects)
-      })
-    },
-    componentDidUpdate (prevProps, prevState) {
-      if (this.props.match.params.ticker !== prevProps.match.params.ticker &&
-        this.props.projects.length > 0) {
-        const id = getProjectIDByTicker(this.props.match, this.props.projects)
-        this.props.changeProjectId(id)
-      }
-    }
-  }),
-  graphql(projectGQL, {
+  graphql(projectBySlugGQL, {
     name: 'Project',
     props: ({Project}) => ({
       Project: {
@@ -231,18 +282,28 @@ const enhance = compose(
         empty: !Project.hasOwnProperty('project'),
         error: Project.error,
         errorMessage: Project.error ? Project.error.message : '',
-        project: Project.project
+        project: {
+          ...Project.projectBySlug,
+          isERC20: isERC20(Project.projectBySlug)
+        }
       }
     }),
-    options: ({projectId}) => ({
-      skip: !projectId,
-      errorPolicy: 'all',
-      variables: {
-        id: projectId
+    options: ({match}) => {
+      const to = moment().endOf('day').utc().format()
+      const fromOverTime = moment().subtract(2, 'years').utc().format()
+      const interval = moment(to).diff(fromOverTime, 'days') > 300 ? '7d' : '1d'
+      return {
+        variables: {
+          slug: match.params.slug,
+          from: moment().subtract(30, 'days').utc().format(),
+          to,
+          fromOverTime,
+          interval
+        }
       }
-    })
+    }
   }),
-  graphql(queryTwitterData, {
+  graphql(TwitterDataGQL, {
     name: 'TwitterData',
     options: ({chartVars}) => {
       const { ticker } = chartVars
@@ -255,12 +316,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryTwitterHistory, {
+  graphql(TwitterHistoryGQL, {
     name: 'TwitterHistoryData',
     options: ({chartVars}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
@@ -270,12 +331,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryHistoryPrice, {
+  graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
     options: ({chartVars}) => {
       const {from, to, ticker, interval} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
@@ -286,12 +347,27 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryGithubActivity, {
-    name: 'GithubActivity',
-    options: ({match, chartVars}) => {
+  graphql(BurnRateGQL, {
+    name: 'BurnRate',
+    options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker
+        }
+      }
+    }
+  }),
+  graphql(GithubActivityGQL, {
+    name: 'GithubActivity',
+    options: ({chartVars}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from || !ticker,
         variables: {
           from: from ? moment(from).subtract(7, 'days') : undefined,
           to,
@@ -303,12 +379,12 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryBurnRate, {
-    name: 'BurnRate',
-    options: ({chartVars}) => {
+  graphql(TransactionVolumeGQL, {
+    name: 'TransactionVolume',
+    options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
@@ -318,17 +394,32 @@ const enhance = compose(
       }
     }
   }),
-  graphql(queryTransactionVolume, {
-    name: 'TransactionVolume',
+  graphql(ExchangeFundFlowGQL, {
+    name: 'ExchangeFundFlow',
     options: ({chartVars}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from,
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
           to,
           ticker
+        }
+      }
+    }
+  }),
+  graphql(EthSpentOverTimeByErc20ProjectsGQL, {
+    name: 'EthSpentOverTimeByErc20Projects',
+    options: ({chartVars, Project}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from || ticker !== 'ETH',
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
         }
       }
     }

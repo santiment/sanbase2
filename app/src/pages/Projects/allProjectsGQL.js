@@ -13,6 +13,7 @@ const allProjectsGQL = gql`{
     volumeUsd
     volumeChange24h
     ethSpent
+    coinmarketcapId
     averageDevActivity
     marketcapUsd
     ethBalance
@@ -28,6 +29,24 @@ const allProjectsGQL = gql`{
     signals {
       name
       description
+    }
+  }
+}`
+
+export const allShortProjectsGQL = gql`{
+  allProjects {
+    id
+    name
+    rank
+    ethSpent
+    coinmarketcapId
+    marketcapUsd
+    fundsRaisedIcos {
+      amount
+      currencyCode
+    }
+    ethAddresses {
+      address
     }
   }
 }`

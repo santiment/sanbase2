@@ -60,6 +60,12 @@
   border-color: rgb(16, 195, 245) !important;
 }
 
+.ethSpentOverTimeLabel {
+  color: #c82f3f !important;
+  background-color: #c82f3f !important;
+  border-color: #c82f3f !important;
+}
+
 .filter-category {
   display: flex;
   padding: 0;

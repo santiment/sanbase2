@@ -18,7 +18,8 @@ const COLORS = {
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
   twitter: 'rgba(16, 195, 245, 0.7)',
   burnRate: 'rgba(252, 138, 23, 0.7)',
-  transactionVolume: 'rgba(39, 166, 153, 0.7)'
+  transactionVolume: 'rgba(39, 166, 153, 0.7)',
+  ethSpentOverTime: '#c82f3f'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -68,6 +69,7 @@ const makeChartDataFromHistory = ({
   isToggledTwitter,
   isToggledBurnRate,
   isToggledTransactionVolume,
+  isToggledEthSpentOverTime,
   ...props
 }) => {
   const twitter = props.twitter.history.items || []
@@ -209,6 +211,26 @@ const makeChartDataFromHistory = ({
         y: data.transactionVolume
       }
     })}
+
+  const ethSpentOverTimeByErc20ProjectsDataset = !isToggledEthSpentOverTime ? null : {
+    label: 'ETH Spent Over time',
+    type: 'bar',
+    fill: false,
+    yAxisID: 'y-axis-8',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.ethSpentOverTime,
+    backgroundColor: COLORS.ethSpentOverTime,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: props.ethSpentOverTimeByErc20Projects.items.map(data => {
+      return {
+        x: data.datetime,
+        y: data.ethSpent
+      }
+    })}
   return {
     labels,
     datasets: [
@@ -218,7 +240,8 @@ const makeChartDataFromHistory = ({
       volumeDataset,
       twitterDataset,
       burnrateDataset,
-      transactionVolumeDataset
+      transactionVolumeDataset,
+      ethSpentOverTimeByErc20ProjectsDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -304,6 +327,9 @@ const makeOptionsFromProps = props => ({
           return `${label}: ${millify(tooltipItem.yLabel)} followers`
         }
         if (label === 'Marketcap') {
+          return `${label}: ${millify(tooltipItem.yLabel)}`
+        }
+        if (label === 'ETH Spent Over time') {
           return `${label}: ${millify(tooltipItem.yLabel)}`
         }
         return `${label}: ${props.isToggledBTC
@@ -492,6 +518,34 @@ const makeOptionsFromProps = props => ({
       },
       display: props.isToggledTransactionVolume &&
         props.transactionVolume.items.length !== 0,
+      position: 'right'
+    }, {
+      id: 'y-axis-8',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'ETH Spent Over Time',
+        fontColor: '#3d4450'
+      },
+      afterTickToLabelConversion: scaleInstance => {
+        scaleInstance.ticks[0] = null
+        scaleInstance.ticksAsNumbers[0] = null
+      },
+      ticks: {
+        display: true,
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return millify(value)
+        }
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledEthSpentOverTime &&
+        props.ethSpentOverTimeByErc20Projects.items.length !== 0,
       position: 'right'
     }],
     xAxes: [{

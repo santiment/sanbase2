@@ -160,6 +160,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.eth_spent/3)
     end
 
+    field :eth_spent_over_time, list_of(:eth_spent_data) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      resolve(&ProjectResolver.eth_spent_over_time/3)
+    end
+
     field :eth_top_transactions, list_of(:wallet_transaction) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -233,5 +241,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :signal do
     field(:name, non_null(:string))
     field(:description, non_null(:string))
+  end
+
+  object :eth_spent_data do
+    field(:datetime, non_null(:datetime))
+    field(:eth_spent, :float)
   end
 end

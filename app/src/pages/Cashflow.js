@@ -1,9 +1,10 @@
 import React from 'react'
 import ReactTable from 'react-table'
 import classnames from 'classnames'
+import throttle from 'lodash.throttle'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
-import { withRouter } from 'react-router-dom'
+import { withRouter, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet'
 import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
@@ -20,12 +21,16 @@ import allProjectsGQL from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
 
+export const refetchThrottled = data => {
+  throttle(data => data.refetch(), 1000)
+}
+
 export const Tips = () =>
   <div style={{ textAlign: 'center' }}>
     <em>Tip: Hold shift when sorting to multi-sort!</em>
   </div>
 
-const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
+export const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
   <div
     className={classnames('rt-th', className)}
     onClick={e => (
@@ -47,7 +52,7 @@ const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
   </div>
 )
 
-const CustomHeadComponent = ({ children, className, ...rest }) => (
+export const CustomHeadComponent = ({ children, className, ...rest }) => (
   <Sticky enabled >
     <div className={classnames('rt-thead', className)} {...rest}>
       {children}
@@ -55,7 +60,7 @@ const CustomHeadComponent = ({ children, className, ...rest }) => (
   </Sticky>
 )
 
-const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
+export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
   <div className='wallet'>
     <div className='usd first'>
       {usdBalance
@@ -85,7 +90,7 @@ const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
   </div>
 )
 
-const formatMarketCapProject = marketcapUsd => {
+export const formatMarketCapProject = marketcapUsd => {
   if (marketcapUsd !== null) {
     return `$${millify(parseFloat(marketcapUsd))}`
   } else {
@@ -93,7 +98,7 @@ const formatMarketCapProject = marketcapUsd => {
   }
 }
 
-const getFilter = search => {
+export const getFilter = search => {
   if (search) {
     return [{
       id: 'project',
@@ -103,13 +108,66 @@ const getFilter = search => {
   return []
 }
 
+export const PriceColumn = {
+  Header: 'Price',
+  id: 'price',
+  maxWidth: 100,
+  accessor: d => ({
+    priceUsd: d.priceUsd,
+    change24h: d.percentChange24h
+  }),
+  Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
+    {priceUsd ? formatNumber(priceUsd, 'USD') : 'No data'}
+    &nbsp;
+    {<PercentChanges changes={change24h} />}
+  </div>,
+  sortable: true,
+  sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
+}
+
+export const VolumeColumn = {
+  Header: 'Volume',
+  id: 'volume',
+  maxWidth: 100,
+  accessor: d => ({
+    volumeUsd: d.volumeUsd,
+    change24h: d.volumeChange24h
+  }),
+  Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
+    {volumeUsd
+      ? `$${millify(parseFloat(volumeUsd))}`
+      : 'No data'}
+    &nbsp;
+    {change24h
+      ? <PercentChanges changes={change24h} />
+      : ''}
+  </div>,
+  sortable: true,
+  sortMethod: (a, b) =>
+    simpleSort(
+      parseFloat(a.volumeUsd || 0),
+      parseFloat(b.volumeUsd || 0)
+    )
+}
+
+export const MarketCapColumn = {
+  Header: 'Market Cap',
+  id: 'marketcapUsd',
+  maxWidth: 130,
+  accessor: 'marketcapUsd',
+  Cell: ({value}) => <div className='overview-marketcap'>{formatMarketCapProject(value)}</div>,
+  sortable: true,
+  sortMethod: (a, b) => simpleSort(+a, +b)
+}
+
 export const Cashflow = ({
   Projects = {
     projects: [],
     filteredProjects: [],
     loading: true,
     isError: false,
-    isEmpty: true
+    isEmpty: true,
+    refetch: null
   },
   onSearch,
   history,
@@ -119,6 +177,7 @@ export const Cashflow = ({
 }) => {
   const { projects, loading } = Projects
   if (Projects.isError) {
+    refetchThrottled(Projects)
     return (
       <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
         <Message warning>
@@ -139,10 +198,7 @@ export const Cashflow = ({
       ticker: d.ticker
     }),
     Cell: ({value}) => (
-      <div
-        onMouseOver={() => preload()}
-        onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)}
-        className='overview-ticker' >
+      <div className='overview-ticker' >
         <ProjectIcon name={value.name} /><br />{value.ticker}
       </div>
     ),
@@ -159,12 +215,13 @@ export const Cashflow = ({
     sortable: true,
     accessor: d => ({
       name: d.name,
-      ticker: d.ticker
+      ticker: d.ticker,
+      cmcId: d.coinmarketcapId
     }),
     Cell: ({value}) => (
       <div
         onMouseOver={() => preload()}
-        onClick={() => history.push(`/projects/${value.ticker.toLowerCase()}`)}
+        onClick={() => history.push(`/projects/${value.cmcId}`)}
         className='overview-name' >
         {value.name}
       </div>
@@ -175,53 +232,7 @@ export const Cashflow = ({
       return name.toLowerCase().indexOf(filter.value) !== -1 ||
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
-  }, {
-    Header: 'Price',
-    id: 'price',
-    maxWidth: 100,
-    accessor: d => ({
-      priceUsd: d.priceUsd,
-      change24h: d.percentChange24h
-    }),
-    Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
-      {priceUsd ? formatNumber(priceUsd, 'USD') : '---'}
-      &nbsp;
-      {<PercentChanges changes={change24h} />}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
-  }, {
-    Header: 'Volume',
-    id: 'volume',
-    maxWidth: 100,
-    accessor: d => ({
-      volumeUsd: d.volumeUsd,
-      change24h: d.volumeChange24h
-    }),
-    Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
-      {volumeUsd
-        ? `$${millify(parseFloat(volumeUsd))}`
-        : ''}
-      &nbsp;
-      {change24h
-        ? <PercentChanges changes={change24h} />
-        : ''}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) =>
-      simpleSort(
-        parseFloat(a.volumeUsd || 0),
-        parseFloat(b.volumeUsd || 0)
-      )
-  }, {
-    Header: 'Market Cap',
-    id: 'marketcapUsd',
-    maxWidth: 130,
-    accessor: 'marketcapUsd',
-    Cell: ({value}) => <div className='overview-marketcap'>{formatMarketCapProject(value)}</div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(parseInt(a, 10), parseInt(b, 10))
-  }, {
+  }, PriceColumn, VolumeColumn, MarketCapColumn, {
     Header: 'Balance (USD/ETH)',
     maxWidth: 110,
     id: 'balance',
@@ -309,7 +320,10 @@ export const Cashflow = ({
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
-          <h1>Projects</h1>
+          <div className='cashflow-title'>
+            <h1>Projects</h1>
+            <Link to={'/projects/ethereum'}>More data about Ethereum</Link>
+          </div>
           <p>
             brought to you by <a
               href='https://santiment.net'
@@ -380,7 +394,7 @@ export const Cashflow = ({
                     handleOriginal()
                   }
                   if (rowInfo && rowInfo.original && rowInfo.original.ticker) {
-                    history.push(`/projects/${rowInfo.original.ticker.toLowerCase()}`)
+                    history.push(`/projects/${rowInfo.original.coinmarketcapId}`)
                   }
                 }
               }
@@ -430,7 +444,8 @@ const mapDataToProps = ({allProjects, ownProps}) => {
       isEmpty,
       isError,
       projects,
-      errorMessage
+      errorMessage,
+      refetch: allProjects.refetch
     }
   }
 }
@@ -446,7 +461,8 @@ const enhance = compose(
     props: mapDataToProps,
     options: () => {
       return {
-        errorPolicy: 'all'
+        errorPolicy: 'all',
+        notifyOnNetworkStatusChange: true
       }
     }
   }),

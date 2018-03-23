@@ -86,6 +86,7 @@ const ProjectChartFooter = (props) => (
           Github Activity
         </ToggleBtn>
       </FilterCategory>
+      {props.isERC20 &&
       <FilterCategory
         className='filter-category-blockchain'
         settings={() => (
@@ -149,7 +150,7 @@ const ProjectChartFooter = (props) => (
             position='top left'
           />
         </ToggleBtn>
-      </FilterCategory>
+      </FilterCategory>}
       <FilterCategory name='Social'>
         <ToggleBtn
           loading={props.twitter.history.loading}
@@ -161,6 +162,18 @@ const ProjectChartFooter = (props) => (
           Twitter
         </ToggleBtn>
       </FilterCategory>
+      {(props.isERC20 || props.ticker === 'ETH') &&
+      <FilterCategory name='Ethereum'>
+        <ToggleBtn
+          loading={props.ethSpentOverTime.loading}
+          disabled={props.ethSpentOverTime.items.length === 0}
+          isToggled={props.isToggledEthSpentOverTime &&
+            props.ethSpentOverTime.items.length !== 0}
+          toggle={props.toggleEthSpentOverTime}>
+          <Label circular className='ethSpentOverTimeLabel' empty />
+          ETH spent over time
+        </ToggleBtn>
+      </FilterCategory>}
     </div>
   </div>
 )

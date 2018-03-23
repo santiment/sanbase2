@@ -179,7 +179,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     result =
       result
       |> Enum.map(fn %{"timestamp" => timestamp, "macd" => macd} ->
-        %{datetime: DateTime.from_unix!(timestamp), macd: decimal_or_nil(macd)}
+        %{datetime: DateTime.from_unix!(timestamp), macd: macd}
       end)
 
     {:ok, result}
@@ -219,7 +219,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     result =
       result
       |> Enum.map(fn %{"timestamp" => timestamp, "rsi" => rsi} ->
-        %{datetime: DateTime.from_unix!(timestamp), rsi: decimal_or_nil(rsi)}
+        %{datetime: DateTime.from_unix!(timestamp), rsi: rsi}
       end)
 
     {:ok, result}
@@ -270,9 +270,9 @@ defmodule Sanbase.InternalServices.TechIndicators do
                      } ->
         %{
           datetime: DateTime.from_unix!(timestamp),
-          price_volume_diff: decimal_or_nil(price_volume_diff),
-          price_change: decimal_or_nil(price_change),
-          volume_change: decimal_or_nil(volume_change)
+          price_volume_diff: price_volume_diff,
+          price_change: price_change,
+          volume_change: volume_change
         }
       end)
 
@@ -314,7 +314,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
                      } ->
         %{
           datetime: DateTime.from_unix!(timestamp),
-          mention_count: decimal_or_nil(mention_count)
+          mention_count: mention_count
         }
       end)
 
@@ -325,9 +325,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
     Logger.error(message)
     {:error, message}
   end
-
-  defp decimal_or_nil(nil), do: nil
-  defp decimal_or_nil(value), do: Decimal.new(value)
 
   defp tech_indicators_url() do
     Config.module_get(Sanbase.TechIndicators, :url)

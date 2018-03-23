@@ -6,11 +6,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
 
   import Ecto.Query
 
-  def twitter_data(_root, %{ticker: ticker}, _resolution) do
-    Cache.func(
-      fn -> calculate_twitter_data(ticker) end,
-      {:twitter_data, ticker}
-    ).()
+  def twitter_data(root, %{ticker: ticker}, resolution) do
+    calculate_twitter_data(ticker)
+  end
+
+  def twitter_data(%Project{ticker: ticker}, _args, resolution) do
+    calculate_twitter_data(ticker)
   end
 
   defp calculate_twitter_data(ticker) do
@@ -28,13 +29,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
       _error ->
         {:ok, nil}
     end
-  end
-
-  def twitter_data(%Project{ticker: ticker}, _args, resolution) do
-    Cache.func(
-      fn -> calculate_twitter_data(ticker) end,
-      {:twitter_data, ticker}
-    ).()
   end
 
   def history_twitter_data(

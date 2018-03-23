@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.Resolvers.IcoResolver
   alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.Helpers.Cache
 
   # Includes all available fields
   object :project do
@@ -158,9 +157,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :eth_spent, :float do
       arg(:days, :integer, default_value: 30)
 
-      (&ProjectResolver.eth_spent/3)
-      |> Cache.resolver(:eth_spent)
-      |> resolve()
+      resolve(&ProjectResolver.eth_spent/3)
     end
 
     field :eth_spent_over_time, list_of(:eth_spent_data) do
@@ -168,9 +165,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      (&ProjectResolver.eth_spent_over_time/3)
-      |> Cache.resolver(:eth_spent_over_time)
-      |> resolve()
+      resolve(&ProjectResolver.eth_spent_over_time/3)
     end
 
     field :eth_top_transactions, list_of(:wallet_transaction) do

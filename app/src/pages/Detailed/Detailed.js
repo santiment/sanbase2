@@ -248,7 +248,7 @@ export const Detailed = ({
             project.ethTopTransactions.map((transaction, index) => (
               <div className='top-eth-transaction' key={index}>
                 <div className='top-eth-transaction__hash'>
-                  <a href={`https://etherscan.io/address/${transaction.trxHash}`}>{transaction.trxHash}</a>
+                  <a href={`https://etherscan.io/tx/${transaction.trxHash}`}>{transaction.trxHash}</a>
                 </div>
                 <div>
                   {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}

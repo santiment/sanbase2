@@ -61,31 +61,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
-  def exchange_fund_flow(
+  def exchange_funds_flow(
         _root,
         %{
           ticker: ticker,
           from: from,
           to: to,
-          transaction_type: transaction_type
+          interval: interval
         },
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
-         {:ok, transactions} <-
-           Transactions.Store.transactions(
+         {:ok, funds_flow_list} <-
+           Transactions.Store.transactions_in_out_difference(
              contract_address,
              from,
              to,
-             transaction_type |> Atom.to_string()
+             interval
            ) do
       result =
-        transactions
-        |> Enum.map(fn {datetime, volume, address} ->
+        funds_flow_list
+        |> Enum.map(fn {datetime, funds_flow} ->
           %{
             datetime: datetime,
-            transaction_volume: volume / :math.pow(10, token_decimals),
-            address: address
+            funds_flow: funds_flow
           }
         end)
 

@@ -22,6 +22,7 @@ import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
 import PageLoader from './components/PageLoader'
+import Footer from './components/Footer'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -108,6 +109,7 @@ export const App = ({isDesktop}) => (
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>
+    <Footer />
   </div>
 )
 

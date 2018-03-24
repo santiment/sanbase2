@@ -7,13 +7,22 @@ const Footer = () => {
     <div className='sanbase-footer'>
       <div className='sanbase-footer__links'>
         <Link to={'/roadmap'}>Roadmap</Link>
-        <Link to={'/faq'}>Faq</Link>
         <Link to={'/status'}>Status</Link>
-        <Link to={'/contact'}>Contact</Link>
-        <Link to={'/request_token'}>Request Token</Link>
+        <a href='mailto:info@santiment.net'>Contact</a>
+        <a href='https://santiment.typeform.com/to/EzKW7E'>
+          Request Token
+        </a>
       </div>
       <div className='sanbase-footer__greetings'>
-        Brought to you by <a href='https://santiment.net'>Santiment</a>
+        Brought to you by &nbsp;
+        <a
+          href='https://santiment.net'
+          rel='noopener noreferrer'
+          target='_blank'>Santiment</a>
+      </div>
+      <div className='cashflow-indev-message'>
+        NOTE: This app is in development.
+        We give no guarantee data is correct as we are in active development.
       </div>
     </div>
   )

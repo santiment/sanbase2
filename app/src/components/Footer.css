@@ -1,11 +1,16 @@
 .sanbase-footer {
-  margin: 0 auto;
-  width: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 2em;
+  flex-direction: column;
+  margin-top: 0.5em;
 }
 
 .sanbase-footer__links {
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sanbase-footer__links a {
@@ -20,4 +25,5 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 1.5em;
 }

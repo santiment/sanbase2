@@ -396,10 +396,6 @@ export const Cashflow = ({
         </Panel>
       </FadeIn>
       <Tips />
-      <div className='cashflow-indev-message'>
-        NOTE: This app is in development.
-        We give no guarantee data is correct as we are in active development.
-      </div>
     </div>
   )
 }

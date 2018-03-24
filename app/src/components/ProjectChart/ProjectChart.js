@@ -536,6 +536,12 @@ const makeOptionsFromProps = props => ({
       },
       ticks: {
         display: true,
+        ticks: {
+          max: parseInt(Math.max(...props.ethSpentOverTime.items.filter(data => {
+            return moment(data.datetime).isAfter(props.from) &&
+              moment(data.datetime).isBefore(props.to)
+          }).map(data => data.ethSpent)), 10)
+        },
         callback: (value, index, values) => {
           if (!values[index]) { return }
           return millify(value)

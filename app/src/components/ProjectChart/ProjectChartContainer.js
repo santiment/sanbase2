@@ -172,6 +172,8 @@ class ProjectChartContainer extends Component {
           isToggledBTC={this.state.isToggledBTC}
           history={this.props.price.history.items}
           burnRate={burnRate}
+          from={this.state.startDate}
+          to={this.state.endDate}
           transactionVolume={transactionVolume}
           ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
           isLoading={this.props.price.history.loading}

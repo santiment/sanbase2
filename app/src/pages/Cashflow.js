@@ -325,11 +325,6 @@ export const Cashflow = ({
             <Link to={'/projects/ethereum'}>More data about Ethereum</Link>
           </div>
           <p>
-            brought to you by <a
-              href='https://santiment.net'
-              rel='noopener noreferrer'
-              target='_blank'>Santiment</a>
-            <br />
             <Icon color='red' name='question circle outline' />Automated data not available.&nbsp;
             <span className='cashflow-head-community-help'>
             Community help locating correct wallet is welcome!</span>
@@ -403,10 +398,6 @@ export const Cashflow = ({
         </Panel>
       </FadeIn>
       <Tips />
-      <div className='cashflow-indev-message'>
-        NOTE: This app is in development.
-        We give no guarantee data is correct as we are in active development.
-      </div>
     </div>
   )
 }

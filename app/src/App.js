@@ -22,6 +22,7 @@ import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
 import PageLoader from './components/PageLoader'
+import Status from './pages/Status'
 import Footer from './components/Footer'
 import './App.css'
 
@@ -96,6 +97,7 @@ export const App = ({isDesktop}) => (
         <Route exact path='/projects/:slug' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
+        <Route exact path='/status' component={Status} />
         <Route path='/email_login' component={EmailLoginVerification} />
         <Route
           exact
@@ -109,7 +111,7 @@ export const App = ({isDesktop}) => (
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>
-    <Footer />
+    {isDesktop && <Footer />}
   </div>
 )
 

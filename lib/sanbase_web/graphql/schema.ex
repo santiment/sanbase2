@@ -73,6 +73,24 @@ defmodule SanbaseWeb.Graphql.Schema do
       |> resolve()
     end
 
+    @desc "Fetch all ERC20 projects"
+    field :all_erc20_projects, list_of(:project) do
+      middleware(ProjectPermissions)
+
+      (&ProjectResolver.all_erc20_projects/3)
+      |> Cache.resolver(:all_erc20_projects)
+      |> resolve()
+    end
+
+    @desc "Fetch all currency projects"
+    field :all_currency_projects, list_of(:project) do
+      middleware(ProjectPermissions)
+
+      (&ProjectResolver.all_currency_projects/3)
+      |> Cache.resolver(:all_currency_projects)
+      |> resolve()
+    end
+
     @desc "Fetch all project transparency projects. Requires basic authentication"
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)

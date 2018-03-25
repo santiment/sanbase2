@@ -1,15 +1,20 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
   import Absinthe.Resolution.Helpers
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Model.MarketSegment
-  alias Sanbase.Model.Infrastructure
-  alias Sanbase.Model.ProjectTransparencyStatus
-  alias Sanbase.Model.ProjectEthAddress
+  alias Sanbase.Model.{
+    Project,
+    LatestCoinmarketcapData,
+    MarketSegment,
+    Infrastructure,
+    ProjectTransparencyStatus,
+    ProjectEthAddress,
+    Ico,
+    Infrastructure
+  }
+
   alias Sanbase.Prices
   alias Sanbase.Github
   alias Sanbase.ExternalServices.Etherscan

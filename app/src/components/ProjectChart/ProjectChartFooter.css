@@ -8,6 +8,9 @@
   align-items: center;
   justify-content: flex-end;
   user-select: none;
+  cursor: pointer;
+  text-align: center;
+  border-radius: 4px;
 }
 
 .toggleBtn div i {
@@ -22,6 +25,15 @@
 .toggleBtn .icon {
   margin-bottom: 6px;
   margin-left: 3px;
+}
+
+.toggleBtn.activated {
+  background: rgba(38, 43, 51, 0.8);
+  color: white;
+}
+
+.toggleBtn.disabled {
+  color: #888;
 }
 
 .marketcapLabel {

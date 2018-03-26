@@ -19,7 +19,8 @@ const COLORS = {
   twitter: 'rgba(16, 195, 245, 0.7)',
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
-  ethSpentOverTime: '#c82f3f'
+  ethSpentOverTime: '#c82f3f',
+  ethPrice: '#3c3c3d'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -70,6 +71,7 @@ const makeChartDataFromHistory = ({
   isToggledBurnRate,
   isToggledTransactionVolume,
   isToggledEthSpentOverTime,
+  isToggledEthPrice,
   ...props
 }) => {
   const twitter = props.twitter.history.items || []
@@ -231,6 +233,29 @@ const makeChartDataFromHistory = ({
         y: data.ethSpent
       }
     })}
+  const ethPriceDataset = !isToggledEthPrice && props.isERC20 ? null : {
+    label: 'ETH Price',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-9',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.ethPrice,
+    backgroundColor: COLORS.ethPrice,
+    borderWidth: 1,
+    data: props.ethPrice.history.items ? props.ethPrice.history.items.map(data => {
+      if (isToggledBTC) {
+        return {
+          x: data.datetime,
+          y: parseFloat(data.priceBtc)
+        }
+      }
+      return {
+        x: data.datetime,
+        y: parseFloat(data.priceUsd)
+      }
+    }) : []}
   return {
     labels,
     datasets: [
@@ -241,7 +266,8 @@ const makeChartDataFromHistory = ({
       twitterDataset,
       burnrateDataset,
       transactionVolumeDataset,
-      ethSpentOverTimeByErc20ProjectsDataset
+      ethSpentOverTimeByErc20ProjectsDataset,
+      ethPriceDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -553,6 +579,24 @@ const makeOptionsFromProps = props => ({
       display: props.isToggledEthSpentOverTime &&
         props.ethSpentOverTimeByErc20Projects.items.length !== 0,
       position: 'right'
+    }, {
+      id: 'y-axis-9',
+      display: true,
+      position: 'right',
+      scaleLabel: {
+        display: true,
+        labelString: `ETH Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
+        fontColor: '#3d4450'
+      },
+      ticks: {
+        display: false,
+        beginAtZero: true,
+        callback: renderTicks(props)
+      },
+      gridLines: {
+        drawBorder: false,
+        display: false
+      }
     }],
     xAxes: [{
       type: 'time',

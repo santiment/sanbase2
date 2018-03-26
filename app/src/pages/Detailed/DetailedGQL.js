@@ -109,11 +109,12 @@ export const GithubActivityGQL = gql`
 }`
 
 export const BurnRateGQL = gql`
-  query queryBurnRate($ticker:String, $from: DateTime, $to: DateTime) {
+  query queryBurnRate($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
     burnRate(
       ticker: $ticker,
       from: $from,
-      to: $to
+      to: $to,
+      interval: $interval
     ) {
       datetime
       burnRate

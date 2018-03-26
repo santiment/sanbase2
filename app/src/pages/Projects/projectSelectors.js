@@ -6,12 +6,6 @@ export const isERC20 = project => (
 
 const defaulFilter = project => project
 
-export const getProjects = (allProjects = []) => (
-  allProjects.filter(project => (isERC20(project) &&
-    defaulFilter(project)
-  )
-))
-
 export const getCurrencies = (allProjects = []) => (
   allProjects.filter(project => (!isERC20(project) &&
     defaulFilter(project)
@@ -21,5 +15,3 @@ export const getCurrencies = (allProjects = []) => (
 export const getAll = (allProjects = []) => (
   allProjects.filter(defaulFilter)
 )
-
-export default getProjects

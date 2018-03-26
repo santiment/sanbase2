@@ -233,7 +233,7 @@ const makeChartDataFromHistory = ({
         y: data.ethSpent
       }
     })}
-  const ethPriceDataset = !isToggledEthPrice && props.isERC20 ? null : {
+  const ethPriceDataset = !isToggledEthPrice ? null : {
     label: 'ETH Price',
     type: 'line',
     fill: false,

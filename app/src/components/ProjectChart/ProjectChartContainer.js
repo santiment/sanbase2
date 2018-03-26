@@ -1,10 +1,7 @@
 import React, { Component } from 'react'
 import moment from 'moment'
 import * as qs from 'query-string'
-import {
-  compose,
-  withState
-} from 'recompose'
+import { compose, withState } from 'recompose'
 import ProjectChartHeader from './ProjectChartHeader'
 import ProjectChartFooter from './ProjectChartFooter'
 import ProjectChart from './ProjectChart'

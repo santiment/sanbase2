@@ -11,9 +11,8 @@ import { FadeIn } from 'animate-components'
 import { getOrigin } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
-import { getCurrencies } from './Projects/projectSelectors'
 import Panel from './../components/Panel'
-import allProjectsGQL from './Projects/allProjectsGQL'
+import { currenciesGQL } from './Projects/allProjectsGQL'
 import {
   refetchThrottled,
   getFilter,
@@ -194,13 +193,13 @@ export const Currencies = ({
   )
 }
 
-const mapDataToProps = ({allProjects, ownProps}) => {
-  const loading = allProjects.loading
-  const isError = !!allProjects.error
-  const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = getCurrencies(allProjects.allProjects)
+const mapDataToProps = ({allCurrencies, ownProps}) => {
+  const loading = allCurrencies.loading
+  const isError = !!allCurrencies.error
+  const errorMessage = allCurrencies.error ? allCurrencies.error.message : ''
+  const projects = allCurrencies.allCurrencyProjects
 
-  const isEmpty = projects.length === 0
+  const isEmpty = projects && projects.length === 0
   return {
     Projects: {
       loading,
@@ -208,15 +207,15 @@ const mapDataToProps = ({allProjects, ownProps}) => {
       isError,
       projects,
       errorMessage,
-      refetch: allProjects.refetch
+      refetch: allCurrencies.refetch
     }
   }
 }
 
 const enhance = compose(
   withRouter,
-  graphql(allProjectsGQL, {
-    name: 'allProjects',
+  graphql(currenciesGQL, {
+    name: 'allCurrencies',
     props: mapDataToProps,
     options: () => {
       return {

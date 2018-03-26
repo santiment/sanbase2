@@ -96,7 +96,7 @@ const ProjectChartHeader = ({
           isToggled={isToggledEthPrice &&
             ethPrice.history.items.length !== 0}
           toggle={toggleEthPrice}>
-          Ethereum Price
+          ETH Price
         </ToggleBtn>}
         &nbsp;
         <CurrencyFilter

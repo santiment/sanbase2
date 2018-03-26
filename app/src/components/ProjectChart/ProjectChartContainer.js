@@ -164,6 +164,10 @@ class ProjectChartContainer extends Component {
           interval={this.state.interval}
           shareableURL={shareableURL}
           ticker={this.props.ticker}
+          isERC20={this.props.isERC20}
+          toggleEthPrice={this.props.toggleEthPrice}
+          isToggledEthPrice={this.props.isToggledEthPrice}
+          ethPrice={this.props.ethPrice}
           isDesktop={this.props.isDesktop}
         />
         <ProjectChart
@@ -194,6 +198,7 @@ const enhance = compose(
   withState('isToggledTwitter', 'toggleTwitter', false),
   withState('isToggledBurnRate', 'toggleBurnRate', false),
   withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
+  withState('isToggledEthPrice', 'toggleEthPrice', false),
   withState('blockchainFilter', 'setBlockchainFilter', 'all')
 )
 

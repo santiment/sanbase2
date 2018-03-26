@@ -89,6 +89,11 @@ export const Detailed = ({
     loading: true,
     error: false
   },
+  EthPrice = {
+    loading: true,
+    error: false,
+    historyPrice: []
+  },
   changeChartVars,
   isDesktop
 }) => {
@@ -123,6 +128,13 @@ export const Detailed = ({
           return {...item, volumeBTC, marketcapBTC}
         })
         : []
+    }
+  }
+
+  const ethPrice = {
+    history: {
+      loading: EthPrice.loading,
+      items: EthPrice.historyPrice ? EthPrice.historyPrice : []
     }
   }
 
@@ -180,6 +192,7 @@ export const Detailed = ({
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
       ethSpentOverTime={_ethSpentOverTime}
+      ethPrice={ethPrice}
       isERC20={project.isERC20}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
@@ -305,6 +318,21 @@ const enhance = compose(
       }
     }
   }),
+  graphql(HistoryPriceGQL, {
+    name: 'EthPrice',
+    options: ({chartVars}) => {
+      const {from, to, ticker, interval} = chartVars
+      return {
+        skip: !ticker || isERC20(ticker),
+        variables: {
+          ticker: 'ETH',
+          from,
+          to,
+          interval
+        }
+      }
+    }
+  }),
   graphql(TwitterDataGQL, {
     name: 'TwitterData',
     options: ({chartVars}) => {
@@ -353,13 +381,15 @@ const enhance = compose(
     name: 'BurnRate',
     options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
+      const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
-        skip: !from || !ticker,
+        skip: !from || !ticker || isERC20(ticker),
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker
+          ticker,
+          interval
         }
       }
     }
@@ -386,7 +416,7 @@ const enhance = compose(
     options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from || !ticker,
+        skip: !from || !ticker || isERC20(ticker),
         errorPolicy: 'all',
         variables: {
           from,

@@ -204,13 +204,13 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Shows the flow of funds in an exchange wallet"
-    field :exchange_fund_flow, list_of(:exchange_transaction) do
+    field :exchange_funds_flow, list_of(:funds_flow) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:transaction_type, :transaction_type, default_value: :all)
+      arg(:interval, :string, default_value: "1d")
 
-      resolve(&EtherbiResolver.exchange_fund_flow/3)
+      resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
     @desc "MACD for a ticker and given currency and time period"

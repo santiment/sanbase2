@@ -303,4 +303,15 @@ defmodule Sanbase.Model.Project do
 
     Repo.all(query)
   end
+
+  def project_eth_addresses_by_ticker(ticker) do
+    query =
+      from(
+        p in Project,
+        where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
+        preload: [:eth_addresses]
+      )
+
+    Repo.one(query)
+  end
 end

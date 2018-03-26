@@ -109,11 +109,12 @@ export const GithubActivityGQL = gql`
 }`
 
 export const BurnRateGQL = gql`
-  query queryBurnRate($ticker:String, $from: DateTime, $to: DateTime) {
+  query queryBurnRate($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
     burnRate(
       ticker: $ticker,
       from: $from,
-      to: $to
+      to: $to,
+      interval: $interval
     ) {
       datetime
       burnRate
@@ -122,11 +123,12 @@ export const BurnRateGQL = gql`
 }`
 
 export const TransactionVolumeGQL = gql`
-  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime) {
+  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
     transactionVolume(
       ticker: $ticker,
       from: $from,
-      to: $to
+      to: $to,
+      interval: $interval
     ) {
       datetime
       transactionVolume

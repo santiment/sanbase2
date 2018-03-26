@@ -320,10 +320,10 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'EthPrice',
-    options: ({chartVars}) => {
+    options: ({chartVars, Project}) => {
       const {from, to, ticker, interval} = chartVars
       return {
-        skip: !ticker || isERC20(ticker),
+        skip: !ticker,
         variables: {
           ticker: 'ETH',
           from,
@@ -383,7 +383,7 @@ const enhance = compose(
       const {from, to, ticker} = chartVars
       const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
-        skip: !from || !ticker || isERC20(ticker),
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
@@ -417,7 +417,7 @@ const enhance = compose(
       const {from, to, ticker} = chartVars
       const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
-        skip: !from || !ticker || isERC20(ticker),
+        skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
@@ -430,10 +430,10 @@ const enhance = compose(
   }),
   graphql(ExchangeFundFlowGQL, {
     name: 'ExchangeFundFlow',
-    options: ({chartVars}) => {
+    options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from || !ticker,
+        skip: !from || !ticker || (Project && !Project.isERC20),
         errorPolicy: 'all',
         variables: {
           from,

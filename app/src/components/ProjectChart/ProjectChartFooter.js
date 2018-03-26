@@ -38,6 +38,7 @@ export const ToggleBtn = ({
     />}
     {!loading && !disabled && !error && children}
     {loading && children}
+    &nbsp;
     {loading && <Loader active inline size='mini' />}
   </div>
 )

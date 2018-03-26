@@ -123,11 +123,12 @@ export const BurnRateGQL = gql`
 }`
 
 export const TransactionVolumeGQL = gql`
-  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime) {
+  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
     transactionVolume(
       ticker: $ticker,
       from: $from,
-      to: $to
+      to: $to,
+      interval: $interval
     ) {
       datetime
       transactionVolume

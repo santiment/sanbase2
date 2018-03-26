@@ -10,8 +10,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
   plug(ErrorCatcher.Middleware)
-  plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.BaseUrl, "https://etherscan.io")
+  plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.Logger)
 
   def fetch_address_page(address) do

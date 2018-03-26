@@ -62,7 +62,7 @@ const handleLoad = () => {
   }).install()
   const origin = getOrigin()
 
-  const httpLink = createHttpLink({ uri: `${origin}` })
+  const httpLink = createHttpLink({ uri: `${origin}/graphql` })
   const authLink = setContext((_, { headers }) => {
     // get the authentication token from local storage if it exists
     const token = loadState() ? loadState().token : undefined

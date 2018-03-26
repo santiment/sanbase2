@@ -62,7 +62,7 @@ const handleLoad = () => {
   }).install()
   const origin = getOrigin()
 
-  const httpLink = createHttpLink({ uri: `${origin}/graphql` })
+  const httpLink = createHttpLink({ uri: `${origin}` })
   const authLink = setContext((_, { headers }) => {
     // get the authentication token from local storage if it exists
     const token = loadState() ? loadState().token : undefined
@@ -108,6 +108,7 @@ const handleLoad = () => {
 
   const client = new ApolloClient({
     link: from([authLink, linkError, httpLink]),
+    shouldBatch: true,
     cache: new InMemoryCache()
   })
 

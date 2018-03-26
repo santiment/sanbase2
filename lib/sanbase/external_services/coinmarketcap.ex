@@ -52,7 +52,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
     projects =
       Project
-      |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
+      |> where([p], not is_nil(p.coinmarketcap_id))
       |> Repo.all()
 
     Task.Supervisor.async_stream_nolink(

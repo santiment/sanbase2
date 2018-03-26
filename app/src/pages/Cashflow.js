@@ -15,9 +15,8 @@ import { formatNumber } from '../utils/formatting'
 import { millify, getOrigin } from '../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
-import { getProjects } from './Projects/projectSelectors'
 import Panel from './../components/Panel'
-import allProjectsGQL from './Projects/allProjectsGQL'
+import { allErc20ProjectsGQL } from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
 
@@ -426,9 +425,9 @@ const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = getProjects(allProjects.allProjects)
+  const projects = allProjects.allErc20Projects
 
-  const isEmpty = projects.length === 0
+  const isEmpty = projects && projects.length === 0
   return {
     Projects: {
       loading,
@@ -447,7 +446,7 @@ const enhance = compose(
     mapDispatchToProps
   ),
   withRouter,
-  graphql(allProjectsGQL, {
+  graphql(allErc20ProjectsGQL, {
     name: 'allProjects',
     props: mapDataToProps,
     options: () => {

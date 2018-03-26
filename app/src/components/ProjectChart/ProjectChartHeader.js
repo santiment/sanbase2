@@ -61,7 +61,8 @@ const ProjectChartHeader = ({
   ticker,
   ethPrice,
   isToggledEthPrice,
-  toggleEthPrice
+  toggleEthPrice,
+  isERC20
 }) => {
   return (
     <div className='chart-header'>
@@ -88,14 +89,15 @@ const ProjectChartHeader = ({
         />}
       </div>
       <div className='chart-header-actions'>
+        {isERC20 &&
         <ToggleBtn
-          loading={ethPrice.loading}
+          loading={ethPrice.history.loading}
           disabled={ethPrice.history.items.length === 0}
           isToggled={isToggledEthPrice &&
             ethPrice.history.items.length !== 0}
           toggle={toggleEthPrice}>
           Ethereum Price
-        </ToggleBtn>
+        </ToggleBtn>}
         &nbsp;
         <CurrencyFilter
           ticker={ticker}

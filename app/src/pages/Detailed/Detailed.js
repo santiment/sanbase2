@@ -415,13 +415,15 @@ const enhance = compose(
     name: 'TransactionVolume',
     options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
+      const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
         skip: !from || !ticker || isERC20(ticker),
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker
+          ticker,
+          interval
         }
       }
     }

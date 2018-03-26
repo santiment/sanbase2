@@ -4,8 +4,7 @@ import {
   Popup,
   Icon,
   Label,
-  Loader,
-  Checkbox
+  Loader
 } from 'semantic-ui-react'
 import './ProjectChartFooter.css'
 
@@ -27,11 +26,13 @@ export const ToggleBtn = ({
       <Popup
         trigger={<div>{children}</div>}
         content="We don't have the data for this project"
+        inverted
         position='bottom left'
       />}
     {!loading && !!error &&
       <Popup
         trigger={<div>{children}</div>}
+        inverted
         content='There was a problem fetching the data. Please, try again or come back later...'
         position='bottom left'
     />}
@@ -89,33 +90,6 @@ const ProjectChartFooter = (props) => (
       {props.isERC20 &&
       <FilterCategory
         className='filter-category-blockchain'
-        settings={() => (
-          <Popup
-            position='top center'
-            size='large'
-            trigger={<Icon name='cogs' />} on='click'>
-            <div className='blockchain-settings'>
-              <Checkbox
-                label={{ children: 'all' }}
-                value='all'
-                checked={props.blockchainFilter === 'all'}
-                onChange={() => props.setBlockchainFilter('all')}
-                radio />
-              <Checkbox
-                label={{ children: 'only outliers' }}
-                checked={props.blockchainFilter === 'only'}
-                onChange={() => props.setBlockchainFilter('only')}
-                value='only'
-                radio />
-              <Checkbox
-                label={{ children: 'without outliers' }}
-                checked={props.blockchainFilter === 'rest'}
-                onChange={() => props.setBlockchainFilter('rest')}
-                value='rest'
-                radio />
-            </div>
-          </Popup>
-        )}
         name='Blockchain'>
         <ToggleBtn
           loading={props.burnRate.loading}
@@ -128,6 +102,7 @@ const ProjectChartFooter = (props) => (
           Burn Rate
           <Popup
             trigger={<Icon name='info circle' />}
+            inverted
             content='Token Burn Rate shows the amount of movement
             of tokens between addresses. One use for this metric is
             to spot large amounts of tokens moving after sitting for long periods of time'
@@ -146,6 +121,7 @@ const ProjectChartFooter = (props) => (
           Transaction Volume
           <Popup
             trigger={<Icon name='info circle' />}
+            inverted
             content='Total amount of tokens that were transacted on the blockchain'
             position='top left'
           />
@@ -172,6 +148,14 @@ const ProjectChartFooter = (props) => (
           toggle={props.toggleEthSpentOverTime}>
           <Label circular className='ethSpentOverTimeLabel' empty />
           ETH spent over time
+          <Popup
+            trigger={<Icon name='info circle' />}
+            inverted
+            content='How much ETH has moved out of team wallets over time.
+            While not tracked all the way to exchanges, this metric may suggest pottential
+            selling activity.'
+            position='top left'
+          />
         </ToggleBtn>
       </FilterCategory>}
     </div>

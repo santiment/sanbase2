@@ -147,7 +147,7 @@
   text-align: center;
 }
 
-.ReactTable .rt-td {
+.ReactTable .rt-tbody .rt-td {
   padding: 8px 5px;
 }
 
@@ -155,6 +155,7 @@
   font-size: 18px;
   line-height: 1.2;
 }
+
 .ticker {
   font-size: 14px;
 }
@@ -171,6 +172,7 @@
   text-overflow: ellipsis;
   text-decoration: underline;
 }
+
 .rt-td .overview-name:hover {
   color: #26a987;
 }

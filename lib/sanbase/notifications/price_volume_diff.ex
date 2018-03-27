@@ -133,7 +133,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     {:ok, %HTTPoison.Response{status_code: 204}} =
       http_client().post(
         webhook_url(),
-        notification_payload(project, currency, notification_date, indicator, debug_info),
+        notification_payload(project, currency, indicator, debug_info),
         [
           {"Content-Type", "application/json"}
         ]

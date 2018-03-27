@@ -1,9 +1,14 @@
 import React, { Fragment } from 'react'
-import { Icon } from 'react-fa'
+//import { Icon } from 'react-fa'
+import { Popup, Button, Icon } from 'semantic-ui-react'
 import './AppMenu.css'
 
 const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) => (
-  <Fragment>
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  }}>
     {showInsights &&
     <ul className={showIcons ? 'menu-list user-generated' : 'menu-list-top user-generated'} >
       <li onClick={() => handleNavigation('insights')}>
@@ -25,7 +30,33 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
         Signals
       </li>
     </ul>
-  </Fragment>
+    <Popup
+      position='bottom left'
+      basic
+      wide
+      trigger={
+        <Icon
+          className='app-menu-creation-icon'
+        fitted name='plus' />
+      } on='click'>
+      <div className='app-menu-creation-list'>
+        <Button
+          basic
+          color='green'
+          onClick={() => handleNavigation('insights/new')}
+        >
+          Create new insight
+        </Button>
+        <Button
+          basic
+          onClick={() =>
+            window.location.replace('https://santiment.typeform.com/to/EzKW7E')}
+        >
+          Request new token
+        </Button>
+      </div>
+    </Popup>
+  </div>
 )
 
 export default AppMenu

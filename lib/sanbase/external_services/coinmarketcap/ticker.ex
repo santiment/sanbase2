@@ -53,7 +53,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
         market_cap_usd: marketcap_usd
       }) do
     price_point = %PricePoint{
-      marketcap: marketcap_usd,
+      marketcap: marketcap_usd |> to_integer(),
       volume_usd: volume_usd |> to_integer(),
       price_btc: price_btc |> to_float(),
       price_usd: price_usd |> to_float(),

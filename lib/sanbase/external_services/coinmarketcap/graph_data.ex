@@ -5,10 +5,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   use Tesla
 
+  alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Model.Project
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.ExternalServices.ErrorCatcher
+  alias Sanbase.Prices.Store
 
   plug(RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter)
   plug(ErrorCatcher.Middleware)
@@ -26,12 +29,55 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> Map.get(:datetime)
   end
 
-  def fetch_prices(coinmarketcap_id, from_datetime, to_datetime) do
+  def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id} = project, to_datetime) do
+    fetch_price_stream(coinmarketcap_id, to_datetime, DateTime.utc_now())
+    |> process_price_stream(project)
+
+    :ok
+  end
+
+  def fetch_price_stream(coinmarketcap_id, from_datetime, to_datetime) do
     day_ranges(from_datetime, to_datetime)
-    |> Stream.flat_map(&extract_prices_for_interval(coinmarketcap_id, &1))
+    |> Stream.map(&extract_price_points_for_interval(coinmarketcap_id, &1))
   end
 
   # Helper functions
+
+  defp process_price_stream(price_stream, %Project{ticker: ticker} = project) do
+    price_stream
+    |> Stream.each(fn prices ->
+      measurement_points =
+        prices
+        |> Enum.flat_map(&price_points_to_measurements(&1, project))
+
+      measurement_points |> Store.import()
+
+      last_price_datetime_updated =
+        measurement_points
+        |> Enum.max_by(&Measurement.get_timestamp/1)
+        |> Measurement.get_datetime()
+
+      Store.update_last_history_datetime_cmc(ticker, last_price_datetime_updated)
+    end)
+    |> Stream.run()
+  end
+
+  defp price_points_to_measurements(%PricePoint{} = price_point, %Project{ticker: ticker}) do
+    [
+      PricePoint.convert_to_measurement(price_point, "USD", ticker),
+      PricePoint.convert_to_measurement(price_point, "BTC", ticker)
+    ]
+  end
+
+  defp price_points_to_measurements(price_points, %Project{ticker: ticker}) do
+    price_points
+    |> Enum.flat_map(fn price_point ->
+      [
+        PricePoint.convert_to_measurement(price_point, "USD", ticker),
+        PricePoint.convert_to_measurement(price_point, "BTC", ticker)
+      ]
+    end)
+  end
 
   defp json_to_price_points(json) do
     json
@@ -55,7 +101,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
          price_btc: price_btc
        }) do
     List.zip([market_cap_by_available_supply, price_usd, volume_usd, price_btc])
-    |> Stream.map(fn {[dt, marketcap], [dt, price_usd], [dt, volume_usd], [dt, price_btc]} ->
+    |> Enum.map(fn {[dt, marketcap], [dt, price_usd], [dt, volume_usd], [dt, price_btc]} ->
       %PricePoint{
         marketcap: marketcap,
         price_usd: price_usd,
@@ -66,8 +112,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end)
   end
 
-  defp extract_prices_for_interval(coinmarketcap_id, {start_interval, end_interval}) do
-    graph_data_interval_url(coinmarketcap_id, start_interval * 1000, end_interval * 1000)
+  defp extract_price_points_for_interval(coinmarketcap_id, {start_interval_sec, end_interval_sec}) do
+    graph_data_interval_url(coinmarketcap_id, start_interval_sec * 1000, end_interval_sec * 1000)
     |> get()
     |> case do
       %{status: 200, body: body} ->

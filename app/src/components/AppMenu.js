@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react'
-import { Icon } from 'react-fa'
+//import { Icon } from 'react-fa'
+import { Popup, Button, Icon } from 'semantic-ui-react'
 import './AppMenu.css'
 
 const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) => (

@@ -75,6 +75,26 @@ ul.menu-list {
   text-transform: uppercase;
 }
 
+.app-menu-creation-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-menu-creation-list button {
+  margin-top: 0.5em !important;
+}
+
+.app-menu-creation-list button:first-child {
+  margin-top: 0 !important;
+}
+
+.app-menu-creation-icon {
+  margin-left: 1em;
+  margin-right: 1em;
+  margin-bottom: 16px;
+  color: white;
+}
+
 @media (min-width: 1024px) {
   .user-generated {
     border-right: 1px solid white;

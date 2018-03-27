@@ -15,11 +15,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
-  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices
   alias Sanbase.Notifications.PriceVolumeDiff
   alias Sanbase.Utils.Config
@@ -128,38 +126,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     !main_contract_address or !contract_abi or !contract_block_number
   end
 
-  defp fetch_and_process_price_data(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+  defp fetch_and_process_price_data(%Project{} = project) do
     last_price_datetime = last_price_datetime(project)
-
-    prices = fetch_prices(project, last_price_datetime)
-
-    prices |> Store.import()
-
-    last_price_datetime_updated =
-      prices
-      |> Enum.max_by(&Measurement.get_timestamp/1)
-      |> Measurement.get_datetime()
-
-    Store.update_last_history_datetime_cmc(coinmarketcap_id, last_price_datetime_updated)
+    GraphData.fetch_and_store_prices(project, last_price_datetime)
 
     process_notifications(project)
-  end
-
-  defp fetch_prices(
-         %Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker},
-         last_price_datetime
-       ) do
-    GraphData.fetch_prices(
-      coinmarketcap_id,
-      last_price_datetime,
-      DateTime.utc_now()
-    )
-    |> Stream.flat_map(fn price_point ->
-      [
-        PricePoint.convert_to_measurement(price_point, "USD", ticker),
-        PricePoint.convert_to_measurement(price_point, "BTC", ticker)
-      ]
-    end)
   end
 
   defp process_notifications(%Project{} = project) do
@@ -169,10 +140,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     PriceVolumeDiff.exec(project, "usd")
   end
 
-  defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id}) do
-    case Store.last_history_datetime_cmc!(coinmarketcap_id) do
+  defp last_price_datetime(%Project{ticker: ticker}) do
+    case Store.last_history_datetime_cmc!(ticker) do
       nil ->
-        GraphData.fetch_first_price_datetime(coinmarketcap_id)
+        GraphData.fetch_first_price_datetime(ticker)
 
       datetime ->
         datetime

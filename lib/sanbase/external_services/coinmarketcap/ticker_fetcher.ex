@@ -12,7 +12,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Utils.Config
   alias Sanbase.Prices.Store
 
@@ -24,11 +23,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   end
 
   def init(:ok) do
-    update_interval = Config.get(:update_interval, @default_update_interval)
-
     if Config.get(:sync_enabled, false) do
+      Store.create_db()
+
       GenServer.cast(self(), :sync)
 
+      update_interval = Config.get(:update_interval, @default_update_interval)
       {:ok, %{update_interval: update_interval}}
     else
       :ignore

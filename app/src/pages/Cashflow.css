@@ -115,6 +115,7 @@
 
 .ReactTable .rt-tbody .rt-td {
   border-right: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 8px 5px;
 }
 
 .rt-tr:hover {
@@ -145,10 +146,6 @@
 .ReactTable .rt-thead .rt-tr .rt-th:nth-child(7),
 .ReactTable .rt-thead .rt-tr .rt-th:last-child {
   text-align: center;
-}
-
-.ReactTable .rt-tbody .rt-td {
-  padding: 8px 5px;
 }
 
 .ReactTable .rt-td > div {

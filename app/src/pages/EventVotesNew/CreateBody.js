@@ -1,5 +1,5 @@
 import React from 'react'
-import { CreateInsight } from './CreateInsight'
+import CreateInsight from './CreateInsight'
 import { withState } from 'recompose'
 import { Button } from 'semantic-ui-react'
 

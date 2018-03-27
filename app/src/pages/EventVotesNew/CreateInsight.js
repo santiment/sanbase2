@@ -1,11 +1,10 @@
 import React from 'react'
 import 'medium-draft/lib/index.css'
+import nprogress from 'nprogress'
 import { convertToRaw } from 'draft-js'
 import { draftjsToMd } from './../../utils/draftjsToMd'
-import {
-  Editor,
-  createEditorState
-} from 'medium-draft'
+import { compose, withState } from 'recompose'
+import { Editor, createEditorState } from 'medium-draft'
 import CustomImageSideButton from './CustomImageSideButton'
 import './CreateInsight.css'
 
@@ -26,6 +25,15 @@ export class CreateInsight extends React.Component {
     this.refs.editor.focus()
   }
 
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.isPendingImg) {
+      nprogress.start()
+    }
+    if (nextProps.isSuccessImg) {
+      nprogress.done()
+    }
+  }
+
   render () {
     const { editorState } = this.state
     return (
@@ -34,7 +42,13 @@ export class CreateInsight extends React.Component {
         editorState={editorState}
         sideButtons={[{
           title: 'Image',
-          component: CustomImageSideButton
+          component: props => (
+            <CustomImageSideButton
+              onPendingImg={this.props.onPendingImg}
+              onErrorImg={this.props.onErrorImg}
+              onSuccessImg={this.props.onSuccessImg}
+              {...props}
+            />)
         }]}
         toolbarConfig={{
           block: ['ordered-list-item', 'unordered-list-item'],
@@ -46,4 +60,8 @@ export class CreateInsight extends React.Component {
   }
 }
 
-export default CreateInsight
+export default compose(
+  withState('isPendingImg', 'onPendingImg', false),
+  withState('isErrorImg', 'onErrorImg', false),
+  withState('isSuccessImg', 'onSuccessImg', false)
+)(CreateInsight)

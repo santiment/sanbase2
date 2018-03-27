@@ -198,7 +198,7 @@ export const Cashflow = ({
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br /><span class="ticker">{value.ticker}</span>
+        <ProjectIcon name={value.name} /><br /><span class='ticker'>{value.ticker}</span>
       </div>
     ),
     filterMethod: (filter, row) => {

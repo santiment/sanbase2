@@ -29,49 +29,49 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     [
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 1500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 1500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123b"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 2500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 2500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123c"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 3500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 3500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123d"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 100_000, from_addr: "0x2", to_addr: "0x1"},
+        fields: %{trx_value: 100_000, from_addr: "0x2", to_addr: "0x1", trx_hash: "0x123e"},
         tags: [transaction_type: "in"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 5500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 5500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123f"},
         tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 45000, from_addr: "0x2", to_addr: "0x1"},
+        fields: %{trx_value: 45000, from_addr: "0x2", to_addr: "0x1", trx_hash: "0x123g"},
         tags: [transaction_type: "in"],
         name: ticker
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{trx_value: 6500, from_addr: "0x1", to_addr: "0x2"},
+        fields: %{trx_value: 6500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x123h"},
         tags: [transaction_type: "out"],
         name: ticker
       }
@@ -90,12 +90,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     query = """
     {
       project(id: #{context.project.id}) {
-        ethTransactions(
+        ethTopTransactions(
           from: "#{context.datetime_from}",
           to: "#{context.datetime_to}",
           transaction_type: IN){
             datetime,
-            transaction_volume,
+            trxValue,
             fromAddress,
             toAddress
         }
@@ -107,20 +107,20 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "project"))
 
-    trx_in = json_response(result, 200)["data"]["project"]["ethTransactions"]
+    trx_in = json_response(result, 200)["data"]["project"]["ethTopTransactions"]
 
     assert %{
              "datetime" => "2017-05-16T18:00:00Z",
              "fromAddress" => "0x2",
              "toAddress" => "0x1",
-             "transaction_volume" => "100000"
+             "trxValue" => "100000"
            } in trx_in
 
     assert %{
              "datetime" => "2017-05-17T19:00:00Z",
              "fromAddress" => "0x2",
              "toAddress" => "0x1",
-             "transaction_volume" => "45000"
+             "trxValue" => "45000"
            } in trx_in
   end
 
@@ -128,12 +128,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     query = """
     {
       project(id: #{context.project.id}) {
-        ethTransactions(
+        ethTopTransactions(
           from: "#{context.datetime_from}",
           to: "#{context.datetime_to}",
           transaction_type: OUT){
             datetime,
-            transaction_volume,
+            trxValue,
             fromAddress,
             toAddress
         }
@@ -145,48 +145,48 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "project"))
 
-    trx_out = json_response(result, 200)["data"]["project"]["ethTransactions"]
+    trx_out = json_response(result, 200)["data"]["project"]["ethTopTransactions"]
 
     assert %{
              "datetime" => "2017-05-13T15:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "500"
+             "trxValue" => "500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-14T16:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "1500"
+             "trxValue" => "1500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-15T17:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "2500"
+             "trxValue" => "2500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-16T18:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "3500"
+             "trxValue" => "3500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-17T19:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "5500"
+             "trxValue" => "5500"
            } in trx_out
 
     assert %{
              "datetime" => "2017-05-18T20:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "6500"
+             "trxValue" => "6500"
            } in trx_out
   end
 
@@ -194,12 +194,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     query = """
     {
       project(id: #{context.project.id}) {
-        ethTransactions(
+        ethTopTransactions(
           from: "#{context.datetime_from}",
           to: "#{context.datetime_to}",
           transaction_type: ALL){
             datetime,
-            transaction_volume,
+            trxValue,
             fromAddress,
             toAddress
         }
@@ -211,62 +211,62 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "project"))
 
-    trx_all = json_response(result, 200)["data"]["project"]["ethTransactions"]
+    trx_all = json_response(result, 200)["data"]["project"]["ethTopTransactions"]
 
     assert %{
              "datetime" => "2017-05-13T15:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "500"
+             "trxValue" => "500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-14T16:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "1500"
+             "trxValue" => "1500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-15T17:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "2500"
+             "trxValue" => "2500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-16T18:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "3500"
+             "trxValue" => "3500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-17T19:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "5500"
+             "trxValue" => "5500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-18T20:00:00Z",
              "fromAddress" => "0x1",
              "toAddress" => "0x2",
-             "transaction_volume" => "6500"
+             "trxValue" => "6500"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-16T18:00:00Z",
              "fromAddress" => "0x2",
              "toAddress" => "0x1",
-             "transaction_volume" => "100000"
+             "trxValue" => "100000"
            } in trx_all
 
     assert %{
              "datetime" => "2017-05-17T19:00:00Z",
              "fromAddress" => "0x2",
              "toAddress" => "0x1",
-             "transaction_volume" => "45000"
+             "trxValue" => "45000"
            } in trx_all
   end
 end

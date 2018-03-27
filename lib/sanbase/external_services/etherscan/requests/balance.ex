@@ -6,13 +6,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests.Balance do
 
   defstruct [:status, :message, :result]
 
-  def get_balance!(address) do
-    case get_balance(address) do
-      {:ok, result} -> result
-      {:error, error} -> raise(error)
-    end
-  end
-
   def get_balance(address) do
     Requests.get("/", query: get_query(address))
     |> case do

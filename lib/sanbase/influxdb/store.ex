@@ -26,6 +26,10 @@ defmodule Sanbase.Influxdb.Store do
           |> __MODULE__.write()
       end
 
+      def import([]) do
+        :ok
+      end
+
       def import(measurements) do
         # 1 day of 5 min resolution data
         measurements
@@ -112,6 +116,30 @@ defmodule Sanbase.Influxdb.Store do
         case first_datetime(measurement) do
           {:ok, datetime} -> datetime
           {:error, error} -> raise(error)
+        end
+      end
+
+      @doc ~s"""
+        Returns a list of measurement names that are used internally and should not be exposed.
+        Should be overridden if the Store module uses internal measurements
+      """
+      def internal_measurements() do
+        {:ok, []}
+      end
+
+      defoverridable internal_measurements: 0
+
+      @doc ~s"""
+        Returns a list of all measurements except the internal ones
+      """
+      def public_measurements() do
+        with {:ok, all_measurements} <- list_measurements(),
+             {:ok, internal_measurements} <- internal_measurements() do
+          {
+            :ok,
+            all_measurements
+            |> Enum.reject(fn x -> Enum.member?(internal_measurements, x) end)
+          }
         end
       end
 

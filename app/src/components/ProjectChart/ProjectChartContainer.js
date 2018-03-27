@@ -1,10 +1,7 @@
 import React, { Component } from 'react'
 import moment from 'moment'
 import * as qs from 'query-string'
-import {
-  compose,
-  withState
-} from 'recompose'
+import { compose, withState } from 'recompose'
 import ProjectChartHeader from './ProjectChartHeader'
 import ProjectChartFooter from './ProjectChartFooter'
 import ProjectChart from './ProjectChart'
@@ -14,9 +11,9 @@ class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
     const shareableState = qs.parse(props.location.search)
-    const { from, to } = makeItervalBounds('1m')
+    const { from, to } = makeItervalBounds('all')
     this.state = {
-      interval: '1m',
+      interval: 'all',
       isError: false,
       errorMessage: '',
       selected: undefined,
@@ -164,6 +161,10 @@ class ProjectChartContainer extends Component {
           interval={this.state.interval}
           shareableURL={shareableURL}
           ticker={this.props.ticker}
+          isERC20={this.props.isERC20}
+          toggleEthPrice={this.props.toggleEthPrice}
+          isToggledEthPrice={this.props.isToggledEthPrice}
+          ethPrice={this.props.ethPrice}
           isDesktop={this.props.isDesktop}
         />
         <ProjectChart
@@ -172,10 +173,15 @@ class ProjectChartContainer extends Component {
           isToggledBTC={this.state.isToggledBTC}
           history={this.props.price.history.items}
           burnRate={burnRate}
+          from={this.state.startDate}
+          to={this.state.endDate}
           transactionVolume={transactionVolume}
+          ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
           isLoading={this.props.price.history.loading}
+          isERC20={this.props.isERC20}
           isEmpty={this.props.price.history.items.length === 0} />
-        <ProjectChartFooter {...this.props} />
+        <ProjectChartFooter
+          {...this.props} />
       </div>
     )
   }
@@ -184,10 +190,12 @@ class ProjectChartContainer extends Component {
 const enhance = compose(
   withState('isToggledMarketCap', 'toggleMarketcap', false),
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
+  withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),
   withState('isToggledVolume', 'toggleVolume', true),
   withState('isToggledTwitter', 'toggleTwitter', false),
   withState('isToggledBurnRate', 'toggleBurnRate', false),
   withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
+  withState('isToggledEthPrice', 'toggleEthPrice', false),
   withState('blockchainFilter', 'setBlockchainFilter', 'all')
 )
 

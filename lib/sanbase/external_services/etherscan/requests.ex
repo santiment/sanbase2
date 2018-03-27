@@ -8,9 +8,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
 
   alias Sanbase.Utils.Config
   alias Sanbase.ExternalServices.RateLimiting
+  alias Sanbase.ExternalServices.ErrorCatcher
 
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
+  plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://api.etherscan.io/api")
+  plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.JSON)
 

@@ -1,0 +1,29 @@
+.sanbase-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2em;
+  flex-direction: column;
+  margin-top: 0.5em;
+}
+
+.sanbase-footer__links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sanbase-footer__links a {
+  margin-left: 1em;
+}
+
+.sanbase-footer__links a:first-child {
+  margin-left: 0;
+}
+
+.sanbase-footer__greetings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.5em;
+}

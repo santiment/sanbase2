@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-06-03 | v.0.5.2:
+  Added eth spent over time for ERC20 projects
+  Added eth spent for all projects
+  Made special page for Etheteum with more data
+
 - 2018-06-03 | v.0.5.1:
 
   Added fixed header for Cashflow table

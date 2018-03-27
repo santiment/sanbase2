@@ -2,10 +2,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.ExternalServices.TwitterData.Store
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
   import Ecto.Query
+  import Absinthe.Resolution.Helpers
 
-  def twitter_data(_root, %{ticker: ticker}, _resolution) do
+  def twitter_data(root, %{ticker: ticker}, resolution) do
+    async(Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}))
+  end
+
+  def twitter_data(%Project{ticker: ticker}, _args, resolution) do
+    async(Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}))
+  end
+
+  defp calculate_twitter_data(ticker) do
     with {:ok, twitter_link} <- get_twitter_link(ticker),
          {:ok, twitter_name} <- extract_twitter_name(twitter_link),
          {datetime, followers_count} <- Store.last_record_for_measurement(twitter_name) do
@@ -20,10 +30,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
       _error ->
         {:ok, nil}
     end
-  end
-
-  def twitter_data(%Project{ticker: ticker}, _args, resolution) do
-    twitter_data(nil, %{ticker: ticker}, resolution)
   end
 
   def history_twitter_data(

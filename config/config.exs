@@ -61,7 +61,7 @@ config :sanbase, Sanbase.Etherbi.Transactions.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
   port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
-  database: "erc20_exchange_transactions"
+  database: "erc20_exchange_funds_flow"
 
 config :sanbase, Sanbase.Etherbi.BurnRate.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
@@ -103,6 +103,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.LatestEthWalletData,
     Sanbase.ExAdmin.Model.LatestBtcWalletData,
     Sanbase.ExAdmin.Notifications.Type,
+    Sanbase.ExAdmin.Notifications.Notification,
     Sanbase.ExAdmin.Auth.User,
     Sanbase.ExAdmin.Voting.Poll,
     Sanbase.ExAdmin.Voting.Post
@@ -160,7 +161,10 @@ config :sanbase, Sanbase.Notifications.CheckPrices,
 
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: {:system, "PRICE_VOLUME_DIFF_WEBHOOK_URL"},
-  notification_threshold: {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_THRESHOLD", "0.1"},
+  window_type: {:system, "PRICE_VOLUME_DIFF_WINDOW_TYPE"},
+  approximation_window: {:system, "PRICE_VOLUME_DIFF_APPROXIMATION_WINDOW", "14"},
+  comparison_window: {:system, "PRICE_VOLUME_DIFF_COMPARISON_WINDOW", "7"},
+  notification_threshold: {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_THRESHOLD", "0.01"},
   notifications_cooldown: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_COOLDOWN", "86400"},
   debug_url: {:system, "PRICE_VOLUME_DIFF_DEBUG_URL"},
   notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}

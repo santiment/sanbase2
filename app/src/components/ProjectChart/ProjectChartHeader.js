@@ -5,6 +5,7 @@ import { fadeIn, slideUp } from 'animate-keyframes'
 import { DateRangePicker } from 'react-dates'
 import { formatNumber } from '../../utils/formatting'
 import ShareableBtn from './ShareableBtn'
+import { ToggleBtn } from './ProjectChartFooter'
 import './ProjectChartHeader.css'
 
 export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
@@ -25,14 +26,17 @@ export const TimeFilter = props => (
     <TimeFilterItem value={'1w'} {...props} />
     <TimeFilterItem value={'2w'} {...props} />
     <TimeFilterItem value={'1m'} {...props} />
+    <TimeFilterItem value={'3m'} {...props} />
+    <TimeFilterItem value={'all'} {...props} />
   </div>
 )
 
-export const CurrencyFilter = ({isToggledBTC, toggleBTC}) => (
+export const CurrencyFilter = ({ticker, isToggledBTC, toggleBTC}) => (
   <div className='currency-filter'>
+    {ticker !== 'BTC' &&
     <div
       className={isToggledBTC ? 'activated' : ''}
-      onClick={() => toggleBTC(true)}>BTC</div>
+      onClick={() => toggleBTC(true)}>BTC</div>}
     <div
       className={!isToggledBTC ? 'activated' : ''}
       onClick={() => toggleBTC(false)}>USD</div>
@@ -54,7 +58,11 @@ const ProjectChartHeader = ({
   setFilter,
   shareableURL,
   sanbaseChart,
-  ticker
+  ticker,
+  ethPrice,
+  isToggledEthPrice,
+  toggleEthPrice,
+  isERC20
 }) => {
   return (
     <div className='chart-header'>
@@ -81,7 +89,18 @@ const ProjectChartHeader = ({
         />}
       </div>
       <div className='chart-header-actions'>
+        {isERC20 &&
+        <ToggleBtn
+          loading={ethPrice.history.loading}
+          disabled={ethPrice.history.items.length === 0}
+          isToggled={isToggledEthPrice &&
+            ethPrice.history.items.length !== 0}
+          toggle={toggleEthPrice}>
+          ETH Price
+        </ToggleBtn>}
+        &nbsp;
         <CurrencyFilter
+          ticker={ticker}
           isToggledBTC={isToggledBTC}
           toggleBTC={toggleBTC} />
         <ShareableBtn

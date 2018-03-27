@@ -8,6 +8,10 @@
   align-items: center;
   justify-content: flex-end;
   user-select: none;
+  cursor: pointer;
+  text-align: center;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(50, 50, 92, 0.11), 0 1px 3px rgba(0, 0, 0, 0.075);
 }
 
 .toggleBtn div i {
@@ -22,6 +26,15 @@
 .toggleBtn .icon {
   margin-bottom: 6px;
   margin-left: 3px;
+}
+
+.toggleBtn.activated {
+  background: rgba(38, 43, 51, 0.8);
+  color: white;
+}
+
+.toggleBtn.disabled {
+  color: #888;
 }
 
 .marketcapLabel {
@@ -58,6 +71,12 @@
   color: rgb(16, 195, 245) !important;
   background-color: rgb(16, 195, 245) !important;
   border-color: rgb(16, 195, 245) !important;
+}
+
+.ethSpentOverTimeLabel {
+  color: #c82f3f !important;
+  background-color: #c82f3f !important;
+  border-color: #c82f3f !important;
 }
 
 .filter-category {

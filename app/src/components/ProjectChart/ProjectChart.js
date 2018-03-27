@@ -18,7 +18,9 @@ const COLORS = {
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
   twitter: 'rgba(16, 195, 245, 0.7)',
   burnRate: 'rgba(252, 138, 23, 0.7)',
-  transactionVolume: 'rgba(39, 166, 153, 0.7)'
+  transactionVolume: 'rgba(39, 166, 153, 0.7)',
+  ethSpentOverTime: '#c82f3f',
+  ethPrice: '#3c3c3d'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -68,6 +70,8 @@ const makeChartDataFromHistory = ({
   isToggledTwitter,
   isToggledBurnRate,
   isToggledTransactionVolume,
+  isToggledEthSpentOverTime,
+  isToggledEthPrice,
   ...props
 }) => {
   const twitter = props.twitter.history.items || []
@@ -209,6 +213,49 @@ const makeChartDataFromHistory = ({
         y: data.transactionVolume
       }
     })}
+
+  const ethSpentOverTimeByErc20ProjectsDataset = !isToggledEthSpentOverTime ? null : {
+    label: 'ETH Spent Over time',
+    type: 'bar',
+    fill: false,
+    yAxisID: 'y-axis-8',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.ethSpentOverTime,
+    backgroundColor: COLORS.ethSpentOverTime,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: props.ethSpentOverTimeByErc20Projects.items.map(data => {
+      return {
+        x: data.datetime,
+        y: data.ethSpent
+      }
+    })}
+  const ethPriceDataset = !isToggledEthPrice ? null : {
+    label: 'ETH Price',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-9',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.ethPrice,
+    backgroundColor: COLORS.ethPrice,
+    borderWidth: 1,
+    data: props.ethPrice.history.items ? props.ethPrice.history.items.map(data => {
+      if (isToggledBTC) {
+        return {
+          x: data.datetime,
+          y: parseFloat(data.priceBtc)
+        }
+      }
+      return {
+        x: data.datetime,
+        y: parseFloat(data.priceUsd)
+      }
+    }) : []}
   return {
     labels,
     datasets: [
@@ -218,7 +265,9 @@ const makeChartDataFromHistory = ({
       volumeDataset,
       twitterDataset,
       burnrateDataset,
-      transactionVolumeDataset
+      transactionVolumeDataset,
+      ethSpentOverTimeByErc20ProjectsDataset,
+      ethPriceDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -304,6 +353,9 @@ const makeOptionsFromProps = props => ({
           return `${label}: ${millify(tooltipItem.yLabel)} followers`
         }
         if (label === 'Marketcap') {
+          return `${label}: ${millify(tooltipItem.yLabel)}`
+        }
+        if (label === 'ETH Spent Over time') {
           return `${label}: ${millify(tooltipItem.yLabel)}`
         }
         return `${label}: ${props.isToggledBTC
@@ -493,6 +545,58 @@ const makeOptionsFromProps = props => ({
       display: props.isToggledTransactionVolume &&
         props.transactionVolume.items.length !== 0,
       position: 'right'
+    }, {
+      id: 'y-axis-8',
+      tooltips: {
+        mode: 'index',
+        intersect: false
+      },
+      scaleLabel: {
+        display: true,
+        labelString: 'ETH Spent Over Time',
+        fontColor: '#3d4450'
+      },
+      afterTickToLabelConversion: scaleInstance => {
+        scaleInstance.ticks[0] = null
+        scaleInstance.ticksAsNumbers[0] = null
+      },
+      ticks: {
+        display: true,
+        ticks: {
+          max: parseInt(Math.max(...props.ethSpentOverTime.items.filter(data => {
+            return moment(data.datetime).isAfter(props.from) &&
+              moment(data.datetime).isBefore(props.to)
+          }).map(data => data.ethSpent)), 10)
+        },
+        callback: (value, index, values) => {
+          if (!values[index]) { return }
+          return millify(value)
+        }
+      },
+      gridLines: {
+        display: false
+      },
+      display: props.isToggledEthSpentOverTime &&
+        props.ethSpentOverTimeByErc20Projects.items.length !== 0,
+      position: 'right'
+    }, {
+      id: 'y-axis-9',
+      display: true,
+      position: 'right',
+      scaleLabel: {
+        display: true,
+        labelString: `ETH Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
+        fontColor: '#3d4450'
+      },
+      ticks: {
+        display: false,
+        beginAtZero: true,
+        callback: renderTicks(props)
+      },
+      gridLines: {
+        drawBorder: false,
+        display: false
+      }
     }],
     xAxes: [{
       type: 'time',

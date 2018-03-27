@@ -11,6 +11,7 @@ import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
 import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
+import Currencies from './pages/Currencies'
 import CashflowMobile from './pages/CashflowMobile'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
@@ -21,7 +22,8 @@ import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
 import PageLoader from './components/PageLoader'
-import ImageUpload from './components/ImageUpload'
+import Status from './pages/Status'
+import Footer from './components/Footer'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -87,18 +89,25 @@ export const App = ({isDesktop}) => (
             <CashflowMobile {...props} />
           )
         }} />
+        <Route exact path='/currencies' render={props => {
+          return (
+            <Currencies
+              preload={() => LoadableDetailedPage.preload()}
+              {...props} />
+          )
+        }} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
-        <Route exact path='/uploader' component={ImageUpload} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
         <Route exact path='/insights' component={LoadableInsights} />
         <Route exact path='/insights/newest' component={LoadableInsights} />
         <Route exact path='/insights/popular' component={LoadableInsights} />
         <Route exact path='/insights/my' component={LoadableInsights} />
         <Route exact path='/insights/:insightId' component={LoadableInsight} />
-        <Route exact path='/projects/:ticker' render={props => (
+        <Route exact path='/projects/:slug' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
+        <Route exact path='/status' component={Status} />
         <Route path='/email_login' component={EmailLoginVerification} />
         <Route
           exact
@@ -112,6 +121,7 @@ export const App = ({isDesktop}) => (
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>
+    {isDesktop && <Footer />}
   </div>
 )
 

@@ -30,19 +30,20 @@ exports[`Cashflow container it should render correctly 1`] = `
     <div
       className="cashflow-head"
     >
-      <h1>
-        Projects
-      </h1>
-      <p>
-        brought to you by 
-        <a
-          href="https://santiment.net"
-          rel="noopener noreferrer"
-          target="_blank"
+      <div
+        className="cashflow-title"
+      >
+        <h1>
+          Projects
+        </h1>
+        <Link
+          replace={false}
+          to="/projects/ethereum"
         >
-          Santiment
-        </a>
-        <br />
+          More data about Ethereum
+        </Link>
+      </div>
+      <p>
         <Icon
           as="i"
           color="red"
@@ -311,10 +312,5 @@ exports[`Cashflow container it should render correctly 1`] = `
     </Panel>
   </FadeIn>
   <Component />
-  <div
-    className="cashflow-indev-message"
-  >
-    NOTE: This app is in development. We give no guarantee data is correct as we are in active development.
-  </div>
 </div>
 `;

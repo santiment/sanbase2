@@ -4,16 +4,17 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   alias Decimal, as: D
   alias Sanbase.ExternalServices.RateLimiting
   alias Sanbase.ExternalServices.ProjectInfo
+  alias Sanbase.ExternalServices.ErrorCatcher
 
   require Logger
 
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
+  plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://etherscan.io")
+  plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.Logger)
 
-  @max_redirects 10
-
-  def fetch_address_page!(address) do
+  def fetch_address_page(address) do
     case get("/address/#{address}") do
       %Tesla.Env{status: 200, body: body} ->
         body
@@ -26,23 +27,17 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         )
 
         nil
+
+      %Tesla.Error{message: error_msg} ->
+        Logger.warn("Error response from etherscan for address #{address}. #{error_msg}")
+        nil
     end
   end
 
-  def fetch_token_page!(token_name, redirects \\ 0)
-
-  def fetch_token_page!(_, @max_redirects) do
-    Logger.warn("Too many redirects")
-    nil
-  end
-
-  def fetch_token_page!(token_name, redirects) do
+  def fetch_token_page(token_name) do
     case get("/token/#{token_name}") do
       %Tesla.Env{status: 200, body: body} ->
         body
-
-      %Tesla.Env{status: 302, headers: %{"location" => "/token/" <> name}} ->
-        fetch_token_page!(name, redirects + 1)
 
       %Tesla.Env{status: status, body: body} ->
         Logger.warn(
@@ -51,6 +46,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
           }"
         )
 
+        nil
+
+      %Tesla.Error{message: error_msg} ->
+        Logger.warn("Error response from etherscan for #{token_name}. #{error_msg}")
         nil
     end
   end

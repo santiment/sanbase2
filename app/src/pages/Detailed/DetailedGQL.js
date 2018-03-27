@@ -1,9 +1,9 @@
 import gql from 'graphql-tag'
 
-export const projectGQL = gql`
-  query projectGQL($id: ID!) {
-    project(
-      id: $id,
+export const projectBySlugGQL = gql`
+  query projectBySlugGQL($slug: String!, $from: DateTime, $fromOverTime: DateTime, $to: DateTime, $interval: String!) {
+    projectBySlug(
+      slug: $slug,
     ){
       id,
       name,
@@ -27,6 +27,21 @@ export const projectGQL = gql`
       priceBtc,
       volumeUsd,
       ethBalance,
+      ethAddresses {
+        balance,
+        address
+      },
+      ethTopTransactions(from: $from, to: $to, limit: 10, transactionType: OUT) {
+        fromAddress,
+        trxValue,
+        trxHash,
+        toAddress,
+        datetime
+      },
+      ethSpentOverTime(from: $fromOverTime, to: $to, interval: $interval) {
+        datetime,
+        ethSpent
+      },
       ethSpent,
       marketcapUsd,
       tokenDecimals,
@@ -36,8 +51,9 @@ export const projectGQL = gql`
     }
   }
 `
-export const queryTwitterHistory = gql`
-  query queryTwitterHistory($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
+
+export const TwitterHistoryGQL = gql`
+  query queryTwitterHistory($ticker:String!, $from: DateTime, $to: DateTime, $interval: String) {
     historyTwitterData(
       ticker: $ticker,
       from: $from,
@@ -51,8 +67,8 @@ export const queryTwitterHistory = gql`
   }
 `
 
-export const queryTwitterData = gql`
-  query queryTwitterData($ticker:String) {
+export const TwitterDataGQL = gql`
+  query queryTwitterData($ticker:String!) {
     twitterData(ticker: $ticker) {
       datetime
       followersCount
@@ -61,7 +77,7 @@ export const queryTwitterData = gql`
   }
 `
 
-export const queryHistoryPrice = gql`
+export const HistoryPriceGQL = gql`
   query queryHistoryPrice($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
     historyPrice(
       ticker: $ticker,
@@ -77,7 +93,7 @@ export const queryHistoryPrice = gql`
     }
 }`
 
-export const queryGithubActivity = gql`
+export const GithubActivityGQL = gql`
   query queryGithubActivity($ticker: String, $from: DateTime, $to: DateTime, $interval: String, $transform: String, $movingAverageInterval: Int) {
     githubActivity(
       ticker: $ticker,
@@ -92,12 +108,13 @@ export const queryGithubActivity = gql`
     }
 }`
 
-export const queryBurnRate = gql`
-  query queryBurnRate($ticker:String, $from: DateTime, $to: DateTime) {
+export const BurnRateGQL = gql`
+  query queryBurnRate($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
     burnRate(
       ticker: $ticker,
       from: $from,
-      to: $to
+      to: $to,
+      interval: $interval
     ) {
       datetime
       burnRate
@@ -105,15 +122,44 @@ export const queryBurnRate = gql`
     }
 }`
 
-export const queryTransactionVolume = gql`
-  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime) {
+export const TransactionVolumeGQL = gql`
+  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
     transactionVolume(
       ticker: $ticker,
       from: $from,
-      to: $to
+      to: $to,
+      interval: $interval
     ) {
       datetime
       transactionVolume
+      __typename
+    }
+}`
+
+export const ExchangeFundFlowGQL = gql`
+  query exchangeFundFlowGQL($ticker:String, $from: DateTime, $to: DateTime) {
+    exchangeFundFlow(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      transactionType: ALL
+    ) {
+      datetime
+      transactionVolume
+      address
+      __typename
+    }
+}`
+
+export const EthSpentOverTimeByErc20ProjectsGQL = gql`
+  query ethSpentOverTimeByErc20Projects($interval:String, $from: DateTime, $to: DateTime) {
+    ethSpentOverTimeByErc20Projects(
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime
+      ethSpent
       __typename
     }
 }`

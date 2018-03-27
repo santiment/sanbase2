@@ -52,12 +52,4 @@ describe('Project detail page container', () => {
       />)
     expect(toJson(pdp)).toMatchSnapshot()
   })
-
-  it('it should redirect to /', () => {
-    const pdp = shallow(<Detailed
-      match={{params: 'any-unkonown-project'}}
-      projectId={null}
-    />)
-    expect(toJson(pdp)).toMatchSnapshot()
-  })
 })

@@ -12,9 +12,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   @notification_type_name "price_volume_diff"
 
-  @approximation_window 14
-  @comparison_window 7
-
   def exec(project, currency) do
     currency = String.upcase(currency)
 
@@ -24,17 +21,18 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
            seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
          ) do
-      {indicator, debug_info} = get_indicator(project.ticker, currency)
+      %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
+
+      {indicator, notification_log} =
+        get_indicator(project.ticker, currency, from_datetime, to_datetime)
 
       if check_notification(indicator) do
-        send_notification(project, currency, indicator, debug_info)
+        send_notification(project, currency, to_datetime, indicator, notification_log)
       end
     end
   end
 
-  defp get_indicator(ticker, currency) do
-    %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
-
+  defp get_indicator(ticker, currency, from_datetime, to_datetime) do
     indicator =
       TechIndicators.price_volume_diff_ma(
         ticker,
@@ -42,8 +40,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         from_datetime,
         to_datetime,
         "1d",
-        @approximation_window,
-        @comparison_window,
+        window_type(),
+        approximation_window(),
+        comparison_window(),
         1
       )
       |> case do
@@ -63,120 +62,160 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
         _ ->
           %{
-            price_volume_diff: Decimal.new(0),
-            price_change: Decimal.new(0),
-            volume_change: Decimal.new(0)
+            price_volume_diff: 0,
+            price_change: 0,
+            volume_change: 0
           }
       end
 
-    debug_info =
-      debug_info(
+    notification_log =
+      get_notification_log(
         ticker,
         currency,
         from_datetime,
         to_datetime,
         "1d",
-        @approximation_window,
-        @comparison_window
+        window_type(),
+        approximation_window(),
+        comparison_window(),
+        notification_threshold()
       )
 
-    {indicator, debug_info}
+    {indicator, notification_log}
   end
 
   defp check_notification(%{price_volume_diff: price_volume_diff}) do
-    Decimal.cmp(price_volume_diff, notification_threshold())
-    |> case do
-      :lt -> false
-      _ -> true
-    end
+    price_volume_diff >= notification_threshold()
   end
 
   defp notification_type_name(currency), do: @notification_type_name <> "_" <> currency
 
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
-    from_datetime = Timex.shift(to_datetime, days: -@approximation_window - @comparison_window)
+    from_datetime = Timex.shift(to_datetime, days: -approximation_window() - comparison_window())
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end
 
-  defp send_notification(project, currency, indicator, debug_info) do
+  defp send_notification(
+         project,
+         currency,
+         notification_date,
+         indicator,
+         {notification_data, debug_info}
+       ) do
     {:ok, %HTTPoison.Response{status_code: 204}} =
       @http_service.post(
         webhook_url(),
-        notification_payload(project, currency, indicator, debug_info),
+        notification_payload(project, currency, notification_date, indicator, debug_info),
         [
           {"Content-Type", "application/json"}
         ]
       )
 
-    Utils.insert_notification(project, notification_type_name(currency))
+    Utils.insert_notification(project, notification_type_name(currency), notification_data)
   end
 
   defp notification_payload(
          %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id},
          currency,
+         notification_date,
          %{price_change: price_change, volume_change: volume_change},
          debug_info
        ) do
+    {:ok, notification_date_string} =
+      Timex.format(notification_date, "{YYYY}-{0M}-{0D} {h24}:{m}:{s}")
+
     Poison.encode!(%{
       content:
-        "#{name}: #{ticker}/#{String.upcase(currency)} #{notification_emoji(price_change)} Price #{
-          notification_emoji(volume_change)
-        } Volume opposite trends. https://coinmarketcap.com/currencies/#{coinmarketcap_id} #{
-          debug_info
-        }",
+        "[#{notification_date_string} UTC] #{name}: #{ticker}/#{String.upcase(currency)} #{
+          notification_emoji(price_change)
+        } Price #{notification_emoji(volume_change)} Volume opposite trends. https://coinmarketcap.com/currencies/#{
+          coinmarketcap_id
+        } #{debug_info}",
       username: "Price-Volume Difference"
     })
   end
 
   defp notification_emoji(value) do
-    Decimal.cmp(value, Decimal.new(0))
-    |> case do
-      :lt -> ":small_red_triangle_down:"
-      :gt -> ":small_red_triangle:"
-      :eq -> " "
+    cond do
+      value < 0 -> ":small_red_triangle_down:"
+      value > 0 -> ":small_red_triangle:"
+      true -> " "
     end
   end
 
-  def debug_info(
+  def get_notification_log(
         ticker,
         currency,
         from_datetime,
         to_datetime,
         aggregate_interval,
+        window_type,
         approximation_window,
-        comparison_window
+        comparison_window,
+        notification_threshold
       ) do
-    case debug_url() do
-      nil ->
-        nil
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
 
-      debug_url ->
-        from_unix = DateTime.to_unix(from_datetime)
-        to_unix = DateTime.to_unix(to_datetime)
+    notification_data =
+      "ticker=#{ticker}&currency=#{currency}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}&aggregate_interval=#{
+        aggregate_interval
+      }&window_type=#{window_type}&approximation_window=#{approximation_window}&comparison_window=#{
+        comparison_window
+      }&notification_threshold=#{notification_threshold}"
 
-        debug_url =
-          "#{debug_url}?ticker=#{ticker}&currency=#{currency}&from_timestamp=#{from_unix}&to_timestamp=#{
-            to_unix
-          }&aggregate_interval=#{aggregate_interval}&approximation_window=#{approximation_window}&comparison_window=#{
-            comparison_window
-          }"
+    debug_info =
+      case debug_url() do
+        nil ->
+          nil
 
-        "[DEBUG INFO: #{debug_url}]"
-    end
+        debug_url ->
+          from_unix = DateTime.to_unix(from_datetime)
+          to_unix = DateTime.to_unix(to_datetime)
+
+          debug_url = "#{debug_url}?#{notification_data}"
+
+          "[DEBUG INFO: #{debug_url}]"
+      end
+
+    {notification_data, debug_info}
   end
 
-  defp nil_to_zero(nil), do: Decimal.new(0)
+  defp nil_to_zero(nil), do: 0
   defp nil_to_zero(value), do: value
 
   defp webhook_url() do
     Config.get(:webhook_url)
   end
 
+  defp window_type() do
+    Config.get(:window_type)
+  end
+
+  defp approximation_window() do
+    {res, _} =
+      Config.get(:approximation_window)
+      |> Integer.parse()
+
+    res
+  end
+
+  defp comparison_window() do
+    {res, _} =
+      Config.get(:comparison_window)
+      |> Integer.parse()
+
+    res
+  end
+
   defp notification_threshold() do
-    Config.get(:notification_threshold)
-    |> Decimal.new()
+    {res, _} =
+      Config.get(:notification_threshold)
+      |> Float.parse()
+
+    res
   end
 
   defp notifications_cooldown() do

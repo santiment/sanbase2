@@ -31,23 +31,23 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
              {:ok,
               [
                 %{
-                  macd: Decimal.new(0.0),
+                  macd: 0.0,
                   datetime: DateTime.from_unix!(1_516_406_400)
                 },
                 %{
-                  macd: Decimal.new(-0.014954423076923185),
+                  macd: -0.014954423076923185,
                   datetime: DateTime.from_unix!(1_516_492_800)
                 },
                 %{
-                  macd: Decimal.new(-0.02373337292856359),
+                  macd: -0.02373337292856359,
                   datetime: DateTime.from_unix!(1_516_579_200)
                 },
                 %{
-                  macd: Decimal.new(-0.030529013702074614),
+                  macd: -0.030529013702074614,
                   datetime: DateTime.from_unix!(1_516_665_600)
                 },
                 %{
-                  macd: Decimal.new(-0.0239400614928722),
+                  macd: -0.0239400614928722,
                   datetime: DateTime.from_unix!(1_516_752_000)
                 }
               ]}
@@ -79,23 +79,23 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
              {:ok,
               [
                 %{
-                  rsi: Decimal.new(0.0),
+                  rsi: 0.0,
                   datetime: DateTime.from_unix!(1_516_406_400)
                 },
                 %{
-                  rsi: Decimal.new(-0.014954423076923185),
+                  rsi: -0.014954423076923185,
                   datetime: DateTime.from_unix!(1_516_492_800)
                 },
                 %{
-                  rsi: Decimal.new(-0.02373337292856359),
+                  rsi: -0.02373337292856359,
                   datetime: DateTime.from_unix!(1_516_579_200)
                 },
                 %{
-                  rsi: Decimal.new(-0.030529013702074614),
+                  rsi: -0.030529013702074614,
                   datetime: DateTime.from_unix!(1_516_665_600)
                 },
                 %{
-                  rsi: Decimal.new(-0.0239400614928722),
+                  rsi: -0.0239400614928722,
                   datetime: DateTime.from_unix!(1_516_752_000)
                 }
               ]}
@@ -120,6 +120,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_752_000),
         "1d",
+        "bohman",
         14,
         7
       )
@@ -128,34 +129,68 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
              {:ok,
               [
                 %{
-                  price_volume_diff: Decimal.new(0.0),
-                  price_change: Decimal.new(0.04862261825993345),
-                  volume_change: Decimal.new(0.030695260272520467),
+                  price_volume_diff: 0.0,
+                  price_change: 0.04862261825993345,
+                  volume_change: 0.030695260272520467,
                   datetime: DateTime.from_unix!(1_516_406_400)
                 },
                 %{
-                  price_volume_diff: Decimal.new(-0.014954423076923185),
-                  price_change: Decimal.new(0.04862261825993345),
-                  volume_change: Decimal.new(0.030695260272520467),
+                  price_volume_diff: -0.014954423076923185,
+                  price_change: 0.04862261825993345,
+                  volume_change: 0.030695260272520467,
                   datetime: DateTime.from_unix!(1_516_492_800)
                 },
                 %{
-                  price_volume_diff: Decimal.new(-0.02373337292856359),
-                  price_change: Decimal.new(0.04862261825993345),
-                  volume_change: Decimal.new(0.030695260272520467),
+                  price_volume_diff: -0.02373337292856359,
+                  price_change: 0.04862261825993345,
+                  volume_change: 0.030695260272520467,
                   datetime: DateTime.from_unix!(1_516_579_200)
                 },
                 %{
-                  price_volume_diff: Decimal.new(-0.030529013702074614),
-                  price_change: Decimal.new(0.04862261825993345),
-                  volume_change: Decimal.new(0.030695260272520467),
+                  price_volume_diff: -0.030529013702074614,
+                  price_change: 0.04862261825993345,
+                  volume_change: 0.030695260272520467,
                   datetime: DateTime.from_unix!(1_516_665_600)
                 },
                 %{
-                  price_volume_diff: Decimal.new(-0.0239400614928722),
-                  price_change: Decimal.new(0.04862261825993345),
-                  volume_change: Decimal.new(0.030695260272520467),
+                  price_volume_diff: -0.0239400614928722,
+                  price_change: 0.04862261825993345,
+                  volume_change: 0.030695260272520467,
                   datetime: DateTime.from_unix!(1_516_752_000)
+                }
+              ]}
+  end
+
+  test "fetch twitter mention count", _context do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body:
+           "[{\"mention_count\": 0, \"timestamp\": 1516406400}, {\"mention_count\": 1234, \"timestamp\": 1516492800}]",
+         status_code: 200
+       }}
+    )
+
+    result =
+      TechIndicators.twitter_mention_count(
+        "XYZ",
+        DateTime.from_unix!(1_516_406_400),
+        DateTime.from_unix!(1_516_492_800),
+        "1d"
+      )
+
+    assert result ==
+             {:ok,
+              [
+                %{
+                  mention_count: 0,
+                  datetime: DateTime.from_unix!(1_516_406_400)
+                },
+                %{
+                  mention_count: 1234,
+                  datetime: DateTime.from_unix!(1_516_492_800)
                 }
               ]}
   end

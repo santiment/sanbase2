@@ -192,6 +192,19 @@
   margin-top: 16px;
 }
 
+.detailed .top-eth-transaction {
+  display: flex;
+  justify-content: space-between;
+}
+
+.detailed .top-eth-transaction__hash {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 70%;
+  height: 1.2em;
+  white-space: nowrap;
+}
+
 @media (min-width: 1024px) {
   .detailed-head {
     margin: 0 16px;

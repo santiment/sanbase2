@@ -276,6 +276,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
+      middleware(JWTAuth, san_tokens: 1000)
+
       complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
       resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end

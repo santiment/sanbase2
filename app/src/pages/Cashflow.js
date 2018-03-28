@@ -198,7 +198,8 @@ export const Cashflow = ({
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br /><span class='ticker'>{value.ticker}</span>
+        <ProjectIcon name={value.name} /><br />
+        <span className='ticker'>{value.ticker}</span>
       </div>
     ),
     filterMethod: (filter, row) => {
@@ -324,9 +325,9 @@ export const Cashflow = ({
             <Link to={'/projects/ethereum'}>More data about Ethereum</Link>
           </div>
           <p>
-            <Icon color='red' name='question circle outline' />Automated data not available.&nbsp;
-            <span className='cashflow-head-community-help'>
-            Community help locating correct wallets is welcome!</span>
+            <Icon color='red' name='question circle outline' />
+            Automated data not available.&nbsp;
+            <span>Community help locating correct wallets is welcome!</span>
           </p>
         </div>
         <Panel>

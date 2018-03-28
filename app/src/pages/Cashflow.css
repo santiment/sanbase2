@@ -20,6 +20,7 @@
 
 .cashflow-title a {
   margin-left: 1em;
+  margin-top: 18px;
   border-left: 1px solid #3e3e3e;
   padding-left: 1em;
 }
@@ -33,15 +34,12 @@
 .cashflow-head p {
   text-align: right;
   font-size: 12px;
+  margin-top: 21px;
 }
 
 .cashflow-indev-message {
   margin: 16px;
   text-align: right;
-}
-
-.cashflow-head-community-help {
-  text-decoration: underline;
 }
 
 .row {
@@ -113,6 +111,7 @@
 
 .ReactTable .rt-tbody .rt-td {
   border-right: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 8px 5px;
 }
 
 .rt-tr:hover {
@@ -132,6 +131,11 @@
   white-space: normal;
 }
 
+.ReactTable .rt-td > div {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
 .ReactTable .rt-thead .rt-tr {
   text-align: right;
 }
@@ -141,14 +145,13 @@
 }
 
 .ReactTable .rt-thead .rt-tr .rt-th:nth-child(7),
-.ReactTable .rt-thead .rt-tr .rt-th:last-child {
+.ReactTable .rt-thead .rt-tr .rt-th:last-child,
+.ReactTable .rt-tbody .rt-td:last-child > div {
   text-align: center;
 }
 
-.ReactTable .rt-td > div {
-  font-size: 18px;
-  line-height: 1.2;
-  padding: 5px;
+.ticker {
+  font-size: 14px;
 }
 
 .-sort-desc,
@@ -157,11 +160,15 @@
 }
 
 .rt-td .overview-name {
-  padding-top: 15px;
+  padding-top: 12px;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   text-decoration: underline;
+}
+
+.rt-td .overview-name:hover {
+  color: #26a987;
 }
 
 .rt-td .overview-price,
@@ -170,23 +177,25 @@
 .rt-td .overview-balance,
 .rt-td .overview-ethspent,
 .rt-td .overview-devactivity {
+  padding-top: 3px;
   text-align: right;
 }
 
 .rt-td .overview-pb {
-  padding-top: 15px;
+  padding-top: 12px;
   text-align: center;
 }
 
 .rt-td .overview-marketcap,
 .rt-td .overview-ethspent,
 .rt-td .overview-devactivity {
-  padding-top: 15px;
+  padding-top: 12px;
 }
 
 .rt-td .overview-ticker {
   font-size: 14px;
-  padding-top: 8px;
+  line-height: 1 !important;
+  padding-top: 6px;
   text-align: center;
 }
 

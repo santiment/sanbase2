@@ -78,7 +78,7 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
               <Icon color='red' name='question circle outline' />
             </a>}
           </div>}
-          content='Community help locating correct wallet is welcome!'
+          content='Know this project wallet? Click the ? to send wallet info'
           position='top center'
         />
       }
@@ -180,7 +180,7 @@ export const Cashflow = ({
     return (
       <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
         <Message warning>
-          <Message.Header>Something going wrong on our server.</Message.Header>
+          <Message.Header>We're sorry, something has gone wrong on our server.</Message.Header>
           <p>Please try again later.</p>
         </Message>
       </div>
@@ -198,7 +198,8 @@ export const Cashflow = ({
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br />{value.ticker}
+        <ProjectIcon name={value.name} /><br />
+        <span className='ticker'>{value.ticker}</span>
       </div>
     ),
     filterMethod: (filter, row) => {
@@ -324,9 +325,9 @@ export const Cashflow = ({
             <Link to={'/projects/ethereum'}>More data about Ethereum</Link>
           </div>
           <p>
-            <Icon color='red' name='question circle outline' />Automated data not available.&nbsp;
-            <span className='cashflow-head-community-help'>
-            Community help locating correct wallet is welcome!</span>
+            <Icon color='red' name='question circle outline' />
+            Automated data not available.&nbsp;
+            <span>Community help locating correct wallets is welcome!</span>
           </p>
         </div>
         <Panel>

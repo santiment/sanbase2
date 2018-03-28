@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import { Popup, Button, Icon } from 'semantic-ui-react'
 import './AppMenu.css'
 
@@ -8,14 +8,12 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
     justifyContent: 'center',
     alignItems: 'center'
   }}>
-    {showInsights &&
-    <ul className={showIcons ? 'menu-list user-generated' : 'menu-list-top user-generated'} >
+    <ul className={showIcons ? 'menu-list' : 'menu-list-top'} >
+      {showInsights &&
       <li onClick={() => handleNavigation('insights')}>
         {showIcons && <i className='fa fa-newspaper-o' />}
         Insights
-      </li>
-    </ul>}
-    <ul className={showIcons ? 'menu-list' : 'menu-list-top'} >
+      </li>}
       <li onClick={() => handleNavigation('projects')}>
         {showIcons && <Icon name='list 2x' />}
         ERC20 Projects
@@ -28,6 +26,7 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
         {showIcons && <Icon name='th 2x' />}
         Signals
       </li>
+      {showInsights &&
       <Popup
         position='bottom left'
         basic
@@ -56,7 +55,7 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
             Request new token
           </Button>
         </div>
-      </Popup>
+      </Popup>}
     </ul>
   </div>
 )

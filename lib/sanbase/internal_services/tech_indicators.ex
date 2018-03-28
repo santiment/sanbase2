@@ -4,7 +4,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   alias Sanbase.Utils.Config
 
   @http_client Mockery.of("HTTPoison")
-  @recv_timeout 45_000
+  @recv_timeout 15_000
 
   def macd(
         ticker,

@@ -1,9 +1,18 @@
 defmodule SanbaseWeb.Graphql.Helpers.Cache do
   @ttl :timer.minutes(5)
+  def from(captured_mfa) when is_function(captured_mfa) do
+    fun_name =
+      captured_mfa
+      |> :erlang.fun_info()
+      |> Keyword.get(:name)
+
+    captured_mfa
+    |> resolver(fun_name)
+  end
 
   def resolver(resolver_fn, name) do
     # Caching is only possible for query resolvers for now. Field resolvers are
-    # not cupported, because they are scoped on their root object, we can't get
+    # not supported, because they are scoped on their root object, we can't get
     # a good, general cache key for arbitrary root objects
     fn %{}, args, resolution ->
       {_, value} =

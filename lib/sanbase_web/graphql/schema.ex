@@ -15,7 +15,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   }
 
   alias SanbaseWeb.Graphql.Helpers.Cache
-
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
@@ -68,8 +67,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ProjectPermissions)
 
-      (&ProjectResolver.all_projects/3)
-      |> Cache.resolver(:all_projects)
+      Cache.from(&ProjectResolver.all_projects/3)
       |> resolve()
     end
 
@@ -77,8 +75,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_erc20_projects, list_of(:project) do
       middleware(ProjectPermissions)
 
-      (&ProjectResolver.all_erc20_projects/3)
-      |> Cache.resolver(:all_erc20_projects)
+      Cache.from(&ProjectResolver.all_erc20_projects/3)
       |> resolve()
     end
 
@@ -86,8 +83,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_currency_projects, list_of(:project) do
       middleware(ProjectPermissions)
 
-      (&ProjectResolver.all_currency_projects/3)
-      |> Cache.resolver(:all_currency_projects)
+      Cache.from(&ProjectResolver.all_currency_projects/3)
       |> resolve()
     end
 
@@ -154,8 +150,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :twitter_data, :twitter_data do
       arg(:ticker, non_null(:string))
 
-      (&TwitterResolver.twitter_data/3)
-      |> Cache.resolver(:twitter_data)
+      Cache.from(&TwitterResolver.twitter_data/3)
       |> resolve()
     end
 
@@ -166,8 +161,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "6h")
 
-      (&TwitterResolver.history_twitter_data/3)
-      |> Cache.resolver(:history_twitter_data)
+      Cache.from(&TwitterResolver.history_twitter_data/3)
       |> resolve()
     end
 
@@ -280,9 +274,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      (&ProjectResolver.eth_spent_by_erc20_projects/3)
-      |> Cache.resolver(:eth_spent_by_erc20_projects)
-      |> resolve
+      Cache.from(&ProjectResolver.eth_spent_by_erc20_projects/3)
+      |> resolve()
     end
 
     @desc "Returns the ETH spent by all projects in a given time period for a given interval"
@@ -291,8 +284,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      (&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
-      |> Cache.resolver(:eth_spent_over_time_by_erc20_projects)
+      Cache.from(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
       |> resolve
     end
   end

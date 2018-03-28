@@ -27,6 +27,8 @@ defmodule SanbaseWeb.ConnCase do
   end
 
   setup tags do
+    SanbaseWeb.Graphql.Helpers.Cache.clear_all()
+
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Sanbase.Repo)
 
     unless tags[:async] do

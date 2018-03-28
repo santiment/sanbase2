@@ -86,6 +86,10 @@
   color: #d3d3d3;
 }
 
+.ui.modal {
+  margin-top: 20px !important;
+}
+
 @supports (--css: variables) {
   :root {
     --progress-bg-color: #d3d3d3;

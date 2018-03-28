@@ -1,5 +1,7 @@
 defmodule SanbaseWeb.Graphql.Helpers.Cache do
   @ttl :timer.minutes(5)
+  @cache_name :graphql_cache
+
   def from(captured_mfa) when is_function(captured_mfa) do
     fun_name =
       captured_mfa
@@ -10,25 +12,36 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     |> resolver(fun_name)
   end
 
-  def resolver(resolver_fn, name) do
-    # Caching is only possible for query resolvers for now. Field resolvers are
-    # not supported, because they are scoped on their root object, we can't get
-    # a good, general cache key for arbitrary root objects
-    fn %{}, args, resolution ->
+  def from(fun, fun_name) when is_function(fun) do
+    fun
+    |> resolver(fun_name)
+  end
+
+  def func(cached_func, name, args \\ %{}) do
+    fn ->
       {_, value} =
-        Cachex.fetch(:graphql_cache, cache_key(name, args), fn ->
-          {:commit, resolver_fn.(%{}, args, resolution)}
+        Cachex.fetch(@cache_name, cache_key(name, args), fn ->
+          {:commit, cached_func.()}
         end)
 
       value
     end
   end
 
-  def func(cached_func, name, args \\ %{}) do
-    fn ->
+  def clear_all() do
+    Cachex.clear(@cache_name)
+  end
+
+  # Private functions
+
+  defp resolver(resolver_fn, name) do
+    # Caching is only possible for query resolvers for now. Field resolvers are
+    # not supported, because they are scoped on their root object, we can't get
+    # a good, general cache key for arbitrary root objects
+    fn %{}, args, resolution ->
       {_, value} =
-        Cachex.fetch(:graphql_cache, cache_key(name, args), fn ->
-          {:commit, cached_func.()}
+        Cachex.fetch(@cache_name, cache_key(name, args), fn ->
+          {:commit, resolver_fn.(%{}, args, resolution)}
         end)
 
       value

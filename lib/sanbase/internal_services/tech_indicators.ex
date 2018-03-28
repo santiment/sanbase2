@@ -705,7 +705,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
-    url = "#{tech_indicators_url()}/indicator/twitter_mention_count"
+    url = "#{tech_indicators_url()}/indicator/twittermentioncount"
 
     options = [
       recv_timeout: @recv_timeout,
@@ -731,6 +731,48 @@ defmodule Sanbase.InternalServices.TechIndicators do
         %{
           datetime: DateTime.from_unix!(timestamp),
           mention_count: mention_count
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  defp emojis_sentiment_request(
+         ticker,
+         from_datetime,
+         to_datetime,
+         aggregate_interval,
+         result_size_tail
+       ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/emojissentiment"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"ticker", ticker},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"aggregate_interval", aggregate_interval},
+        {"result_size_tail", result_size_tail}
+      ]
+    ]
+
+    @http_client.get(url, [], options)
+  end
+
+  defp emojis_sentiment_result(result) do
+    result =
+      result
+      |> Enum.map(fn %{
+                       "timestamp" => timestamp,
+                       "sentiment" => sentiment
+                     } ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          sentiment: sentiment
         }
       end)
 

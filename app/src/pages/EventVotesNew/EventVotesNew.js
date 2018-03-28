@@ -28,6 +28,12 @@ class EventVotesNew extends Component {
     console.log('save the post', post)
   }
 
+  componentDidMount () {
+    if (!this.props.isLogin) {
+      this.props.history.push('/login')
+    }
+  }
+
   render () {
     if (!this.state.text &&
       this.props.history.location.pathname !== '/insights/new') {

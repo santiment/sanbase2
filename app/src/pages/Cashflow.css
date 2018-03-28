@@ -144,7 +144,8 @@
 }
 
 .ReactTable .rt-thead .rt-tr .rt-th:nth-child(7),
-.ReactTable .rt-thead .rt-tr .rt-th:last-child {
+.ReactTable .rt-thead .rt-tr .rt-th:last-child,
+.ReactTable .rt-tbody .rt-td:last-child > div {
   text-align: center;
 }
 

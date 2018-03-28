@@ -45,7 +45,7 @@ export const Currencies = ({
     return (
       <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
         <Message warning>
-          <Message.Header>Something going wrong on our server.</Message.Header>
+          <Message.Header>We're sorry, something has gone wrong on our server.</Message.Header>
           <p>Please try again later.</p>
         </Message>
       </div>
@@ -57,13 +57,14 @@ export const Currencies = ({
     filterable: true,
     sortable: true,
     minWidth: 44,
+    maxWidth: 110,
     accessor: d => ({
       name: d.name,
       ticker: d.ticker
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br />{value.ticker}
+        <ProjectIcon name={value.name} /><br /><span className='ticker'>{value.ticker}</span>
       </div>
     ),
     filterMethod: (filter, row) => {
@@ -99,7 +100,7 @@ export const Currencies = ({
   }, PriceColumn, VolumeColumn, MarketCapColumn, {
     Header: 'Dev activity (30D)',
     id: 'github_activity',
-    maxWidth: 110,
+    maxWidth: 220,
     accessor: d => d.averageDevActivity,
     Cell: ({value}) => <div className='overview-devactivity'>{value ? parseFloat(value).toFixed(2) : ''}</div>,
     sortable: true,
@@ -115,16 +116,6 @@ export const Currencies = ({
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
           <h1>Currencies</h1>
-          <p>
-            brought to you by <a
-              href='https://santiment.net'
-              rel='noopener noreferrer'
-              target='_blank'>Santiment</a>
-            <br />
-            <Icon color='red' name='question circle outline' />Automated data not available.&nbsp;
-            <span className='cashflow-head-community-help'>
-            Community help locating correct wallet is welcome!</span>
-          </p>
         </div>
         <Panel>
           <div className='row'>

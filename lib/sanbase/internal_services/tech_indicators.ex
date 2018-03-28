@@ -4,7 +4,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   alias Sanbase.Utils.Config
 
   @http_client Mockery.of("HTTPoison")
-  @recv_timeout 45_000
+  @recv_timeout 15_000
 
   def macd(
         ticker,
@@ -322,8 +322,9 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp error_result(message) do
-    Logger.error(message)
-    {:error, message}
+    log_id = Ecto.UUID.generate()
+    Logger.error("[#{log_id}] #{message}")
+    {:error, "[#{log_id}] Error executing query. See logs for details."}
   end
 
   defp tech_indicators_url() do

@@ -135,6 +135,11 @@
   white-space: normal;
 }
 
+.ReactTable .rt-td > div {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
 .ReactTable .rt-thead .rt-tr {
   text-align: right;
 }
@@ -147,11 +152,6 @@
 .ReactTable .rt-thead .rt-tr .rt-th:last-child,
 .ReactTable .rt-tbody .rt-td:last-child > div {
   text-align: center;
-}
-
-.ReactTable .rt-td > div {
-  font-size: 18px;
-  line-height: 1.2;
 }
 
 .ticker {

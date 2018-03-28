@@ -53,7 +53,7 @@ exports[`Cashflow container it should render correctly 1`] = `
         <span
           className="cashflow-head-community-help"
         >
-          Community help locating correct wallet is welcome!
+          Community help locating correct wallets is welcome!
         </span>
       </p>
     </div>

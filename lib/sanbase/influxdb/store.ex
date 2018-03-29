@@ -31,7 +31,6 @@ defmodule Sanbase.Influxdb.Store do
       end
 
       def import(measurements) do
-        # 1 day of 5 min resolution data
         measurements
         |> Stream.map(&Measurement.convert_measurement_for_import/1)
         |> Stream.reject(&is_nil/1)
@@ -63,13 +62,13 @@ defmodule Sanbase.Influxdb.Store do
 
       def drop_measurement(measurement_name) do
         ~s/DROP MEASUREMENT "#{measurement_name}"/
-        |> __MODULE__.execute()
+        |> __MODULE__.execute(method: :post)
       end
 
       def create_db() do
         Sanbase.Utils.Config.get(:database)
         |> Instream.Admin.Database.create()
-        |> __MODULE__.execute()
+        |> __MODULE__.execute(method: :post)
       end
 
       def last_datetime(measurement) do

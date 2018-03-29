@@ -16,18 +16,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   end
 
   test "fetching prices of a token" do
-    Tesla.Mock.mock(fn %{
-                         method: :get,
-                         url:
-                           "https://graphs2.coinmarketcap.com/currencies/santiment/1507991665000/1508078065000/"
-                       } ->
+    Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "btc_graph_data.json"))}
     end)
 
     from_datetime = DateTime.from_unix!(1_507_991_665_000, :millisecond)
     to_datetime = DateTime.from_unix!(1_508_078_065_000, :millisecond)
 
-    GraphData.fetch_prices("santiment", from_datetime, to_datetime)
+    GraphData.fetch_price_stream("santiment", from_datetime, to_datetime)
+    |> Stream.flat_map(fn x -> x end)
     |> Stream.take(1)
     |> Enum.map(fn %PricePoint{datetime: datetime, price_usd: price_usd} ->
       assert datetime == from_datetime

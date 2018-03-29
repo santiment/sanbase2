@@ -55,7 +55,7 @@ const EthereumBlock = ({
     Cell: ({value = {}}) => <div>{
       value.length > 0 ? value.map((wallet, index) => (
         <div key={index}
-        className='wallet-addresses'>
+          className='wallet-addresses'>
           <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
         </div>
       )) : 'No data'

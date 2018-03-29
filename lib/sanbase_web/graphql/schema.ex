@@ -15,7 +15,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   }
 
   alias SanbaseWeb.Graphql.Helpers.Cache
-
   alias SanbaseWeb.Graphql.Complexity.PriceComplexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
@@ -68,8 +67,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ProjectPermissions)
 
-      (&ProjectResolver.all_projects/3)
-      |> Cache.resolver(:all_projects)
+      Cache.from(&ProjectResolver.all_projects/3)
       |> resolve()
     end
 
@@ -77,8 +75,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_erc20_projects, list_of(:project) do
       middleware(ProjectPermissions)
 
-      (&ProjectResolver.all_erc20_projects/3)
-      |> Cache.resolver(:all_erc20_projects)
+      Cache.from(&ProjectResolver.all_erc20_projects/3)
       |> resolve()
     end
 
@@ -86,8 +83,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_currency_projects, list_of(:project) do
       middleware(ProjectPermissions)
 
-      (&ProjectResolver.all_currency_projects/3)
-      |> Cache.resolver(:all_currency_projects)
+      Cache.from(&ProjectResolver.all_currency_projects/3)
       |> resolve()
     end
 
@@ -113,13 +109,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
-      resolve(&ProjectResolver.project_by_slug/3)
+
+      Cache.from(&ProjectResolver.project_by_slug/3)
+      |> resolve()
     end
 
     @desc "Fetch all projects that have ETH contract info"
     field :all_projects_with_eth_contract_info, list_of(:project) do
       middleware(BasicAuth)
-      resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
+
+      Cache.from(&ProjectResolver.all_projects_with_eth_contract_info/3)
+      |> resolve()
     end
 
     @desc "Historical information for the price"
@@ -130,12 +130,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1h")
 
       complexity(&PriceComplexity.history_price/3)
-      resolve(&PriceResolver.history_price/3)
+
+      Cache.from(&PriceResolver.history_price/3)
+      |> resolve()
     end
 
     @desc "Returns a list of available github repositories"
     field :github_availables_repos, list_of(:string) do
-      resolve(&GithubResolver.available_repos/3)
+      Cache.from(&GithubResolver.available_repos/3)
+      |> resolve()
     end
 
     @desc "Returns a list of github activities"
@@ -147,15 +150,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:moving_average_interval, :integer, default_value: 10)
       arg(:transform, :string, default_value: "None")
 
-      resolve(&GithubResolver.activity/3)
+      Cache.from(&GithubResolver.activity/3)
+      |> resolve()
     end
 
     @desc "Current data for a twitter account"
     field :twitter_data, :twitter_data do
       arg(:ticker, non_null(:string))
 
-      (&TwitterResolver.twitter_data/3)
-      |> Cache.resolver(:twitter_data)
+      Cache.from(&TwitterResolver.twitter_data/3)
       |> resolve()
     end
 
@@ -166,8 +169,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "6h")
 
-      (&TwitterResolver.history_twitter_data/3)
-      |> Cache.resolver(:history_twitter_data)
+      Cache.from(&TwitterResolver.history_twitter_data/3)
       |> resolve()
     end
 
@@ -178,7 +180,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
 
-      resolve(&EtherbiResolver.burn_rate/3)
+      Cache.from(&EtherbiResolver.burn_rate/3)
+      |> resolve()
     end
 
     @desc "Transaction volume for a ticker and given time period"
@@ -188,19 +191,22 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
 
-      resolve(&EtherbiResolver.transaction_volume/3)
+      Cache.from(&EtherbiResolver.transaction_volume/3)
+      |> resolve()
     end
 
     @desc "Returns the currently running poll"
     field :current_poll, :poll do
-      resolve(&VotingResolver.current_poll/3)
+      Cache.from(&VotingResolver.current_poll/3)
+      |> resolve()
     end
 
     @desc "Get the post with the specified id"
     field :post, :post do
       arg(:id, non_null(:integer))
 
-      resolve(&VotingResolver.post/3)
+      Cache.from(&VotingResolver.post/3)
+      |> resolve()
     end
 
     @desc "Shows the flow of funds in an exchange wallet"
@@ -210,7 +216,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      resolve(&EtherbiResolver.exchange_funds_flow/3)
+      Cache.from(&EtherbiResolver.exchange_funds_flow/3)
+      |> resolve()
     end
 
     @desc "MACD for a ticker and given currency and time period"
@@ -224,7 +231,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&TechIndicatorsComplexity.macd/3)
-      resolve(&TechIndicatorsResolver.macd/3)
+
+      Cache.from(&TechIndicatorsResolver.macd/3)
+      |> resolve()
     end
 
     @desc "RSI for a ticker and given currency and time period"
@@ -239,7 +248,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&TechIndicatorsComplexity.rsi/3)
-      resolve(&TechIndicatorsResolver.rsi/3)
+
+      Cache.from(&TechIndicatorsResolver.rsi/3)
+      |> resolve()
     end
 
     @desc "Price-volume diff for a ticker and given currency and time period"
@@ -253,7 +264,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&TechIndicatorsComplexity.price_volume_diff/3)
-      resolve(&TechIndicatorsResolver.price_volume_diff/3)
+
+      Cache.from(&TechIndicatorsResolver.price_volume_diff/3)
+      |> resolve()
     end
 
     @desc "Twitter mention count for a ticker and time period"
@@ -265,14 +278,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&TechIndicatorsComplexity.twitter_mention_count/3)
-      resolve(&TechIndicatorsResolver.twitter_mention_count/3)
+
+      Cache.from(&TechIndicatorsResolver.twitter_mention_count/3)
+      |> resolve()
     end
 
     @desc "Returns a list of all exchange wallets. Internal API."
     field :exchange_wallets, list_of(:wallet) do
       middleware(BasicAuth)
 
-      resolve(&EtherbiResolver.exchange_wallets/3)
+      Cache.from(&EtherbiResolver.exchange_wallets/3)
+      |> resolve()
     end
 
     @desc "Returns the ETH spent by all projects in a given time period"
@@ -280,9 +296,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      (&ProjectResolver.eth_spent_by_erc20_projects/3)
-      |> Cache.resolver(:eth_spent_by_erc20_projects)
-      |> resolve
+      Cache.from(&ProjectResolver.eth_spent_by_erc20_projects/3)
+      |> resolve()
     end
 
     @desc "Returns the ETH spent by all projects in a given time period for a given interval"
@@ -291,8 +306,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      (&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
-      |> Cache.resolver(:eth_spent_over_time_by_erc20_projects)
+      Cache.from(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
       |> resolve
     end
   end

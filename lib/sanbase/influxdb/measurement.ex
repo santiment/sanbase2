@@ -4,7 +4,7 @@ defmodule Sanbase.Influxdb.Measurement do
   """
   defstruct [:timestamp, :fields, :tags, :name]
 
-  alias Sanbase.Influxdb.Measurement
+  alias __MODULE__
 
   def convert_measurement_for_import(nil), do: nil
 
@@ -24,5 +24,11 @@ defmodule Sanbase.Influxdb.Measurement do
         }
       ]
     }
+  end
+
+  def get_timestamp(%Measurement{timestamp: ts}), do: ts
+
+  def get_datetime(%Measurement{timestamp: ts}) do
+    DateTime.from_unix!(ts, :nanoseconds)
   end
 end

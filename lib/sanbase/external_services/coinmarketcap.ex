@@ -140,10 +140,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     PriceVolumeDiff.exec(project, "usd")
   end
 
-  defp last_price_datetime(%Project{ticker: ticker}) do
-    case Store.last_history_datetime_cmc!(ticker) do
+  defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id}) do
+    case Store.last_history_datetime_cmc!(coinmarketcap_id) do
       nil ->
-        GraphData.fetch_first_price_datetime(ticker)
+        GraphData.fetch_first_price_datetime(coinmarketcap_id)
 
       datetime ->
         datetime

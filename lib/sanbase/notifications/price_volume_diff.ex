@@ -21,14 +21,24 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
            seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
          ) do
-      %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
-
-      {indicator, notification_log} =
-        get_indicator(project.ticker, currency, from_datetime, to_datetime)
-
-      if check_notification(indicator) do
+      with %{from_datetime: from_datetime, to_datetime: to_datetime} <- get_calculation_interval(),
+           true <- check_volume(project, currency, from_datetime, to_datetime),
+           {indicator, notification_log} <-
+             get_indicator(project.ticker, currency, from_datetime, to_datetime),
+           true <- check_notification(indicator) do
         send_notification(project, currency, indicator, notification_log)
       end
+    end
+  end
+
+  defp check_volume(project, currency, from_datetime, to_datetime) do
+    pair = "#{project.ticker}_#{currency}"
+
+    with {:ok, [[_dt, volume]]} <-
+           Sanbase.Prices.Store.fetch_mean_volume(pair, from_datetime, to_datetime) do
+      volume >= notification_volume_threshold()
+    else
+      _ -> false
     end
   end
 
@@ -95,7 +105,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
-    from_datetime = Timex.shift(to_datetime, days: -approximation_window() - comparison_window() - 2)
+
+    from_datetime =
+      Timex.shift(to_datetime, days: -approximation_window() - comparison_window() - 2)
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end
@@ -149,17 +161,17 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
-  def get_notification_log(
-        ticker,
-        currency,
-        from_datetime,
-        to_datetime,
-        aggregate_interval,
-        window_type,
-        approximation_window,
-        comparison_window,
-        notification_threshold
-      ) do
+  defp get_notification_log(
+         ticker,
+         currency,
+         from_datetime,
+         to_datetime,
+         aggregate_interval,
+         window_type,
+         approximation_window,
+         comparison_window,
+         notification_threshold
+       ) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
@@ -218,6 +230,14 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     {res, _} =
       Config.get(:notification_threshold)
       |> Float.parse()
+
+    res
+  end
+
+  defp notification_volume_threshold() do
+    {res, _} =
+      Config.get(:notification_volume_threshold)
+      |> Integer.parse()
 
     res
   end

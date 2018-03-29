@@ -278,8 +278,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   defp sum_from_to_query(measurement, from, to, transaction_type) do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
-    WHERE transaction_type = '#{transaction_type}'
-    AND trx_hash != ''
+    WHERE trx_hash != ''
+    #{construct_internal_eth_addresses_filter(measurement, transaction_type)}
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -288,7 +288,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE trx_hash != ''
-    AND #{construct_internal_eth_addresses_filter(measurement, transaction_type)}
+    #{construct_internal_eth_addresses_filter(measurement, transaction_type)}
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
     GROUP BY TIME(#{resolution}) fill(0)/
@@ -298,7 +298,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
     FROM "#{measurement}"
     WHERE trx_hash != ''
-    AND #{construct_internal_eth_addresses_filter(measurement, "all")}
+    #{construct_internal_eth_addresses_filter(measurement, "all")}
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -307,7 +307,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
     FROM "#{measurement}"
     WHERE trx_hash != ''
-    AND #{construct_internal_eth_addresses_filter(measurement, transaction_type)}
+    #{construct_internal_eth_addresses_filter(measurement, transaction_type)}
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
@@ -392,28 +392,31 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   defp parse_transactions_time_series(_), do: {:ok, []}
 
   defp construct_internal_eth_addresses_filter(ticker, transaction_type) do
-    ticker
-    |> Project.project_eth_addresses_by_ticker()
-    |> Map.get(:eth_addresses)
-    |> Enum.map(fn eth_address -> eth_address.address end)
-    |> filter_eth_addresses(transaction_type)
+    case ticker |> Project.project_eth_addresses_by_ticker() do
+      nil ->
+        filter_eth_addresses([], transaction_type)
+
+      project ->
+        project
+        |> Map.get(:eth_addresses)
+        |> Enum.map(fn eth_address -> eth_address.address end)
+        |> filter_eth_addresses(transaction_type)
+    end
   end
 
-  defp filter_eth_addresses([], _transaction_type), do: ""
+  defp filter_eth_addresses([], "all"), do: ""
+  defp filter_eth_addresses([], "in"), do: " AND transaction_type = 'in'"
+  defp filter_eth_addresses([], "out"), do: " AND transaction_type = 'out'"
 
-  defp filter_eth_addresses(addresses, transaction_type) when transaction_type in ["in", "IN"] do
-    "transaction_type = '#{transaction_type}' AND " <>
-      filter_eth_addresses_by_field(addresses, "from_addr")
+  defp filter_eth_addresses(addresses, "in") do
+    " AND transaction_type = 'in' AND " <> filter_eth_addresses_by_field(addresses, "from_addr")
   end
 
-  defp filter_eth_addresses(addresses, transaction_type)
-       when transaction_type in ["out", "OUT"] do
-    "transaction_type = '#{transaction_type}' AND " <>
-      filter_eth_addresses_by_field(addresses, "to_addr")
+  defp filter_eth_addresses(addresses, "out") do
+    " AND transaction_type = 'out' AND " <> filter_eth_addresses_by_field(addresses, "to_addr")
   end
 
-  defp filter_eth_addresses(addresses, transaction_type)
-       when transaction_type in ["all", "ALL"] do
+  defp filter_eth_addresses(addresses, "all") do
     ~s/(#{filter_eth_addresses(addresses, "in")})/ <>
       " OR " <> ~s/(#{filter_eth_addresses(addresses, "out")})/
   end
@@ -424,5 +427,5 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     |> Enum.join(" AND ")
   end
 
-  defp filter_address(address, field), do: "#{field} != '#{address}'"
+  defp filter_address(address, field), do: ~s/"#{field}" != '#{address}'/
 end

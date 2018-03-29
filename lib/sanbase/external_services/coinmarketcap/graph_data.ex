@@ -43,7 +43,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   # Helper functions
 
-  defp process_price_stream(price_stream, %Project{ticker: ticker} = project) do
+  defp process_price_stream(price_stream, %Project{coinmarketcap_id: coinmarketcap_id} = project) do
     price_stream
     |> Stream.each(fn prices ->
       measurement_points =
@@ -57,7 +57,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
         |> Enum.max_by(&Measurement.get_timestamp/1)
         |> Measurement.get_datetime()
 
-      Store.update_last_history_datetime_cmc(ticker, last_price_datetime_updated)
+      Store.update_last_history_datetime_cmc(coinmarketcap_id, last_price_datetime_updated)
     end)
     |> Stream.run()
   end

@@ -14,11 +14,8 @@ import FinancialsBlock from './FinancialsBlock'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
-import {
-  calculateBTCVolume,
-  calculateBTCMarketcap,
-  millify
-} from '../../utils/utils'
+import { calculateBTCVolume, calculateBTCMarketcap } from 'utils/utils'
+import { millify } from 'utils/formatting'
 import { isERC20 } from './../Projects/projectSelectors'
 import DetailedHeader from './DetailedHeader'
 import {
@@ -264,7 +261,7 @@ export const Detailed = ({
                   <a href={`https://etherscan.io/tx/${transaction.trxHash}`}>{transaction.trxHash}</a>
                 </div>
                 <div>
-                  {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
+                  {millify(transaction.trxValue, 2)}
                   &nbsp; | &nbsp;
                   {moment(transaction.datetime).fromNow()}
                 </div>

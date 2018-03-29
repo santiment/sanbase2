@@ -1,6 +1,6 @@
 import React from 'react'
 import { Icon } from 'semantic-ui-react'
-import { formatBTC } from './../../utils/formatting'
+import { formatBTC } from 'utils/formatting'
 import './LikeBtn.css'
 
 const Like = ({
@@ -14,7 +14,7 @@ const Like = ({
     {liked
       ? <Icon name='heart' />
       : <Icon name='empty heart' />}
-    {formatBTC(parseFloat(votes))}
+    {formatBTC(votes)}
   </div>
 )
 

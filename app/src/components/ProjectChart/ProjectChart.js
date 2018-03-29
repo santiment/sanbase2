@@ -5,8 +5,8 @@ import { pure } from 'recompose'
 import { Bar, Chart } from 'react-chartjs-2'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
-import { formatNumber, formatBTC } from '../../utils/formatting'
-import { findIndexByDatetime, millify } from '../../utils/utils'
+import { formatNumber, formatBTC, millify } from 'utils/formatting'
+import { findIndexByDatetime } from 'utils/utils'
 import 'chartjs-plugin-datalabels'
 import './ProjectChart.css'
 import './react-dates-override.css'
@@ -280,7 +280,7 @@ const renderTicks = props => {
     if (!values[index]) { return }
     return props.isToggledBTC
       ? formatBTC(value)
-      : formatNumber(value, 'USD')
+      : formatNumber(value, { currency: 'USD' })
   }
 }
 
@@ -360,7 +360,7 @@ const makeOptionsFromProps = props => ({
         }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
-          : formatNumber(tooltipItem.yLabel, 'USD')}`
+          : formatNumber(tooltipItem.yLabel, { currency: 'USD' })}`
       }
     }
   },

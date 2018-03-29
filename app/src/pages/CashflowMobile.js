@@ -6,7 +6,7 @@ import { compose, withState, lifecycle } from 'recompose'
 import { ListView, ListViewItem } from './../components/ListView'
 import ProjectCard from './Projects/ProjectCard'
 import FloatingButton from './Projects/FloatingButton'
-import { simpleSort } from './../utils/sortMethods'
+import { simpleSort } from 'utils/sortMethods'
 import Search from './../components/Search'
 import Filters, {
   DEFAULT_SORT_BY,

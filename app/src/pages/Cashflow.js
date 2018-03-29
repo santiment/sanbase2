@@ -74,6 +74,7 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
             <a
               target='_blank'
               rel='noopener noreferrer'
+              className='findwallet'
               href={`https://santiment.typeform.com/to/bT0Dgu?project=${project}&ticker=${ticker}`}>
               <Icon color='red' name='question circle outline' />
             </a>}

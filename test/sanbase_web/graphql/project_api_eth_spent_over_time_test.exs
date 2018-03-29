@@ -3,7 +3,12 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.Etherscan.Store
-  alias Sanbase.Model.Project
+
+  alias Sanbase.Model.{
+    Project,
+    ProjectEthAddress
+  }
+
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -16,13 +21,33 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
 
     p =
       %Project{}
-      |> Project.changeset(%{name: "Santiment", ticker: ticker})
+      |> Project.changeset(%{name: "Santiment", ticker: ticker, coinmarketcap_id: "santiment"})
       |> Repo.insert!()
+
+    project_address1 = "0x123a12345bc"
+
+    %ProjectEthAddress{}
+    |> ProjectEthAddress.changeset(%{
+      project_id: p.id,
+      address: project_address1
+    })
+    |> Repo.insert_or_update()
+
+    project_address2 = "0x321321321"
+
+    %ProjectEthAddress{}
+    |> ProjectEthAddress.changeset(%{
+      project_id: p.id,
+      address: project_address2
+    })
+    |> Repo.insert!()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 15:00:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 16:00:00], "Etc/UTC")
+    datetime2_internal = DateTime.from_naive!(~N[2017-05-14 17:00:00], "Etc/UTC")
     datetime3 = DateTime.from_naive!(~N[2017-05-15 17:00:00], "Etc/UTC")
     datetime4 = DateTime.from_naive!(~N[2017-05-15 18:00:00], "Etc/UTC")
+    datetime4_internal = DateTime.from_naive!(~N[2017-05-15 19:00:00], "Etc/UTC")
     datetime5 = DateTime.from_naive!(~N[2017-05-17 19:00:00], "Etc/UTC")
     datetime6 = DateTime.from_naive!(~N[2017-05-18 20:00:00], "Etc/UTC")
 
@@ -37,6 +62,28 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 1500, from_addr: "0x1", to_addr: "0x2", trx_hash: "0x321a"},
         tags: [transaction_type: "out"],
+        name: ticker
+      },
+      %Measurement{
+        timestamp: datetime2_internal |> DateTime.to_unix(:nanoseconds),
+        fields: %{
+          trx_value: 50000,
+          from_addr: project_address1,
+          to_addr: project_address2,
+          trx_hash: "0x321a_Int"
+        },
+        tags: [transaction_type: "out"],
+        name: ticker
+      },
+      %Measurement{
+        timestamp: datetime2_internal |> DateTime.to_unix(:nanoseconds),
+        fields: %{
+          trx_value: 50000,
+          from_addr: project_address2,
+          to_addr: project_address1,
+          trx_hash: "0x321a_Int"
+        },
+        tags: [transaction_type: "in"],
         name: ticker
       },
       %Measurement{
@@ -55,6 +102,28 @@ defmodule SanbaseWeb.Graphql.ProjectApiEthSpentOverTimeTest do
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
         fields: %{trx_value: 100_000, from_addr: "0x2", to_addr: "0x1", trx_hash: "0x321d"},
         tags: [transaction_type: "in"],
+        name: ticker
+      },
+      %Measurement{
+        timestamp: datetime4_internal |> DateTime.to_unix(:nanoseconds),
+        fields: %{
+          trx_value: 16_670,
+          from_addr: project_address1,
+          to_addr: project_address2,
+          trx_hash: "0x321d_Int"
+        },
+        tags: [transaction_type: "in"],
+        name: ticker
+      },
+      %Measurement{
+        timestamp: datetime4_internal |> DateTime.to_unix(:nanoseconds),
+        fields: %{
+          trx_value: 16_670,
+          from_addr: project_address2,
+          to_addr: project_address1,
+          trx_hash: "0x321d_Int"
+        },
+        tags: [transaction_type: "out"],
         name: ticker
       },
       %Measurement{

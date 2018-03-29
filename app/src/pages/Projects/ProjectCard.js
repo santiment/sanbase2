@@ -10,8 +10,7 @@ import {
 } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
-import { formatNumber } from '../../utils/formatting'
-import { millify } from '../../utils/utils'
+import { formatNumber, millify } from 'utils/formatting'
 import './ProjectCard.css'
 
 const HiddenElements = () => ''
@@ -130,12 +129,12 @@ const ProjectCard = ({
         <Statistic.Group size='mini' widths='two' style={{paddingBottom: '1em'}}>
           <StatisticElement
             name='Price'
-            value={priceUsd ? formatNumber(priceUsd, 'USD') : '---'}
+            value={priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : '---'}
             disabled={!priceUsd} />
           <StatisticElement
             name='Volume'
             value={volumeUsd
-              ? `$${millify(parseFloat(volumeUsd))}`
+              ? `$${millify(volumeUsd)}`
               : '---'}
             disabled={!volumeUsd} />
           <StatisticElement
@@ -151,19 +150,19 @@ const ProjectCard = ({
           <StatisticElement
             name='MarketCap'
             value={marketcapUsd
-              ? `$${millify(parseFloat(marketcapUsd))}`
+              ? `$${millify(marketcapUsd)}`
               : '---'}
             disabled={!marketcapUsd} />
           <StatisticElement
             name='Crypto Balance'
             value={ethBalance
-              ? `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
+              ? `ETH ${millify(parseFloat(ethBalance).toFixed(2))}`
               : '---'}
             disabled={!ethBalance} />
           <StatisticElement
             name='ETH Spent 30d'
             value={ethSpent
-              ? `ETH ${millify(parseFloat(parseFloat(ethSpent).toFixed(2)))}`
+              ? `ETH ${millify(parseFloat(ethSpent).toFixed(2))}`
               : 0}
             disabled={!ethSpent} />
           <StatisticElement

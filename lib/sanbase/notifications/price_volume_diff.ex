@@ -95,7 +95,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
-    from_datetime = Timex.shift(to_datetime, days: -approximation_window() - comparison_window() - 2)
+
+    from_datetime =
+      Timex.shift(to_datetime, days: -approximation_window() - comparison_window() - 2)
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end

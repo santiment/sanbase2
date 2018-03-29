@@ -43,7 +43,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   # Helper functions
 
-  defp process_price_stream(price_stream, %Project{ticker: ticker} = project) do
+  defp process_price_stream(price_stream, %Project{} = project) do
     price_stream
     |> Stream.each(fn prices ->
       measurement_points =
@@ -52,14 +52,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
       measurement_points |> Store.import()
 
-      last_price_datetime_updated =
-        measurement_points
-        |> Enum.max_by(&Measurement.get_timestamp/1)
-        |> Measurement.get_datetime()
-
-      Store.update_last_history_datetime_cmc(ticker, last_price_datetime_updated)
+      update_last_cmc_history_datetime(project, measurement_points)
     end)
     |> Stream.run()
+  end
+
+  def update_last_cmc_history_datetime(_project, []), do: :ok
+
+  def update_last_cmc_history_datetime(%Project{coinmarketcap_id: coinmarketcap_id}, points) do
+    last_price_datetime_updated =
+      points
+      |> Enum.max_by(&Measurement.get_timestamp/1)
+      |> Measurement.get_datetime()
+
+    Store.update_last_history_datetime_cmc(coinmarketcap_id, last_price_datetime_updated)
   end
 
   defp price_points_to_measurements(%PricePoint{} = price_point, %Project{ticker: ticker}) do

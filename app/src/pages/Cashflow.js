@@ -74,6 +74,7 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
             <a
               target='_blank'
               rel='noopener noreferrer'
+              className='findwallet'
               href={`https://santiment.typeform.com/to/bT0Dgu?project=${project}&ticker=${ticker}`}>
               <Icon color='red' name='question circle outline' />
             </a>}
@@ -315,14 +316,14 @@ export const Cashflow = ({
   return (
     <div className='page cashflow'>
       <Helmet>
-        <title>SANbase: Projects</title>
+        <title>SANbase: ERC20 Projects</title>
         <link rel='canonical' href={`${getOrigin()}/projects`} />
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
           <div className='cashflow-title'>
-            <h1>Projects</h1>
-            <Link to={'/projects/ethereum'}>More data about Ethereum</Link>
+            <h1>ERC20 Projects</h1>
+            <span><Link to={'/projects/ethereum'}>More data about Ethereum</Link></span>
           </div>
           <p>
             <Icon color='red' name='question circle outline' />

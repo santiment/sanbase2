@@ -1,22 +1,21 @@
+const formatCryptoCurrency = (currency, amount) => `${currency} ${amount}`
+
 const formatBTC = price => {
-  const _price = parseFloat(price)
-  return _price > 1
-    ? parseFloat(_price.toFixed(2))
-    : parseFloat(_price.toFixed(8))
+  price = parseFloat(price)
+  const precision = price > 1 ? 2 : 8
+
+  return parseFloat(price.toFixed(precision))
 }
 
-const formatNumber = (amount, currency, options = {}) => {
-  if (currency === 'SAN') {
-    const value = amount / 10000000000
-    if (value % 1 === 0) {
-      return `SAN ${value}.000`
-    }
-    return `SAN ${value}`
-  }
+const formatSAN = price => {
+  const value = price / 10000000000
 
+  return value % 1 === 0 ? `${value}.000` : `${value}`
+}
+
+const formatNumber = (amount, options = {}) => {
   let value = new Intl.NumberFormat('en', {
-    style: currency ? 'currency' : 'decimal',
-    currency,
+    style: options.currency ? 'currency' : 'decimal',
     ...options
   }).format(amount)
 
@@ -28,4 +27,22 @@ const formatNumber = (amount, currency, options = {}) => {
   return value
 }
 
-export { formatNumber, formatBTC }
+const millify = (value, precision = 1) => {
+  const suffixes = ['', 'K', 'M', 'B', 'T']
+  value = Number(value)
+  if (value === 0) return value.toString()
+
+  let exponent = Math.floor(Math.log(Math.abs(value)) / Math.log(1000))
+  if (exponent < 0) {
+    exponent = 0
+  } else if (exponent >= suffixes.length) {
+    exponent = suffixes.length - 1
+  }
+
+  const prettifiedValue = value / Math.pow(1000, exponent)
+  precision = prettifiedValue % 1 === 0 ? 0 : precision
+
+  return `${Number(prettifiedValue.toFixed(precision))}${suffixes[exponent]}`
+}
+
+export { formatCryptoCurrency, formatBTC, formatSAN, formatNumber, millify }

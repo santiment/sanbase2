@@ -1,7 +1,7 @@
 import React from 'react'
 import PanelBlock from './../../components/PanelBlock'
 import moment from 'moment'
-import { millify } from '../../utils/utils'
+import { millify } from 'utils/formatting'
 
 const SpentOverTime = ({loading = true, project = {}}) => {
   return (
@@ -23,7 +23,7 @@ const SpentOverTime = ({loading = true, project = {}}) => {
           <div
             key={index}
             style={{display: 'flex', justifyContent: 'space-between'}}>
-            <div>ETH {millify(parseFloat(parseFloat(transaction.ethSpent).toFixed(2)))}</div>
+            <div>ETH {millify(parseFloat(transaction.ethSpent).toFixed(2))}</div>
             <div>{moment(transaction.datetime).fromNow()}</div>
           </div>
         ))}

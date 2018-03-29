@@ -37,7 +37,7 @@
 }
 
 .cashflow-indev-message {
- margin-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 .row {
@@ -165,7 +165,6 @@
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* text-decoration: underline; */
 }
 
 .rt-td .overview-name:hover {

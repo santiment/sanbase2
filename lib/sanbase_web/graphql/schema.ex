@@ -195,6 +195,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       |> resolve()
     end
 
+    @desc "Daily active addresses for a ticker and given time period"
+    field :daily_active_addresses, list_of(:active_addresses) do
+      arg(:ticker, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      Cache.from(&EtherbiResolver.daily_active_addresses/3)
+      |> resolve()
+    end
+
     @desc "Returns the currently running poll"
     field :current_poll, :poll do
       Cache.from(&VotingResolver.current_poll/3)

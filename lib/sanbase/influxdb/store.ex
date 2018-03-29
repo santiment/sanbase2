@@ -142,6 +142,53 @@ defmodule Sanbase.Influxdb.Store do
         end
       end
 
+      @doc ~s"""
+        Transforms the `datetime` parammeter to the internally used datetime format
+      """
+      def influx_time(datetime, from_type \\ nil)
+
+      def influx_time(%DateTime{} = datetime, _from_type) do
+        DateTime.to_unix(datetime, :nanoseconds)
+      end
+
+      def influx_time(datetime, :seconds) when is_integer(datetime) do
+        datetime * 1_000_000_000
+      end
+
+      def parse_time_series(%{results: [%{error: error}]}) do
+        {:error, error}
+      end
+
+      @doc ~s"""
+        Parse the values from a time series into a list of list. Each list
+        begins with the datetime, parsed from iso8601 into %DateTime{} format.
+        The rest of the values in the list are not changed.
+      """
+      def parse_time_series(%{
+            results: [
+              %{
+                series: [
+                  %{
+                    values: values
+                  }
+                ]
+              }
+            ]
+          }) do
+        result =
+          values
+          |> Enum.map(fn [iso8601_datetime | rest] ->
+            {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+            [datetime | rest]
+          end)
+
+        {:ok, result}
+      end
+
+      def parse_time_series(_) do
+        {:ok, []}
+      end
+
       # Private functions
 
       defp parse_measurements_list(%{results: [%{error: error}]}), do: {:error, error}

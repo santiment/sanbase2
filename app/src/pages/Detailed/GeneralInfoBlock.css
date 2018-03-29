@@ -3,6 +3,17 @@
   padding: 0 10px;
 }
 
+.social-icons a {
+  border-bottom: none;
+  color: #26a987;
+}
+
 .info-disabled {
   color: #d3d3d3;
 }
+
+
+/* whitepaper link is picking up disabled class even if there's a link
+.fa-disabled {
+  display: none;
+} */

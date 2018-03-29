@@ -51,7 +51,7 @@ const FinancialsBlock = ({
     </div>}
     {ethBalance &&
     <div className={cx({
-      'row-info': true,
+      'row-info wallets': true,
       'info-disabled': !isERC20 || !ethBalance
     })}>
       <div>
@@ -62,9 +62,10 @@ const FinancialsBlock = ({
     <div className='row-info wallets-balance'>
       {ethAddresses.map((wallet, index) => (
         <div key={index}>
-          <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
-          &nbsp;
-          ETH {millify(parseFloat(parseFloat(wallet.balance).toFixed(2)))}
+          <div className='wallets-addresses'>
+            <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
+            <span>ETH {millify(parseFloat(parseFloat(wallet.balance).toFixed(2)))}</span>
+          </div>
         </div>
       ))}
     </div>}

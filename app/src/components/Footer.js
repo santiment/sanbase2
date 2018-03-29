@@ -21,7 +21,7 @@ const Footer = () => {
           target='_blank'>Santiment</a>
       </div>
       <div className='cashflow-indev-message'>
-        NOTE: This app is in development.
+        NOTE: This app is an early release.
         We give no guarantee data is correct as we are in active development.
       </div>
     </div>

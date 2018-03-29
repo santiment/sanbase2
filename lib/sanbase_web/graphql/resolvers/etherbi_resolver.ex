@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
-  alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume}
+  alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume, DailyActiveAddresses}
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, ExchangeEthAddress}
 
@@ -25,7 +25,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      _ -> {:error, "Can't fetch burn rate for #{ticker}"}
+      error ->
+        error_msg = "Can't fetch burn rate for #{ticker}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 
@@ -52,7 +55,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      _ -> {:error, "Can't fetch transaction volume for #{ticker}"}
+      error ->
+        error_msg = "Can't fetch transaction for #{ticker}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  @doc ~S"""
+    Return the number of daily active addresses for a given ticker
+  """
+  def daily_active_addresses(
+        _root,
+        %{ticker: ticker, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, contract_address, _token_decimals} <- ticker_to_contract_info(ticker),
+         {:ok, daily_active_addresses} <-
+           DailyActiveAddresses.Store.daily_active_addresses(contract_address, from, to, interval) do
+      result =
+        daily_active_addresses
+        |> Enum.map(fn [datetime, active_addresses] ->
+          %{
+            datetime: datetime,
+            active_addresses: active_addresses |> round() |> trunc()
+          }
+        end)
+
+      {:ok, result}
+    else
+      error ->
+        error_msg = "Can't fetch daily active addresses for #{ticker}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 
@@ -91,12 +126,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, result}
     else
       error ->
-        error_message =
-          "Can't fetch the exchange fund flow for #{ticker}. Reason: #{inspect(error)}"
-
-        Logger.warn(error_message)
-
-        {:error, error_message}
+        error_msg = "Can't fetch the exchange fund flow for #{ticker}."
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 

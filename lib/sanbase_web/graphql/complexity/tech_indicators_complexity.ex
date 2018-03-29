@@ -58,6 +58,21 @@ defmodule SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity do
     get_complexity(from, to, interval)
   end
 
+  @doc ~S"""
+  Internal services use basic authentication. Return complexity = 0 to allow them
+  to access everything without limits.
+  """
+  def emojis_sentiment(_, _, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}) do
+    0
+  end
+
+  @doc ~S"""
+  For max complexity 5000 we allow 1000 values
+  """
+  def emojis_sentiment(%{from: from, to: to, interval: interval}, _child_complexity, _) do
+    get_complexity(from, to, interval)
+  end
+
   # Helper functions
 
   # For max complexity 5000 we allow 1000 values

@@ -283,6 +283,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       |> resolve()
     end
 
+    @desc "Emojis sentiment for a ticker and time period"
+    field :emojis_sentiment, list_of(:emojis_sentiment) do
+      arg(:ticker, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, :string, default_value: "1d")
+      arg(:result_size_tail, :integer, default_value: 0)
+
+      middleware(JWTAuth, san_tokens: 1000)
+
+      complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
+      resolve(&TechIndicatorsResolver.emojis_sentiment/3)
+    end
+
     @desc "Returns a list of all exchange wallets. Internal API."
     field :exchange_wallets, list_of(:wallet) do
       middleware(BasicAuth)

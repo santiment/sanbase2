@@ -245,9 +245,10 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "averageDailyActiveAddresses"))
+      |> post("/graphql", query_skeleton(query, "projectBySlug"))
 
-    active_addresses = json_response(result, 200)["data"]["averageDailyActiveAddresses"]
+    active_addresses =
+      json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
 
     assert active_addresses == %{
              "datetime" => "2017-05-13T21:45:00Z",

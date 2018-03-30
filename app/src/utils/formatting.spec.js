@@ -38,6 +38,12 @@ describe('formatSAN', () => {
 })
 
 describe('formatNumber', () => {
+  it('throws an error if input is not supported', () => {
+    expect(() => formatNumber('adfada')).toThrowError('Unsupported type: "adfada"')
+    expect(() => formatNumber('5.5 adfada')).toThrowError('Unsupported type: "5.5 adfada"')
+    expect(() => formatNumber({foo: 'bar'})).toThrowError('Unsupported type: "[object Object]"')
+  })
+
   it('parses input to float', () => {
     expect(formatNumber(200000)).toEqual('200,000')
     expect(formatNumber('200000')).toEqual('200,000')

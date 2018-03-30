@@ -21,14 +21,24 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
            seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
          ) do
-      %{from_datetime: from_datetime, to_datetime: to_datetime} = get_calculation_interval()
-
-      {indicator, notification_log} =
-        get_indicator(project.ticker, currency, from_datetime, to_datetime)
-
-      if check_notification(indicator) do
-        send_notification(project, currency, to_datetime, indicator, notification_log)
+      with %{from_datetime: from_datetime, to_datetime: to_datetime} <- get_calculation_interval(),
+           true <- check_volume(project, currency, from_datetime, to_datetime),
+           {indicator, notification_log} <-
+             get_indicator(project.ticker, currency, from_datetime, to_datetime),
+           true <- check_notification(indicator) do
+        send_notification(project, currency, indicator, notification_log)
       end
+    end
+  end
+
+  defp check_volume(project, currency, from_datetime, to_datetime) do
+    pair = "#{project.ticker}_#{currency}"
+
+    with {:ok, [[_dt, volume]]} <-
+           Sanbase.Prices.Store.fetch_mean_volume(pair, from_datetime, to_datetime) do
+      volume >= notification_volume_threshold()
+    else
+      _ -> false
     end
   end
 
@@ -49,12 +59,14 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         {:ok,
          [
            %{
+             datetime: datetime,
              price_volume_diff: price_volume_diff,
              price_change: price_change,
              volume_change: volume_change
            }
          ]} ->
           %{
+            datetime: datetime,
             price_volume_diff: nil_to_zero(price_volume_diff),
             price_change: nil_to_zero(price_change),
             volume_change: nil_to_zero(volume_change)
@@ -62,6 +74,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
         _ ->
           %{
+            datetime: to_datetime,
             price_volume_diff: 0,
             price_change: 0,
             volume_change: 0
@@ -92,7 +105,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
-    from_datetime = Timex.shift(to_datetime, days: -approximation_window() - comparison_window())
+
+    from_datetime =
+      Timex.shift(to_datetime, days: -approximation_window() - comparison_window() - 2)
 
     %{from_datetime: from_datetime, to_datetime: to_datetime}
   end
@@ -100,14 +115,13 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   defp send_notification(
          project,
          currency,
-         notification_date,
          indicator,
          {notification_data, debug_info}
        ) do
     {:ok, %HTTPoison.Response{status_code: 204}} =
       @http_service.post(
         webhook_url(),
-        notification_payload(project, currency, notification_date, indicator, debug_info),
+        notification_payload(project, currency, indicator, debug_info),
         [
           {"Content-Type", "application/json"}
         ]
@@ -119,18 +133,20 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   defp notification_payload(
          %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id},
          currency,
-         notification_date,
-         %{price_change: price_change, volume_change: volume_change},
+         %{datetime: datetime, price_change: price_change, volume_change: volume_change},
          debug_info
        ) do
+    # Timex.shift(days: 1) is because the returned datetime is the beginning of the day
     {:ok, notification_date_string} =
-      Timex.format(notification_date, "{YYYY}-{0M}-{0D} {h24}:{m}:{s}")
+      datetime
+      |> Timex.shift(days: 1)
+      |> Timex.format("{YYYY}-{0M}-{0D} {h24}:{m}:{s}")
 
     Poison.encode!(%{
       content:
-        "[#{notification_date_string} UTC] #{name}: #{ticker}/#{String.upcase(currency)} #{
-          notification_emoji(price_change)
-        } Price #{notification_emoji(volume_change)} Volume opposite trends. https://coinmarketcap.com/currencies/#{
+        "#{name}: #{ticker}/#{String.upcase(currency)} #{notification_emoji(price_change)} Price #{
+          notification_emoji(volume_change)
+        } Volume opposite trends (as of #{notification_date_string} UTC). https://coinmarketcap.com/currencies/#{
           coinmarketcap_id
         } #{debug_info}",
       username: "Price-Volume Difference"
@@ -145,17 +161,17 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
-  def get_notification_log(
-        ticker,
-        currency,
-        from_datetime,
-        to_datetime,
-        aggregate_interval,
-        window_type,
-        approximation_window,
-        comparison_window,
-        notification_threshold
-      ) do
+  defp get_notification_log(
+         ticker,
+         currency,
+         from_datetime,
+         to_datetime,
+         aggregate_interval,
+         window_type,
+         approximation_window,
+         comparison_window,
+         notification_threshold
+       ) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
@@ -214,6 +230,14 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     {res, _} =
       Config.get(:notification_threshold)
       |> Float.parse()
+
+    res
+  end
+
+  defp notification_volume_threshold() do
+    {res, _} =
+      Config.get(:notification_volume_threshold)
+      |> Integer.parse()
 
     res
   end

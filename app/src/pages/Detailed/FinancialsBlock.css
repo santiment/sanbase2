@@ -3,7 +3,26 @@
   flex-direction: column;
 }
 
+.wallets {
+  border-bottom: none !important;
+}
+
 .wallets-balance {
+  border-bottom: none !important;
   display: flex;
-  justify-content: flex-end !important;
+  flex-direction: column;
+}
+
+.wallets-balance > div {
+  display: flex;
+}
+
+.wallets-addresses {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.wallets-addresses span {
+  text-align: right;
 }

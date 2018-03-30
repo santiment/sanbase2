@@ -19,7 +19,7 @@ const DetailedHeader = ({project = {
         <H1>{project.name}</H1>
         <ProjectIcon
           name={project.name || ''}
-          size={24} />
+          size={22} />
         <DIV className='detailed-ticker-name'>
           {(project.ticker || '').toUpperCase()}
         </DIV>

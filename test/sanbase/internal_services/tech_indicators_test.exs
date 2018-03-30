@@ -194,4 +194,38 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
                 }
               ]}
   end
+
+  test "fetch emojis_sentiment", _context do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body:
+           "[{\"sentiment\": 0, \"timestamp\": 1516406400}, {\"sentiment\": 1234, \"timestamp\": 1516492800}]",
+         status_code: 200
+       }}
+    )
+
+    result =
+      TechIndicators.emojis_sentiment(
+        "XYZ",
+        DateTime.from_unix!(1_516_406_400),
+        DateTime.from_unix!(1_516_492_800),
+        "1d"
+      )
+
+    assert result ==
+             {:ok,
+              [
+                %{
+                  sentiment: 0,
+                  datetime: DateTime.from_unix!(1_516_406_400)
+                },
+                %{
+                  sentiment: 1234,
+                  datetime: DateTime.from_unix!(1_516_492_800)
+                }
+              ]}
+  end
 end

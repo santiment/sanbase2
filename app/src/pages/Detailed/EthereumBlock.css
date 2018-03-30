@@ -6,3 +6,11 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.wallet-addresses {
+  font-size: 14px;
+}
+
+.wallet-addresses a {
+  line-height: 1.7;
+}

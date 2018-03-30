@@ -74,11 +74,12 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
             <a
               target='_blank'
               rel='noopener noreferrer'
+              className='findwallet'
               href={`https://santiment.typeform.com/to/bT0Dgu?project=${project}&ticker=${ticker}`}>
               <Icon color='red' name='question circle outline' />
             </a>}
           </div>}
-          content='Community help locating correct wallet is welcome!'
+          content='Know this project wallet? Click the ? to send wallet info'
           position='top center'
         />
       }
@@ -180,7 +181,7 @@ export const Cashflow = ({
     return (
       <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
         <Message warning>
-          <Message.Header>Something going wrong on our server.</Message.Header>
+          <Message.Header>We're sorry, something has gone wrong on our server.</Message.Header>
           <p>Please try again later.</p>
         </Message>
       </div>
@@ -198,7 +199,8 @@ export const Cashflow = ({
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br />{value.ticker}
+        <ProjectIcon name={value.name} /><br />
+        <span className='ticker'>{value.ticker}</span>
       </div>
     ),
     filterMethod: (filter, row) => {
@@ -314,19 +316,19 @@ export const Cashflow = ({
   return (
     <div className='page cashflow'>
       <Helmet>
-        <title>SANbase: Projects</title>
+        <title>SANbase: ERC20 Projects</title>
         <link rel='canonical' href={`${getOrigin()}/projects`} />
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
           <div className='cashflow-title'>
-            <h1>Projects</h1>
-            <Link to={'/projects/ethereum'}>More data about Ethereum</Link>
+            <h1>ERC20 Projects</h1>
+            <span><Link to={'/projects/ethereum'}>More data about Ethereum</Link></span>
           </div>
           <p>
-            <Icon color='red' name='question circle outline' />Automated data not available.&nbsp;
-            <span className='cashflow-head-community-help'>
-            Community help locating correct wallet is welcome!</span>
+            <Icon color='red' name='question circle outline' />
+            Automated data not available.&nbsp;
+            <span>Community help locating correct wallets is welcome!</span>
           </p>
         </div>
         <Panel>

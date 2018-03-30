@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
   alias SanbaseWeb.Graphql.Resolvers.IcoResolver
   alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
+  alias SanbaseWeb.Graphql.Resolvers.EtherbiResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   # Includes all available fields
@@ -175,6 +176,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:limit, :integer, default_value: 10)
 
       resolve(&ProjectResolver.eth_top_transactions/3)
+    end
+
+    @desc "Average daily active addresses for a ticker and given time period"
+    field :average_daily_active_addresses, :active_addresses do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      resolve(&EtherbiResolver.average_daily_active_addresses/3)
     end
   end
 

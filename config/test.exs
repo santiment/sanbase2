@@ -56,6 +56,9 @@ config :sanbase, Sanbase.Etherbi.BurnRate.Store, database: "erc20_burn_rate_flow
 config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
   database: "erc20_transaction_volume_test"
 
+config :sanbase, Sanbase.Etherbi.DailyActiveAddresses.Store,
+  database: "erc20_daily_active_addresses_test"
+
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"

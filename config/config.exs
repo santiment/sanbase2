@@ -75,6 +75,12 @@ config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
   pool: [max_overflow: 10, size: 20],
   database: "erc20_transaction_volume"
 
+config :sanbase, Sanbase.Etherbi.DailyActiveAddresses.Store,
+  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
+  pool: [max_overflow: 10, size: 20],
+  database: "erc20_daily_active_addresses"
+
 config :sanbase, Sanbase.ExternalServices.Etherscan.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},

@@ -18,11 +18,10 @@
   align-items: center;
 }
 
-.cashflow-title a {
-  margin-left: 1em;
-  margin-top: 18px;
-  border-left: 1px solid #3e3e3e;
-  padding-left: 1em;
+.cashflow-title span {
+  border-left: 1px solid #3d4450;
+  margin: 18px 0 0 16px;
+  padding-left: 16px;
 }
 
 .cashflow-head h1 {
@@ -38,8 +37,7 @@
 }
 
 .cashflow-indev-message {
-  margin: 16px;
-  text-align: right;
+  margin-bottom: 16px;
 }
 
 .row {
@@ -111,7 +109,7 @@
 
 .ReactTable .rt-tbody .rt-td {
   border-right: 1px solid rgba(0, 0, 0, 0.05);
-  padding: 8px 5px;
+  padding: 8px;
 }
 
 .rt-tr:hover {
@@ -160,11 +158,13 @@
 }
 
 .rt-td .overview-name {
+  border-bottom: 1px solid #b1b7c1;
+  display: inline-block;
+  padding-bottom: 1px;
   padding-top: 12px;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-decoration: underline;
 }
 
 .rt-td .overview-name:hover {
@@ -210,6 +210,14 @@
 
 .ReactTable .wallet .eth {
   font-size: 14px;
+}
+
+.ReactTable .wallet .eth i {
+  font-size: 15px;
+}
+
+.findwallet {
+  border-bottom: none;
 }
 
 .ReactTable .cell-signals {

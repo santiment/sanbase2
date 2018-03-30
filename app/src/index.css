@@ -9,12 +9,12 @@ body {
 
 a {
   color: #3d4450;
-  text-decoration: underline;
+  border-bottom: 1px solid #b1b7c1;
 }
 
-a:hover {
+a:hover,
+a:focus {
   color: #26a987;
-  text-decoration: underline;
 }
 
 h1,

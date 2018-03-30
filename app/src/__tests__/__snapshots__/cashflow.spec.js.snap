@@ -9,7 +9,7 @@ exports[`Cashflow container it should render correctly 1`] = `
     encodeSpecialCharacters={true}
   >
     <title>
-      SANbase: Projects
+      SANbase: ERC20 Projects
     </title>
     <link
       href="/projects"
@@ -34,14 +34,16 @@ exports[`Cashflow container it should render correctly 1`] = `
         className="cashflow-title"
       >
         <h1>
-          Projects
+          ERC20 Projects
         </h1>
-        <Link
-          replace={false}
-          to="/projects/ethereum"
-        >
-          More data about Ethereum
-        </Link>
+        <span>
+          <Link
+            replace={false}
+            to="/projects/ethereum"
+          >
+            More data about Ethereum
+          </Link>
+        </span>
       </div>
       <p>
         <Icon

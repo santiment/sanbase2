@@ -14,6 +14,8 @@ const formatSAN = price => {
 }
 
 const formatNumber = (amount, options = {}) => {
+  if (isNaN(Number(amount))) throw new Error(`Unsupported type: "${amount}"`)
+
   let value = new Intl.NumberFormat('en', {
     style: options.currency ? 'currency' : 'decimal',
     ...options

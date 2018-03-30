@@ -226,7 +226,8 @@ CREATE TABLE exchange_eth_addresses (
     id bigint NOT NULL,
     address character varying(255) NOT NULL,
     name character varying(255) NOT NULL,
-    comments text
+    comments text,
+    source text
 );
 
 

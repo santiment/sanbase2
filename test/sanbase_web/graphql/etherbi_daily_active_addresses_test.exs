@@ -232,12 +232,13 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
   test "fetch average daily active addreses", context do
     query = """
     {
-      averageDailyActiveAddresses(
-        ticker: "#{context.ticker}",
-        from: "#{context.datetime1}",
-        to: "#{context.datetime8}") {
-          datetime
-          activeAddresses
+      projectBySlug(slug: "santiment") {
+        averageDailyActiveAddresses(
+          from: "#{context.datetime1}",
+          to: "#{context.datetime8}") {
+            datetime
+            activeAddresses
+        }
       }
     }
     """

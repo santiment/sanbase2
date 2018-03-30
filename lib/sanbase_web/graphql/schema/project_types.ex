@@ -916,6 +916,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
       resolve(&ProjectResolver.eth_top_transactions/3)
     end
+
+    @desc "Average daily active addresses for a ticker and given time period"
+    field :average_daily_active_addresses, :active_addresses do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      resolve(&EtherbiResolver.average_daily_active_addresses/3)
+    end
   end
 
   object :project_with_eth_contract_info do

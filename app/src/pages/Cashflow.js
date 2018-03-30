@@ -11,10 +11,10 @@ import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
 import Sticky from 'react-stickynode'
-import { formatNumber } from '../utils/formatting'
-import { millify, getOrigin } from '../utils/utils'
+import { formatNumber, millify } from 'utils/formatting'
+import { getOrigin } from 'utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
-import { simpleSort } from './../utils/sortMethods'
+import { simpleSort } from 'utils/sortMethods'
 import Panel from './../components/Panel'
 import { allErc20ProjectsGQL } from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
@@ -63,7 +63,7 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
   <div className='wallet'>
     <div className='usd first'>
       {usdBalance
-        ? `$${millify(parseFloat(parseFloat(usdBalance).toFixed(2)))}`
+        ? `$${millify(usdBalance, 2)}`
         : '---'}
     </div>
     <div className='eth'>
@@ -84,7 +84,7 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
         />
       }
       {ethBalance
-        ? `Ξ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
+        ? `Ξ${millify(ethBalance, 2)}`
         : '---'}
     </div>
   </div>
@@ -92,7 +92,7 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
 
 export const formatMarketCapProject = marketcapUsd => {
   if (marketcapUsd !== null) {
-    return `$${millify(parseFloat(marketcapUsd))}`
+    return `$${millify(marketcapUsd, 2)}`
   } else {
     return 'No data'
   }
@@ -117,7 +117,7 @@ export const PriceColumn = {
     change24h: d.percentChange24h
   }),
   Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
-    {priceUsd ? formatNumber(priceUsd, 'USD') : 'No data'}
+    {priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : 'No data'}
     &nbsp;
     {<PercentChanges changes={change24h} />}
   </div>,
@@ -135,7 +135,7 @@ export const VolumeColumn = {
   }),
   Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
     {volumeUsd
-      ? `$${millify(parseFloat(volumeUsd))}`
+      ? `$${millify(volumeUsd, 2)}`
       : 'No data'}
     &nbsp;
     {change24h
@@ -260,7 +260,7 @@ export const Cashflow = ({
         if (value > 1000000000000) {
           return '∞'
         }
-        return value < 1000 ? formatNumber(parseFloat(value).toFixed(3)) : millify(parseFloat(value))
+        return millify(value, 3)
       })(value)
     }</div>,
     sortable: true,

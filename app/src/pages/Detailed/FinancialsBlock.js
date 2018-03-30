@@ -2,8 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import cx from 'classnames'
 import { Label } from 'semantic-ui-react'
-import { formatNumber } from '../../utils/formatting'
-import { millify } from '../../utils/utils'
+import { formatCryptoCurrency, formatNumber, millify } from 'utils/formatting'
 import './FinancialsBlock.css'
 
 const propTypes = {
@@ -12,9 +11,9 @@ const propTypes = {
 
 export const collectedField = (currency, amount) => {
   if (currency === 'USD') {
-    return formatNumber(amount, 'USD')
+    return formatNumber(amount, { currency: 'USD' })
   }
-  return `${currency} ${formatNumber(amount)}`
+  return formatCryptoCurrency(currency, formatNumber(amount))
 }
 
 const showStatus = status => {
@@ -64,7 +63,7 @@ const FinancialsBlock = ({
         <div key={index}>
           <div className='wallets-addresses'>
             <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
-            <span>ETH {millify(parseFloat(parseFloat(wallet.balance).toFixed(2)))}</span>
+            <span>ETH {millify(wallet.balance, 2)}</span>
           </div>
         </div>
       ))}
@@ -77,7 +76,7 @@ const FinancialsBlock = ({
       <div>
         Total Balance
       </div>
-      {ethBalance && `ETH ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`}
+      {ethBalance && `ETH ${millify(ethBalance, 2)}`}
     </div>}
     {isERC20 &&
     <div className={cx({
@@ -86,7 +85,7 @@ const FinancialsBlock = ({
     })}>
       <div>ETH Spent 30d</div>
       <div style={{textAlign: 'right'}}>
-        {ethSpent ? `ETH ${millify(parseFloat(parseFloat(ethSpent).toFixed(2)))}` : 0}
+        {ethSpent ? `ETH ${millify(ethSpent, 2)}` : 0}
       </div>
     </div>}
   </div>

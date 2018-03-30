@@ -8,15 +8,15 @@ import {
   DEFAULT_SORT_BY,
   DEFAULT_FILTER_BY
 } from 'pages/Projects/Filters'
-import { allErc20ProjectsGQL } from 'pages/Projects/allProjectsGQL'
+import allProjectsGQL from 'pages/Projects/allProjectsGQL'
 
-const CashflowMobile = (props) => <ProjectsMobile {...props} />
+const CurrenciesMobile = (props) => <ProjectsMobile {...props} />
 
 const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = allProjects.allErc20Projects || []
+  const projects = allProjects.allProjects || []
 
   let filteredProjects = [...projects]
     .sort((a, b) => {
@@ -68,7 +68,7 @@ const enhance = compose(
   withState('sortBy', 'changeSort', DEFAULT_SORT_BY),
   withState('filterBy', 'changeFilter', DEFAULT_FILTER_BY),
   withState('isFilterOpened', 'toggleFilter', false),
-  graphql(allErc20ProjectsGQL, {
+  graphql(allProjectsGQL, {
     name: 'allProjects',
     props: mapDataToProps,
     options: () => {
@@ -87,4 +87,4 @@ const enhance = compose(
   })
 )
 
-export default enhance(CashflowMobile)
+export default enhance(CurrenciesMobile)

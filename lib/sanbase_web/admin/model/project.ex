@@ -282,6 +282,22 @@ defmodule Sanbase.ExAdmin.Model.Project do
         end
       end
     end
+
+    # Make all string filters "Contains" by default
+    sidebar "", only: :index do
+      panel "" do
+        markup_contents do
+          script type: "text/javascript" do
+            """
+            $(document).ready(function() {
+              $("div.filter-select select option[value$=_contains]").prop('selected', true);
+              $("div.filter-select select option[value$=_contains]").parent().trigger("change");
+            });
+            """
+          end
+        end
+      end
+    end
   end
 
   def set_defaults(conn, params, resource, :new) do

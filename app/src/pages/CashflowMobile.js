@@ -107,9 +107,9 @@ const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = allProjects.allProjects || []
+  const projects = allProjects.allErc20Projects || []
 
-  let filteredProjects = projects
+  let filteredProjects = [...projects]
     .sort((a, b) => {
       if (ownProps.sortBy === 'github_activity') {
         return simpleSort(

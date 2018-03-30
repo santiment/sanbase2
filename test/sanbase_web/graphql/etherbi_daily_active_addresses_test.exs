@@ -203,7 +203,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
            } in active_addressess
   end
 
-  test "no data returned for daily active addresse", context do
+  test "no data returned for daily active addresses", context do
     from_no_data = Timex.shift(context.datetime1, days: -10)
     to_no_data = Timex.shift(context.datetime1, days: -2)
 
@@ -227,5 +227,30 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     active_addressess = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
     assert active_addressess == []
+  end
+
+  test "fetch average daily active addreses", context do
+    query = """
+    {
+      averageDailyActiveAddresses(
+        ticker: "#{context.ticker}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime8}") {
+          datetime
+          activeAddresses
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "averageDailyActiveAddresses"))
+
+    active_addresses = json_response(result, 200)["data"]["averageDailyActiveAddresses"]
+
+    assert active_addresses == %{
+             "datetime" => "2017-05-13T21:45:00Z",
+             "activeAddresses" => 11444
+           }
   end
 end

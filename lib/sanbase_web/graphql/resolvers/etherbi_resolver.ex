@@ -92,6 +92,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
+    Return the average number of daily active addresses for a given ticker and period of time
+  """
+  def average_daily_active_addresses(
+        _root,
+        %{ticker: ticker, from: from, to: to},
+        _resolution
+      ) do
+    with {:ok, contract_address, _token_decimals} <- ticker_to_contract_info(ticker),
+         {:ok, average_daily_active_addresses} <-
+           DailyActiveAddresses.Store.average_daily_active_addresses(contract_address, from, to) do
+      result =
+        average_daily_active_addresses
+        |> Enum.map(fn [datetime, active_addresses] ->
+          %{
+            datetime: datetime,
+            active_addresses: active_addresses |> round() |> trunc()
+          }
+        end)
+        |> List.first()
+
+      {:ok, result}
+    else
+      error ->
+        error_msg = "Can't fetch daily active addresses for #{ticker}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  @doc ~S"""
     Return the transactions that happend in or out of an exchange wallet for a given ticker
     and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi

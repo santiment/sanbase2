@@ -12,6 +12,12 @@ defmodule Sanbase.Etherbi.DailyActiveAddresses.Store do
     |> parse_time_series()
   end
 
+  def average_daily_active_addresses(measurement, from, to) do
+    average_daily_active_addresses_query(measurement, from, to)
+    |> Store.query()
+    |> parse_time_series()
+  end
+
   # Private functions
 
   defp daily_active_addresses_query(measurement, from, to, "1d") do
@@ -25,5 +31,11 @@ defmodule Sanbase.Etherbi.DailyActiveAddresses.Store do
     WHERE time >= #{influx_time(from)}
     AND time <= #{influx_time(to)}
     GROUP BY time(#{interval}) fill(0)/
+  end
+
+  defp average_daily_active_addresses_query(measurement, from, to) do
+    ~s/SELECT MEAN(active_addresses) FROM "#{measurement}"
+    WHERE time >= #{influx_time(from)}
+    AND time <= #{influx_time(to)}/
   end
 end

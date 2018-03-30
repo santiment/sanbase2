@@ -14,12 +14,15 @@ defmodule Sanbase.Model.ProjectBtcAddress do
       references: :address,
       define_field: false
     )
+
+    field(:source, :string)
+    field(:comments, :string)
   end
 
   @doc false
   def changeset(%ProjectBtcAddress{} = project_btc_address, attrs \\ %{}) do
     project_btc_address
-    |> cast(attrs, [:address, :project_id])
+    |> cast(attrs, [:address, :project_id, :source, :comments])
     |> validate_required([:address, :project_id])
     |> update_change(:address, &String.downcase/1)
     |> unique_constraint(:address)

@@ -86,6 +86,35 @@
   color: #d3d3d3;
 }
 
+.feedback-button-wrapper {
+  position: absolute;
+  top: 10px;
+  right: calc(50% - 100px);
+}
+
+.feedback-button-wrapper .button {
+  background-color: white !important;
+}
+
+.feedback-body-wrapper div {
+  width: 210px !important;
+}
+
+.feedback-body-wrapper div form textarea {
+  border: none !important;
+  padding: 0 !important;
+}
+
+.feedback-body-wrapper .button {
+  margin-top: 1em !important;
+  float: right;
+}
+
+.feedback-body-wrapper textarea:focus,
+.feedback-body-wrapper input:focus {
+  outline: none;
+}
+
 @supports (--css: variables) {
   :root {
     --progress-bg-color: #d3d3d3;

@@ -2,13 +2,13 @@ import React from 'react'
 import { graphql } from 'react-apollo'
 import { compose, withState, lifecycle } from 'recompose'
 
-import { simpleSort } from 'utils/sortMethods'
-import ProjectsMobile from 'pages/Projects/ProjectsMobile'
+import { simpleSort } from './../utils/sortMethods'
+import ProjectsMobile from './Projects/ProjectsMobile'
 import {
   DEFAULT_SORT_BY,
   DEFAULT_FILTER_BY
-} from 'pages/Projects/Filters'
-import { allErc20ProjectsGQL } from 'pages/Projects/allProjectsGQL'
+} from './Projects/Filters'
+import { allErc20ProjectsGQL } from './Projects/allProjectsGQL'
 
 const CashflowMobile = (props) => <ProjectsMobile {...props} />
 

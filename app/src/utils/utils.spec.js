@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import moment from 'moment'
-import { findIndexByDatetime, calculateBTCVolume } from 'utils/utils'
+import { findIndexByDatetime, calculateBTCVolume } from './utils'
 
 const labels = [
   moment('2018-01-15T06:00:00Z'),

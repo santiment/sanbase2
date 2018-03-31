@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import cx from 'classnames'
 import { Label } from 'semantic-ui-react'
-import { formatCryptoCurrency, formatNumber, millify } from 'utils/formatting'
+import { formatCryptoCurrency, formatNumber, millify } from './../../utils/formatting'
 import './FinancialsBlock.css'
 
 const propTypes = {

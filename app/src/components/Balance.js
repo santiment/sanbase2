@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { Message } from 'semantic-ui-react'
-import { formatCryptoCurrency, formatSAN } from 'utils/formatting'
+import { formatCryptoCurrency, formatSAN } from './../utils/formatting'
 
 export const Balance = ({user, onlyBalance = false}) => {
   return (

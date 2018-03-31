@@ -9,7 +9,7 @@ import { Button, Icon } from 'semantic-ui-react'
 import metamaskIcon from '../../assets/metamask-icon-64-2.png'
 import EmailLogin from './EmailLogin'
 import EthLogin from './EthLogin'
-import { loadPrevAuthProvider } from 'utils/localStorage'
+import { loadPrevAuthProvider } from './../../utils/localStorage'
 import './Login.css'
 
 const STEPS = {

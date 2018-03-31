@@ -2,7 +2,7 @@ import React from 'react'
 import { createSkeletonProvider, createSkeletonElement } from '@trainline/react-skeletor'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
-import { formatCryptoCurrency, formatBTC, formatNumber } from 'utils/formatting'
+import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
 import './DetailedHeader.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')

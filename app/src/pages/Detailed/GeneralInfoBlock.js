@@ -1,6 +1,6 @@
 import React from 'react'
 import cx from 'classnames'
-import { formatCryptoCurrency, formatNumber } from 'utils/formatting'
+import { formatCryptoCurrency, formatNumber } from './../../utils/formatting'
 import './GeneralInfoBlock.css'
 
 const GeneralInfoBlock = ({

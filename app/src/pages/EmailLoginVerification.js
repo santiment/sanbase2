@@ -9,7 +9,7 @@ import {
 import * as qs from 'query-string'
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
-import { savePrevAuthProvider } from 'utils/localStorage'
+import { savePrevAuthProvider } from './../utils/localStorage'
 
 const emailLoginVerifyGQL = gql`
   mutation emailLoginVerify($email: String!, $token: String!) {

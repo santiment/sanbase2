@@ -13,6 +13,7 @@ import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import Currencies from './pages/Currencies'
 import CashflowMobile from './pages/CashflowMobile'
+import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
@@ -83,10 +84,15 @@ export const App = ({isDesktop}) => (
           )
         }} />
         <Route exact path='/currencies' render={props => {
+          if (isDesktop) {
+            return (
+              <Currencies
+                preload={() => LoadableDetailedPage.preload()}
+                {...props} />
+            )
+          }
           return (
-            <Currencies
-              preload={() => LoadableDetailedPage.preload()}
-              {...props} />
+            <CurrenciesMobile {...props} />
           )
         }} />
         <Route exact path='/roadmap' component={Roadmap} />

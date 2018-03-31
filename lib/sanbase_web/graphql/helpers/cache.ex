@@ -20,7 +20,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   def func(cached_func, name, args \\ %{}) do
     fn ->
       {_, value} =
-        Cachex.fetch(@cache_name, cache_key(name, args), fn ->
+        Cachex.fetch(@cache_name, cache_key(name, args, %{}), fn ->
           {:commit, cached_func.()}
         end)
 
@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     # a good, general cache key for arbitrary root objects
     fn %{}, args, resolution ->
       {_, value} =
-        Cachex.fetch(@cache_name, cache_key(name, args), fn ->
+        Cachex.fetch(@cache_name, cache_key(name, args, resolution), fn ->
           {:commit, resolver_fn.(%{}, args, resolution)}
         end)
 
@@ -48,14 +48,19 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     end
   end
 
-  defp cache_key(name, args) do
+  defp cache_key(name, args, resolution \\ %{}) do
     args_hash =
       args
-      |> convert_values
+      |> convert_values()
       |> Poison.encode!()
-      |> sha256
+      |> sha256()
 
-    {name, args_hash}
+    requested_fields_hash =
+      resolution
+      |> requested_fields()
+      |> sha256()
+
+    {name, args_hash, requested_fields_hash}
   end
 
   defp convert_values(args) do
@@ -73,5 +78,12 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   defp sha256(data) do
     :crypto.hash(:sha256, data)
     |> Base.encode16()
+  end
+
+  defp requested_fields(resolution) when resolution == %{}, do: []
+
+  defp requested_fields(resolution) do
+    resolution.definition.selections
+    |> Enum.map(&Map.get(&1, :name))
   end
 end

@@ -1,7 +1,7 @@
 import React from 'react'
-import PanelBlock from './../../components/PanelBlock'
 import moment from 'moment'
-import { millify } from 'utils/formatting'
+import PanelBlock from './../../components/PanelBlock'
+import { millify } from './../../utils/formatting'
 
 const SpentOverTime = ({loading = true, project = {}}) => {
   return (

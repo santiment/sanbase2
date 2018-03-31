@@ -18,9 +18,9 @@ import { InMemoryCache } from 'apollo-cache-inmemory'
 import { ApolloProvider } from 'react-apollo'
 import App from './App'
 import reducers from './reducers/rootReducers.js'
-import { loadState, saveState } from 'utils/localStorage'
-import { getOrigin } from 'utils/utils'
-import setAuthorizationToken from 'utils/setAuthorizationToken'
+import { loadState, saveState } from './utils/localStorage'
+import { getOrigin } from './utils/utils'
+import setAuthorizationToken from './utils/setAuthorizationToken'
 import { hasMetamask } from './web3Helpers'
 import * as serviceWorker from './serviceWorker'
 import 'semantic-ui-css/semantic.min.css'
@@ -91,7 +91,7 @@ const handleLoad = () => {
       } else {
         if (process.env.NODE_ENV === 'development') {
           console.log(
-            `[GraphQL error]: ${JSON.stringify(graphQLErrors)} ${JSON.stringify(operation)}`
+            `[GraphQL error]: ${JSON.stringify(graphQLErrors)}`
           )
         }
         Raven.captureException(`[GraphQL error]: ${JSON.stringify(graphQLErrors)}`)

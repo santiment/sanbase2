@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { formatCryptoCurrency, formatBTC, formatSAN, formatNumber, millify } from 'utils/formatting'
+import { formatCryptoCurrency, formatBTC, formatSAN, formatNumber, millify } from './formatting'
 
 describe('formatCryptoCurrency', () => {
   it('returns properly formated string', () => {

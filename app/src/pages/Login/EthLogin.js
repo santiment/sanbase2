@@ -15,7 +15,7 @@ import {
   signMessage
 } from '../../web3Helpers'
 import AuthForm from './AuthForm'
-import { savePrevAuthProvider } from 'utils/localStorage'
+import { savePrevAuthProvider } from './../../utils/localStorage'
 import metamaskDownloadImg from './../../assets/download-metamask.png'
 
 const EthLogin = ({

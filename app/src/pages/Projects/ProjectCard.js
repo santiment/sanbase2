@@ -10,7 +10,7 @@ import {
 } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
-import { formatNumber, millify } from 'utils/formatting'
+import { formatNumber, millify } from './../../utils/formatting'
 import './ProjectCard.css'
 
 const HiddenElements = () => ''

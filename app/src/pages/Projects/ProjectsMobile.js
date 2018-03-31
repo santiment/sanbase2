@@ -2,14 +2,14 @@ import React from 'react'
 import { SlideDown } from 'animate-components'
 import { Loader, Message, Button } from 'semantic-ui-react'
 
-import { ListView, ListViewItem } from 'components/ListView'
-import ProjectCard from 'pages/Projects/ProjectCard'
-import FloatingButton from 'pages/Projects/FloatingButton'
-import Search from 'components/Search'
+import { ListView, ListViewItem } from './../../components/ListView'
+import Search from './../../components/Search'
+import ProjectCard from './ProjectCard'
+import FloatingButton from './FloatingButton'
 import Filters, {
   DEFAULT_SORT_BY,
   DEFAULT_FILTER_BY
-} from 'pages/Projects/Filters'
+} from './Filters'
 import './ProjectsMobile.css'
 
 const ProjectsMobile = ({

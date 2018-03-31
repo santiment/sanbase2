@@ -8,6 +8,7 @@ import logo from '../assets/logo_sanbase.png'
 import AppMenu from './AppMenu'
 import AuthControl from './AuthControl'
 import Search from './SearchContainer'
+import FeedbackBtn from './FeedbackBtn'
 import './TopMenu.css'
 
 export const TopMenu = ({
@@ -33,6 +34,7 @@ export const TopMenu = ({
         </div>
         <Search />
       </div>
+      <FeedbackBtn />
       <div className='right'>
         <AppMenu
           showInsights={qsData && qsData.insights}

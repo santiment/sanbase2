@@ -30,7 +30,8 @@ const ProjectsMobile = ({
   changeFilter,
   changeSort,
   filterBy = DEFAULT_FILTER_BY,
-  sortBy = DEFAULT_SORT_BY
+  sortBy = DEFAULT_SORT_BY,
+  type = 'erc20'
 }) => {
   const { projects = [] } = Projects
   if (Projects.loading) {
@@ -70,12 +71,13 @@ const ProjectsMobile = ({
         }}
         runwayItems={7}
         runwayItemsOpposite={5}
-        aveCellHeight={460}
+        aveCellHeight={type === 'erc20' ? 460 : 360}
       >
         {Projects.filteredProjects.map((project, index) => (
-          <ListViewItem height={500} key={index}>
+          <ListViewItem height={type === 'erc20' ? 500 : 400} key={index}>
             <div className='ListItem-project' >
               <ProjectCard
+                type={type}
                 onClick={() => history.push(`/projects/${project.coinmarketcapId}`)}
                 {...project} />
             </div>

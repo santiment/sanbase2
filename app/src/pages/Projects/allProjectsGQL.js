@@ -43,7 +43,7 @@ const project = gql`
   }
 `
 
-const allProjectsGQL = gql`
+export const allProjectsGQL = gql`
   query allProjects {
     allProjects {
       ...generalData

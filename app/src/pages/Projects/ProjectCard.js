@@ -14,12 +14,6 @@ import { formatNumber, millify } from './../../utils/formatting'
 import './ProjectCard.css'
 
 const HiddenElements = () => ''
-// Project Name
-// Market Cap
-// Crypto Balance (ETH) - the current Balance column
-// ETH Spent (30d) - total change in ETH balance for the last 30 days
-// Dev Activity (30d) - total dev activity for the last 30 days
-// Flag - signals flag. For now we only show it when Crypto Balance > Market Cap
 
 const MARKET_SEGMENT_COLORS = {
   'Financial': 'violet',
@@ -67,7 +61,8 @@ const ProjectCard = ({
   marketcapUsd,
   teamTokenWallet,
   signals,
-  onClick
+  onClick,
+  type = 'erc20'
 }) => {
   const warning = signals && signals.length > 0
   return (
@@ -153,18 +148,20 @@ const ProjectCard = ({
               ? `$${millify(marketcapUsd)}`
               : '---'}
             disabled={!marketcapUsd} />
+          {type === 'erc20' &&
           <StatisticElement
             name='Crypto Balance'
             value={ethBalance
               ? `ETH ${millify(parseFloat(ethBalance).toFixed(2))}`
               : '---'}
-            disabled={!ethBalance} />
+            disabled={!ethBalance} />}
+          {type === 'erc20' &&
           <StatisticElement
             name='ETH Spent 30d'
             value={ethSpent
               ? `ETH ${millify(parseFloat(ethSpent).toFixed(2))}`
               : 0}
-            disabled={!ethSpent} />
+            disabled={!ethSpent} />}
           <StatisticElement
             name='Dev Activity 30d'
             value={averageDevActivity ? parseFloat(averageDevActivity).toFixed(2) : '---'}

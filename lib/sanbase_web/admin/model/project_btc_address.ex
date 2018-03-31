@@ -7,15 +7,18 @@ defmodule Sanbase.ExAdmin.Model.ProjectBtcAddress do
   alias Sanbase.Model.Project
 
   register_resource Sanbase.Model.ProjectBtcAddress do
-    form project do
+    form address do
       inputs do
-        input(project, :address)
+        input(address, :address)
 
         input(
-          project,
+          address,
           :project,
           collection: from(p in Project, order_by: p.name) |> Sanbase.Repo.all()
         )
+
+        input(address, :source)
+        input(address, :comments)
       end
     end
 

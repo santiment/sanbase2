@@ -8,10 +8,14 @@ import {
   Popup,
   Icon,
   TextArea,
-  Form
+  Form,
+  Message
 } from 'semantic-ui-react'
 
+const MAX_FEEDBACK_MESSAGE_LENGTH = 320
+
 const handleSendFeedback = ({message = '', onPending, onSuccess, onError}) => {
+  if (message.length > MAX_FEEDBACK_MESSAGE_LENGTH) { return }
   try {
     onPending(true)
     axios({
@@ -25,7 +29,7 @@ const handleSendFeedback = ({message = '', onPending, onSuccess, onError}) => {
   } catch (error) {
     onPending(false)
     onError(true)
-    Raven.captureException('Alert about new insight ' + JSON.stringify(error))
+    Raven.captureException('Feedback form has an error: ' + JSON.stringify(error))
   }
 }
 
@@ -37,6 +41,12 @@ const FeedbackBtn = props => {
         className='feedback-body-wrapper'
         basic
         wide
+        onClose={() => {
+          props.onChange('')
+          props.onSuccess(false)
+          props.onError(false)
+          props.onPending(false)
+        }}
         trigger={
           <Button size='tiny'>
             <Icon name='bullhorn' />
@@ -44,9 +54,17 @@ const FeedbackBtn = props => {
           </Button>
       } on='click'>
         <FadeIn duration='0.5s' timingFunction='ease-out' as='div'>
-          <Form onSubmit={() => handleSendFeedback(props)}>
+          <Form
+            className='attached fluid'
+            onSubmit={() => handleSendFeedback(props)}>
             <TextArea
-              onChange={e => props.onChange(e.target.value)}
+              value={props.message}
+              onChange={e => {
+                const message = e.target.value
+                if (message.length < MAX_FEEDBACK_MESSAGE_LENGTH) {
+                  props.onChange(e.target.value)
+                }
+              }}
               autoHeight placeholder='Start typing...' />
             {props.isSuccess
               ? <div>Thank you!</div>
@@ -54,6 +72,10 @@ const FeedbackBtn = props => {
                 {props.isPending ? 'Waiting...' : 'Submit'}
               </Button>}
           </Form>
+          {props.message.length >= MAX_FEEDBACK_MESSAGE_LENGTH - 1 &&
+          <Message attached='bottom' warning>
+            Maximum length of feedback message.
+          </Message>}
         </FadeIn>
       </Popup>
     </div>

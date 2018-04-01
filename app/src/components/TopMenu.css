@@ -9,13 +9,12 @@
 
 .top-menu .left {
   display: flex;
-  width: 50%;
 }
 
 .top-menu .right {
   display: flex;
   justify-content: flex-end;
-  width: 50%;
+  flex: 2;
   align-items: center;
 }
 
@@ -72,4 +71,40 @@
 .acct-links ul {
   margin: 0;
   padding: 0;
+}
+
+.feedback-button-wrapper {
+  display: none;
+  position: absolute;
+  top: 10px;
+  right: calc(50% - 100px);
+}
+
+.feedback-button-wrapper .button {
+  background-color: white !important;
+}
+
+.feedback-body-wrapper div {
+  width: 210px !important;
+}
+
+.feedback-body-wrapper div form textarea {
+  border: none !important;
+  padding: 0 !important;
+}
+
+.feedback-body-wrapper .button {
+  margin-top: 1em !important;
+  float: right;
+}
+
+.feedback-body-wrapper textarea:focus,
+.feedback-body-wrapper input:focus {
+  outline: none;
+}
+
+@media (min-width: 1250px) {
+  .feedback-button-wrapper {
+    display: inline-block;
+  }
 }

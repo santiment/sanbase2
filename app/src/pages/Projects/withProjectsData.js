@@ -86,8 +86,7 @@ const enhance = (type = 'all') => compose(
   graphql(pickGQL(type), {
     name: 'Projects',
     props: mapDataToProps(type),
-    options: ({...props}) => {
-      console.log(props)
+    options: () => {
       return {
         errorPolicy: 'all'
       }

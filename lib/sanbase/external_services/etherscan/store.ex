@@ -42,7 +42,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   def last_block_number(address) do
     select_last_block_number(address)
     |> Store.query()
-    |> parse_last_block_number()
+    |> parse_time_series()
+    |> case do
+      {:error, error} -> {:error, error}
+      {:ok, [[_iso8601_datetime, block_number] | _]} -> {:ok, block_number}
+      {:ok, _} -> {:ok, nil}
+    end
   end
 
   @doc ~s"""
@@ -67,9 +72,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   def trx_sum_in_interval(measurement, from, to, transaction_type) do
     sum_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
-    |> parse_trx_sum_time_series()
+    |> parse_time_series()
     |> case do
-      {:ok, [{_datetime, amount}]} -> {:ok, amount}
+      {:ok, [[_datetime, amount]]} -> {:ok, amount}
       {:ok, []} -> {:ok, nil}
       res -> res
     end
@@ -182,7 +187,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   def trx_sum_over_time_in_interval(measurement, from, to, resolution, transaction_type) do
     sum_over_time_from_to_query(measurement, from, to, resolution, transaction_type)
     |> Store.query()
-    |> parse_trx_sum_time_series()
+    |> parse_time_series()
   end
 
   @doc ~s"""
@@ -212,7 +217,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   def top_transactions(measurement, from, to, transaction_type, limit) do
     select_top_transactions(measurement, from, to, transaction_type, limit)
     |> Store.query()
-    |> parse_transactions_time_series()
+    |> parse_time_series()
   end
 
   @doc ~s"""
@@ -240,7 +245,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
-    {datetime, total_eth_spent}
+    [datetime, total_eth_spent]
   end
 
   defp eth_spent_by_projects_query(measurements_list, from, to) do
@@ -311,85 +316,6 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
-
-  defp parse_trx_sum_time_series(%{error: error}) do
-    {:error, error}
-  end
-
-  defp parse_trx_sum_time_series(%{results: [%{error: error}]}) do
-    {:error, error}
-  end
-
-  defp parse_trx_sum_time_series(%{
-         results: [
-           %{
-             series: [
-               %{
-                 values: transactions
-               }
-             ]
-           }
-         ]
-       }) do
-    result =
-      transactions
-      |> Enum.map(fn [iso8601_datetime, amount] ->
-        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-        {datetime, amount}
-      end)
-
-    {:ok, result}
-  end
-
-  defp parse_trx_sum_time_series(_), do: {:ok, []}
-
-  defp parse_last_block_number(%{results: [%{error: error}]}) do
-    {:error, error}
-  end
-
-  defp parse_last_block_number(%{
-         results: [
-           %{
-             series: [
-               %{
-                 values: block_number
-               }
-             ]
-           }
-         ]
-       }) do
-    [[_iso8601_datetime, block_number] | _] = block_number
-    {:ok, block_number}
-  end
-
-  defp parse_last_block_number(_), do: {:ok, nil}
-
-  defp parse_transactions_time_series(%{results: [%{error: error}]}) do
-    {:error, error}
-  end
-
-  defp parse_transactions_time_series(%{
-         results: [
-           %{
-             series: [
-               %{
-                 values: transactions
-               }
-             ]
-           }
-         ]
-       }) do
-    result =
-      transactions
-      |> Enum.map(fn [iso8601_datetime, trx_hash, trx_value, trx_type, from_addr, to_addr] ->
-        {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-        {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr}
-      end)
-
-    {:ok, result}
-  end
-
-  defp parse_transactions_time_series(_), do: {:ok, []}
 
   defp construct_internal_eth_addresses_filter(ticker, transaction_type) do
     case ticker |> Project.project_eth_addresses_by_ticker() do

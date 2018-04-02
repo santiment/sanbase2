@@ -192,7 +192,7 @@ const enhance = compose(
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),
   withState('isToggledVolume', 'toggleVolume', true),
-  withState('isToggledTwitter', 'toggleTwitter', false),
+  withState('isToggledTwitter', 'toggleTwitter', true),
   withState('isToggledBurnRate', 'toggleBurnRate', false),
   withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
   withState('isToggledEthPrice', 'toggleEthPrice', false),

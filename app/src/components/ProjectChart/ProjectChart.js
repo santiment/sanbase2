@@ -74,7 +74,7 @@ const makeChartDataFromHistory = ({
   isToggledEthPrice,
   ...props
 }) => {
-  const twitter = props.twitter.history.items || []
+  const twitterData = props.historyTwitterData || {}
   const github = props.github.history.items || []
   const burnRate = props.burnRate.items || []
   const transactionVolume = props.transactionVolume.items || []
@@ -156,25 +156,9 @@ const makeChartDataFromHistory = ({
         y: data.activity
       }
     })}
-  const twitterDataset = !isToggledTwitter ? null : {
-    label: 'Twitter',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-5',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.twitter,
-    backgroundColor: COLORS.twitter,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: twitter.map(data => {
-      return {
-        x: data.datetime,
-        y: data.followersCount
-      }
-    })}
+  const twitterDataset = !isToggledTwitter ? null : twitterData.dataset
+  console.log(twitterData.dataset)
+
   const burnrateDataset = !isToggledBurnRate ? null : {
     label: 'Burn Rate',
     type: 'bar',
@@ -461,7 +445,7 @@ const makeOptionsFromProps = props => ({
         props.github.history.items.length !== 0,
       position: 'right'
     }, {
-      id: 'y-axis-5',
+      id: 'y-axis-twitter',
       type: 'linear',
       tooltips: {
         mode: 'index',
@@ -479,7 +463,9 @@ const makeOptionsFromProps = props => ({
         display: false
       },
       display: props.isToggledTwitter &&
-        props.twitter.history.items.length !== 0,
+        props.historyTwitterData &&
+        props.historyTwitterData.items &&
+        props.historyTwitterData.items.length !== 0,
       position: 'right'
     }, {
       id: 'y-axis-6',

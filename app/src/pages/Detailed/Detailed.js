@@ -31,6 +31,7 @@ import {
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'
+import withTimeseries from './withTimeseries'
 import './Detailed.css'
 
 const propTypes = {
@@ -45,11 +46,6 @@ export const Detailed = ({
     loading: true,
     error: false,
     twitterData: []
-  },
-  TwitterHistoryData = {
-    loading: true,
-    error: false,
-    twitterHistoryData: []
   },
   HistoryPrice = {
     loading: true,
@@ -92,7 +88,11 @@ export const Detailed = ({
     historyPrice: []
   },
   changeChartVars,
-  isDesktop
+  isDesktop,
+  historyTwitterData = {
+    items: []
+  },
+  ...props
 }) => {
   const project = Project.project
 
@@ -100,20 +100,20 @@ export const Detailed = ({
     return <Redirect to='/' />
   }
 
-  const twitter = {
-    history: {
-      error: TwitterHistoryData.error || false,
-      loading: TwitterHistoryData.loading,
-      items: TwitterHistoryData.historyTwitterData || []
-    },
-    data: {
-      error: TwitterData.error || false,
-      loading: TwitterData.loading,
-      followersCount: TwitterData.twitterData
-        ? TwitterData.twitterData.followersCount
-        : undefined
-    }
-  }
+  //const twitter = {
+    //history: {
+      //error: TwitterHistoryData.error || false,
+      //loading: TwitterHistoryData.loading,
+      //items: TwitterHistoryData.historyTwitterData || []
+    //},
+    //data: {
+      //error: TwitterData.error || false,
+      //loading: TwitterData.loading,
+      //followersCount: TwitterData.twitterData
+        //? TwitterData.twitterData.followersCount
+        //: undefined
+    //}
+  //}
 
   const price = {
     history: {
@@ -182,7 +182,7 @@ export const Detailed = ({
       routerHistory={history}
       location={location}
       isDesktop={isDesktop}
-      twitter={twitter}
+      {...props}
       price={price}
       github={github}
       burnRate={burnRate}
@@ -315,6 +315,78 @@ const enhance = compose(
       }
     }
   }),
+  withTimeseries({
+    query: TwitterDataGQL,
+    name: 'TwitterData',
+    options: ({chartVars}) => {
+      const { ticker } = chartVars
+      return {
+        skip: !ticker,
+        errorPolicy: 'all',
+        variables: {
+          ticker
+        }
+      }
+    }}, {
+      query: TwitterHistoryGQL,
+      name: 'historyTwitterData',
+      chartjs: {
+        dataset: {
+          label: 'Twitter',
+          type: 'line',
+          fill: false,
+          yAxisID: 'y-axis-twitter',
+          datalabels: {
+            display: false
+          },
+          borderColor: 'rgba(16, 195, 245, 0.7)',
+          backgroundColor: 'rgba(16, 195, 245, 0.7)',
+          borderWidth: 1,
+          pointBorderWidth: 2,
+          pointRadius: 2,
+          data: data => data.map(item => {
+            return {
+              x: item.datetime,
+              y: item.followersCount
+            }
+          })
+        },
+        scale: {
+          id: 'y-axis-twitter',
+          type: 'linear',
+          tooltips: {
+            mode: 'index',
+            intersect: false
+          },
+          scaleLabel: {
+            display: true,
+            labelString: 'Twitter',
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            display: true
+          },
+          gridLines: {
+            display: false
+          },
+          display: (isToggled, data) => isToggled &&
+            data.history.items.length !== 0,
+          position: 'right'
+        }
+      },
+      options: ({chartVars}) => {
+        const {from, to, ticker} = chartVars
+        return {
+          skip: !from || !ticker,
+          errorPolicy: 'all',
+          variables: {
+            from,
+            to,
+            ticker
+          }
+        }
+      }
+    }),
   graphql(HistoryPriceGQL, {
     name: 'EthPrice',
     options: ({chartVars, Project}) => {
@@ -330,34 +402,34 @@ const enhance = compose(
       }
     }
   }),
-  graphql(TwitterDataGQL, {
-    name: 'TwitterData',
-    options: ({chartVars}) => {
-      const { ticker } = chartVars
-      return {
-        skip: !ticker,
-        errorPolicy: 'all',
-        variables: {
-          ticker
-        }
-      }
-    }
-  }),
-  graphql(TwitterHistoryGQL, {
-    name: 'TwitterHistoryData',
-    options: ({chartVars}) => {
-      const {from, to, ticker} = chartVars
-      return {
-        skip: !from || !ticker,
-        errorPolicy: 'all',
-        variables: {
-          from,
-          to,
-          ticker
-        }
-      }
-    }
-  }),
+  //graphql(TwitterDataGQL, {
+    //name: 'TwitterData',
+    //options: ({chartVars}) => {
+      //const { ticker } = chartVars
+      //return {
+        //skip: !ticker,
+        //errorPolicy: 'all',
+        //variables: {
+          //ticker
+        //}
+      //}
+    //}
+  //}),
+  //graphql(TwitterHistoryGQL, {
+    //name: 'TwitterHistoryData',
+    //options: ({chartVars}) => {
+      //const {from, to, ticker} = chartVars
+      //return {
+        //skip: !from || !ticker,
+        //errorPolicy: 'all',
+        //variables: {
+          //from,
+          //to,
+          //ticker
+        //}
+      //}
+    //}
+  //}),
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
     options: ({chartVars}) => {

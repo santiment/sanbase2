@@ -170,7 +170,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
            Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
       result =
         eth_spent_over_time
-        |> Enum.map(fn {datetime, eth_spent} ->
+        |> Enum.map(fn [datetime, eth_spent] ->
           %{datetime: datetime, eth_spent: eth_spent}
         end)
 
@@ -217,7 +217,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
            ) do
       result =
         total_eth_spent_over_time
-        |> Enum.map(fn {datetime, eth_spent} ->
+        |> Enum.map(fn [datetime, eth_spent] ->
           %{
             datetime: datetime,
             eth_spent: eth_spent
@@ -253,7 +253,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
            Etherscan.Store.top_transactions(ticker, from, to, trx_type, limit) do
       result =
         eth_transactions
-        |> Enum.map(fn {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr} ->
+        |> Enum.map(fn [datetime, trx_hash, trx_value, trx_type, from_addr, to_addr] ->
           %{
             datetime: datetime,
             trx_hash: trx_hash,

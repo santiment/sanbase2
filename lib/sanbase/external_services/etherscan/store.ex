@@ -107,7 +107,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   def eth_spent_by_projects(measurements_list, from, to) do
     total_eth_spent =
       measurements_list
-      |> Stream.map(&trx_sum_in_interval(&1, from, to, "out"))
+      |> Enum.map(&Task.async(fn -> trx_sum_in_interval(&1, from, to, "out") end))
+      |> Stream.map(&Task.await/1)
       |> Stream.reject(fn {:ok, sum} -> sum == nil end)
       |> Enum.reduce(0, fn
         {:ok, sum}, acc ->

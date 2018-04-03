@@ -68,7 +68,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     Returns `{:ok, result}` on success, `{:error, reason}` otherwise
   """
   @spec trx_sum_in_interval(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
-          {:ok, list()} | {:error, String.t()}
+          {:ok, number()} | {:ok, nil} | {:error, String.t()}
   def trx_sum_in_interval(measurement, from, to, transaction_type) do
     sum_from_to_query(measurement, from, to, transaction_type)
     |> Store.query()
@@ -86,7 +86,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     Returns `result` on success, raises an error otherwise
   """
   @spec trx_sum_in_interval!(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
-          list() | nil | no_return()
+          number() | nil | no_return()
   def trx_sum_in_interval!(measurement, from, to, transaction_type) do
     case trx_sum_in_interval(measurement, from, to, transaction_type) do
       {:ok, result} -> result
@@ -100,24 +100,25 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     the transactions is aggreated in influxdb for each measurement and the total SUM
     is calculated in Elixir
   """
-  @spec eth_spent_by_projects(list(), %DateTime{}, %DateTime{}) :: number()
+  @spec eth_spent_by_projects(list(), %DateTime{}, %DateTime{}) ::
+          {:ok, number()} | {:ok, nil} | {:error, String.t()}
   def eth_spent_by_projects([], _from, _to), do: {:ok, nil}
 
   def eth_spent_by_projects(measurements_list, from, to) do
-    %{
-      results: [
-        %{
-          series: summed_series
-        }
-      ]
-    } =
-      eth_spent_by_projects_query(measurements_list, from, to)
-      |> Store.query()
-
     total_eth_spent =
-      summed_series
-      |> Enum.reduce(0, fn %{values: [[_, sum]]}, acc ->
-        sum + acc
+      measurements_list
+      |> Stream.map(&trx_sum_in_interval(&1, from, to, "out"))
+      |> Stream.reject(fn {:ok, sum} -> sum == nil end)
+      |> Enum.reduce(0, fn
+        {:ok, sum}, acc ->
+          acc + sum
+
+        {:error, error}, acc ->
+          Logger.warn(
+            "Error while calculating the total eth spent by a project in an interval: #{error}"
+          )
+
+          acc
       end)
 
     {:ok, total_eth_spent}
@@ -130,44 +131,18 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     the transactions is aggreated in influxdb for each measurement and the total SUM
     is calculated in Elixir
   """
-  @spec eth_spent_over_time_by_projects(list(), %DateTime{}, %DateTime{}, String.t()) :: number()
+  @spec eth_spent_over_time_by_projects(list(), %DateTime{}, %DateTime{}, String.t()) ::
+          {:ok, list()} | {:error, String.t()}
   def eth_spent_over_time_by_projects([], _from, _to, _interval), do: {:ok, []}
 
-  def eth_spent_over_time_by_projects(measurements_list, from, to, interval) do
-    measurements_list
-    |> Enum.chunk_every(10)
-    |> Enum.map(fn measurements_list ->
-      measurements_list
-      |> eth_spent_over_time_by_projects_query(from, to, interval)
-      |> Store.query()
-    end)
-    |> Enum.flat_map(&series_from_eth_spent_over_time_by_projects/1)
-    |> reduce_eth_spent_over_time_by_projects()
-  end
-
-  defp series_from_eth_spent_over_time_by_projects(%{
-         results: [
-           %{
-             series: series
-           }
-         ]
-       }) do
-    series
-  end
-
-  defp series_from_eth_spent_over_time_by_projects({:results, [%{statement_id: 0}]}) do
-    []
-  end
-
-  defp reduce_eth_spent_over_time_by_projects(series) do
+  def eth_spent_over_time_by_projects(measurements_list, from, to, resolution) do
     total_eth_spent_over_time =
-      series
-      |> Enum.map(fn %{values: values} ->
-        values
-      end)
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(&reduce_values/1)
+      measurements_list
+      |> Stream.map(&trx_sum_over_time_in_interval!(&1, from, to, resolution, "out"))
+      |> Enum.reject(fn list -> [] == list end)
+      |> Stream.zip()
+      |> Stream.map(&Tuple.to_list/1)
+      |> Stream.map(&reduce_values/1)
 
     {:ok, total_eth_spent_over_time}
   end
@@ -201,7 +176,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
           %DateTime{},
           String.t(),
           String.t()
-        ) :: list() | nil | no_return()
+        ) :: list() | no_return()
   def trx_sum_over_time_in_interval!(measurement, from, to, resolution, transaction_type) do
     case trx_sum_over_time_in_interval(measurement, from, to, resolution, transaction_type) do
       {:ok, result} -> result
@@ -214,6 +189,13 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     transaction type. Supported transaction types are `all`, `in` and `out`. Returns
     `{:ok, result}` on success, `{:error, error}` otherwise.
   """
+  @spec top_transactions(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          String.t()
+        ) :: {:ok, list()} | {:error, String.t()}
   def top_transactions(measurement, from, to, transaction_type, limit) do
     select_top_transactions(measurement, from, to, transaction_type, limit)
     |> Store.query()
@@ -225,6 +207,13 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     transaction type. Supported transaction types are `all`, `in` and `out`. Returns
     `result` on success, raises an error otherwise.
   """
+  @spec top_transactions!(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          String.t()
+        ) :: list() | no_return()
   def top_transactions!(measurement, from, to, transaction_type, limit) do
     case top_transactions(measurement, from, to, transaction_type, limit) do
       {:ok, result} -> result
@@ -236,43 +225,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
   defp reduce_values([]), do: []
 
-  defp reduce_values([[iso8601_datetime, _] | _] = values) do
+  defp reduce_values([[datetime, _] | _] = values) do
     total_eth_spent =
       values
       |> Enum.reduce(0, fn [_, sum], acc ->
         sum + acc
       end)
 
-    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-
     [datetime, total_eth_spent]
-  end
-
-  defp eth_spent_by_projects_query(measurements_list, from, to) do
-    measurements_string =
-      measurements_list
-      |> Enum.map(fn elem -> "\"#{elem}\"" end)
-      |> Enum.join(",")
-
-    ~s/SELECT SUM(trx_value) from #{measurements_string}
-    WHERE transaction_type = 'out'
-    AND trx_hash != ''
-    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
-  end
-
-  defp eth_spent_over_time_by_projects_query(measurements_list, from, to, resolution) do
-    measurements_string =
-      measurements_list
-      |> Enum.map(fn elem -> "\"#{elem}\"" end)
-      |> Enum.join(",")
-
-    ~s/SELECT SUM(trx_value) from #{measurements_string}
-    WHERE transaction_type = 'out'
-    AND trx_hash != ''
-    AND time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
-    GROUP BY TIME(#{resolution}) fill(0)/
   end
 
   defp select_last_block_number(address) do
@@ -349,7 +309,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
   def filter_eth_addresses_by_field(addresses, field) do
     addresses
-    |> Enum.map(&filter_address(&1, field))
+    |> Stream.map(&filter_address(&1, field))
     |> Enum.join(" AND ")
   end
 

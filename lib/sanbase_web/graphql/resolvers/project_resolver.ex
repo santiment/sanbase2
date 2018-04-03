@@ -54,13 +54,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     query =
       from(
         p in Project,
-        inner_join: ico in Ico,
-        on: p.id == ico.project_id,
         inner_join: infr in Infrastructure,
         on: p.infrastructure_id == infr.id,
-        where:
-          not is_nil(p.coinmarketcap_id) and not is_nil(ico.main_contract_address) and
-            infr.code == "ETH",
+        where: not is_nil(p.coinmarketcap_id) and infr.code == "ETH" and fragment("? = (
+              select project_id
+              from icos where
+              icos.project_id = ? and
+              icos.main_contract_address is not null
+              order by start_date
+              limit 1
+          )", p.id, p.id),
         order_by: p.name
       )
 
@@ -498,7 +501,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     yesterday = Timex.shift(Timex.now(), days: -1)
     the_other_day = Timex.shift(Timex.now(), days: -2)
 
-    with {:ok, [[_dt, today_vol]]} <- Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
+    with {:ok, [[_dt, today_vol]]} <-
+           Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
          {:ok, [[_dt, yesterday_vol]]} <-
            Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
          true <- yesterday_vol > 0 do

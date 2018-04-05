@@ -37,7 +37,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
                          method: :get,
                          url: "https://graphs2.coinmarketcap.com/global/marketcap-total/"
                        } ->
-      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "coinmarketcap_total_graph_data.json"))}
+      %Tesla.Env{
+        status: 200,
+        body: File.read!(Path.join(__DIR__, "coinmarketcap_total_graph_data.json"))
+      }
     end)
 
     assert GraphData.fetch_first_marketcap_total_datetime() ==
@@ -46,7 +49,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
 
   test "fetching total market capitalization" do
     Tesla.Mock.mock(fn %{method: :get} ->
-      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "coinmarketcap_total_graph_data.json"))}
+      %Tesla.Env{
+        status: 200,
+        body: File.read!(Path.join(__DIR__, "coinmarketcap_total_graph_data.json"))
+      }
     end)
 
     from_datetime = DateTime.from_unix!(1_367_174_820_000, :millisecond)
@@ -57,7 +63,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     |> Stream.take(1)
     |> Enum.map(fn %PricePoint{datetime: datetime, marketcap: marketcap, volume_usd: volume_usd} ->
       assert datetime == from_datetime
-      assert marketcap == 1599410000
+      assert marketcap == 1_599_410_000
       assert volume_usd == 0
     end)
   end

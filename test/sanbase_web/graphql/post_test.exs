@@ -20,7 +20,16 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     conn = setup_jwt_auth(build_conn(), user)
 
-    {:ok, conn: conn, user: user}
+    user2 =
+      %User{
+        salt: User.generate_salt(),
+        san_balance:
+          Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
+        san_balance_updated_at: Timex.now()
+      }
+      |> Repo.insert!()
+
+    {:ok, conn: conn, user: user, user2: user2}
   end
 
   test "getting all posts as anon user", %{user: user} do
@@ -124,5 +133,60 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     assert json_response(result, 200)["data"]["allInsights"] |> List.first() |> Map.get("text") ==
              post.text
+  end
+
+  test "getting all posts for given user", %{user: user, user2: user2, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    post2 =
+      %Post{
+        poll_id: poll.id,
+        user_id: user2.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    query = """
+    {
+      allInsightsForUser(user_id: #{user.id}) {
+        id,
+        title,
+        short_desc,
+        text,
+        user {
+          email
+        }
+        related_projects {
+          ticker
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsightsForUser"))
+
+    assert json_response(result, 200)["data"]["allInsightsForUser"] |> Enum.count() == 1
+
+    assert json_response(result, 200)["data"]["allInsightsForUser"]
+           |> List.first()
+           |> Map.get("text") == post.text
   end
 end

@@ -222,6 +222,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       |> resolve()
     end
 
+    @desc "Get all posts for given user"
+    field :all_insights_for_user, list_of(:post) do
+      arg(:user_id, non_null(:integer))
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.all_posts_for_user/3)
+      |> resolve()
+    end
+
     @desc "Get the post with the specified id"
     field :post, :post do
       arg(:id, non_null(:integer))

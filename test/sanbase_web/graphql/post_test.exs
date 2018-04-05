@@ -155,7 +155,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     result =
       build_conn()
-      |> post("/graphql", query_skeleton(query, "allInsights"))
+      |> post("/graphql", query_skeleton(query, "post"))
 
     assert [
              %{
@@ -166,7 +166,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
            ] == json_response(result, 200)["data"]["allInsights"]
   end
 
-  test "trying to get not allowed field from posts as anon user", %{user: user} do
+  test "getting all posts as anon user", %{user: user} do
     poll = Poll.find_or_insert_current_poll!()
 
     %Post{
@@ -211,6 +211,37 @@ defmodule SanbaseWeb.Graphql.PostTest do
         state: Post.approved_state()
       }
       |> Repo.insert!()
+
+    query = """
+    {
+      allInsights {
+        title,
+        short_desc
+      }
+    }
+    """
+
+    result =
+      build_conn()
+      |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    assert [%{"title" => post.title, "short_desc" => post.short_desc}] ==
+             json_response(result, 200)["data"]["allInsights"]
+  end
+
+  test "trying to get not allowed field from posts as anon user", %{user: user} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    %Post{
+      poll_id: poll.id,
+      user_id: user.id,
+      title: "Awesome analysis",
+      short_desc: "Example analysis short description",
+      text: "Example text, hoo",
+      link: "http://www.google.com",
+      state: Post.approved_state()
+    }
+    |> Repo.insert!()
 
     query = """
     {
@@ -946,31 +977,22 @@ defmodule SanbaseWeb.Graphql.PostTest do
       }
       |> Repo.insert!()
 
-    post2 =
-      %Post{
-        poll_id: poll.id,
-        user_id: user2.id,
-        title: "Awesome analysis",
-        short_desc: "Example analysis short description",
-        text: "Example text, hoo",
-        link: "http://www.google.com",
-        state: Post.approved_state()
-      }
-      |> Repo.insert!()
+    %Post{
+      poll_id: poll.id,
+      user_id: user2.id,
+      title: "Awesome analysis",
+      short_desc: "Example analysis short description",
+      text: "Example text, hoo",
+      link: "http://www.google.com",
+      state: Post.approved_state()
+    }
+    |> Repo.insert!()
 
     query = """
     {
       allInsightsForUser(user_id: #{user.id}) {
         id,
-        title,
-        short_desc,
-        text,
-        user {
-          email
-        }
-        related_projects {
-          ticker
-        }
+        text
       }
     }
     """
@@ -1023,15 +1045,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     {
       allInsightsUserVoted(user_id: #{user.id}) {
         id,
-        title,
-        short_desc,
-        text,
-        user {
-          email
-        }
-        related_projects {
-          ticker
-        }
+        text
       }
     }
     """

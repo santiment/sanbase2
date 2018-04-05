@@ -204,6 +204,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Get all posts for given user"
     field :all_insights_for_user, list_of(:post) do
       arg(:user_id, non_null(:integer))
+
       middleware(PostPermissions)
 
       Cache.from(&PostResolver.all_posts_for_user/3)
@@ -213,6 +214,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Get all posts a user has voted for"
     field :all_insights_user_voted, list_of(:post) do
       arg(:user_id, non_null(:integer))
+
       middleware(PostPermissions)
 
       Cache.from(&PostResolver.all_posts_user_voted/3)
@@ -223,7 +225,9 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :post, :post do
       arg(:id, non_null(:integer))
 
-      Cache.from(&VotingResolver.post/3)
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.post/3)
       |> resolve()
     end
 

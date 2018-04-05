@@ -15,13 +15,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   end
 
   def price_points_to_measurements(%PricePoint{} = price_point) do
-    [ convert_to_measurement(price_point, "USD", "TOTAL_MARKET") ]
+    [convert_to_measurement(price_point, "USD", "TOTAL_MARKET")]
   end
 
   def price_points_to_measurements(price_points) do
     price_points
     |> Enum.flat_map(fn price_point ->
-      [ convert_to_measurement(price_point, "USD", "TOTAL_MARKET") ]
+      [convert_to_measurement(price_point, "USD", "TOTAL_MARKET")]
     end)
   end
 

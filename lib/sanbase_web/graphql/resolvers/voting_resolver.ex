@@ -15,13 +15,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     {:ok, poll}
   end
 
-  def post(_root, %{id: post_id}, _resolution) do
-    case Repo.get(Post, post_id) do
-      nil -> {:error, "There is no post with id #{post_id}"}
-      post -> {:ok, post}
-    end
-  end
-
   def total_san_votes(%Post{} = post, _args, _context) do
     total_san_votes =
       post

@@ -32,6 +32,67 @@ defmodule SanbaseWeb.Graphql.PostTest do
     {:ok, conn: conn, user: user, user2: user2}
   end
 
+  test "getting a post by id", %{user: user, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    query = """
+    {
+      post(id: #{post.id}) {
+        text
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "post"))
+
+    assert json_response(result, 200)["data"]["post"] |> Map.get("text") == post.text
+  end
+
+  test "getting a post by id for anon user", %{user: user} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    query = """
+    {
+      post(id: #{post.id}) {
+        title,
+        short_desc
+      }
+    }
+    """
+
+    result =
+      build_conn()
+      |> post("/graphql", query_skeleton(query, "post"))
+
+    assert json_response(result, 200)["data"]["post"] |> Map.get("title") == post.title
+  end
+
   test "getting all posts as anon user", %{user: user} do
     poll = Poll.find_or_insert_current_poll!()
 
@@ -67,17 +128,16 @@ defmodule SanbaseWeb.Graphql.PostTest do
   test "trying to get not allowed field from posts as anon user", %{user: user} do
     poll = Poll.find_or_insert_current_poll!()
 
-    post =
-      %Post{
-        poll_id: poll.id,
-        user_id: user.id,
-        title: "Awesome analysis",
-        short_desc: "Example analysis short description",
-        text: "Example text, hoo",
-        link: "http://www.google.com",
-        state: Post.approved_state()
-      }
-      |> Repo.insert!()
+    %Post{
+      poll_id: poll.id,
+      user_id: user.id,
+      title: "Awesome analysis",
+      short_desc: "Example analysis short description",
+      text: "Example text, hoo",
+      link: "http://www.google.com",
+      state: Post.approved_state()
+    }
+    |> Repo.insert!()
 
     query = """
     {
@@ -114,15 +174,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     {
       allInsights {
         id,
-        title,
-        short_desc,
         text,
-        user {
-          email
-        }
-        related_projects {
-          ticker
-        }
       }
     }
     """
@@ -150,31 +202,22 @@ defmodule SanbaseWeb.Graphql.PostTest do
       }
       |> Repo.insert!()
 
-    post2 =
-      %Post{
-        poll_id: poll.id,
-        user_id: user2.id,
-        title: "Awesome analysis",
-        short_desc: "Example analysis short description",
-        text: "Example text, hoo",
-        link: "http://www.google.com",
-        state: Post.approved_state()
-      }
-      |> Repo.insert!()
+    %Post{
+      poll_id: poll.id,
+      user_id: user2.id,
+      title: "Awesome analysis",
+      short_desc: "Example analysis short description",
+      text: "Example text, hoo",
+      link: "http://www.google.com",
+      state: Post.approved_state()
+    }
+    |> Repo.insert!()
 
     query = """
     {
       allInsightsForUser(user_id: #{user.id}) {
         id,
-        title,
-        short_desc,
-        text,
-        user {
-          email
-        }
-        related_projects {
-          ticker
-        }
+        text
       }
     }
     """
@@ -227,15 +270,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     {
       allInsightsUserVoted(user_id: #{user.id}) {
         id,
-        title,
-        short_desc,
-        text,
-        user {
-          email
-        }
-        related_projects {
-          ticker
-        }
+        text
       }
     }
     """

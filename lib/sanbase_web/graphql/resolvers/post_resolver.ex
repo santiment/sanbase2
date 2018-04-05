@@ -11,6 +11,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   @preloaded_assoc [:votes, :user, :related_projects, :images]
 
+  def post(_root, %{id: post_id}, _resolution) do
+    case Repo.get(Post, post_id) do
+      nil -> {:error, "There is no post with id #{post_id}"}
+      post -> {:ok, post}
+    end
+  end
+
   def all_posts(_root, _args, _context) do
     posts =
       Post

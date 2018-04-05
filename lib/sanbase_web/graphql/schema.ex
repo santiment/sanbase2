@@ -231,6 +231,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       |> resolve()
     end
 
+    @desc "Get all posts a user has voted for"
+    field :all_insights_user_voted, list_of(:post) do
+      arg(:user_id, non_null(:integer))
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.all_posts_user_voted/3)
+      |> resolve()
+    end
+
     @desc "Get the post with the specified id"
     field :post, :post do
       arg(:id, non_null(:integer))

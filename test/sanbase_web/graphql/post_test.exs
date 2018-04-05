@@ -189,4 +189,65 @@ defmodule SanbaseWeb.Graphql.PostTest do
            |> List.first()
            |> Map.get("text") == post.text
   end
+
+  test "getting all posts user has voted for", %{user: user, user2: user2, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{post_id: post.id, user_id: user.id}
+    |> Repo.insert!()
+
+    post2 =
+      %Post{
+        poll_id: poll.id,
+        user_id: user2.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{post_id: post2.id, user_id: user2.id}
+    |> Repo.insert!()
+
+    query = """
+    {
+      allInsightsUserVoted(user_id: #{user.id}) {
+        id,
+        title,
+        short_desc,
+        text,
+        user {
+          email
+        }
+        related_projects {
+          ticker
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsightsUserVoted"))
+
+    assert json_response(result, 200)["data"]["allInsightsUserVoted"] |> Enum.count() == 1
+
+    assert json_response(result, 200)["data"]["allInsightsUserVoted"]
+           |> List.first()
+           |> Map.get("text") == post.text
+  end
 end

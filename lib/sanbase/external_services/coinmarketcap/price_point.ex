@@ -1,6 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
   alias __MODULE__
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Model.Project
 
   defstruct [:datetime, :marketcap, :price_usd, :volume_usd, :price_btc, :volume_btc]
 
@@ -11,6 +12,34 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint do
       tags: [],
       name: name <> "_#{suffix}"
     }
+  end
+
+  def price_points_to_measurements(%PricePoint{} = price_point) do
+    [ convert_to_measurement(price_point, "USD", "TOTAL_MARKET") ]
+  end
+
+  def price_points_to_measurements(price_points) do
+    price_points
+    |> Enum.flat_map(fn price_point ->
+      [ convert_to_measurement(price_point, "USD", "TOTAL_MARKET") ]
+    end)
+  end
+
+  def price_points_to_measurements(%PricePoint{} = price_point, %Project{ticker: ticker}) do
+    [
+      convert_to_measurement(price_point, "USD", ticker),
+      convert_to_measurement(price_point, "BTC", ticker)
+    ]
+  end
+
+  def price_points_to_measurements(price_points, %Project{ticker: ticker}) do
+    price_points
+    |> Enum.flat_map(fn price_point ->
+      [
+        convert_to_measurement(price_point, "USD", ticker),
+        convert_to_measurement(price_point, "BTC", ticker)
+      ]
+    end)
   end
 
   defp price_point_to_fields(

@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
               from icos where
               icos.project_id = ? and
               icos.main_contract_address is not null
-              order by start_date
+              order by end_date DESC
               limit 1
           )", p.id, p.id),
         order_by: p.name

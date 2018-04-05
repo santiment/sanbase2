@@ -11,7 +11,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     EtherbiResolver,
     VotingResolver,
     TechIndicatorsResolver,
-    FileResolver
+    FileResolver,
+    PostResolver
   }
 
   alias SanbaseWeb.Graphql.Helpers.Cache
@@ -22,7 +23,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     MultipleAuth,
     BasicAuth,
     JWTAuth,
-    ProjectPermissions
+    ProjectPermissions,
+    PostPermissions
   }
 
   alias SanbaseWeb.Graphql.SanbaseRepo
@@ -209,6 +211,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Returns the currently running poll"
     field :current_poll, :poll do
       Cache.from(&VotingResolver.current_poll/3)
+      |> resolve()
+    end
+
+    @desc "Get all posts"
+    field :all_insights, list_of(:post) do
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.all_posts/3)
       |> resolve()
     end
 

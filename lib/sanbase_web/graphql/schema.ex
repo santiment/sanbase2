@@ -214,11 +214,21 @@ defmodule SanbaseWeb.Graphql.Schema do
       |> resolve()
     end
 
+    @desc "Get the post with the specified id"
+    field :post, :post do
+      arg(:id, non_null(:integer))
+
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.post/3)
+      |> resolve()
+    end
+
     @desc "Get all posts"
     field :all_insights, list_of(:post) do
       middleware(PostPermissions)
 
-      Cache.from(&PostResolver.all_posts/3)
+      Cache.from(&PostResolver.posts/3)
       |> resolve()
     end
 
@@ -228,7 +238,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      Cache.from(&PostResolver.all_posts_for_user/3)
+      Cache.from(&PostResolver.posts_by_user/3)
       |> resolve()
     end
 
@@ -238,17 +248,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      Cache.from(&PostResolver.all_posts_user_voted/3)
-      |> resolve()
-    end
-
-    @desc "Get the post with the specified id"
-    field :post, :post do
-      arg(:id, non_null(:integer))
-
-      middleware(PostPermissions)
-
-      Cache.from(&PostResolver.post/3)
+      Cache.from(&PostResolver.posts_user_voted_for/3)
       |> resolve()
     end
 

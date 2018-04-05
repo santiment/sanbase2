@@ -3,11 +3,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   import Ecto.Query
 
-  alias Sanbase.Auth.User
-  alias Sanbase.Voting.{Poll, Post, Vote}
+  alias Sanbase.Voting.Post
   alias Sanbase.Repo
-  alias Sanbase.InternalServices.Ethauth
-  alias SanbaseWeb.Graphql.Resolvers.Helpers
 
   @preloaded_assoc [:votes, :user, :related_projects, :images]
 
@@ -18,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     end
   end
 
-  def all_posts(_root, _args, _context) do
+  def posts(_root, _args, _context) do
     posts =
       Post
       |> Repo.all()
@@ -27,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
-  def all_posts_for_user(_root, %{user_id: user_id}, _context) do
+  def posts_by_user(_root, %{user_id: user_id}, _context) do
     query =
       from(
         p in Post,
@@ -42,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
-  def all_posts_user_voted(_root, %{user_id: user_id}, _context) do
+  def posts_user_voted_for(_root, %{user_id: user_id}, _context) do
     query =
       from(
         p in Post,

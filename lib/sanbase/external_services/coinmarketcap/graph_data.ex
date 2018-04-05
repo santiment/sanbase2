@@ -173,14 +173,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   end
 
   defp extract_price_points_for_interval(coinmarketcap_id, {start_interval_sec, end_interval_sec}) do
-    graph_data_currencies_interval_url(coinmarketcap_id, start_interval_sec * 1000, end_interval_sec * 1000)
+    graph_data_currencies_interval_url(
+      coinmarketcap_id,
+      start_interval_sec * 1000,
+      end_interval_sec * 1000
+    )
     |> get()
     |> case do
       %{status: 200, body: body} ->
         body |> json_to_price_points()
 
       _ ->
-        Logger.error("Failed to fetch graph data for #{coinmarketcap_id} for the selected interval")
+        Logger.error(
+          "Failed to fetch graph data for #{coinmarketcap_id} for the selected interval"
+        )
+
         []
     end
   end

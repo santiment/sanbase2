@@ -67,7 +67,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> Stream.each(fn marketcap_totals ->
       measurement_points =
         marketcap_totals
-        |> Enum.flat_map(&price_points_to_measurements(&1))
+        |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1))
 
       measurement_points |> Store.import()
 
@@ -81,7 +81,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> Stream.each(fn prices ->
       measurement_points =
         prices
-        |> Enum.flat_map(&price_points_to_measurements(&1, project))
+        |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, project))
 
       measurement_points |> Store.import()
 
@@ -92,41 +92,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   def update_last_cmc_history_datetime(_project, []), do: :ok
 
-  def update_last_cmc_history_datetime(ticker, points) do
+  def update_last_cmc_history_datetime(coinmarketcap_id, points) do
     last_price_datetime_updated =
       points
       |> Enum.max_by(&Measurement.get_timestamp/1)
       |> Measurement.get_datetime()
 
-    Store.update_last_history_datetime_cmc(ticker, last_price_datetime_updated)
-  end
-
-  defp price_points_to_measurements(%PricePoint{} = price_point) do
-    [ PricePoint.convert_to_measurement(price_point, "USD", "TOTAL_MARKET") ]
-  end
-
-  defp price_points_to_measurements(price_points) do
-    price_points
-    |> Enum.flat_map(fn price_point ->
-      [ PricePoint.convert_to_measurement(price_point, "USD", "TOTAL_MARKET") ]
-    end)
-  end
-
-  defp price_points_to_measurements(%PricePoint{} = price_point, %Project{ticker: ticker}) do
-    [
-      PricePoint.convert_to_measurement(price_point, "USD", ticker),
-      PricePoint.convert_to_measurement(price_point, "BTC", ticker)
-    ]
-  end
-
-  defp price_points_to_measurements(price_points, %Project{ticker: ticker}) do
-    price_points
-    |> Enum.flat_map(fn price_point ->
-      [
-        PricePoint.convert_to_measurement(price_point, "USD", ticker),
-        PricePoint.convert_to_measurement(price_point, "BTC", ticker)
-      ]
-    end)
+    Store.update_last_history_datetime_cmc(coinmarketcap_id, last_price_datetime_updated)
   end
 
   defp json_to_price_points(json) do
@@ -195,7 +167,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
         body |> json_to_price_points()
 
       _ ->
-        Logger.error("Failed to fetch graph data for interval")
+        Logger.error("Failed to fetch graph data for total marketcap for the selected interval")
         []
     end
   end
@@ -208,7 +180,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
         body |> json_to_price_points()
 
       _ ->
-        Logger.error("Failed to fetch graph data for interval")
+        Logger.error("Failed to fetch graph data for #{coinmarketcap_id} for the selected interval")
         []
     end
   end
@@ -231,12 +203,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end)
   end
 
-  defp graph_data_currencies_all_time_url(ticker) do
-    "/currencies/#{ticker}/"
+  defp graph_data_currencies_all_time_url(coinmarketcap_id) do
+    "/currencies/#{coinmarketcap_id}/"
   end
 
-  defp graph_data_currencies_interval_url(ticker, from_timestamp, to_timestamp) do
-    "/currencies/#{ticker}/#{from_timestamp}/#{to_timestamp}/"
+  defp graph_data_currencies_interval_url(coinmarketcap_id, from_timestamp, to_timestamp) do
+    "/currencies/#{coinmarketcap_id}/#{from_timestamp}/#{to_timestamp}/"
   end
 
   defp graph_data_marketcap_total_all_time_url() do

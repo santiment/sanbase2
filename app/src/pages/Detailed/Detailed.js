@@ -89,9 +89,6 @@ export const Detailed = ({
   },
   changeChartVars,
   isDesktop,
-  historyTwitterData = {
-    items: []
-  },
   ...props
 }) => {
   const project = Project.project
@@ -99,21 +96,6 @@ export const Detailed = ({
   if (/not found/.test(Project.errorMessage)) {
     return <Redirect to='/' />
   }
-
-  //const twitter = {
-    //history: {
-      //error: TwitterHistoryData.error || false,
-      //loading: TwitterHistoryData.loading,
-      //items: TwitterHistoryData.historyTwitterData || []
-    //},
-    //data: {
-      //error: TwitterData.error || false,
-      //loading: TwitterData.loading,
-      //followersCount: TwitterData.twitterData
-        //? TwitterData.twitterData.followersCount
-        //: undefined
-    //}
-  //}
 
   const price = {
     history: {
@@ -402,34 +384,19 @@ const enhance = compose(
       }
     }
   }),
-  //graphql(TwitterDataGQL, {
-    //name: 'TwitterData',
-    //options: ({chartVars}) => {
-      //const { ticker } = chartVars
-      //return {
-        //skip: !ticker,
-        //errorPolicy: 'all',
-        //variables: {
-          //ticker
-        //}
-      //}
-    //}
-  //}),
-  //graphql(TwitterHistoryGQL, {
-    //name: 'TwitterHistoryData',
-    //options: ({chartVars}) => {
-      //const {from, to, ticker} = chartVars
-      //return {
-        //skip: !from || !ticker,
-        //errorPolicy: 'all',
-        //variables: {
-          //from,
-          //to,
-          //ticker
-        //}
-      //}
-    //}
-  //}),
+  graphql(TwitterDataGQL, {
+    name: 'TwitterData',
+    options: ({chartVars}) => {
+      const { ticker } = chartVars
+      return {
+        skip: !ticker,
+        errorPolicy: 'all',
+        variables: {
+          ticker
+        }
+      }
+    }
+  }),
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
     options: ({chartVars}) => {

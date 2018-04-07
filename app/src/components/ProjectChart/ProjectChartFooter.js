@@ -59,16 +59,14 @@ const FilterCategory = ({
     </div>
   </div>
 )
-//<ToggleBtn
-          //loading={props.historyTwitterData.loading}
-          //disabled={props.historyTwitterData.items.length === 0}
-          //isToggled={props.isToggledTwitter &&
-            //props.historyTwitterData.items.length !== 0}
-          //toggle={props.toggleTwitter}>
-          //<Label circular className='twitterLabel' empty />
-          //Twitter
-        //</ToggleBtn>
-const ProjectChartFooter = (props) => (
+//
+const ProjectChartFooter = ({
+  historyTwitterData = {
+    loading: false,
+    items: []
+  },
+  ...props
+}) => (
   <div className='chart-footer'>
     <div className='chart-footer-filters'>
       <FilterCategory name='Financial'>
@@ -137,7 +135,15 @@ const ProjectChartFooter = (props) => (
         </ToggleBtn>
       </FilterCategory>}
       <FilterCategory name='Social'>
-
+        <ToggleBtn
+          loading={historyTwitterData.loading}
+          disabled={historyTwitterData.items.length === 0}
+          isToggled={props.isToggledTwitter &&
+            historyTwitterData.items.length !== 0}
+          toggle={props.toggleTwitter}>
+          <Label circular className='twitterLabel' empty />
+          Twitter
+        </ToggleBtn>
       </FilterCategory>
       {(props.isERC20 || props.ticker === 'ETH') &&
       <FilterCategory name='Ethereum'>

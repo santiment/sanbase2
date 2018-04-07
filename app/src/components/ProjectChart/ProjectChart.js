@@ -157,7 +157,6 @@ const makeChartDataFromHistory = ({
       }
     })}
   const twitterDataset = !isToggledTwitter ? null : twitterData.dataset
-  console.log(twitterData.dataset)
 
   const burnrateDataset = !isToggledBurnRate ? null : {
     label: 'Burn Rate',

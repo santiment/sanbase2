@@ -25,6 +25,11 @@ exports[`Project detail page container it should render correctly 1`] = `
   />
   <div>
     <withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))))
+      TwitterHistoryData={
+        Object {
+          "loading": true,
+        }
+      }
       burnRate={
         Object {
           "error": false,
@@ -64,26 +69,27 @@ exports[`Project detail page container it should render correctly 1`] = `
           },
         }
       }
+      projectId={12}
+      projects={
+        Array [
+          Object {
+            "id": 12,
+            "name": "Aeternity",
+            "ticker": "AE",
+          },
+          Object {
+            "id": 15,
+            "name": "Aragon",
+            "ticker": "ANT",
+          },
+        ]
+      }
       ticker="AE"
       transactionVolume={
         Object {
           "error": false,
           "items": Array [],
           "loading": true,
-        }
-      }
-      twitter={
-        Object {
-          "data": Object {
-            "error": false,
-            "followersCount": undefined,
-            "loading": true,
-          },
-          "history": Object {
-            "error": false,
-            "items": Array [],
-            "loading": true,
-          },
         }
       }
     />

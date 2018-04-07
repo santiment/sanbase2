@@ -1,11 +1,23 @@
 import { compose } from 'recompose'
 import { graphql } from 'react-apollo'
 
+const makeDataset = (dataset = {}, data = []) => {
+  return {
+    ...dataset,
+    data: data.map(item => {
+      return {
+        x: item.datetime,
+        y: item.followersCount
+      }
+    })
+  }
+}
+
 const makeProps = (name, chartjs = {}) => props => {
   const Data = props[name] || {}
   return {
     [name]: {
-      dataset: chartjs.dataset || undefined,
+      dataset: chartjs.dataset ? makeDataset(chartjs.dataset, Data[name]) : undefined,
       scale: chartjs.scale || undefined,
       loading: Data.loading || false,
       error: Data.error || false,

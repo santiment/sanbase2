@@ -74,6 +74,21 @@ exports[`Project detail page container it should render correctly 1`] = `
           },
         }
       }
+      projectId={12}
+      projects={
+        Array [
+          Object {
+            "id": 12,
+            "name": "Aeternity",
+            "ticker": "AE",
+          },
+          Object {
+            "id": 15,
+            "name": "Aragon",
+            "ticker": "ANT",
+          },
+        ]
+      }
       ticker="AE"
       transactionVolume={
         Object {

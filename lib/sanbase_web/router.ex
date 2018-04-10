@@ -33,7 +33,8 @@ defmodule SanbaseWeb.Router do
       Absinthe.Plug,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
-      max_complexity: 5000
+      max_complexity: 5000,
+      log_level: :info
     )
 
     if Mix.env() == :dev do

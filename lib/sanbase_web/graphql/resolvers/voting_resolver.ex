@@ -30,7 +30,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   def voted_at(%Post{} = post, _args, %{
         context: %{auth: %{current_user: user}}
       }) do
-    case Repo.get_by(Vote, post_id: post.id, user_id: user.id) do
+    post
+    |> Repo.preload([:votes])
+    |> Map.get(:votes, [])
+    |> Enum.find(&(&1.user_id == user.id))
+    |> case do
       nil -> {:ok, nil}
       vote -> {:ok, vote.inserted_at}
     end

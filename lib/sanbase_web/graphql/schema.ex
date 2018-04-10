@@ -422,7 +422,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:image_urls, list_of(:string))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.create_post/3)
+      resolve(&PostResolver.create_post/3)
     end
 
     @desc "Mutation for deleting an existing post owned by the currently logged in used"
@@ -430,7 +430,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:id, non_null(:id))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.delete_post/3)
+      resolve(&PostResolver.delete_post/3)
     end
 
     @desc "Upload a list images and get the urls to them"

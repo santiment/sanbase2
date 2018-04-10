@@ -20,7 +20,9 @@
 .detailed-name {
   display: flex;
   align-items: center;
-  padding-top: 12px;
+  padding-top: 0;
+  justify-content: center;
+  text-align: center;
 }
 
 .detailed-name h1 {
@@ -222,6 +224,10 @@
     flex-direction: row;
   }
 
+  .detailed-name {
+    padding-top: 12px;
+  }
+
   .detailed-name h1 {
     margin: 0 15px 3px 0;
     font-size: 1.8em;
@@ -230,6 +236,7 @@
 
   .detailed-price {
     line-height: 1.4;
+    margin-top: auto;
   }
 
   .detailed-price-usd {

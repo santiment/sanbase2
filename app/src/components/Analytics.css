@@ -1,17 +1,39 @@
+.analytics {
+  border-bottom: 1px solid gray;
+}
+
 .analytics-trend-row {
   display: flex;
-  border-bottom: 1px solid rgba(207, 215, 223, 0.5);
-  padding: 16px 20px;
+  padding: 0;
   font-size: 20px;
 }
 
 .analytics-trend-info {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
+  min-width: 30%;
+}
+
+.analytics-trend-info-label {
+  margin-top: 1em;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 14px;
 }
 
 .analytics-trend-details {
   color: #009663;
   font-weight: 500;
+}
+
+.analytics-trend-chart {
+  flex: 1;
+  position: relative;
+  padding: 0;
+  height: 90px;
+  max-width: 70%;
+}
+
+.analytics-trend-chart canvas {
+  margin-top: 10px;
 }

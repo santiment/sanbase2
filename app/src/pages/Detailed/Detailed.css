@@ -27,7 +27,9 @@
 .detailed-name {
   display: flex;
   align-items: center;
-  padding-top: 12px;
+  padding-top: 0;
+  justify-content: center;
+  text-align: center;
 }
 
 .detailed-name h1 {
@@ -48,7 +50,7 @@
   font-size: 1.6em;
   font-weight: 300;
   z-index: -1;
-  margin-top: auto;
+  margin-top: 1em;
   line-height: 1.4em;
 }
 
@@ -214,6 +216,10 @@
     flex-direction: row;
   }
 
+  .detailed-name {
+    padding-top: 12px;
+  }
+
   .detailed-name h1 {
     font-size: 1.8em;
     letter-spacing: 0.5px;
@@ -221,6 +227,7 @@
 
   .detailed-price {
     line-height: 1.4;
+    margin-top: auto;
   }
 
   .detailed-price-usd {

@@ -13,7 +13,6 @@ import GeneralInfoBlock from './GeneralInfoBlock'
 import FinancialsBlock from './FinancialsBlock'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import Panel from './../../components/Panel'
-import Search from './../../components/SearchContainer'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { millify } from './../../utils/formatting'
 import { isERC20 } from './../Projects/projectSelectors'
@@ -191,7 +190,6 @@ export const Detailed = ({
           : `${Project.project.ticker} project page`}
         </title>
       </Helmet>
-      {!isDesktop && <Search />}
       <DetailedHeader {...Project} />
       {isDesktop
         ? <Panel zero>{projectContainerChart}</Panel>

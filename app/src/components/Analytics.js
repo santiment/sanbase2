@@ -1,27 +1,38 @@
 import React from 'react'
 import moment from 'moment'
 import { Line } from 'react-chartjs-2'
+import { Icon } from 'semantic-ui-react'
+import { formatNumber } from './../utils/formatting'
 import './Analytics.css'
 
 const COLOR = '#009663'
 
-const getChartDataFromHistory = (history = []) => {
+const makeAxisName = label => 'y-axis-' + label
+
+const getChartDataFromHistory = (data, label) => {
+  const items = data.items || []
+  const borderColor = (data.dataset || {}).borderColor || COLOR
   return {
-    labels: history ? history.map(data => moment(data.datetime).utc()) : [],
+    labels: items ? items.map(data => moment(data.datetime).utc()) : [],
     datasets: [{
+      label,
+      type: 'LineWithLine',
       fill: true,
-      borderColor: COLOR,
-      borderWidth: 1,
-      backgroundColor: 'rgba(239, 242, 236, 0.5)',
-      pointBorderWidth: 2,
-      pointRadius: 1,
-      strokeColor: COLOR,
-      data: history ? history.map(data => data.followersCount) : []
+      borderColor: borderColor,
+      borderWidth: 0.5,
+      yAxisID: makeAxisName(label),
+      backgroundColor: borderColor,
+      pointBorderWidth: 0.2,
+      pointRadius: 0.1,
+      data: items ? items.map(data => data[`${label}`]) : [],
+      datalabels: {
+        display: false
+      }
     }]
   }
 }
 
-const chartOptions = {
+const getChartOptions = (label) => ({
   responsive: true,
   showTooltips: false,
   pointDot: false,
@@ -29,14 +40,24 @@ const chartOptions = {
   datasetFill: false,
   scaleFontSize: 0,
   animation: false,
+  maintainAspectRatio: false,
+  hover: {
+    mode: 'x',
+    intersect: false
+  },
+  tooltips: {
+    mode: 'x',
+    intersect: false
+  },
   legend: {
     display: false
   },
   scales: {
     yAxes: [{
+      id: makeAxisName(label),
       ticks: {
         display: false,
-        beginAtZero: false
+        beginAtZero: true
       },
       gridLines: {
         drawBorder: false,
@@ -53,41 +74,58 @@ const chartOptions = {
       }
     }]
   }
+})
+
+const renderData = (data, label) => {
+  if (data.loading) {
+    return ('Loading ...')
+  }
+  if (data.error) {
+    return ('Server error. Try later...')
+  }
+  if (!data.loading && data.items.length === 0) {
+    return ('No data')
+  }
+  const value = data.items[data.items.length - 1][`${label}`]
+  //return formatNumber(value, { currency: 'USD' })
+  return formatNumber(value)
 }
 
 const Analytics = ({
-  twitter = {
-    history: {
-      loading: true,
-      items: []
+  data = {
+    dataset: {
+      borderColor: COLOR
     },
-    data: {
-      loading: true,
-      followersCount: undefined
-    }
-  }
+    error: false,
+    loading: true,
+    items: []
+  },
+  label,
+  show = 'last 7 days'
 }) => {
-  const chartData = getChartDataFromHistory(twitter.history.items)
+  const chartData = getChartDataFromHistory(data, label)
+  const chartOptions = getChartOptions(label)
+  const borderColor = (data.dataset || {}).borderColor || COLOR
   return (
     <div className='analytics'>
-      <h2>Analytics</h2>
-      <hr />
+      <div className='analytics-trend-row'>
+        <div className='analytics-trend-info-label'>
+          <Icon name='arrow down' /> {show}
+        </div>
+      </div>
       <div className='analytics-trend-row'>
         <div className='analytics-trend-info'>
-          <div className='analytics-trend-title'>
-            Twitter followers
-          </div>
-          <div className='analytics-trend-details'>
-            {twitter.data.loading ? '---' : twitter.data.followersCount}
+          <div
+            className='analytics-trend-details'
+            style={{color: borderColor}}
+          >
+            {renderData(data, label)}
           </div>
         </div>
         <div className='analytics-trend-chart'>
           <Line
-            height={80}
             data={chartData}
             options={chartOptions}
-            style={{ transition: 'opacity 0.25s ease' }}
-            redraw
           />
         </div>
       </div>

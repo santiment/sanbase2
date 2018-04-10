@@ -11,7 +11,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     EtherbiResolver,
     VotingResolver,
     TechIndicatorsResolver,
-    FileResolver
+    FileResolver,
+    PostResolver
   }
 
   alias SanbaseWeb.Graphql.Helpers.Cache
@@ -22,7 +23,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     MultipleAuth,
     BasicAuth,
     JWTAuth,
-    ProjectPermissions
+    ProjectPermissions,
+    PostPermissions
   }
 
   alias SanbaseWeb.Graphql.SanbaseRepo
@@ -216,7 +218,37 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :post, :post do
       arg(:id, non_null(:integer))
 
-      Cache.from(&VotingResolver.post/3)
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.post/3)
+      |> resolve()
+    end
+
+    @desc "Get all posts"
+    field :all_insights, list_of(:post) do
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.posts/3)
+      |> resolve()
+    end
+
+    @desc "Get all posts for given user"
+    field :all_insights_for_user, list_of(:post) do
+      arg(:user_id, non_null(:integer))
+
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.posts_by_user/3)
+      |> resolve()
+    end
+
+    @desc "Get all posts a user has voted for"
+    field :all_insights_user_voted, list_of(:post) do
+      arg(:user_id, non_null(:integer))
+
+      middleware(PostPermissions)
+
+      Cache.from(&PostResolver.posts_user_voted_for/3)
       |> resolve()
     end
 
@@ -411,7 +443,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:image_urls, list_of(:string))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.create_post/3)
+      resolve(&PostResolver.create_post/3)
     end
 
     @desc "Mutation for deleting an existing post owned by the currently logged in used"
@@ -419,7 +451,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:id, non_null(:id))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.delete_post/3)
+      resolve(&PostResolver.delete_post/3)
     end
 
     @desc "Upload a list images and get the urls to them"

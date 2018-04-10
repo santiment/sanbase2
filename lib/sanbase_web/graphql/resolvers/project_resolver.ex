@@ -71,6 +71,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
       ])
+      |> Enum.dedup()
 
     {:ok, erc20_projects}
   end
@@ -92,6 +93,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
       ])
+      |> Enum.dedup()
 
     {:ok, currency_projects}
   end

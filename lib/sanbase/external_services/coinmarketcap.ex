@@ -52,6 +52,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       Sanbase.TaskSupervisor,
       &fetch_and_process_marketcap_total_data/0
     )
+    |> Task.await(:infinity)
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,

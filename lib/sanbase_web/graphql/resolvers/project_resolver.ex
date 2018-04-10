@@ -54,16 +54,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     query =
       from(
         p in Project,
+        inner_join: ico in Ico,
+        on: p.id == ico.project_id,
         inner_join: infr in Infrastructure,
         on: p.infrastructure_id == infr.id,
-        where: not is_nil(p.coinmarketcap_id) and infr.code == "ETH" and fragment("? = (
-              select project_id
-              from icos where
-              icos.project_id = ? and
-              icos.main_contract_address is not null
-              order by end_date DESC
-              limit 1
-          )", p.id, p.id),
+        where:
+          not is_nil(p.coinmarketcap_id) and not is_nil(ico.main_contract_address) and
+            infr.code == "ETH",
         order_by: p.name
       )
 
@@ -74,6 +71,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
       ])
+      |> Enum.dedup()
 
     {:ok, erc20_projects}
   end
@@ -95,6 +93,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
       ])
+      |> Enum.dedup()
 
     {:ok, currency_projects}
   end

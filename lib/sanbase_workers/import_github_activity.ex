@@ -81,7 +81,8 @@ defmodule SanbaseWorkers.ImportGithubActivity do
         %{},
         stream_to: self(),
         recv_timeout: 60_000,
-        follow_redirect: true
+        follow_redirect: true,
+        max_redirect: 10
       )
 
     :ok = stream_loop(request_ref, output_file)

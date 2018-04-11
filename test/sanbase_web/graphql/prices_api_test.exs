@@ -342,6 +342,50 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     Base.encode64(username <> ":" <> password)
   end
 
+  test "no information is available for total marketcap", context do
+    Store.drop_measurement("TOTAL_MARKET_USD")
+
+    query = """
+    {
+      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}", to: "#{context.datetime2}", interval: "1h") {
+        datetime
+        volume
+        marketcap
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+
+    assert json_response(result, 200)["data"]["historyPrice"] == []
+  end
+
+  test "default arguments for total marketcap are correctly set", context do
+    query = """
+    {
+      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}"){
+        datetime
+        volume
+        marketcap
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> put_req_header("authorization", "Basic " <> basic_auth())
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+
+    history_price = json_response(result, 200)["data"]["historyPrice"]
+    assert Enum.count(history_price) == 2
+    assert Enum.at(history_price, 0)["volume"] == "1200"
+    assert Enum.at(history_price, 0)["marketcap"] == "1500"
+    assert Enum.at(history_price, 1)["volume"] == "1300"
+    assert Enum.at(history_price, 1)["marketcap"] == "1800"
+  end
+
   defp basic_auth() do
     username =
       Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)

@@ -1184,6 +1184,28 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert data["data"]["deletePost"] == nil
   end
 
+  test "create post with tags", %{conn: conn} do
+    tag = Repo.insert!(%Tag{name: "SAN"})
+
+    mutation = """
+    mutation {
+      createPost(title: "Awesome post", text: "Example body", tags: ["#{tag.name}"]) {
+        tags{
+          name
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [tag] = json_response(result, 200)["data"]["createPost"]["tags"]
+
+    assert tag == %{"name" => "SAN"}
+  end
+
   @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
   test "create post with image and retrieve the image hash and url", %{conn: conn} do
     image_url = upload_image(conn)

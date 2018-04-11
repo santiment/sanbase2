@@ -420,6 +420,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:text, :string)
       arg(:related_projects, list_of(:integer))
       arg(:image_urls, list_of(:string))
+      arg(:tags, list_of(:string))
 
       middleware(JWTAuth)
       resolve(&PostResolver.create_post/3)

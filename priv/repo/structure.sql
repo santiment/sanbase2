@@ -828,6 +828,48 @@ ALTER SEQUENCE public.posts_projects_id_seq OWNED BY public.posts_projects.id;
 
 
 --
+-- Name: posts_tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE posts_tags (
+    id bigint NOT NULL,
+    post_id bigint,
+    tag_id bigint
+);
+
+
+--
+-- Name: posts_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE posts_tags_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_tags_id_seq1; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE posts_tags_id_seq1
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_tags_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE posts_tags_id_seq1 OWNED BY posts_tags.id;
+
+
+--
 -- Name: processed_github_archives; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1345,6 +1387,13 @@ ALTER TABLE ONLY public.posts_projects ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: posts_tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts_tags ALTER COLUMN id SET DEFAULT nextval('posts_tags_id_seq1'::regclass);
+
+
+--
 -- Name: processed_github_archives id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1405,6 +1454,13 @@ ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.u
 --
 
 ALTER TABLE ONLY public.project_transparency_statuses ALTER COLUMN id SET DEFAULT nextval('public.project_transparency_statuses_id_seq'::regclass);
+
+
+--
+-- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tags ALTER COLUMN id SET DEFAULT nextval('tags_id_seq'::regclass);
 
 
 --
@@ -1864,6 +1920,13 @@ CREATE UNIQUE INDEX posts_projects_post_id_project_id_index ON public.posts_proj
 
 
 --
+-- Name: posts_tags_post_id_tag_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX posts_tags_post_id_tag_id_index ON posts_tags USING btree (post_id, tag_id);
+
+
+--
 -- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1973,6 +2036,13 @@ CREATE UNIQUE INDEX project_transparency_statuses_name_index ON public.project_t
 --
 
 CREATE UNIQUE INDEX projet_user_constraint ON public.user_followed_project USING btree (project_id, user_id);
+
+
+--
+-- Name: tags_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX tags_name_index ON tags USING btree (name);
 
 
 --
@@ -2183,6 +2253,22 @@ ALTER TABLE ONLY public.posts_projects
 
 ALTER TABLE ONLY public.posts_projects
     ADD CONSTRAINT posts_projects_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
+
+
+--
+-- Name: posts_tags posts_tags_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts_tags
+    ADD CONSTRAINT posts_tags_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts(id);
+
+
+--
+-- Name: posts_tags posts_tags_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts_tags
+    ADD CONSTRAINT posts_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES tags(id);
 
 
 --

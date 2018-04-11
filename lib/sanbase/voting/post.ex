@@ -50,6 +50,14 @@ defmodule Sanbase.Voting.Post do
       on_delete: :delete_all
     )
 
+    many_to_many(
+      :tags,
+      Tag,
+      join_through: "posts_tags",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
+
     timestamps()
   end
 
@@ -195,6 +203,14 @@ defmodule Sanbase.Voting.Post do
   def declined_state(), do: @declined
 
   # Helper functions
+  defp tags_cast(changeset, %{tags: tags}) do
+    tags = Tag |> where([t], t.name in ^tags) |> Sanbase.Repo.all()
+
+    changeset
+    |> put_assoc(:tags, tags)
+  end
+
+  defp tags_cast(changeset, _), do: changeset
 
   defp related_projects_cast(changeset, %{related_projects: related_projects}) do
     projects = Project |> where([p], p.id in ^related_projects) |> Sanbase.Repo.all()

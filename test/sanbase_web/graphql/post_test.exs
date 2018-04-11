@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.PostTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Voting.{Poll, Post, Vote}
+  alias Sanbase.Voting.{Poll, Post, Vote, Tag}
   alias Sanbase.Auth.User
   alias Sanbase.Repo
   alias Sanbase.InternalServices.Ethauth
@@ -407,6 +407,28 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     assert data["errors"] != nil
     assert data["data"]["deletePost"] == nil
+  end
+
+  test "create post with tags", %{conn: conn} do
+    tag = Repo.insert!(%Tag{name: "SAN"})
+
+    mutation = """
+    mutation {
+      createPost(title: "Awesome post", text: "Example body", tags: ["#{tag.name}"]) {
+        tags{
+          name
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [tag] = json_response(result, 200)["data"]["createPost"]["tags"]
+
+    assert tag == %{"name" => "SAN"}
   end
 
   @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"

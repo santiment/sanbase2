@@ -15,6 +15,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Infrastructure
   }
 
+  alias Sanbase.Voting.{Post, Tag}
+
   alias Sanbase.Prices
   alias Sanbase.Github
   alias Sanbase.ExternalServices.Etherscan
@@ -687,5 +689,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _ -> {:ok, nil}
       end
     end)
+  end
+
+  def posts(%Project{} = project, _args, _) do
+    query =
+      from(
+        p in Post,
+        join: pt in "posts_tags",
+        on: p.id == pt.post_id,
+        join: t in Tag,
+        on: t.id == pt.tag_id,
+        where: t.name == ^project.ticker
+      )
+
+    {:ok, Repo.all(query)}
   end
 end

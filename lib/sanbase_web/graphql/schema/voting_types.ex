@@ -6,6 +6,10 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
   alias SanbaseWeb.Graphql.Resolvers.VotingResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
 
+  object :tag do
+    field(:name, non_null(:string))
+  end
+
   object :poll do
     field(:start_at, non_null(:datetime))
     field(:end_at, non_null(:datetime))
@@ -24,6 +28,7 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:moderation_comment, :string)
     field(:images, list_of(:image_data), resolve: dataloader(SanbaseRepo))
     field(:related_projects, list_of(:project), resolve: dataloader(SanbaseRepo))
+    field(:tags, list_of(:tag), resolve: dataloader(SanbaseRepo))
 
     field :created_at, non_null(:datetime) do
       resolve(fn %{inserted_at: inserted_at}, _, _ ->

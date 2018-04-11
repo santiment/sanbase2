@@ -7,7 +7,7 @@ defmodule Sanbase.Voting.Post do
   use Timex.Ecto.Timestamps
 
   alias Sanbase.Model.Project
-  alias Sanbase.Voting.{Poll, Post, Vote, PostImage}
+  alias Sanbase.Voting.{Poll, Post, Vote, PostImage, Tag}
   alias Sanbase.Auth.User
 
   @approved "approved"
@@ -35,12 +35,21 @@ defmodule Sanbase.Voting.Post do
       on_delete: :delete_all
     )
 
+    many_to_many(
+      :tags,
+      Tag,
+      join_through: "posts_tags",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
+
     timestamps()
   end
 
   def create_changeset(%Post{} = post, attrs) do
     post
     |> cast(attrs, [:title, :short_desc, :link, :text])
+    |> tags_cast(attrs)
     |> related_projects_cast(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])
@@ -53,6 +62,14 @@ defmodule Sanbase.Voting.Post do
   def declined_state(), do: @declined
 
   # Helper functions
+  defp tags_cast(changeset, %{tags: tags}) do
+    tags = Tag |> where([t], t.name in ^tags) |> Sanbase.Repo.all()
+
+    changeset
+    |> put_assoc(:tags, tags)
+  end
+
+  defp tags_cast(changeset, _), do: changeset
 
   defp related_projects_cast(changeset, %{related_projects: related_projects}) do
     projects = Project |> where([p], p.id in ^related_projects) |> Sanbase.Repo.all()

@@ -11,7 +11,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
   alias ExAws.S3
   alias Sanbase.Utils.Config
 
-  @github_archive "http://data.githubarchive.org/"
+  @github_archive "http://data.gharchive.org/"
 
   faktory_options(queue: "default", retry: -1, reserve_for: 900)
 
@@ -80,7 +80,8 @@ defmodule SanbaseWorkers.ImportGithubActivity do
         @github_archive <> archive <> ".json.gz",
         %{},
         stream_to: self(),
-        recv_timeout: 60_000
+        recv_timeout: 60_000,
+        follow_redirect: true
       )
 
     :ok = stream_loop(request_ref, output_file)

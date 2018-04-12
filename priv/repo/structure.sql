@@ -851,22 +851,10 @@ CREATE SEQUENCE posts_tags_id_seq
 
 
 --
--- Name: posts_tags_id_seq1; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: posts_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE posts_tags_id_seq1
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: posts_tags_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE posts_tags_id_seq1 OWNED BY posts_tags.id;
+ALTER SEQUENCE posts_tags_id_seq OWNED BY posts_tags.id;
 
 
 --
@@ -1390,7 +1378,7 @@ ALTER TABLE ONLY public.posts_projects ALTER COLUMN id SET DEFAULT nextval('publ
 -- Name: posts_tags id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY posts_tags ALTER COLUMN id SET DEFAULT nextval('posts_tags_id_seq1'::regclass);
+ALTER TABLE ONLY posts_tags ALTER COLUMN id SET DEFAULT nextval('posts_tags_id_seq'::regclass);
 
 
 --

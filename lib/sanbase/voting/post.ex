@@ -43,14 +43,6 @@ defmodule Sanbase.Voting.Post do
     has_many(:images, PostImage, on_delete: :delete_all)
 
     many_to_many(
-      :related_projects,
-      Project,
-      join_through: "posts_projects",
-      on_replace: :delete,
-      on_delete: :delete_all
-    )
-
-    many_to_many(
       :tags,
       Tag,
       join_through: "posts_tags",
@@ -211,15 +203,6 @@ defmodule Sanbase.Voting.Post do
   end
 
   defp tags_cast(changeset, _), do: changeset
-
-  defp related_projects_cast(changeset, %{related_projects: related_projects}) do
-    projects = Project |> where([p], p.id in ^related_projects) |> Sanbase.Repo.all()
-
-    changeset
-    |> put_assoc(:related_projects, projects)
-  end
-
-  defp related_projects_cast(changeset, _), do: changeset
 
   defp images_cast(changeset, %{image_urls: image_urls}) do
     images = PostImage |> where([i], i.image_url in ^image_urls) |> Sanbase.Repo.all()

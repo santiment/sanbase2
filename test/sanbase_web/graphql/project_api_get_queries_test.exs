@@ -9,7 +9,7 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     Ico
   }
 
-  alias Sanbase.Voting.{Poll, Post, Vote, Tag}
+  alias Sanbase.Voting.{Poll, Post, Tag}
   alias Sanbase.Auth.User
 
   alias Sanbase.Repo

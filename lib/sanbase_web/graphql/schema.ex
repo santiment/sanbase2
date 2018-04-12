@@ -439,7 +439,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:short_desc, :string)
       arg(:link, :string)
       arg(:text, :string)
-      arg(:related_projects, list_of(:integer))
       arg(:image_urls, list_of(:string))
       arg(:tags, list_of(:string))
 

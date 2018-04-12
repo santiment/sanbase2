@@ -8,7 +8,7 @@ const GeneralInfoBlock = ({
   slackLink,
   twitterLink,
   githubLink,
-  mediumLink,
+  blogLink,
   whitepaperLink,
   marketcapUsd,
   rank,
@@ -30,8 +30,8 @@ const GeneralInfoBlock = ({
       <a href={twitterLink || ''}>
         <i className={`fa fa-twitter ${!twitterLink && 'fa-disabled'}`} />
       </a>
-      <a href={mediumLink || ''}>
-        <i className={`fa fa-medium ${!mediumLink && 'fa-disabled'}`} />
+      <a href={blogLink || ''}>
+        <i className={`fa fa-medium ${!blogLink && 'fa-disabled'}`} />
       </a>
       <a href={githubLink || ''}>
         <i className={`fa fa-github ${!githubLink && 'fa-disabled'}`} />

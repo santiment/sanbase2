@@ -48,6 +48,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       |> where([p], not is_nil(p.coinmarketcap_id))
       |> Repo.all()
 
+    Task.Supervisor.async_nolink(
+      Sanbase.TaskSupervisor,
+      &fetch_and_process_marketcap_total_data/0
+    )
+    |> Task.await(:infinity)
+
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
       projects,
@@ -144,6 +150,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     case Store.last_history_datetime_cmc!(coinmarketcap_id) do
       nil ->
         GraphData.fetch_first_price_datetime(coinmarketcap_id)
+
+      datetime ->
+        datetime
+    end
+  end
+
+  defp fetch_and_process_marketcap_total_data() do
+    last_marketcap_total_datetime = last_marketcap_total_datetime()
+    GraphData.fetch_and_store_marketcap_total(last_marketcap_total_datetime)
+  end
+
+  defp last_marketcap_total_datetime() do
+    case Store.last_history_datetime_cmc!("TOTAL_MARKET") do
+      nil ->
+        GraphData.fetch_first_marketcap_total_datetime()
 
       datetime ->
         datetime

@@ -15,7 +15,7 @@ defmodule Sanbase.Repo.Migrations.FillTagsFromProjects do
     projects = Repo.all(query)
 
     for project <- projects do
-      Repo.insert!(%Tag{name: project.ticker})
+      Repo.insert(%Tag{name: project.ticker}, on_conflict: :nothing)
     end
   end
 

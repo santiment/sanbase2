@@ -514,7 +514,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
-  def posts(%Project{} = project, _args, _) do
+  def posts(%Project{ticker: ticker} = project, _args, _resolution) when is_nil(ticker),
+    do: {:ok, []}
+
+  def posts(%Project{ticker: ticker} = project, _args, _resolution) do
     query =
       from(
         p in Post,
@@ -522,7 +525,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         on: p.id == pt.post_id,
         join: t in Tag,
         on: t.id == pt.tag_id,
-        where: t.name == ^project.ticker
+        where: t.name == ^ticker
       )
 
     {:ok, Repo.all(query)}

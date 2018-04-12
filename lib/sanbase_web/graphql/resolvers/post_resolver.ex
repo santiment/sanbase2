@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Resolvers.Helpers
 
-  @preloaded_assoc [:votes, :user, :related_projects, :images]
+  @preloaded_assoc [:votes, :user, :images]
 
   def post(_root, %{id: post_id}, _resolution) do
     case Repo.get(Post, post_id) do

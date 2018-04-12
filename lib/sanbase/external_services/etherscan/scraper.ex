@@ -65,37 +65,77 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   def parse_token_page!(html, project_info) do
     %ProjectInfo{
       project_info
-      | total_supply:
-          D.mult(total_supply(html), D.new(:math.pow(10, token_decimals(html)))) |> D.to_integer(),
+      | total_supply: total_supply(html) || project_info.total_supply,
         main_contract_address: main_contract_address(html) || project_info.main_contract_address,
-        token_decimals: token_decimals(html)
+        token_decimals: token_decimals(html),
+        website_link: official_link(html, "Website"),
+        email: official_link(html, "Email") |> email(),
+        reddit_link: official_link(html, "Reddit"),
+        twitter_link: official_link(html, "Twitter"),
+        bitcointalk_link: official_link(html, "Bitcointalk"),
+        blog_link: official_link(html, "Blog"),
+        github_link: official_link(html, "Github"),
+        telegram_link: official_link(html, "Telegram"),
+        slack_link: official_link(html, "Slack"),
+        facebook_link: official_link(html, "Facebook"),
+        whitepaper_link: official_link(html, "Whitepaper")
     }
+  end
+
+  defp official_link(html, media) do
+    Floki.find(html, ~s/a[data-original-title^="#{media}:"]/)
+    |> Floki.attribute("href")
+    |> List.first()
+  end
+
+  defp email(nil) do
+    nil
+  end
+
+  defp email(mailto_string) do
+    String.slice(mailto_string, 7..-1)
   end
 
   defp creation_transaction(html) do
     Floki.find(html, ~s/a[title="Creator Transaction Hash"]/)
-    |> hd
-    |> Floki.text()
+    |> List.first()
+    |> case do
+      nil -> nil
+      match -> Floki.text(match)
+    end
   end
 
   defp total_supply(html) do
     Floki.find(html, ~s/td:fl-contains('Total Supply') + td/)
-    |> hd
-    |> Floki.text()
-    |> parse_total_supply
+    |> List.first()
+    |> case do
+      nil ->
+        nil
+
+      match ->
+        Floki.text(match)
+        |> parse_total_supply
+        |> D.mult(D.new(:math.pow(10, token_decimals(html))))
+        |> D.to_integer()
+    end
   end
 
   defp main_contract_address(html) do
     Floki.find(html, ~s/td:fl-contains('ERC20 Contract') + td/)
-    |> hd
-    |> Floki.text()
+    |> List.first()
+    |> case do
+      nil -> nil
+      match -> Floki.text(match)
+    end
   end
 
   defp token_decimals(html) do
     Floki.find(html, ~s/td:fl-contains('Token Decimals') + td/)
-    |> hd
-    |> Floki.text()
-    |> parse_token_decimals
+    |> List.first()
+    |> case do
+      nil -> nil
+      match -> Floki.text(match) |> parse_token_decimals
+    end
   end
 
   defp parse_token_decimals(nil), do: 0

@@ -665,6 +665,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:ticker, :string)
     field(:logo_url, :string)
     field(:website_link, :string)
+    field(:email, :string)
+    field(:bitcointalk_link, :string)
     field(:btt_link, :string)
     field(:facebook_link, :string)
     field(:github_link, :string)

@@ -165,22 +165,35 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
   defp total_supply(html) do
     Floki.find(html, ~s/td:fl-contains('Total Supply') + td/)
-    |> hd
-    |> Floki.text()
-    |> parse_total_supply
+    |> List.first()
+    |> case do
+      nil ->
+        nil
+
+      match ->
+        Floki.text(match)
+        |> parse_total_supply
+        |> D.mult(D.new(:math.pow(10, token_decimals(html))))
+        |> D.to_integer()
+    end
   end
 
   defp main_contract_address(html) do
     Floki.find(html, ~s/td:fl-contains('ERC20 Contract') + td/)
-    |> hd
-    |> Floki.text()
+    |> List.first()
+    |> case do
+      nil -> nil
+      match -> Floki.text(match)
+    end
   end
 
   defp token_decimals(html) do
     Floki.find(html, ~s/td:fl-contains('Token Decimals') + td/)
-    |> hd
-    |> Floki.text()
-    |> parse_token_decimals
+    |> List.first()
+    |> case do
+      nil -> nil
+      match -> Floki.text(match) |> parse_token_decimals
+    end
   end
 
   defp parse_token_decimals(nil), do: 0

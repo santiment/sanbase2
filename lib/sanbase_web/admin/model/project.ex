@@ -7,6 +7,9 @@ defmodule Sanbase.ExAdmin.Model.Project do
   alias Sanbase.Model.Infrastructure
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.ProjectTransparencyStatus
+  alias Sanbase.Voting.Tag
+
+  alias Sanbase.Repo
 
   register_resource Sanbase.Model.Project do
     show project do
@@ -122,6 +125,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
     controller do
       # doc: https://hexdocs.pm/ex_admin/ExAdmin.Register.html#after_filter/2
       after_filter(:set_defaults, only: [:new])
+      after_filter(:add_tag, only: [:create])
     end
 
     # Make all string filters "Contains" by default
@@ -149,6 +153,13 @@ defmodule Sanbase.ExAdmin.Model.Project do
     {conn, params, resource}
   end
 
+  def add_tag(conn, params, resource, :create) do
+    resource
+    |> add_tag!()
+
+    {conn, params, resource}
+  end
+
   defp set_infrastructure_default(%Project{infrastructure_id: nil} = project) do
     infrastructure = Infrastructure.get("ETH")
 
@@ -159,4 +170,11 @@ defmodule Sanbase.ExAdmin.Model.Project do
   end
 
   defp set_infrastructure_default(%Project{} = project), do: project
+
+  defp add_tag!(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project)
+       when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
+    Repo.insert!(%Tag{name: ticker})
+  end
+
+  defp add_tag!(%Project{} = project), do: :ok
 end

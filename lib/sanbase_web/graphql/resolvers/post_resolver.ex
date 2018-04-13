@@ -19,9 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   def posts(_root, _args, _context) do
     posts =
-      Post
-      |> order_by(desc: :inserted_at)
-      |> Repo.all()
+      Post.posts_by_score()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}

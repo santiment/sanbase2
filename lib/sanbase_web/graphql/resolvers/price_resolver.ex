@@ -13,8 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     loader
     |> Dataloader.load(PriceStore, "TOTAL_MARKET_USD", args)
     |> on_load(fn loader ->
-      with {:ok, usd_prices} <-
-             Dataloader.get(loader, PriceStore, "TOTAL_MARKET_USD", args) do
+      with {:ok, usd_prices} <- Dataloader.get(loader, PriceStore, "TOTAL_MARKET_USD", args) do
         result =
           usd_prices
           |> Enum.map(fn [dt, _, volume, marketcap] ->

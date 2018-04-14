@@ -46,6 +46,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTAuth do
   defp has_enough_san_tokens?(_, 0), do: true
 
   defp has_enough_san_tokens?(current_user, san_tokens) do
-    User.san_balance!(current_user) >= san_tokens
+    Decimal.cmp(User.san_balance!(current_user), Decimal.new(san_tokens)) != :lt
   end
 end

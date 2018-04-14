@@ -12,7 +12,8 @@
 
 .detailed-ticker-name {
   margin-left: 5px;
-  font-size: 20px;
+  margin-top: 24px;
+  font-size: 18px;
 }
 
 .panel-chart {
@@ -37,7 +38,8 @@
 }
 
 .detailed-name img {
-  margin-bottom: 4px;
+  margin-top: 24px;
+  margin-left: 6px;
 }
 
 .detailed-price {
@@ -171,7 +173,7 @@
   display: flex;
   justify-content: space-between;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
 .row-info .value {
@@ -201,7 +203,7 @@
   text-overflow: ellipsis;
   overflow: hidden;
   width: 70%;
-  height: 1.2em;
+  height: 2em;
   white-space: nowrap;
 }
 

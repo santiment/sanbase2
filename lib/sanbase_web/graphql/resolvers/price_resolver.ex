@@ -9,6 +9,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   Returns a list of price points for the given ticker. Optimizes the number of queries
   to the DB by inspecting the requested fields.
   """
+  def history_price(_root, %{ticker: "TOTAL_MARKET"} = args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(PriceStore, "TOTAL_MARKET_USD", args)
+    |> on_load(fn loader ->
+      with {:ok, usd_prices} <-
+             Dataloader.get(loader, PriceStore, "TOTAL_MARKET_USD", args) do
+        result =
+          usd_prices
+          |> Enum.map(fn [dt, _, volume, marketcap] ->
+            %{
+              datetime: dt,
+              marketcap: Decimal.new(marketcap),
+              volume: Decimal.new(volume)
+            }
+          end)
+
+        {:ok, result}
+      else
+        _ ->
+          {:error, "Can't fetch total marketcap prices"}
+      end
+    end)
+  end
+
   def history_price(_root, %{ticker: ticker} = args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(PriceStore, String.upcase(ticker) <> "_USD", args)

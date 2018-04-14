@@ -123,6 +123,22 @@ defmodule Sanbase.ExAdmin.Model.Project do
       # doc: https://hexdocs.pm/ex_admin/ExAdmin.Register.html#after_filter/2
       after_filter(:set_defaults, only: [:new])
     end
+
+    # Make all string filters "Contains" by default
+    sidebar "", only: :index do
+      panel "" do
+        markup_contents do
+          script type: "text/javascript" do
+            """
+            $(document).ready(function() {
+              $("div.filter-select select option[value$=_contains]").prop('selected', true);
+              $("div.filter-select select option[value$=_contains]").parent().trigger("change");
+            });
+            """
+          end
+        end
+      end
+    end
   end
 
   def set_defaults(conn, params, resource, :new) do

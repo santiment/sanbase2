@@ -22,4 +22,9 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:datetime, non_null(:datetime))
     field(:mention_count, :integer)
   end
+
+  object :emojis_sentiment do
+    field(:datetime, non_null(:datetime))
+    field(:sentiment, :float)
+  end
 end

@@ -46,6 +46,9 @@ defmodule Sanbase.Application do
         # Time series transaction volume DB connection
         Sanbase.Etherbi.TransactionVolume.Store.child_spec(),
 
+        # Time series DAT DB connection
+        Sanbase.Etherbi.DailyActiveAddresses.Store.child_spec(),
+
         # Time series ethscan team wallet transactions DB connection
         Sanbase.ExternalServices.Etherscan.Store.child_spec(),
 

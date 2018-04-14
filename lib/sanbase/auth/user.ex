@@ -59,8 +59,9 @@ defmodule Sanbase.Auth.User do
     Timex.diff(Timex.now(), san_balance_updated_at, :seconds) > @san_balance_cache_seconds
   end
 
-  def update_san_balance_changeset(%User{eth_accounts: eth_accounts} = user) do
-    san_balance = san_balance_for_eth_accounts(eth_accounts)
+  def update_san_balance_changeset(user) do
+    user = Repo.preload(user, :eth_accounts)
+    san_balance = san_balance_for_eth_accounts(user.eth_accounts)
 
     user
     |> change(san_balance: san_balance, san_balance_updated_at: Timex.now())

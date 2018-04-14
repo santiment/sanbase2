@@ -1,6 +1,6 @@
 .App {
   display: flex;
-  flex-direction: column; /* adding for top menu - kc */
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {
@@ -72,7 +72,7 @@
 .App .page h1 {
   font-size: 32px;
   font-weight: 400;
-  margin-bottom: 8px;
+  margin-top: 16px;
   line-height: 51px;
   color: #171717;
 }

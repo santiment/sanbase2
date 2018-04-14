@@ -140,7 +140,7 @@ const handleLoad = () => {
       } else {
         if (process.env.NODE_ENV === 'development') {
           console.log(
-            `[GraphQL error]: ${JSON.stringify(graphQLErrors)} ${JSON.stringify(operation)}`
+            `[GraphQL error]: ${JSON.stringify(graphQLErrors)}`
           )
         }
         Raven.captureException(`[GraphQL error]: ${JSON.stringify(graphQLErrors)}`)

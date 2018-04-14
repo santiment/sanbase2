@@ -13,9 +13,11 @@ import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import Currencies from './pages/Currencies'
 import CashflowMobile from './pages/CashflowMobile'
+import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
+import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
 import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
@@ -90,10 +92,15 @@ export const App = ({isDesktop}) => (
           )
         }} />
         <Route exact path='/currencies' render={props => {
+          if (isDesktop) {
+            return (
+              <Currencies
+                preload={() => LoadableDetailedPage.preload()}
+                {...props} />
+            )
+          }
           return (
-            <Currencies
-              preload={() => LoadableDetailedPage.preload()}
-              {...props} />
+            <CurrenciesMobile {...props} />
           )
         }} />
         <Route exact path='/roadmap' component={Roadmap} />
@@ -108,6 +115,7 @@ export const App = ({isDesktop}) => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
+        <Route exact path='/build' component={BuildChallenge} />
         <Route path='/email_login' component={EmailLoginVerification} />
         <Route
           exact

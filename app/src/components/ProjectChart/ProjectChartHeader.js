@@ -3,7 +3,7 @@ import moment from 'moment'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { DateRangePicker } from 'react-dates'
-import { formatNumber } from '../../utils/formatting'
+import { formatNumber } from './../../utils/formatting'
 import ShareableBtn from './ShareableBtn'
 import { ToggleBtn } from './ProjectChartFooter'
 import './ProjectChartHeader.css'
@@ -126,9 +126,9 @@ const ProjectChartHeader = ({
             as='div'
           >
             <span className='selected-value-data'>Price:
-              {formatNumber(history[selected].priceUsd, 'USD')}</span>
+              {formatNumber(history[selected].priceUsd, { currency: 'USD' })}</span>
             <span className='selected-value-data'>Volume:
-              {formatNumber(history[selected].volume, 'USD')}</span>
+              {formatNumber(history[selected].volume, { currency: 'USD' })}</span>
           </Merge>}</div> ]}
     </div>
   )

@@ -1,0 +1,493 @@
+defmodule SanbaseWeb.Graphql.PostTest do
+  use SanbaseWeb.ConnCase, async: false
+
+  alias Sanbase.Voting.{Poll, Post, Vote}
+  alias Sanbase.Auth.User
+  alias Sanbase.Repo
+  alias Sanbase.InternalServices.Ethauth
+
+  import SanbaseWeb.Graphql.TestHelpers
+
+  setup do
+    user =
+      %User{
+        salt: User.generate_salt(),
+        san_balance:
+          Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
+        san_balance_updated_at: Timex.now()
+      }
+      |> Repo.insert!()
+
+    conn = setup_jwt_auth(build_conn(), user)
+
+    user2 =
+      %User{
+        salt: User.generate_salt(),
+        san_balance:
+          Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
+        san_balance_updated_at: Timex.now()
+      }
+      |> Repo.insert!()
+
+    {:ok, conn: conn, user: user, user2: user2}
+  end
+
+  test "getting a post by id", %{user: user, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    query = """
+    {
+      post(id: #{post.id}) {
+        text
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "post"))
+
+    assert json_response(result, 200)["data"]["post"] |> Map.get("text") == post.text
+  end
+
+  test "getting a post by id for anon user", %{user: user} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    query = """
+    {
+      post(id: #{post.id}) {
+        title,
+        shortDesc
+      }
+    }
+    """
+
+    result =
+      build_conn()
+      |> post("/graphql", query_skeleton(query, "post"))
+
+    assert json_response(result, 200)["data"]["post"] |> Map.get("title") == post.title
+  end
+
+  test "getting all posts as anon user", %{user: user} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    query = """
+    {
+      allInsights {
+        title,
+        shortDesc
+      }
+    }
+    """
+
+    result =
+      build_conn()
+      |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    assert [%{"title" => post.title, "shortDesc" => post.short_desc}] ==
+             json_response(result, 200)["data"]["allInsights"]
+  end
+
+  test "trying to get not allowed field from posts as anon user", %{user: user} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    %Post{
+      poll_id: poll.id,
+      user_id: user.id,
+      title: "Awesome analysis",
+      short_desc: "Example analysis short description",
+      text: "Example text, hoo",
+      link: "http://www.google.com",
+      state: Post.approved_state()
+    }
+    |> Repo.insert!()
+
+    query = """
+    {
+      allInsights {
+        id,
+      }
+    }
+    """
+
+    result =
+      build_conn()
+      |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    [error] = json_response(result, 200)["errors"]
+    assert "unauthorized" == error["message"]
+  end
+
+  test "getting all posts as logged in user", %{user: user, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    query = """
+    {
+      allInsights {
+        id,
+        text,
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    assert json_response(result, 200)["data"]["allInsights"] |> List.first() |> Map.get("text") ==
+             post.text
+  end
+
+  test "getting all posts for given user", %{user: user, user2: user2, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Post{
+      poll_id: poll.id,
+      user_id: user2.id,
+      title: "Awesome analysis",
+      short_desc: "Example analysis short description",
+      text: "Example text, hoo",
+      link: "http://www.google.com",
+      state: Post.approved_state()
+    }
+    |> Repo.insert!()
+
+    query = """
+    {
+      allInsightsForUser(user_id: #{user.id}) {
+        id,
+        text
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsightsForUser"))
+
+    assert json_response(result, 200)["data"]["allInsightsForUser"] |> Enum.count() == 1
+
+    assert json_response(result, 200)["data"]["allInsightsForUser"]
+           |> List.first()
+           |> Map.get("text") == post.text
+  end
+
+  test "getting all posts user has voted for", %{user: user, user2: user2, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{post_id: post.id, user_id: user.id}
+    |> Repo.insert!()
+
+    post2 =
+      %Post{
+        poll_id: poll.id,
+        user_id: user2.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{post_id: post2.id, user_id: user2.id}
+    |> Repo.insert!()
+
+    query = """
+    {
+      allInsightsUserVoted(user_id: #{user.id}) {
+        id,
+        text
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsightsUserVoted"))
+
+    assert json_response(result, 200)["data"]["allInsightsUserVoted"] |> Enum.count() == 1
+
+    assert json_response(result, 200)["data"]["allInsightsUserVoted"]
+           |> List.first()
+           |> Map.get("text") == post.text
+  end
+
+  test "adding a new post to the current poll", %{user: user, conn: conn} do
+    query = """
+    mutation {
+      createPost(title: "Awesome post", text: "Example body") {
+        id,
+        title,
+        text,
+        user {
+          id
+        },
+        totalSanVotes,
+        state,
+        createdAt
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    sanbasePost = json_response(result, 200)["data"]["createPost"]
+
+    assert sanbasePost["id"] != nil
+    assert sanbasePost["title"] == "Awesome post"
+    assert sanbasePost["state"] == nil
+    assert sanbasePost["user"]["id"] == user.id |> Integer.to_string()
+    {total_san_votes, _after_decimal_point} = sanbasePost["totalSanVotes"] |> Integer.parse()
+    assert total_san_votes == 0
+
+    createdAt = Timex.parse!(sanbasePost["createdAt"], "{ISO:Extended}")
+
+    # Assert that now() and createdAt do not differ by more than 2 seconds.
+    assert Sanbase.TestUtils.date_close_to(Timex.now(), createdAt, 2, :seconds)
+  end
+
+  test "adding a new post with a very long title", %{conn: conn} do
+    long_title = Stream.cycle(["a"]) |> Enum.take(200) |> Enum.join()
+
+    query = """
+    mutation {
+      createPost(title: "#{long_title}", text: "This is the body of the post") {
+        id,
+        title
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["errors"]
+  end
+
+  test "deleting a post", %{user: user, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    sanbase_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        text: "Another example of MD text of the analysis",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{post_id: sanbase_post.id, user_id: user.id}
+    |> Repo.insert!()
+
+    query = """
+    mutation {
+      deletePost(id: #{sanbase_post.id}) {
+        id
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    sanbasePost = json_response(result, 200)["data"]["deletePost"]
+
+    assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
+  end
+
+  test "deleting a post which does not belong to the user", %{conn: conn} do
+    other_user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    poll = Poll.find_or_insert_current_poll!()
+
+    sanbase_post =
+      %Post{
+        poll_id: poll.id,
+        user_id: other_user.id,
+        title: "Awesome analysis",
+        text: "Text in body",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    query = """
+    mutation {
+      deletePost(id: #{sanbase_post.id}) {
+        id
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    data = json_response(result, 200)
+
+    assert data["errors"] != nil
+    assert data["data"]["deletePost"] == nil
+  end
+
+  @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
+  test "create post with image and retrieve the image hash and url", %{conn: conn} do
+    image_url = upload_image(conn)
+
+    mutation = """
+    mutation {
+      createPost(title: "Awesome post", text: "Example body", imageUrls: ["#{image_url}"]) {
+        images{
+          imageUrl
+          contentHash
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [image] = json_response(result, 200)["data"]["createPost"]["images"]
+
+    assert image["imageUrl"] == image_url
+    assert image["contentHash"] == @test_file_hash
+
+    # assert that the file exists
+    assert true == File.exists?(image_url)
+  end
+
+  test "cannot reuse images", %{conn: conn} do
+    image_url = upload_image(conn)
+
+    mutation = """
+    mutation {
+      createPost(title: "Awesome post", text: "Example body", imageUrls: ["#{image_url}"]) {
+        images{
+          imageUrl
+          contentHash
+        }
+      }
+    }
+    """
+
+    _ =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    result2 =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [error] = json_response(result2, 200)["errors"]
+    assert String.contains?(error["details"]["images"] |> hd, "already used")
+  end
+
+  # Helper functions
+
+  @test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image.png"
+  defp upload_image(conn) do
+    mutation = """
+      mutation {
+        uploadImage(images: ["img"]){
+          fileName
+          contentHash,
+          imageUrl
+        }
+      }
+    """
+
+    upload = %Plug.Upload{
+      content_type: "application/octet-stream",
+      filename: "image.png",
+      path: @test_file_path
+    }
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => mutation, "img" => upload})
+
+    [imageData] = json_response(result, 200)["data"]["uploadImage"]
+    imageData["imageUrl"]
+  end
+end

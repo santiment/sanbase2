@@ -5,6 +5,7 @@
 /*.ez
 .env*
 !.env.example
+!app/.env
 
 # Generated on crash by the VM
 erl_crash.dump

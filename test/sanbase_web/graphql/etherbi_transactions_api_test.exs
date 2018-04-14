@@ -24,74 +24,77 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     %Ico{project_id: project.id, main_contract_address: contract_address}
     |> Repo.insert!()
 
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-13 21:47:00], "Etc/UTC")
-    datetime3 = DateTime.from_naive!(~N[2017-05-13 21:49:00], "Etc/UTC")
-    datetime4 = DateTime.from_naive!(~N[2017-05-13 21:51:00], "Etc/UTC")
-    datetime5 = DateTime.from_naive!(~N[2017-05-13 21:53:00], "Etc/UTC")
-    datetime6 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
-    datetime7 = DateTime.from_naive!(~N[2017-05-13 21:57:00], "Etc/UTC")
-    datetime8 = DateTime.from_naive!(~N[2017-05-13 21:59:00], "Etc/UTC")
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2017-05-14 00:00:00], "Etc/UTC")
+    datetime3 = DateTime.from_naive!(~N[2017-05-15 00:00:00], "Etc/UTC")
+    datetime4 = DateTime.from_naive!(~N[2017-05-16 00:00:00], "Etc/UTC")
+    datetime5 = DateTime.from_naive!(~N[2017-05-17 00:00:00], "Etc/UTC")
+    datetime6 = DateTime.from_naive!(~N[2017-05-18 00:00:00], "Etc/UTC")
+    datetime7 = DateTime.from_naive!(~N[2017-05-19 00:00:00], "Etc/UTC")
+    datetime8 = DateTime.from_naive!(~N[2017-05-20 00:00:00], "Etc/UTC")
 
     Store.import([
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 5000, ticker: ticker},
-        tags: [transaction_type: "in", address: exchange_address],
+        fields: %{incoming_exchange_funds: 5000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 3000, ticker: ticker},
-        tags: [transaction_type: "out", address: exchange_address],
+        # datetime 1: total 2000 in
+        fields: %{outgoing_exchange_funds: 3000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 6000, ticker: ticker},
-        tags: [transaction_type: "in", address: exchange_address],
+        # datetime 2: total 2000 in
+        fields: %{incoming_exchange_funds: 6000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 4000, ticker: ticker},
-        tags: [transaction_type: "out", address: exchange_address],
+        fields: %{outgoing_exchange_funds: 4000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 9000, ticker: ticker},
-        tags: [transaction_type: "in", address: exchange_address],
+        # datetime 3: total 9000 in
+        fields: %{incoming_exchange_funds: 9000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 15000, ticker: ticker},
-        tags: [transaction_type: "in", address: exchange_address],
+        # datetime 4: total 15000 in
+        fields: %{incoming_exchange_funds: 15000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 18000, ticker: ticker},
-        tags: [transaction_type: "out", address: exchange_address],
+        # datetime 5: total 18000 out
+        fields: %{outgoing_exchange_funds: 18000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 1000, ticker: ticker},
-        tags: [transaction_type: "in", address: exchange_address],
+        # datetime 6: total 1000 in
+        fields: %{incoming_exchange_funds: 1000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 10000, ticker: ticker},
-        tags: [transaction_type: "out", address: exchange_address],
+        fields: %{outgoing_exchange_funds: 10000},
+        name: contract_address
+      },
+      %Measurement{
+        timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
+        # datetime 7: total 8450 out
+        fields: %{incoming_exchange_funds: 1550},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime8 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 50000, ticker: ticker},
-        tags: [transaction_type: "in", address: exchange_address],
+        # datetime 8; total 50000 out
+        fields: %{outgoing_exchange_funds: 50000},
         name: contract_address
       }
     ])
@@ -110,101 +113,63 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     ]
   end
 
-  test "fetch in transactions", context do
+  test "fetch funds flow", context do
     query = """
     {
-      exchangeFundFlow(
+      exchangeFundsFlow(
         ticker: "#{context.ticker}",
         from: "#{context.datetime1}",
-        to: "#{context.datetime8}",
-        transaction_type: IN) {
+        to: "#{context.datetime8}") {
           datetime
-          transactionVolume
-          address
+          fundsFlow
       }
     }
     """
 
     result =
       context.conn
-      |> post("/graphql", query_skeleton(query, "exchangeFundFlow"))
+      |> post("/graphql", query_skeleton(query, "exchangeFundsFlow"))
 
-    transactions_in = json_response(result, 200)["data"]["exchangeFundFlow"]
+    funds_flow_list = json_response(result, 200)["data"]["exchangeFundsFlow"]
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
-             "address" => context.exchange_address,
-             "transactionVolume" => 5000.0
-           } in transactions_in
+             "fundsFlow" => 2000
+           } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
-             "address" => context.exchange_address,
-             "transactionVolume" => 6000.0
-           } in transactions_in
+             "fundsFlow" => 2000
+           } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime3),
-             "address" => context.exchange_address,
-             "transactionVolume" => 9000.0
-           } in transactions_in
+             "fundsFlow" => 9000
+           } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime4),
-             "address" => context.exchange_address,
-             "transactionVolume" => 15000.0
-           } in transactions_in
-
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime6),
-             "address" => context.exchange_address,
-             "transactionVolume" => 1000.0
-           } in transactions_in
-  end
-
-  test "fetch out transactions", context do
-    query = """
-    {
-      exchangeFundFlow(
-        ticker: "#{context.ticker}",
-        from: "#{context.datetime1}",
-        to: "#{context.datetime8}",
-        transaction_type: OUT) {
-          datetime
-          transactionVolume
-          address
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "exchangeFundFlow"))
-
-    transactions_out = json_response(result, 200)["data"]["exchangeFundFlow"]
-
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime1),
-             "address" => context.exchange_address,
-             "transactionVolume" => 3000.0
-           } in transactions_out
-
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime2),
-             "address" => context.exchange_address,
-             "transactionVolume" => 4000.0
-           } in transactions_out
+             "fundsFlow" => 15000
+           } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
-             "address" => context.exchange_address,
-             "transactionVolume" => 18000.0
-           } in transactions_out
+             "fundsFlow" => -18000
+           } in funds_flow_list
+
+    assert %{
+             "datetime" => DateTime.to_iso8601(context.datetime6),
+             "fundsFlow" => 1000
+           } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime7),
-             "address" => context.exchange_address,
-             "transactionVolume" => 10000.0
-           } in transactions_out
+             "fundsFlow" => -8450
+           } in funds_flow_list
+
+    assert %{
+             "datetime" => DateTime.to_iso8601(context.datetime8),
+             "fundsFlow" => -50000
+           } in funds_flow_list
   end
 end

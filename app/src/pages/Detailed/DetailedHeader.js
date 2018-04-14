@@ -2,7 +2,7 @@ import React from 'react'
 import { createSkeletonProvider, createSkeletonElement } from '@trainline/react-skeletor'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
-import { formatNumber, formatBTC } from '../../utils/formatting'
+import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
 import './DetailedHeader.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
@@ -19,7 +19,7 @@ const DetailedHeader = ({project = {
         <H1>{project.name}</H1>
         <ProjectIcon
           name={project.name || ''}
-          size={24} />
+          size={22} />
         <DIV className='detailed-ticker-name'>
           {(project.ticker || '').toUpperCase()}
         </DIV>
@@ -32,12 +32,12 @@ const DetailedHeader = ({project = {
     <div className='detailed-price'>
       <div className='detailed-price-description'>Today's changes</div>
       <div className='detailed-price-usd'>
-        {formatNumber(project.priceUsd, 'USD')}&nbsp;
+        {formatNumber(project.priceUsd, { currency: 'USD' })}&nbsp;
         {!loading && project &&
           <PercentChanges changes={project.percentChange24h} />}
       </div>
       <div className='detailed-price-btc'>
-        BTC {formatBTC(parseFloat(project.priceBtc))}
+        {formatCryptoCurrency('BTC', formatBTC(project.priceBtc))}
       </div>
     </div>
   </div>

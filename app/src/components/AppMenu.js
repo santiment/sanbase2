@@ -56,6 +56,11 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
           </Button>
         </div>
       </Popup>}
+      {showIcons &&
+      <li onClick={() => handleNavigation('roadmap')}>
+        {showIcons && <Icon name='map 2x' />}
+        Roadmap
+      </li>}
     </ul>
   </div>
 )

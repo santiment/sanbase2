@@ -14,7 +14,7 @@ const Like = ({
     {liked
       ? <Icon name='heart' />
       : <Icon name='empty heart' />}
-    {formatBTC(parseFloat(votes))}
+    {formatBTC(votes)}
   </div>
 )
 

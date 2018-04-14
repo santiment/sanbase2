@@ -1,8 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
-  alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume}
+  alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume, DailyActiveAddresses}
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, ExchangeEthAddress}
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
+  import Absinthe.Resolution.Helpers
   import Ecto.Query
 
   require Logger
@@ -25,7 +27,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      _ -> {:error, "Can't fetch burn rate for #{ticker}"}
+      error ->
+        error_msg = "Can't fetch burn rate for #{ticker}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 
@@ -52,7 +57,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      _ -> {:error, "Can't fetch transaction volume for #{ticker}"}
+      error ->
+        error_msg = "Can't fetch transaction for #{ticker}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  @doc ~S"""
+    Return the number of daily active addresses for a given ticker
+  """
+  def daily_active_addresses(
+        _root,
+        %{ticker: ticker, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, contract_address, _token_decimals} <- ticker_to_contract_info(ticker),
+         {:ok, daily_active_addresses} <-
+           DailyActiveAddresses.Store.daily_active_addresses(contract_address, from, to, interval) do
+      result =
+        daily_active_addresses
+        |> Enum.map(fn [datetime, active_addresses] ->
+          %{
+            datetime: datetime,
+            active_addresses: active_addresses |> round() |> trunc()
+          }
+        end)
+
+      {:ok, result}
+    else
+      error ->
+        error_msg = "Can't fetch daily active addresses for #{ticker}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 
@@ -61,43 +98,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
-  def exchange_fund_flow(
+  def exchange_funds_flow(
         _root,
         %{
           ticker: ticker,
           from: from,
           to: to,
-          transaction_type: transaction_type
+          interval: interval
         },
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
-         {:ok, transactions} <-
-           Transactions.Store.transactions(
+         {:ok, funds_flow_list} <-
+           Transactions.Store.transactions_in_out_difference(
              contract_address,
              from,
              to,
-             transaction_type |> Atom.to_string()
+             interval
            ) do
       result =
-        transactions
-        |> Enum.map(fn {datetime, volume, address} ->
+        funds_flow_list
+        |> Enum.map(fn {datetime, funds_flow} ->
           %{
             datetime: datetime,
-            transaction_volume: volume / :math.pow(10, token_decimals),
-            address: address
+            funds_flow: funds_flow
           }
         end)
 
       {:ok, result}
     else
       error ->
-        error_message =
-          "Can't fetch the exchange fund flow for #{ticker}. Reason: #{inspect(error)}"
-
-        Logger.warn(error_message)
-
-        {:error, error_message}
+        error_msg = "Can't fetch the exchange fund flow for #{ticker}."
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 
@@ -105,11 +138,59 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     {:ok, ExchangeEthAddress |> Repo.all()}
   end
 
-  defp ticker_to_contract_info(ticker) do
-    with project when not is_nil(project) <- get_project_by_ticker(ticker),
-         initial_ico when not is_nil(initial_ico) <- Project.initial_ico(project),
+  @doc ~S"""
+    Return the average number of daily active addresses for a given ticker and period of time
+  """
+  def average_daily_active_addresses(
+        %Project{ticker: ticker} = project,
+        %{from: from, to: to} = args,
+        _resolution
+      ) do
+    async(
+      Cache.func(
+        fn -> calculate_average_daily_active_addresses(project, from, to) end,
+        {:average_daily_active_addresses, ticker},
+        args
+      )
+    )
+  end
+
+  def calculate_average_daily_active_addresses(project, from, to) do
+    with {:ok, contract_address, _token_decimals} <- project_to_contract_info(project),
+         {:ok, average_daily_active_addresses} <-
+           DailyActiveAddresses.Store.average_daily_active_addresses(contract_address, from, to) do
+      result =
+        average_daily_active_addresses
+        |> Enum.map(fn [datetime, active_addresses] ->
+          %{
+            datetime: datetime,
+            active_addresses: active_addresses |> round() |> trunc()
+          }
+        end)
+        |> List.first()
+
+      {:ok, result}
+    else
+      error ->
+        error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  defp project_to_contract_info(project) do
+    with initial_ico when not is_nil(initial_ico) <- Project.initial_ico(project),
          contract_address when not is_nil(contract_address) <- initial_ico.main_contract_address do
       {:ok, String.downcase(contract_address), project.token_decimals || 0}
+    else
+      _ -> {:error, "Can't find contract address of #{project.coinmarketcap_id}"}
+    end
+  end
+
+  defp ticker_to_contract_info(ticker) do
+    with project when not is_nil(project) <- get_project_by_ticker(ticker),
+         {:ok, contract_address, token_decimals} <- project_to_contract_info(project) do
+      {:ok, contract_address, token_decimals}
     else
       _ -> {:error, "Can't find ticker contract address"}
     end

@@ -5,9 +5,9 @@ import classnames from 'classnames'
 import { withRouter } from 'react-router-dom'
 import { compose } from 'recompose'
 import { Loader } from 'semantic-ui-react'
-import { simpleSort } from './../../utils/sortMethods'
 import PanelBlock from './../../components/PanelBlock'
-import { formatNumber } from '../../utils/formatting'
+import { simpleSort } from './../../utils/sortMethods'
+import { formatNumber } from './../../utils/formatting'
 import { allErc20ShortProjectsGQL } from './../Projects/allProjectsGQL'
 import { CustomThComponent, CustomHeadComponent } from './../Cashflow'
 import { collectedField } from './FinancialsBlock'
@@ -54,7 +54,8 @@ const EthereumBlock = ({
     accessor: 'ethAddresses',
     Cell: ({value = {}}) => <div>{
       value.length > 0 ? value.map((wallet, index) => (
-        <div key={index}>
+        <div key={index}
+          className='wallet-addresses'>
           <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
         </div>
       )) : 'No data'

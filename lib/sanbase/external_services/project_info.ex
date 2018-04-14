@@ -1,13 +1,13 @@
 defmodule Sanbase.ExternalServices.ProjectInfo do
   @moduledoc """
-  # Fetch information about a project
+    Fetch information about a project
 
-  This module combies the logic from several external and internal services
-  in order to scrape as much information about a project as possible. All the
-  fields that are scraped can be seen in the struct that the module defines.
+    This module combies the logic from several external and internal services
+    in order to scrape as much information about a project as possible. All the
+    fields that are scraped can be seen in the struct that the module defines.
 
-  There is also a function, which allows to update the project with the
-  collected information.
+    There is also a function, which allows to update the project with the
+    collected information.
   """
   defstruct [
     :coinmarketcap_id,

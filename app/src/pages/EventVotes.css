@@ -3,12 +3,17 @@
   padding-bottom: 1px;
 }
 
+.event-votes a {
+  text-decoration: none;
+  border-bottom: none;
+}
+
 .event-votes .ui.message {
   margin: 16px 10px !important;
 }
 
 .event-posts-list {
-  padding: 8px;
+  padding: 0;
 }
 
 .event-votes-control {

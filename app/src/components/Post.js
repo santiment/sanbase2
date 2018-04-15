@@ -39,9 +39,10 @@ const Status = ({status = STATES.waiting, moderationComment}) => {
           {status}
         </Label>
       </div>
-      {moderationComment && <div>
-        <span>Comment:</span> {moderationComment}
-      </div>}
+      {moderationComment &&
+        <div>
+          <span>Comment:</span> {moderationComment}
+        </div>}
     </Div>
   )
 }
@@ -65,9 +66,6 @@ const Post = ({
 }) => {
   return (
     <div className='event-post'>
-      <div className='event-post-index'>
-        {index}.
-      </div>
       <div className='event-post-body'>
         <A className='event-storylink' href={link || `/insights/${id}`}>
           {title}
@@ -77,30 +75,34 @@ const Post = ({
         <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
         {user &&
           <Div className='event-post-info'>
-            by&nbsp; {user.username}
+            <div className='event-post-author'>
+              by&nbsp; {user.username}
+            </div>
+            <LikeBtn
+              onLike={() => {
+                if (votedAt) {
+                  unvotePost(id)
+                } else {
+                  votePost(id)
+                }
+              }}
+              liked={!!votedAt}
+              votes={totalSanVotes} />
           </Div>}
-        <LikeBtn
-          onLike={() => {
-            if (votedAt) {
-              unvotePost(id)
-            } else {
-              votePost(id)
-            }
-          }}
-          liked={!!votedAt}
-          votes={totalSanVotes} />
-        {showStatus && <Status
-          moderationComment={moderationComment}
-          status={!state ? STATES.waiting : state} />}
-        {showStatus && <Button
-          size='mini'
-          onClick={() => deletePost(id)}
-          style={{
-            fontWeight: '700',
-            color: '#db2828'
-          }}>
-          Delete this insight
-        </Button>}
+        <div className='event-post-controls'>
+          {showStatus && <Status
+            moderationComment={moderationComment}
+            status={!state ? STATES.waiting : state} />}
+          {showStatus && <Button
+            size='mini'
+            onClick={() => deletePost(id)}
+            style={{
+              fontWeight: '700',
+              color: '#db2828'
+            }}>
+            Delete this insight
+          </Button>}
+        </div>
       </div>
     </div>
   )

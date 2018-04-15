@@ -10,6 +10,10 @@
   height: 22px;
 }
 
+.event-post .post-status .label {
+  user-select: none;
+}
+
 .event-post .event-post-body {
   flex: 1;
 }

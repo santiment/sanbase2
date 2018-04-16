@@ -2,6 +2,17 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   @ttl :timer.minutes(5)
   @cache_name :graphql_cache
 
+  alias __MODULE__, as: CacheMod
+
+  defmacro cache_resolve(captured_mfa_ast) do
+    quote do
+      middleware(
+        Absinthe.Resolution,
+        CacheMod.from(unquote(captured_mfa_ast))
+      )
+    end
+  end
+
   def from(captured_mfa) when is_function(captured_mfa) do
     fun_name =
       captured_mfa

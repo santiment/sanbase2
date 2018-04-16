@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
   alias Sanbase.Voting.{Poll, Post, Vote, Tag}
   alias Sanbase.Auth.User
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.InternalServices.Ethauth
 
@@ -410,6 +411,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
   end
 
   test "create post with tags", %{conn: conn} do
+    Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
     tag = Repo.insert!(%Tag{name: "SAN"})
 
     mutation = """
@@ -417,6 +419,9 @@ defmodule SanbaseWeb.Graphql.PostTest do
       createPost(title: "Awesome post", text: "Example body", tags: ["#{tag.name}"]) {
         tags{
           name
+        },
+        related_projects {
+          ticker
         }
       }
     }
@@ -427,8 +432,10 @@ defmodule SanbaseWeb.Graphql.PostTest do
       |> post("/graphql", mutation_skeleton(mutation))
 
     [tag] = json_response(result, 200)["data"]["createPost"]["tags"]
+    [related_projects] = json_response(result, 200)["data"]["createPost"]["related_projects"]
 
     assert tag == %{"name" => "SAN"}
+    assert related_projects == %{"ticker" => "SAN"}
   end
 
   @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"

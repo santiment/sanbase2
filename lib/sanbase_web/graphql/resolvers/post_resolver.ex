@@ -5,10 +5,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Post, Poll}
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Resolvers.Helpers
 
-  @preloaded_assoc [:votes, :user, :images]
+  @preloaded_assoc [:votes, :user, :images, :tags]
 
   def post(_root, %{id: post_id}, _resolution) do
     case Repo.get(Post, post_id) do
@@ -55,6 +56,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
+  end
+
+  def related_projects(post, _, _) do
+    tags = post.tags |> Enum.map(& &1.name)
+
+    query =
+      from(
+        p in Project,
+        where: p.ticker in ^tags and not is_nil(p.coinmarketcap_id)
+      )
+
+    {:ok, Repo.all(query)}
   end
 
   def create_post(_root, post_args, %{

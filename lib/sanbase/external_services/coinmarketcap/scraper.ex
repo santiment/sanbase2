@@ -43,7 +43,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp name(html) do
-    Floki.attribute(html, ".currency-logo-32x32", "alt")
+    Floki.attribute(html, ".logo-32x32", "alt")
     |> List.first()
   end
 

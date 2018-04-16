@@ -48,6 +48,10 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
 
     field(:updated_at, non_null(:datetime))
 
+    field(:related_projects, list_of(:project)) do
+      resolve(&PostResolver.related_projects/3)
+    end
+
     field :created_at, non_null(:datetime) do
       resolve(fn %{inserted_at: inserted_at}, _, _ ->
         {:ok, inserted_at}

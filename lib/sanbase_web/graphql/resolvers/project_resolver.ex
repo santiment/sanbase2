@@ -695,6 +695,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     do: {:ok, []}
 
   def posts(%Project{ticker: ticker} = project, _args, _resolution) do
+    async(Cache.func(fn -> fetch_posts_by_ticker(ticker) end, {:posts, ticker}))
+  end
+
+  defp fetch_posts_by_ticker(ticker) do
     query =
       from(
         p in Post,

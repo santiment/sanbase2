@@ -213,6 +213,15 @@ exports[`Cashflow container it should render correctly 1`] = `
             },
             Object {
               "Cell": [Function],
+              "Header": "Daily active addresses (30D)",
+              "accessor": [Function],
+              "id": "daily_active_addresses",
+              "maxWidth": 110,
+              "sortMethod": [Function],
+              "sortable": true,
+            },
+            Object {
+              "Cell": [Function],
               "Header": "Signals",
               "accessor": [Function],
               "id": "signals",

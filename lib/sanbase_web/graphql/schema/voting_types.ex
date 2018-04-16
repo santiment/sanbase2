@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
 
   import Absinthe.Resolution.Helpers
 
-  alias SanbaseWeb.Graphql.Resolvers.VotingResolver
+  alias SanbaseWeb.Graphql.Resolvers.{VotingResolver, PostResolver}
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   object :tag do
@@ -28,6 +28,10 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:moderation_comment, :string)
     field(:images, list_of(:image_data), resolve: dataloader(SanbaseRepo))
     field(:tags, list_of(:tag), resolve: dataloader(SanbaseRepo))
+
+    field(:related_projects, list_of(:project)) do
+      resolve(&PostResolver.related_projects/3)
+    end
 
     field :created_at, non_null(:datetime) do
       resolve(fn %{inserted_at: inserted_at}, _, _ ->

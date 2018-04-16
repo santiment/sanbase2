@@ -6,7 +6,6 @@ defmodule Sanbase.Voting.Post do
 
   use Timex.Ecto.Timestamps
 
-  alias Sanbase.Model.Project
   alias Sanbase.Voting.{Poll, Post, Vote, PostImage, Tag}
   alias Sanbase.Auth.User
 

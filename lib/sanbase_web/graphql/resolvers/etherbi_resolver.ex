@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         },
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
+    with {:ok, contract_address, _token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, funds_flow_list} <-
            Transactions.Store.transactions_in_out_difference(
              contract_address,
@@ -155,21 +155,42 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     )
   end
 
+  def average_daily_active_addresses(
+        %Project{ticker: ticker} = project,
+        _args,
+        _resolution
+      ) do
+    month_ago = Timex.shift(Timex.now(), days: -30)
+
+    async(
+      Cache.func(
+        fn -> calculate_average_daily_active_addresses(project, month_ago, Timex.now()) end,
+        {:average_daily_active_addresses, ticker}
+      )
+    )
+  end
+
   def calculate_average_daily_active_addresses(project, from, to) do
     with {:ok, contract_address, _token_decimals} <- project_to_contract_info(project),
          {:ok, average_daily_active_addresses} <-
            DailyActiveAddresses.Store.average_daily_active_addresses(contract_address, from, to) do
-      result =
-        average_daily_active_addresses
-        |> Enum.map(fn [datetime, active_addresses] ->
-          %{
-            datetime: datetime,
-            active_addresses: active_addresses |> round() |> trunc()
-          }
-        end)
-        |> List.first()
+      case average_daily_active_addresses do
+        [] ->
+          {:ok, 0}
 
-      {:ok, result}
+        _ ->
+          %{active_addresses: average_activity} =
+            average_daily_active_addresses
+            |> Enum.map(fn [datetime, active_addresses] ->
+              %{
+                datetime: datetime,
+                active_addresses: active_addresses |> round() |> trunc()
+              }
+            end)
+            |> List.first()
+
+          {:ok, average_activity}
+      end
     else
       error ->
         error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"

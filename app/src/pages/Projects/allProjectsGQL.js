@@ -28,6 +28,7 @@ const project = gql`
     ethSpent
     coinmarketcapId
     averageDevActivity
+    averageDailyActiveAddresses
     marketcapUsd
     ethBalance
     btcBalance

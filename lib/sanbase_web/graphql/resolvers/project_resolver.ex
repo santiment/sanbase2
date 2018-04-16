@@ -15,9 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Infrastructure
   }
 
-  alias Sanbase.Prices
-  alias Sanbase.Github
-  alias Sanbase.ExternalServices.Etherscan
+  alias Sanbase.{Prices, Github, ExternalServices.Etherscan}
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore

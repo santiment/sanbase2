@@ -287,6 +287,14 @@ export const Cashflow = ({
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
+    Header: 'Daily active addresses (30D)',
+    id: 'daily_active_addresses',
+    maxWidth: 110,
+    accessor: d => d.averageDailyActiveAddresses,
+    Cell: ({value}) => <div className='overview-activeaddresses'>{value ? formatNumber(value) : ''}</div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(a, b)
+  }, {
     Header: 'Signals',
     id: 'signals',
     minWidth: 64,

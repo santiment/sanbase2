@@ -93,6 +93,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp email(mailto_string) do
+    # Removes the mailto part of the string "mailto:eos@block.one"
     String.slice(mailto_string, 7..-1)
   end
 

@@ -367,9 +367,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def funds_raised_icos(%Project{} = project, _args, _resolution) do
-    funds_raised = Project.funds_raised_icos(project)
-    {:ok, funds_raised}
+  def funds_raised_icos(%Project{id: id} = project, _args, _resolution) do
+    async(
+      Cache.func(
+        fn -> {:ok, Project.funds_raised_icos(project)} end,
+        {:funds_raised_icos, id}
+      )
+    )
   end
 
   def market_segment(%Project{market_segment_id: nil}, _args, _resolution), do: {:ok, nil}
@@ -500,8 +504,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     yesterday = Timex.shift(Timex.now(), days: -1)
     the_other_day = Timex.shift(Timex.now(), days: -2)
 
-    with {:ok, [[_dt, today_vol]]} <-
-           Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
+    with {:ok, [[_dt, today_vol]]} <- Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
          {:ok, [[_dt, yesterday_vol]]} <-
            Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
          true <- yesterday_vol > 0 do

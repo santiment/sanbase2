@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   import Ecto.Query
 
   alias Sanbase.Auth.User
-  alias Sanbase.Voting.{Post, Poll}
+  alias Sanbase.Voting.{Post, Poll, Tag}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Resolvers.Helpers
@@ -112,6 +112,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       _post ->
         {:error, "You don't own the post with id #{post_id}"}
     end
+  end
+
+  def all_tags(_root, _args, _context) do
+    {:ok, Repo.all(Tag)}
   end
 
   # Helper functions

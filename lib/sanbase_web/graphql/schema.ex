@@ -252,6 +252,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       |> resolve()
     end
 
+    @desc "Get all tags"
+    field :all_tags, list_of(:tag) do
+      Cache.from(&PostResolver.all_tags/3)
+      |> resolve()
+    end
+
     @desc "Shows the flow of funds in an exchange wallet"
     field :exchange_funds_flow, list_of(:funds_flow) do
       arg(:ticker, non_null(:string))

@@ -231,13 +231,6 @@ SeedsGithubActivityImporter.import_gh_activity(DateTime.utc_now(), 50, "SAN", []
 alias Sanbase.Etherbi.DailyActiveAddresses
 
 defmodule SeedsDailyActiveAddressesImporter do
-  def previous_day(datetime) do
-    datetime
-    |> DateTime.to_unix()
-    |> Kernel.-(86400)
-    |> DateTime.from_unix!()
-  end
-
   def import_daily_active_addresses(_datetime, _active_addresses, _contract_address, to_import, 0) do
     DailyActiveAddresses.Store.import(to_import)
     :ok
@@ -254,7 +247,7 @@ defmodule SeedsDailyActiveAddressesImporter do
       | to_import
     ]
 
-    datetime = previous_day(datetime)
+    datetime = Timex.shift(datetime, days: -1)
     active_addresses = :rand.uniform(10000)
 
     import_daily_active_addresses(

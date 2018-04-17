@@ -131,7 +131,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp token_decimals(html) do
-    Floki.find(html, ~s/td:fl-contains('Token Decimals') + td/)
+    Floki.find(html, ~s/td:fl-contains('Decimals') + td/)
     |> List.first()
     |> case do
       nil -> nil

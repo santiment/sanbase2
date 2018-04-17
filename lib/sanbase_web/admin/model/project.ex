@@ -155,7 +155,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
   def add_tag(conn, params, resource, :create) do
     resource
-    |> add_tag!()
+    |> add_tag()
 
     {conn, params, resource}
   end
@@ -171,10 +171,12 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
   defp set_infrastructure_default(%Project{} = project), do: project
 
-  defp add_tag!(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project)
+  defp add_tag(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = _project)
        when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
-    Repo.insert!(%Tag{name: ticker})
+    %Tag{name: ticker}
+    |> Tag.changeset()
+    |> Repo.insert()
   end
 
-  defp add_tag!(%Project{} = project), do: :ok
+  defp add_tag(%Project{}), do: :ok
 end

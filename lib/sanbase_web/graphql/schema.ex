@@ -228,7 +228,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights, list_of(:post) do
       middleware(PostPermissions)
 
-      Cache.from(&PostResolver.posts/3)
+      Cache.from(&PostResolver.all_insights/3)
       |> resolve()
     end
 
@@ -238,7 +238,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      Cache.from(&PostResolver.posts_by_user/3)
+      Cache.from(&PostResolver.all_insights_for_user/3)
       |> resolve()
     end
 
@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      Cache.from(&PostResolver.posts_user_voted_for/3)
+      Cache.from(&PostResolver.all_insights_user_voted_for/3)
       |> resolve()
     end
 

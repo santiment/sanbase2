@@ -1,4 +1,6 @@
 defmodule SanbaseWeb.Graphql.Helpers.Cache do
+  require Logger
+
   @ttl :timer.minutes(5)
   @cache_name :graphql_cache
 
@@ -21,6 +23,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     fn ->
       {_, value} =
         Cachex.fetch(@cache_name, cache_key(name, args), fn ->
+          Logger.info("Caching a new value in Graphql Cache. Current cache size: #{size(:megabytes)}mb")
           {:commit, cached_func.()}
         end)
 
@@ -30,6 +33,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
 
   def clear_all() do
     Cachex.clear(@cache_name)
+  end
+
+  def size(:megabytes) do
+    bytes_size = :ets.info(:graphql_cache, :memory) * :erlang.system_info(:wordsize)
+    bytes_size / (1024*1024) |> Float.round(2)
   end
 
   # Private functions

@@ -304,14 +304,20 @@ defmodule Sanbase.Model.Project do
     Repo.all(query)
   end
 
-  def project_eth_addresses_by_ticker(ticker) do
+  def eth_addresses_by_tickers(tickers) do
     query =
       from(
         p in Project,
-        where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
+        where: p.ticker in ^tickers and not is_nil(p.coinmarketcap_id),
         preload: [:eth_addresses]
       )
 
-    Repo.one(query)
+    Repo.all(query)
+    |> Stream.map(fn %Project{ticker: ticker, eth_addresses: eth_addresses} ->
+      eth_addresses = eth_addresses |> Enum.map(&Map.get(&1, :address))
+
+      {ticker, eth_addresses}
+    end)
+    |> Enum.into(%{})
   end
 end

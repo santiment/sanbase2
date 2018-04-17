@@ -691,10 +691,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end)
   end
 
-  def related_posts(%Project{ticker: ticker} = project, _args, _resolution) when is_nil(ticker),
+  def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) when is_nil(ticker),
     do: {:ok, []}
 
-  def related_posts(%Project{ticker: ticker} = project, _args, _resolution) do
+  def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) do
     Cache.func(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()
   end
 

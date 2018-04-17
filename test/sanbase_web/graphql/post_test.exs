@@ -492,6 +492,26 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert String.contains?(error["details"]["images"] |> hd, "already used")
   end
 
+  test "get all tags", %{conn: conn} do
+    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+
+    query = """
+    {
+      allTags {
+        name
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allTags"))
+
+    assert json_response(result, 200)["data"]["allTags"] ==
+             [%{"name" => tag1.name}, %{"name" => tag2.name}]
+  end
+
   # Helper functions
 
   @test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image.png"

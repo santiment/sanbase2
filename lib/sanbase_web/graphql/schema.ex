@@ -20,7 +20,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
-    MultipleAuth,
     BasicAuth,
     JWTAuth,
     ProjectPermissions,

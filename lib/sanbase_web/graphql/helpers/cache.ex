@@ -143,6 +143,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     middleware_resolver(captured_mfa, fun_name)
   end
 
+  def size(:megabytes) do
+    bytes_size = :ets.info(:graphql_cache, :memory) * :erlang.system_info(:wordsize)
+    bytes_size / (1024*1024) |> Float.round(2)
+  end
+
   # Private functions
 
   defp resolver(resolver_fn, name) do

@@ -56,12 +56,12 @@ DATABASE_URL=postgres://custom_username:custom_password@localhost:5432/sanbase_t
 The frontend application is in the `app` folder. To run the tests you can do:
 
 ```
-cd app && npm run test:js
+cd app && yarn test:js
 ```
 
 This is going to run the tests in watch mode, so when you change the JS files the tests will automatically run.
 
-If you need to update snapshots, press `u` after running the `npm run test:js`.
+If you need to update snapshots, press `u` after running the `yarn test:js`.
 
 We use JEST, enzyme and jest snapshots for testing.
 
@@ -69,8 +69,8 @@ We use **standard** for js lint and **stylelint** for css. Use these commands th
 
 ```
 cd app
-npm run test:lint:js
-npm run test:lint:css
+yarn test:lint:js
+yarn test:lint:css
 ```
 
 ----
@@ -78,7 +78,7 @@ npm run test:lint:css
 We have Storybook for our UI components
 
 ```
-npm run storybook
+yarn storybook
 ```
 
 Open http://localhost:9001

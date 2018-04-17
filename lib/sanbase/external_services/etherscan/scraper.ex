@@ -88,13 +88,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> List.first()
   end
 
-  defp email(nil) do
-    nil
-  end
+  defp email("mailto:" <> email), do: email
 
-  defp email(mailto_string) do
-    # Removes the mailto part of the string "mailto:eos@block.one"
-    String.slice(mailto_string, 7..-1)
+  defp email(_) do
+    nil
   end
 
   defp creation_transaction(html) do

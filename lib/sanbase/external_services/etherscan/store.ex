@@ -70,14 +70,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   @spec trx_sum_in_interval(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
           {:ok, number()} | {:ok, nil} | {:error, String.t()}
   def trx_sum_in_interval(measurement, from, to, transaction_type) do
-    sum_from_to_query(measurement, from, to, transaction_type)
-    |> Store.query()
-    |> parse_time_series()
-    |> case do
-      {:ok, [[_datetime, amount]]} -> {:ok, amount}
-      {:ok, []} -> {:ok, nil}
-      res -> res
-    end
+    ticker_address_map = Project.eth_addresses_by_tickers([measurement])
+
+    do_trx_sum_in_interval(measurement, from, to, transaction_type, ticker_address_map)
   end
 
   @doc ~s"""
@@ -105,9 +100,13 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   def eth_spent_by_projects([], _from, _to), do: {:ok, nil}
 
   def eth_spent_by_projects(measurements_list, from, to) do
+    ticker_address_map = Project.eth_addresses_by_tickers(measurements_list)
+
     total_eth_spent =
       measurements_list
-      |> Enum.map(&Task.async(fn -> trx_sum_in_interval(&1, from, to, "out") end))
+      |> Enum.map(
+        &Task.async(fn -> do_trx_sum_in_interval(&1, from, to, "out", ticker_address_map) end)
+      )
       |> Stream.map(&Task.await/1)
       |> Stream.reject(fn {:ok, sum} -> sum == nil end)
       |> Enum.reduce(0, fn
@@ -137,9 +136,23 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
   def eth_spent_over_time_by_projects([], _from, _to, _interval), do: {:ok, []}
 
   def eth_spent_over_time_by_projects(measurements_list, from, to, resolution) do
+    ticker_address_map = Project.eth_addresses_by_tickers(measurements_list)
+
     total_eth_spent_over_time =
       measurements_list
-      |> Stream.map(&trx_sum_over_time_in_interval!(&1, from, to, resolution, "out"))
+      |> Stream.map(fn measurement ->
+        {:ok, eth_spent} =
+          do_trx_sum_over_time_in_interval(
+            measurement,
+            from,
+            to,
+            resolution,
+            "out",
+            ticker_address_map
+          )
+
+        eth_spent
+      end)
       |> Enum.reject(fn list -> [] == list end)
       |> Stream.zip()
       |> Stream.map(&Tuple.to_list/1)
@@ -161,9 +174,16 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
           String.t()
         ) :: {:ok, list()} | {:error, String.t()}
   def trx_sum_over_time_in_interval(measurement, from, to, resolution, transaction_type) do
-    sum_over_time_from_to_query(measurement, from, to, resolution, transaction_type)
-    |> Store.query()
-    |> parse_time_series()
+    ticker_address_map = Project.eth_addresses_by_tickers([measurement])
+
+    do_trx_sum_over_time_in_interval(
+      measurement,
+      from,
+      to,
+      resolution,
+      transaction_type,
+      ticker_address_map
+    )
   end
 
   @doc ~s"""
@@ -198,7 +218,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
           String.t()
         ) :: {:ok, list()} | {:error, String.t()}
   def top_transactions(measurement, from, to, transaction_type, limit) do
-    select_top_transactions(measurement, from, to, transaction_type, limit)
+    ticker_address_map = Project.eth_addresses_by_tickers([measurement])
+
+    select_top_transactions(measurement, from, to, transaction_type, limit, ticker_address_map)
     |> Store.query()
     |> parse_time_series()
   end
@@ -224,6 +246,37 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
 
   # Private functions
 
+  defp do_trx_sum_in_interval(measurement, from, to, transaction_type, ticker_address_map) do
+    sum_from_to_query(measurement, from, to, transaction_type, ticker_address_map)
+    |> Store.query()
+    |> parse_time_series()
+    |> case do
+      {:ok, [[_datetime, amount]]} -> {:ok, amount}
+      {:ok, []} -> {:ok, nil}
+      res -> res
+    end
+  end
+
+  defp do_trx_sum_over_time_in_interval(
+         measurement,
+         from,
+         to,
+         resolution,
+         transaction_type,
+         ticker_address_map
+       ) do
+    sum_over_time_from_to_query(
+      measurement,
+      from,
+      to,
+      resolution,
+      transaction_type,
+      ticker_address_map
+    )
+    |> Store.query()
+    |> parse_time_series()
+  end
+
   defp reduce_values([]), do: []
 
   defp reduce_values([[datetime, _] | _] = values) do
@@ -241,53 +294,57 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     WHERE address = '#{address}'/
   end
 
-  defp sum_from_to_query(measurement, from, to, transaction_type) do
+  defp sum_from_to_query(measurement, from, to, transaction_type, ticker_address_map) do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE trx_hash != ''
-    #{construct_internal_eth_addresses_filter(measurement, transaction_type)}
+    #{construct_internal_eth_addresses_filter(measurement, transaction_type, ticker_address_map)}
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp sum_over_time_from_to_query(measurement, from, to, resolution, transaction_type) do
+  defp sum_over_time_from_to_query(
+         measurement,
+         from,
+         to,
+         resolution,
+         transaction_type,
+         ticker_address_map
+       ) do
     ~s/SELECT time, SUM(trx_value)
     FROM "#{measurement}"
     WHERE trx_hash != ''
-    #{construct_internal_eth_addresses_filter(measurement, transaction_type)}
+    #{construct_internal_eth_addresses_filter(measurement, transaction_type, ticker_address_map)}
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
     GROUP BY TIME(#{resolution}) fill(0)/
   end
 
-  defp select_top_transactions(measurement, from, to, "all", limit) do
+  defp select_top_transactions(measurement, from, to, "all", limit, ticker_address_map) do
     ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
     FROM "#{measurement}"
     WHERE trx_hash != ''
-    #{construct_internal_eth_addresses_filter(measurement, "all")}
+    #{construct_internal_eth_addresses_filter(measurement, "all", ticker_address_map)}
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp select_top_transactions(measurement, from, to, transaction_type, limit) do
+  defp select_top_transactions(measurement, from, to, transaction_type, limit, ticker_address_map) do
     ~s/SELECT trx_hash, TOP(trx_value, #{limit}) as trx_value, transaction_type, from_addr, to_addr
     FROM "#{measurement}"
     WHERE trx_hash != ''
-    #{construct_internal_eth_addresses_filter(measurement, transaction_type)}
+    #{construct_internal_eth_addresses_filter(measurement, transaction_type, ticker_address_map)}
     AND time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp construct_internal_eth_addresses_filter(ticker, transaction_type) do
-    case ticker |> Project.project_eth_addresses_by_ticker() do
+  defp construct_internal_eth_addresses_filter(ticker, transaction_type, ticker_address_map) do
+    case Map.get(ticker_address_map, ticker) do
       nil ->
         filter_eth_addresses([], transaction_type)
 
-      project ->
-        project
-        |> Map.get(:eth_addresses)
-        |> Enum.map(fn eth_address -> eth_address.address end)
-        |> filter_eth_addresses(transaction_type)
+      eth_addresses ->
+        filter_eth_addresses(eth_addresses, transaction_type)
     end
   end
 

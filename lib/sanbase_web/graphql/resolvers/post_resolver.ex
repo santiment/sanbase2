@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     end
   end
 
-  def posts(_root, _args, _context) do
+  def all_insights(_root, _args, _context) do
     posts =
       Post
       |> order_by(desc: :inserted_at)
@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
-  def posts_by_user(_root, %{user_id: user_id}, _context) do
+  def all_insights_for_user(_root, %{user_id: user_id}, _context) do
     query =
       from(
         p in Post,
@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
-  def posts_user_voted_for(_root, %{user_id: user_id}, _context) do
+  def all_insights_user_voted_for(_root, %{user_id: user_id}, _context) do
     query =
       from(
         p in Post,

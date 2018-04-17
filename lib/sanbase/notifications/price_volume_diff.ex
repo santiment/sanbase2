@@ -189,9 +189,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
           nil
 
         debug_url ->
-          from_unix = DateTime.to_unix(from_datetime)
-          to_unix = DateTime.to_unix(to_datetime)
-
           debug_url = "#{debug_url}?#{notification_data}"
 
           "[DEBUG INFO: #{debug_url}]"

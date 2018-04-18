@@ -53,11 +53,9 @@ defmodule Sanbase.Voting.Post do
   def declined_state(), do: @declined
 
   @doc """
-  Returns all posts ranked by HN ranking algorithm: https://news.ycombinator.com/item?id=1781013
-  where gravity = 1.8
-  formula: votes / pow((item_hour_age + 2), gravity)
-
-  returns: list of %Post{}
+    Returns all posts ranked by HN ranking algorithm: https://news.ycombinator.com/item?id=1781013
+    where gravity = 1.8
+    formula: votes / pow((item_hour_age + 2), gravity)
   """
 
   @spec posts_by_score() :: [%Post{}]

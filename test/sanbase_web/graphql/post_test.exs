@@ -301,7 +301,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
       }
       |> Repo.insert!()
 
-    %Vote{post_id: post.id, user_id: user.id}
+    %Vote{}
+    |> Vote.changeset(%{post_id: post.id, user_id: user.id})
     |> Repo.insert!()
 
     post2 =

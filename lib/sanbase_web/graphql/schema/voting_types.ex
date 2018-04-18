@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:images, list_of(:image_data), resolve: dataloader(SanbaseRepo))
     field(:tags, list_of(:tag), resolve: dataloader(SanbaseRepo))
 
-    field(:related_projects, list_of(:project)) do
+    field :related_projects, list_of(:project) do
       resolve(&PostResolver.related_projects/3)
     end
 

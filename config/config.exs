@@ -26,7 +26,7 @@ config :sasl, sasl_error_logger: false
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: {Sanbase.Utils.JsonLogger, :format},
+  format: "$time $metadata[$level] $message\n",
   metadata: [:request_id],
   handle_otp_reports: true,
   handle_sasl_reports: true

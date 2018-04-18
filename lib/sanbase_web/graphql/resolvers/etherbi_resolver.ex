@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         },
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
+    with {:ok, contract_address, _token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, funds_flow_list} <-
            Transactions.Store.transactions_in_out_difference(
              contract_address,

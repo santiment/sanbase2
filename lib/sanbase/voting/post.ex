@@ -9,6 +9,7 @@ defmodule Sanbase.Voting.Post do
   alias Sanbase.Model.Project
   alias Sanbase.Voting.{Poll, Post, Vote, PostImage}
   alias Sanbase.Auth.User
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
   @approved "approved"
   @declined "declined"

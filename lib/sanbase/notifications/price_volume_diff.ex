@@ -21,8 +21,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
            seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
          ) do
-      with %{from_datetime: from_datetime, to_datetime: to_datetime} <-
-             get_calculation_interval(),
+      with %{from_datetime: from_datetime, to_datetime: to_datetime} <- get_calculation_interval(),
            true <- check_volume(project, currency, from_datetime, to_datetime),
            {indicator, notification_log} <-
              get_indicator(project.ticker, currency, from_datetime, to_datetime),

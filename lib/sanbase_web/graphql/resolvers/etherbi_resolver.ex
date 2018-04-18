@@ -179,7 +179,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
           average_activity = active_addresses |> round() |> trunc()
           {:ok, average_activity}
 
-        _ -> {:ok, 0}
+        _ ->
+          {:ok, 0}
       end
     else
       error ->

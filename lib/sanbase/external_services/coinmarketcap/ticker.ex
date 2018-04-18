@@ -41,7 +41,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   def parse_json(json) do
     json
     |> Poison.decode!(as: [%Ticker{}])
-    |> Stream.filter(fn(ticker) -> ticker.last_updated end)
+    |> Stream.filter(fn ticker -> ticker.last_updated end)
     |> Enum.map(&make_timestamp_integer/1)
   end
 

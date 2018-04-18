@@ -15,6 +15,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Infrastructure
   }
 
+  alias Sanbase.Voting.{Post, Tag}
+
   alias Sanbase.Prices
   alias Sanbase.Github
   alias Sanbase.ExternalServices.Etherscan
@@ -500,7 +502,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     yesterday = Timex.shift(Timex.now(), days: -1)
     the_other_day = Timex.shift(Timex.now(), days: -2)
 
-    with {:ok, [[_dt, today_vol]]} <- Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
+    with {:ok, [[_dt, today_vol]]} <-
+           Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
          {:ok, [[_dt, yesterday_vol]]} <-
            Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
          true <- yesterday_vol > 0 do
@@ -686,5 +689,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _ -> {:ok, nil}
       end
     end)
+  end
+
+  def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) when is_nil(ticker),
+    do: {:ok, []}
+
+  def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) do
+    Cache.func(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()
+  end
+
+  defp fetch_posts_by_ticker(ticker) do
+    query =
+      from(
+        p in Post,
+        join: pt in "posts_tags",
+        on: p.id == pt.post_id,
+        join: t in Tag,
+        on: t.id == pt.tag_id,
+        where: t.name == ^ticker
+      )
+
+    {:ok, Repo.all(query)}
   end
 end

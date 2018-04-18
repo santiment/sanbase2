@@ -4,6 +4,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
+  alias Sanbase.Voting.Tag
 
   test "creating project info from a project" do
     project =
@@ -108,5 +109,50 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
              "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
 
     assert Project.initial_ico(project).contract_block_number == 3_972_935
+  end
+
+  test "update project_info with new ticker inserts into tags" do
+    ticker = "SAN"
+
+    project =
+      %Project{coinmarketcap_id: "santiment", name: "Santiment"}
+      |> Repo.insert!()
+
+    {:ok, project} =
+      ProjectInfo.update_project(
+        %ProjectInfo{
+          name: "Santiment",
+          coinmarketcap_id: "santiment",
+          ticker: "SAN"
+        },
+        project
+      )
+
+    assert project.ticker == ticker
+    assert Tag |> Repo.one() |> Map.get(:name) == ticker
+  end
+
+  test "update project_info with ticker - does not insert into tags if duplicate tag" do
+    ticker = "SAN"
+
+    %Tag{name: ticker}
+    |> Repo.insert!()
+
+    project =
+      %Project{coinmarketcap_id: "santiment", name: "Santiment", ticker: "OLD_TICKR"}
+      |> Repo.insert!()
+
+    {:ok, project} =
+      ProjectInfo.update_project(
+        %ProjectInfo{
+          name: "Santiment",
+          coinmarketcap_id: "santiment",
+          ticker: "SAN"
+        },
+        project
+      )
+
+    assert project.ticker == ticker
+    assert Tag |> Repo.all() |> Enum.count() == 1
   end
 end

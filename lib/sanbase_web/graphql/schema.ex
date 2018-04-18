@@ -213,7 +213,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights, list_of(:post) do
       middleware(PostPermissions)
 
-      cache_resolve(&PostResolver.posts/3)
+      cache_resolve(&PostResolver.all_insights/3)
     end
 
     @desc "Get all posts for given user"
@@ -222,7 +222,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      cache_resolve(&PostResolver.posts_by_user/3)
+      cache_resolve(&PostResolver.all_insights_for_user/3)
     end
 
     @desc "Get all posts a user has voted for"
@@ -231,7 +231,12 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      cache_resolve(&PostResolver.posts_user_voted_for/3)
+      cache_resolve(&PostResolver.all_insights_user_voted_for/3)
+    end
+
+    @desc "Get all tags"
+    field :all_tags, list_of(:tag) do
+      cache_resolve(&PostResolver.all_tags/3)
     end
 
     @desc "Shows the flow of funds in an exchange wallet"
@@ -413,8 +418,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:short_desc, :string)
       arg(:link, :string)
       arg(:text, :string)
-      arg(:related_projects, list_of(:integer))
       arg(:image_urls, list_of(:string))
+      arg(:tags, list_of(:string))
 
       middleware(JWTAuth)
       resolve(&PostResolver.create_post/3)

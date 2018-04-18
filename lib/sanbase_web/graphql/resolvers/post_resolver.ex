@@ -4,12 +4,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   import Ecto.Query
 
   alias Sanbase.Auth.User
-  alias Sanbase.Voting.{Post, Poll}
+  alias Sanbase.Voting.{Post, Poll, Tag}
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Resolvers.Helpers
   alias SanbaseWeb.Graphql.Helpers.Cache
 
-  @preloaded_assoc [:votes, :user, :related_projects, :images]
+  @preloaded_assoc [:votes, :user, :images, :tags]
 
   def post(_root, %{id: post_id}, _resolution) do
     case Repo.get(Post, post_id) do
@@ -18,11 +19,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     end
   end
 
-  def posts(_root, _args, _context) do
+  def all_insights(_root, _args, _context) do
     Cache.func(fn -> calc_posts() end, :posts_by_score).()
   end
 
-  def posts_by_user(_root, %{user_id: user_id}, _context) do
+  def all_insights_for_user(_root, %{user_id: user_id}, _context) do
     query =
       from(
         p in Post,
@@ -37,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
-  def posts_user_voted_for(_root, %{user_id: user_id}, _context) do
+  def all_insights_user_voted_for(_root, %{user_id: user_id}, _context) do
     query =
       from(
         p in Post,
@@ -50,6 +51,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
+  end
+
+  def related_projects(post, _, _) do
+    tags = post.tags |> Enum.map(& &1.name)
+
+    query =
+      from(
+        p in Project,
+        where: p.ticker in ^tags and not is_nil(p.coinmarketcap_id)
+      )
+
+    {:ok, Repo.all(query)}
   end
 
   def create_post(_root, post_args, %{
@@ -94,6 +107,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       _post ->
         {:error, "You don't own the post with id #{post_id}"}
     end
+  end
+
+  def all_tags(_root, _args, _context) do
+    {:ok, Repo.all(Tag)}
   end
 
   # Helper functions

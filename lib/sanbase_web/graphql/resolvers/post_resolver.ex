@@ -20,7 +20,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   def all_insights(_root, _args, _context) do
-    Cache.func(fn -> calc_posts() end, :posts_by_score).()
+    posts =
+      Post.posts_by_score()
+      |> Repo.preload(@preloaded_assoc)
+
+    {:ok, posts}
   end
 
   def all_insights_for_user(_root, %{user_id: user_id}, _context) do
@@ -114,14 +118,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   # Helper functions
-
-  defp calc_posts() do
-    posts =
-      Post.posts_by_score()
-      |> Repo.preload(@preloaded_assoc)
-
-    {:ok, posts}
-  end
 
   defp delete_post_images(%Post{} = post) do
     extract_image_url_from_post(post)

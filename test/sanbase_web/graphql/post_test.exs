@@ -287,6 +287,59 @@ defmodule SanbaseWeb.Graphql.PostTest do
            |> Map.get("text") == post.text
   end
 
+  test "getting all posts ranked", %{user: user, user2: user2, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{}
+    |> Vote.changeset(%{post_id: post.id, user_id: user.id})
+    |> Repo.insert!()
+
+    post2 =
+      %Post{
+        poll_id: poll.id,
+        user_id: user2.id,
+        title: "Awesome analysis2",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo2",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{post_id: post2.id, user_id: user.id}
+    |> Repo.insert!()
+
+    %Vote{post_id: post2.id, user_id: user2.id}
+    |> Repo.insert!()
+
+    query = """
+    {
+      allInsights {
+        id,
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    assert json_response(result, 200)["data"]["allInsights"] ==
+             [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]
+  end
+
   test "adding a new post to the current poll", %{user: user, conn: conn} do
     query = """
     mutation {

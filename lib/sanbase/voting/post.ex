@@ -51,6 +51,43 @@ defmodule Sanbase.Voting.Post do
 
   def declined_state(), do: @declined
 
+  @doc """
+    Returns all posts ranked by HN ranking algorithm: https://news.ycombinator.com/item?id=1781013
+    where gravity = 1.8
+    formula: votes / pow((item_hour_age + 2), gravity)
+  """
+
+  @spec posts_by_score() :: [%Post{}]
+  def posts_by_score() do
+    gravity = 1.8
+
+    query = """
+      SELECT * FROM
+        (SELECT
+          posts_by_votes.*,
+          ((posts_by_votes.votes_count) / POWER(posts_by_votes.item_hour_age + 2, #{gravity})) as score
+          FROM
+            (SELECT
+              p.*,
+              (EXTRACT(EPOCH FROM current_timestamp - p.inserted_at) /3600)::Integer as item_hour_age,
+              count(*) AS votes_count
+              FROM posts AS p
+              LEFT JOIN votes AS v ON p.id = v.post_id
+              GROUP BY p.id
+              ORDER BY votes_count DESC
+            ) AS posts_by_votes
+          ORDER BY score DESC
+        ) AS ranked_posts;
+    """
+
+    result = Ecto.Adapters.SQL.query!(Sanbase.Repo, query)
+
+    result.rows
+    |> Enum.map(fn row ->
+      Sanbase.Repo.load(Post, {result.columns, row})
+    end)
+  end
+
   # Helper functions
   defp tags_cast(changeset, %{tags: tags}) do
     tags = Tag |> where([t], t.name in ^tags) |> Sanbase.Repo.all()

@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Resolvers.Helpers
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
   @preloaded_assoc [:votes, :user, :images, :tags]
 
@@ -20,9 +21,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   def all_insights(_root, _args, _context) do
     posts =
-      Post
-      |> order_by(desc: :inserted_at)
-      |> Repo.all()
+      Post.posts_by_score()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}

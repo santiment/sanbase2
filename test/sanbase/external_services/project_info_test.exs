@@ -11,7 +11,6 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
       %Project{
         coinmarketcap_id: "coinmarketcap_id",
         name: "Name",
-        main_contract_address: "address",
         website_link: "website.link.com",
         email: "email@link.com",
         reddit_link: "reddit.link.com",
@@ -35,7 +34,6 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     expected_project_info = %ProjectInfo{
       coinmarketcap_id: "coinmarketcap_id",
       name: "Name",
-      main_contract_address: "address",
       website_link: "website.link.com",
       email: "email@link.com",
       reddit_link: "reddit.link.com",

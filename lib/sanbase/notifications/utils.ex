@@ -12,10 +12,10 @@ defmodule Sanbase.Notifications.Utils do
     recent_notifications_count(project, type, cooldown_datetime) > 0
   end
 
-  def insert_notification(project, notification_type_name) do
+  def insert_notification(project, notification_type_name, notification_data) do
     type = get_or_create_notification_type(notification_type_name)
 
-    %Notification{}
+    %Notification{data: notification_data}
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.put_assoc(:project, project)
     |> Ecto.Changeset.put_assoc(:type, type)

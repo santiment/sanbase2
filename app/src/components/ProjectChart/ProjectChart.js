@@ -5,9 +5,9 @@ import { pure } from 'recompose'
 import { Bar, Chart } from 'react-chartjs-2'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
-import { formatNumber, formatBTC } from '../../utils/formatting'
-import { findIndexByDatetime, millify } from '../../utils/utils'
 import 'chartjs-plugin-datalabels'
+import { formatNumber, formatBTC, millify } from './../../utils/formatting'
+import { findIndexByDatetime } from './../../utils/utils'
 import './ProjectChart.css'
 import './react-dates-override.css'
 
@@ -19,7 +19,8 @@ const COLORS = {
   twitter: 'rgba(16, 195, 245, 0.7)',
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
-  ethSpentOverTime: '#c82f3f'
+  ethSpentOverTime: '#c82f3f',
+  ethPrice: '#3c3c3d'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -70,6 +71,7 @@ const makeChartDataFromHistory = ({
   isToggledBurnRate,
   isToggledTransactionVolume,
   isToggledEthSpentOverTime,
+  isToggledEthPrice,
   ...props
 }) => {
   const twitter = props.twitter.history.items || []
@@ -231,6 +233,29 @@ const makeChartDataFromHistory = ({
         y: data.ethSpent
       }
     })}
+  const ethPriceDataset = !isToggledEthPrice ? null : {
+    label: 'ETH Price',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-9',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.ethPrice,
+    backgroundColor: COLORS.ethPrice,
+    borderWidth: 1,
+    data: props.ethPrice.history.items ? props.ethPrice.history.items.map(data => {
+      if (isToggledBTC) {
+        return {
+          x: data.datetime,
+          y: parseFloat(data.priceBtc)
+        }
+      }
+      return {
+        x: data.datetime,
+        y: parseFloat(data.priceUsd)
+      }
+    }) : []}
   return {
     labels,
     datasets: [
@@ -241,7 +266,8 @@ const makeChartDataFromHistory = ({
       twitterDataset,
       burnrateDataset,
       transactionVolumeDataset,
-      ethSpentOverTimeByErc20ProjectsDataset
+      ethSpentOverTimeByErc20ProjectsDataset,
+      ethPriceDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -254,7 +280,7 @@ const renderTicks = props => {
     if (!values[index]) { return }
     return props.isToggledBTC
       ? formatBTC(value)
-      : formatNumber(value, 'USD')
+      : formatNumber(value, { currency: 'USD' })
   }
 }
 
@@ -334,7 +360,7 @@ const makeOptionsFromProps = props => ({
         }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
-          : formatNumber(tooltipItem.yLabel, 'USD')}`
+          : formatNumber(tooltipItem.yLabel, { currency: 'USD' })}`
       }
     }
   },
@@ -536,6 +562,12 @@ const makeOptionsFromProps = props => ({
       },
       ticks: {
         display: true,
+        ticks: {
+          max: parseInt(Math.max(...props.ethSpentOverTime.items.filter(data => {
+            return moment(data.datetime).isAfter(props.from) &&
+              moment(data.datetime).isBefore(props.to)
+          }).map(data => data.ethSpent)), 10)
+        },
         callback: (value, index, values) => {
           if (!values[index]) { return }
           return millify(value)
@@ -547,6 +579,24 @@ const makeOptionsFromProps = props => ({
       display: props.isToggledEthSpentOverTime &&
         props.ethSpentOverTimeByErc20Projects.items.length !== 0,
       position: 'right'
+    }, {
+      id: 'y-axis-9',
+      display: true,
+      position: 'right',
+      scaleLabel: {
+        display: true,
+        labelString: `ETH Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
+        fontColor: '#3d4450'
+      },
+      ticks: {
+        display: false,
+        beginAtZero: true,
+        callback: renderTicks(props)
+      },
+      gridLines: {
+        drawBorder: false,
+        display: false
+      }
     }],
     xAxes: [{
       type: 'time',

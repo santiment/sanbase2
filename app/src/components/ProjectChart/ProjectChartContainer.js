@@ -1,10 +1,7 @@
 import React, { Component } from 'react'
 import moment from 'moment'
 import * as qs from 'query-string'
-import {
-  compose,
-  withState
-} from 'recompose'
+import { compose, withState } from 'recompose'
 import ProjectChartHeader from './ProjectChartHeader'
 import ProjectChartFooter from './ProjectChartFooter'
 import ProjectChart from './ProjectChart'
@@ -164,6 +161,10 @@ class ProjectChartContainer extends Component {
           interval={this.state.interval}
           shareableURL={shareableURL}
           ticker={this.props.ticker}
+          isERC20={this.props.isERC20}
+          toggleEthPrice={this.props.toggleEthPrice}
+          isToggledEthPrice={this.props.isToggledEthPrice}
+          ethPrice={this.props.ethPrice}
           isDesktop={this.props.isDesktop}
         />
         <ProjectChart
@@ -172,6 +173,8 @@ class ProjectChartContainer extends Component {
           isToggledBTC={this.state.isToggledBTC}
           history={this.props.price.history.items}
           burnRate={burnRate}
+          from={this.state.startDate}
+          to={this.state.endDate}
           transactionVolume={transactionVolume}
           ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
           isLoading={this.props.price.history.loading}
@@ -192,6 +195,7 @@ const enhance = compose(
   withState('isToggledTwitter', 'toggleTwitter', false),
   withState('isToggledBurnRate', 'toggleBurnRate', false),
   withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
+  withState('isToggledEthPrice', 'toggleEthPrice', false),
   withState('blockchainFilter', 'setBlockchainFilter', 'all')
 )
 

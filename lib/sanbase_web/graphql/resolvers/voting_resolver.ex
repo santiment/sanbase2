@@ -15,13 +15,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     {:ok, poll}
   end
 
-  def post(_root, %{id: post_id}, _resolution) do
-    case Repo.get(Post, post_id) do
-      nil -> {:error, "There is no post with id #{post_id}"}
-      post -> {:ok, post}
-    end
-  end
-
   def total_san_votes(%Post{} = post, _args, _context) do
     total_san_votes =
       post
@@ -37,7 +30,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   def voted_at(%Post{} = post, _args, %{
         context: %{auth: %{current_user: user}}
       }) do
-    case Repo.get_by(Vote, post_id: post.id, user_id: user.id) do
+    post
+    |> Repo.preload([:votes])
+    |> Map.get(:votes, [])
+    |> Enum.find(&(&1.user_id == user.id))
+    |> case do
       nil -> {:ok, nil}
       vote -> {:ok, vote.inserted_at}
     end
@@ -73,63 +70,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
       _error ->
         {:error, "Can't remove vote"}
     end
-  end
-
-  def create_post(_root, post_args, %{
-        context: %{auth: %{current_user: user}}
-      }) do
-    %Post{user_id: user.id, poll_id: Poll.find_or_insert_current_poll!().id}
-    |> Post.create_changeset(post_args)
-    |> Repo.insert()
-    |> case do
-      {:ok, post} ->
-        {:ok, post}
-
-      {:error, changeset} ->
-        {
-          :error,
-          message: "Can't create post", details: Helpers.error_details(changeset)
-        }
-    end
-  end
-
-  def delete_post(_root, %{id: post_id}, %{
-        context: %{auth: %{current_user: %User{id: user_id}}}
-      }) do
-    case Repo.get(Post, post_id) do
-      %Post{user_id: ^user_id} = post ->
-        # Delete the images from the S3/Local store.
-        delete_post_images(post)
-
-        # Note: When ecto changeset middleware is implemented return just `Repo.delete(post)`
-        case Repo.delete(post) do
-          {:ok, post} ->
-            {:ok, post}
-
-          {:error, changeset} ->
-            {
-              :error,
-              message: "Can't delete post with id #{post_id}",
-              details: Helpers.error_details(changeset)
-            }
-        end
-
-      _post ->
-        {:error, "You don't own the post with id #{post_id}"}
-    end
-  end
-
-  # Helper functions
-
-  defp delete_post_images(%Post{} = post) do
-    extract_image_url_from_post(post)
-    |> Enum.map(&Sanbase.FileStore.delete/1)
-  end
-
-  defp extract_image_url_from_post(%Post{} = post) do
-    post
-    |> Repo.preload(:images)
-    |> Map.get(:images, [])
-    |> Enum.map(fn %{image_url: image_url} -> image_url end)
   end
 end

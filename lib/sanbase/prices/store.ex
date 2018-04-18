@@ -12,6 +12,8 @@ defmodule Sanbase.Prices.Store do
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
+  @last_history_price_cmc_measurement "sanbase-internal-last-history-price-cmc"
+
   def fetch_price_points!(pair, from, to) do
     fetch_query(pair, from, to)
     |> q()
@@ -56,6 +58,32 @@ defmodule Sanbase.Prices.Store do
     Store.query(query)
     |> parse_price_series
   end
+
+  def update_last_history_datetime_cmc(ticker, last_updated_datetime) do
+    %Measurement{
+      timestamp: 0,
+      fields: %{last_updated: last_updated_datetime |> DateTime.to_unix(:nanoseconds)},
+      tags: [ticker: ticker],
+      name: @last_history_price_cmc_measurement
+    }
+    |> Store.import()
+  end
+
+  def last_history_datetime_cmc!(ticker) do
+    case last_history_datetime_cmc(ticker) do
+      {:ok, datetime} -> datetime
+      {:error, error} -> raise(error)
+    end
+  end
+
+  def last_history_datetime_cmc(ticker) do
+    ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
+    WHERE ticker = '#{ticker}'/
+    |> Store.query()
+    |> parse_last_history_datetime_cmc()
+  end
+
+  # Helper functions
 
   defp fetch_query(pair, from, to) do
     ~s/SELECT time, price, volume, marketcap
@@ -124,4 +152,24 @@ defmodule Sanbase.Prices.Store do
   defp parse_record(_) do
     {:ok, nil}
   end
+
+  defp parse_last_history_datetime_cmc(%{results: [%{error: error}]}), do: {:error, error}
+
+  defp parse_last_history_datetime_cmc(%{
+         results: [
+           %{
+             series: [
+               %{
+                 values: [[_iso8601_datetime, iso8601_last_updated, _]]
+               }
+             ]
+           }
+         ]
+       }) do
+    {:ok, datetime} = DateTime.from_unix(iso8601_last_updated, :nanoseconds)
+
+    {:ok, datetime}
+  end
+
+  defp parse_last_history_datetime_cmc(_), do: {:ok, nil}
 end

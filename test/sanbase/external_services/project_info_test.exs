@@ -4,13 +4,28 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
+  alias Sanbase.Voting.Tag
 
   test "creating project info from a project" do
     project =
       %Project{
         coinmarketcap_id: "coinmarketcap_id",
         name: "Name",
-        main_contract_address: "address"
+        main_contract_address: "address",
+        website_link: "website.link.com",
+        email: "email@link.com",
+        reddit_link: "reddit.link.com",
+        twitter_link: "twitter.link.com",
+        bitcointalk_link: "bitcointalk.link.com",
+        blog_link: "blog.link.com",
+        github_link: "github.link.com",
+        telegram_link: "telegram.link.com",
+        slack_link: "slack.link.com",
+        facebook_link: "facebook.link.com",
+        whitepaper_link: "whitepaper.link.com",
+        ticker: "SAN",
+        token_decimals: 4,
+        total_supply: 50000
       }
       |> Repo.insert!()
 
@@ -20,7 +35,21 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     expected_project_info = %ProjectInfo{
       coinmarketcap_id: "coinmarketcap_id",
       name: "Name",
-      main_contract_address: "address"
+      main_contract_address: "address",
+      website_link: "website.link.com",
+      email: "email@link.com",
+      reddit_link: "reddit.link.com",
+      twitter_link: "twitter.link.com",
+      bitcointalk_link: "bitcointalk.link.com",
+      blog_link: "blog.link.com",
+      github_link: "github.link.com",
+      telegram_link: "telegram.link.com",
+      slack_link: "slack.link.com",
+      facebook_link: "facebook.link.com",
+      whitepaper_link: "whitepaper.link.com",
+      ticker: "SAN",
+      token_decimals: 4,
+      total_supply: 50000
     }
 
     assert expected_project_info == ProjectInfo.from_project(project)
@@ -78,5 +107,50 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     assert Project.initial_ico(project).id == ico.id
 
     assert Project.initial_ico(project).contract_block_number == 3_972_935
+  end
+
+  test "update project_info with new ticker inserts into tags" do
+    ticker = "SAN"
+
+    project =
+      %Project{coinmarketcap_id: "santiment", name: "Santiment"}
+      |> Repo.insert!()
+
+    {:ok, project} =
+      ProjectInfo.update_project(
+        %ProjectInfo{
+          name: "Santiment",
+          coinmarketcap_id: "santiment",
+          ticker: "SAN"
+        },
+        project
+      )
+
+    assert project.ticker == ticker
+    assert Tag |> Repo.one() |> Map.get(:name) == ticker
+  end
+
+  test "update project_info with ticker - does not insert into tags if duplicate tag" do
+    ticker = "SAN"
+
+    %Tag{name: ticker}
+    |> Repo.insert!()
+
+    project =
+      %Project{coinmarketcap_id: "santiment", name: "Santiment", ticker: "OLD_TICKR"}
+      |> Repo.insert!()
+
+    {:ok, project} =
+      ProjectInfo.update_project(
+        %ProjectInfo{
+          name: "Santiment",
+          coinmarketcap_id: "santiment",
+          ticker: "SAN"
+        },
+        project
+      )
+
+    assert project.ticker == ticker
+    assert Tag |> Repo.all() |> Enum.count() == 1
   end
 end

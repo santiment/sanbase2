@@ -25,6 +25,8 @@ defmodule Sanbase.Model.Project do
     field(:ticker, :string)
     field(:logo_url, :string)
     field(:website_link, :string)
+    field(:email, :string)
+    field(:bitcointalk_link, :string)
     field(:btt_link, :string)
     field(:facebook_link, :string)
     field(:github_link, :string)
@@ -59,8 +61,6 @@ defmodule Sanbase.Model.Project do
     )
 
     has_many(:icos, Ico)
-
-    many_to_many(:related_posts, Post, join_through: "posts_projects")
   end
 
   @doc false
@@ -72,6 +72,8 @@ defmodule Sanbase.Model.Project do
       :logo_url,
       :coinmarketcap_id,
       :website_link,
+      :email,
+      :bitcointalk_link,
       :market_segment_id,
       :infrastructure_id,
       :btt_link,

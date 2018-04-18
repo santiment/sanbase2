@@ -16,11 +16,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
   alias Sanbase.Notifications.CheckPrices
   alias Sanbase.Notifications.PriceVolumeDiff
   alias Sanbase.Utils.Config
@@ -33,16 +30,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   def init(:ok) do
-    update_interval = Config.get(:update_interval, @default_update_interval)
-
     if Config.get(:sync_enabled, false) do
-      Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
-      |> Keyword.get(:database)
-      |> Instream.Admin.Database.create()
-      |> Store.execute()
+      Store.create_db()
 
       GenServer.cast(self(), :sync)
 
+      update_interval = Config.get(:update_interval, @default_update_interval)
       {:ok, %{update_interval: update_interval}}
     else
       :ignore
@@ -52,8 +45,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
     projects =
       Project
-      |> where([p], not is_nil(p.coinmarketcap_id) and not is_nil(p.ticker))
+      |> where([p], not is_nil(p.coinmarketcap_id))
       |> Repo.all()
+
+    Task.Supervisor.async_nolink(
+      Sanbase.TaskSupervisor,
+      &fetch_and_process_marketcap_total_data/0
+    )
+    |> Task.await(:infinity)
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
@@ -68,7 +67,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
       projects,
-      &fetch_price_data/1,
+      &fetch_and_process_price_data/1,
       ordered: false,
       max_concurrency: 5,
       timeout: :infinity
@@ -105,14 +104,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   defp project_info_missing?(
          %Project{
            website_link: website_link,
+           email: email,
+           reddit_link: reddit_link,
+           twitter_link: twitter_link,
+           bitcointalk_link: bitcointalk_link,
+           blog_link: blog_link,
            github_link: github_link,
+           telegram_link: telegram_link,
+           slack_link: slack_link,
+           facebook_link: facebook_link,
+           whitepaper_link: whitepaper_link,
            ticker: ticker,
            name: name,
            token_decimals: token_decimals,
            main_contract_address: main_contract_address
          } = project
        ) do
-    !website_link or !github_link or !ticker or !name or !main_contract_address or !token_decimals
+    !website_link or !email or !reddit_link or !twitter_link or !bitcointalk_link or !blog_link or
+      !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
+      !ticker or !name or !main_contract_address or !token_decimals
   end
 
   defp missing_ico_info?(%Ico{
@@ -122,60 +132,39 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     !contract_abi or !contract_block_number
   end
 
-  defp fetch_price_data(%Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker} = project) do
-    GraphData.fetch_prices(
-      coinmarketcap_id,
-      last_price_datetime(project),
-      DateTime.utc_now()
-    )
-    |> Stream.flat_map(fn price_point ->
-      [
-        convert_to_measurement(price_point, "_usd", "#{ticker}_USD"),
-        convert_to_measurement(price_point, "_btc", "#{ticker}_BTC")
-      ]
-    end)
-    |> Store.import()
+  defp fetch_and_process_price_data(%Project{} = project) do
+    last_price_datetime = last_price_datetime(project)
+    GraphData.fetch_and_store_prices(project, last_price_datetime)
 
+    process_notifications(project)
+  end
+
+  defp process_notifications(%Project{} = project) do
     CheckPrices.exec(project, "usd")
     CheckPrices.exec(project, "btc")
 
     PriceVolumeDiff.exec(project, "usd")
   end
 
-  defp convert_to_measurement(%PricePoint{datetime: datetime} = point, suffix, name) do
-    %Measurement{
-      timestamp: DateTime.to_unix(datetime, :nanosecond),
-      fields: price_point_to_fields(point, suffix),
-      tags: [],
-      name: name
-    }
-  end
+  defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id}) do
+    case Store.last_history_datetime_cmc!(coinmarketcap_id) do
+      nil ->
+        GraphData.fetch_first_price_datetime(coinmarketcap_id)
 
-  defp price_point_to_fields(
-         %PricePoint{marketcap: marketcap, volume_usd: volume} = point,
-         suffix
-       ) do
-    %{
-      price: Map.get(point, String.to_atom("price" <> suffix)),
-      volume: volume,
-      marketcap: marketcap
-    }
-  end
-
-  defp last_price_datetime(%Project{ticker: ticker} = project) do
-    usd_datetime = last_price_datetime(ticker <> "_USD", project)
-    btc_datetime = last_price_datetime(ticker <> "_BTC", project)
-
-    case DateTime.compare(usd_datetime, btc_datetime) do
-      :gt -> btc_datetime
-      _ -> usd_datetime
+      datetime ->
+        datetime
     end
   end
 
-  defp last_price_datetime(pair, %Project{coinmarketcap_id: coinmarketcap_id}) do
-    case Store.last_datetime!(pair) do
+  defp fetch_and_process_marketcap_total_data() do
+    last_marketcap_total_datetime = last_marketcap_total_datetime()
+    GraphData.fetch_and_store_marketcap_total(last_marketcap_total_datetime)
+  end
+
+  defp last_marketcap_total_datetime() do
+    case Store.last_history_datetime_cmc!("TOTAL_MARKET") do
       nil ->
-        GraphData.fetch_first_price_datetime(coinmarketcap_id)
+        GraphData.fetch_first_marketcap_total_datetime()
 
       datetime ->
         datetime

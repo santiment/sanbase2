@@ -1,6 +1,6 @@
 import React from 'react'
 import cx from 'classnames'
-import { formatNumber } from '../../utils/formatting'
+import { formatCryptoCurrency, formatNumber } from './../../utils/formatting'
 import './GeneralInfoBlock.css'
 
 const GeneralInfoBlock = ({
@@ -8,7 +8,7 @@ const GeneralInfoBlock = ({
   slackLink,
   twitterLink,
   githubLink,
-  mediumLink,
+  blogLink,
   whitepaperLink,
   marketcapUsd,
   rank,
@@ -30,8 +30,8 @@ const GeneralInfoBlock = ({
       <a href={twitterLink || ''}>
         <i className={`fa fa-twitter ${!twitterLink && 'fa-disabled'}`} />
       </a>
-      <a href={mediumLink || ''}>
-        <i className={`fa fa-medium ${!mediumLink && 'fa-disabled'}`} />
+      <a href={blogLink || ''}>
+        <i className={`fa fa-medium ${!blogLink && 'fa-disabled'}`} />
       </a>
       <a href={githubLink || ''}>
         <i className={`fa fa-github ${!githubLink && 'fa-disabled'}`} />
@@ -48,7 +48,7 @@ const GeneralInfoBlock = ({
         Market Cap
       </div>
       <div>
-        {formatNumber(marketcapUsd, 'USD')}
+        {formatNumber(marketcapUsd, { currency: 'USD' })}
       </div>
     </div>
     <div className={`row-info ${!priceUsd && 'info-disabled'}`}>
@@ -56,7 +56,7 @@ const GeneralInfoBlock = ({
         Price
       </div>
       <div>
-        {formatNumber(priceUsd, 'USD')}
+        {formatNumber(priceUsd, { currency: 'USD' })}
       </div>
     </div>
     <div className={`row-info ${!volumeUsd && 'info-disabled'}`}>
@@ -64,7 +64,7 @@ const GeneralInfoBlock = ({
         Volume
       </div>
       <div>
-        {formatNumber(volumeUsd, 'USD')}
+        {formatNumber(volumeUsd, { currency: 'USD' })}
       </div>
     </div>
     <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
@@ -72,8 +72,7 @@ const GeneralInfoBlock = ({
         Circulating
       </div>
       <div>
-        {ticker}&nbsp;
-        {formatNumber(marketcapUsd / priceUsd)}
+        {formatCryptoCurrency(ticker, formatNumber(marketcapUsd / priceUsd))}
       </div>
     </div>
     <div className={cx({
@@ -84,8 +83,7 @@ const GeneralInfoBlock = ({
         Total supply
       </div>
       <div>
-        {isERC20 && ticker}&nbsp;
-        {isERC20 && formatNumber(totalSupply)}
+        {isERC20 ? formatCryptoCurrency(ticker, formatNumber(totalSupply)) : ''}
       </div>
     </div>
     <div className={`row-info ${!rank && 'info-disabled'}`}>

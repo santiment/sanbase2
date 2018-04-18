@@ -3,8 +3,9 @@ import moment from 'moment'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
 import { DateRangePicker } from 'react-dates'
-import { formatNumber } from '../../utils/formatting'
+import { formatNumber } from './../../utils/formatting'
 import ShareableBtn from './ShareableBtn'
+import { ToggleBtn } from './ProjectChartFooter'
 import './ProjectChartHeader.css'
 
 export const TimeFilterItem = ({disabled, interval, setFilter, value = '1d'}) => {
@@ -57,7 +58,11 @@ const ProjectChartHeader = ({
   setFilter,
   shareableURL,
   sanbaseChart,
-  ticker
+  ticker,
+  ethPrice,
+  isToggledEthPrice,
+  toggleEthPrice,
+  isERC20
 }) => {
   return (
     <div className='chart-header'>
@@ -84,6 +89,16 @@ const ProjectChartHeader = ({
         />}
       </div>
       <div className='chart-header-actions'>
+        {isERC20 &&
+        <ToggleBtn
+          loading={ethPrice.history.loading}
+          disabled={ethPrice.history.items.length === 0}
+          isToggled={isToggledEthPrice &&
+            ethPrice.history.items.length !== 0}
+          toggle={toggleEthPrice}>
+          ETH Price
+        </ToggleBtn>}
+        &nbsp;
         <CurrencyFilter
           ticker={ticker}
           isToggledBTC={isToggledBTC}
@@ -111,9 +126,9 @@ const ProjectChartHeader = ({
             as='div'
           >
             <span className='selected-value-data'>Price:
-              {formatNumber(history[selected].priceUsd, 'USD')}</span>
+              {formatNumber(history[selected].priceUsd, { currency: 'USD' })}</span>
             <span className='selected-value-data'>Volume:
-              {formatNumber(history[selected].volume, 'USD')}</span>
+              {formatNumber(history[selected].volume, { currency: 'USD' })}</span>
           </Merge>}</div> ]}
     </div>
   )

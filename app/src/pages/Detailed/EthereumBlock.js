@@ -5,11 +5,10 @@ import classnames from 'classnames'
 import { withRouter } from 'react-router-dom'
 import { compose } from 'recompose'
 import { Loader } from 'semantic-ui-react'
-import { simpleSort } from './../../utils/sortMethods'
 import PanelBlock from './../../components/PanelBlock'
-import { formatNumber } from '../../utils/formatting'
-import { allShortProjectsGQL } from './../Projects/allProjectsGQL'
-import { getProjects } from './../Projects/projectSelectors'
+import { simpleSort } from './../../utils/sortMethods'
+import { formatNumber } from './../../utils/formatting'
+import { allErc20ShortProjectsGQL } from './../Projects/allProjectsGQL'
 import { CustomThComponent, CustomHeadComponent } from './../Cashflow'
 import { collectedField } from './FinancialsBlock'
 import './../Cashflow.css'
@@ -18,13 +17,13 @@ import './EthereumBlock.css'
 const EthereumBlock = ({
   project = {},
   Projects = {
-    allProjects: [],
+    allErc20Projects: [],
     loading: true
   },
   loading = true,
   history
 }) => {
-  const projects = getProjects(Projects.allProjects)
+  const projects = Projects.allErc20Projects
   const columns = [{
     Header: () => <span className='header-project-column'>Projects</span>,
     id: 'project',
@@ -36,7 +35,7 @@ const EthereumBlock = ({
       ticker: d.ticker,
       cmcId: d.coinmarketcapId
     }),
-    Cell: ({value}) => (
+    Cell: ({value = {}}) => (
       <div
         onClick={() => history.push(`/projects/${value.cmcId}`)}
         className='overview-name' >
@@ -53,12 +52,13 @@ const EthereumBlock = ({
     Header: 'Wallets',
     id: 'wallets',
     accessor: 'ethAddresses',
-    Cell: ({value}) => <div>{
-      value.map((wallet, index) => (
-        <div key={index}>
+    Cell: ({value = {}}) => <div>{
+      value.length > 0 ? value.map((wallet, index) => (
+        <div key={index}
+          className='wallet-addresses'>
           <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
         </div>
-      ))
+      )) : 'No data'
     }</div>,
     sortable: false
   }, {
@@ -136,7 +136,7 @@ const EthereumBlock = ({
 
 const enhance = compose(
   withRouter,
-  graphql(allShortProjectsGQL, {
+  graphql(allErc20ShortProjectsGQL, {
     name: 'Projects',
     options: () => {
       return {

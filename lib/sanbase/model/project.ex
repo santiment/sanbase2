@@ -180,7 +180,7 @@ defmodule Sanbase.Model.Project do
         inner_join: p in Project,
         on: p.id == d.project_id,
         where:
-          not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(d.main_contract_address) and
+          not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(p.main_contract_address) and
             not is_nil(d.contract_block_number) and not is_nil(d.contract_abi),
         order_by: p.name,
         select: p

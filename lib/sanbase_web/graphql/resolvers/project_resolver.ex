@@ -61,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         inner_join: infr in Infrastructure,
         on: p.infrastructure_id == infr.id,
         where:
-          not is_nil(p.coinmarketcap_id) and not is_nil(ico.main_contract_address) and
+          not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
             infr.code == "ETH",
         order_by: p.name
       )
@@ -84,7 +84,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         p in Project,
         inner_join: ico in Ico,
         on: p.id == ico.project_id,
-        where: not is_nil(p.coinmarketcap_id) and is_nil(ico.main_contract_address),
+        where: not is_nil(p.coinmarketcap_id) and is_nil(p.main_contract_address),
         order_by: p.name
       )
 

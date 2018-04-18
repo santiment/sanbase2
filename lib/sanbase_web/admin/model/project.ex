@@ -139,6 +139,33 @@ defmodule Sanbase.ExAdmin.Model.Project do
         end
       end
     end
+
+    # Put Actions column to the front
+    sidebar " ", only: :index do
+      panel "" do
+        markup_contents do
+          script type: "text/javascript" do
+            """
+            $.moveColumn = function (table, from, to) {
+                var rows = $('tr', table);
+                var cols;
+                rows.each(function() {
+                    cols = $(this).children('th, td');
+                    cols.eq(from).detach().insertBefore(cols.eq(to));
+                });
+            }
+
+            $(document).ready(function() {
+              thact = $("table.index_table thead tr th.th-actions");
+              index = $("table.index_table thead tr th").index(thact);
+              table = $("table.index_table thead,tbody");
+              $.moveColumn(table, index, 1);
+            });
+            """
+          end
+        end
+      end
+    end
   end
 
   def set_defaults(conn, params, resource, :new) do

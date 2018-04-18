@@ -8,7 +8,6 @@ defmodule Sanbase.Voting.Post do
 
   alias Sanbase.Voting.{Poll, Post, Vote, PostImage, Tag}
   alias Sanbase.Auth.User
-  alias SanbaseWeb.Graphql.Helpers.Cache
 
   alias Sanbase.Repo
 

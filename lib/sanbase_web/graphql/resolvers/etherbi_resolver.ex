@@ -142,21 +142,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Return the average number of daily active addresses for a given ticker and period of time
   """
   def average_daily_active_addresses(
-        %Project{ticker: ticker} = project,
+        %Project{id: id} = project,
         %{from: from, to: to} = args,
         _resolution
       ) do
     async(
       Cache.func(
         fn -> calculate_average_daily_active_addresses(project, from, to) end,
-        {:average_daily_active_addresses, ticker},
+        {:average_daily_active_addresses, id},
         args
       )
     )
   end
 
   def average_daily_active_addresses(
-        %Project{ticker: ticker} = project,
+        %Project{id: id} = project,
         _args,
         _resolution
       ) do
@@ -165,7 +165,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     async(
       Cache.func(
         fn -> calculate_average_daily_active_addresses(project, month_ago, Timex.now()) end,
-        {:average_daily_active_addresses, ticker}
+        {:average_daily_active_addresses, id}
       )
     )
   end
@@ -175,27 +175,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
          {:ok, average_daily_active_addresses} <-
            DailyActiveAddresses.Store.average_daily_active_addresses(contract_address, from, to) do
       case average_daily_active_addresses do
-        [] ->
-          {:ok, 0}
-
-        _ ->
-          %{active_addresses: average_activity} =
-            average_daily_active_addresses
-            |> Enum.map(fn [datetime, active_addresses] ->
-              %{
-                datetime: datetime,
-                active_addresses: active_addresses |> round() |> trunc()
-              }
-            end)
-            |> List.first()
-
+        [[datetime, active_addresses]] ->
+          average_activity = active_addresses |> round() |> trunc()
           {:ok, average_activity}
+
+        _ -> {:ok, 0}
       end
     else
       error ->
         error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
-        {:error, error_msg}
+        {:ok, 0}
     end
   end
 

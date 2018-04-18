@@ -13,14 +13,22 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     :coinmarketcap_id,
     :name,
     :website_link,
+    :email,
+    :reddit_link,
+    :twitter_link,
+    :bitcointalk_link,
+    :blog_link,
     :github_link,
+    :telegram_link,
+    :slack_link,
+    :facebook_link,
+    :whitepaper_link,
     :main_contract_address,
     :ticker,
     :creation_transaction,
     :contract_block_number,
     :contract_abi,
     :etherscan_token_name,
-    :whitepaper_link,
     :token_decimals,
     :total_supply
   ]
@@ -63,13 +71,13 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     |> fetch_abi()
   end
 
-  def fetch_etherscan_token_summary(%ProjectInfo{etherscan_token_name: nil} = project_info),
+  def fetch_etherscan_token_summary(%ProjectInfo{coinmarketcap_id: nil} = project_info),
     do: project_info
 
   def fetch_etherscan_token_summary(
-        %ProjectInfo{etherscan_token_name: etherscan_token_name} = project_info
+        %ProjectInfo{coinmarketcap_id: coinmarketcap_id} = project_info
       ) do
-    Etherscan.Scraper.fetch_token_page(etherscan_token_name)
+    Etherscan.Scraper.fetch_token_page(coinmarketcap_id)
     |> Etherscan.Scraper.parse_token_page!(project_info)
   end
 

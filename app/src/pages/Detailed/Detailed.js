@@ -14,11 +14,8 @@ import FinancialsBlock from './FinancialsBlock'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
-import {
-  calculateBTCVolume,
-  calculateBTCMarketcap,
-  millify
-} from '../../utils/utils'
+import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
+import { millify } from './../../utils/formatting'
 import { isERC20 } from './../Projects/projectSelectors'
 import DetailedHeader from './DetailedHeader'
 import {
@@ -89,6 +86,11 @@ export const Detailed = ({
     loading: true,
     error: false
   },
+  EthPrice = {
+    loading: true,
+    error: false,
+    historyPrice: []
+  },
   changeChartVars,
   isDesktop
 }) => {
@@ -123,6 +125,13 @@ export const Detailed = ({
           return {...item, volumeBTC, marketcapBTC}
         })
         : []
+    }
+  }
+
+  const ethPrice = {
+    history: {
+      loading: EthPrice.loading,
+      items: EthPrice.historyPrice ? EthPrice.historyPrice : []
     }
   }
 
@@ -180,6 +189,7 @@ export const Detailed = ({
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
       ethSpentOverTime={_ethSpentOverTime}
+      ethPrice={ethPrice}
       isERC20={project.isERC20}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
@@ -248,10 +258,10 @@ export const Detailed = ({
             project.ethTopTransactions.map((transaction, index) => (
               <div className='top-eth-transaction' key={index}>
                 <div className='top-eth-transaction__hash'>
-                  <a href={`https://etherscan.io/address/${transaction.trxHash}`}>{transaction.trxHash}</a>
+                  <a href={`https://etherscan.io/tx/${transaction.trxHash}`}>{transaction.trxHash}</a>
                 </div>
                 <div>
-                  {millify(parseFloat(parseFloat(transaction.trxValue).toFixed(2)))}
+                  {millify(transaction.trxValue, 2)}
                   &nbsp; | &nbsp;
                   {moment(transaction.datetime).fromNow()}
                 </div>
@@ -305,6 +315,21 @@ const enhance = compose(
       }
     }
   }),
+  graphql(HistoryPriceGQL, {
+    name: 'EthPrice',
+    options: ({chartVars, Project}) => {
+      const {from, to, ticker, interval} = chartVars
+      return {
+        skip: !ticker,
+        variables: {
+          ticker: 'ETH',
+          from,
+          to,
+          interval
+        }
+      }
+    }
+  }),
   graphql(TwitterDataGQL, {
     name: 'TwitterData',
     options: ({chartVars}) => {
@@ -353,13 +378,15 @@ const enhance = compose(
     name: 'BurnRate',
     options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
+      const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
         skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker
+          ticker,
+          interval
         }
       }
     }
@@ -385,23 +412,25 @@ const enhance = compose(
     name: 'TransactionVolume',
     options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
+      const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
         skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker
+          ticker,
+          interval
         }
       }
     }
   }),
   graphql(ExchangeFundFlowGQL, {
     name: 'ExchangeFundFlow',
-    options: ({chartVars}) => {
+    options: ({chartVars, Project}) => {
       const {from, to, ticker} = chartVars
       return {
-        skip: !from || !ticker,
+        skip: !from || !ticker || (Project && !Project.isERC20),
         errorPolicy: 'all',
         variables: {
           from,

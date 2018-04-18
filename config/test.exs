@@ -49,11 +49,15 @@ config :sanbase, Sanbase.Github.Store, database: "github_activity_test"
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data_test"
 
-config :sanbase, Sanbase.Etherbi.Transactions.Store, database: "transactions_test"
+config :sanbase, Sanbase.Etherbi.Transactions.Store, database: "erc20_exchange_funds_flow_test"
 
-config :sanbase, Sanbase.Etherbi.BurnRate.Store, database: "burn_rate_test"
+config :sanbase, Sanbase.Etherbi.BurnRate.Store, database: "erc20_burn_rate_flow_test"
 
-config :sanbase, Sanbase.Etherbi.TransactionVolume.Store, database: "transaction_volume_test"
+config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
+  database: "erc20_transaction_volume_test"
+
+config :sanbase, Sanbase.Etherbi.DailyActiveAddresses.Store,
+  database: "erc20_daily_active_addresses_test"
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",

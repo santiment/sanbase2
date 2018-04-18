@@ -91,7 +91,7 @@ const handleLoad = () => {
       } else {
         if (process.env.NODE_ENV === 'development') {
           console.log(
-            `[GraphQL error]: ${JSON.stringify(graphQLErrors)} ${JSON.stringify(operation)}`
+            `[GraphQL error]: ${JSON.stringify(graphQLErrors)}`
           )
         }
         Raven.captureException(`[GraphQL error]: ${JSON.stringify(graphQLErrors)}`)
@@ -108,6 +108,7 @@ const handleLoad = () => {
 
   const client = new ApolloClient({
     link: from([authLink, linkError, httpLink]),
+    shouldBatch: true,
     cache: new InMemoryCache()
   })
 

@@ -1,15 +1,22 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
   import Absinthe.Resolution.Helpers
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Model.MarketSegment
-  alias Sanbase.Model.Infrastructure
-  alias Sanbase.Model.ProjectTransparencyStatus
-  alias Sanbase.Model.ProjectEthAddress
+  alias Sanbase.Model.{
+    Project,
+    LatestCoinmarketcapData,
+    MarketSegment,
+    Infrastructure,
+    ProjectTransparencyStatus,
+    ProjectEthAddress,
+    Ico,
+    Infrastructure
+  }
+
+  alias Sanbase.Voting.{Post, Tag}
+
   alias Sanbase.Prices
   alias Sanbase.Github
   alias Sanbase.ExternalServices.Etherscan
@@ -43,6 +50,54 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       ])
 
     {:ok, projects}
+  end
+
+  def all_erc20_projects(_root, _args, _resolution) do
+    query =
+      from(
+        p in Project,
+        inner_join: ico in Ico,
+        on: p.id == ico.project_id,
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        where:
+          not is_nil(p.coinmarketcap_id) and not is_nil(ico.main_contract_address) and
+            infr.code == "ETH",
+        order_by: p.name
+      )
+
+    erc20_projects =
+      query
+      |> Repo.all()
+      |> Repo.preload([
+        :latest_coinmarketcap_data,
+        icos: [ico_currencies: [:currency]]
+      ])
+      |> Enum.dedup()
+
+    {:ok, erc20_projects}
+  end
+
+  def all_currency_projects(_root, _args, _resolution) do
+    query =
+      from(
+        p in Project,
+        inner_join: ico in Ico,
+        on: p.id == ico.project_id,
+        where: not is_nil(p.coinmarketcap_id) and is_nil(ico.main_contract_address),
+        order_by: p.name
+      )
+
+    currency_projects =
+      query
+      |> Repo.all()
+      |> Repo.preload([
+        :latest_coinmarketcap_data,
+        icos: [ico_currencies: [:currency]]
+      ])
+      |> Enum.dedup()
+
+    {:ok, currency_projects}
   end
 
   def project(_parent, %{id: id}, _resolution) do
@@ -189,10 +244,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     )
   end
 
-  defp calculate_eth_top_transactions(
-         ticker,
-         %{from: from, to: to, transaction_type: trx_type, limit: limit} = args
-       ) do
+  defp calculate_eth_top_transactions(ticker, %{
+         from: from,
+         to: to,
+         transaction_type: trx_type,
+         limit: limit
+       }) do
     with trx_type <- trx_type |> Atom.to_string(),
          {:ok, eth_transactions} <-
            Etherscan.Store.top_transactions(ticker, from, to, trx_type, limit) do
@@ -445,7 +502,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     yesterday = Timex.shift(Timex.now(), days: -1)
     the_other_day = Timex.shift(Timex.now(), days: -2)
 
-    with {:ok, [[_dt, today_vol]]} <- Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
+    with {:ok, [[_dt, today_vol]]} <-
+           Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
          {:ok, [[_dt, yesterday_vol]]} <-
            Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
          true <- yesterday_vol > 0 do
@@ -631,5 +689,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _ -> {:ok, nil}
       end
     end)
+  end
+
+  def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) when is_nil(ticker),
+    do: {:ok, []}
+
+  def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) do
+    Cache.func(fn -> fetch_posts_by_ticker(ticker) end, {:related_posts, ticker}).()
+  end
+
+  defp fetch_posts_by_ticker(ticker) do
+    query =
+      from(
+        p in Post,
+        join: pt in "posts_tags",
+        on: p.id == pt.post_id,
+        join: t in Tag,
+        on: t.id == pt.tag_id,
+        where: t.name == ^ticker
+      )
+
+    {:ok, Repo.all(query)}
   end
 end

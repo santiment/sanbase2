@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
   alias SanbaseWeb.Graphql.Resolvers.IcoResolver
   alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
+  alias SanbaseWeb.Graphql.Resolvers.EtherbiResolver
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   # Includes all available fields
@@ -16,6 +17,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:ticker, :string)
     field(:logo_url, :string)
     field(:website_link, :string)
+    field(:email, :string)
+    field(:bitcointalk_link, :string)
     field(:btt_link, :string)
     field(:facebook_link, :string)
     field(:github_link, :string)
@@ -32,7 +35,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:token_decimals, :integer)
     field(:main_contract_address, :string)
     field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
-    field(:related_posts, list_of(:post), resolve: dataloader(SanbaseRepo))
+
+    field(:related_posts, list_of(:post)) do
+      resolve(&ProjectResolver.related_posts/3)
+    end
 
     field :market_segment, :string do
       resolve(&ProjectResolver.market_segment/3)
@@ -176,6 +182,14 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:limit, :integer, default_value: 10)
 
       resolve(&ProjectResolver.eth_top_transactions/3)
+    end
+
+    @desc "Average daily active addresses for a ticker and given time period"
+    field :average_daily_active_addresses, :active_addresses do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      resolve(&EtherbiResolver.average_daily_active_addresses/3)
     end
   end
 

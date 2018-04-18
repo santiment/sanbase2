@@ -4,7 +4,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   alias Sanbase.Utils.Config
 
   @http_client Mockery.of("HTTPoison")
-  @recv_timeout 45_000
+  @recv_timeout 15_000
 
   def macd(
         ticker,
@@ -141,6 +141,39 @@ defmodule Sanbase.InternalServices.TechIndicators do
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
           "Cannot fetch twitter mention count data for ticker #{ticker}: #{
+            HTTPoison.Error.message(error)
+          }"
+        )
+    end
+  end
+
+  def emojis_sentiment(
+        ticker,
+        from_datetime,
+        to_datetime,
+        aggregate_interval,
+        result_size_tail \\ 0
+      ) do
+    emojis_sentiment_request(
+      ticker,
+      from_datetime,
+      to_datetime,
+      aggregate_interval,
+      result_size_tail
+    )
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Poison.decode(body)
+        emojis_sentiment_result(result)
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        error_result(
+          "Error status #{status} fetching emojis sentiment for ticker #{ticker}: #{body}"
+        )
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result(
+          "Cannot fetch emojis sentiment data for ticker #{ticker}: #{
             HTTPoison.Error.message(error)
           }"
         )
@@ -289,7 +322,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
-    url = "#{tech_indicators_url()}/indicator/twitter_mention_count"
+    url = "#{tech_indicators_url()}/indicator/twittermentioncount"
 
     options = [
       recv_timeout: @recv_timeout,
@@ -321,9 +354,52 @@ defmodule Sanbase.InternalServices.TechIndicators do
     {:ok, result}
   end
 
+  defp emojis_sentiment_request(
+         ticker,
+         from_datetime,
+         to_datetime,
+         aggregate_interval,
+         result_size_tail
+       ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/emojissentiment"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"ticker", ticker},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"aggregate_interval", aggregate_interval},
+        {"result_size_tail", result_size_tail}
+      ]
+    ]
+
+    @http_client.get(url, [], options)
+  end
+
+  defp emojis_sentiment_result(result) do
+    result =
+      result
+      |> Enum.map(fn %{
+                       "timestamp" => timestamp,
+                       "sentiment" => sentiment
+                     } ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          sentiment: sentiment
+        }
+      end)
+
+    {:ok, result}
+  end
+
   defp error_result(message) do
-    Logger.error(message)
-    {:error, message}
+    log_id = Ecto.UUID.generate()
+    Logger.error("[#{log_id}] #{message}")
+    {:error, "[#{log_id}] Error executing query. See logs for details."}
   end
 
   defp tech_indicators_url() do

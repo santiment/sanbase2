@@ -9,8 +9,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
 
   plug(RateLimiting.Middleware, name: :http_coinmarketcap_rate_limiter)
   plug(ErrorCatcher.Middleware)
-  plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.BaseUrl, "https://coinmarketcap.com/currencies")
+  plug(Tesla.Middleware.FollowRedirects, max_redirects: 10)
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
@@ -43,7 +43,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp name(html) do
-    Floki.attribute(html, ".currency-logo-32x32", "alt")
+    Floki.attribute(html, ".logo-32x32", "alt")
     |> List.first()
   end
 

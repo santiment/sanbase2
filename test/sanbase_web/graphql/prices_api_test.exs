@@ -17,6 +17,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     Store.drop_measurement("TEST_USD")
     Store.drop_measurement("XYZ_USD")
     Store.drop_measurement("XYZ_BTC")
+    Store.drop_measurement("TOTAL_MARKET_USD")
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
@@ -56,6 +57,18 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         fields: %{price: 20, volume: 200, marketcap: 500},
         name: "XYZ_USD"
+      },
+      # older
+      %Measurement{
+        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        fields: %{volume: 1200, marketcap: 1500},
+        name: "TOTAL_MARKET_USD"
+      },
+      # newer
+      %Measurement{
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        fields: %{volume: 1300, marketcap: 1800},
+        name: "TOTAL_MARKET_USD"
       }
     ])
 
@@ -171,6 +184,50 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     assert json_response(result, 200)["data"] != nil
+  end
+
+  test "no information is available for total marketcap", context do
+    Store.drop_measurement("TOTAL_MARKET_USD")
+
+    query = """
+    {
+      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}", to: "#{context.datetime2}", interval: "1h") {
+        datetime
+        volume
+        marketcap
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+
+    assert json_response(result, 200)["data"]["historyPrice"] == []
+  end
+
+  test "default arguments for total marketcap are correctly set", context do
+    query = """
+    {
+      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}"){
+        datetime
+        volume
+        marketcap
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> put_req_header("authorization", "Basic " <> basic_auth())
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+
+    history_price = json_response(result, 200)["data"]["historyPrice"]
+    assert Enum.count(history_price) == 2
+    assert Enum.at(history_price, 0)["volume"] == "1200"
+    assert Enum.at(history_price, 0)["marketcap"] == "1500"
+    assert Enum.at(history_price, 1)["volume"] == "1300"
+    assert Enum.at(history_price, 1)["marketcap"] == "1800"
   end
 
   defp basic_auth() do

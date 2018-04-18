@@ -11,13 +11,12 @@ import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
 import Sticky from 'react-stickynode'
-import { formatNumber } from '../utils/formatting'
-import { millify, getOrigin } from '../utils/utils'
+import { formatNumber, millify } from './../utils/formatting'
+import { getOrigin } from './../utils/utils'
 import ProjectIcon from './../components/ProjectIcon'
 import { simpleSort } from './../utils/sortMethods'
-import { getProjects } from './Projects/projectSelectors'
 import Panel from './../components/Panel'
-import allProjectsGQL from './Projects/allProjectsGQL'
+import { allErc20ProjectsGQL } from './Projects/allProjectsGQL'
 import PercentChanges from './../components/PercentChanges'
 import './Cashflow.css'
 
@@ -64,7 +63,7 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
   <div className='wallet'>
     <div className='usd first'>
       {usdBalance
-        ? `$${millify(parseFloat(parseFloat(usdBalance).toFixed(2)))}`
+        ? `$${millify(usdBalance, 2)}`
         : '---'}
     </div>
     <div className='eth'>
@@ -75,16 +74,17 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
             <a
               target='_blank'
               rel='noopener noreferrer'
+              className='findwallet'
               href={`https://santiment.typeform.com/to/bT0Dgu?project=${project}&ticker=${ticker}`}>
               <Icon color='red' name='question circle outline' />
             </a>}
           </div>}
-          content='Community help locating correct wallet is welcome!'
+          content='Know this project wallet? Click the ? to send wallet info'
           position='top center'
         />
       }
       {ethBalance
-        ? `Ξ${millify(parseFloat(parseFloat(ethBalance).toFixed(2)))}`
+        ? `Ξ${millify(ethBalance, 2)}`
         : '---'}
     </div>
   </div>
@@ -92,7 +92,7 @@ export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
 
 export const formatMarketCapProject = marketcapUsd => {
   if (marketcapUsd !== null) {
-    return `$${millify(parseFloat(marketcapUsd))}`
+    return `$${millify(marketcapUsd, 2)}`
   } else {
     return 'No data'
   }
@@ -117,7 +117,7 @@ export const PriceColumn = {
     change24h: d.percentChange24h
   }),
   Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
-    {priceUsd ? formatNumber(priceUsd, 'USD') : 'No data'}
+    {priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : 'No data'}
     &nbsp;
     {<PercentChanges changes={change24h} />}
   </div>,
@@ -135,7 +135,7 @@ export const VolumeColumn = {
   }),
   Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
     {volumeUsd
-      ? `$${millify(parseFloat(volumeUsd))}`
+      ? `$${millify(volumeUsd, 2)}`
       : 'No data'}
     &nbsp;
     {change24h
@@ -181,7 +181,7 @@ export const Cashflow = ({
     return (
       <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
         <Message warning>
-          <Message.Header>Something going wrong on our server.</Message.Header>
+          <Message.Header>We're sorry, something has gone wrong on our server.</Message.Header>
           <p>Please try again later.</p>
         </Message>
       </div>
@@ -199,7 +199,8 @@ export const Cashflow = ({
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br />{value.ticker}
+        <ProjectIcon name={value.name} /><br />
+        <span className='ticker'>{value.ticker}</span>
       </div>
     ),
     filterMethod: (filter, row) => {
@@ -259,7 +260,7 @@ export const Cashflow = ({
         if (value > 1000000000000) {
           return '∞'
         }
-        return value < 1000 ? formatNumber(parseFloat(value).toFixed(3)) : millify(parseFloat(value))
+        return millify(value, 3)
       })(value)
     }</div>,
     sortable: true,
@@ -315,24 +316,19 @@ export const Cashflow = ({
   return (
     <div className='page cashflow'>
       <Helmet>
-        <title>SANbase: Projects</title>
+        <title>SANbase: ERC20 Projects</title>
         <link rel='canonical' href={`${getOrigin()}/projects`} />
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='cashflow-head'>
           <div className='cashflow-title'>
-            <h1>Projects</h1>
-            <Link to={'/projects/ethereum'}>More data about Ethereum</Link>
+            <h1>ERC20 Projects</h1>
+            <span><Link to={'/projects/ethereum'}>More data about Ethereum</Link></span>
           </div>
           <p>
-            brought to you by <a
-              href='https://santiment.net'
-              rel='noopener noreferrer'
-              target='_blank'>Santiment</a>
-            <br />
-            <Icon color='red' name='question circle outline' />Automated data not available.&nbsp;
-            <span className='cashflow-head-community-help'>
-            Community help locating correct wallet is welcome!</span>
+            <Icon color='red' name='question circle outline' />
+            Automated data not available.&nbsp;
+            <span>Community help locating correct wallets is welcome!</span>
           </p>
         </div>
         <Panel>
@@ -403,10 +399,6 @@ export const Cashflow = ({
         </Panel>
       </FadeIn>
       <Tips />
-      <div className='cashflow-indev-message'>
-        NOTE: This app is in development.
-        We give no guarantee data is correct as we are in active development.
-      </div>
     </div>
   )
 }
@@ -435,9 +427,9 @@ const mapDataToProps = ({allProjects, ownProps}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = getProjects(allProjects.allProjects)
+  const projects = allProjects.allErc20Projects
 
-  const isEmpty = projects.length === 0
+  const isEmpty = projects && projects.length === 0
   return {
     Projects: {
       loading,
@@ -456,7 +448,7 @@ const enhance = compose(
     mapDispatchToProps
   ),
   withRouter,
-  graphql(allProjectsGQL, {
+  graphql(allErc20ProjectsGQL, {
     name: 'allProjects',
     props: mapDataToProps,
     options: () => {

@@ -26,7 +26,7 @@ config :sasl, sasl_error_logger: false
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
+  format: {Sanbase.Utils.JsonLogger, :format},
   metadata: [:request_id],
   handle_otp_reports: true,
   handle_sasl_reports: true
@@ -75,6 +75,12 @@ config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
   pool: [max_overflow: 10, size: 20],
   database: "erc20_transaction_volume"
 
+config :sanbase, Sanbase.Etherbi.DailyActiveAddresses.Store,
+  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
+  pool: [max_overflow: 10, size: 20],
+  database: "erc20_daily_active_addresses"
+
 config :sanbase, Sanbase.ExternalServices.Etherscan.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
@@ -103,6 +109,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Model.LatestEthWalletData,
     Sanbase.ExAdmin.Model.LatestBtcWalletData,
     Sanbase.ExAdmin.Notifications.Type,
+    Sanbase.ExAdmin.Notifications.Notification,
     Sanbase.ExAdmin.Auth.User,
     Sanbase.ExAdmin.Voting.Poll,
     Sanbase.ExAdmin.Voting.Post
@@ -164,6 +171,8 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   approximation_window: {:system, "PRICE_VOLUME_DIFF_APPROXIMATION_WINDOW", "14"},
   comparison_window: {:system, "PRICE_VOLUME_DIFF_COMPARISON_WINDOW", "7"},
   notification_threshold: {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_THRESHOLD", "0.01"},
+  notification_volume_threshold:
+    {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_VOLUME_THRESHOLD", "100000"},
   notifications_cooldown: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_COOLDOWN", "86400"},
   debug_url: {:system, "PRICE_VOLUME_DIFF_DEBUG_URL"},
   notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}

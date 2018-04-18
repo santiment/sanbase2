@@ -9,7 +9,7 @@ exports[`Cashflow container it should render correctly 1`] = `
     encodeSpecialCharacters={true}
   >
     <title>
-      SANbase: Projects
+      SANbase: ERC20 Projects
     </title>
     <link
       href="/projects"
@@ -34,35 +34,26 @@ exports[`Cashflow container it should render correctly 1`] = `
         className="cashflow-title"
       >
         <h1>
-          Projects
+          ERC20 Projects
         </h1>
-        <Link
-          replace={false}
-          to="/projects/ethereum"
-        >
-          More data about Ethereum
-        </Link>
+        <span>
+          <Link
+            replace={false}
+            to="/projects/ethereum"
+          >
+            More data about Ethereum
+          </Link>
+        </span>
       </div>
       <p>
-        brought to you by 
-        <a
-          href="https://santiment.net"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Santiment
-        </a>
-        <br />
         <Icon
           as="i"
           color="red"
           name="question circle outline"
         />
         Automated data not available. 
-        <span
-          className="cashflow-head-community-help"
-        >
-          Community help locating correct wallet is welcome!
+        <span>
+          Community help locating correct wallets is welcome!
         </span>
       </p>
     </div>
@@ -321,10 +312,5 @@ exports[`Cashflow container it should render correctly 1`] = `
     </Panel>
   </FadeIn>
   <Component />
-  <div
-    className="cashflow-indev-message"
-  >
-    NOTE: This app is in development. We give no guarantee data is correct as we are in active development.
-  </div>
 </div>
 `;

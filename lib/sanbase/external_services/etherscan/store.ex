@@ -95,6 +95,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     is calculated in Elixir
   """
   @spec eth_spent_by_projects(list(), %DateTime{}, %DateTime{}) :: number()
+  def eth_spent_by_projects([], _from, _to), do: {:ok, nil}
+
   def eth_spent_by_projects(measurements_list, from, to) do
     %{
       results: [
@@ -123,6 +125,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Store do
     is calculated in Elixir
   """
   @spec eth_spent_over_time_by_projects(list(), %DateTime{}, %DateTime{}, String.t()) :: number()
+  def eth_spent_over_time_by_projects([], _from, _to, _interval), do: {:ok, []}
+
   def eth_spent_over_time_by_projects(measurements_list, from, to, interval) do
     measurements_list
     |> Enum.chunk_every(10)

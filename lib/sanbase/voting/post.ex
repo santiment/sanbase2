@@ -9,7 +9,6 @@ defmodule Sanbase.Voting.Post do
   alias Sanbase.Model.Project
   alias Sanbase.Voting.{Poll, Post, Vote, PostImage}
   alias Sanbase.Auth.User
-  alias SanbaseWeb.Graphql.Helpers.Cache
 
   @approved "approved"
   @declined "declined"
@@ -61,6 +60,7 @@ defmodule Sanbase.Voting.Post do
   returns: list of %Post{}
   """
 
+  @spec posts_by_score() :: [%Post{}]
   def posts_by_score() do
     gravity = 1.8
 

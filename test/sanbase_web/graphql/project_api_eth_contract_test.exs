@@ -14,7 +14,12 @@ defmodule Sanbase.Graphql.ProjectApiEthContractTest do
   test "fetch wallet projects with ethereum contract info", context do
     project1 =
       %Project{}
-      |> Project.changeset(%{name: "Project1", ticker: "P1", coinmarketcap_id: "P1_id"})
+      |> Project.changeset(%{
+        name: "Project1",
+        ticker: "P1",
+        coinmarketcap_id: "P1_id",
+        main_contract_address: "address"
+      })
       |> Repo.insert!()
 
     %Ico{}

@@ -218,6 +218,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   # Helper functions
 
+  defp calc_posts() do
+    posts =
+      Post.posts_by_score()
+      |> Repo.preload(@preloaded_assoc)
+
+    {:ok, posts}
+  end
+
   defp delete_post_images(%Post{} = post) do
     extract_image_url_from_post(post)
     |> Enum.map(&Sanbase.FileStore.delete/1)

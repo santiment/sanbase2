@@ -100,6 +100,13 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     %Tag{name: ticker}
     |> Tag.changeset()
     |> Repo.insert()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, changeset} ->
+        Logger.warn("Cannot insert tag on project creation. Reason: #{inspect(changeset.errors)}")
+    end
   end
 
   defp do_insert_tag(_, _), do: :ok

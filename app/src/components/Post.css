@@ -1,7 +1,12 @@
 .event-post {
   display: flex;
   border-bottom: 1px solid #e8e8e8;
-  padding: 15px;
+  padding: 10px 15px;
+}
+
+.event-post:hover {
+  background-color: #e8e8e8;
+  cursor: pointer;
 }
 
 .event-post .event-post-index {
@@ -16,6 +21,15 @@
 
 .event-post .event-post-body {
   flex: 1;
+}
+
+.event-post-body-link {
+  padding: 15px;
+  width: 100%;
+}
+
+.event-post-body-link:hover {
+  background-color: #f9f9f9;
 }
 
 .event-post .event-storylink {

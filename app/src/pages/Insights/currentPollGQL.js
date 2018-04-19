@@ -1,23 +1,18 @@
 import gql from 'graphql-tag'
 
 export const currentPollGQL = gql`{
-  currentPoll {
-    endAt
-    posts {
+  allInsights {
+    id
+    title
+    state
+    moderationComment
+    createdAt
+    votedAt
+    totalSanVotes
+    user {
       id
-      title
-      state
-      moderationComment
-      link
-      createdAt
-      votedAt
-      totalSanVotes
-      user {
-        id
-        username
-      }
+      username
     }
-    startAt
   }
 }`
 

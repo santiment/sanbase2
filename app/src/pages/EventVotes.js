@@ -259,7 +259,7 @@ export const sortByNewest = posts => {
 const mapDataToProps = props => {
   const { Poll, ownProps } = props
   const filter = ownProps.match.path.split('/')[2] || 'popular'
-  const posts = (Poll.currentPoll || {}).posts || []
+  const posts = Poll.allInsights || []
   let filteredPosts = posts
     // TODO: We should return this filter in the near future
     // .filter(post => post.state === 'approved')

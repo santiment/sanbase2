@@ -16,8 +16,6 @@ defmodule Sanbase.Model.Project do
     ProjectTransparencyStatus
   }
 
-  alias Sanbase.Voting.Post
-
   import Ecto.Query
 
   schema "project" do

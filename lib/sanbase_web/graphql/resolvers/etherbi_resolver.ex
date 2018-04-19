@@ -175,7 +175,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
          {:ok, average_daily_active_addresses} <-
            DailyActiveAddresses.Store.average_daily_active_addresses(contract_address, from, to) do
       case average_daily_active_addresses do
-        [[datetime, active_addresses]] ->
+        [[_dt, active_addresses]] ->
           average_activity = active_addresses |> round() |> trunc()
           {:ok, average_activity}
 

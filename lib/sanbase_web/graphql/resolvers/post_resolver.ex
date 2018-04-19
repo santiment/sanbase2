@@ -8,7 +8,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Resolvers.Helpers
-  alias SanbaseWeb.Graphql.Helpers.Cache
 
   @preloaded_assoc [:votes, :user, :images, :tags]
 

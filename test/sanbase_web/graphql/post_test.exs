@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.Graphql.PostTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Voting.{Poll, Post, Vote}
+  alias Sanbase.Voting.{Poll, Post, Vote, Tag}
   alias Sanbase.Auth.User
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.InternalServices.Ethauth
 
@@ -286,6 +287,59 @@ defmodule SanbaseWeb.Graphql.PostTest do
            |> Map.get("text") == post.text
   end
 
+  test "getting all posts ranked", %{user: user, user2: user2, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{}
+    |> Vote.changeset(%{post_id: post.id, user_id: user.id})
+    |> Repo.insert!()
+
+    post2 =
+      %Post{
+        poll_id: poll.id,
+        user_id: user2.id,
+        title: "Awesome analysis2",
+        short_desc: "Example analysis short description",
+        text: "Example text, hoo2",
+        link: "http://www.google.com",
+        state: Post.approved_state()
+      }
+      |> Repo.insert!()
+
+    %Vote{post_id: post2.id, user_id: user.id}
+    |> Repo.insert!()
+
+    %Vote{post_id: post2.id, user_id: user2.id}
+    |> Repo.insert!()
+
+    query = """
+    {
+      allInsights {
+        id,
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    assert json_response(result, 200)["data"]["allInsights"] ==
+             [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]
+  end
+
   test "adding a new post to the current poll", %{user: user, conn: conn} do
     query = """
     mutation {
@@ -409,6 +463,34 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert data["data"]["deletePost"] == nil
   end
 
+  test "create post with tags", %{conn: conn} do
+    Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+    tag = Repo.insert!(%Tag{name: "SAN"})
+
+    mutation = """
+    mutation {
+      createPost(title: "Awesome post", text: "Example body", tags: ["#{tag.name}"]) {
+        tags{
+          name
+        },
+        related_projects {
+          ticker
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [tag] = json_response(result, 200)["data"]["createPost"]["tags"]
+    [related_projects] = json_response(result, 200)["data"]["createPost"]["related_projects"]
+
+    assert tag == %{"name" => "SAN"}
+    assert related_projects == %{"ticker" => "SAN"}
+  end
+
   @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
   test "create post with image and retrieve the image hash and url", %{conn: conn} do
     image_url = upload_image(conn)
@@ -461,6 +543,26 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     [error] = json_response(result2, 200)["errors"]
     assert String.contains?(error["details"]["images"] |> hd, "already used")
+  end
+
+  test "get all tags", %{conn: conn} do
+    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+
+    query = """
+    {
+      allTags {
+        name
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allTags"))
+
+    assert json_response(result, 200)["data"]["allTags"] ==
+             [%{"name" => tag1.name}, %{"name" => tag2.name}]
   end
 
   # Helper functions

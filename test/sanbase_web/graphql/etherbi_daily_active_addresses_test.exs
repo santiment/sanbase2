@@ -235,10 +235,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
       projectBySlug(slug: "santiment") {
         averageDailyActiveAddresses(
           from: "#{context.datetime1}",
-          to: "#{context.datetime8}") {
-            datetime
-            activeAddresses
-        }
+          to: "#{context.datetime8}")
       }
     }
     """
@@ -250,9 +247,27 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     active_addresses =
       json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
 
-    assert active_addresses == %{
-             "datetime" => "2017-05-13T21:45:00Z",
-             "activeAddresses" => 11444
-           }
+    assert active_addresses == 11444
+  end
+
+  test "fetch average daily active addreses returns 0 if there is no activity", context do
+    query = """
+    {
+      projectBySlug(slug: "santiment") {
+        averageDailyActiveAddresses(
+          from: "2018-03-17T18:47:00.000000Z",
+          to: "2018-04-12T18:47:00.000000Z")
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "projectBySlug"))
+
+    active_addresses =
+      json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
+
+    assert active_addresses == 0
   end
 end

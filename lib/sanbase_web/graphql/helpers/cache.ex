@@ -144,7 +144,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   end
 
   def size(:megabytes) do
-    bytes_size = :ets.info(:graphql_cache, :memory) * :erlang.system_info(:wordsize)
+    bytes_size = :ets.info(ConCache.ets(@cache_name), :memory) * :erlang.system_info(:wordsize)
     (bytes_size / (1024 * 1024)) |> Float.round(2)
   end
 

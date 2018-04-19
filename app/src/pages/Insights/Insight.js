@@ -52,7 +52,7 @@ const Insight = ({
         </H2>
         <Span>
           by {post.user.username
-            ? `${post.user.username}`
+            ? <a href={`/insights/users/${post.user.id}`}>{post.user.username}</a>
             : 'unknown author'}
         </Span>
         &nbsp;&#8226;&nbsp;
@@ -80,12 +80,10 @@ export const postGQL = gql`
       state
       user {
         username
+        id
       }
       votedAt
       totalSanVotes
-      relatedProjects {
-        ticker
-      }
     }
   }
 `

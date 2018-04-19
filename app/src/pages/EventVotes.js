@@ -41,6 +41,18 @@ const voteMutationHelper = ({postId, action = 'vote'}) => ({
   }
 })
 
+const getPosts = (match, Posts) => {
+  const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
+  const showedUserByIdPosts = match.path.split('/')[2] === 'users'
+  if (showedMyPosts) {
+    return Posts.userPosts
+  }
+  if (showedUserByIdPosts) {
+    return Posts.postsByUserId
+  }
+  return Posts.filteredPosts
+}
+
 const EventVotes = ({
   Posts = {
     posts: [],
@@ -148,7 +160,7 @@ const EventVotes = ({
           {Posts.isEmpty && !showedMyPosts
             ? <Message><h2>We don't have any insights yet.</h2></Message>
             : <PostList {...Posts}
-              posts={showedMyPosts ? Posts.userPosts : Posts.filteredPosts}
+              posts={getPosts(match, Posts)}
               userId={showedMyPosts ? user.data.id : undefined}
               deletePost={postId => {
                 setDeletePostId(postId)
@@ -265,6 +277,12 @@ const mapDataToProps = props => {
     posts.filter(post => post.user.id === ownProps.user.data.id)
   )
 
+  const postsByUserId = filter === 'users'
+    ? sortByNewest(
+      posts.filter(post => post.user.id === ownProps.match.params.userId)
+    )
+    : []
+
   if (Poll.error) {
     throw new Error(Poll.error)
   }
@@ -274,6 +292,7 @@ const mapDataToProps = props => {
       posts,
       filteredPosts,
       userPosts,
+      postsByUserId,
       refetch: Poll.refetch,
       loading: Poll.loading,
       isEmpty: Poll.currentPoll &&

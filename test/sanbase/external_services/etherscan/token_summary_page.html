@@ -17,6 +17,7 @@
             padding:8px;
             font-size:13px;
             border-radius: 4px !important;
+            word-wrap: break-word;
         }
         .repStyle {
             font-size:13px;
@@ -30,7 +31,7 @@
 <div class="wrapper">
 <div class="header">
 <div class="container">
-<a class="logo" href="/" title="Home Page">
+<a class="logo" href="/" target="_parent" title="Home Page">
 <img id="logo-header" src="/images/EtherscanLogo-transparent-b-small.png" alt="Logo" style="margin-top: 16px; margin-bottom: 14px; margin-left: -6px">
 </a>
 <div class="topbar hidden-xs hidden-sm ">
@@ -79,20 +80,13 @@
 </ul>
 </li>
 <li id="LI8"><a href="/uncles"><i class="fa fa-cube"></i>&nbsp;View Uncles</a></li>
-</ul>
-</li>
-<li id="LI_Accounts" class="dropdown">
-<a href="#" class="" data-toggle="dropdown">
-&nbsp;Account
-</a>
-<ul class="dropdown-menu">
-<li id="LI_accountall"><a href="/accounts" title="Normal & Contract Accounts"><i class="fa fa-building"></i>&nbsp;All Accounts</a></li>
 <li class="divider"></li>
+<li id="LI_accountall"><a href="/accounts" title="Normal & Contract Accounts"><i class="fa fa-building"></i>&nbsp;All Accounts</a></li>
 <li id="LI_contract_verified"><a href="/contractsVerified" title="Contracts with Verified Source Code"><i class="fa fa-check-circle-o"></i>&nbsp;Verified Contracts</a></li>
 </ul>
 </li>
 <li id="LI_tokens" class="dropdown active">
-<a href="#" class="" data-toggle="dropdown">&nbsp;Token
+<a href="#" class="" data-toggle="dropdown">&nbsp;Tokens
 </a>
 <ul class="dropdown-menu">
 <li id="LI21"><a href="/tokens" title="View Tokens"><i class="fa fa-superpowers"></i>&nbsp;View Tokens</a></li>
@@ -101,32 +95,30 @@
 </ul>
 </li>
 <li id="LI_charts2">
-<a href="/charts">&nbsp;Chart</a>
+<a href="/charts">&nbsp;Charts</a>
 </li>
 <li id="LI_services2" class="dropdown">
 <a href="#" class="" data-toggle="dropdown">
 &nbsp;Misc &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </a>
-<ul class="dropdown-menu">
+ <ul class="dropdown-menu">
 <li id="LI5"><a href="/ether-mining-calculator"><i class="fa fa-gavel"></i>Mining Calculator</a></li>
 <li id="LI6"><a href="/apis"><i class="fa fa-cogs"></i>APIs</a></li>
 <li id="LI17"><a href="/verifyContract" title="Verify and Publish your contract source code"><i class="fa fa-code"></i>Verify Contract</a></li>
 <li id="LI24"><a href="/opcode-tool" title="ByteCode to Opcode Converter"><i class="fa  fa-ellipsis-h"></i>Byte To Opcode</a></li>
-<li class="divider"></li>
 <li id="LI29"><a href="/verifiedSignatures" title="List Of Verified Message Signatures"><i class="fa fa-code"></i>Verified Signatures</a></li>
-<li class="divider"></li>
 <li id="LI10"><a href="/pushTx"><i class="fa fa-pied-piper-alt"></i>Broadcast TXN</a></li>
-<li class="divider"></li>
 <li id="LI2"><a href="/find-similiar-contracts" title="Find other contracts that have the same/similiar contract codes"><i class="fa fa-search-plus"></i>Similiar Contracts</a></li>
 <li class="divider"></li>
+<li id="LI25"><a href="/swarm" title="Swarm Search"><i class="fa fa-search-plus"></i>Swarm Search</a></li>
+<li id="LI30"><a href="/swarmupload" title="Swarm Upload"><i class="fa fa-cloud-upload"></i>Swarm Upload</a></li>
+<li class="divider"></li>
 <li id="LI4"><a href="/dextracker" title="Ethereum Dex Tracker"><i class="fa fa-bars"></i>DEX Tracker</a></li>
+<li id="LI7"><a href="/orderbooks" title="Ethereum Dex Order Books"><i class="fa fa-bars"></i>DEX OrderBooks</a></li>
+<li id="LI19"><a href="/gastracker" title="Ethereum Gas Tracker"><i class="fa fa-bars"></i>GAS Tracker</a></li>
 <li class="divider"></li>
 <li id="LI22"><a href="/ens" title="Ethereum Name Service Events"><i class="fa fa-bars"></i>ENS Events</a></li>
 <li id="LI26"><a href="/enslookup" title="Ethereum Name Service Lookup"><i class="fa fa-search-plus"></i>ENS Lookup</a></li>
-<li class="divider"></li>
-<li id="LI7"><a href="https://ropsten.etherscan.io" target="_blank" title="Ropsten (Revived) TESTNET BlockExplorer"><i class="fa fa-location-arrow"></i>Testnet (Ropsten)</a></li>
-<li id="LI28"><a href="https://kovan.etherscan.io" target="_blank" title="Kovan (Poa) TESTNET BlockExplorer"><i class="fa fa-location-arrow"></i>Testnet (Kovan)</a></li>
-<li id="LI32"><a href="https://rinkeby.etherscan.io" target="_blank" title="Rinkeby (Poa) TESTNET BlockExplorer"><i class="fa fa-location-arrow"></i>Testnet (Rinkeby)</a></li>
 </ul>
 </li>
 <li id="LI_login" class="hidden-lg hidden-md ">
@@ -148,6 +140,7 @@
 
 <script>
         function resizeIframe(obj, addwidth) {
+            //console.log("resizeIframe");
             //setTimeout(function () {
                 obj.style.height = 0;
                 obj.style.height = (obj.contentWindow.document.body.scrollHeight + addwidth) + 'px';
@@ -172,8 +165,7 @@
 
 
 <div class="container">
-<span id="ContentPlaceHolder1_lblAdResult"><div style='margin-top:6px; margin-bottom:22px'><span class='hidden-xs'>&nbsp;&nbsp;</span>Sponsored Link: <img src='/images/ad/copytrack_20.png' />&nbsp;<b>COPYTRACK </b> - THE FUTURE OF GLOBAL COPYRIGHT REGISTRATION -
-<a href='https://copytrack.io/?utm_source=etherscan&utm_medium=banner&utm_campaign=tokenpage' target='_blank' rel='nofollow' title='Links to an External Advertiser site'><b> JOIN TOKEN SALE NOW!</b></a></div></span>
+<span id="ContentPlaceHolder1_lblAdResult"><div style='margin-top:6px; margin-bottom:22px'><span class='hidden-xs'>&nbsp;&nbsp;</span>Sponsored Link: &nbsp;<img src='/images/ad/truegame_20.png' /> <b> Truegame: ICO Investment rating</b> Positive, Risk - Low. Confirmed by top #1 rating agency. <a href='https://ico.truegame.io/?utm_source=etherscan_tokens' rel='nofollow' title='Links to an External Advertiser site' target='_blank'> <b>Last days of ICO! </b></a></div></span>
 <div id="ContentPlaceHolder1_divSummary" class="row">
 <div class="col-md-6">
 <table class="table">
@@ -188,20 +180,20 @@ TokenTracker Summary
 <td>Total Supply:
 </td>
 <td>
-6,804,870,174<b>.</b>878168246198837603 SNT ($2,959,036,551.71)
+6,804,870,174<b>.</b>878168246198837603 SNT ($925,462,343.78)
 </td>
 </tr>
 <tr id="ContentPlaceHolder1_tr_valuepertoken">
 <td>Value per Token: </td>
 <td>
-$0.4348 @ 0.000353 Eth <font color='green' class='text-nowrap'>(<i class='fa  fa-caret-up'></i> 5.75%)</font>
+$0.1360 @ 0.000245 Eth <font color='green' class='text-nowrap'>(<i class='fa  fa-caret-up'></i> 4.81%)</font>
 </td>
 </tr>
 <tr>
 <td>Token Holders:
 </td>
 <td>
-55262 addresses
+64687 addresses
 </td>
 </tr>
 <tr id="ContentPlaceHolder1_trNoOfTxns">
@@ -238,56 +230,19 @@ ERC20 Contract:
 </td>
 </tr>
 <tr id="ContentPlaceHolder1_tr_officialsite_2">
-<td>Official Links:
+<td>Links:
 </td>
 <td>
-<ul class='list-inline s-icons' style='margin-bottom:-7px'>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Website: https://status.im/' rel='nofollow' target='_blank' href='https://status.im/'><i Class='fa fa-globe'></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Email: mailto:hello@eosgold.io' href='mailto:hello@eosgold.io'><i Class='fa fa-envelope'></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement="top" data-toggle="tooltip" class="tooltips" data-original-title="Bitcointalk: https://bitcointalk.org/index.php?topic=2419283.240" rel="nofollow" target="_blank" href="https://bitcointalk.org/index.php?topic=2419283.240"><i class="fa fa-btc"></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement="top" data-toggle="tooltip" class="tooltips" data-original-title="Blog: https://blog.omisego.network/" rel="nofollow" target="_blank" href="https://blog.omisego.network/"><i class="fa fa-pencil-square-o"></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement="top" data-toggle="tooltip" class="tooltips" data-original-title="Telegram: https://t.me/civicplatform" rel="nofollow" target="_blank" href="https://t.me/civicplatform"><i class="fa fa-telegram"></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Reddit: https://www.reddit.com/r/statusim/' rel='nofollow' target='_blank' href='https://www.reddit.com/r/statusim/'><i Class='fa fa-reddit-square'></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Slack: http://slack.status.im/' rel='nofollow' target='_blank' href='http://slack.status.im/'><i Class='fa  fa-slack'></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Facebook: https://www.facebook.com/ethstatus' rel='nofollow' target='_blank' href='https://www.facebook.com/ethstatus'><i Class='fa  fa-facebook'></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Twitter: https://twitter.com/ethstatus' rel='nofollow' target='_blank' href='https://twitter.com/ethstatus'><i Class='fa fa-twitter'></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Github: https://github.com/status-im' rel='nofollow' target='_blank' href='https://github.com/status-im'><i Class='fa fa-github'></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Whitepaper: https://status.im/whitepaper.pdf' rel='nofollow' target='_blank' href='https://status.im/whitepaper.pdf'><i Class='fa fa-file-text-o'></i></a>&nbsp;
-  </li>
-  <li>
-    <a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='CoinMarketCap: status' rel='nofollow' target='_blank' href='https://coinmarketcap.com/currencies/status/'><img src='/images/cmc.png'></a>&nbsp;
-  </li>
-</ul>
+<ul class='list-inline s-icons' style='margin-bottom:-7px'><li><a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Website: https://status.im/' rel='nofollow' target='_blank' href='https://status.im/'><i Class='fa fa-globe'></i></a></li><li><a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Reddit: https://www.reddit.com/r/statusim/' rel='nofollow' target='_blank' href='https://www.reddit.com/r/statusim/'><i Class='fa fa-reddit-square'></i></a></li><li><a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Slack: http://slack.status.im/' rel='nofollow' target='_blank' href='http://slack.status.im/'><i Class='fa  fa-slack'></i></a></li><li><a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Facebook: https://www.facebook.com/ethstatus' rel='nofollow' target='_blank' href='https://www.facebook.com/ethstatus'><i Class='fa  fa-facebook'></i></a></li><li><a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Twitter: https://twitter.com/ethstatus' rel='nofollow' target='_blank' href='https://twitter.com/ethstatus'><i Class='fa fa-twitter'></i></a></li><li><a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Github: https://github.com/status-im' rel='nofollow' target='_blank' href='https://github.com/status-im'><i Class='fa fa-github'></i></a></li><li><a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='Whitepaper: https://status.im/whitepaper.pdf' rel='nofollow' target='_blank' href='https://status.im/whitepaper.pdf'><i Class='fa fa-file-text-o'></i></a></li><li><a data-placement='top' data-toggle='tooltip' Class='tooltips' data-original-title='CoinMarketCap: status' rel='nofollow' target='_blank' href='https://coinmarketcap.com/currencies/status/'><img src='/images/cmc.png'></a>&nbsp;</li></ul>
 </td>
 </tr>
 <tr>
-<td>Search/Filter By:
+<td>Filter By:
 </td>
 <td>
 <form action="" method="get">
-<div id="ContentPlaceHolder1_searchdiv" style="display: inline;">
-<input type="text" class="form-control-custom" placeholder="Enter Token Address or TxHash" name="a" maxlength="66">
+<div id="ContentPlaceHolder1_searchdiv" style="display: inline;white-space: nowrap;">
+<input type="text" class="form-control-custom" placeholder="Enter Token Address or TxHash" name="a" maxlength="66" style="width:210px">
 <span class="" style="display: inline">
 <button class="btn-u btn-u-default" type="submit" style="padding: 2px 5px 2px 5px; height: 29px; width: 45px; margin-left: -5px; margin-top: -4px;" title="Only show token records for this address" onclick="javascript:updatehash('');">Apply</button>
 </span>
@@ -295,24 +250,28 @@ ERC20 Contract:
 </form>
 </td>
 </tr>
- </table>
+</table>
 </div>
 </div>
 <div id="ContentPlaceHolder1_maintab" class="tab-v2">
 <ul class="nav nav-tabs" id='nav_tabs'>
 <li class="active" id="li_transactions"><a href="#transactions" data-toggle="tab" onclick="javascript:updatehash('');loadIframeSource3()">Token Transfers</a></li>
 <li id="ContentPlaceHolder1_li_balances"><a href="#balances" data-toggle="tab" onclick="javascript:updatehash('balances');loadIframeSource2()" title='Balances Sorted in Descending order'>Token Holders</a></li>
+<li id="ContentPlaceHolder1_li_tokenInfoTab"><a href="#tokenInfo" data-toggle="tab" onclick="javascript:updatehash('tokenInfo');" title='Token General Info'>Token Info<sup>&nbsp;<font color='#FF5733'>New</font></sup></a></li>
 <li id="ContentPlaceHolder1_li_readContract"><a href="#readContract" data-toggle="tab" onclick="javascript:updatehash('readContract');loadIframeSource();" title='Read Smart Contract Information'>Read Smart Contract</a></li>
-<li id="ContentPlaceHolder1_li_disqus"><a href="#comments" data-toggle="tab" onclick="javascript:loaddisqus();">Comments</a></li>
+<li id="ContentPlaceHolder1_li_disqus"><a href="#comments" data-toggle="tab" onclick="javascript:loaddisqus();"><span class="disqus-comment-count" data-disqus-identifier="Etherscan_0x744d70fdbe2ba4cf95131626614a1763df805b9e_Token_Comments">Comments</span></a></li>
 </ul>
 
 <div class="tab-content" style="padding: 1px 0;">
+<script>window.parent.isFrameLoading = true;</script>
 <div class="tab-pane fade in active" id="transactions" style="margin-bottom: -20px">
 <div class="panel panel-info">
 <div>
 <span id="loadingtxframe">
 <div id="overlay" align="center">
-<br /><br /><img src="/images/ajax-loader2.gif" alt="Loading" /><br />
+<br />
+<br />
+<img src="/images/ajax-loader2.gif" alt="Loading" /><br />
 <br />
 ... loading, please wait ...
 <br />
@@ -320,7 +279,7 @@ ERC20 Contract:
 </div>
 </span>
 <div class="panel-body table-responsive" style="overflow: auto; -webkit-overflow-scrolling: touch">
-<iframe width="100%" id="tokentxnsiframe" src="" frameborder="0" scrolling="yes" onload='javascript:resizeIframe(this, 0);'></iframe>
+<iframe width="100%" id="tokentxnsiframe" src="" frameborder="0" scrolling="yes"></iframe>
 </div>
 </div>
 <span class='pull-right' style='margin-top:20px' title='Export records in CSV format'><font size=1>[ Download <a href='/exportData?type=tokentxns&contract=0x744d70fdbe2ba4cf95131626614a1763df805b9e&a=&decimal=18' target='_blank'><b>CSV Export</b></a>&nbsp;<span class='glyphicon glyphicon-download-alt'></span> ]</font>&nbsp;</span>
@@ -329,17 +288,54 @@ ERC20 Contract:
 <div class="tab-pane fade in" id="balances" style="margin-bottom: -30px">
 <div class="panel panel-info">
 <div>
-<div class="panel-body table-responsive" style="overflow: auto; -webkit-overflow-scrolling: touch">
-<iframe width="100%" id="tokeholdersiframe" src="" frameborder="0" scrolling="yes" onload='javascript:resizeIframe(this, 0);'></iframe>
+<span id="loadingtxframe2">
+<div id="overlay2" align="center">
+<br />
+<br />
+<img src="/images/ajax-loader2.gif" alt="Loading" /><br />
+<br />
+... loading, please wait ...
+<br />
+<br />
 </div>
+</span>
+<div class="panel-body table-responsive" style="overflow: auto; -webkit-overflow-scrolling: touch">
+<iframe width="100%" id="tokeholdersiframe" src="" frameborder="0" scrolling="yes"></iframe>
+</div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade in" id="tokenInfo" style="margin-bottom: -20px">
+<div class="panel panel-info">
+<div class="panel-body">
+<p><ins><strong>Overview</strong></ins></p>Status is an open source messaging platform and mobile browser to interact with decentralized applications that run on the Ethereum Network.<br><br><p><ins><strong>Profitability / Loss</strong></ins></p><table border='0' cellpadding='0' cellspacing='0'><tbody><tr><td style='width:150px'>Since ICO</td><td style='width:15px'>:</td><td><span title='ICO USD Price'>USD $0.04</span> <span class="label label-success rounded" title='2.40 X'><font color='white'><i class='fa fa-caret-up'></i> <b>240%</b></font></span> &nbsp;|&nbsp; <span title='ICO ETH Price'>ETH 0.0001</span> <span class="label label-success rounded" title='1.45 X'><font color='white'><i class='fa fa-caret-up'></i> <b>145%</b></font></span></td></tr></tbody></table><br><p><ins><strong>Market</strong></ins></p><table border='0' cellpadding='0' cellspacing='0'><tbody><tr><td style='width:150px'>Volume (24hr)</td><td style='width:15px'>:</td><td>$58,088,900.00</td></tr><tr><td style='width:150px'>MarketCap</td><td style='width:15px'>:</td><td>$471,985,795.00</td></tr><tr><td style='width:150px'>Circulating supply</td><td style='width:15px'>:</td><td>3,470,483,788.00 SNT</td></tr></tbody></table><br><p><ins><strong>ICO Information</strong></ins></p>
+<table border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="width:150px">ICO Start Date</td>
+<td style="width:15px">:</td>
+<td>Jun 20, 2017&nbsp;&nbsp;</td>
+</tr>
+<tr>
+<td style="width:150px">Total Cap</td>
+<td style="width:15px">:</td>
+<td>$109,488,000</td>
+</tr>
+<tr>
+<td style="width:150px">ICO Price&nbsp;</td>
+<td style="width:15px">:</td>
+<td>$0.037 | 0.0001 ETH</td>
+</tr>
+</tbody>
+</table><br><br><font size=1>Updates? Click <a href='/contactus?id=6&a=0x744d70fdbe2ba4cf95131626614a1763df805b9e'>Here to update</a> the Token ICO / General Information</font><br>
 </div>
 </div>
 </div>
 <div class="tab-pane fade in" id="readContract" style="margin-bottom: -20px">
 <div class="panel panel-info">
 <div>
-<div class=" panel-bodytable-responsive" style="overflow: auto; -webkit-overflow-scrolling: touch">
-<iframe width="100%" id="readcontractiframe" src="" frameborder="0" scrolling="yes" onload='javascript:resizeIframe(this, 0);'></iframe>
+<div class="panel-body table-responsive" style="overflow: auto; -webkit-overflow-scrolling: touch">
+<iframe width="100%" id="readcontractiframe" src="" frameborder="0" scrolling="yes"></iframe>
 </div>
 </div>
 </div>
@@ -347,15 +343,16 @@ ERC20 Contract:
 <div class="tab-pane fade in" id="comments" style="margin-bottom: -20px">
 <div class="panel panel-info">
 <div class="panel-body">
- <div>
+<div>
 <div id="disqus_thread"></div>
 <script type="text/javascript">
                                     var disqus_shortname = 'Etherscan';
                                     var disqus_identifier = 'Etherscan_0x744d70fdbe2ba4cf95131626614a1763df805b9e_Token_Comments';
                                     var disqus_title = '0x744d70fdbe2ba4cf95131626614a1763df805b9e Token';
-                                    var disqus_url = 'http://etherscan.io/token/0x744d70fdbe2ba4cf95131626614a1763df805b9e#disqus';
+                                    var disqus_url = 'https://etherscan.io/token/0x744d70fdbe2ba4cf95131626614a1763df805b9e#disqus';
                                 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+<script id="dsq-count-scr" src="//etherscan.disqus.com/count.js" async></script>
 </div>
 </div>
 </div>
@@ -368,7 +365,7 @@ ERC20 Contract:
 </div>
 <script type="text/javascript">
         $(function () {
-            $("[rel='tooltip']").tooltip({ html: true });
+            $("[rel='tooltip']").tooltip({html:true});
         });
     </script>
 <script type="text/javascript">
@@ -392,6 +389,17 @@ ERC20 Contract:
             $('.nav-tabs a[href="#' + tab + '"]').tab('show');
         };
         function updatehash(strhash) {
+            //console.log("strhash = " + strhash);
+            var curHash = window.location.hash.substring(1);
+            //console.log("curHash = " + curHash);
+            if (curHash == '' || curHash == 'balances') {
+                //console.log("isFrameLoading : " + window.isFrameLoading);
+                if (window.isFrameLoading == true) {
+                    event.stopPropagation();
+                    alert('Please wait for the tab to finish loading before continuing...');
+                    return false;
+                }
+            };
             if (strhash == '') {
                 history.replaceState("", document.title, window.location.pathname);
             } else {
@@ -399,7 +407,6 @@ ERC20 Contract:
                 history.replaceState("", document.title, baseUrl + '#' + strhash);
             }
         }
-
         var disqusloaded = false;
         function loaddisqus() {
             if (disqusloaded == false) {
@@ -418,23 +425,24 @@ ERC20 Contract:
                 document.getElementById('readcontractiframe').src = '/readContract?a=0x744d70fdbe2ba4cf95131626614a1763df805b9e&v=0x744d70fdbe2ba4cf95131626614a1763df805b9e';
             }
         }
-        var token_holders_loaded = false;
+        //var token_holders_loaded = false;
+        window.token_holders_loaded = false;
         function loadIframeSource2() {
-            if (token_holders_loaded == false) {
-                token_holders_loaded = true;
-                document.getElementById('tokeholdersiframe').src = '/token/generic-tokenholders2?a=0x744d70fdbe2ba4cf95131626614a1763df805b9e';
+            if (window.token_holders_loaded == false) {
+                //token_holders_loaded = true;
+                document.getElementById('tokeholdersiframe').src = '/token/generic-tokenholders2?a=0x744d70fdbe2ba4cf95131626614a1763df805b9e&s=6804870174878168246198837603';
             }
         }
-
-        var token_transactions_loaded = false;
+        //var token_transactions_loaded = false;
+        window.token_transactions_loaded = false;
         function loadIframeSource3() {
-            if (token_transactions_loaded == false) {
-                token_transactions_loaded = true;
+            if (window.token_transactions_loaded == false) {
                 document.getElementById('tokentxnsiframe').src = '/token/generic-tokentxns2?contractAddress=0x744d70fdbe2ba4cf95131626614a1763df805b9e&a=&mode=';
-            }
+            };
+            //var obj = document.getElementById('tokentxnsiframe');
+            //obj.style.height = (obj.contentWindow.document.body.scrollHeight) + 'px';
+            //console.log("height: " + obj.contentWindow.document.body.scrollHeight);
         }
-
-
     </script>
 <div id="push"></div>
 
@@ -454,7 +462,13 @@ ERC20 Contract:
 <a href='/comments'><span class="pull-right" style="color: #C0C0C0; margin-top: 8px; ">[View More]</span></a>
 </div>
 <ul class="list-unstyled link-list">
-<li><img src='/images/icons/comment-white.png'>&nbsp;&nbsp;<a href='http://etherscan.io/address/0x1522900b6dafac587d499a862861c0869be6e428#comments'>Do you already got it now?</a><i class="fa fa-angle-right"></i></li><li><img src='/images/icons/comment-white.png'>&nbsp;&nbsp;<a href='http://etherscan.io/address/0x1522900b6dafac587d499a862861c0869be6e428#comments'>Do you already got it?</a><i class="fa fa-angle-right"></i></li><li><img src='/images/icons/comment-white.png'>&nbsp;&nbsp;<a href='http://etherscan.io/address/0xde29d63a4ca54c269e67a11b50017709b85f160e#comments'>Hi everyone</a><i class="fa fa-angle-right"></i></li><li><img src='/images/icons/comment-white.png'>&nbsp;&nbsp;<a href='http://etherscan.io/address/0xff714f17dcf5d9db0cc3b814e415ace61f6cdb09#comments'>Hi! i'm begging you please send back my 500 rebel or eve...</a><i class="fa fa-angle-right"></i></li>
+<li><img src='/images/icons/comment-white.png'>&nbsp;&nbsp;<a href='http://etherscan.io/address/0xc15ffcceb80e34a780a46795dbd126e2d65c4460#comments'>These people claiming to be able to help you out if you ...</a><i class="fa fa-angle-right"></i></li><li><img src='/images/icons/comment-white.png'>&nbsp;&nbsp;<a href='http://etherscan.io/address/0xb3775fb83f7d12a36e0475abdd1fca35c091efbe#comments'>Hello
+please i am a poor man need helping
+send me just 0...</a><i class="fa fa-angle-right"></i></li><li><img src='/images/icons/comment-white.png'>&nbsp;&nbsp;<a href='http://etherscan.io/address/0x0c15261d0d90da0978a6ca8abc6acb7b4021de81#comments'>Hello
+please i am a poor man need helping
+send me just 0...</a><i class="fa fa-angle-right"></i></li><li><img src='/images/icons/comment-white.png'>&nbsp;&nbsp;<a href='http://etherscan.io/address/0x2cf298a6b65c0aab44f63168638d834673e53cda#comments'>Hello
+please i am a poor man need helping
+send me just 0...</a><i class="fa fa-angle-right"></i></li>
 </ul>
 </div>
 <div class="col-md-3 md-margin-bottom-40">
@@ -493,7 +507,7 @@ ERC20 Contract:
 <div class="col-md-8">
 <p style="font-family:'Open Sans',sans-serif; font-size: 11px; color: #C0C0C0;">Etherscan © 2018 [B]
 Running
-<a target="_blank" href='https://github.com/ethereum/go-ethereum'>Geth</a>&<a target="_blank" href='https://ethcore.io/parity.html'>Parity</a>
+<a target="_blank" href='https://github.com/ethereum/go-ethereum'>Geth</a>&<a target="_blank" href='https://www.parity.io/'>Parity</a>
 | Donations:<a href="https://etherscan.io/address/0x71c7656ec7ab88b098defb751b7401b5f6d8976f">0x71c7656ec7ab88b098defb751b7401b5f6d8976f</a>
 </p>
 </div>

@@ -82,7 +82,7 @@ const Post = ({
         {user &&
           <Div className='event-post-info'>
             <div className='event-post-author'>
-              by&nbsp; {user.username}
+              by&nbsp; <a href={`/insights/users/${user.id}`}>{user.username}</a>
             </div>
             <LikeBtn
               onLike={() => {

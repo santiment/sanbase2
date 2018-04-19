@@ -1,5 +1,6 @@
 import React from 'react'
 import moment from 'moment'
+import { withRouter } from 'react-router-dom'
 import { Label, Button } from 'semantic-ui-react'
 import LikeBtn from './../pages/EventVotesNew/LikeBtn'
 import { createSkeletonElement } from '@trainline/react-skeletor'
@@ -60,12 +61,17 @@ const Post = ({
   votePost,
   unvotePost,
   deletePost,
+  history,
   moderationComment = null,
   state = STATES.waiting,
   showStatus = false
 }) => {
   return (
-    <div className='event-post'>
+    <div className='event-post' onClick={e => {
+      if (e.target.className === 'event-post-body') {
+        history.push(`/insights/${id}`)
+      }
+    }}>
       <div className='event-post-body'>
         <A className='event-storylink' href={link || `/insights/${id}`}>
           {title}
@@ -108,4 +114,4 @@ const Post = ({
   )
 }
 
-export default Post
+export default withRouter(Post)

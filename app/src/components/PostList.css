@@ -1,3 +1,3 @@
-.event-posts-list .event-post ~ .event-post {
-  margin-top: 5px;
+.event-posts-list .event-post {
+  margin-top: 0;
 }

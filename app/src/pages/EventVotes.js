@@ -41,7 +41,7 @@ const voteMutationHelper = ({postId, action = 'vote'}) => ({
   }
 })
 
-const getPosts = (match, Posts) => {
+const getPosts = (match, history, Posts) => {
   const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
   const showedUserByIdPosts = match.path.split('/')[2] === 'users'
   if (showedMyPosts) {
@@ -160,7 +160,7 @@ const EventVotes = ({
           {Posts.isEmpty && !showedMyPosts
             ? <Message><h2>We don't have any insights yet.</h2></Message>
             : <PostList {...Posts}
-              posts={getPosts(match, Posts)}
+              posts={getPosts(match, history, Posts)}
               userId={showedMyPosts ? user.data.id : undefined}
               deletePost={postId => {
                 setDeletePostId(postId)

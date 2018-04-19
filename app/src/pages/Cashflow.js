@@ -59,37 +59,6 @@ export const CustomHeadComponent = ({ children, className, ...rest }) => (
   </Sticky>
 )
 
-export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
-  <div className='wallet'>
-    <div className='usd first'>
-      {usdBalance
-        ? `$${millify(usdBalance, 2)}`
-        : '---'}
-    </div>
-    <div className='eth'>
-      {parseFloat(ethBalance) === 0 &&
-        <Popup
-          inverted
-          trigger={<div style={{display: 'inline-block'}}>{
-            <a
-              target='_blank'
-              rel='noopener noreferrer'
-              className='findwallet'
-              href={`https://santiment.typeform.com/to/bT0Dgu?project=${project}&ticker=${ticker}`}>
-              <Icon color='red' name='question circle outline' />
-            </a>}
-          </div>}
-          content='Know this project wallet? Click the ? to send wallet info'
-          position='top center'
-        />
-      }
-      {ethBalance
-        ? `Ξ${millify(ethBalance, 2)}`
-        : '---'}
-    </div>
-  </div>
-)
-
 export const formatMarketCapProject = marketcapUsd => {
   if (marketcapUsd !== null) {
     return `$${millify(marketcapUsd, 2)}`
@@ -234,43 +203,6 @@ export const Cashflow = ({
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
   }, PriceColumn, VolumeColumn, MarketCapColumn, {
-    Header: 'Balance (USD/ETH)',
-    maxWidth: 110,
-    id: 'balance',
-    accessor: d => ({
-      project: d.name,
-      ticker: d.ticker,
-      ethBalance: d.ethBalance,
-      usdBalance: d.usdBalance
-    }),
-    Cell: ({value}) => <div className='overview-balance'>{formatBalance(value)}</div>,
-    sortable: true,
-    sortMethod: (a, b) =>
-      simpleSort(
-        parseFloat(a.ethBalance || 0),
-        parseFloat(b.ethBalance || 0)
-      )
-  }, {
-    Header: 'P/B',
-    id: 'pbr',
-    maxWidth: 100,
-    accessor: 'priceToBookRatio',
-    Cell: ({value}) => <div className='overview-pb'>{value &&
-      ((value) => {
-        if (value > 1000000000000) {
-          return '∞'
-        }
-        return millify(value, 3)
-      })(value)
-    }</div>,
-    sortable: true,
-    sortMethod: (a, b) => {
-      return simpleSort(
-        parseFloat(a || 0),
-        parseFloat(b || 0)
-      )
-    }
-  }, {
     Header: 'ETH spent (30D)',
     maxWidth: 110,
     id: 'tx',
@@ -284,6 +216,14 @@ export const Cashflow = ({
     maxWidth: 110,
     accessor: d => d.averageDevActivity,
     Cell: ({value}) => <div className='overview-devactivity'>{value ? parseFloat(value).toFixed(2) : ''}</div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(a, b)
+  }, {
+    Header: 'Daily active addresses (30D)',
+    id: 'daily_active_addresses',
+    maxWidth: 110,
+    accessor: d => d.averageDailyActiveAddresses,
+    Cell: ({value}) => <div className='overview-activeaddresses'>{value ? formatNumber(value) : ''}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {

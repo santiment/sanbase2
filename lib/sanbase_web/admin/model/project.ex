@@ -7,6 +7,9 @@ defmodule Sanbase.ExAdmin.Model.Project do
   alias Sanbase.Model.Infrastructure
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.ProjectTransparencyStatus
+  alias Sanbase.Voting.Tag
+
+  alias Sanbase.Repo
 
   register_resource Sanbase.Model.Project do
     show project do
@@ -122,6 +125,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
     controller do
       # doc: https://hexdocs.pm/ex_admin/ExAdmin.Register.html#after_filter/2
       after_filter(:set_defaults, only: [:new])
+      after_filter(:add_tag, only: [:create])
     end
 
     # Make all string filters "Contains" by default
@@ -139,12 +143,46 @@ defmodule Sanbase.ExAdmin.Model.Project do
         end
       end
     end
+
+    # Put Actions column to the front
+    sidebar " ", only: :index do
+      panel "" do
+        markup_contents do
+          script type: "text/javascript" do
+            """
+            $.moveColumn = function (table, from, to) {
+                var rows = $('tr', table);
+                var cols;
+                rows.each(function() {
+                    cols = $(this).children('th, td');
+                    cols.eq(from).detach().insertBefore(cols.eq(to));
+                });
+            }
+
+            $(document).ready(function() {
+              thact = $("table.index_table thead tr th.th-actions");
+              index = $("table.index_table thead tr th").index(thact);
+              table = $("table.index_table thead,tbody");
+              $.moveColumn(table, index, 1);
+            });
+            """
+          end
+        end
+      end
+    end
   end
 
   def set_defaults(conn, params, resource, :new) do
     resource =
       resource
       |> set_infrastructure_default()
+
+    {conn, params, resource}
+  end
+
+  def add_tag(conn, params, resource, :create) do
+    resource
+    |> add_tag()
 
     {conn, params, resource}
   end
@@ -159,4 +197,13 @@ defmodule Sanbase.ExAdmin.Model.Project do
   end
 
   defp set_infrastructure_default(%Project{} = project), do: project
+
+  defp add_tag(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = _project)
+       when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
+    %Tag{name: ticker}
+    |> Tag.changeset()
+    |> Repo.insert()
+  end
+
+  defp add_tag(%Project{}), do: :ok
 end

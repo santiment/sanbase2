@@ -75,7 +75,8 @@ defmodule Sanbase.Mixfile do
       {:uuid, "~> 1.1"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
       {:cachex, "~> 3.0"},
-      {:dialyxir, "~> 0.5", only: [:dev], runtime: false}
+      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+      {:con_cache, git: "https://github.com/sasa1977/con_cache"}
     ]
   end
 

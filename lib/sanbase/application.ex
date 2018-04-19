@@ -23,10 +23,12 @@ defmodule Sanbase.Application do
         supervisor(SanbaseWeb.Endpoint, []),
 
         # Start the graphQL in-memory cache
-        worker(Cachex, [
-          :graphql_cache,
-          [limit: 10000, expiration: expiration(default: :timer.minutes(5))]
-        ]),
+        {ConCache,
+         [
+           name: :graphql_cache,
+           ttl_check_interval: :timer.minutes(1),
+           global_ttl: :timer.minutes(5)
+         ]},
 
         # Time series Prices DB connection
         Sanbase.Prices.Store.child_spec(),

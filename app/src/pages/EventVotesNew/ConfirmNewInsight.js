@@ -11,10 +11,10 @@ import Post from './../../components/Post'
 import ErrorBoundary from './../../ErrorBoundary'
 
 const createPostGQL = gql`
-  mutation createPost($link: String!, $title: String!) {
+  mutation createPost($title: String!, $text: String!) {
     createPost(
-      link: $link,
       title: $title
+      text: $text
     ) {
       id
     }
@@ -43,7 +43,7 @@ const ConfirmPost = ({
             onClick={() => {
               onPending(true)
               createPost({
-                variables: {title: post.title, link: post.link}
+                variables: {title: post.title, text: post.text}
               })
               .then(data => {
                 if (process.env.NODE_ENV === 'production') {

@@ -4,14 +4,15 @@ import { connect } from 'react-redux'
 import Panel from './../../components/Panel'
 import PostsNewHeader from './EventVotesNewHeader'
 import ConfirmPost from './ConfirmNewInsight'
-import CreateLink from './CreateLink'
 import CreateTitle from './CreateTitle'
+import CreateBody from './CreateBody'
 import './EventVotesNew.css'
 
 class EventVotesNew extends Component {
   state = { // eslint-disable-line
     title: '',
     link: '',
+    text: '',
     votes: 0,
     author: this.props.username,
     created: new Date()
@@ -27,8 +28,14 @@ class EventVotesNew extends Component {
     console.log('save the post', post)
   }
 
+  componentDidMount () {
+    if (!this.props.isLogin) {
+      this.props.history.push('/login')
+    }
+  }
+
   render () {
-    if (!this.state.link &&
+    if (!this.state.text &&
       this.props.history.location.pathname !== '/insights/new') {
       return (
         <Redirect to={{
@@ -50,10 +57,10 @@ class EventVotesNew extends Component {
             exact
             path='/insights/new'
             render={() => (
-              <CreateLink
+              <CreateBody
                 changePost={this.changePost}
                 post={{...this.state}} />
-            )} />
+          )} />
           <Route
             exact
             path='/insights/new/title'
@@ -87,7 +94,6 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
   return {
     addPost: post => {
-      console.log('add post')
       dispatch({
         type: 'ADD_EVENT_POST',
         payload: {

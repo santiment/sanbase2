@@ -1,30 +1,12 @@
 import React from 'react'
 import 'medium-draft/lib/index.css'
+import nprogress from 'nprogress'
+import { convertToRaw } from 'draft-js'
+import { draftjsToMd } from './../../utils/draftjsToMd'
+import { compose, withState } from 'recompose'
+import { Editor, createEditorState } from 'medium-draft'
+import CustomImageSideButton from './CustomImageSideButton'
 import './CreateInsight.css'
-
-import {
-  Editor,
-  Block,
-  addNewBlock,
-  createEditorState,
-  ImageSideButton
-} from 'medium-draft'
-
-class CustomImageSideButton extends ImageSideButton {
-  onChange (e) {
-    const file = e.target.files[0]
-    if (file.type.indexOf('image/') === 0) {
-      console.log(file)
-      this.props.setEditorState(addNewBlock(
-        this.props.getEditorState(),
-        Block.IMAGE, {
-          src: file
-        }
-      ))
-    }
-    this.props.close()
-  }
-}
 
 export class CreateInsight extends React.Component {
   state = { // eslint-disable-line
@@ -33,10 +15,23 @@ export class CreateInsight extends React.Component {
 
   onChange = editorState => { // eslint-disable-line
     this.setState({ editorState })
+    const markdown = draftjsToMd(convertToRaw(editorState.getCurrentContent()))
+    if (markdown.length > 2) {
+      this.props.changePost(markdown)
+    }
   }
 
   componentDidMount () {
     this.refs.editor.focus()
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.isPendingImg) {
+      nprogress.start()
+    }
+    if (nextProps.isSuccessImg) {
+      nprogress.done()
+    }
   }
 
   render () {
@@ -47,7 +42,13 @@ export class CreateInsight extends React.Component {
         editorState={editorState}
         sideButtons={[{
           title: 'Image',
-          component: CustomImageSideButton
+          component: props => (
+            <CustomImageSideButton
+              onPendingImg={this.props.onPendingImg}
+              onErrorImg={this.props.onErrorImg}
+              onSuccessImg={this.props.onSuccessImg}
+              {...props}
+            />)
         }]}
         toolbarConfig={{
           block: ['ordered-list-item', 'unordered-list-item'],
@@ -59,4 +60,8 @@ export class CreateInsight extends React.Component {
   }
 }
 
-export default CreateInsight
+export default compose(
+  withState('isPendingImg', 'onPendingImg', false),
+  withState('isErrorImg', 'onErrorImg', false),
+  withState('isSuccessImg', 'onSuccessImg', false)
+)(CreateInsight)

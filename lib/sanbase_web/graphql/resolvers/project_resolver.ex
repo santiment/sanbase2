@@ -56,8 +56,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     query =
       from(
         p in Project,
-        inner_join: ico in Ico,
-        on: p.id == ico.project_id,
         inner_join: infr in Infrastructure,
         on: p.infrastructure_id == infr.id,
         where:
@@ -82,8 +80,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     query =
       from(
         p in Project,
-        inner_join: ico in Ico,
-        on: p.id == ico.project_id,
         where: not is_nil(p.coinmarketcap_id) and is_nil(p.main_contract_address),
         order_by: p.name
       )
@@ -95,7 +91,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
       ])
-      |> Enum.dedup()
 
     {:ok, currency_projects}
   end

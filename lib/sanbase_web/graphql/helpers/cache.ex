@@ -33,10 +33,6 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   def func(cached_func, name, args \\ %{}) do
     fn ->
       ConCache.get_or_store(@cache_name, cache_key(name, args), fn ->
-        Logger.info(
-          "Caching a new value in Graphql Cache. Current cache size: #{size(:megabytes)}mb"
-        )
-
         cached_func.()
       end)
     end

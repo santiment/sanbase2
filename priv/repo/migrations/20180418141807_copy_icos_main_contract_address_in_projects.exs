@@ -11,7 +11,8 @@ defmodule Sanbase.Repo.Migrations.CopyIcosMainContractAddressInProjects do
       from(
         i in Ico,
         where: not is_nil(i.main_contract_address),
-        select: [i.project_id, i.main_contract_address]
+        select: [i.project_id, i.main_contract_address],
+        order_by: [desc: :id]
       )
 
     Repo.all(query)

@@ -6,6 +6,7 @@ const generalData = gql`
     name
     description
     ticker
+    coinmarketcapId
   }
 `
 
@@ -26,7 +27,6 @@ const project = gql`
     volumeUsd
     volumeChange24h
     ethSpent
-    coinmarketcapId
     averageDevActivity
     averageDailyActiveAddresses
     marketcapUsd
@@ -53,6 +53,15 @@ export const allProjectsGQL = gql`
   }
   ${generalData}
   ${project}
+`
+
+export const allProjectsForSearchGQL = gql`
+  query allProjects {
+    allProjects {
+      ...generalData
+    }
+  }
+  ${generalData}
 `
 
 export const allErc20ProjectsGQL = gql`

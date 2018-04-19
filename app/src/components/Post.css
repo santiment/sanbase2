@@ -1,17 +1,41 @@
 .event-post {
   display: flex;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 10px 15px;
 }
 
-.event-post-index {
+.event-post:hover {
+  background-color: #e8e8e8;
+  cursor: pointer;
+}
+
+.event-post .event-post-index {
   margin-right: 4px;
   margin-top: 2px;
   height: 22px;
 }
 
+.event-post .post-status .label {
+  user-select: none;
+}
+
+.event-post .event-post-body {
+  flex: 1;
+}
+
+.event-post-body-link {
+  padding: 15px;
+  width: 100%;
+}
+
+.event-post-body-link:hover {
+  background-color: #f9f9f9;
+}
+
 .event-post .event-storylink {
   color: black;
-  font-size: 1.2em;
-  font-weight: bold;
+  font-size: 20px;
+  line-height: 32px;
   cursor: pointer;
   text-decoration: none;
 }
@@ -22,10 +46,14 @@
 
 .event-post .event-post-info {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  margin-top: 2px;
+}
+
+.event-post .event-post-author {
   color: #828282;
   font-size: 0.8em;
-  margin-top: 2px;
 }
 
 .event-post .event-post-info .account-name {
@@ -49,11 +77,17 @@
   text-transform: lowercase;
 }
 
+.event-post-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
 .event-post .post-status {
   color: #3e3e3e;
-  padding: 10px 0;
-  margin: 10px 0;
-  border-top: 1px solid rgba(50, 50, 93, 0.17);
+  padding: 0;
+  margin: 0;
 }
 
 @keyframes skeletonAnimation {

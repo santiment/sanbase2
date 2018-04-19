@@ -1,12 +1,13 @@
 import React from 'react'
 import moment from 'moment'
+import { withRouter } from 'react-router-dom'
 import { Label, Button } from 'semantic-ui-react'
 import LikeBtn from './../pages/EventVotesNew/LikeBtn'
 import { createSkeletonElement } from '@trainline/react-skeletor'
 import './Post.css'
 
 export const getSourceLink = link => {
-  return link ? link.split('/')[2] : ''
+  return link ? link.split('/')[2] : 'SANbase.net'
 }
 
 const A = createSkeletonElement('a', 'pending-home')
@@ -39,9 +40,10 @@ const Status = ({status = STATES.waiting, moderationComment}) => {
           {status}
         </Label>
       </div>
-      {moderationComment && <div>
-        <span>Comment:</span> {moderationComment}
-      </div>}
+      {moderationComment &&
+        <div>
+          <span>Comment:</span> {moderationComment}
+        </div>}
     </Div>
   )
 }
@@ -59,17 +61,19 @@ const Post = ({
   votePost,
   unvotePost,
   deletePost,
+  history,
   moderationComment = null,
   state = STATES.waiting,
   showStatus = false
 }) => {
   return (
-    <div className='event-post'>
-      <div className='event-post-index'>
-        {index}.
-      </div>
+    <div className='event-post' onClick={e => {
+      if (e.target.className === 'event-post-body') {
+        history.push(`/insights/${id}`)
+      }
+    }}>
       <div className='event-post-body'>
-        <A className='event-storylink' href={link}>
+        <A className='event-storylink' href={link || `/insights/${id}`}>
           {title}
         </A>
         <br />
@@ -77,33 +81,37 @@ const Post = ({
         <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
         {user &&
           <Div className='event-post-info'>
-            by&nbsp; {user.username}
+            <div className='event-post-author'>
+              by&nbsp; <a href={`/insights/users/${user.id}`}>{user.username}</a>
+            </div>
+            <LikeBtn
+              onLike={() => {
+                if (votedAt) {
+                  unvotePost(id)
+                } else {
+                  votePost(id)
+                }
+              }}
+              liked={!!votedAt}
+              votes={totalSanVotes} />
           </Div>}
-        <LikeBtn
-          onLike={() => {
-            if (votedAt) {
-              unvotePost(id)
-            } else {
-              votePost(id)
-            }
-          }}
-          liked={!!votedAt}
-          votes={totalSanVotes} />
-        {showStatus && <Status
-          moderationComment={moderationComment}
-          status={!state ? STATES.waiting : state} />}
-        {showStatus && <Button
-          size='mini'
-          onClick={() => deletePost(id)}
-          style={{
-            fontWeight: '700',
-            color: '#db2828'
-          }}>
-          Delete this insight
-        </Button>}
+        <div className='event-post-controls'>
+          {showStatus && <Status
+            moderationComment={moderationComment}
+            status={!state ? STATES.waiting : state} />}
+          {showStatus && <Button
+            size='mini'
+            onClick={() => deletePost(id)}
+            style={{
+              fontWeight: '700',
+              color: '#db2828'
+            }}>
+            Delete this insight
+          </Button>}
+        </div>
       </div>
     </div>
   )
 }
 
-export default Post
+export default withRouter(Post)

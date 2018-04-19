@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react'
 import debounce from 'lodash.debounce'
+import { Helmet } from 'react-helmet'
 import Raven from 'raven-js'
 import {
   compose,
@@ -40,6 +41,18 @@ const voteMutationHelper = ({postId, action = 'vote'}) => ({
   }
 })
 
+const getPosts = (match, history, Posts) => {
+  const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
+  const showedUserByIdPosts = match.path.split('/')[2] === 'users'
+  if (showedMyPosts) {
+    return Posts.userPosts
+  }
+  if (showedUserByIdPosts) {
+    return Posts.postsByUserId
+  }
+  return Posts.filteredPosts
+}
+
 const EventVotes = ({
   Posts = {
     posts: [],
@@ -65,7 +78,8 @@ const EventVotes = ({
   setDeletePostId,
   deletePostId = undefined
 }) => {
-  const showedMyPosts = match.params.filter === 'my' && Posts.hasUserInsights
+  const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
+
   return ([
     <Fragment key='modal-login-request'>
       {isToggledLoginRequest &&
@@ -85,6 +99,9 @@ const EventVotes = ({
           }} />}
     </Fragment>,
     <div className='page event-votes' key='page-event-votes'>
+      <Helmet>
+        <title>SANbase: Insights</title>
+      </Helmet>
       {location.state && location.state.postCreated &&
         <Message positive>
           <Message.Header>
@@ -95,75 +112,97 @@ const EventVotes = ({
           </Message.Header>
           <p>We need some time to approve your insight...</p>
         </Message>}
-      <Panel>
-        <div className='panel-header'>
-          Insights
+      <div className='event-votes-rows'>
+        <div className='event-votes-navs'>
+          {Posts.hasUserInsights &&
+            <NavLink
+              className='event-votes-navigation__add-link'
+              to={'/insights/my'}>
+              My Insights
+            </NavLink>}
         </div>
-        <div className='event-votes-control'>
-          <div className='event-votes-navigation'>
-            <NavLink
-              className='event-votes-navigation__link'
-              activeClassName='event-votes-navigation__link--active'
-              exact
-              to={'/insights'}>
-              POPULAR
-            </NavLink>
-            <NavLink
-              className='event-votes-navigation__link'
-              activeClassName='event-votes-navigation__link--active'
-              exact
-              to={'/insights/newest'}>
-              NEWEST
-            </NavLink>
+        <Panel className='event-votes-content'>
+          <div className='panel-header'>
+            Insights
           </div>
-          <div>
-            {Posts.hasUserInsights &&
-              <Fragment>
-                <NavLink
-                  className='event-votes-navigation__add-link'
-                  to={'/insights/my'}>
-                  My Insights
-                </NavLink>
-                &nbsp;|&nbsp;
-              </Fragment>}
-            {user.token
-              ? <NavLink
-                className='event-votes-navigation__add-link'
-                to={'/insights/new'}>
-                Add new insight
+          <div className='event-votes-control'>
+            <div className='event-votes-navigation'>
+              <NavLink
+                className='event-votes-navigation__link'
+                activeClassName='event-votes-navigation__link--active'
+                exact
+                to={'/insights'}>
+                POPULAR
               </NavLink>
-              : <a
-                onClick={() => toggleLoginRequest(!isToggledLoginRequest)}
-                className='event-votes-navigation__add-link'>
+              <NavLink
+                className='event-votes-navigation__link'
+                activeClassName='event-votes-navigation__link--active'
+                exact
+                to={'/insights/newest'}>
+                NEWEST
+              </NavLink>
+            </div>
+            <div>
+
+              {user.token
+                ? <NavLink
+                  className='event-votes-navigation__add-link'
+                  to={'/insights/new'}>
                   Add new insight
-                </a>}
+                </NavLink>
+                : <a
+                  onClick={() => toggleLoginRequest(!isToggledLoginRequest)}
+                  className='event-votes-navigation__add-link'>
+                    Add new insight
+                  </a>}
+            </div>
           </div>
+          {Posts.isEmpty && !showedMyPosts
+            ? <Message><h2>We don't have any insights yet.</h2></Message>
+            : <PostList {...Posts}
+              posts={getPosts(match, history, Posts)}
+              userId={showedMyPosts ? user.data.id : undefined}
+              deletePost={postId => {
+                setDeletePostId(postId)
+                toggleDeletePostRequest(true)
+              }}
+              votePost={debounce(postId => {
+                user.token
+                  ? votePost(voteMutationHelper({postId, action: 'vote'}))
+                  .then(data => Posts.refetch())
+                  .catch(e => Raven.captureException(e))
+                  : toggleLoginRequest(!isToggledLoginRequest)
+              }, 100)}
+              unvotePost={debounce(postId => {
+                user.token
+                  ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
+                  .then(data => Posts.refetch())
+                  .catch(e => Raven.captureException(e))
+                  : toggleLoginRequest(!isToggledLoginRequest)
+              }, 100)}
+          />}
+        </Panel>
+        <div className='event-votes-sidebar'>
+          <Panel>
+            <div className='cta-subscription'>
+              <span className=''>Get new signals/insights about crypto in your inbox, every day</span>
+              <div id='mc_embed_signup'>
+                <form action='//santiment.us14.list-manage.com/subscribe/post?u=122a728fd98df22b204fa533c&amp;id=80b55fcb45' method='post' id='mc-embedded-subscribe-form' name='mc-embedded-subscribe-form' className='validate' target='_blank'>
+                  <div id='mc_embed_signup_scroll'>
+                    <input type='email' defaultValue='' name='EMAIL' className='email' id='mce-EMAIL' placeholder='Your email address' required />
+                    <div className='hidden-xs-up' aria-hidden='true'>
+                      <input type='text' name='b_122a728fd98df22b204fa533c_80b55fcb45' tabIndex='-1' value='' />
+                    </div>
+                    <div className='clear'>
+                      <input type='submit' value='Subscribe' name='subscribe' id='mc-embedded-subscribe' className='button' />
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </Panel>
         </div>
-        {Posts.isEmpty && !showedMyPosts
-          ? <Message><h2>We don't have any insights yet.</h2></Message>
-          : <PostList {...Posts}
-            posts={showedMyPosts ? Posts.userPosts : Posts.filteredPosts}
-            userId={showedMyPosts ? user.data.id : undefined}
-            deletePost={postId => {
-              setDeletePostId(postId)
-              toggleDeletePostRequest(true)
-            }}
-            votePost={debounce(postId => {
-              user.token
-                ? votePost(voteMutationHelper({postId, action: 'vote'}))
-                .then(data => Posts.refetch())
-                .catch(e => Raven.captureException(e))
-                : toggleLoginRequest(!isToggledLoginRequest)
-            }, 100)}
-            unvotePost={debounce(postId => {
-              user.token
-                ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
-                .then(data => Posts.refetch())
-                .catch(e => Raven.captureException(e))
-                : toggleLoginRequest(!isToggledLoginRequest)
-            }, 100)}
-        />}
-      </Panel>
+      </div>
     </div>
   ])
 }
@@ -219,8 +258,8 @@ export const sortByNewest = posts => {
 
 const mapDataToProps = props => {
   const { Poll, ownProps } = props
-  const filter = ownProps.match.params.filter || 'popular'
-  const posts = (Poll.currentPoll || {}).posts || []
+  const filter = ownProps.match.path.split('/')[2] || 'popular'
+  const posts = Poll.allInsights || []
   let filteredPosts = posts
     // TODO: We should return this filter in the near future
     // .filter(post => post.state === 'approved')
@@ -238,6 +277,12 @@ const mapDataToProps = props => {
     posts.filter(post => post.user.id === ownProps.user.data.id)
   )
 
+  const postsByUserId = filter === 'users'
+    ? sortByNewest(
+      posts.filter(post => post.user.id === ownProps.match.params.userId)
+    )
+    : []
+
   if (Poll.error) {
     throw new Error(Poll.error)
   }
@@ -247,6 +292,7 @@ const mapDataToProps = props => {
       posts,
       filteredPosts,
       userPosts,
+      postsByUserId,
       refetch: Poll.refetch,
       loading: Poll.loading,
       isEmpty: Poll.currentPoll &&

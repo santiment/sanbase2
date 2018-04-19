@@ -80,6 +80,11 @@ hr {
   }
 }
 
+.hidden {
+  visibility: false;
+  display: none;
+}
+
 .ui.button {
   font-family: 'Nunito Sans', sans-serif;
   font-weight: initial;

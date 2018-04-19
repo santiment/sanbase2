@@ -32,25 +32,21 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
 
   def func(cached_func, name, args \\ %{}) do
     fn ->
-      {_, value} =
-        Cachex.fetch(@cache_name, cache_key(name, args), fn ->
-          Logger.info(
-            "Caching a new value in Graphql Cache. Current cache size: #{size(:megabytes)}mb"
-          )
-
-          {:commit, cached_func.()}
-        end)
-
-      value
+      ConCache.get_or_store(@cache_name, cache_key(name, args), fn ->
+        cached_func.()
+      end)
     end
   end
 
   def clear_all() do
-    Cachex.clear(@cache_name)
+    @cache_name
+    |> ConCache.ets()
+    |> :ets.tab2list()
+    |> Enum.each(fn {key, _} -> ConCache.delete(@cache_name, key) end)
   end
 
   def size(:megabytes) do
-    bytes_size = :ets.info(:graphql_cache, :memory) * :erlang.system_info(:wordsize)
+    bytes_size = :ets.info(ConCache.ets(@cache_name), :memory) * :erlang.system_info(:wordsize)
     (bytes_size / (1024 * 1024)) |> Float.round(2)
   end
 
@@ -61,12 +57,9 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     # not supported, because they are scoped on their root object, we can't get
     # a good, general cache key for arbitrary root objects
     fn %{}, args, resolution ->
-      {_, value} =
-        Cachex.fetch(@cache_name, cache_key(name, args), fn ->
-          {:commit, resolver_fn.(%{}, args, resolution)}
-        end)
-
-      value
+      ConCache.get_or_store(@cache_name, cache_key(name, args), fn ->
+        resolver_fn.(%{}, args, resolution)
+      end)
     end
   end
 

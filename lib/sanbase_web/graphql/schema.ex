@@ -24,6 +24,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.FileTypes)
 
   def dataloader() do
+    alias SanbaseWeb.Graphql.SanbaseRepo
+    alias SanbaseWeb.Graphql.PriceStore
+
     Dataloader.new()
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(PriceStore, PriceStore.data())
@@ -34,7 +37,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   def plugins do
-    [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
+    [
+      Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()
+    ]
   end
 
   query do

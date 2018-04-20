@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   import Absinthe.Resolution.Helpers
-  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1, cache_resolve_dataloader: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ProjectResolver,
@@ -814,15 +814,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:project_transparency_description, :string)
 
     field :eth_balance, :decimal do
-      resolve(&ProjectBalanceResolver.eth_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.eth_balance/3)
     end
 
     field :btc_balance, :decimal do
-      resolve(&ProjectBalanceResolver.btc_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.btc_balance/3)
     end
 
     field :usd_balance, :decimal do
-      resolve(&ProjectBalanceResolver.usd_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.usd_balance/3)
     end
 
     # If there is no raw data for any currency for a given ico, then fallback one of the precalculated totals - one of Ico.funds_raised_usd, Ico.funds_raised_btc, Ico.funds_raised_eth (checked in that order)

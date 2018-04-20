@@ -10,7 +10,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     MarketSegment,
     Infrastructure,
     ProjectTransparencyStatus,
-    ProjectEthAddress,
     Ico,
     Infrastructure
   }
@@ -21,8 +20,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Github
   alias Sanbase.ExternalServices.Etherscan
 
-  alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.PriceStore
   alias SanbaseWeb.Graphql.Helpers.Cache
 
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver

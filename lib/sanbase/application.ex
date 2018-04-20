@@ -1,7 +1,6 @@
 defmodule Sanbase.Application do
   use Application
   import Supervisor.Spec
-  import Cachex.Spec
 
   import Supervisor.Spec
   import Sanbase.ApplicationUtils

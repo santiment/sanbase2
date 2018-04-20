@@ -1,29 +1,15 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
   require Logger
 
-  import Ecto.Query
   import Absinthe.Resolution.Helpers
 
   alias Sanbase.Model.{
     Project,
-    LatestCoinmarketcapData,
-    MarketSegment,
-    Infrastructure,
-    ProjectTransparencyStatus,
-    ProjectEthAddress,
-    Ico,
-    Infrastructure
+    ProjectEthAddress
   }
-
-  alias Sanbase.Voting.{Post, Tag}
-
-  alias Sanbase.{Prices, Github, ExternalServices.Etherscan}
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore
-  alias SanbaseWeb.Graphql.Helpers.Cache
-
-  alias Sanbase.Repo
 
   def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
@@ -74,8 +60,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
   end
 
   def usd_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    IO.puts("RESOLVING USD BALANCE")
-
     loader
     |> usd_balance_loader(project)
     |> on_load(&usd_balance_from_loader(&1, project))

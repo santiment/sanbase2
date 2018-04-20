@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   import Absinthe.Resolution.Helpers
-  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1, cache_resolve_dataloader: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ProjectResolver,
@@ -62,15 +62,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:project_transparency_description, :string)
 
     field :eth_balance, :decimal do
-      resolve(&ProjectBalanceResolver.eth_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.eth_balance/3)
     end
 
     field :btc_balance, :decimal do
-      resolve(&ProjectBalanceResolver.btc_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.btc_balance/3)
     end
 
     field :usd_balance, :decimal do
-      resolve(&ProjectBalanceResolver.usd_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.usd_balance/3)
     end
 
     field :funds_raised_icos, list_of(:currency_amount) do
@@ -159,7 +159,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:icos, list_of(:ico), resolve: assoc(:icos))
 
     field :signals, list_of(:signal) do
-      resolve(&ProjectResolver.signals/3)
+      cache_resolve_dataloader(&ProjectResolver.signals/3)
     end
 
     field :price_to_book_ratio, :decimal do

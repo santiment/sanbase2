@@ -17,12 +17,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.Voting.{Post, Tag}
 
-  alias Sanbase.{Prices, Github, ExternalServices.Etherscan}
+  alias Sanbase.{
+    Prices,
+    Github,
+    ExternalServices.Etherscan
+  }
 
   alias SanbaseWeb.Graphql.SanbaseRepo
   alias SanbaseWeb.Graphql.PriceStore
   alias SanbaseWeb.Graphql.Helpers.Cache
 
+  alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
   alias Sanbase.Repo
 
   def all_projects(_parent, args, _resolution, only_project_transparency \\ nil) do
@@ -268,12 +273,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> eth_balance_loader(project)
-    |> on_load(&eth_balance_from_loader(&1, project))
-  end
-
   # Helper functions
 
   defp gen_measurements_list(measurements) do
@@ -285,81 +284,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Enum.reject(fn elem -> elem =~ ~r/[a-z]/ end)
 
     {:ok, list}
-  end
-
-  defp eth_balance_loader(loader, project) do
-    loader
-    |> Dataloader.load(SanbaseRepo, :eth_addresses, project)
-  end
-
-  defp eth_balance_from_loader(loader, project) do
-    balance =
-      loader
-      |> Dataloader.get(SanbaseRepo, :eth_addresses, project)
-      |> Stream.reject(&is_nil/1)
-      |> Stream.map(& &1.latest_eth_wallet_data)
-      |> Stream.reject(&is_nil/1)
-      |> Stream.map(& &1.balance)
-      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
-
-    {:ok, balance}
-  end
-
-  def btc_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> btc_balance_loader(project)
-    |> on_load(&btc_balance_from_loader(&1, project))
-  end
-
-  defp btc_balance_loader(loader, project) do
-    loader
-    |> Dataloader.load(SanbaseRepo, :btc_addresses, project)
-  end
-
-  def btc_balance_from_loader(loader, project) do
-    balance =
-      loader
-      |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
-      |> Stream.reject(&is_nil/1)
-      |> Stream.map(& &1.latest_btc_wallet_data)
-      |> Stream.reject(&is_nil/1)
-      |> Stream.map(& &1.balance)
-      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
-
-    {:ok, balance}
-  end
-
-  def usd_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
-    loader
-    |> usd_balance_loader(project)
-    |> on_load(&usd_balance_from_loader(&1, project))
-  end
-
-  defp usd_balance_loader(loader, project) do
-    loader
-    |> eth_balance_loader(project)
-    |> btc_balance_loader(project)
-    |> Dataloader.load(PriceStore, "ETH_USD", :last)
-    |> Dataloader.load(PriceStore, "BTC_USD", :last)
-  end
-
-  defp usd_balance_from_loader(loader, project) do
-    with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
-         {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
-         eth_price when not is_nil(eth_price) <-
-           Dataloader.get(loader, PriceStore, "ETH_USD", :last),
-         btc_price when not is_nil(btc_price) <-
-           Dataloader.get(loader, PriceStore, "BTC_USD", :last) do
-      {:ok,
-       Decimal.add(
-         Decimal.mult(eth_balance, eth_price),
-         Decimal.mult(btc_balance, btc_price)
-       )}
-    else
-      error ->
-        Logger.warn("Cannot calculate USD balance. Reason: #{inspect(error)}")
-        {:ok, nil}
-    end
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
@@ -631,9 +555,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def price_to_book_ratio(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
-    |> usd_balance_loader(project)
+    |> ProjectBalanceResolver.usd_balance_loader(project)
     |> on_load(fn loader ->
-      with {:ok, usd_balance} <- usd_balance_from_loader(loader, project),
+      with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
            false <- is_nil(usd_balance) || is_nil(market_cap),
            false <- Decimal.cmp(usd_balance, Decimal.new(0)) == :eq do
@@ -647,9 +571,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def signals(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
-    |> usd_balance_loader(project)
+    |> ProjectBalanceResolver.usd_balance_loader(project)
     |> on_load(fn loader ->
-      with {:ok, usd_balance} <- usd_balance_from_loader(loader, project),
+      with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
            false <- is_nil(usd_balance) || is_nil(market_cap),
            :lt <- Decimal.cmp(market_cap, usd_balance) do
@@ -663,22 +587,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       else
         _ ->
           {:ok, []}
-      end
-    end)
-  end
-
-  def eth_address_balance(%ProjectEthAddress{} = eth_address, _args, %{
-        context: %{loader: loader}
-      }) do
-    loader
-    |> Dataloader.load(SanbaseRepo, :latest_eth_wallet_data, eth_address)
-    |> on_load(fn loader ->
-      with latest_eth_wallet_data when not is_nil(latest_eth_wallet_data) <-
-             Dataloader.get(loader, SanbaseRepo, :latest_eth_wallet_data, eth_address),
-           balance <- latest_eth_wallet_data.balance do
-        {:ok, balance}
-      else
-        _ -> {:ok, nil}
       end
     end)
   end

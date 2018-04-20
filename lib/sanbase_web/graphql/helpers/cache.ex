@@ -56,10 +56,22 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     # Caching is only possible for query resolvers for now. Field resolvers are
     # not supported, because they are scoped on their root object, we can't get
     # a good, general cache key for arbitrary root objects
-    fn %{}, args, resolution ->
-      ConCache.get_or_store(@cache_name, cache_key(name, args), fn ->
-        resolver_fn.(%{}, args, resolution)
-      end)
+    fn
+      %Sanbase.Model.Project{id: id} = project, args, resolution ->
+        {:ok, value} =
+          ConCache.get_or_store(@cache_name, cache_key({name, id}, args), fn ->
+            {:ok, resolver_fn.(project, args, resolution)}
+          end)
+
+        value
+
+      %{}, args, resolution ->
+        {:ok, value} =
+          ConCache.get_or_store(@cache_name, cache_key(name, args), fn ->
+            {:ok, resolver_fn.(%{}, args, resolution)}
+          end)
+
+        value
     end
   end
 

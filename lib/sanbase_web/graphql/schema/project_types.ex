@@ -3,11 +3,16 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   import Absinthe.Resolution.Helpers
+  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
-  alias SanbaseWeb.Graphql.Resolvers.IcoResolver
-  alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
-  alias SanbaseWeb.Graphql.Resolvers.EtherbiResolver
+  alias SanbaseWeb.Graphql.Resolvers.{
+    ProjectResolver,
+    ProjectBalanceResolver,
+    IcoResolver,
+    TwitterResolver,
+    EtherbiResolver
+  }
+
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   # Includes all available fields
@@ -57,23 +62,23 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:project_transparency_description, :string)
 
     field :eth_balance, :decimal do
-      resolve(&ProjectResolver.eth_balance/3)
+      resolve(&ProjectBalanceResolver.eth_balance/3)
     end
 
     field :btc_balance, :decimal do
-      resolve(&ProjectResolver.btc_balance/3)
+      resolve(&ProjectBalanceResolver.btc_balance/3)
     end
 
     field :usd_balance, :decimal do
-      resolve(&ProjectResolver.usd_balance/3)
+      resolve(&ProjectBalanceResolver.usd_balance/3)
     end
 
     field :funds_raised_icos, list_of(:currency_amount) do
-      resolve(&ProjectResolver.funds_raised_icos/3)
+      cache_resolve(&ProjectResolver.funds_raised_icos/3)
     end
 
     field :roi_usd, :decimal do
-      resolve(&ProjectResolver.roi_usd/3)
+      cache_resolve(&ProjectResolver.roi_usd/3)
     end
 
     field(:coinmarketcap_id, :string)
@@ -136,19 +141,19 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :funds_raised_usd_ico_end_price, :decimal do
-      resolve(&ProjectResolver.funds_raised_usd_ico_end_price/3)
+      cache_resolve(&ProjectResolver.funds_raised_usd_ico_end_price/3)
     end
 
     field :funds_raised_eth_ico_end_price, :decimal do
-      resolve(&ProjectResolver.funds_raised_eth_ico_end_price/3)
+      cache_resolve(&ProjectResolver.funds_raised_eth_ico_end_price/3)
     end
 
     field :funds_raised_btc_ico_end_price, :decimal do
-      resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
+      cache_resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
     end
 
     field :initial_ico, :ico do
-      resolve(&ProjectResolver.initial_ico/3)
+      cache_resolve(&ProjectResolver.initial_ico/3)
     end
 
     field(:icos, list_of(:ico), resolve: assoc(:icos))
@@ -197,7 +202,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:address, non_null(:string))
 
     field :balance, :decimal do
-      resolve(&ProjectResolver.eth_address_balance/3)
+      resolve(&ProjectBalanceResolver.eth_address_balance/3)
     end
   end
 

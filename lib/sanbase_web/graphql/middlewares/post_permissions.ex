@@ -3,7 +3,15 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
 
   alias Absinthe.Resolution
 
-  @allowed_fields_for_anon_users ["title", "shortDesc"]
+  @allowed_fields_for_anon_users [
+    "id",
+    "title",
+    "shortDesc",
+    "totalSanVotes",
+    "user",
+    "createdAt",
+    "state"
+  ]
 
   def call(%Resolution{context: %{auth: %{auth_method: :user_token}}} = resolution, _) do
     resolution

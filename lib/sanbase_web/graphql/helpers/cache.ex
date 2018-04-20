@@ -15,14 +15,27 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     end
   end
 
+  defmacro cache_resolve_dataloader(captured_mfa_ast) do
+    quote do
+      middleware(
+        Absinthe.Resolution,
+        CacheMod.dataloader_from(unquote(captured_mfa_ast))
+      )
+    end
+  end
+
   def from(captured_mfa) when is_function(captured_mfa) do
-    fun_name =
-      captured_mfa
-      |> :erlang.fun_info()
-      |> Keyword.get(:name)
+    fun_name = captured_mfa |> captured_mfa_name()
 
     captured_mfa
     |> resolver(fun_name)
+  end
+
+  def dataloader_from(captured_mfa) when is_function(captured_mfa) do
+    fun_name = captured_mfa |> captured_mfa_name()
+
+    captured_mfa
+    |> dataloader_resolver(fun_name)
   end
 
   def from(fun, fun_name) when is_function(fun) do
@@ -53,9 +66,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   # Private functions
 
   defp resolver(resolver_fn, name) do
-    # Caching is only possible for query resolvers for now. Field resolvers are
-    # not supported, because they are scoped on their root object, we can't get
-    # a good, general cache key for arbitrary root objects
+    # Works only for top-level resolvers and fields with root object Project
     fn
       %Sanbase.Model.Project{id: id} = project, args, resolution ->
         {:ok, value} =
@@ -72,6 +83,51 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
           end)
 
         value
+    end
+  end
+
+  defp dataloader_resolver(resolver_fn, name) do
+    # Works only for top-level resolvers and fields with root object Project
+    fn
+      %Sanbase.Model.Project{id: id} = project, args, resolution ->
+        cache_key = cache_key({name, id}, args)
+
+        case ConCache.get(@cache_name, cache_key) do
+          nil ->
+            {:middleware, midl, {loader, callback}} = resolver_fn.(project, args, resolution)
+
+            caching_callback = fn loader ->
+              value = callback.(loader)
+              ConCache.put(@cache_name, cache_key, value)
+
+              value
+            end
+
+            {:middleware, midl, {loader, caching_callback}}
+
+          value ->
+            value
+        end
+
+      %{}, args, resolution ->
+        cache_key = cache_key(name, args)
+
+        case ConCache.get(@cache_name, cache_key) do
+          nil ->
+            {:middleware, midl, {loader, callback}} = resolver_fn.(%{}, args, resolution)
+
+            caching_callback = fn loader_arg ->
+              value = callback.(loader_arg)
+              ConCache.put(@cache_name, cache_key, value)
+
+              value
+            end
+
+            {:middleware, midl, {loader, caching_callback}}
+
+          value ->
+            value
+        end
     end
   end
 
@@ -100,5 +156,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   defp sha256(data) do
     :crypto.hash(:sha256, data)
     |> Base.encode16()
+  end
+
+  defp captured_mfa_name(captured_mfa) do
+    captured_mfa
+    |> :erlang.fun_info()
+    |> Keyword.get(:name)
   end
 end

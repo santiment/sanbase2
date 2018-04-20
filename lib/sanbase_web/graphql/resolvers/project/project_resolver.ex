@@ -2,8 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
   import Ecto.Query
-  import Absinthe.Resolution.Helpers, except: [async: 1]
-  import SanbaseWeb.Graphql.Helpers.Async
+  import Absinthe.Resolution.Helpers
 
   alias Sanbase.Model.{
     Project,
@@ -11,70 +10,59 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     MarketSegment,
     Infrastructure,
     ProjectTransparencyStatus,
+    ProjectEthAddress,
     Ico,
     Infrastructure
   }
 
   alias Sanbase.Voting.{Post, Tag}
 
-  alias Sanbase.{
-    Prices,
-    Github
-  }
+  alias Sanbase.Prices
+  alias Sanbase.Github
+  alias Sanbase.ExternalServices.Etherscan
 
-  alias Sanbase.Repo
+  alias SanbaseWeb.Graphql.SanbaseRepo
+  alias SanbaseWeb.Graphql.PriceStore
   alias SanbaseWeb.Graphql.Helpers.Cache
+
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
+  alias Sanbase.Repo
 
-  def all_projects(_parent, args, _resolution, only_project_transparency \\ nil) do
-    only_project_transparency =
-      case only_project_transparency do
-        nil -> Map.get(args, :only_project_transparency, false)
-        value -> value
-      end
+  def all_projects(parent, args, %{context: %{basic_auth: true}}), do: all_projects(parent, args)
 
-    query =
-      if only_project_transparency do
-        from(p in Project, where: p.project_transparency, order_by: p.name)
-      else
-        from(p in Project, where: not is_nil(p.coinmarketcap_id), order_by: p.name)
-      end
+  def all_projects(parent, args, %{context: %{current_user: user}}) when not is_nil(user), do: all_projects(parent, args)
 
-    projects =
-      query
-      |> Repo.all()
-      |> Repo.preload([
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ])
+  def all_projects(_parent, _args, _context), do: {:error, :unauthorized}
+
+  defp all_projects(parent, args) do
+    only_project_transparency = Map.get(args, :only_project_transparency, false)
+
+    query = cond do
+      only_project_transparency ->
+        from p in Project,
+        where: p.project_transparency
+      true ->
+        from p in Project,
+        where: not is_nil(p.coinmarketcap_id)
+    end
+
+    projects = case coinmarketcap_requested?(resolution) do
+      true -> Repo.all(query) |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+      _ -> Repo.all(query)
+    end
 
     {:ok, projects}
   end
 
-  def all_erc20_projects(_root, _args, _resolution) do
-    erc20_projects =
-      Project.erc20_projects()
-      |> Repo.preload([
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ])
-      |> Enum.dedup()
+  def project(parent, args, %{context: %{basic_auth: true}}), do: project(parent, args)
 
-    {:ok, erc20_projects}
-  end
+  def project(parent, args, %{context: %{current_user: user}}) when not is_nil(user), do: project(parent, args)
 
-  def all_currency_projects(_root, _args, _resolution) do
-    currency_projects =
-      Project.currency_projects()
-      |> Repo.preload([
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ])
+  def project(_parent, _args, _context), do: {:error, :unauthorized}
 
-    {:ok, currency_projects}
-  end
+  defp project(parent, args) do
+    id = Map.get(args, :id)
 
-  def project(_parent, %{id: id}, _resolution) do
     project =
       Project
       |> Repo.get(id)
@@ -82,8 +70,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     {:ok, project}
   end
-
-  def slug(%Project{coinmarketcap_id: coinmarketcap_id}, _, _), do: {:ok, coinmarketcap_id}
 
   def project_by_slug(_parent, %{slug: slug}, _resolution) do
     Project
@@ -110,6 +96,101 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
 
     {:ok, projects}
+  end
+
+  def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
+    async(Cache.func(fn -> calculate_eth_spent(ticker, days) end, {:eth_spent, ticker, days}))
+  end
+
+  def calculate_eth_spent(ticker, days) do
+    today = Timex.now()
+    days_ago = Timex.shift(today, days: -days)
+
+    with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
+      {:ok, eth_spent}
+    else
+      error ->
+        Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
+        {:ok, nil}
+    end
+  end
+
+  def eth_balances_by_id(only_project_transparency, project_ids) do
+    query =
+      from(
+        a in ProjectEthAddress,
+        inner_join: wd in LatestEthWalletData,
+        on: wd.address == a.address,
+        where:
+          a.project_id in ^project_ids and
+            (not (^only_project_transparency) or a.project_transparency),
+        group_by: a.project_id,
+        select: %{project_id: a.project_id, balance: sum(wd.balance)}
+      )
+
+    balances = Repo.all(query)
+
+    {:ok, balance}
+  end
+
+    {:ok, balance}
+  end
+
+  def btc_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> btc_balance_loader(project)
+    |> on_load(&btc_balance_from_loader(&1, project))
+  end
+
+  defp btc_balance_loader(loader, project) do
+    loader
+    |> Dataloader.load(SanbaseRepo, :btc_addresses, project)
+  end
+
+  def btc_balance_from_loader(loader, project) do
+    balance =
+      loader
+      |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
+      |> Stream.reject(&is_nil/1)
+      |> Stream.map(& &1.latest_btc_wallet_data)
+      |> Stream.reject(&is_nil/1)
+      |> Stream.map(& &1.balance)
+      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+
+    {:ok, balance}
+  end
+
+  def usd_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> usd_balance_loader(project)
+    |> on_load(&usd_balance_from_loader(&1, project))
+  end
+
+  defp usd_balance_loader(loader, project) do
+    loader
+    |> eth_balance_loader(project)
+    |> btc_balance_loader(project)
+    |> Dataloader.load(PriceStore, "ETH_USD", :last)
+    |> Dataloader.load(PriceStore, "BTC_USD", :last)
+  end
+
+  defp usd_balance_from_loader(loader, project) do
+    with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
+         {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
+         eth_price when not is_nil(eth_price) <-
+           Dataloader.get(loader, PriceStore, "ETH_USD", :last),
+         btc_price when not is_nil(btc_price) <-
+           Dataloader.get(loader, PriceStore, "BTC_USD", :last) do
+      {:ok,
+       Decimal.add(
+         Decimal.mult(eth_balance, eth_price),
+         Decimal.mult(btc_balance, btc_price)
+       )}
+    else
+      error ->
+        Logger.warn("Cannot calculate USD balance. Reason: #{inspect(error)}")
+        {:ok, nil}
+    end
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
@@ -211,7 +292,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_usd |> float_or_nil()}
+    {:ok, price_usd}
   end
 
   def price_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -221,7 +302,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_btc |> float_or_nil()}
+    {:ok, price_btc}
   end
 
   def price_btc(_parent, _args, _resolution), do: {:ok, nil}
@@ -231,24 +312,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, volume_usd |> float_or_nil()}
+    {:ok, volume_usd}
   end
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def volume_change_24h(%Project{id: id} = project, _args, _resolution) do
-    async(Cache.func(fn -> calculate_volume_change_24h(project) end, {:volume_change_24h, id}))
+  def volume_change_24h(%Project{ticker: ticker}, _args, _resolution) do
+    async(Cache.func(fn -> calculate_volume_change_24h(ticker) end, {:volume_change_24h, ticker}))
   end
 
-  defp calculate_volume_change_24h(%Project{} = project) do
-    measurement_name = Sanbase.Influxdb.Measurement.name_from(project)
+  defp calculate_volume_change_24h(ticker) do
+    pair = "#{ticker}_USD"
     yesterday = Timex.shift(Timex.now(), days: -1)
     the_other_day = Timex.shift(Timex.now(), days: -2)
 
     with {:ok, [[_dt, today_vol]]} <-
-           Prices.Store.fetch_mean_volume(measurement_name, yesterday, Timex.now()),
+           Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
          {:ok, [[_dt, yesterday_vol]]} <-
-           Prices.Store.fetch_mean_volume(measurement_name, the_other_day, yesterday),
+           Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
          true <- yesterday_vol > 0 do
       {:ok, (today_vol - yesterday_vol) * 100 / yesterday_vol}
     else
@@ -285,7 +366,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, market_cap_usd |> float_or_nil()}
+    {:ok, market_cap_usd}
   end
 
   def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -303,14 +384,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def available_supply(_parent, _args, _resolution), do: {:ok, nil}
 
   def total_supply(
-        %Project{
-          total_supply: total_supply,
-          latest_coinmarketcap_data: %LatestCoinmarketcapData{total_supply: cmc_total_supply}
-        },
+        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{total_supply: total_supply}},
         _args,
         _resolution
       ) do
-    {:ok, total_supply || cmc_total_supply}
+    {:ok, total_supply}
   end
 
   def total_supply(_parent, _args, _resolution), do: {:ok, nil}
@@ -383,27 +461,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, ico}
   end
 
-  @doc """
-  Return the main sale price, which is the maximum token_usd_ico_price from all icos of a project
-  """
-  def ico_price(%Project{id: id}, _args, _resolution) do
-    ico_with_max_price =
-      Project
-      |> Repo.get(id)
-      |> Repo.preload([:icos])
-      |> Map.get(:icos)
-      |> Enum.reject(fn ico -> is_nil(ico.token_usd_ico_price) end)
-      |> Enum.map(fn ico ->
-        %Ico{ico | token_usd_ico_price: Decimal.to_float(ico.token_usd_ico_price)}
-      end)
-      |> Enum.max_by(fn ico -> ico.token_usd_ico_price end, fn -> nil end)
-
-    case ico_with_max_price do
-      %Ico{token_usd_ico_price: ico_price} -> {:ok, ico_price}
-      nil -> {:ok, nil}
-    end
-  end
-
   def price_to_book_ratio(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
     |> ProjectBalanceResolver.usd_balance_loader(project)
@@ -411,8 +468,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
            false <- is_nil(usd_balance) || is_nil(market_cap),
-           false <- usd_balance <= 0.001 do
-        {:ok, market_cap / usd_balance}
+           false <- Decimal.cmp(usd_balance, Decimal.new(0)) == :eq do
+        {:ok, Decimal.div(market_cap, usd_balance)}
       else
         _ ->
           {:ok, nil}
@@ -427,12 +484,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
            false <- is_nil(usd_balance) || is_nil(market_cap),
-           true <- usd_balance > market_cap do
+           :lt <- Decimal.cmp(market_cap, usd_balance) do
         {:ok,
          [
            %{
              name: "balance_bigger_than_mcap",
-             description: "The balance of the project is bigger than its market capitalization"
+             description: "The balance of the project is bigger than it's market capitalization"
            }
          ]}
       else
@@ -462,8 +519,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     {:ok, Repo.all(query)}
   end
-
-  # Calling Decimal.to_float/1 with `nil` crashes the process
-  defp float_or_nil(nil), do: nil
-  defp float_or_nil(num), do: Decimal.to_float(num)
 end

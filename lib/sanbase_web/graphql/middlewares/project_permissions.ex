@@ -23,7 +23,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
   # Helper functions
 
   defp has_not_allowed_fields?(resolution) do
-    not_allowed_fields = ["initial_ico", "icos"]
+    not_allowed_fields = [
+      "initial_ico",
+      "icos",
+      "funds_raised_usd_ico_end_price",
+      "funds_raised_icos"
+    ]
 
     requested_fields = requested_fields(resolution)
 

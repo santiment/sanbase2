@@ -16,7 +16,7 @@ import Panel from './../components/Panel'
 import PostList from './../components/PostList'
 import { simpleSort } from './../utils/sortMethods'
 import ModalConfirmDeletePost from './Insights/ConfirmDeletePostModal'
-import currentPollGQL from './Insights/currentPollGQL'
+import { allInsightsPublicGQL, allInsightsGQL } from './Insights/currentPollGQL'
 import './EventVotes.css'
 
 const POLLING_INTERVAL = 10000
@@ -32,12 +32,12 @@ const voteMutationHelper = ({postId, action = 'vote'}) => ({
   },
   update: (proxy, { data: { vote, unvote } }) => {
     const changedPost = action === 'vote' ? vote : unvote
-    const data = proxy.readQuery({ query: currentPollGQL })
-    const newPosts = [...data.currentPoll.posts]
+    const data = proxy.readQuery({ query: allInsightsPublicGQL })
+    const newPosts = [...data.allInsights]
     const postIndex = newPosts.findIndex(post => post.id === changedPost.id)
     newPosts[postIndex].votedAt = action === 'vote' ? new Date() : null
-    data.currentPoll.posts = newPosts
-    proxy.writeQuery({ query: currentPollGQL, data })
+    data.allInsights = newPosts
+    proxy.writeQuery({ query: allInsightsPublicGQL, data })
   }
 })
 
@@ -257,9 +257,9 @@ export const sortByNewest = posts => {
 }
 
 const mapDataToProps = props => {
-  const { Poll, ownProps } = props
+  const { Insights, ownProps } = props
   const filter = ownProps.match.path.split('/')[2] || 'popular'
-  const posts = Poll.allInsights || []
+  const posts = Insights.allInsights || []
   let filteredPosts = posts
     // TODO: We should return this filter in the near future
     // .filter(post => post.state === 'approved')
@@ -283,8 +283,8 @@ const mapDataToProps = props => {
     )
     : []
 
-  if (Poll.error) {
-    throw new Error(Poll.error)
+  if (Insights.error) {
+    throw new Error(Insights.error)
   }
 
   return {
@@ -293,14 +293,14 @@ const mapDataToProps = props => {
       filteredPosts,
       userPosts,
       postsByUserId,
-      refetch: Poll.refetch,
-      loading: Poll.loading,
-      isEmpty: Poll.currentPoll &&
+      refetch: Insights.refetch,
+      loading: Insights.loading,
+      isEmpty: Insights.currentPoll &&
         filteredPosts &&
         filteredPosts.length === 0,
       hasUserInsights: userPosts.length > 0,
-      isError: !!Poll.error || false,
-      errorMessage: Poll.error ? Poll.error.message : ''
+      isError: !!Insights.error || false,
+      errorMessage: Insights.error ? Insights.error.message : ''
     }
   }
 }
@@ -318,10 +318,21 @@ const enhance = compose(
   withState('isToggledLoginRequest', 'toggleLoginRequest', false),
   withState('isToggledDeletePostRequest', 'toggleDeletePostRequest', false),
   withState('deletePostId', 'setDeletePostId', undefined),
-  graphql(currentPollGQL, {
+  graphql(allInsightsPublicGQL, {
+    name: 'Insights',
+    props: mapDataToProps,
+    options: ({user}) => ({
+      skip: !user,
+      pollInterval: POLLING_INTERVAL
+    })
+  }),
+  graphql(allInsightsGQL, {
     name: 'Poll',
     props: mapDataToProps,
-    options: { pollInterval: POLLING_INTERVAL }
+    options: ({user}) => ({
+      skip: user,
+      pollInterval: POLLING_INTERVAL
+    })
   }),
   graphql(votePostGQL, {
     name: 'votePost'

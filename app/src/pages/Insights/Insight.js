@@ -1,4 +1,5 @@
 import React, { createElement } from 'react'
+import { Redirect } from 'react-router-dom'
 import { Helmet } from 'react-helmet'
 import {
   compose,
@@ -41,6 +42,9 @@ const Insight = ({
       return <h1 style={{ textDecoration: 'underline' }}>{props.children}</h1>
     }
   })
+  if (!post) {
+    return <Redirect to='/insights' />
+  }
   return (
     <div className='page insight'>
       <Helmet>

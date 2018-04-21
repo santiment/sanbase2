@@ -63,7 +63,7 @@ const Post = ({
   deletePost,
   history,
   moderationComment = null,
-  state = STATES.waiting,
+  state = STATES.approved,
   showStatus = false
 }) => {
   return (
@@ -98,7 +98,7 @@ const Post = ({
         <div className='event-post-controls'>
           {showStatus && <Status
             moderationComment={moderationComment}
-            status={!state ? STATES.waiting : state} />}
+            status={!state ? STATES.approved : state} />}
           {showStatus && <Button
             size='mini'
             onClick={() => deletePost(id)}

@@ -81,8 +81,16 @@ defmodule SanbaseWeb.Graphql.PostTest do
     query = """
     {
       post(id: #{post.id}) {
+        id,
         title,
-        shortDesc
+        shortDesc,
+        state,
+        createdAt,
+        user {
+          id,
+          username
+        },
+        totalSanVotes
       }
     }
     """
@@ -91,7 +99,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
       build_conn()
       |> post("/graphql", query_skeleton(query, "post"))
 
-    assert json_response(result, 200)["data"]["post"] |> Map.get("title") == post.title
+    assert json_response(result, 200)["data"]["post"] |> Map.get("state") == post.state
   end
 
   test "getting all posts as anon user", %{user: user} do
@@ -143,7 +151,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     query = """
     {
       allInsights {
-        id,
+        text,
       }
     }
     """

@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     end
   end
 
-  object :user_for_post do
+  object :post_author do
     field(:id, non_null(:id))
     field(:username, :string)
   end

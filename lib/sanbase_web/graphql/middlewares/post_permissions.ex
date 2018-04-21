@@ -10,7 +10,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
     "totalSanVotes",
     "user",
     "createdAt",
-    "state"
+    "state",
+    "__typename"
   ]
 
   def call(%Resolution{context: %{auth: %{auth_method: :user_token}}} = resolution, _) do

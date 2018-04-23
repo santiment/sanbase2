@@ -213,7 +213,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights, list_of(:post) do
       middleware(PostPermissions)
 
-      cache_resolve(&PostResolver.all_insights/3)
+      resolve(&PostResolver.all_insights/3)
     end
 
     @desc "Get all posts for given user"
@@ -222,7 +222,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      cache_resolve(&PostResolver.all_insights_for_user/3)
+      resolve(&PostResolver.all_insights_for_user/3)
     end
 
     @desc "Get all posts a user has voted for"
@@ -231,7 +231,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      cache_resolve(&PostResolver.all_insights_user_voted_for/3)
+      resolve(&PostResolver.all_insights_user_voted_for/3)
     end
 
     @desc "Get all tags"

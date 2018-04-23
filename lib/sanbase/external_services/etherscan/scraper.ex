@@ -65,20 +65,20 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   def parse_token_page!(html, project_info) do
     %ProjectInfo{
       project_info
-      | total_supply: total_supply(html) || project_info.total_supply,
-        main_contract_address: main_contract_address(html) || project_info.main_contract_address,
-        token_decimals: token_decimals(html) || project_info.token_decimals,
-        website_link: official_link(html, "Website") || project_info.website_link,
-        email: official_link(html, "Email") |> email() || project_info.email,
-        reddit_link: official_link(html, "Reddit") || project_info.reddit_link,
-        twitter_link: official_link(html, "Twitter") || project_info.twitter_link,
-        btt_link: official_link(html, "Bitcointalk") || project_info.btt_link,
-        blog_link: official_link(html, "Blog") || project_info.blog_link,
-        github_link: official_link(html, "Github") || project_info.github_link,
-        telegram_link: official_link(html, "Telegram") || project_info.telegram_link,
-        slack_link: official_link(html, "Slack") || project_info.slack_link,
-        facebook_link: official_link(html, "Facebook") || project_info.facebook_link,
-        whitepaper_link: official_link(html, "Whitepaper") || project_info.whitepaper_link
+      | total_supply: project_info.total_supply || total_supply(html),
+        main_contract_address: project_info.main_contract_address || main_contract_address(html),
+        token_decimals: project_info.token_decimals || token_decimals(html),
+        website_link: project_info.website_link || official_link(html, "Website"),
+        email: project_info.email || official_link(html, "Email") |> email(),
+        reddit_link: project_info.reddit_link || official_link(html, "Reddit"),
+        twitter_link: project_info.twitter_link || official_link(html, "Twitter"),
+        btt_link: project_info.btt_link || official_link(html, "Bitcointalk"),
+        blog_link: project_info.blog_link || official_link(html, "Blog"),
+        github_link: project_info.github_link || official_link(html, "Github"),
+        telegram_link: project_info.telegram_link || official_link(html, "Telegram"),
+        slack_link: project_info.slack_link || official_link(html, "Slack"),
+        facebook_link: project_info.facebook_link || official_link(html, "Facebook"),
+        whitepaper_link: project_info.whitepaper_link || official_link(html, "Whitepaper")
     }
   end
 

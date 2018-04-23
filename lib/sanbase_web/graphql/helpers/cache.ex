@@ -113,22 +113,24 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     (bytes_size / (1024 * 1024)) |> Float.round(2)
   end
 
-  # Public so it can be used by the resolve macros. You should not use it.
+  @doc false
   def from(captured_mfa) when is_function(captured_mfa) do
+    # Public so it can be used by the resolve macros. You should not use it.
     fun_name = captured_mfa |> captured_mfa_name()
 
     resolver(captured_mfa, fun_name)
   end
 
-  # Public so it can be used by the resolve macros. You should not use it.
+  @doc false
   def from(fun, fun_name) when is_function(fun) do
+    # Public so it can be used by the resolve macros. You should not use it.
     resolver(fun, fun_name)
   end
 
-  # Public so it can be used by the resolve macros. You should not use it.
+  @doc false
   def dataloader_from(captured_mfa) when is_function(captured_mfa) do
+    # Public so it can be used by the resolve macros. You should not use it.
     fun_name = captured_mfa |> captured_mfa_name()
-
     dataloader_resolver(captured_mfa, fun_name)
   end
 
@@ -138,20 +140,16 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     # Works only for top-level resolvers and fields with root object Project
     fn
       %Sanbase.Model.Project{id: id} = project, args, resolution ->
-        {:ok, value} =
-          ConCache.get_or_store(@cache_name, cache_key({name, id}, args), fn ->
-            {:ok, resolver_fn.(project, args, resolution)}
-          end)
+        fun = fn -> resolver_fn.(project, args, resolution) end
 
-        value
+        cache_key({name, id}, args)
+        |> get_or_store(fun)
 
       %{}, args, resolution ->
-        {:ok, value} =
-          ConCache.get_or_store(@cache_name, cache_key(name, args), fn ->
-            {:ok, resolver_fn.(%{}, args, resolution)}
-          end)
+        fun = fn -> resolver_fn.(%{}, args, resolution) end
 
-        value
+        cache_key(name, args)
+        |> get_or_store(fun)
     end
   end
 
@@ -175,50 +173,50 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     # Works only for top-level resolvers and fields with root object Project
     fn
       %Sanbase.Model.Project{id: id} = project, args, resolution ->
-        cache_key = cache_key({name, id}, args)
+        fun = fn -> resolver_fn.(project, args, resolution) end
 
-        case ConCache.get(@cache_name, cache_key) do
-          nil ->
-            {:middleware, midl, {loader, callback}} = resolver_fn.(project, args, resolution)
-
-            caching_callback = fn loader ->
-              value = callback.(loader)
-              ConCache.put(@cache_name, cache_key, {:ok, value})
-
-              value
-            end
-
-            {:middleware, midl, {loader, caching_callback}}
-
-          # Wrap in a tuple to distinguish value = nil from not having a record
-          {:ok, value} ->
-            value
-        end
+        cache_key({name, id}, args)
+        |> get_or_store_dataloader(fun)
 
       %{}, args, resolution ->
-        cache_key = cache_key(name, args)
+        fun = fn -> resolver_fn.(%{}, args, resolution) end
 
-        case ConCache.get(@cache_name, cache_key) do
-          nil ->
-            {:middleware, midl, {loader, callback}} = resolver_fn.(%{}, args, resolution)
-
-            caching_callback = fn loader_arg ->
-              value = callback.(loader_arg)
-              ConCache.put(@cache_name, cache_key, {:ok, value})
-
-              value
-            end
-
-            {:middleware, midl, {loader, caching_callback}}
-
-          # Wrap in a tuple to distinguish value = nil from not having a record
-          {:ok, value} ->
-            value
-        end
+        cache_key(name, args)
+        |> get_or_store_dataloader(fun)
     end
   end
 
   # Calculate the cache key from a given name and arguments.
+
+  defp get_or_store(cache_key, resolver_fn) do
+    {:ok, value} =
+      ConCache.get_or_store(@cache_name, cache_key, fn ->
+        {:ok, resolver_fn.()}
+      end)
+
+    value
+  end
+
+  defp get_or_store_dataloader(cache_key, resolver_fn) do
+    case ConCache.get(@cache_name, cache_key) do
+      nil ->
+        {:middleware, midl, {loader, callback}} = resolver_fn.()
+
+        caching_callback = fn loader_arg ->
+          value = callback.(loader_arg)
+          ConCache.put(@cache_name, cache_key, {:ok, value})
+
+          value
+        end
+
+        {:middleware, midl, {loader, caching_callback}}
+
+      # Wrap in a tuple to distinguish value = nil from not having a record
+      {:ok, value} ->
+        value
+    end
+  end
+
   defp cache_key(name, args) do
     args_hash =
       args

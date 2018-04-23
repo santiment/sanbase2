@@ -11,7 +11,8 @@ const PostList = ({
   isEmpty = true,
   votePost,
   unvotePost,
-  deletePost
+  deletePost,
+  gotoInsight
 }) => (
   <div className='event-posts-list'>
     {Object.keys(posts).map((key, index) => (
@@ -22,6 +23,7 @@ const PostList = ({
         votePost={votePost}
         unvotePost={unvotePost}
         deletePost={deletePost}
+        gotoInsight={gotoInsight}
         {...posts[key]} />
     ))}
   </div>

@@ -63,13 +63,14 @@ const Post = ({
   deletePost,
   history,
   moderationComment = null,
-  state = STATES.waiting,
+  state = STATES.approved,
+  gotoInsight,
   showStatus = false
 }) => {
   return (
     <div className='event-post' onClick={e => {
       if (e.target.className === 'event-post-body') {
-        history.push(`/insights/${id}`)
+        gotoInsight(id)
       }
     }}>
       <div className='event-post-body'>
@@ -98,7 +99,7 @@ const Post = ({
         <div className='event-post-controls'>
           {showStatus && <Status
             moderationComment={moderationComment}
-            status={!state ? STATES.waiting : state} />}
+            status={!state ? STATES.approved : state} />}
           {showStatus && <Button
             size='mini'
             onClick={() => deletePost(id)}

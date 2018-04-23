@@ -9,6 +9,11 @@
   cursor: pointer;
 }
 
+.event-posts-step-confirm .event-post:hover {
+  background-color: white;
+  cursor: default;
+}
+
 .event-post .event-post-index {
   margin-right: 4px;
   margin-top: 2px;

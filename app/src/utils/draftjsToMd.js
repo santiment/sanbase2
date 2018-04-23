@@ -44,7 +44,6 @@ const applyAtomicStyle = (block, entityMap, content) => {
   if (block.type !== 'atomic:image') return content
   const key = block.key
   const link = block.data.src
-  console.log(content)
   return `${content} ![${key || ''}](${link})`
 }
 

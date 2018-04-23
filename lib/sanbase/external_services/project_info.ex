@@ -16,7 +16,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     :email,
     :reddit_link,
     :twitter_link,
-    :bitcointalk_link,
+    :btt_link,
     :blog_link,
     :github_link,
     :telegram_link,

@@ -72,7 +72,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         email: official_link(html, "Email") |> email() || project_info.email,
         reddit_link: official_link(html, "Reddit") || project_info.reddit_link,
         twitter_link: official_link(html, "Twitter") || project_info.twitter_link,
-        bitcointalk_link: official_link(html, "Bitcointalk") || project_info.bitcointalk_link,
+        btt_link: official_link(html, "Bitcointalk") || project_info.btt_link,
         blog_link: official_link(html, "Blog") || project_info.blog_link,
         github_link: official_link(html, "Github") || project_info.github_link,
         telegram_link: official_link(html, "Telegram") || project_info.telegram_link,

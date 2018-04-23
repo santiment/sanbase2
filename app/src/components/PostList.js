@@ -9,10 +9,10 @@ const PostList = ({
   loading = true,
   isError = false,
   isEmpty = true,
-  toggleLoginRequest,
   votePost,
   unvotePost,
-  deletePost
+  deletePost,
+  gotoInsight
 }) => (
   <div className='event-posts-list'>
     {Object.keys(posts).map((key, index) => (
@@ -20,10 +20,10 @@ const PostList = ({
         showStatus={!!userId}
         index={index + 1}
         key={index}
-        toggleLoginRequest={toggleLoginRequest}
         votePost={votePost}
         unvotePost={unvotePost}
         deletePost={deletePost}
+        gotoInsight={gotoInsight}
         {...posts[key]} />
     ))}
   </div>

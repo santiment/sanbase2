@@ -6,7 +6,7 @@ import {
   withState
 } from 'recompose'
 import { graphql } from 'react-apollo'
-import currentPollGQL from './currentPollGQL'
+import { allInsightsPublicGQL } from './currentPollGQL'
 import gql from 'graphql-tag'
 
 const ConfirmDeletePostModal = ({
@@ -56,14 +56,14 @@ const ConfirmDeletePostModal = ({
                     }
                   },
                   update: (proxy, { data: { deletePost } }) => {
-                    const data = proxy.readQuery({ query: currentPollGQL })
-                    const newPosts = [...data.currentPoll.posts]
+                    const data = proxy.readQuery({ query: allInsightsPublicGQL })
+                    const newPosts = [...data.allInsights]
                     const postIndex = newPosts.findIndex(post => post.id === deletePost.id)
                     delete newPosts[postIndex]
-                    data.currentPoll.posts = [
+                    data.allInsights = [
                       ...newPosts.slice(0, postIndex),
                       ...newPosts.slice(postIndex + 1)]
-                    proxy.writeQuery({ query: currentPollGQL, data })
+                    proxy.writeQuery({ query: allInsightsPublicGQL, data })
                   }
                 })
                 .then(data => {

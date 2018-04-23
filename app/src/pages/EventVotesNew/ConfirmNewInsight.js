@@ -31,10 +31,11 @@ const ConfirmPost = ({
 }) => {
   return (
     <ErrorBoundary>
-      <div className='event-posts-new-step'>
+      <div className='event-posts-new-step event-posts-step-confirm'>
         <Post
           votePost={() => {}}
           unvotePost={() => {}}
+          gotoInsight={() => {}}
           user={user} {...post} />
         <div className='event-posts-new-step-control'>
           <Button

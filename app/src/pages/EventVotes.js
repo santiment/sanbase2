@@ -1,6 +1,5 @@
 import React, { Fragment } from 'react'
 import debounce from 'lodash.debounce'
-import { Helmet } from 'react-helmet'
 import Raven from 'raven-js'
 import {
   compose,
@@ -11,15 +10,16 @@ import { connect } from 'react-redux'
 import { Button, Header, Icon, Modal, Message } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
-import { NavLink } from 'react-router-dom'
+import { NavLink, Redirect } from 'react-router-dom'
 import Panel from './../components/Panel'
 import PostList from './../components/PostList'
 import { simpleSort } from './../utils/sortMethods'
 import ModalConfirmDeletePost from './Insights/ConfirmDeletePostModal'
 import { allInsightsPublicGQL, allInsightsGQL } from './Insights/currentPollGQL'
+import InsightsLayout from './Insights/InsightsLayout'
 import './EventVotes.css'
 
-const POLLING_INTERVAL = 10000
+const POLLING_INTERVAL = 5000
 
 const voteMutationHelper = ({postId, action = 'vote'}) => ({
   variables: {postId: parseInt(postId, 10)},
@@ -32,20 +32,22 @@ const voteMutationHelper = ({postId, action = 'vote'}) => ({
   },
   update: (proxy, { data: { vote, unvote } }) => {
     const changedPost = action === 'vote' ? vote : unvote
-    const data = proxy.readQuery({ query: allInsightsPublicGQL })
+    const data = proxy.readQuery({ query: allInsightsGQL })
     const newPosts = [...data.allInsights]
     const postIndex = newPosts.findIndex(post => post.id === changedPost.id)
     newPosts[postIndex].votedAt = action === 'vote' ? new Date() : null
     data.allInsights = newPosts
-    proxy.writeQuery({ query: allInsightsPublicGQL, data })
+    proxy.writeQuery({ query: allInsightsGQL, data })
   }
 })
 
 const getPosts = (match, history, Posts) => {
-  const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
   const showedUserByIdPosts = match.path.split('/')[2] === 'users'
-  if (showedMyPosts) {
-    return Posts.userPosts
+  if (match.path.split('/')[2] === 'my') {
+    if (Posts.hasUserInsights) {
+      return Posts.userPosts
+    }
+    return []
   }
   if (showedUserByIdPosts) {
     return Posts.postsByUserId
@@ -79,7 +81,9 @@ const EventVotes = ({
   deletePostId = undefined
 }) => {
   const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
-
+  if (match.path.split('/')[2] === 'my' && !Posts.hasUserInsights) {
+    return <Redirect to='/insights/newest' />
+  }
   return ([
     <Fragment key='modal-login-request'>
       {isToggledLoginRequest &&
@@ -98,33 +102,25 @@ const EventVotes = ({
             toggleDeletePostRequest(!isToggledDeletePostRequest)
           }} />}
     </Fragment>,
-    <div className='page event-votes' key='page-event-votes'>
-      <Helmet>
-        <title>SANbase: Insights</title>
-      </Helmet>
+    <Fragment key='page-event-votes'>
       {location.state && location.state.postCreated &&
-        <Message positive>
-          <Message.Header>
-            <span role='img' aria-label='Clap'>👏</span>
-            <span role='img' aria-label='Clap'>👏</span>
-            <span role='img' aria-label='Clap'>👏</span>
-            Insight was created
-          </Message.Header>
-          <p>We need some time to approve your insight...</p>
-        </Message>}
-      <div className='event-votes-rows'>
-        <div className='event-votes-navs'>
-          {Posts.hasUserInsights &&
-            <NavLink
-              className='event-votes-navigation__add-link'
-              to={'/insights/my'}>
-              My Insights
-            </NavLink>}
-        </div>
+        <div style={{
+          paddingTop: 16,
+          maxWidth: 620,
+          width: '100%',
+          margin: '0 auto'}}>
+          <Message positive>
+            <Message.Header>
+              <span role='img' aria-label='Clap'>👏</span>
+              <span role='img' aria-label='Clap'>👏</span>
+              <span role='img' aria-label='Clap'>👏</span>
+              Insight was created
+            </Message.Header>
+            <p>We need some time to approve your insight...</p>
+          </Message>
+        </div>}
+      <InsightsLayout isLogin={!!user.token}>
         <Panel className='event-votes-content'>
-          <div className='panel-header'>
-            Insights
-          </div>
           <div className='event-votes-control'>
             <div className='event-votes-navigation'>
               <NavLink
@@ -143,17 +139,16 @@ const EventVotes = ({
               </NavLink>
             </div>
             <div>
-
               {user.token
                 ? <NavLink
                   className='event-votes-navigation__add-link'
                   to={'/insights/new'}>
-                  Add new insight
+                  <Icon name='plus' /> New insight
                 </NavLink>
                 : <a
                   onClick={() => toggleLoginRequest(!isToggledLoginRequest)}
                   className='event-votes-navigation__add-link'>
-                    Add new insight
+                  <Icon name='plus' /> New insight
                   </a>}
             </div>
           </div>
@@ -162,7 +157,13 @@ const EventVotes = ({
             : <PostList {...Posts}
               posts={getPosts(match, history, Posts)}
               userId={showedMyPosts ? user.data.id : undefined}
-              toggleLoginRequest={toggleLoginRequest}
+              gotoInsight={id => {
+                if (!user.token) {
+                  toggleLoginRequest(true)
+                } else {
+                  history.push(`/insights/${id}`)
+                }
+              }}
               deletePost={postId => {
                 setDeletePostId(postId)
                 toggleDeletePostRequest(true)
@@ -183,28 +184,8 @@ const EventVotes = ({
               }, 100)}
           />}
         </Panel>
-        <div className='event-votes-sidebar'>
-          <Panel>
-            <div className='cta-subscription'>
-              <span className=''>Get new signals/insights about crypto in your inbox, every day</span>
-              <div id='mc_embed_signup'>
-                <form action='//santiment.us14.list-manage.com/subscribe/post?u=122a728fd98df22b204fa533c&amp;id=80b55fcb45' method='post' id='mc-embedded-subscribe-form' name='mc-embedded-subscribe-form' className='validate' target='_blank'>
-                  <div id='mc_embed_signup_scroll'>
-                    <input type='email' defaultValue='' name='EMAIL' className='email' id='mce-EMAIL' placeholder='Your email address' required />
-                    <div className='hidden-xs-up' aria-hidden='true'>
-                      <input type='text' name='b_122a728fd98df22b204fa533c_80b55fcb45' tabIndex='-1' value='' />
-                    </div>
-                    <div className='clear'>
-                      <input type='submit' value='Subscribe' name='subscribe' id='mc-embedded-subscribe' className='button' />
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </Panel>
-        </div>
-      </div>
-    </div>
+      </InsightsLayout>
+    </Fragment>
   ])
 }
 
@@ -295,6 +276,7 @@ const mapDataToProps = props => {
       userPosts,
       postsByUserId,
       refetch: Insights.refetch,
+      updateQuery: Insights.updateQuery,
       loading: Insights.loading,
       isEmpty: Insights.currentPoll &&
         filteredPosts &&
@@ -323,15 +305,15 @@ const enhance = compose(
     name: 'Insights',
     props: mapDataToProps,
     options: ({user}) => ({
-      skip: !user,
+      skip: user.token,
       pollInterval: POLLING_INTERVAL
     })
   }),
   graphql(allInsightsGQL, {
-    name: 'Poll',
+    name: 'Insights',
     props: mapDataToProps,
     options: ({user}) => ({
-      skip: user,
+      skip: !user.token,
       pollInterval: POLLING_INTERVAL
     })
   }),

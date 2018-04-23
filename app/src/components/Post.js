@@ -64,16 +64,13 @@ const Post = ({
   history,
   moderationComment = null,
   state = STATES.approved,
-  toggleLoginRequest,
+  gotoInsight,
   showStatus = false
 }) => {
-  console.log(votedAt)
   return (
     <div className='event-post' onClick={e => {
-      if (!user.username) {
-        toggleLoginRequest(true)
-      } else if (e.target.className === 'event-post-body') {
-        history.push(`/insights/${id}`)
+      if (e.target.className === 'event-post-body') {
+        gotoInsight(id)
       }
     }}>
       <div className='event-post-body'>

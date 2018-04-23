@@ -6,6 +6,7 @@ import PostsNewHeader from './EventVotesNewHeader'
 import ConfirmPost from './ConfirmNewInsight'
 import CreateTitle from './CreateTitle'
 import CreateBody from './CreateBody'
+import InsightsLayout from './../Insights/InsightsLayout'
 import './EventVotesNew.css'
 
 class EventVotesNew extends Component {
@@ -47,39 +48,38 @@ class EventVotesNew extends Component {
     const paths = this.props.history.location.pathname.split('/')
     const last = paths[paths.length - 1]
     return (
-      <div className='page event-posts-new'>
-        <Panel>
-          <div className='panel-header'>
-            Post new insight
-          </div>
-          <PostsNewHeader location={last} />
-          <Route
-            exact
-            path='/insights/new'
-            render={() => (
-              <CreateBody
-                changePost={this.changePost}
-                post={{...this.state}} />
-          )} />
-          <Route
-            exact
-            path='/insights/new/title'
-            render={() => (
-              <CreateTitle
-                changePost={this.changePost}
-                post={{...this.state}} />
+      <InsightsLayout isLogin={this.state.isLogin}>
+        <div className='event-posts-new'>
+          <Panel>
+            <PostsNewHeader location={last} />
+            <Route
+              exact
+              path='/insights/new'
+              render={() => (
+                <CreateBody
+                  changePost={this.changePost}
+                  post={{...this.state}} />
             )} />
-          <Route
-            exact
-            path='/insights/new/confirm'
-            render={() => (
-              <ConfirmPost
-                addPost={addPost}
-                savePost={this.savePost}
-                post={{...this.state}} />
-            )} />
-        </Panel>
-      </div>
+            <Route
+              exact
+              path='/insights/new/title'
+              render={() => (
+                <CreateTitle
+                  changePost={this.changePost}
+                  post={{...this.state}} />
+              )} />
+            <Route
+              exact
+              path='/insights/new/confirm'
+              render={() => (
+                <ConfirmPost
+                  addPost={addPost}
+                  savePost={this.savePost}
+                  post={{...this.state}} />
+              )} />
+          </Panel>
+        </div>
+      </InsightsLayout>
     )
   }
 }

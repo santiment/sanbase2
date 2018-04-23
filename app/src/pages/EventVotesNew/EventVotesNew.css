@@ -58,12 +58,14 @@
   justify-content: flex-end;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .event-posts-new {
-    min-width: 720px;
-    width: 720px;
+    min-width: 520px;
+    max-width: 520px;
   }
+}
 
+@media (min-width: 1024px) {
   .event-posts-new h2 {
     margin: 0 0 40px 15px;
   }

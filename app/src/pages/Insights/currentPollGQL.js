@@ -1,7 +1,7 @@
 import gql from 'graphql-tag'
 
 export const allInsightsPublicGQL = gql`
-  query allInsights {
+  query allInsightsPublic {
     allInsights {
       id
       title
@@ -22,6 +22,7 @@ export const allInsightsGQL = gql`
       id
       title
       createdAt
+      votedAt
       state
       totalSanVotes
       moderationComment

@@ -1,5 +1,4 @@
 import React from 'react'
-import { Icon } from 'semantic-ui-react'
 import { formatBTC } from './../../utils/formatting'
 import './LikeBtn.css'
 
@@ -12,8 +11,8 @@ const Like = ({
     onClick={onLike}
     className='like-btn'>
     {liked
-      ? <Icon name='heart' />
-      : <Icon name='empty heart' />}
+      ? <i className='fa fa-heart' />
+      : <i className='fa fal fa-heart-o' />}
     {formatBTC(votes)}
   </div>
 )

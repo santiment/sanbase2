@@ -47,7 +47,7 @@ defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
              email: nil,
              reddit_link: "https://www.reddit.com/r/statusim/",
              twitter_link: "https://twitter.com/ethstatus",
-             bitcointalk_link: "should_not_be_changed_to_nil",
+             btt_link: "should_not_be_changed_to_nil",
              blog_link: nil,
              github_link: "https://github.com/status-im",
              telegram_link: nil,

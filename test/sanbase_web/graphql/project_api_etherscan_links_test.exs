@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEtherscanLinksTest do
         email: "email@link.com",
         reddit_link: "reddit.link.com",
         twitter_link: "twitter.link.com",
-        bitcointalk_link: "bitcointalk.link.com",
+        btt_link: "bitcointalk.link.com",
         blog_link: "blog.link.com",
         github_link: "github.link.com",
         telegram_link: "telegram.link.com",
@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEtherscanLinksTest do
       "email" => "email@link.com",
       "reddit_link" => "reddit.link.com",
       "twitter_link" => "twitter.link.com",
-      "bitcointalk_link" => "bitcointalk.link.com",
+      "btt_link" => "bitcointalk.link.com",
       "blog_link" => "blog.link.com",
       "github_link" => "github.link.com",
       "telegram_link" => "telegram.link.com",
@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEtherscanLinksTest do
         email
         reddit_link
         twitter_link
-        bitcointalk_link
+        btt_link
         blog_link
         github_link
         telegram_link

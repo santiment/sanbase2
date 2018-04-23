@@ -107,7 +107,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
            email: email,
            reddit_link: reddit_link,
            twitter_link: twitter_link,
-           bitcointalk_link: bitcointalk_link,
+           btt_link: btt_link,
            blog_link: blog_link,
            github_link: github_link,
            telegram_link: telegram_link,
@@ -120,7 +120,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
            main_contract_address: main_contract_address
          } = project
        ) do
-    !website_link or !email or !reddit_link or !twitter_link or !bitcointalk_link or !blog_link or
+    !website_link or !email or !reddit_link or !twitter_link or !btt_link or !blog_link or
       !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
       !ticker or !name or !main_contract_address or !token_decimals
   end

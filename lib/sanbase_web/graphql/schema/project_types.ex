@@ -33,6 +33,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:team_token_wallet, :string)
     field(:description, :string)
     field(:token_decimals, :integer)
+    field(:main_contract_address, :string)
     field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
 
     field :related_posts, list_of(:post) do
@@ -224,7 +225,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:minimal_cap_amount, :decimal)
     field(:maximal_cap_amount, :decimal)
-    field(:main_contract_address, :string)
     field(:contract_block_number, :integer)
     field(:contract_abi, :string)
     field(:comments, :string)

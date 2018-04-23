@@ -33,12 +33,13 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
         ticker: "PRJ1",
         name: "Project1",
         infrastructure_id: infr_eth.id,
-        coinmarketcap_id: "proj1"
+        coinmarketcap_id: "proj1",
+        main_contract_address: "0x123123"
       })
       |> Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(%{project_id: project1.id, main_contract_address: "0x123123"})
+    |> Ico.changeset(%{project_id: project1.id})
     |> Repo.insert!()
 
     project2 =

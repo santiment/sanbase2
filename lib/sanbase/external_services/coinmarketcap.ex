@@ -116,30 +116,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
            whitepaper_link: whitepaper_link,
            ticker: ticker,
            name: name,
-           token_decimals: token_decimals
+           token_decimals: token_decimals,
+           main_contract_address: main_contract_address
          } = project
        ) do
     !website_link or !email or !reddit_link or !twitter_link or !bitcointalk_link or !blog_link or
       !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
-      !ticker or !name or missing_main_contract_address?(project) or !token_decimals
-  end
-
-  defp missing_main_contract_address?(project) do
-    project
-    |> Project.initial_ico()
-    |> case do
-      nil -> true
-      %Ico{} = ico -> missing_ico_info?(ico)
-      _ -> false
-    end
+      !ticker or !name or !main_contract_address or !token_decimals
   end
 
   defp missing_ico_info?(%Ico{
-         main_contract_address: main_contract_address,
          contract_abi: contract_abi,
          contract_block_number: contract_block_number
        }) do
-    !main_contract_address or !contract_abi or !contract_block_number
+    !contract_abi or !contract_block_number
   end
 
   defp fetch_and_process_price_data(%Project{} = project) do

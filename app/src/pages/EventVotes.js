@@ -162,6 +162,7 @@ const EventVotes = ({
             : <PostList {...Posts}
               posts={getPosts(match, history, Posts)}
               userId={showedMyPosts ? user.data.id : undefined}
+              toggleLoginRequest={toggleLoginRequest}
               deletePost={postId => {
                 setDeletePostId(postId)
                 toggleDeletePostRequest(true)

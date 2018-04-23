@@ -64,11 +64,15 @@ const Post = ({
   history,
   moderationComment = null,
   state = STATES.approved,
+  toggleLoginRequest,
   showStatus = false
 }) => {
+  console.log(votedAt)
   return (
     <div className='event-post' onClick={e => {
-      if (e.target.className === 'event-post-body') {
+      if (!user.username) {
+        toggleLoginRequest(true)
+      } else if (e.target.className === 'event-post-body') {
         history.push(`/insights/${id}`)
       }
     }}>

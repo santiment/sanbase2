@@ -9,6 +9,7 @@ const PostList = ({
   loading = true,
   isError = false,
   isEmpty = true,
+  toggleLoginRequest,
   votePost,
   unvotePost,
   deletePost
@@ -19,6 +20,7 @@ const PostList = ({
         showStatus={!!userId}
         index={index + 1}
         key={index}
+        toggleLoginRequest={toggleLoginRequest}
         votePost={votePost}
         unvotePost={unvotePost}
         deletePost={deletePost}

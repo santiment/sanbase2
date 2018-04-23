@@ -148,6 +148,25 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     (bytes_size / (1024 * 1024)) |> Float.round(2)
   end
 
+  # Public so it can be used by the resolve macros. You should not use it.
+  def from(captured_mfa) when is_function(captured_mfa) do
+    fun_name = captured_mfa |> captured_mfa_name()
+
+    resolver(captured_mfa, fun_name)
+  end
+
+  # Public so it can be used by the resolve macros. You should not use it.
+  def from(fun, fun_name) when is_function(fun) do
+    resolver(fun, fun_name)
+  end
+
+  # Public so it can be used by the resolve macros. You should not use it.
+  def dataloader_from(captured_mfa) when is_function(captured_mfa) do
+    fun_name = captured_mfa |> captured_mfa_name()
+
+    dataloader_resolver(captured_mfa, fun_name)
+  end
+
   # Private functions
 
   defp resolver(resolver_fn, name) do
@@ -269,6 +288,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     {:middleware, midl, {loader, caching_callback}}
   end
 
+  # Calculate the cache key from a given name and arguments.
   defp cache_key(name, args) do
     args_hash =
       args

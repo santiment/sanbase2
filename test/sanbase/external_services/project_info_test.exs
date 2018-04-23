@@ -28,13 +28,12 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
       }
       |> Repo.insert!()
 
-    %Ico{main_contract_address: "address", project_id: project.id}
+    %Ico{project_id: project.id}
     |> Repo.insert!()
 
     expected_project_info = %ProjectInfo{
       coinmarketcap_id: "coinmarketcap_id",
       name: "Name",
-      main_contract_address: "address",
       website_link: "website.link.com",
       email: "email@link.com",
       reddit_link: "reddit.link.com",
@@ -75,8 +74,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
     assert project.github_link == "https://github.com/santiment"
     assert project.token_decimals == 18
 
-    assert Project.initial_ico(project).main_contract_address ==
-             "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
+    assert project.main_contract_address == "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
 
     assert Project.initial_ico(project).contract_block_number == 3_972_935
   end
@@ -103,10 +101,8 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
       )
 
     assert project.github_link == "https://github.com/santiment"
+    assert project.main_contract_address == "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
     assert Project.initial_ico(project).id == ico.id
-
-    assert Project.initial_ico(project).main_contract_address ==
-             "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
 
     assert Project.initial_ico(project).contract_block_number == 3_972_935
   end

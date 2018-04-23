@@ -37,7 +37,6 @@ defmodule Sanbase.Model.Ico do
       :tokens_sold_at_ico,
       :minimal_cap_amount,
       :maximal_cap_amount,
-      :main_contract_address,
       :comments,
       :project_id,
       :cap_currency_id,

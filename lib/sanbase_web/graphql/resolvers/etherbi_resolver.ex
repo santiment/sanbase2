@@ -190,13 +190,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
+  defp project_to_contract_info(%Project{main_contract_address: main_contract_address} = project)
+       when not is_nil(main_contract_address) do
+    {:ok, String.downcase(main_contract_address), project.token_decimals || 0}
+  end
+
   defp project_to_contract_info(project) do
-    with initial_ico when not is_nil(initial_ico) <- Project.initial_ico(project),
-         contract_address when not is_nil(contract_address) <- initial_ico.main_contract_address do
-      {:ok, String.downcase(contract_address), project.token_decimals || 0}
-    else
-      _ -> {:error, "Can't find contract address of #{project.coinmarketcap_id}"}
-    end
+    {:error, "Can't find contract address of #{project.coinmarketcap_id}"}
   end
 
   defp ticker_to_contract_info(ticker) do

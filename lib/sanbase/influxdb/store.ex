@@ -30,6 +30,14 @@ defmodule Sanbase.Influxdb.Store do
         :ok
       end
 
+      def import({:error, reason} = err_tuple) do
+        Logger.warn(
+          "Store.import/1 from #{__MODULE__} called with an error tuple: #{inspect(err_tuple)}"
+        )
+
+        err_tuple
+      end
+
       def import(measurements) do
         measurements
         |> Stream.map(&Measurement.convert_measurement_for_import/1)

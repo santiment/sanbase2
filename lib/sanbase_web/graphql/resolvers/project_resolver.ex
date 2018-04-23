@@ -165,7 +165,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
            Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
       result =
         eth_spent_over_time
-        |> Enum.map(fn {datetime, eth_spent} ->
+        |> Enum.map(fn [datetime, eth_spent] ->
           %{datetime: datetime, eth_spent: eth_spent}
         end)
 
@@ -212,7 +212,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
            ) do
       result =
         total_eth_spent_over_time
-        |> Enum.map(fn {datetime, eth_spent} ->
+        |> Enum.map(fn [datetime, eth_spent] ->
           %{
             datetime: datetime,
             eth_spent: eth_spent
@@ -224,20 +224,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def eth_top_transactions(
-        %Project{ticker: ticker},
+        %Project{ticker: ticker} = project,
         args,
         _resolution
       ) do
     async(
       Cache.func(
-        fn -> calculate_eth_top_transactions(ticker, args) end,
+        fn -> calculate_eth_top_transactions(project, args) end,
         {:eth_top_transactions, ticker},
         args
       )
     )
   end
 
-  defp calculate_eth_top_transactions(ticker, %{
+  defp calculate_eth_top_transactions(%Project{ticker: ticker}, %{
          from: from,
          to: to,
          transaction_type: trx_type,
@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
            Etherscan.Store.top_transactions(ticker, from, to, trx_type, limit) do
       result =
         eth_transactions
-        |> Enum.map(fn {datetime, trx_hash, trx_value, trx_type, from_addr, to_addr} ->
+        |> Enum.map(fn [datetime, trx_hash, trx_value, trx_type, from_addr, to_addr] ->
           %{
             datetime: datetime,
             trx_hash: trx_hash,
@@ -264,7 +264,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       error ->
         Logger.warn("Cannot fetch ETH transactions for #{ticker}. Reason: #{inspect(error)}")
 
-        {:ok, nil}
+        {:ok, []}
     end
   end
 
@@ -495,8 +495,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     yesterday = Timex.shift(Timex.now(), days: -1)
     the_other_day = Timex.shift(Timex.now(), days: -2)
 
-    with {:ok, [[_dt, today_vol]]} <-
-           Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
+    with {:ok, [[_dt, today_vol]]} <- Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
          {:ok, [[_dt, yesterday_vol]]} <-
            Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
          true <- yesterday_vol > 0 do

@@ -24,20 +24,22 @@ defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
         backup_records
         |> Enum.find(fn row -> row["coinmarketcap_id"] == project.coinmarketcap_id end)
 
-      Project.changeset(project, %{
-        token_decimals: project.token_decimals || backup_record["token_decimals"],
-        website_link: project.website_link || backup_record["website_link"],
-        reddit_link: project.reddit_link || backup_record["reddit_link"],
-        twitter_link: project.twitter_link || backup_record["twitter_link"],
-        btt_link: project.btt_link || backup_record["btt_link"],
-        blog_link: project.blog_link || backup_record["blog_link"],
-        github_link: project.github_link || backup_record["github_link"],
-        telegram_link: project.telegram_link || backup_record["telegram_link"],
-        slack_link: project.slack_link || backup_record["slack_link"],
-        facebook_link: project.facebook_link || backup_record["facebook_link"],
-        whitepaper_link: project.whitepaper_link || backup_record["whitepaper_link"]
-      })
-      |> Repo.update!()
+      if backup_record do
+        Project.changeset(project, %{
+          token_decimals: project.token_decimals || backup_record["token_decimals"],
+          website_link: project.website_link || backup_record["website_link"],
+          reddit_link: project.reddit_link || backup_record["reddit_link"],
+          twitter_link: project.twitter_link || backup_record["twitter_link"],
+          btt_link: project.btt_link || backup_record["btt_link"],
+          blog_link: project.blog_link || backup_record["blog_link"],
+          github_link: project.github_link || backup_record["github_link"],
+          telegram_link: project.telegram_link || backup_record["telegram_link"],
+          slack_link: project.slack_link || backup_record["slack_link"],
+          facebook_link: project.facebook_link || backup_record["facebook_link"],
+          whitepaper_link: project.whitepaper_link || backup_record["whitepaper_link"]
+        })
+        |> Repo.update!()
+      end
     end)
   end
 

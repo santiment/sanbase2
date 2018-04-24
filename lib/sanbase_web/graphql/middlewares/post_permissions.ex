@@ -11,6 +11,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
     "user",
     "createdAt",
     "state",
+    "readyState",
     "__typename"
   ]
 

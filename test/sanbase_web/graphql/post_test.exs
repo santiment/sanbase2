@@ -121,7 +121,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
     {
       allInsights {
         title,
-        shortDesc
+        shortDesc,
+        readyState
       }
     }
     """
@@ -130,8 +131,13 @@ defmodule SanbaseWeb.Graphql.PostTest do
       build_conn()
       |> post("/graphql", query_skeleton(query, "allInsights"))
 
-    assert [%{"title" => post.title, "shortDesc" => post.short_desc}] ==
-             json_response(result, 200)["data"]["allInsights"]
+    assert [
+             %{
+               "title" => post.title,
+               "shortDesc" => post.short_desc,
+               "readyState" => Post.draft()
+             }
+           ] == json_response(result, 200)["data"]["allInsights"]
   end
 
   test "trying to get not allowed field from posts as anon user", %{user: user} do
@@ -184,6 +190,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
       allInsights {
         id,
         text,
+        readyState
       }
     }
     """
@@ -483,7 +490,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         },
         related_projects {
           ticker
-        }
+        },
+        readyState
       }
     }
     """
@@ -494,9 +502,11 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     [tag] = json_response(result, 200)["data"]["createPost"]["tags"]
     [related_projects] = json_response(result, 200)["data"]["createPost"]["related_projects"]
+    readyState = json_response(result, 200)["data"]["createPost"]["readyState"]
 
     assert tag == %{"name" => "SAN"}
     assert related_projects == %{"ticker" => "SAN"}
+    assert readyState == Post.draft()
   end
 
   @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
@@ -571,6 +581,71 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     assert json_response(result, 200)["data"]["allTags"] ==
              [%{"name" => tag1.name}, %{"name" => tag2.name}]
+  end
+
+  test "publish post", %{user: user, conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome analysis",
+        text: "Text in body",
+        state: Post.approved_state(),
+        ready_state: Post.draft()
+      }
+      |> Repo.insert!()
+
+    query = """
+    mutation {
+      publishInsight(id: #{post.id}) {
+        id,
+        ready_state
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    data = json_response(result, 200)["data"]
+    assert data["publishInsight"]["ready_state"] == Post.published()
+  end
+
+  test "publish post returns error when user is not author", %{conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    other_user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: other_user.id,
+        title: "Awesome analysis",
+        text: "Text in body",
+        state: Post.approved_state(),
+        ready_state: Post.draft()
+      }
+      |> Repo.insert!()
+
+    query = """
+    mutation {
+      publishInsight(id: #{post.id}) {
+        id,
+        ready_state
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    assert json_response(result, 200)["errors"]
   end
 
   # Helper functions

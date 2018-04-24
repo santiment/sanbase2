@@ -442,5 +442,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
       resolve(&FileResolver.upload_image/3)
     end
+
+    @desc "Publish insight"
+    field :publish_insight, :post do
+      arg(:id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&PostResolver.publish_insight/3)
+    end
   end
 end

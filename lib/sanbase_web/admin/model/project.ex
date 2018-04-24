@@ -79,6 +79,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input(project, :ticker)
         input(project, :logo_url)
         input(project, :website_link)
+        input(project, :email)
         input(project, :btt_link)
         input(project, :facebook_link)
         input(project, :github_link)

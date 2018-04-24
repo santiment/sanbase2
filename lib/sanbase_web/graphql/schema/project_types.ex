@@ -163,7 +163,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :price_to_book_ratio, :decimal do
-      resolve(&ProjectResolver.price_to_book_ratio/3)
+      cache_resolve_dataloader(&ProjectResolver.price_to_book_ratio/3)
     end
 
     field :eth_spent, :float do

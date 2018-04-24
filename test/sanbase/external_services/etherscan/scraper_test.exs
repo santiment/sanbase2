@@ -17,7 +17,7 @@ defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
     html = File.read!(Path.join(__DIR__, "token_summary_page.html"))
 
     assert Scraper.parse_token_page!(html, %ProjectInfo{
-             bitcointalk_link: "should_not_be_changed_to_nil"
+             btt_link: "should_not_be_changed_to_nil"
            }) == %ProjectInfo{
              total_supply: 6_804_870_174_878_168_246_198_837_603,
              main_contract_address: "0x744d70fdbe2ba4cf95131626614a1763df805b9e",
@@ -26,7 +26,7 @@ defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
              email: nil,
              reddit_link: "https://www.reddit.com/r/statusim/",
              twitter_link: "https://twitter.com/ethstatus",
-             bitcointalk_link: "should_not_be_changed_to_nil",
+             btt_link: "should_not_be_changed_to_nil",
              blog_link: nil,
              github_link: "https://github.com/status-im",
              telegram_link: nil,

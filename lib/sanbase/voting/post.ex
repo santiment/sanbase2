@@ -11,6 +11,8 @@ defmodule Sanbase.Voting.Post do
 
   @approved "approved"
   @declined "declined"
+  @draft "draft"
+  @published "published"
 
   schema "posts" do
     belongs_to(:poll, Poll)
@@ -23,6 +25,7 @@ defmodule Sanbase.Voting.Post do
     field(:text, :string)
     field(:state, :string)
     field(:moderation_comment, :string)
+    field(:ready_state, :string, default: @draft)
 
     has_many(:images, PostImage, on_delete: :delete_all)
 
@@ -47,9 +50,16 @@ defmodule Sanbase.Voting.Post do
     |> unique_constraint(:poll_id, name: :posts_poll_id_title_index)
   end
 
-  def approved_state(), do: @approved
+  def update_changeset(%Post{} = post, attrs) do
+    post
+    |> cast(attrs, [:ready_state])
+  end
 
+  def approved_state(), do: @approved
   def declined_state(), do: @declined
+
+  def published(), do: @published
+  def draft(), do: @draft
 
   @doc """
     Returns all posts ranked by HN ranking algorithm: https://news.ycombinator.com/item?id=1781013

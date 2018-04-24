@@ -7,11 +7,14 @@ defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
   alias Sanbase.Model.Project
   alias Sanbase.Repo
 
+  require Logger
+
   def up do
     backup_records =
       Path.expand("project_backup.csv", __DIR__)
       |> File.stream!()
       |> CSV.decode!(headers: true)
+      |> Enum.reject(&(&1["coinmarketcap_id"] == nil))
 
     query =
       from(
@@ -21,11 +24,17 @@ defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
 
     Repo.all(query)
     |> Enum.map(fn project ->
+      Logger.debug("Updating project #{inspect(project)}")
+
       backup_record =
         backup_records
-        |> Enum.find(fn row -> row["coinmarketcap_id"] == project.coinmarketcap_id end)
+        |> Enum.find(fn row ->
+          row["coinmarketcap_id"] == project.coinmarketcap_id and project.coinmarketcap_id != nil
+        end)
 
       if backup_record do
+        Logger.debug("Found record to recover data: #{inspect(backup_record)}")
+
         Project.changeset(project, %{
           token_decimals: project.token_decimals || backup_record["token_decimals"],
           website_link: project.website_link || backup_record["website_link"],

@@ -1,5 +1,6 @@
 defmodule Sanbase.Repo.Migrations.RestoreLostProjectData do
   use Ecto.Migration
+  @disable_ddl_transaction true
 
   import Ecto.Query
 

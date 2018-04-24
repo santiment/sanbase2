@@ -11,7 +11,6 @@ export const projectBySlugGQL = gql`
       description,
       websiteLink,
       email,
-      bitcointalkLink,
       blogLink,
       telegramLink,
       facebookLink,

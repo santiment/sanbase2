@@ -107,7 +107,7 @@ const Post = ({
           <div style={{
             display: 'flex'
           }} >
-            {showStatus && <Button
+            {showStatus && readyState === 'draft' && <Button
               size='mini'
               onClick={() => deletePost(id)}
               basic

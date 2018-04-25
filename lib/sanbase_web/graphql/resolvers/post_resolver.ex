@@ -218,6 +218,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   # Helper functions
 
+  defp get_only_published_or_own_posts(posts, user_id) do
+    posts
+    |> Enum.filter(fn post ->
+      post.user_id == user_id || post.ready_state == Post.published()
+    end)
+  end
+
   defp delete_post_images(%Post{} = post) do
     extract_image_url_from_post(post)
     |> Enum.map(&Sanbase.FileStore.delete/1)

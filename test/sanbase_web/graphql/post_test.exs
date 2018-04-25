@@ -113,7 +113,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         short_desc: "Example analysis short description",
         text: "Example text, hoo",
         link: "http://www.google.com",
-        state: Post.approved_state()
+        state: Post.approved_state(),
+        ready_state: Post.published()
       }
       |> Repo.insert!()
 
@@ -135,7 +136,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
              %{
                "title" => post.title,
                "shortDesc" => post.short_desc,
-               "readyState" => Post.draft()
+               "readyState" => Post.published()
              }
            ] == json_response(result, 200)["data"]["allInsights"]
   end
@@ -150,7 +151,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
       short_desc: "Example analysis short description",
       text: "Example text, hoo",
       link: "http://www.google.com",
-      state: Post.approved_state()
+      state: Post.approved_state(),
+      ready_state: Post.published()
     }
     |> Repo.insert!()
 
@@ -201,6 +203,42 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
     assert json_response(result, 200)["data"]["allInsights"] |> List.first() |> Map.get("text") ==
              post.text
+  end
+
+  test "get only published or own posts", %{conn: conn} do
+    poll = Poll.find_or_insert_current_poll!()
+
+    other_user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    %Post{
+      poll_id: poll.id,
+      user_id: other_user.id,
+      title: "Awesome analysis",
+      short_desc: "Example analysis short description",
+      text: "Example text, hoo",
+      link: "http://www.google.com",
+      state: Post.approved_state(),
+      ready_state: Post.draft()
+    }
+    |> Repo.insert!()
+
+    query = """
+    {
+      allInsights {
+        id,
+        text,
+        readyState
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    assert json_response(result, 200)["data"]["allInsights"] == []
   end
 
   test "getting all posts for given user", %{user: user, user2: user2, conn: conn} do
@@ -313,7 +351,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         short_desc: "Example analysis short description",
         text: "Example text, hoo",
         link: "http://www.google.com",
-        state: Post.approved_state()
+        state: Post.approved_state(),
+        ready_state: Post.published()
       }
       |> Repo.insert!()
 
@@ -329,7 +368,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         short_desc: "Example analysis short description",
         text: "Example text, hoo2",
         link: "http://www.google.com",
-        state: Post.approved_state()
+        state: Post.approved_state(),
+        ready_state: Post.published()
       }
       |> Repo.insert!()
 

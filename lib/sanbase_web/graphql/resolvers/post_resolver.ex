@@ -18,9 +18,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     end
   end
 
+  def all_insights(_root, _args, %{
+        context: %{auth: %{current_user: %User{id: user_id}}}
+      }) do
+    posts =
+      Post.posts_by_score()
+      |> get_only_published_or_own_posts(user_id)
+      |> Repo.preload(@preloaded_assoc)
+
+    {:ok, posts}
+  end
+
   def all_insights(_root, _args, _context) do
     posts =
       Post.posts_by_score()
+      |> Enum.filter(&(&1.ready_state == Post.published()))
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
@@ -142,6 +154,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   # Helper functions
+
+  defp get_only_published_or_own_posts(posts, user_id) do
+    posts
+    |> Enum.filter(fn post ->
+      post.user_id == user_id || post.ready_state == Post.published()
+    end)
+  end
 
   defp delete_post_images(%Post{} = post) do
     extract_image_url_from_post(post)

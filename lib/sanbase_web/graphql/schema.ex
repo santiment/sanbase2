@@ -27,9 +27,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     PostPermissions
   }
 
-  alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.PriceStore
-
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
   import_types(SanbaseWeb.Graphql.CustomTypes)
@@ -45,6 +42,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.FileTypes)
 
   def dataloader() do
+    alias SanbaseWeb.Graphql.SanbaseRepo
+    alias SanbaseWeb.Graphql.PriceStore
+
     Dataloader.new()
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(PriceStore, PriceStore.data())
@@ -55,7 +55,9 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   def plugins do
-    [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
+    [
+      Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()
+    ]
   end
 
   query do
@@ -439,6 +441,14 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&FileResolver.upload_image/3)
+    end
+
+    @desc "Publish insight"
+    field :publish_insight, :post do
+      arg(:id, non_null(:id))
+
+      middleware(JWTAuth)
+      resolve(&PostResolver.publish_insight/3)
     end
   end
 end

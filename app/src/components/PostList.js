@@ -13,6 +13,7 @@ const PostList = ({
   votePost,
   unvotePost,
   deletePost,
+  publishPost,
   gotoInsight
 }) => (
   <div className='event-posts-list'>
@@ -25,6 +26,7 @@ const PostList = ({
         votePost={votePost}
         unvotePost={unvotePost}
         deletePost={deletePost}
+        publishPost={publishPost}
         gotoInsight={gotoInsight}
         {...posts[key]} />
     ))}

@@ -58,6 +58,7 @@
     "react-sizes": "^0.4.3",
     "react-stickynode": "^1.4.1",
     "react-table": "^6.7.5",
+    "react-virtualized": "^9.18.5",
     "recompose": "^0.26.0",
     "redux": "^3.7.2",
     "redux-persist": "^5.4.0",

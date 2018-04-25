@@ -22,35 +22,37 @@ export const TopMenu = ({
   const qsData = qs.parse(location.search)
   return (
     <div className='top-menu'>
-      <div className='left'>
-        <div
-          onClick={() => history.push('/')}
-          className='brand'>
-          <img
-            src={logo}
-            width='115'
-            height='22'
-            alt='SANbase' />
+      <div className='container'>
+        <div className='left'>
+          <div
+            onClick={() => history.push('/')}
+            className='brand'>
+            <img
+              src={logo}
+              width='115'
+              height='22'
+              alt='SANbase' />
+          </div>
+          <Search />
         </div>
-        <Search />
-      </div>
-      <FeedbackBtn />
-      <div className='right'>
-        <AppMenu
-          showInsights={qsData && qsData.insights}
-          handleNavigation={nextRoute => {
-            history.push(`/${nextRoute}`)
-          }} />
-        <AuthControl
-          login={() => history.push('/login')}
-          openSettings={() => {
-            history.push('/account')
-          }}
-          handleNavigation={nextRoute => {
-            history.push(`/${nextRoute}`)
-          }}
-          user={user}
-          logout={logout} />
+        <FeedbackBtn />
+        <div className='right'>
+          <AppMenu
+            showInsights={qsData && qsData.insights}
+            handleNavigation={nextRoute => {
+              history.push(`/${nextRoute}`)
+            }} />
+          <AuthControl
+            login={() => history.push('/login')}
+            openSettings={() => {
+              history.push('/account')
+            }}
+            handleNavigation={nextRoute => {
+              history.push(`/${nextRoute}`)
+            }}
+            user={user}
+            logout={logout} />
+        </div>
       </div>
     </div>
   )

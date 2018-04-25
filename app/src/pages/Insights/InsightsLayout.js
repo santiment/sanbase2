@@ -4,21 +4,34 @@ import { NavLink } from 'react-router-dom'
 import Panel from './../../components/Panel'
 import './InsightsLayout.css'
 
-const InsightsLayout = ({isLogin = false, children}) => (
+const InsightsLayout = ({
+  isLogin = false,
+  title = 'SANbase: Insights',
+  children
+}) => (
   <div className='page event-votes'>
     <Helmet>
-      <title>SANbase: Insights</title>
+      <title>{title}</title>
     </Helmet>
     <div className='event-votes-rows'>
       <div className='event-votes-navs'>
         <h2>Insights</h2>
-        {isLogin && <NavLink
-          className='event-votes-navigation__add-link'
-          to={'/insights/my'}>
-          My Insights
-        </NavLink>}
+        <div className='event-votes-navs-list'>
+          {isLogin && <NavLink
+            className='event-votes-navigation__add-link'
+            to={'/insights/my'}>
+            My Insights
+          </NavLink>}
+          <NavLink
+            className='event-votes-navigation__add-link'
+            to={'/insights/newest'}>
+            All Insights
+          </NavLink>
+        </div>
       </div>
-      {children}
+      <div className='event-votes-content'>
+        {children}
+      </div>
       <div className='event-votes-sidebar'>
         <Panel>
           <div className='cta-subscription'>

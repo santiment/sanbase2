@@ -1,17 +1,9 @@
-.insight {
-  margin: 0 auto;
-  width: 100%;
-}
-
 .insight-content img {
   width: calc(100% + 32px);
   margin-left: -16px;
   object-fit: cover;
 }
 
-@media (min-width: 1024px) {
-  .insight {
-    min-width: 720px;
-    width: 720px;
-  }
+.insight-panel {
+  padding: 16px !important;
 }

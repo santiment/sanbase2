@@ -1,12 +1,10 @@
 import React, { createElement } from 'react'
 import { Redirect } from 'react-router-dom'
-import { Helmet } from 'react-helmet'
 import {
   compose,
   pure
 } from 'recompose'
 import moment from 'moment'
-import Panel from './../../components/Panel'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import {
@@ -14,6 +12,8 @@ import {
   createSkeletonElement
 } from '@trainline/react-skeletor'
 import marksy from 'marksy'
+import InsightsLayout from './InsightsLayout'
+import Panel from './../../components/Panel'
 import './Insight.css'
 
 const POLLING_INTERVAL = 100000
@@ -46,27 +46,28 @@ const Insight = ({
     return <Redirect to='/insights' />
   }
   return (
-    <div className='page insight'>
-      <Helmet>
-        <title>SANbase: Insight - {post.title}</title>
-      </Helmet>
-      <Panel>
-        <H2>
-          {post.title}
-        </H2>
-        <Span>
-          by {post.user.username
-            ? <a href={`/insights/users/${post.user.id}`}>{post.user.username}</a>
-            : 'unknown author'}
-        </Span>
-        &nbsp;&#8226;&nbsp;
-        {post.createdAt &&
-          <Span>{moment(post.createdAt).format('MMM DD, YYYY')}</Span>}
-        <Div className='insight-content' style={{ marginTop: '1em' }}>
-          {post.text &&
-            compile(post.text).tree}
-        </Div>
-      </Panel>
+    <div className='insight'>
+      <InsightsLayout
+        isLogin={false}
+        title={`SANbase: Insight - ${post.title}`}>
+        <Panel className='insight-panel'>
+          <H2>
+            {post.title}
+          </H2>
+          <Span>
+            by {post.user.username
+              ? <a href={`/insights/users/${post.user.id}`}>{post.user.username}</a>
+              : 'unknown author'}
+          </Span>
+          &nbsp;&#8226;&nbsp;
+          {post.createdAt &&
+            <Span>{moment(post.createdAt).format('MMM DD, YYYY')}</Span>}
+          <Div className='insight-content' style={{ marginTop: '1em' }}>
+            {post.text &&
+              compile(post.text).tree}
+          </Div>
+        </Panel>
+      </InsightsLayout>
     </div>
   )
 }

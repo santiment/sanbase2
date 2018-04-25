@@ -26,6 +26,7 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:text, :string)
     field(:state, :string)
     field(:moderation_comment, :string)
+    field(:ready_state, :string)
     field(:images, list_of(:image_data), resolve: dataloader(SanbaseRepo))
     field(:tags, list_of(:tag), resolve: dataloader(SanbaseRepo))
 

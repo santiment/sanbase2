@@ -17,15 +17,15 @@ const Div = createSkeletonElement('div', 'pending-home')
 const STATES = {
   approved: 'approved',
   declined: 'declined',
-  waiting: 'waiting'
+  waiting: 'waiting',
+  draft: 'draft',
+  published: 'published'
 }
 
-const Status = ({status = STATES.waiting, moderationComment}) => {
+const Status = ({status = STATES.draft, moderationComment}) => {
   const color = (status => {
-    if (status === STATES.approved) {
+    if (status === STATES.published) {
       return 'green'
-    } else if (status === STATES.declined) {
-      return 'red'
     }
     return 'orange'
   })(status)
@@ -62,9 +62,11 @@ const Post = ({
   votePost,
   unvotePost,
   deletePost,
+  publishPost,
   history,
   moderationComment = null,
   state = STATES.approved,
+  readyState = STATES.draft,
   gotoInsight,
   showStatus = false
 }) => {
@@ -98,20 +100,34 @@ const Post = ({
               liked={!!votedAt}
               votes={totalSanVotes} />
           </Div>}
-        <div className='event-post-controls'>
+        <Div className='event-post-controls'>
           {showStatus && <Status
             moderationComment={moderationComment}
-            status={!state ? STATES.approved : state} />}
-          {showStatus && <Button
-            size='mini'
-            onClick={() => deletePost(id)}
-            style={{
-              fontWeight: '700',
-              color: '#db2828'
-            }}>
-            Delete this insight
-          </Button>}
-        </div>
+            status={readyState} />}
+          <div style={{
+            display: 'flex'
+          }} >
+            {showStatus && readyState === 'draft' && <Button
+              size='mini'
+              onClick={() => deletePost(id)}
+              basic
+              style={{
+                fontWeight: '700',
+                color: '#db2828'
+              }}>
+              Delete this insight
+            </Button>}
+            {showStatus && readyState === 'draft' && <Button
+              size='mini'
+              color='orange'
+              onClick={() => publishPost(id)}
+              style={{
+                fontWeight: '700'
+              }}>
+              Publish your insight
+            </Button>}
+          </div>
+        </Div>
       </div>
     </div>
   )

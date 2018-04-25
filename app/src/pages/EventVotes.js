@@ -15,6 +15,7 @@ import Panel from './../components/Panel'
 import PostList from './../components/PostList'
 import { simpleSort } from './../utils/sortMethods'
 import ModalConfirmDeletePost from './Insights/ConfirmDeletePostModal'
+import ModalConfirmPublishPost from './Insights/ConfirmPublishPostModal'
 import { allInsightsPublicGQL, allInsightsGQL } from './Insights/currentPollGQL'
 import InsightsLayout from './Insights/InsightsLayout'
 import './EventVotes.css'
@@ -78,8 +79,12 @@ const EventVotes = ({
   isToggledLoginRequest,
   toggleDeletePostRequest,
   isToggledDeletePostRequest,
+  togglePublishPostRequest,
+  isToggledPublishPostRequest,
   setDeletePostId,
-  deletePostId = undefined
+  deletePostId = undefined,
+  setPublishInsightId,
+  publishInsightId = undefined
 }) => {
   const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
   if (match.path.split('/')[2] === 'my' && !Posts.hasUserInsights) {
@@ -101,6 +106,17 @@ const EventVotes = ({
               setDeletePostId(undefined)
             }
             toggleDeletePostRequest(!isToggledDeletePostRequest)
+          }} />}
+    </Fragment>,
+    <Fragment key='modal-publish-post-request'>
+      {isToggledPublishPostRequest &&
+        <ModalConfirmPublishPost
+          publishInsightId={publishInsightId}
+          toggleForm={() => {
+            if (isToggledPublishPostRequest) {
+              setPublishInsightId(undefined)
+            }
+            togglePublishPostRequest(!isToggledPublishPostRequest)
           }} />}
     </Fragment>,
     <Fragment key='page-event-votes'>
@@ -169,6 +185,10 @@ const EventVotes = ({
               deletePost={postId => {
                 setDeletePostId(postId)
                 toggleDeletePostRequest(true)
+              }}
+              publishPost={postId => {
+                setPublishInsightId(postId)
+                togglePublishPostRequest(true)
               }}
               votePost={debounce(postId => {
                 user.token
@@ -245,8 +265,7 @@ const mapDataToProps = props => {
   const filter = ownProps.match.path.split('/')[2] || 'popular'
   const posts = Insights.allInsights || []
   let filteredPosts = posts
-    // TODO: We should return this filter in the near future
-    // .filter(post => post.state === 'approved')
+    .filter(post => post.readyState ? post.readyState === 'published' : true)
     .map(post => {
       return {
         totalSanVotes: parseFloat(post.totalSanVotes) || 0,
@@ -312,7 +331,9 @@ const enhance = compose(
   ),
   withState('isToggledLoginRequest', 'toggleLoginRequest', false),
   withState('isToggledDeletePostRequest', 'toggleDeletePostRequest', false),
+  withState('isToggledPublishPostRequest', 'togglePublishPostRequest', false),
   withState('deletePostId', 'setDeletePostId', undefined),
+  withState('publishInsightId', 'setPublishInsightId', undefined),
   graphql(allInsightsPublicGQL, {
     name: 'Insights',
     props: mapDataToProps,

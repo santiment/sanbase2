@@ -1,8 +1,8 @@
 import React from 'react'
 import { SlideDown } from 'animate-components'
 import { Loader, Message, Button } from 'semantic-ui-react'
+import { List, AutoSizer } from 'react-virtualized'
 
-import { ListView, ListViewItem } from './../../components/ListView'
 import Search from './../../components/Search'
 import ProjectCard from './ProjectCard'
 import FloatingButton from './FloatingButton'
@@ -48,6 +48,29 @@ const ProjectsMobile = ({
     )
   }
 
+  const rowRenderer = ({
+    key,
+    index,
+    isScrolling,
+    isVisible,
+    style
+  }) => {
+    const project = Projects.filteredProjects[index]
+
+    return (
+      <div
+        key={key}
+        style={style}
+      >
+        <ProjectCard
+          type={type}
+          onClick={() => history.push(`/projects/${project.coinmarketcapId}`)}
+          {...project}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className='cashflow-mobile'>
       {isSearchFocused &&
@@ -65,25 +88,19 @@ const ProjectsMobile = ({
             </Button>
           </div>
         </SlideDown>}
-      <ListView
-        style={{
-          top: isSearchFocused ? 60 : 0
-        }}
-        runwayItems={7}
-        runwayItemsOpposite={5}
-        aveCellHeight={type === 'erc20' ? 460 : 360}
-      >
-        {Projects.filteredProjects.map((project, index) => (
-          <ListViewItem height={type === 'erc20' ? 500 : 400} key={index}>
-            <div className='ListItem-project' >
-              <ProjectCard
-                type={type}
-                onClick={() => history.push(`/projects/${project.coinmarketcapId}`)}
-                {...project} />
-            </div>
-          </ListViewItem>
-        ))}
-      </ListView>
+      <div className='List'>
+        <AutoSizer>
+          {({ height, width }) => (
+            <List
+              width={width}
+              height={height}
+              rowCount={Projects.filteredProjects.length}
+              rowHeight={type === 'erc20' ? 470 : 400}
+              rowRenderer={rowRenderer}
+            />
+          )}
+        </AutoSizer>
+      </div>
       {isFilterOpened &&
         <Filters
           filterBy={filterBy}

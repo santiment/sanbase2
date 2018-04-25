@@ -7,6 +7,7 @@ import './InsightsLayout.css'
 const InsightsLayout = ({
   isLogin = false,
   title = 'SANbase: Insights',
+  sidebar = null,
   children
 }) => (
   <div className='page event-votes'>
@@ -33,7 +34,8 @@ const InsightsLayout = ({
         {children}
       </div>
       <div className='event-votes-sidebar'>
-        <Panel>
+        {sidebar && sidebar}
+        {!sidebar && <Panel>
           <div className='cta-subscription'>
             <span className=''>Get new signals/insights about crypto in your inbox, every day</span>
             <div id='mc_embed_signup'>
@@ -50,7 +52,7 @@ const InsightsLayout = ({
               </form>
             </div>
           </div>
-        </Panel>
+        </Panel>}
       </div>
     </div>
   </div>

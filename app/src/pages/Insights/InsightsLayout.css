@@ -14,7 +14,11 @@
   margin-right: 30px;
   width: 120px;
   margin-top: 16px;
-  padding-top: 3em;
+}
+
+.event-votes-navs-list {
+  display: flex;
+  flex-direction: column;
 }
 
 .event-votes-content {
@@ -27,7 +31,7 @@
 }
 
 .event-votes-navs a {
-  font-size: 20px;
+  font-size: 16px;
   text-transform: uppercase;
   color: #26a987;
 }

@@ -22,7 +22,8 @@ import { loadState, saveState } from './utils/localStorage'
 import { getOrigin } from './utils/utils'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import { hasMetamask } from './web3Helpers'
-import * as serviceWorker from './serviceWorker'
+// Look at 42 line. ;)
+// import * as serviceWorker from './serviceWorker'
 
 import 'semantic-ui-css/semantic.min.css'
 import './index.css'
@@ -37,14 +38,23 @@ const run = (client, store, App) => {
       </Provider>
     </ApolloProvider>,
     document.getElementById('root'))
-  serviceWorker.register({
+
+  // TODO: 2018-04-25 Yura Z.: Need to change deploy logic for frontend
+  // Until we don't use s3 for static, we have problem with webworkers,
+  // after each updates.
+  /* serviceWorker.register({
     onUpdate: registration => {
       console.log('App updated... Refresh your browser, please.')
     },
     onSuccess: registration => {
       console.log('Your browser makes cached SANbase version')
     }
-  })
+  }) */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(registration => {
+      registration.unregister()
+    })
+  }
 }
 
 const handleLoad = () => {

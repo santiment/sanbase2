@@ -56,6 +56,7 @@ const Post = ({
   totalSanVotes = 0,
   liked = false,
   user,
+  balance = null,
   createdAt,
   votedAt,
   votePost,
@@ -93,6 +94,7 @@ const Post = ({
                   votePost(id)
                 }
               }}
+              balance={balance}
               liked={!!votedAt}
               votes={totalSanVotes} />
           </Div>}

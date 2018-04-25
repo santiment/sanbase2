@@ -116,6 +116,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, Repo.all(Tag)}
   end
 
+  def publish_insight(_root, %{id: post_id}, %{
+        context: %{auth: %{current_user: %User{id: user_id}}}
+      }) do
+    case Repo.get(Post, post_id) do
+      %Post{user_id: ^user_id} = post ->
+        post
+        |> Post.update_changeset(%{ready_state: Post.published()})
+        |> Repo.update()
+        |> case do
+          {:ok, post} ->
+            {:ok, post}
+
+          {:error, changeset} ->
+            {
+              :error,
+              message: "Can't publish post with id #{post_id}",
+              details: Helpers.error_details(changeset)
+            }
+        end
+
+      _post ->
+        {:error, "Cannot change ready_state of post with id: #{post_id}"}
+    end
+  end
+
   # Helper functions
 
   defp delete_post_images(%Post{} = post) do

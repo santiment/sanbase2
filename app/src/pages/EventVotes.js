@@ -73,6 +73,7 @@ const EventVotes = ({
   history,
   match,
   user,
+  balance,
   toggleLoginRequest,
   isToggledLoginRequest,
   toggleDeletePostRequest,
@@ -157,6 +158,7 @@ const EventVotes = ({
             : <PostList {...Posts}
               posts={getPosts(match, history, Posts)}
               userId={showedMyPosts ? user.data.id : undefined}
+              balance={balance}
               gotoInsight={id => {
                 if (!user.token) {
                   toggleLoginRequest(true)
@@ -289,8 +291,18 @@ const mapDataToProps = props => {
 }
 
 const mapStateToProps = state => {
+  const getBalance = (state) => {
+    const ethAccounts = state.user.data.ethAccounts
+    if (ethAccounts) {
+      return state.user.data.ethAccounts.length > 0
+        ? state.user.data.ethAccounts[0].sanBalance
+        : 0
+    }
+    return 0
+  }
   return {
-    user: state.user
+    user: state.user,
+    balance: getBalance(state)
   }
 }
 

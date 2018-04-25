@@ -6,6 +6,7 @@ import './PostList.css'
 const PostList = ({
   posts = {},
   userId = null,
+  balance = null,
   loading = true,
   isError = false,
   isEmpty = true,
@@ -20,6 +21,7 @@ const PostList = ({
         showStatus={!!userId}
         index={index + 1}
         key={index}
+        balance={balance}
         votePost={votePost}
         unvotePost={unvotePost}
         deletePost={deletePost}

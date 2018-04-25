@@ -294,7 +294,6 @@ CREATE TABLE icos (
     minimal_cap_amount numeric,
     maximal_cap_amount numeric,
     cap_currency_id bigint,
-    main_contract_address character varying(255),
     comments text,
     contract_block_number integer,
     contract_abi text,

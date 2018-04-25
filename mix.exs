@@ -81,7 +81,6 @@ defmodule Sanbase.Mixfile do
       {:arc, git: "https://github.com/marinho10/arc"},
       {:uuid, "~> 1.1"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
-      {:cachex, "~> 3.0"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:con_cache, git: "https://github.com/sasa1977/con_cache"},
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]}

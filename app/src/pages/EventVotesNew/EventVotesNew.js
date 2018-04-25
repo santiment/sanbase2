@@ -48,7 +48,20 @@ class EventVotesNew extends Component {
     const paths = this.props.history.location.pathname.split('/')
     const last = paths[paths.length - 1]
     return (
-      <InsightsLayout isLogin={this.state.isLogin}>
+      <InsightsLayout
+        sidebar={
+          <div style={{marginTop: 16}}>
+            <p>
+              Use Insights to journal your ideas, as a way to teach yourself, perform research, or share with others.
+            </p>
+            <p>
+              Record your trades or research notes, and learn more about your investing style, track your progress over time, and study trends. You can also share (“publish”) Insights publicly to teach others, build your reputation and educate yourself at the same time! You will be participating in the proper decentralisation of creating, owning and sharing financial information in our society.
+            </p>
+            <p>
+              Plus, you could benefit financially from your skills in “understanding the crypto”.
+            </p>
+          </div>}
+        isLogin={this.state.isLogin}>
         <div className='event-posts-new'>
           <Panel>
             <PostsNewHeader location={last} />

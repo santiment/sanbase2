@@ -73,7 +73,7 @@ const Post = ({
   return (
     <div className='event-post' onClick={e => {
       if (e.target.className === 'event-post-body') {
-        gotoInsight(id)
+        id && gotoInsight(id)
       }
     }}>
       <div className='event-post-body'>

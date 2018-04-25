@@ -1,10 +1,13 @@
 .top-menu {
   background: linear-gradient(270deg, #26a987, #2d79d0, #309d81);
   background-size: 300% 300%;
+  height: 52px;
+}
+
+.container {
   display: flex;
   font-size: 13px;
   padding: 0 48px;
-  position: relative;
 }
 
 .top-menu .left {

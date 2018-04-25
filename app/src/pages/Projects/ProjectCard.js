@@ -84,7 +84,7 @@ const ProjectCard = ({
                   <div>&nbsp;{rank}</div>
                 </div>
               } on='click'>
-              Market capitalisation in a cryptocurrency world is a mulpitle
+              Market capitalization in a cryptocurrency world is a multiple
               of amount of tokens in the circulation * token price
             </Popup>
           </div>

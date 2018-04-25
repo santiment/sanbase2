@@ -26,6 +26,7 @@ export const allInsightsGQL = gql`
       state
       totalSanVotes
       moderationComment
+      readyState
       votedAt
       user {
         id

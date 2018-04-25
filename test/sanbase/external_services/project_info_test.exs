@@ -1,6 +1,8 @@
 defmodule Sanbase.ExternalServices.ProjectInfoTest do
   use Sanbase.DataCase, async: false
 
+  import ExUnit.CaptureLog
+
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
@@ -138,17 +140,15 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
       %Project{coinmarketcap_id: "santiment", name: "Santiment", ticker: "OLD_TICKR"}
       |> Repo.insert!()
 
-    {:ok, project} =
-      ProjectInfo.update_project(
-        %ProjectInfo{
-          name: "Santiment",
-          coinmarketcap_id: "santiment",
-          ticker: "SAN"
-        },
-        project
-      )
-
-    assert project.ticker == ticker
-    assert Tag |> Repo.all() |> Enum.count() == 1
+    assert capture_log(fn ->
+             ProjectInfo.update_project(
+               %ProjectInfo{
+                 name: "Santiment",
+                 coinmarketcap_id: "santiment",
+                 ticker: "SAN"
+               },
+               project
+             )
+           end) =~ "has already been taken"
   end
 end

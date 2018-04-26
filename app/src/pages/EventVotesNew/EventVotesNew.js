@@ -21,7 +21,6 @@ class EventVotesNew extends Component {
   }
 
   changePost = (post, nextStepURL = '') => { // eslint-disable-line
-    console.log(post)
     this.setState({...post}, () => {
       this.props.history.push(`/insights/new/${nextStepURL}`)
     })

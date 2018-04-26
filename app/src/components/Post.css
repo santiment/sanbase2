@@ -95,11 +95,20 @@
   margin: 0;
 }
 
+.event-post .post-tags {
+  display: flex;
+}
+
 .event-post .post-tag {
   border: 1px solid #e3e3e3;
   border-radius: 4px;
   padding: 0 6px;
+  margin-left: 5px;
   font-size: 12px;
+}
+
+.event-post .post-tag:first-child {
+  margin-left: 0;
 }
 
 @keyframes skeletonAnimation {

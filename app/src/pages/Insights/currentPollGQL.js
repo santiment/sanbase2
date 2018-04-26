@@ -8,6 +8,9 @@ export const allInsightsPublicGQL = gql`
       createdAt
       state
       totalSanVotes
+      tags {
+        name
+      }
       user {
         id
         username
@@ -24,6 +27,9 @@ export const allInsightsGQL = gql`
       createdAt
       votedAt
       state
+      tags {
+        name
+      }
       totalSanVotes
       moderationComment
       readyState

@@ -15,6 +15,7 @@ class EventVotesNew extends Component {
     link: '',
     text: '',
     votes: 0,
+    tags: [],
     author: this.props.username,
     created: new Date()
   }
@@ -26,7 +27,7 @@ class EventVotesNew extends Component {
   }
 
   savePost = post => { // eslint-disable-line
-    console.log('save the post', post)
+    console.log('Save the inisight', post)
   }
 
   componentDidMount () {

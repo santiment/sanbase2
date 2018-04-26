@@ -83,7 +83,8 @@ defmodule Sanbase.Mixfile do
       {:phoenix_live_reload, "~> 1.1", only: :dev},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:con_cache, git: "https://github.com/sasa1977/con_cache"},
-      {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]}
+      {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
+      {:observer_cli, "~> 1.3"}
     ]
   end
 

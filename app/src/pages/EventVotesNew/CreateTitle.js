@@ -35,7 +35,6 @@ const CreateTitle = ({post, changePost}) => {
       validateError={errorValidator}
       validateSuccess={successValidator}
       onSubmit={values => {
-        console.log(values)
         changePost(values, 'confirm')
       }}>
       {formApi => (<form

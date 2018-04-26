@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import moment from 'moment'
 import { withRouter } from 'react-router-dom'
 import { Label, Button } from 'semantic-ui-react'
@@ -50,7 +50,10 @@ const Status = ({status = STATES.draft, moderationComment}) => {
 
 const Author = ({id, username}) => (
   <div className='event-post-author'>
-    by&nbsp; <a href={`/insights/users/${id}`}>{username}</a>
+    {id &&
+      <Fragment>
+        by&nbsp; <a href={`/insights/users/${id}`}>{username}</a>
+      </Fragment>}
   </div>
 )
 
@@ -90,14 +93,14 @@ const Post = ({
         <br />
         <Span>{getSourceLink(link)}</Span>&nbsp;&#8226;&nbsp;
         <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
-        {user && tags.length > 0 && <Author user={user} />}
+        {user && tags.length > 0 && <Author {...user} />}
         {user &&
           <Div className='event-post-info'>
             {tags.length > 0
               ? tags.map((tag, index) => (
                 <div key={index} className='post-tag'>{tag.label}</div>
               ))
-              : <Author user={user} />}
+              : <Author {...user} />}
             <LikeBtn
               onLike={() => {
                 if (votedAt) {

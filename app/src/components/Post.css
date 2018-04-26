@@ -95,6 +95,13 @@
   margin: 0;
 }
 
+.event-post .post-tag {
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
 @keyframes skeletonAnimation {
   0% {
     opacity: 0.8;

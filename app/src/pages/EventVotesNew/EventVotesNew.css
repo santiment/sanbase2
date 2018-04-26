@@ -58,6 +58,10 @@
   justify-content: flex-end;
 }
 
+.event-posts-step-confirm .event-post {
+  border-bottom: none;
+}
+
 @media (min-width: 768px) {
   .event-posts-new {
     min-width: 520px;

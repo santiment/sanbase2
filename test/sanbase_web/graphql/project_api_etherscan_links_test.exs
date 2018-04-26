@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEtherscanLinksTest do
       }
       |> Repo.insert!()
 
-    %Ico{main_contract_address: "address", project_id: project.id}
+    %Ico{project_id: project.id}
     |> Repo.insert!()
 
     %LatestCoinmarketcapData{

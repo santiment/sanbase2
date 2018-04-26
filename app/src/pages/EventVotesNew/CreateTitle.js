@@ -5,6 +5,7 @@ import {
 } from 'semantic-ui-react'
 import { Form } from 'react-form'
 import ReactFormInput from '../../components/react-form-semantic-ui-react/ReactFormInput'
+import TagsField from './TagsField'
 
 const TITLE_MAX_LENGTH = 140
 
@@ -34,13 +35,14 @@ const CreateTitle = ({post, changePost}) => {
       validateError={errorValidator}
       validateSuccess={successValidator}
       onSubmit={values => {
+        console.log(values)
         changePost(values, 'confirm')
       }}>
       {formApi => (<form
         className='event-posts-new-step'
         onSubmit={formApi.submitForm}
         autoComplete='off'>
-        <label>Short description
+        <label>Short description (required)
           {formApi.values.title &&
             formApi.values.title.length > TITLE_MAX_LENGTH &&
             <LimitSizeOfTitle
@@ -57,6 +59,10 @@ const CreateTitle = ({post, changePost}) => {
           <Message negative>
             {formApi.getError().title}
           </Message>}
+        <TagsField setTags={tags => {
+          formApi.values.tags = tags
+        }} />
+        <br />
         <div className='event-posts-new-step-control'>
           <Button
             disabled={!formApi.getSuccess().title}

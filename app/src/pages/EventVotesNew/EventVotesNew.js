@@ -15,18 +15,20 @@ class EventVotesNew extends Component {
     link: '',
     text: '',
     votes: 0,
+    tags: [],
     author: this.props.username,
     created: new Date()
   }
 
   changePost = (post, nextStepURL = '') => { // eslint-disable-line
+    console.log(post)
     this.setState({...post}, () => {
       this.props.history.push(`/insights/new/${nextStepURL}`)
     })
   }
 
   savePost = post => { // eslint-disable-line
-    console.log('save the post', post)
+    console.log('Save the inisight', post)
   }
 
   componentDidMount () {

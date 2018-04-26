@@ -97,9 +97,11 @@ const Post = ({
         {user &&
           <Div className='event-post-info'>
             {tags.length > 0
-              ? tags.map((tag, index) => (
-                <div key={index} className='post-tag'>{tag.label}</div>
-              ))
+              ? <div className='post-tags'>
+                {tags.map((tag, index) => (
+                  <div key={index} className='post-tag'>{tag.label}</div>
+                ))}
+              </div>
               : <Author {...user} />}
             <LikeBtn
               onLike={() => {

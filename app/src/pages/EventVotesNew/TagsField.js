@@ -1,6 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import CreatableSelect from 'react-select/lib/Creatable'
+import Select from 'react-select'
+import tags from './../Insights/tags.json'
+
+const getOptionsFromTags = tags => {
+  return tags.allTags.map((tag, index) => {
+    return {value: tag.name, label: tag.name}
+  })
+}
 
 class TagsField extends Component {
   state = { // eslint-disable-line
@@ -19,13 +26,10 @@ class TagsField extends Component {
     return (
       <div>
         <label>Tags</label>
-        <CreatableSelect
+        <Select
           isMulti
           placeholder='Add a tag...'
-          options={[
-            {value: 'Santiment', label: 'SAN'},
-            {value: 'EOS', label: 'EOS'}
-          ]}
+          options={getOptionsFromTags(tags)}
           onChange={this.handleOnChange}
           value={this.state.tags}
         />

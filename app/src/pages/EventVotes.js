@@ -120,22 +120,6 @@ const EventVotes = ({
           }} />}
     </Fragment>,
     <Fragment key='page-event-votes'>
-      {location.state && location.state.postCreated &&
-        <div style={{
-          paddingTop: 16,
-          maxWidth: 620,
-          width: '100%',
-          margin: '0 auto'}}>
-          <Message positive>
-            <Message.Header>
-              <span role='img' aria-label='Clap'>👏</span>
-              <span role='img' aria-label='Clap'>👏</span>
-              <span role='img' aria-label='Clap'>👏</span>
-              Insight was created
-            </Message.Header>
-            <p>We need some time to approve your insight...</p>
-          </Message>
-        </div>}
       <InsightsLayout isLogin={!!user.token}>
         <Panel className='event-votes-content'>
           <div className='event-votes-control'>

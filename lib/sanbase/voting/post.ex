@@ -220,4 +220,11 @@ defmodule Sanbase.Voting.Post do
   end
 
   defp images_cast(changeset, _), do: changeset
+
+  defp get_only_published_or_own_posts(posts, user_id) do
+    posts
+    |> Enum.filter(fn post ->
+      post.user_id == user_id || post.ready_state == published()
+    end)
+  end
 end

@@ -395,6 +395,46 @@ defmodule SanbaseWeb.Graphql.PostTest do
              [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]
   end
 
+  test "Search posts by tag", %{user: user, conn: conn} do
+    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+
+    poll = Poll.find_or_insert_current_poll!()
+
+    post = %Post{
+      poll_id: poll.id,
+      user_id: user.id,
+      title: "Awesome analysis",
+      short_desc: "Example analysis short description",
+      text: "Example text, hoo",
+      link: "http://www.google.com",
+      state: Post.approved_state(),
+      ready_state: Post.published()
+    }
+
+    post1 =
+      Map.merge(post, %{tags: [tag1]})
+      |> Repo.insert!()
+
+    _post2 =
+      Map.merge(post, %{tags: [tag2]})
+      |> Repo.insert!()
+
+    query = """
+    {
+      allInsightsByTag(tag: "#{tag1.name}"){
+        id
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allInsightsByTag"))
+
+    assert json_response(result, 200)["data"]["allInsightsByTag"] == [%{"id" => "#{post1.id}"}]
+  end
+
   test "adding a new post to the current poll", %{user: user, conn: conn} do
     query = """
     mutation {

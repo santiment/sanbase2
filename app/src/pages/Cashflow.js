@@ -265,11 +265,6 @@ export const Cashflow = ({
             <h1>ERC20 Projects</h1>
             <span><Link to={'/projects/ethereum'}>More data about Ethereum</Link></span>
           </div>
-          <p>
-            <Icon color='red' name='question circle outline' />
-            Automated data not available.&nbsp;
-            <span>Community help locating correct wallets is welcome!</span>
-          </p>
         </div>
         <Panel>
           <div className='row'>

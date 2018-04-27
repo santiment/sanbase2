@@ -3,8 +3,8 @@
   color: #d3d3d3 !important;
 }
 
-.project-card {
-  margin-bottom: 10px;
+.project-card > :first-child {
+  border-radius: 0 !important;
 }
 
 .project-card-rank-label {

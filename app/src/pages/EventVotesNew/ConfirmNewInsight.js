@@ -73,7 +73,6 @@ const ConfirmPost = ({
                 update: (proxy, { data: { createPost } }) => {
                   const { id, title, text, tags } = createPost
                   const data = proxy.readQuery({ query: allInsightsGQL })
-                  console.log(data, createPost)
                   let newPosts = [...data.allInsights]
                   if (id === 'last') {
                     newPosts.push({

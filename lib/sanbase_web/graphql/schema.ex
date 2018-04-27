@@ -236,6 +236,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PostResolver.all_insights_user_voted_for/3)
     end
 
+    @desc "Get all posts by tag"
+    field :all_insights_by_tag, list_of(:post) do
+      arg(:tag, non_null(:string))
+
+      middleware(PostPermissions)
+
+      resolve(&PostResolver.all_insights_by_tag/3)
+    end
+
     @desc "Get all tags"
     field :all_tags, list_of(:tag) do
       cache_resolve(&PostResolver.all_tags/3)

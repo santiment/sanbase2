@@ -3,6 +3,10 @@
   color: #d3d3d3 !important;
 }
 
+.project-card {
+  margin-bottom: 10px;
+}
+
 .project-card-rank-label {
   text-transform: uppercase;
   letter-spacing: 0.5px;

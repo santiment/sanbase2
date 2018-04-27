@@ -28,7 +28,7 @@ export default class ProjectsMobile extends Component {
   }
 
   cache = new CellMeasurerCache({
-    defaultHeight: 320,
+    defaultHeight: 248,
     fixedWidth: true
   })
 

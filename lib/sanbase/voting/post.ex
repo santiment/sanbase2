@@ -98,6 +98,26 @@ defmodule Sanbase.Voting.Post do
     end)
   end
 
+  @doc """
+    Returns only published posts ranked by the ranking algorithm
+  """
+
+  @spec ranked_published_posts() :: [%Post{}]
+  def ranked_published_posts() do
+    posts_by_score()
+    |> Enum.filter(&(&1.ready_state == published()))
+  end
+
+  @doc """
+    Returns published or current user's posts ranked by the ranking algorithm
+  """
+
+  @spec ranked_published_or_own_posts(integer) :: [%Post{}]
+  def ranked_published_or_own_posts(user_id) do
+    posts_by_score()
+    |> get_only_published_or_own_posts(user_id)
+  end
+
   # Helper functions
   defp tags_cast(changeset, %{tags: tags}) do
     tags = Tag |> where([t], t.name in ^tags) |> Sanbase.Repo.all()
@@ -124,4 +144,11 @@ defmodule Sanbase.Voting.Post do
   end
 
   defp images_cast(changeset, _), do: changeset
+
+  defp get_only_published_or_own_posts(posts, user_id) do
+    posts
+    |> Enum.filter(fn post ->
+      post.user_id == user_id || post.ready_state == published()
+    end)
+  end
 end

@@ -69,7 +69,7 @@ const ProjectCard = ({
 
   return (
     <div className='project-card'>
-      <Card fluid >
+      <Card fluid onClick={toggleExpandCard}>
         <Card.Content>
           <Card.Header>
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
@@ -105,11 +105,7 @@ const ProjectCard = ({
               : description}
           </Card.Description>
         </Card.Content>
-        <Card.Content
-          extra
-          style={{position: 'relative'}}
-          onClick={toggleExpandCard}
-        >
+        <Card.Content extra style={{position: 'relative'}}>
           {warning &&
           <Popup basic
             position='right center'
@@ -190,14 +186,16 @@ const ProjectCard = ({
             </HiddenElements>
           </Statistic.Group>
         </Card.Content>
-        <Card.Content extra>
-          <div className='ui two buttons'>
-            <HiddenElements>
-              <Button basic size='large' icon='star' />
-            </HiddenElements>
-            <Button basic size='large' onClick={handleMoreClick}>more...</Button>
-          </div>
-        </Card.Content>
+        {isExpanded &&
+          <Card.Content extra>
+            <div className='ui two buttons'>
+              <HiddenElements>
+                <Button basic size='large' icon='star' />
+              </HiddenElements>
+              <Button basic size='large' onClick={handleMoreClick}>more...</Button>
+            </div>
+          </Card.Content>
+        }
       </Card>
     </div>
   )

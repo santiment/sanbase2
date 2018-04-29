@@ -52,6 +52,16 @@ defmodule Sanbase.Voting.Post do
 
   def update_changeset(%Post{} = post, attrs) do
     post
+    |> cast(attrs, [:title, :short_desc, :link, :text])
+    |> tags_cast(attrs)
+    |> images_cast(attrs)
+    |> validate_required([:poll_id, :user_id, :title])
+    |> validate_length(:title, max: 140)
+    |> unique_constraint(:poll_id, name: :posts_poll_id_title_index)
+  end
+
+  def publish_changeset(%Post{} = post, attrs) do
+    post
     |> cast(attrs, [:ready_state])
   end
 

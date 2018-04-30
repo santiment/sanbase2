@@ -22,8 +22,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
         context: %{auth: %{current_user: %User{id: user_id}}}
       }) do
     posts =
-      Post.posts_by_score()
-      |> get_only_published_or_own_posts(user_id)
+      user_id
+      |> Post.ranked_published_or_own_posts()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
@@ -31,8 +31,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   def all_insights(_root, _args, _context) do
     posts =
-      Post.posts_by_score()
-      |> Enum.filter(&(&1.ready_state == Post.published()))
+      Post.ranked_published_posts()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
@@ -64,6 +63,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       query
       |> Repo.all()
       |> Repo.preload(@preloaded_assoc)
+
+    {:ok, posts}
+  end
+
+  def all_insights_by_tag(_root, %{tag: tag}, %{
+        context: %{auth: %{current_user: %User{id: user_id}}}
+      }) do
+    posts =
+      user_id
+      |> Post.ranked_published_or_own_posts()
+      |> Repo.preload(@preloaded_assoc)
+      |> filter_by_tag(tag)
+
+    {:ok, posts}
+  end
+
+  def all_insights_by_tag(_root, %{tag: tag}, _context) do
+    posts =
+      Post.ranked_published_posts()
+      |> Repo.preload(@preloaded_assoc)
+      |> filter_by_tag(tag)
 
     {:ok, posts}
   end
@@ -155,13 +175,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   # Helper functions
 
-  defp get_only_published_or_own_posts(posts, user_id) do
-    posts
-    |> Enum.filter(fn post ->
-      post.user_id == user_id || post.ready_state == Post.published()
-    end)
-  end
-
   defp delete_post_images(%Post{} = post) do
     extract_image_url_from_post(post)
     |> Enum.map(&Sanbase.FileStore.delete/1)
@@ -172,5 +185,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.preload(:images)
     |> Map.get(:images, [])
     |> Enum.map(fn %{image_url: image_url} -> image_url end)
+  end
+
+  defp filter_by_tag(posts, tag) do
+    posts
+    |> Enum.filter(fn post ->
+      tag in Enum.map(post.tags, & &1.name)
+    end)
   end
 end

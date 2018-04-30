@@ -176,13 +176,13 @@ export const Detailed = ({
   const emojisSentiment = {
     loading: EmojisSentiment.loading,
     error: EmojisSentiment.error,
-    items: EmojisSentiment.emojisSentiment
+    items: EmojisSentiment.emojisSentiment || []
   }
 
   const dailyActiveAddresses = {
     loading: DailyActiveAddresses.loading,
     error: DailyActiveAddresses.error,
-    items: DailyActiveAddresses.dailyActiveAddresses
+    items: DailyActiveAddresses.dailyActiveAddresses || []
   }
 
   const ethSpentOverTimeByErc20Projects = {

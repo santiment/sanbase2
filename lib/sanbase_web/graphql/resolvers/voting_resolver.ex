@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Repo
-  alias Sanbase.InternalServices.Ethauth
   alias SanbaseWeb.Graphql.Resolvers.Helpers
 
   def current_poll(_root, _args, _context) do
@@ -24,7 +23,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
       |> Stream.map(&User.san_balance!/1)
       |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
-    {:ok, Decimal.div(total_san_votes, Ethauth.san_token_decimals())}
+    {:ok, total_san_votes}
   end
 
   def voted_at(%Post{} = post, _args, %{

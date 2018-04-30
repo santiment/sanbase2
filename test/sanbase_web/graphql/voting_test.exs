@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.VotingTest do
   alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Auth.User
   alias Sanbase.Repo
-  alias Sanbase.InternalServices.Ethauth
 
   import SanbaseWeb.Graphql.TestHelpers
 
@@ -12,8 +11,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     user =
       %User{
         salt: User.generate_salt(),
-        san_balance:
-          Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
+        san_balance: Decimal.new("10.000000000000000000"),
         san_balance_updated_at: Timex.now()
       }
       |> Repo.insert!()
@@ -90,8 +88,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     assert currentPoll["posts"] == [
              %{
                "id" => Integer.to_string(approved_post.id),
-               "totalSanVotes" =>
-                 Decimal.to_string(Decimal.div(user.san_balance, Ethauth.san_token_decimals()))
+               "totalSanVotes" => Decimal.to_string(user.san_balance)
              }
            ]
   end
@@ -168,8 +165,7 @@ defmodule SanbaseWeb.Graphql.VotingTest do
 
     assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
 
-    assert sanbasePost["totalSanVotes"] ==
-             Decimal.to_string(Decimal.div(user.san_balance, Ethauth.san_token_decimals()))
+    assert sanbasePost["totalSanVotes"] == Decimal.to_string(user.san_balance)
   end
 
   test "unvoting for a post", %{conn: conn, user: user} do
@@ -204,6 +200,6 @@ defmodule SanbaseWeb.Graphql.VotingTest do
     sanbasePost = json_response(result, 200)["data"]["unvote"]
 
     assert sanbasePost["id"] == Integer.to_string(sanbase_post.id)
-    assert sanbasePost["totalSanVotes"] == "0.000000000000000000"
+    assert Decimal.cmp(sanbasePost["totalSanVotes"] |> Decimal.new(), Decimal.new(0)) == :eq
   end
 end

@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.VotingTest do
   alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Auth.User
   alias Sanbase.Repo
-  alias Sanbase.InternalServices.Ethauth
 
   import SanbaseWeb.Graphql.TestHelpers
 

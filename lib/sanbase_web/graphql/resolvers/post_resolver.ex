@@ -102,6 +102,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
         context: %{auth: %{current_user: %User{id: user_id}}}
       }) do
     draft_state = Post.draft()
+    published_state = Post.published()
 
     case Repo.get(Post, post_id) do
       %Post{user_id: ^user_id, ready_state: ^draft_state} = post ->
@@ -119,6 +120,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
               message: "Can't update post", details: Helpers.error_details(changeset)
             }
         end
+
+      %Post{user_id: another_user_id} when user_id != another_user_id ->
+        {:error, "Cannot update not owned post: #{post_id}"}
+
+      %Post{user_id: ^user_id, ready_state: ^published_state} ->
+        {:error, "Cannot update published post: #{post_id}"}
 
       _post ->
         {:error, "Cannot update post with id: #{post_id}"}

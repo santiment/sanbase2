@@ -26,7 +26,9 @@ import {
   GithubActivityGQL,
   TransactionVolumeGQL,
   ExchangeFundFlowGQL,
-  EthSpentOverTimeByErc20ProjectsGQL
+  EthSpentOverTimeByErc20ProjectsGQL,
+  DailyActiveAddressesGQL,
+  EmojisSentimentGQL
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'
@@ -86,6 +88,16 @@ export const Detailed = ({
     error: false,
     historyPrice: []
   },
+  DailyActiveAddresses = {
+    loading: true,
+    error: false,
+    dailyActiveAddresses: []
+  },
+  EmojisSentiment = {
+    loading: true,
+    error: false,
+    emojisSentiment: []
+  },
   changeChartVars,
   isDesktop,
   ...props
@@ -142,6 +154,18 @@ export const Detailed = ({
     items: ExchangeFundFlow.transactionVolume
   }
 
+  const emojisSentiment = {
+    loading: EmojisSentiment.loading,
+    error: EmojisSentiment.error,
+    items: EmojisSentiment.emojisSentiment
+  }
+
+  const dailyActiveAddresses = {
+    loading: DailyActiveAddresses.loading,
+    error: DailyActiveAddresses.error,
+    items: DailyActiveAddresses.dailyActiveAddresses
+  }
+
   const ethSpentOverTimeByErc20Projects = {
     loading: EthSpentOverTimeByErc20Projects.loading,
     error: EthSpentOverTimeByErc20Projects.error,
@@ -170,6 +194,8 @@ export const Detailed = ({
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
       ethSpentOverTime={_ethSpentOverTime}
+      emojisSentiment={emojisSentiment}
+      dailyActiveAddresses={dailyActiveAddresses}
       ethPrice={ethPrice}
       isERC20={project.isERC20}
       onDatesChange={(from, to, interval, ticker) => {
@@ -487,6 +513,38 @@ const enhance = compose(
         variables: {
           from,
           to,
+          interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
+        }
+      }
+    }
+  }),
+  graphql(EmojisSentimentGQL, {
+    name: 'EmojisSentiment',
+    options: ({chartVars, Project}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from || !ticker,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker,
+          interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
+        }
+      }
+    }
+  }),
+  graphql(DailyActiveAddressesGQL, {
+    name: 'DailyActiveAddresses',
+    options: ({chartVars, Project}) => {
+      const {from, to, ticker} = chartVars
+      return {
+        skip: !from || !ticker,
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          ticker,
           interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
         }
       }

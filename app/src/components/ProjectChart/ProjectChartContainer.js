@@ -229,6 +229,8 @@ const enhance = compose(
   withState('isToggledBurnRate', 'toggleBurnRate', false),
   withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
   withState('isToggledEthPrice', 'toggleEthPrice', false),
+  withState('isToggledEmojisSentiment', 'toggleEmojisSentiment', true),
+  withState('isToggledDailyActiveAddresses', 'toggleActiveAddresses', false),
   withState('blockchainFilter', 'setBlockchainFilter', 'all')
 )
 

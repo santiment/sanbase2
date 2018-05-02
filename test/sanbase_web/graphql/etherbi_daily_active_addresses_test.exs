@@ -13,6 +13,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     Store.create_db()
 
     ticker = "SAN"
+    slug = "santiment"
     contract_address = "0x1234"
     Store.drop_measurement(contract_address)
 
@@ -20,7 +21,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
       %Project{
         name: "Santiment",
         ticker: ticker,
-        coinmarketcap_id: "santiment",
+        coinmarketcap_id: slug,
         main_contract_address: contract_address
       }
       |> Repo.insert!()
@@ -89,7 +90,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     ])
 
     [
-      ticker: ticker,
+      slug: slug,
       datetime1: datetime1,
       datetime2: datetime2,
       datetime3: datetime3,
@@ -105,7 +106,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     query = """
     {
       dailyActiveAddresses(
-        ticker: "#{context.ticker}",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}") {
           datetime
@@ -166,7 +167,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     query = """
     {
       dailyActiveAddresses(
-        ticker: "#{context.ticker}",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}",
         interval: "2d") {
@@ -215,7 +216,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     query = """
     {
       dailyActiveAddresses(
-        ticker: "#{context.ticker}",
+        slug: "#{context.slug}",
         from: "#{from_no_data}",
         to: "#{to_no_data}",
         interval: "2d") {

@@ -13,6 +13,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     Store.create_db()
 
     ticker = "SAN"
+    slug = "santiment"
     exchange_address = "0x4321"
     contract_address = "0x1234"
     Store.drop_measurement(contract_address)
@@ -21,7 +22,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
       %Project{
         name: "Santiment",
         ticker: ticker,
-        coinmarketcap_id: "santiment",
+        coinmarketcap_id: slug,
         main_contract_address: contract_address
       }
       |> Repo.insert!()
@@ -106,7 +107,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
 
     [
       exchange_address: exchange_address,
-      ticker: ticker,
+      slug: slug,
       datetime1: datetime1,
       datetime2: datetime2,
       datetime3: datetime3,
@@ -122,7 +123,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     query = """
     {
       exchangeFundsFlow(
-        ticker: "#{context.ticker}",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}") {
           datetime

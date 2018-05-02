@@ -106,6 +106,7 @@ export const App = ({isDesktop}) => (
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
+        <Route path='/insights/update/:insightId' component={LoadableInsightsNew} />
         <Route exact path='/insights' component={LoadableInsights} />
         <Route exact path='/insights/newest' component={LoadableInsights} />
         <Route exact path='/insights/popular' component={LoadableInsights} />

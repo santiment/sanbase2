@@ -20,7 +20,8 @@ const COLORS = {
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
   ethSpentOverTime: '#c82f3f',
-  ethPrice: '#3c3c3d'
+  ethPrice: '#3c3c3d',
+  sentiment: '#e23ab4'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -71,13 +72,17 @@ const makeChartDataFromHistory = ({
   isToggledBurnRate,
   isToggledTransactionVolume,
   isToggledEthSpentOverTime,
-  isToggledEthPrice,
+  isToggledEthPrice = false,
+  isToggledEmojisSentiment = false,
+  isToggledDailyActiveAddresses = false,
   ...props
 }) => {
   const twitter = props.twitter.history.items || []
   const github = props.github.history.items || []
   const burnRate = props.burnRate.items || []
   const transactionVolume = props.transactionVolume.items || []
+  const emojisSentiment = props.emojisSentiment.items || []
+  const dailyActiveAddresses = props.dailyActiveAddresses.items || []
   const labels = history ? history.map(data => moment(data.datetime).utc()) : []
   const eventIndex = findIndexByDatetime(labels, '2018-01-13T18:00:00Z')
   const priceDataset = {
@@ -256,6 +261,44 @@ const makeChartDataFromHistory = ({
         y: parseFloat(data.priceUsd)
       }
     }) : []}
+  const sentimentDataset = !isToggledEmojisSentiment ? null : {
+    label: 'Sentiment',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-10',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.sentiment,
+    backgroundColor: COLORS.sentiment,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: emojisSentiment.map(data => {
+      return {
+        x: data.datetime,
+        y: data.sentiment
+      }
+    })}
+  const dailyActiveAddressesDataset = !isToggledDailyActiveAddresses ? null : {
+    label: 'Daily Active Addresses',
+    type: 'bar',
+    fill: false,
+    yAxisID: 'y-axis-11',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.twitter,
+    backgroundColor: COLORS.twitter,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: dailyActiveAddresses.map(data => {
+      return {
+        x: data.datetime,
+        y: data.activeAddresses
+      }
+    })}
   return {
     labels,
     datasets: [
@@ -267,7 +310,9 @@ const makeChartDataFromHistory = ({
       burnrateDataset,
       transactionVolumeDataset,
       ethSpentOverTimeByErc20ProjectsDataset,
-      ethPriceDataset
+      ethPriceDataset,
+      sentimentDataset,
+      dailyActiveAddressesDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -357,6 +402,12 @@ const makeOptionsFromProps = props => ({
         }
         if (label === 'ETH Spent Over time') {
           return `${label}: ${millify(tooltipItem.yLabel)}`
+        }
+        if (label === 'Daily Active Addresses') {
+          return `${label}: ${millify(tooltipItem.yLabel)}`
+        }
+        if (label === 'Sentiment') {
+          return `${label}: ${formatNumber(tooltipItem.yLabel)}`
         }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
@@ -581,7 +632,6 @@ const makeOptionsFromProps = props => ({
       position: 'right'
     }, {
       id: 'y-axis-9',
-      display: true,
       position: 'right',
       scaleLabel: {
         display: true,
@@ -596,7 +646,44 @@ const makeOptionsFromProps = props => ({
       gridLines: {
         drawBorder: false,
         display: false
-      }
+      },
+      display: props.isToggledEthPrice
+    }, {
+      id: 'y-axis-10',
+      position: 'right',
+      scaleLabel: {
+        display: true,
+        labelString: 'Sentiment',
+        fontColor: '#3d4450'
+      },
+      ticks: {
+        display: false,
+        beginAtZero: true,
+        callback: renderTicks(props)
+      },
+      gridLines: {
+        drawBorder: false,
+        display: false
+      },
+      display: props.isToggledEmojisSentiment
+    }, {
+      id: 'y-axis-11',
+      position: 'right',
+      scaleLabel: {
+        display: true,
+        labelString: `Daily Active Addresses`,
+        fontColor: '#3d4450'
+      },
+      ticks: {
+        display: false,
+        beginAtZero: true,
+        callback: renderTicks(props)
+      },
+      gridLines: {
+        drawBorder: false,
+        display: false
+      },
+      display: props.isToggledDailyActiveAddresses
     }],
     xAxes: [{
       type: 'time',

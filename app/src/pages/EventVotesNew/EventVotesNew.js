@@ -34,11 +34,16 @@ class EventVotesNew extends Component {
     if (!this.props.isLogin) {
       this.props.history.push('/login')
     }
+    if (this.props.match.path.split('/')[2] === 'update' &&
+      !!this.props.match.params.insightId) {
+      this.changePost(this.props.location.state.post)
+    }
   }
 
   render () {
     if (!this.state.text &&
-      this.props.history.location.pathname !== '/insights/new') {
+      this.props.history.location.pathname !== '/insights/new' &&
+      this.props.match.path.split('/')[2] !== 'update') {
       return (
         <Redirect to={{
           pathname: '/insights/new'

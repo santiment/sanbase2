@@ -1,10 +1,11 @@
 import React, { createElement } from 'react'
-import { Redirect } from 'react-router-dom'
+import { Redirect, withRouter } from 'react-router-dom'
 import {
   compose,
   pure
 } from 'recompose'
 import moment from 'moment'
+import { Button } from 'semantic-ui-react'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import {
@@ -23,6 +24,7 @@ const Span = createSkeletonElement('span', 'pending-home')
 const Div = createSkeletonElement('div', 'pending-home')
 
 const Insight = ({
+  history,
   Post = {
     loading: true,
     post: null
@@ -34,7 +36,8 @@ const Insight = ({
     createdAt: null,
     user: {
       username: null
-    }
+    },
+    readyState: 'draft'
   }} = Post
   const compile = marksy({
     createElement,
@@ -52,7 +55,16 @@ const Insight = ({
         title={`SANbase: Insight - ${post.title}`}>
         <Panel className='insight-panel'>
           <H2>
-            {post.title}
+            {post.title} - {post.readyState === 'draft' &&
+              <Button
+                onClick={() => {
+                  history.push(`/insights/update/${post.id}`, {post})
+                }}
+              >
+                edit
+              </Button>
+            }
+
           </H2>
           <Span>
             by {post.user.username
@@ -83,6 +95,7 @@ export const postGQL = gql`
       shortDesc
       createdAt
       state
+      readyState
       user {
         username
         id
@@ -94,6 +107,7 @@ export const postGQL = gql`
 `
 
 const enhance = compose(
+  withRouter,
   graphql(postGQL, {
     name: 'Post',
     options: ({match}) => ({

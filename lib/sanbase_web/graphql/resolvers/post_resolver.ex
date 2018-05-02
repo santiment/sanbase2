@@ -22,8 +22,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
         context: %{auth: %{current_user: %User{id: user_id}}}
       }) do
     posts =
-      Post.posts_by_score()
-      |> get_only_published_or_own_posts(user_id)
+      user_id
+      |> Post.ranked_published_or_own_posts()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
@@ -31,8 +31,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   def all_insights(_root, _args, _context) do
     posts =
-      Post.posts_by_score()
-      |> Enum.filter(&(&1.ready_state == Post.published()))
+      Post.ranked_published_posts()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}
@@ -68,6 +67,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
+  def all_insights_by_tag(_root, %{tag: tag}, %{
+        context: %{auth: %{current_user: %User{id: user_id}}}
+      }) do
+    posts =
+      user_id
+      |> Post.ranked_published_or_own_posts()
+      |> Repo.preload(@preloaded_assoc)
+      |> filter_by_tag(tag)
+
+    {:ok, posts}
+  end
+
+  def all_insights_by_tag(_root, %{tag: tag}, _context) do
+    posts =
+      Post.ranked_published_posts()
+      |> Repo.preload(@preloaded_assoc)
+      |> filter_by_tag(tag)
+
+    {:ok, posts}
+  end
+
   def related_projects(post, _, _) do
     tags = post.tags |> Enum.map(& &1.name)
 
@@ -95,6 +115,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
           :error,
           message: "Can't create post", details: Helpers.error_details(changeset)
         }
+    end
+  end
+
+  def update_post(_root, %{id: post_id} = post_args, %{
+        context: %{auth: %{current_user: %User{id: user_id}}}
+      }) do
+    draft_state = Post.draft()
+    published_state = Post.published()
+
+    case Repo.get(Post, post_id) do
+      %Post{user_id: ^user_id, ready_state: ^draft_state} = post ->
+        post
+        |> Repo.preload([:tags, :images])
+        |> Post.update_changeset(post_args)
+        |> Repo.update()
+        |> case do
+          {:ok, post} ->
+            {:ok, post}
+
+          {:error, changeset} ->
+            {
+              :error,
+              message: "Can't update post", details: Helpers.error_details(changeset)
+            }
+        end
+
+      %Post{user_id: another_user_id} when user_id != another_user_id ->
+        {:error, "Cannot update not owned post: #{post_id}"}
+
+      %Post{user_id: ^user_id, ready_state: ^published_state} ->
+        {:error, "Cannot update published post: #{post_id}"}
+
+      _post ->
+        {:error, "Cannot update post with id: #{post_id}"}
     end
   end
 
@@ -134,7 +188,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     case Repo.get(Post, post_id) do
       %Post{user_id: ^user_id} = post ->
         post
-        |> Post.update_changeset(%{ready_state: Post.published()})
+        |> Post.publish_changeset(%{ready_state: Post.published()})
         |> Repo.update()
         |> case do
           {:ok, post} ->
@@ -155,13 +209,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   # Helper functions
 
-  defp get_only_published_or_own_posts(posts, user_id) do
-    posts
-    |> Enum.filter(fn post ->
-      post.user_id == user_id || post.ready_state == Post.published()
-    end)
-  end
-
   defp delete_post_images(%Post{} = post) do
     extract_image_url_from_post(post)
     |> Enum.map(&Sanbase.FileStore.delete/1)
@@ -172,5 +219,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.preload(:images)
     |> Map.get(:images, [])
     |> Enum.map(fn %{image_url: image_url} -> image_url end)
+  end
+
+  defp filter_by_tag(posts, tag) do
+    posts
+    |> Enum.filter(fn post ->
+      tag in Enum.map(post.tags, & &1.name)
+    end)
   end
 end

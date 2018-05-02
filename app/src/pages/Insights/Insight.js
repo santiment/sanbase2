@@ -101,7 +101,10 @@ export const postGQL = gql`
         id
       }
       votedAt
-      totalSanVotes
+      votes {
+         totalSanVotes,
+         totalVotes
+      }
     }
   }
 `

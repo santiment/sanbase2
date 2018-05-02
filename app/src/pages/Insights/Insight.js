@@ -55,7 +55,7 @@ const Insight = ({
         title={`SANbase: Insight - ${post.title}`}>
         <Panel className='insight-panel'>
           <H2>
-            {post.title} - {post.readyState === 'draft' &&
+            {post.title} {post.readyState === 'draft' &&
               <Button
                 onClick={() => {
                   history.push(`/insights/update/${post.id}`, {post})

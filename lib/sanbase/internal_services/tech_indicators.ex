@@ -738,7 +738,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp emojis_sentiment_request(
-         ticker,
          from_datetime,
          to_datetime,
          aggregate_interval,
@@ -752,7 +751,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"ticker", ticker},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
         {"aggregate_interval", aggregate_interval},

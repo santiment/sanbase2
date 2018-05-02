@@ -90,7 +90,9 @@ defmodule SanbaseWeb.Graphql.PostTest do
           id,
           username
         },
-        totalSanVotes
+        votes{
+          totalSanVotes
+        }
       }
     }
     """
@@ -445,7 +447,9 @@ defmodule SanbaseWeb.Graphql.PostTest do
         user {
           id
         },
-        totalSanVotes,
+        votes{
+          totalSanVotes,
+        }
         state,
         createdAt
       }
@@ -462,8 +466,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert sanbasePost["title"] == "Awesome post"
     assert sanbasePost["state"] == nil
     assert sanbasePost["user"]["id"] == user.id |> Integer.to_string()
-    {total_san_votes, _after_decimal_point} = sanbasePost["totalSanVotes"] |> Integer.parse()
-    assert total_san_votes == 0
+    assert sanbasePost["votes"]["totalSanVotes"] == 0
 
     createdAt = Timex.parse!(sanbasePost["createdAt"], "{ISO:Extended}")
 

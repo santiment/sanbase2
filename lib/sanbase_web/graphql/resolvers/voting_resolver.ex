@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Repo
-  alias Sanbase.InternalServices.Ethauth
   alias SanbaseWeb.Graphql.Resolvers.Helpers
 
   def current_poll(_root, _args, _context) do
@@ -15,16 +14,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
     {:ok, poll}
   end
 
-  def total_san_votes(%Post{} = post, _args, _context) do
-    total_san_votes =
+  @doc ~s"""
+    Returns a tuple `{total_votes, total_san_votes}` where:
+    - `total_votes` represents the number of votes where each vote's weight is 1
+    - `total_san_votes` represents the number of votes where each vote's weight is
+    equal to the san balance of the voter
+  """
+  def votes(%Post{} = post, _args, _context) do
+    {total_votes, total_san_votes} =
       post
       |> Repo.preload(votes: [user: :eth_accounts])
       |> Map.get(:votes)
       |> Stream.map(&Map.get(&1, :user))
       |> Stream.map(&User.san_balance!/1)
-      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+      |> Enum.reduce({0, 0}, fn san_balance, {votes, san_token_votes} ->
+        {votes + 1, san_token_votes + Decimal.to_float(san_balance)}
+      end)
 
-    {:ok, Decimal.div(total_san_votes, Ethauth.san_token_decimals())}
+    {:ok,
+     %{
+       total_votes: total_votes,
+       total_san_votes: total_san_votes |> round() |> trunc()
+     }}
   end
 
   def voted_at(%Post{} = post, _args, %{

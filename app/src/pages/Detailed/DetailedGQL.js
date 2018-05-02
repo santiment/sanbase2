@@ -19,6 +19,7 @@ export const projectBySlugGQL = gql`
       twitterLink,
       whitepaperLink,
       slackLink,
+      infrastructure,
       btcBalance,
       projectTransparency,
       projectTransparencyDescription,

@@ -159,7 +159,7 @@ const ProjectChartFooter = ({
           isToggled={props.isToggledEmojisSentiment &&
             props.emojisSentiment.items.length !== 0}
           toggle={props.toggleEmojisSentiment}>
-          <Label circular className='twitterLabel' empty />
+          <Label circular className='sentimentLabel' empty />
           Sentiment
         </ToggleBtn>
       </FilterCategory>

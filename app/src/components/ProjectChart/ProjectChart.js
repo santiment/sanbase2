@@ -20,7 +20,8 @@ const COLORS = {
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
   ethSpentOverTime: '#c82f3f',
-  ethPrice: '#3c3c3d'
+  ethPrice: '#3c3c3d',
+  sentiment: '#e23ab4'
 }
 
 // Fix X mode in Chart.js lib. Monkey loves this.
@@ -268,8 +269,8 @@ const makeChartDataFromHistory = ({
     datalabels: {
       display: false
     },
-    borderColor: COLORS.twitter,
-    backgroundColor: COLORS.twitter,
+    borderColor: COLORS.sentiment,
+    backgroundColor: COLORS.sentiment,
     borderWidth: 1,
     pointBorderWidth: 2,
     pointRadius: 2,

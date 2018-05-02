@@ -76,7 +76,11 @@ const createNewPost = ({createPost, post, user, history}) => createPost({
         title,
         tags,
         text,
-        totalSanVotes: 0,
+        votes: {
+          totalSanVotes: 0,
+          totalVotes: 0,
+          __typename: 'Vote'
+        },
         createdAt: new Date(),
         readyState: 'draft',
         votedAt: null,
@@ -95,7 +99,11 @@ const createNewPost = ({createPost, post, user, history}) => createPost({
         title,
         tags,
         text,
-        totalSanVotes: 0,
+        votes: {
+          totalSanVotes: 0,
+          totalVotes: 0,
+          __typename: 'Vote'
+        },
         createdAt: new Date(),
         readyState: 'draft',
         votedAt: null,

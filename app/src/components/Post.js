@@ -62,7 +62,7 @@ const Post = ({
   id,
   title,
   link,
-  totalSanVotes = 0,
+  votes = {},
   liked = false,
   user,
   tags = [],
@@ -113,7 +113,7 @@ const Post = ({
               }}
               balance={balance}
               liked={!!votedAt}
-              votes={totalSanVotes} />
+              votes={votes.totalSanVotes || 0} />
           </Div>}
         <Div className='event-post-controls'>
           {showStatus && <Status

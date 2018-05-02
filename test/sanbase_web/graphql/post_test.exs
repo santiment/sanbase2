@@ -617,6 +617,142 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert true == File.exists?(image_url)
   end
 
+  test "update post", %{conn: conn, user: user} do
+    image_url = upload_image(conn)
+    poll = Poll.find_or_insert_current_poll!()
+    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome post",
+        text: "Example body",
+        ready_state: Post.draft(),
+        tags: [tag1]
+      }
+      |> Repo.insert!()
+
+    mutation = """
+    mutation {
+      updatePost(id: #{post.id} title: "Awesome post2", text: "Example body2", tags: ["#{
+      tag2.name
+    }"], imageUrls: ["#{image_url}"]) {
+        id,
+        title,
+        text,
+        images{
+          imageUrl
+          contentHash
+        }
+        tags {
+          name
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    new_post = json_response(result, 200)["data"]["updatePost"]
+    assert new_post["title"] == "Awesome post2"
+  end
+
+  test "cannot update not owned post", %{conn: conn} do
+    image_url = upload_image(conn)
+    poll = Poll.find_or_insert_current_poll!()
+    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+
+    other_user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: other_user.id,
+        title: "Awesome post",
+        text: "Example body",
+        ready_state: Post.draft(),
+        tags: [tag1]
+      }
+      |> Repo.insert!()
+
+    mutation = """
+    mutation {
+      updatePost(id: #{post.id} title: "Awesome post2", text: "Example body2", tags: ["#{
+      tag2.name
+    }"], imageUrls: ["#{image_url}"]) {
+        id,
+        title,
+        text,
+        images{
+          imageUrl
+          contentHash
+        }
+        tags {
+          name
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [error] = json_response(result, 200)["errors"]
+    assert String.contains?(error["message"], "Cannot update not owned post")
+  end
+
+  test "cannot update published posts", %{conn: conn, user: user} do
+    image_url = upload_image(conn)
+    poll = Poll.find_or_insert_current_poll!()
+    tag1 = %Tag{name: "PRJ1"} |> Repo.insert!()
+    tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
+
+    post =
+      %Post{
+        poll_id: poll.id,
+        user_id: user.id,
+        title: "Awesome post",
+        text: "Example body",
+        ready_state: Post.published(),
+        tags: [tag1]
+      }
+      |> Repo.insert!()
+
+    mutation = """
+    mutation {
+      updatePost(id: #{post.id} title: "Awesome post2", text: "Example body2", tags: ["#{
+      tag2.name
+    }"], imageUrls: ["#{image_url}"]) {
+        id,
+        title,
+        text,
+        images{
+          imageUrl
+          contentHash
+        }
+        tags {
+          name
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    [error] = json_response(result, 200)["errors"]
+    assert String.contains?(error["message"], "Cannot update published post")
+  end
+
   test "cannot reuse images", %{conn: conn} do
     image_url = upload_image(conn)
 

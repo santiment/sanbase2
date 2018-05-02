@@ -44,13 +44,12 @@ export class CreateInsight extends React.Component {
         editorState={editorState}
         sideButtons={[{
           title: 'Image',
-          component: props => (
-            <CustomImageSideButton
-              onPendingImg={this.props.onPendingImg}
-              onErrorImg={this.props.onErrorImg}
-              onSuccessImg={this.props.onSuccessImg}
-              {...props}
-            />)
+          component: CustomImageSideButton,
+          props: {
+            onPendingImg: this.props.onPendingImg,
+            onErrorImg: this.props.onErrorImg,
+            onSuccessImg: this.props.onSuccessImg
+          }
         }]}
         toolbarConfig={{
           block: ['ordered-list-item', 'unordered-list-item'],

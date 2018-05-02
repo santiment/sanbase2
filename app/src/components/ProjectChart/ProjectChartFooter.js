@@ -127,6 +127,15 @@ const ProjectChartFooter = (props) => (
             position='top left'
           />
         </ToggleBtn>
+        <ToggleBtn
+          loading={props.dailyActiveAddresses.loading}
+          disabled={props.dailyActiveAddresses.items.length === 0}
+          isToggled={props.isToggledDailyActiveAddresses &&
+            props.dailyActiveAddresses.items.length !== 0}
+          toggle={props.toggleActiveAddresses}>
+          <Label circular className='twitterLabel' empty />
+          Daily Active Addresses
+        </ToggleBtn>
       </FilterCategory>}
       <FilterCategory name='Social'>
         <ToggleBtn
@@ -137,6 +146,15 @@ const ProjectChartFooter = (props) => (
           toggle={props.toggleTwitter}>
           <Label circular className='twitterLabel' empty />
           Twitter
+        </ToggleBtn>
+        <ToggleBtn
+          loading={props.emojisSentiment.loading}
+          disabled={props.emojisSentiment.items.length === 0}
+          isToggled={props.isToggledEmojisSentiment &&
+            props.emojisSentiment.items.length !== 0}
+          toggle={props.toggleEmojisSentiment}>
+          <Label circular className='sentimentLabel' empty />
+          Sentiment
         </ToggleBtn>
       </FilterCategory>
       {(props.isERC20 || props.ticker === 'ETH') &&

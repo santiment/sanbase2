@@ -16,7 +16,6 @@ import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { millify } from './../../utils/formatting'
-import { isERC20 } from './../Projects/projectSelectors'
 import DetailedHeader from './DetailedHeader'
 import {
   projectBySlugGQL,
@@ -176,13 +175,13 @@ export const Detailed = ({
   const emojisSentiment = {
     loading: EmojisSentiment.loading,
     error: EmojisSentiment.error,
-    items: EmojisSentiment.emojisSentiment
+    items: EmojisSentiment.emojisSentiment || []
   }
 
   const dailyActiveAddresses = {
     loading: DailyActiveAddresses.loading,
     error: DailyActiveAddresses.error,
-    items: DailyActiveAddresses.dailyActiveAddresses
+    items: DailyActiveAddresses.dailyActiveAddresses || []
   }
 
   const ethSpentOverTimeByErc20Projects = {
@@ -322,7 +321,7 @@ const enhance = compose(
         errorMessage: Project.error ? Project.error.message : '',
         project: {
           ...Project.projectBySlug,
-          isERC20: isERC20(Project.projectBySlug)
+          isERC20: (Project.projectBySlug || {}).infrastructure === 'ETH'
         }
       }
     }),
@@ -483,7 +482,7 @@ const enhance = compose(
   }),
   graphql(EmojisSentimentGQL, {
     name: 'EmojisSentiment',
-    options: ({chartVars, Project}) => {
+    options: ({chartVars}) => {
       const {from, to, ticker} = chartVars
       return {
         skip: !from || !ticker,
@@ -499,7 +498,7 @@ const enhance = compose(
   }),
   graphql(DailyActiveAddressesGQL, {
     name: 'DailyActiveAddresses',
-    options: ({chartVars, Project}) => {
+    options: ({chartVars}) => {
       const {from, to, ticker} = chartVars
       return {
         skip: !from || !ticker,

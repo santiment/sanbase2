@@ -83,7 +83,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   def emojis_sentiment(
         _root,
         %{
-          ticker: ticker,
           from: from,
           to: to,
           interval: interval,
@@ -92,7 +91,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
         _resolution
       ) do
     TechIndicators.emojis_sentiment(
-      ticker,
       from,
       to,
       interval,

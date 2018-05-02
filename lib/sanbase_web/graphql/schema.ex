@@ -321,7 +321,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Emojis sentiment for a ticker and time period"
     field :emojis_sentiment, list_of(:emojis_sentiment) do
-      arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1d")

@@ -5,7 +5,7 @@ import { Button } from 'semantic-ui-react'
 
 const CreateBody = ({changePost, post, postBody = null, setPostBody}) => (
   <div style={{padding: '0 20px 20px 20px'}}>
-    <CreateInsight changePost={raw => {
+    <CreateInsight initValue={post.text} changePost={raw => {
       setPostBody(raw)
     }} />
     <div className='event-posts-new-step-control'>

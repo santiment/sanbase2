@@ -10,7 +10,7 @@ import './CreateInsight.css'
 
 export class CreateInsight extends React.Component {
   state = { // eslint-disable-line
-    editorState: createEditorState() // for empty content
+    editorState: createEditorState(this.props.initValue) // for empty content
   }
 
   onChange = editorState => { // eslint-disable-line

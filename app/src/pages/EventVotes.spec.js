@@ -6,19 +6,25 @@ const unsortedPosts = [{
   id: 1,
   title: 'check',
   link: 'https://asdfjhj.startrack',
-  totalSanVotes: 0,
+  votes: {
+    totalSanVotes: 0
+  },
   createdAt: moment().utc().format()
 }, {
   id: 2,
   title: 'check 2',
   link: 'https://asdfjhj.startrack',
-  totalSanVotes: 3,
+  votes: {
+    totalSanVotes: 3
+  },
   createdAt: moment().day(-1).utc().format()
 }, {
   id: 3,
   title: 'check 3',
   link: 'https://asdfjhj.startrack',
-  totalSanVotes: 1,
+  votes: {
+    totalSanVotes: 1
+  },
   createdAt: moment().day(-5).utc().format()
 }]
 

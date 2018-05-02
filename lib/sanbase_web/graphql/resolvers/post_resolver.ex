@@ -118,6 +118,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     end
   end
 
+  def update_post(_root, %{id: post_id} = post_args, %{
+        context: %{auth: %{current_user: %User{id: user_id}}}
+      }) do
+    draft_state = Post.draft()
+    published_state = Post.published()
+
+    case Repo.get(Post, post_id) do
+      %Post{user_id: ^user_id, ready_state: ^draft_state} = post ->
+        post
+        |> Repo.preload([:tags, :images])
+        |> Post.update_changeset(post_args)
+        |> Repo.update()
+        |> case do
+          {:ok, post} ->
+            {:ok, post}
+
+          {:error, changeset} ->
+            {
+              :error,
+              message: "Can't update post", details: Helpers.error_details(changeset)
+            }
+        end
+
+      %Post{user_id: another_user_id} when user_id != another_user_id ->
+        {:error, "Cannot update not owned post: #{post_id}"}
+
+      %Post{user_id: ^user_id, ready_state: ^published_state} ->
+        {:error, "Cannot update published post: #{post_id}"}
+
+      _post ->
+        {:error, "Cannot update post with id: #{post_id}"}
+    end
+  end
+
   def delete_post(_root, %{id: post_id}, %{
         context: %{auth: %{current_user: %User{id: user_id}}}
       }) do
@@ -154,7 +188,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     case Repo.get(Post, post_id) do
       %Post{user_id: ^user_id} = post ->
         post
-        |> Post.update_changeset(%{ready_state: Post.published()})
+        |> Post.publish_changeset(%{ready_state: Post.published()})
         |> Repo.update()
         |> case do
           {:ok, post} ->

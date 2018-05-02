@@ -11,7 +11,7 @@ import './CreateInsight.css'
 export class CreateInsight extends React.Component {
   /* eslint-disable no-undef */
   state = {
-    editorState: createEditorState()
+    editorState: createEditorState(this.props.initValue)
   }
 
   onChange = editorState => {

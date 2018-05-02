@@ -19,6 +19,7 @@ export const projectBySlugGQL = gql`
       twitterLink,
       whitepaperLink,
       slackLink,
+      infrastructure,
       btcBalance,
       projectTransparency,
       projectTransparencyDescription,
@@ -163,6 +164,34 @@ export const EthSpentOverTimeByErc20ProjectsGQL = gql`
     ) {
       datetime
       ethSpent
+      __typename
+    }
+}`
+
+export const EmojisSentimentGQL = gql`
+  query emojisSentiment($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
+    emojisSentiment(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime
+      sentiment
+      __typename
+    }
+}`
+
+export const DailyActiveAddressesGQL = gql`
+  query dailyActiveAddresses($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
+    dailyActiveAddresses(
+      ticker: $ticker,
+      from: $from,
+      to: $to,
+      interval: $interval
+    ) {
+      datetime
+      activeAddresses
       __typename
     }
 }`

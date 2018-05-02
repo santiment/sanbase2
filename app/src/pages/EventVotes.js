@@ -231,7 +231,7 @@ const unvotePostGQL = gql`
 
 export const sortByPopular = posts => {
   return posts.sort((postA, postB) =>
-    simpleSort(postA.totalSanVotes, postB.totalSanVotes)
+    simpleSort(postA.votes.totalSanVotes, postB.votes.totalSanVotes)
   )
 }
 
@@ -252,7 +252,9 @@ const mapDataToProps = props => {
     .filter(post => post.readyState ? post.readyState === 'published' : true)
     .map(post => {
       return {
-        totalSanVotes: parseFloat(post.totalSanVotes) || 0,
+        votes: {
+          totalSanVotes: parseFloat(post.votes.totalSanVotes) || 0
+        },
         ...post}
     })
   filteredPosts = sortByNewest(filteredPosts)

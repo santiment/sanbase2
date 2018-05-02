@@ -6,6 +6,11 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
   alias SanbaseWeb.Graphql.Resolvers.{VotingResolver, PostResolver}
   alias SanbaseWeb.Graphql.SanbaseRepo
 
+  object :vote do
+    field(:total_votes, non_null(:integer))
+    field(:total_san_votes, non_null(:integer))
+  end
+
   object :tag do
     field(:name, non_null(:string))
   end
@@ -44,8 +49,8 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
       resolve(&VotingResolver.voted_at/3)
     end
 
-    field :total_san_votes, :integer do
-      resolve(&VotingResolver.total_san_votes/3)
+    field :votes, :vote do
+      resolve(&VotingResolver.votes/3)
     end
   end
 end

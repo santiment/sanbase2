@@ -436,6 +436,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PostResolver.create_post/3)
     end
 
+    @desc "Mutation used for updating a post"
+    field :update_post, :post do
+      arg(:id, non_null(:id))
+      arg(:title, :string)
+      arg(:short_desc, :string)
+      arg(:link, :string)
+      arg(:text, :string)
+      arg(:image_urls, list_of(:string))
+      arg(:tags, list_of(:string))
+
+      middleware(JWTAuth)
+      resolve(&PostResolver.update_post/3)
+    end
+
     @desc "Mutation for deleting an existing post owned by the currently logged in used"
     field :delete_post, :post do
       arg(:id, non_null(:id))

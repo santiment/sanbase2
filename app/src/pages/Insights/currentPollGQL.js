@@ -7,7 +7,10 @@ export const allInsightsPublicGQL = gql`
       title
       createdAt
       state
-      totalSanVotes
+      votes {
+        totalSanVotes,
+        totalVotes
+      }
       tags {
         name
       }
@@ -30,7 +33,10 @@ export const allInsightsGQL = gql`
       tags {
         name
       }
-      totalSanVotes
+      votes {
+        totalSanVotes,
+        totalVotes
+      }
       moderationComment
       readyState
       votedAt

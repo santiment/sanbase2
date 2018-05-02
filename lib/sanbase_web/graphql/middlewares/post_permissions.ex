@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
     "id",
     "title",
     "shortDesc",
-    "totalSanVotes",
+    "votes",
     "user",
     "createdAt",
     "state",

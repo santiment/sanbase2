@@ -165,16 +165,10 @@ defmodule Sanbase.InternalServices.TechIndicators do
         emojis_sentiment_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result(
-          "Error status #{status} fetching emojis sentiment: #{body}"
-        )
+        error_result("Error status #{status} fetching emojis sentiment: #{body}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch emojis sentiment data: #{
-            HTTPoison.Error.message(error)
-          }"
-        )
+        error_result("Cannot fetch emojis sentiment data: #{HTTPoison.Error.message(error)}")
     end
   end
 

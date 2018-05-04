@@ -64,7 +64,9 @@ export const Currencies = ({
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br /><span className='ticker'>{value.ticker}</span>
+        <ProjectIcon
+          ticker={value.ticker}
+          name={value.name} /><br /><span className='ticker'>{value.ticker}</span>
       </div>
     ),
     filterMethod: (filter, row) => {

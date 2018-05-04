@@ -128,6 +128,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
     # Store each data point and the information when it was last updated
     price_stream
+    # Store each data point and the information when it was last updated
     |> Stream.each(fn prices ->
       measurement_points =
         prices

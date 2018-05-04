@@ -152,6 +152,7 @@ defmodule Sanbase.Influxdb.Store do
 
       @doc ~s"""
         Transforms the `datetime` parammeter to the internally used datetime format
+        which is timestamp in nanoseconds
       """
       def influx_time(datetime, from_type \\ nil)
 
@@ -161,6 +162,10 @@ defmodule Sanbase.Influxdb.Store do
 
       def influx_time(datetime, :seconds) when is_integer(datetime) do
         datetime * 1_000_000_000
+      end
+
+      def influx_time(datetime, :milliseconds) when is_integer(datetime) do
+        datetime * 1_000_000
       end
 
       def parse_time_series(%{results: [%{error: error}]}) do

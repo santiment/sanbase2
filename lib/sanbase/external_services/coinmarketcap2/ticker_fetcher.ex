@@ -1,9 +1,11 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
-  # # Syncronize ticker data from coinmarketcap.com
-  #
-  # A GenServer, which updates the data from coinmarketcap on a regular basis.
-  # On regular intervals it will fetch the data from coinmarketcap and insert it
-  # into a local DB
+  @moduledoc ~s"""
+    A GenServer, which updates the data from coinmarketcap on a regular basis.
+
+    Fetches only the current info and no historical data.
+    On predefined intervals it will fetch the data from coinmarketcap and insert it
+    into a local DB
+  """
   use GenServer, restart: :permanent, shutdown: 5_000
 
   require Sanbase.Utils.Config
@@ -36,19 +38,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   end
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
-    # Fetch current  marketcap
+    # Fetch current coinmarketcap data for many tickers
     tickers = Ticker.fetch_data()
 
-    tickers
-    |> Enum.each(&store_latest_coinmarketcap_data/1)
-
-    tickers
-    |> Enum.flat_map(&Ticker.convert_for_importing/1)
-    |> Store.import()
-
+    # Create a project if it's a new one in the top projects and we don't have it
     tickers
     |> Enum.take(top_projects_to_follow())
     |> Enum.each(&insert_or_create_project/1)
+
+    # Store the data in LatestCoinmarketcapData in postgres
+    tickers
+    |> Enum.each(&store_latest_coinmarketcap_data/1)
+
+    # Store the data in Influxdb
+    tickers
+    |> Enum.map(&Ticker.convert_for_importing/1)
+    |> Store.import()
 
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
 

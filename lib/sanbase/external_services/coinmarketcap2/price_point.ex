@@ -7,69 +7,56 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint2 do
     :ticker,
     :slug,
     :datetime,
-    :marketcap,
-    :price_usd,
+    :marketcap_usd,
     :volume_usd,
-    :price_btc,
-    :volume_btc
+    :price_usd,
+    :price_btc
   ]
 
-  def convert_to_measurement(%PricePoint{datetime: datetime} = point, suffix, name) do
+  def convert_to_measurement(%PricePoint{datetime: datetime} = point, name) do
     %Measurement{
       timestamp: DateTime.to_unix(datetime, :nanosecond),
-      fields: price_point_to_fields(point, suffix),
+      fields: price_point_fields(point),
       tags: [],
-      name: name <> "_#{suffix}"
+      name: name
     }
   end
 
-  def price_points_to_measurements(%PricePoint{} = price_point) do
-    [convert_to_measurement(price_point, "USD", "TOTAL_MARKET")]
-  end
-
-  def price_points_to_measurements(price_points) do
+  def price_points_to_measurements(price_points, "TOTAL_MARKET") do
     price_points
-    |> Enum.flat_map(fn price_point ->
-      [convert_to_measurement(price_point, "USD", "TOTAL_MARKET")]
+    |> List.wrap()
+    |> Enum.map(fn price_point ->
+      convert_to_measurement(price_point, "TOTAL_MARKET_total-market")
     end)
   end
 
-  def price_points_to_measurements(%PricePoint{} = price_point, %Project{ticker: ticker}) do
-    [
-      convert_to_measurement(price_point, "USD", ticker),
-      convert_to_measurement(price_point, "BTC", ticker)
-    ]
-  end
-
-  def price_points_to_measurements(price_points, %Project{ticker: ticker}) do
+  def price_points_to_measurements(price_points, %Project{
+        ticker: ticker,
+        coinmarketcap_id: coinmarketcap_id
+      })
+      when nil != coinmarketcap_id and nil != ticker do
     price_points
-    |> Enum.flat_map(fn price_point ->
-      [
-        convert_to_measurement(price_point, "USD", ticker),
-        convert_to_measurement(price_point, "BTC", ticker)
-      ]
+    |> List.wrap()
+    |> Enum.map(fn price_point ->
+      convert_to_measurement(price_point, ticker <> "_" <> coinmarketcap_id)
     end)
   end
 
-  defp price_point_to_fields(
-         %PricePoint{marketcap: marketcap, volume_usd: volume_usd, price_btc: price_btc},
-         "BTC"
-       ) do
-    %{
-      price: price_btc,
-      volume: volume_usd,
-      marketcap: marketcap
-    }
-  end
+  def price_points_to_measurements(_, _), do: []
 
-  defp price_point_to_fields(
-         %PricePoint{marketcap: marketcap, volume_usd: volume_usd, price_usd: price_usd},
-         "USD"
-       ) do
+  # Private functions
+
+  defp price_point_fields(%PricePoint{
+         marketcap_usd: marketcap_usd,
+         volume_usd: volume_usd,
+         price_btc: price_btc,
+         price_usd: price_usd
+       }) do
     %{
-      price: price_usd,
-      volume: volume_usd,
-      marketcap: marketcap
+      price_usd: price_usd,
+      price_btc: price_btc,
+      volume_usd: volume_usd,
+      marketcap_usd: marketcap_usd
     }
   end
 end

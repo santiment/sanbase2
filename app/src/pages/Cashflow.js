@@ -168,7 +168,7 @@ export const Cashflow = ({
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br />
+        <ProjectIcon name={value.name} ticker={value.ticker} /><br />
         <span className='ticker'>{value.ticker}</span>
       </div>
     ),

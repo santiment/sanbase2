@@ -66,4 +66,11 @@ describe('sanitizeMediumDraftHtml', () => {
 
     expect(sanitizeMediumDraftHtml(dirty)).toEqual(clean)
   })
+
+  it('should sanitize scripts in event handlers', () => {
+    const dirty = '<button onclick="myFunction()">Click me</button><p id="demo"></p><script>function myFunction() {document.getElementById("demo").innerHTML = "Hello World";}</script>'
+    const clean = 'Click me<p id="demo"></p>'
+
+    expect(sanitizeMediumDraftHtml(dirty)).toEqual(clean)
+  })
 })

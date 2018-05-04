@@ -1,25 +1,29 @@
-import React from 'react'
-import 'medium-draft/lib/index.css'
+import React, {Component} from 'react'
 import nprogress from 'nprogress'
 import { convertToRaw } from 'draft-js'
-import { draftToMarkdown } from 'markdown-draft-js'
-import { compose, withState } from 'recompose'
 import { Editor, createEditorState } from 'medium-draft'
+import mediumDraftExporter from 'medium-draft/lib/exporter'
+import mediumDraftImporter from 'medium-draft/lib/importer'
+import 'medium-draft/lib/index.css'
+import {sanitizeMediumDraftHtml} from 'utils/utils'
+import { compose, withState } from 'recompose'
 import CustomImageSideButton from './CustomImageSideButton'
 import './CreateInsight.css'
 
-export class CreateInsight extends React.Component {
-  /* eslint-disable no-undef */
-  state = {
-    editorState: createEditorState(this.props.initValue)
+export class CreateInsight extends Component {
+  constructor (props) {
+    super(props)
+
+    this.state = {
+      editorState: createEditorState(convertToRaw(mediumDraftImporter(this.props.initValue)))
+    }
   }
 
+  /* eslint-disable no-undef */
   onChange = editorState => {
     this.setState({ editorState })
-    const markdown = draftToMarkdown(convertToRaw(editorState.getCurrentContent()))
-    if (markdown.length > 2) {
-      this.props.changePost(markdown)
-    }
+    const renderedHTML = sanitizeMediumDraftHtml(mediumDraftExporter(editorState.getCurrentContent()))
+    this.props.changePost(renderedHTML)
   }
   /* eslint-enable no-undef */
 

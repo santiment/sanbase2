@@ -9,12 +9,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
-  alias Sanbase.ExternalServices.RateLimiting
-  alias Sanbase.ExternalServices.ErrorCatcher
   alias Sanbase.Prices.Store
 
-  plug(RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter)
-  plug(ErrorCatcher.Middleware)
+  plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter)
+  plug(Sanbase.ExternalServices.ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://graphs2.coinmarketcap.com")
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
@@ -22,7 +20,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   # Number of seconds in a day
   @seconds_in_day 24 * 60 * 60
 
-  def fetch_first_price_datetime(coinmarketcap_id) do
+  def fetch_first_datetime("TOTAL_MARKET") do
+    fetch_all_time_marketcap()
+    |> Enum.take(1)
+    |> hd
+    |> Map.get(:datetime)
+  end
+
+  def fetch_first_datetime(coinmarketcap_id) do
     fetch_all_time_prices(coinmarketcap_id)
     |> Enum.take(1)
     |> hd
@@ -32,8 +37,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id} = project, to_datetime) do
     fetch_price_stream(coinmarketcap_id, to_datetime, DateTime.utc_now())
     |> process_price_stream(project)
-
-    :ok
   end
 
   def fetch_price_stream(coinmarketcap_id, from_datetime, to_datetime) do
@@ -41,33 +44,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> Stream.map(&extract_price_points_for_interval(coinmarketcap_id, &1))
   end
 
-  def fetch_first_marketcap_total_datetime() do
-    fetch_all_time_marketcap()
-    |> Enum.take(1)
-    |> hd
-    |> Map.get(:datetime)
-  end
-
   def fetch_and_store_marketcap_total(to_datetime) do
     fetch_marketcap_total_stream(to_datetime, DateTime.utc_now())
     |> process_marketcap_total_stream()
-
-    :ok
   end
 
   def fetch_marketcap_total_stream(from_datetime, to_datetime) do
     day_ranges(from_datetime, to_datetime)
-    |> Stream.map(&extract_price_points_for_interval(&1))
+    |> Stream.map(&extract_price_points_for_interval("TOTAL_MARKET", &1))
   end
 
   # Helper functions
 
   defp process_marketcap_total_stream(marketcap_total_stream) do
     marketcap_total_stream
-    |> Stream.each(fn marketcap_totals ->
+    # Store each data point and the information when it was last updated
+    |> Stream.each(fn total_marketcap_info ->
       measurement_points =
-        marketcap_totals
-        |> Enum.flat_map(&PricePoint2.price_points_to_measurements(&1))
+        total_marketcap_info
+        |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, "TOTAL_MARKET"))
 
       measurement_points |> Store.import()
 
@@ -78,6 +73,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
   defp process_price_stream(price_stream, %Project{} = project) do
     price_stream
+    # Store each data point and the information when it was last updated
     |> Stream.each(fn prices ->
       measurement_points =
         prices
@@ -134,7 +130,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     List.zip([market_cap_by_available_supply, volume_usd])
     |> Enum.map(fn {[dt, marketcap], [dt, volume_usd]} ->
       %PricePoint{
-        marketcap: marketcap,
+        marketcap_usd: marketcap,
         volume_usd: volume_usd,
         datetime: DateTime.from_unix!(dt, :millisecond)
       }
@@ -144,22 +140,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   defp convert_to_price_points(%GraphData{
          market_cap_by_available_supply: market_cap_by_available_supply,
          price_usd: price_usd,
-         volume_usd: volume_usd,
-         price_btc: price_btc
+         price_btc: price_btc,
+         volume_usd: volume_usd
        }) do
     List.zip([market_cap_by_available_supply, price_usd, volume_usd, price_btc])
     |> Enum.map(fn {[dt, marketcap], [dt, price_usd], [dt, volume_usd], [dt, price_btc]} ->
       %PricePoint{
-        marketcap: marketcap,
         price_usd: price_usd,
-        volume_usd: volume_usd,
         price_btc: price_btc,
+        marketcap_usd: marketcap,
+        volume_usd: volume_usd,
         datetime: DateTime.from_unix!(dt, :millisecond)
       }
     end)
   end
 
-  defp extract_price_points_for_interval({start_interval_sec, end_interval_sec}) do
+  defp extract_price_points_for_interval("TOTAL_MARKET", {start_interval_sec, end_interval_sec}) do
     graph_data_marketcap_total_interval_url(start_interval_sec * 1000, end_interval_sec * 1000)
     |> get()
     |> case do

@@ -1,4 +1,8 @@
-defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
+defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
+  @moduledoc ~s"""
+
+  """
+
   use Tesla
 
   require Logger

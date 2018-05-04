@@ -5,7 +5,7 @@ import './ProjectIcon.css'
 
 export const DefaultIcon = () => ('')
 
-export const ProjectIcon = ({name, size}) => {
+export const ProjectIcon = ({name, size, ticker}) => {
   if (!name) {
     return (
       <DefaultIcon size={size} />
@@ -15,9 +15,13 @@ export const ProjectIcon = ({name, size}) => {
   try {
     imgSource = require(`../assets/project-icons/${name.toString().toLowerCase().split((/[ /.]+/)).join('-')}.png`)
   } catch (e) {
-    return (
-      <DefaultIcon size={size} />
-    )
+    try {
+      imgSource = require(`../assets/32x32/${ticker}-32.png`)
+    } catch (e) {
+      return (
+        <DefaultIcon size={size} />
+      )
+    }
   }
   return (
     <img
@@ -30,11 +34,13 @@ export const ProjectIcon = ({name, size}) => {
 
 ProjectIcon.propTypes = {
   size: PropTypes.number,
-  name: PropTypes.string.isRequired
+  name: PropTypes.string.isRequired,
+  ticker: PropTypes.string
 }
 
 ProjectIcon.defaultProps = {
-  size: 16
+  size: 16,
+  ticker: ''
 }
 
 export default setDisplayName('ProjectIcon')(ProjectIcon)

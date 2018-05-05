@@ -1,3 +1,13 @@
 .insight-panel {
   padding: 16px !important;
 }
+
+.insight-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.insight-panel-header button {
+  text-transform: uppercase !important;
+}

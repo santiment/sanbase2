@@ -71,18 +71,20 @@ class Insight extends Component {
           isLogin={false}
           title={`SANbase: Insight - ${post.title}`}>
           <Panel className='insight-panel'>
-            <H2>
-              {post.title} {post.readyState === 'draft' &&
+            <div className='insight-panel-header'>
+              <H2>
+                {post.title}
+              </H2>
+              {post.readyState === 'draft' &&
                 <Button
+                  basic
                   onClick={() => {
                     history.push(`/insights/update/${post.id}`, {post})
                   }}
                 >
                   edit
-                </Button>
-              }
-
-            </H2>
+                </Button>}
+            </div>
             <Span>
               by {post.user.username
                 ? <a href={`/insights/users/${post.user.id}`}>{post.user.username}</a>

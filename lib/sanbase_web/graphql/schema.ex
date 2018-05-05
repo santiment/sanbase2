@@ -208,7 +208,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(PostPermissions)
 
-      cache_resolve(&PostResolver.post/3)
+      resolve(&PostResolver.post/3)
     end
 
     @desc "Get all posts"

@@ -11,3 +11,7 @@
 .insight-panel-header button {
   text-transform: uppercase !important;
 }
+
+.insight-content .md-RichEditor-root {
+  padding: 0;
+}

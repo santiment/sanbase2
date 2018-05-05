@@ -36,9 +36,10 @@ class Insight extends Component {
   }
 
   componentWillReceiveProps (nextProps) {
-    if (nextProps.Post.post.text) {
+    const text = (nextProps.Post.post || {}).text
+    if (text) {
       this.setState({
-        editorState: createEditorState(convertToRaw(mediumDraftImporter(nextProps.Post.post.text)))
+        editorState: createEditorState(convertToRaw(mediumDraftImporter(text || '')))
       })
     }
   }

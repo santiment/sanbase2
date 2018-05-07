@@ -269,6 +269,11 @@ export const Cashflow = ({
             Welcome to SANbase! Click the projects below to see our first sets of datafeeds (fundamentals, dev activity, and blockchain data) plotted against price charts. You can also compare projects by sorting on any of the columns.
             <br />
             At the moment, the tools and datasets are “beta” stage, geared toward people who have experience with data analysis and who want to help create insights and methodologies for valuating crypto assets.
+            <br />
+            We have more advanced experimental data-feeds in the closed beta.
+            <br />
+            We add some of them gradually to this publicly visible interface
+            <br />
             We’re adding feeds and improving features all the time, so stay tuned!
             <br />
             <br />

@@ -265,6 +265,22 @@ export const Cashflow = ({
             <h1>ERC20 Projects</h1>
             <span><Link to={'/projects/ethereum'}>More data about Ethereum</Link></span>
           </div>
+          <div>
+            Welcome to SANbase! Click the projects below to see our first sets of datafeeds (fundamentals, dev activity, and blockchain data) plotted against price charts. You can also compare projects by sorting on any of the columns.
+            <br />
+            At the moment, the tools and datasets are “beta” stage, geared toward people who have experience with data analysis and who want to help create insights and methodologies for valuating crypto assets.
+            We’re adding feeds and improving features all the time, so stay tuned!
+            <br />
+            <br />
+            For more details on how to interpret Dev Activity see
+            &nbsp;<a href='https://medium.com/santiment/tracking-github-activity-of-crypto-projects-introducing-a-better-approach-9fb1af3f1c32'>"Tracking GitHub Activity — A Better Approach"</a>
+            <br />
+            For more insight on where SANbase is headed see
+            &nbsp;<a href='https://medium.com/santiment/valuing-crypto-assets-with-behaviour-elephant-analysis-5a53e018a136'>"Valuing crypto-assets with “Behaviour Elephant Analysis"</a>
+            <br />
+            For a growing library of video tours see our
+            &nbsp;<a href='https://www.youtube.com/channel/UCSzP_Z3MrygWlbLMyrNmMkg'>Youtube channel</a>
+          </div>
         </div>
         <Panel>
           <div className='row'>

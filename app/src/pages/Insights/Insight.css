@@ -15,3 +15,9 @@
 .insight-content .md-RichEditor-root {
   padding: 0;
 }
+
+.insight-panel-footer {
+  margin-top: 2em;
+  display: flex;
+  justify-content: flex-end;
+}

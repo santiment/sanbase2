@@ -60,6 +60,9 @@ class EventVotesNew extends Component {
             <div style={{marginBottom: 16}}>
               <Link to={'/insights/33'}>How to use Insights: Traders/Investors</Link>
             </div>
+            <div style={{marginBottom: 16}}>
+              <Link to={'/insights/34'}>How to use Insights: Researchers</Link>
+            </div>
             <div>
               <p>
                 Use Insights to journal your ideas, as a way to teach yourself, perform research, or share with others.

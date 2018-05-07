@@ -6,8 +6,7 @@
 
 .cashflow-head {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   margin-top: 1em;
   margin-bottom: 1em;
   padding: 0 16px;

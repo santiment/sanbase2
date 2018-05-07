@@ -483,14 +483,13 @@ const enhance = compose(
   graphql(EmojisSentimentGQL, {
     name: 'EmojisSentiment',
     options: ({chartVars}) => {
-      const {from, to, ticker} = chartVars
+      const {from, to} = chartVars
       return {
-        skip: !from || !ticker,
+        skip: !from,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
           interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
         }
       }

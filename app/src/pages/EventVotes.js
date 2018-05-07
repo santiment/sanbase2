@@ -18,11 +18,12 @@ import ModalConfirmDeletePost from './Insights/ConfirmDeletePostModal'
 import ModalConfirmPublishPost from './Insights/ConfirmPublishPostModal'
 import { allInsightsPublicGQL, allInsightsGQL } from './Insights/currentPollGQL'
 import InsightsLayout from './Insights/InsightsLayout'
+import { getBalance } from './UserSelectors'
 import './EventVotes.css'
 
 const POLLING_INTERVAL = 5000
 
-const voteMutationHelper = ({postId, action = 'vote'}) => ({
+export const voteMutationHelper = ({postId, action = 'vote'}) => ({
   variables: {postId: parseInt(postId, 10)},
   optimisticResponse: {
     __typename: 'Mutation',
@@ -34,7 +35,7 @@ const voteMutationHelper = ({postId, action = 'vote'}) => ({
   update: (proxy, { data: { vote, unvote } }) => {
     const changedPost = action === 'vote' ? vote : unvote
     const data = proxy.readQuery({ query: allInsightsGQL })
-    const newPosts = [...data.allInsights]
+    const newPosts = data.allInsights ? [...data.allInsights] : []
     const postIndex = newPosts.findIndex(post => post.id === changedPost.id)
     newPosts[postIndex].votedAt = action === 'vote' ? new Date() : null
     data.allInsights = newPosts
@@ -213,7 +214,7 @@ const ModalRequestLogin = ({history, toggleLoginRequest}) => (
   </Modal>
 )
 
-const votePostGQL = gql`
+export const votePostGQL = gql`
   mutation vote($postId: Int!){
     vote(postId: $postId) {
       id
@@ -221,7 +222,7 @@ const votePostGQL = gql`
   }
 `
 
-const unvotePostGQL = gql`
+export const unvotePostGQL = gql`
   mutation unvote($postId: Int!){
     unvote(postId: $postId) {
       id
@@ -296,15 +297,6 @@ const mapDataToProps = props => {
 }
 
 const mapStateToProps = state => {
-  const getBalance = (state) => {
-    const ethAccounts = state.user.data.ethAccounts
-    if (ethAccounts) {
-      return state.user.data.ethAccounts.length > 0
-        ? state.user.data.ethAccounts[0].sanBalance
-        : 0
-    }
-    return 0
-  }
   return {
     user: state.user,
     balance: getBalance(state)

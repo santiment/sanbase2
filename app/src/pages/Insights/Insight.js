@@ -59,7 +59,9 @@ class Insight extends Component {
       votePost,
       unvotePost,
       balance = 0,
-      user = null
+      user = {
+        data: {}
+      }
     } = this.props
     const {post = {
       id: null,
@@ -74,8 +76,7 @@ class Insight extends Component {
       votes: {}
     }} = Post
     const {editorState} = this.state
-
-    if (!user.account) {
+    if (!user.isLoading && !user.token) {
       return (<div className='insight'>
         <InsightsLayout
           isLogin={false}

@@ -24,16 +24,19 @@ const ConfirmPublishPostModal = ({
   return (
     <Modal
       defaultOpen
-      style={{marginTop: 0}}
+      style={{
+        marginTop: '35% !important',
+        margin: 'auto'
+      }}
       dimmer={'blurring'}
       onClose={toggleForm} closeIcon>
       {isSuccess
         ? <Modal.Content>
-          <p>Post (id: {publishInsightId}) was published.</p>
+          <p>Post was published.</p>
         </Modal.Content>
         : <Fragment>
           <Modal.Content>
-            <p>Do you want to publish this insight? (id: {publishInsightId})</p>
+            <p>Do you want to publish this insight?</p>
           </Modal.Content>
           <Modal.Actions>
             <Button

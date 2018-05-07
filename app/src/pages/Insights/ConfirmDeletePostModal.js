@@ -24,16 +24,19 @@ const ConfirmDeletePostModal = ({
   return (
     <Modal
       defaultOpen
-      style={{marginTop: 0}}
+      style={{
+        marginTop: '35% !important',
+        margin: 'auto'
+      }}
       dimmer={'blurring'}
       onClose={toggleForm} closeIcon>
       {isSuccess
         ? <Modal.Content>
-          <p>Post (id: {deletePostId}) was deleted.</p>
+          <p>Post was deleted.</p>
         </Modal.Content>
         : <Fragment>
           <Modal.Content>
-            <p>Do you want to delete this post? (id: {deletePostId})</p>
+            <p>Do you want to delete this post?</p>
           </Modal.Content>
           <Modal.Actions>
             <Button

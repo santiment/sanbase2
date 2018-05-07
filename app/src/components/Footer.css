@@ -4,7 +4,7 @@
   justify-content: center;
   padding: 2em;
   flex-direction: column;
-  margin-top: 2.5em;
+  margin-top: 3em;
 }
 
 .sanbase-footer__links {
@@ -22,9 +22,5 @@
 }
 
 .sanbase-footer__greetings {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
+  margin-top: 1em;
 }

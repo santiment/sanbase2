@@ -21,3 +21,8 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.insight-login-request {
+  margin: 0 auto;
+  margin-top: 16px;
+}

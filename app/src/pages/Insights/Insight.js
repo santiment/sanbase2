@@ -8,7 +8,7 @@ import {
   pure
 } from 'recompose'
 import moment from 'moment'
-import { Button } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import {
@@ -74,6 +74,24 @@ class Insight extends Component {
       votes: {}
     }} = Post
     const {editorState} = this.state
+
+    if (!user.account) {
+      return (<div className='insight'>
+        <InsightsLayout
+          isLogin={false}
+          title={`SANbase...`}>
+          <div className='insight-login-request'>
+            <h2>You need to have SANbase account, if you want to see insights.</h2>
+            <Button
+              onClick={() =>
+                history.push(`/login?redirect_to=${history.location.pathname}`)}
+              color='green'>
+              <Icon name='checkmark' /> Login or Sign up
+            </Button>
+          </div>
+        </InsightsLayout>
+      </div>)
+    }
 
     if (!post) {
       return <Redirect to='/insights' />

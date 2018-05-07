@@ -56,13 +56,14 @@ class EventVotesNew extends Component {
     return (
       <InsightsLayout
         sidebar={
-          <div style={{marginTop: 16}}>
-            <div style={{marginBottom: 16}}>
+          <div className='event-votes-sidebar-highlights'>
+            <div>
               <Link to={'/insights/33'}>How to use Insights: Traders/Investors</Link>
             </div>
-            <div style={{marginBottom: 16}}>
+            <div>
               <Link to={'/insights/34'}>How to use Insights: Researchers</Link>
             </div>
+            <br />
             <div>
               <p>
                 Use Insights to journal your ideas, as a way to teach yourself, perform research, or share with others.

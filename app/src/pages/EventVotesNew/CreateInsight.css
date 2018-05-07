@@ -1,5 +1,9 @@
 .md-side-toolbar {
-  left: -40px;
+  left: -40px !important;
+}
+
+.md-sb-button {
+  border: none !important;
 }
 
 .md-add-button {

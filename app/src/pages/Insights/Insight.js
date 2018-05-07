@@ -1,5 +1,8 @@
 import React, { Component } from 'react'
 import { Redirect, withRouter } from 'react-router-dom'
+import { connect } from 'react-redux'
+import Raven from 'raven-js'
+import debounce from 'lodash.debounce'
 import {
   compose,
   pure
@@ -18,6 +21,9 @@ import mediumDraftImporter from 'medium-draft/lib/importer'
 import 'medium-draft/lib/index.css'
 import InsightsLayout from './InsightsLayout'
 import Panel from './../../components/Panel'
+import LikeBtn from './../EventVotesNew/LikeBtn'
+import { votePostGQL, unvotePostGQL } from './../EventVotes'
+import { getBalance } from './../UserSelectors'
 import './Insight.css'
 
 const POLLING_INTERVAL = 100000
@@ -49,16 +55,23 @@ class Insight extends Component {
       Post = {
         loading: true,
         post: null
-      }
+      },
+      votePost,
+      unvotePost,
+      balance = 0,
+      user = null
     } = this.props
     const {post = {
+      id: null,
       title: '',
       text: '',
       createdAt: null,
       user: {
         username: null
       },
-      readyState: 'draft'
+      readyState: 'draft',
+      votedAt: null,
+      votes: {}
     }} = Post
     const {editorState} = this.state
 
@@ -69,7 +82,7 @@ class Insight extends Component {
     return (
       <div className='insight'>
         <InsightsLayout
-          isLogin={false}
+          isLogin={!!user}
           title={`SANbase: Insight - ${post.title}`}>
           <Panel className='insight-panel'>
             <div className='insight-panel-header'>
@@ -103,6 +116,31 @@ class Insight extends Component {
                 onChange={() => {}}
               />
             </Div>
+            <div className='insight-panel-footer'>
+              <LikeBtn
+                onLike={() => {
+                  if (post.votedAt) {
+                    debounce((postId, unvote) => {
+                      unvote({
+                        variables: {postId: parseInt(postId, 10)}
+                      })
+                      .then(() => Post.refetch())
+                      .catch(e => Raven.captureException(e))
+                    }, 100)(post.id, unvotePost)
+                  } else {
+                    debounce((postId, vote) => {
+                      vote({
+                        variables: {postId: parseInt(postId, 10)}
+                      })
+                      .then(() => Post.refetch())
+                      .catch(e => Raven.captureException(e))
+                    }, 100)(post.id, votePost)
+                  }
+                }}
+                balance={balance}
+                liked={!!post.votedAt}
+                votes={(post.votes || {}).totalSanVotes || 0} />
+            </div>
           </Panel>
         </InsightsLayout>
       </div>
@@ -135,8 +173,18 @@ export const postGQL = gql`
   }
 `
 
+const mapStateToProps = state => {
+  return {
+    user: state.user,
+    balance: getBalance(state)
+  }
+}
+
 const enhance = compose(
   withRouter,
+  connect(
+    mapStateToProps
+  ),
   graphql(postGQL, {
     name: 'Post',
     options: ({match}) => ({
@@ -147,6 +195,12 @@ const enhance = compose(
         id: +match.params.insightId
       }
     })
+  }),
+  graphql(votePostGQL, {
+    name: 'votePost'
+  }),
+  graphql(unvotePostGQL, {
+    name: 'unvotePost'
   }),
   pure
 )

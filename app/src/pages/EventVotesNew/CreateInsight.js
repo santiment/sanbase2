@@ -1,25 +1,31 @@
-import React from 'react'
-import 'medium-draft/lib/index.css'
+import React, { Component } from 'react'
 import nprogress from 'nprogress'
 import { convertToRaw } from 'draft-js'
-import { draftjsToMd } from './../../utils/draftjsToMd'
 import { compose, withState } from 'recompose'
 import { Editor, createEditorState } from 'medium-draft'
+import mediumDraftExporter from 'medium-draft/lib/exporter'
+import mediumDraftImporter from 'medium-draft/lib/importer'
+import { sanitizeMediumDraftHtml } from './../../utils/utils'
 import CustomImageSideButton from './CustomImageSideButton'
 import './CreateInsight.css'
+import 'medium-draft/lib/index.css'
 
-export class CreateInsight extends React.Component {
-  state = { // eslint-disable-line
-    editorState: createEditorState(this.props.initValue) // for empty content
-  }
+export class CreateInsight extends Component {
+  constructor (props) {
+    super(props)
 
-  onChange = editorState => { // eslint-disable-line
-    this.setState({ editorState })
-    const markdown = draftjsToMd(convertToRaw(editorState.getCurrentContent()))
-    if (markdown.length > 2) {
-      this.props.changePost(markdown)
+    this.state = {
+      editorState: createEditorState(convertToRaw(mediumDraftImporter(this.props.initValue)))
     }
   }
+
+  /* eslint-disable no-undef */
+  onChange = editorState => {
+    this.setState({ editorState })
+    const renderedHTML = sanitizeMediumDraftHtml(mediumDraftExporter(editorState.getCurrentContent()))
+    this.props.changePost(renderedHTML)
+  }
+  /* eslint-enable no-undef */
 
   componentDidMount () {
     this.refs.editor.focus()
@@ -42,13 +48,12 @@ export class CreateInsight extends React.Component {
         editorState={editorState}
         sideButtons={[{
           title: 'Image',
-          component: props => (
-            <CustomImageSideButton
-              onPendingImg={this.props.onPendingImg}
-              onErrorImg={this.props.onErrorImg}
-              onSuccessImg={this.props.onSuccessImg}
-              {...props}
-            />)
+          component: CustomImageSideButton,
+          props: {
+            onPendingImg: this.props.onPendingImg,
+            onErrorImg: this.props.onErrorImg,
+            onSuccessImg: this.props.onSuccessImg
+          }
         }]}
         toolbarConfig={{
           block: ['ordered-list-item', 'unordered-list-item'],

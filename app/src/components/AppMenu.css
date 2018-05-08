@@ -1,5 +1,5 @@
 ul.menu-list {
-  margin-top: 24px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -60,6 +60,10 @@ ul.menu-list {
 .menu-list .sub-menu li .fa {
   font-size: 6px;
   margin-right: 10px;
+}
+
+.menu-list li.active {
+  border-left: 4px solid white;
 }
 
 .menu-list-top {

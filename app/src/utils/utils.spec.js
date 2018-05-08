@@ -1,6 +1,10 @@
 /* eslint-env jest */
 import moment from 'moment'
-import { findIndexByDatetime, calculateBTCVolume } from './utils'
+import {
+  findIndexByDatetime,
+  calculateBTCVolume,
+  sanitizeMediumDraftHtml
+} from './utils'
 
 const labels = [
   moment('2018-01-15T06:00:00Z'),
@@ -52,5 +56,21 @@ const historyPrice = [
 describe('calculateBTCVolume', () => {
   it('should return volume in BTC', () => {
     expect(calculateBTCVolume(historyPrice[0])).toEqual(308.34861283195977)
+  })
+})
+
+describe('sanitizeMediumDraftHtml', () => {
+  it('should sanitize script tags', () => {
+    const dirty = '<html><body><p id="demo" /><script>document.getElementById("demo").innerHTML = "Hello JavaScript!";</script></body></html>'
+    const clean = '<p id="demo"></p>'
+
+    expect(sanitizeMediumDraftHtml(dirty)).toEqual(clean)
+  })
+
+  it('should sanitize scripts in event handlers', () => {
+    const dirty = '<button onclick="myFunction()">Click me</button><p id="demo"></p><script>function myFunction() {document.getElementById("demo").innerHTML = "Hello World";}</script>'
+    const clean = 'Click me<p id="demo"></p>'
+
+    expect(sanitizeMediumDraftHtml(dirty)).toEqual(clean)
   })
 })

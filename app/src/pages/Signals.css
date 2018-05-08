@@ -1,3 +1,13 @@
+.page.signals .container {
+  padding: 0;
+}
+
+@media (max-width: 767px) {
+  .page.signals .container .panel {
+    padding: 16px !important;
+  }
+}
+
 /* mailchimp, signals */
 .signals-form {
   text-align: center;

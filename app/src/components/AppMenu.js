@@ -2,28 +2,40 @@ import React from 'react'
 import { Popup, Button, Icon } from 'semantic-ui-react'
 import './AppMenu.css'
 
-const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center'
-  }}>
+const isPageFromLocation = (location, pagename = '') => {
+  if (location) {
+    return pagename === location.pathname.split('/')[1]
+  }
+  return false
+}
+
+const AppMenu = ({
+  handleNavigation,
+  showIcons = false,
+  showInsights = false,
+  location = null
+}) => (
+  <div>
     <ul className={showIcons ? 'menu-list' : 'menu-list-top'} >
       {showInsights &&
-      <li onClick={() => handleNavigation('insights')}>
-        {showIcons && <i className='fa fa-newspaper-o' />}
+      <li
+        className={isPageFromLocation(location, 'insights') ? 'active' : ''}
+        onClick={() => handleNavigation('insights')}>
         Insights
       </li>}
-      <li onClick={() => handleNavigation('projects')}>
-        {showIcons && <Icon name='list 2x' />}
+      <li
+        className={isPageFromLocation(location, 'projects') ? 'active' : ''}
+        onClick={() => handleNavigation('projects')}>
         ERC20 Projects
       </li>
-      <li onClick={() => handleNavigation('currencies')}>
-        {showIcons && <Icon name='list 2x' />}
+      <li
+        className={isPageFromLocation(location, 'currencies') ? 'active' : ''}
+        onClick={() => handleNavigation('currencies')}>
         Currencies
       </li>
-      <li onClick={() => handleNavigation('signals')}>
-        {showIcons && <Icon name='th 2x' />}
+      <li
+        className={isPageFromLocation(location, 'signals') ? 'active' : ''}
+        onClick={() => handleNavigation('signals')}>
         Signals
       </li>
       {showInsights &&
@@ -56,11 +68,11 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
           </Button>
         </div>
       </Popup>}
-      {showIcons &&
-      <li onClick={() => handleNavigation('roadmap')}>
-        {showIcons && <Icon name='map 2x' />}
+      <li
+        className={isPageFromLocation(location, 'roadmap') ? 'active' : ''}
+        onClick={() => handleNavigation('roadmap')}>
         Roadmap
-      </li>}
+      </li>
     </ul>
   </div>
 )

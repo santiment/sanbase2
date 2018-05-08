@@ -79,8 +79,20 @@
   margin-left: 20px;
 }
 
-.event-votes-sidebar .panel {
+.event-votes-sidebar .event-votes-sidebar-highlights {
   margin-top: 16px;
+}
+
+.event-votes-sidebar .event-votes-sidebar-highlights a {
+  border-bottom: 1px solid #b1b7c1;
+}
+
+.event-votes-sidebar .event-votes-sidebar-highlights div:first-child {
+  margin-bottom: 8px;
+}
+
+.event-votes-sidebar .panel {
+  margin: 16px 0 0 0;
 }
 
 @media (min-width: 768px) {

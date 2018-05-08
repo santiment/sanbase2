@@ -41,7 +41,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
 
   def email_login(%{email: email} = args, _resolution) do
     with {:ok, user} <- User.find_or_insert_by_email(email, args[:username]),
-         {:ok, user} <- User.update_email_token(user),
+         {:ok, user} <- User.update_email_token(user, args[:consent]),
          {:ok, _user} <- User.send_login_email(user) do
       {:ok, %{success: true}}
     else

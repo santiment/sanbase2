@@ -369,6 +369,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :email_login, :email_login_request do
       arg(:email, non_null(:string))
       arg(:username, :string)
+      arg(:consent, :string)
 
       resolve(&AccountResolver.email_login/2)
     end

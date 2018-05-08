@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:id, non_null(:id))
     field(:email, :string)
     field(:username, :string)
+    field(:consent_id, :string)
     field(:eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts))
 
     field :followed_projects, list_of(:project) do

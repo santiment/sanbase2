@@ -69,9 +69,13 @@ defmodule SanbaseWeb.Router do
       plug(:put_secure_browser_headers)
     end
 
-    scope "/" do
-      pipe_through([:nextjs])
+    scope "/", SanbaseWeb do
+      pipe_through(:browser)
 
+      get("/consent", RootController, :consent)
+    end
+
+    scope "/" do
       get("/*path", ReverseProxy, upstream: ["http://localhost:3000"])
     end
   else

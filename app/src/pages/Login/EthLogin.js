@@ -23,7 +23,8 @@ const EthLogin = ({
   requestAuth,
   checkMetamask,
   authWithSAN,
-  client
+  client,
+  consent
 }) => {
   return (
     <Fragment>
@@ -49,7 +50,7 @@ const EthLogin = ({
           account={user.account}
           pending={user.isLoading}
           error={user.error}
-          handleAuth={() => requestAuth(user.account, authWithSAN, client)} />}
+          handleAuth={() => requestAuth(user.account, authWithSAN, client, consent)} />}
     </Fragment>
   )
 }
@@ -68,7 +69,7 @@ const mapDispatchToProps = dispatch => {
         hasMetamask
       })
     },
-    requestAuth: (address, authWithSAN, client) => {
+    requestAuth: (address, authWithSAN, client, consent) => {
       signMessage(address).then(({messageHash, signature}) => {
         dispatch({
           type: 'PENDING_LOGIN'
@@ -87,6 +88,11 @@ const mapDispatchToProps = dispatch => {
             user
           })
           client.resetStore()
+          
+          if (consent) {
+            const consentUrl = `/consent?consent=${consent}&email=${address}&name=${address}`;
+            window.location.replace(consentUrl);
+          }
         }).catch((error) => {
           dispatch({
             type: 'FAILED_LOGIN',

@@ -13,7 +13,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   defstruct [
     :id,
     :name,
-    :coinmarketcap_id,
     :symbol,
     :price_usd,
     :price_btc,
@@ -53,13 +52,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   def parse_json(json) do
     json
     |> Poison.decode!(as: [%Ticker{}])
-    |> Stream.filter(fn ticker -> ticker.last_updated end)
+    |> Stream.filter(fn %Ticker{last_updated: last_updated} -> last_updated end)
     |> Enum.map(&make_timestamp_integer/1)
   end
 
   def convert_for_importing(
         %Ticker{
-          symbol: ticker,
           last_updated: last_updated,
           price_btc: price_btc,
           price_usd: price_usd,

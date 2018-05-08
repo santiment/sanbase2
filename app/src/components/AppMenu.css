@@ -62,6 +62,10 @@ ul.menu-list {
   margin-right: 10px;
 }
 
+.menu-list li.active {
+  border-left: 4px solid white;
+}
+
 .menu-list-top {
   margin-top: 16px;
   padding: 0;

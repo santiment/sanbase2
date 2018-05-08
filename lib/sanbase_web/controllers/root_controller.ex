@@ -16,7 +16,7 @@ defmodule SanbaseWeb.RootController do
           "consent" => consent,
           "name" => name,
           "email" => email
-        } = params
+        } = _params
       ) do
     {:ok, access_token} = Hydra.get_access_token()
     {:ok, redirect_url} = Hydra.get_consent_data(consent, access_token)

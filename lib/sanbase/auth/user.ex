@@ -117,8 +117,6 @@ defmodule Sanbase.Auth.User do
       user.email_token != token ->
         false
 
-        Timex.diff(Timex.now(), user.email_token_generated_at, :minutes) |> IO.inspect()
-
       Timex.diff(Timex.now(), user.email_token_generated_at, :minutes) >
           @login_email_valid_minutes ->
         false

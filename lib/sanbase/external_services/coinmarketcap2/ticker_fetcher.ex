@@ -13,6 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Project
   alias Sanbase.Repo
+  # TODO: Change
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker2, as: Ticker
   alias Sanbase.Utils.Config
   alias Sanbase.Prices.Store
@@ -72,8 +73,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     end
   end
 
-  defp store_latest_coinmarketcap_data(ticker) do
-    ticker.id
+  defp store_latest_coinmarketcap_data(%Ticker{id: coinmarketcap_id} = ticker) do
+    coinmarketcap_id
     |> get_or_create_latest_coinmarketcap_data()
     |> LatestCoinmarketcapData.changeset(%{
       market_cap_usd: ticker.market_cap_usd,

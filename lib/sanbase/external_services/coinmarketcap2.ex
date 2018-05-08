@@ -27,6 +27,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
   def init(_arg) do
     if Config.get(:sync_enabled, false) do
+      # Create an influxdb if it does not exists, no-op if it exists
       Store.create_db()
 
       # Start scraping immediately
@@ -39,8 +40,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
       # Scrape total market and prices often. Scrape the missing info rarely.
       # There are many projects for which the missing info is not available. The
       # missing info could become available at any time so the scraping attempts
-      # should continue. Make these scrapers rarer because the CMC API is rate
-      # limited.
+      # should continue. This is made to speed the scraping as the API is rate limited.
       {:ok,
        %{
          missing_info_update_interval: update_interval * 10,
@@ -68,7 +68,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   def handle_info(:fetch_total_market, %{total_market_update_interval: update_interval} = state) do
-    # Start the task under the supervisor in a way that does not need await
+    # Start the task under the supervisor in a way that does not need await.
+    # As there is only one data record to be fetched we fire and forget about it,
+    # so the work can continue to scraping the projects' prices in parallel.
     Task.Supervisor.start_child(
       Sanbase.TaskSupervisor,
       &fetch_and_process_marketcap_total_data/0
@@ -169,7 +171,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
   defp last_price_datetime(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project)
        when nil != ticker and nil != coinmarketcap_id do
-    measurement_name = Measurement.name_from(project)
+    measurement_name = Sanbase.Influxdb.Measurement.name_from(project)
 
     case Store.last_history_datetime_cmc!(measurement_name) do
       nil ->
@@ -185,7 +187,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
     case Store.last_history_datetime_cmc!(measurement_name) do
       nil ->
-        GraphData.fetch_first_datetime(measurement_name)
+        GraphData.fetch_first_datetime("TOTAL_MARKET")
 
       datetime ->
         datetime

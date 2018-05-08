@@ -21,21 +21,30 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   @seconds_in_day 24 * 60 * 60
 
   def fetch_first_datetime("TOTAL_MARKET") do
-    fetch_all_time_marketcap()
-    |> Enum.take(1)
-    |> hd
-    |> Map.get(:datetime)
+    all_time_total_market_price_points()
+    |> List.first()
+    |> case do
+      nil -> nil
+      %PricePoint{datetime: datetime} -> datetime
+    end
   end
 
   def fetch_first_datetime(coinmarketcap_id) do
-    fetch_all_time_prices(coinmarketcap_id)
-    |> Enum.take(1)
-    |> hd
-    |> Map.get(:datetime)
+    all_time_project_price_points(coinmarketcap_id)
+    |> List.first()
+    |> case do
+      nil -> nil
+      %PricePoint{datetime: datetime} -> datetime
+    end
   end
 
-  def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id} = project, to_datetime) do
-    fetch_price_stream(coinmarketcap_id, to_datetime, DateTime.utc_now())
+  def fetch_and_store_prices(_project, nil), do: :ok
+
+  def fetch_and_store_prices(
+        %Project{coinmarketcap_id: coinmarketcap_id} = project,
+        last_fetched_datetime
+      ) do
+    fetch_price_stream(coinmarketcap_id, last_fetched_datetime, DateTime.utc_now())
     |> process_price_stream(project)
   end
 
@@ -44,8 +53,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> Stream.map(&extract_price_points_for_interval(coinmarketcap_id, &1))
   end
 
-  def fetch_and_store_marketcap_total(to_datetime) do
-    fetch_marketcap_total_stream(to_datetime, DateTime.utc_now())
+  def fetch_and_store_marketcap_total(nil), do: :ok
+
+  def fetch_and_store_marketcap_total(last_fetched_datetime) do
+    fetch_marketcap_total_stream(last_fetched_datetime, DateTime.utc_now())
     |> process_marketcap_total_stream()
   end
 
@@ -57,16 +68,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   # Helper functions
 
   defp process_marketcap_total_stream(marketcap_total_stream) do
+    measurement_name = "TOTAL_MARKET-total_market"
+
     marketcap_total_stream
     # Store each data point and the information when it was last updated
     |> Stream.each(fn total_marketcap_info ->
       measurement_points =
         total_marketcap_info
-        |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, "TOTAL_MARKET"))
+        |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, measurement_name))
 
       measurement_points |> Store.import()
 
-      update_last_cmc_history_datetime("TOTAL_MARKET", measurement_points)
+      update_last_cmc_history_datetime(measurement_name, measurement_points)
     end)
     |> Stream.run()
   end
@@ -81,20 +94,20 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
       measurement_points |> Store.import()
 
-      update_last_cmc_history_datetime(project.coinmarketcap_id, measurement_points)
+      update_last_cmc_history_datetime(Measurement.name_from(project), measurement_points)
     end)
     |> Stream.run()
   end
 
   def update_last_cmc_history_datetime(_project, []), do: :ok
 
-  def update_last_cmc_history_datetime(coinmarketcap_id, points) do
+  def update_last_cmc_history_datetime(measurement_name, points) do
     last_price_datetime_updated =
       points
       |> Enum.max_by(&Measurement.get_timestamp/1)
       |> Measurement.get_datetime()
 
-    Store.update_last_history_datetime_cmc(coinmarketcap_id, last_price_datetime_updated)
+    Store.update_last_history_datetime_cmc(measurement_name, last_price_datetime_updated)
   end
 
   defp json_to_price_points(json) do
@@ -103,8 +116,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> convert_to_price_points()
   end
 
-  defp fetch_all_time_prices(coinmarketcap_id) do
-    graph_data_currencies_all_time_url(coinmarketcap_id)
+  defp all_time_project_price_points(coinmarketcap_id) do
+    all_time_project_url(coinmarketcap_id)
     |> get()
     |> case do
       %{status: 200, body: body} ->
@@ -112,8 +125,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     end
   end
 
-  defp fetch_all_time_marketcap() do
-    graph_data_marketcap_total_all_time_url()
+  defp all_time_total_market_price_points() do
+    all_time_total_market_url()
     |> get()
     |> case do
       %{status: 200, body: body} ->
@@ -156,7 +169,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   end
 
   defp extract_price_points_for_interval("TOTAL_MARKET", {start_interval_sec, end_interval_sec}) do
-    graph_data_marketcap_total_interval_url(start_interval_sec * 1000, end_interval_sec * 1000)
+    total_market_interval_url(start_interval_sec * 1000, end_interval_sec * 1000)
     |> get()
     |> case do
       %{status: 200, body: body} ->
@@ -169,7 +182,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   end
 
   defp extract_price_points_for_interval(coinmarketcap_id, {start_interval_sec, end_interval_sec}) do
-    graph_data_currencies_interval_url(
+    project_interval_url(
       coinmarketcap_id,
       start_interval_sec * 1000,
       end_interval_sec * 1000
@@ -206,19 +219,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     end)
   end
 
-  defp graph_data_currencies_all_time_url(coinmarketcap_id) do
+  defp all_time_project_url(coinmarketcap_id) do
     "/currencies/#{coinmarketcap_id}/"
   end
 
-  defp graph_data_currencies_interval_url(coinmarketcap_id, from_timestamp, to_timestamp) do
+  defp project_interval_url(coinmarketcap_id, from_timestamp, to_timestamp) do
     "/currencies/#{coinmarketcap_id}/#{from_timestamp}/#{to_timestamp}/"
   end
 
-  defp graph_data_marketcap_total_all_time_url() do
+  defp all_time_total_market_url() do
     "/global/marketcap-total/"
   end
 
-  defp graph_data_marketcap_total_interval_url(from_timestamp, to_timestamp) do
+  defp total_market_interval_url(from_timestamp, to_timestamp) do
     "/global/marketcap-total/#{from_timestamp}/#{to_timestamp}/"
   end
 end

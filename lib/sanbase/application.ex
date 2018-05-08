@@ -65,8 +65,8 @@ defmodule Sanbase.Application do
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(
           :graph_coinmarketcap_rate_limiter,
           scale: 60_000,
-          limit: 20,
-          time_between_requests: 2000
+          limit: 30,
+          time_between_requests: 1000
         ),
 
         # Coinmarketcap api rate limiter
@@ -81,8 +81,8 @@ defmodule Sanbase.Application do
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(
           :http_coinmarketcap_rate_limiter,
           scale: 60_000,
-          limit: 20,
-          time_between_requests: 2000
+          limit: 30,
+          time_between_requests: 1000
         ),
 
         # Twitter API rate limiter

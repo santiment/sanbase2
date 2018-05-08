@@ -19,3 +19,10 @@
 .project-card-rank-label div {
   display: inline-block;
 }
+
+.ui.cards a.card:hover,
+.ui.link.card:hover,
+.ui.link.cards .card:hover,
+a.ui.card:hover {
+  transform: none;
+}

@@ -3,6 +3,10 @@
   height: 100%;
 }
 
+.cashflow-mobile .List {
+  padding: 0 !important;
+}
+
 .cashflow-mobile-search {
   padding: 0 10px 10px 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);

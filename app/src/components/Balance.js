@@ -20,7 +20,7 @@ export const Balance = ({user, onlyBalance = false}) => {
           </div>
         </Fragment>
       ))
-      : <Message>You don't connect any wallet with SAN tokens</Message>}
+      : <Message>0 SAN tokens</Message>}
     </div>
   )
 }

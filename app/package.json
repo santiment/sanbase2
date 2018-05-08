@@ -3,7 +3,7 @@
   "version": "0.5.2",
   "private": true,
   "scripts": {
-    "start": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
+    "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
     "start:server": "node server",
     "storybook": "start-storybook -p 9001 -c .storybook",
     "build": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) react-scripts build",

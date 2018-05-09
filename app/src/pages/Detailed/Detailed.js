@@ -28,7 +28,6 @@ import {
   ExchangeFundFlowGQL,
   EthSpentOverTimeByErc20ProjectsGQL,
   DailyActiveAddressesGQL,
-  EmojisSentimentGQL
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'
@@ -96,11 +95,6 @@ export const Detailed = ({
     loading: true,
     error: false,
     dailyActiveAddresses: []
-  },
-  EmojisSentiment = {
-    loading: true,
-    error: false,
-    emojisSentiment: []
   },
   changeChartVars,
   isDesktop
@@ -172,12 +166,6 @@ export const Detailed = ({
     items: ExchangeFundFlow.transactionVolume
   }
 
-  const emojisSentiment = {
-    loading: EmojisSentiment.loading,
-    error: EmojisSentiment.error,
-    items: EmojisSentiment.emojisSentiment || []
-  }
-
   const dailyActiveAddresses = {
     loading: DailyActiveAddresses.loading,
     error: DailyActiveAddresses.error,
@@ -212,7 +200,6 @@ export const Detailed = ({
       tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
       transactionVolume={transactionVolume}
       ethSpentOverTime={_ethSpentOverTime}
-      emojisSentiment={emojisSentiment}
       dailyActiveAddresses={dailyActiveAddresses}
       ethPrice={ethPrice}
       isERC20={project.isERC20}
@@ -471,21 +458,6 @@ const enhance = compose(
       const {from, to, ticker} = chartVars
       return {
         skip: !from || ticker !== 'ETH',
-        errorPolicy: 'all',
-        variables: {
-          from,
-          to,
-          interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
-        }
-      }
-    }
-  }),
-  graphql(EmojisSentimentGQL, {
-    name: 'EmojisSentiment',
-    options: ({chartVars}) => {
-      const {from, to} = chartVars
-      return {
-        skip: !from,
         errorPolicy: 'all',
         variables: {
           from,

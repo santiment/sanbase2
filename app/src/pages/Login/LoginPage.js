@@ -24,7 +24,7 @@ export const LoginPage = ({
   }
   if (user.data.hasOwnProperty('username') || user.token) {
     if (consent) {
-      window.location.replace(`/consent?consent=${consent}&email=${user.data.email}&name=${user.data.username}`)
+      window.location.replace(`/consent?consent=${consent}&token=${user.token}`)
     }
     return <Redirect to='/' />
   }

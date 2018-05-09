@@ -4,7 +4,8 @@ export const initialState = {
   data: {},
   account: null,
   token: null,
-  hasMetamask: false
+  hasMetamask: false,
+  consent: null,
 }
 
 export default (state = initialState, action) => {
@@ -35,6 +36,7 @@ export default (state = initialState, action) => {
         error: false,
         isLoading: false,
         token: action.token,
+        consent: action.consent,
         data: {
           ...action.user
         }
@@ -45,7 +47,8 @@ export default (state = initialState, action) => {
         error: false,
         isLoading: false,
         data: {},
-        token: null
+        token: null,
+        consent: null
       }
     case 'FAILED_LOGIN':
       return {
@@ -54,6 +57,7 @@ export default (state = initialState, action) => {
         isLoading: false,
         data: {},
         token: null,
+        consent: null,
         errorMessage: action.error
       }
     case 'CHANGE_EMAIL':

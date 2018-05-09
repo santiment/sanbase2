@@ -1,7 +1,10 @@
 defmodule SanbaseWeb.RootController do
   use SanbaseWeb, :controller
 
+  require Logger
+
   alias Sanbase.Oauth2.Hydra
+  alias Sanbase.Auth.User
 
   # Used in production mode to serve the reactjs application
   def index(conn, _params) do
@@ -14,13 +17,13 @@ defmodule SanbaseWeb.RootController do
         conn,
         %{
           "consent" => consent,
-          "name" => name,
-          "email" => email
+          "token" => token
         } = _params
       ) do
+    {:ok, user} = bearer_authorize(token)
     {:ok, access_token} = Hydra.get_access_token()
     {:ok, redirect_url} = Hydra.get_consent_data(consent, access_token)
-    :ok = Hydra.accept_consent(consent, access_token, %{name: name, email: email})
+    :ok = Hydra.accept_consent(consent, access_token, user)
     redirect(conn, external: redirect_url)
   end
 
@@ -33,5 +36,16 @@ defmodule SanbaseWeb.RootController do
   defp path(file) do
     Application.app_dir(:sanbase)
     |> Path.join(file)
+  end
+
+  defp bearer_authorize(token) do
+    with {:ok, %User{salt: salt} = user, %{"salt" => salt}} <-
+           SanbaseWeb.Guardian.resource_from_token(token) do
+      {:ok, user}
+    else
+      _ ->
+        Logger.warn("Invalid bearer token in request: #{token}")
+        {:error, :invalid_token}
+    end
   end
 end

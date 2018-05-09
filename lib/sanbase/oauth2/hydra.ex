@@ -1,9 +1,11 @@
 defmodule Sanbase.Oauth2.Hydra do
+  alias Sanbase.Auth.User
+
   @base_url "http://localhost:4444"
   @token_url @base_url <> "/oauth2/token"
   @consent_url @base_url <> "/oauth2/consent/requests"
-  @client_id "some-consumer"
-  @client_secret "consumer-secret"
+  @client_id "grafana"
+  @client_secret "grafana-secret"
 
   @basic_auth [hackney: [basic_auth: {@client_id, @client_secret}]]
 
@@ -37,12 +39,16 @@ defmodule Sanbase.Oauth2.Hydra do
     end
   end
 
-  def accept_consent(consent, access_token, user) do
+  def accept_consent(
+        consent,
+        access_token,
+        %User{username: username, id: id, email: email} = _user
+      ) do
     data = %{
       "grantScopes" => ["openid", "offline", "hydra.clients"],
       "accessTokenExtra" => %{},
-      "idTokenExtra" => user,
-      "subject" => "user:12345:#{user.name}"
+      "idTokenExtra" => %{name: username, email: email || username},
+      "subject" => "user:#{id}:#{username}"
     }
 
     HTTPoison.patch!(@consent_url <> "/#{consent}/accept", Poison.encode!(data), [

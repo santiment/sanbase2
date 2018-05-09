@@ -223,7 +223,10 @@ const handleLoad = () => {
   setInterval(() => {
     if (prevToken !== (loadState() || {}).token) {
       prevToken = (loadState() || {}).token
-      window.location.reload()
+
+      if (!(loadState() || {}).consent) {
+        window.location.reload()
+      }
     }
   }, 2000)
 

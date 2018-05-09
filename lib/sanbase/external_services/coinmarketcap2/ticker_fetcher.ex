@@ -13,7 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  # TODO: Change
+  # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker2, as: Ticker
   alias Sanbase.Utils.Config
   alias Sanbase.Prices.Store

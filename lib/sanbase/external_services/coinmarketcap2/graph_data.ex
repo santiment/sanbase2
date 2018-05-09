@@ -5,6 +5,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
   use Tesla
 
+  # TODO: Change after switching over to only this cmc
   alias __MODULE__, as: GraphData
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
   alias Sanbase.Influxdb.Measurement

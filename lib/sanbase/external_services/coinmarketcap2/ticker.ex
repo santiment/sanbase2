@@ -30,6 +30,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   use Tesla
 
   alias Sanbase.ExternalServices.RateLimiting
+  # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
   alias Sanbase.Influxdb.Measurement
 

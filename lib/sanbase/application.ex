@@ -102,10 +102,12 @@ defmodule Sanbase.Application do
         ),
 
         # Price fetcher
+        # TODO: Change after switching over to only this cmc
         Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
         Sanbase.ExternalServices.Coinmarketcap2.child_spec(%{}),
 
         # Current marketcap fetcher
+        # TODO: Change after switching over to only this cmc
         Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
         Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2.child_spec(%{}),
 

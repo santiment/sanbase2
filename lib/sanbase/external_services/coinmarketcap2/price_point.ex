@@ -1,4 +1,5 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint2 do
+  # TODO: Change after switching over to only this cmc
   alias __MODULE__, as: PricePoint
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project

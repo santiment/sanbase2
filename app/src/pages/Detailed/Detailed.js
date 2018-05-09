@@ -27,7 +27,7 @@ import {
   TransactionVolumeGQL,
   ExchangeFundFlowGQL,
   EthSpentOverTimeByErc20ProjectsGQL,
-  DailyActiveAddressesGQL,
+  DailyActiveAddressesGQL
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'

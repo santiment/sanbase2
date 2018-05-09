@@ -86,13 +86,12 @@ const mapDispatchToProps = dispatch => {
             type: 'SUCCESS_LOGIN',
             token,
             user,
-            consent,
+            consent
           })
           client.resetStore()
-          
           if (consent) {
-            const consentUrl = `/consent?consent=${consent}&token=${token}`;
-            window.location.replace(consentUrl);
+            const consentUrl = `/consent?consent=${consent}&token=${token}`
+            window.location.replace(consentUrl)
           }
         }).catch((error) => {
           dispatch({

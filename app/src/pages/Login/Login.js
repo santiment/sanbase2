@@ -125,7 +125,7 @@ export const Login = ({
   } else if (currentStep === STEPS.email) {
     return (
       <AuthProvider gotoBack={() => gotoBack(changeStep)}>
-        <EmailLogin consent={consent}/>
+        <EmailLogin consent={consent} />
       </AuthProvider>
     )
   }

@@ -75,13 +75,13 @@ const mapDispatchToProps = dispatch => {
             type: 'SUCCESS_LOGIN',
             token,
             user,
-            consent: user.consent_id,
+            consent: user.consent_id
           })
           props.changeVerificationStatus('verified')
 
           if (user.consent_id) {
             window.location.replace(`/consent?consent=${user.consent_id}&token=${token}`)
-          } else { 
+          } else {
             props.history.push('/')
           }
         })

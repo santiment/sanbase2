@@ -5,7 +5,7 @@ export const initialState = {
   account: null,
   token: null,
   hasMetamask: false,
-  consent: null,
+  consent: null
 }
 
 export default (state = initialState, action) => {

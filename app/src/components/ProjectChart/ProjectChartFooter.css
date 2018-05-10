@@ -73,6 +73,12 @@
   border-color: rgb(16, 195, 245) !important;
 }
 
+.sentimentLabel {
+  color: #e23ab4 !important;
+  background-color: #e23ab4 !important;
+  border-color: #e23ab4 !important;
+}
+
 .ethSpentOverTimeLabel {
   color: #c82f3f !important;
   background-color: #c82f3f !important;

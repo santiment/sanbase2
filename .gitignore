@@ -33,3 +33,6 @@ npm-debug.log
 
 # Emacs backups
 *~
+
+# cTags definitions
+**/.tags

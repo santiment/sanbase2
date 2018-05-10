@@ -3,6 +3,10 @@
   color: #d3d3d3 !important;
 }
 
+.project-card > :first-child {
+  border-radius: 0 !important;
+}
+
 .project-card-rank-label {
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -14,4 +18,11 @@
 
 .project-card-rank-label div {
   display: inline-block;
+}
+
+.ui.cards a.card:hover,
+.ui.link.card:hover,
+.ui.link.cards .card:hover,
+a.ui.card:hover {
+  transform: none;
 }

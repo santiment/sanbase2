@@ -59,37 +59,6 @@ export const CustomHeadComponent = ({ children, className, ...rest }) => (
   </Sticky>
 )
 
-export const formatBalance = ({ethBalance, usdBalance, project, ticker}) => (
-  <div className='wallet'>
-    <div className='usd first'>
-      {usdBalance
-        ? `$${millify(usdBalance, 2)}`
-        : '---'}
-    </div>
-    <div className='eth'>
-      {parseFloat(ethBalance) === 0 &&
-        <Popup
-          inverted
-          trigger={<div style={{display: 'inline-block'}}>{
-            <a
-              target='_blank'
-              rel='noopener noreferrer'
-              className='findwallet'
-              href={`https://santiment.typeform.com/to/bT0Dgu?project=${project}&ticker=${ticker}`}>
-              <Icon color='red' name='question circle outline' />
-            </a>}
-          </div>}
-          content='Know this project wallet? Click the ? to send wallet info'
-          position='top center'
-        />
-      }
-      {ethBalance
-        ? `Ξ${millify(ethBalance, 2)}`
-        : '---'}
-    </div>
-  </div>
-)
-
 export const formatMarketCapProject = marketcapUsd => {
   if (marketcapUsd !== null) {
     return `$${millify(marketcapUsd, 2)}`
@@ -199,7 +168,7 @@ export const Cashflow = ({
     }),
     Cell: ({value}) => (
       <div className='overview-ticker' >
-        <ProjectIcon name={value.name} /><br />
+        <ProjectIcon name={value.name} ticker={value.ticker} /><br />
         <span className='ticker'>{value.ticker}</span>
       </div>
     ),
@@ -234,43 +203,6 @@ export const Cashflow = ({
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
   }, PriceColumn, VolumeColumn, MarketCapColumn, {
-    Header: 'Balance (USD/ETH)',
-    maxWidth: 110,
-    id: 'balance',
-    accessor: d => ({
-      project: d.name,
-      ticker: d.ticker,
-      ethBalance: d.ethBalance,
-      usdBalance: d.usdBalance
-    }),
-    Cell: ({value}) => <div className='overview-balance'>{formatBalance(value)}</div>,
-    sortable: true,
-    sortMethod: (a, b) =>
-      simpleSort(
-        parseFloat(a.ethBalance || 0),
-        parseFloat(b.ethBalance || 0)
-      )
-  }, {
-    Header: 'P/B',
-    id: 'pbr',
-    maxWidth: 100,
-    accessor: 'priceToBookRatio',
-    Cell: ({value}) => <div className='overview-pb'>{value &&
-      ((value) => {
-        if (value > 1000000000000) {
-          return '∞'
-        }
-        return millify(value, 3)
-      })(value)
-    }</div>,
-    sortable: true,
-    sortMethod: (a, b) => {
-      return simpleSort(
-        parseFloat(a || 0),
-        parseFloat(b || 0)
-      )
-    }
-  }, {
     Header: 'ETH spent (30D)',
     maxWidth: 110,
     id: 'tx',
@@ -284,6 +216,14 @@ export const Cashflow = ({
     maxWidth: 110,
     accessor: d => d.averageDevActivity,
     Cell: ({value}) => <div className='overview-devactivity'>{value ? parseFloat(value).toFixed(2) : ''}</div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(a, b)
+  }, {
+    Header: 'Daily active addresses (30D)',
+    id: 'daily_active_addresses',
+    maxWidth: 110,
+    accessor: d => d.averageDailyActiveAddresses,
+    Cell: ({value}) => <div className='overview-activeaddresses'>{value ? formatNumber(value) : ''}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
@@ -325,11 +265,27 @@ export const Cashflow = ({
             <h1>ERC20 Projects</h1>
             <span><Link to={'/projects/ethereum'}>More data about Ethereum</Link></span>
           </div>
-          <p>
-            <Icon color='red' name='question circle outline' />
-            Automated data not available.&nbsp;
-            <span>Community help locating correct wallets is welcome!</span>
-          </p>
+          <div>
+            Welcome to SANbase! Click the projects below to see our first sets of datafeeds (fundamentals, dev activity, and blockchain data) plotted against price charts. You can also compare projects by sorting on any of the columns.
+            <br />
+            At the moment, the tools and datasets are “beta” stage, geared toward people who have experience with data analysis and who want to help create insights and methodologies for valuating crypto assets.
+            <br />
+            We have more advanced experimental data-feeds in the closed beta.
+            <br />
+            We add some of them gradually to this publicly visible interface
+            <br />
+            We’re adding feeds and improving features all the time, so stay tuned!
+            <br />
+            <br />
+            For more details on how to interpret Dev Activity see
+            &nbsp;<a href='https://medium.com/santiment/tracking-github-activity-of-crypto-projects-introducing-a-better-approach-9fb1af3f1c32'>"Tracking GitHub Activity — A Better Approach"</a>
+            <br />
+            For more insight on where SANbase is headed see
+            &nbsp;<a href='https://medium.com/santiment/valuing-crypto-assets-with-behaviour-elephant-analysis-5a53e018a136'>"Valuing crypto-assets with “Behaviour Elephant Analysis"</a>
+            <br />
+            For a growing library of video tours see our
+            &nbsp;<a href='https://www.youtube.com/channel/UCSzP_Z3MrygWlbLMyrNmMkg'>Youtube channel</a>
+          </div>
         </div>
         <Panel>
           <div className='row'>

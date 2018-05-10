@@ -148,14 +148,12 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   def emojis_sentiment(
-        ticker,
         from_datetime,
         to_datetime,
         aggregate_interval,
         result_size_tail \\ 0
       ) do
     emojis_sentiment_request(
-      ticker,
       from_datetime,
       to_datetime,
       aggregate_interval,
@@ -167,16 +165,10 @@ defmodule Sanbase.InternalServices.TechIndicators do
         emojis_sentiment_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result(
-          "Error status #{status} fetching emojis sentiment for ticker #{ticker}: #{body}"
-        )
+        error_result("Error status #{status} fetching emojis sentiment: #{body}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch emojis sentiment data for ticker #{ticker}: #{
-            HTTPoison.Error.message(error)
-          }"
-        )
+        error_result("Cannot fetch emojis sentiment data: #{HTTPoison.Error.message(error)}")
     end
   end
 
@@ -355,7 +347,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp emojis_sentiment_request(
-         ticker,
          from_datetime,
          to_datetime,
          aggregate_interval,
@@ -369,7 +360,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"ticker", ticker},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
         {"aggregate_interval", aggregate_interval},

@@ -133,6 +133,15 @@ const ProjectChartFooter = ({
             position='top left'
           />
         </ToggleBtn>
+        <ToggleBtn
+          loading={props.dailyActiveAddresses.loading}
+          disabled={props.dailyActiveAddresses.items.length === 0}
+          isToggled={props.isToggledDailyActiveAddresses &&
+            props.dailyActiveAddresses.items.length !== 0}
+          toggle={props.toggleActiveAddresses}>
+          <Label circular className='twitterLabel' empty />
+          Daily Active Addresses
+        </ToggleBtn>
       </FilterCategory>}
       <FilterCategory name='Social'>
         <ToggleBtn

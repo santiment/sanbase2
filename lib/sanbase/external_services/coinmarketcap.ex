@@ -48,6 +48,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       |> where([p], not is_nil(p.coinmarketcap_id))
       |> Repo.all()
 
+    Task.Supervisor.async_nolink(
+      Sanbase.TaskSupervisor,
+      &fetch_and_process_marketcap_total_data/0
+    )
+    |> Task.await(:infinity)
+
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
       projects,
@@ -98,32 +104,32 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   defp project_info_missing?(
          %Project{
            website_link: website_link,
+           email: email,
+           reddit_link: reddit_link,
+           twitter_link: twitter_link,
+           btt_link: btt_link,
+           blog_link: blog_link,
            github_link: github_link,
+           telegram_link: telegram_link,
+           slack_link: slack_link,
+           facebook_link: facebook_link,
+           whitepaper_link: whitepaper_link,
            ticker: ticker,
            name: name,
-           token_decimals: token_decimals
+           token_decimals: token_decimals,
+           main_contract_address: main_contract_address
          } = project
        ) do
-    !website_link or !github_link or !ticker or !name or missing_main_contract_address?(project) or
-      !token_decimals
-  end
-
-  defp missing_main_contract_address?(project) do
-    project
-    |> Project.initial_ico()
-    |> case do
-      nil -> true
-      %Ico{} = ico -> missing_ico_info?(ico)
-      _ -> false
-    end
+    !website_link or !email or !reddit_link or !twitter_link or !btt_link or !blog_link or
+      !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
+      !ticker or !name or !main_contract_address or !token_decimals
   end
 
   defp missing_ico_info?(%Ico{
-         main_contract_address: main_contract_address,
          contract_abi: contract_abi,
          contract_block_number: contract_block_number
        }) do
-    !main_contract_address or !contract_abi or !contract_block_number
+    !contract_abi or !contract_block_number
   end
 
   defp fetch_and_process_price_data(%Project{} = project) do
@@ -144,6 +150,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     case Store.last_history_datetime_cmc!(coinmarketcap_id) do
       nil ->
         GraphData.fetch_first_price_datetime(coinmarketcap_id)
+
+      datetime ->
+        datetime
+    end
+  end
+
+  defp fetch_and_process_marketcap_total_data() do
+    last_marketcap_total_datetime = last_marketcap_total_datetime()
+    GraphData.fetch_and_store_marketcap_total(last_marketcap_total_datetime)
+  end
+
+  defp last_marketcap_total_datetime() do
+    case Store.last_history_datetime_cmc!("TOTAL_MARKET") do
+      nil ->
+        GraphData.fetch_first_marketcap_total_datetime()
 
       datetime ->
         datetime

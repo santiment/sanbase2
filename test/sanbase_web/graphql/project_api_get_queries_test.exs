@@ -9,6 +9,9 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     Ico
   }
 
+  alias Sanbase.Voting.{Poll, Post, Tag}
+  alias Sanbase.Auth.User
+
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -27,19 +30,22 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     project1 =
       %Project{}
       |> Project.changeset(%{
+        ticker: "PRJ1",
         name: "Project1",
         infrastructure_id: infr_eth.id,
-        coinmarketcap_id: "proj1"
+        coinmarketcap_id: "proj1",
+        main_contract_address: "0x123123"
       })
       |> Repo.insert!()
 
     %Ico{}
-    |> Ico.changeset(%{project_id: project1.id, main_contract_address: "0x123123"})
+    |> Ico.changeset(%{project_id: project1.id})
     |> Repo.insert!()
 
     project2 =
       %Project{}
       |> Project.changeset(%{
+        ticker: "PRJ2",
         name: "Project2",
         infrastructure_id: infr_eth.id,
         coinmarketcap_id: "proj2"
@@ -53,6 +59,7 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     project3 =
       %Project{}
       |> Project.changeset(%{
+        ticker: "PRJ3",
         name: "Project3",
         infrastructure_id: infr_btc.id,
         coinmarketcap_id: "proj3"
@@ -63,7 +70,7 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     |> Ico.changeset(%{project_id: project3.id})
     |> Repo.insert!()
 
-    :ok
+    {:ok, project: project1}
   end
 
   test "fetch all projects", context do
@@ -124,5 +131,41 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     assert %{"name" => "Project1"} not in projects
     assert %{"name" => "Project2"} in projects
     assert %{"name" => "Project3"} in projects
+  end
+
+  test "fetch all projects with their insights", context do
+    post_title = "Awesome post"
+    tag = Repo.insert!(%Tag{name: context.project.ticker})
+    user = Repo.insert!(%User{salt: User.generate_salt()})
+    poll = Poll.find_or_insert_current_poll!()
+
+    Repo.insert!(%Post{
+      title: post_title,
+      poll_id: poll.id,
+      user_id: user.id,
+      tags: [tag]
+    })
+
+    query = """
+    {
+      allProjects{
+        ticker,
+        related_posts {
+          title
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "allProjects"))
+
+    projects = json_response(result, 200)["data"]["allProjects"]
+
+    assert %{
+             "ticker" => "PRJ1",
+             "related_posts" => [%{"title" => post_title}]
+           } in projects
   end
 end

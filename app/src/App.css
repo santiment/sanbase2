@@ -1,4 +1,5 @@
 .App {
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -84,6 +85,10 @@
 
 .fa-disabled {
   color: #d3d3d3;
+}
+
+.ui.modal {
+  margin-top: 20px !important;
 }
 
 @supports (--css: variables) {

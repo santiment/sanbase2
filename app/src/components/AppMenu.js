@@ -1,31 +1,80 @@
-import React, { Fragment } from 'react'
-import { Icon } from 'react-fa'
+import React from 'react'
+import { Popup, Button, Icon } from 'semantic-ui-react'
 import './AppMenu.css'
 
-const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) => (
-  <Fragment>
-    {showInsights &&
-    <ul className={showIcons ? 'menu-list user-generated' : 'menu-list-top user-generated'} >
-      <li onClick={() => handleNavigation('insights')}>
-        {showIcons && <i className='fa fa-newspaper-o' />}
-        Insights
-      </li>
-    </ul>}
+const isPageFromLocation = (location, pagename = '') => {
+  if (location) {
+    return pagename === location.pathname.split('/')[1]
+  }
+  return false
+}
+
+const AppMenu = ({
+  handleNavigation,
+  showIcons = false,
+  showInsights = false,
+  location = null
+}) => (
+  <div>
     <ul className={showIcons ? 'menu-list' : 'menu-list-top'} >
-      <li onClick={() => handleNavigation('projects')}>
-        {showIcons && <Icon name='list 2x' />}
+      {showInsights &&
+      <li
+        className={isPageFromLocation(location, 'insights') ? 'active' : ''}
+        onClick={() => handleNavigation('insights')}>
+        Insights
+      </li>}
+      <li
+        className={isPageFromLocation(location, 'projects') ? 'active' : ''}
+        onClick={() => handleNavigation('projects')}>
         ERC20 Projects
       </li>
-      <li onClick={() => handleNavigation('currencies')}>
-        {showIcons && <Icon name='list 2x' />}
+      <li
+        className={isPageFromLocation(location, 'currencies') ? 'active' : ''}
+        onClick={() => handleNavigation('currencies')}>
         Currencies
       </li>
-      <li onClick={() => handleNavigation('signals')}>
-        {showIcons && <Icon name='th 2x' />}
+      <li
+        className={isPageFromLocation(location, 'signals') ? 'active' : ''}
+        onClick={() => handleNavigation('signals')}>
         Signals
       </li>
+      {showInsights &&
+      <Popup
+        position='bottom left'
+        basic
+        wide
+        trigger={
+          <li>
+            <Icon
+              className='app-menu-creation-icon'
+              fitted
+              name='plus' />
+          </li>
+        } on='click'>
+        <div className='app-menu-creation-list'>
+          <Button
+            basic
+            color='green'
+            onClick={() => handleNavigation('insights/new')}
+          >
+            Create new insight
+          </Button>
+          <Button
+            basic
+            onClick={() =>
+              window.location.replace('https://santiment.typeform.com/to/EzKW7E')}
+          >
+            Request new token
+          </Button>
+        </div>
+      </Popup>}
+      <li
+        className={isPageFromLocation(location, 'roadmap') ? 'active' : ''}
+        onClick={() => handleNavigation('roadmap')}>
+        Roadmap
+      </li>
     </ul>
-  </Fragment>
+  </div>
 )
 
 export default AppMenu

@@ -20,11 +20,14 @@ defmodule SanbaseWeb.RootController do
           "token" => token
         } = _params
       ) do
-    {:ok, user} = bearer_authorize(token)
-    {:ok, access_token} = Hydra.get_access_token()
-    {:ok, redirect_url} = Hydra.get_consent_data(consent, access_token)
-    :ok = Hydra.accept_consent(consent, access_token, user)
-    redirect(conn, external: redirect_url)
+    with {:ok, user} <- bearer_authorize(token),
+         {:ok, access_token} <- Hydra.get_access_token(),
+         {:ok, redirect_url} <- Hydra.get_consent_data(consent, access_token),
+         :ok <- Hydra.accept_consent(consent, access_token, user) do
+      redirect(conn, external: redirect_url)
+    else
+      _ -> redirect(conn, "/")
+    end
   end
 
   def react_env(conn, _params) do

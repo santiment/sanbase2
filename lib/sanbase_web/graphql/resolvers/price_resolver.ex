@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
   import Absinthe.Resolution.Helpers
+  import Ecto.Query
 
   alias SanbaseWeb.Graphql.PriceStore
 
@@ -11,12 +12,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   """
   def history_price(_root, %{ticker: "TOTAL_MARKET"} = args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(PriceStore, "TOTAL_MARKET_USD", args)
+    |> Dataloader.load(PriceStore, "TOTAL_MARKET_total-market", args)
     |> on_load(fn loader ->
-      with {:ok, usd_prices} <- Dataloader.get(loader, PriceStore, "TOTAL_MARKET_USD", args) do
+      with {:ok, usd_prices} <-
+             Dataloader.get(loader, PriceStore, "TOTAL_MARKET_total-market", args) do
         result =
           usd_prices
-          |> Enum.map(fn [dt, _, volume, marketcap] ->
+          |> Enum.map(fn [dt, _, _, marketcap_usd, volume_usd] ->
             %{
               datetime: dt,
               marketcap: nil_or_decimal(marketcap),
@@ -32,19 +34,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end)
   end
 
+  @deprecated "Use history price by slug"
   def history_price(_root, %{ticker: ticker} = args, %{context: %{loader: loader}}) do
+    slug = slug_by_ticker(ticker)
+    ticker_cmc_id = ticker <> "_" <> slug
+
     loader
-    |> Dataloader.load(PriceStore, String.upcase(ticker) <> "_USD", args)
-    |> Dataloader.load(PriceStore, String.upcase(ticker) <> "_BTC", args)
+    |> Dataloader.load(PriceStore, ticker_cmc_id, args)
     |> on_load(fn loader ->
-      with {:ok, usd_prices} <-
-             Dataloader.get(loader, PriceStore, String.upcase(ticker) <> "_USD", args),
-           {:ok, btc_prices} <-
-             Dataloader.get(loader, PriceStore, String.upcase(ticker) <> "_BTC", args) do
-        # Zip the price in USD and BTC so they are shown as a single price point
+      with {:ok, prices} <- Dataloader.get(loader, PriceStore, ticker_cmc_id, args) do
         result =
-          Enum.zip(btc_prices, usd_prices)
-          |> Enum.map(fn {[dt, btc_price, volume, marketcap], [_, usd_price, _, _]} ->
+          prices
+          |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->
             %{
               datetime: dt,
               price_btc: nil_or_decimal(btc_price),
@@ -62,9 +63,58 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end)
   end
 
+  def history_price(_root, %{slug: slug} = args, %{context: %{loader: loader}}) do
+    ticker = ticker_by_slug(slug)
+    ticker_cmc_id = ticker <> "_" <> slug
+
+    loader
+    |> Dataloader.load(PriceStore, ticker_cmc_id, args)
+    |> on_load(fn loader ->
+      with {:ok, prices} <- Dataloader.get(loader, PriceStore, ticker_cmc_id, args) do
+        result =
+          prices
+          |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->
+            %{
+              datetime: dt,
+              price_btc: Decimal.new(btc_price),
+              price_usd: Decimal.new(usd_price),
+              marketcap: Decimal.new(marketcap_usd),
+              volume: Decimal.new(volume_usd)
+            }
+          end)
+
+        {:ok, result}
+      else
+        _ ->
+          {:error, "Can't fetch prices for #{ticker}"}
+      end
+    end)
+  end
+
+  # Private functions
+
   defp nil_or_decimal(nil), do: nil
 
   defp nil_or_decimal(num) when is_number(num) do
     Decimal.new(num)
+  end
+
+  defp ticker_by_slug(slug) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      select: p.ticker
+    )
+    |> Sanbase.Repo.one()
+  end
+
+  @deprecated "This should no longer be used after price by ticker is removed"
+  defp slug_by_ticker(ticker) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
+      select: p.coinmarketcap_id
+    )
+    |> Sanbase.Repo.one()
   end
 end

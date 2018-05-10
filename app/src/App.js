@@ -17,6 +17,7 @@ import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
+import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
 import TopMenu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
@@ -36,6 +37,13 @@ const LoadableDetailedPage = Loadable({
 
 const LoadableInsights = Loadable({
   loader: () => import('./pages/EventVotes'),
+  loading: () => (
+    <PageLoader />
+  )
+})
+
+const LoadableInsight = Loadable({
+  loader: () => import('./pages/Insights/Insight'),
   loading: () => (
     <PageLoader />
   )
@@ -97,13 +105,19 @@ export const App = ({isDesktop}) => (
         }} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
-        <Route exact path='/insights' component={LoadableInsights} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
-        <Route exact path='/insights/:filter' component={LoadableInsights} />
+        <Route path='/insights/update/:insightId' component={LoadableInsightsNew} />
+        <Route exact path='/insights' component={LoadableInsights} />
+        <Route exact path='/insights/newest' component={LoadableInsights} />
+        <Route exact path='/insights/popular' component={LoadableInsights} />
+        <Route exact path='/insights/my' component={LoadableInsights} />
+        <Route exact path='/insights/users/:userId' component={LoadableInsights} />
+        <Route exact path='/insights/:insightId' component={LoadableInsight} />
         <Route exact path='/projects/:slug' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
+        <Route exact path='/build' component={BuildChallenge} />
         <Route path='/email_login' component={EmailLoginVerification} />
         <Route
           exact

@@ -1,6 +1,6 @@
-.event-votes .panel {
-  padding: 0;
-  padding-bottom: 1px;
+.event-votes a {
+  text-decoration: none;
+  border-bottom: none;
 }
 
 .event-votes .ui.message {
@@ -8,17 +8,7 @@
 }
 
 .event-posts-list {
-  padding: 8px;
-}
-
-.event-votes-control {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
-  padding-bottom: 10px;
-  margin-bottom: 5px;
-  border-bottom: 1px solid #e8e8e8;
+  padding: 0;
 }
 
 .event-votes-header span {
@@ -35,6 +25,7 @@
 .event-votes-navigation__add-link {
   color: #999;
   cursor: pointer;
+  margin-right: 7px;
 }
 
 .event-votes-navigation__link:hover {
@@ -52,9 +43,8 @@
 }
 
 @media (min-width: 1024px) {
-  .event-votes {
-    min-width: 720px;
-    width: 720px;
+  .event-votes-rows {
+    flex-direction: row;
   }
 
   .event-votes .ui.message {

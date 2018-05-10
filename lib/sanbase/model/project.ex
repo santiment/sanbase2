@@ -16,8 +16,6 @@ defmodule Sanbase.Model.Project do
     ProjectTransparencyStatus
   }
 
-  alias Sanbase.Voting.Post
-
   import Ecto.Query
 
   schema "project" do
@@ -25,6 +23,7 @@ defmodule Sanbase.Model.Project do
     field(:ticker, :string)
     field(:logo_url, :string)
     field(:website_link, :string)
+    field(:email, :string)
     field(:btt_link, :string)
     field(:facebook_link, :string)
     field(:github_link, :string)
@@ -41,6 +40,7 @@ defmodule Sanbase.Model.Project do
     field(:total_supply, :decimal)
     field(:description, :string)
     field(:project_transparency, :boolean, default: false)
+    field(:main_contract_address, :string)
     belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)
     field(:project_transparency_description, :string)
     has_many(:eth_addresses, ProjectEthAddress)
@@ -58,8 +58,6 @@ defmodule Sanbase.Model.Project do
     )
 
     has_many(:icos, Ico)
-
-    many_to_many(:related_posts, Post, join_through: "posts_projects")
   end
 
   @doc false
@@ -71,6 +69,7 @@ defmodule Sanbase.Model.Project do
       :logo_url,
       :coinmarketcap_id,
       :website_link,
+      :email,
       :market_segment_id,
       :infrastructure_id,
       :btt_link,
@@ -84,6 +83,7 @@ defmodule Sanbase.Model.Project do
       :linkedin_link,
       :telegram_link,
       :token_address,
+      :main_contract_address,
       :team_token_wallet,
       :description,
       :project_transparency,
@@ -159,7 +159,6 @@ defmodule Sanbase.Model.Project do
         i in Ico,
         select: %{
           project_id: i.project_id,
-          main_contract_address: i.main_contract_address,
           contract_block_number: i.contract_block_number,
           contract_abi: i.contract_abi,
           rank:
@@ -177,7 +176,7 @@ defmodule Sanbase.Model.Project do
         inner_join: p in Project,
         on: p.id == d.project_id,
         where:
-          not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(d.main_contract_address) and
+          not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(p.main_contract_address) and
             not is_nil(d.contract_block_number) and not is_nil(d.contract_abi),
         order_by: p.name,
         select: p
@@ -302,5 +301,22 @@ defmodule Sanbase.Model.Project do
       )
 
     Repo.all(query)
+  end
+
+  def eth_addresses_by_tickers(tickers) do
+    query =
+      from(
+        p in Project,
+        where: p.ticker in ^tickers and not is_nil(p.coinmarketcap_id),
+        preload: [:eth_addresses]
+      )
+
+    Repo.all(query)
+    |> Stream.map(fn %Project{ticker: ticker, eth_addresses: eth_addresses} ->
+      eth_addresses = eth_addresses |> Enum.map(&Map.get(&1, :address))
+
+      {ticker, eth_addresses}
+    end)
+    |> Enum.into(%{})
   end
 end

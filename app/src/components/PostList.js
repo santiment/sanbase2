@@ -6,12 +6,15 @@ import './PostList.css'
 const PostList = ({
   posts = {},
   userId = null,
+  balance = null,
   loading = true,
   isError = false,
   isEmpty = true,
   votePost,
   unvotePost,
-  deletePost
+  deletePost,
+  publishPost,
+  gotoInsight
 }) => (
   <div className='event-posts-list'>
     {Object.keys(posts).map((key, index) => (
@@ -19,9 +22,12 @@ const PostList = ({
         showStatus={!!userId}
         index={index + 1}
         key={index}
+        balance={balance}
         votePost={votePost}
         unvotePost={unvotePost}
         deletePost={deletePost}
+        publishPost={publishPost}
+        gotoInsight={gotoInsight}
         {...posts[key]} />
     ))}
   </div>

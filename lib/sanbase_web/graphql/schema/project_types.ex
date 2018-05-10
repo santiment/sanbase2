@@ -3,11 +3,16 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   import Absinthe.Resolution.Helpers
+  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1, cache_resolve_dataloader: 1]
 
-  alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
-  alias SanbaseWeb.Graphql.Resolvers.IcoResolver
-  alias SanbaseWeb.Graphql.Resolvers.TwitterResolver
-  alias SanbaseWeb.Graphql.Resolvers.EtherbiResolver
+  alias SanbaseWeb.Graphql.Resolvers.{
+    ProjectResolver,
+    ProjectBalanceResolver,
+    IcoResolver,
+    TwitterResolver,
+    EtherbiResolver
+  }
+
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   # Includes all available fields
@@ -17,6 +22,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:ticker, :string)
     field(:logo_url, :string)
     field(:website_link, :string)
+    field(:email, :string)
     field(:btt_link, :string)
     field(:facebook_link, :string)
     field(:github_link, :string)
@@ -31,8 +37,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:team_token_wallet, :string)
     field(:description, :string)
     field(:token_decimals, :integer)
+    field(:main_contract_address, :string)
     field(:eth_addresses, list_of(:eth_address), resolve: dataloader(SanbaseRepo))
-    field(:related_posts, list_of(:post), resolve: dataloader(SanbaseRepo))
+
+    field :related_posts, list_of(:post) do
+      resolve(&ProjectResolver.related_posts/3)
+    end
 
     field :market_segment, :string do
       resolve(&ProjectResolver.market_segment/3)
@@ -51,23 +61,23 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:project_transparency_description, :string)
 
     field :eth_balance, :decimal do
-      resolve(&ProjectResolver.eth_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.eth_balance/3)
     end
 
     field :btc_balance, :decimal do
-      resolve(&ProjectResolver.btc_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.btc_balance/3)
     end
 
     field :usd_balance, :decimal do
-      resolve(&ProjectResolver.usd_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.usd_balance/3)
     end
 
     field :funds_raised_icos, list_of(:currency_amount) do
-      resolve(&ProjectResolver.funds_raised_icos/3)
+      cache_resolve(&ProjectResolver.funds_raised_icos/3)
     end
 
     field :roi_usd, :decimal do
-      resolve(&ProjectResolver.roi_usd/3)
+      cache_resolve(&ProjectResolver.roi_usd/3)
     end
 
     field(:coinmarketcap_id, :string)
@@ -130,29 +140,29 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :funds_raised_usd_ico_end_price, :decimal do
-      resolve(&ProjectResolver.funds_raised_usd_ico_end_price/3)
+      cache_resolve(&ProjectResolver.funds_raised_usd_ico_end_price/3)
     end
 
     field :funds_raised_eth_ico_end_price, :decimal do
-      resolve(&ProjectResolver.funds_raised_eth_ico_end_price/3)
+      cache_resolve(&ProjectResolver.funds_raised_eth_ico_end_price/3)
     end
 
     field :funds_raised_btc_ico_end_price, :decimal do
-      resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
+      cache_resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
     end
 
     field :initial_ico, :ico do
-      resolve(&ProjectResolver.initial_ico/3)
+      cache_resolve(&ProjectResolver.initial_ico/3)
     end
 
     field(:icos, list_of(:ico), resolve: assoc(:icos))
 
     field :signals, list_of(:signal) do
-      resolve(&ProjectResolver.signals/3)
+      cache_resolve_dataloader(&ProjectResolver.signals/3)
     end
 
     field :price_to_book_ratio, :decimal do
-      resolve(&ProjectResolver.price_to_book_ratio/3)
+      cache_resolve_dataloader(&ProjectResolver.price_to_book_ratio/3)
     end
 
     field :eth_spent, :float do
@@ -179,9 +189,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     @desc "Average daily active addresses for a ticker and given time period"
-    field :average_daily_active_addresses, :active_addresses do
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
+    field :average_daily_active_addresses, :integer do
+      arg(:from, :datetime)
+      arg(:to, :datetime)
 
       resolve(&EtherbiResolver.average_daily_active_addresses/3)
     end
@@ -191,7 +201,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:address, non_null(:string))
 
     field :balance, :decimal do
-      resolve(&ProjectResolver.eth_address_balance/3)
+      resolve(&ProjectBalanceResolver.eth_address_balance/3)
     end
   end
 
@@ -219,7 +229,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:minimal_cap_amount, :decimal)
     field(:maximal_cap_amount, :decimal)
-    field(:main_contract_address, :string)
     field(:contract_block_number, :integer)
     field(:contract_abi, :string)
     field(:comments, :string)

@@ -71,10 +71,6 @@ defmodule Sanbase.Etherbi.Transactions.Store do
     GROUP BY time(#{interval}) fill(0)/
   end
 
-  defp parse_transactions_time_series(%{results: [%{error: error}]}) do
-    {:error, error}
-  end
-
   defp parse_in_out_diff_time_series(%{
          results: [
            %{

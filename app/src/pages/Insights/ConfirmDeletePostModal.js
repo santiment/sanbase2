@@ -6,7 +6,7 @@ import {
   withState
 } from 'recompose'
 import { graphql } from 'react-apollo'
-import currentPollGQL from './currentPollGQL'
+import { allInsightsPublicGQL } from './currentPollGQL'
 import gql from 'graphql-tag'
 
 const ConfirmDeletePostModal = ({
@@ -24,15 +24,19 @@ const ConfirmDeletePostModal = ({
   return (
     <Modal
       defaultOpen
+      style={{
+        marginTop: '35% !important',
+        margin: 'auto'
+      }}
       dimmer={'blurring'}
       onClose={toggleForm} closeIcon>
       {isSuccess
         ? <Modal.Content>
-          <p>Post (id: {deletePostId}) was deleted.</p>
+          <p>Post was deleted.</p>
         </Modal.Content>
         : <Fragment>
           <Modal.Content>
-            <p>Do you want to delete this post? (id: {deletePostId})</p>
+            <p>Do you want to delete this post?</p>
           </Modal.Content>
           <Modal.Actions>
             <Button
@@ -55,14 +59,14 @@ const ConfirmDeletePostModal = ({
                     }
                   },
                   update: (proxy, { data: { deletePost } }) => {
-                    const data = proxy.readQuery({ query: currentPollGQL })
-                    const newPosts = [...data.currentPoll.posts]
+                    const data = proxy.readQuery({ query: allInsightsPublicGQL })
+                    const newPosts = [...data.allInsights]
                     const postIndex = newPosts.findIndex(post => post.id === deletePost.id)
                     delete newPosts[postIndex]
-                    data.currentPoll.posts = [
+                    data.allInsights = [
                       ...newPosts.slice(0, postIndex),
                       ...newPosts.slice(postIndex + 1)]
-                    proxy.writeQuery({ query: currentPollGQL, data })
+                    proxy.writeQuery({ query: allInsightsPublicGQL, data })
                   }
                 })
                 .then(data => {

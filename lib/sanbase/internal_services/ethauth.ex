@@ -4,6 +4,8 @@ defmodule Sanbase.InternalServices.Ethauth do
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
 
+  @san_token_decimals Decimal.new(:math.pow(10, 18))
+
   def verify_signature(signature, address, message_hash) do
     %Tesla.Env{status: 200, body: body} =
       get(client(), "recover", query: [sign: signature, hash: message_hash])
@@ -18,10 +20,11 @@ defmodule Sanbase.InternalServices.Ethauth do
 
     body
     |> Decimal.new()
+    |> Decimal.div(@san_token_decimals)
   end
 
   def san_token_decimals() do
-    Decimal.new(:math.pow(10, 18))
+    @san_token_decimals
   end
 
   defp client() do

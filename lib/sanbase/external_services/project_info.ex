@@ -13,14 +13,22 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
     :coinmarketcap_id,
     :name,
     :website_link,
+    :email,
+    :reddit_link,
+    :twitter_link,
+    :btt_link,
+    :blog_link,
     :github_link,
+    :telegram_link,
+    :slack_link,
+    :facebook_link,
+    :whitepaper_link,
     :main_contract_address,
     :ticker,
     :creation_transaction,
     :contract_block_number,
     :contract_abi,
     :etherscan_token_name,
-    :whitepaper_link,
     :token_decimals,
     :total_supply
   ]
@@ -31,6 +39,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   alias Sanbase.InternalServices.Parity
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Voting.Tag
 
   require Logger
 
@@ -84,7 +93,31 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
       |> Project.changeset(Map.from_struct(project_info))
       |> Repo.update!()
     end)
+    |> insert_tag(project_info)
   end
+
+  defp insert_tag({:ok, project}, project_info) do
+    do_insert_tag(project, project_info)
+    {:ok, project}
+  end
+
+  defp insert_tag({:error, reason}, _), do: {:error, reason}
+
+  defp do_insert_tag(%Project{coinmarketcap_id: coinmarketcap_id}, %ProjectInfo{ticker: ticker})
+       when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
+    %Tag{name: ticker}
+    |> Tag.changeset()
+    |> Repo.insert()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, changeset} ->
+        Logger.warn("Cannot insert tag on project creation. Reason: #{inspect(changeset.errors)}")
+    end
+  end
+
+  defp do_insert_tag(_, _), do: :ok
 
   defp find_or_create_initial_ico(project) do
     case Project.initial_ico(project) do

@@ -209,7 +209,6 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
     result =
       TechIndicators.emojis_sentiment(
-        "XYZ",
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_492_800),
         "1d"

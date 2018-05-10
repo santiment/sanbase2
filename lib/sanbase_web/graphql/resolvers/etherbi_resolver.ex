@@ -108,7 +108,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         },
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
+    with {:ok, contract_address, _token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, funds_flow_list} <-
            Transactions.Store.transactions_in_out_difference(
              contract_address,
@@ -142,15 +142,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Return the average number of daily active addresses for a given ticker and period of time
   """
   def average_daily_active_addresses(
-        %Project{ticker: ticker} = project,
+        %Project{id: id} = project,
         %{from: from, to: to} = args,
         _resolution
       ) do
     async(
       Cache.func(
         fn -> calculate_average_daily_active_addresses(project, from, to) end,
-        {:average_daily_active_addresses, ticker},
+        {:average_daily_active_addresses, id},
         args
+      )
+    )
+  end
+
+  def average_daily_active_addresses(
+        %Project{id: id} = project,
+        _args,
+        _resolution
+      ) do
+    month_ago = Timex.shift(Timex.now(), days: -30)
+
+    async(
+      Cache.func(
+        fn -> calculate_average_daily_active_addresses(project, month_ago, Timex.now()) end,
+        {:average_daily_active_addresses, id}
       )
     )
   end
@@ -159,32 +174,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     with {:ok, contract_address, _token_decimals} <- project_to_contract_info(project),
          {:ok, average_daily_active_addresses} <-
            DailyActiveAddresses.Store.average_daily_active_addresses(contract_address, from, to) do
-      result =
-        average_daily_active_addresses
-        |> Enum.map(fn [datetime, active_addresses] ->
-          %{
-            datetime: datetime,
-            active_addresses: active_addresses |> round() |> trunc()
-          }
-        end)
-        |> List.first()
+      case average_daily_active_addresses do
+        [[_dt, active_addresses]] ->
+          average_activity = active_addresses |> round() |> trunc()
+          {:ok, average_activity}
 
-      {:ok, result}
+        _ ->
+          {:ok, 0}
+      end
     else
       error ->
         error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
-        {:error, error_msg}
+        {:ok, 0}
     end
   end
 
+  defp project_to_contract_info(%Project{main_contract_address: main_contract_address} = project)
+       when not is_nil(main_contract_address) do
+    {:ok, String.downcase(main_contract_address), project.token_decimals || 0}
+  end
+
   defp project_to_contract_info(project) do
-    with initial_ico when not is_nil(initial_ico) <- Project.initial_ico(project),
-         contract_address when not is_nil(contract_address) <- initial_ico.main_contract_address do
-      {:ok, String.downcase(contract_address), project.token_decimals || 0}
-    else
-      _ -> {:error, "Can't find contract address of #{project.coinmarketcap_id}"}
-    end
+    {:error, "Can't find contract address of #{project.coinmarketcap_id}"}
   end
 
   defp ticker_to_contract_info(ticker) do

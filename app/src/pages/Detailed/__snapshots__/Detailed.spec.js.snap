@@ -12,7 +12,6 @@ exports[`Project detail page container it should render correctly 1`] = `
       AE project page
     </title>
   </HelmetWrapper>
-  <withRouter(Apollo(SearchContainer)) />
   <ExportedComponent
     project={
       Object {
@@ -24,13 +23,20 @@ exports[`Project detail page container it should render correctly 1`] = `
     }
   />
   <div>
-    <withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))))
+    <withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))))))
       TwitterHistoryData={
         Object {
           "loading": true,
         }
       }
       burnRate={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": true,
+        }
+      }
+      dailyActiveAddresses={
         Object {
           "error": false,
           "items": Array [],

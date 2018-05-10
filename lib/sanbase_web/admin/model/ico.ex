@@ -23,7 +23,6 @@ defmodule Sanbase.ExAdmin.Model.Ico do
       column(:start_date)
       column(:end_date)
       column(:tokens_issued_at_ico)
-      column(:main_contract_address)
       # display the default actions column
       actions()
     end
@@ -56,7 +55,6 @@ defmodule Sanbase.ExAdmin.Model.Ico do
         input(ico, :tokens_sold_at_ico)
         input(ico, :minimal_cap_amount)
         input(ico, :maximal_cap_amount)
-        input(ico, :main_contract_address)
         input(ico, :contract_block_number)
         input(ico, :contract_abi)
         input(ico, :comments)

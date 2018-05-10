@@ -6,8 +6,7 @@
 
 .cashflow-head {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   margin-top: 1em;
   margin-bottom: 1em;
   padding: 0 16px;
@@ -176,7 +175,8 @@
 .rt-td .overview-marketcap,
 .rt-td .overview-balance,
 .rt-td .overview-ethspent,
-.rt-td .overview-devactivity {
+.rt-td .overview-devactivity,
+.rt-td .overview-activeaddresses {
   padding-top: 3px;
   text-align: right;
 }
@@ -188,7 +188,8 @@
 
 .rt-td .overview-marketcap,
 .rt-td .overview-ethspent,
-.rt-td .overview-devactivity {
+.rt-td .overview-devactivity,
+.rt-td .overview-activeaddresses {
   padding-top: 12px;
 }
 
@@ -245,7 +246,8 @@
   .rt-td .overview-name,
   .rt-td .overview-marketcap,
   .rt-td .overview-ethspent,
-  .rt-td .overview-devactivity {
+  .rt-td .overview-devactivity,
+  .rt-td .overview-activeaddresses {
     padding-top: 9px;
   }
 }

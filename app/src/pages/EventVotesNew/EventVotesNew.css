@@ -22,6 +22,7 @@
   margin-right: 10px;
   text-transform: uppercase;
   color: #999;
+  user-select: none;
 }
 
 .event-posts-new-navigation--active {
@@ -58,12 +59,18 @@
   justify-content: flex-end;
 }
 
-@media (min-width: 1024px) {
-  .event-posts-new {
-    min-width: 720px;
-    width: 720px;
-  }
+.event-posts-step-confirm .event-post {
+  border-bottom: none;
+}
 
+@media (min-width: 768px) {
+  .event-posts-new {
+    min-width: 520px;
+    max-width: 520px;
+  }
+}
+
+@media (min-width: 1024px) {
   .event-posts-new h2 {
     margin: 0 0 40px 15px;
   }

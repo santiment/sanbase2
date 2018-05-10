@@ -1,5 +1,9 @@
 .md-side-toolbar {
-  left: -40px;
+  left: -40px !important;
+}
+
+.md-sb-button {
+  border: none !important;
 }
 
 .md-add-button {
@@ -12,4 +16,8 @@
 
 .md-sb-img-button {
   border: none !important;
+}
+
+.public-DraftEditor-content .md-block-paragraph {
+  margin: 10px 0;
 }

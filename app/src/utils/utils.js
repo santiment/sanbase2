@@ -28,10 +28,23 @@ const sanitizeMediumDraftHtml = (html) => sanitizeHtml(html,
     allowedAttributes: {...sanitizeHtml.defaults.allowedAttributes, '*': ['class', 'id']}
   })
 
+const filterProjectsByMarketSegment = (projects, categories, allMarketSegments) => {
+  if (projects === undefined || Object.keys(categories).length === 0) {
+    return projects
+  }
+
+  return projects.filter((project) =>
+    Object.keys(categories).includes(Object.keys(allMarketSegments).find(key =>
+      allMarketSegments[key] === project.marketSegment
+    )
+  ))
+}
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
   calculateBTCMarketcap,
   getOrigin,
-  sanitizeMediumDraftHtml
+  sanitizeMediumDraftHtml,
+  filterProjectsByMarketSegment
 }

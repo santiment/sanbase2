@@ -4,38 +4,6 @@
   min-width: 80%;
 }
 
-.cashflow-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1em;
-  margin-bottom: 1em;
-  padding: 0 16px;
-}
-
-.cashflow-title {
-  display: flex;
-  align-items: center;
-}
-
-.cashflow-title span {
-  border-left: 1px solid #3d4450;
-  margin: 18px 0 0 16px;
-  padding-left: 16px;
-}
-
-.cashflow-head h1 {
-  font-family: 'Source Sans Pro', sans-serif;
-  margin: 0;
-  color: rgba(0, 0, 0, 0.7) !important;
-}
-
-.cashflow-head p {
-  text-align: right;
-  font-size: 12px;
-  margin-top: 21px;
-}
-
 .cashflow-indev-message {
   margin-bottom: 16px;
 }

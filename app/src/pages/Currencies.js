@@ -2,17 +2,18 @@ import React from 'react'
 import ReactTable from 'react-table'
 import classnames from 'classnames'
 import { graphql } from 'react-apollo'
+import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { Helmet } from 'react-helmet'
 import { Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
-import { getOrigin } from './../utils/utils'
-import ProjectIcon from './../components/ProjectIcon'
-import { simpleSort } from './../utils/sortMethods'
-import Panel from './../components/Panel'
-import { currenciesGQL } from './Projects/allProjectsGQL'
+import { getOrigin, filterProjectsByMarketSegment } from 'utils/utils'
+import ProjectIcon from 'components/ProjectIcon'
+import { simpleSort } from 'utils/sortMethods'
+import Panel from 'components/Panel'
+import { currenciesGQL, allMarketSegments } from 'pages/Projects/allProjectsGQL'
 import {
   refetchThrottled,
   getFilter,
@@ -23,6 +24,7 @@ import {
   VolumeColumn,
   MarketCapColumn
 } from './Cashflow.js'
+import CashflowHead from 'components/CashflowHead'
 import './Cashflow.css'
 
 export const Currencies = ({
@@ -35,11 +37,17 @@ export const Currencies = ({
     refetch: null
   },
   history,
+  match,
   search,
   tableInfo,
+  handleSetCategory,
+  categories,
+  allMarketSegments,
   preload
 }) => {
-  const { projects, loading } = Projects
+  const { loading } = Projects
+  const projects = filterProjectsByMarketSegment(Projects.projects, categories, allMarketSegments)
+
   if (Projects.isError) {
     refetchThrottled(Projects)
     return (
@@ -51,6 +59,7 @@ export const Currencies = ({
       </div>
     )
   }
+
   const columns = [{
     Header: '',
     id: 'icon',
@@ -116,9 +125,12 @@ export const Currencies = ({
         <link rel='canonical' href={`${getOrigin()}/projects`} />
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
-        <div className='cashflow-head'>
-          <h1>Currencies</h1>
-        </div>
+        <CashflowHead
+          path={match.path}
+          categories={categories}
+          handleSetCategory={handleSetCategory}
+          allMarketSegments={allMarketSegments}
+        />
         <Panel>
           <div className='row'>
             <div className='datatables-info'>
@@ -186,6 +198,25 @@ export const Currencies = ({
   )
 }
 
+const mapStateToProps = state => {
+  return {
+    categories: state.projects.categories
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    handleSetCategory: (event) => {
+      dispatch({
+        type: 'SET_CATEGORY',
+        payload: {
+          category: event.target
+        }
+      })
+    }
+  }
+}
+
 const mapDataToProps = ({allCurrencies, ownProps}) => {
   const loading = allCurrencies.loading
   const isError = !!allCurrencies.error
@@ -206,6 +237,10 @@ const mapDataToProps = ({allCurrencies, ownProps}) => {
 }
 
 const enhance = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  ),
   withRouter,
   graphql(currenciesGQL, {
     name: 'allCurrencies',
@@ -216,6 +251,12 @@ const enhance = compose(
         notifyOnNetworkStatusChange: true
       }
     }
+  }),
+  graphql(allMarketSegments, {
+    name: 'allMarketSegments',
+    props: ({allMarketSegments: {allMarketSegments}}) => (
+      { allMarketSegments: allMarketSegments ? JSON.parse(allMarketSegments) : {} }
+    )
   }),
   pure
 )

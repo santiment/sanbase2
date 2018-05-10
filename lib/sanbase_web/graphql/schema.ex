@@ -47,6 +47,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.current_user/3)
     end
 
+    @desc "Fetch all market segments"
+    field :all_market_segments, :string do
+      middleware(ProjectPermissions)
+
+      cache_resolve(&MarketSegmentResolver.all_market_segments/3)
+    end
+
     @desc "Fetch all projects or only those in project transparency based on the argument"
     field :all_projects, list_of(:project) do
       arg(:only_project_transparency, :boolean, default_value: false)

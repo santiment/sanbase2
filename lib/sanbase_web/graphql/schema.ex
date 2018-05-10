@@ -169,7 +169,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Burn rate for a ticker and given time period"
     field :burn_rate, list_of(:burn_rate_data) do
-      arg(:slug, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      # TODO: Make non_null after removing :ticker
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
@@ -179,7 +181,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Transaction volume for a ticker and given time period"
     field :transaction_volume, list_of(:transaction_volume) do
-      arg(:slug, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      # TODO: Make non_null after removing :ticker
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
@@ -189,7 +193,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Daily active addresses for a ticker and given time period"
     field :daily_active_addresses, list_of(:active_addresses) do
-      arg(:slug, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      # TODO: Make non_null after removing :ticker
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
@@ -252,7 +258,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Shows the flow of funds in an exchange wallet"
     field :exchange_funds_flow, list_of(:funds_flow) do
-      arg(:slug, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      # TODO: Make non_null after removing :ticker
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")

@@ -224,7 +224,7 @@ config :arc,
   virtual_host: true,
   bucket: {:system, "POSTS_IMAGE_BUCKET"}
 
-config :sanbase, Sanbase.Hydra,
+config :sanbase, Sanbase.Oauth2.Hydra,
   base_url: {:system, "HYDRA_BASE_URL", "http://localhost:4444"},
   token_uri: {:system, "HYDRA_TOKEN_URI", "/oauth2/token"},
   consent_uri: {:system, "HYDRA_CONSENT_URI", "/oauth2/consent/requests"},

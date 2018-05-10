@@ -27,25 +27,27 @@ exports[`Cashflow container it should render correctly 1`] = `
     playState="running"
     timingFunction="ease-in"
   >
-    <div
-      className="cashflow-head"
-    >
-      <div
-        className="cashflow-title"
-      >
-        <h1>
-          ERC20 Projects
-        </h1>
-        <span>
-          <Link
-            replace={false}
-            to="/projects/ethereum"
-          >
-            More data about Ethereum
-          </Link>
-        </span>
-      </div>
-    </div>
+    <CashflowHead
+      allMarketSegments={
+        Object {
+          "advertising": "Advertising",
+          "blockchain_network": "Blockchain Network",
+          "data": "Data",
+          "digital_identity": "Digital Identity",
+          "financial": "Financial",
+          "gambling": "Gambling",
+          "gaming": "Gaming",
+          "legal": "Legal",
+          "media": "Media",
+          "prediction_market": "Prediction Market",
+          "protocol": "Protocol",
+          "transportation": "Transportation",
+          "unknown": null,
+        }
+      }
+      categories={Object {}}
+      path="/products"
+    />
     <Panel>
       <div
         className="row"

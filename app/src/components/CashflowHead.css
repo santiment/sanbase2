@@ -1,0 +1,43 @@
+.cashflow-head {
+  display: flex;
+  align-items: center;
+  margin: 1em 0;
+  padding: 0 16px;
+}
+
+.cashflow-head span {
+  margin: 18px 0 0 16px;
+  padding-left: 16px;
+}
+
+.cashflow-head > :nth-child(2) {
+  border-left: 1px solid #3d4450;
+}
+
+.cashflow-head h1 {
+  font-family: 'Source Sans Pro', sans-serif;
+  margin: 0;
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.categories-button {
+  margin-left: auto !important;
+}
+
+.categories-links {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.categories-links .checkbox {
+  margin: 0.5em 0 0 !important;
+}
+
+.categories-links .checkbox:first-child {
+  margin-top: 0 !important;
+}
+
+.categories-links .clear-all-categories {
+  margin: 1.5em 0 0 !important;
+}

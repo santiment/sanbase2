@@ -4,20 +4,21 @@ import classnames from 'classnames'
 import throttle from 'lodash.throttle'
 import { graphql } from 'react-apollo'
 import { connect } from 'react-redux'
-import { withRouter, Link } from 'react-router-dom'
+import { withRouter } from 'react-router-dom'
 import { Helmet } from 'react-helmet'
 import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import { compose, pure } from 'recompose'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
 import Sticky from 'react-stickynode'
-import { formatNumber, millify } from './../utils/formatting'
-import { getOrigin } from './../utils/utils'
-import ProjectIcon from './../components/ProjectIcon'
-import { simpleSort } from './../utils/sortMethods'
-import Panel from './../components/Panel'
-import { allErc20ProjectsGQL } from './Projects/allProjectsGQL'
-import PercentChanges from './../components/PercentChanges'
+import { formatNumber, millify } from 'utils/formatting'
+import { getOrigin, filterProjectsByMarketSegment } from 'utils/utils'
+import { simpleSort } from 'utils/sortMethods'
+import ProjectIcon from 'components/ProjectIcon'
+import Panel from 'components/Panel'
+import { allErc20ProjectsGQL, allMarketSegments } from 'pages/Projects/allProjectsGQL'
+import PercentChanges from 'components/PercentChanges'
+import CashflowHead from 'components/CashflowHead'
 import './Cashflow.css'
 
 export const refetchThrottled = data => {
@@ -139,12 +140,18 @@ export const Cashflow = ({
     refetch: null
   },
   onSearch,
+  handleSetCategory,
   history,
+  match,
   search,
   tableInfo,
+  categories,
+  allMarketSegments,
   preload
 }) => {
-  const { projects, loading } = Projects
+  const { loading } = Projects
+  const projects = filterProjectsByMarketSegment(Projects.projects, categories, allMarketSegments)
+
   if (Projects.isError) {
     refetchThrottled(Projects)
     return (
@@ -156,6 +163,7 @@ export const Cashflow = ({
       </div>
     )
   }
+
   const columns = [{
     Header: '',
     id: 'icon',
@@ -260,12 +268,12 @@ export const Cashflow = ({
         <link rel='canonical' href={`${getOrigin()}/projects`} />
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
-        <div className='cashflow-head'>
-          <div className='cashflow-title'>
-            <h1>ERC20 Projects</h1>
-            <span><Link to={'/projects/ethereum'}>More data about Ethereum</Link></span>
-          </div>
-        </div>
+        <CashflowHead
+          path={match.path}
+          categories={categories}
+          handleSetCategory={handleSetCategory}
+          allMarketSegments={allMarketSegments}
+        />
         <Panel>
           <div className='row'>
             <div className='datatables-info'>
@@ -341,7 +349,8 @@ export const Cashflow = ({
 const mapStateToProps = state => {
   return {
     search: state.projects.search,
-    tableInfo: state.projects.tableInfo
+    tableInfo: state.projects.tableInfo,
+    categories: state.projects.categories
   }
 }
 
@@ -354,11 +363,19 @@ const mapDispatchToProps = dispatch => {
           search: event.target.value.toLowerCase()
         }
       })
+    },
+    handleSetCategory: (event) => {
+      dispatch({
+        type: 'SET_CATEGORY',
+        payload: {
+          category: event.target
+        }
+      })
     }
   }
 }
 
-const mapDataToProps = ({allProjects, ownProps}) => {
+const mapDataToProps = ({allProjects}) => {
   const loading = allProjects.loading
   const isError = !!allProjects.error
   const errorMessage = allProjects.error ? allProjects.error.message : ''
@@ -392,6 +409,12 @@ const enhance = compose(
         notifyOnNetworkStatusChange: true
       }
     }
+  }),
+  graphql(allMarketSegments, {
+    name: 'allMarketSegments',
+    props: ({allMarketSegments: {allMarketSegments}}) => (
+      { allMarketSegments: allMarketSegments ? JSON.parse(allMarketSegments) : {} }
+    )
   }),
   pure
 )

@@ -3,7 +3,8 @@ import moment from 'moment'
 import {
   findIndexByDatetime,
   calculateBTCVolume,
-  sanitizeMediumDraftHtml
+  sanitizeMediumDraftHtml,
+  filterProjectsByMarketSegment
 } from './utils'
 
 const labels = [
@@ -72,5 +73,70 @@ describe('sanitizeMediumDraftHtml', () => {
     const clean = 'Click me<p id="demo"></p>'
 
     expect(sanitizeMediumDraftHtml(dirty)).toEqual(clean)
+  })
+})
+
+describe('filterProjectsByMarketSegment', () => {
+  it('should return expected values', () => {
+    const allMarketSegments = {
+      advertising: 'Advertising',
+      blockchain_network: 'Blockchain Network',
+      data: 'Data',
+      digital_identity: 'Digital Identity',
+      financial: 'Financial',
+      gambling: 'Gambling',
+      gaming: 'Gaming',
+      legal: 'Legal',
+      media: 'Media',
+      prediction_market: 'Prediction Market',
+      protocol: 'Protocol',
+      transportation: 'Transportation',
+      unknown: null
+    }
+    const dataProvider = [
+      // projects is undefined, there is a category
+      {
+        projects: undefined,
+        categories: {financial: true},
+        expectation: undefined
+      },
+      // projects is an empty array, there is a category
+      {
+        projects: [],
+        categories: {financial: true},
+        expectation: []
+      },
+      // projects is an empty array, categories is an empty object
+      {
+        projects: [],
+        categories: {},
+        expectation: []
+      },
+      // projects is not empty, categories is an empty object
+      {
+        projects: [{marketSegment: 'Financial'}],
+        categories: {},
+        expectation: [{marketSegment: 'Financial'}]
+      },
+      // projects is not empty, there is a category
+      {
+        projects: [{marketSegment: 'Financial'}, {marketSegment: 'media'}],
+        categories: {financial: true},
+        expectation: [{marketSegment: 'Financial'}]
+      },
+      // projects is not empty, there are multiple categories
+      {
+        projects: [{marketSegment: 'Financial'}, {marketSegment: 'Blockchain Network'}, {marketSegment: 'Advertising'}],
+        categories: {
+          financial: true,
+          blockchain_network: true
+        },
+        expectation: [{marketSegment: 'Financial'}, {marketSegment: 'Blockchain Network'}]
+      }
+    ]
+    dataProvider.map((data) =>
+      expect(filterProjectsByMarketSegment(data.projects, data.categories, allMarketSegments))
+        .toEqual(data.expectation)
+    )
   })
 })

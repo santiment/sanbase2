@@ -14,14 +14,6 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
         {showIcons && <i className='fa fa-newspaper-o' />}
         Insights
       </li>}
-      <li onClick={() => handleNavigation('projects')}>
-        {showIcons && <Icon name='list 2x' />}
-        ERC20 Projects
-      </li>
-      <li onClick={() => handleNavigation('currencies')}>
-        {showIcons && <Icon name='list 2x' />}
-        Currencies
-      </li>
       <li onClick={() => handleNavigation('signals')}>
         {showIcons && <Icon name='th 2x' />}
         Signals

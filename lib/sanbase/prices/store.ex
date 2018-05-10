@@ -181,7 +181,7 @@ defmodule Sanbase.Prices.Store do
            %{
              series: [
                %{
-                 values: [[iso8601_datetime, price, marketcap, volume]]
+                 values: [[iso8601_datetime, price_usd, price_btc, marketcap_usd, volume_usd]]
                }
              ]
            }
@@ -189,7 +189,7 @@ defmodule Sanbase.Prices.Store do
        }) do
     {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
 
-    {:ok, {datetime, price, marketcap, volume}}
+    {:ok, {datetime, price_usd, price_btc, marketcap_usd, volume_usd}}
   end
 
   defp parse_record(_) do

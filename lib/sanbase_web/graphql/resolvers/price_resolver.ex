@@ -141,9 +141,58 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     |> Sanbase.Repo.one()
   end
 
+  def history_price(_root, %{slug: slug} = args, %{context: %{loader: loader}}) do
+    ticker = ticker_by_slug(slug)
+    ticker_cmc_id = ticker <> "_" <> slug
+
+    loader
+    |> Dataloader.load(PriceStore, ticker_cmc_id, args)
+    |> on_load(fn loader ->
+      with {:ok, prices} <- Dataloader.get(loader, PriceStore, ticker_cmc_id, args) do
+        result =
+          prices
+          |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->
+            %{
+              datetime: dt,
+              price_btc: Decimal.new(btc_price),
+              price_usd: Decimal.new(usd_price),
+              marketcap: Decimal.new(marketcap_usd),
+              volume: Decimal.new(volume_usd)
+            }
+          end)
+
+        {:ok, result}
+      else
+        _ ->
+          {:error, "Can't fetch prices for #{ticker}"}
+      end
+    end)
+  end
+
+  # Private functions
+
   defp nil_or_decimal(nil), do: nil
 
   defp nil_or_decimal(num) when is_number(num) do
     Decimal.new(num)
+  end
+
+  defp ticker_by_slug(slug) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      select: p.ticker
+    )
+    |> Sanbase.Repo.one()
+  end
+
+  @deprecated "This should no longer be used after price by ticker is removed"
+  defp slug_by_ticker(ticker) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
+      select: p.coinmarketcap_id
+    )
+    |> Sanbase.Repo.one()
   end
 end

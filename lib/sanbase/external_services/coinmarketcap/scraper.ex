@@ -33,12 +33,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   def parse_project_page(html, project_info) do
     %ProjectInfo{
       project_info
-      | name: name(html),
-        ticker: ticker(html),
-        main_contract_address: main_contract_address(html),
-        website_link: website_link(html),
-        github_link: github_link(html),
-        etherscan_token_name: etherscan_token_name(html)
+      | name: project_info.name || name(html),
+        ticker: project_info.ticker || ticker(html),
+        main_contract_address: project_info.main_contract_address || main_contract_address(html),
+        website_link: project_info.website_link || website_link(html),
+        github_link: project_info.github_link || github_link(html),
+        etherscan_token_name: project_info.etherscan_token_name || etherscan_token_name(html)
     }
   end
 

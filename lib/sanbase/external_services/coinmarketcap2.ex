@@ -45,7 +45,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
        %{
          missing_info_update_interval: update_interval * 10,
          total_market_update_interval: update_interval,
-         prices_update_interval: update_interval
+         prices_update_interval: update_interval,
+         total_market_task_pid: nil
        }}
     else
       :ignore
@@ -67,17 +68,29 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
     {:noreply, state}
   end
 
-  def handle_info(:fetch_total_market, %{total_market_update_interval: update_interval} = state) do
-    # Start the task under the supervisor in a way that does not need await.
-    # As there is only one data record to be fetched we fire and forget about it,
-    # so the work can continue to scraping the projects' prices in parallel.
-    Task.Supervisor.start_child(
-      Sanbase.TaskSupervisor,
-      &fetch_and_process_marketcap_total_data/0
-    )
+  def handle_info(
+        :fetch_total_market,
+        %{
+          total_market_update_interval: update_interval,
+          total_market_task_pid: total_market_task_pid
+        } = state
+      ) do
+    # If we have a running task for fetching the total market cap do not run it again
+    if total_market_task_pid && Process.alive?(total_market_task_pid) do
+      {:noreply, state}
+    else
+      # Start the task under the supervisor in a way that does not need await.
+      # As there is only one data record to be fetched we fire and forget about it,
+      # so the work can continue to scraping the projects' prices in parallel.
+      {:ok, pid} =
+        Task.Supervisor.start_child(
+          Sanbase.TaskSupervisor,
+          &fetch_and_process_marketcap_total_data/0
+        )
 
-    Process.send_after(self(), :fetch_total_market, update_interval)
-    {:noreply, state}
+      Process.send_after(self(), :fetch_total_market, update_interval)
+      {:noreply, Map.put(state, :total_market_task_pid, pid)}
+    end
   end
 
   def handle_info(:fetch_prices, %{prices_update_interval: update_interval} = state) do

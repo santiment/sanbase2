@@ -1,17 +1,15 @@
 import React from 'react'
 import moment from 'moment'
-//import { Bar, Line } from 'react-chartjs-2'
+import { compose, withState } from 'recompose'
 import {
-ResponsiveContainer,
+  ResponsiveContainer,
   BarChart,
   Bar,
   LineChart,
   Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
   Tooltip,
-  ReferenceLine
+  ReferenceLine,
+  Brush
 } from 'recharts'
 import { formatNumber } from './../utils/formatting'
 import './Analytics.css'
@@ -141,43 +139,70 @@ const Analytics = ({
       color: 'red',
       y: null,
       label: ''
-    }
+    },
+    withMiniMap: false
   },
-  show = 'last 7 days'
+  show = 'last 7 days',
+  setIndex,
+  index = null
 }) => {
   const chartData = getChartDataFromHistory(data, label, chart)
   const borderColor = (data.dataset || {}).borderColor || COLOR
-  const referenceLine = chart.referenceLine
+  const {referenceLine, withMiniMap} = chart
   return (
     <div className='analytics'>
       <div className='analytics-trend-row'>
         <div className='analytics-trend-info-label'>
           {show}
+          <div className='analytics-trend-info'>
+            <div
+              className='analytics-trend-details'
+              style={{color: borderColor}}
+            >
+              {index
+              ? (data.items[index] || {})[`${label}`]
+              : renderData(data, label)}
+            </div>
+          </div>
         </div>
       </div>
       <div className='analytics-trend-row'>
-        <div className='analytics-trend-info'>
-          <div
-            className='analytics-trend-details'
-            style={{color: borderColor}}
-          >
-            {renderData(data, label)}
-          </div>
-        </div>
         <div className='analytics-trend-chart'>
           {chart.type === 'bar' &&
             <ResponsiveContainer>
               <BarChart
+                syncId='anyId'
                 data={chartData.datasets[0].data} >
                 <Tooltip />
                 <Bar dataKey='y' fill='#82ca9d' />
+{withMiniMap &&
+          <Brush
+            travellerWidth={20}
+            data={chartData.datasets[0].data}
+            tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
+            dataKey='x' height={50} />}
               </BarChart>
             </ResponsiveContainer>}
+
           {chart.type === 'line' &&
             <ResponsiveContainer>
               <LineChart
+                syncId='anyId'
+                dot={false}
                 data={chartData.datasets[0].data} >
-                <Line type='monotone' dataKey='y' stroke='#8884d8' strokeWidth={2} />
+                <Line
+                  type='monotone'
+                  dot={false}
+                  dataKey='y'
+                  stroke='#8884d8'
+                  onClick={(data, e) => {
+                    console.log(data)
+                    setIndex(e.target)
+                  }}
+                  onMouseDown={(data, e) => {
+                    console.log(data, e)
+                  }}
+                  strokeWidth={2} />
                 {referenceLine.y &&
                 <ReferenceLine
                   y={referenceLine.y}
@@ -191,4 +216,8 @@ const Analytics = ({
   )
 }
 
-export default Analytics
+const enhance = compose(
+  withState('index', 'setIndex', null)
+)
+
+export default enhance(Analytics)

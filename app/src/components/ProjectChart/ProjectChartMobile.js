@@ -39,7 +39,8 @@ const ProjectChartMobile = ({
           color: 'rgba(38, 43, 51)',
           fill: false,
           borderWidth: 1,
-          pointBorderWidth: 2
+          pointBorderWidth: 2,
+          withMiniMap: true
         }}
         show='Volume'
       />

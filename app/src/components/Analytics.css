@@ -1,5 +1,6 @@
 .analytics {
-  border-bottom: 1px solid gray;
+  padding-bottom: 1em;
+  box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.2);
 }
 
 .analytics-trend-row {
@@ -12,7 +13,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  min-width: 30%;
+  /*min-width: 30%;*/
 }
 
 .analytics-trend-info-label {
@@ -32,7 +33,7 @@
   position: relative;
   padding: 0;
   height: 90px;
-  max-width: 70%;
+  max-width: 100%;
 }
 
 .analytics-trend-chart canvas {

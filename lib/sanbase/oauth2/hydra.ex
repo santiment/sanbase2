@@ -5,6 +5,9 @@ defmodule Sanbase.Oauth2.Hydra do
   alias Sanbase.Utils.Config
   alias Sanbase.Auth.User
 
+  @clients_require_san_tokens ["grafana"]
+  @required_san_tokens 100
+
   def get_access_token() do
     with {:ok, %HTTPoison.Response{body: json_body, status_code: 200}} <- do_fetch_access_token(),
          {:ok, access_token} <- extract_field_from_json(json_body, "access_token") do
@@ -94,6 +97,18 @@ defmodule Sanbase.Oauth2.Hydra do
     }
 
     HTTPoison.patch(consent_url() <> "/#{consent}/reject", Jason.encode!(data), [
+      {"Authorization", "Bearer #{access_token}"},
+      {"Content-type", "application/json"},
+      {"Accept", "application/json"}
+    ])
+  end
+
+  defp do_reject_consent(consent, access_token, %User{username: username}) do
+    data = %{
+      "reason" => "#{username} doesn't have enough SAN tokens"
+    }
+
+    HTTPoison.patch(consent_url() <> "/#{consent}/reject", Poison.encode!(data), [
       {"Authorization", "Bearer #{access_token}"},
       {"Content-type", "application/json"},
       {"Accept", "application/json"}

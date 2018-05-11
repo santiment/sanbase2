@@ -69,7 +69,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   # Helper functions
 
   defp process_marketcap_total_stream(marketcap_total_stream) do
-    measurement_name = "TOTAL_MARKET-total_market"
+    measurement_name = "TOTAL_MARKET_total-market"
 
     marketcap_total_stream
     # Store each data point and the information when it was last updated

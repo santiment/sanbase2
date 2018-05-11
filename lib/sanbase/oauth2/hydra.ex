@@ -5,6 +5,9 @@ defmodule Sanbase.Oauth2.Hydra do
   alias Sanbase.Utils.Config
   alias Sanbase.Auth.User
 
+  @clients_require_san_tokens ["grafana"]
+  @required_san_tokens 100
+
   def get_access_token() do
     with {:ok, %HTTPoison.Response{body: json_body, status_code: 200}} <- do_fetch_access_token(),
          {:ok, access_token} <- extract_field_from_json(json_body, "access_token") do
@@ -17,17 +20,38 @@ defmodule Sanbase.Oauth2.Hydra do
   def get_consent_data(consent, access_token) do
     with {:ok, %HTTPoison.Response{body: json_body, status_code: 200}} <-
            do_fetch_consent_data(consent, access_token),
-         {:ok, redirect_url} <- extract_field_from_json(json_body, "redirectUrl") do
-      {:ok, redirect_url}
+         {:ok, redirect_url} <- extract_field_from_json(json_body, "redirectUrl"),
+         {:ok, client_id} <- extract_field_from_json(json_body, "clientId") do
+      {:ok, redirect_url, client_id}
     else
       error -> Logger.warn("Error getting consent data: " <> inspect(error))
     end
+  end
+
+  def manage_consent(consent, access_token, user, client_id)
+      when client_id in @clients_require_san_tokens do
+    if has_enough_san_tokens?(user, @required_san_tokens) do
+      accept_consent(consent, access_token, user)
+    else
+      reject_consent(consent, access_token, user)
+    end
+  end
+
+  def manage_consent(consent, access_token, user, _client_id) do
+    accept_consent(consent, access_token, user)
   end
 
   def accept_consent(consent, access_token, user) do
     case do_accept_consent(consent, access_token, user) do
       {:ok, %HTTPoison.Response{status_code: 204}} -> :ok
       error -> Logger.warn("Error accepting consent: " <> inspect(error))
+    end
+  end
+
+  def reject_consent(consent, access_token, user) do
+    case do_reject_consent(consent, access_token, user) do
+      {:ok, %HTTPoison.Response{status_code: 204}} -> :ok
+      error -> Logger.warn("Error rejecting consent: " <> inspect(error))
     end
   end
 
@@ -62,6 +86,18 @@ defmodule Sanbase.Oauth2.Hydra do
     ])
   end
 
+  defp do_reject_consent(consent, access_token, %User{username: username}) do
+    data = %{
+      "reason" => "#{username} doesn't have enough SAN tokens"
+    }
+
+    HTTPoison.patch(consent_url() <> "/#{consent}/reject", Poison.encode!(data), [
+      {"Authorization", "Bearer #{access_token}"},
+      {"Content-type", "application/json"},
+      {"Accept", "application/json"}
+    ])
+  end
+
   defp extract_field_from_json(json, field) do
     with {:ok, body} <- Poison.decode(json),
          {:ok, result} <- Map.fetch(body, field) do
@@ -74,4 +110,8 @@ defmodule Sanbase.Oauth2.Hydra do
 
   defp basic_auth(),
     do: [hackney: [basic_auth: {Config.get(:client_id), Config.get(:client_secret)}]]
+
+  defp has_enough_san_tokens?(%User{} = user, san_tokens) do
+    Decimal.cmp(User.san_balance!(user), Decimal.new(san_tokens)) != :lt
+  end
 end

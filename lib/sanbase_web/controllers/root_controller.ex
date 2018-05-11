@@ -22,8 +22,8 @@ defmodule SanbaseWeb.RootController do
       ) do
     with {:ok, user} <- bearer_authorize(token),
          {:ok, access_token} <- Hydra.get_access_token(),
-         {:ok, redirect_url} <- Hydra.get_consent_data(consent, access_token),
-         :ok <- Hydra.accept_consent(consent, access_token, user) do
+         {:ok, redirect_url, client_id} <- Hydra.get_consent_data(consent, access_token),
+         :ok <- Hydra.manage_consent(consent, access_token, user, client_id) do
       redirect(conn, external: redirect_url)
     else
       _ -> redirect(conn, "/")

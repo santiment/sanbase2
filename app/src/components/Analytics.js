@@ -1,7 +1,18 @@
 import React from 'react'
 import moment from 'moment'
-import { Line } from 'react-chartjs-2'
-import { Icon } from 'semantic-ui-react'
+//import { Bar, Line } from 'react-chartjs-2'
+import {
+ResponsiveContainer,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine
+} from 'recharts'
 import { formatNumber } from './../utils/formatting'
 import './Analytics.css'
 
@@ -9,22 +20,25 @@ const COLOR = '#009663'
 
 const makeAxisName = label => 'y-axis-' + label
 
-const getChartDataFromHistory = (data, label) => {
+const getChartDataFromHistory = (data, label, chart = {}) => {
   const items = data.items || []
   const borderColor = (data.dataset || {}).borderColor || COLOR
   return {
     labels: items ? items.map(data => moment(data.datetime).utc()) : [],
     datasets: [{
       label,
-      type: 'LineWithLine',
-      fill: true,
+      type: chart.type || 'LineWithLine',
+      fill: chart.fill || true,
       borderColor: borderColor,
-      borderWidth: 0.5,
+      borderWidth: chart.borderWidth || 0.5,
       yAxisID: makeAxisName(label),
       backgroundColor: borderColor,
-      pointBorderWidth: 0.2,
+      pointBorderWidth: chart.pointBorderWidth || 0.2,
       pointRadius: 0.1,
-      data: items ? items.map(data => data[`${label}`]) : [],
+      data: items ? items.map(data => ({
+        x: data.datetime,
+        y: +data[`${label}`]
+      })) : [],
       datalabels: {
         display: false
       }
@@ -36,7 +50,7 @@ const getChartOptions = (label) => ({
   responsive: true,
   showTooltips: false,
   pointDot: false,
-  scaleShowLabels: false,
+  scaleShowLabels: true,
   datasetFill: false,
   scaleFontSize: 0,
   animation: false,
@@ -47,7 +61,27 @@ const getChartOptions = (label) => ({
   },
   tooltips: {
     mode: 'x',
-    intersect: false
+    intersect: false,
+    titleMarginBottom: 16,
+    titleFontSize: 14,
+    titleFontColor: '#3d4450',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    cornerRadius: 3,
+    borderColor: 'rgba(38, 43, 51, 0.7)',
+    borderWidth: 1,
+    bodyFontSize: 14,
+    bodySpacing: 8,
+    bodyFontColor: '#3d4450',
+    displayColors: true,
+    callbacks: {
+      title: (item, data) => {
+        return moment(data.datasets[0].data[item[0].index].x).format('MMM DD YYYY')
+      },
+      label: (tooltipItem, data) => {
+        const label = data.datasets[tooltipItem.datasetIndex].label.toString()
+        return `${label}: ${formatNumber(tooltipItem.yLabel, { currency: 'USD' })}`
+      }
+    }
   },
   legend: {
     display: false
@@ -57,11 +91,11 @@ const getChartOptions = (label) => ({
       id: makeAxisName(label),
       ticks: {
         display: false,
-        beginAtZero: true
+        beginAtZero: false
       },
       gridLines: {
         drawBorder: false,
-        display: false
+        display: true
       }
     }],
     xAxes: [{
@@ -101,16 +135,24 @@ const Analytics = ({
     items: []
   },
   label,
+  chart = {
+    type: 'line',
+    referenceLine: {
+      color: 'red',
+      y: null,
+      label: ''
+    }
+  },
   show = 'last 7 days'
 }) => {
-  const chartData = getChartDataFromHistory(data, label)
-  const chartOptions = getChartOptions(label)
+  const chartData = getChartDataFromHistory(data, label, chart)
   const borderColor = (data.dataset || {}).borderColor || COLOR
+  const referenceLine = chart.referenceLine
   return (
     <div className='analytics'>
       <div className='analytics-trend-row'>
         <div className='analytics-trend-info-label'>
-          <Icon name='arrow down' /> {show}
+          {show}
         </div>
       </div>
       <div className='analytics-trend-row'>
@@ -123,10 +165,26 @@ const Analytics = ({
           </div>
         </div>
         <div className='analytics-trend-chart'>
-          <Line
-            data={chartData}
-            options={chartOptions}
-          />
+          {chart.type === 'bar' &&
+            <ResponsiveContainer>
+              <BarChart
+                data={chartData.datasets[0].data} >
+                <Tooltip />
+                <Bar dataKey='y' fill='#82ca9d' />
+              </BarChart>
+            </ResponsiveContainer>}
+          {chart.type === 'line' &&
+            <ResponsiveContainer>
+              <LineChart
+                data={chartData.datasets[0].data} >
+                <Line type='monotone' dataKey='y' stroke='#8884d8' strokeWidth={2} />
+                {referenceLine.y &&
+                <ReferenceLine
+                  y={referenceLine.y}
+                  label={referenceLine.label}
+                  stroke={referenceLine.color} />}
+              </LineChart>
+            </ResponsiveContainer>}
         </div>
       </div>
     </div>

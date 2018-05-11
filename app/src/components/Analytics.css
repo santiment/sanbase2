@@ -19,6 +19,7 @@
   margin-top: 1em;
   color: rgba(0, 0, 0, 0.5);
   font-size: 14px;
+  font-weight: 600;
 }
 
 .analytics-trend-details {
@@ -36,4 +37,5 @@
 
 .analytics-trend-chart canvas {
   margin-top: 10px;
+  z-index: 900;
 }

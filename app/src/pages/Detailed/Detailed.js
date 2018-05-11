@@ -14,7 +14,7 @@ import FinancialsBlock from './FinancialsBlock'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import Panel from './../../components/Panel'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
-import { millify } from './../../utils/formatting'
+import { millify, formatNumber } from './../../utils/formatting'
 import DetailedHeader from './DetailedHeader'
 import {
   projectBySlugGQL,
@@ -105,10 +105,12 @@ export const Detailed = ({
     history: {
       loading: HistoryPrice.loading,
       items: HistoryPrice.historyPrice
-        ? HistoryPrice.historyPrice.map(item => {
+        ? HistoryPrice.historyPrice.filter(item => item.priceUsd > 0).map(item => {
+          const priceUsd = formatNumber(parseFloat(item.priceUsd).toFixed(2) || 0)
+          const volume = parseFloat(item.volume)
           const volumeBTC = calculateBTCVolume(item)
           const marketcapBTC = calculateBTCMarketcap(item)
-          return {...item, volumeBTC, marketcapBTC}
+          return {...item, volumeBTC, marketcapBTC, volume, priceUsd}
         })
         : []
     }
@@ -239,7 +241,7 @@ export const Detailed = ({
           </PanelBlock>}
       </div>
       <div className='information'>
-        {project.isERC20 &&
+        {isDesktop && project.isERC20 &&
         project.ethTopTransactions &&
         project.ethTopTransactions.length > 0 &&
         <PanelBlock
@@ -261,7 +263,7 @@ export const Detailed = ({
             ))}
           </div>
         </PanelBlock>}
-        {project.ethSpentOverTime && project.ethSpentOverTime.length > 0 &&
+        {isDesktop && project.ethSpentOverTime && project.ethSpentOverTime.length > 0 &&
           <SpentOverTime project={project} loading={Project.loading} />}
       </div>
     </div>

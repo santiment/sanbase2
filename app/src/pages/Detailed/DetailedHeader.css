@@ -54,7 +54,6 @@
   display: flex;
   flex-direction: column;
   font-size: 1.6em;
-  z-index: -1;
   margin-top: 1em;
   line-height: 1.4em;
 }

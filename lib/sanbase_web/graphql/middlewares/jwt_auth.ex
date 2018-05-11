@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTAuth do
       resolution
     else
       resolution
-      |> Resolution.put_result({:error, :unauthorized})
+      |> Resolution.put_result({:error, "Insufficient SAN balance"})
     end
   end
 

@@ -135,7 +135,7 @@ defmodule Sanbase.Prices.Utils do
   def convert_amount(nil, _currency_from, _measurement_to, _timestamp), do: nil
 
   def convert_amount(amount, currency, currency, _timestamp) do
-    Decimal.mult(amount, Decimal.new(1))
+    Decimal.to_float(amount)
   end
 
   def convert_amount(
@@ -157,7 +157,7 @@ defmodule Sanbase.Prices.Utils do
         nil
 
       price ->
-        Decimal.mult(Decimal.new(price), amount)
+        price * Decimal.to_float(amount)
     end
   end
 end

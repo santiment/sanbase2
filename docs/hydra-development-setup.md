@@ -73,8 +73,7 @@ $ hydra clients create --skip-tls-verify --id grafana --secret grafana-secret -g
 ```
 
 ```bash
-hydra clients create --skip-tls-verify --id consent-app --secret consent-secret -g authorization_code,refresh_token,client_credentials -r token,code,id_t
-oken --allowed-scopes openid,offline,hydra.clients,hydra.consent
+hydra clients create --skip-tls-verify --id consent-app --secret consent-secret -g client_credentials -r token --allowed-scopes hydra.consent
 ```
 * scopes: what scopes are allowed for this client
 * callbacks: http://localhost:5555/login/generic_oauth - redirect url - in this case local `grafana`

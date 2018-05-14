@@ -5,9 +5,6 @@ defmodule Sanbase.Oauth2.Hydra do
   alias Sanbase.Utils.Config
   alias Sanbase.Auth.User
 
-  @clients_require_san_tokens ["grafana"]
-  @required_san_tokens 100
-
   def get_access_token() do
     with {:ok, %HTTPoison.Response{body: json_body, status_code: 200}} <- do_fetch_access_token(),
          {:ok, access_token} <- extract_field_from_json(json_body, "access_token") do
@@ -28,12 +25,14 @@ defmodule Sanbase.Oauth2.Hydra do
     end
   end
 
-  def manage_consent(consent, access_token, user, client_id)
-      when client_id in @clients_require_san_tokens do
-    if has_enough_san_tokens?(user, @required_san_tokens) do
-      accept_consent(consent, access_token, user)
-    else
+  def manage_consent(consent, access_token, user, client_id) do
+    if !has_enough_san_tokens?(
+         user,
+         json_config_value(:clients_that_require_san_tokens)[client_id]
+       ) do
       reject_consent(consent, access_token, user)
+    else
+      accept_consent(consent, access_token, user)
     end
   end
 
@@ -111,7 +110,14 @@ defmodule Sanbase.Oauth2.Hydra do
   defp basic_auth(),
     do: [hackney: [basic_auth: {Config.get(:client_id), Config.get(:client_secret)}]]
 
-  defp has_enough_san_tokens?(%User{} = user, san_tokens) do
+  defp has_enough_san_tokens?(%User{} = user, san_tokens) when not is_nil(san_tokens) do
     Decimal.cmp(User.san_balance!(user), Decimal.new(san_tokens)) != :lt
+  end
+
+  defp has_enough_san_tokens?(%User{} = user, _), do: true
+
+  defp json_config_value(key) do
+    Config.get(key)
+    |> Poison.decode!()
   end
 end

@@ -135,9 +135,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     assert json_response(result, 200)["data"]["project"] ==
              %{
                "name" => "Project",
-               "fundsRaisedUsdIcoEndPrice" => "1200",
-               "fundsRaisedEthIcoEndPrice" => "250.0",
-               "fundsRaisedBtcIcoEndPrice" => "300.0"
+               "fundsRaisedUsdIcoEndPrice" => 1200.0,
+               "fundsRaisedEthIcoEndPrice" => 250.0,
+               "fundsRaisedBtcIcoEndPrice" => 300.0
              }
   end
 

@@ -56,10 +56,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   def fetch_mean_volume(measurement, from, to) do
-    ~s/SELECT MEAN(volume_usd)
-    FROM "#{measurement}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    fetch_mean_volume_query(measurement, from, to)
     |> Store.query()
     |> parse_time_series()
   end
@@ -85,7 +82,14 @@ defmodule Sanbase.Prices.Store do
     ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
     WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
     |> Store.query()
-    |> parse_record()
+    |> parse_time_series()
+  end
+
+  def last_record!(measurement) do
+    case last_record(measurement) do
+      {:ok, datetime} -> datetime
+      {:error, error} -> raise(error)
+    end
   end
 
   def fetch_last_price_point_before(measurement, timestamp) do
@@ -97,14 +101,14 @@ defmodule Sanbase.Prices.Store do
   # Helper functions
 
   defp fetch_query(measurement, from, to) do
-    ~s/SELECT time, price_usd, price_btc, volume_usd, marketcap_usd
+    ~s/SELECT time, price_usd, price_btc, marketcap_usd, volume_usd
     FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   defp fetch_prices_with_resolution_query(measurement, from, to, resolution) do
-    ~s/SELECT MEAN(price_usd), MEAN(price_btc), LAST(volume_usd), MEAN(marketcap_usd)
+    ~s/SELECT MEAN(price_usd), MEAN(price_btc), MEAN(marketcap_usd), LAST(volume_usd)
     FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
@@ -117,26 +121,16 @@ defmodule Sanbase.Prices.Store do
     WHERE time <= #{DateTime.to_unix(timestamp, :nanoseconds)}/
   end
 
-  defp parse_record(%{results: [%{error: error}]}), do: {:error, error}
-
-  defp parse_record(%{
-         results: [
-           %{
-             series: [
-               %{
-                 values: [[iso8601_datetime, price_usd, price_btc, marketcap_usd, volume_usd]]
-               }
-             ]
-           }
-         ]
-       }) do
-    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
-
-    {:ok, {datetime, price_usd, price_btc, marketcap_usd, volume_usd}}
+  defp fetch_mean_volume_query(measurement, from, to) do
+    ~s/SELECT MEAN(volume_usd)
+    FROM "#{measurement}"
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp parse_record(_) do
-    {:ok, nil}
+  defp last_history_datetime_cmc_query(ticker) do
+    ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
+    WHERE ticker = '#{ticker}'/
   end
 
   defp parse_last_history_datetime_cmc(%{results: [%{error: error}]}), do: {:error, error}

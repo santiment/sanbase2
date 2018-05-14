@@ -4,11 +4,12 @@ defmodule Sanbase.Prices.Utils do
   @bitcoin_measurement "BTC_bitcoin"
   @ethereum_measurement "ETH_ethereum"
 
-  def fetch_last_price_before(pair, timestamp) do
-    Store.fetch_last_price_point_before(pair, timestamp)
+  @spec fetch_last_price_before(String.t(), Integer) :: {number(), number()} | {nil, nil}
+  def fetch_last_price_before(measurement, timestamp) do
+    Store.fetch_last_price_point_before(measurement, timestamp)
     |> case do
       {:ok, [[_, price_usd, price_btc, _, _]]} ->
-        {Decimal.new(price_usd), Decimal.new(price_btc)}
+        {price_usd, price_btc}
 
       _ ->
         {nil, nil}
@@ -16,10 +17,10 @@ defmodule Sanbase.Prices.Utils do
   end
 
   @doc """
-  Converts prices between currencies. Tries intermediate conversions with USD/BTC
-  if data for direct conversion is not available.
+    Converts prices between currencies. Tries intermediate conversions with USD/BTC
+    if data for direct conversion is not available.
   """
-  def fetch_last_price_before(ticker, ticker, _timestamp), do: Decimal.new(1)
+  def fetch_last_price_before(measurement, measurement, _timestamp), do: 1.0
 
   def fetch_last_price_before("BTC", "USD", timestamp) do
     {price_usd, _price_btc} = fetch_last_price_before(@bitcoin_measurement, timestamp)
@@ -27,16 +28,14 @@ defmodule Sanbase.Prices.Utils do
   end
 
   defguard is_zero(price)
-           when is_float(price) and not (0.0 > price) and price <= 1.0e-7
+           when is_number(price) and price >= -1.0e-7 and price <= 1.0e-7
 
   def fetch_last_price_before("USD", "BTC", timestamp) do
-    zero = Decimal.new(0)
     {_price_usd, price_btc} = fetch_last_price_before(@bitcoin_measurement, timestamp)
 
     case price_btc do
-      nil -> nil
-      x when is_zero(x) -> nil
-      price -> Decimal.div(Decimal.new(1), price)
+      x when is_nil(x) or is_zero(x) -> nil
+      price -> 1 / price
     end
   end
 
@@ -50,44 +49,115 @@ defmodule Sanbase.Prices.Utils do
   end
 
   def fetch_last_price_before(measurement, "BTC", timestamp) do
-    fetch_last_price_before(measurement, timestamp)
-    |> case do
+    {_price_usd, price_btc} = fetch_last_price_before(measurement, timestamp)
+
+    case price_btc do
       nil -> fetch_last_price_btc_before_convert_via_usd(measurement, timestamp)
       price -> price
     end
   end
 
+  def fetch_last_price_before(measurement, "ETH", timestamp) do
+    fetch_last_price_before_convert_via_intermediate(
+      measurement,
+      @ethereum_measurement,
+      "USD",
+      timestamp
+    )
+  end
+
+  def fetch_last_price_before(measurement_from, measurement_to, timestamp)
+      when measurement_to != "USD" and measurement_to != "BTC" do
+    price =
+      fetch_last_price_before_convert_via_intermediate(
+        measurement_from,
+        measurement_to,
+        "USD",
+        timestamp
+      )
+
+    case price do
+      nil ->
+        fetch_last_price_before_convert_via_intermediate(
+          measurement_from,
+          measurement_to,
+          "BTC",
+          timestamp
+        )
+
+      price ->
+        price
+    end
+  end
+
   # Private functions
 
-  defp fetch_last_price_usd_before_convert_via_btc(ticker_from, timestamp) do
-    with price_btc <- fetch_last_price_before(ticker_from <> "_BTC", timestamp),
-         true <- !is_nil(price_btc),
-         price_btc_usd <- fetch_last_price_before("BTC_USD", timestamp),
-         true <- !is_nil(price_btc_usd) do
-      Decimal.mult(price_btc, price_btc_usd)
+  defp fetch_last_price_before_convert_via_intermediate(
+         measurement_from,
+         measurement_to,
+         measurement_interm,
+         timestamp
+       ) do
+    with price_from_interm <-
+           fetch_last_price_before(measurement_from, measurement_interm, timestamp),
+         false <- is_nil(price_from_interm) or is_zero(price_from_interm),
+         price_to_interm <-
+           fetch_last_price_before(measurement_to, measurement_interm, timestamp),
+         false <- is_nil(price_to_interm) or is_zero(price_to_interm) do
+      price_from_interm / price_to_interm
     else
       _ -> nil
     end
   end
 
-  defp fetch_last_price_btc_before_convert_via_usd(ticker_from, timestamp) do
-    with price_usd <- fetch_last_price_before(ticker_from <> "_USD", timestamp),
-         true <- !is_nil(price_usd),
-         price_btc_usd <- fetch_last_price_before("BTC_USD", timestamp),
-         true <- !is_nil(price_btc_usd) and price_btc_usd != Decimal.new(0) do
-      Decimal.div(price_usd, price_btc_usd)
+  defp fetch_last_price_usd_before_convert_via_btc(measurement, timestamp) do
+    with {_price_usd, price_btc} <- fetch_last_price_before(measurement, timestamp),
+         false <- is_nil(price_btc),
+         {price_btc_usd, _price_btc_btc} <- fetch_last_price_before("BTC_bitcoin", timestamp),
+         false <- is_nil(price_btc_usd) do
+      price_btc * price_btc_usd
     else
       _ -> nil
     end
   end
 
-  def convert_amount(nil, _measurement_from, _measurement_to, _timestamp), do: nil
+  defp fetch_last_price_btc_before_convert_via_usd(measurement, timestamp) do
+    with {price_usd, _price_btc} <- fetch_last_price_before(measurement, timestamp),
+         false <- is_nil(price_usd) or is_zero(price_usd),
+         {price_btc_usd, _price_btc_btc} <- fetch_last_price_before("BTC_bitcoin", timestamp),
+         false <- is_nil(price_btc_usd) or is_zero(price_btc_usd) do
+      price_usd / price_btc_usd
+    else
+      _ -> nil
+    end
+  end
 
-  def convert_amount(amount, measurement_from, measurement_to, timestamp) do
-    fetch_last_price_before(measurement_from, measurement_to, timestamp)
+  def convert_amount(nil, _currency_from, _measurement_to, _timestamp), do: nil
+
+  def convert_amount(amount, currency, currency, _timestamp) do
+    Decimal.mult(amount, Decimal.new(1))
+  end
+
+  def convert_amount(
+        amount,
+        currency_from,
+        target_currency,
+        timestamp
+      ) do
+    alias Sanbase.Model.{Project, Currency}
+
+    %Project{ticker: ticker, coinmarketcap_id: cmc_id} =
+      Currency.to_project(%Currency{code: currency_from})
+
+    ticker_cmc_id = ticker <> "_" <> cmc_id
+
+    fetch_last_price_before(ticker_cmc_id, target_currency, timestamp)
     |> case do
-      nil -> nil
-      price -> Decimal.mult(price, amount)
+      nil ->
+        nil
+
+      price ->
+        Decimal.mult(Decimal.new(price), amount)
     end
   end
 end

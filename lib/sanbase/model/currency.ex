@@ -41,6 +41,14 @@ defmodule Sanbase.Model.Currency do
 
     currency
   end
+
+  def to_project(%Currency{code: code}) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.ticker == ^code and not is_nil(p.coinmarketcap_id)
+    )
+    |> Repo.one()
+  end
 end
 
 # used by ex_admin

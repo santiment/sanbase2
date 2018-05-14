@@ -142,15 +142,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.percent_change_7d/3)
     end
 
-    field :funds_raised_usd_ico_end_price, :decimal do
+    field :funds_raised_usd_ico_end_price, :float do
       cache_resolve(&ProjectResolver.funds_raised_usd_ico_end_price/3)
     end
 
-    field :funds_raised_eth_ico_end_price, :decimal do
+    field :funds_raised_eth_ico_end_price, :float do
       cache_resolve(&ProjectResolver.funds_raised_eth_ico_end_price/3)
     end
 
-    field :funds_raised_btc_ico_end_price, :decimal do
+    field :funds_raised_btc_ico_end_price, :float do
       cache_resolve(&ProjectResolver.funds_raised_btc_ico_end_price/3)
     end
 
@@ -222,15 +222,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:tokens_issued_at_ico, :decimal)
     field(:tokens_sold_at_ico, :decimal)
 
-    field :funds_raised_usd_ico_end_price, :decimal do
+    field :funds_raised_usd_ico_end_price, :float do
       resolve(&IcoResolver.funds_raised_usd_ico_end_price/3)
     end
 
-    field :funds_raised_eth_ico_end_price, :decimal do
+    field :funds_raised_eth_ico_end_price, :float do
       resolve(&IcoResolver.funds_raised_eth_ico_end_price/3)
     end
 
-    field :funds_raised_btc_ico_end_price, :decimal do
+    field :funds_raised_btc_ico_end_price, :float do
       resolve(&IcoResolver.funds_raised_btc_ico_end_price/3)
     end
 
@@ -260,7 +260,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   object :currency_amount do
     field(:currency_code, :string)
-    field(:amount, :decimal)
+    field(:amount, :float)
   end
 
   object :signal do

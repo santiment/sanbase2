@@ -19,14 +19,13 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
 
     %Project{}
     |> Project.changeset(%{name: "Ethereum", ticker: "ETH", coinmarketcap_id: "ethereum"})
+    |> Repo.insert!()
 
     date1 = "2017-08-19"
     date1_unix = 1_503_100_800_000_000_000
 
     date2 = "2017-10-17"
     date2_unix = 1_508_198_400_000_000_000
-
-    now = Ecto.DateTime.utc()
 
     Store.import([
       %Measurement{
@@ -47,6 +46,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
       %Project{}
       |> Project.changeset(%{name: "Project", ticker: "TEST", coinmarketcap_id: cmc_id})
       |> Repo.insert!()
+
+    now = Ecto.DateTime.utc()
 
     %LatestCoinmarketcapData{}
     |> LatestCoinmarketcapData.changeset(%{

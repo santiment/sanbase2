@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   Returns a list of price points for the given ticker. Optimizes the number of queries
   to the DB by inspecting the requested fields.
   """
+  @deprecated "Use history price by slug instead of ticker"
   def history_price(_root, %{ticker: "TOTAL_MARKET"} = args, %{context: %{loader: loader}}) do
     loader
     |> Dataloader.load(PriceStore, "TOTAL_MARKET_total-market", args)
@@ -23,6 +24,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
               datetime: dt,
               marketcap: nil_or_decimal(marketcap),
               volume: nil_or_decimal(volume)
+            }
+          end)
+
+        {:ok, result}
+      else
+        _ ->
+          {:error, "Can't fetch total marketcap prices"}
+      end
+    end)
+  end
+
+  @doc """
+  Returns a list of price points for the given ticker. Optimizes the number of queries
+  to the DB by inspecting the requested fields.
+  """
+  def history_price(_root, %{slug: "TOTAL_MARKET"} = args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(PriceStore, "TOTAL_MARKET_total-market", args)
+    |> on_load(fn loader ->
+      with {:ok, usd_prices} <-
+             Dataloader.get(loader, PriceStore, "TOTAL_MARKET_total-market", args) do
+        result =
+          usd_prices
+          |> Enum.map(fn [dt, _, _, marketcap_usd, volume_usd] ->
+            %{
+              datetime: dt,
+              marketcap: Decimal.new(marketcap_usd),
+              volume: Decimal.new(volume_usd)
             }
           end)
 
@@ -73,6 +102,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       with {:ok, prices} <- Dataloader.get(loader, PriceStore, ticker_cmc_id, args) do
         result =
           prices
+          # |> IO.inspect(label: "HISTORY PRICES FOR #{slug}")
           |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->
             %{
               datetime: dt,

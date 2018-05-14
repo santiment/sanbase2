@@ -250,9 +250,9 @@ defmodule Sanbase.Model.Project do
   defp calc_token_usd_ico_price(price_from, currency_from, ico_start_date, current_datetime) do
     with :gt <- Ecto.DateTime.compare(current_datetime, Ecto.DateTime.from_date(ico_start_date)),
          timestamp <- Sanbase.DateTimeUtils.ecto_date_to_datetime(ico_start_date),
-         price_usd <-
+         price_usd when not is_nil(price_usd) <-
            Sanbase.Prices.Utils.fetch_last_price_before(currency_from, "USD", timestamp) do
-      Decimal.mult(price_from, price_usd)
+      Decimal.mult(price_from, Decimal.new(price_usd))
     else
       _ -> nil
     end

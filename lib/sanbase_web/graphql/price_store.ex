@@ -26,7 +26,9 @@ defmodule SanbaseWeb.Graphql.PriceStore do
 
   defp fetch_price(measurement, %{from: from, to: to, interval: interval} = args) do
     Cache.func(
-      fn -> Prices.Store.fetch_prices_with_resolution(measurement, from, to, interval) end,
+      fn ->
+        Prices.Store.fetch_prices_with_resolution(measurement, from, to, interval)
+      end,
       :fetch_prices_with_resolution,
       Map.merge(%{measurement: measurement}, args)
     ).()

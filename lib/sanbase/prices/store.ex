@@ -192,8 +192,9 @@ defmodule Sanbase.Prices.Store do
     {:ok, {datetime, price_usd, price_btc, marketcap_usd, volume_usd}}
   end
 
-  defp parse_record(_) do
-    {:ok, nil}
+  defp last_history_datetime_cmc_query(ticker) do
+    ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
+    WHERE ticker = '#{ticker}'/
   end
 
   defp parse_last_history_datetime_cmc(%{results: [%{error: error}]}), do: {:error, error}

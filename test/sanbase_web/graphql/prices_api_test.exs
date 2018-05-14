@@ -66,6 +66,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       }
     ])
 
+    # Store.fetch_price_points(ticker_cmc_id1, 0 |> DateTime.from_unix!(), DateTime.utc_now())
+    # |> IO.inspect()
+
     [
       datetime1: datetime1,
       datetime2: datetime2,
@@ -343,11 +346,13 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "no information is available for total marketcap", context do
-    Store.drop_measurement("TOTAL_MARKET_USD")
+    Store.drop_measurement(context.total_market)
 
     query = """
     {
-      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}", to: "#{context.datetime2}", interval: "1h") {
+      historyPrice(slug: "#{context.total_market}", from: "#{context.datetime1}", to: "#{
+      context.datetime2
+    }", interval: "1h") {
         datetime
         volume
         marketcap
@@ -365,7 +370,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "default arguments for total marketcap are correctly set", context do
     query = """
     {
-      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}"){
+      historyPrice(slug: "#{context.total_market}", from: "#{context.datetime1}"){
         datetime
         volume
         marketcap

@@ -174,7 +174,12 @@ defmodule Sanbase.Model.Ico do
 
     Repo.preload(ico, ico_currencies: [:currency]).ico_currencies
     |> Enum.map(fn ic ->
-      Sanbase.Prices.Utils.convert_amount(ic.amount, ic.currency.code, target_ticker, timestamp)
+      Sanbase.Prices.Utils.convert_amount(
+        ic.amount,
+        ic.currency.code,
+        target_currency,
+        timestamp
+      )
     end)
     |> Enum.reject(&is_nil/1)
     |> case do

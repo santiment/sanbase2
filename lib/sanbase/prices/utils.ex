@@ -38,7 +38,7 @@ defmodule Sanbase.Prices.Utils do
   end
 
   defguard is_zero(price)
-           when is_float(price) and not (0.0 > price) and price <= 1.0e-7
+           when is_number(price) and price >= -1.0e-7 and price <= 1.0e-7
 
   def fetch_last_price_before("USD", "BTC", timestamp) do
     {_price_usd, price_btc} = fetch_last_price_before(@bitcoin_measurement, timestamp)

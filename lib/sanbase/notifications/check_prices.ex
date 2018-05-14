@@ -18,7 +18,7 @@ defmodule Sanbase.Notifications.CheckPrices do
   @check_interval_in_sec 60 * 60
   @price_change_threshold 5
 
-  def exec(project, counter_currency) do
+  def exec(%Project{} = project, counter_currency) do
     unless ComputeMovements.recent_notification?(
              project,
              seconds_ago(@cooldown_period_in_sec),
@@ -36,10 +36,17 @@ defmodule Sanbase.Notifications.CheckPrices do
     end
   end
 
-  defp fetch_price_points(project, counter_currency) do
-    ticker = price_ticker(project, counter_currency)
+  defp fetch_price_points(
+         %Project{ticker: ticker, coinmarketcap_id: cmc_id} = project,
+         counter_currency
+       ) do
+    ticker_cmc_id = ticker <> "_" <> cmc_id
 
-    Store.fetch_price_points!(ticker, seconds_ago(@check_interval_in_sec), DateTime.utc_now())
+    Store.fetch_price_points!(
+      ticker_cmc_id,
+      seconds_ago(@check_interval_in_sec),
+      DateTime.utc_now()
+    )
   end
 
   def send_notification({notification, price_difference, project}, counter_currency) do
@@ -61,7 +68,6 @@ defmodule Sanbase.Notifications.CheckPrices do
       )
   end
 
-  # TODO FIXXXXXXXx
   defp price_ticker(%Project{ticker: ticker}, counter_currency) do
     "#{ticker}_#{String.upcase(counter_currency)}"
   end

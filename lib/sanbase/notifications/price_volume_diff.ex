@@ -33,11 +33,16 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
-  defp check_volume(project, currency, from_datetime, to_datetime) do
-    pair = "#{project.ticker}_#{currency}"
+  defp check_volume(
+         %Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id},
+         currency,
+         from_datetime,
+         to_datetime
+       ) do
+    measurement = ticker <> "_" <> coinmarketcap_id
 
     with {:ok, [[_dt, volume]]} <-
-           Sanbase.Prices.Store.fetch_mean_volume(pair, from_datetime, to_datetime) do
+           Sanbase.Prices.Store.fetch_mean_volume(measurement, from_datetime, to_datetime) do
       volume >= notification_volume_threshold()
     else
       _ -> false

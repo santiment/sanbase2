@@ -11,10 +11,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
   require Sanbase.Utils.Config
 
   setup do
-    Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
-    |> Keyword.get(:database)
-    |> Instream.Admin.Database.create()
-    |> Store.execute()
+    Store.create_db()
+
+    # TODO: Make projects with cmc_id and import correctly!!!
 
     Store.drop_measurement("TEST_USD")
     Store.drop_measurement("TESTNOVOLUME_USD")

@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     ticker2 = "XYZ"
     total_market_ticker_cmc_id = "TOTAL_MARKET_total-market"
 
-    ticker_cmc_id1 = ticker1 <> "_" <> slug2
+    ticker_cmc_id1 = ticker1 <> "_" <> slug1
     ticker_cmc_id2 = ticker2 <> "_" <> slug2
 
     %Project{}
@@ -41,7 +41,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     Store.import([
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{price_usd: 1000, price_btc: 20, volume_usd: 200, marketcap_usd: 500},
+        fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
         name: ticker_cmc_id1
       },
       %Measurement{
@@ -66,9 +66,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       }
     ])
 
-    # Store.fetch_price_points(ticker_cmc_id1, 0 |> DateTime.from_unix!(), DateTime.utc_now())
-    # |> IO.inspect()
-
     [
       datetime1: datetime1,
       datetime2: datetime2,
@@ -76,19 +73,20 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       # Too long requested with small interval should trigger complexity check
       years_ago: years_ago,
       slug1: slug1,
+      slug2: slug2,
       ticker_cmc_id1: ticker_cmc_id1,
-      ticker_cmc_id1: ticker_cmc_id2,
-      total_market: "TOTAL_MARKET",
-      total_market_ticker_cmc_id: total_market_ticker_cmc_id
+      ticker_cmc_id2: ticker_cmc_id2,
+      total_market_slug: "TOTAL_MARKET",
+      total_market_measurement: total_market_ticker_cmc_id
     ]
   end
 
   test "no information is available for a ticker", context do
-    Store.drop_measurement(context.ticker_cmc_id1)
+    Store.drop_measurement(context.ticker_cmc_id2)
 
     query = """
     {
-      historyPrice(slug: "#{context.slug1}", from: "#{context.datetime1}", to: "#{
+      historyPrice(slug: "#{context.slug2}", from: "#{context.datetime1}", to: "#{
       context.datetime2
     }", interval: "1h") {
         datetime
@@ -199,11 +197,11 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "no information is available for total marketcap", context do
-    Store.drop_measurement(context.total_market)
+    Store.drop_measurement(context.total_market_measurement)
 
     query = """
     {
-      historyPrice(slug: "#{context.total_market}", from: "#{context.datetime1}", to: "#{
+      historyPrice(slug: "#{context.total_market_slug}", from: "#{context.datetime1}", to: "#{
       context.datetime2
     }", interval: "1h") {
         datetime
@@ -223,7 +221,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "default arguments for total marketcap are correctly set", context do
     query = """
     {
-      historyPrice(slug: "#{context.total_market}", from: "#{context.datetime1}"){
+      historyPrice(slug: "#{context.total_market_slug}", from: "#{context.datetime1}"){
         datetime
         volume
         marketcap

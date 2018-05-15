@@ -6,17 +6,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   alias SanbaseWeb.Graphql.PriceStore
 
+  @total_market "TOTAL_MARKET"
+  @total_market_measurement "TOTAL_MARKET_total-market"
+
   @doc """
   Returns a list of price points for the given ticker. Optimizes the number of queries
   to the DB by inspecting the requested fields.
   """
   @deprecated "Use history price by slug instead of ticker"
-  def history_price(_root, %{ticker: "TOTAL_MARKET"} = args, %{context: %{loader: loader}}) do
+  def history_price(_root, %{ticker: @total_market} = args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(PriceStore, "TOTAL_MARKET_total-market", args)
+    |> Dataloader.load(PriceStore, @total_market_measurement, args)
     |> on_load(fn loader ->
       with {:ok, usd_prices} <-
-             Dataloader.get(loader, PriceStore, "TOTAL_MARKET_total-market", args) do
+             Dataloader.get(loader, PriceStore, @total_market_measurement, args) do
         result =
           usd_prices
           |> Enum.map(fn [dt, _, _, marketcap_usd, volume_usd] ->
@@ -39,12 +42,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   Returns a list of price points for the given ticker. Optimizes the number of queries
   to the DB by inspecting the requested fields.
   """
-  def history_price(_root, %{slug: "TOTAL_MARKET"} = args, %{context: %{loader: loader}}) do
+  def history_price(_root, %{slug: @total_market} = args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(PriceStore, "TOTAL_MARKET_total-market", args)
+    |> Dataloader.load(PriceStore, @total_market_measurement, args)
     |> on_load(fn loader ->
       with {:ok, usd_prices} <-
-             Dataloader.get(loader, PriceStore, "TOTAL_MARKET_total-market", args) do
+             Dataloader.get(loader, PriceStore, @total_market_measurement, args) do
         result =
           usd_prices
           |> Enum.map(fn [dt, _, _, marketcap_usd, volume_usd] ->
@@ -102,7 +105,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       with {:ok, prices} <- Dataloader.get(loader, PriceStore, ticker_cmc_id, args) do
         result =
           prices
-          # |> IO.inspect(label: "HISTORY PRICES FOR #{slug}")
           |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->
             %{
               datetime: dt,

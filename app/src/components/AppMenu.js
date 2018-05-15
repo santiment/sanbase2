@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { Popup, Button, Icon } from 'semantic-ui-react'
 import './AppMenu.css'
 
-const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) => (
+const AppMenu = ({handleNavigation, showIcons = false, showInsights = false, isMobile}) => (
   <div style={{
     display: 'flex',
     justifyContent: 'center',
@@ -10,10 +10,23 @@ const AppMenu = ({handleNavigation, showIcons = false, showInsights = false}) =>
   }}>
     <ul className={showIcons ? 'menu-list' : 'menu-list-top'} >
       {showInsights &&
-      <li onClick={() => handleNavigation('insights')}>
-        {showIcons && <i className='fa fa-newspaper-o' />}
-        Insights
-      </li>}
+        <li onClick={() => handleNavigation('insights')}>
+          {showIcons && <i className='fa fa-newspaper-o' />}
+          Insights
+        </li>
+      }
+      {isMobile &&
+        <Fragment>
+          <li onClick={() => handleNavigation('projects')}>
+            {showIcons && <Icon name='list 2x' />}
+            ERC20 Projects
+          </li>
+          <li onClick={() => handleNavigation('currencies')}>
+            {showIcons && <Icon name='list 2x' />}
+            Currencies
+          </li>
+        </Fragment>
+      }
       <li onClick={() => handleNavigation('signals')}>
         {showIcons && <Icon name='th 2x' />}
         Signals

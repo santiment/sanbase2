@@ -1,11 +1,7 @@
-.cashflow {
+.projects-tabel {
   width: 80%;
   max-width: 80%;
   min-width: 80%;
-}
-
-.cashflow-indev-message {
-  margin-bottom: 16px;
 }
 
 .row {
@@ -57,7 +53,7 @@
   display: inline-block;
 }
 
-.cashflow .ReactTable {
+.projects-tabel .ReactTable {
   border-top: none;
   border-left: none;
   border-right: none;
@@ -222,8 +218,12 @@
 }
 
 @media all and (min-width: 768px) and (max-width: 1440px) {
-  .cashflow {
+  .projects-tabel {
     width: 100%;
     min-width: 100%;
   }
+}
+
+.projects-tabel-tips {
+  text-align: 'center';
 }

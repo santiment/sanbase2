@@ -12,6 +12,7 @@ import 'nprogress/nprogress.css'
 import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import Currencies from './pages/Currencies'
+import Favorites from './pages/Favorites'
 import CashflowMobile from './pages/CashflowMobile'
 import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
@@ -101,6 +102,18 @@ export const App = ({isDesktop}) => (
           }
           return (
             <CurrenciesMobile {...props} />
+          )
+        }} />
+        <Route exact path='/favorites' render={props => {
+          if (isDesktop) {
+            return (
+              <Favorites
+                preload={() => LoadableDetailedPage.preload()}
+                {...props} />
+            )
+          }
+          return (
+            <Redirect from='/favorites' to='/projects' />
           )
         }} />
         <Route exact path='/roadmap' component={Roadmap} />

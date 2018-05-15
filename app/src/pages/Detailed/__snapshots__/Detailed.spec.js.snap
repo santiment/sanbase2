@@ -14,6 +14,8 @@ exports[`Project detail page container it should render correctly 1`] = `
   </HelmetWrapper>
   <withRouter(Apollo(SearchContainer)) />
   <ExportedComponent
+    isFavorite={false}
+    isLoggedIn={false}
     project={
       Object {
         "id": 12,

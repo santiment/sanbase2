@@ -8,6 +8,7 @@ import { Redirect } from 'react-router-dom'
 import moment from 'moment'
 import { Helmet } from 'react-helmet'
 import { graphql, withApollo } from 'react-apollo'
+import { connect } from 'react-redux'
 import PanelBlock from './../../components/PanelBlock'
 import GeneralInfoBlock from './GeneralInfoBlock'
 import FinancialsBlock from './FinancialsBlock'
@@ -28,7 +29,9 @@ import {
   ExchangeFundFlowGQL,
   EthSpentOverTimeByErc20ProjectsGQL,
   DailyActiveAddressesGQL,
-  EmojisSentimentGQL
+  EmojisSentimentGQL,
+  FollowProjectGQL,
+  UnfollowProjectGQL
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'
@@ -102,8 +105,12 @@ export const Detailed = ({
     error: false,
     emojisSentiment: []
   },
+  followProject,
+  unfollowProject,
   changeChartVars,
-  isDesktop
+  isDesktop,
+  dispatch,
+  user
 }) => {
   const project = Project.project
 
@@ -226,6 +233,9 @@ export const Detailed = ({
       }}
       ticker={project.ticker} />
 
+  const isLoggedIn = Object.keys(user).length === 0 && user.constructor === Object
+  const isFavorite = () => isLoggedIn && project && user.followedProjects.includes(project.id)
+
   return (
     <div className='page detailed'>
       <Helmet>
@@ -235,7 +245,14 @@ export const Detailed = ({
         </title>
       </Helmet>
       {!isDesktop && <Search />}
-      <DetailedHeader {...Project} />
+      <DetailedHeader
+        {...Project}
+        dispatch={dispatch}
+        isFavorite={isFavorite()}
+        isLoggedIn={isLoggedIn}
+        addToFavorites={followProject}
+        removeFromFavorites={unfollowProject}
+      />
       {isDesktop
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
@@ -303,7 +320,16 @@ export const Detailed = ({
 
 Detailed.propTypes = propTypes
 
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  }
+}
+
 const enhance = compose(
+  connect(
+    mapStateToProps
+  ),
   withApollo,
   withState('chartVars', 'changeChartVars', {
     from: undefined,
@@ -511,6 +537,12 @@ const enhance = compose(
         }
       }
     }
+  }),
+  graphql(FollowProjectGQL, {
+    name: 'followProject'
+  }),
+  graphql(UnfollowProjectGQL, {
+    name: 'unfollowProject'
   })
 )
 

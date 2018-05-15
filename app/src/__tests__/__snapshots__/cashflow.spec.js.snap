@@ -1,298 +1,36 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Cashflow container it should render correctly 1`] = `
-<div
-  className="page cashflow"
->
-  <HelmetWrapper
-    defer={true}
-    encodeSpecialCharacters={true}
-  >
-    <title>
-      SANbase: ERC20 Projects
-    </title>
-    <link
-      href="/projects"
-      rel="canonical"
-    />
-  </HelmetWrapper>
-  <FadeIn
-    as="div"
-    backfaceVisible="visible"
-    delay="0s"
-    direction="normal"
-    duration="0.3s"
-    fillMode="none"
-    iterations="1"
-    playState="running"
-    timingFunction="ease-in"
-  >
-    <CashflowHead
-      allMarketSegments={
-        Object {
-          "advertising": "Advertising",
-          "blockchain_network": "Blockchain Network",
-          "data": "Data",
-          "digital_identity": "Digital Identity",
-          "financial": "Financial",
-          "gambling": "Gambling",
-          "gaming": "Gaming",
-          "legal": "Legal",
-          "media": "Media",
-          "prediction_market": "Prediction Market",
-          "protocol": "Protocol",
-          "transportation": "Transportation",
-          "unknown": null,
-        }
-      }
-      categories={Object {}}
-      path="/products"
-    />
-    <Panel>
-      <div
-        className="row"
-      >
-        <div
-          className="datatables-info"
-        />
-        <div
-          className="datatables-filter"
-        >
-          <label>
-            <input
-              placeholder="Search"
-            />
-          </label>
-        </div>
-      </div>
-      <ReactTable
-        AggregatedComponent={[Function]}
-        ExpanderComponent={[Function]}
-        FilterComponent={[Function]}
-        LoadingComponent={[Function]}
-        NoDataComponent={[Function]}
-        PadRowComponent={[Function]}
-        PaginationComponent={[Function]}
-        PivotValueComponent={[Function]}
-        ResizerComponent={[Function]}
-        TableComponent={[Function]}
-        TbodyComponent={[Function]}
-        TdComponent={[Function]}
-        TfootComponent={[Function]}
-        ThComponent={[Function]}
-        TheadComponent={[Function]}
-        TrComponent={[Function]}
-        TrGroupComponent={[Function]}
-        aggregatedKey="_aggregated"
-        className="-highlight"
-        collapseOnDataChange={true}
-        collapseOnPageChange={true}
-        collapseOnSortingChange={true}
-        column={
-          Object {
-            "Aggregated": undefined,
-            "Cell": undefined,
-            "Expander": undefined,
-            "Filter": undefined,
-            "Footer": undefined,
-            "Header": undefined,
-            "Pivot": undefined,
-            "PivotValue": undefined,
-            "aggregate": undefined,
-            "className": "",
-            "filterAll": false,
-            "filterMethod": undefined,
-            "filterable": undefined,
-            "footerClassName": "",
-            "footerStyle": Object {},
-            "getFooterProps": [Function],
-            "getHeaderProps": [Function],
-            "getProps": [Function],
-            "headerClassName": "",
-            "headerStyle": Object {},
-            "minWidth": 100,
-            "resizable": undefined,
-            "show": true,
-            "sortMethod": undefined,
-            "sortable": undefined,
-            "style": Object {},
-          }
-        }
-        columns={
-          Array [
-            Object {
-              "Cell": [Function],
-              "Header": "",
-              "accessor": [Function],
-              "filterMethod": [Function],
-              "filterable": true,
-              "id": "icon",
-              "minWidth": 44,
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Project",
-              "accessor": [Function],
-              "filterMethod": [Function],
-              "filterable": true,
-              "id": "project",
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Price",
-              "accessor": [Function],
-              "id": "price",
-              "maxWidth": 100,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Volume",
-              "accessor": [Function],
-              "id": "volume",
-              "maxWidth": 100,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Market Cap",
-              "accessor": "marketcapUsd",
-              "id": "marketcapUsd",
-              "maxWidth": 130,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "ETH spent (30D)",
-              "accessor": [Function],
-              "id": "tx",
-              "maxWidth": 110,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Dev activity (30D)",
-              "accessor": [Function],
-              "id": "github_activity",
-              "maxWidth": 110,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Daily active addresses (30D)",
-              "accessor": [Function],
-              "id": "daily_active_addresses",
-              "maxWidth": 110,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Signals",
-              "accessor": [Function],
-              "id": "signals",
-              "minWidth": 64,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-          ]
-        }
-        data={Array []}
-        defaultExpanded={Object {}}
-        defaultFilterMethod={[Function]}
-        defaultFiltered={Array []}
-        defaultPageSize={20}
-        defaultResized={Array []}
-        defaultSortDesc={false}
-        defaultSortMethod={[Function]}
-        defaultSorted={
-          Array [
-            Object {
-              "desc": false,
-              "id": "marketcapUsd",
-            },
-          ]
-        }
-        expanderDefaults={
-          Object {
-            "filterable": false,
-            "resizable": false,
-            "sortable": false,
-            "width": 35,
-          }
-        }
-        filterable={false}
-        filtered={Array []}
-        freezeWhenExpanded={false}
-        getLoadingProps={[Function]}
-        getNoDataProps={[Function]}
-        getPaginationProps={[Function]}
-        getProps={[Function]}
-        getResizerProps={[Function]}
-        getTableProps={[Function]}
-        getTbodyProps={[Function]}
-        getTdProps={[Function]}
-        getTfootProps={[Function]}
-        getTfootTdProps={[Function]}
-        getTfootTrProps={[Function]}
-        getTheadFilterProps={[Function]}
-        getTheadFilterThProps={[Function]}
-        getTheadFilterTrProps={[Function]}
-        getTheadGroupProps={[Function]}
-        getTheadGroupThProps={[Function]}
-        getTheadGroupTrProps={[Function]}
-        getTheadProps={[Function]}
-        getTheadThProps={[Function]}
-        getTheadTrProps={[Function]}
-        getTrGroupProps={[Function]}
-        getTrProps={[Function]}
-        groupedByPivotKey="_groupedByPivot"
-        indexKey="_index"
-        loading={true}
-        loadingText="Loading..."
-        multiSort={true}
-        nestingLevelKey="_nestingLevel"
-        nextText="Next"
-        noDataText="No rows found"
-        ofText="of"
-        onFetchData={[Function]}
-        originalKey="_original"
-        pageSize={0}
-        pageSizeOptions={
-          Array [
-            5,
-            10,
-            20,
-            25,
-            50,
-            100,
-          ]
-        }
-        pageText="Page"
-        pivotDefaults={Object {}}
-        pivotIDKey="_pivotID"
-        pivotValKey="_pivotVal"
-        previousText="Previous"
-        resizable={true}
-        rowsText="rows"
-        showPageJump={true}
-        showPageSizeOptions={true}
-        showPagination={false}
-        showPaginationBottom={false}
-        showPaginationTop={false}
-        sortable={false}
-        style={Object {}}
-        subRowsKey="_subRows"
-      />
-    </Panel>
-  </FadeIn>
-  <Component />
-</div>
+<ProjectsTabel
+  allMarketSegments={
+    Object {
+      "advertising": "Advertising",
+      "blockchain_network": "Blockchain Network",
+      "data": "Data",
+      "digital_identity": "Digital Identity",
+      "financial": "Financial",
+      "gambling": "Gambling",
+      "gaming": "Gaming",
+      "legal": "Legal",
+      "media": "Media",
+      "prediction_market": "Prediction Market",
+      "protocol": "Protocol",
+      "transportation": "Transportation",
+      "unknown": null,
+    }
+  }
+  categories={Object {}}
+  match={
+    Object {
+      "path": "/products",
+    }
+  }
+  tableInfo={
+    Object {
+      "page": 1,
+      "pageSize": 32,
+      "visibleItems": 32,
+    }
+  }
+/>
 `;

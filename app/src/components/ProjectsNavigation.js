@@ -1,33 +1,35 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import {
   Button,
   Checkbox,
   Popup
 } from 'semantic-ui-react'
-import './CashflowHead.css'
+import './ProjectsNavigation.css'
 
-const CashflowHead = ({
+const ProjectsNavigation = ({
   path,
   categories,
   handleSetCategory,
-  allMarketSegments
+  allMarketSegments,
+  user
 }) => {
   return (
-    <div className='cashflow-head'>
-      {path.includes('projects') &&
-        <Fragment>
-          <h1>ERC20 Projects</h1>
-          <span><Link to={'/currencies'}>Currencies</Link></span>
-        </Fragment>
+    <div className='projects-navigation'>
+      <h1>
+        {path.includes('projects') && 'ERC20 Projects'}
+        {path.includes('currencies') && 'Currencies'}
+        {path.includes('favorites') && 'Favorites'}
+      </h1>
+      {(path.includes('currencies') || path.includes('favorites')) &&
+        <span><Link to={'/projects'}>ERC20 Projects</Link></span>
       }
-      {path.includes('currencies') &&
-        <Fragment>
-          <h1>Currencies</h1>
-          <span><Link to={'/projects'}>ERC20 Projects</Link></span>
-        </Fragment>
+      {(path.includes('projects') || path.includes('favorites')) &&
+        <span><Link to={'/currencies'}>Currencies</Link></span>
       }
-      <span><Link to={'/favorites'}>Favorites</Link></span>
+      {user.account && !path.includes('favorites') &&
+        <span><Link to={'/favorites'}>Favorites</Link></span>
+      }
       <span><Link to={'/projects/ethereum'}>More data about Ethereum</Link></span>
       <Popup
         trigger={<span className='categories-button'><Button>Categories</Button></span>}
@@ -58,4 +60,4 @@ const CashflowHead = ({
   )
 }
 
-export default CashflowHead
+export default ProjectsNavigation

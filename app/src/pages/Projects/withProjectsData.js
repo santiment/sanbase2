@@ -1,105 +1,111 @@
 import { graphql } from 'react-apollo'
-import { compose, withState, lifecycle } from 'recompose'
+import { connect } from 'react-redux'
+import { withRouter } from 'react-router-dom'
+import { compose, pure } from 'recompose'
 import {
-  DEFAULT_SORT_BY,
-  DEFAULT_FILTER_BY
-} from './Filters'
-import { allProjectsGQL, allErc20ProjectsGQL, currenciesGQL } from './allProjectsGQL'
-import { simpleSort } from './../../utils/sortMethods'
+  allProjectsGQL,
+  allErc20ProjectsGQL,
+  currenciesGQL,
+  allMarketSegmentsGQL
+} from './allProjectsGQL'
 
-const mapDataToProps = type => ({Projects, ownProps}) => {
+const mapStateToProps = state => {
+  return {
+    search: state.projects.search,
+    tableInfo: state.projects.tableInfo,
+    categories: state.projects.categories,
+    user: state.user
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    onSearch: (event) => {
+      dispatch({
+        type: 'SET_SEARCH',
+        payload: {
+          search: event.target.value.toLowerCase()
+        }
+      })
+    },
+    handleSetCategory: (event) => {
+      dispatch({
+        type: 'SET_CATEGORY',
+        payload: {
+          category: event.target
+        }
+      })
+    }
+  }
+}
+
+const mapDataToProps = type => ({Projects}) => {
   const loading = Projects.loading
   const isError = !!Projects.error
   const errorMessage = Projects.error ? Projects.error.message : ''
-  const projects = Projects[pickProjects(type)] || []
+  const projects = Projects[pickProjectsType(type).projects] || []
 
-  let filteredProjects = [...projects]
-    .sort((a, b) => {
-      if (ownProps.sortBy === 'github_activity') {
-        return simpleSort(+a.averageDevActivity, +b.averageDevActivity)
-      }
-      return simpleSort(+a.marketcapUsd, +b.marketcapUsd)
-    })
-    .filter(project => {
-      const hasSignals = project.signals && project.signals.length > 0
-      const withSignals = ownProps.filterBy['signals']
-      return withSignals ? hasSignals : true
-    })
-    .filter(project => {
-      const hasSpentETH = project.ethSpent > 0
-      const withSpentETH = ownProps.filterBy['spent_eth_30d']
-      return withSpentETH ? hasSpentETH : true
-    })
-
-  if (ownProps.isSearchFocused && ownProps.filterName) {
-    filteredProjects = filteredProjects.filter(project => {
-      return project.name.toLowerCase().indexOf(ownProps.filterName) !== -1 ||
-          project.ticker.toLowerCase().indexOf(ownProps.filterName) !== -1
-    })
-  }
-
-  const isEmpty = projects.length === 0
+  const isEmpty = projects && projects.length === 0
   return {
     Projects: {
       loading,
       isEmpty,
       isError,
       projects,
-      filteredProjects,
-      errorMessage
+      errorMessage,
+      refetch: Projects.refetch
     }
   }
 }
 
-const pickProjects = type => {
+const pickProjectsType = type => {
   switch (type) {
     case 'all':
-      return 'allProjects'
+      return {
+        projects: 'allProjects',
+        gql: allProjectsGQL
+      }
     case 'currency':
-      return 'allCurrencyProjects'
+      return {
+        projects: 'allCurrencyProjects',
+        gql: currenciesGQL
+      }
     case 'erc20':
-      return 'allErc20Projects'
+      return {
+        projects: 'allErc20Projects',
+        gql: allErc20ProjectsGQL
+      }
     default:
-      return 'allProjects'
-  }
-}
-
-const pickGQL = type => {
-  switch (type) {
-    case 'all':
-      return allProjectsGQL
-    case 'currency':
-      return currenciesGQL
-    case 'erc20':
-      return allErc20ProjectsGQL
-    default:
-      return allProjectsGQL
+      return {
+        projects: 'allProjects',
+        gql: allProjectsGQL
+      }
   }
 }
 
 const enhance = (type = 'all') => compose(
-  withState('isSearchFocused', 'focusSearch', false),
-  withState('filterName', 'filterByName', null),
-  withState('sortBy', 'changeSort', DEFAULT_SORT_BY),
-  withState('filterBy', 'changeFilter', DEFAULT_FILTER_BY),
-  withState('isFilterOpened', 'toggleFilter', false),
-  graphql(pickGQL(type), {
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  ),
+  withRouter,
+  graphql(pickProjectsType(type).gql, {
     name: 'Projects',
     props: mapDataToProps(type),
     options: () => {
       return {
-        errorPolicy: 'all'
+        errorPolicy: 'all',
+        notifyOnNetworkStatusChange: true
       }
     }
   }),
-  lifecycle({
-    componentDidUpdate (prevProps, prevState) {
-      if (this.props.isSearchFocused !== prevProps.isSearchFocused) {
-        const searchInput = document.querySelector('.search div input')
-        searchInput && searchInput.focus()
-      }
-    }
-  })
+  graphql(allMarketSegmentsGQL, {
+    name: 'allMarketSegments',
+    props: ({allMarketSegments: {allMarketSegments}}) => (
+      { allMarketSegments: allMarketSegments ? JSON.parse(allMarketSegments) : {} }
+    )
+  }),
+  pure
 )
 
 const withProjectsData = ({type = 'all'}) => WrappedComponent => {

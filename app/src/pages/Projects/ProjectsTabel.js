@@ -1,10 +1,60 @@
 import React from 'react'
+import ReactTable from 'react-table'
+import classnames from 'classnames'
+import throttle from 'lodash.throttle'
+import { Helmet } from 'react-helmet'
+import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import 'react-table/react-table.css'
-import ProjectsTabel from 'pages/Projects/ProjectsTabel'
-import withProjectsData from 'pages/Projects/withProjectsData'
+import { FadeIn } from 'animate-components'
+import Sticky from 'react-stickynode'
+import { formatNumber, millify } from 'utils/formatting'
+import { getOrigin, filterProjectsByMarketSegment } from 'utils/utils'
+import { simpleSort } from 'utils/sortMethods'
+import ProjectIcon from 'components/ProjectIcon'
+import Panel from 'components/Panel'
+import PercentChanges from 'components/PercentChanges'
+import ProjectsNavigation from 'components/ProjectsNavigation'
+import './ProjectsTabel.css'
 
-export const Cashflow = ({
-  Projects,
+export const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
+  <div
+    className={classnames('rt-th', className)}
+    onClick={e => (
+      toggleSort && toggleSort(e)
+    )}
+    role='columnheader'
+    tabIndex='-1'
+    {...rest}
+  >
+    {((Array.isArray(children) ? children[0] : {}).props || {}).children === 'P/B'
+      ? <Popup
+        trigger={<div>{children}</div>}
+        content='Ratio between the market cap and the current crypto balance.
+          Companies with low P/B ratio might be undervalued.'
+        inverted
+        position='top left'
+      />
+      : children}
+  </div>
+)
+
+export const CustomHeadComponent = ({ children, className, ...rest }) => (
+  <Sticky enabled >
+    <div className={classnames('rt-thead', className)} {...rest}>
+      {children}
+    </div>
+  </Sticky>
+)
+
+const ProjectsTabel = ({
+  Projects = {
+    projects: [],
+    filteredProjects: [],
+    loading: true,
+    isError: false,
+    isEmpty: true,
+    refetch: null
+  },
   onSearch,
   handleSetCategory,
   history,
@@ -13,10 +63,30 @@ export const Cashflow = ({
   tableInfo,
   categories,
   allMarketSegments,
-  preload
+  preload,
+  user
 }) => {
   const { loading } = Projects
   const projects = filterProjectsByMarketSegment(Projects.projects, categories, allMarketSegments)
+  const refetchThrottled = data => {
+    throttle(data => data.refetch(), 1000)
+  }
+  const formatMarketCapProject = marketcapUsd => {
+    if (marketcapUsd !== null) {
+      return `$${millify(marketcapUsd, 2)}`
+    } else {
+      return 'No data'
+    }
+  }
+  const getFilter = search => {
+    if (search) {
+      return [{
+        id: 'project',
+        value: search
+      }]
+    }
+    return []
+  }
 
   if (Projects.isError) {
     refetchThrottled(Projects)
@@ -57,7 +127,6 @@ export const Cashflow = ({
     id: 'project',
     filterable: true,
     sortable: true,
-    width: 350,
     accessor: d => ({
       name: d.name,
       ticker: d.ticker,
@@ -77,16 +146,64 @@ export const Cashflow = ({
       return name.toLowerCase().indexOf(filter.value) !== -1 ||
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
-  }, PriceColumn, VolumeColumn, MarketCapColumn, {
+  },
+  {
+    Header: 'Price',
+    id: 'price',
+    maxWidth: 100,
+    accessor: d => ({
+      priceUsd: d.priceUsd,
+      change24h: d.percentChange24h
+    }),
+    Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
+      {priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : 'No data'}
+      &nbsp;
+      {<PercentChanges changes={change24h} />}
+    </div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
+  },
+  {
+    Header: 'Volume',
+    id: 'volume',
+    maxWidth: 100,
+    accessor: d => ({
+      volumeUsd: d.volumeUsd,
+      change24h: d.volumeChange24h
+    }),
+    Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
+      {volumeUsd
+        ? `$${millify(volumeUsd, 2)}`
+        : 'No data'}
+      &nbsp;
+      {change24h
+        ? <PercentChanges changes={change24h} />
+        : ''}
+    </div>,
+    sortable: true,
+    sortMethod: (a, b) =>
+      simpleSort(
+        parseFloat(a.volumeUsd || 0),
+        parseFloat(b.volumeUsd || 0)
+      )
+  },
+  {
+    Header: 'Market Cap',
+    id: 'marketcapUsd',
+    maxWidth: 130,
+    accessor: 'marketcapUsd',
+    Cell: ({value}) => <div className='overview-marketcap'>{formatMarketCapProject(value)}</div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(+a, +b)
+  },
+  {
     Header: 'ETH spent (30D)',
     maxWidth: 110,
     id: 'tx',
     accessor: d => d.ethSpent,
     Cell: ({value}) => <div className='overview-ethspent'>{`Ξ${formatNumber(value)}`}</div>,
     sortable: true,
-    sortMethod: (a, b, isDesc) => (
-      sortDate(a[0].last_outgoing, b[0].last_outgoing, isDesc)
-    )
+    sortMethod: (a, b) => simpleSort(a, b)
   }, {
     Header: 'Dev activity (30D)',
     id: 'github_activity',
@@ -131,39 +248,40 @@ export const Cashflow = ({
   }]
 
   return (
-    <div className='page cashflow'>
-      <div className='cashflow-head'>
-        <h1>Cash Flow</h1>
-        <p>
-          brought to you by <a
-            href='https://santiment.net'
-            rel='noopener noreferrer'
-            target='_blank'>Santiment</a>
-          <br />
-          NOTE: This app is a prototype.
-          We give no guarantee data is correct as we are in active development.
-        </p>
-      </div>
-      <div className='panel'>
-        <div className='row'>
-          <div className='datatables-info'>
-            <label>
-              Showing {
-                (tableInfo.visibleItems !== 0)
-                  ? (tableInfo.page - 1) * tableInfo.pageSize + 1
-                  : 0
-              } to {
-                tableInfo.page * tableInfo.pageSize
-              } of {tableInfo.visibleItems}
-              &nbsp;entries&nbsp;
-              {tableInfo.visibleItems !== projects.length &&
-                `(filtered from ${projects.length} total entries)`}
-            </label>
-          </div>
-          <div className='datatables-filter'>
-            <label>
-              <input placeholder='Search' onKeyUp={onSearch} />
-            </label>
+    <div className='page projects-tabel'>
+      <Helmet>
+        <title>SANbase: ERC20 Projects</title>
+        <link rel='canonical' href={`${getOrigin()}/projects`} />
+      </Helmet>
+      <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
+        <ProjectsNavigation
+          path={match.path}
+          categories={categories}
+          handleSetCategory={handleSetCategory}
+          allMarketSegments={allMarketSegments}
+          user={user}
+        />
+        <Panel>
+          <div className='row'>
+            <div className='datatables-info'>
+              {false && <label>
+                Showing {
+                  (tableInfo.visibleItems !== 0)
+                    ? (tableInfo.page - 1) * tableInfo.pageSize + 1
+                    : 0
+                } to {
+                  tableInfo.page * tableInfo.pageSize
+                } of {tableInfo.visibleItems}
+                &nbsp;entries&nbsp;
+                {tableInfo.visibleItems !== projects.length &&
+                  `(filtered from ${projects.length} total entries)`}
+              </label>}
+            </div>
+            <div className='datatables-filter'>
+              <label>
+                <input placeholder='Search' onKeyUp={onSearch} />
+              </label>
+            </div>
           </div>
           <ReactTable
             loading={loading}
@@ -210,82 +328,11 @@ export const Cashflow = ({
           />
         </Panel>
       </FadeIn>
-      <Tips />
+      <div className='projects-tabel-tips'>
+        <em>Tip: Hold shift when sorting to multi-sort!</em>
+      </div>
     </div>
   )
 }
 
-const mapStateToProps = state => {
-  return {
-    search: state.projects.search,
-    tableInfo: state.projects.tableInfo,
-    categories: state.projects.categories
-  }
-}
-
-const mapDispatchToProps = dispatch => {
-  return {
-    onSearch: (event) => {
-      dispatch({
-        type: 'SET_SEARCH',
-        payload: {
-          search: event.target.value.toLowerCase()
-        }
-      })
-    },
-    handleSetCategory: (event) => {
-      dispatch({
-        type: 'SET_CATEGORY',
-        payload: {
-          category: event.target
-        }
-      })
-    }
-  }
-}
-
-const mapDataToProps = ({allProjects}) => {
-  const loading = allProjects.loading
-  const isError = !!allProjects.error
-  const errorMessage = allProjects.error ? allProjects.error.message : ''
-  const projects = allProjects.allErc20Projects
-
-  const isEmpty = projects && projects.length === 0
-  return {
-    Projects: {
-      loading,
-      isEmpty,
-      isError,
-      projects,
-      errorMessage,
-      refetch: allProjects.refetch
-    }
-  }
-}
-
-const enhance = compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
-  withRouter,
-  graphql(allErc20ProjectsGQL, {
-    name: 'allProjects',
-    props: mapDataToProps,
-    options: () => {
-      return {
-        errorPolicy: 'all',
-        notifyOnNetworkStatusChange: true
-      }
-    }
-  }),
-  graphql(allMarketSegments, {
-    name: 'allMarketSegments',
-    props: ({allMarketSegments: {allMarketSegments}}) => (
-      { allMarketSegments: allMarketSegments ? JSON.parse(allMarketSegments) : {} }
-    )
-  }),
-  pure
-)
-
-export default withProjectsData({type: 'erc20'})(Cashflow)
+export default ProjectsTabel

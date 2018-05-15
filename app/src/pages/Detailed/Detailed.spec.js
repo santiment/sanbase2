@@ -4,26 +4,12 @@ import { shallow } from 'enzyme'
 import toJson from 'enzyme-to-json'
 import { Detailed } from './Detailed'
 
-const projects = [
-  {
-    'id': 12,
-    'name': 'Aeternity',
-    'ticker': 'AE'
-  },
-  {
-    'id': 15,
-    'name': 'Aragon',
-    'ticker': 'ANT'
-  }
-]
-
 describe('Project detail page container', () => {
   it('it should render correctly', () => {
     const match = {
       params: {ticker: 'AE'}
     }
     const pdp = shallow(<Detailed
-      projects={projects}
       projectId={12}
       Project={{
         project: {
@@ -32,6 +18,9 @@ describe('Project detail page container', () => {
           ticker: 'AE',
           priceUsd: 10
         }
+      }}
+      user={{
+        followedProjects: []
       }}
       TwitterData={{
         loading: true

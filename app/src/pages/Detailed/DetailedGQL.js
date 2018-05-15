@@ -194,3 +194,25 @@ export const DailyActiveAddressesGQL = gql`
       __typename
     }
 }`
+
+export const FollowProjectGQL = gql`
+  mutation followProject($projectId: Int!) {
+    followProject(
+      projectId: $projectId
+    ) {
+      followedProjects {
+        id
+      }
+    }
+}`
+
+export const UnfollowProjectGQL = gql`
+  mutation unfollowProject($projectId: Int!) {
+    unfollowProject(
+      projectId: $projectId
+    ) {
+      followedProjects {
+        id
+      }
+    }
+}`

@@ -10,8 +10,8 @@ import {
   withState
 } from 'recompose'
 import { graphql } from 'react-apollo'
-import gql from 'graphql-tag'
 import { Form } from 'react-form'
+import { emailLoginGQL } from './LoginGQL'
 import ReactFormInput from '../../components/react-form-semantic-ui-react/ReactFormInput'
 import './EmailLogin.css'
 const validate = require('validate.js')

@@ -3,12 +3,12 @@ import { connect } from 'react-redux'
 import { graphql, withApollo } from 'react-apollo'
 import GoogleAnalytics from 'react-ga'
 import Raven from 'raven-js'
-import gql from 'graphql-tag'
 import {
   lifecycle,
   compose
 } from 'recompose'
 import { Message } from 'semantic-ui-react'
+import { ethLoginGQL, followedProjectsGQL } from './LoginGQL'
 import {
   setupWeb3,
   hasMetamask,
@@ -124,25 +124,6 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const ethLoginGQL = gql`
-  mutation ethLogin($signature: String!, $address: String!, $messageHash: String!) {
-    ethLogin(
-      signature: $signature,
-      address: $address,
-      messageHash: $messageHash) {
-        token,
-        user {
-          id,
-          email,
-          username,
-          ethAccounts {
-            address,
-            sanBalance
-          }
-        }
-      }
-}`
-
 export default compose(
   connect(
     mapStateToProps,
@@ -151,6 +132,9 @@ export default compose(
   withApollo,
   graphql(ethLoginGQL, {
     name: 'authWithSAN'
+  }),
+  graphql(followedProjectsGQL, {
+    name: 'followedProjects'
   }),
   lifecycle({
     componentDidMount () {

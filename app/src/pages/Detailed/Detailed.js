@@ -8,6 +8,7 @@ import { Redirect } from 'react-router-dom'
 import moment from 'moment'
 import { Helmet } from 'react-helmet'
 import { graphql, withApollo } from 'react-apollo'
+import { connect } from 'react-redux'
 import PanelBlock from './../../components/PanelBlock'
 import GeneralInfoBlock from './GeneralInfoBlock'
 import FinancialsBlock from './FinancialsBlock'
@@ -196,6 +197,9 @@ export const Detailed = ({
       }}
       ticker={project.ticker} />
 
+  const isLoggedIn = Object.keys(user).length === 0 && user.constructor === Object
+  const isFavorite = () => isLoggedIn && project && user.followedProjects.includes(project.id)
+
   return (
     <div className='page detailed'>
       <Helmet>
@@ -272,7 +276,16 @@ export const Detailed = ({
 
 Detailed.propTypes = propTypes
 
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  }
+}
+
 const enhance = compose(
+  connect(
+    mapStateToProps
+  ),
   withApollo,
   withState('chartVars', 'changeChartVars', {
     from: undefined,
@@ -521,6 +534,12 @@ const enhance = compose(
         }
       }
     }
+  }),
+  graphql(FollowProjectGQL, {
+    name: 'followProject'
+  }),
+  graphql(UnfollowProjectGQL, {
+    name: 'unfollowProject'
   })
 )
 

@@ -14,7 +14,7 @@ import ProjectIcon from 'components/ProjectIcon'
 import Panel from 'components/Panel'
 import PercentChanges from 'components/PercentChanges'
 import ProjectsNavigation from 'components/ProjectsNavigation'
-import './ProjectsTabel.css'
+import './ProjectsTable.css'
 
 export const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
   <div
@@ -46,7 +46,7 @@ export const CustomHeadComponent = ({ children, className, ...rest }) => (
   </Sticky>
 )
 
-const ProjectsTabel = ({
+const ProjectsTable = ({
   Projects = {
     projects: [],
     filteredProjects: [],
@@ -248,7 +248,7 @@ const ProjectsTabel = ({
   }]
 
   return (
-    <div className='page projects-tabel'>
+    <div className='page projects-table'>
       <Helmet>
         <title>SANbase: ERC20 Projects</title>
         <link rel='canonical' href={`${getOrigin()}/projects`} />
@@ -328,11 +328,11 @@ const ProjectsTabel = ({
           />
         </Panel>
       </FadeIn>
-      <div className='projects-tabel-tips'>
+      <div className='projects-table-tips'>
         <em>Tip: Hold shift when sorting to multi-sort!</em>
       </div>
     </div>
   )
 }
 
-export default ProjectsTabel
+export default ProjectsTable

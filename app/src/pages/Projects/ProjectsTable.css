@@ -1,4 +1,4 @@
-.projects-tabel {
+.projects-table {
   width: 80%;
   max-width: 80%;
   min-width: 80%;
@@ -53,7 +53,7 @@
   display: inline-block;
 }
 
-.projects-tabel .ReactTable {
+.projects-table .ReactTable {
   border-top: none;
   border-left: none;
   border-right: none;
@@ -218,12 +218,12 @@
 }
 
 @media all and (min-width: 768px) and (max-width: 1440px) {
-  .projects-tabel {
+  .projects-table {
     width: 100%;
     min-width: 100%;
   }
 }
 
-.projects-tabel-tips {
+.projects-table-tips {
   text-align: 'center';
 }

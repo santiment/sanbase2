@@ -145,7 +145,9 @@ const handleLoad = () => {
           if (process.env.NODE_ENV === 'development') {
             console.log(errorMessage)
           }
-          Raven.captureException(errorMessage)
+          if (message !== 'unauthorized') {
+            Raven.captureException(errorMessage)
+          }
         })
       } else {
         if (process.env.NODE_ENV === 'development') {

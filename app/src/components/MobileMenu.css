@@ -39,3 +39,11 @@
   color: rgba(255, 255, 255, 0.7);
   list-style: none;
 }
+
+.mobile-app-menu .overlay-content .menu-list li {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+}

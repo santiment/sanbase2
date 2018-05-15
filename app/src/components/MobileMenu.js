@@ -54,6 +54,7 @@ const MobileMenu = ({
         <AppMenu
           showIcons
           isMobile
+          location={history.location}
           showInsights={hasInsights(location)}
           handleNavigation={nextRoute => {
             toggleMenu(opened => !opened)

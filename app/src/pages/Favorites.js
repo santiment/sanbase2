@@ -1,6 +1,6 @@
 import React from 'react'
 import 'react-table/react-table.css'
-import ProjectsTabel from 'pages/Projects/ProjectsTabel'
+import ProjectsTable from 'pages/Projects/ProjectsTable'
 import withProjectsData from 'pages/Projects/withProjectsData'
 
 export const Favorites = ({
@@ -24,7 +24,7 @@ export const Favorites = ({
   }
 
   return (
-    <ProjectsTabel
+    <ProjectsTable
       Projects={Projects}
       onSearch={onSearch}
       handleSetCategory={handleSetCategory}

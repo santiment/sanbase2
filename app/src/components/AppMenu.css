@@ -15,7 +15,6 @@ ul.menu-list {
   margin: 0;
   padding: 10px 22px;
   display: flex;
-  align-items: center;
   cursor: pointer;
 }
 

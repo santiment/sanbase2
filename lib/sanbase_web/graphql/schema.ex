@@ -363,6 +363,12 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       cache_resolve(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
     end
+
+    @desc "Fetch followed projects"
+    field :followed_projects, list_of(:project) do
+
+      resolve(&AccountResolver.followed_projects/3)
+    end
   end
 
   mutation do

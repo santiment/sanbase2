@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     end
   end
 
-  def followed_projects(%User{} = user, _args, %{
+  def followed_projects(_root, _args, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
     query =

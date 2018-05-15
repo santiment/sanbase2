@@ -53,6 +53,7 @@ const MobileMenu = ({
       <div className='overlay-content'>
         <AppMenu
           showIcons
+          isMobile
           showInsights={hasInsights(location)}
           handleNavigation={nextRoute => {
             toggleMenu(opened => !opened)

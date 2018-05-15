@@ -169,9 +169,8 @@ export const EthSpentOverTimeByErc20ProjectsGQL = gql`
 }`
 
 export const EmojisSentimentGQL = gql`
-  query emojisSentiment($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
+  query emojisSentiment($from: DateTime, $to: DateTime, $interval: String) {
     emojisSentiment(
-      ticker: $ticker,
       from: $from,
       to: $to,
       interval: $interval

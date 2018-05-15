@@ -1,14 +1,14 @@
 import React, { Component } from 'react'
 import nprogress from 'nprogress'
 import { convertToRaw } from 'draft-js'
+import { compose, withState } from 'recompose'
 import { Editor, createEditorState } from 'medium-draft'
 import mediumDraftExporter from 'medium-draft/lib/exporter'
 import mediumDraftImporter from 'medium-draft/lib/importer'
-import 'medium-draft/lib/index.css'
-import { sanitizeMediumDraftHtml } from 'utils/utils'
-import { compose, withState } from 'recompose'
+import { sanitizeMediumDraftHtml } from './../../utils/utils'
 import CustomImageSideButton from './CustomImageSideButton'
 import './CreateInsight.css'
+import 'medium-draft/lib/index.css'
 
 export class CreateInsight extends Component {
   constructor (props) {

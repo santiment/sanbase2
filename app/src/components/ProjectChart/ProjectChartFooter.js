@@ -147,15 +147,6 @@ const ProjectChartFooter = (props) => (
           <Label circular className='twitterLabel' empty />
           Twitter
         </ToggleBtn>
-        <ToggleBtn
-          loading={props.emojisSentiment.loading}
-          disabled={props.emojisSentiment.items.length === 0}
-          isToggled={props.isToggledEmojisSentiment &&
-            props.emojisSentiment.items.length !== 0}
-          toggle={props.toggleEmojisSentiment}>
-          <Label circular className='sentimentLabel' empty />
-          Sentiment
-        </ToggleBtn>
       </FilterCategory>
       {(props.isERC20 || props.ticker === 'ETH') &&
       <FilterCategory name='Ethereum'>

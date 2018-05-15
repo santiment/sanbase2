@@ -41,13 +41,6 @@ exports[`Project detail page container it should render correctly 1`] = `
           "loading": true,
         }
       }
-      emojisSentiment={
-        Object {
-          "error": false,
-          "items": Array [],
-          "loading": true,
-        }
-      }
       ethPrice={
         Object {
           "history": Object {

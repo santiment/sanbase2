@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Route, Redirect } from 'react-router-dom'
+import { Route, Redirect, Link } from 'react-router-dom'
 import { connect } from 'react-redux'
 import Panel from './../../components/Panel'
 import PostsNewHeader from './EventVotesNewHeader'
@@ -56,16 +56,25 @@ class EventVotesNew extends Component {
     return (
       <InsightsLayout
         sidebar={
-          <div style={{marginTop: 16}}>
-            <p>
-              Use Insights to journal your ideas, as a way to teach yourself, perform research, or share with others.
-            </p>
-            <p>
-              Record your trades or research notes, and learn more about your investing style, track your progress over time, and study trends. You can also share (“publish”) Insights publicly to teach others, build your reputation and educate yourself at the same time! You will be participating in the proper decentralisation of creating, owning and sharing financial information in our society.
-            </p>
-            <p>
-              Plus, you could benefit financially from your skills in “understanding the crypto”.
-            </p>
+          <div className='event-votes-sidebar-highlights'>
+            <div>
+              <Link to={'/insights/33'}>How to use Insights: Traders/Investors</Link>
+            </div>
+            <div>
+              <Link to={'/insights/34'}>How to use Insights: Researchers</Link>
+            </div>
+            <br />
+            <div>
+              <p>
+                Use Insights to journal your ideas, as a way to teach yourself, perform research, or share with others.
+              </p>
+              <p>
+                Record your trades or research notes, and learn more about your investing style, track your progress over time, and study trends. You can also share (“publish”) Insights publicly to teach others, build your reputation and educate yourself at the same time! You will be participating in the proper decentralisation of creating, owning and sharing financial information in our society.
+              </p>
+              <p>
+                Plus, you could benefit financially from your skills in “understanding the crypto”.
+              </p>
+            </div>
           </div>}
         isLogin={this.state.isLogin}>
         <div className='event-posts-new'>

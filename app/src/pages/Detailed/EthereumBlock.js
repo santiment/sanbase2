@@ -9,9 +9,9 @@ import PanelBlock from './../../components/PanelBlock'
 import { simpleSort } from './../../utils/sortMethods'
 import { formatNumber } from './../../utils/formatting'
 import { allErc20ShortProjectsGQL } from './../Projects/allProjectsGQL'
-import { CustomThComponent, CustomHeadComponent } from 'pages/Projects/ProjectsTabel'
+import { CustomThComponent, CustomHeadComponent } from 'pages/Projects/ProjectsTable'
 import { collectedField } from './FinancialsBlock'
-import 'pages/Projects/ProjectsTabel.css'
+import 'pages/Projects/ProjectsTable.css'
 import './EthereumBlock.css'
 
 const EthereumBlock = ({

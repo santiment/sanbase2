@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react'
+import { Link } from 'react-router-dom'
 import { Popup, Button, Icon } from 'semantic-ui-react'
 import './AppMenu.css'
 
@@ -25,8 +26,8 @@ const AppMenu = ({
           Insights
         </li>
       }
-      {isMobile &&
-        <Fragment>
+      {isMobile
+        ? <Fragment>
           <li
             className={isPageFromLocation(location, 'projects') ? 'active' : ''}
             onClick={() => handleNavigation('projects')}>
@@ -37,13 +38,34 @@ const AppMenu = ({
             onClick={() => handleNavigation('currencies')}>
             Currencies
           </li>
+          <li
+            className={isPageFromLocation(location, 'signals') ? 'active' : ''}
+            onClick={() => handleNavigation('signals')}>
+            Signals
+          </li>
+          <li
+            className={isPageFromLocation(location, 'roadmap') ? 'active' : ''}
+            onClick={() => handleNavigation('roadmap')}>
+            Roadmap
+          </li>
         </Fragment>
-      }
-      <li
-        className={isPageFromLocation(location, 'signals') ? 'active' : ''}
-        onClick={() => handleNavigation('signals')}>
-        Signals
-      </li>
+        : <Fragment>
+          <Link
+            className='app-menu__page-link'
+            to={'/projects'}>
+            Markets
+          </Link>
+          <Link
+            className='app-menu__page-link'
+            to={'/signals'}>
+            Signals
+          </Link>
+          <Link
+            className='app-menu__page-link'
+            to={'/roadmap'}>
+            Roadmap
+          </Link>
+        </Fragment>}
       {showInsights &&
       <Popup
         position='bottom left'
@@ -74,11 +96,6 @@ const AppMenu = ({
           </Button>
         </div>
       </Popup>}
-      <li
-        className={isPageFromLocation(location, 'roadmap') ? 'active' : ''}
-        onClick={() => handleNavigation('roadmap')}>
-        Roadmap
-      </li>
     </ul>
   </div>
 )

@@ -7,13 +7,13 @@ import { Icon, Popup, Message, Loader } from 'semantic-ui-react'
 import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
 import Sticky from 'react-stickynode'
-import { formatNumber, millify } from 'utils/formatting'
-import { getOrigin, filterProjectsByMarketSegment } from 'utils/utils'
-import { simpleSort } from 'utils/sortMethods'
-import ProjectIcon from 'components/ProjectIcon'
-import Panel from 'components/Panel'
-import PercentChanges from 'components/PercentChanges'
-import ProjectsNavigation from 'components/ProjectsNavigation'
+import { formatNumber, millify } from '../../utils/formatting'
+import { getOrigin, filterProjectsByMarketSegment } from '../../utils/utils'
+import { simpleSort } from '../../utils/sortMethods'
+import ProjectIcon from '../../components/ProjectIcon'
+import Panel from '../../components/Panel'
+import PercentChanges from '../../components/PercentChanges'
+import ProjectsNavigation from '../../components/ProjectsNavigation'
 import './ProjectsTable.css'
 
 export const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
@@ -328,9 +328,6 @@ const ProjectsTable = ({
           />
         </Panel>
       </FadeIn>
-      <div className='projects-table-tips'>
-        <em>Tip: Hold shift when sorting to multi-sort!</em>
-      </div>
     </div>
   )
 }

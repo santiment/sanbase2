@@ -221,7 +221,8 @@ export const Detailed = ({
       }}
       ticker={project.ticker} />
 
-  const isFavorite = () => isLoggedIn && project && user.followedProjects.includes(project.id)
+  const isFavorite = () => isLoggedIn && project &&
+    user.followedProjects && user.followedProjects.includes(project.id)
 
   return (
     <div className='page detailed'>

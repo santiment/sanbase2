@@ -15,7 +15,7 @@ exports[`Project detail page container it should render correctly 1`] = `
   <withRouter(Apollo(SearchContainer)) />
   <ExportedComponent
     isFavorite={false}
-    isLoggedIn={false}
+    isLoggedIn={true}
     project={
       Object {
         "id": 12,

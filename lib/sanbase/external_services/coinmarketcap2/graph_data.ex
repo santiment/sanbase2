@@ -136,7 +136,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
       measurement_points |> Store.import()
 
-      update_last_cmc_history_datetime(Measurement.name_from(project), measurement_points)
+      update_last_cmc_history_datetime(project, measurement_points)
     end)
     |> Stream.run()
   end

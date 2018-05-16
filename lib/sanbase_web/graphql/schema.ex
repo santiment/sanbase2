@@ -12,7 +12,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     VotingResolver,
     TechIndicatorsResolver,
     FileResolver,
-    PostResolver
+    PostResolver,
+    MarketSegmentResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -63,6 +64,13 @@ defmodule SanbaseWeb.Graphql.Schema do
   query do
     field :current_user, :user do
       resolve(&AccountResolver.current_user/3)
+    end
+
+    @desc "Fetch all market segments"
+    field :all_market_segments, :string do
+      middleware(ProjectPermissions)
+
+      cache_resolve(&MarketSegmentResolver.all_market_segments/3)
     end
 
     @desc "Fetch all projects or only those in project transparency based on the argument"
@@ -362,6 +370,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
 
       cache_resolve(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
+    end
+
+    @desc "Fetch followed projects"
+    field :followed_projects, list_of(:project) do
+
+      resolve(&AccountResolver.followed_projects/3)
     end
   end
 

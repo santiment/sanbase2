@@ -1,7 +1,7 @@
 import React from 'react'
 import ProjectsMobile from './Projects/ProjectsMobile'
-import withProjectsData from './Projects/withProjectsData'
+import withProjectsDataMobile from './Projects/withProjectsDataMobile'
 
 const CurrenciesMobile = props => <ProjectsMobile type={'currency'} {...props} />
 
-export default withProjectsData({type: 'currency'})(CurrenciesMobile)
+export default withProjectsDataMobile({type: 'currency'})(CurrenciesMobile)

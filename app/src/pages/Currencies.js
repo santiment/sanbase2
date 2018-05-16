@@ -1,7 +1,7 @@
 import React from 'react'
 import 'react-table/react-table.css'
-import ProjectsTable from 'pages/Projects/ProjectsTable'
-import withProjectsData from 'pages/Projects/withProjectsData'
+import ProjectsTable from './Projects/ProjectsTable'
+import withProjectsData from './Projects/withProjectsData'
 
 export const Currencies = ({
   Projects,

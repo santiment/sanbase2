@@ -197,7 +197,6 @@ export const Detailed = ({
       }}
       ticker={project.ticker} />
 
-  const isLoggedIn = Object.keys(user).length > 0 && user.constructor === Object
   const isFavorite = () => isLoggedIn && project && user.followedProjects.includes(project.id)
 
   return (
@@ -278,7 +277,8 @@ Detailed.propTypes = propTypes
 
 const mapStateToProps = state => {
   return {
-    user: state.user
+    user: state.user,
+    isLoggedIn: !!state.user.token
   }
 }
 

@@ -1,0 +1,12 @@
+.detailed-page-mobile-settings-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  background-color: white;
+  box-shadow: 0 -1px 4px 0 rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  display: flex;
+  justify-content: flex-end;
+}

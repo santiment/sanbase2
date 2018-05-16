@@ -32,7 +32,7 @@ export default (state = initialState, action) => {
       }
     case 'SUCCESS_LOGIN':
       return {
-        ...state,
+        ...initialState,
         error: false,
         isLoading: false,
         token: action.token,
@@ -43,7 +43,7 @@ export default (state = initialState, action) => {
       }
     case 'SUCCESS_LOGOUT':
       return {
-        ...state,
+        ...initialState,
         error: false,
         isLoading: false,
         data: {},

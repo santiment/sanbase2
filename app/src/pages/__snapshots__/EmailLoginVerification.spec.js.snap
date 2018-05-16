@@ -1,7 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`EmailLoginVerification it should render correctly 1`] = `
-<div>
+<div
+  style={
+    Object {
+      "margin": "1em",
+    }
+  }
+>
   <h2>
     Verification...
   </h2>

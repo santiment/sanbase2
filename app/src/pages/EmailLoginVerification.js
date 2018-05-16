@@ -7,7 +7,7 @@ import {
   lifecycle
 } from 'recompose'
 import * as qs from 'query-string'
-import { graphql } from 'react-apollo'
+import { graphql, withApollo } from 'react-apollo'
 import gql from 'graphql-tag'
 import { savePrevAuthProvider } from './../utils/localStorage'
 
@@ -34,20 +34,20 @@ const emailLoginVerifyGQL = gql`
 export const EmailLoginVerification = ({verificationStatus = 'pending'}) => {
   if (verificationStatus === 'pending') {
     return (
-      <div>
+      <div style={{margin: '1em'}}>
         <h2>Verification...</h2>
       </div>
     )
   }
   if (verificationStatus === 'failed') {
     return (
-      <div>
+      <div style={{margin: '1em'}}>
         <h2>You don't have access.</h2>
       </div>
     )
   }
   return (
-    <div>
+    <div style={{margin: '1em'}}>
       <h2>Email address confirmed</h2>
     </div>
   )
@@ -76,6 +76,7 @@ const mapDispatchToProps = dispatch => {
             user
           })
           props.changeVerificationStatus('verified')
+          props.client.resetStore()
           props.history.push('/')
         })
         .catch(error => {
@@ -99,6 +100,7 @@ const enhance = compose(
     mapStateToProps,
     mapDispatchToProps
   ),
+  withApollo,
   graphql(emailLoginVerifyGQL, {
     name: 'emailLoginVerify',
     props: ({ emailLoginVerify }) => ({

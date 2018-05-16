@@ -13,18 +13,21 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   @notification_type_name "price_volume_diff"
 
-  def exec(project, currency) do
+  @doc ~s"""
+    A notification is triggered when a price is increasing and the volume is decreasing.
+    Currently we have only `USD` volume so we support only `USD` notification
+  """
+  def exec(project, "USD" = currency) do
     currency = String.upcase(currency)
 
-    if notifications_enabled?() &&
+    if Config.get(:notifications_enabled) &&
          not Utils.recent_notification?(
            project,
            seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
          ) do
-      with %{from_datetime: from_datetime, to_datetime: to_datetime} <-
-             get_calculation_interval(),
-           true <- check_volume(project, currency, from_datetime, to_datetime),
+      with {from_datetime, to_datetime} <- get_calculation_interval(),
+           true <- volume_over_threshold?(project, currency, from_datetime, to_datetime),
            {indicator, notification_log} <-
              get_indicator(project.ticker, currency, from_datetime, to_datetime),
            true <- check_notification(indicator) do
@@ -33,12 +36,16 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
-  defp check_volume(
+  # Private functions
+
+  # Calculate the notification only if the 24h volume is over some threshold ($100,000 by default)
+  defp volume_over_threshold?(
          %Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id},
          currency,
          from_datetime,
          to_datetime
-       ) do
+       )
+       when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
     measurement = ticker <> "_" <> coinmarketcap_id
 
     with {:ok, [[_dt, volume]]} <-
@@ -116,7 +123,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     from_datetime =
       Timex.shift(to_datetime, days: -approximation_window() - comparison_window() - 2)
 
-    %{from_datetime: from_datetime, to_datetime: to_datetime}
+    {from_datetime, to_datetime}
   end
 
   defp send_notification(
@@ -190,7 +197,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       }&notification_threshold=#{notification_threshold}"
 
     debug_info =
-      case debug_url() do
+      case Config.get(:debug_url) do
         nil ->
           nil
 
@@ -252,10 +259,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       |> Integer.parse()
 
     res
-  end
-
-  defp debug_url() do
-    Config.get(:debug_url)
   end
 
   defp notifications_enabled?() do

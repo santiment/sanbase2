@@ -108,7 +108,7 @@ const getChartOptions = (label) => ({
   }
 })
 
-const renderData = (data, label) => {
+const renderData = (data, label, formatData = null) => {
   if (data.loading) {
     return ('Loading ...')
   }
@@ -119,7 +119,9 @@ const renderData = (data, label) => {
     return ('No data')
   }
   const value = data.items[data.items.length - 1][`${label}`]
-  //return formatNumber(value, { currency: 'USD' })
+  if (formatData) {
+    return formatData(value)
+  }
   return formatNumber(value)
 }
 
@@ -144,16 +146,19 @@ const Analytics = ({
   },
   show = 'last 7 days',
   setIndex,
-  index = null
+  index = null,
+  formatData = null,
+  showInfo = true
 }) => {
   const chartData = getChartDataFromHistory(data, label, chart)
-  const borderColor = (data.dataset || {}).borderColor || COLOR
-  const {referenceLine, withMiniMap} = chart
+  const borderColor = (data.dataset || {}).borderColor || chart.color || COLOR
+  const {referenceLine, withMiniMap, syncId = undefined} = chart
   return (
     <div className='analytics'>
       <div className='analytics-trend-row'>
         <div className='analytics-trend-info-label'>
           {show}
+          {showInfo &&
           <div className='analytics-trend-info'>
             <div
               className='analytics-trend-details'
@@ -161,9 +166,9 @@ const Analytics = ({
             >
               {index
               ? (data.items[index] || {})[`${label}`]
-              : renderData(data, label)}
+              : renderData(data, label, formatData)}
             </div>
-          </div>
+          </div>}
         </div>
       </div>
       <div className='analytics-trend-row'>
@@ -171,19 +176,18 @@ const Analytics = ({
           {chart.type === 'bar' &&
             <ResponsiveContainer>
               <BarChart
-                syncId='anyId'
+                syncId={syncId}
                 data={chartData.datasets[0].data} >
                 <Tooltip />
-                <Bar dataKey='y' fill='#82ca9d' />
-{withMiniMap &&
-          <Brush
-            travellerWidth={20}
-            data={chartData.datasets[0].data}
-            tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
-            dataKey='x' height={50} />}
+                <Bar dataKey='y' stroke={borderColor} fill={borderColor} />
+                {withMiniMap &&
+                <Brush
+                  travellerWidth={20}
+                  data={chartData.datasets[0].data}
+                  tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
+                  dataKey='x' height={50} />}
               </BarChart>
             </ResponsiveContainer>}
-
           {chart.type === 'line' &&
             <ResponsiveContainer>
               <LineChart
@@ -194,7 +198,7 @@ const Analytics = ({
                   type='monotone'
                   dot={false}
                   dataKey='y'
-                  stroke='#8884d8'
+                  stroke={borderColor}
                   onClick={(data, e) => {
                     console.log(data)
                     setIndex(e.target)
@@ -203,7 +207,7 @@ const Analytics = ({
                     console.log(data, e)
                   }}
                   strokeWidth={2} />
-                {referenceLine.y &&
+                {(referenceLine || {}).y &&
                 <ReferenceLine
                   y={referenceLine.y}
                   label={referenceLine.label}

@@ -6,12 +6,14 @@ import {
 } from 'react-router-dom'
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
+import { connect } from 'react-redux'
 import { compose } from 'recompose'
 import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
 import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import Currencies from './pages/Currencies'
+import Favorites from './pages/Favorites'
 import CashflowMobile from './pages/CashflowMobile'
 import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
@@ -72,7 +74,7 @@ class Route extends React.Component {
   }
 }
 
-export const App = ({isDesktop}) => (
+export const App = ({isDesktop, isLoggedIn}) => (
   <div className='App'>
     {isDesktop
       ? <TopMenu />
@@ -101,6 +103,18 @@ export const App = ({isDesktop}) => (
           }
           return (
             <CurrenciesMobile {...props} />
+          )
+        }} />
+        <Route exact path='/favorites' render={props => {
+          if (isDesktop && isLoggedIn) {
+            return (
+              <Favorites
+                preload={() => LoadableDetailedPage.preload()}
+                {...props} />
+            )
+          }
+          return (
+            <Redirect from='/favorites' to='/projects' />
           )
         }} />
         <Route exact path='/roadmap' component={Roadmap} />
@@ -135,11 +149,20 @@ export const App = ({isDesktop}) => (
   </div>
 )
 
+const mapStateToProps = state => {
+  return {
+    isLoggedIn: !!state.user.token
+  }
+}
+
 export const mapSizesToProps = ({ width }) => ({
   isDesktop: width > 768
 })
 
 const enchance = compose(
+  connect(
+    mapStateToProps
+  ),
   withSizes(mapSizesToProps),
   withTracker
 )

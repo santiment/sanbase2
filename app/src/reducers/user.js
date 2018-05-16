@@ -79,6 +79,11 @@ export default (state = initialState, action) => {
           ...action.user
         }
       }
+    case 'SET_FOLLOWED_PROJECTS':
+      return {
+        ...state,
+        followedProjects: action.followedProjects.map((project) => project.id)
+      }
     default:
       return state
   }

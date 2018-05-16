@@ -125,4 +125,8 @@ export const allShortProjectsGQL = gql`{
   }
 }`
 
+export const allMarketSegmentsGQL = gql`{
+  allMarketSegments
+}`
+
 export default allProjectsGQL

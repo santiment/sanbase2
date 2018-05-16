@@ -29,6 +29,7 @@
 .projects-navigation-list__page-link--active {
   color: #26a987;
   box-shadow: rgb(38, 169, 135) 0 3px inset, rgb(230, 235, 241) -1px 0 inset;
+  background: white;
 }
 
 .projects-navigation span {

@@ -4,6 +4,9 @@ defmodule Sanbase.Prices.Utils do
   @bitcoin_measurement "BTC_bitcoin"
   @ethereum_measurement "ETH_ethereum"
 
+  defguard is_zero(price)
+           when is_number(price) and price >= -1.0e-7 and price <= 1.0e-7
+
   @spec fetch_last_price_before(String.t(), Integer) :: {number(), number()} | {nil, nil}
   def fetch_last_price_before(measurement, timestamp) do
     Store.fetch_last_price_point_before(measurement, timestamp)
@@ -22,13 +25,17 @@ defmodule Sanbase.Prices.Utils do
   """
   def fetch_last_price_before(measurement, measurement, _timestamp), do: 1.0
 
-  def fetch_last_price_before("BTC", "USD", timestamp) do
+  def fetch_last_price_before(currency, "USD", timestamp)
+      when currency in ["BTC", @bitcoin_measurement] do
     {price_usd, _price_btc} = fetch_last_price_before(@bitcoin_measurement, timestamp)
     price_usd
   end
 
-  defguard is_zero(price)
-           when is_number(price) and price >= -1.0e-7 and price <= 1.0e-7
+  def fetch_last_price_before(currency, "USD", timestamp)
+      when currency in ["ETH", @ethereum_measurement] do
+    {price_usd, _price_btc} = fetch_last_price_before(@ethereum_measurement, timestamp)
+    price_usd
+  end
 
   def fetch_last_price_before("USD", "BTC", timestamp) do
     {_price_usd, price_btc} = fetch_last_price_before(@bitcoin_measurement, timestamp)
@@ -39,6 +46,11 @@ defmodule Sanbase.Prices.Utils do
     end
   end
 
+  @doc ~s"""
+    We need the next 4 cases when calling from `convert_amount`. There we get
+    a currency code (a ticker that has to be unique) and we get the project from that
+    code so we can construct the `ticker_coinmarketcap_id` measurement name.
+  """
   def fetch_last_price_before(measurement, "USD", timestamp) do
     {price_usd, _price_btc} = fetch_last_price_before(measurement, timestamp)
 
@@ -113,7 +125,8 @@ defmodule Sanbase.Prices.Utils do
   defp fetch_last_price_usd_before_convert_via_btc(measurement, timestamp) do
     with {_price_usd, price_btc} <- fetch_last_price_before(measurement, timestamp),
          false <- is_nil(price_btc),
-         {price_btc_usd, _price_btc_btc} <- fetch_last_price_before("BTC_bitcoin", timestamp),
+         {price_btc_usd, _price_btc_btc} <-
+           fetch_last_price_before(@bitcoin_measurement, timestamp),
          false <- is_nil(price_btc_usd) do
       price_btc * price_btc_usd
     else
@@ -124,7 +137,8 @@ defmodule Sanbase.Prices.Utils do
   defp fetch_last_price_btc_before_convert_via_usd(measurement, timestamp) do
     with {price_usd, _price_btc} <- fetch_last_price_before(measurement, timestamp),
          false <- is_nil(price_usd) or is_zero(price_usd),
-         {price_btc_usd, _price_btc_btc} <- fetch_last_price_before("BTC_bitcoin", timestamp),
+         {price_btc_usd, _price_btc_btc} <-
+           fetch_last_price_before(@bitcoin_measurement, timestamp),
          false <- is_nil(price_btc_usd) or is_zero(price_btc_usd) do
       price_usd / price_btc_usd
     else

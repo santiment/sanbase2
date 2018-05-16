@@ -4,8 +4,9 @@ defmodule Sanbase.Mixfile do
   def project do
     [
       app: :sanbase,
+      name: "Sanbase",
       version: "0.0.1",
-      elixir: "~> 1.4",
+      elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -17,7 +18,9 @@ defmodule Sanbase.Mixfile do
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.html": :test
-      ]
+      ],
+      source_url: "https://github.com/santiment/sanbase2/",
+      homepage_url: "https://sanbase-low.santiment.net/projects"
     ]
   end
 

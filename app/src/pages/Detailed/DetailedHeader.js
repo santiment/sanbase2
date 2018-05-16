@@ -1,6 +1,6 @@
 import React from 'react'
 import { createSkeletonProvider, createSkeletonElement } from '@trainline/react-skeletor'
-import { Icon, Popup } from 'semantic-ui-react'
+import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
@@ -49,14 +49,9 @@ const DetailedHeader = ({
             <div className='detailed-favorite'>
               <Popup
                 trigger={
-                  <Icon
-                    // TODO: "star outline" class is raising an error in the console but it's working. "empty star" is not
-                    // raising error but it's rendering a half star. Maybe this will be fixed in future versions of semantic-ui-react
-                    // 15.05.2018 Lyudmil Lesinski
-                    name={isFavorite ? 'star' : 'star outline'}
-                    size='large'
+                  <i class={`fa fa-2x fa-star${isFavorite ? '' : '-o'}`}
                     onClick={() => isFavorite ? removeFromFavorites(followProjectHelper('remove')) : addToFavorites(followProjectHelper('add'))}
-                  />
+                    aria-hidden='true' />
                 }
                 content='Add to favorites'
                 position='bottom center'

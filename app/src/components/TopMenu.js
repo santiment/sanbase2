@@ -1,5 +1,5 @@
 import React from 'react'
-import { withRouter } from 'react-router-dom'
+import { withRouter, Link } from 'react-router-dom'
 import * as qs from 'query-string'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
@@ -24,15 +24,15 @@ export const TopMenu = ({
     <div className='top-menu'>
       <div className='container'>
         <div className='left'>
-          <div
-            onClick={() => history.push('/')}
+          <Link
+            to={'/'}
             className='brand'>
             <img
               src={logo}
               width='115'
               height='22'
               alt='SANbase' />
-          </div>
+          </Link>
           <Search />
         </div>
         <FeedbackBtn />

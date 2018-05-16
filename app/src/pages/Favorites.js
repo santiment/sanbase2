@@ -1,7 +1,7 @@
 import React from 'react'
 import 'react-table/react-table.css'
-import ProjectsTable from 'pages/Projects/ProjectsTable'
-import withProjectsData from 'pages/Projects/withProjectsData'
+import ProjectsTable from './Projects/ProjectsTable'
+import withProjectsData from './Projects/withProjectsData'
 
 export const Favorites = ({
   Projects,
@@ -16,10 +16,16 @@ export const Favorites = ({
   preload,
   user
 }) => {
-  if (Projects.projects.length > 0 && user.followedProjects.length > 0) {
+  if (Projects.projects.length > 0 &&
+    user.followedProjects && user.followedProjects.length > 0) {
     Projects = {
       ...Projects,
       projects: Projects.projects.filter((project) => user.followedProjects.includes(project.id))
+    }
+  } else {
+    Projects = {
+      ...Projects,
+      projects: []
     }
   }
 

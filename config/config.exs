@@ -57,29 +57,27 @@ config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   pool: [max_overflow: 10, size: 20],
   database: "twitter_followers_data"
 
-# There is a service with name `etherbi-influxdb` and it creates an env var
-# `ETHERBI_INFLUXDB_PORT` which starts with `tcp:` and breaks the behaviour
 config :sanbase, Sanbase.Etherbi.Transactions.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_SERVICE_PORT", 8086},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "erc20_exchange_funds_flow"
 
 config :sanbase, Sanbase.Etherbi.BurnRate.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_SERVICE_PORT", 8086},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "erc20_burn_rate"
 
 config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_SERVICE_PORT", 8086},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "erc20_transaction_volume"
 
 config :sanbase, Sanbase.Etherbi.DailyActiveAddresses.Store,
   host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_SERVICE_PORT", 8086},
+  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
   pool: [max_overflow: 10, size: 20],
   database: "erc20_daily_active_addresses"
 

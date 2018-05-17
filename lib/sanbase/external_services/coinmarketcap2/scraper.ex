@@ -29,7 +29,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
         {:error, error}
 
       %Tesla.Error{message: error_msg} ->
-        Logger.warn(error_msg)
+        Logger.error(
+          "Error fetching project page for #{coinmarketcap_id}. Error message: #{
+            inspect(error_msg)
+          }"
+        )
+
         {:error, error_msg}
     end
   end
@@ -45,6 +50,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
         etherscan_token_name: etherscan_token_name(html)
     }
   end
+
+  # Private functions
 
   defp name(html) do
     Floki.attribute(html, ".logo-32x32", "alt")

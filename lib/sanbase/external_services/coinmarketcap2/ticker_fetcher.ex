@@ -40,7 +40,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
 
   def handle_cast(:sync, %{update_interval: update_interval} = state) do
     # Fetch current coinmarketcap data for many tickers
-    tickers = Ticker.fetch_data()
+    {:ok, tickers} = Ticker.fetch_data()
 
     # Create a project if it's a new one in the top projects and we don't have it
     tickers

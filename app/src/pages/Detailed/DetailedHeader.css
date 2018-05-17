@@ -104,6 +104,16 @@
   margin-top: 5px;
 }
 
+.detailed-favorite {
+  margin-top: 14px;
+  margin-left: 15px;
+  cursor: pointer;
+}
+
+.detailed-favorite i {
+  margin-right: 0;
+}
+
 .pending-h1 {
   height: 1em;
   font-size: 28px !important;

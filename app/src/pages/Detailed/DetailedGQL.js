@@ -26,6 +26,11 @@ export const projectBySlugGQL = gql`
       projectTransparencyStatus,
       tokenAddress,
       fundsRaisedIcos { amount, currencyCode },
+      initialIco {
+        id
+        tokenUsdIcoPrice
+      }
+      fundsRaisedUsdIcoEndPrice,
       roiUsd,
       priceUsd,
       priceBtc,
@@ -192,5 +197,27 @@ export const DailyActiveAddressesGQL = gql`
       datetime
       activeAddresses
       __typename
+    }
+}`
+
+export const FollowProjectGQL = gql`
+  mutation followProject($projectId: Int!) {
+    followProject(
+      projectId: $projectId
+    ) {
+      followedProjects {
+        id
+      }
+    }
+}`
+
+export const UnfollowProjectGQL = gql`
+  mutation unfollowProject($projectId: Int!) {
+    unfollowProject(
+      projectId: $projectId
+    ) {
+      followedProjects {
+        id
+      }
     }
 }`

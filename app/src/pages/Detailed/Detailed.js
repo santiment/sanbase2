@@ -8,14 +8,16 @@ import { Redirect } from 'react-router-dom'
 import moment from 'moment'
 import { Helmet } from 'react-helmet'
 import { graphql, withApollo } from 'react-apollo'
-import PanelBlock from './../../components/PanelBlock'
+import { connect } from 'react-redux'
 import GeneralInfoBlock from './GeneralInfoBlock'
 import FinancialsBlock from './FinancialsBlock'
-import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
-import Panel from './../../components/Panel'
-import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
-import { millify, formatNumber } from './../../utils/formatting'
 import DetailedHeader from './DetailedHeader'
+import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
+import PanelBlock from './../../components/PanelBlock'
+import Panel from './../../components/Panel'
+import Search from './../../components/SearchContainer'
+import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
+import { millify } from './../../utils/formatting'
 import {
   projectBySlugGQL,
   TwitterDataGQL,
@@ -26,7 +28,9 @@ import {
   TransactionVolumeGQL,
   ExchangeFundFlowGQL,
   EthSpentOverTimeByErc20ProjectsGQL,
-  DailyActiveAddressesGQL
+  DailyActiveAddressesGQL,
+  FollowProjectGQL,
+  UnfollowProjectGQL
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'
@@ -91,8 +95,13 @@ export const Detailed = ({
     error: false,
     dailyActiveAddresses: []
   },
+  followProject,
+  unfollowProject,
   changeChartVars,
   isDesktop,
+  isLoggedIn,
+  dispatch,
+  user,
   ...props
 }) => {
   const project = Project.project
@@ -106,7 +115,7 @@ export const Detailed = ({
       loading: HistoryPrice.loading,
       items: HistoryPrice.historyPrice
         ? HistoryPrice.historyPrice.filter(item => item.priceUsd > 0).map(item => {
-          const priceUsd = formatNumber(parseFloat(item.priceUsd).toFixed(2) || 0)
+          const priceUsd = +item.priceUsd
           const volume = parseFloat(item.volume)
           const volumeBTC = calculateBTCVolume(item)
           const marketcapBTC = calculateBTCMarketcap(item)
@@ -186,6 +195,7 @@ export const Detailed = ({
       dailyActiveAddresses={dailyActiveAddresses}
       ethPrice={ethPrice}
       isERC20={project.isERC20}
+      project={project}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
           from,
@@ -196,6 +206,9 @@ export const Detailed = ({
       }}
       ticker={project.ticker} />
 
+  const isFavorite = () => isLoggedIn && project &&
+    user.followedProjects && user.followedProjects.includes(project.id)
+
   return (
     <div className='page detailed'>
       <Helmet>
@@ -204,7 +217,15 @@ export const Detailed = ({
           : `${Project.project.ticker} project page`}
         </title>
       </Helmet>
-      <DetailedHeader {...Project} />
+      {!isDesktop && <Search />}
+      <DetailedHeader
+        {...Project}
+        dispatch={dispatch}
+        isFavorite={isFavorite()}
+        isLoggedIn={isLoggedIn}
+        addToFavorites={followProject}
+        removeFromFavorites={unfollowProject}
+      />
       {isDesktop
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
@@ -272,7 +293,17 @@ export const Detailed = ({
 
 Detailed.propTypes = propTypes
 
+const mapStateToProps = state => {
+  return {
+    user: state.user,
+    isLoggedIn: !!state.user.token
+  }
+}
+
 const enhance = compose(
+  connect(
+    mapStateToProps
+  ),
   withApollo,
   withState('chartVars', 'changeChartVars', {
     from: undefined,
@@ -521,6 +552,12 @@ const enhance = compose(
         }
       }
     }
+  }),
+  graphql(FollowProjectGQL, {
+    name: 'followProject'
+  }),
+  graphql(UnfollowProjectGQL, {
+    name: 'unfollowProject'
   })
 )
 

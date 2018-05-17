@@ -12,6 +12,7 @@ exports[`Project detail page container it should render correctly 1`] = `
       AE project page
     </title>
   </HelmetWrapper>
+  <withRouter(Apollo(SearchContainer)) />
   <ExportedComponent
     project={
       Object {
@@ -23,7 +24,7 @@ exports[`Project detail page container it should render correctly 1`] = `
     }
   />
   <div>
-    <withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))))))
+    <Connect(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer))))))))))))
       TwitterHistoryData={
         Object {
           "loading": true,
@@ -75,21 +76,15 @@ exports[`Project detail page container it should render correctly 1`] = `
           },
         }
       }
-      projectId={12}
-      projects={
-        Array [
-          Object {
-            "id": 12,
-            "name": "Aeternity",
-            "ticker": "AE",
-          },
-          Object {
-            "id": 15,
-            "name": "Aragon",
-            "ticker": "ANT",
-          },
-        ]
+      project={
+        Object {
+          "id": 12,
+          "name": "Aragorn",
+          "priceUsd": 10,
+          "ticker": "AE",
+        }
       }
+      projectId={12}
       ticker="AE"
       transactionVolume={
         Object {

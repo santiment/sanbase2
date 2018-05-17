@@ -10,3 +10,7 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.project-dp-chart-mobile-fullscreen .chart-footer {
+  padding: 0 20px;
+}

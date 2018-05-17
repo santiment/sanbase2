@@ -12,7 +12,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     VotingResolver,
     TechIndicatorsResolver,
     FileResolver,
-    PostResolver
+    PostResolver,
+    MarketSegmentResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -63,6 +64,13 @@ defmodule SanbaseWeb.Graphql.Schema do
   query do
     field :current_user, :user do
       resolve(&AccountResolver.current_user/3)
+    end
+
+    @desc "Fetch all market segments"
+    field :all_market_segments, :string do
+      middleware(ProjectPermissions)
+
+      cache_resolve(&MarketSegmentResolver.all_market_segments/3)
     end
 
     @desc "Fetch all projects or only those in project transparency based on the argument"
@@ -169,7 +177,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Burn rate for a ticker and given time period"
     field :burn_rate, list_of(:burn_rate_data) do
-      arg(:ticker, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      # TODO: Make non_null after removing :ticker
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
@@ -179,7 +189,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Transaction volume for a ticker and given time period"
     field :transaction_volume, list_of(:transaction_volume) do
-      arg(:ticker, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      # TODO: Make non_null after removing :ticker
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
@@ -189,7 +201,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Daily active addresses for a ticker and given time period"
     field :daily_active_addresses, list_of(:active_addresses) do
-      arg(:ticker, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      # TODO: Make non_null after removing :ticker
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
@@ -252,7 +266,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Shows the flow of funds in an exchange wallet"
     field :exchange_funds_flow, list_of(:funds_flow) do
-      arg(:ticker, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      # TODO: Make non_null after removing :ticker
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
@@ -354,6 +370,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
 
       cache_resolve(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
+    end
+
+    @desc "Fetch followed projects"
+    field :followed_projects, list_of(:project) do
+
+      resolve(&AccountResolver.followed_projects/3)
     end
   end
 

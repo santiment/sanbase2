@@ -1,5 +1,7 @@
 import React, { Fragment } from 'react'
-import { Icon, Button } from 'semantic-ui-react'
+import { connect } from 'react-redux'
+import { compose } from 'recompose'
+import { Button } from 'semantic-ui-react'
 import Analytics from './../Analytics'
 import { formatNumber, millify } from './../../utils/formatting'
 import './ProjectChartMobile.css'
@@ -25,26 +27,39 @@ const ProjectChartMobile = ({
       loading: true
     }
   },
+  project = {
+    fundsRaisedUsdIcoEndPrice: null,
+    initialIco: {
+      tokenUsdIcoPrice: null
+    }
+  },
   settings = {
     showed: {
       'priceUsd': true,
       'volume': true,
       'marketcap': true
-    },
-    showminimap: {
-      'priceUsd': true
     }
   },
+  routerHistory,
+  isToggledFullscreen,
+  toggleFullscreen,
+  isToggledMinimap,
+  toggleMiniMap,
   isERC20
 }) => {
+  const tokenIcoUsd = (project.initialIco || {}).tokenUsdIcoPrice || undefined
   return (
     <Fragment>
       <div className='detailed-page-mobile-settings-bar'>
-        <Button basic >
-          ERC20 Projects
+        <Button
+          positive={isToggledFullscreen}
+          onClick={toggleFullscreen} basic >
+          Old view (more data)
         </Button>
-        <Button basic >
-          Settings
+        <Button
+          positive={isToggledMinimap}
+          onClick={toggleMiniMap} basic >
+          Minimap
         </Button>
       </div>
       {(settings.showed['priceUsd'] ||
@@ -65,12 +80,11 @@ const ProjectChartMobile = ({
           borderWidth: 1,
           pointBorderWidth: 2,
           syncId: 'financial',
-          withMiniMap: settings.showminimap['priceUsd'],
-          referenceLine: {
-            y: 2,
+          referenceLine: tokenIcoUsd ? {
+            y: +tokenIcoUsd,
             label: 'ICO price',
             color: 'rgb(38, 43, 51)'
-          }
+          } : undefined
         }}
       />}
       {settings.showed['volume'] && <Analytics
@@ -86,7 +100,7 @@ const ProjectChartMobile = ({
           borderWidth: 1,
           syncId: 'financial',
           pointBorderWidth: 2,
-          withMiniMap: settings.showminimap['volume']
+          withMiniMap: isToggledMinimap
         }}
         show='Volume'
       />}
@@ -145,4 +159,37 @@ const ProjectChartMobile = ({
   )
 }
 
-export default ProjectChartMobile
+const mapStateToProps = state => {
+  return {
+    isToggledFullscreen: state.detailedPageUi.isToggledFullscreen,
+    isToggledMinimap: state.detailedPageUi.isToggledMinimap,
+    isToggledBurnRate: state.detailedPageUi.isToggledBurnRate
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    toggleFullscreen: () => {
+      dispatch({
+        type: 'TOGGLE_FULLSCREEN_MOBILE'
+      })
+    },
+    toggleMiniMap: () => {
+      dispatch({
+        type: 'TOGGLE_MINIMAP'
+      })
+    },
+    toggleBurnRate: () => {
+      dispatch({
+        type: 'TOGGLE_BURNRATE'
+      })
+    }
+  }
+}
+
+export default compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(ProjectChartMobile)

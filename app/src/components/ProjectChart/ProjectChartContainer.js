@@ -1,11 +1,65 @@
 import React, { Component } from 'react'
+import { connect } from 'react-redux'
+import cx from 'classnames'
 import moment from 'moment'
+import { Button } from 'semantic-ui-react'
+import { Chart } from 'react-chartjs-2'
 import * as qs from 'query-string'
 import { compose, withState } from 'recompose'
 import ProjectChartHeader from './ProjectChartHeader'
 import ProjectChartFooter from './ProjectChartFooter'
 import ProjectChart from './ProjectChart'
+import ProjectChartMobile from './ProjectChartMobile'
 import { normalizeData, makeItervalBounds } from './utils'
+
+// Fix X mode in Chart.js lib. Monkey loves this.
+const originalX = Chart.Interaction.modes.x
+Chart.Interaction.modes.x = function (chart, e, options) {
+  const activePoints = originalX.apply(this, arguments)
+  return activePoints.reduce((acc, item) => {
+    const i = acc.findIndex(x => x._datasetIndex === item._datasetIndex)
+    if (i <= -1) {
+      acc.push(item)
+    }
+    return acc
+  }, [])
+}
+
+const getYAxisScale = scales => {
+  for (const key in scales) {
+    if (/^y-axis/.test(key)) {
+      return scales[`${key}`]
+    }
+  }
+  return scales['y-axis-1']
+}
+
+// Draw a vertical line in our Chart, when tooltip is activated.
+Chart.defaults.LineWithLine = Chart.defaults.line
+Chart.controllers.LineWithLine = Chart.controllers.line.extend({
+  draw: function (ease) {
+    Chart.controllers.line.prototype.draw.call(this, ease)
+
+    if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
+      const activePoint = this.chart.tooltip._active[0]
+      const ctx = this.chart.ctx
+      const x = activePoint.tooltipPosition().x
+      const scale = getYAxisScale(this.chart.scales)
+      if (!scale) { return }
+      const topY = scale.top
+      const bottomY = scale.bottom
+
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(x, topY)
+      ctx.lineTo(x, bottomY)
+      ctx.lineWidth = 1
+      ctx.strokeStyle = '#adadad'
+      ctx.stroke()
+      ctx.restore()
+    }
+  }
+})
 
 class ProjectChartContainer extends Component {
   constructor (props) {
@@ -148,7 +202,10 @@ class ProjectChartContainer extends Component {
       })
     }
     return (
-      <div className='project-dp-chart'>
+      <div className={cx({
+        'project-dp-chart': true
+      })} >
+        {(this.props.isDesktop || this.props.isFullscreenMobile) &&
         <ProjectChartHeader
           startDate={this.state.startDate}
           endDate={this.state.endDate}
@@ -166,33 +223,59 @@ class ProjectChartContainer extends Component {
           isToggledEthPrice={this.props.isToggledEthPrice}
           ethPrice={this.props.ethPrice}
           isDesktop={this.props.isDesktop}
-        />
-        <ProjectChart
-          {...this.props}
-          setSelected={this.setSelected}
-          isToggledBTC={this.state.isToggledBTC}
-          history={this.props.price.history.items}
-          burnRate={burnRate}
-          from={this.state.startDate}
-          to={this.state.endDate}
-          transactionVolume={transactionVolume}
-          ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
-          isLoading={this.props.price.history.loading}
-          isERC20={this.props.isERC20}
-          isEmpty={this.props.price.history.items.length === 0} />
-        <ProjectChartFooter
-          {...this.props} />
+        />}
+        {(this.props.isDesktop || this.props.isFullscreenMobile)
+          ? <ProjectChart
+            {...this.props}
+            setSelected={this.setSelected}
+            isToggledBTC={this.state.isToggledBTC}
+            history={this.props.price.history.items}
+            burnRate={burnRate}
+            from={this.state.startDate}
+            to={this.state.endDate}
+            transactionVolume={transactionVolume}
+            ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
+            isLoading={this.props.price.history.loading}
+            isERC20={this.props.isERC20}
+            isEmpty={this.props.price.history.items.length === 0} />
+          : <ProjectChartMobile
+            {...this.props}
+          /> }
+        {(this.props.isDesktop || this.props.isFullscreenMobile) &&
+          <ProjectChartFooter
+            {...this.props} />}
+        {this.props.isFullscreenMobile &&
+          <Button onClick={this.props.toggleFullscreen} basic >
+            Back to newest mode
+          </Button>}
       </div>
     )
   }
 }
 
+const mapStateToProps = state => {
+  return {
+    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    toggleFullscreen: () => {
+      dispatch({
+        type: 'TOGGLE_FULLSCREEN_MOBILE'
+      })
+    }
+  }
+}
+
 const enhance = compose(
+  connect(mapStateToProps, mapDispatchToProps),
   withState('isToggledMarketCap', 'toggleMarketcap', false),
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),
   withState('isToggledVolume', 'toggleVolume', true),
-  withState('isToggledTwitter', 'toggleTwitter', false),
+  withState('isToggledTwitter', 'toggleTwitter', true),
   withState('isToggledBurnRate', 'toggleBurnRate', false),
   withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
   withState('isToggledEthPrice', 'toggleEthPrice', false),

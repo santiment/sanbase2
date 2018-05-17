@@ -1,98 +1,173 @@
 import React from 'react'
 import moment from 'moment'
-import { Line } from 'react-chartjs-2'
+import { compose, withState } from 'recompose'
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  Tooltip,
+  ReferenceLine,
+  Brush
+} from 'recharts'
+import { formatNumber } from './../utils/formatting'
 import './Analytics.css'
 
 const COLOR = '#009663'
 
-const getChartDataFromHistory = (history = []) => {
+const makeAxisName = label => 'y-axis-' + label
+
+const getChartDataFromHistory = (data, label, chart = {}) => {
+  const items = data.items || []
+  const borderColor = (data.dataset || {}).borderColor || COLOR
   return {
-    labels: history ? history.map(data => moment(data.datetime).utc()) : [],
+    labels: items ? items.map(data => moment(data.datetime).utc()) : [],
     datasets: [{
-      fill: true,
-      borderColor: COLOR,
-      borderWidth: 1,
-      backgroundColor: 'rgba(239, 242, 236, 0.5)',
-      pointBorderWidth: 2,
-      pointRadius: 1,
-      strokeColor: COLOR,
-      data: history ? history.map(data => data.followersCount) : []
+      label,
+      type: chart.type || 'LineWithLine',
+      fill: chart.fill || true,
+      borderColor: borderColor,
+      borderWidth: chart.borderWidth || 0.5,
+      yAxisID: makeAxisName(label),
+      backgroundColor: borderColor,
+      pointBorderWidth: chart.pointBorderWidth || 0.2,
+      pointRadius: 0.1,
+      data: items ? items.map(data => ({
+        x: data.datetime,
+        [`${label}`]: +data[`${label}`]
+      })) : [],
+      datalabels: {
+        display: false
+      }
     }]
   }
 }
 
-const chartOptions = {
-  responsive: true,
-  showTooltips: false,
-  pointDot: false,
-  scaleShowLabels: false,
-  datasetFill: false,
-  scaleFontSize: 0,
-  animation: false,
-  legend: {
-    display: false
-  },
-  scales: {
-    yAxes: [{
-      ticks: {
-        display: false,
-        beginAtZero: false
-      },
-      gridLines: {
-        drawBorder: false,
-        display: false
-      }
-    }],
-    xAxes: [{
-      gridLines: {
-        drawBorder: false,
-        display: false
-      },
-      ticks: {
-        display: false
-      }
-    }]
+const renderData = (data, label, formatData = null) => {
+  if (data.loading) {
+    return ('Loading ...')
   }
+  if (data.error) {
+    return ('Server error. Try later...')
+  }
+  if (!data.loading && data.items.length === 0) {
+    return ('No data')
+  }
+  const value = data.items[data.items.length - 1][`${label}`]
+  if (formatData) {
+    return formatData(value)
+  }
+  return formatNumber(value)
 }
 
 const Analytics = ({
-  twitter = {
-    history: {
-      loading: true,
-      items: []
+  data = {
+    dataset: {
+      borderColor: COLOR
     },
-    data: {
-      loading: true,
-      followersCount: undefined
-    }
-  }
+    error: false,
+    loading: true,
+    items: []
+  },
+  label,
+  chart = {
+    type: 'line',
+    referenceLine: {
+      color: 'red',
+      y: null,
+      label: ''
+    },
+    withMiniMap: false
+  },
+  show = 'last 7 days',
+  setIndex,
+  index = null,
+  formatData = null,
+  showInfo = true
 }) => {
-  const chartData = getChartDataFromHistory(twitter.history.items)
+  const chartData = getChartDataFromHistory(data, label, chart)
+  const borderColor = (data.dataset || {}).borderColor || chart.color || COLOR
+  const {referenceLine, withMiniMap, syncId = undefined} = chart
+  const tooltip = (
+    <Tooltip
+      formatter={formatData}
+      labelFormatter={index => {
+        const datetime = chartData.datasets[0].data[index].x
+        return moment(datetime).format('DD.MM.YYYY')
+      }}
+      label={'asdf'}
+    />)
   return (
     <div className='analytics'>
-      <h2>Analytics</h2>
-      <hr />
       <div className='analytics-trend-row'>
-        <div className='analytics-trend-info'>
-          <div className='analytics-trend-title'>
-            Twitter followers
-          </div>
-          <div className='analytics-trend-details'>
-            {twitter.data.loading ? '---' : twitter.data.followersCount}
-          </div>
+        <div className='analytics-trend-info-label'>
+          {show}
+          {showInfo &&
+          <div className='analytics-trend-info'>
+            <div
+              className='analytics-trend-details'
+              style={{color: borderColor}}
+            >
+              {index
+              ? (data.items[index] || {})[`${label}`]
+              : renderData(data, label, formatData)}
+            </div>
+          </div>}
         </div>
+      </div>
+      <div className='analytics-trend-row'>
         <div className='analytics-trend-chart'>
-          <Line
-            height={80}
-            data={chartData}
-            options={chartOptions}
-            style={{ transition: 'opacity 0.25s ease' }}
-            redraw
-          />
+          {chart.type === 'bar' &&
+            <ResponsiveContainer>
+              <BarChart
+                syncId={syncId}
+                data={chartData.datasets[0].data} >
+                {tooltip}
+                <Bar dataKey={label} stroke={borderColor} fill={borderColor} />
+                {withMiniMap &&
+                <Brush
+                  travellerWidth={20}
+                  data={chartData.datasets[0].data}
+                  tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
+                  dataKey='x' height={50} />}
+              </BarChart>
+            </ResponsiveContainer>}
+          {chart.type === 'line' &&
+            <ResponsiveContainer>
+              <LineChart
+                syncId={syncId}
+                dot={false}
+                data={chartData.datasets[0].data} >
+                {tooltip}
+                <Line
+                  type='monotone'
+                  dot={false}
+                  dataKey={label}
+                  stroke={borderColor}
+                  onClick={(data, e) => {
+                    console.log(data)
+                    setIndex(e.target)
+                  }}
+                  onMouseDown={(data, e) => {
+                    console.log(data, e)
+                  }}
+                  strokeWidth={2} />
+                {(referenceLine || {}).y &&
+                <ReferenceLine
+                  y={referenceLine.y}
+                  label={referenceLine.label}
+                  stroke={referenceLine.color} />}
+              </LineChart>
+            </ResponsiveContainer>}
         </div>
       </div>
     </div>
   )
 }
 
-export default Analytics
+const enhance = compose(
+  withState('index', 'setIndex', null)
+)
+
+export default enhance(Analytics)

@@ -26,6 +26,11 @@ export const projectBySlugGQL = gql`
       projectTransparencyStatus,
       tokenAddress,
       fundsRaisedIcos { amount, currencyCode },
+      initialIco {
+        id
+        tokenUsdIcoPrice
+      }
+      fundsRaisedUsdIcoEndPrice,
       roiUsd,
       priceUsd,
       priceBtc,

@@ -1,5 +1,8 @@
 import React, { Component } from 'react'
+import { connect } from 'react-redux'
+import cx from 'classnames'
 import moment from 'moment'
+import { Button } from 'semantic-ui-react'
 import { Chart } from 'react-chartjs-2'
 import * as qs from 'query-string'
 import { compose, withState } from 'recompose'
@@ -199,8 +202,10 @@ class ProjectChartContainer extends Component {
       })
     }
     return (
-      <div className='project-dp-chart'>
-        {this.props.isDesktop &&
+      <div className={cx({
+        'project-dp-chart': true
+      })} >
+        {(this.props.isDesktop || this.props.isFullscreenMobile) &&
         <ProjectChartHeader
           startDate={this.state.startDate}
           endDate={this.state.endDate}
@@ -219,7 +224,7 @@ class ProjectChartContainer extends Component {
           ethPrice={this.props.ethPrice}
           isDesktop={this.props.isDesktop}
         />}
-        {this.props.isDesktop
+        {(this.props.isDesktop || this.props.isFullscreenMobile)
           ? <ProjectChart
             {...this.props}
             setSelected={this.setSelected}
@@ -236,15 +241,36 @@ class ProjectChartContainer extends Component {
           : <ProjectChartMobile
             {...this.props}
           /> }
-        {this.props.isDesktop &&
+        {(this.props.isDesktop || this.props.isFullscreenMobile) &&
           <ProjectChartFooter
-            {...this.props} /> }
+            {...this.props} />}
+        {this.props.isFullscreenMobile &&
+          <Button onClick={this.props.toggleFullscreen} basic >
+            Back to newest mode
+          </Button>}
       </div>
     )
   }
 }
 
+const mapStateToProps = state => {
+  return {
+    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    toggleFullscreen: () => {
+      dispatch({
+        type: 'TOGGLE_FULLSCREEN_MOBILE'
+      })
+    }
+  }
+}
+
 const enhance = compose(
+  connect(mapStateToProps, mapDispatchToProps),
   withState('isToggledMarketCap', 'toggleMarketcap', false),
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),

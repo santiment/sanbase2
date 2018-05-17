@@ -13,6 +13,7 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
     Store.create_db()
 
     ticker = "SAN"
+    slug = "santiment"
     contract_address = "0x1234"
     Store.drop_measurement(contract_address)
 
@@ -20,7 +21,7 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
       %Project{
         name: "Santiment",
         ticker: ticker,
-        coinmarketcap_id: "santiment",
+        coinmarketcap_id: slug,
         main_contract_address: contract_address
       }
       |> Repo.insert!()
@@ -89,7 +90,7 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
     ])
 
     [
-      ticker: ticker,
+      slug: slug,
       datetime1: datetime1,
       datetime2: datetime2,
       datetime3: datetime3,
@@ -105,7 +106,7 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
     query = """
     {
       burnRate(
-        ticker: "#{context.ticker}",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}",
         interval: "5m") {
@@ -166,7 +167,7 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
     query = """
     {
       burnRate(
-        ticker: "#{context.ticker}",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}",
         interval: "30m") {

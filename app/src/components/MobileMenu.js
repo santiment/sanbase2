@@ -53,6 +53,7 @@ const MobileMenu = ({
       <div className='overlay-content'>
         <AppMenu
           showIcons
+          isMobile
           location={history.location}
           showInsights={hasInsights(location)}
           handleNavigation={nextRoute => {

@@ -8,7 +8,8 @@ export const initialState = {
     pageSize: 0,
     page: 1
   },
-  search: ''
+  search: '',
+  categories: {}
 }
 
 export default (state = initialState, action) => {
@@ -57,6 +58,19 @@ export default (state = initialState, action) => {
           page: 1
         },
         search: action.payload.search
+      }
+    case 'SET_CATEGORY':
+      if (action.payload.category.name === 'clearAllCategories') {
+        state.categories = {}
+      } else if (!action.payload.category.checked) {
+        delete state.categories[action.payload.category.id]
+      } else {
+        state.categories[action.payload.category.id] = action.payload.category.checked
+      }
+
+      return {
+        ...state,
+        categories: {...state.categories}
       }
     default:
       return state

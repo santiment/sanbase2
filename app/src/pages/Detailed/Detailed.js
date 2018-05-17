@@ -29,7 +29,6 @@ import {
   EthSpentOverTimeByErc20ProjectsGQL,
   DailyActiveAddressesGQL
 } from './DetailedGQL'
-import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'
 import withTimeseries from './withTimeseries'
 import './Detailed.css'
@@ -267,8 +266,6 @@ export const Detailed = ({
             ))}
           </div>
         </PanelBlock>}
-        {isDesktop && project.ethSpentOverTime && project.ethSpentOverTime.length > 0 &&
-          <SpentOverTime project={project} loading={Project.loading} />}
       </div>
     </div>
   )

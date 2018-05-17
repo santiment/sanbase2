@@ -179,7 +179,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp main_contract_address(html) do
-    Floki.find(html, ~s/td:fl-contains('ERC20 Contract') + td/)
+    Floki.find(html, ~s/td:fl-contains('Contract') + td/)
     |> List.first()
     |> case do
       nil -> nil

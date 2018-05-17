@@ -220,20 +220,6 @@ const handleLoad = () => {
   })
   .catch(error => Raven.captureException(error))
 
-  // TODO: Yura Zatsepin: 2018-5-16 14:00
-  // Run this watcher, only if page is unvisible/unactive
-  // Why? Cause we need to detect when localstorage, after
-  // email login verification link changed.
-  // But we need to do it, only if page is unvisible.
-  const oldState = loadState()
-  let prevToken = oldState ? oldState.token : null
-  setInterval(() => {
-    if (prevToken !== (loadState() || {}).token) {
-      prevToken = (loadState() || {}).token
-      window.location.reload()
-    }
-  }, 2000)
-
   store.subscribe(() => {
     saveState(store.getState().user)
   })

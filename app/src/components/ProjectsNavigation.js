@@ -7,6 +7,8 @@ import {
 } from 'semantic-ui-react'
 import './ProjectsNavigation.css'
 
+const HiddenElements = () => ''
+
 const ProjectsNavigation = ({
   path,
   categories,
@@ -44,32 +46,34 @@ const ProjectsNavigation = ({
           More data about Ethereum
         </Link>
       </div>
-      <Popup
-        trigger={<span className='categories-button'><Button>Categories</Button></span>}
-        on='click'
-        position='bottom center'
-      >
-        <div className='categories-links'>
-          {Object.entries(allMarketSegments).length > 0
-            ? Object.entries(allMarketSegments).sort().map(([key, value]) =>
-              <Checkbox
-                key={key}
-                id={key}
-                label={value || 'Unknown'}
-                onChange={handleSetCategory}
-                checked={categories[key]}
-              />)
-            : 'Categories not founded'
-          }
-          {Object.entries(allMarketSegments).length > 0 &&
-            <Button
-              className='clear-all-categories'
-              content='Clear All'
-              onClick={handleSetCategory}
-              name='clearAllCategories'
-            />}
-        </div>
-      </Popup>
+      <HiddenElements>
+        <Popup
+          trigger={<span className='categories-button'><Button>Categories</Button></span>}
+          on='click'
+          position='bottom center'
+        >
+          <div className='categories-links'>
+            {Object.entries(allMarketSegments).length > 0
+              ? Object.entries(allMarketSegments).sort().map(([key, value]) =>
+                <Checkbox
+                  key={key}
+                  id={key}
+                  label={value || 'Unknown'}
+                  onChange={handleSetCategory}
+                  checked={categories[key]}
+                />)
+              : 'Categories not founded'
+            }
+            {Object.entries(allMarketSegments).length > 0 &&
+              <Button
+                className='clear-all-categories'
+                content='Clear All'
+                onClick={handleSetCategory}
+                name='clearAllCategories'
+              />}
+          </div>
+        </Popup>
+      </HiddenElements>
     </div>
   )
 }

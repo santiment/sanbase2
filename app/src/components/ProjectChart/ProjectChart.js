@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import moment from 'moment'
 import { pure } from 'recompose'
-import { Bar, Chart } from 'react-chartjs-2'
+import { Bar } from 'react-chartjs-2'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
 import 'chartjs-plugin-datalabels'
@@ -23,44 +23,6 @@ const COLORS = {
   ethPrice: '#3c3c3d'
 }
 
-// Fix X mode in Chart.js lib. Monkey loves this.
-const originalX = Chart.Interaction.modes.x
-Chart.Interaction.modes.x = function (chart, e, options) {
-  const activePoints = originalX.apply(this, arguments)
-  return activePoints.reduce((acc, item) => {
-    const i = acc.findIndex(x => x._datasetIndex === item._datasetIndex)
-    if (i <= -1) {
-      acc.push(item)
-    }
-    return acc
-  }, [])
-}
-
-// Draw a vertical line in our Chart, when tooltip is activated.
-Chart.defaults.LineWithLine = Chart.defaults.line
-Chart.controllers.LineWithLine = Chart.controllers.line.extend({
-  draw: function (ease) {
-    Chart.controllers.line.prototype.draw.call(this, ease)
-
-    if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
-      const activePoint = this.chart.tooltip._active[0]
-      const ctx = this.chart.ctx
-      const x = activePoint.tooltipPosition().x
-      const topY = this.chart.scales['y-axis-1'].top
-      const bottomY = this.chart.scales['y-axis-1'].bottom
-
-      ctx.save()
-      ctx.beginPath()
-      ctx.moveTo(x, topY)
-      ctx.lineTo(x, bottomY)
-      ctx.lineWidth = 1
-      ctx.strokeStyle = '#adadad'
-      ctx.stroke()
-      ctx.restore()
-    }
-  }
-})
-
 const makeChartDataFromHistory = ({
   history = [],
   isToggledBTC,
@@ -75,7 +37,7 @@ const makeChartDataFromHistory = ({
   isToggledDailyActiveAddresses = false,
   ...props
 }) => {
-  const twitter = props.twitter.history.items || []
+  const twitterData = props.historyTwitterData || {}
   const github = props.github.history.items || []
   const burnRate = props.burnRate.items || []
   const transactionVolume = props.transactionVolume.items || []
@@ -158,25 +120,8 @@ const makeChartDataFromHistory = ({
         y: data.activity
       }
     })}
-  const twitterDataset = !isToggledTwitter ? null : {
-    label: 'Twitter',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-5',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.twitter,
-    backgroundColor: COLORS.twitter,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: twitter.map(data => {
-      return {
-        x: data.datetime,
-        y: data.followersCount
-      }
-    })}
+  const twitterDataset = !isToggledTwitter ? null : twitterData.dataset
+
   const burnrateDataset = !isToggledBurnRate ? null : {
     label: 'Burn Rate',
     type: 'bar',
@@ -486,7 +431,7 @@ const makeOptionsFromProps = props => ({
         props.github.history.items.length !== 0,
       position: 'right'
     }, {
-      id: 'y-axis-5',
+      id: 'y-axis-twitter',
       type: 'linear',
       tooltips: {
         mode: 'index',
@@ -504,7 +449,9 @@ const makeOptionsFromProps = props => ({
         display: false
       },
       display: props.isToggledTwitter &&
-        props.twitter.history.items.length !== 0,
+        props.historyTwitterData &&
+        props.historyTwitterData.items &&
+        props.historyTwitterData.items.length !== 0,
       position: 'right'
     }, {
       id: 'y-axis-6',

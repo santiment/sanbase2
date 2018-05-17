@@ -12,6 +12,78 @@
   }
 }
 
+.detailed-head {
+  display: flex;
+  justify-content: space-between;
+  min-height: 84px;
+  flex-direction: column;
+}
+
+.detailed-name {
+  display: flex;
+  align-items: center;
+  padding-top: 0;
+  justify-content: left;
+  text-align: left;
+  margin-top: 16px;
+}
+
+.detailed-name img {
+  margin-top: 0;
+  margin-left: 6px;
+}
+
+.detailed-name h1 {
+  margin: 0 !important;
+  margin-right: 5px;
+  font-size: 24px !important;
+  line-height: 1em !important;
+}
+
+.detailed-name .detailed-ticker-name {
+  margin-left: 5px;
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.datailed-project-description {
+  color: gray;
+}
+
+.detailed-price {
+  display: flex;
+  flex-direction: column;
+  font-size: 1.6em;
+  margin-top: 1em;
+  line-height: 1.4em;
+}
+
+.detailed-price-description {
+  font-size: 0.6em;
+  font-weight: 300;
+  line-height: 1;
+  text-transform: uppercase;
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.detailed-price-usd {
+  display: flex;
+  align-items: baseline;
+  justify-content: left;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.detailed-price-usd .percent-changes {
+  font-size: 24px;
+  font-weight: 300;
+}
+
+.detailed-price-btc {
+  font-size: 16px;
+}
+
 .pending-header {
   color: white;
   background-color: white;
@@ -46,4 +118,22 @@
   height: 1em;
   font-size: 28px !important;
   margin-bottom: 5px;
+}
+
+@media (min-width: 768px) {
+  .detailed-name {
+    align-items: center;
+  }
+
+  .detailed-price-description {
+    margin-bottom: 10px;
+  }
+
+  .detailed-price-usd {
+    font-size: 24px;
+  }
+
+  .detailed-price-usd .percent-changes {
+    font-size: 0.7em;
+  }
 }

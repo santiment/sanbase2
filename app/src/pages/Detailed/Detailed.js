@@ -9,15 +9,15 @@ import moment from 'moment'
 import { Helmet } from 'react-helmet'
 import { graphql, withApollo } from 'react-apollo'
 import { connect } from 'react-redux'
-import PanelBlock from './../../components/PanelBlock'
 import GeneralInfoBlock from './GeneralInfoBlock'
 import FinancialsBlock from './FinancialsBlock'
+import DetailedHeader from './DetailedHeader'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
+import PanelBlock from './../../components/PanelBlock'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { millify } from './../../utils/formatting'
-import DetailedHeader from './DetailedHeader'
 import {
   projectBySlugGQL,
   TwitterDataGQL,
@@ -34,6 +34,7 @@ import {
 } from './DetailedGQL'
 import SpentOverTime from './SpentOverTime'
 import EthereumBlock from './EthereumBlock'
+import withTimeseries from './withTimeseries'
 import './Detailed.css'
 
 const propTypes = {
@@ -48,11 +49,6 @@ export const Detailed = ({
     loading: true,
     error: false,
     twitterData: []
-  },
-  TwitterHistoryData = {
-    loading: true,
-    error: false,
-    twitterHistoryData: []
   },
   HistoryPrice = {
     loading: true,
@@ -105,7 +101,8 @@ export const Detailed = ({
   isDesktop,
   isLoggedIn,
   dispatch,
-  user
+  user,
+  ...props
 }) => {
   const project = Project.project
 
@@ -113,29 +110,16 @@ export const Detailed = ({
     return <Redirect to='/' />
   }
 
-  const twitter = {
-    history: {
-      error: TwitterHistoryData.error || false,
-      loading: TwitterHistoryData.loading,
-      items: TwitterHistoryData.historyTwitterData || []
-    },
-    data: {
-      error: TwitterData.error || false,
-      loading: TwitterData.loading,
-      followersCount: TwitterData.twitterData
-        ? TwitterData.twitterData.followersCount
-        : undefined
-    }
-  }
-
   const price = {
     history: {
       loading: HistoryPrice.loading,
       items: HistoryPrice.historyPrice
-        ? HistoryPrice.historyPrice.map(item => {
+        ? HistoryPrice.historyPrice.filter(item => item.priceUsd > 0).map(item => {
+          const priceUsd = +item.priceUsd
+          const volume = parseFloat(item.volume)
           const volumeBTC = calculateBTCVolume(item)
           const marketcapBTC = calculateBTCMarketcap(item)
-          return {...item, volumeBTC, marketcapBTC}
+          return {...item, volumeBTC, marketcapBTC, volume, priceUsd}
         })
         : []
     }
@@ -201,7 +185,7 @@ export const Detailed = ({
       routerHistory={history}
       location={location}
       isDesktop={isDesktop}
-      twitter={twitter}
+      {...props}
       price={price}
       github={github}
       burnRate={burnRate}
@@ -211,6 +195,7 @@ export const Detailed = ({
       dailyActiveAddresses={dailyActiveAddresses}
       ethPrice={ethPrice}
       isERC20={project.isERC20}
+      project={project}
       onDatesChange={(from, to, interval, ticker) => {
         changeChartVars({
           from,
@@ -277,7 +262,7 @@ export const Detailed = ({
           </PanelBlock>}
       </div>
       <div className='information'>
-        {project.isERC20 &&
+        {isDesktop && project.isERC20 &&
         project.ethTopTransactions &&
         project.ethTopTransactions.length > 0 &&
         <PanelBlock
@@ -299,7 +284,7 @@ export const Detailed = ({
             ))}
           </div>
         </PanelBlock>}
-        {project.ethSpentOverTime && project.ethSpentOverTime.length > 0 &&
+        {isDesktop && project.ethSpentOverTime && project.ethSpentOverTime.length > 0 &&
           <SpentOverTime project={project} loading={Project.loading} />}
       </div>
     </div>
@@ -355,6 +340,78 @@ const enhance = compose(
       }
     }
   }),
+  withTimeseries({
+    query: TwitterDataGQL,
+    name: 'TwitterData',
+    options: ({chartVars}) => {
+      const { ticker } = chartVars
+      return {
+        skip: !ticker,
+        errorPolicy: 'all',
+        variables: {
+          ticker
+        }
+      }
+    }}, {
+      query: TwitterHistoryGQL,
+      name: 'historyTwitterData',
+      chartjs: {
+        dataset: {
+          label: 'Twitter',
+          type: 'line',
+          fill: false,
+          yAxisID: 'y-axis-twitter',
+          datalabels: {
+            display: false
+          },
+          borderColor: 'rgba(16, 195, 245, 0.7)',
+          backgroundColor: 'rgba(16, 195, 245, 0.7)',
+          borderWidth: 1,
+          pointBorderWidth: 2,
+          pointRadius: 2,
+          data: data => data.map(item => {
+            return {
+              x: item.datetime,
+              y: item.followersCount
+            }
+          })
+        },
+        scale: {
+          id: 'y-axis-twitter',
+          type: 'linear',
+          tooltips: {
+            mode: 'index',
+            intersect: false
+          },
+          scaleLabel: {
+            display: true,
+            labelString: 'Twitter',
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            display: true
+          },
+          gridLines: {
+            display: false
+          },
+          display: (isToggled, data) => isToggled &&
+            data.history.items.length !== 0,
+          position: 'right'
+        }
+      },
+      options: ({chartVars}) => {
+        const {from, to, ticker} = chartVars
+        return {
+          skip: !from || !ticker,
+          errorPolicy: 'all',
+          variables: {
+            from,
+            to,
+            ticker
+          }
+        }
+      }
+    }),
   graphql(HistoryPriceGQL, {
     name: 'EthPrice',
     options: ({chartVars, Project}) => {
@@ -378,21 +435,6 @@ const enhance = compose(
         skip: !ticker,
         errorPolicy: 'all',
         variables: {
-          ticker
-        }
-      }
-    }
-  }),
-  graphql(TwitterHistoryGQL, {
-    name: 'TwitterHistoryData',
-    options: ({chartVars}) => {
-      const {from, to, ticker} = chartVars
-      return {
-        skip: !from || !ticker,
-        errorPolicy: 'all',
-        variables: {
-          from,
-          to,
           ticker
         }
       }

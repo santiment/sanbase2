@@ -74,11 +74,13 @@ class Route extends React.Component {
   }
 }
 
-export const App = ({isDesktop, isLoggedIn}) => (
+export const App = ({isDesktop, isLoggedIn, isFullscreenMobile}) => (
   <div className='App'>
-    {isDesktop
-      ? <TopMenu />
-      : <MobileMenu />}
+    {isFullscreenMobile
+      ? undefined
+      : (isDesktop
+        ? <TopMenu />
+        : <MobileMenu />)}
     <ErrorBoundary>
       <Switch>
         <Route exact path='/projects' render={props => {
@@ -151,7 +153,8 @@ export const App = ({isDesktop, isLoggedIn}) => (
 
 const mapStateToProps = state => {
   return {
-    isLoggedIn: !!state.user.token
+    isLoggedIn: !!state.user.token,
+    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile
   }
 }
 

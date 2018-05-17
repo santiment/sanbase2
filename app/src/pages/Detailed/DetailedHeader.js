@@ -45,11 +45,11 @@ const DetailedHeader = ({
           <DIV className='detailed-ticker-name'>
             {(project.ticker || '').toUpperCase()}
           </DIV>
-          {isLoggedIn &&
+          {isLoggedIn && !loading &&
             <div className='detailed-favorite'>
               <Popup
                 trigger={
-                  <i class={`fa fa-2x fa-star${isFavorite ? '' : '-o'}`}
+                  <i className={`fa fa-2x fa-star${isFavorite ? '' : '-o'}`}
                     onClick={() => isFavorite ? removeFromFavorites(followProjectHelper('remove')) : addToFavorites(followProjectHelper('add'))}
                     aria-hidden='true' />
                 }

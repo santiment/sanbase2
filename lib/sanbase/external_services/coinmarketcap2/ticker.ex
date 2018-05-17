@@ -29,6 +29,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
 
   use Tesla
 
+  require Logger
+
   alias Sanbase.ExternalServices.RateLimiting
   # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
@@ -45,8 +47,26 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
     "/?limit=#{@projects_number}"
     |> get()
     |> case do
-      %{status: 200, body: body} ->
-        parse_json(body)
+      %Tesla.Env{status: 200, body: body} ->
+        {:ok, parse_json(body)}
+
+      %Tesla.Env{status: status, body: _body} ->
+        error =
+          "Failed fetching top #{@project_numbers} projects' information from /v1/ticker. Status: #{
+            status
+          }"
+
+        Logger.warn(error)
+        {:error, error}
+
+      %Tesla.Error{message: error_msg} ->
+        Logger.error(
+          "Error fetching top #{@project_numbers} projects' information from /v1/ticker. Error message #{
+            inspect(error_msg)
+          }"
+        )
+
+        {:error, error_msg}
     end
   end
 

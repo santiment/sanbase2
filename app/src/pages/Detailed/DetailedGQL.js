@@ -30,7 +30,6 @@ export const projectBySlugGQL = gql`
         id
         tokenUsdIcoPrice
       }
-      fundsRaisedUsdIcoEndPrice,
       roiUsd,
       priceUsd,
       priceBtc,

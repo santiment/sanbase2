@@ -321,4 +321,15 @@ defmodule Sanbase.Model.Project do
     end)
     |> Enum.into(%{})
   end
+
+  def ticker_by_slug(nil), do: nil
+
+  def ticker_by_slug(slug) when is_binary(slug) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      select: p.ticker
+    )
+    |> Sanbase.Repo.one()
+  end
 end

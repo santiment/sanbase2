@@ -104,8 +104,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp total_supply(html) do
-    Floki.find(html, ~s/td:fl-contains('Total Supply') + td/)
-    |> List.first()
+    # We have two neighbour`td`s and the first one contains a span with title
+    Floki.find(html, ~s/td > span[title*="Total Supply"]) + td/)
+    |> Enum.at(1)
     |> case do
       nil ->
         nil
@@ -119,7 +120,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp main_contract_address(html) do
-    Floki.find(html, ~s/td:fl-contains('ERC20 Contract') + td/)
+    Floki.find(html, ~s/td:fl-contains('Contract') + td/)
     |> List.first()
     |> case do
       nil -> nil

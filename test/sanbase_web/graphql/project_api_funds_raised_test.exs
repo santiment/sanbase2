@@ -126,7 +126,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   end
 
   test "fetch project funds raised", context do
-    project_id = setup()
+    project_id = context.project.id
 
     query = """
     {
@@ -165,6 +165,46 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
             "fundsRaisedEthIcoEndPrice" => "100.0",
             "fundsRaisedBtcIcoEndPrice" => "200"}]}]
   end
+
+  test "no ico does not break query", context do
+    project_id = context.project_no_ico.id
+
+    query = """
+    {
+      project(id: $id) {
+        name,
+        fundsRaisedUsdIcoEndPrice,
+        fundsRaisedEthIcoEndPrice,
+        fundsRaisedBtcIcoEndPrice,
+        icos {
+          endDate,
+          fundsRaisedUsdIcoEndPrice,
+          fundsRaisedEthIcoEndPrice,
+          fundsRaisedBtcIcoEndPrice
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> put_req_header("authorization", get_authorization_header())
+      |> post(
+        "/graphql",
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
+      )
+
+    assert json_response(result, 200)["data"]["project"] ==
+             %{
+               "name" => context.project_no_ico.name,
+               "fundsRaisedUsdIcoEndPrice" => nil,
+               "fundsRaisedEthIcoEndPrice" => nil,
+               "fundsRaisedBtcIcoEndPrice" => nil,
+               "icos" => []
+             }
+  end
+
+  # Private functions
 
   defp get_authorization_header do
     username = context_config(:basic_auth_username)

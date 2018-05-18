@@ -33,7 +33,6 @@ import {
   UnfollowProjectGQL
 } from './DetailedGQL'
 import EthereumBlock from './EthereumBlock'
-import withTimeseries from './withTimeseries'
 import './Detailed.css'
 
 const propTypes = {
@@ -337,78 +336,21 @@ const enhance = compose(
       }
     }
   }),
-  withTimeseries({
-    query: TwitterDataGQL,
-    name: 'TwitterData',
+  graphql(TwitterHistoryGQL, {
+    name: 'TwitterHistory',
     options: ({chartVars}) => {
-      const { ticker } = chartVars
+      const {from, to, ticker, interval} = chartVars
       return {
         skip: !ticker,
-        errorPolicy: 'all',
         variables: {
-          ticker
+          ticker: 'ETH',
+          from,
+          to,
+          interval
         }
       }
-    }}, {
-      query: TwitterHistoryGQL,
-      name: 'historyTwitterData',
-      chartjs: {
-        dataset: {
-          label: 'Twitter',
-          type: 'line',
-          fill: false,
-          yAxisID: 'y-axis-twitter',
-          datalabels: {
-            display: false
-          },
-          borderColor: 'rgba(16, 195, 245, 0.7)',
-          backgroundColor: 'rgba(16, 195, 245, 0.7)',
-          borderWidth: 1,
-          pointBorderWidth: 2,
-          pointRadius: 2,
-          data: data => data.map(item => {
-            return {
-              x: item.datetime,
-              y: item.followersCount
-            }
-          })
-        },
-        scale: {
-          id: 'y-axis-twitter',
-          type: 'linear',
-          tooltips: {
-            mode: 'index',
-            intersect: false
-          },
-          scaleLabel: {
-            display: true,
-            labelString: 'Twitter',
-            fontColor: '#3d4450'
-          },
-          ticks: {
-            display: true
-          },
-          gridLines: {
-            display: false
-          },
-          display: (isToggled, data) => isToggled &&
-            data.history.items.length !== 0,
-          position: 'right'
-        }
-      },
-      options: ({chartVars}) => {
-        const {from, to, ticker} = chartVars
-        return {
-          skip: !from || !ticker,
-          errorPolicy: 'all',
-          variables: {
-            from,
-            to,
-            ticker
-          }
-        }
-      }
-    }),
+    }
+  }),
   graphql(HistoryPriceGQL, {
     name: 'EthPrice',
     options: ({chartVars, Project}) => {

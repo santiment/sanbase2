@@ -47,7 +47,6 @@ const ProjectChartMobile = ({
   toggleMiniMap,
   isERC20
 }) => {
-  const tokenIcoUsd = (project.initialIco || {}).tokenUsdIcoPrice || undefined
   return (
     <Fragment>
       <div className='detailed-page-mobile-settings-bar'>
@@ -79,12 +78,7 @@ const ProjectChartMobile = ({
           fill: true,
           borderWidth: 1,
           pointBorderWidth: 2,
-          syncId: 'financial',
-          referenceLine: tokenIcoUsd ? {
-            y: +tokenIcoUsd,
-            label: 'ICO price',
-            color: 'rgb(38, 43, 51)'
-          } : undefined
+          syncId: 'financial'
         }}
       />}
       {settings.showed['volume'] && <Analytics

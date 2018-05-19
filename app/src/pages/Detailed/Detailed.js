@@ -1,9 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {
-  compose,
-  withState
-} from 'recompose'
+import { compose } from 'recompose'
 import { Redirect } from 'react-router-dom'
 import moment from 'moment'
 import { Helmet } from 'react-helmet'
@@ -95,7 +92,6 @@ export const Detailed = ({
   },
   followProject,
   unfollowProject,
-  changeChartVars,
   isDesktop,
   isLoggedIn,
   dispatch,
@@ -194,14 +190,6 @@ export const Detailed = ({
       ethPrice={ethPrice}
       isERC20={project.isERC20}
       project={project}
-      onDatesChange={(from, to, interval, ticker) => {
-        changeChartVars({
-          from,
-          to,
-          interval,
-          ticker
-        })
-      }}
       ticker={project.ticker} />
 
   const isFavorite = () => isLoggedIn && project &&
@@ -292,7 +280,8 @@ Detailed.propTypes = propTypes
 const mapStateToProps = state => {
   return {
     user: state.user,
-    isLoggedIn: !!state.user.token
+    isLoggedIn: !!state.user.token,
+    timeFilter: state.detailedPageUi.timeFilter
   }
 }
 
@@ -301,12 +290,6 @@ const enhance = compose(
     mapStateToProps
   ),
   withApollo,
-  withState('chartVars', 'changeChartVars', {
-    from: undefined,
-    to: undefined,
-    interval: undefined,
-    ticker: undefined
-  }),
   graphql(projectBySlugGQL, {
     name: 'Project',
     props: ({Project}) => ({
@@ -338,12 +321,13 @@ const enhance = compose(
   }),
   graphql(TwitterHistoryGQL, {
     name: 'TwitterHistory',
-    options: ({chartVars}) => {
-      const {from, to, ticker, interval} = chartVars
+    options: ({timeFilter, Project}) => {
+      const {from, to, interval} = timeFilter
+      const ticker = Project.project.ticker
       return {
         skip: !ticker,
         variables: {
-          ticker: 'ETH',
+          ticker,
           from,
           to,
           interval
@@ -353,23 +337,23 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'EthPrice',
-    options: ({chartVars, Project}) => {
-      const {from, to, ticker, interval} = chartVars
+    options: ({timeFilter}) => {
+      const {from, to} = timeFilter
       return {
-        skip: !ticker,
+        skip: !from,
         variables: {
           ticker: 'ETH',
           from,
           to,
-          interval
+          interval: '7d'
         }
       }
     }
   }),
   graphql(TwitterDataGQL, {
     name: 'TwitterData',
-    options: ({chartVars}) => {
-      const { ticker } = chartVars
+    options: ({Project}) => {
+      const ticker = Project.project.ticker
       return {
         skip: !ticker,
         errorPolicy: 'all',
@@ -381,8 +365,9 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
-    options: ({chartVars}) => {
-      const {from, to, ticker, interval} = chartVars
+    options: ({timeFilter, Project}) => {
+      const {from, to, interval} = timeFilter
+      const ticker = Project.project.ticker
       return {
         skip: !from || !ticker,
         errorPolicy: 'all',
@@ -397,16 +382,17 @@ const enhance = compose(
   }),
   graphql(BurnRateGQL, {
     name: 'BurnRate',
-    options: ({chartVars, Project}) => {
-      const {from, to, ticker} = chartVars
+    options: ({timeFilter, match}) => {
+      const {from, to} = timeFilter
+      const slug = match.params.slug
       const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval
         }
       }
@@ -414,8 +400,9 @@ const enhance = compose(
   }),
   graphql(GithubActivityGQL, {
     name: 'GithubActivity',
-    options: ({chartVars}) => {
-      const {from, to, ticker} = chartVars
+    options: ({timeFilter, Project}) => {
+      const {from, to} = timeFilter
+      const ticker = Project.project.ticker
       return {
         skip: !from || !ticker,
         variables: {
@@ -431,16 +418,17 @@ const enhance = compose(
   }),
   graphql(TransactionVolumeGQL, {
     name: 'TransactionVolume',
-    options: ({chartVars, Project}) => {
-      const {from, to, ticker} = chartVars
+    options: ({timeFilter, match}) => {
+      const {from, to} = timeFilter
+      const slug = match.params.slug
       const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval
         }
       }
@@ -448,23 +436,25 @@ const enhance = compose(
   }),
   graphql(ExchangeFundFlowGQL, {
     name: 'ExchangeFundFlow',
-    options: ({chartVars, Project}) => {
-      const {from, to, ticker} = chartVars
+    options: ({timeFilter, match, Project}) => {
+      const {from, to} = timeFilter
+      const slug = match.params.slug
       return {
-        skip: !from || !ticker || (Project && !Project.isERC20),
+        skip: !from || !slug || (Project && !Project.isERC20),
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker
+          slug
         }
       }
     }
   }),
   graphql(EthSpentOverTimeByErc20ProjectsGQL, {
     name: 'EthSpentOverTimeByErc20Projects',
-    options: ({chartVars, Project}) => {
-      const {from, to, ticker} = chartVars
+    options: ({timeFilter, Project}) => {
+      const {from, to} = timeFilter
+      const ticker = Project.project.ticker
       return {
         skip: !from || ticker !== 'ETH',
         errorPolicy: 'all',
@@ -478,15 +468,16 @@ const enhance = compose(
   }),
   graphql(DailyActiveAddressesGQL, {
     name: 'DailyActiveAddresses',
-    options: ({chartVars}) => {
-      const {from, to, ticker} = chartVars
+    options: ({timeFilter, match}) => {
+      const {from, to} = timeFilter
+      const slug = match.params.slug
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
         }
       }

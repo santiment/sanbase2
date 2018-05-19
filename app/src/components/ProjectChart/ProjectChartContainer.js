@@ -71,8 +71,8 @@ class ProjectChartContainer extends Component {
       isError: false,
       errorMessage: '',
       selected: undefined,
-      startDate: moment(from),
-      endDate: moment(to),
+      startDate: moment(shareableState.from) || moment(from),
+      endDate: moment(shareableState.from) || moment(to),
       focusedInput: null,
       isToggledBTC: shareableState.currency && shareableState.currency === 'BTC'
     }
@@ -82,13 +82,15 @@ class ProjectChartContainer extends Component {
     this.props.toggleTwitter(shareableState.twitter)
     this.props.toggleBurnRate(shareableState.tbr)
     this.props.toggleTransactionVolume(shareableState.tv)
+    this.props.toggleActiveAddresses(shareableState.daa)
+    this.props.toggleEthSpentOverTime(shareableState.ethSpent)
+    this.props.toggleEthPrice(shareableState.ethPrice)
 
     this.setFilter = this.setFilter.bind(this)
     this.setSelected = this.setSelected.bind(this)
-    this.onDatesChange = this.onDatesChange.bind(this)
     this.onFocusChange = this.onFocusChange.bind(this)
-    this.updateHistoryData = this.updateHistoryData.bind(this)
     this.toggleBTC = this.toggleBTC.bind(this)
+    this.setFromTo = this.setFromTo.bind(this)
   }
 
   onFocusChange (focusedInput) {
@@ -97,40 +99,47 @@ class ProjectChartContainer extends Component {
     })
   }
 
-  onDatesChange (startDate, endDate) {
-    this.setState({
-      startDate,
-      endDate
+  setSelected (selected) {
+    this.setState({selected})
+  }
+
+  setFromTo (from, to) {
+    if (!moment.isMoment(from) || !moment.isMoment(to)) {
+      return
+    }
+    let interval = '1w'
+    const diffInDays = moment(to).diff(from, 'days')
+    if (diffInDays > 32 && diffInDays < 900) {
+      interval = '1d'
+    } else if (diffInDays >= 900) {
+      interval = '1w'
+    } else if (diffInDays > 1 && diffInDays <= 7) {
+      interval = '1h'
+    } else if (diffInDays < 0) {
+      interval = '5m'
+    }
+    this.props.changeTimeFilter({
+      to: to.utc().format(),
+      from: from.utc().format(),
+      interval,
+      timeframe: undefined
     })
-    if (!startDate || !endDate) { return }
-    this.setState({
-      interval: undefined
-    })
-    let interval = '1h'
-    const diffInDays = moment(endDate).diff(startDate, 'days')
+  }
+
+  setFilter (timeframe) {
+    const { from, to, minInterval } = makeItervalBounds(timeframe)
+    let interval = minInterval
+    const diffInDays = moment(to).diff(from, 'days')
     if (diffInDays > 32 && diffInDays < 900) {
       interval = '1d'
     } else if (diffInDays >= 900) {
       interval = '1w'
     }
-    this.props.onDatesChange(
-      startDate.utc().format(),
-      endDate.utc().format(),
-      interval,
-      this.props.ticker
-    )
-  }
-
-  setSelected (selected) {
-    this.setState({selected})
-  }
-
-  setFilter (interval) {
-    if (interval === this.state.interval) { return }
-    this.setState({
+    this.props.changeTimeFilter({
+      timeframe,
+      to,
+      from,
       interval
-    }, () => {
-      this.updateHistoryData(this.props.ticker)
     })
   }
 
@@ -138,33 +147,24 @@ class ProjectChartContainer extends Component {
     this.setState({isToggledBTC})
   }
 
-  updateHistoryData (ticker) {
-    const { interval } = this.state
-    const { from, to, minInterval } = makeItervalBounds(interval)
-    this.setState({
-      interval,
-      startDate: moment(from),
-      endDate: moment(to)
-    })
-    this.props.onDatesChange(from, to, minInterval, ticker)
-  }
-
   componentWillReceiveProps (nextProps) {
-    if (nextProps.ticker !== this.props.ticker) {
-      this.setState({
-        interval: '1m'
-      })
-      this.updateHistoryData(nextProps.ticker)
+    if (nextProps.ticker !== this.props.ticker &&
+      typeof this.props.ticker !== 'undefined') {
+      // TODO: Reset all filters, not only time
+      this.setFilter('all')
     }
   }
 
   componentDidMount () {
-    const { ticker } = this.props
-    const shareableState = qs.parse(this.props.location.search)
-    if (shareableState.from && shareableState.to) {
-      this.onDatesChange(moment(shareableState.from), moment(shareableState.to))
-    } else {
-      this.updateHistoryData(ticker)
+    const {from, to, timeframe} = qs.parse(this.props.location.search)
+    if (timeframe) {
+      this.setFilter(timeframe)
+    }
+    if (from && to && !timeframe) {
+      this.setFromTo(moment(from), moment(to))
+    }
+    if (!from && !to && !timeframe) {
+      this.setFilter('all')
     }
   }
 
@@ -176,9 +176,13 @@ class ProjectChartContainer extends Component {
       twitter: this.props.isToggledTwitter,
       tbr: this.props.isToggledBurnRate,
       tv: this.props.isToggledTransactionVolume,
+      daa: this.props.isToggledDailyActiveAddresses,
+      ethSpent: this.props.isToggledEthSpentOverTime,
+      ethPrice: this.props.isToggledEthPrice,
       currency: this.state.isToggledBTC ? 'BTC' : 'USD',
-      from: moment(this.state.startDate).utc().format(),
-      to: moment(this.state.endDate).utc().format()
+      from: this.props.timeFilter.from,
+      to: this.props.timeFilter.to,
+      timeframe: this.props.timeFilter.timeframe
     }
     let fullpath = window.location.href
     if (window.location.href.indexOf('?') > -1) {
@@ -207,15 +211,15 @@ class ProjectChartContainer extends Component {
       })} >
         {(this.props.isDesktop || this.props.isFullscreenMobile) &&
         <ProjectChartHeader
-          startDate={this.state.startDate}
-          endDate={this.state.endDate}
-          changeDates={this.onDatesChange}
+          from={this.props.timeFilter.from}
+          to={this.props.timeFilter.to}
+          setFromTo={this.setFromTo}
           focusedInput={this.state.focusedInput}
           onFocusChange={this.onFocusChange}
           setFilter={this.setFilter}
           toggleBTC={this.toggleBTC}
           isToggledBTC={this.state.isToggledBTC}
-          interval={this.state.interval}
+          interval={this.props.timeFilter.timeframe}
           shareableURL={shareableURL}
           ticker={this.props.ticker}
           isERC20={this.props.isERC20}
@@ -255,7 +259,8 @@ class ProjectChartContainer extends Component {
 
 const mapStateToProps = state => {
   return {
-    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile
+    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
+    timeFilter: state.detailedPageUi.timeFilter
   }
 }
 
@@ -264,6 +269,15 @@ const mapDispatchToProps = dispatch => {
     toggleFullscreen: () => {
       dispatch({
         type: 'TOGGLE_FULLSCREEN_MOBILE'
+      })
+    },
+    changeTimeFilter: ({timeframe, from, to, interval}) => {
+      dispatch({
+        type: 'CHANGE_TIME_FILTER',
+        timeframe,
+        from,
+        to,
+        interval
       })
     }
   }

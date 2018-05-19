@@ -67,7 +67,6 @@ exports[`Project detail page container it should render correctly 1`] = `
           },
         }
       }
-      onDatesChange={[Function]}
       price={
         Object {
           "history": Object {

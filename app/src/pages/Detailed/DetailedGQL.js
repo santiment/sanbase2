@@ -117,9 +117,9 @@ export const GithubActivityGQL = gql`
 }`
 
 export const BurnRateGQL = gql`
-  query queryBurnRate($ticker: String, $from: DateTime, $to: DateTime, $interval: String) {
+  query queryBurnRate($slug: String, $from: DateTime, $to: DateTime, $interval: String) {
     burnRate(
-      ticker: $ticker,
+      slug: $slug,
       from: $from,
       to: $to,
       interval: $interval
@@ -131,9 +131,9 @@ export const BurnRateGQL = gql`
 }`
 
 export const TransactionVolumeGQL = gql`
-  query queryTransactionVolume($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
+  query queryTransactionVolume($slug:String, $from: DateTime, $to: DateTime, $interval: String) {
     transactionVolume(
-      ticker: $ticker,
+      slug: $slug,
       from: $from,
       to: $to,
       interval: $interval
@@ -145,9 +145,9 @@ export const TransactionVolumeGQL = gql`
 }`
 
 export const ExchangeFundFlowGQL = gql`
-  query exchangeFundFlowGQL($ticker:String, $from: DateTime, $to: DateTime) {
+  query exchangeFundFlowGQL($slug:String, $from: DateTime, $to: DateTime) {
     exchangeFundFlow(
-      ticker: $ticker,
+      slug: $slug,
       from: $from,
       to: $to,
       transactionType: ALL
@@ -186,9 +186,9 @@ export const EmojisSentimentGQL = gql`
 }`
 
 export const DailyActiveAddressesGQL = gql`
-  query dailyActiveAddresses($ticker:String, $from: DateTime, $to: DateTime, $interval: String) {
+  query dailyActiveAddresses($slug:String, $from: DateTime, $to: DateTime, $interval: String) {
     dailyActiveAddresses(
-      ticker: $ticker,
+      slug: $slug,
       from: $from,
       to: $to,
       interval: $interval

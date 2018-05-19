@@ -4,6 +4,7 @@
 
 .toggleBtn {
   display: flex;
+  position: relative;
   padding: 2px 10px;
   align-items: center;
   justify-content: flex-end;
@@ -35,6 +36,18 @@
 
 .toggleBtn.disabled {
   color: #888;
+}
+
+.toggleBtn .toggleBtn--loading {
+  color: transparent !important;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.toggleBtn .toggleBtn-loader {
+  position: absolute;
+  top: 50%;
+  left: 40%;
+  color: white;
 }
 
 .marketcapLabel {

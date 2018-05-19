@@ -163,10 +163,6 @@
     flex-direction: row;
   }
 
-  .detailed-name {
-    padding-top: 12px;
-  }
-
   .detailed-name h1 {
     font-size: 1.8em;
     letter-spacing: 0.5px;

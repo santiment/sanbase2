@@ -60,15 +60,14 @@ const ShareableBtn = enhance(
             <Input
               input={{readOnly: true}}
               defaultValue={shareableURL} />
-              &nbsp;
-            <Button icon='clipboard' onClick={() => {
+            {!isSaved && <Button icon='clipboard' onClick={() => {
               const result = copy(shareableURL)
               setTimeout(() => {
                 save(false)
               }, 1000)
               save(result)
-            }} />
-            &nbsp;{isSaved && 'Saved!'}
+            }} />}
+            {isSaved && <div>Saved!</div>}
           </div>
           {sanbaseChartImg &&
           <div className='shareable-image'>

@@ -1,11 +1,15 @@
-.shareable-inner {
-  display: flex;
-  flex-direction: column;
-}
-
 .shareable-url {
   display: flex;
   align-items: center;
+}
+
+.shareable-url .input {
+  margin-right: 10px;
+  width: 75%;
+}
+
+.shareable-url .button {
+  margin-right: 5px;
 }
 
 .shareable-image {

@@ -2,6 +2,7 @@ import React from 'react'
 import moment from 'moment'
 import { Merge } from 'animate-components'
 import { fadeIn, slideUp } from 'animate-keyframes'
+import { withState, compose, lifecycle } from 'recompose'
 import { DateRangePicker } from 'react-dates'
 import { formatNumber } from './../../utils/formatting'
 import ShareableBtn from './ShareableBtn'
@@ -43,12 +44,14 @@ export const CurrencyFilter = ({ticker, isToggledBTC, toggleBTC}) => (
   </div>
 )
 
+const HiddenElements = () => ''
+
 const ProjectChartHeader = ({
-  startDate,
-  endDate,
+  from,
+  to,
   focusedInput,
   onFocusChange,
-  changeDates,
+  setFromTo,
   isDesktop = true,
   selected,
   history,
@@ -62,6 +65,8 @@ const ProjectChartHeader = ({
   ethPrice,
   isToggledEthPrice,
   toggleEthPrice,
+  changeFromTo,
+  dates,
   isERC20
 }) => {
   return (
@@ -70,23 +75,36 @@ const ProjectChartHeader = ({
         <TimeFilter
           interval={interval}
           setFilter={setFilter} />
-        {isDesktop &&
-        <DateRangePicker
-          small
-          startDateId='startDate'
-          endDateId='endDate'
-          startDate={startDate}
-          endDate={endDate}
-          onDatesChange={({ startDate, endDate }) => changeDates(startDate, endDate)}
-          focusedInput={focusedInput}
-          onFocusChange={onFocusChange}
-          displayFormat={() => moment.localeData().longDateFormat('L')}
-          hideKeyboardShortcutsPanel
-          isOutsideRange={day => {
-            const today = moment().endOf('day')
-            return day > today
-          }}
-        />}
+        <HiddenElements>
+          {isDesktop &&
+          <DateRangePicker
+            small
+            startDateId='startDate'
+            endDateId='endDate'
+            readOnly
+            startDate={moment(dates.from)}
+            endDate={moment(dates.to)}
+            onDatesChange={({startDate, endDate}) => {
+              changeFromTo({
+                from: moment(startDate).utc().format(),
+                to: moment(endDate).utc().format()
+              })
+            }}
+            focusedInput={focusedInput}
+            onFocusChange={focusedInput => {
+              if (!focusedInput) {
+                setFromTo(moment(dates.from), moment(dates.to))
+              }
+              onFocusChange(focusedInput)
+            }}
+            displayFormat={() => moment.localeData().longDateFormat('L')}
+            hideKeyboardShortcutsPanel
+            isOutsideRange={day => {
+              const today = moment().endOf('day')
+              return day > today
+            }}
+          />}
+        </HiddenElements>
       </div>
       <div className='chart-header-actions'>
         {isERC20 &&
@@ -134,4 +152,19 @@ const ProjectChartHeader = ({
   )
 }
 
-export default ProjectChartHeader
+export default compose(
+  withState('dates', 'changeFromTo', {
+    from: undefined,
+    to: undefined
+  }),
+  lifecycle({
+    componentWillReceiveProps (nextProps) {
+      if (this.props.from !== nextProps.from || this.props.to !== nextProps.to) {
+        this.props.changeFromTo({
+          from: nextProps.from,
+          to: nextProps.to
+        })
+      }
+    }
+  })
+)(ProjectChartHeader)

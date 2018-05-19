@@ -68,8 +68,8 @@ class ProjectChartContainer extends Component {
       isError: false,
       errorMessage: '',
       selected: undefined,
-      startDate: moment(from),
-      endDate: moment(to),
+      startDate: moment(shareableState.from) || moment(from),
+      endDate: moment(shareableState.from) || moment(to),
       focusedInput: null,
       isToggledBTC: shareableState.currency && shareableState.currency === 'BTC'
     }
@@ -79,10 +79,12 @@ class ProjectChartContainer extends Component {
     this.props.toggleTwitter(shareableState.twitter)
     this.props.toggleBurnRate(shareableState.tbr)
     this.props.toggleTransactionVolume(shareableState.tv)
+    this.props.toggleActiveAddresses(shareableState.daa)
+    this.props.toggleEthSpentOverTime(shareableState.ethSpent)
+    this.props.toggleEthPrice(shareableState.ethPrice)
 
     this.setFilter = this.setFilter.bind(this)
     this.setSelected = this.setSelected.bind(this)
-    this.onDatesChange = this.onDatesChange.bind(this)
     this.onFocusChange = this.onFocusChange.bind(this)
   }
 
@@ -92,40 +94,47 @@ class ProjectChartContainer extends Component {
     })
   }
 
-  onDatesChange (startDate, endDate) {
-    this.setState({
-      startDate,
-      endDate
+  setSelected (selected) {
+    this.setState({selected})
+  }
+
+  setFromTo (from, to) {
+    if (!moment.isMoment(from) || !moment.isMoment(to)) {
+      return
+    }
+    let interval = '1w'
+    const diffInDays = moment(to).diff(from, 'days')
+    if (diffInDays > 32 && diffInDays < 900) {
+      interval = '1d'
+    } else if (diffInDays >= 900) {
+      interval = '1w'
+    } else if (diffInDays > 1 && diffInDays <= 7) {
+      interval = '1h'
+    } else if (diffInDays < 0) {
+      interval = '5m'
+    }
+    this.props.changeTimeFilter({
+      to: to.utc().format(),
+      from: from.utc().format(),
+      interval,
+      timeframe: undefined
     })
-    if (!startDate || !endDate) { return }
-    this.setState({
-      interval: undefined
-    })
-    let interval = '1h'
-    const diffInDays = moment(endDate).diff(startDate, 'days')
+  }
+
+  setFilter (timeframe) {
+    const { from, to, minInterval } = makeItervalBounds(timeframe)
+    let interval = minInterval
+    const diffInDays = moment(to).diff(from, 'days')
     if (diffInDays > 32 && diffInDays < 900) {
       interval = '1d'
     } else if (diffInDays >= 900) {
       interval = '1w'
     }
-    this.props.onDatesChange(
-      startDate.utc().format(),
-      endDate.utc().format(),
-      interval,
-      this.props.ticker
-    )
-  }
-
-  setSelected (selected) {
-    this.setState({selected})
-  }
-
-  setFilter (interval) {
-    if (interval === this.state.interval) { return }
-    this.setState({
+    this.props.changeTimeFilter({
+      timeframe,
+      to,
+      from,
       interval
-    }, () => {
-      this.updateHistoryData(this.props.ticker)
     })
   }
 
@@ -149,9 +158,13 @@ class ProjectChartContainer extends Component {
       twitter: this.props.isToggledTwitter,
       tbr: this.props.isToggledBurnRate,
       tv: this.props.isToggledTransactionVolume,
+      daa: this.props.isToggledDailyActiveAddresses,
+      ethSpent: this.props.isToggledEthSpentOverTime,
+      ethPrice: this.props.isToggledEthPrice,
       currency: this.state.isToggledBTC ? 'BTC' : 'USD',
-      from: moment(this.state.startDate).utc().format(),
-      to: moment(this.state.endDate).utc().format()
+      from: this.props.timeFilter.from,
+      to: this.props.timeFilter.to,
+      timeframe: this.props.timeFilter.timeframe
     }
     let fullpath = window.location.href
     if (window.location.href.indexOf('?') > -1) {
@@ -178,15 +191,15 @@ class ProjectChartContainer extends Component {
       <div className='project-dp-chart'>
         {this.props.isDesktop &&
         <ProjectChartHeader
-          startDate={this.state.startDate}
-          endDate={this.state.endDate}
-          changeDates={this.onDatesChange}
+          from={this.props.timeFilter.from}
+          to={this.props.timeFilter.to}
+          setFromTo={this.setFromTo}
           focusedInput={this.state.focusedInput}
           onFocusChange={this.onFocusChange}
           setFilter={this.setFilter}
           toggleBTC={this.toggleBTC}
           isToggledBTC={this.state.isToggledBTC}
-          interval={this.state.interval}
+          interval={this.props.timeFilter.timeframe}
           shareableURL={shareableURL}
           ticker={this.props.ticker}
           isERC20={this.props.isERC20}

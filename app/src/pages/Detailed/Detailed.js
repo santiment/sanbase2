@@ -1,9 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {
-  compose,
-  withState
-} from 'recompose'
+import { compose } from 'recompose'
 import { Redirect } from 'react-router-dom'
 import moment from 'moment'
 import { Helmet } from 'react-helmet'
@@ -276,7 +273,8 @@ Detailed.propTypes = propTypes
 const mapStateToProps = state => {
   return {
     user: state.user,
-    isLoggedIn: !!state.user.token
+    isLoggedIn: !!state.user.token,
+    timeFilter: state.detailedPageUi.timeFilter
   }
 }
 
@@ -323,12 +321,13 @@ const enhance = compose(
   }),
   graphql(TwitterHistoryGQL, {
     name: 'TwitterHistory',
-    options: ({chartVars}) => {
-      const {from, to, ticker, interval} = chartVars
+    options: ({timeFilter, Project}) => {
+      const {from, to, interval} = timeFilter
+      const ticker = Project.project.ticker
       return {
         skip: !ticker,
         variables: {
-          ticker: 'ETH',
+          ticker,
           from,
           to,
           interval
@@ -338,23 +337,23 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'EthPrice',
-    options: ({chartVars, Project}) => {
-      const {from, to, ticker, interval} = chartVars
+    options: ({timeFilter}) => {
+      const {from, to} = timeFilter
       return {
-        skip: !ticker,
+        skip: !from,
         variables: {
           ticker: 'ETH',
           from,
           to,
-          interval
+          interval: '7d'
         }
       }
     }
   }),
   graphql(TwitterDataGQL, {
     name: 'TwitterData',
-    options: ({chartVars}) => {
-      const { ticker } = chartVars
+    options: ({Project}) => {
+      const ticker = Project.project.ticker
       return {
         skip: !ticker,
         errorPolicy: 'all',
@@ -366,8 +365,9 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
-    options: ({chartVars}) => {
-      const {from, to, ticker, interval} = chartVars
+    options: ({timeFilter, Project}) => {
+      const {from, to, interval} = timeFilter
+      const ticker = Project.project.ticker
       return {
         skip: !from || !ticker,
         errorPolicy: 'all',
@@ -399,8 +399,9 @@ const enhance = compose(
   }),
   graphql(GithubActivityGQL, {
     name: 'GithubActivity',
-    options: ({chartVars}) => {
-      const {from, to, ticker} = chartVars
+    options: ({timeFilter, Project}) => {
+      const {from, to} = timeFilter
+      const ticker = Project.project.ticker
       return {
         skip: !from || !ticker,
         variables: {
@@ -448,8 +449,9 @@ const enhance = compose(
   }),
   graphql(EthSpentOverTimeByErc20ProjectsGQL, {
     name: 'EthSpentOverTimeByErc20Projects',
-    options: ({chartVars, Project}) => {
-      const {from, to, ticker} = chartVars
+    options: ({timeFilter, Project}) => {
+      const {from, to} = timeFilter
+      const ticker = Project.project.ticker
       return {
         skip: !from || ticker !== 'ETH',
         errorPolicy: 'all',

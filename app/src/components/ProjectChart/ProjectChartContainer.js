@@ -64,7 +64,12 @@ Chart.controllers.LineWithLine = Chart.controllers.line.extend({
 class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
-    const shareableState = qs.parse(props.location.search)
+    const shareableState = ((shareable) => {
+      Object.keys(shareable).forEach(key => {
+        shareable[`${key}`] = shareable[key] === 'true'
+      })
+      return shareable
+    })(qs.parse(props.location.search))
     const { from, to } = makeItervalBounds('all')
     this.state = {
       interval: 'all',
@@ -76,15 +81,18 @@ class ProjectChartContainer extends Component {
       focusedInput: null,
       isToggledBTC: shareableState.currency && shareableState.currency === 'BTC'
     }
-    this.props.toggleVolume(shareableState.volume)
-    this.props.toggleMarketcap(shareableState.marketcap)
-    this.props.toggleGithubActivity(shareableState.github)
-    this.props.toggleTwitter(shareableState.twitter)
-    this.props.toggleBurnRate(shareableState.tbr)
-    this.props.toggleTransactionVolume(shareableState.tv)
-    this.props.toggleActiveAddresses(shareableState.daa)
-    this.props.toggleEthSpentOverTime(shareableState.ethSpent)
-    this.props.toggleEthPrice(shareableState.ethPrice)
+
+    if (Object.keys(shareableState).length > 0) {
+      this.props.toggleVolume(shareableState.volume)
+      this.props.toggleMarketcap(shareableState.marketcap)
+      this.props.toggleGithubActivity(shareableState.github)
+      this.props.toggleTwitter(shareableState.twitter)
+      this.props.toggleBurnRate(shareableState.tbr)
+      this.props.toggleTransactionVolume(shareableState.tv)
+      this.props.toggleActiveAddresses(shareableState.daa)
+      this.props.toggleEthSpentOverTime(shareableState.ethSpent)
+      this.props.toggleEthPrice(shareableState.ethPrice)
+    }
 
     this.setFilter = this.setFilter.bind(this)
     this.setSelected = this.setSelected.bind(this)
@@ -150,8 +158,16 @@ class ProjectChartContainer extends Component {
   componentWillReceiveProps (nextProps) {
     if (nextProps.ticker !== this.props.ticker &&
       typeof this.props.ticker !== 'undefined') {
-      // TODO: Reset all filters, not only time
       this.setFilter('all')
+      this.props.toggleVolume(true)
+      this.props.toggleMarketcap(false)
+      this.props.toggleGithubActivity(false)
+      this.props.toggleTwitter(false)
+      this.props.toggleBurnRate(false)
+      this.props.toggleTransactionVolume(false)
+      this.props.toggleActiveAddresses(false)
+      this.props.toggleEthSpentOverTime(false)
+      this.props.toggleEthPrice(false)
     }
   }
 
@@ -170,19 +186,19 @@ class ProjectChartContainer extends Component {
 
   render () {
     const newShareableState = {
-      volume: this.props.isToggledVolume,
-      marketcap: this.props.isToggledMarketCap,
-      github: this.props.isToggledGithubActivity,
-      twitter: this.props.isToggledTwitter,
-      tbr: this.props.isToggledBurnRate,
-      tv: this.props.isToggledTransactionVolume,
-      daa: this.props.isToggledDailyActiveAddresses,
-      ethSpent: this.props.isToggledEthSpentOverTime,
-      ethPrice: this.props.isToggledEthPrice,
+      volume: this.props.isToggledVolume || undefined,
+      marketcap: this.props.isToggledMarketCap || undefined,
+      github: this.props.isToggledGithubActivity || undefined,
+      twitter: this.props.isToggledTwitter || undefined,
+      tbr: this.props.isToggledBurnRate || undefined,
+      tv: this.props.isToggledTransactionVolume || undefined,
+      daa: this.props.isToggledDailyActiveAddresses || undefined,
+      ethSpent: this.props.isToggledEthSpentOverTime || undefined,
+      ethPrice: this.props.isToggledEthPrice || undefined,
       currency: this.state.isToggledBTC ? 'BTC' : 'USD',
-      from: this.props.timeFilter.from,
-      to: this.props.timeFilter.to,
-      timeframe: this.props.timeFilter.timeframe
+      from: this.props.timeFilter.from || undefined,
+      to: this.props.timeFilter.to || undefined,
+      timeframe: this.props.timeFilter.timeframe || undefined
     }
     let fullpath = window.location.href
     if (window.location.href.indexOf('?') > -1) {
@@ -289,7 +305,7 @@ const enhance = compose(
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),
   withState('isToggledVolume', 'toggleVolume', true),
-  withState('isToggledTwitter', 'toggleTwitter', true),
+  withState('isToggledTwitter', 'toggleTwitter', false),
   withState('isToggledBurnRate', 'toggleBurnRate', false),
   withState('isToggledTransactionVolume', 'toggleTransactionVolume', false),
   withState('isToggledEthPrice', 'toggleEthPrice', false),

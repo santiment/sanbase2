@@ -27,10 +27,9 @@
 
 .project-chart-body {
   background: rgba(245, 249, 255, 0.6);
-  border-bottom: 1px solid rgba(38, 43, 51, 0.2);
-  border-top: 1px solid rgba(38, 43, 51, 0.2);
   position: relative;
-  padding: 10px 20px 24px 20px;
+  padding: 0 20px;
+  padding-top: 10px;
 }
 
 .project-chart__isLoading,
@@ -44,6 +43,8 @@
   height: 100%;
   width: 100%;
   justify-content: center;
+  user-select: none;
+  z-index: 9999;
 }
 
 .chart-datetime-settings {

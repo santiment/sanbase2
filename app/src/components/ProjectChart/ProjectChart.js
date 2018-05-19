@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import moment from 'moment'
-import { pure } from 'recompose'
 import { Bar } from 'react-chartjs-2'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
@@ -351,15 +350,17 @@ const makeOptionsFromProps = props => ({
       display: true,
       position: 'left',
       scaleLabel: {
-        display: true,
+        display: false,
         labelString: `Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
         fontColor: '#3d4450'
       },
       ticks: {
-        display: true,
-        beginAtZero: true,
-        maxRotation: 20,
-        callback: renderTicks(props)
+        display: !props.isLoading,
+        beginAtZero: false,
+        autoSkip: false,
+        callback: renderTicks(props),
+        maxRotation: props.isToggledBTC ? 35 : 0,
+        minRotation: props.isToggledBTC ? 35 : 0
       },
       gridLines: {
         drawBorder: true,
@@ -600,14 +601,19 @@ const makeOptionsFromProps = props => ({
       },
       ticks: {
         autoSkipPadding: 1,
-        maxRotation: 20,
+        display: !props.isLoading,
         callback: function (value, index, values) {
           if (!values[index]) { return }
           const time = moment.utc(values[index]['value'])
-          if (props.interval === '1d') {
+          const {from, to} = props.timeFilter
+          const diff = moment(to).diff(from, 'days')
+          if (diff <= 1) {
             return time.format('HH:mm')
           }
-          return time.format('D MMM')
+          if (diff > 1 && diff < 95) {
+            return time.format('D MMM')
+          }
+          return time.format('MMMM Y')
         }
       },
       gridLines: {
@@ -624,11 +630,11 @@ export const ProjectChart = ({
   isDesktop,
   isError,
   isEmpty,
-  isLoading,
   errorMessage,
   setSelected,
   ...props
 }) => {
+  const isLoading = props.isLoading
   if (isError) {
     return (
       <div>
@@ -648,6 +654,7 @@ export const ProjectChart = ({
         data={chartData}
         options={chartOptions}
         height={isDesktop ? 80 : undefined}
+        redraw
         onElementsClick={elems => {
           !props.isDesktop && elems[0] && setSelected(elems[0]._index)
         }}
@@ -682,4 +689,4 @@ ProjectChart.defaultProps = {
   focusedInput: null
 }
 
-export default pure(ProjectChart)
+export default ProjectChart

@@ -190,7 +190,8 @@ export const Detailed = ({
           from,
           to,
           interval,
-          ticker
+          ticker,
+          slug: match.params.slug
         })
       }}
       ticker={project.ticker} />
@@ -288,7 +289,8 @@ const enhance = compose(
     from: undefined,
     to: undefined,
     interval: undefined,
-    ticker: undefined
+    ticker: undefined,
+    slug: undefined
   }),
   graphql(projectBySlugGQL, {
     name: 'Project',
@@ -381,7 +383,7 @@ const enhance = compose(
   graphql(BurnRateGQL, {
     name: 'BurnRate',
     options: ({chartVars, Project}) => {
-      const {from, to, ticker} = chartVars
+      const {from, to, ticker, slug} = chartVars
       const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
         skip: !from || !ticker,
@@ -389,7 +391,7 @@ const enhance = compose(
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval
         }
       }
@@ -415,7 +417,7 @@ const enhance = compose(
   graphql(TransactionVolumeGQL, {
     name: 'TransactionVolume',
     options: ({chartVars, Project}) => {
-      const {from, to, ticker} = chartVars
+      const {from, to, ticker, slug} = chartVars
       const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
         skip: !from || !ticker,
@@ -423,7 +425,7 @@ const enhance = compose(
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval
         }
       }
@@ -432,14 +434,14 @@ const enhance = compose(
   graphql(ExchangeFundFlowGQL, {
     name: 'ExchangeFundFlow',
     options: ({chartVars, Project}) => {
-      const {from, to, ticker} = chartVars
+      const {from, to, ticker, slug} = chartVars
       return {
         skip: !from || !ticker || (Project && !Project.isERC20),
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker
+          slug
         }
       }
     }
@@ -462,14 +464,14 @@ const enhance = compose(
   graphql(DailyActiveAddressesGQL, {
     name: 'DailyActiveAddresses',
     options: ({chartVars}) => {
-      const {from, to, ticker} = chartVars
+      const {from, to, ticker, slug} = chartVars
       return {
         skip: !from || !ticker,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
         }
       }

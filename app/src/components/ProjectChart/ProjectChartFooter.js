@@ -37,9 +37,10 @@ export const ToggleBtn = ({
         position='bottom left'
     />}
     {!loading && !disabled && !error && children}
-    {loading && children}
-    &nbsp;
-    {loading && <Loader active inline size='mini' />}
+    {loading && <div className='toggleBtn--loading'>{children}</div>}
+    {loading && <div className='toggleBtn-loader'>
+      <Loader active inverted={isToggled} size='mini' />
+    </div>}
   </div>
 )
 

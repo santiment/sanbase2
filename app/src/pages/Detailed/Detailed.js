@@ -382,17 +382,17 @@ const enhance = compose(
   }),
   graphql(BurnRateGQL, {
     name: 'BurnRate',
-    options: ({timeFilter, Project}) => {
+    options: ({timeFilter, match}) => {
       const {from, to} = timeFilter
-      const ticker = Project.project.ticker
+      const slug = match.params.slug
       const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval
         }
       }
@@ -418,17 +418,17 @@ const enhance = compose(
   }),
   graphql(TransactionVolumeGQL, {
     name: 'TransactionVolume',
-    options: ({timeFilter, Project}) => {
+    options: ({timeFilter, match}) => {
       const {from, to} = timeFilter
-      const ticker = Project.project.ticker
+      const slug = match.params.slug
       const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval
         }
       }
@@ -436,16 +436,16 @@ const enhance = compose(
   }),
   graphql(ExchangeFundFlowGQL, {
     name: 'ExchangeFundFlow',
-    options: ({timeFilter, Project}) => {
+    options: ({timeFilter, match, Project}) => {
       const {from, to} = timeFilter
-      const ticker = Project.project.ticker
+      const slug = match.params.slug
       return {
-        skip: !from || !ticker || (Project && !Project.isERC20),
+        skip: !from || !slug || (Project && !Project.isERC20),
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker
+          slug
         }
       }
     }
@@ -468,16 +468,16 @@ const enhance = compose(
   }),
   graphql(DailyActiveAddressesGQL, {
     name: 'DailyActiveAddresses',
-    options: ({timeFilter, Project}) => {
+    options: ({timeFilter, match}) => {
       const {from, to} = timeFilter
-      const ticker = Project.project.ticker
+      const slug = match.params.slug
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
+          slug,
           interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
         }
       }

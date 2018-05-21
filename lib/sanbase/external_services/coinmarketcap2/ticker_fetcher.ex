@@ -29,7 +29,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     if Config.get(:sync_enabled, false) do
       Store.create_db()
 
-      GenServer.cast(self(), :sync)
+      Process.send(self(), :sync, [:noconnect])
 
       update_interval = Config.get(:update_interval, @default_update_interval)
       {:ok, %{update_interval: update_interval}}
@@ -38,7 +38,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     end
   end
 
-  def handle_cast(:sync, %{update_interval: update_interval} = state) do
+  def handle_info(:sync, %{update_interval: update_interval} = state) do
     # Fetch current coinmarketcap data for many tickers
     {:ok, tickers} = Ticker.fetch_data()
 
@@ -56,7 +56,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     |> Enum.map(&Ticker.convert_for_importing/1)
     |> Store.import()
 
-    Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
+    Process.send_after(self(), :sync, update_interval)
 
     {:noreply, state}
   end

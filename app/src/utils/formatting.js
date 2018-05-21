@@ -2,7 +2,7 @@ const formatCryptoCurrency = (currency, amount) => `${currency} ${amount}`
 
 const formatBTC = price => {
   price = parseFloat(price)
-  const precision = price > 1 ? 2 : 8
+  const precision = price >= 1 ? 2 : 8
 
   return parseFloat(price.toFixed(precision))
 }
@@ -15,7 +15,7 @@ const formatSAN = price => {
 
 const formatNumber = (amount, options = {}) => {
   if (isNaN(Number(amount))) throw new Error(`Unsupported type: "${amount}"`)
-  const maximumFractionDigits = Math.abs(amount) > 1 ? 2 : 6
+  const maximumFractionDigits = Math.abs(amount) >= 1 ? 2 : 6
 
   let value = new Intl.NumberFormat('en', {
     style: options.currency ? 'currency' : 'decimal',

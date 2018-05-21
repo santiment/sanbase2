@@ -76,21 +76,30 @@ defmodule Sanbase.Model.Ico do
 
   def funds_raised_usd_ico_end_price(_), do: nil
 
-  def funds_raised_eth_ico_end_price(%Ico{end_date: end_date} = ico) when not is_nil(end_date) do
-    funds_raised_ico_end_price_from_currencies(ico, "ETH", end_date)
+  def funds_raised_eth_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico)
+      when not is_nil(end_date) do
+    project = Repo.get(Project, project_id)
+    funds_raised_ico_end_price_from_currencies(project, ico, "ETH", end_date)
   end
 
   def funds_raised_eth_ico_end_price(_), do: nil
 
-  def funds_raised_btc_ico_end_price(%Ico{end_date: end_date} = ico) when not is_nil(end_date) do
-    funds_raised_ico_end_price_from_currencies(ico, "BTC", end_date)
+  def funds_raised_btc_ico_end_price(%Ico{end_date: end_date, project_id: project_id} = ico)
+      when not is_nil(end_date) do
+    project = Repo.get(Project, project_id)
+    funds_raised_ico_end_price_from_currencies(project, ico, "BTC", end_date)
   end
 
   def funds_raised_btc_ico_end_price(_), do: nil
 
   # Private functions
 
-  defp funds_raised_ico_end_price_from_currencies(ico, target_ticker, date) do
+  defp funds_raised_ico_end_price_from_currencies(
+         %Project{ticker: ticker, coinmarketcap_id: cmc_id},
+         %Ico{} = ico,
+         target_currency,
+         date
+       ) do
     timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)
 
     Repo.preload(ico, ico_currencies: [:currency]).ico_currencies

@@ -168,12 +168,25 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   # Fetch history coinmarketcap data and store it in DB
-  defp fetch_and_process_price_data(%Project{} = project) do
-    last_price_datetime = last_price_datetime(project)
-    GraphData.fetch_and_store_prices(project, last_price_datetime)
+  defp fetch_and_process_price_data(
+         %Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker} = project
+       )
+       when nil != ticker and nil != coinmarketcap_id do
+    case last_price_datetime(project) do
+      nil ->
+        err_msg =
+          "Cannot fetch the last price datetime for #{coinmarketcap_id} with ticker #{ticker}"
 
-    # TODO: Activate later when old coinmarketcap is disabled
-    # process_notifications(project)
+        Logger.warn(err_msg)
+        {:error, err_msg}
+
+      last_price_datetime ->
+        GraphData.fetch_and_store_prices(project, last_price_datetime)
+
+        # TODO: Activate later when old coinmarketcap is disabled
+        # process_notifications(project)
+        :ok
+    end
   end
 
   defp process_notifications(%Project{} = project) do
@@ -208,7 +221,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   defp fetch_and_process_marketcap_total_data() do
-    last_marketcap_total_datetime()
-    |> GraphData.fetch_and_store_marketcap_total()
+    case last_marketcap_total_datetime() do
+      nil ->
+        err_msg = "Cannot fetch the last price datetime for TOTAL_MARKET"
+        Logger.warn(err_msg)
+        {:error, err_msg}
+
+      last_price_datetime ->
+        GraphData.fetch_and_store_marketcap_total(last_price_datetime)
+        :ok
+    end
   end
 end

@@ -117,6 +117,7 @@ const ProjectsTable = ({
     filterable: true,
     sortable: true,
     minWidth: 44,
+    maxWidth: 100,
     accessor: d => ({
       name: d.name,
       ticker: d.ticker

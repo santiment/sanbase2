@@ -65,7 +65,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   def parse_token_page!(html, project_info) do
     %ProjectInfo{
       project_info
-      | total_supply: project_info.total_supply || total_supply(html),
+      | total_supply:  total_supply(html) || project_info.total_supply,
         main_contract_address: project_info.main_contract_address || main_contract_address(html),
         token_decimals: project_info.token_decimals || token_decimals(html),
         website_link: project_info.website_link || official_link(html, "Website"),
@@ -104,9 +104,11 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp total_supply(html) do
-    # We have two neighbour`td`s and the first one contains a span with title
-    Floki.find(html, ~s/td > span[title*="Total Supply"]) + td/)
-    |> Enum.at(1)
+    # TODO: 21.05.2018 Lyudmil Lesinksi
+    # The real css selector shoul be "#ContentPlaceHolder1_divSummary > div:first-child  tr:first-child > td + td"
+    # but for some reason Floki doesn't recognize that as the valid selector so we have to use Enum.at
+    Floki.find(html, ~s/#ContentPlaceHolder1_divSummary > div:first-child  tr > td + td/)
+    |> Enum.at(0)
     |> case do
       nil ->
         nil
@@ -114,7 +116,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
       match ->
         Floki.text(match)
         |> parse_total_supply
-        |> D.mult(D.new(:math.pow(10, token_decimals(html))))
+        |> D.round()
         |> D.to_integer()
     end
   end

@@ -1,5 +1,6 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   use ExUnit.Case
+  use Sanbase.DataCase, async: false
 
   # TODO: Change after old cmc scraper is removed
   alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2, as: TickerFetcher
@@ -11,7 +12,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
   @bch_measurement "BCH_bitcoin-cash"
   @eos_measurement "EOS_eos"
 
-  test "parsing the project page" do
+  test "parsing the project page", _context do
+    Store.create_db()
+
     Tesla.Mock.mock(fn %{method: :get} ->
       %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "v1_ticker_5.json"))}
     end)

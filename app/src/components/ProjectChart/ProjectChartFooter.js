@@ -93,6 +93,15 @@ const ProjectChartFooter = ({
           toggle={props.toggleGithubActivity}>
           <Label circular className='githubActivityLabel' empty />
           Github Activity
+          <Popup
+            trigger={<Icon name='info circle' />}
+            inverted
+            content="Metric based on number of Github 'events' including
+              issue interactions, pull requests, comments,
+              and wiki edits, plus the number of public
+              repositories a project is maintaining"
+            position='top left'
+          />
         </ToggleBtn>
       </FilterCategory>
       {props.isERC20 &&

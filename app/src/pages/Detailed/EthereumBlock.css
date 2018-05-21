@@ -2,9 +2,9 @@
   display: flex;
 }
 
-.header-eth-spent-column {
-  display: flex;
-  justify-content: flex-end;
+.ethereum-table-cell-funds-collected,
+.ethereum-table-cell-eth-spent {
+  text-align: right !important;
 }
 
 .wallet-addresses {

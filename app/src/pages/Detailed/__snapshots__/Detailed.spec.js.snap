@@ -24,7 +24,12 @@ exports[`Project detail page container it should render correctly 1`] = `
     }
   />
   <div>
-    <withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))))))
+    <Connect(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer))))))))))))
+      TwitterHistoryData={
+        Object {
+          "loading": true,
+        }
+      }
       burnRate={
         Object {
           "error": false,
@@ -33,13 +38,6 @@ exports[`Project detail page container it should render correctly 1`] = `
         }
       }
       dailyActiveAddresses={
-        Object {
-          "error": false,
-          "items": Array [],
-          "loading": true,
-        }
-      }
-      emojisSentiment={
         Object {
           "error": false,
           "items": Array [],
@@ -69,7 +67,6 @@ exports[`Project detail page container it should render correctly 1`] = `
           },
         }
       }
-      onDatesChange={[Function]}
       price={
         Object {
           "history": Object {
@@ -78,26 +75,21 @@ exports[`Project detail page container it should render correctly 1`] = `
           },
         }
       }
+      project={
+        Object {
+          "id": 12,
+          "name": "Aragorn",
+          "priceUsd": 10,
+          "ticker": "AE",
+        }
+      }
+      projectId={12}
       ticker="AE"
       transactionVolume={
         Object {
           "error": false,
           "items": Array [],
           "loading": true,
-        }
-      }
-      twitter={
-        Object {
-          "data": Object {
-            "error": false,
-            "followersCount": undefined,
-            "loading": true,
-          },
-          "history": Object {
-            "error": false,
-            "items": Array [],
-            "loading": true,
-          },
         }
       }
     />

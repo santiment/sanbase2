@@ -1,8 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import moment from 'moment'
-import { pure } from 'recompose'
-import { Bar, Chart } from 'react-chartjs-2'
+import { Bar } from 'react-chartjs-2'
 import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
 import 'chartjs-plugin-datalabels'
@@ -20,47 +19,8 @@ const COLORS = {
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
   ethSpentOverTime: '#c82f3f',
-  ethPrice: '#3c3c3d',
-  sentiment: '#e23ab4'
+  ethPrice: '#3c3c3d'
 }
-
-// Fix X mode in Chart.js lib. Monkey loves this.
-const originalX = Chart.Interaction.modes.x
-Chart.Interaction.modes.x = function (chart, e, options) {
-  const activePoints = originalX.apply(this, arguments)
-  return activePoints.reduce((acc, item) => {
-    const i = acc.findIndex(x => x._datasetIndex === item._datasetIndex)
-    if (i <= -1) {
-      acc.push(item)
-    }
-    return acc
-  }, [])
-}
-
-// Draw a vertical line in our Chart, when tooltip is activated.
-Chart.defaults.LineWithLine = Chart.defaults.line
-Chart.controllers.LineWithLine = Chart.controllers.line.extend({
-  draw: function (ease) {
-    Chart.controllers.line.prototype.draw.call(this, ease)
-
-    if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
-      const activePoint = this.chart.tooltip._active[0]
-      const ctx = this.chart.ctx
-      const x = activePoint.tooltipPosition().x
-      const topY = this.chart.scales['y-axis-1'].top
-      const bottomY = this.chart.scales['y-axis-1'].bottom
-
-      ctx.save()
-      ctx.beginPath()
-      ctx.moveTo(x, topY)
-      ctx.lineTo(x, bottomY)
-      ctx.lineWidth = 1
-      ctx.strokeStyle = '#adadad'
-      ctx.stroke()
-      ctx.restore()
-    }
-  }
-})
 
 const makeChartDataFromHistory = ({
   history = [],
@@ -73,15 +33,13 @@ const makeChartDataFromHistory = ({
   isToggledTransactionVolume,
   isToggledEthSpentOverTime,
   isToggledEthPrice = false,
-  isToggledEmojisSentiment = false,
   isToggledDailyActiveAddresses = false,
   ...props
 }) => {
-  const twitter = props.twitter.history.items || []
+  const twitterData = props.historyTwitterData || {}
   const github = props.github.history.items || []
   const burnRate = props.burnRate.items || []
   const transactionVolume = props.transactionVolume.items || []
-  const emojisSentiment = props.emojisSentiment.items || []
   const dailyActiveAddresses = props.dailyActiveAddresses.items || []
   const labels = history ? history.map(data => moment(data.datetime).utc()) : []
   const eventIndex = findIndexByDatetime(labels, '2018-01-13T18:00:00Z')
@@ -161,25 +119,8 @@ const makeChartDataFromHistory = ({
         y: data.activity
       }
     })}
-  const twitterDataset = !isToggledTwitter ? null : {
-    label: 'Twitter',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-5',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.twitter,
-    backgroundColor: COLORS.twitter,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: twitter.map(data => {
-      return {
-        x: data.datetime,
-        y: data.followersCount
-      }
-    })}
+  const twitterDataset = !isToggledTwitter ? null : twitterData.dataset
+
   const burnrateDataset = !isToggledBurnRate ? null : {
     label: 'Burn Rate',
     type: 'bar',
@@ -261,25 +202,6 @@ const makeChartDataFromHistory = ({
         y: parseFloat(data.priceUsd)
       }
     }) : []}
-  const sentimentDataset = !isToggledEmojisSentiment ? null : {
-    label: 'Sentiment',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-10',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.sentiment,
-    backgroundColor: COLORS.sentiment,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: emojisSentiment.map(data => {
-      return {
-        x: data.datetime,
-        y: data.sentiment
-      }
-    })}
   const dailyActiveAddressesDataset = !isToggledDailyActiveAddresses ? null : {
     label: 'Daily Active Addresses',
     type: 'bar',
@@ -311,7 +233,6 @@ const makeChartDataFromHistory = ({
       transactionVolumeDataset,
       ethSpentOverTimeByErc20ProjectsDataset,
       ethPriceDataset,
-      sentimentDataset,
       dailyActiveAddressesDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
@@ -406,9 +327,6 @@ const makeOptionsFromProps = props => ({
         if (label === 'Daily Active Addresses') {
           return `${label}: ${millify(tooltipItem.yLabel)}`
         }
-        if (label === 'Sentiment') {
-          return `${label}: ${formatNumber(tooltipItem.yLabel)}`
-        }
         return `${label}: ${props.isToggledBTC
           ? formatBTC(tooltipItem.yLabel)
           : formatNumber(tooltipItem.yLabel, { currency: 'USD' })}`
@@ -432,15 +350,17 @@ const makeOptionsFromProps = props => ({
       display: true,
       position: 'left',
       scaleLabel: {
-        display: true,
+        display: false,
         labelString: `Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
         fontColor: '#3d4450'
       },
       ticks: {
-        display: true,
-        beginAtZero: true,
-        maxRotation: 20,
-        callback: renderTicks(props)
+        display: !props.isLoading,
+        beginAtZero: false,
+        autoSkip: false,
+        callback: renderTicks(props),
+        maxRotation: props.isToggledBTC ? 35 : 0,
+        minRotation: props.isToggledBTC ? 35 : 0
       },
       gridLines: {
         drawBorder: true,
@@ -512,7 +432,7 @@ const makeOptionsFromProps = props => ({
         props.github.history.items.length !== 0,
       position: 'right'
     }, {
-      id: 'y-axis-5',
+      id: 'y-axis-twitter',
       type: 'linear',
       tooltips: {
         mode: 'index',
@@ -530,7 +450,9 @@ const makeOptionsFromProps = props => ({
         display: false
       },
       display: props.isToggledTwitter &&
-        props.twitter.history.items.length !== 0,
+        props.historyTwitterData &&
+        props.historyTwitterData.items &&
+        props.historyTwitterData.items.length !== 0,
       position: 'right'
     }, {
       id: 'y-axis-6',
@@ -649,24 +571,6 @@ const makeOptionsFromProps = props => ({
       },
       display: props.isToggledEthPrice
     }, {
-      id: 'y-axis-10',
-      position: 'right',
-      scaleLabel: {
-        display: true,
-        labelString: 'Sentiment',
-        fontColor: '#3d4450'
-      },
-      ticks: {
-        display: false,
-        beginAtZero: true,
-        callback: renderTicks(props)
-      },
-      gridLines: {
-        drawBorder: false,
-        display: false
-      },
-      display: props.isToggledEmojisSentiment
-    }, {
       id: 'y-axis-11',
       position: 'right',
       scaleLabel: {
@@ -697,14 +601,19 @@ const makeOptionsFromProps = props => ({
       },
       ticks: {
         autoSkipPadding: 1,
-        maxRotation: 20,
+        display: !props.isLoading,
         callback: function (value, index, values) {
           if (!values[index]) { return }
           const time = moment.utc(values[index]['value'])
-          if (props.interval === '1d') {
+          const {from, to} = props.timeFilter
+          const diff = moment(to).diff(from, 'days')
+          if (diff <= 1) {
             return time.format('HH:mm')
           }
-          return time.format('D MMM')
+          if (diff > 1 && diff < 95) {
+            return time.format('D MMM')
+          }
+          return time.format('MMMM Y')
         }
       },
       gridLines: {
@@ -721,11 +630,11 @@ export const ProjectChart = ({
   isDesktop,
   isError,
   isEmpty,
-  isLoading,
   errorMessage,
   setSelected,
   ...props
 }) => {
+  const isLoading = props.isLoading
   if (isError) {
     return (
       <div>
@@ -745,6 +654,7 @@ export const ProjectChart = ({
         data={chartData}
         options={chartOptions}
         height={isDesktop ? 80 : undefined}
+        redraw
         onElementsClick={elems => {
           !props.isDesktop && elems[0] && setSelected(elems[0]._index)
         }}
@@ -779,4 +689,4 @@ ProjectChart.defaultProps = {
   focusedInput: null
 }
 
-export default pure(ProjectChart)
+export default ProjectChart

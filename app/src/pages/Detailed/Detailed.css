@@ -2,73 +2,11 @@
   min-width: 100%;
 }
 
-.detailed-head {
-  display: flex;
-  justify-content: space-between;
-  min-height: 84px;
-  align-items: center;
-  flex-direction: column;
-}
-
-.detailed-ticker-name {
-  margin-left: 5px;
-  margin-top: 24px;
-  font-size: 18px;
-}
-
 .panel-chart {
   padding-top: 0;
 }
 
 .datailed-project-description {
-  font-size: 16px;
-}
-
-.detailed-name {
-  display: flex;
-  align-items: center;
-  padding-top: 12px;
-}
-
-.detailed-name h1 {
-  margin: 0;
-  margin-bottom: 0 !important;
-  margin-right: 5px;
-  font-size: 1.2em;
-}
-
-.detailed-name img {
-  margin-top: 24px;
-  margin-left: 6px;
-}
-
-.detailed-price {
-  display: flex;
-  flex-direction: column;
-  font-size: 1.6em;
-  font-weight: 300;
-  z-index: -1;
-  margin-top: auto;
-  line-height: 1.4em;
-}
-
-.detailed-price-description {
-  font-size: 0.6em;
-  font-weight: 300;
-  line-height: 1;
-  text-transform: uppercase;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.detailed-price-usd {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  font-size: 1.6em;
-}
-
-.detailed-price-btc {
   font-size: 16px;
 }
 
@@ -207,6 +145,17 @@
   white-space: nowrap;
 }
 
+@media (max-width: 768px) {
+  .App {
+    background-color: white;
+  }
+
+  .panel {
+    box-shadow: none;
+    padding: 0;
+  }
+}
+
 @media (min-width: 1024px) {
   .detailed-head {
     margin: 0 16px;
@@ -221,6 +170,7 @@
 
   .detailed-price {
     line-height: 1.4;
+    margin-top: auto;
   }
 
   .detailed-price-usd {

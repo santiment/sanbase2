@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { graphql } from 'react-apollo'
 import ReactTable from 'react-table'
 import classnames from 'classnames'
@@ -7,10 +7,9 @@ import { compose } from 'recompose'
 import { Loader } from 'semantic-ui-react'
 import PanelBlock from './../../components/PanelBlock'
 import { simpleSort } from './../../utils/sortMethods'
-import { formatNumber } from './../../utils/formatting'
+import { millify, getSymbolByCurrency } from '../../utils/formatting'
 import { allErc20ShortProjectsGQL } from './../Projects/allProjectsGQL'
 import { CustomThComponent, CustomHeadComponent } from './../Projects/ProjectsTable'
-import { collectedField } from './FinancialsBlock'
 import './../Projects/ProjectsTable.css'
 import './EthereumBlock.css'
 
@@ -25,7 +24,7 @@ const EthereumBlock = ({
 }) => {
   const projects = Projects.allErc20Projects
   const columns = [{
-    Header: () => <span className='header-project-column'>Projects</span>,
+    Header: 'Projects',
     id: 'project',
     maxWidth: 210,
     filterable: true,
@@ -52,34 +51,38 @@ const EthereumBlock = ({
     Header: 'Wallets',
     id: 'wallets',
     accessor: 'ethAddresses',
-    Cell: ({value = {}}) => <div>{
+    Cell: ({value = {}}) => <Fragment>{
       value.length > 0 ? value.map((wallet, index) => (
         <div key={index}
           className='wallet-addresses'>
           <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
         </div>
-      )) : 'No data'
-    }</div>,
+      )) : <div>
+          No data
+        </div>
+    }</Fragment>,
     sortable: false
   }, {
-    Header: 'ETH Collected',
+    Header: 'Funds Collected',
     id: 'collected',
     maxWidth: 210,
     accessor: 'fundsRaisedIcos',
-    Cell: ({value}) => <div>{
-      value && value.map((amountIco, index) => {
-        return <div key={index} >{
-          collectedField(amountIco.currencyCode, amountIco.amount)
-        }</div>
-      })
-    }</div>,
+    Cell: ({value}) => <Fragment>{
+      value.length > 0 ? value.map((amountIco, index) => (
+        <div className='ethereum-table-cell-funds-collected' key={index}>
+          {`${getSymbolByCurrency(amountIco.currencyCode)}${millify(amountIco.amount, 2)}`}
+        </div>
+      )) : <div className='ethereum-table-cell-funds-collected'>
+        No data
+      </div>
+    }</Fragment>,
     sortable: false
   }, {
-    Header: () => <span className='header-eth-spent-column'>ETH spent (30D)</span>,
+    Header: 'ETH spent (30D)',
     maxWidth: 150,
-    id: 'tx',
+    id: 'eth_spent',
     accessor: d => d.ethSpent,
-    Cell: ({value}) => <div className='overview-ethspent'>{`Ξ${formatNumber(value)}`}</div>,
+    Cell: ({value}) => <div className='ethereum-table-cell-eth-spent'>{`Ξ${millify(value, 2)}`}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }]

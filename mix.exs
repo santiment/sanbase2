@@ -70,7 +70,7 @@ defmodule Sanbase.Mixfile do
       {:faktory_worker_ex, git: "https://github.com/santiment/faktory_worker_ex"},
       {:temp, "~> 0.4"},
       {:httpoison, "~> 0.13"},
-      {:floki, "~> 0.19.0"},
+      {:floki, "~> 0.20"},
       {:sentry, "~> 6.0.4"},
       {:extwitter, "~> 0.9.0"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},

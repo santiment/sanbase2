@@ -474,11 +474,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   def available_supply(_parent, _args, _resolution), do: {:ok, nil}
 
   def total_supply(
-        %Project{latest_coinmarketcap_data: %LatestCoinmarketcapData{total_supply: total_supply}},
+        %Project{
+          total_supply: total_supply,
+          latest_coinmarketcap_data: %LatestCoinmarketcapData{total_supply: cmc_total_supply}
+        },
         _args,
         _resolution
       ) do
-    {:ok, total_supply}
+    {:ok, cmc_total_supply || total_supply}
   end
 
   def total_supply(_parent, _args, _resolution), do: {:ok, nil}

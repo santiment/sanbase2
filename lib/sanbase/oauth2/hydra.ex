@@ -74,7 +74,7 @@ defmodule Sanbase.Oauth2.Hydra do
     data = %{
       "grantScopes" => ["openid", "offline", "hydra.clients"],
       "accessTokenExtra" => %{},
-      "idTokenExtra" => %{name: username, email: email || username},
+      "idTokenExtra" => %{id: id, name: username, email: email || username},
       "subject" => "user:#{id}:#{username}"
     }
 

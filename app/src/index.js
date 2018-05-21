@@ -220,21 +220,6 @@ const handleLoad = () => {
   })
   .catch(error => Raven.captureException(error))
 
-<<<<<<< HEAD
-  const oldState = loadState()
-  let prevToken = oldState ? oldState.token : null
-  setInterval(() => {
-    if (prevToken !== (loadState() || {}).token) {
-      prevToken = (loadState() || {}).token
-
-      if (!(loadState() || {}).consent) {
-        window.location.reload()
-      }
-    }
-  }, 2000)
-
-=======
->>>>>>> master
   store.subscribe(() => {
     saveState(store.getState().user)
   })

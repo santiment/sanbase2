@@ -15,9 +15,12 @@ const formatSAN = price => {
 
 const formatNumber = (amount, options = {}) => {
   if (isNaN(Number(amount))) throw new Error(`Unsupported type: "${amount}"`)
+  const maximumFractionDigits = Math.abs(amount) > 1 ? 2 : 6
 
   let value = new Intl.NumberFormat('en', {
     style: options.currency ? 'currency' : 'decimal',
+    maximumFractionDigits,
+    minimumFractionDigits: maximumFractionDigits,
     ...options
   }).format(amount)
 

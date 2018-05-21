@@ -45,8 +45,8 @@ describe('formatNumber', () => {
   })
 
   it('parses input to float', () => {
-    expect(formatNumber(200000)).toEqual('200,000')
-    expect(formatNumber('200000')).toEqual('200,000')
+    expect(formatNumber(200000)).toEqual('200,000.00')
+    expect(formatNumber('200000')).toEqual('200,000.00')
   })
 
   it('parses input as currency if one is passed', () => {
@@ -54,12 +54,12 @@ describe('formatNumber', () => {
   })
 
   it('adds + sign if directionSymbol is true and amount is positive', () => {
-    expect(formatNumber(200000, { directionSymbol: true })).toEqual('+200,000')
+    expect(formatNumber(200000, { directionSymbol: true })).toEqual('+200,000.00')
     expect(formatNumber(200000, { currency: 'USD', directionSymbol: true })).toEqual('+$200,000.00')
   })
 
   it('adds - sign for negative amounts', () => {
-    expect(formatNumber(-200000)).toEqual('-200,000')
+    expect(formatNumber(-200000)).toEqual('-200,000.00')
     expect(formatNumber(-200000, { currency: 'USD' })).toEqual('-$200,000.00')
   })
 })

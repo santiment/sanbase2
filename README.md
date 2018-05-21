@@ -10,8 +10,8 @@ This is the source of the sanbase project of [`https://santiment.net`](https://s
   * You may need to run the servers after installing: `brew services start postgresql && brew services start influxdb`
   * Elixir & NodeJS. On OS X you can do that with `brew install elixir nodejs`
   * Install dependencies with `mix deps.get`
-  * Install JS dependencies for the static frontend with `cd assets && yarn && cd ..`
-  * Install JS dependencies for the next.js frontend with `cd app && yarn && cd ..`
+  * Install JS dependencies for the static frontend with `yarn --cwd assets`
+  * Install JS dependencies for the next.js frontend with `yarn --cwd app`
   * If you don't have a database, run `createdb sanbase_dev`
   * Create a copy of `.env.example`, name it `.env` and adjust your settings there.
   * To enable phoenix live reloading you should have inotify-tools. This package requires to be [manually installed](https://github.com/rvoicilas/inotify-tools/wiki) on Linux and requires no installation on Windows and Mac OS X.
@@ -56,7 +56,7 @@ DATABASE_URL=postgres://custom_username:custom_password@localhost:5432/sanbase_t
 The frontend application is in the `app` folder. To run the tests you can do:
 
 ```
-cd app && yarn test:js
+yarn --cwd app test:js
 ```
 
 This is going to run the tests in watch mode, so when you change the JS files the tests will automatically run.
@@ -68,9 +68,8 @@ We use JEST, enzyme and jest snapshots for testing.
 We use **standard** for js lint and **stylelint** for css. Use these commands the run the linters:
 
 ```
-cd app
-yarn test:lint:js
-yarn test:lint:css
+yarn --cwd app test:lint:js
+yarn --cwd app test:lint:css
 ```
 
 ----
@@ -78,7 +77,7 @@ yarn test:lint:css
 We have Storybook for our UI components
 
 ```
-yarn storybook
+yarn --cwd app storybook
 ```
 
 Open http://localhost:9001

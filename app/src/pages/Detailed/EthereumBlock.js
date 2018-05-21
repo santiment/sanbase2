@@ -67,7 +67,7 @@ const EthereumBlock = ({
     id: 'collected',
     maxWidth: 210,
     accessor: 'fundsRaisedIcos',
-    Cell: ({value}) => <Fragment>{
+    Cell: ({value = {}}) => <Fragment>{
       value.length > 0 ? value.map((amountIco, index) => (
         <div className='ethereum-table-cell-funds-collected' key={index}>
           {`${getSymbolByCurrency(amountIco.currencyCode)}${millify(amountIco.amount, 2)}`}

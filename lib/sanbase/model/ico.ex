@@ -69,13 +69,21 @@ defmodule Sanbase.Model.Ico do
     funds_raised_ico_end_price_from_currencies(ico, "USD", end_date)
   end
 
+  def funds_raised_usd_ico_end_price(_), do: nil
+
   def funds_raised_eth_ico_end_price(%Ico{end_date: end_date} = ico) when not is_nil(end_date) do
     funds_raised_ico_end_price_from_currencies(ico, "ETH", end_date)
   end
 
+  def funds_raised_eth_ico_end_price(_), do: nil
+
   def funds_raised_btc_ico_end_price(%Ico{end_date: end_date} = ico) when not is_nil(end_date) do
     funds_raised_ico_end_price_from_currencies(ico, "BTC", end_date)
   end
+
+  def funds_raised_btc_ico_end_price(_), do: nil
+
+  # Private functions
 
   defp funds_raised_ico_end_price_from_currencies(ico, target_ticker, date) do
     timestamp = Sanbase.DateTimeUtils.ecto_date_to_datetime(date)

@@ -14,7 +14,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
 
-  defp setup do
+  setup do
     Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
     |> Keyword.get(:database)
     |> Instream.Admin.Database.create()
@@ -96,11 +96,19 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     |> IcoCurrencies.changeset(%{ico_id: ico2.id, currency_id: currency_btc.id, amount: 200})
     |> Repo.insert!()
 
-    project.id
+    project_no_ico =
+      %Project{}
+      |> Project.changeset(%{name: "NoIco", coinmarketcap_id: "no_ico", ticker: "NO_ICO"})
+      |> Repo.insert!()
+
+    [
+      project: project,
+      project_no_ico: project_no_ico
+    ]
   end
 
   test "fetch project public funds raised", context do
-    project_id = setup()
+    project_id = context.project.id
 
     query = """
     {
@@ -130,7 +138,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   end
 
   test "fetch project funds raised", context do
-    project_id = setup()
+    project_id = context.project.id
 
     query = """
     {
@@ -179,6 +187,46 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
                ]
              }
   end
+
+  test "no ico does not break query", context do
+    project_id = context.project_no_ico.id
+
+    query = """
+    {
+      project(id: $id) {
+        name,
+        fundsRaisedUsdIcoEndPrice,
+        fundsRaisedEthIcoEndPrice,
+        fundsRaisedBtcIcoEndPrice,
+        icos {
+          endDate,
+          fundsRaisedUsdIcoEndPrice,
+          fundsRaisedEthIcoEndPrice,
+          fundsRaisedBtcIcoEndPrice
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> put_req_header("authorization", get_authorization_header())
+      |> post(
+        "/graphql",
+        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project_id}}")
+      )
+
+    assert json_response(result, 200)["data"]["project"] ==
+             %{
+               "name" => context.project_no_ico.name,
+               "fundsRaisedUsdIcoEndPrice" => nil,
+               "fundsRaisedEthIcoEndPrice" => nil,
+               "fundsRaisedBtcIcoEndPrice" => nil,
+               "icos" => []
+             }
+  end
+
+  # Private functions
 
   defp get_authorization_header do
     username = context_config(:basic_auth_username)

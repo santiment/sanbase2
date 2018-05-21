@@ -148,6 +148,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     {:ok, Repo.all(query)}
   end
 
+  def followed_projects(_root, _args, _resolution) do
+    {:error, "You must be logged in to fetch followed projects"}
+  end
+
   # No eth account and there is a user logged in
   defp fetch_user(
          %{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}},

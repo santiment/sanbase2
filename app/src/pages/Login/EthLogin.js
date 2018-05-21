@@ -90,7 +90,6 @@ const mapDispatchToProps = dispatch => {
             consent
           })
           client.resetStore()
-          
           if (consent) {
             const consentUrl = `/consent?consent=${consent}&token=${token}`
             window.location.replace(consentUrl)

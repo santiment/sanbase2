@@ -1,5 +1,14 @@
 const formatCryptoCurrency = (currency, amount) => `${currency} ${amount}`
 
+const getSymbolByCurrency = currency => {
+  if (currency === 'ETH') {
+    return 'Ξ'
+  } else if (currency === 'BTC') {
+    return 'BTC'
+  }
+  return '$'
+}
+
 const formatBTC = price => {
   price = parseFloat(price)
   const precision = price >= 1 ? 2 : 8
@@ -50,4 +59,4 @@ const millify = (value, precision = 1) => {
   return `${Number(prettifiedValue.toFixed(precision))}${suffixes[exponent]}`
 }
 
-export { formatCryptoCurrency, formatBTC, formatSAN, formatNumber, millify }
+export { formatCryptoCurrency, formatBTC, formatSAN, formatNumber, millify, getSymbolByCurrency }

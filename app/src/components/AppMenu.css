@@ -15,8 +15,34 @@ ul.menu-list {
   margin: 0;
   padding: 10px 22px;
   display: flex;
-  align-items: center;
   cursor: pointer;
+}
+
+.menu-list a {
+  text-decoration: none;
+  padding: 10px 22px;
+  color: rgba(255, 255, 255, 0.5);
+  display: list-item;
+  list-style-type: none;
+}
+
+.menu-list-top a {
+  display: inline;
+  font-family: Nunito Sans, sans-serif;
+  margin: 0;
+  padding: 10px 22px;
+  cursor: pointer;
+  border: none;
+  color: hsla(0, 0%, 100%, 0.8);
+  line-height: 1.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.menu-list-top li a {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.8em;
+  text-transform: uppercase;
 }
 
 .menu-list-top li:hover {
@@ -24,20 +50,27 @@ ul.menu-list {
   transition: all 0.5s ease;
 }
 
+.menu-list-top a:visited {
+  color: hsla(0, 0%, 100%, 0.8);
+}
+
+.menu-list-top a:hover {
+  background-color: #4f5b69;
+  color: hsla(0, 0%, 100%, 0.8);
+  transition: all 0.5s ease;
+}
+
+.menu-list-top .app-menu__page-link--active {
+  border-bottom: 2px solid white;
+}
+
 .user-generated {
   border-bottom: 1px solid white;
 }
 
-.menu-list li:hover {
+.menu-list a:hover {
   background-color: #4f5b69;
   transition: all 1s ease;
-}
-
-.menu-list li a {
-  text-decoration: none;
-  color: rgba(255, 255, 255, 0.5);
-  display: list-item;
-  list-style-type: none;
 }
 
 .menu-list .fa {
@@ -71,12 +104,6 @@ ul.menu-list {
   padding: 0;
   text-align: right;
   user-select: none;
-}
-
-.menu-list-top li a {
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.8em;
-  text-transform: uppercase;
 }
 
 .app-menu-creation-list {

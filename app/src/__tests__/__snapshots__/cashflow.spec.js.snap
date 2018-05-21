@@ -1,329 +1,36 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Cashflow container it should render correctly 1`] = `
-<div
-  className="page cashflow"
->
-  <HelmetWrapper
-    defer={true}
-    encodeSpecialCharacters={true}
-  >
-    <title>
-      SANbase: ERC20 Projects
-    </title>
-    <link
-      href="/projects"
-      rel="canonical"
-    />
-  </HelmetWrapper>
-  <FadeIn
-    as="div"
-    backfaceVisible="visible"
-    delay="0s"
-    direction="normal"
-    duration="0.3s"
-    fillMode="none"
-    iterations="1"
-    playState="running"
-    timingFunction="ease-in"
-  >
-    <div
-      className="cashflow-head"
-    >
-      <div
-        className="cashflow-title"
-      >
-        <h1>
-          ERC20 Projects
-        </h1>
-        <span>
-          <Link
-            replace={false}
-            to="/projects/ethereum"
-          >
-            More data about Ethereum
-          </Link>
-        </span>
-      </div>
-      <div>
-        Welcome to SANbase! Click the projects below to see our first sets of datafeeds (fundamentals, dev activity, and blockchain data) plotted against price charts. You can also compare projects by sorting on any of the columns.
-        <br />
-        At the moment, the tools and datasets are “beta” stage, geared toward people who have experience with data analysis and who want to help create insights and methodologies for valuating crypto assets.
-        <br />
-        We have more advanced experimental data-feeds in the closed beta.
-        <br />
-        We add some of them gradually to this publicly visible interface
-        <br />
-        We’re adding feeds and improving features all the time, so stay tuned!
-        <br />
-        <br />
-        For more details on how to interpret Dev Activity see  
-        <a
-          href="https://medium.com/santiment/tracking-github-activity-of-crypto-projects-introducing-a-better-approach-9fb1af3f1c32"
-        >
-          "Tracking GitHub Activity — A Better Approach"
-        </a>
-        <br />
-        For more insight on where SANbase is headed see  
-        <a
-          href="https://medium.com/santiment/valuing-crypto-assets-with-behaviour-elephant-analysis-5a53e018a136"
-        >
-          "Valuing crypto-assets with “Behaviour Elephant Analysis"
-        </a>
-        <br />
-        For a growing library of video tours see our  
-        <a
-          href="https://www.youtube.com/channel/UCSzP_Z3MrygWlbLMyrNmMkg"
-        >
-          Youtube channel
-        </a>
-      </div>
-    </div>
-    <Panel>
-      <div
-        className="row"
-      >
-        <div
-          className="datatables-info"
-        />
-        <div
-          className="datatables-filter"
-        >
-          <label>
-            <input
-              placeholder="Search"
-            />
-          </label>
-        </div>
-      </div>
-      <ReactTable
-        AggregatedComponent={[Function]}
-        ExpanderComponent={[Function]}
-        FilterComponent={[Function]}
-        LoadingComponent={[Function]}
-        NoDataComponent={[Function]}
-        PadRowComponent={[Function]}
-        PaginationComponent={[Function]}
-        PivotValueComponent={[Function]}
-        ResizerComponent={[Function]}
-        TableComponent={[Function]}
-        TbodyComponent={[Function]}
-        TdComponent={[Function]}
-        TfootComponent={[Function]}
-        ThComponent={[Function]}
-        TheadComponent={[Function]}
-        TrComponent={[Function]}
-        TrGroupComponent={[Function]}
-        aggregatedKey="_aggregated"
-        className="-highlight"
-        collapseOnDataChange={true}
-        collapseOnPageChange={true}
-        collapseOnSortingChange={true}
-        column={
-          Object {
-            "Aggregated": undefined,
-            "Cell": undefined,
-            "Expander": undefined,
-            "Filter": undefined,
-            "Footer": undefined,
-            "Header": undefined,
-            "Pivot": undefined,
-            "PivotValue": undefined,
-            "aggregate": undefined,
-            "className": "",
-            "filterAll": false,
-            "filterMethod": undefined,
-            "filterable": undefined,
-            "footerClassName": "",
-            "footerStyle": Object {},
-            "getFooterProps": [Function],
-            "getHeaderProps": [Function],
-            "getProps": [Function],
-            "headerClassName": "",
-            "headerStyle": Object {},
-            "minWidth": 100,
-            "resizable": undefined,
-            "show": true,
-            "sortMethod": undefined,
-            "sortable": undefined,
-            "style": Object {},
-          }
-        }
-        columns={
-          Array [
-            Object {
-              "Cell": [Function],
-              "Header": "",
-              "accessor": [Function],
-              "filterMethod": [Function],
-              "filterable": true,
-              "id": "icon",
-              "minWidth": 44,
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Project",
-              "accessor": [Function],
-              "filterMethod": [Function],
-              "filterable": true,
-              "id": "project",
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Price",
-              "accessor": [Function],
-              "id": "price",
-              "maxWidth": 100,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Volume",
-              "accessor": [Function],
-              "id": "volume",
-              "maxWidth": 100,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Market Cap",
-              "accessor": "marketcapUsd",
-              "id": "marketcapUsd",
-              "maxWidth": 130,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "ETH spent (30D)",
-              "accessor": [Function],
-              "id": "tx",
-              "maxWidth": 110,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Dev activity (30D)",
-              "accessor": [Function],
-              "id": "github_activity",
-              "maxWidth": 110,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Daily active addresses (30D)",
-              "accessor": [Function],
-              "id": "daily_active_addresses",
-              "maxWidth": 110,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-            Object {
-              "Cell": [Function],
-              "Header": "Signals",
-              "accessor": [Function],
-              "id": "signals",
-              "minWidth": 64,
-              "sortMethod": [Function],
-              "sortable": true,
-            },
-          ]
-        }
-        data={Array []}
-        defaultExpanded={Object {}}
-        defaultFilterMethod={[Function]}
-        defaultFiltered={Array []}
-        defaultPageSize={20}
-        defaultResized={Array []}
-        defaultSortDesc={false}
-        defaultSortMethod={[Function]}
-        defaultSorted={
-          Array [
-            Object {
-              "desc": false,
-              "id": "marketcapUsd",
-            },
-          ]
-        }
-        expanderDefaults={
-          Object {
-            "filterable": false,
-            "resizable": false,
-            "sortable": false,
-            "width": 35,
-          }
-        }
-        filterable={false}
-        filtered={Array []}
-        freezeWhenExpanded={false}
-        getLoadingProps={[Function]}
-        getNoDataProps={[Function]}
-        getPaginationProps={[Function]}
-        getProps={[Function]}
-        getResizerProps={[Function]}
-        getTableProps={[Function]}
-        getTbodyProps={[Function]}
-        getTdProps={[Function]}
-        getTfootProps={[Function]}
-        getTfootTdProps={[Function]}
-        getTfootTrProps={[Function]}
-        getTheadFilterProps={[Function]}
-        getTheadFilterThProps={[Function]}
-        getTheadFilterTrProps={[Function]}
-        getTheadGroupProps={[Function]}
-        getTheadGroupThProps={[Function]}
-        getTheadGroupTrProps={[Function]}
-        getTheadProps={[Function]}
-        getTheadThProps={[Function]}
-        getTheadTrProps={[Function]}
-        getTrGroupProps={[Function]}
-        getTrProps={[Function]}
-        groupedByPivotKey="_groupedByPivot"
-        indexKey="_index"
-        loading={true}
-        loadingText="Loading..."
-        multiSort={true}
-        nestingLevelKey="_nestingLevel"
-        nextText="Next"
-        noDataText="No rows found"
-        ofText="of"
-        onFetchData={[Function]}
-        originalKey="_original"
-        pageSize={0}
-        pageSizeOptions={
-          Array [
-            5,
-            10,
-            20,
-            25,
-            50,
-            100,
-          ]
-        }
-        pageText="Page"
-        pivotDefaults={Object {}}
-        pivotIDKey="_pivotID"
-        pivotValKey="_pivotVal"
-        previousText="Previous"
-        resizable={true}
-        rowsText="rows"
-        showPageJump={true}
-        showPageSizeOptions={true}
-        showPagination={false}
-        showPaginationBottom={false}
-        showPaginationTop={false}
-        sortable={false}
-        style={Object {}}
-        subRowsKey="_subRows"
-      />
-    </Panel>
-  </FadeIn>
-  <Component />
-</div>
-`;
+<ProjectsTable
+  allMarketSegments={
+    Object {
+      "advertising": "Advertising",
+      "blockchain_network": "Blockchain Network",
+      "data": "Data",
+      "digital_identity": "Digital Identity",
+      "financial": "Financial",
+      "gambling": "Gambling",
+      "gaming": "Gaming",
+      "legal": "Legal",
+      "media": "Media",
+      "prediction_market": "Prediction Market",
+      "protocol": "Protocol",
+      "transportation": "Transportation",
+      "unknown": null,
+    }
+  }
+  categories={Object {}}
+  match={
+    Object {
+      "path": "/products",
+    }
+  }
+  tableInfo={
+    Object {
+      "page": 1,
+      "pageSize": 32,
+      "visibleItems": 32,
+    }
+  }
+/>
+`

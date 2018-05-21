@@ -40,10 +40,12 @@
   list-style: none;
 }
 
+.mobile-app-menu .overlay-content .menu-list a,
 .mobile-app-menu .overlay-content .menu-list li {
   display: flex;
   align-items: center;
   text-align: center;
   font-size: 24px;
   font-weight: 600;
+  border-bottom: none;
 }

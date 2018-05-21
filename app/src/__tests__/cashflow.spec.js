@@ -39,6 +39,23 @@ const projects = [
   }
 ]
 
+const allMarketSegments = {
+  advertising: 'Advertising',
+  blockchain_network: 'Blockchain Network',
+  data: 'Data',
+  digital_identity: 'Digital Identity',
+  financial: 'Financial',
+  gambling: 'Gambling',
+  gaming: 'Gaming',
+  legal: 'Legal',
+  media: 'Media',
+  prediction_market: 'Prediction Market',
+  protocol: 'Protocol',
+  transportation: 'Transportation',
+  unknown: null
+}
+const categories = {}
+
 describe('Cashflow container', () => {
   it('it should render correctly', () => {
     const login = shallow(<Cashflow
@@ -47,7 +64,11 @@ describe('Cashflow container', () => {
         visibleItems: 32,
         pageSize: 32,
         page: 1
-      }} />)
+      }}
+      allMarketSegments={allMarketSegments}
+      categories={categories}
+      match={{path: '/products'}}
+    />)
     expect(toJson(login)).toMatchSnapshot()
   })
 })

@@ -210,14 +210,17 @@ const handleLoad = () => {
     `
   })
   .then(response => {
-    store.dispatch({
-      type: 'CHANGE_USER_DATA',
-      user: response.data.currentUser,
-      hasMetamask: hasMetamask()
-    })
+    if (response.data.currentUser) {
+      store.dispatch({
+        type: 'CHANGE_USER_DATA',
+        user: response.data.currentUser,
+        hasMetamask: hasMetamask()
+      })
+    }
   })
   .catch(error => Raven.captureException(error))
 
+<<<<<<< HEAD
   const oldState = loadState()
   let prevToken = oldState ? oldState.token : null
   setInterval(() => {
@@ -230,9 +233,9 @@ const handleLoad = () => {
     }
   }, 2000)
 
+=======
+>>>>>>> master
   store.subscribe(() => {
-    // TODO: Yura Zatsepin: 2017-12-07 11:23:
-    // we need add throttle when save action was hapenned
     saveState(store.getState().user)
   })
 

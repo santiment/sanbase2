@@ -355,7 +355,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
 
-    url = "#{tech_indicators_url()}/indicator/emojissentiment"
+    url = "#{tech_indicators_url()}/indicator/summaryemojissentiment"
 
     options = [
       recv_timeout: @recv_timeout,

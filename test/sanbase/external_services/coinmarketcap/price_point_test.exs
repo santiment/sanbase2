@@ -36,8 +36,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
       name: Measurement.name_from(project)
     }
 
-    project = %Project{
-      ticker: "SAN"
+    %{
+      price_point: price_point,
+      expectation: expectation,
+      project: project
     }
 
     %{
@@ -141,9 +143,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
     price_point: price_point,
     expectation: expectation
   } do
-    expectation = Map.replace!(expectation, :name, "TOTAL_MARKET_USD")
+    expectation = Map.replace!(expectation, :name, @total_market_measurement)
 
-    assert PricePoint.price_points_to_measurements(price_point) == [expectation]
+    assert PricePoint.price_points_to_measurements(price_point, @total_market_measurement) == [
+             expectation
+           ]
   end
 
   test "price_points_to_measurements called with array of price point", %{
@@ -157,30 +161,19 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
         DateTime.from_unix!(1_367_174_821_000_000_000, :nanosecond)
       )
 
-    expectation = Map.replace!(expectation, :name, "TOTAL_MARKET_USD")
+    expectation = Map.replace!(expectation, :name, @total_market_measurement)
 
     expectation_new =
       expectation
       |> Map.replace!(:timestamp, 1_367_174_821_000_000_000)
-      |> Map.replace!(:name, "TOTAL_MARKET_USD")
+      |> Map.replace!(:name, @total_market_measurement)
 
-    assert PricePoint.price_points_to_measurements([price_point, price_point_new]) == [
+    assert PricePoint.price_points_to_measurements(
+             [price_point, price_point_new],
+             @total_market_measurement
+           ) == [
              expectation,
              expectation_new
-           ]
-  end
-
-  test "price_points_to_measurements called with one price point and project", %{
-    price_point: price_point,
-    expectation: expectation,
-    project: project
-  } do
-    expectation_usd = Map.replace!(expectation, :name, "SAN_USD")
-    expectation_btc = Map.replace!(expectation, :name, "SAN_BTC")
-
-    assert PricePoint.price_points_to_measurements(price_point, project) == [
-             expectation_usd,
-             expectation_btc
            ]
   end
 
@@ -196,20 +189,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
         DateTime.from_unix!(1_367_174_821_000_000_000, :nanosecond)
       )
 
-    expectation_usd = Map.replace!(expectation, :name, "SAN_USD")
-    expectation_btc = Map.replace!(expectation, :name, "SAN_BTC")
-
-    expectation_usd_new =
+    expectation_new =
       expectation
       |> Map.replace!(:timestamp, 1_367_174_821_000_000_000)
-      |> Map.replace!(:name, "SAN_USD")
-
-    expectation_btc_new =
-      expectation
-      |> Map.replace!(:timestamp, 1_367_174_821_000_000_000)
-      |> Map.replace!(:name, "SAN_BTC")
 
     assert PricePoint.price_points_to_measurements([price_point, price_point_new], project) ==
-             [expectation_usd, expectation_btc, expectation_usd_new, expectation_btc_new]
+             [expectation, expectation_new]
   end
 end

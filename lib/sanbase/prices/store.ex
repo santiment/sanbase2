@@ -59,26 +59,26 @@ defmodule Sanbase.Prices.Store do
     |> parse_price_series
   end
 
-  def update_last_history_datetime_cmc(ticker, last_updated_datetime) do
+  def update_last_history_datetime_cmc(ticker_cmc_id, last_updated_datetime) do
     %Measurement{
       timestamp: 0,
       fields: %{last_updated: last_updated_datetime |> DateTime.to_unix(:nanoseconds)},
-      tags: [ticker: ticker],
+      tags: [ticker_cmc_id: ticker_cmc_id],
       name: @last_history_price_cmc_measurement
     }
     |> Store.import()
   end
 
-  def last_history_datetime_cmc!(ticker) do
-    case last_history_datetime_cmc(ticker) do
+  def last_history_datetime_cmc!(ticker_cmc_id) do
+    case last_history_datetime_cmc(ticker_cmc_id) do
       {:ok, datetime} -> datetime
       {:error, error} -> raise(error)
     end
   end
 
-  def last_history_datetime_cmc(ticker) do
+  def last_history_datetime_cmc(ticker_cmc_id) do
     ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
-    WHERE ticker = '#{ticker}'/
+    WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
     |> Store.query()
     |> parse_last_history_datetime_cmc()
   end

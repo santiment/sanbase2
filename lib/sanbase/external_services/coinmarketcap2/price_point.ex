@@ -23,11 +23,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint2 do
     }
   end
 
-  def price_points_to_measurements(price_points, "TOTAL_MARKET") do
+  def price_points_to_measurements(price_points, "TOTAL_MARKET_total-market" = total_market) do
     price_points
     |> List.wrap()
     |> Enum.map(fn price_point ->
-      convert_to_measurement(price_point, "TOTAL_MARKET_total-market")
+      convert_to_measurement(price_point, total_market)
     end)
   end
 

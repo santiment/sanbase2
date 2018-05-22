@@ -247,14 +247,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
           "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
         )
 
-        GraphData.fetch_first_datetime("TOTAL_MARKET")
+        GraphData.fetch_first_datetime(measurement_name)
 
       datetime ->
         datetime
     end
   end
 
-  defp fetch_and_process_marketcap_total_data() do
+  def fetch_and_process_marketcap_total_data() do
     case last_marketcap_total_datetime() do
       nil ->
         err_msg = "[CMC] Cannot fetch the last price datetime for TOTAL_MARKET"

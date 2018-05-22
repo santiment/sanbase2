@@ -1,7 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.ScraperTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.ExternalServices.Coinmarketcap.Scraper
+  alias Sanbase.ExternalServices.Coinmarketcap.Scraper2, as: Scraper
   alias Sanbase.ExternalServices.ProjectInfo
 
   test "parsing the project page" do

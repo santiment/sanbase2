@@ -31,15 +31,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePoint2 do
     end)
   end
 
-  def price_points_to_measurements(price_points, %Project{
-        ticker: ticker,
-        coinmarketcap_id: coinmarketcap_id
-      })
+  def price_points_to_measurements(
+        price_points,
+        %Project{
+          ticker: ticker,
+          coinmarketcap_id: coinmarketcap_id
+        } = project
+      )
       when nil != coinmarketcap_id and nil != ticker do
     price_points
     |> List.wrap()
     |> Enum.map(fn price_point ->
-      convert_to_measurement(price_point, ticker <> "_" <> coinmarketcap_id)
+      convert_to_measurement(price_point, Measurement.name_from(project))
     end)
   end
 

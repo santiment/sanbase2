@@ -196,24 +196,4 @@ defmodule Sanbase.Prices.Store do
     ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
     WHERE ticker = '#{ticker}'/
   end
-
-  defp parse_last_history_datetime_cmc(%{results: [%{error: error}]}), do: {:error, error}
-
-  defp parse_last_history_datetime_cmc(%{
-         results: [
-           %{
-             series: [
-               %{
-                 values: [[_iso8601_datetime, iso8601_last_updated | _]]
-               }
-             ]
-           }
-         ]
-       }) do
-    {:ok, datetime} = DateTime.from_unix(iso8601_last_updated, :nanoseconds)
-
-    {:ok, datetime}
-  end
-
-  defp parse_last_history_datetime_cmc(_), do: {:ok, nil}
 end

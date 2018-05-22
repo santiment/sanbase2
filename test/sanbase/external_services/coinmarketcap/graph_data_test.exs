@@ -77,9 +77,27 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
   end
 
   test "total marketcap correctly saved to influxdb" do
+    Tesla.Mock.mock(fn %{method: :get} ->
+      %Tesla.Env{
+        status: 200,
+        body: File.read!(Path.join(__DIR__, "coinmarketcap_total_graph_data.json"))
+      }
+    end)
+
+    Store.create_db()
     measurement_name = "TOTAL_MARKET_total-market"
     Store.drop_measurement(measurement_name)
 
-    Coin
+    # The HTTP GET request is mocked, this interval here does not play a role.
+    # Put one day before now so we will have only one day range and won't make many HTTP queries
+    GraphData.fetch_and_store_marketcap_total(Timex.shift(Timex.now(), days: -1))
+
+    from = DateTime.from_unix!(0)
+    to = DateTime.utc_now()
+
+    {:ok, [[_datetime, mean_volume]]} =
+      Store.fetch_mean_volume(@total_market_measurement, from, to)
+
+    assert mean_volume == 2_513_748_896.5741253
   end
 end

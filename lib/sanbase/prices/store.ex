@@ -84,20 +84,6 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
-  def last_record(measurement) do
-    ~s/SELECT LAST(price_usd), price_btc, marketcap_usd, volume_usd
-    FROM "#{measurement}"/
-    |> Store.query()
-    |> parse_time_series()
-  end
-
-  def last_record!(measurement) do
-    case last_record(measurement) do
-      {:ok, datetime} -> datetime
-      {:error, error} -> raise(error)
-    end
-  end
-
   def fetch_last_price_point_before(measurement, timestamp) do
     fetch_last_price_point_before_query(measurement, timestamp)
     |> Store.query()

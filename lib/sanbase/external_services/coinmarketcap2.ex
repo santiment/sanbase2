@@ -254,7 +254,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
     end
   end
 
-  def fetch_and_process_marketcap_total_data() do
+  defp fetch_and_process_marketcap_total_data() do
     case last_marketcap_total_datetime() do
       nil ->
         err_msg = "[CMC] Cannot fetch the last price datetime for TOTAL_MARKET"

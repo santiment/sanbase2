@@ -21,7 +21,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   # Number of seconds in a day
   @seconds_in_day 24 * 60 * 60
 
-  def fetch_first_datetime("TOTAL_MARKET") do
+  def fetch_first_datetime("TOTAL_MARKET_total-market") do
     all_time_total_market_price_points()
     |> List.first()
     |> case do

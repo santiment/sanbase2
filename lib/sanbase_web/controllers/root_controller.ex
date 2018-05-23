@@ -26,7 +26,7 @@ defmodule SanbaseWeb.RootController do
          :ok <- Hydra.manage_consent(consent, access_token, user, client_id) do
       redirect(conn, external: redirect_url)
     else
-      _ -> redirect(conn, "/")
+      _ -> redirect(conn, to: "/")
     end
   end
 

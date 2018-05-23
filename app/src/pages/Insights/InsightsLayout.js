@@ -1,13 +1,33 @@
 import React, { Fragment } from 'react'
+import { compose } from 'recompose'
+import { connect } from 'react-redux'
 import { Helmet } from 'react-helmet'
-import { NavLink, Link } from 'react-router-dom'
+import { NavLink, Link, withRouter } from 'react-router-dom'
+import { Icon, Button } from 'semantic-ui-react'
 import Panel from './../../components/Panel'
 import './InsightsLayout.css'
+
+const isShowedNewInsightsButton = (history, isLogin) => (
+  isLogin &&
+  (!history.location.pathname.startsWith('/insights/new') ||
+    history.location.pathname === '/insights/newest')
+)
+
+const NewInsightBtn = ({history}) => (
+  <Button
+    color='green'
+    onClick={() => history.push('/insights/new')}
+    className='event-votes-navigation__add-link'>
+    <Icon name='plus' />New insight
+  </Button>
+)
 
 const InsightsLayout = ({
   isLogin = false,
   title = 'SANbase: Insights',
   sidebar = null,
+  loginModalRequest,
+  history,
   children
 }) => (
   <div className='page event-votes'>
@@ -28,6 +48,12 @@ const InsightsLayout = ({
             to={'/insights/newest'}>
             All Insights
           </NavLink>
+          <br />
+          {isShowedNewInsightsButton(history, isLogin) &&
+            <NewInsightBtn
+              isLogin={isLogin}
+              loginModalRequest={loginModalRequest}
+              history={history} />}
         </div>
       </div>
       <div className='event-votes-content'>
@@ -69,4 +95,17 @@ const InsightsLayout = ({
   </div>
 )
 
-export default InsightsLayout
+const mapDispatchToProps = dispatch => {
+  return {
+    loginModalRequest: () => {
+      dispatch({
+        type: 'TOGGLE_LOGIN_REQUEST_MODAL'
+      })
+    }
+  }
+}
+
+export default compose(
+  connect(undefined, mapDispatchToProps),
+  withRouter
+)(InsightsLayout)

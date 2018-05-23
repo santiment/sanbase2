@@ -12,7 +12,7 @@
 
 .event-votes-navs {
   margin-right: 30px;
-  width: 120px;
+  max-width: 220px;
   margin-top: 16px;
 }
 

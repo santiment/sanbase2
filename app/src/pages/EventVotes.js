@@ -76,8 +76,6 @@ const EventVotes = ({
   match,
   user,
   balance,
-  toggleLoginRequest,
-  isToggledLoginRequest,
   toggleDeletePostRequest,
   isToggledDeletePostRequest,
   togglePublishPostRequest,
@@ -85,7 +83,9 @@ const EventVotes = ({
   setDeletePostId,
   deletePostId = undefined,
   setPublishInsightId,
-  publishInsightId = undefined
+  publishInsightId = undefined,
+  isOpenedLoginRequestModal,
+  loginModalRequest
 }) => {
   const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
   if (match.path.split('/')[2] === 'my' && !Posts.hasUserInsights) {
@@ -93,9 +93,9 @@ const EventVotes = ({
   }
   return ([
     <Fragment key='modal-login-request'>
-      {isToggledLoginRequest &&
+      {isOpenedLoginRequestModal &&
         <ModalRequestLogin
-          toggleLoginRequest={toggleLoginRequest}
+          toggleLoginRequest={loginModalRequest}
           history={history} />}
     </Fragment>,
     <Fragment key='modal-delete-post-request'>
@@ -140,19 +140,6 @@ const EventVotes = ({
                 NEWEST
               </NavLink>
             </div>
-            <div>
-              {user.token
-                ? <NavLink
-                  className='event-votes-navigation__add-link'
-                  to={'/insights/new'}>
-                  <Icon name='plus' /> New insight
-                </NavLink>
-                : <a
-                  onClick={() => toggleLoginRequest(!isToggledLoginRequest)}
-                  className='event-votes-navigation__add-link'>
-                  <Icon name='plus' /> New insight
-                  </a>}
-            </div>
           </div>
           {Posts.isEmpty && !showedMyPosts
             ? <Message><h2>We don't have any insights yet.</h2></Message>
@@ -162,7 +149,7 @@ const EventVotes = ({
               balance={balance}
               gotoInsight={id => {
                 if (!user.token) {
-                  toggleLoginRequest(true)
+                  loginModalRequest(true)
                 } else {
                   history.push(`/insights/${id}`)
                 }
@@ -180,14 +167,14 @@ const EventVotes = ({
                   ? votePost(voteMutationHelper({postId, action: 'vote'}))
                   .then(data => Posts.refetch())
                   .catch(e => Raven.captureException(e))
-                  : toggleLoginRequest(!isToggledLoginRequest)
+                  : loginModalRequest()
               }, 100)}
               unvotePost={debounce(postId => {
                 user.token
                   ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
                   .then(data => Posts.refetch())
                   .catch(e => Raven.captureException(e))
-                  : toggleLoginRequest(!isToggledLoginRequest)
+                  : loginModalRequest()
               }, 100)}
           />}
         </Panel>
@@ -299,15 +286,26 @@ const mapDataToProps = props => {
 const mapStateToProps = state => {
   return {
     user: state.user,
-    balance: getBalance(state)
+    balance: getBalance(state),
+    isOpenedLoginRequestModal: state.insightsPageUi.isOpenedLoginRequestModal
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    loginModalRequest: () => {
+      dispatch({
+        type: 'TOGGLE_LOGIN_REQUEST_MODAL'
+      })
+    }
   }
 }
 
 const enhance = compose(
   connect(
-    mapStateToProps
+    mapStateToProps,
+    mapDispatchToProps
   ),
-  withState('isToggledLoginRequest', 'toggleLoginRequest', false),
   withState('isToggledDeletePostRequest', 'toggleDeletePostRequest', false),
   withState('isToggledPublishPostRequest', 'togglePublishPostRequest', false),
   withState('deletePostId', 'setDeletePostId', undefined),

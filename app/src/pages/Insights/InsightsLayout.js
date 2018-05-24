@@ -45,7 +45,7 @@ const InsightsLayout = ({
           </NavLink>}
           <NavLink
             className='event-votes-navigation__add-link'
-            to={'/insights/newest'}>
+            to={'/insights'}>
             All Insights
           </NavLink>
           <br />

@@ -52,6 +52,18 @@
   max-width: 1024px;
 }
 
+.button {
+  box-shadow: 0 4px 6px rgba(45, 156, 129, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.15s ease;
+  letter-spacing: 0.025em;
+}
+
+.button:focus,
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 14px rgba(45, 156, 129, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
 @media (max-width: 767px) {
   .App .page {
     padding: 0 15px;

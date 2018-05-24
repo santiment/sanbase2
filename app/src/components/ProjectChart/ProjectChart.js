@@ -574,7 +574,7 @@ const makeOptionsFromProps = props => ({
       id: 'y-axis-11',
       position: 'right',
       scaleLabel: {
-        display: true,
+        display: false,
         labelString: `Daily Active Addresses`,
         fontColor: '#3d4450'
       },

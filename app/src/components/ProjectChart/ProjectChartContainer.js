@@ -239,9 +239,6 @@ class ProjectChartContainer extends Component {
           shareableURL={shareableURL}
           ticker={this.props.ticker}
           isERC20={this.props.isERC20}
-          toggleEthPrice={this.props.toggleEthPrice}
-          isToggledEthPrice={this.props.isToggledEthPrice}
-          ethPrice={this.props.ethPrice}
           isDesktop={this.props.isDesktop}
         />}
         {(this.props.isDesktop || this.props.isFullscreenMobile)
@@ -262,8 +259,7 @@ class ProjectChartContainer extends Component {
             {...this.props}
           /> }
         {(this.props.isDesktop || this.props.isFullscreenMobile) &&
-          <ProjectChartFooter
-            {...this.props} />}
+          <ProjectChartFooter {...this.props} />}
         {this.props.isFullscreenMobile &&
           <Button onClick={this.props.toggleFullscreen} basic >
             Back to newest mode

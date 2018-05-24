@@ -14,6 +14,7 @@ import PanelBlock from './../../components/PanelBlock'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
+import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
 import { millify } from './../../utils/formatting'
 import {
   projectBySlugGQL,
@@ -27,7 +28,8 @@ import {
   EthSpentOverTimeByErc20ProjectsGQL,
   DailyActiveAddressesGQL,
   FollowProjectGQL,
-  UnfollowProjectGQL
+  UnfollowProjectGQL,
+  EmojisSentimentGQL
 } from './DetailedGQL'
 import EthereumBlock from './EthereumBlock'
 import './Detailed.css'
@@ -90,12 +92,18 @@ export const Detailed = ({
     error: false,
     dailyActiveAddresses: []
   },
+  EmojisSentiment = {
+    loading: false,
+    error: false,
+    emojisSentiment: []
+  },
   followProject,
   unfollowProject,
   isDesktop,
   isLoggedIn,
   dispatch,
   user,
+  hasPremium,
   ...props
 }) => {
   const project = Project.project
@@ -158,6 +166,12 @@ export const Detailed = ({
     items: DailyActiveAddresses.dailyActiveAddresses || []
   }
 
+  const emojisSentiment = {
+    loading: EmojisSentiment.loading,
+    error: EmojisSentiment.error,
+    items: EmojisSentiment.emojisSentiment || []
+  }
+
   const ethSpentOverTimeByErc20Projects = {
     loading: EthSpentOverTimeByErc20Projects.loading,
     error: EthSpentOverTimeByErc20Projects.error,
@@ -187,8 +201,10 @@ export const Detailed = ({
       transactionVolume={transactionVolume}
       ethSpentOverTime={_ethSpentOverTime}
       dailyActiveAddresses={dailyActiveAddresses}
+      emojisSentiment={emojisSentiment}
       ethPrice={ethPrice}
       isERC20={project.isERC20}
+      isPremium={hasPremium}
       project={project}
       ticker={project.ticker} />
 
@@ -280,7 +296,8 @@ Detailed.propTypes = propTypes
 const mapStateToProps = state => {
   return {
     user: state.user,
-    isLoggedIn: !!state.user.token,
+    hasPremium: checkHasPremium(state),
+    isLoggedIn: checkIsLoggedIn(state),
     timeFilter: state.detailedPageUi.timeFilter
   }
 }
@@ -457,6 +474,21 @@ const enhance = compose(
       const ticker = Project.project.ticker
       return {
         skip: !from || ticker !== 'ETH',
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
+        }
+      }
+    }
+  }),
+  graphql(EmojisSentimentGQL, {
+    name: 'EmojisSentiment',
+    options: ({timeFilter, hasPremium}) => {
+      const {from, to} = timeFilter
+      return {
+        skip: !from || !hasPremium,
         errorPolicy: 'all',
         variables: {
           from,

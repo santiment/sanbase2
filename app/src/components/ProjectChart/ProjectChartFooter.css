@@ -104,6 +104,8 @@
   margin: 15px 0;
   border-right: 1px solid rgb(231, 231, 231);
   user-select: none;
+  justify-content: space-between;
+  align-items: normal;
 }
 
 .filter-category:last-child {
@@ -117,8 +119,9 @@
 
 .filter-category-body {
   display: flex;
+  flex-direction: column;
   justify-content: flex-end;
-  flex: 1;
+  max-width: 30%;
 }
 
 .filter-category-body .toggleBtn:last-child {
@@ -148,6 +151,11 @@
   margin-bottom: 0;
 }
 
+.premium-wall-button {
+  border: 2px solid gold;
+  margin-top: 5px;
+}
+
 @media (min-width: 1024px) {
   .chart-footer {
     display: flex;
@@ -157,17 +165,20 @@
 
   .chart-footer-filters {
     display: flex;
-    align-items: center;
   }
 
   .filter-category {
-    flex-direction: column;
-    align-items: normal;
+    display: block;
     padding: 5px 20px;
   }
 
   .filter-category-title {
     margin-bottom: 10px;
+    flex: 1;
+  }
+
+  .filter-category-body {
+    max-width: 100%;
   }
 
   .filter-category-blockchain {
@@ -179,7 +190,6 @@
   }
 
   .filter-category-blockchain .filter-category-body {
-    flex-direction: row;
     justify-content: end;
   }
 
@@ -188,6 +198,10 @@
   }
 
   .filter-category-body .toggleBtn {
-    margin-right: 10px;
+    margin-top: 10px;
+  }
+
+  .filter-category-body .toggleBtn:first-child {
+    margin-top: 0;
   }
 }

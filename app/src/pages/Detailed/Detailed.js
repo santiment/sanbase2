@@ -200,9 +200,6 @@ export const Detailed = ({
       }}
       ticker={project.ticker} />
 
-  const isFavorite = () => isLoggedIn && project &&
-    user.followedProjects && user.followedProjects.includes(project.id)
-
   return (
     <div className='page detailed'>
       <Helmet>
@@ -501,12 +498,6 @@ const enhance = compose(
         }
       }
     }
-  }),
-  graphql(FollowProjectGQL, {
-    name: 'followProject'
-  }),
-  graphql(UnfollowProjectGQL, {
-    name: 'unfollowProject'
   })
 )
 

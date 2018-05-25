@@ -1,42 +1,17 @@
 import React from 'react'
 import { createSkeletonProvider, createSkeletonElement } from '@trainline/react-skeletor'
 import { compose } from 'recompose'
+import { connect } from 'react-redux'
 import { graphql } from 'react-apollo'
 import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
 import { followedProjectsGQL } from './../Login/LoginGQL'
-import { FollowProjectGQL, UnfollowProjectGQL } from './DetailedGQL'
 import './DetailedHeader.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
 const DIV = createSkeletonElement('div', 'pending-header pending-div')
-
-const followProjectHelper = (action, project) => ({
-  variables: {projectId: Number(project.id)},
-  optimisticResponse: {
-    __typename: 'Mutation',
-    [action]: {
-      __typename: 'Project',
-      id: project.id
-    }
-  },
-  update: (proxy) => {
-    let data = proxy.readQuery({ query: followedProjectsGQL })
-    const newFollowedProjects = data.followedProjects ? [...data.followedProjects] : []
-    if (action === 'followProject') {
-      newFollowedProjects.push({
-        id: project.id,
-        __typename: 'Project'
-      })
-      data.followedProjects = newFollowedProjects
-    } else if (action === 'unfollowProject') {
-      data.followedProjects = newFollowedProjects.filter(current => current.id !== project.id)
-    }
-    proxy.writeQuery({ query: followedProjectsGQL, data })
-  }
-})
 
 const DetailedHeader = ({
   project = {
@@ -46,11 +21,9 @@ const DetailedHeader = ({
   },
   loading,
   empty,
-  dispatch,
   isLoggedIn,
   isFavorite,
-  followProject,
-  unfollowProject
+  handleFavorite
 }) => {
   return (
     <div className='detailed-head'>
@@ -69,11 +42,10 @@ const DetailedHeader = ({
               <Popup
                 trigger={
                   <i className={`fa fa-2x fa-star${isFavorite ? '' : '-o'}`}
-                    onClick={() => {
-                      isFavorite
-                        ? unfollowProject(followProjectHelper('unfollowProject', project))
-                        : followProject(followProjectHelper('followProject', project))
-                    }}
+                    onClick={() => handleFavorite({
+                      projectId: project.id,
+                      actionType: isFavorite ? 'unfollowProject' : 'followProject'
+                    })}
                     aria-hidden='true' />
                 }
                 content='Add to favorites'
@@ -102,6 +74,20 @@ const DetailedHeader = ({
   )
 }
 
+const mapDispatchToProps = dispatch => {
+  return {
+    handleFavorite: ({projectId, actionType}) => {
+      dispatch({
+        type: 'TOGGLE_FAVORITE',
+        payload: {
+          projectId,
+          actionType
+        }
+      })
+    }
+  }
+}
+
 export default compose(
   createSkeletonProvider(
     {
@@ -120,6 +106,10 @@ export default compose(
       color: '#bdc3c7'
     })
   ),
+  connect(
+    null,
+    mapDispatchToProps
+  ),
   graphql(followedProjectsGQL, {
     name: 'FollowedProjects',
     props: ({FollowedProjects, ownProps}) => {
@@ -131,11 +121,5 @@ export default compose(
         })
       }
     }
-  }),
-  graphql(FollowProjectGQL, {
-    name: 'followProject'
-  }),
-  graphql(UnfollowProjectGQL, {
-    name: 'unfollowProject'
   })
 )(DetailedHeader)

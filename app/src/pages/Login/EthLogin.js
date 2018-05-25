@@ -3,10 +3,7 @@ import { connect } from 'react-redux'
 import { graphql, withApollo } from 'react-apollo'
 import GoogleAnalytics from 'react-ga'
 import Raven from 'raven-js'
-import {
-  lifecycle,
-  compose
-} from 'recompose'
+import { lifecycle, compose } from 'recompose'
 import { Message } from 'semantic-ui-react'
 import { ethLoginGQL, followedProjectsGQL } from './LoginGQL'
 import {

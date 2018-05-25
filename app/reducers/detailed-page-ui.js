@@ -38,6 +38,10 @@ export default (state = initialState, action) => {
           interval
         }
       }
+    case 'TOGGLE_FAVORITE':
+      return {
+        ...state
+      }
     default:
       return state
   }

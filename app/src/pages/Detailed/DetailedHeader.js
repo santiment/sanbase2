@@ -1,13 +1,42 @@
 import React from 'react'
 import { createSkeletonProvider, createSkeletonElement } from '@trainline/react-skeletor'
+import { compose } from 'recompose'
+import { graphql } from 'react-apollo'
 import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
+import { followedProjectsGQL } from './../Login/LoginGQL'
+import { FollowProjectGQL, UnfollowProjectGQL } from './DetailedGQL'
 import './DetailedHeader.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
 const DIV = createSkeletonElement('div', 'pending-header pending-div')
+
+const followProjectHelper = (action, project) => ({
+  variables: {projectId: Number(project.id)},
+  optimisticResponse: {
+    __typename: 'Mutation',
+    [action]: {
+      __typename: 'Project',
+      id: project.id
+    }
+  },
+  update: (proxy) => {
+    let data = proxy.readQuery({ query: followedProjectsGQL })
+    const newFollowedProjects = data.followedProjects ? [...data.followedProjects] : []
+    if (action === 'followProject') {
+      newFollowedProjects.push({
+        id: project.id,
+        __typename: 'Project'
+      })
+      data.followedProjects = newFollowedProjects
+    } else if (action === 'unfollowProject') {
+      data.followedProjects = newFollowedProjects.filter(current => current.id !== project.id)
+    }
+    proxy.writeQuery({ query: followedProjectsGQL, data })
+  }
+})
 
 const DetailedHeader = ({
   project = {
@@ -18,21 +47,11 @@ const DetailedHeader = ({
   loading,
   empty,
   dispatch,
-  isFavorite,
   isLoggedIn,
-  addToFavorites,
-  removeFromFavorites
+  isFavorite,
+  followProject,
+  unfollowProject
 }) => {
-  const followProjectHelper = (action) => ({
-    variables: {projectId: Number(project.id)},
-    update: (proxy, { data }) => {
-      dispatch({
-        type: 'SET_FOLLOWED_PROJECTS',
-        followedProjects: data[`${action === 'remove' ? 'un' : ''}followProject`].followedProjects
-      })
-    }
-  })
-
   return (
     <div className='detailed-head'>
       <div className='detailed-project-about'>
@@ -50,7 +69,11 @@ const DetailedHeader = ({
               <Popup
                 trigger={
                   <i className={`fa fa-2x fa-star${isFavorite ? '' : '-o'}`}
-                    onClick={() => isFavorite ? removeFromFavorites(followProjectHelper('remove')) : addToFavorites(followProjectHelper('add'))}
+                    onClick={() => {
+                      isFavorite
+                        ? unfollowProject(followProjectHelper('unfollowProject', project))
+                        : followProject(followProjectHelper('followProject', project))
+                    }}
                     aria-hidden='true' />
                 }
                 content='Add to favorites'
@@ -79,20 +102,40 @@ const DetailedHeader = ({
   )
 }
 
-export default createSkeletonProvider(
-  {
-    project: {
-      name: '******',
-      description: '______ ___ ______ __ _____ __ ______',
-      ticker: '',
-      percentChange24h: 0,
-      priceBtc: 0,
-      priceUsd: 0
+export default compose(
+  createSkeletonProvider(
+    {
+      project: {
+        name: '******',
+        description: '______ ___ ______ __ _____ __ ______',
+        ticker: '',
+        percentChange24h: 0,
+        priceBtc: 0,
+        priceUsd: 0
+      }
+    },
+    ({ loading }) => loading,
+    () => ({
+      backgroundColor: '#bdc3c7',
+      color: '#bdc3c7'
+    })
+  ),
+  graphql(followedProjectsGQL, {
+    name: 'FollowedProjects',
+    props: ({FollowedProjects, ownProps}) => {
+      const { followedProjects = [] } = FollowedProjects
+      const { project = {} } = ownProps
+      return {
+        isFavorite: followedProjects && followedProjects.some(val => {
+          return val.id === project.id
+        })
+      }
     }
-  },
-  ({ loading }) => loading,
-  () => ({
-    backgroundColor: '#bdc3c7',
-    color: '#bdc3c7'
+  }),
+  graphql(FollowProjectGQL, {
+    name: 'followProject'
+  }),
+  graphql(UnfollowProjectGQL, {
+    name: 'unfollowProject'
   })
 )(DetailedHeader)

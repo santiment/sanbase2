@@ -201,22 +201,14 @@ export const DailyActiveAddressesGQL = gql`
 
 export const FollowProjectGQL = gql`
   mutation followProject($projectId: Int!) {
-    followProject(
-      projectId: $projectId
-    ) {
-      followedProjects {
-        id
-      }
+    followProject(projectId: $projectId) {
+      id
     }
 }`
 
 export const UnfollowProjectGQL = gql`
   mutation unfollowProject($projectId: Int!) {
-    unfollowProject(
-      projectId: $projectId
-    ) {
-      followedProjects {
-        id
-      }
+    unfollowProject(projectId: $projectId) {
+      id
     }
 }`

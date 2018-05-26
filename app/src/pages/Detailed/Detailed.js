@@ -25,9 +25,7 @@ import {
   TransactionVolumeGQL,
   ExchangeFundFlowGQL,
   EthSpentOverTimeByErc20ProjectsGQL,
-  DailyActiveAddressesGQL,
-  FollowProjectGQL,
-  UnfollowProjectGQL
+  DailyActiveAddressesGQL
 } from './DetailedGQL'
 import EthereumBlock from './EthereumBlock'
 import './Detailed.css'
@@ -90,11 +88,8 @@ export const Detailed = ({
     error: false,
     dailyActiveAddresses: []
   },
-  followProject,
-  unfollowProject,
   isDesktop,
   isLoggedIn,
-  dispatch,
   user,
   ...props
 }) => {
@@ -192,9 +187,6 @@ export const Detailed = ({
       project={project}
       ticker={project.ticker} />
 
-  const isFavorite = () => isLoggedIn && project &&
-    user.followedProjects && user.followedProjects.includes(project.id)
-
   return (
     <div className='page detailed'>
       <Helmet>
@@ -206,11 +198,7 @@ export const Detailed = ({
       {!isDesktop && <Search />}
       <DetailedHeader
         {...Project}
-        dispatch={dispatch}
-        isFavorite={isFavorite()}
         isLoggedIn={isLoggedIn}
-        addToFavorites={followProject}
-        removeFromFavorites={unfollowProject}
       />
       {isDesktop
         ? <Panel zero>{projectContainerChart}</Panel>
@@ -482,12 +470,6 @@ const enhance = compose(
         }
       }
     }
-  }),
-  graphql(FollowProjectGQL, {
-    name: 'followProject'
-  }),
-  graphql(UnfollowProjectGQL, {
-    name: 'unfollowProject'
   })
 )
 

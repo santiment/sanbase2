@@ -3,11 +3,7 @@ import debounce from 'lodash.debounce'
 import moment from 'moment'
 import * as qs from 'query-string'
 import Raven from 'raven-js'
-import {
-  compose,
-  withState,
-  pure
-} from 'recompose'
+import { compose, withState, pure } from 'recompose'
 import { connect } from 'react-redux'
 import { Button, Header, Icon, Modal, Message } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'

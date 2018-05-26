@@ -3,12 +3,9 @@ import { connect } from 'react-redux'
 import { graphql, withApollo } from 'react-apollo'
 import GoogleAnalytics from 'react-ga'
 import Raven from 'raven-js'
-import {
-  lifecycle,
-  compose
-} from 'recompose'
+import { lifecycle, compose } from 'recompose'
 import { Message } from 'semantic-ui-react'
-import { ethLoginGQL, followedProjectsGQL } from './LoginGQL'
+import { ethLoginGQL } from './LoginGQL'
 import {
   setupWeb3,
   hasMetamask,
@@ -23,7 +20,6 @@ const EthLogin = ({
   requestAuth,
   checkMetamask,
   authWithSAN,
-  followedProjects,
   client
 }) => {
   return (
@@ -50,7 +46,7 @@ const EthLogin = ({
           account={user.account}
           pending={user.isLoading}
           error={user.error}
-          handleAuth={() => requestAuth(user.account, authWithSAN, followedProjects, client)} />}
+          handleAuth={() => requestAuth(user.account, authWithSAN, client)} />}
     </Fragment>
   )
 }
@@ -69,7 +65,7 @@ const mapDispatchToProps = dispatch => {
         hasMetamask
       })
     },
-    requestAuth: (address, authWithSAN, followedProjects, client) => {
+    requestAuth: (address, authWithSAN, client) => {
       signMessage(address).then(({messageHash, signature}) => {
         dispatch({
           type: 'PENDING_LOGIN'
@@ -88,14 +84,6 @@ const mapDispatchToProps = dispatch => {
             user
           })
           client.resetStore()
-        })
-        .then(() => {
-          followedProjects.refetch().then(({data: {followedProjects}}) => {
-            dispatch({
-              type: 'SET_FOLLOWED_PROJECTS',
-              followedProjects
-            })
-          })
         })
         .catch((error) => {
           dispatch({
@@ -136,9 +124,6 @@ export default compose(
   withApollo,
   graphql(ethLoginGQL, {
     name: 'authWithSAN'
-  }),
-  graphql(followedProjectsGQL, {
-    name: 'followedProjects'
   }),
   lifecycle({
     componentDidMount () {

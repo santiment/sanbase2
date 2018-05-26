@@ -7,7 +7,7 @@ import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
-import { followedProjectsGQL } from './../Login/LoginGQL'
+import { followedProjectsGQL } from './DetailedGQL'
 import './DetailedHeader.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
@@ -22,7 +22,7 @@ const DetailedHeader = ({
   loading,
   empty,
   isLoggedIn,
-  isFavorite,
+  isFollowed,
   handleFavorite
 }) => {
   return (
@@ -41,10 +41,10 @@ const DetailedHeader = ({
             <div className='detailed-favorite'>
               <Popup
                 trigger={
-                  <i className={`fa fa-2x fa-star${isFavorite ? '' : '-o'}`}
+                  <i className={`fa fa-2x fa-star${isFollowed ? '' : '-o'}`}
                     onClick={() => handleFavorite({
                       projectId: project.id,
-                      actionType: isFavorite ? 'unfollowProject' : 'followProject'
+                      actionType: isFollowed ? 'unfollowProject' : 'followProject'
                     })}
                     aria-hidden='true' />
                 }
@@ -78,7 +78,7 @@ const mapDispatchToProps = dispatch => {
   return {
     handleFavorite: ({projectId, actionType}) => {
       dispatch({
-        type: 'TOGGLE_FAVORITE',
+        type: 'TOGGLE_FOLLOW',
         payload: {
           projectId,
           actionType
@@ -116,7 +116,7 @@ export default compose(
       const { followedProjects = [] } = FollowedProjects
       const { project = {} } = ownProps
       return {
-        isFavorite: followedProjects && followedProjects.some(val => {
+        isFollowed: followedProjects && followedProjects.some(val => {
           return val.id === project.id
         })
       }

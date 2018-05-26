@@ -38,7 +38,7 @@ export default (state = initialState, action) => {
           interval
         }
       }
-    case 'TOGGLE_FAVORITE':
+    case 'TOGGLE_FOLLOW':
       return {
         ...state
       }

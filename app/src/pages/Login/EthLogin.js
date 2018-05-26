@@ -5,7 +5,7 @@ import GoogleAnalytics from 'react-ga'
 import Raven from 'raven-js'
 import { lifecycle, compose } from 'recompose'
 import { Message } from 'semantic-ui-react'
-import { ethLoginGQL, followedProjectsGQL } from './LoginGQL'
+import { ethLoginGQL } from './LoginGQL'
 import {
   setupWeb3,
   hasMetamask,
@@ -129,9 +129,6 @@ export default compose(
   withApollo,
   graphql(ethLoginGQL, {
     name: 'authWithSAN'
-  }),
-  graphql(followedProjectsGQL, {
-    name: 'followedProjects'
   }),
   lifecycle({
     componentDidMount () {

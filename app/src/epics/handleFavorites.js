@@ -1,5 +1,10 @@
-import { followedProjectsGQL } from './../pages/Login/LoginGQL'
-import { FollowProjectGQL, UnfollowProjectGQL } from './../pages/Detailed/DetailedGQL'
+import GoogleAnalytics from 'react-ga'
+import Raven from 'raven-js'
+import {
+  FollowProjectGQL,
+  UnfollowProjectGQL,
+  followedProjectsGQL
+} from './../pages/Detailed/DetailedGQL'
 
 const followProjectHelper = ({actionType, projectId}) => ({
   variables: {projectId: Number(projectId)},
@@ -26,17 +31,26 @@ const followProjectHelper = ({actionType, projectId}) => ({
   }
 })
 
-const handleFavorites = (action$, store, { client }) =>
-  action$.ofType('TOGGLE_FAVORITE')
-    .map((action) => {
+const handleFollow = (action$, store, { client }) =>
+  action$.ofType('TOGGLE_FOLLOW')
+    .switchMap((action) => {
       const { actionType } = action.payload
       const mutation = actionType === 'followProject' ? FollowProjectGQL : UnfollowProjectGQL
-      client.mutate({
+      return client.mutate({
         mutation,
         ...followProjectHelper(action.payload)
       })
-      .catch(e => console.log(e))
-      return { type: 'PONG' }
+      .then(() => {
+        GoogleAnalytics.event({
+          category: 'Interactions',
+          action: `User follow the project ${action.payload.projectId}`
+        })
+        return { type: 'TOGGLE_FOLLOW_SUCCESS' }
+      })
+      .catch(error => {
+        Raven.captureException(error)
+        return { type: 'TOGGLE_FOLLOW_FAILED' }
+      })
     })
 
-export default handleFavorites
+export default handleFollow

@@ -199,6 +199,13 @@ export const DailyActiveAddressesGQL = gql`
     }
 }`
 
+export const followedProjectsGQL = gql`
+  query followedProjects {
+    followedProjects {
+        id,
+      }
+}`
+
 export const FollowProjectGQL = gql`
   mutation followProject($projectId: Int!) {
     followProject(projectId: $projectId) {

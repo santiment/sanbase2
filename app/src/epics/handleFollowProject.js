@@ -1,7 +1,7 @@
 import GoogleAnalytics from 'react-ga'
 import Raven from 'raven-js'
 import { Observable } from 'rxjs'
-import { showNotification } from 'react-notification-redux'
+import { showNotification } from './../actions/rootActions'
 import {
   FollowProjectGQL,
   UnfollowProjectGQL,

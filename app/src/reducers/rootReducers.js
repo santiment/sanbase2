@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux'
+import { notificationReducer } from 'react-notification-redux';
 import user, { initialState as userState } from './user'
 import projects, { initialState as projectsState } from './projects'
 

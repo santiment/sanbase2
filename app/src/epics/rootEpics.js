@@ -1,7 +1,7 @@
-import { combineEpics } from 'redux-observable'
 import 'rxjs'
-import handleFavorites from './handleFavorites'
+import { combineEpics } from 'redux-observable'
+import handleFollowProject from './handleFollowProject'
 
 export default combineEpics(
-  handleFavorites
+  handleFollowProject
 )

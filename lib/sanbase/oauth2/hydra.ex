@@ -145,7 +145,7 @@ defmodule Sanbase.Oauth2.Hydra do
     |> Map.get(client_id, 0)
   end
 
-  defp has_enough_san_tokens?(%User{} = user, _), do: true
+  defp has_enough_san_tokens?(%User{} = _user, _), do: true
 
   defp json_config_value(key) do
     Config.get(key)

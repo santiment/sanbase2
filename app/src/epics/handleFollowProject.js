@@ -1,5 +1,7 @@
 import GoogleAnalytics from 'react-ga'
 import Raven from 'raven-js'
+import { Observable } from 'rxjs'
+import { showNotification } from './../actions/rootActions'
 import {
   FollowProjectGQL,
   UnfollowProjectGQL,
@@ -31,26 +33,35 @@ const followProjectHelper = ({actionType, projectId}) => ({
   }
 })
 
+const notificationMsg = actionType =>
+  actionType === 'followProject'
+    ? 'You followed this project'
+    : 'You unfollowed this project'
+
 const handleFollow = (action$, store, { client }) =>
   action$.ofType('TOGGLE_FOLLOW')
     .switchMap((action) => {
       const { actionType } = action.payload
       const mutation = actionType === 'followProject' ? FollowProjectGQL : UnfollowProjectGQL
-      return client.mutate({
+      const mutationPromise = client.mutate({
         mutation,
         ...followProjectHelper(action.payload)
       })
-      .then(() => {
-        GoogleAnalytics.event({
-          category: 'Interactions',
-          action: `User follow the project ${action.payload.projectId}`
+      return Observable.from(mutationPromise)
+        .mergeMap(() => {
+          GoogleAnalytics.event({
+            category: 'Interactions',
+            action: `User follow the project ${action.payload.projectId}`
+          })
+          return Observable.merge(
+            Observable.of({ type: 'TOGGLE_FOLLOW_SUCCESS' }),
+            Observable.of(showNotification(notificationMsg(actionType)))
+          )
         })
-        return { type: 'TOGGLE_FOLLOW_SUCCESS' }
-      })
-      .catch(error => {
-        Raven.captureException(error)
-        return { type: 'TOGGLE_FOLLOW_FAILED' }
-      })
+        .catch(error => {
+          Raven.captureException(error)
+          return Observable.of({ type: 'TOGGLE_FOLLOW_FAILED', payload: error })
+        })
     })
 
 export default handleFollow

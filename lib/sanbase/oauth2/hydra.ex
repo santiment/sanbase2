@@ -36,10 +36,6 @@ defmodule Sanbase.Oauth2.Hydra do
     end
   end
 
-  def manage_consent(consent, access_token, user, _client_id) do
-    accept_consent(consent, access_token, user)
-  end
-
   def accept_consent(consent, access_token, user) do
     case do_accept_consent(consent, access_token, user) do
       {:ok, %HTTPoison.Response{status_code: 204}} -> :ok
@@ -114,7 +110,7 @@ defmodule Sanbase.Oauth2.Hydra do
     Decimal.cmp(User.san_balance!(user), Decimal.new(san_tokens)) != :lt
   end
 
-  defp has_enough_san_tokens?(%User{} = user, _), do: true
+  defp has_enough_san_tokens?(%User{} = _user, _), do: true
 
   defp json_config_value(key) do
     Config.get(key)

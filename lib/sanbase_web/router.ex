@@ -48,6 +48,12 @@ defmodule SanbaseWeb.Router do
     end
   end
 
+  scope "/", SanbaseWeb do
+    pipe_through(:browser)
+
+    get("/consent", RootController, :consent)
+  end
+
   scope "/api", SanbaseWeb do
     pipe_through(:api)
 
@@ -67,12 +73,6 @@ defmodule SanbaseWeb.Router do
     pipeline :nextjs do
       plug(:accepts, ["html"])
       plug(:put_secure_browser_headers)
-    end
-
-    scope "/", SanbaseWeb do
-      pipe_through(:browser)
-
-      get("/consent", RootController, :consent)
     end
 
     scope "/" do

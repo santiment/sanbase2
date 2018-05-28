@@ -65,8 +65,8 @@ defmodule Sanbase.Application do
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(
           :graph_coinmarketcap_rate_limiter,
           scale: 60_000,
-          limit: 20,
-          time_between_requests: 2000
+          limit: 30,
+          time_between_requests: 1000
         ),
 
         # Coinmarketcap api rate limiter
@@ -81,8 +81,8 @@ defmodule Sanbase.Application do
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(
           :http_coinmarketcap_rate_limiter,
           scale: 60_000,
-          limit: 20,
-          time_between_requests: 2000
+          limit: 30,
+          time_between_requests: 1000
         ),
 
         # Twitter API rate limiter
@@ -102,10 +102,14 @@ defmodule Sanbase.Application do
         ),
 
         # Price fetcher
+        # TODO: Change after switching over to only this cmc
         Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
+        Sanbase.ExternalServices.Coinmarketcap2.child_spec(%{}),
 
         # Current marketcap fetcher
+        # TODO: Change after switching over to only this cmc
         Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
+        Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2.child_spec(%{}),
 
         # Etherscan wallet tracking worker
         Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),

@@ -1,4 +1,5 @@
 defmodule Sanbase.Utils.Config do
+  alias __MODULE__, as: Config
   def parse_config_value({:system, env_key, default}) do
     System.get_env(env_key) || default
   end
@@ -15,7 +16,7 @@ defmodule Sanbase.Utils.Config do
     quote bind_quoted: [key: key] do
       Application.fetch_env!(:sanbase, __MODULE__)
       |> Keyword.get(key)
-      |> Sanbase.Utils.Config.parse_config_value()
+      |> Config.parse_config_value()
     end
   end
 
@@ -23,7 +24,7 @@ defmodule Sanbase.Utils.Config do
     quote bind_quoted: [key: key, default: default] do
       Application.fetch_env!(:sanbase, __MODULE__)
       |> Keyword.get(key, default)
-      |> Sanbase.Utils.Config.parse_config_value()
+      |> Config.parse_config_value()
     end
   end
 
@@ -31,7 +32,7 @@ defmodule Sanbase.Utils.Config do
     quote bind_quoted: [module: module, key: key] do
       Application.fetch_env!(:sanbase, module)
       |> Keyword.get(key)
-      |> Sanbase.Utils.Config.parse_config_value()
+      |> Config.parse_config_value()
     end
   end
 
@@ -39,7 +40,7 @@ defmodule Sanbase.Utils.Config do
     quote bind_quoted: [module: module, key: key, default: default] do
       Application.fetch_env!(:sanbase, module)
       |> Keyword.get(key, default)
-      |> Sanbase.Utils.Config.parse_config_value()
+      |> Config.parse_config_value()
     end
   end
 end

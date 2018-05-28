@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { createStore, applyMiddleware } from 'redux'
+import { createEpicMiddleware } from 'redux-observable'
 import { composeWithDevTools } from 'redux-devtools-extension'
 import axios from 'axios'
 import { multiClientMiddleware } from 'redux-axios-middleware'
@@ -18,6 +19,7 @@ import { InMemoryCache } from 'apollo-cache-inmemory'
 import { ApolloProvider } from 'react-apollo'
 import App from './App'
 import reducers from './reducers/rootReducers.js'
+import epics from './epics/rootEpics.js'
 import { loadState, saveState } from './utils/localStorage'
 import { getOrigin } from './utils/utils'
 import setAuthorizationToken from './utils/setAuthorizationToken'
@@ -186,6 +188,11 @@ const handleLoad = () => {
 
   const middleware = [
     multiClientMiddleware(clients),
+    createEpicMiddleware(epics, {
+      dependencies: {
+        client
+      }
+    }),
     createRavenMiddleware(Raven)
   ]
 

@@ -19,7 +19,7 @@ defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
     assert Scraper.parse_token_page!(html, %ProjectInfo{
              btt_link: "should_not_be_changed_to_nil"
            }) == %ProjectInfo{
-             total_supply: 6_804_870_174_878_168_246_198_837_603,
+             total_supply: 6_804_870_175,
              main_contract_address: "0x744d70fdbe2ba4cf95131626614a1763df805b9e",
              token_decimals: 18,
              website_link: "https://status.im/",

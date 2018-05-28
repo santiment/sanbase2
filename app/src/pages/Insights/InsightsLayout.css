@@ -12,7 +12,7 @@
 
 .event-votes-navs {
   margin-right: 30px;
-  width: 120px;
+  max-width: 220px;
   margin-top: 16px;
 }
 
@@ -23,11 +23,6 @@
 
 .event-votes-content {
   flex: 1;
-}
-
-.event-votes-content.panel {
-  margin: 0;
-  margin-top: 16px;
 }
 
 .event-votes-navs a {
@@ -68,9 +63,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e8e8e8;
 }
 
 .event-votes-sidebar {

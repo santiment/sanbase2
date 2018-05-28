@@ -19,13 +19,6 @@ const ethLoginGQL = gql`
       }
 }`
 
-const followedProjectsGQL = gql`
-  query followedProjects {
-    followedProjects {
-        id,
-      }
-}`
-
 const emailLoginGQL = gql`
   mutation emailLogin($email: String!, $username: String!, $consent: String!) {
     emailLogin(email: $email, username: $username, consent: $consent) {
@@ -36,6 +29,5 @@ const emailLoginGQL = gql`
 
 export {
   ethLoginGQL,
-  followedProjectsGQL,
   emailLoginGQL
 }

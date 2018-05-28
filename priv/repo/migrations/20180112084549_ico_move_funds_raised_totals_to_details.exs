@@ -17,10 +17,14 @@ defmodule Sanbase.Repo.Migrations.IcoMoveFundsRaisedTotalsToDetails do
     from(
       i in Ico,
       preload: [ico_currencies: [:currency]],
-      where: fragment("NOT EXISTS(select 1
+      where:
+        fragment(
+          "NOT EXISTS(select 1
                   from ico_currencies ic
                   where ic.ico_id = ?
-                        and ic.amount is not null)", i.id)
+                        and ic.amount is not null)",
+          i.id
+        )
     )
     |> Repo.stream(max_rows: 10000)
     |> Stream.each(fn ico ->

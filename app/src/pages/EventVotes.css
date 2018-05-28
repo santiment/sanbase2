@@ -42,6 +42,32 @@
   border: none;
 }
 
+.insight-list {
+  margin-top: 16px;
+}
+
+.posts-by-day {
+  margin-bottom: 20px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
+}
+
+.posts-by-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 8px;
+  user-select: none;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.posts-by-day-header .represent-day {
+  margin: 15px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
 @media (min-width: 1024px) {
   .event-votes-rows {
     flex-direction: row;

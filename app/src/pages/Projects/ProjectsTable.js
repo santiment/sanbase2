@@ -46,6 +46,16 @@ export const CustomHeadComponent = ({ children, className, ...rest }) => (
   </Sticky>
 )
 
+export const filterColumnsByTableSection = (tableSection, columns) => {
+  if (tableSection === 'currencies') {
+    return columns.filter(column =>
+      column.id !== 'eth_spent' &&
+      column.id !== 'daily_active_addresses' &&
+      column.id !== 'signals')
+  }
+  return columns
+}
+
 const ProjectsTable = ({
   Projects = {
     projects: [],
@@ -68,6 +78,7 @@ const ProjectsTable = ({
 }) => {
   const { loading } = Projects
   const projects = filterProjectsByMarketSegment(Projects.projects, categories, allMarketSegments)
+  const currentTableSection = match.path.split('/')[1] // currencies or projects ...
   const refetchThrottled = data => {
     throttle(data => data.refetch(), 1000)
   }
@@ -106,6 +117,7 @@ const ProjectsTable = ({
     filterable: true,
     sortable: true,
     minWidth: 44,
+    maxWidth: 100,
     accessor: d => ({
       name: d.name,
       ticker: d.ticker
@@ -157,7 +169,6 @@ const ProjectsTable = ({
     }),
     Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
       {priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : 'No data'}
-      &nbsp;
       {<PercentChanges changes={change24h} />}
     </div>,
     sortable: true,
@@ -199,9 +210,9 @@ const ProjectsTable = ({
   {
     Header: 'ETH spent (30D)',
     maxWidth: 110,
-    id: 'tx',
+    id: 'eth_spent',
     accessor: d => d.ethSpent,
-    Cell: ({value}) => <div className='overview-ethspent'>{`Ξ${formatNumber(value)}`}</div>,
+    Cell: ({value}) => <div className='overview-ethspent'>{`Ξ${millify(value, 2)}`}</div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(a, b)
   }, {
@@ -299,7 +310,7 @@ const ProjectsTable = ({
             ]}
             className='-highlight'
             data={projects}
-            columns={columns}
+            columns={filterColumnsByTableSection(currentTableSection, columns)}
             filtered={getFilter(search)}
             LoadingComponent={({ className, loading, loadingText, ...rest }) => (
               <div

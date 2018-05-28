@@ -1,17 +1,14 @@
 import React, { Fragment } from 'react'
 import debounce from 'lodash.debounce'
+import moment from 'moment'
+import * as qs from 'query-string'
 import Raven from 'raven-js'
-import {
-  compose,
-  withState,
-  pure
-} from 'recompose'
+import { compose, withState, pure } from 'recompose'
 import { connect } from 'react-redux'
 import { Button, Header, Icon, Modal, Message } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
 import { NavLink, Redirect } from 'react-router-dom'
-import Panel from './../components/Panel'
 import PostList from './../components/PostList'
 import { simpleSort } from './../utils/sortMethods'
 import ModalConfirmDeletePost from './Insights/ConfirmDeletePostModal'
@@ -43,25 +40,16 @@ export const voteMutationHelper = ({postId, action = 'vote'}) => ({
   }
 })
 
-const getPosts = (match, history, Posts) => {
-  const showedUserByIdPosts = match.path.split('/')[2] === 'users'
-  if (match.path.split('/')[2] === 'my') {
-    if (Posts.hasUserInsights) {
-      return Posts.userPosts
-    }
-    return []
+const formatDay = timestamp => {
+  if (moment.unix(timestamp).isSame(moment(), 'day')) {
+    return 'Today'
   }
-  if (showedUserByIdPosts) {
-    return Posts.postsByUserId
-  }
-  return Posts.filteredPosts
+  return moment.unix(timestamp).format('MMM Do YYYY')
 }
 
 const EventVotes = ({
   Posts = {
     posts: [],
-    filteredPosts: [],
-    userPosts: [],
     loading: true,
     isEmpty: false,
     hasUserInsights: false,
@@ -76,8 +64,6 @@ const EventVotes = ({
   match,
   user,
   balance,
-  toggleLoginRequest,
-  isToggledLoginRequest,
   toggleDeletePostRequest,
   isToggledDeletePostRequest,
   togglePublishPostRequest,
@@ -85,17 +71,19 @@ const EventVotes = ({
   setDeletePostId,
   deletePostId = undefined,
   setPublishInsightId,
-  publishInsightId = undefined
+  publishInsightId = undefined,
+  isOpenedLoginRequestModal,
+  loginModalRequest
 }) => {
   const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
   if (match.path.split('/')[2] === 'my' && !Posts.hasUserInsights) {
-    return <Redirect to='/insights/newest' />
+    return <Redirect to='/insights' />
   }
   return ([
     <Fragment key='modal-login-request'>
-      {isToggledLoginRequest &&
+      {isOpenedLoginRequestModal &&
         <ModalRequestLogin
-          toggleLoginRequest={toggleLoginRequest}
+          toggleLoginRequest={loginModalRequest}
           history={history} />}
     </Fragment>,
     <Fragment key='modal-delete-post-request'>
@@ -122,75 +110,70 @@ const EventVotes = ({
     </Fragment>,
     <Fragment key='page-event-votes'>
       <InsightsLayout isLogin={!!user.token}>
-        <Panel className='event-votes-content'>
-          <div className='event-votes-control'>
-            <div className='event-votes-navigation'>
-              <NavLink
-                className='event-votes-navigation__link'
-                activeClassName='event-votes-navigation__link--active'
-                exact
-                to={'/insights'}>
-                POPULAR
-              </NavLink>
-              <NavLink
-                className='event-votes-navigation__link'
-                activeClassName='event-votes-navigation__link--active'
-                exact
-                to={'/insights/newest'}>
-                NEWEST
-              </NavLink>
-            </div>
-            <div>
-              {user.token
-                ? <NavLink
-                  className='event-votes-navigation__add-link'
-                  to={'/insights/new'}>
-                  <Icon name='plus' /> New insight
-                </NavLink>
-                : <a
-                  onClick={() => toggleLoginRequest(!isToggledLoginRequest)}
-                  className='event-votes-navigation__add-link'>
-                  <Icon name='plus' /> New insight
-                  </a>}
-            </div>
-          </div>
+        <div className='insight-list'>
           {Posts.isEmpty && !showedMyPosts
             ? <Message><h2>We don't have any insights yet.</h2></Message>
-            : <PostList {...Posts}
-              posts={getPosts(match, history, Posts)}
-              userId={showedMyPosts ? user.data.id : undefined}
-              balance={balance}
-              gotoInsight={id => {
-                if (!user.token) {
-                  toggleLoginRequest(true)
-                } else {
-                  history.push(`/insights/${id}`)
-                }
-              }}
-              deletePost={postId => {
-                setDeletePostId(postId)
-                toggleDeletePostRequest(true)
-              }}
-              publishPost={postId => {
-                setPublishInsightId(postId)
-                togglePublishPostRequest(true)
-              }}
-              votePost={debounce(postId => {
-                user.token
-                  ? votePost(voteMutationHelper({postId, action: 'vote'}))
-                  .then(data => Posts.refetch())
-                  .catch(e => Raven.captureException(e))
-                  : toggleLoginRequest(!isToggledLoginRequest)
-              }, 100)}
-              unvotePost={debounce(postId => {
-                user.token
-                  ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
-                  .then(data => Posts.refetch())
-                  .catch(e => Raven.captureException(e))
-                  : toggleLoginRequest(!isToggledLoginRequest)
-              }, 100)}
-          />}
-        </Panel>
+            : Object.keys(Posts.posts).sort().reverse().map((key, index) => (
+              <div key={key} className='posts-by-day'>
+                <div className='posts-by-day-header'>
+                  <span className='represent-day'>{formatDay(key)}</span>
+                  {index === 0 &&
+                    <div className='event-votes-control'>
+                      <div className='event-votes-navigation'>
+                        <NavLink
+                          className='event-votes-navigation__link'
+                          activeClassName='event-votes-navigation__link--active'
+                          exact
+                          to={'?sort=popular'}>
+                          POPULAR
+                        </NavLink>
+                        <NavLink
+                          className='event-votes-navigation__link'
+                          activeClassName='event-votes-navigation__link--active'
+                          exact
+                          to={'?sort=newest'}>
+                          NEWEST
+                        </NavLink>
+                      </div>
+                    </div>}
+                </div>
+                <PostList {...Posts}
+                  posts={Posts.posts[key]}
+                  userId={showedMyPosts ? user.data.id : undefined}
+                  balance={balance}
+                  gotoInsight={id => {
+                    if (!user.token) {
+                      loginModalRequest(true)
+                    } else {
+                      history.push(`/insights/${id}`)
+                    }
+                  }}
+                  deletePost={postId => {
+                    setDeletePostId(postId)
+                    toggleDeletePostRequest(true)
+                  }}
+                  publishPost={postId => {
+                    setPublishInsightId(postId)
+                    togglePublishPostRequest(true)
+                  }}
+                  votePost={debounce(postId => {
+                    user.token
+                      ? votePost(voteMutationHelper({postId, action: 'vote'}))
+                      .then(data => Posts.refetch())
+                      .catch(e => Raven.captureException(e))
+                      : loginModalRequest()
+                  }, 100)}
+                  unvotePost={debounce(postId => {
+                    user.token
+                      ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
+                      .then(data => Posts.refetch())
+                      .catch(e => Raven.captureException(e))
+                      : loginModalRequest()
+                  }, 100)}
+                />
+              </div>
+            ))}
+        </div>
       </InsightsLayout>
     </Fragment>
   ])
@@ -247,10 +230,11 @@ export const sortByNewest = posts => {
 
 const mapDataToProps = props => {
   const { Insights, ownProps } = props
-  const filter = ownProps.match.path.split('/')[2] || 'popular'
+  const filter = ownProps.match.path.split('/')[2] || 'all'
+  const qsData = qs.parse(ownProps.location.search)
+  const sort = qsData['sort'] ? qsData.sort : 'popular'
   const posts = Insights.allInsights || []
-  let filteredPosts = posts
-    .filter(post => post.readyState ? post.readyState === 'published' : true)
+  let normalizedPosts = posts
     .map(post => {
       return {
         votes: {
@@ -258,20 +242,54 @@ const mapDataToProps = props => {
         },
         ...post}
     })
-  filteredPosts = sortByNewest(filteredPosts)
-  if (filter === 'popular') {
-    filteredPosts = sortByPopular(filteredPosts)
+
+  const filteredByPublished = posts => posts.filter(post => post.readyState ? post.readyState === 'published' : true)
+  const filteredBySelfUser = posts => posts.filter(post => post.user.id === ownProps.user.data.id)
+  const hasUserInsights = filteredBySelfUser(normalizedPosts).length > 0
+  const filteredByUserID = posts => posts.filter(post => post.user.id === ownProps.match.params.userId)
+
+  const postsByDay = normalizedPosts.reduce((acc, post) => {
+    const day = moment(post.createdAt).endOf('day').unix()
+    if (!acc[`${day}`]) {
+      acc[`${day}`] = []
+    }
+    acc[`${day}`].push(post)
+    return acc
+  }, {})
+
+  const reduceAllKeys = postsByDay => filterFn => Object.keys(postsByDay).reduce((acc, key) => {
+    const filtered = filterFn(postsByDay[key])
+    if (filtered.length > 0) {
+      acc[key] = filtered
+    }
+    return acc
+  }, {})
+
+  const applyFilter = posts => {
+    if (filter === 'users') {
+      return reduceAllKeys(posts)(
+        compose(
+          filteredByPublished,
+          filteredByUserID
+        )
+      )
+    } else if (filter === 'my') {
+      return reduceAllKeys(posts)(filteredBySelfUser)
+    }
+    return reduceAllKeys(posts)(filteredByPublished)
   }
 
-  const userPosts = sortByNewest(
-    posts.filter(post => post.user.id === ownProps.user.data.id)
-  )
+  const applySort = posts => {
+    if (sort === 'newest') {
+      return reduceAllKeys(posts)(sortByNewest)
+    }
+    return reduceAllKeys(posts)(sortByPopular)
+  }
 
-  const postsByUserId = filter === 'users'
-    ? sortByNewest(
-      posts.filter(post => post.user.id === ownProps.match.params.userId)
-    )
-    : []
+  const visiblePosts = compose(
+    applyFilter,
+    applySort
+  )(postsByDay)
 
   if (Insights.error) {
     throw new Error(Insights.error)
@@ -279,17 +297,14 @@ const mapDataToProps = props => {
 
   return {
     Posts: {
-      posts,
-      filteredPosts,
-      userPosts,
-      postsByUserId,
+      posts: visiblePosts,
       refetch: Insights.refetch,
       updateQuery: Insights.updateQuery,
       loading: Insights.loading,
       isEmpty: Insights.currentPoll &&
-        filteredPosts &&
-        filteredPosts.length === 0,
-      hasUserInsights: userPosts.length > 0,
+        visiblePosts &&
+        Object.keys(visiblePosts).length === 0,
+      hasUserInsights,
       isError: !!Insights.error || false,
       errorMessage: Insights.error ? Insights.error.message : ''
     }
@@ -299,15 +314,26 @@ const mapDataToProps = props => {
 const mapStateToProps = state => {
   return {
     user: state.user,
-    balance: getBalance(state)
+    balance: getBalance(state),
+    isOpenedLoginRequestModal: state.insightsPageUi.isOpenedLoginRequestModal
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    loginModalRequest: () => {
+      dispatch({
+        type: 'TOGGLE_LOGIN_REQUEST_MODAL'
+      })
+    }
   }
 }
 
 const enhance = compose(
   connect(
-    mapStateToProps
+    mapStateToProps,
+    mapDispatchToProps
   ),
-  withState('isToggledLoginRequest', 'toggleLoginRequest', false),
   withState('isToggledDeletePostRequest', 'toggleDeletePostRequest', false),
   withState('isToggledPublishPostRequest', 'togglePublishPostRequest', false),
   withState('deletePostId', 'setDeletePostId', undefined),

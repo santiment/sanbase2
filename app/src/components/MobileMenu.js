@@ -1,40 +1,25 @@
 import React from 'react'
-import { withRouter } from 'react-router-dom'
-import * as qs from 'query-string'
+import { withRouter, NavLink as Link } from 'react-router-dom'
+import cx from 'classnames'
 import { connect } from 'react-redux'
 import { Icon } from 'react-fa'
-import {
-  withState,
-  compose
-} from 'recompose'
+import { Button } from 'semantic-ui-react'
+import { compose, withStateHandlers } from 'recompose'
 import 'font-awesome/css/font-awesome.css'
 import './MobileMenu.css'
 import logo from '../assets/logo_sanbase.png'
-import AuthControl from './AuthControl'
-import AppMenu from './AppMenu'
-
-const appMenuCls = isMenuOpened => {
-  const defaultCls = 'app-menu mobile-app-menu'
-  return isMenuOpened
-    ? `${defaultCls} overlay`
-    : defaultCls
-}
-
-const hasInsights = location => {
-  const qsData = qs.parse(location.search)
-  return qsData && qsData.insights
-}
 
 const MobileMenu = ({
+  isOpened = false,
   toggleMenu,
-  isMenuOpened,
   history,
-  loading,
-  user,
-  location,
+  isLogined,
   logout
 }) => (
-  <div className={appMenuCls(isMenuOpened)}>
+  <div className={cx({
+    'mobile-app-menu': true,
+    'overlay': isOpened
+  })}>
     <div className='app-bar'>
       <div
         onClick={() => history.push('/')}
@@ -46,48 +31,58 @@ const MobileMenu = ({
           alt='SANbase' />
       </div>
       <Icon
-        onClick={() => toggleMenu(opened => !opened)}
-        name='bars' />
+        className={isOpened ? 'close-btn--rotation' : ''}
+        onClick={toggleMenu}
+        name={isOpened ? 'close' : 'bars'} />
     </div>
-    {isMenuOpened &&
+    {isOpened &&
       <div className='overlay-content'>
-        <AppMenu
-          showIcons
-          isMobile
-          location={history.location}
-          showInsights={hasInsights(location)}
-          handleNavigation={nextRoute => {
-            toggleMenu(opened => !opened)
-            history.push(`/${nextRoute}`)
-          }} />
-        <AuthControl
-          login={() => {
-            toggleMenu(opened => !opened)
-            history.push('/login')
-          }}
-          openSettings={() => {
-            toggleMenu(opened => !opened)
-            history.push('/account')
-          }}
-          handleNavigation={nextRoute => {
-            toggleMenu(opened => !opened)
-            history.push(`/${nextRoute}`)
-          }}
-          isDesktop={false}
-          user={user}
-          logout={() => {
-            toggleMenu(opened => !opened)
-            logout()
-          }} />
-      </div>
-    }
+        <div className='navigation-list'>
+          <Link
+            onClick={toggleMenu}
+            to={'/signals'}>
+            Signals
+          </Link>
+          <Link
+            onClick={toggleMenu}
+            to={'/roadmap'}>
+            Roadmap
+          </Link>
+          <Link
+            onClick={toggleMenu}
+            to={'/projects'}>
+            ERC20 Projects
+          </Link>
+          <Link
+            onClick={toggleMenu}
+            to={'/currencies'}>
+            Currencies
+          </Link>
+        </div>
+        {isLogined
+          ? <Button
+            color='orange'
+            onClick={() => {
+              toggleMenu()
+              logout()
+            }}>
+              Logout
+            </Button>
+          : <Button
+            color='green'
+            onClick={() => {
+              toggleMenu()
+              history.push('/login')
+            }}>
+              Login
+            </Button>}
+      </div>}
   </div>
 )
 
-const mapStateToProps = state => {
+const mapStateToProps = ({ user = {} }) => {
   return {
-    user: state.user.data,
-    loading: state.user.isLoading
+    isLogined: !!user.token
   }
 }
 
@@ -102,12 +97,17 @@ const mapDispatchToProps = dispatch => {
 }
 
 const enhance = compose(
+  withRouter,
   connect(
     mapStateToProps,
     mapDispatchToProps
   ),
-  withRouter,
-  withState('isMenuOpened', 'toggleMenu', false)
+  withStateHandlers(
+    { isOpened: false },
+    {
+      toggleMenu: ({isOpened}) => () => ({isOpened: !isOpened})
+    }
+  )
 )
 
 export default enhance(MobileMenu)

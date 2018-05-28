@@ -2,7 +2,7 @@
   z-index: 99999;
 }
 
-.app-bar {
+.mobile-app-menu .app-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -12,11 +12,19 @@
   padding: 16px 22px;
 }
 
-.app-bar .brand {
+.mobile-app-menu.overlay .app-bar {
+  background: #262b33;
+}
+
+.mobile-app-menu.overlay .app-bar .close-btn--rotation {
+  animation: rotate 0.2s 1;
+}
+
+.mobile-app-menu .app-bar .brand {
   padding-top: 6px;
 }
 
-.app-bar .fa {
+.mobile-app-menu .app-bar .fa {
   font-size: 1.7em;
 }
 
@@ -29,23 +37,46 @@
   top: 0;
   background-color: #262b33;
   overflow-x: hidden;
-  transition: 0.5s;
 }
 
 .mobile-app-menu .overlay-content {
   position: relative;
-  top: 25%;
   width: 100%;
-  color: rgba(255, 255, 255, 0.7);
-  list-style: none;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+  cursor: pointer;
 }
 
-.mobile-app-menu .overlay-content .menu-list a,
-.mobile-app-menu .overlay-content .menu-list li {
-  display: flex;
-  align-items: center;
+.mobile-app-menu a {
+  text-decoration: none;
   text-align: center;
+  padding: 10px 22px;
+  color: rgba(255, 255, 255, 0.9);
+  display: list-item;
+  list-style-type: none;
   font-size: 24px;
   font-weight: 600;
   border-bottom: none;
+}
+
+.mobile-app-menu a:hover {
+  background-color: #4f5b69;
+  transition: all 1s ease;
+}
+
+.mobile-app-menu a.active {
+  color: rgb(24, 186, 55);
+}
+
+.mobile-app-menu .button {
+  margin: 0 22px !important;
+}
+
+.mobile-app-menu .navigation-list {
+  flex: 1;
+  padding-top: 35%;
 }

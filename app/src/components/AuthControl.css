@@ -44,10 +44,6 @@
 }
 
 @media (min-width: 1024px) {
-  .user-auth-control {
-    padding: 0;
-  }
-
   .acct {
     margin-bottom: 0;
   }

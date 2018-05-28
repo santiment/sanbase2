@@ -35,11 +35,12 @@ const handleSendFeedback = ({message = '', onPending, onSuccess, onError}) => {
 
 const FeedbackBtn = props => {
   return (
-    <div
-      className='feedback-button-wrapper'>
+    <div className='feedback-button-wrapper'>
       <Popup
         className='feedback-body-wrapper'
         basic
+        inverted
+        position='bottom center'
         wide
         onClose={() => {
           props.onChange('')
@@ -48,39 +49,38 @@ const FeedbackBtn = props => {
           props.onPending(false)
         }}
         trigger={
-          <Button size='tiny'>
-            <Icon name='bullhorn' />
-            Feedback about this page?
-          </Button>
-      } on='click'>
-        <FadeIn duration='0.5s' timingFunction='ease-out' as='div'>
-          <Form
-            className='attached fluid'
-            onSubmit={() => handleSendFeedback(props)}>
-            <TextArea
-              value={props.message}
-              onChange={e => {
-                const message = e.target.value
-                if (message.length < MAX_FEEDBACK_MESSAGE_LENGTH) {
-                  props.onChange(e.target.value)
-                }
-              }}
-              autoHeight placeholder='Start typing...' />
-            {props.isSuccess
-              ? <div>Thank you!</div>
-              : <Button type='submit' basic size='tiny' color='green'>
-                {props.isPending ? 'Waiting...' : 'Submit'}
-              </Button>}
-          </Form>
-          {props.message.length >= MAX_FEEDBACK_MESSAGE_LENGTH - 1 &&
-          <Message attached='bottom' warning>
-            Maximum length of feedback message.
-          </Message>}
-        </FadeIn>
+          <Button circular icon='bullhorn' />
+      } on='hover'>
+        Send a feedback
       </Popup>
     </div>
   )
 }
+
+//<FadeIn duration='0.5s' timingFunction='ease-out' as='div'>
+          //<Form
+            //className='attached fluid'
+            //onSubmit={() => handleSendFeedback(props)}>
+            //<TextArea
+              //value={props.message}
+              //onChange={e => {
+                //const message = e.target.value
+                //if (message.length < MAX_FEEDBACK_MESSAGE_LENGTH) {
+                  //props.onChange(e.target.value)
+                //}
+              //}}
+              //autoHeight placeholder='Start typing...' />
+            //{props.isSuccess
+              //? <div>Thank you!</div>
+              //: <Button type='submit' basic size='tiny' color='green'>
+                //{props.isPending ? 'Waiting...' : 'Submit'}
+              //</Button>}
+          //</Form>
+          //{props.message.length >= MAX_FEEDBACK_MESSAGE_LENGTH - 1 &&
+          //<Message attached='bottom' warning>
+            //Maximum length of feedback message.
+          //</Message>}
+        //</FadeIn>
 
 const enhance = compose(
   withState('isPending', 'onPending', false),

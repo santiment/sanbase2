@@ -52,6 +52,7 @@ const ChooseAuthProvider = ({
   isDesktop,
   gotoEmail,
   gotoMetamask,
+  consent,
   prevAuthProvider = null
 }) => (
   <Fragment>
@@ -112,18 +113,19 @@ const gotoBack = changeStep => {
 export const Login = ({
   currentStep,
   changeStep,
-  isDesktop
+  isDesktop,
+  consent
 }) => {
   if (currentStep === STEPS.metamask) {
     return (
       <AuthProvider gotoBack={() => gotoBack(changeStep)}>
-        <EthLogin />
+        <EthLogin consent={consent} />
       </AuthProvider>
     )
   } else if (currentStep === STEPS.email) {
     return (
       <AuthProvider gotoBack={() => gotoBack(changeStep)}>
-        <EmailLogin />
+        <EmailLogin consent={consent} />
       </AuthProvider>
     )
   }
@@ -144,7 +146,8 @@ export const Login = ({
         changeStep(STEPS.email)
       }}
       prevAuthProvider={loadPrevAuthProvider()}
-      isDesktop={isDesktop} />
+      isDesktop={isDesktop}
+      consent={consent} />
   )
 }
 

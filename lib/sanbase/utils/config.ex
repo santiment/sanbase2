@@ -1,5 +1,6 @@
 defmodule Sanbase.Utils.Config do
   alias __MODULE__, as: Config
+
   def parse_config_value({:system, env_key, default}) do
     System.get_env(env_key) || default
   end

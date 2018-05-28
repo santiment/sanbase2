@@ -81,3 +81,7 @@ yarn --cwd app storybook
 ```
 
 Open http://localhost:9001
+
+## Setting up Hydra Oauth2 server locally
+[Setup Hydra locally] (docs/hydra-development-setup.md)
+[Grafana generic oauth setup] (docs/setup-generic-oauth-grafana.md)

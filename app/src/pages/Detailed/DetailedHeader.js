@@ -23,7 +23,7 @@ const DetailedHeader = ({
   empty,
   isLoggedIn,
   isFollowed,
-  handleFavorite
+  handleFollow
 }) => {
   return (
     <div className='detailed-head'>
@@ -42,7 +42,7 @@ const DetailedHeader = ({
               <Popup
                 trigger={
                   <i className={`fa fa-2x fa-star${isFollowed ? '' : '-o'}`}
-                    onClick={() => handleFavorite({
+                    onClick={() => handleFollow({
                       projectId: project.id,
                       actionType: isFollowed ? 'unfollowProject' : 'followProject'
                     })}
@@ -76,7 +76,7 @@ const DetailedHeader = ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    handleFavorite: ({projectId, actionType}) => {
+    handleFollow: ({projectId, actionType}) => {
       dispatch({
         type: 'TOGGLE_FOLLOW',
         payload: {

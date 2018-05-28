@@ -10,6 +10,7 @@ import { connect } from 'react-redux'
 import { compose } from 'recompose'
 import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
+import Notification from './components/Notification'
 import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import Currencies from './pages/Currencies'
@@ -147,6 +148,7 @@ export const App = ({isDesktop, isLoggedIn, isFullscreenMobile}) => (
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>
+    <Notification />
     {isDesktop && <Footer />}
   </div>
 )

@@ -48,6 +48,12 @@ defmodule SanbaseWeb.Router do
     end
   end
 
+  scope "/", SanbaseWeb do
+    pipe_through(:browser)
+
+    get("/consent", RootController, :consent)
+  end
+
   scope "/api", SanbaseWeb do
     pipe_through(:api)
 
@@ -70,8 +76,6 @@ defmodule SanbaseWeb.Router do
     end
 
     scope "/" do
-      pipe_through([:nextjs])
-
       get("/*path", ReverseProxy, upstream: ["http://localhost:3000"])
     end
   else

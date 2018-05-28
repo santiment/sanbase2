@@ -65,8 +65,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   def parse_token_page!(html, project_info) do
     %ProjectInfo{
       project_info
-      # We want to override the currently stored total_supply and that's the reason why the order is different than the rest of the fields
-      | total_supply: total_supply(html) || project_info.total_supply,
+      | # We want to override the currently stored total_supply and that's the reason why the order is different than the rest of the fields
+        total_supply: total_supply(html) || project_info.total_supply,
         main_contract_address: project_info.main_contract_address || main_contract_address(html),
         token_decimals: project_info.token_decimals || token_decimals(html),
         website_link: project_info.website_link || official_link(html, "Website"),

@@ -20,8 +20,8 @@ const ethLoginGQL = gql`
 }`
 
 const emailLoginGQL = gql`
-  mutation emailLogin($email: String!, $username: String!) {
-    emailLogin(email: $email, username: $username) {
+  mutation emailLogin($email: String!, $username: String!, $consent: String!) {
+    emailLogin(email: $email, username: $username, consent: $consent) {
       success
     }
   }

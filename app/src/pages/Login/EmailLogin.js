@@ -108,7 +108,8 @@ const EmailLogin = ({
   isSuccess = false,
   onPending,
   onError,
-  onSuccess
+  onSuccess,
+  consent
 }) => {
   if (isSuccess) {
     return (
@@ -138,7 +139,7 @@ const EmailLogin = ({
         }}
         onSubmit={values => {
           onPending(true)
-          emailLogin({variables: {...values}})
+          emailLogin({variables: {...values, consent}})
             .then(data => {
               onPending(false)
               onSuccess(true)

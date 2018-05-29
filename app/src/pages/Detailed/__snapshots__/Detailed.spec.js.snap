@@ -99,6 +99,20 @@ exports[`Project detail page container it should render correctly 1`] = `
           "loading": true,
         }
       }
+      twitterData={
+        Object {
+          "error": false,
+          "followersCount": 0,
+          "loading": true,
+        }
+      }
+      twitterHistory={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": false,
+        }
+      }
     />
   </div>
   <div

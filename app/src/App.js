@@ -29,6 +29,7 @@ import ErrorBoundary from './ErrorBoundary'
 import PageLoader from './components/PageLoader'
 import Status from './pages/Status'
 import Footer from './components/Footer'
+import FeedbackModal from './components/FeedbackModal.js'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -75,7 +76,11 @@ class Route extends React.Component {
   }
 }
 
-export const App = ({isDesktop, isLoggedIn, isFullscreenMobile}) => (
+export const App = ({
+  isDesktop,
+  isLoggedIn,
+  isFullscreenMobile
+}) => (
   <div className='App'>
     {isFullscreenMobile
       ? undefined
@@ -149,6 +154,7 @@ export const App = ({isDesktop, isLoggedIn, isFullscreenMobile}) => (
       </Switch>
     </ErrorBoundary>
     <Notification />
+    <FeedbackModal />
     {isDesktop && <Footer />}
   </div>
 )

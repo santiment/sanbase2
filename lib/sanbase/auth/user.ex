@@ -32,6 +32,7 @@ defmodule Sanbase.Auth.User do
     field(:email_token, :string)
     field(:email_token_generated_at, Timex.Ecto.DateTime)
     field(:email_token_validated_at, Timex.Ecto.DateTime)
+    field(:consent_id, :string)
 
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -94,12 +95,13 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  def update_email_token(user) do
+  def update_email_token(user, consent \\ nil) do
     user
     |> change(
       email_token: generate_email_token(),
       email_token_generated_at: Timex.now(),
-      email_token_validated_at: nil
+      email_token_validated_at: nil,
+      consent_id: consent
     )
     |> Repo.update()
   end

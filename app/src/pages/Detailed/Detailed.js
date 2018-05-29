@@ -26,10 +26,8 @@ import {
   TransactionVolumeGQL,
   ExchangeFundFlowGQL,
   EthSpentOverTimeByErc20ProjectsGQL,
-  DailyActiveAddressesGQL,
-  FollowProjectGQL,
-  UnfollowProjectGQL,
-  EmojisSentimentGQL
+  EmojisSentimentGQL,
+  DailyActiveAddressesGQL
 } from './DetailedGQL'
 import EthereumBlock from './EthereumBlock'
 import './Detailed.css'
@@ -97,11 +95,13 @@ export const Detailed = ({
     error: false,
     emojisSentiment: []
   },
-  followProject,
-  unfollowProject,
+  TwitterHistory = {
+    loading: false,
+    error: false,
+    followersCount: []
+  },
   isDesktop,
   isLoggedIn,
-  dispatch,
   user,
   hasPremium,
   ...props
@@ -166,6 +166,12 @@ export const Detailed = ({
     items: DailyActiveAddresses.dailyActiveAddresses || []
   }
 
+  const twitterHistory = {
+    loading: TwitterHistory.loading,
+    error: TwitterHistory.error || false,
+    items: TwitterHistory.historyTwitterData || []
+  }
+
   const emojisSentiment = {
     loading: EmojisSentiment.loading,
     error: EmojisSentiment.error,
@@ -182,6 +188,12 @@ export const Detailed = ({
     loading: Project.loading,
     error: project.errorMessage || false,
     items: project.ethSpentOverTime || []
+  }
+
+  const twitterData = {
+    loading: TwitterData.loading,
+    error: TwitterData.error || false,
+    followersCount: (TwitterData.twitterData || {}).followersCount || 0
   }
 
   const _ethSpentOverTime = project.ticker === 'ETH'
@@ -202,14 +214,13 @@ export const Detailed = ({
       ethSpentOverTime={_ethSpentOverTime}
       dailyActiveAddresses={dailyActiveAddresses}
       emojisSentiment={emojisSentiment}
+      twitterHistory={twitterHistory}
+      twitterData={twitterData}
       ethPrice={ethPrice}
       isERC20={project.isERC20}
       isPremium={hasPremium}
       project={project}
       ticker={project.ticker} />
-
-  const isFavorite = () => isLoggedIn && project &&
-    user.followedProjects && user.followedProjects.includes(project.id)
 
   return (
     <div className='page detailed'>
@@ -222,11 +233,7 @@ export const Detailed = ({
       {!isDesktop && <Search />}
       <DetailedHeader
         {...Project}
-        dispatch={dispatch}
-        isFavorite={isFavorite()}
         isLoggedIn={isLoggedIn}
-        addToFavorites={followProject}
-        removeFromFavorites={unfollowProject}
       />
       {isDesktop
         ? <Panel zero>{projectContainerChart}</Panel>
@@ -514,12 +521,6 @@ const enhance = compose(
         }
       }
     }
-  }),
-  graphql(FollowProjectGQL, {
-    name: 'followProject'
-  }),
-  graphql(UnfollowProjectGQL, {
-    name: 'unfollowProject'
   })
 )
 

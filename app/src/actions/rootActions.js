@@ -1,4 +1,4 @@
-import { SHOW_NOTIFICATION } from './types'
+import { SHOW_NOTIFICATION, APP_CHANGE_ONLINE_STATUS } from './types'
 
 export const showNotification = (
   payload = { message: 'Empty message' }
@@ -15,3 +15,10 @@ export const showNotification = (
     }
   }
 }
+
+export const changeNetworkStatus = newtworkStatus => ({
+  type: APP_CHANGE_ONLINE_STATUS,
+  payload: {
+    isOnline: newtworkStatus
+  }
+})

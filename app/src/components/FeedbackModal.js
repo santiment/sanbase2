@@ -42,6 +42,7 @@ const FeedbackModal = ({
   return (
     <Modal
       open={isFeedbackModalOpened}
+      dimmer={'blurring'}
       onClose={() => {
         props.onChange('')
         props.onSuccess(false)
@@ -87,7 +88,6 @@ const FeedbackModal = ({
             {props.isPending ? 'Waiting...' : 'Submit'}
           </Button>}
       </Modal.Actions>
-      }
     </Modal>
   )
 }

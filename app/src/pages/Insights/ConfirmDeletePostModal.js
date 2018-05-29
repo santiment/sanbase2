@@ -24,10 +24,6 @@ const ConfirmDeletePostModal = ({
   return (
     <Modal
       defaultOpen
-      style={{
-        marginTop: '35% !important',
-        margin: 'auto'
-      }}
       dimmer={'blurring'}
       onClose={toggleForm} closeIcon>
       {isSuccess

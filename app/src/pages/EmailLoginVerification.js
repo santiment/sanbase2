@@ -22,6 +22,7 @@ const emailLoginVerifyGQL = gql`
         id,
         email,
         username,
+        consent_id,
         ethAccounts {
           address,
           sanBalance
@@ -42,7 +43,7 @@ export const EmailLoginVerification = ({verificationStatus = 'pending'}) => {
   if (verificationStatus === 'failed') {
     return (
       <div style={{margin: '1em'}}>
-        <h2>You don't have access.</h2>
+        <h2>You do not have access.</h2>
       </div>
     )
   }
@@ -73,11 +74,17 @@ const mapDispatchToProps = dispatch => {
           dispatch({
             type: 'SUCCESS_LOGIN',
             token,
-            user
+            user,
+            consent: user.consent_id
           })
           props.changeVerificationStatus('verified')
           props.client.resetStore()
-          props.history.push('/')
+
+          if (user.consent_id) {
+            window.location.replace(`/consent?consent=${user.consent_id}&token=${token}`)
+          } else {
+            props.history.push('/')
+          }
         })
         .catch(error => {
           GoogleAnalytics.event({

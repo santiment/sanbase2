@@ -1,7 +1,10 @@
 import React from 'react'
+import { compose } from 'recompose'
+import { graphql } from 'react-apollo'
 import 'react-table/react-table.css'
 import ProjectsTable from './Projects/ProjectsTable'
 import withProjectsData from './Projects/withProjectsData'
+import { followedProjectsGQL } from './../pages/Detailed/DetailedGQL'
 
 export const Favorites = ({
   Projects,
@@ -15,35 +18,45 @@ export const Favorites = ({
   allMarketSegments,
   preload,
   user
-}) => {
-  if (Projects.projects.length > 0 &&
-    user.followedProjects && user.followedProjects.length > 0) {
-    Projects = {
-      ...Projects,
-      projects: Projects.projects.filter((project) => user.followedProjects.includes(project.id))
-    }
-  } else {
-    Projects = {
-      ...Projects,
-      projects: []
-    }
-  }
+}) => (
+  <ProjectsTable
+    Projects={Projects}
+    onSearch={onSearch}
+    handleSetCategory={handleSetCategory}
+    history={history}
+    match={match}
+    search={search}
+    tableInfo={tableInfo}
+    categories={categories}
+    allMarketSegments={allMarketSegments}
+    preload={preload}
+    user={user}
+  />
+)
 
-  return (
-    <ProjectsTable
-      Projects={Projects}
-      onSearch={onSearch}
-      handleSetCategory={handleSetCategory}
-      history={history}
-      match={match}
-      search={search}
-      tableInfo={tableInfo}
-      categories={categories}
-      allMarketSegments={allMarketSegments}
-      preload={preload}
-      user={user}
-    />
-  )
-}
-
-export default withProjectsData({type: 'all'})(Favorites)
+export default compose(
+  withProjectsData({type: 'all'}),
+  graphql(followedProjectsGQL, {
+    name: 'FollowedProjects',
+    props: ({FollowedProjects, ownProps}) => {
+      const { followedProjects = [] } = FollowedProjects
+      const _followed = followedProjects.map(project => project.id)
+      const { Projects = {} } = ownProps
+      if (Projects.projects.length > 0 && _followed.length > 0) {
+        return {
+          Projects: {
+            ...Projects,
+            projects: Projects.projects.filter(project => _followed.includes(project.id))
+          }
+        }
+      } else {
+        return {
+          Projects: {
+            ...Projects,
+            projects: []
+          }
+        }
+      }
+    }
+  })
+)(Favorites)

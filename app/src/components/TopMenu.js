@@ -1,67 +1,68 @@
 import React from 'react'
 import { withRouter, Link } from 'react-router-dom'
-import * as qs from 'query-string'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import 'font-awesome/css/font-awesome.css'
 import logo from '../assets/logo_sanbase.png'
-import AppMenu from './AppMenu'
-import AuthControl from './AuthControl'
+import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './SearchContainer'
-import FeedbackBtn from './FeedbackBtn'
+import './AppMenu.css'
 import './TopMenu.css'
 
 export const TopMenu = ({
-  user,
-  loading,
-  logout,
-  history,
-  location,
-  projects = []
- }) => {
-  const qsData = qs.parse(location.search)
-  return (
-    <div className='top-menu'>
-      <div className='container'>
-        <div className='left'>
+ isLoggedin,
+ logout,
+ history,
+ location,
+ projects = []
+}) => (
+  <div className='app-menu'>
+    <div className='container'>
+      <div className='left'>
+        <Link
+          to={'/'}
+          exact
+          className='brand'>
+          <img
+            src={logo}
+            width='115'
+            height='22'
+            alt='SANbase' />
+        </Link>
+        <Search />
+      </div>
+      <div className='right'>
+        <ul className='menu-list-top' >
           <Link
-            to={'/'}
-            className='brand'>
-            <img
-              src={logo}
-              width='115'
-              height='22'
-              alt='SANbase' />
+            className='app-menu__page-link'
+            to={'/projects'}>
+            Markets
           </Link>
-          <Search />
-        </div>
-        <FeedbackBtn />
-        <div className='right'>
-          <AppMenu
-            showInsights={qsData && qsData.insights}
-            handleNavigation={nextRoute => {
-              history.push(`/${nextRoute}`)
-            }} />
-          <AuthControl
-            login={() => history.push('/login')}
-            openSettings={() => {
-              history.push('/account')
-            }}
-            handleNavigation={nextRoute => {
-              history.push(`/${nextRoute}`)
-            }}
-            user={user}
-            logout={logout} />
-        </div>
+          <Link
+            className='app-menu__page-link'
+            to={'/signals'}>
+            Signals
+          </Link>
+          <Link
+            className='app-menu__page-link'
+            to={'/roadmap'}>
+            Roadmap
+          </Link>
+        </ul>
+        <HeaderDropdownMenu
+          handleNavigation={nextRoute => {
+            history.push(`/${nextRoute}`)
+          }}
+          isLoggedin={isLoggedin}
+          logout={logout} />
       </div>
     </div>
-  )
-}
+  </div>
+)
 
-const mapStateToProps = state => {
+const mapStateToProps = ({user = {}}) => {
   return {
-    user: state.user.data,
-    loading: state.user.isLoading
+    isLoggedin: !!user.token
   }
 }
 

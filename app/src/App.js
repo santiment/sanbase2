@@ -10,6 +10,7 @@ import { connect } from 'react-redux'
 import { compose } from 'recompose'
 import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
+import Notification from './components/Notification'
 import LoginPage from './pages/Login/LoginPage'
 import Cashflow from './pages/Cashflow'
 import Currencies from './pages/Currencies'
@@ -21,7 +22,7 @@ import Signals from './pages/Signals'
 import Account from './pages/Account'
 import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
-import TopMenu from './components/TopMenu'
+import Menu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
@@ -79,7 +80,7 @@ export const App = ({isDesktop, isLoggedIn, isFullscreenMobile}) => (
     {isFullscreenMobile
       ? undefined
       : (isDesktop
-        ? <TopMenu />
+        ? <Menu />
         : <MobileMenu />)}
     <ErrorBoundary>
       <Switch>
@@ -147,6 +148,7 @@ export const App = ({isDesktop, isLoggedIn, isFullscreenMobile}) => (
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>
+    <Notification />
     {isDesktop && <Footer />}
   </div>
 )

@@ -4,6 +4,7 @@ import {
   Switch,
   Redirect
 } from 'react-router-dom'
+import { FadeInDown } from 'animate-components'
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
 import { connect } from 'react-redux'
@@ -79,9 +80,18 @@ class Route extends React.Component {
 export const App = ({
   isDesktop,
   isLoggedIn,
-  isFullscreenMobile
+  isFullscreenMobile,
+  isOffline
 }) => (
   <div className='App'>
+    {isOffline &&
+    <FadeInDown
+      className='offline-status-message'
+      duration='1.0s'
+      timingFunction='ease-out'
+      as='div'>
+        OFFLINE
+    </FadeInDown>}
     {isFullscreenMobile
       ? undefined
       : (isDesktop
@@ -162,7 +172,8 @@ export const App = ({
 const mapStateToProps = state => {
   return {
     isLoggedIn: !!state.user.token,
-    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile
+    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
+    isOffline: !state.rootUi.isOnline
   }
 }
 

@@ -1,5 +1,6 @@
 export const initialState = {
-  isFeedbackModalOpened: false
+  isFeedbackModalOpened: false,
+  isOnline: true
 }
 
 export default (state = initialState, action) => {
@@ -8,6 +9,11 @@ export default (state = initialState, action) => {
       return {
         ...state,
         isFeedbackModalOpened: !state.isFeedbackModalOpened
+      }
+    case 'APP_CHANGE_ONLINE_STATUS':
+      return {
+        ...state,
+        isOnline: action.payload.isOnline
       }
     default:
       return state

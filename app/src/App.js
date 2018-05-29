@@ -22,7 +22,7 @@ import Signals from './pages/Signals'
 import Account from './pages/Account'
 import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
-import TopMenu from './components/TopMenu'
+import Menu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
 import ErrorBoundary from './ErrorBoundary'
@@ -80,7 +80,7 @@ export const App = ({isDesktop, isLoggedIn, isFullscreenMobile}) => (
     {isFullscreenMobile
       ? undefined
       : (isDesktop
-        ? <TopMenu />
+        ? <Menu />
         : <MobileMenu />)}
     <ErrorBoundary>
       <Switch>

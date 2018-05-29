@@ -6,7 +6,6 @@ import { FadeIn } from 'animate-components'
 import {
   Button,
   Popup,
-  Icon,
   TextArea,
   Form,
   Message
@@ -35,11 +34,12 @@ const handleSendFeedback = ({message = '', onPending, onSuccess, onError}) => {
 
 const FeedbackBtn = props => {
   return (
-    <div
-      className='feedback-button-wrapper'>
+    <div className='feedback-button-wrapper'>
       <Popup
         className='feedback-body-wrapper'
         basic
+        inverted
+        position='bottom center'
         wide
         onClose={() => {
           props.onChange('')
@@ -48,11 +48,8 @@ const FeedbackBtn = props => {
           props.onPending(false)
         }}
         trigger={
-          <Button size='tiny'>
-            <Icon name='bullhorn' />
-            Feedback about this page?
-          </Button>
-      } on='click'>
+          <Button circular icon='bullhorn' />
+      } on='hover'>
         <FadeIn duration='0.5s' timingFunction='ease-out' as='div'>
           <Form
             className='attached fluid'

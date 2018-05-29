@@ -11,19 +11,26 @@ export const LoginPage = ({
   isDesktop,
   location
 }) => {
+  let consent = ''
   if (location) {
     const qsData = qs.parse(location.search)
     if (qsData && qsData.redirect_to && user.token) {
       return <Redirect to={qsData.redirect_to} />
     }
+    if (qsData && qsData.consent) {
+      consent = qsData.consent
+    }
   }
   if (user.data.hasOwnProperty('username') || user.token) {
+    if (consent) {
+      window.location.replace(`/consent?consent=${consent}&token=${user.token}`)
+    }
     return <Redirect to='/' />
   }
   return (
     <div className='page login wrapper'>
       <Panel className='login-inner'>
-        <Login isDesktop={isDesktop} />
+        <Login isDesktop={isDesktop} consent={consent} />
       </Panel>
     </div>
   )

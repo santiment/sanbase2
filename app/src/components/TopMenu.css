@@ -1,33 +1,33 @@
-.top-menu {
+.app-menu {
   background: linear-gradient(270deg, #26a987, #2d79d0, #309d81);
   background-size: 300% 300%;
   height: 52px;
 }
 
-.container {
+.app-menu .container {
   display: flex;
   font-size: 13px;
   padding: 0 48px;
 }
 
-.top-menu .left {
+.app-menu .left {
   display: flex;
 }
 
-.top-menu .right {
+.app-menu .right {
   display: flex;
   justify-content: flex-end;
   width: 80%;
-  align-items: center;
 }
 
-.top-menu .brand {
+.app-menu .brand {
   cursor: pointer;
   font-size: 18px;
   padding: 16px 16px 0 0;
+  border: none;
 }
 
-.top-menu ul li {
+.app-menu ul li {
   font-family: 'Nunito Sans', sans-serif;
   letter-spacing: 0.03em;
   line-height: 1.8em;
@@ -37,20 +37,19 @@
   text-transform: uppercase;
 }
 
-.top-menu .selected {
+.app-menu .selected {
   color: rgba(255, 255, 255, 1);
 }
 
-.top-menu .user-auth-control {
-  margin: 8px;
+.app-menu .user-auth-control {
   position: relative;
+  display: flex;
+  padding: 8px;
 }
 
-.top-menu .user-auth-control button,
-.top-menu .user-auth-control .acct {
+.app-menu .user-auth-control a {
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 4px;
+  border: none;
   color: rgba(255, 255, 255, 0.8);
   font-size: 12px;
   padding: 7px 24px;
@@ -58,11 +57,16 @@
   text-transform: uppercase;
 }
 
-.top-menu .user-auth-control .address {
+.app-menu .user-auth-control a:hover {
+  background-color: #4f5b69;
+  color: hsla(0, 0%, 100%, 0.8);
+}
+
+.app-menu .user-auth-control .address {
   display: none;
 }
 
-.top-menu .user-auth-control .acct-links {
+.app-menu .user-auth-control .acct-links {
   position: absolute;
   background-color: #fff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -76,15 +80,13 @@
   padding: 0;
 }
 
-.feedback-button-wrapper {
-  display: none;
-  position: absolute;
-  top: 10px;
-  right: calc(50% - 100px);
+.feedback-button-wrapper .icon {
+  background: transparent !important;
+  color: white;
 }
 
-.feedback-button-wrapper .button {
-  background-color: white !important;
+.feedback-button-wrapper button:hover {
+  background: rgba(225, 225, 225, 0.2) !important;
 }
 
 .feedback-body-wrapper div {

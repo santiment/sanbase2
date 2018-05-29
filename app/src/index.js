@@ -25,6 +25,7 @@ import { getOrigin } from './utils/utils'
 import detectNetwork from './utils/detectNetwork'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import { hasMetamask } from './web3Helpers'
+import { changeNetworkStatus } from './actions/rootActions'
 // Look at 42 line. ;)
 // import * as serviceWorker from './serviceWorker'
 
@@ -233,12 +234,7 @@ const handleLoad = () => {
   })
 
   detectNetwork(({online = true}) => {
-    store.dispatch({
-      type: 'APP_CHANGE_ONLINE_STATUS',
-      payload: {
-        isOnline: online
-      }
-    })
+    store.dispatch(changeNetworkStatus(online))
   })
 
   if (!window.Intl) {

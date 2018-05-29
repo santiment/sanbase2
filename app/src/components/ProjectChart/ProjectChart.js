@@ -19,7 +19,8 @@ const COLORS = {
   burnRate: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
   ethSpentOverTime: '#c82f3f',
-  ethPrice: '#3c3c3d'
+  ethPrice: '#3c3c3d',
+  sentiment: '#e23ab4'
 }
 
 const makeChartDataFromHistory = ({
@@ -34,9 +35,9 @@ const makeChartDataFromHistory = ({
   isToggledEthSpentOverTime,
   isToggledEthPrice = false,
   isToggledDailyActiveAddresses = false,
+  isToggledEmojisSentiment,
   ...props
 }) => {
-  const twitterData = props.historyTwitterData || {}
   const github = props.github.history.items || []
   const burnRate = props.burnRate.items || []
   const transactionVolume = props.transactionVolume.items || []
@@ -119,7 +120,25 @@ const makeChartDataFromHistory = ({
         y: data.activity
       }
     })}
-  const twitterDataset = !isToggledTwitter ? null : twitterData.dataset
+  const twitterDataset = !isToggledTwitter ? null : {
+    label: 'Twitter',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-twitter',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.twitter,
+    backgroundColor: COLORS.twitter,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: props.twitterHistory.items.map(data => {
+      return {
+        x: data.datetime,
+        y: data.followersCount
+      }
+    })}
 
   const burnrateDataset = !isToggledBurnRate ? null : {
     label: 'Burn Rate',
@@ -202,6 +221,27 @@ const makeChartDataFromHistory = ({
         y: parseFloat(data.priceUsd)
       }
     }) : []}
+
+  const sentimentEmojisDataset = !isToggledEmojisSentiment ? null : {
+    label: 'Sentiment',
+    type: 'line',
+    fill: false,
+    yAxisID: 'y-axis-sentiment',
+    datalabels: {
+      display: false
+    },
+    borderColor: COLORS.sentiment,
+    backgroundColor: COLORS.sentiment,
+    borderWidth: 1,
+    pointBorderWidth: 2,
+    pointRadius: 2,
+    data: props.emojisSentiment.items.map(data => {
+      return {
+        x: data.datetime,
+        y: data.sentiment
+      }
+    })}
+
   const dailyActiveAddressesDataset = !isToggledDailyActiveAddresses ? null : {
     label: 'Daily Active Addresses',
     type: 'bar',
@@ -221,6 +261,7 @@ const makeChartDataFromHistory = ({
         y: data.activeAddresses
       }
     })}
+
   return {
     labels,
     datasets: [
@@ -233,7 +274,8 @@ const makeChartDataFromHistory = ({
       transactionVolumeDataset,
       ethSpentOverTimeByErc20ProjectsDataset,
       ethPriceDataset,
-      dailyActiveAddressesDataset
+      dailyActiveAddressesDataset,
+      sentimentEmojisDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
       return acc
@@ -323,6 +365,9 @@ const makeOptionsFromProps = props => ({
         }
         if (label === 'ETH Spent Over time') {
           return `${label}: ${millify(tooltipItem.yLabel)}`
+        }
+        if (label === 'Sentiment') {
+          return `${label}: ${tooltipItem.yLabel}`
         }
         if (label === 'Daily Active Addresses') {
           return `${label}: ${millify(tooltipItem.yLabel)}`
@@ -450,9 +495,9 @@ const makeOptionsFromProps = props => ({
         display: false
       },
       display: props.isToggledTwitter &&
-        props.historyTwitterData &&
-        props.historyTwitterData.items &&
-        props.historyTwitterData.items.length !== 0,
+        props.historyTwitter &&
+        props.historyTwitter.items &&
+        props.historyTwitter.items.length !== 0,
       position: 'right'
     }, {
       id: 'y-axis-6',
@@ -571,10 +616,28 @@ const makeOptionsFromProps = props => ({
       },
       display: props.isToggledEthPrice
     }, {
+      id: 'y-axis-sentiment',
+      position: 'right',
+      scaleLabel: {
+        display: false,
+        labelString: `Sentiment`,
+        fontColor: '#3d4450'
+      },
+      ticks: {
+        display: false,
+        beginAtZero: true,
+        callback: renderTicks(props)
+      },
+      gridLines: {
+        drawBorder: false,
+        display: false
+      },
+      display: props.isToggledEmojisSentiment
+    }, {
       id: 'y-axis-11',
       position: 'right',
       scaleLabel: {
-        display: true,
+        display: false,
         labelString: `Daily Active Addresses`,
         fontColor: '#3d4450'
       },

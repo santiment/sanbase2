@@ -87,6 +87,7 @@ class ProjectChartContainer extends Component {
       this.props.toggleMarketcap(shareableState.marketcap)
       this.props.toggleGithubActivity(shareableState.github)
       this.props.toggleTwitter(shareableState.twitter)
+      this.props.toggleEmojisSentiment(shareableState.sentiment)
       this.props.toggleBurnRate(shareableState.tbr)
       this.props.toggleTransactionVolume(shareableState.tv)
       this.props.toggleActiveAddresses(shareableState.daa)
@@ -163,6 +164,7 @@ class ProjectChartContainer extends Component {
       this.props.toggleMarketcap(false)
       this.props.toggleGithubActivity(false)
       this.props.toggleTwitter(false)
+      this.props.toggleEmojisSentiment(false)
       this.props.toggleBurnRate(false)
       this.props.toggleTransactionVolume(false)
       this.props.toggleActiveAddresses(false)
@@ -190,6 +192,7 @@ class ProjectChartContainer extends Component {
       marketcap: this.props.isToggledMarketCap || undefined,
       github: this.props.isToggledGithubActivity || undefined,
       twitter: this.props.isToggledTwitter || undefined,
+      sentiment: this.props.isToggledEmojisSentiment || undefined,
       tbr: this.props.isToggledBurnRate || undefined,
       tv: this.props.isToggledTransactionVolume || undefined,
       daa: this.props.isToggledDailyActiveAddresses || undefined,
@@ -239,9 +242,6 @@ class ProjectChartContainer extends Component {
           shareableURL={shareableURL}
           ticker={this.props.ticker}
           isERC20={this.props.isERC20}
-          toggleEthPrice={this.props.toggleEthPrice}
-          isToggledEthPrice={this.props.isToggledEthPrice}
-          ethPrice={this.props.ethPrice}
           isDesktop={this.props.isDesktop}
         />}
         {(this.props.isDesktop || this.props.isFullscreenMobile)
@@ -262,8 +262,7 @@ class ProjectChartContainer extends Component {
             {...this.props}
           /> }
         {(this.props.isDesktop || this.props.isFullscreenMobile) &&
-          <ProjectChartFooter
-            {...this.props} />}
+          <ProjectChartFooter {...this.props} />}
         {this.props.isFullscreenMobile &&
           <Button onClick={this.props.toggleFullscreen} basic >
             Back to newest mode

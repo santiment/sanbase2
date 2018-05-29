@@ -1,8 +1,8 @@
 import React from 'react'
-import { Button, Popup, Icon } from 'semantic-ui-react'
+import { Button, Popup } from 'semantic-ui-react'
 import { NavLink as Link } from 'react-router-dom'
-import FeedbackBtn from './FeedbackBtn'
-import './AuthControl.css'
+// import FeedbackBtn from './FeedbackBtn'
+import './HeaderDropdownMenu.js'
 
 const HeaderDesktopDropMenu = ({
   isLoggedin,
@@ -12,12 +12,8 @@ const HeaderDesktopDropMenu = ({
   if (isLoggedin) {
     return (
       <div className='user-auth-control'>
-        <FeedbackBtn />
         <Popup basic wide trigger={
-          <Icon
-            style={{color: 'white', pointer: 'cursor'}}
-            size='large'
-            name='user circle' />
+          <Button circular icon='user' />
         } on='click'>
           <div className='acct-links'>
             <Button basic onClick={() => handleNavigation('account')}>Settings</Button>

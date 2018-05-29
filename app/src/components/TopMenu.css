@@ -44,6 +44,7 @@
 .app-menu .user-auth-control {
   position: relative;
   display: flex;
+  padding: 8px;
 }
 
 .app-menu .user-auth-control a {
@@ -79,17 +80,9 @@
   padding: 0;
 }
 
-.feedback-button-wrapper {
-  /*display: none;*/
-  /*position: absolute;*/
-  /*top: 10px;*/
-  /*right: calc(50% - 100px);*/
-}
-
 .feedback-button-wrapper .icon {
   background: transparent !important;
   color: white;
-  /*font-size: 1.5em;*/
 }
 
 .feedback-button-wrapper button:hover {

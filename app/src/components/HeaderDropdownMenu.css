@@ -2,53 +2,11 @@
   padding: 10px 20px;
 }
 
-.acct {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.acct i {
-  margin-left: 5px;
-}
-
-.acct-links {
-  cursor: pointer;
+.dropdown-menu {
   display: flex;
   flex-direction: column;
-  max-width: 50%;
 }
 
-.acct-links button {
-  margin-top: 0.5em !important;
-}
-
-.acct-links button:first-child {
-  margin-top: 0 !important;
-}
-
-.acct-links .logoutBtn {
-  margin-top: 0 !important;
-}
-
-.acct-links hr {
-  width: 100%;
-}
-
-.account-name {
-  width: 50%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-@media (min-width: 1024px) {
-  .acct {
-    margin-bottom: 0;
-  }
-
-  .acct-links {
-    max-width: 100%;
-  }
+.dropdown-menu .button:last-child {
+  margin-top: 1em;
 }

@@ -19,10 +19,7 @@ export const TopMenu = ({
   <div className='app-menu'>
     <div className='container'>
       <div className='left'>
-        <Link
-          to={'/'}
-          exact
-          className='brand'>
+        <Link to={'/'} className='brand'>
           <img
             src={logo}
             width='115'

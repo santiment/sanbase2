@@ -13,19 +13,26 @@ export const ToggleBtn = ({
   error = false,
   disabled,
   isToggled,
+  // this button for premium timeseries
+  premium = false,
+  // current user has premium
+  hasPremium = false,
   toggle,
   children
 }) => (
   <div className={cx({
     'toggleBtn': true,
     'activated': isToggled,
+    'premium-wall-button': premium,
     'disabled': disabled || loading
   })}
     onClick={() => !disabled && !loading && toggle(!isToggled)}>
     {!loading && disabled && !error &&
       <Popup
         trigger={<div>{children}</div>}
-        content="We don't have the data for this project"
+        content={premium && !hasPremium
+          ? 'You need to have more than 1000 tokens to see that data.'
+          : "We don't have the data for this project."}
         inverted
         position='bottom left'
       />}
@@ -61,13 +68,7 @@ const FilterCategory = ({
   </div>
 )
 //
-const ProjectChartFooter = ({
-  historyTwitterData = {
-    loading: false,
-    items: []
-  },
-  ...props
-}) => (
+const ProjectChartFooter = props => (
   <div className='chart-footer'>
     <div className='chart-footer-filters'>
       <FilterCategory name='Financial'>
@@ -155,13 +156,25 @@ const ProjectChartFooter = ({
       </FilterCategory>}
       <FilterCategory name='Social'>
         <ToggleBtn
-          loading={historyTwitterData.loading}
-          disabled={historyTwitterData.items.length === 0}
+          loading={props.twitterHistory.loading}
+          disabled={props.twitterHistory.items.length === 0}
           isToggled={props.isToggledTwitter &&
-            historyTwitterData.items.length !== 0}
+            props.twitterHistory.items.length !== 0}
           toggle={props.toggleTwitter}>
           <Label circular className='twitterLabel' empty />
-          Twitter
+          Twitter {!props.twitterData.loading && !props.twitterData.error &&
+            `| ${props.twitterData.followersCount}`}
+        </ToggleBtn>
+        <ToggleBtn
+          loading={props.emojisSentiment.loading}
+          premium
+          hasPremium={props.isPremium}
+          disabled={props.emojisSentiment.items.length === 0}
+          isToggled={props.isToggledEmojisSentiment &&
+            props.emojisSentiment.items.length !== 0}
+          toggle={props.toggleEmojisSentiment}>
+          <Label circular className='sentimentLabel' empty />
+          Sentiment
         </ToggleBtn>
       </FilterCategory>
       {(props.isERC20 || props.ticker === 'ETH') &&
@@ -182,6 +195,14 @@ const ProjectChartFooter = ({
             selling activity.'
             position='top left'
           />
+        </ToggleBtn>
+        <ToggleBtn
+          loading={props.ethPrice.history.loading}
+          disabled={props.ethPrice.history.items.length === 0}
+          isToggled={props.isToggledEthPrice &&
+            props.ethPrice.history.items.length !== 0}
+          toggle={props.toggleEthPrice}>
+          Compare with ETH price
         </ToggleBtn>
       </FilterCategory>}
     </div>

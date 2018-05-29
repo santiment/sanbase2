@@ -14,6 +14,7 @@ import PanelBlock from './../../components/PanelBlock'
 import Panel from './../../components/Panel'
 import Search from './../../components/SearchContainer'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
+import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
 import { millify } from './../../utils/formatting'
 import {
   projectBySlugGQL,
@@ -25,6 +26,7 @@ import {
   TransactionVolumeGQL,
   ExchangeFundFlowGQL,
   EthSpentOverTimeByErc20ProjectsGQL,
+  EmojisSentimentGQL,
   DailyActiveAddressesGQL
 } from './DetailedGQL'
 import EthereumBlock from './EthereumBlock'
@@ -88,9 +90,20 @@ export const Detailed = ({
     error: false,
     dailyActiveAddresses: []
   },
+  EmojisSentiment = {
+    loading: false,
+    error: false,
+    emojisSentiment: []
+  },
+  TwitterHistory = {
+    loading: false,
+    error: false,
+    followersCount: []
+  },
   isDesktop,
   isLoggedIn,
   user,
+  hasPremium,
   ...props
 }) => {
   const project = Project.project
@@ -153,6 +166,18 @@ export const Detailed = ({
     items: DailyActiveAddresses.dailyActiveAddresses || []
   }
 
+  const twitterHistory = {
+    loading: TwitterHistory.loading,
+    error: TwitterHistory.error || false,
+    items: TwitterHistory.historyTwitterData || []
+  }
+
+  const emojisSentiment = {
+    loading: EmojisSentiment.loading,
+    error: EmojisSentiment.error,
+    items: EmojisSentiment.emojisSentiment || []
+  }
+
   const ethSpentOverTimeByErc20Projects = {
     loading: EthSpentOverTimeByErc20Projects.loading,
     error: EthSpentOverTimeByErc20Projects.error,
@@ -163,6 +188,12 @@ export const Detailed = ({
     loading: Project.loading,
     error: project.errorMessage || false,
     items: project.ethSpentOverTime || []
+  }
+
+  const twitterData = {
+    loading: TwitterData.loading,
+    error: TwitterData.error || false,
+    followersCount: (TwitterData.twitterData || {}).followersCount || 0
   }
 
   const _ethSpentOverTime = project.ticker === 'ETH'
@@ -182,8 +213,12 @@ export const Detailed = ({
       transactionVolume={transactionVolume}
       ethSpentOverTime={_ethSpentOverTime}
       dailyActiveAddresses={dailyActiveAddresses}
+      emojisSentiment={emojisSentiment}
+      twitterHistory={twitterHistory}
+      twitterData={twitterData}
       ethPrice={ethPrice}
       isERC20={project.isERC20}
+      isPremium={hasPremium}
       project={project}
       ticker={project.ticker} />
 
@@ -268,7 +303,8 @@ Detailed.propTypes = propTypes
 const mapStateToProps = state => {
   return {
     user: state.user,
-    isLoggedIn: !!state.user.token,
+    hasPremium: checkHasPremium(state),
+    isLoggedIn: checkIsLoggedIn(state),
     timeFilter: state.detailedPageUi.timeFilter
   }
 }
@@ -445,6 +481,21 @@ const enhance = compose(
       const ticker = Project.project.ticker
       return {
         skip: !from || ticker !== 'ETH',
+        errorPolicy: 'all',
+        variables: {
+          from,
+          to,
+          interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
+        }
+      }
+    }
+  }),
+  graphql(EmojisSentimentGQL, {
+    name: 'EmojisSentiment',
+    options: ({timeFilter, hasPremium}) => {
+      const {from, to} = timeFilter
+      return {
+        skip: !from || !hasPremium,
         errorPolicy: 'all',
         variables: {
           from,

@@ -48,7 +48,7 @@ const DetailedHeader = ({
                     })}
                     aria-hidden='true' />
                 }
-                content='Add to favorites'
+                content={isFollowed ? 'Unfollow this project' : 'Follow this project'}
                 position='bottom center'
               />
             </div>

@@ -68,13 +68,7 @@ const FilterCategory = ({
   </div>
 )
 //
-const ProjectChartFooter = ({
-  historyTwitterData = {
-    loading: false,
-    items: []
-  },
-  ...props
-}) => (
+const ProjectChartFooter = props => (
   <div className='chart-footer'>
     <div className='chart-footer-filters'>
       <FilterCategory name='Financial'>
@@ -162,13 +156,14 @@ const ProjectChartFooter = ({
       </FilterCategory>}
       <FilterCategory name='Social'>
         <ToggleBtn
-          loading={historyTwitterData.loading}
-          disabled={historyTwitterData.items.length === 0}
+          loading={props.twitterHistory.loading}
+          disabled={props.twitterHistory.items.length === 0}
           isToggled={props.isToggledTwitter &&
-            historyTwitterData.items.length !== 0}
+            props.twitterHistory.items.length !== 0}
           toggle={props.toggleTwitter}>
           <Label circular className='twitterLabel' empty />
-          Twitter
+          Twitter {!props.twitterData.loading && !props.twitterData.error &&
+            `| ${props.twitterData.followersCount}`}
         </ToggleBtn>
         <ToggleBtn
           loading={props.emojisSentiment.loading}

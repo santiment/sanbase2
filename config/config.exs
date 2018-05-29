@@ -236,6 +236,15 @@ config :arc,
   virtual_host: true,
   bucket: {:system, "POSTS_IMAGE_BUCKET"}
 
+config :sanbase, Sanbase.Oauth2.Hydra,
+  base_url: {:system, "HYDRA_BASE_URL", "http://localhost:4444"},
+  token_uri: {:system, "HYDRA_TOKEN_URI", "/oauth2/token"},
+  consent_uri: {:system, "HYDRA_CONSENT_URI", "/oauth2/consent/requests"},
+  client_id: {:system, "HYDRA_CLIENT_ID", "consent-app"},
+  client_secret: {:system, "HYDRA_CLIENT_SECRET", "consent-secret"},
+  clients_that_require_san_tokens:
+    {:system, "CLIENTS_THAT_REQUIRE_SAN_TOKENS", "{\"grafana\": 100}"}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

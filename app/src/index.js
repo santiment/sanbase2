@@ -22,6 +22,7 @@ import reducers from './reducers/rootReducers.js'
 import epics from './epics/rootEpics.js'
 import { loadState, saveState } from './utils/localStorage'
 import { getOrigin } from './utils/utils'
+import detectNetwork from './utils/detectNetwork'
 import setAuthorizationToken from './utils/setAuthorizationToken'
 import { hasMetamask } from './web3Helpers'
 // Look at 42 line. ;)
@@ -229,6 +230,15 @@ const handleLoad = () => {
 
   store.subscribe(() => {
     saveState(store.getState().user)
+  })
+
+  detectNetwork(({online = true}) => {
+    store.dispatch({
+      type: 'APP_CHANGE_ONLINE_STATUS',
+      payload: {
+        isOnline: online
+      }
+    })
   })
 
   if (!window.Intl) {

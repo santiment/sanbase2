@@ -99,7 +99,7 @@ const ProjectsTable = ({
     return []
   }
 
-  if (Projects.isError) {
+  if (Projects.isError && Projects.errorMessage !== 'Network error: Failed to fetch') {
     refetchThrottled(Projects)
     return (
       <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>

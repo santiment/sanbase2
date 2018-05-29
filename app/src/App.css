@@ -103,6 +103,10 @@
   margin-top: 20px !important;
 }
 
+.ui.page.modals {
+  display: flex !important;
+}
+
 @supports (--css: variables) {
   :root {
     --progress-bg-color: #d3d3d3;

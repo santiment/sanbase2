@@ -27,7 +27,8 @@ import {
   ExchangeFundFlowGQL,
   EthSpentOverTimeByErc20ProjectsGQL,
   EmojisSentimentGQL,
-  DailyActiveAddressesGQL
+  DailyActiveAddressesGQL,
+  AllInsightsByTagGQL
 } from './DetailedGQL'
 import EthereumBlock from './EthereumBlock'
 import './Detailed.css'
@@ -518,6 +519,27 @@ const enhance = compose(
           to,
           slug,
           interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
+        }
+      }
+    }
+  }),
+  graphql(AllInsightsByTagGQL, {
+    name: 'AllInsights',
+    props: ({AllInsights}) => ({
+      Insights: {
+        loading: AllInsights.loading,
+        error: AllInsights.error || false,
+        items: (AllInsights.allInsightsByTag || [])
+          .filter(insight => insight.readyState === 'published')
+      }
+    }),
+    options: ({match, Project: { project = {} }}) => {
+      const { ticker } = project
+      return {
+        skip: !ticker,
+        errorPolicy: 'all',
+        variables: {
+          tag: ticker
         }
       }
     }

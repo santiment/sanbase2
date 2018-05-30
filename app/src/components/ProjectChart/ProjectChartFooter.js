@@ -190,7 +190,7 @@ const ProjectChartFooter = ({
               Community Insights
             </Message.Header>
             <p>
-              Our community make Insights about this project.
+              Our community made Insights about this project.
             </p>
             <p>
               You can learn something new.

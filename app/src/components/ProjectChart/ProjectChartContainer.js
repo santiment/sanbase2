@@ -220,13 +220,9 @@ class ProjectChartContainer extends Component {
             {...this.props}
             setSelected={this.setSelected}
             isToggledBTC={this.state.isToggledBTC}
-            history={this.props.price.history.items}
-            burnRate={burnRate}
-            from={this.state.startDate}
-            to={this.state.endDate}
-            transactionVolume={transactionVolume}
-            ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
-            isLoading={this.props.price.history.loading}
+            interval={this.props.timeFilter.timeframe}
+            shareableURL={shareableURL}
+            ticker={this.props.ticker}
             isERC20={this.props.isERC20}
             isEmpty={this.props.price.history.items.length === 0} />
           : <ProjectChartMobile

@@ -498,6 +498,27 @@ const enhance = compose(
         }
       }
     }
+  }),
+  graphql(AllInsightsByTagGQL, {
+    name: 'AllInsights',
+    props: ({AllInsights}) => ({
+      Insights: {
+        loading: AllInsights.loading,
+        error: AllInsights.error || false,
+        items: (AllInsights.allInsightsByTag || [])
+          .filter(insight => insight.readyState === 'published')
+      }
+    }),
+    options: ({match, Project: { project = {} }}) => {
+      const { ticker } = project
+      return {
+        skip: !ticker,
+        errorPolicy: 'all',
+        variables: {
+          tag: ticker
+        }
+      }
+    }
   })
 )
 

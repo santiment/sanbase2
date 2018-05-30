@@ -1,10 +1,12 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import cx from 'classnames'
 import {
   Popup,
   Icon,
   Label,
-  Loader
+  Loader,
+  Message
 } from 'semantic-ui-react'
 import './ProjectChartFooter.css'
 
@@ -181,6 +183,22 @@ const ProjectChartFooter = ({
           <Label circular className='sentimentLabel' empty />
           Sentiment
         </ToggleBtn>
+        {!Insights.loading &&
+          Insights.items.length > 0 &&
+          <Message info floating size='tiny' >
+            <Message.Header>
+              Community Insights
+            </Message.Header>
+            <p>
+              Our community make Insights about this project.
+            </p>
+            <p>
+              You can learn something new.
+            </p>
+            <Link to='/insights'>{Insights.items.length}&nbsp;
+              Insight{Insights.items.length > 1 && 's'} about {props.project.ticker}</Link>
+          </Message>
+        }
       </FilterCategory>
       {(props.isERC20 || props.ticker === 'ETH') &&
       <FilterCategory name='Ethereum'>

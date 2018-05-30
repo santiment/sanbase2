@@ -219,3 +219,25 @@ export const UnfollowProjectGQL = gql`
       id
     }
 }`
+
+export const AllInsightsByTagGQL = gql`
+  query allInsightsByTag($tag:String!) {
+    allInsightsByTag(
+      tag: $tag
+    ) {
+      user {
+        username
+      }
+      title
+      text
+      createdAt
+      state
+      readyState
+      votedAt
+      votes {
+        totalSanVotes
+        totalVotes
+      }
+      __typename
+    }
+}`

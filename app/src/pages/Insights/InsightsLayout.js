@@ -16,8 +16,7 @@ const isShowedNewInsightsButton = (history, isLogin) => (
 const NewInsightBtn = ({history}) => (
   <Button
     color='green'
-    onClick={() => history.push('/insights/new')}
-    className='event-votes-navigation__add-link'>
+    onClick={() => history.push('/insights/new')}>
     <Icon name='plus' />New insight
   </Button>
 )
@@ -30,21 +29,19 @@ const InsightsLayout = ({
   history,
   children
 }) => (
-  <div className='page event-votes'>
+  <div className='page event-votes insights-page'>
     <Helmet>
       <title>{title}</title>
     </Helmet>
-    <div className='event-votes-rows'>
-      <div className='event-votes-navs'>
+    <div className='insights-page-rows'>
+      <div className='insights-page-navs'>
         <h2>Insights</h2>
         <div className='event-votes-navs-list'>
           {isLogin && <NavLink
-            className='event-votes-navigation__add-link'
             to={'/insights/my'}>
             My Insights
           </NavLink>}
           <NavLink
-            className='event-votes-navigation__add-link'
             to={'/insights'}>
             All Insights
           </NavLink>
@@ -56,14 +53,14 @@ const InsightsLayout = ({
               history={history} />}
         </div>
       </div>
-      <div className='event-votes-content'>
+      <div className='insights-page-content'>
         {children}
       </div>
-      <div className='event-votes-sidebar'>
+      <div className='insights-page-sidebar'>
         {sidebar && sidebar}
         {!sidebar &&
         <Fragment>
-          {isLogin && <div className='event-votes-sidebar-highlights'>
+          {isLogin && <div className='insights-page-sidebar-highlights'>
             <div>
               <Link to={'/insights/33'}>How to use Insights: Traders/Investors</Link>
             </div>

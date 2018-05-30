@@ -69,10 +69,6 @@
 }
 
 @media (min-width: 1024px) {
-  .event-votes-rows {
-    flex-direction: row;
-  }
-
   .event-votes .ui.message {
     margin: 16px !important;
   }

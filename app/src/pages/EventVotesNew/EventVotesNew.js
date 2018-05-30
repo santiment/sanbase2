@@ -56,7 +56,7 @@ class EventVotesNew extends Component {
     return (
       <InsightsLayout
         sidebar={
-          <div className='event-votes-sidebar-highlights'>
+          <div className='insights-pages-sidebar-highlights'>
             <div>
               <Link to={'/insights/33'}>How to use Insights: Traders/Investors</Link>
             </div>

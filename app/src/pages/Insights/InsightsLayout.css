@@ -3,17 +3,18 @@
   padding-bottom: 1px;
 }
 
-.event-votes-rows {
+.insights-page-rows {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
   flex-direction: column;
 }
 
-.event-votes-navs {
-  margin-right: 30px;
-  max-width: 220px;
-  margin-top: 16px;
+.insights-page-navs {
+  margin: 0 auto;
+  margin-bottom: 1em;
+  text-align: center;
+  order: 2;
 }
 
 .event-votes-navs-list {
@@ -21,18 +22,18 @@
   flex-direction: column;
 }
 
-.event-votes-content {
+.insights-page-content {
   flex: 1;
 }
 
-.event-votes-navs a {
+.insights-page-navs a {
   font-size: 16px;
   text-transform: uppercase;
   color: #26a987;
 }
 
-.event-votes-navs a:hover,
-.event-votes-navs a:focus {
+.insights-page-navs a:hover,
+.insights-page-navs a:focus {
   color: black;
 }
 
@@ -65,40 +66,66 @@
   align-items: center;
 }
 
-.event-votes-sidebar {
+.insights-page-sidebar {
   width: 260px;
   min-width: 250px;
-  margin-left: 20px;
+  margin: 0 auto;
 }
 
-.event-votes-sidebar .event-votes-sidebar-highlights {
-  margin-top: 16px;
+.insights-page-sidebar .panel {
+  display: none;
 }
 
-.event-votes-sidebar .event-votes-sidebar-highlights a {
+.insights-page-sidebar .insights-page-sidebar-highlights {
+  text-align: center;
+  margin-bottom: 1em;
+}
+
+.insights-page-sidebar .insights-page-sidebar-highlights a {
   border-bottom: 1px solid #b1b7c1;
 }
 
-.event-votes-sidebar .event-votes-sidebar-highlights div:first-child {
+.insights-page-sidebar .insights-page-sidebar-highlights div:first-child {
   margin-bottom: 8px;
 }
 
-.event-votes-sidebar .panel {
-  margin: 16px 0 0 0;
-}
-
 @media (min-width: 768px) {
-  .event-votes-content {
+  .insights-page-rows {
+    flex-direction: row;
+  }
+
+  .insights-page-content {
     min-width: 520px;
     max-width: 520px;
+    order: 2;
+  }
+
+  .insights-page-navs {
+    order: 1;
+    margin-right: 30px;
+    max-width: 220px;
+    margin-top: 16px;
+    text-align: left;
+  }
+
+  .insights-page-sidebar {
+    order: 3;
+    margin-top: 16px;
+    margin-left: 20px;
+  }
+
+  .insights-page-sidebar .panel {
+    display: block;
+    margin: 16px 0 0 0;
+  }
+
+  .insights-page-sidebar .insights-page-sidebar-highlights {
+    text-align: left;
+    margin-bottom: 0;
   }
 }
 
 @media (min-width: 1024px) {
-  .event-votes-rows {
-    flex-direction: row;
-  }
-
   .event-votes .ui.message {
     margin: 16px !important;
   }

@@ -19,8 +19,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
           |> Enum.map(fn [dt, _, volume, marketcap] ->
             %{
               datetime: dt,
-              marketcap: Decimal.new(marketcap),
-              volume: Decimal.new(volume)
+              marketcap: nil_or_decimal(marketcap),
+              volume: nil_or_decimal(volume)
             }
           end)
 
@@ -47,10 +47,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
           |> Enum.map(fn {[dt, btc_price, volume, marketcap], [_, usd_price, _, _]} ->
             %{
               datetime: dt,
-              price_btc: Decimal.new(btc_price),
-              price_usd: Decimal.new(usd_price),
-              marketcap: Decimal.new(marketcap),
-              volume: Decimal.new(volume)
+              price_btc: nil_or_decimal(btc_price),
+              price_usd: nil_or_decimal(usd_price),
+              marketcap: nil_or_decimal(marketcap),
+              volume: nil_or_decimal(volume)
             }
           end)
 
@@ -60,5 +60,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
           {:error, "Can't fetch prices for #{ticker}"}
       end
     end)
+  end
+
+  defp nil_or_decimal(nil), do: nil
+  defp nil_or_decimal(num) when is_number(num) do
+    Decimal.new(num)
   end
 end

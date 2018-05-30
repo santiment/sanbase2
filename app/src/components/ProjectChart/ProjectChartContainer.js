@@ -225,48 +225,52 @@ class ProjectChartContainer extends Component {
       })
     }
     return (
-      <div className={cx({
-        'project-dp-chart': true
-      })} >
-        {(this.props.isDesktop || this.props.isFullscreenMobile) &&
-        <ProjectChartHeader
-          from={this.props.timeFilter.from}
-          to={this.props.timeFilter.to}
-          setFromTo={this.setFromTo}
-          focusedInput={this.state.focusedInput}
-          onFocusChange={this.onFocusChange}
-          setFilter={this.setFilter}
-          toggleBTC={this.toggleBTC}
-          isToggledBTC={this.state.isToggledBTC}
-          interval={this.props.timeFilter.timeframe}
-          shareableURL={shareableURL}
-          ticker={this.props.ticker}
-          isERC20={this.props.isERC20}
-          isDesktop={this.props.isDesktop}
-        />}
-        {(this.props.isDesktop || this.props.isFullscreenMobile)
-          ? <ProjectChart
-            {...this.props}
-            setSelected={this.setSelected}
+      <div style={{ display: 'flex' }}>
+        {this.props.isToggledInsights && <div>CEHCK</div>}
+        <div className={cx({
+          'project-dp-chart': true
+        })}
+          style={{ flex: 1 }}>
+          {(this.props.isDesktop || this.props.isFullscreenMobile) &&
+          <ProjectChartHeader
+            from={this.props.timeFilter.from}
+            to={this.props.timeFilter.to}
+            setFromTo={this.setFromTo}
+            focusedInput={this.state.focusedInput}
+            onFocusChange={this.onFocusChange}
+            setFilter={this.setFilter}
+            toggleBTC={this.toggleBTC}
             isToggledBTC={this.state.isToggledBTC}
-            history={this.props.price.history.items}
-            burnRate={burnRate}
-            from={this.state.startDate}
-            to={this.state.endDate}
-            transactionVolume={transactionVolume}
-            ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
-            isLoading={this.props.price.history.loading}
+            interval={this.props.timeFilter.timeframe}
+            shareableURL={shareableURL}
+            ticker={this.props.ticker}
             isERC20={this.props.isERC20}
-            isEmpty={this.props.price.history.items.length === 0} />
-          : <ProjectChartMobile
-            {...this.props}
-          /> }
-        {(this.props.isDesktop || this.props.isFullscreenMobile) &&
-          <ProjectChartFooter {...this.props} />}
-        {this.props.isFullscreenMobile &&
-          <Button onClick={this.props.toggleFullscreen} basic >
-            Back to newest mode
-          </Button>}
+            isDesktop={this.props.isDesktop}
+          />}
+          {(this.props.isDesktop || this.props.isFullscreenMobile)
+            ? <ProjectChart
+              {...this.props}
+              setSelected={this.setSelected}
+              isToggledBTC={this.state.isToggledBTC}
+              history={this.props.price.history.items}
+              burnRate={burnRate}
+              from={this.state.startDate}
+              to={this.state.endDate}
+              transactionVolume={transactionVolume}
+              ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
+              isLoading={this.props.price.history.loading}
+              isERC20={this.props.isERC20}
+              isEmpty={this.props.price.history.items.length === 0} />
+            : <ProjectChartMobile
+              {...this.props}
+            /> }
+          {(this.props.isDesktop || this.props.isFullscreenMobile) &&
+            <ProjectChartFooter {...this.props} />}
+          {this.props.isFullscreenMobile &&
+            <Button onClick={this.props.toggleFullscreen} basic >
+              Back to newest mode
+            </Button>}
+        </div>
       </div>
     )
   }

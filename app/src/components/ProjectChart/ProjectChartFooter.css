@@ -98,6 +98,10 @@
   border-color: #c82f3f !important;
 }
 
+.chart-footer-filters p {
+  margin: 5px !important;
+}
+
 .filter-category {
   display: flex;
   padding: 0;

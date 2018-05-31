@@ -107,11 +107,12 @@ export default compose(
     })
   ),
   connect(
-    null,
+    undefined,
     mapDispatchToProps
   ),
   graphql(followedProjectsGQL, {
     name: 'FollowedProjects',
+    options: ({isLoggedIn}) => ({skip: !isLoggedIn}),
     props: ({FollowedProjects, ownProps}) => {
       const { followedProjects = [] } = FollowedProjects
       const { project = {} } = ownProps

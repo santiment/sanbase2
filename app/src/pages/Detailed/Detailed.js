@@ -533,10 +533,10 @@ const enhance = compose(
           .filter(insight => insight.readyState === 'published')
       }
     }),
-    options: ({match, Project: { project = {} }}) => {
+    options: ({isLoggedIn, match, Project: { project = {} }}) => {
       const { ticker } = project
       return {
-        skip: !ticker,
+        skip: !ticker || !isLoggedIn,
         errorPolicy: 'all',
         variables: {
           tag: ticker

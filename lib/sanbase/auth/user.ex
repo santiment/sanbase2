@@ -33,6 +33,7 @@ defmodule Sanbase.Auth.User do
     field(:email_token_generated_at, Timex.Ecto.DateTime)
     field(:email_token_validated_at, Timex.Ecto.DateTime)
     field(:consent_id, :string)
+    field(:test_san_balance, :decimal)
 
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
@@ -50,7 +51,7 @@ defmodule Sanbase.Auth.User do
 
   def changeset(%User{} = user, attrs \\ %{}) do
     user
-    |> cast(attrs, [:email, :username, :salt])
+    |> cast(attrs, [:email, :username, :salt, :test_san_balance])
     |> unique_constraint(:email)
   end
 
@@ -68,7 +69,12 @@ defmodule Sanbase.Auth.User do
     |> change(san_balance: san_balance, san_balance_updated_at: Timex.now())
   end
 
-  def san_balance!(%User{san_balance: san_balance} = user) do
+  def san_balance!(%User{test_san_balance: test_san_balance} = _user)
+      when not is_nil(test_san_balance) do
+    test_san_balance
+  end
+
+  def san_balance!(%User{san_balance: san_balance, test_san_balance: test_san_balance} = user) do
     if san_balance_cache_stale?(user) do
       update_san_balance_changeset(user)
       |> Repo.update!()

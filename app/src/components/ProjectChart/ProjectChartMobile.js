@@ -47,6 +47,10 @@ const ProjectChartMobile = ({
   toggleMiniMap,
   isERC20
 }) => {
+  const icoPrice = (project.initialIco || {}).tokenUsdIcoPrice
+  const icoPriceUSD = icoPrice
+    ? formatNumber(icoPrice, { currency: 'USD' })
+    : undefined
   return (
     <Fragment>
       <div className='detailed-page-mobile-settings-bar'>
@@ -65,6 +69,11 @@ const ProjectChartMobile = ({
         settings.showed['volume'] ||
         settings.showed['marketcap']) &&
         <h2>FINANCIAL</h2>}
+      {icoPrice &&
+        <div className='ico-price-label'>
+          {`ICO Price ${icoPriceUSD}`}
+          <div className='ico-price-legend' />
+        </div>}
       {settings.showed['priceUsd'] && <Analytics
         data={price.history}
         label='priceUsd'
@@ -78,7 +87,10 @@ const ProjectChartMobile = ({
           fill: true,
           borderWidth: 1,
           pointBorderWidth: 2,
-          syncId: 'financial'
+          syncId: 'financial',
+          referenceLine: {
+            y: +icoPrice
+          }
         }}
       />}
       {settings.showed['volume'] && <Analytics

@@ -40,9 +40,10 @@ Chart.controllers.LineWithLine = Chart.controllers.line.extend({
   draw: function (ease) {
     Chart.controllers.line.prototype.draw.call(this, ease)
 
+    const ctx = this.chart.ctx
+
     if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
       const activePoint = this.chart.tooltip._active[0]
-      const ctx = this.chart.ctx
       const x = activePoint.tooltipPosition().x
       const scale = getYAxisScale(this.chart.scales)
       if (!scale) { return }
@@ -93,6 +94,7 @@ class ProjectChartContainer extends Component {
       this.props.toggleActiveAddresses(shareableState.daa)
       this.props.toggleEthSpentOverTime(shareableState.ethSpent)
       this.props.toggleEthPrice(shareableState.ethPrice)
+      this.props.toggleICOPrice(shareableState.icoPrice)
     }
 
     this.setFilter = this.setFilter.bind(this)
@@ -170,6 +172,7 @@ class ProjectChartContainer extends Component {
       this.props.toggleActiveAddresses(false)
       this.props.toggleEthSpentOverTime(false)
       this.props.toggleEthPrice(false)
+      this.props.toggleICOPrice(false)
     }
   }
 
@@ -201,7 +204,8 @@ class ProjectChartContainer extends Component {
       currency: this.state.isToggledBTC ? 'BTC' : 'USD',
       from: this.props.timeFilter.from || undefined,
       to: this.props.timeFilter.to || undefined,
-      timeframe: this.props.timeFilter.timeframe || undefined
+      timeframe: this.props.timeFilter.timeframe || undefined,
+      icoPrice: this.props.isToggledICOPrice || undefined
     }
     let fullpath = window.location.href
     if (window.location.href.indexOf('?') > -1) {
@@ -265,7 +269,10 @@ class ProjectChartContainer extends Component {
               {...this.props}
             /> }
           {(this.props.isDesktop || this.props.isFullscreenMobile) &&
-            <ProjectChartFooter {...this.props} />}
+            <ProjectChartFooter
+              {...this.props}
+              isToggledBTC={this.state.isToggledBTC}
+            />}
           {this.props.isFullscreenMobile &&
             <Button onClick={this.props.toggleFullscreen} basic >
               Back to newest mode
@@ -314,6 +321,7 @@ const enhance = compose(
   withState('isToggledEthPrice', 'toggleEthPrice', false),
   withState('isToggledEmojisSentiment', 'toggleEmojisSentiment', false),
   withState('isToggledDailyActiveAddresses', 'toggleActiveAddresses', false),
+  withState('isToggledICOPrice', 'toggleICOPrice', false),
   withState('blockchainFilter', 'setBlockchainFilter', 'all')
 )
 

@@ -155,9 +155,10 @@ const Analytics = ({
                   strokeWidth={2} />
                 {(referenceLine || {}).y &&
                 <ReferenceLine
+                  strokeDasharray='3 3'
+                  stroke='black'
                   y={referenceLine.y}
-                  label={referenceLine.label}
-                  stroke={referenceLine.color} />}
+                  label={referenceLine.label} />}
               </LineChart>
             </ResponsiveContainer>}
         </div>

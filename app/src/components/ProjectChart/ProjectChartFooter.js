@@ -93,6 +93,14 @@ const ProjectChartFooter = ({
           <Label circular className='volumeLabel' empty />
           Volume
         </ToggleBtn>
+        {!props.isToggledBTC &&
+        ((props.project.initialIco || {}).tokenUsdIcoPrice || undefined) &&
+        <ToggleBtn
+          isToggled={props.isToggledICOPrice}
+          toggle={props.toggleICOPrice}>
+          <Label circular className='icoPriceLabel' empty />
+          ICO Price (USD)
+        </ToggleBtn>}
       </FilterCategory>
       <FilterCategory name='Development'>
         <ToggleBtn

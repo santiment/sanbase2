@@ -24,7 +24,7 @@ exports[`Project detail page container it should render correctly 1`] = `
     }
   />
   <div>
-    <Connect(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer))))))))))))
+    <Connect(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))))))))
       TwitterHistoryData={
         Object {
           "loading": true,

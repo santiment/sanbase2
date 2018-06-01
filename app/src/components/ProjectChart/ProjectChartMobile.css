@@ -14,3 +14,15 @@
 .project-dp-chart-mobile-fullscreen .chart-footer {
   padding: 0 20px;
 }
+
+.ico-price-label {
+  display: flex;
+}
+
+.ico-price-legend {
+  width: 20px;
+  height: 1px;
+  margin-top: 10px;
+  margin-left: 10px;
+  border: 1px dashed black;
+}

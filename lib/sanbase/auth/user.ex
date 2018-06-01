@@ -74,7 +74,7 @@ defmodule Sanbase.Auth.User do
     test_san_balance
   end
 
-  def san_balance!(%User{san_balance: san_balance, test_san_balance: test_san_balance} = user) do
+  def san_balance!(%User{san_balance: san_balance} = user) do
     if san_balance_cache_stale?(user) do
       update_san_balance_changeset(user)
       |> Repo.update!()

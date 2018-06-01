@@ -37,6 +37,10 @@ const ProjectChartMobile = ({
   },
   isERC20
 }) => {
+  const icoPrice = (project.initialIco || {}).tokenUsdIcoPrice
+  const icoPriceUSD = icoPrice
+    ? formatNumber(icoPrice, { currency: 'USD' })
+    : undefined
   return (
     <Fragment>
       <div className='detailed-page-mobile-settings-bar'>
@@ -51,6 +55,11 @@ const ProjectChartMobile = ({
         settings.showed['volume'] ||
         settings.showed['marketcap']) &&
         <h2>FINANCIAL</h2>}
+      {icoPrice &&
+        <div className='ico-price-label'>
+          {`ICO Price ${icoPriceUSD}`}
+          <div className='ico-price-legend' />
+        </div>}
       {settings.showed['priceUsd'] && <Analytics
         data={price.history}
         label='priceUsd'

@@ -4136,6 +4136,12 @@ chartjs-color@~2.2.0:
     chartjs-color-string "^0.5.0"
     color-convert "^0.5.3"
 
+chartjs-plugin-annotation@^0.5.7:
+  version "0.5.7"
+  resolved "https://registry.yarnpkg.com/chartjs-plugin-annotation/-/chartjs-plugin-annotation-0.5.7.tgz#1bf0e30199a6a9ff9889ce0f37a1e755a80d10bf"
+  dependencies:
+    chart.js "^2.4.0"
+
 chartjs-plugin-datalabels@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/chartjs-plugin-datalabels/-/chartjs-plugin-datalabels-0.2.0.tgz#bf1748c06fb7e5deeba169e4259914bcdeae0ede"

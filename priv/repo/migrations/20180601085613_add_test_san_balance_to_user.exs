@@ -3,7 +3,7 @@ defmodule Sanbase.Repo.Migrations.AddTestSanBalanceToUser do
 
   def change do
     alter table(:users) do
-      add(:test_san_balance, :numeric)
+      add(:test_san_balance, :decimal)
     end
   end
 end

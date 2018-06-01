@@ -1,21 +1,9 @@
 export const getBalance = state => {
-  const ethAccounts = state.user.data.ethAccounts
-  if (ethAccounts) {
-    return state.user.data.ethAccounts.length > 0
-      ? state.user.data.ethAccounts[0].sanBalance
-      : 0
-  }
-  return 0
+  return state.user.data.sanBalance
 }
 
 export const checkHasPremium = state => {
-  const ethAccounts = state.user.data.ethAccounts
-  if (ethAccounts) {
-    return state.user.data.ethAccounts.length > 0
-      ? state.user.data.ethAccounts[0].sanBalance >= 1000
-      : false
-  }
-  return false
+  return state.user.data.sanBalance >= 1000
 }
 
 export const checkIsLoggedIn = state => {

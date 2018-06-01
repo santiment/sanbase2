@@ -210,6 +210,7 @@ const handleLoad = () => {
           id,
           email,
           username,
+          sanBalance,
           ethAccounts{
             address,
             sanBalance

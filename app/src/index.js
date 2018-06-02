@@ -5,15 +5,10 @@ import { Provider } from 'react-redux'
 import { createStore, applyMiddleware } from 'redux'
 import { createEpicMiddleware } from 'redux-observable'
 import { composeWithDevTools } from 'redux-devtools-extension'
-import axios from 'axios'
-import { multiClientMiddleware } from 'redux-axios-middleware'
-import Raven from 'raven-js'
 import createRavenMiddleware from 'raven-for-redux'
-import ApolloClient, { printAST } from 'apollo-client'
+import ApolloClient from 'apollo-client'
 import { createHttpLink } from 'apollo-link-http'
-import { setContext } from 'apollo-link-context'
-import { from, ApolloLink, Observable } from 'apollo-link'
-import { onError } from 'apollo-link-error'
+import { from } from 'apollo-link'
 import { InMemoryCache } from 'apollo-cache-inmemory'
 import { ApolloProvider } from 'react-apollo'
 import App from './App'
@@ -22,8 +17,11 @@ import epics from './epics/rootEpics.js'
 import { loadState, saveState } from './utils/localStorage'
 import { getOrigin } from './utils/utils'
 import detectNetwork from './utils/detectNetwork'
-import setAuthorizationToken from './utils/setAuthorizationToken'
+import getRaven from './utils/getRaven'
 import { changeNetworkStatus, launchApp } from './actions/rootActions'
+import uploadLink from './apollo/upload-link'
+import errorLink from './apollo/error-link'
+import authLink from './apollo/auth-link'
 // Look at 42 line. ;)
 // import * as serviceWorker from './serviceWorker'
 
@@ -60,140 +58,20 @@ const run = (client, store, App) => {
 }
 
 const handleLoad = () => {
-  if (!window.env) {
-    window.env = {
-      RAVEN_DSN: '',
-      WEBSITE_URL: process.env.REACT_APP_WEBSITE_URL || ''
-    }
-  }
-  Raven.config(window.env.RAVEN_DSN || '', {
-    release: process.env.REACT_APP_VERSION,
-    environment: process.env.NODE_ENV,
-    tags: {
-      git_commit: process.env.REACT_APP_VERSION.split('-')[1]
-    }
-  }).install()
-  const origin = getOrigin()
-
-  const httpLink = createHttpLink({ uri: `${origin}/graphql` })
-
-  const authLink = setContext((_, { headers }) => {
-    // get the authentication token from local storage if it exists
-    const token = loadState() ? loadState().token : undefined
-    // return the headers to the context so httpLink can read them
-    return {
-      headers: {
-        ...headers,
-        authorization: token ? `Bearer ${token}` : null
-      }
-    }
-  })
-
-  const isObject = value => value !== null && typeof value === 'object'
-
-  const uploadLink = new ApolloLink((operation, forward) => {
-    if (typeof FormData !== 'undefined' && isObject(operation.variables)) {
-      const files = operation.variables.images
-      if (files && files.length > 0) {
-        const { headers } = operation.getContext()
-        const formData = new FormData() // eslint-disable-line
-
-        const filesData = Object.keys(files).filter(key => {
-          return files[key].name
-        })
-        formData.append('query', printAST(operation.query))
-        let variables = {'images': []}
-        filesData.forEach(key => {
-          variables['images'].push(files[key].name)
-          formData.append(files[key].name, files[key])
-        })
-        formData.append('variables', JSON.stringify(variables))
-
-        return new Observable(observer => {
-          fetch(`${origin}/graphql`, { // eslint-disable-line
-            method: 'POST',
-            headers: {
-              ...headers
-            },
-            body: formData
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw Error(response.statusText)
-            }
-            return response.json()
-          })
-          .then(success => {
-            observer.next(success)
-            observer.complete()
-          }).catch(error => {
-            observer.next(error)
-            observer.error(error)
-          })
-        })
-      }
-    }
-    return forward(operation)
-  })
-
-  const linkError = onError(({graphQLErrors, networkError, operation}) => {
-    if (graphQLErrors) {
-      if (Array.isArray(graphQLErrors)) {
-        graphQLErrors.forEach(({ message, locations, path }) => {
-          const errorMessage = `[GraphQL error]:
-            Message: ${JSON.stringify(message)},
-            Location: ${JSON.stringify(locations)},
-            Path: ${JSON.stringify(path)}`
-          if (process.env.NODE_ENV === 'development') {
-            console.log(errorMessage)
-          }
-          if (message !== 'unauthorized') {
-            Raven.captureException(errorMessage)
-          }
-        })
-      } else {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            `[GraphQL error]: ${JSON.stringify(graphQLErrors)}`
-          )
-        }
-        Raven.captureException(`[GraphQL error]: ${JSON.stringify(graphQLErrors)}`)
-      }
-    }
-
-    if (networkError) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(networkError)
-      }
-      Raven.captureException(`[Network error]: ${networkError}`)
-    }
-  })
-
+  const httpLink = createHttpLink({ uri: `${getOrigin()}/graphql` })
   const client = new ApolloClient({
-    link: from([authLink, linkError, uploadLink, httpLink]),
+    link: from([authLink, errorLink, uploadLink, httpLink]),
     shouldBatch: true,
     cache: new InMemoryCache()
   })
 
-  const clients = {
-    sanbaseClient: {
-      client: axios.create({
-        baseURL: `${origin}/api`,
-        responseType: 'json'
-      })
-    }
-  }
-
-  loadState() && setAuthorizationToken(loadState().token)
-
   const middleware = [
-    multiClientMiddleware(clients),
     createEpicMiddleware(epics, {
       dependencies: {
         client
       }
     }),
-    createRavenMiddleware(Raven)
+    createRavenMiddleware(getRaven())
   ]
 
   const store = createStore(reducers,

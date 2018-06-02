@@ -6,12 +6,8 @@ import Raven from 'raven-js'
 import { lifecycle, compose } from 'recompose'
 import { Message } from 'semantic-ui-react'
 import { ethLoginGQL } from './LoginGQL'
-import {
-  setupWeb3,
-  hasMetamask,
-  signMessage
-} from '../../web3Helpers'
 import AuthForm from './AuthForm'
+import { setupWeb3, hasMetamask, signMessage } from '../../web3Helpers'
 import { savePrevAuthProvider } from './../../utils/localStorage'
 import metamaskDownloadImg from './../../assets/download-metamask.png'
 

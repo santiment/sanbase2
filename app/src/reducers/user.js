@@ -1,3 +1,5 @@
+import * as actions from './../actions/types'
+
 export const initialState = {
   isLoading: true,
   error: false,
@@ -68,7 +70,7 @@ export default (state = initialState, action) => {
           email: action.email
         }
       }
-    case 'CHANGE_USER_DATA':
+    case actions.CHANGE_USER_DATA:
       if (!action.user) {
         return {
           ...initialState,
@@ -82,6 +84,11 @@ export default (state = initialState, action) => {
         data: {
           ...action.user
         }
+      }
+    case actions.APP_USER_HAS_INACTIVE_TOKEN:
+      return {
+        ...initialState,
+        isLoading: false
       }
     default:
       return state

@@ -10,7 +10,6 @@ import { multiClientMiddleware } from 'redux-axios-middleware'
 import Raven from 'raven-js'
 import createRavenMiddleware from 'raven-for-redux'
 import ApolloClient, { printAST } from 'apollo-client'
-import gql from 'graphql-tag'
 import { createHttpLink } from 'apollo-link-http'
 import { setContext } from 'apollo-link-context'
 import { from, ApolloLink, Observable } from 'apollo-link'
@@ -24,8 +23,7 @@ import { loadState, saveState } from './utils/localStorage'
 import { getOrigin } from './utils/utils'
 import detectNetwork from './utils/detectNetwork'
 import setAuthorizationToken from './utils/setAuthorizationToken'
-import { hasMetamask } from './web3Helpers'
-import { changeNetworkStatus } from './actions/rootActions'
+import { changeNetworkStatus, launchApp } from './actions/rootActions'
 // Look at 42 line. ;)
 // import * as serviceWorker from './serviceWorker'
 
@@ -203,35 +201,11 @@ const handleLoad = () => {
     composeWithDevTools(applyMiddleware(...middleware))
   )
 
-  client.query({
-    query: gql`
-      query {
-        currentUser {
-          id,
-          email,
-          username,
-          ethAccounts{
-            address,
-            sanBalance
-          }
-        }
-      }
-    `
-  })
-  .then(response => {
-    if (response.data.currentUser) {
-      store.dispatch({
-        type: 'CHANGE_USER_DATA',
-        user: response.data.currentUser,
-        hasMetamask: hasMetamask()
-      })
-    }
-  })
-  .catch(error => Raven.captureException(error))
-
   store.subscribe(() => {
     saveState(store.getState().user)
   })
+
+  store.dispatch(launchApp())
 
   detectNetwork(({online = true}) => {
     store.dispatch(changeNetworkStatus(online))

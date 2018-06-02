@@ -14,7 +14,7 @@ const handleOffline = (action$, store, { client }) =>
     map(({payload: { isOnline = true }}) => {
       if (!isOnline) {
         GoogleAnalytics.event({
-          category: 'Users',
+          category: 'User',
           action: 'User is offline'
         })
       }

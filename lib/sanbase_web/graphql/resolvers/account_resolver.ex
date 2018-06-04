@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
         _args,
         _res
       ) do
-    {:ok, Decimal.to_float(test_san_balance || san_balance)}
+    {:ok, Decimal.to_float(test_san_balance || san_balance || Decimal.new(0))}
   end
 
   def current_user(_root, _args, %{

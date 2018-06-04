@@ -1,5 +1,6 @@
 export const getBalance = state => {
-  return state.user.data.sanBalance
+  return state.user.data.sanBalance > 0
+    ? state.user.data.sanBalance : 0
 }
 
 export const checkHasPremium = state => {

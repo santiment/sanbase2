@@ -100,6 +100,10 @@ defmodule Sanbase.Application do
           limit: 100,
           time_between_requests: 100
         ),
+        worker(PlugAttack.Storage.Ets, [
+          SanbaseWeb.Graphql.PlugAttack.Storage,
+          [clean_period: 60_000]
+        ]),
 
         # Price fetcher
         # TODO: Change after switching over to only this cmc

@@ -11,8 +11,8 @@ defmodule SanbaseWeb.Graphql.PlugAttack do
   rule "throttle per ip", conn do
     throttle(
       conn.remote_ip,
-      period: Config.get(:rate_limit_period),
-      limit: Config.get(:rate_limit_max_requests),
+      period: Config.get(:rate_limit_period) |> String.to_integer(),
+      limit: Config.get(:rate_limit_max_requests) |> String.to_integer(),
       storage: {PlugAttack.Storage.Ets, SanbaseWeb.Graphql.PlugAttack.Storage}
     )
   end

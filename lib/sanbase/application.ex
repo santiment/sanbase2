@@ -100,7 +100,7 @@ defmodule Sanbase.Application do
           limit: 100,
           time_between_requests: 100
         ),
-        worker(PlugAttack.Storage.Ets, [
+        supervisor(PlugAttack.Storage.Ets, [
           SanbaseWeb.Graphql.PlugAttack.Storage,
           [clean_period: 60_000]
         ]),

@@ -555,14 +555,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def ico_price(%Project{id: id} = project, _args, _resolution) do
-    project
-
-    Project
-    |> Repo.get(id)
-    |> Repo.preload([:icos])
-
     ico_price =
-      project.icos
+      Project
+      |> Repo.get(id)
+      |> Repo.preload([:icos])
+      |> Map.get(:icos)
       |> Enum.map(fn ico ->
         Map.merge(ico, %{token_usd_ico_price: Decimal.to_float(ico.token_usd_ico_price)})
       end)

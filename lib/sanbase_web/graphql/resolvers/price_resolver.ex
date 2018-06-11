@@ -63,6 +63,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   end
 
   defp nil_or_decimal(nil), do: nil
+
   defp nil_or_decimal(num) when is_number(num) do
     Decimal.new(num)
   end

@@ -29,9 +29,7 @@ const ProjectChartMobile = ({
   },
   project = {
     fundsRaisedUsdIcoEndPrice: null,
-    initialIco: {
-      tokenUsdIcoPrice: null
-    }
+    icoPrice: null
   },
   settings = {
     showed: {
@@ -47,7 +45,7 @@ const ProjectChartMobile = ({
   toggleMiniMap,
   isERC20
 }) => {
-  const icoPrice = (project.initialIco || {}).tokenUsdIcoPrice
+  const icoPrice = project.icoPrice
   const icoPriceUSD = icoPrice
     ? formatNumber(icoPrice, { currency: 'USD' })
     : undefined

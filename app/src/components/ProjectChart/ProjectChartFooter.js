@@ -94,7 +94,7 @@ const ProjectChartFooter = ({
           Volume
         </ToggleBtn>
         {!props.isToggledBTC &&
-        ((props.project.initialIco || {}).tokenUsdIcoPrice || undefined) &&
+        (props.project.icoPrice || undefined) &&
         <ToggleBtn
           isToggled={props.isToggledICOPrice}
           toggle={props.toggleICOPrice}>

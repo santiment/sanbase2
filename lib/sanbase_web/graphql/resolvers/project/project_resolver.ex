@@ -564,7 +564,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       |> Repo.preload([:icos])
       |> Map.get(:icos)
       |> Enum.map(fn ico ->
-        Map.merge(ico, %{token_usd_ico_price: Decimal.to_float(ico.token_usd_ico_price)})
+        %Ico{ico | token_usd_ico_price: Decimal.to_float(ico.token_usd_ico_price)}
       end)
       |> Enum.reject(fn ico -> is_nil(ico.token_usd_ico_price) end)
       |> Enum.max_by(fn ico -> ico.token_usd_ico_price end, fn -> nil end)

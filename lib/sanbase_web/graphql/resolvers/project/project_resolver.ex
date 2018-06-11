@@ -558,7 +558,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   Return the main sale price, which is the maximum from all icos of a project
   """
   def ico_price(%Project{id: id} = project, _args, _resolution) do
-    ico_price =
+    ico_with_max_price =
       Project
       |> Repo.get(id)
       |> Repo.preload([:icos])
@@ -568,9 +568,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         %Ico{ico | token_usd_ico_price: Decimal.to_float(ico.token_usd_ico_price)}
       end)
       |> Enum.max_by(fn ico -> ico.token_usd_ico_price end, fn -> nil end)
-      |> Map.get(:token_usd_ico_price)
 
-    {:ok, ico_price}
+    case ico_with_max_price do
+      %Ico{token_usd_ico_price: ico_price} -> {:ok, ico_price}
+      nil -> {:ok, nil}
+    end
   end
 
   def price_to_book_ratio(%Project{} = project, _args, %{context: %{loader: loader}}) do

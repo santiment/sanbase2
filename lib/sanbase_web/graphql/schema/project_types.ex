@@ -157,6 +157,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:icos, list_of(:ico), resolve: assoc(:icos))
 
+    field :ico_price, :float do
+      cache_resolve(&ProjectResolver.ico_price/3)
+    end
+
     field :signals, list_of(:signal) do
       cache_resolve_dataloader(&ProjectResolver.signals/3)
     end

@@ -37,7 +37,7 @@ const ProjectChartMobile = ({
   },
   isERC20
 }) => {
-  const icoPrice = (project.initialIco || {}).tokenUsdIcoPrice
+  const icoPrice = project.icoPrice
   const icoPriceUSD = icoPrice
     ? formatNumber(icoPrice, { currency: 'USD' })
     : undefined

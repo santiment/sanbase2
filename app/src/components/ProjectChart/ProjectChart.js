@@ -296,7 +296,7 @@ const renderTicks = props => {
 
 const getICOPriceAnnotation = props => {
   if (props.isToggledBTC) { return undefined }
-  const icoPrice = (props.project.initialIco || {}).tokenUsdIcoPrice || undefined
+  const icoPrice = props.project.icoPrice || undefined
   const icoPriceUSD = icoPrice
     ? formatNumber(icoPrice, { currency: 'USD' })
     : undefined

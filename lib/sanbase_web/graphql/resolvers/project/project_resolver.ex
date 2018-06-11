@@ -554,6 +554,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, ico}
   end
 
+  def ico_price(%Project{id: id} = project, _args, _resolution) do
+    project
+
+    Project
+    |> Repo.get(id)
+    |> Repo.preload([:icos])
+
+    ico_price =
+      project.icos
+      |> Enum.map(fn ico ->
+        Map.merge(ico, %{token_usd_ico_price: Decimal.to_float(ico.token_usd_ico_price)})
+      end)
+      |> Enum.max_by(fn ico -> ico.token_usd_ico_price end, fn -> nil end)
+      |> Map.get(:token_usd_ico_price)
+
+    {:ok, ico_price}
+  end
+
   def price_to_book_ratio(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
     |> ProjectBalanceResolver.usd_balance_loader(project)

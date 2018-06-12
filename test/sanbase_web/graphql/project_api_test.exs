@@ -228,7 +228,92 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     assert String.contains?(project_error["message"], "not found")
   end
 
+  test "fetch project ico_price by slug", context do
+    cmc_id = "santiment1"
+    name = "Santiment1"
+
+    project =
+      %Project{}
+      |> Project.changeset(%{name: name, coinmarketcap_id: cmc_id})
+      |> Repo.insert!()
+
+    %Ico{}
+    |> Ico.changeset(%{
+      project_id: project.id,
+      token_usd_ico_price: Decimal.new(0.1)
+    })
+    |> Repo.insert!()
+
+    %Ico{}
+    |> Ico.changeset(%{
+      project_id: project.id,
+      token_usd_ico_price: Decimal.new(0.2)
+    })
+    |> Repo.insert!()
+
+    %Ico{}
+    |> Ico.changeset(%{
+      project_id: project.id,
+      token_usd_ico_price: nil
+    })
+    |> Repo.insert!()
+
+    response = query_ico_price(context, cmc_id)
+
+    assert response["icoPrice"] == Decimal.new(0.2) |> Decimal.to_float()
+  end
+
+  test "fetch project ico_price when it is nil", context do
+    cmc_id = "santiment1"
+    name = "Santiment1"
+
+    project =
+      %Project{}
+      |> Project.changeset(%{name: name, coinmarketcap_id: cmc_id})
+      |> Repo.insert!()
+
+    %Ico{}
+    |> Ico.changeset(%{
+      project_id: project.id,
+      token_usd_ico_price: nil
+    })
+    |> Repo.insert!()
+
+    response = query_ico_price(context, cmc_id)
+
+    assert response["icoPrice"] == nil
+  end
+
+  test "fetch project ico_price when the project does not have ico record", context do
+    cmc_id = "santiment1"
+    name = "Santiment1"
+
+    %Project{}
+    |> Project.changeset(%{name: name, coinmarketcap_id: cmc_id})
+    |> Repo.insert!()
+
+    response = query_ico_price(context, cmc_id)
+
+    assert response["icoPrice"] == nil
+  end
+
   # Helper functions
+
+  defp query_ico_price(context, cmc_id) do
+    query = """
+    {
+      projectBySlug(slug: "#{cmc_id}") {
+        icoPrice
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "projectBySlug"))
+
+    json_response(result, 200)["data"]["projectBySlug"]
+  end
 
   defp get_authorization_header do
     username = context_config(:basic_auth_username)

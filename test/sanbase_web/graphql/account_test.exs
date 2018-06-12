@@ -18,6 +18,23 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     {:ok, conn: conn}
   end
 
+  test "the default current user's san_balance is 0.0", %{conn: conn} do
+    query = """
+    {
+      currentUser {
+        id,
+        sanBalance
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+
+    assert json_response(result, 200)["data"]["currentUser"]["sanBalance"] == 0.0
+  end
+
   test "change email of current user", %{conn: conn} do
     new_email = "new_test_email@santiment.net"
 

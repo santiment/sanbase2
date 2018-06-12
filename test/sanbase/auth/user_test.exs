@@ -70,6 +70,31 @@ defmodule Sanbase.Auth.UserTest do
     assert Sanbase.TestUtils.date_close_to(Timex.now(), user.san_balance_updated_at, 2, :seconds)
   end
 
+  test "san_balance! returns test_san_balance if present" do
+    user =
+      %User{
+        san_balance: Decimal.new(10),
+        test_san_balance: Decimal.new(20),
+        san_balance_updated_at: Timex.shift(Timex.now(), minutes: -2),
+        salt: User.generate_salt()
+      }
+      |> Repo.insert!()
+
+    assert User.san_balance!(user) == Decimal.new(20)
+  end
+
+  test "san_balance! returns cached san_balance if test_san_balance not present" do
+    user =
+      %User{
+        san_balance: Decimal.new(10),
+        san_balance_updated_at: Timex.shift(Timex.now(), minutes: -2),
+        salt: User.generate_salt()
+      }
+      |> Repo.insert!()
+
+    assert User.san_balance!(user) == Decimal.new(10)
+  end
+
   test "find_or_insert_by_email when the user does not exist" do
     {:ok, user} = User.find_or_insert_by_email("test@example.com", "john_snow")
 

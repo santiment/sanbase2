@@ -555,7 +555,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   @doc """
-  Return the main sale price, which is the maximum from all icos of a project
+  Return the main sale price, which is the maximum token_usd_ico_price from all icos of a project
   """
   def ico_price(%Project{id: id} = project, _args, _resolution) do
     ico_with_max_price =

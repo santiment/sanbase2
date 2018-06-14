@@ -20,7 +20,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
   # 5 minutes
   @default_update_interval 1000 * 60 * 5
-  @request_timeout 300_000
+  @request_timeout 600_000
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -184,6 +184,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
        )
        when nil != ticker and nil != coinmarketcap_id do
     measurement_name = Measurement.name_from(project)
+    Logger.info("Fetch and process prices for #{measurement_name}")
 
     case last_price_datetime(project) do
       nil ->

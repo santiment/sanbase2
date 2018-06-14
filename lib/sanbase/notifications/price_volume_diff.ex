@@ -40,13 +40,12 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   # Calculate the notification only if the 24h volume is over some threshold ($100,000 by default)
   defp volume_over_threshold?(
-         %Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id},
+         %Project{} = project,
          currency,
          from_datetime,
          to_datetime
-       )
-       when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
-    measurement = ticker <> "_" <> coinmarketcap_id
+       ) do
+    measurement = Sanbase.Influxdb.Measurement.name_from(project)
 
     with {:ok, [[_dt, volume]]} <-
            Sanbase.Prices.Store.fetch_mean_volume(measurement, from_datetime, to_datetime) do

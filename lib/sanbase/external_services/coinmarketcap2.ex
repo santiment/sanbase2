@@ -16,6 +16,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   # TODO: Change
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData2, as: GraphData
   alias Sanbase.Utils.Config
+  alias Sanbase.Influxdb.Measurement
 
   # 5 minutes
   @default_update_interval 1000 * 60 * 5
@@ -54,6 +55,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   def handle_info(:fetch_missing_info, %{missing_info_update_interval: update_interval} = state) do
+    Logger.info("[CMC] Fetching missing info for projects.")
+
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
       projects(),
@@ -75,6 +78,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
           total_market_task_pid: total_market_task_pid
         } = state
       ) do
+    Logger.info("[CMC] Fetching TOTAL_MARKET data.")
+
     # If we have a running task for fetching the total market cap do not run it again
     if total_market_task_pid && Process.alive?(total_market_task_pid) do
       {:noreply, state}
@@ -94,6 +99,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   def handle_info(:fetch_prices, %{prices_update_interval: update_interval} = state) do
+    Logger.info("[CMC] Fetching prices for projects.")
+
     # Run the tasks in a stream concurrently so `max_concurrency` can be used.
     # Otherwise risking to start too many tasks to a service that's rate limited
     Task.Supervisor.async_stream_nolink(
@@ -111,7 +118,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   def handle_info(msg, state) do
-    Logger.warn("Unknown message received in #{__MODULE__}: #{msg}")
+    Logger.warn("[CMC] Unknown message received in #{__MODULE__}: #{msg}")
     {:noreply, state}
   end
 
@@ -148,10 +155,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
   # Fetch project info from Coinmarketcap and Etherscan. Fill only missing info
   # and does not override existing info.
-  defp fetch_project_info(project) do
+  defp fetch_project_info(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
     alias Sanbase.ExternalServices.ProjectInfo
 
     if project_info_missing?(project) do
+      Logger.info(
+        "[CMC] There is missing info for project with coinmarketcap id #{coinmarketcap_id}. Will try to fetch it."
+      )
+
       ProjectInfo.from_project(project)
       |> ProjectInfo.fetch_coinmarketcap_info()
       |> case do
@@ -172,15 +183,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
          %Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker} = project
        )
        when nil != ticker and nil != coinmarketcap_id do
+    measurement_name = Measurement.name_from(project)
+
     case last_price_datetime(project) do
       nil ->
         err_msg =
-          "Cannot fetch the last price datetime for #{coinmarketcap_id} with ticker #{ticker}"
+          "[CMC] Cannot fetch the last price datetime for #{coinmarketcap_id} with ticker #{
+            ticker
+          }"
 
         Logger.warn(err_msg)
         {:error, err_msg}
 
       last_price_datetime ->
+        Logger.info(
+          "[CMC] Latest price datetime for #{measurement_name} - " <> inspect(last_price_datetime)
+        )
+
         GraphData.fetch_and_store_prices(project, last_price_datetime)
 
         # TODO: Activate later when old coinmarketcap is disabled
@@ -195,12 +214,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
     Sanbase.Notifications.PriceVolumeDiff.exec(project, "usd")
   end
 
-  defp last_price_datetime(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project)
-       when nil != ticker and nil != coinmarketcap_id do
-    measurement_name = Sanbase.Influxdb.Measurement.name_from(project)
+  defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+    measurement_name = Measurement.name_from(project)
 
     case Store.last_history_datetime_cmc!(measurement_name) do
       nil ->
+        Logger.info(
+          "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
+        )
+
         GraphData.fetch_first_datetime(coinmarketcap_id)
 
       datetime ->
@@ -213,6 +235,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
     case Store.last_history_datetime_cmc!(measurement_name) do
       nil ->
+        Logger.info(
+          "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
+        )
+
         GraphData.fetch_first_datetime("TOTAL_MARKET")
 
       datetime ->
@@ -223,7 +249,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   defp fetch_and_process_marketcap_total_data() do
     case last_marketcap_total_datetime() do
       nil ->
-        err_msg = "Cannot fetch the last price datetime for TOTAL_MARKET"
+        err_msg = "[CMC] Cannot fetch the last price datetime for TOTAL_MARKET"
         Logger.warn(err_msg)
         {:error, err_msg}
 

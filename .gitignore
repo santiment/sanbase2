@@ -36,3 +36,7 @@ npm-debug.log
 
 # cTags definitions
 **/.tags
+
+# Ignore some editor related folders
+/.vscode
+/.elixir_ls

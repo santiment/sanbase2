@@ -80,7 +80,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     query =
       from(
         p in Project,
-        where: not is_nil(p.coinmarketcap_id) and is_nil(p.main_contract_address),
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        # The opposite of ERC20. Classify everything except ERC20 as Currency.
+        where:
+          not is_nil(p.coinmarketcap_id) and
+            (is_nil(p.main_contract_address) or infr.code != "ETH"),
         order_by: p.name
       )
 

@@ -56,13 +56,15 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     |> Ico.changeset(%{project_id: project2.id})
     |> Repo.insert!()
 
+    # Should be classified as currency despite having main contract address
     project3 =
       %Project{}
       |> Project.changeset(%{
         ticker: "PRJ3",
         name: "Project3",
         infrastructure_id: infr_btc.id,
-        coinmarketcap_id: "proj3"
+        coinmarketcap_id: "proj3",
+        main_contract_address: "0x1234567890"
       })
       |> Repo.insert!()
 

@@ -72,6 +72,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       select: p.ticker
     )
     |> Sanbase.Repo.one()
+  end
+
   defp total_market_history_price_on_load(loader, args) do
     with {:ok, usd_prices} <- Dataloader.get(loader, PriceStore, @total_market_measurement, args) do
       result =

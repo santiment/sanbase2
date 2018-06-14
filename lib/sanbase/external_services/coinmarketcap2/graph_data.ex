@@ -25,8 +25,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     all_time_total_market_price_points()
     |> List.first()
     |> case do
-      nil -> nil
-      %PricePoint{datetime: datetime} -> datetime
+      nil ->
+        Logger.warn("[CMC] Cannot fetch first datetime from coinmarketcap for TOTAL_MARKET")
+        nil
+
+      %PricePoint{datetime: datetime} ->
+        Logger.info("[CMC] Fetched first datetime for TOTAL_MARKET: " <> inspect(datetime))
+        datetime
     end
   end
 
@@ -34,17 +39,33 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     all_time_project_price_points(coinmarketcap_id)
     |> List.first()
     |> case do
-      nil -> nil
-      %PricePoint{datetime: datetime} -> datetime
+      nil ->
+        Logger.warn(
+          "[CMC] Cannot fetch first datetime from coinmarketcap for #{coinmarketcap_id}"
+        )
+
+        nil
+
+      %PricePoint{datetime: datetime} ->
+        Logger.info("[CMC] Fetched first datetime for #{coinmarketcap_id}: " <> inspect(datetime))
+        datetime
     end
   end
 
-  def fetch_and_store_prices(_project, nil), do: :ok
+  def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id}, nil) do
+    Logger.warn("[CMC] Trying to fetch and store prices for project with coinmarketcap_id
+      #{coinmarketcap_id} but the last_fetched_datetime is nil")
+
+    :ok
+  end
 
   def fetch_and_store_prices(
         %Project{coinmarketcap_id: coinmarketcap_id} = project,
         last_fetched_datetime
       ) do
+    Logger.info("[CMC] Fetching and storing prices for project with coinmarketcap id
+    #{coinmarketcap_id} with last fetched datetime " <> inspect(last_fetched_datetime))
+
     fetch_price_stream(coinmarketcap_id, last_fetched_datetime, DateTime.utc_now())
     |> process_price_stream(project)
   end
@@ -54,9 +75,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> Stream.map(&extract_price_points_for_interval(coinmarketcap_id, &1))
   end
 
-  def fetch_and_store_marketcap_total(nil), do: :ok
+  def fetch_and_store_marketcap_total(nil) do
+    Logger.warn(
+      "[CMC] Trying to fetch and store total marketcap data but the last fetched datetime is nil"
+    )
+
+    :ok
+  end
 
   def fetch_and_store_marketcap_total(last_fetched_datetime) do
+    Logger.info("[CMC] Fetching and storing prices for TOTAL_MARKET
+    with last fetched datetime " <> inspect(last_fetched_datetime))
+
     fetch_marketcap_total_stream(last_fetched_datetime, DateTime.utc_now())
     |> process_marketcap_total_stream()
   end
@@ -70,9 +100,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
   defp process_marketcap_total_stream(marketcap_total_stream) do
     measurement_name = "TOTAL_MARKET_total-market"
+    Logger.info("[CMC] Processing total marketcap stream.")
 
-    marketcap_total_stream
     # Store each data point and the information when it was last updated
+    marketcap_total_stream
     |> Stream.each(fn total_marketcap_info ->
       measurement_points =
         total_marketcap_info
@@ -85,9 +116,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> Stream.run()
   end
 
-  defp process_price_stream(price_stream, %Project{} = project) do
-    price_stream
+  defp process_price_stream(price_stream, %Project{coinmarketcap_id: coinmarketcap_id} = project) do
+    Logger.info("[CMC] Processing price stream for #{coinmarketcap_id}")
+
     # Store each data point and the information when it was last updated
+    price_stream
     |> Stream.each(fn prices ->
       measurement_points =
         prices
@@ -100,7 +133,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> Stream.run()
   end
 
-  def update_last_cmc_history_datetime(_project, []), do: :ok
+  def update_last_cmc_history_datetime(%Project{coinmarketcap_id: coinmarketcap_id}, []) do
+    Logger.info("[CMC] Trying to update last cmc history datetime for #{coinmarketcap_id}
+      but there are no price points imported.")
+
+    :ok
+  end
 
   def update_last_cmc_history_datetime(measurement_name, points) do
     last_price_datetime_updated =

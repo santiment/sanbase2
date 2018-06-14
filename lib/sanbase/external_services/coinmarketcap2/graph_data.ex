@@ -53,8 +53,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   end
 
   def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id}, nil) do
-    Logger.warn("[CMC] Trying to fetch and store prices for project with coinmarketcap_id
-      #{coinmarketcap_id} but the last_fetched_datetime is nil")
+    Logger.warn(
+      "[CMC] Trying to fetch and store prices for project with coinmarketcap_id #{
+        coinmarketcap_id
+      } but the last_fetched_datetime is nil"
+    )
 
     :ok
   end
@@ -63,8 +66,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
         %Project{coinmarketcap_id: coinmarketcap_id} = project,
         last_fetched_datetime
       ) do
-    Logger.info("[CMC] Fetching and storing prices for project with coinmarketcap id
-    #{coinmarketcap_id} with last fetched datetime " <> inspect(last_fetched_datetime))
+    Logger.info(
+      "[CMC] Fetching and storing prices for project with coinmarketcap id #{coinmarketcap_id} with last fetched datetime " <>
+        inspect(last_fetched_datetime)
+    )
 
     fetch_price_stream(coinmarketcap_id, last_fetched_datetime, DateTime.utc_now())
     |> process_price_stream(project)
@@ -134,19 +139,28 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   end
 
   def update_last_cmc_history_datetime(%Project{coinmarketcap_id: coinmarketcap_id}, []) do
-    Logger.info("[CMC] Trying to update last cmc history datetime for #{coinmarketcap_id}
-      but there are no price points imported.")
+    Logger.info(
+      "[CMC] Trying to update last cmc history datetime for #{coinmarketcap_id} but there are no price points imported."
+    )
 
     :ok
   end
 
   def update_last_cmc_history_datetime(measurement_name, points) do
-    last_price_datetime_updated =
-      points
-      |> Enum.max_by(&Measurement.get_timestamp/1)
-      |> Measurement.get_datetime()
+    case points do
+      [] ->
+        Logger.info(
+          "Cannot update last cmc history datetime for #{measurement_name}. Reason: No price points fetched"
+        )
 
-    Store.update_last_history_datetime_cmc(measurement_name, last_price_datetime_updated)
+      points ->
+        last_price_datetime_updated =
+          points
+          |> Enum.max_by(&Measurement.get_timestamp/1)
+          |> Measurement.get_datetime()
+
+        Store.update_last_history_datetime_cmc(measurement_name, last_price_datetime_updated)
+    end
   end
 
   defp json_to_price_points(json) do

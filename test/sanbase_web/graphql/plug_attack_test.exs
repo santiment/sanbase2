@@ -30,9 +30,7 @@ defmodule PlugAttackTest do
   end
 
   defp get_max_requests() do
-    Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.PlugAttack)
-    |> Keyword.get(:rate_limit_max_requests)
-    |> Config.parse_config_value()
+    Config.module_get(SanbaseWeb.Graphql.PlugAttack, :rate_limit_max_requests)
     |> String.to_integer()
   end
 end

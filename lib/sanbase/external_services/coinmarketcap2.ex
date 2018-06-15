@@ -32,9 +32,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
       Store.create_db()
 
       # Start scraping immediately
+      Process.send(self(), :fetch_prices, [:noconnect])
       Process.send(self(), :fetch_missing_info, [:noconnect])
       Process.send(self(), :fetch_total_market, [:noconnect])
-      Process.send(self(), :fetch_prices, [:noconnect])
 
       update_interval = Config.get(:update_interval, @default_update_interval)
 

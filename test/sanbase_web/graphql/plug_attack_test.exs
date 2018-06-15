@@ -1,5 +1,6 @@
 defmodule PlugAttackTest do
   use SanbaseWeb.ConnCase
+  require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
 
   setup do

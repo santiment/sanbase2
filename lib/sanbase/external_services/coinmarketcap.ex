@@ -132,11 +132,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     !contract_abi or !contract_block_number
   end
 
-  defp fetch_and_process_price_data(%Project{} = project) do
-    last_price_datetime = last_price_datetime(project)
-    GraphData.fetch_and_store_prices(project, last_price_datetime)
+  defp fetch_and_process_price_data(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
+    key = {:cmc_fetch_price, "old_scraper_" <> coinmarketcap_id}
 
-    process_notifications(project)
+    if Registry.lookup(Sanbase.Registry, key) == [] do
+      Registry.register(Sanbase.Registry, key, :running)
+
+      last_price_datetime = last_price_datetime(project)
+      GraphData.fetch_and_store_prices(project, last_price_datetime)
+
+      process_notifications(project)
+      Registry.unregister(Sanbase.Regstry, key)
+    end
   end
 
   defp process_notifications(%Project{} = project) do

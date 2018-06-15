@@ -47,6 +47,9 @@ defmodule Sanbase.Application do
            acquire_lock_timeout: 30_000
          ]},
 
+        # Start a Registry
+        {Registry, keys: :unique, name: Sanbase.Registry},
+
         # Start the graphQL in-memory cache
         {ConCache,
          [

@@ -184,28 +184,35 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
        )
        when nil != ticker and nil != coinmarketcap_id do
     measurement_name = Measurement.name_from(project)
-    Logger.info("Fetch and process prices for #{measurement_name}")
+    key = {:cmc_fetch_price, measurement_name}
 
-    case last_price_datetime(project) do
-      nil ->
-        err_msg =
-          "[CMC] Cannot fetch the last price datetime for #{coinmarketcap_id} with ticker #{
-            ticker
-          }"
+    if Registry.lookup(Sanbase.Registry, key) == [] do
+      Registry.register(Sanbase.Registry, key, :running)
+      Logger.info("Fetch and process prices for #{measurement_name}")
 
-        Logger.warn(err_msg)
-        {:error, err_msg}
+      case last_price_datetime(project) do
+        nil ->
+          err_msg =
+            "[CMC] Cannot fetch the last price datetime for #{coinmarketcap_id} with ticker #{
+              ticker
+            }"
 
-      last_price_datetime ->
-        Logger.info(
-          "[CMC] Latest price datetime for #{measurement_name} - " <> inspect(last_price_datetime)
-        )
+          Logger.warn(err_msg)
+          {:error, err_msg}
 
-        GraphData.fetch_and_store_prices(project, last_price_datetime)
+        last_price_datetime ->
+          Logger.info(
+            "[CMC] Latest price datetime for #{measurement_name} - " <>
+              inspect(last_price_datetime)
+          )
 
-        # TODO: Activate later when old coinmarketcap is disabled
-        # process_notifications(project)
-        :ok
+          GraphData.fetch_and_store_prices(project, last_price_datetime)
+
+          # TODO: Activate later when old coinmarketcap is disabled
+          # process_notifications(project)
+          Registry.unregister(Sanbase.Registry, key)
+          :ok
+      end
     end
   end
 

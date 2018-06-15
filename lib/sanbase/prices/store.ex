@@ -162,7 +162,7 @@ defmodule Sanbase.Prices.Store do
            %{
              series: [
                %{
-                 values: [[_iso8601_datetime, iso8601_last_updated, _]]
+                 values: [[_iso8601_datetime, iso8601_last_updated | _]]
                }
              ]
            }

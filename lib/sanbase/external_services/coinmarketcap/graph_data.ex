@@ -178,7 +178,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end
   end
 
-  defp extract_price_points_for_interval(coinmarketcap_id, {start_interval_sec, end_interval_sec}) do
+  defp extract_price_points_for_interval(
+         coinmarketcap_id,
+         {start_interval_sec, end_interval_sec} = interval
+       ) do
     graph_data_currencies_interval_url(
       coinmarketcap_id,
       start_interval_sec * 1000,

@@ -89,8 +89,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   end
 
   def fetch_and_store_marketcap_total(last_fetched_datetime) do
-    Logger.info("[CMC] Fetching and storing prices for TOTAL_MARKET
-    with last fetched datetime " <> inspect(last_fetched_datetime))
+    Logger.info(
+      "[CMC] Fetching and storing prices for TOTAL_MARKET with last fetched datetime " <>
+        inspect(last_fetched_datetime)
+    )
 
     fetch_marketcap_total_stream(last_fetched_datetime, DateTime.utc_now())
     |> process_marketcap_total_stream()
@@ -105,7 +107,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
   defp process_marketcap_total_stream(marketcap_total_stream) do
     measurement_name = "TOTAL_MARKET_total-market"
-    Logger.info("[CMC] Processing total marketcap stream.")
+    Logger.info("[CMC] Processing stream for #{measurement_name}.")
 
     # Store each data point and the information when it was last updated
     marketcap_total_stream
@@ -150,7 +152,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     case points do
       [] ->
         Logger.info(
-          "Cannot update last cmc history datetime for #{measurement_name}. Reason: No price points fetched"
+          "[CMC] Cannot update last cmc history datetime for #{measurement_name}. Reason: No price points fetched"
         )
 
       points ->
@@ -158,6 +160,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
           points
           |> Enum.max_by(&Measurement.get_timestamp/1)
           |> Measurement.get_datetime()
+
+        Logger.info(
+          "[CMC] Updating the last history cmc datetime for #{measurement_name} to " <>
+            inspect(last_price_datetime_updated)
+        )
 
         Store.update_last_history_datetime_cmc(measurement_name, last_price_datetime_updated)
     end
@@ -229,12 +236,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
         body |> json_to_price_points()
 
       _ ->
-        Logger.error("Failed to fetch graph data for total marketcap for the selected interval")
+        Logger.error(
+          "[CMC] Failed to fetch graph data for total marketcap for the selected interval"
+        )
+
         []
     end
   end
 
-  defp extract_price_points_for_interval(coinmarketcap_id, {start_interval_sec, end_interval_sec}) do
+  defp extract_price_points_for_interval(
+         coinmarketcap_id,
+         {start_interval_sec, end_interval_sec} = interval
+       ) do
+    Logger.info(
+      "[CMC] Extracting price points for #{coinmarketcap_id} and interval #{inspect(interval)}"
+    )
+
     project_interval_url(
       coinmarketcap_id,
       start_interval_sec * 1000,
@@ -247,7 +264,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
       _ ->
         Logger.error(
-          "Failed to fetch graph data for #{coinmarketcap_id} for the selected interval"
+          "[CMC] Failed to fetch graph data for #{coinmarketcap_id} for the selected interval"
         )
 
         []
@@ -260,6 +277,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   end
 
   defp day_ranges(from_datetime, to_datetime) do
+    Logger.info(
+      "[CMC] Creating a stream of day ranges for: #{
+        inspect(from_datetime |> DateTime.from_unix!())
+      } - #{inspect(to_datetime |> DateTime.from_unix!())}"
+    )
+
     Stream.unfold(from_datetime, fn start_interval ->
       if start_interval <= to_datetime do
         {

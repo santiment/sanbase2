@@ -62,11 +62,6 @@ defmodule Sanbase.Prices.Store do
   end
 
   def update_last_history_datetime_cmc(ticker_cmc_id, last_updated_datetime) do
-    Logger.info(
-      "Updating the last history cmc datetime for #{ticker_cmc_id} to " <>
-        inspect(last_updated_datetime)
-    )
-
     %Measurement{
       timestamp: 0,
       fields: %{last_updated: last_updated_datetime |> DateTime.to_unix(:nanoseconds)},

@@ -16,7 +16,7 @@ export default (state = initialState, action) => {
         ...state,
         isFeedbackModalOpened: !state.isFeedbackModalOpened
       }
-    case 'APP_CHANGE_ONLINE_STATUS':
+    case actions.APP_CHANGE_ONLINE_STATUS:
       return {
         ...state,
         isOnline: action.payload.isOnline

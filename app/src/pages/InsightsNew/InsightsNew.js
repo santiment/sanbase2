@@ -2,14 +2,14 @@ import React, { Component } from 'react'
 import { Route, Redirect, Link } from 'react-router-dom'
 import { connect } from 'react-redux'
 import Panel from './../../components/Panel'
-import PostsNewHeader from './EventVotesNewHeader'
+import PostsNewHeader from './InsightsNewHeader'
 import ConfirmPost from './ConfirmNewInsight'
 import CreateTitle from './CreateTitle'
 import CreateBody from './CreateBody'
 import InsightsLayout from './../Insights/InsightsLayout'
-import './EventVotesNew.css'
+import './InsightsNew.css'
 
-class EventVotesNew extends Component {
+class InsightsNew extends Component {
   state = { // eslint-disable-line
     title: '',
     link: '',
@@ -135,4 +135,4 @@ const mapDispatchToProps = dispatch => {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(EventVotesNew)
+)(InsightsNew)

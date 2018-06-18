@@ -608,7 +608,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
          [
            %{
              name: "balance_bigger_than_mcap",
-             description: "The balance of the project is bigger than it's market capitalization"
+             description: "The balance of the project is bigger than its market capitalization"
            }
          ]}
       else

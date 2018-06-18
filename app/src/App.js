@@ -41,7 +41,7 @@ const LoadableDetailedPage = Loadable({
 })
 
 const LoadableInsights = Loadable({
-  loader: () => import('./pages/EventVotes'),
+  loader: () => import('./pages/InsightsPage'),
   loading: () => (
     <PageLoader />
   )
@@ -55,7 +55,7 @@ const LoadableInsight = Loadable({
 })
 
 const LoadableInsightsNew = Loadable({
-  loader: () => import('./pages/EventVotesNew/EventVotesNew'),
+  loader: () => import('./pages/InsightsNew/InsightsNew'),
   loading: () => (
     <PageLoader />
   )

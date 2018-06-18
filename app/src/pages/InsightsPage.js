@@ -16,7 +16,7 @@ import ModalConfirmPublishPost from './Insights/ConfirmPublishPostModal'
 import { allInsightsPublicGQL, allInsightsGQL } from './Insights/currentPollGQL'
 import InsightsLayout from './Insights/InsightsLayout'
 import { getBalance } from './UserSelectors'
-import './EventVotes.css'
+import './InsightsPage.css'
 
 const POLLING_INTERVAL = 5000
 
@@ -47,7 +47,7 @@ const formatDay = timestamp => {
   return moment.unix(timestamp).format('MMM Do YYYY')
 }
 
-const EventVotes = ({
+const InsightsPage = ({
   Posts = {
     posts: [],
     loading: true,
@@ -363,4 +363,4 @@ const enhance = compose(
   pure
 )
 
-export default enhance(EventVotes)
+export default enhance(InsightsPage)

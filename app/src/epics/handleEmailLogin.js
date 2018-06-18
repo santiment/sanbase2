@@ -38,7 +38,7 @@ export const handleLoginSuccess = (action$, store, { client }) =>
             Observable.of(showNotification('You are logged in!')),
             Observable.of(
               consent
-                ? replace(`/consent?consent=${user.consent_id}&token=${token}`)
+                ? window.location.replace(`/consent?consent=${user.consent_id}&token=${token}`)
                 : replace('/')
             )
           )

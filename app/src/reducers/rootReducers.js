@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux'
+import { routerReducer } from 'react-router-redux'
 import user, { initialState as userState } from './user'
 import projects, { initialState as projectsState } from './projects'
 import rootUi, { initialState as rootUiState } from './root-ui'
@@ -12,7 +13,8 @@ export const intitialState = {
   detailedPageUi: detailedPageUiState,
   insightsPageUi: insightsPageUiState,
   rootUi: rootUiState,
-  notification: initialNotificationState
+  notification: initialNotificationState,
+  router: routerReducer
 }
 
 export default combineReducers({

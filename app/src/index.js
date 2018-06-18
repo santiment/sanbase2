@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { BrowserRouter as Router, Route } from 'react-router-dom'
+import { Route } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { createStore, applyMiddleware } from 'redux'
 import { createEpicMiddleware } from 'redux-observable'
@@ -11,6 +11,8 @@ import { createHttpLink } from 'apollo-link-http'
 import { from } from 'apollo-link'
 import { InMemoryCache } from 'apollo-cache-inmemory'
 import { ApolloProvider } from 'react-apollo'
+import createHistory from 'history/createBrowserHistory'
+import { ConnectedRouter, routerMiddleware } from 'react-router-redux'
 import App from './App'
 import reducers from './reducers/rootReducers.js'
 import epics from './epics/rootEpics.js'
@@ -28,7 +30,7 @@ import authLink from './apollo/auth-link'
 import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
-const handleLoad = () => {
+const main = () => {
   const httpLink = createHttpLink({ uri: `${getOrigin()}/graphql` })
   const client = new ApolloClient({
     link: from([authLink, errorLink, uploadLink, httpLink]),
@@ -36,12 +38,15 @@ const handleLoad = () => {
     cache: new InMemoryCache()
   })
 
+  const history = createHistory()
+
   const middleware = [
     createEpicMiddleware(epics, {
       dependencies: {
         client
       }
     }),
+    routerMiddleware(history),
     createRavenMiddleware(getRaven())
   ]
 
@@ -63,9 +68,9 @@ const handleLoad = () => {
   ReactDOM.render(
     <ApolloProvider client={client}>
       <Provider store={store}>
-        <Router>
+        <ConnectedRouter history={history}>
           <Route path='/' component={App} />
-        </Router>
+        </ConnectedRouter>
       </Provider>
     </ApolloProvider>,
     document.getElementById('root'))
@@ -89,11 +94,11 @@ const handleLoad = () => {
 }
 
 if (process.env.NODE_ENV === 'development') {
-  handleLoad()
+  main()
 } else {
   const script = document.createElement('script')
   script.src = `/env.js?${process.env.REACT_APP_VERSION}`
   script.async = false
   document.body.appendChild(script)
-  script.addEventListener('load', handleLoad)
+  script.addEventListener('load', main)
 }

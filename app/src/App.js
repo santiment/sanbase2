@@ -31,6 +31,8 @@ import PageLoader from './components/PageLoader'
 import Status from './pages/Status'
 import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
+import ApiExamples from './components/ApiExamples'
+import ApiExplorer from './components/ApiExplorer'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -151,6 +153,8 @@ export const App = ({
         <Route exact path='/status' component={Status} />
         <Route exact path='/build' component={BuildChallenge} />
         <Route path='/email_login' component={EmailLoginVerification} />
+        <Route path='/apiexamples' component={ApiExamples} />
+        <Route path='/apiexplorer' component={ApiExplorer} />
         <Route
           exact
           path='/login'

@@ -37,7 +37,8 @@ defmodule SanbaseWeb.Endpoint do
     Plug.Session,
     store: :cookie,
     key: "_sanbase_key",
-    signing_salt: "bfH+5EQ0"
+    signing_salt: "bfH+5EQ0",
+    http_only: false
   )
 
   if Mix.env() == :dev do

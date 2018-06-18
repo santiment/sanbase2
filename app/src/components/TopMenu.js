@@ -6,6 +6,7 @@ import 'font-awesome/css/font-awesome.css'
 import logo from '../assets/logo_sanbase.png'
 import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './SearchContainer'
+import axios from 'axios'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -66,10 +67,12 @@ const mapStateToProps = ({user = {}}) => {
 const mapDispatchToProps = dispatch => {
   return {
     logout: () => {
-      dispatch({
-        type: 'SUCCESS_LOGOUT'
+      axios.get("/logout").then((data) => {
+        dispatch({
+          type: 'SUCCESS_LOGOUT'
+        })
       })
-    }
+    },
   }
 }
 

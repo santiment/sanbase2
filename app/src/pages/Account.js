@@ -5,6 +5,7 @@ import Raven from 'raven-js'
 import { Redirect } from 'react-router-dom'
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
+import axios from 'axios'
 import {
   compose,
   withState,
@@ -200,8 +201,10 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
   return {
     logout: () => {
-      dispatch({
-        type: 'SUCCESS_LOGOUT'
+      axios.get("/logout").then((data) => {
+        dispatch({
+          type: 'SUCCESS_LOGOUT'
+        })
       })
     },
     changedEmail: email => {

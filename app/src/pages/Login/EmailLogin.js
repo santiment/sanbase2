@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react'
 import Raven from 'raven-js'
+import gql from 'graphql-tag'
 import GoogleAnalytics from 'react-ga'
 import {
   Button,
@@ -11,10 +12,17 @@ import {
 } from 'recompose'
 import { graphql } from 'react-apollo'
 import { Form } from 'react-form'
-import { emailLoginGQL } from './LoginGQL'
 import ReactFormInput from '../../components/react-form-semantic-ui-react/ReactFormInput'
 import './EmailLogin.css'
 const validate = require('validate.js')
+
+const emailLoginGQL = gql`
+  mutation emailLogin($email: String!, $username: String!, $consent: String!) {
+    emailLogin(email: $email, username: $username, consent: $consent) {
+      success
+    }
+  }
+`
 
 const validateFields = (email, username) => {
   var constraints = {

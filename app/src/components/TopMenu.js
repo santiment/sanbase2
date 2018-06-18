@@ -6,6 +6,7 @@ import 'font-awesome/css/font-awesome.css'
 import logo from '../assets/logo_sanbase.png'
 import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './SearchContainer'
+import * as actions from './../actions/types'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -67,7 +68,7 @@ const mapDispatchToProps = dispatch => {
   return {
     logout: () => {
       dispatch({
-        type: 'SUCCESS_LOGOUT'
+        type: actions.USER_LOGOUT_SUCCESS
       })
     }
   }

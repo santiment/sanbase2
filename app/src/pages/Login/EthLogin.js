@@ -1,14 +1,11 @@
 import React, { Fragment } from 'react'
 import { connect } from 'react-redux'
-import { graphql, withApollo } from 'react-apollo'
-import GoogleAnalytics from 'react-ga'
-import Raven from 'raven-js'
+import { withApollo } from 'react-apollo'
 import { lifecycle, compose } from 'recompose'
 import { Message } from 'semantic-ui-react'
-import { ethLoginGQL } from './LoginGQL'
 import AuthForm from './AuthForm'
-import { setupWeb3, hasMetamask, signMessage } from '../../web3Helpers'
-import { savePrevAuthProvider } from './../../utils/localStorage'
+import { setupWeb3, hasMetamask } from '../../web3Helpers'
+import * as actions from './../../actions/types'
 import metamaskDownloadImg from './../../assets/download-metamask.png'
 
 const EthLogin = ({
@@ -16,7 +13,6 @@ const EthLogin = ({
   requestAuth,
   checkMetamask,
   authWithSAN,
-  client,
   consent
 }) => {
   return (
@@ -43,7 +39,7 @@ const EthLogin = ({
           account={user.account}
           pending={user.isLoading}
           error={user.error}
-          handleAuth={() => requestAuth(user.account, authWithSAN, client, consent)} />}
+          handleAuth={() => requestAuth(user.account, consent)} />}
     </Fragment>
   )
 }
@@ -123,9 +119,6 @@ export default compose(
     mapDispatchToProps
   ),
   withApollo,
-  graphql(ethLoginGQL, {
-    name: 'authWithSAN'
-  }),
   lifecycle({
     componentDidMount () {
       this.props.checkMetamask(hasMetamask())

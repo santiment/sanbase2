@@ -1,46 +1,27 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import GoogleAnalytics from 'react-ga'
 import {
   compose,
-  withState,
   lifecycle
 } from 'recompose'
 import * as qs from 'query-string'
-import { graphql, withApollo } from 'react-apollo'
-import gql from 'graphql-tag'
-import { savePrevAuthProvider } from './../utils/localStorage'
+import { Link } from 'react-router-dom'
+import * as actions from './../actions/types'
 
-const emailLoginVerifyGQL = gql`
-  mutation emailLoginVerify($email: String!, $token: String!) {
-    emailLoginVerify(
-      email: $email,
-      token: $token
-    ) {
-      token
-      user {
-        id,
-        email,
-        username,
-        consent_id,
-        ethAccounts {
-          address,
-          sanBalance
-        }
-      }
-    }
-  }
-`
-
-export const EmailLoginVerification = ({verificationStatus = 'pending'}) => {
-  if (verificationStatus === 'pending') {
+export const EmailLoginVerification = ({
+  isSuccess,
+  isError
+}) => {
+  if (isError) {
     return (
       <div style={{margin: '1em'}}>
-        <h2>Verification...</h2>
+        <h2>You do not have access.</h2>
+        <p>Try again later. Maybe, your mail link is old.</p>
+        <Link to='/login'>Login</Link>
       </div>
     )
   }
-  if (verificationStatus === 'failed') {
+  if (isSuccess) {
     return (
       <div>
         <h2>You do not have access.</h2>
@@ -49,14 +30,15 @@ export const EmailLoginVerification = ({verificationStatus = 'pending'}) => {
   }
   return (
     <div style={{margin: '1em'}}>
-      <h2>Email address confirmed</h2>
+      <h2>Verification...</h2>
     </div>
   )
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = ({rootUi}) => {
   return {
-    user: state.user
+    isError: rootUi.loginError,
+    isSuccess: rootUi.loginSuccess
   }
 }
 
@@ -101,22 +83,14 @@ const mapDispatchToProps = dispatch => {
 }
 
 const enhance = compose(
-  withState('verificationStatus', 'changeVerificationStatus', 'pending'),
   connect(
     mapStateToProps,
     mapDispatchToProps
   ),
-  withApollo,
-  graphql(emailLoginVerifyGQL, {
-    name: 'emailLoginVerify',
-    props: ({ emailLoginVerify }) => ({
-      verify: ({token, email}) => emailLoginVerify({ variables: { token, email } })
-    })
-  }),
   lifecycle({
     componentDidMount () {
-      const qsData = qs.parse(this.props.location.search)
-      this.props.authWithEmail(qsData, this.props)
+      const payload = qs.parse(this.props.location.search)
+      this.props.emailLogin(payload)
     }
   })
 )

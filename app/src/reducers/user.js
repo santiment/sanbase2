@@ -22,17 +22,13 @@ export default (state = initialState, action) => {
         ...state,
         hasMetamask: action.hasMetamask
       }
-    case 'APP_LOADING_SUCCESS':
-      return {
-        ...state,
-        isLoading: false
-      }
-    case 'PENDING_LOGIN':
+    case actions.USER_LOGIN_PENDING:
       return {
         ...state,
         isLoading: true
       }
-    case 'SUCCESS_LOGIN':
+    case actions.USER_LOGIN_SUCCESS:
+      console.log(action)
       return {
         ...initialState,
         error: false,
@@ -43,7 +39,7 @@ export default (state = initialState, action) => {
           ...action.user
         }
       }
-    case 'SUCCESS_LOGOUT':
+    case actions.USER_LOGOUT_SUCCESS:
       return {
         ...initialState,
         error: false,
@@ -52,7 +48,7 @@ export default (state = initialState, action) => {
         token: null,
         consent: null
       }
-    case 'FAILED_LOGIN':
+    case actions.USER_LOGIN_FAILED:
       return {
         ...state,
         error: true,
@@ -60,7 +56,7 @@ export default (state = initialState, action) => {
         data: {},
         token: null,
         consent: null,
-        errorMessage: action.error
+        errorMessage: action.payload
       }
     case 'CHANGE_EMAIL':
       return {

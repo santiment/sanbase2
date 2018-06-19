@@ -5,12 +5,27 @@ defmodule SanbaseWeb.RootController do
 
   alias Sanbase.Oauth2.Hydra
   alias Sanbase.Auth.User
+  alias SanbaseWeb.RootView
 
   # Used in production mode to serve the reactjs application
   def index(conn, _params) do
     conn
     |> put_resp_header("content-type", "text/html; charset=utf-8")
     |> Plug.Conn.send_file(200, path("priv/static/index.html"))
+  end
+
+  def logout(conn, _params) do
+    conn
+    |> configure_session(drop: true)
+    |> put_status(:ok)
+    |> json(%{success: true})
+  end
+
+  def api_examples(conn, _params) do
+    conn
+    |> put_resp_header("content-type", "text/html; charset=utf-8")
+    |> put_layout({RootView, "apiexample.html"})
+    |> render("examples.html")
   end
 
   def consent(

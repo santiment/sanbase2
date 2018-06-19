@@ -87,7 +87,8 @@ defmodule Sanbase.Mixfile do
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:con_cache, "~> 0.13"},
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
-      {:observer_cli, "~> 1.3"}
+      {:observer_cli, "~> 1.3"},
+      {:phoenix_markdown, "~> 1.0"}
     ]
   end
 

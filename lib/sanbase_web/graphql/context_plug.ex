@@ -16,26 +16,32 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def init(opts), do: opts
 
   def call(conn, _) do
-    context = build_context(conn, @auth_methods)
-    put_private(conn, :absinthe, %{context: context})
+    {new_conn, context} = build_context(conn, @auth_methods)
+    put_private(new_conn, :absinthe, %{context: context})
   end
 
   defp build_context(conn, [auth_method | rest]) do
     auth_method.(conn)
     |> case do
       :skip -> build_context(conn, rest)
-      auth -> %{auth: auth}
+      {conn, auth} -> {conn, %{auth: auth}}
     end
   end
 
-  defp build_context(_conn, []), do: %{}
+  defp build_context(conn, []), do: {conn, %{}}
 
   def bearer_authentication(conn) do
-    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, current_user} <- bearer_authorize(token) do
-      %{auth_method: :user_token, current_user: current_user}
+    if session_token = get_session(conn, :token) do
+      {:ok, current_user} = bearer_authorize(session_token)
+      {conn, %{auth_method: :user_token, current_user: current_user}}
     else
-      _ -> :skip
+      with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+           {:ok, current_user} <- bearer_authorize(token),
+           new_conn = put_session(conn, :token, token) do
+        {new_conn, %{auth_method: :user_token, current_user: current_user}}
+      else
+        _ -> :skip
+      end
     end
   end
 

@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Router do
   end
 
   pipeline :api do
+    plug(:fetch_session)
     plug(:accepts, ["json"])
     plug(SanbaseWeb.Graphql.ContextPlug)
   end
@@ -26,7 +27,7 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/" do
-    pipe_through(:api)
+    pipe_through([:api])
 
     forward(
       "/graphql",
@@ -37,21 +38,22 @@ defmodule SanbaseWeb.Router do
       log_level: :info
     )
 
-    if Mix.env() == :dev do
-      forward(
-        "/graphiql",
-        Absinthe.Plug.GraphiQL,
-        schema: SanbaseWeb.Graphql.Schema,
-        analyze_complexity: true,
-        max_complexity: 5000
-      )
-    end
+    forward(
+      "/graphiql",
+      Absinthe.Plug.GraphiQL,
+      schema: SanbaseWeb.Graphql.Schema,
+      analyze_complexity: true,
+      max_complexity: 5000,
+      interface: :simple
+    )
   end
 
   scope "/", SanbaseWeb do
     pipe_through(:browser)
 
     get("/consent", RootController, :consent)
+    get("/logout", RootController, :logout)
+    get("/examples", RootController, :api_examples)
   end
 
   scope "/api", SanbaseWeb do

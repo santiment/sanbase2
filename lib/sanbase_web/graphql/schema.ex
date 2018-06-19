@@ -179,7 +179,16 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
 
-    @desc "Fetch burn rate for an unique identifier (slug) and given time period"
+    @desc ~s"""
+    Fetch burn rate for a project and given time period, grouped by interval.
+    Projects are refered by an unique identifier (slug).
+
+    Each transaction has an equivalent burn rate record. The burn rate is calculated
+    by multiplying the number of tokens moved by the number of blocks that they were sitting.
+    Spikes in burn rate indicate big transactions or movements of old tokens.
+
+    Grouping by interval works by summing all burn rate records in the interval.
+    """
     field :burn_rate, list_of(:burn_rate_data) do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       # TODO: Make non_null after removing :ticker
@@ -191,7 +200,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.burn_rate/3)
     end
 
-    @desc "Fetch transaction volume for an unique identifier (slug) and given time period"
+    @desc ~s"""
+    Fetch total amount of tokens for a given project that were transacted on the blockchain, grouped by interval.
+    Projects are refered by an unique identifier (slug).
+
+    This metric includes only on-chain volume and not volume in exchanges.
+
+    Grouping by interval works by summing all transaction volume records in the interval.
+    """
     field :transaction_volume, list_of(:transaction_volume) do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       # TODO: Make non_null after removing :ticker
@@ -203,7 +219,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
 
-    @desc "Fetch daily active addresses for an unique identifier (slug) and given time period"
+    @desc ~s"""
+    Fetch daily active addresses for a project and given time period
+    Projects are refered by an unique identifier (slug).
+
+    Daily active addresses is the number of unique addresses tha participated in
+    the transfers of given token during the day.
+
+    Grouping by interval works by taking the mean of all daily active addresses
+    records in the interval. The default value of the interval is 1 day, which yields
+    the exact number of unique addresses for each day.
+    """
     field :daily_active_addresses, list_of(:active_addresses) do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       # TODO: Make non_null after removing :ticker

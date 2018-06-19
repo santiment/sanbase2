@@ -62,6 +62,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   query do
+    @desc "Returns the currently logged in user"
     field :current_user, :user do
       resolve(&AccountResolver.current_user/3)
     end
@@ -69,16 +70,12 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch all market segments"
     field :all_market_segments, :string do
       middleware(ProjectPermissions)
-
       cache_resolve(&MarketSegmentResolver.all_market_segments/3)
     end
 
-    @desc "Fetch all projects or only those in project transparency based on the argument"
+    @desc "Fetch all projects that have price data"
     field :all_projects, list_of(:project) do
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
-
       cache_resolve(&ProjectResolver.all_projects/3)
     end
 
@@ -89,7 +86,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectResolver.all_erc20_projects/3)
     end
 
-    @desc "Fetch all currency projects"
+    @desc "Fetch all currency projects. Currency project is every project that is not classified as ERC20 and there is price data for it"
     field :all_currency_projects, list_of(:project) do
       middleware(ProjectPermissions)
 
@@ -112,13 +109,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&ProjectResolver.project/3)
     end
 
-    @desc "Fetch a project by a unique identifier"
+    @desc "Fetch a project by an unique identifier"
     field :project_by_slug, :project do
       arg(:slug, non_null(:string))
       arg(:only_project_transparency, :boolean, default_value: false)
 
       middleware(ProjectPermissions)
-
       cache_resolve(&ProjectResolver.project_by_slug/3)
     end
 
@@ -129,7 +125,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
     end
 
-    @desc "Historical information for the price"
+    @desc "Fetch history price for a given ticker and time interval"
     field :history_price, list_of(:price_point) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -137,7 +133,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1h")
 
       complexity(&PriceComplexity.history_price/3)
-
       cache_resolve(&PriceResolver.history_price/3)
     end
 
@@ -146,26 +141,35 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&GithubResolver.available_repos/3)
     end
 
-    @desc "Returns a list of github activities"
+    @desc ~s"""
+    Returns a list of github activity for a given ticker and time interval.
+    Arguments description:
+      > interval -
+      > transform - one of the following:
+        1. None (default)
+        2. movingAverage
+      > movingAverageInterval - used only if transform is `movingAverage`.
+        Returns the simple moving average of the data calculated with this argument.
+    """
     field :github_activity, list_of(:activity_point) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1h")
-      arg(:moving_average_interval, :integer, default_value: 10)
       arg(:transform, :string, default_value: "None")
+      arg(:moving_average_interval, :integer, default_value: 10)
 
       cache_resolve(&GithubResolver.activity/3)
     end
 
-    @desc "Current data for a twitter account"
+    @desc "Fetch the current data for a twitter account. Currently supports only twitter followers"
     field :twitter_data, :twitter_data do
       arg(:ticker, non_null(:string))
 
       cache_resolve(&TwitterResolver.twitter_data/3)
     end
 
-    @desc "Historical information for a twitter account"
+    @desc "Fetch historical data for a twitter account. Currently supports only twitter followers"
     field :history_twitter_data, list_of(:twitter_data) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -175,7 +179,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
 
-    @desc "Burn rate for a ticker and given time period"
+    @desc "Fetch burn rate for an unique identifier (slug) and given time period"
     field :burn_rate, list_of(:burn_rate_data) do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       # TODO: Make non_null after removing :ticker
@@ -187,7 +191,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.burn_rate/3)
     end
 
-    @desc "Transaction volume for a ticker and given time period"
+    @desc "Fetch transaction volume for an unique identifier (slug) and given time period"
     field :transaction_volume, list_of(:transaction_volume) do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       # TODO: Make non_null after removing :ticker
@@ -199,7 +203,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
 
-    @desc "Daily active addresses for a ticker and given time period"
+    @desc "Fetch daily active addresses for an unique identifier (slug) and given time period"
     field :daily_active_addresses, list_of(:active_addresses) do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       # TODO: Make non_null after removing :ticker
@@ -211,60 +215,64 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
 
-    @desc "Returns the currently running poll"
+    @desc "Fetch the currently running poll"
     field :current_poll, :poll do
       cache_resolve(&VotingResolver.current_poll/3)
     end
 
-    @desc "Get the post with the specified id"
+    @desc ~s"""
+    Fetch the post with the given ID.
+    Requires user to be logged in to access all fields of the post/insight
+    """
     field :post, :post do
       arg(:id, non_null(:integer))
 
       middleware(PostPermissions)
-
       resolve(&PostResolver.post/3)
     end
 
-    @desc "Get all posts"
+    @desc "Fetch a list of all posts/insights. Requires user to be logged in to access all fields of the post/insight"
     field :all_insights, list_of(:post) do
       middleware(PostPermissions)
-
       resolve(&PostResolver.all_insights/3)
     end
 
-    @desc "Get all posts for given user"
+    @desc "Fetch a list of all posts for given user ID"
     field :all_insights_for_user, list_of(:post) do
       arg(:user_id, non_null(:integer))
 
       middleware(PostPermissions)
-
       resolve(&PostResolver.all_insights_for_user/3)
     end
 
-    @desc "Get all posts a user has voted for"
+    @desc "Fetch a list of all posts a user has voted for"
     field :all_insights_user_voted, list_of(:post) do
       arg(:user_id, non_null(:integer))
 
       middleware(PostPermissions)
-
       resolve(&PostResolver.all_insights_user_voted_for/3)
     end
 
-    @desc "Get all posts by tag"
+    @desc ~s"""
+    Fetch a list of all posts/insights that have a given tag.
+    Requires user to be logged in to access all fields of the post/insight
+    """
     field :all_insights_by_tag, list_of(:post) do
       arg(:tag, non_null(:string))
 
       middleware(PostPermissions)
-
       resolve(&PostResolver.all_insights_by_tag/3)
     end
 
-    @desc "Get all tags"
+    @desc "Fetch a list of all tags used for posts/insights. Also returns tags that are not used yet"
     field :all_tags, list_of(:tag) do
       cache_resolve(&PostResolver.all_tags/3)
     end
 
-    @desc "Shows the flow of funds in an exchange wallet"
+    @desc ~s"""
+    Fetch the flow of funds in/out from an exchange wallet.
+    Returns the difference IN-OUT calculated for every interval
+    """
     field :exchange_funds_flow, list_of(:funds_flow) do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       # TODO: Make non_null after removing :ticker
@@ -276,10 +284,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
-    @desc "MACD for a ticker and given currency and time period"
+    @desc "Fetch the MACD technical indicator for a given ticker, display currency and time period"
     field :macd, list_of(:macd) do
       arg(:ticker, non_null(:string))
-      @desc "Currently supported: USD, BTC"
+      @desc "Currently supported currencies: USD, BTC"
       arg(:currency, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
@@ -287,11 +295,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&TechIndicatorsComplexity.macd/3)
-
       cache_resolve(&TechIndicatorsResolver.macd/3)
     end
 
-    @desc "RSI for a ticker and given currency and time period"
+    @desc "Fetch the RSI technical indicator for a given ticker, display currency and time period"
     field :rsi, list_of(:rsi) do
       arg(:ticker, non_null(:string))
       @desc "Currently supported: USD, BTC"
@@ -303,14 +310,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&TechIndicatorsComplexity.rsi/3)
-
       cache_resolve(&TechIndicatorsResolver.rsi/3)
     end
 
-    @desc "Price-volume diff for a ticker and given currency and time period"
+    @desc ~s"""
+    Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
+    The indicator measures when there is a difference in trends between price and volume.
+    It shows the case when price goes up and volume goes down.
+    """
     field :price_volume_diff, list_of(:price_volume_diff) do
       arg(:ticker, non_null(:string))
-      @desc "Currently supported: USD, BTC"
+      @desc "Currently supported currencies: USD, BTC"
       arg(:currency, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
@@ -318,11 +328,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&TechIndicatorsComplexity.price_volume_diff/3)
-
       cache_resolve(&TechIndicatorsResolver.price_volume_diff/3)
     end
 
-    @desc "Twitter mention count for a ticker and time period"
+    @desc "Fetch the twitter mention count for a given ticker and time period"
     field :twitter_mention_count, list_of(:twitter_mention_count) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -331,11 +340,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:result_size_tail, :integer, default_value: 0)
 
       complexity(&TechIndicatorsComplexity.twitter_mention_count/3)
-
       cache_resolve(&TechIndicatorsResolver.twitter_mention_count/3)
     end
 
-    @desc "Emojis sentiment for a ticker and time period"
+    @desc ~s"""
+    Fetch the emojis sentiment for a ticker and time period.
+    It is a basic sentiment analysis, based on emojis used in social media communications
+    """
     field :emojis_sentiment, list_of(:emojis_sentiment) do
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
@@ -348,14 +359,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end
 
-    @desc "Returns a list of all exchange wallets. Internal API."
+    @desc "Fetch a list of all exchange wallets. Requires basic authentication"
     field :exchange_wallets, list_of(:wallet) do
       middleware(BasicAuth)
 
       cache_resolve(&EtherbiResolver.exchange_wallets/3)
     end
 
-    @desc "Returns the ETH spent by all projects in a given time period"
+    @desc "Fetch the ETH spent by all ERC20 projects in a given time period"
     field :eth_spent_by_erc20_projects, :float do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -363,7 +374,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectResolver.eth_spent_by_erc20_projects/3)
     end
 
-    @desc "Returns the ETH spent by all projects in a given time period for a given interval"
+    @desc ~s"""
+    Fetch ETH spent by all projects in a given time period and interval.
+    Returns a list of values where each value is of length `interval`
+    """
     field :eth_spent_over_time_by_erc20_projects, list_of(:eth_spent_data) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -372,7 +386,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
     end
 
-    @desc "Fetch followed projects"
+    @desc "Fetch a list of followed projects for the currently logged in user."
     field :followed_projects, list_of(:project) do
       resolve(&AccountResolver.followed_projects/3)
     end
@@ -444,7 +458,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&VotingResolver.unvote/3)
     end
 
-    @desc "Mutation used for creating a post"
+    @desc "Create a post"
     field :create_post, :post do
       arg(:title, non_null(:string))
       arg(:short_desc, :string)
@@ -457,7 +471,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PostResolver.create_post/3)
     end
 
-    @desc "Mutation used for updating a post"
+    @desc "Update a post"
     field :update_post, :post do
       arg(:id, non_null(:id))
       arg(:title, :string)
@@ -471,7 +485,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PostResolver.update_post/3)
     end
 
-    @desc "Mutation for deleting an existing post owned by the currently logged in used"
+    @desc "Delete an existing post owned. Requires the post to be owned by the currently logged in used"
     field :delete_post, :post do
       arg(:id, non_null(:id))
 
@@ -479,7 +493,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PostResolver.delete_post/3)
     end
 
-    @desc "Upload a list images and get the urls to them"
+    @desc "Upload a list images to S3 and get the urls to them"
     field :upload_image, list_of(:image_data) do
       arg(:images, list_of(:upload))
 

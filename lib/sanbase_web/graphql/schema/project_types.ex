@@ -16,6 +16,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   # Includes all available fields
+  @desc ~s"""
+  A type fully describing a project.
+  """
   object :project do
     field(:id, non_null(:id))
     field(:name, non_null(:string))

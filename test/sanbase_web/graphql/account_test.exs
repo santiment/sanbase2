@@ -484,7 +484,11 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
   test "trying to login using invalid token for a user", %{conn: conn} do
     user =
-      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      %User{
+        salt: User.generate_salt(),
+        email: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
       |> Repo.insert!()
 
     query = """
@@ -507,7 +511,11 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
   test "trying to login with a valid email token", %{conn: conn} do
     {:ok, user} =
-      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      %User{
+        salt: User.generate_salt(),
+        email: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
       |> Repo.insert!()
       |> User.update_email_token()
 
@@ -544,7 +552,11 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
   test "trying to login with a valid email token after more than 1 day", %{conn: conn} do
     {:ok, user} =
-      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      %User{
+        salt: User.generate_salt(),
+        email: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
       |> Repo.insert!()
       |> User.update_email_token()
 
@@ -573,7 +585,11 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
   test "trying to login again with a valid email token after one validation", %{conn: conn} do
     {:ok, user} =
-      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      %User{
+        salt: User.generate_salt(),
+        email: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
       |> Repo.insert!()
       |> User.update_email_token()
 
@@ -610,7 +626,11 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     conn: conn
   } do
     {:ok, user} =
-      %User{salt: User.generate_salt(), email: "example@santiment.net"}
+      %User{
+        salt: User.generate_salt(),
+        email: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
       |> Repo.insert!()
       |> User.update_email_token()
 

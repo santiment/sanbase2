@@ -1294,7 +1294,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
 
     other_user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     post =
@@ -1460,7 +1460,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     poll = Poll.find_or_insert_current_poll!()
 
     other_user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     post =

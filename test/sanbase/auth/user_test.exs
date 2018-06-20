@@ -385,7 +385,7 @@ defmodule Sanbase.Auth.UserTest do
 
   test "update_email_token updates the email_token and the email_token_generated_at" do
     user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     {:ok, user} = User.update_email_token(user)

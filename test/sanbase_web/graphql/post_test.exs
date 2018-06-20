@@ -15,7 +15,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         salt: User.generate_salt(),
         san_balance:
           Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
-        san_balance_updated_at: Timex.now()
+        san_balance_updated_at: Timex.now(),
+        privacy_policy_accepted: true
       }
       |> Repo.insert!()
 
@@ -26,7 +27,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         salt: User.generate_salt(),
         san_balance:
           Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
-        san_balance_updated_at: Timex.now()
+        san_balance_updated_at: Timex.now(),
+        privacy_policy_accepted: true
       }
       |> Repo.insert!()
 
@@ -211,7 +213,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     poll = Poll.find_or_insert_current_poll!()
 
     other_user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     %Post{
@@ -528,7 +530,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
   test "deleting a post which does not belong to the user", %{conn: conn} do
     other_user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     poll = Poll.find_or_insert_current_poll!()
@@ -671,7 +673,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     tag2 = %Tag{name: "PRJ2"} |> Repo.insert!()
 
     other_user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     post =
@@ -837,7 +839,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     poll = Poll.find_or_insert_current_poll!()
 
     other_user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     post =

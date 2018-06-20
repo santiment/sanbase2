@@ -14,7 +14,8 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
         salt: User.generate_salt(),
         san_balance:
           Decimal.mult(Decimal.new("10.000000000000000000"), Ethauth.san_token_decimals()),
-        san_balance_updated_at: Timex.now()
+        san_balance_updated_at: Timex.now(),
+        privacy_policy_accepted: true
       }
       |> Repo.insert!()
 

@@ -1,3 +1,5 @@
+import * as actions from './../actions/types'
+
 export const initialState = {
   isLoading: true,
   error: false,
@@ -20,17 +22,13 @@ export default (state = initialState, action) => {
         ...state,
         hasMetamask: action.hasMetamask
       }
-    case 'APP_LOADING_SUCCESS':
-      return {
-        ...state,
-        isLoading: false
-      }
-    case 'PENDING_LOGIN':
+    case actions.USER_LOGIN_PENDING:
       return {
         ...state,
         isLoading: true
       }
-    case 'SUCCESS_LOGIN':
+    case actions.USER_LOGIN_SUCCESS:
+      console.log(action)
       return {
         ...initialState,
         error: false,
@@ -41,7 +39,7 @@ export default (state = initialState, action) => {
           ...action.user
         }
       }
-    case 'SUCCESS_LOGOUT':
+    case actions.USER_LOGOUT_SUCCESS:
       return {
         ...initialState,
         error: false,
@@ -50,7 +48,7 @@ export default (state = initialState, action) => {
         token: null,
         consent: null
       }
-    case 'FAILED_LOGIN':
+    case actions.USER_LOGIN_FAILED:
       return {
         ...state,
         error: true,
@@ -58,7 +56,7 @@ export default (state = initialState, action) => {
         data: {},
         token: null,
         consent: null,
-        errorMessage: action.error
+        errorMessage: action.payload
       }
     case 'CHANGE_EMAIL':
       return {
@@ -68,7 +66,7 @@ export default (state = initialState, action) => {
           email: action.email
         }
       }
-    case 'CHANGE_USER_DATA':
+    case actions.CHANGE_USER_DATA:
       if (!action.user) {
         return {
           ...initialState,
@@ -82,6 +80,11 @@ export default (state = initialState, action) => {
         data: {
           ...action.user
         }
+      }
+    case actions.APP_USER_HAS_INACTIVE_TOKEN:
+      return {
+        ...initialState,
+        isLoading: false
       }
     default:
       return state

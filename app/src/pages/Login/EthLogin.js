@@ -1,18 +1,11 @@
 import React, { Fragment } from 'react'
 import { connect } from 'react-redux'
-import { graphql, withApollo } from 'react-apollo'
-import GoogleAnalytics from 'react-ga'
-import Raven from 'raven-js'
+import { withApollo } from 'react-apollo'
 import { lifecycle, compose } from 'recompose'
 import { Message } from 'semantic-ui-react'
-import { ethLoginGQL } from './LoginGQL'
-import {
-  setupWeb3,
-  hasMetamask,
-  signMessage
-} from '../../web3Helpers'
 import AuthForm from './AuthForm'
-import { savePrevAuthProvider } from './../../utils/localStorage'
+import { setupWeb3, hasMetamask } from '../../web3Helpers'
+import * as actions from './../../actions/types'
 import metamaskDownloadImg from './../../assets/download-metamask.png'
 
 const EthLogin = ({
@@ -20,7 +13,6 @@ const EthLogin = ({
   requestAuth,
   checkMetamask,
   authWithSAN,
-  client,
   consent
 }) => {
   return (
@@ -47,7 +39,7 @@ const EthLogin = ({
           account={user.account}
           pending={user.isLoading}
           error={user.error}
-          handleAuth={() => requestAuth(user.account, authWithSAN, client, consent)} />}
+          handleAuth={() => requestAuth(user.account, consent)} />}
     </Fragment>
   )
 }
@@ -66,51 +58,13 @@ const mapDispatchToProps = dispatch => {
         hasMetamask
       })
     },
-    requestAuth: (address, authWithSAN, client, consent) => {
-      signMessage(address).then(({messageHash, signature}) => {
-        dispatch({
-          type: 'PENDING_LOGIN'
-        })
-        authWithSAN({variables: { signature, address, messageHash }})
-        .then(({ data }) => {
-          const { token, user } = data.ethLogin
-          savePrevAuthProvider('metamask')
-          GoogleAnalytics.event({
-            category: 'User',
-            action: 'Success login with metamask'
-          })
-          dispatch({
-            type: 'SUCCESS_LOGIN',
-            token,
-            user,
-            consent
-          })
-          client.resetStore()
-          if (consent) {
-            const consentUrl = `/consent?consent=${consent}&token=${token}`
-            window.location.replace(consentUrl)
-          }
-        })
-        .catch((error) => {
-          dispatch({
-            type: 'FAILED_LOGIN',
-            errorMessage: error
-          })
-          Raven.captureException(error)
-        })
-      }).catch(error => {
-        // TODO: 2017-12-05 16:05 | Yura Zatsepin:
-        // Remove console.error.
-        // Added User denied, Account error messages in UI
-        console.log(error)
-        GoogleAnalytics.event({
-          category: 'User',
-          action: 'User denied login with metamask'
-        })
-        dispatch({
-          type: 'FAILED_LOGIN',
-          errorMessage: error
-        })
+    requestAuth: (address, consent) => {
+      dispatch({
+        type: actions.USER_ETH_LOGIN,
+        payload: {
+          address,
+          consent
+        }
       })
     },
     changeAccount: account => {
@@ -128,9 +82,6 @@ export default compose(
     mapDispatchToProps
   ),
   withApollo,
-  graphql(ethLoginGQL, {
-    name: 'authWithSAN'
-  }),
   lifecycle({
     componentDidMount () {
       this.props.checkMetamask(hasMetamask())

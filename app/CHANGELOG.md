@@ -1,5 +1,15 @@
 ## CHANGELOG
 
+- 2018-18-06 | v.0.6.0:
+
+  Insights
+  More timeseries
+  More projects, currencies
+  New mobile look
+  SAN token usage
+  Styles
+  And more...
+
 - 2018-06-03 | v.0.5.2:
   Added eth spent over time for ERC20 projects
   Added eth spent for all projects

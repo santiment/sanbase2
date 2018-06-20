@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import moment from 'moment'
-import { sortByNewest, sortByPopular } from './EventVotes'
+import { sortByNewest, sortByPopular } from './InsightsPage'
 
 const unsortedPosts = [{
   id: 1,

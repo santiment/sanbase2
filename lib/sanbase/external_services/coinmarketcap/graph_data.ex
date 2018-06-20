@@ -93,12 +93,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   def update_last_cmc_history_datetime(_project, []), do: :ok
 
   def update_last_cmc_history_datetime(coinmarketcap_id, points) do
-    last_price_datetime_updated =
-      points
-      |> Enum.max_by(&Measurement.get_timestamp/1)
-      |> Measurement.get_datetime()
+    case points do
+      [] ->
+        :ok
 
-    Store.update_last_history_datetime_cmc(coinmarketcap_id, last_price_datetime_updated)
+      points ->
+        last_price_datetime_updated =
+          points
+          |> Enum.max_by(&Measurement.get_timestamp/1)
+          |> Measurement.get_datetime()
+
+        Store.update_last_history_datetime_cmc(coinmarketcap_id, last_price_datetime_updated)
+    end
   end
 
   defp json_to_price_points(json) do
@@ -172,7 +178,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end
   end
 
-  defp extract_price_points_for_interval(coinmarketcap_id, {start_interval_sec, end_interval_sec}) do
+  defp extract_price_points_for_interval(
+         coinmarketcap_id,
+         {start_interval_sec, end_interval_sec} = interval
+       ) do
     graph_data_currencies_interval_url(
       coinmarketcap_id,
       start_interval_sec * 1000,

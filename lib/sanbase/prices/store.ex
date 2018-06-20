@@ -9,6 +9,8 @@ defmodule Sanbase.Prices.Store do
   # nanoseconds
   use Sanbase.Influxdb.Store
 
+  require Logger
+
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
@@ -160,7 +162,7 @@ defmodule Sanbase.Prices.Store do
            %{
              series: [
                %{
-                 values: [[_iso8601_datetime, iso8601_last_updated, _]]
+                 values: [[_iso8601_datetime, iso8601_last_updated | _]]
                }
              ]
            }

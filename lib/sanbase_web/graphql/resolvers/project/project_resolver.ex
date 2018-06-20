@@ -80,7 +80,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     query =
       from(
         p in Project,
-        where: not is_nil(p.coinmarketcap_id) and is_nil(p.main_contract_address),
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        # The opposite of ERC20. Classify everything except ERC20 as Currency.
+        where:
+          not is_nil(p.coinmarketcap_id) and
+            (is_nil(p.main_contract_address) or infr.code != "ETH"),
         order_by: p.name
       )
 
@@ -554,6 +559,27 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, ico}
   end
 
+  @doc """
+  Return the main sale price, which is the maximum token_usd_ico_price from all icos of a project
+  """
+  def ico_price(%Project{id: id} = project, _args, _resolution) do
+    ico_with_max_price =
+      Project
+      |> Repo.get(id)
+      |> Repo.preload([:icos])
+      |> Map.get(:icos)
+      |> Enum.reject(fn ico -> is_nil(ico.token_usd_ico_price) end)
+      |> Enum.map(fn ico ->
+        %Ico{ico | token_usd_ico_price: Decimal.to_float(ico.token_usd_ico_price)}
+      end)
+      |> Enum.max_by(fn ico -> ico.token_usd_ico_price end, fn -> nil end)
+
+    case ico_with_max_price do
+      %Ico{token_usd_ico_price: ico_price} -> {:ok, ico_price}
+      nil -> {:ok, nil}
+    end
+  end
+
   def price_to_book_ratio(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
     |> ProjectBalanceResolver.usd_balance_loader(project)
@@ -582,7 +608,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
          [
            %{
              name: "balance_bigger_than_mcap",
-             description: "The balance of the project is bigger than it's market capitalization"
+             description: "The balance of the project is bigger than its market capitalization"
            }
          ]}
       else

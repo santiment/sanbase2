@@ -9,6 +9,11 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:email, :string)
     field(:username, :string)
     field(:consent_id, :string)
+
+    field :san_balance, :float do
+      resolve(&AccountResolver.san_balance/3)
+    end
+
     field(:eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts))
 
     field :followed_projects, list_of(:project) do

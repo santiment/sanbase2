@@ -199,7 +199,7 @@ const ProjectChartFooter = ({
             <Message.Header>
               Community Insights
             </Message.Header>
-            <p>
+            <p style={{lineHeight: '1.25'}}>
               Our community made Insights about this project.
             </p>
             <p>

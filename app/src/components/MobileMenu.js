@@ -8,6 +8,7 @@ import { compose, withStateHandlers } from 'recompose'
 import 'font-awesome/css/font-awesome.css'
 import './MobileMenu.css'
 import logo from '../assets/logo_sanbase.png'
+import * as actions from './../actions/types'
 
 const MobileMenu = ({
   isOpened = false,
@@ -90,7 +91,7 @@ const mapDispatchToProps = dispatch => {
   return {
     logout: () => {
       dispatch({
-        type: 'SUCCESS_LOGOUT'
+        type: actions.USER_LOGOUT_SUCCESS
       })
     }
   }

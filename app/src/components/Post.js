@@ -2,8 +2,8 @@ import React, { Fragment } from 'react'
 import moment from 'moment'
 import { withRouter } from 'react-router-dom'
 import { Label, Button } from 'semantic-ui-react'
-import LikeBtn from './../pages/EventVotesNew/LikeBtn'
 import { createSkeletonElement } from '@trainline/react-skeletor'
+import LikeBtn from './../pages/InsightsNew/LikeBtn'
 import './Post.css'
 
 export const getSourceLink = link => {

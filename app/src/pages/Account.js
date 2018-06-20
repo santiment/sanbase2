@@ -22,6 +22,7 @@ import copy from 'copy-to-clipboard'
 import Balance from './../components/Balance'
 import { EmailField } from './../pages/Login/EmailLogin'
 import { Form as ReactForm } from 'react-form'
+import * as actions from './../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
@@ -201,7 +202,7 @@ const mapDispatchToProps = dispatch => {
   return {
     logout: () => {
       dispatch({
-        type: 'SUCCESS_LOGOUT'
+        type: actions.USER_LOGOUT_SUCCESS
       })
     },
     changedEmail: email => {

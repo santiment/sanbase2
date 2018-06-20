@@ -21,6 +21,10 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     end
   end
 
+  @desc ~s"""
+  A type describing an Ethereum address. Beside the address itself it returns
+  the SAN balance of that address.
+  """
   object :eth_account do
     field(:address, non_null(:string))
 

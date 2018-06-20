@@ -29,7 +29,8 @@ export const projectBySlugGQL = gql`
       initialIco {
         id
         tokenUsdIcoPrice
-      }
+      },
+      icoPrice,
       roiUsd,
       priceUsd,
       priceBtc,

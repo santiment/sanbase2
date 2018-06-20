@@ -24,9 +24,8 @@ import { changeNetworkStatus, launchApp } from './actions/rootActions'
 import uploadLink from './apollo/upload-link'
 import errorLink from './apollo/error-link'
 import authLink from './apollo/auth-link'
-// Look at 73 line. ;)
+// Look at 77 line. ;)
 // import * as serviceWorker from './serviceWorker'
-
 import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 

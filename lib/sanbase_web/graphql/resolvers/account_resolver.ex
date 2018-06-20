@@ -11,6 +11,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
 
   import Ecto.Query
 
+  def san_balance(
+        %User{san_balance: san_balance, test_san_balance: test_san_balance},
+        _args,
+        _res
+      ) do
+    {:ok, Decimal.to_float(test_san_balance || san_balance || Decimal.new(0))}
+  end
+
   def current_user(_root, _args, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do

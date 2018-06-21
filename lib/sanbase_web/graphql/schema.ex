@@ -501,11 +501,11 @@ defmodule SanbaseWeb.Graphql.Schema do
     activated.
     """
     field :update_terms_and_conditions, :user do
-      arg(:privacy_policy_accepted, :boolean, default_value: false)
-      arg(:marketing_accepted, :boolean, default_value: false)
+      arg(:privacy_policy_accepted, :boolean)
+      arg(:marketing_accepted, :boolean)
 
       # Allow this mutation to be executed when the user has not accepted the privacy policy.
-      # middleware(JWTAuth, allow_access: true)
+      middleware(JWTAuth, allow_access: true)
       resolve(&AccountResolver.update_terms_and_conditions/3)
     end
   end

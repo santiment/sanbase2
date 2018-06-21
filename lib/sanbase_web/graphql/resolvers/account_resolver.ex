@@ -162,14 +162,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
 
   def update_terms_and_conditions(
         _root,
-        %{
-          privacy_policy_accepted: privacy_policy_accepted,
-          marketing_accepted: marketing_accepted
-        } = args,
+        args,
         %{
           context: %{auth: %{auth_method: :user_token, current_user: user}}
         }
       ) do
+    # Update only the provided arguments
+    args =
+      args
+      |> Enum.reject(fn {_key, value} -> value == nil end)
+      |> Enum.into(%{})
+
     Repo.get!(User, user.id)
     |> User.changeset(args)
     |> Repo.update()

@@ -160,6 +160,35 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     {:error, "You must be logged in to fetch followed projects"}
   end
 
+  def update_terms_and_conditions(
+        _root,
+        args,
+        %{
+          context: %{auth: %{auth_method: :user_token, current_user: user}}
+        }
+      ) do
+    # Update only the provided arguments
+    args =
+      args
+      |> Enum.reject(fn {_key, value} -> value == nil end)
+      |> Enum.into(%{})
+
+    Repo.get!(User, user.id)
+    |> User.changeset(args)
+    |> Repo.update()
+    |> case do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot update current user's terms and conditions",
+          details: Helpers.error_details(changeset)
+        }
+    end
+  end
+
   # No eth account and there is a user logged in
   defp fetch_user(
          %{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}},

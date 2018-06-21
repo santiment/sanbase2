@@ -11,7 +11,7 @@ defmodule Sanbase.Voting.PostTest do
       |> Repo.insert!()
 
     user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     post =

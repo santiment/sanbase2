@@ -534,5 +534,19 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
       resolve(&PostResolver.publish_insight/3)
     end
+
+    @desc ~s"""
+    Update the terms and condition the user accepts. The `accept_privacy_policy`
+    must be accepted (must equal `true`) in order for the account to be considered
+    activated.
+    """
+    field :update_terms_and_conditions, :user do
+      arg(:privacy_policy_accepted, :boolean)
+      arg(:marketing_accepted, :boolean)
+
+      # Allow this mutation to be executed when the user has not accepted the privacy policy.
+      middleware(JWTAuth, allow_access: true)
+      resolve(&AccountResolver.update_terms_and_conditions/3)
+    end
   end
 end

@@ -6,19 +6,25 @@ defmodule Sanbase.Auth.UserTest do
   alias Sanbase.Auth.{User, EthAccount}
 
   test "san balance cache is stale when the cache is never updated" do
-    user = %User{san_balance_updated_at: nil}
+    user = %User{san_balance_updated_at: nil, privacy_policy_accepted: true}
 
     assert User.san_balance_cache_stale?(user)
   end
 
   test "san balance cache is stale when the san balance was updated 10 min ago" do
-    user = %User{san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10)}
+    user = %User{
+      san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10),
+      privacy_policy_accepted: true
+    }
 
     assert User.san_balance_cache_stale?(user)
   end
 
   test "san balance cache is not stale when the san balance was updated 5 min ago" do
-    user = %User{san_balance_updated_at: Timex.shift(Timex.now(), minutes: -5)}
+    user = %User{
+      san_balance_updated_at: Timex.shift(Timex.now(), minutes: -5),
+      privacy_policy_accepted: true
+    }
 
     refute User.san_balance_cache_stale?(user)
   end
@@ -26,7 +32,11 @@ defmodule Sanbase.Auth.UserTest do
   test "update_san_balance_changeset is returning a changeset with updated san balance" do
     mock(Sanbase.InternalServices.Ethauth, :san_balance, Decimal.new(5))
 
-    user = %User{san_balance: 0, eth_accounts: [%EthAccount{address: "0x000000000001"}]}
+    user = %User{
+      san_balance: 0,
+      eth_accounts: [%EthAccount{address: "0x000000000001"}],
+      privacy_policy_accepted: true
+    }
 
     changeset = User.update_san_balance_changeset(user)
 
@@ -41,7 +51,11 @@ defmodule Sanbase.Auth.UserTest do
   end
 
   test "san_balance! does not update the balance if the balance cache is not stale" do
-    user = %User{san_balance_updated_at: Timex.now(), san_balance: Decimal.new(5)}
+    user = %User{
+      san_balance_updated_at: Timex.now(),
+      san_balance: Decimal.new(5),
+      privacy_policy_accepted: true
+    }
 
     assert User.san_balance!(user) == Decimal.new(5)
   end
@@ -50,7 +64,8 @@ defmodule Sanbase.Auth.UserTest do
     user =
       %User{
         san_balance_updated_at: Timex.shift(Timex.now(), minutes: -10),
-        salt: User.generate_salt()
+        salt: User.generate_salt(),
+        privacy_policy_accepted: true
       }
       |> Repo.insert!()
 
@@ -88,7 +103,8 @@ defmodule Sanbase.Auth.UserTest do
       %User{
         san_balance: Decimal.new(10),
         san_balance_updated_at: Timex.shift(Timex.now(), minutes: -2),
-        salt: User.generate_salt()
+        salt: User.generate_salt(),
+        privacy_policy_accepted: true
       }
       |> Repo.insert!()
 
@@ -104,7 +120,12 @@ defmodule Sanbase.Auth.UserTest do
 
   test "find_or_insert_by_email when the user exists" do
     existing_user =
-      %User{email: "test@example.com", username: "cersei", salt: User.generate_salt()}
+      %User{
+        email: "test@example.com",
+        username: "cersei",
+        salt: User.generate_salt(),
+        privacy_policy_accepted: true
+      }
       |> Repo.insert!()
 
     {:ok, user} = User.find_or_insert_by_email(existing_user.email, "john_snow")
@@ -116,7 +137,7 @@ defmodule Sanbase.Auth.UserTest do
 
   test "update_email_token updates the email_token and the email_token_generated_at" do
     user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     {:ok, user} = User.update_email_token(user)

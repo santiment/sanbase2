@@ -12,7 +12,8 @@ defmodule SanbaseWeb.Graphql.VotingTest do
       %User{
         salt: User.generate_salt(),
         san_balance: Decimal.new("10.000000000000000000"),
-        san_balance_updated_at: Timex.now()
+        san_balance_updated_at: Timex.now(),
+        privacy_policy_accepted: true
       }
       |> Repo.insert!()
 

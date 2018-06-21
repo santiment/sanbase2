@@ -42,6 +42,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     ]
   end
 
+  def middleware(middleware, field, object) do
+    [ApiDelay] ++ middleware
+  end
+
   query do
     @desc "Returns the user currently logged in."
     field :current_user, :user do
@@ -326,7 +330,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
-    This indicator measures the difference in trend between price and volume, 
+    This indicator measures the difference in trend between price and volume,
     specifically when price goes up as volume goes down.
     """
     field :price_volume_diff, list_of(:price_volume_diff) do
@@ -534,5 +538,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth, allow_access: true)
       resolve(&AccountResolver.update_terms_and_conditions/3)
     end
+  end
+
+  defp default_delay_1d do
+    Timex.shift(Timex.now(), days: -1)
   end
 end

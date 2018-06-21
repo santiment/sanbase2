@@ -7,7 +7,7 @@ const Signals = () => (
   <div className='page signals'>
     <Helmet>
       <title>SANbase: Signals</title>
-      <link rel='canonical' href={`${getOrigin()}/roadmap`} />
+      <link rel='canonical' href={`${getOrigin()}/signals`} />
     </Helmet>
     <div className='page-head'>
       <h1>Signals</h1>

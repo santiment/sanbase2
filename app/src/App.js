@@ -21,6 +21,7 @@ import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
 import Menu from './components/TopMenu'
@@ -150,6 +151,7 @@ export const App = ({
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
         <Route exact path='/build' component={BuildChallenge} />
+        <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />
         <Route
           exact

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.Etherscan.Store

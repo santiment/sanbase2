@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import Sanbase.Utils, only: [parse_config_value: 1]
 

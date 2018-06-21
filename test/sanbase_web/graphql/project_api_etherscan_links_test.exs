@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjecApiEtherscanLinksTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.ExternalServices.Etherscan.Store
   alias Sanbase.Model.{Project, Ico, LatestCoinmarketcapData}

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ContextPlugTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers

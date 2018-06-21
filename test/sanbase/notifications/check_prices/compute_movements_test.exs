@@ -1,5 +1,5 @@
 defmodule Sanbase.Notifications.CheckPrices.ComputeMovementsTest do
-  use Sanbase.DataCase, async: true
+  use Sanbase.DataCase, async: false
 
   alias Sanbase.Notifications.CheckPrices.ComputeMovements
   alias Sanbase.Notifications.Notification

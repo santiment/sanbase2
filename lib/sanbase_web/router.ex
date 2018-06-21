@@ -42,7 +42,8 @@ defmodule SanbaseWeb.Router do
       Absinthe.Plug.GraphiQL,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
-      max_complexity: 5000
+      max_complexity: 5000,
+      interface: :simple
     )
   end
 

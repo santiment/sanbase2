@@ -1,0 +1,64 @@
+1. [Using the Sanbase API explorer](#explorer)
+2. [Example metrics provided by our API](#examples)
+
+<a name='explorer'></a>
+
+# Using the Sanbase API explorer
+
+Our [GraphQL Explorer](<%= @explorer_url %>){:target="_blank"} allows you to experiment with our API.
+You can:
+* Run sample queries on the left pane
+* Read the compiled documentation of our GraphQL schema on the right sidebar
+
+<a name='examples'></a>
+
+# Example metrics provided by our API
+
+Here are some examples of interesting metrics provided by our API. On top of every example there is `Run in explorer` link.
+Clicking this link will lead you to the Explorer window with prefilled query.
+
+### Daily Active Addresses
+
+This metric includes the number of unique addresses that participated in the transfers of given token during the day.
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@daa[:variables])}&query=#{URI.encode(@daa[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @daa[:query] %>
+```
+
+### Burn rate
+
+Each transaction has an equivalent burn rate record.
+The burn rate is calculated by multiplying the number of tokens moved by the number of blocks in which they appeared.
+Spikes in burn rate could indicate large transactions or movement of tokens that have been held for a long time.
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@burn_rate[:variables])}&query=#{URI.encode(@burn_rate[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @burn_rate[:query] %>
+```
+
+### Transaction volume
+
+Fetch total amount of tokens for a project that were transacted on the blockchain, grouped by interval. Projects are referred to by a unique identifier (slug).
+
+This metric includes only on-chain volume, not volume in exchanges.
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@tv[:variables])}&query=#{URI.encode(@tv[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @tv[:query] %>
+```
+
+### Github Activity
+
+Returns a list of github activity for a given ticker and time interval.
+
+[An article explaining our approach to tracking github activity](https://medium.com/santiment/tracking-github-activity-of-crypto-projects-introducing-a-better-approach-9fb1af3f1c32){:target="_blank"}
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@ga[:variables])}&query=#{URI.encode(@ga[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @ga[:query] %>
+```

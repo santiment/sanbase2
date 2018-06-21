@@ -35,6 +35,10 @@ defmodule Sanbase.Auth.User do
     field(:consent_id, :string)
     field(:test_san_balance, :decimal)
 
+    # GDPR related fields
+    field(:privacy_policy_accepted, :boolean, default: false)
+    field(:marketing_accepted, :boolean, default: false)
+
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
 
@@ -51,7 +55,14 @@ defmodule Sanbase.Auth.User do
 
   def changeset(%User{} = user, attrs \\ %{}) do
     user
-    |> cast(attrs, [:email, :username, :salt, :test_san_balance])
+    |> cast(attrs, [
+      :email,
+      :username,
+      :salt,
+      :test_san_balance,
+      :privacy_policy_accepted,
+      :marketing_accepted
+    ])
     |> unique_constraint(:email)
   end
 

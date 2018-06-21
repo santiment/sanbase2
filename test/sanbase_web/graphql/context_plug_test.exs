@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
   test "loading the user from the current token", %{conn: conn} do
     user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     conn = setup_jwt_auth(conn, user)
@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
   test "verifying the user's salt when loading", %{conn: conn} do
     user =
-      %User{salt: User.generate_salt()}
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
     conn = setup_jwt_auth(conn, user)

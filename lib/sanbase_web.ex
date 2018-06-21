@@ -34,6 +34,7 @@ defmodule SanbaseWeb do
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
+      import Phoenix.HTML
 
       import SanbaseWeb.Router.Helpers
       import SanbaseWeb.ErrorHelpers

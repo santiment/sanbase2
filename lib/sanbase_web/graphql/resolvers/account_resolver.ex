@@ -160,13 +160,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     {:error, "You must be logged in to fetch followed projects"}
   end
 
-  def update_terms_and_conditions(
-        _root,
-        args,
-        %{
-          context: %{auth: %{auth_method: :user_token, current_user: user}}
-        }
-      ) do
+  def update_terms_and_conditions(_root, args, %{
+        context: %{auth: %{auth_method: :user_token, current_user: user}}
+      }) do
     # Update only the provided arguments
     args =
       args

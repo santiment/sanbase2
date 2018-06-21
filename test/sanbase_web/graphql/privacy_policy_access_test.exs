@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Auth.User
   alias Sanbase.Repo

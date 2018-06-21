@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Middlewares.MultipleAuthTest do
-  use ExUnit.Case
+  use Sanbase.DataCase, async: false
 
   alias SanbaseWeb.Graphql.Middlewares.MultipleAuth
 

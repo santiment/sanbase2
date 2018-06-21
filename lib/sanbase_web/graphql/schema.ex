@@ -62,10 +62,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     ]
   end
 
-  def middleware(middleware, field, object) do
-    [ApiDelay] ++ middleware
-  end
-
   query do
     @desc "Returns the user currently logged in."
     field :current_user, :user do
@@ -202,6 +198,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
 
+      middleware(ApiDelay)
+
       cache_resolve(&EtherbiResolver.burn_rate/3)
     end
 
@@ -220,6 +218,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
+
+      middleware(ApiDelay)
 
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
@@ -242,6 +242,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
+
+      middleware(ApiDelay)
 
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
@@ -312,6 +314,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
+      middleware(ApiDelay)
+
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
@@ -324,6 +328,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
+
+      middleware(ApiDelay)
 
       complexity(&TechIndicatorsComplexity.macd/3)
       cache_resolve(&TechIndicatorsResolver.macd/3)
@@ -339,6 +345,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:rsi_interval, non_null(:integer))
       arg(:result_size_tail, :integer, default_value: 0)
+
+      middleware(ApiDelay)
 
       complexity(&TechIndicatorsComplexity.rsi/3)
       cache_resolve(&TechIndicatorsResolver.rsi/3)
@@ -357,6 +365,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
+
+      middleware(ApiDelay)
 
       complexity(&TechIndicatorsComplexity.price_volume_diff/3)
       cache_resolve(&TechIndicatorsResolver.price_volume_diff/3)
@@ -553,9 +563,5 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth, allow_access: true)
       resolve(&AccountResolver.update_terms_and_conditions/3)
     end
-  end
-
-  defp default_delay_1d do
-    Timex.shift(Timex.now(), days: -1)
   end
 end

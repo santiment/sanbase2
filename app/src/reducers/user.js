@@ -7,7 +7,9 @@ export const initialState = {
   account: null,
   token: null,
   hasMetamask: false,
-  consent: null
+  consent: null,
+  privacyPolicyAccepted: false,
+  marketingAccepted: false
 }
 
 export default (state = initialState, action) => {
@@ -65,6 +67,11 @@ export default (state = initialState, action) => {
           ...state.data,
           email: action.email
         }
+      }
+    case actions.USER_TOGGLE_PRIVACY_POLICY:
+      return {
+        ...state,
+        privacyPolicyAccepted: !state.privacyPolicyAccepted
       }
     case actions.CHANGE_USER_DATA:
       if (!action.user) {

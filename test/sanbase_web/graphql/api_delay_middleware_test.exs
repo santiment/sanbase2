@@ -2,26 +2,41 @@ defmodule SanbaseWeb.Graphql.ApiDelayMiddlewareTest do
   use SanbaseWeb.ConnCase
 
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Github
+  alias Sanbase.Etherbi.BurnRate.Store
   alias Sanbase.Auth.User
+  alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Github.Store.create_db()
+    Store.create_db()
 
-    Github.Store.drop_measurement("SAN")
-    Github.Store.drop_measurement("TEST1")
-    Github.Store.drop_measurement("TEST2")
+    ticker = "SAN"
+    slug = "santiment"
+    contract_address = "0x1234"
+    Store.drop_measurement(contract_address)
+
+    project =
+      %Project{
+        name: "Santiment",
+        ticker: ticker,
+        coinmarketcap_id: slug,
+        main_contract_address: contract_address
+      }
+      |> Repo.insert!()
+
+    %Ico{project_id: project.id}
+    |> Repo.insert!()
 
     hour_ago = hour_ago()
 
-    Github.Store.import([
+    Store.import([
       %Measurement{
         timestamp: hour_ago |> DateTime.to_unix(:nanoseconds),
-        fields: %{activity: 5},
-        name: "SAN"
+        fields: %{burn_rate: 5000},
+        tags: [],
+        name: contract_address
       }
     ])
 
@@ -45,11 +60,11 @@ defmodule SanbaseWeb.Graphql.ApiDelayMiddlewareTest do
   test "Does not show real time data for anon users" do
     result =
       build_conn()
-      |> post("/graphql", query_skeleton(githubActivityQuery(), "githubActivity"))
+      |> post("/graphql", query_skeleton(burnRateQuery(), "burnRate"))
 
-    activities = json_response(result, 200)["data"]["githubActivity"]
+    burn_rates = json_response(result, 200)["data"]["burnRate"]
 
-    refute %{"activity" => 5} in activities
+    refute %{"burnRate" => 5000.0} in burn_rates
   end
 
   test "Does not show real for user without SAN stake", context do
@@ -57,11 +72,11 @@ defmodule SanbaseWeb.Graphql.ApiDelayMiddlewareTest do
 
     result =
       conn
-      |> post("/graphql", query_skeleton(githubActivityQuery(), "githubActivity"))
+      |> post("/graphql", query_skeleton(burnRateQuery(), "burnRate"))
 
-    activities = json_response(result, 200)["data"]["githubActivity"]
+    burn_rates = json_response(result, 200)["data"]["burnRate"]
 
-    refute %{"activity" => 5} in activities
+    refute %{"burnRate" => 5000.0} in burn_rates
   end
 
   test "Shows realtime data if user has SAN stake", context do
@@ -69,23 +84,23 @@ defmodule SanbaseWeb.Graphql.ApiDelayMiddlewareTest do
 
     result =
       conn
-      |> post("/graphql", query_skeleton(githubActivityQuery(), "githubActivity"))
+      |> post("/graphql", query_skeleton(burnRateQuery(), "burnRate"))
 
-    activities = json_response(result, 200)["data"]["githubActivity"]
+    burn_rates = json_response(result, 200)["data"]["burnRate"]
 
-    assert %{"activity" => 5} in activities
+    assert %{"burnRate" => 5000.0} in burn_rates
   end
 
-  defp githubActivityQuery() do
+  defp burnRateQuery() do
     """
     {
-      githubActivity(
-        ticker: "SAN",
+      burnRate(
+        slug: "santiment",
         from: "#{week_ago()}",
         to: "#{now()}"
-        interval: "1h") {
-          activity
-        }
+        interval: "30m") {
+          burnRate
+      }
     }
     """
   end

@@ -7,32 +7,27 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiDelay do
   @required_san_stake_realtime_api 1
 
   def call(
-        %Resolution{context: %{auth: %{auth_method: :user_token, current_user: current_user}}} =
-          resolution,
+        %Resolution{
+          context: %{
+            auth: %{auth_method: :user_token, current_user: current_user}
+          },
+          arguments: %{to: _to}
+        } = resolution,
         _
       ) do
     unless has_enough_san_tokens?(current_user) do
-      delay_api_results(resolution)
+      update_in(resolution.arguments.to, &delay_1day(&1))
     else
       resolution
     end
   end
 
-  def call(resolution, _) do
-    delay_api_results(resolution)
+  def call(%Resolution{arguments: %{to: _to}} = resolution, _) do
+    update_in(resolution.arguments.to, &delay_1day(&1))
   end
 
-  defp delay_api_results(resolution) do
-    args = resolution.definition.argument_data
-    to_datetime = args |> Map.get(:to, nil)
-
-    case to_datetime do
-      nil ->
-        resolution
-
-      to_datetime ->
-        put_in(resolution.definition.argument_data, %{to: dalay_1day(to_datetime)})
-    end
+  def call(resolution, _) do
+    resolution
   end
 
   defp has_enough_san_tokens?(current_user) do
@@ -44,7 +39,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiDelay do
     end
   end
 
-  defp dalay_1day(to_datetime) do
+  defp delay_1day(to_datetime) do
     yesterday = yesterday()
 
     case DateTime.compare(to_datetime, yesterday) do

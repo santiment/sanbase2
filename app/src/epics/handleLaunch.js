@@ -5,25 +5,29 @@ import gql from 'graphql-tag'
 import { hasMetamask } from './../web3Helpers'
 import * as actions from './../actions/types'
 
+export const userGQL = gql`
+  query {
+    currentUser {
+      id,
+      email,
+      username,
+      privacyPolicyAccepted,
+      marketingAccepted,
+      ethAccounts{
+        address,
+        sanBalance
+      }
+    }
+  }
+`
+
 const handleLaunch = (action$, store, { client }) =>
   action$.pipe(
     ofType(actions.APP_LAUNCHED),
     switchMap(() => {
       return client.query({
         options: { fetchPolicy: 'network-only' },
-        query: gql`
-          query {
-            currentUser {
-              id,
-              email,
-              username,
-              ethAccounts{
-                address,
-                sanBalance
-              }
-            }
-          }
-        `
+        query: userGQL
       })
       .then(response => {
         if (response.data.currentUser) {

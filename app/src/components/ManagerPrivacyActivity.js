@@ -7,7 +7,8 @@ import './ManagerPrivacyActivity.css'
 const ManagerPrivacyActivity = ({
   privacyPolicyAccepted,
   marketingAccepted,
-  togglePrivacyPolicy
+  togglePrivacyPolicy,
+  toggleMarketing
 }) => {
   return (
     <div className='panel'>
@@ -42,6 +43,7 @@ const ManagerPrivacyActivity = ({
             </p>
             <Checkbox
               toggle
+              onClick={toggleMarketing}
               checked={marketingAccepted}
             />
           </div>
@@ -53,17 +55,18 @@ const ManagerPrivacyActivity = ({
 
 const mapStateToProps = state => {
   return {
-    privacyPolicyAccepted: state.user.privacyPolicyAccepted,
-    marketingAccepted: state.user.marketingAccepted
+    privacyPolicyAccepted: state.user.data.privacyPolicyAccepted,
+    marketingAccepted: state.user.data.marketingAccepted
   }
 }
 
 const mapDispatchToProps = dispatch => {
   return {
     togglePrivacyPolicy: () => {
-      dispatch({
-        type: actions.USER_TOGGLE_PRIVACY_POLICY
-      })
+      dispatch({ type: actions.USER_TOGGLE_PRIVACY_POLICY })
+    },
+    toggleMarketing: () => {
+      dispatch({ type: actions.USER_TOGGLE_MARKETING })
     }
   }
 }

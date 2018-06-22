@@ -30,7 +30,6 @@ export default (state = initialState, action) => {
         isLoading: true
       }
     case actions.USER_LOGIN_SUCCESS:
-      console.log(action)
       return {
         ...initialState,
         error: false,
@@ -68,10 +67,16 @@ export default (state = initialState, action) => {
           email: action.email
         }
       }
-    case actions.USER_TOGGLE_PRIVACY_POLICY:
+    case actions.USER_SETTING_GDPR:
+      const {privacyPolicyAccepted = state.privacyPolicyAccepted,
+        marketingAccepted = state.marketingAccepted} = action.payload
       return {
         ...state,
-        privacyPolicyAccepted: !state.privacyPolicyAccepted
+        data: {
+          ...state.data,
+          privacyPolicyAccepted,
+          marketingAccepted
+        }
       }
     case actions.CHANGE_USER_DATA:
       if (!action.user) {

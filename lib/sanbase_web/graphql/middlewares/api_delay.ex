@@ -1,4 +1,11 @@
 defmodule SanbaseWeb.Graphql.Middlewares.ApiDelay do
+  @moduledoc """
+  Middleware that is used to add artificial delay for the data our API returns.
+  The delay is for anon users and for users without the required SAN stake.
+  Currently the delay is one day and is achieved by transforming the `to` datetime
+  argument, taking the minimum between the original `to` and now() - 1day.
+  """
+
   @behaviour Absinthe.Middleware
 
   alias Absinthe.Resolution

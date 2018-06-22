@@ -112,4 +112,36 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
 
     assert json_response(result, 200)["data"]["changeEmail"]["email"] == new_email
   end
+
+  test "update marketing accepted policy", %{conn: conn} do
+    update_mutation = """
+    mutation {
+      updateTermsAndConditions(
+        marketingAccepted: true){
+          marketingAccepted
+        }
+    }
+    """
+
+    result = conn |> post("/graphql", mutation_skeleton(update_mutation))
+
+    assert json_response(result, 200)["data"]["updateTermsAndConditions"]["marketingAccepted"] ==
+             true
+  end
+
+  test "update private policy accepted", %{conn: conn} do
+    update_mutation = """
+    mutation {
+      updateTermsAndConditions(
+        privacyPolicyAccepted: true){
+          privacyPolicyAccepted
+        }
+    }
+    """
+
+    result = conn |> post("/graphql", mutation_skeleton(update_mutation))
+
+    assert json_response(result, 200)["data"]["updateTermsAndConditions"]["privacyPolicyAccepted"] ==
+             true
+  end
 end

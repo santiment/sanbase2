@@ -160,8 +160,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval, :integer, default_value: 10)
 
-      middleware(ApiDelay)
-
       cache_resolve(&GithubResolver.activity/3)
     end
 

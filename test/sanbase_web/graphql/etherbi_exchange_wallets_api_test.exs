@@ -1,6 +1,5 @@
 defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
-  use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
+  use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Model.ExchangeEthAddress
   alias Sanbase.Repo

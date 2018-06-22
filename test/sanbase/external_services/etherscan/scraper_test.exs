@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.Etherscan.ScraperTest do
-  use ExUnit.Case
+  use Sanbase.DataCase, async: false
 
   alias Sanbase.ExternalServices.Etherscan.Scraper
   alias Sanbase.ExternalServices.ProjectInfo

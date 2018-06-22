@@ -1,6 +1,5 @@
 defmodule Sanbase.Etherbi.TransactionsApiTest do
-  use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
+  use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.Transactions.Store

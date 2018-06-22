@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.ProjectApiForbiddenFieldsTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import SanbaseWeb.Graphql.TestHelpers
 

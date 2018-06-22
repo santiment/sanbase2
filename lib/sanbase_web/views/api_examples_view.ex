@@ -1,9 +1,9 @@
-defmodule SanbaseWeb.ApiDocsView do
+defmodule SanbaseWeb.ApiExamplesView do
   use SanbaseWeb, :view
   require Logger
 
   def render("apiexample_view.html", _assigns) do
-    Phoenix.View.render_to_string(SanbaseWeb.ApiDocsView, "examples.html", %{
+    Phoenix.View.render_to_string(SanbaseWeb.ApiExamplesView, "examples.html", %{
       explorer_url: explorer_url(),
       daa: %{
         query: daa(),
@@ -94,6 +94,6 @@ defmodule SanbaseWeb.ApiDocsView do
   end
 
   defp explorer_url() do
-    SanbaseWeb.Endpoint.website_url() <> "/graphiql"
+    SanbaseWeb.Endpoint.website_url() <> "/apiexplorer"
   end
 end

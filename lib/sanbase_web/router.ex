@@ -52,7 +52,7 @@ defmodule SanbaseWeb.Router do
     pipe_through(:browser)
 
     get("/consent", RootController, :consent)
-    get("/apidocs", ApiDocsController, :api_examples)
+    get("/apiexamples", ApiExamplesController, :api_examples)
   end
 
   scope "/api", SanbaseWeb do

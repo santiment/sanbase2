@@ -3,7 +3,8 @@ defmodule Sanbase.Auth.EthAccount do
 
   alias Sanbase.Auth.{User, EthAccount}
 
-  @ethauth Mockery.of("Sanbase.InternalServices.Ethauth")
+  require Mockery.Macro
+  defp ethauth, do: Mockery.Macro.mockable(Sanbase.InternalServices.Ethauth)
 
   schema "eth_accounts" do
     field(:address, :string)
@@ -13,6 +14,6 @@ defmodule Sanbase.Auth.EthAccount do
   end
 
   def san_balance(%EthAccount{address: address}) do
-    @ethauth.san_balance(address)
+    ethauth().san_balance(address)
   end
 end

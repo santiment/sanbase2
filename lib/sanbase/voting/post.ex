@@ -63,7 +63,7 @@ defmodule Sanbase.Voting.Post do
 
   def publish_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:ready_state])
+    |> cast(attrs, [:ready_state, :discourse_topic_url])
   end
 
   def approved_state(), do: @approved

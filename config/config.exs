@@ -116,6 +116,11 @@ config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction,
   restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"},
   required_san_stake_full_access: {:system, "REQUIRED_SAN_STAKE_FULL_ACCESS", "1000"}
 
+config :sanbase, Sanbase.Discourse,
+  url: {:system, "DISCOURSE_URL", "https://discourse.stage.internal.santiment.net/"},
+  api_key: {:system, "DISCOURSE_API_KEY"},
+  insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "Sanbase Insights"}
+
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"

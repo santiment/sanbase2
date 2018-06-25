@@ -6,8 +6,8 @@ defmodule Sanbase.Github.Scheduler do
 
   require Logger
 
-  # A dependency injection, so that we can test this module in isolation
-  @worker Mockery.of("SanbaseWorkers.ImportGithubActivity")
+  require Mockery.Macro
+  defp worker(), do: Mockery.Macro.mockable(SanbaseWorkers.ImportGithubActivity)
 
   def schedule_scrape do
     available_projects = Github.available_projects()
@@ -52,7 +52,7 @@ defmodule Sanbase.Github.Scheduler do
         if need_to_scrape do
           archive_name = archive_name_for(current_datetime)
 
-          @worker.perform_async([archive_name])
+          worker().perform_async([archive_name])
         end
 
         current_datetime

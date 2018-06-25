@@ -144,12 +144,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Returns a list of github activity for a given ticker and time interval.
+
     Arguments description:
-      > interval -
-      > transform - one of the following:
+      * interval - an integer followed by one of: `s`, `m`, `h`, `d` or `w`
+      * transform - one of the following:
         1. None (default)
         2. movingAverage
-      > movingAverageInterval - used only if transform is `movingAverage`.
+      * movingAverageInterval - used only if transform is `movingAverage`.
         Returns the simple moving average of the data calculated with this argument.
     """
     field :github_activity, list_of(:activity_point) do

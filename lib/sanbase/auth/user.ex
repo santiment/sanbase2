@@ -1,7 +1,8 @@
 defmodule Sanbase.Auth.User do
   use Ecto.Schema
-  import Ecto.Changeset
   use Timex.Ecto.Timestamps
+
+  import Ecto.Changeset
 
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Voting.Vote
@@ -21,7 +22,8 @@ defmodule Sanbase.Auth.User do
   # 5 minutes
   @san_balance_cache_seconds 60 * 5
 
-  @mandrill_api Mockery.of("Sanbase.MandrillApi")
+  require Mockery.Macro
+  defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
   schema "users" do
     field(:email, :string)
@@ -151,7 +153,7 @@ defmodule Sanbase.Auth.User do
   end
 
   def send_login_email(user) do
-    @mandrill_api.send(@login_email_template, user.email, %{
+    mandrill_api().send(@login_email_template, user.email, %{
       LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
     })
   end

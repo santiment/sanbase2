@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.ApiDelayMiddlewareTest do
   use SanbaseWeb.ConnCase
+  require Sanbase.Utils.Config
 
+  alias Sanbase.Utils.Config
+  alias SanbaseWeb.Graphql.Middlewares.ApiDelay
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.BurnRate.Store
   alias Sanbase.Auth.User
@@ -43,7 +46,7 @@ defmodule SanbaseWeb.Graphql.ApiDelayMiddlewareTest do
     staked_user =
       %User{
         salt: User.generate_salt(),
-        san_balance: Decimal.new(10),
+        san_balance: Decimal.new(required_san_stake_realtime_api()),
         san_balance_updated_at: Timex.now()
       }
       |> Repo.insert!()
@@ -108,4 +111,8 @@ defmodule SanbaseWeb.Graphql.ApiDelayMiddlewareTest do
   defp now(), do: Timex.now()
   defp hour_ago(), do: Timex.shift(Timex.now(), hours: -1)
   defp week_ago(), do: Timex.shift(Timex.now(), days: -7)
+
+  defp required_san_stake_realtime_api() do
+    Config.module_get(ApiDelay, :required_san_stake_realtime_api) |> String.to_integer()
+  end
 end

@@ -11,6 +11,9 @@ You can:
 * Run sample queries on the left pane
 * Read the compiled documentation of our GraphQL schema on the right sidebar
 
+**Note:** Some of the queries require authorization and a stake of <%= @required_san_stake_realtime_api %>`SAN`
+to return realtime data. Otherwise they show data upto the day before.
+
 <a name='terminal'></a>
 
 # Using the Sanbase API from the command line

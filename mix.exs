@@ -59,7 +59,7 @@ defmodule Sanbase.Mixfile do
       {:hammer, "~> 2.0.0"},
       {:ex_admin, github: "smpallen99/ex_admin", branch: "phx-1.3"},
       {:basic_auth, "~> 2.2"},
-      {:mockery, "~> 2.0"},
+      {:mockery, "~> 2.2"},
       {:distillery, "~> 1.5", runtime: false},
       {:timex, "~> 3.0"},
       {:timex_ecto, "~> 3.0"},
@@ -88,7 +88,8 @@ defmodule Sanbase.Mixfile do
       {:con_cache, "~> 0.13"},
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
       {:observer_cli, "~> 1.3"},
-      {:plug_attack, "~> 0.3.1"}
+      {:plug_attack, "~> 0.3.1"},
+      {:earmark, "~> 1.2"}
     ]
   end
 

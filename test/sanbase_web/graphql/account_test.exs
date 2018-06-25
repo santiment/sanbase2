@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.AccountTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Model.Project
   alias Sanbase.Auth.User

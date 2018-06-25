@@ -39,14 +39,10 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiDelay do
   end
 
   defp has_enough_san_tokens?(current_user) do
-    if Decimal.cmp(
-         User.san_balance!(current_user),
-         Decimal.new(required_san_stake_realtime_api())
-       ) != :lt do
-      true
-    else
-      false
-    end
+    Decimal.cmp(
+      User.san_balance!(current_user),
+      Decimal.new(required_san_stake_realtime_api())
+    ) != :lt
   end
 
   defp delay_1day(to_datetime) do

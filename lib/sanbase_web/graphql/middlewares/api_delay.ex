@@ -42,7 +42,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiDelay do
     if Decimal.cmp(
          User.san_balance!(current_user),
          Decimal.new(required_san_stake_realtime_api())
-       ) == :gt do
+       ) != :lt do
       true
     else
       false

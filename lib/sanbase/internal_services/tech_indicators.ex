@@ -672,7 +672,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       ]
     ]
 
-    @http_client.get(url, [], options)
+    http_client().get(url, [], options)
   end
 
   defp price_volume_diff_ma_result(result) do
@@ -718,7 +718,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       ]
     ]
 
-    @http_client.get(url, [], options)
+    http_client().get(url, [], options)
   end
 
   defp twitter_mention_count_result(result) do
@@ -758,7 +758,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       ]
     ]
 
-    @http_client.get(url, [], options)
+    http_client().get(url, [], options)
   end
 
   defp emojis_sentiment_result(result) do

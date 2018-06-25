@@ -4,22 +4,27 @@ defmodule SanbaseWeb.ApiExamplesView do
 
   def render("apiexample_view.html", _assigns) do
     Phoenix.View.render_to_string(SanbaseWeb.ApiExamplesView, "examples.html", %{
+      api_url: SanbaseWeb.Endpoint.api_url(),
       explorer_url: explorer_url(),
       daa: %{
         query: daa(),
-        variables: "{}"
+        variables: "{}",
+        docs: docs(:daily_active_addresses)
       },
       burn_rate: %{
         query: burn_rate(),
-        variables: "{}"
+        variables: "{}",
+        docs: docs(:burn_rate)
       },
       tv: %{
         query: tv(),
-        variables: "{}"
+        variables: "{}",
+        docs: docs(:transaction_volume)
       },
       ga: %{
         query: ga(),
-        variables: "{}"
+        variables: "{}",
+        docs: docs(:github_activity)
       }
     })
     |> as_html()
@@ -95,5 +100,11 @@ defmodule SanbaseWeb.ApiExamplesView do
 
   defp explorer_url() do
     SanbaseWeb.Endpoint.website_url() <> "/apiexplorer"
+  end
+
+  def docs(field) do
+    Absinthe.Schema.lookup_type(SanbaseWeb.Graphql.Schema, :query).fields
+    |> Map.get(field)
+    |> Map.get(:description)
   end
 end

@@ -19,7 +19,8 @@ config :sanbase, SanbaseWeb.Endpoint,
   secret_key_base: "Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
   render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
   pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2],
-  website_url: {:system, "WEBSITE_URL", "http://localhost:4000"}
+  website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
+  api_url: {:system, "API_URL", "https://api.santiment.net/graphql"}
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false

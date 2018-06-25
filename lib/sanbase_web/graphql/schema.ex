@@ -143,12 +143,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Returns a list of github activity for a given ticker and time interval.
+
     Arguments description:
-      > interval -
-      > transform - one of the following:
+      * interval - an integer followed by one of: `s`, `m`, `h`, `d` or `w`
+      * transform - one of the following:
         1. None (default)
         2. movingAverage
-      > movingAverageInterval - used only if transform is `movingAverage`.
+      * movingAverageInterval - used only if transform is `movingAverage`.
         Returns the simple moving average of the data calculated with this argument.
     """
     field :github_activity, list_of(:activity_point) do
@@ -341,7 +342,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
-    This indicator measures the difference in trend between price and volume, 
+    This indicator measures the difference in trend between price and volume,
     specifically when price goes up as volume goes down.
     """
     field :price_volume_diff, list_of(:price_volume_diff) do

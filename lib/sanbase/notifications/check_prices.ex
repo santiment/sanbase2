@@ -11,13 +11,11 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   require Sanbase.Utils.Config
 
-  @http_service Mockery.of("Tesla")
+  require Mockery.Macro
+  defp http_client(), do: Mockery.Macro.mockable(Tesla)
 
-  # 60 minutes
   @cooldown_period_in_sec 60 * 60
-  # 60 minutes
   @check_interval_in_sec 60 * 60
-  # percent
   @price_change_threshold 5
 
   def exec(project, counter_currency) do
@@ -56,7 +54,7 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   def send_slack_notification(price_difference, project, counter_currency) do
     %{status: 200} =
-      @http_service.post(
+      http_client().post(
         webhook_url(),
         notification_payload(price_difference, project, counter_currency),
         headers: %{"Content-Type" => "application/json"}

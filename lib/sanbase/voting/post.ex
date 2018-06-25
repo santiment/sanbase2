@@ -26,6 +26,7 @@ defmodule Sanbase.Voting.Post do
     field(:state, :string)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
+    field(:discourse_topic_url, :string)
 
     has_many(:images, PostImage, on_delete: :delete_all)
 
@@ -42,7 +43,7 @@ defmodule Sanbase.Voting.Post do
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :discourse_topic_url])
     |> tags_cast(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])
@@ -52,7 +53,7 @@ defmodule Sanbase.Voting.Post do
 
   def update_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :discourse_topic_url])
     |> tags_cast(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])

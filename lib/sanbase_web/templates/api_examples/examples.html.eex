@@ -28,7 +28,8 @@ example that can be run in the terminal.
 
 ### Daily Active Addresses
 
-This metric includes the number of unique addresses that participated in the transfers of given token during the day.
+<%= @daa[:docs] %>
+
 
 <a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@daa[:variables])}&query=#{URI.encode(@daa[:query])}"| %>" target='_blank'>Run in explorer</a>
 
@@ -48,9 +49,8 @@ curl \
 
 ### Burn rate
 
-Each transaction has an equivalent burn rate record.
-The burn rate is calculated by multiplying the number of tokens moved by the number of blocks in which they appeared.
-Spikes in burn rate could indicate large transactions or movement of tokens that have been held for a long time.
+<%= @burn_rate[:docs] %>
+
 
 <a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@burn_rate[:variables])}&query=#{URI.encode(@burn_rate[:query])}"| %>" target='_blank'>Run in explorer</a>
 
@@ -70,9 +70,8 @@ curl \
 
 ### Transaction volume
 
-Fetch total amount of tokens for a project that were transacted on the blockchain, grouped by interval. Projects are referred to by a unique identifier (slug).
+<%= @tv[:docs] %>
 
-This metric includes only on-chain volume, not volume in exchanges.
 
 <a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@tv[:variables])}&query=#{URI.encode(@tv[:query])}"| %>" target='_blank'>Run in explorer</a>
 
@@ -93,7 +92,8 @@ curl \
 
 ### Github Activity
 
-Returns a list of github activity for a given ticker and time interval.
+<%= @ga[:docs] %>
+
 
 [An article explaining our approach to tracking github activity](https://medium.com/santiment/tracking-github-activity-of-crypto-projects-introducing-a-better-approach-9fb1af3f1c32){:target="_blank"}
 

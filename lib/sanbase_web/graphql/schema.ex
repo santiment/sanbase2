@@ -145,7 +145,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns a list of github activity for a given ticker and time interval.
 
     Arguments description:
-      * interval
+      * interval - an integer followed by one of: `s`, `m`, `h`, `d` or `w`
       * transform - one of the following:
         1. None (default)
         2. movingAverage

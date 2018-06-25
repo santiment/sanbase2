@@ -4,6 +4,7 @@ defmodule SanbaseWeb.ApiExamplesView do
 
   def render("apiexample_view.html", _assigns) do
     Phoenix.View.render_to_string(SanbaseWeb.ApiExamplesView, "examples.html", %{
+      api_url: SanbaseWeb.Endpoint.api_url(),
       explorer_url: explorer_url(),
       daa: %{
         query: daa(),

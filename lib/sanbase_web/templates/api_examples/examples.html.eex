@@ -1,5 +1,6 @@
-1. [Using the Sanbase API explorer](#explorer)
-2. [Example metrics provided by our API](#examples)
+1. [Using the Sanbase API via explorer](#explorer)
+2. [Using the Sanbase API from the command line](#terminal)
+3. [Example metrics provided by our API](#examples)
 
 <a name='explorer'></a>
 
@@ -10,12 +11,20 @@ You can:
 * Run sample queries on the left pane
 * Read the compiled documentation of our GraphQL schema on the right sidebar
 
+<a name='terminal'></a>
+
+# Using the Sanbase API from the command line
+
+Our API can be also accessed from the command line. The endpoint is: `<%= @api_url %>`.
+You can copy&paste the provided `curl` examples in the terminal to explore the sample queries.
+
 <a name='examples'></a>
 
 # Example metrics provided by our API
 
 Here are some examples of interesting metrics provided by our API. On top of every example there is `Run in explorer` link.
-Clicking this link will lead you to the Explorer window with prefilled query.
+Clicking this link will lead you to the Explorer window with prefilled query. All sample queries are accompanied with a `curl`
+example that can be run in the terminal.
 
 ### Daily Active Addresses
 
@@ -25,6 +34,16 @@ This metric includes the number of unique addresses that participated in the tra
 
 ```graphql
 <%= @daa[:query] %>
+```
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@daa[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
 ```
 
 ### Burn rate
@@ -37,6 +56,16 @@ Spikes in burn rate could indicate large transactions or movement of tokens that
 
 ```graphql
 <%= @burn_rate[:query] %>
+```
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@burn_rate[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
 ```
 
 ### Transaction volume
@@ -51,6 +80,17 @@ This metric includes only on-chain volume, not volume in exchanges.
 <%= @tv[:query] %>
 ```
 
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@tv[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```
+
 ### Github Activity
 
 Returns a list of github activity for a given ticker and time interval.
@@ -61,4 +101,15 @@ Returns a list of github activity for a given ticker and time interval.
 
 ```graphql
 <%= @ga[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@ga[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
 ```

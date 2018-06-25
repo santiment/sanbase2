@@ -22,8 +22,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   @default_update_interval_ms 1000 * 60 * 5
   @confirmations 10
   @num_18_zeroes 1_000_000_000_000_000_000
-  @tx Mockery.of("Sanbase.ExternalServices.Etherscan.Requests.Tx")
-  @internal_tx Mockery.of("Sanbase.ExternalServices.Etherscan.Requests.InternalTx")
+
+  require Mockery.Macro
+  defp tx(), do: Mockery.Macro.mockable(Sanbase.ExternalServices.Etherscan.Requests.Tx)
+
+  defp internal_tx(),
+    do: Mockery.Macro.mockable(Sanbase.ExternalServices.Etherscan.Requests.InternalTx)
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -152,7 +156,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   defp fetch_internal_transactions(address, measurement_name, endblock) do
     last_block_with_data = Store.last_block_number!(address <> "_in") || 0
 
-    case @internal_tx.get(address, last_block_with_data, endblock) do
+    case internal_tx().get(address, last_block_with_data, endblock) do
       {:ok, list} ->
         list
 
@@ -170,7 +174,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   defp fetch_transactions(address, measurement_name, endblock) do
     last_block_with_data = Store.last_block_number!(address) || 0
 
-    case @tx.get(address, last_block_with_data, endblock) do
+    case tx().get(address, last_block_with_data, endblock) do
       {:ok, list} ->
         list
 

@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:username, :string)
     field(:consent_id, :string)
     field(:privacy_policy_accepted, :boolean)
+    field(:marketing_accepted, :boolean)
 
     field :san_balance, :float do
       resolve(&AccountResolver.san_balance/3)

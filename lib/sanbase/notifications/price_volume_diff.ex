@@ -8,7 +8,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   require Sanbase.Utils.Config
 
-  @http_service Mockery.of("HTTPoison")
+  require Mockery.Macro
+  defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 
   @notification_type_name "price_volume_diff"
 
@@ -120,7 +121,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
          {notification_data, debug_info}
        ) do
     {:ok, %HTTPoison.Response{status_code: 204}} =
-      @http_service.post(
+      http_client().post(
         webhook_url(),
         notification_payload(project, currency, indicator, debug_info),
         [

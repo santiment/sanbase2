@@ -5,6 +5,8 @@ import handleOffline from './handleOffline'
 import handleLauched from './handleLaunch'
 import handleEmailLogin, { handleLoginSuccess } from './handleEmailLogin'
 import handleEthLogin from './handleEthLogin'
+import handleGDPR from './handleGDPR'
+import handleRouter from './handleRouter'
 
 export default combineEpics(
   handleFollowProject,
@@ -12,5 +14,7 @@ export default combineEpics(
   handleLauched,
   handleEmailLogin,
   handleLoginSuccess,
-  handleEthLogin
+  handleEthLogin,
+  handleGDPR,
+  handleRouter
 )

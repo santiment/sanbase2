@@ -43,7 +43,7 @@ defmodule Sanbase.Voting.Post do
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :discourse_topic_url])
+    |> cast(attrs, [:title, :short_desc, :link, :text])
     |> tags_cast(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])
@@ -53,7 +53,7 @@ defmodule Sanbase.Voting.Post do
 
   def update_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text, :discourse_topic_url])
+    |> cast(attrs, [:title, :short_desc, :link, :text])
     |> tags_cast(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])

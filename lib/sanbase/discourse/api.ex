@@ -5,24 +5,21 @@ defmodule Sanbase.Discourse.Api do
   alias Sanbase.Discourse.Config
 
   def publish(title, text, url \\ Config.discourse_url()) do
-    handle_request(
-      publish_topic(title, text, url),
-      title
-    )
+    url
+    |> publish_topic(title, text)
+    |> handle_response(title)
   end
 
   # Private functions
 
-  defp handle_request(request, title) do
-    case request do
+  defp handle_response(response, title) do
+    case response do
       {:ok, %HTTPoison.Response{body: body, status_code: code}}
       when code >= 200 and code < 300 ->
-        response = Poison.decode!(body)
-
         Logger.info("Successfully created a topic '#{title}' in Discourse")
-        {:ok, response}
+        Poison.decode(body)
 
-      {:ok, %HTTPoison.Response{status_code: status_code} = response} ->
+      {:ok, %HTTPoison.Response{status_code: status_code}} ->
         err_msg =
           "Error creating a topic '#{title}' in Discourse: HTTP status code: #{
             inspect(status_code)
@@ -39,7 +36,7 @@ defmodule Sanbase.Discourse.Api do
     end
   end
 
-  defp publish_topic(title, text, url) do
+  defp publish_topic(url, title, text) do
     url = "#{url}/posts?api_key=#{Config.api_key()}"
 
     http_client().post(

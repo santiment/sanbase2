@@ -1,53 +1,60 @@
 import Raven from 'raven-js'
 import { ofType } from 'redux-observable'
+import { Observable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import gql from 'graphql-tag'
 import { hasMetamask } from './../web3Helpers'
 import * as actions from './../actions/types'
 
+export const userGQL = gql`
+  query {
+    currentUser {
+      id,
+      email,
+      username,
+      sanBalance,
+      privacyPolicyAccepted,
+      marketingAccepted,
+      ethAccounts{
+        address,
+        sanBalance
+      }
+    }
+  }
+`
+
 const handleLaunch = (action$, store, { client }) =>
   action$.pipe(
     ofType(actions.APP_LAUNCHED),
     switchMap(() => {
-      return client.query({
+      const queryPromise = client.query({
         options: { fetchPolicy: 'network-only' },
-        query: gql`
-          query {
-            currentUser {
-              id,
-              email,
-              username,
-              ethAccounts{
-                address,
-                sanBalance
-              }
+        query: userGQL
+      })
+      return Observable.from(queryPromise)
+        .map(({ data }) => {
+          if (data.currentUser) {
+            return {
+              type: actions.CHANGE_USER_DATA,
+              user: data.currentUser,
+              hasMetamask: hasMetamask()
             }
           }
-        `
-      })
-      .then(response => {
-        if (response.data.currentUser) {
+          client.resetStore()
           return {
-            type: actions.CHANGE_USER_DATA,
-            user: response.data.currentUser,
-            hasMetamask: hasMetamask()
+            type: actions.APP_USER_HAS_INACTIVE_TOKEN
           }
-        }
-        client.resetStore()
-        return {
-          type: actions.APP_USER_HAS_INACTIVE_TOKEN
-        }
-      })
-      .catch(error => {
-        Raven.captureException(error)
-        client.resetStore()
-        return {
-          type: actions.APP_USER_HAS_INACTIVE_TOKEN,
-          payload: {
-            error
+        })
+        .catch(error => {
+          Raven.captureException(error)
+          client.resetStore()
+          return {
+            type: actions.APP_USER_HAS_INACTIVE_TOKEN,
+            payload: {
+              error
+            }
           }
-        }
-      })
+        })
     })
   )
 

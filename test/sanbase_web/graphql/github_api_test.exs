@@ -1,5 +1,5 @@
 defmodule Sanbase.Github.GithubApiTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Github

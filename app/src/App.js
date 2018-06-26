@@ -21,6 +21,7 @@ import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
 import Signals from './pages/Signals'
 import Account from './pages/Account'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
 import Menu from './components/TopMenu'
@@ -31,6 +32,9 @@ import PageLoader from './components/PageLoader'
 import Status from './pages/Status'
 import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
+import GDPRModal from './components/GDPRModal.js'
+import ApiDocs from './components/ApiDocs'
+import ApiExplorer from './components/ApiExplorer'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -150,7 +154,10 @@ export const App = ({
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
         <Route exact path='/build' component={BuildChallenge} />
+        <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />
+        <Route path='/apidocs' component={ApiDocs} />
+        <Route path='/apiexplorer' component={ApiExplorer} />
         <Route
           exact
           path='/login'
@@ -165,6 +172,7 @@ export const App = ({
     </ErrorBoundary>
     <Notification />
     <FeedbackModal />
+    <GDPRModal />
     {isDesktop && <Footer />}
   </div>
 )

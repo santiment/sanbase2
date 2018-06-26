@@ -3,7 +3,7 @@ import debounce from 'lodash.debounce'
 import moment from 'moment'
 import * as qs from 'query-string'
 import Raven from 'raven-js'
-import { compose, withState, pure } from 'recompose'
+import { compose, withState } from 'recompose'
 import { connect } from 'react-redux'
 import { Button, Header, Icon, Modal, Message } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
@@ -15,7 +15,7 @@ import ModalConfirmDeletePost from './Insights/ConfirmDeletePostModal'
 import ModalConfirmPublishPost from './Insights/ConfirmPublishPostModal'
 import { allInsightsPublicGQL, allInsightsGQL } from './Insights/currentPollGQL'
 import InsightsLayout from './Insights/InsightsLayout'
-import { getBalance } from './UserSelectors'
+import { getBalance, checkIsLoggedIn } from './UserSelectors'
 import './InsightsPage.css'
 
 const POLLING_INTERVAL = 5000
@@ -63,6 +63,7 @@ const InsightsPage = ({
   history,
   match,
   user,
+  isLoggedIn,
   balance,
   toggleDeletePostRequest,
   isToggledDeletePostRequest,
@@ -109,7 +110,7 @@ const InsightsPage = ({
           }} />}
     </Fragment>,
     <Fragment key='page-event-votes'>
-      <InsightsLayout isLogin={!!user.token}>
+      <InsightsLayout isLogin={isLoggedIn}>
         <div className='insight-list'>
           {Posts.isEmpty && !showedMyPosts
             ? <Message><h2>We don't have any insights yet.</h2></Message>
@@ -291,10 +292,6 @@ const mapDataToProps = props => {
     applySort
   )(postsByDay)
 
-  if (Insights.error) {
-    throw new Error(Insights.error)
-  }
-
   return {
     Posts: {
       posts: visiblePosts,
@@ -314,6 +311,7 @@ const mapDataToProps = props => {
 const mapStateToProps = state => {
   return {
     user: state.user,
+    isLoggedIn: checkIsLoggedIn(state),
     balance: getBalance(state),
     isOpenedLoginRequestModal: state.insightsPageUi.isOpenedLoginRequestModal
   }
@@ -341,16 +339,16 @@ const enhance = compose(
   graphql(allInsightsPublicGQL, {
     name: 'Insights',
     props: mapDataToProps,
-    options: ({user}) => ({
-      skip: user.token,
+    options: ({isLoggedIn}) => ({
+      skip: isLoggedIn,
       pollInterval: POLLING_INTERVAL
     })
   }),
   graphql(allInsightsGQL, {
     name: 'Insights',
     props: mapDataToProps,
-    options: ({user}) => ({
-      skip: !user.token,
+    options: ({isLoggedIn}) => ({
+      skip: !isLoggedIn,
       pollInterval: POLLING_INTERVAL
     })
   }),
@@ -359,8 +357,7 @@ const enhance = compose(
   }),
   graphql(unvotePostGQL, {
     name: 'unvotePost'
-  }),
-  pure
+  })
 )
 
 export default enhance(InsightsPage)

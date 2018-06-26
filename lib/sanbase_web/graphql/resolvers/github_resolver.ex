@@ -37,6 +37,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
           ticker: ticker,
           from: from,
           to: to,
+          interval: interval,
           transform: "movingAverage",
           moving_average_interval_base: ma_base
         },

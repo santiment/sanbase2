@@ -25,7 +25,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     BasicAuth,
     JWTAuth,
     ProjectPermissions,
-    PostPermissions
+    PostPermissions,
+    ApiDelay
   }
 
   import_types(Absinthe.Plug.Types)
@@ -143,12 +144,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Returns a list of github activity for a given ticker and time interval.
+
     Arguments description:
-      > interval -
-      > transform - one of the following:
+      * interval - an integer followed by one of: `s`, `m`, `h`, `d` or `w`
+      * transform - one of the following:
         1. None (default)
         2. movingAverage
-      > movingAverageInterval - used only if transform is `movingAverage`.
+      * movingAverageInterval - used only if transform is `movingAverage`.
         Returns the simple moving average of the data calculated with this argument.
     """
     field :github_activity, list_of(:activity_point) do
@@ -197,6 +199,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
 
+      middleware(ApiDelay)
+
       cache_resolve(&EtherbiResolver.burn_rate/3)
     end
 
@@ -215,6 +219,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1h")
+
+      middleware(ApiDelay)
 
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
@@ -237,6 +243,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
+
+      middleware(ApiDelay)
 
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
@@ -307,6 +315,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
+      middleware(ApiDelay)
+
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
@@ -319,6 +329,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
+
+      middleware(ApiDelay)
 
       complexity(&TechIndicatorsComplexity.macd/3)
       cache_resolve(&TechIndicatorsResolver.macd/3)
@@ -335,13 +347,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:rsi_interval, non_null(:integer))
       arg(:result_size_tail, :integer, default_value: 0)
 
+      middleware(ApiDelay)
+
       complexity(&TechIndicatorsComplexity.rsi/3)
       cache_resolve(&TechIndicatorsResolver.rsi/3)
     end
 
     @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
-    This indicator measures the difference in trend between price and volume, 
+    This indicator measures the difference in trend between price and volume,
     specifically when price goes up as volume goes down.
     """
     field :price_volume_diff, list_of(:price_volume_diff) do
@@ -352,6 +366,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
+
+      middleware(ApiDelay)
 
       complexity(&TechIndicatorsComplexity.price_volume_diff/3)
       cache_resolve(&TechIndicatorsResolver.price_volume_diff/3)

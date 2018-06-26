@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.Etherscan.FetchTransactions do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   import Mockery
 

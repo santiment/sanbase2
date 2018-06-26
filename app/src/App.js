@@ -33,6 +33,8 @@ import Status from './pages/Status'
 import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
+import ApiDocs from './components/ApiDocs'
+import ApiExplorer from './components/ApiExplorer'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -154,6 +156,8 @@ export const App = ({
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />
+        <Route path='/apidocs' component={ApiDocs} />
+        <Route path='/apiexplorer' component={ApiExplorer} />
         <Route
           exact
           path='/login'

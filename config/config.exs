@@ -19,7 +19,8 @@ config :sanbase, SanbaseWeb.Endpoint,
   secret_key_base: "Vq7Rfo0T4EfiLX2/ryYal3O0l9ebBNhyh58cfWdTAUHxEJGu2p9u1WTQ31Ki4Phj",
   render_errors: [view: SanbaseWeb.ErrorView, accepts: ~w(json)],
   pubsub: [name: Sanbase.PubSub, adapter: Phoenix.PubSub.PG2],
-  website_url: {:system, "WEBSITE_URL", "http://localhost:4000"}
+  website_url: {:system, "WEBSITE_URL", "http://localhost:4000"},
+  api_url: {:system, "API_URL", "https://api.santiment.net/graphql"}
 
 # Do not log SASL crash reports
 config :sasl, sasl_error_logger: false
@@ -248,6 +249,9 @@ config :sanbase, Sanbase.Oauth2.Hydra,
 config :sanbase, SanbaseWeb.Graphql.PlugAttack,
   rate_limit_period: {:system, "RATE_LIMIT_PERIOD", "10000"},
   rate_limit_max_requests: {:system, "RATE_LIMIT_MAX_REQUESTS", "40"}
+
+config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiDelay,
+  required_san_stake_realtime_api: {:system, "REQUIRED_SAN_STAKE_REALTIME_API", "1000"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

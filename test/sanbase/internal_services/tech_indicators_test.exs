@@ -1,6 +1,5 @@
 defmodule Sanbase.InternalServices.TechIndicatorsTest do
-  use SanbaseWeb.ConnCase
-  use Phoenix.ConnTest
+  use SanbaseWeb.ConnCase, async: false
 
   import Mockery
 

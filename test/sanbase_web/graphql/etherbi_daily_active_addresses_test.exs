@@ -101,6 +101,30 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     ]
   end
 
+  test "fetch daily active addresses no interval set", context do
+    query = """
+    {
+      dailyActiveAddresses(
+        slug: "#{context.slug}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime8}") {
+          datetime
+          activeAddresses
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "dailyActiveAddresses"))
+
+    active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
+
+    assert Enum.find(active_addresses, fn %{"activeAddresses" => activeAddresses} ->
+             activeAddresses == 5000
+           end)
+  end
+
   test "fetch daily active addresses no aggregation", context do
     query = """
     {

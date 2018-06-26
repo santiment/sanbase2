@@ -21,10 +21,9 @@ const PrivacyGQL = gql`
 
 const privacyGQLHelper = (user, type) => {
   const marketingAccepted = type === actions.USER_TOGGLE_MARKETING
-    ? !user.marketingAccepted : user.marketingAccepted
+    ? !user.data.marketingAccepted : user.data.marketingAccepted
   const privacyPolicyAccepted = type === actions.USER_TOGGLE_PRIVACY_POLICY
-    ? !user.privacyPolicyAccepted : user.privacyPolicyAccepted
-      console.log(privacyPolicyAccepted, marketingAccepted)
+    ? !user.data.privacyPolicyAccepted : user.data.privacyPolicyAccepted
   return {
     variables: {
       marketingAccepted,
@@ -72,12 +71,11 @@ const handleGDPR = (action$, store, { client }) =>
                 marketingAccepted: (data.updateTermsAndConditions || {}).marketingAccepted
               }
             }),
-            Observable.of(showNotification('GDPR is changed'))
+            Observable.of(showNotification('Privacy settings is changed'))
           )
         })
         .catch(error => {
           Raven.captureException(error)
-          console.log('check', error);
           return Observable.of({ type: 'TOGGLE_GDPR_FAILED', payload: error })
         })
     })

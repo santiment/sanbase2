@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
 
   def history_twitter_data(
         _root,
-        %{ticker: ticker, from: from, to: to, interval: interval},
+        %{ticker: ticker, from: from, to: to},
         _resolution
       ) do
     with {:ok, twitter_link} <- get_twitter_link(ticker),

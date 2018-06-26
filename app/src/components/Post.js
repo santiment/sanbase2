@@ -6,10 +6,6 @@ import { createSkeletonElement } from '@trainline/react-skeletor'
 import LikeBtn from './../pages/InsightsNew/LikeBtn'
 import './Post.css'
 
-export const getSourceLink = link => {
-  return link ? link.split('/')[2] : 'SANbase.net'
-}
-
 const A = createSkeletonElement('a', 'pending-home')
 const Span = createSkeletonElement('span', 'pending-home')
 const Div = createSkeletonElement('div', 'pending-home')
@@ -61,7 +57,6 @@ const Post = ({
   index = 1,
   id,
   title,
-  link,
   votes = {},
   liked = false,
   user,
@@ -87,11 +82,10 @@ const Post = ({
       }
     }}>
       <div className='event-post-body'>
-        <A className='event-storylink' href={link || `/insights/${id}`}>
+        <A className='event-storylink' href={`/insights/${id}`}>
           {title}
         </A>
         <br />
-        <Span>{getSourceLink(link)}</Span>&nbsp;&#8226;&nbsp;
         <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
         {user && tags.length > 0 && <Author {...user} />}
         {user &&

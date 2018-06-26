@@ -292,10 +292,6 @@ const mapDataToProps = props => {
     applySort
   )(postsByDay)
 
-  if (Insights.error) {
-    throw new Error(Insights.error)
-  }
-
   return {
     Posts: {
       posts: visiblePosts,

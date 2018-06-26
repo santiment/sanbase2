@@ -119,7 +119,7 @@ config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction,
 config :sanbase, Sanbase.Discourse,
   url: {:system, "DISCOURSE_URL", "https://discourse.stage.internal.santiment.net/"},
   api_key: {:system, "DISCOURSE_API_KEY"},
-  insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "Sanbase Insights"}
+  insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "sanbaseinsights"}
 
 # Import configs
 import_config "ex_admin_config.exs"

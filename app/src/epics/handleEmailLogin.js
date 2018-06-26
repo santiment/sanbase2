@@ -18,6 +18,8 @@ const emailLoginVerifyGQL = gql`
         id,
         email,
         username,
+        privacyPolicyAccepted,
+        marketingAccepted,
         consent_id,
         ethAccounts {
           address,

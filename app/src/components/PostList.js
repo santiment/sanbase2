@@ -21,7 +21,7 @@ const PostList = ({
       <Post
         showStatus={!!userId}
         index={index + 1}
-        key={index}
+        key={posts[index].id}
         balance={balance}
         votePost={votePost}
         unvotePost={unvotePost}

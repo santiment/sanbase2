@@ -147,7 +147,7 @@ defmodule Sanbase.Github.GithubApiTest do
         ticker: "SAN",
         from: "#{context.datetime_no_activity1}",
         to: "#{context.datetime_no_activity2}",
-        interval: "1d") {
+        interval: "#{context.dates_interval}") {
           activity
         }
     }
@@ -169,6 +169,7 @@ defmodule Sanbase.Github.GithubApiTest do
         ticker: "SAN",
         from: "#{context.datetime1}",
         to: "#{context.datetime6}",
+        interval: "1h",
         transform: "movingAverage",
         moving_average_interval: 3) {
           activity

@@ -149,7 +149,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "default arguments are correctly set", context do
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{context.datetime1}"){
+      historyPrice(
+        ticker: "TEST",
+        from: "#{context.datetime1}",
+        interval: "1h"){
         priceUsd
       }
     }
@@ -209,7 +212,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "default arguments for total marketcap are correctly set", context do
     query = """
     {
-      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}"){
+      historyPrice(
+        ticker: "TOTAL_MARKET",
+        from: "#{context.datetime1}",
+        interval: "1h"){
         datetime
         volume
         marketcap

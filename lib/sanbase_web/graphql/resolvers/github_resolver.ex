@@ -6,10 +6,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
 
   def activity(
         _root,
-        %{ticker: ticker, from: from, to: to, transform: "None"},
+        %{ticker: ticker, from: from, to: to, interval: interval, transform: "None"},
         _resolution
       ) do
-    {:ok, from, to, interval} = Utils.calibrate_interval(Store, ticker, from, to)
+    {:ok, from, to, interval} = Utils.calibrate_interval(Store, ticker, from, to, interval)
 
     result =
       Store.fetch_activity_with_resolution!(ticker, from, to, interval)

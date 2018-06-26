@@ -17,6 +17,7 @@ const ethLoginGQL = gql`
           id,
           email,
           username,
+          sanBalance,
           privacyPolicyAccepted,
           marketingAccepted,
           ethAccounts {

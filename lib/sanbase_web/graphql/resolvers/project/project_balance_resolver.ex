@@ -81,10 +81,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
          {btc_price_usd, _btc_price_btc} when not is_nil(btc_price_usd) <-
            Dataloader.get(loader, PriceStore, "BTC_bitcoin", :last) do
       {:ok,
-       Decimal.add(
-         Decimal.mult(eth_balance, eth_price_usd),
-         Decimal.mult(btc_balance, btc_price_usd)
-       )}
+       (
+         Decimal.to_float(eth_balance) * eth_price_usd
+         +Decimal.to_float(btc_balance) * btc_price_usd
+       )
+       |> Decimal.new()}
     else
       error ->
         Logger.warn("Cannot calculate USD balance. Reason: #{inspect(error)}")

@@ -32,6 +32,7 @@ import PageLoader from './components/PageLoader'
 import Status from './pages/Status'
 import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
+import GDPRModal from './components/GDPRModal.js'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -167,6 +168,7 @@ export const App = ({
     </ErrorBoundary>
     <Notification />
     <FeedbackModal />
+    <GDPRModal />
     {isDesktop && <Footer />}
   </div>
 )

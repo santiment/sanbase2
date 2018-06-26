@@ -24,12 +24,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
           ticker: ticker,
           from: from,
           to: to,
+          interval: interval,
           transform: "movingAverage",
           moving_average_interval: ma_interval
         },
         _resolution
       ) do
-    {:ok, from, to, interval} = Utils.calibrate_interval(Store, ticker, from, to)
+    {:ok, from, to, interval} = Utils.calibrate_interval(Store, ticker, from, to, interval)
 
     result =
       Store.fetch_moving_average_for_hours!(ticker, from, to, interval, ma_interval)

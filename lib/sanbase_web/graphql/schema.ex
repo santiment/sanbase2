@@ -130,7 +130,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1h")
+      arg(:interval, :string)
 
       complexity(&PriceComplexity.history_price/3)
       cache_resolve(&PriceResolver.history_price/3)
@@ -155,7 +155,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1h")
+      arg(:interval, :string)
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval, :integer, default_value: 10)
 
@@ -174,7 +174,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "6h")
+      arg(:interval, :string)
 
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
@@ -195,7 +195,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1h")
+      arg(:interval, :string)
 
       cache_resolve(&EtherbiResolver.burn_rate/3)
     end
@@ -214,7 +214,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1h")
+      arg(:interval, :string)
 
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
@@ -236,7 +236,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :string)
 
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
@@ -305,7 +305,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :string)
 
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end

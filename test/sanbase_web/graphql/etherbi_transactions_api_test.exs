@@ -125,7 +125,8 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
       exchangeFundsFlow(
         slug: "#{context.slug}",
         from: "#{context.datetime1}",
-        to: "#{context.datetime8}") {
+        to: "#{context.datetime8}",
+        interval: "1d") {
           datetime
           fundsFlow
       }

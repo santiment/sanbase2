@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.PriceStore do
   end
 
   defp fetch_price(pair, %{from: from, to: to, interval: interval} = args) do
-    {:ok, from, to, interval} = Utils.calibrate_interval(Prices.Store, pair, from, to)
+    {:ok, from, to, interval} = Utils.calibrate_interval(Prices.Store, pair, from, to, interval)
 
     Cache.func(
       fn -> Prices.Store.fetch_prices_with_resolution(pair, from, to, interval) end,

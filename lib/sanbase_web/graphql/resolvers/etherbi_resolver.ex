@@ -14,10 +14,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
   @deprecated "Use burn_rate by slug"
-  def burn_rate(_root, %{ticker: ticker, from: from, to: to}, _resolution) do
+  def burn_rate(_root, %{ticker: ticker, from: from, to: to, interval: interval}, _resolution) do
     with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(BurnRate.Store, contract_address, from, to),
+           Utils.calibrate_interval(BurnRate.Store, contract_address, from, to, interval),
          {:ok, burn_rates} <- BurnRate.Store.burn_rate(contract_address, from, to, interval) do
       result =
         burn_rates
@@ -41,10 +41,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Return the token burn rate for the given slug and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
-  def burn_rate(_root, %{slug: slug, from: from, to: to}, _resolution) do
+  def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(BurnRate.Store, contract_address, from, to),
+           Utils.calibrate_interval(BurnRate.Store, contract_address, from, to, interval),
          {:ok, burn_rates} <- BurnRate.Store.burn_rate(contract_address, from, to, interval) do
       result =
         burn_rates
@@ -71,12 +71,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   @deprecated "Use transaction_volume by slug"
   def transaction_volume(
         _root,
-        %{ticker: ticker, from: from, to: to},
+        %{ticker: ticker, from: from, to: to, interval: interval},
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(TransactionVolume.Store, contract_address, from, to),
+           Utils.calibrate_interval(TransactionVolume.Store, contract_address, from, to, interval),
          {:ok, trx_volumes} <-
            TransactionVolume.Store.transaction_volume(contract_address, from, to, interval) do
       result =
@@ -103,12 +103,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   """
   def transaction_volume(
         _root,
-        %{slug: slug, from: from, to: to},
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(TransactionVolume.Store, contract_address, from, to),
+           Utils.calibrate_interval(TransactionVolume.Store, contract_address, from, to, interval),
          {:ok, trx_volumes} <-
            TransactionVolume.Store.transaction_volume(contract_address, from, to, interval) do
       result =
@@ -135,12 +135,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   @deprecated "Use DAA by slug"
   def daily_active_addresses(
         _root,
-        %{ticker: ticker, from: from, to: to},
+        %{ticker: ticker, from: from, to: to, interval: interval},
         _resolution
       ) do
     with {:ok, contract_address, _token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(DailyActiveAddresses.Store, contract_address, from, to),
+           Utils.calibrate_interval(
+             DailyActiveAddresses.Store,
+             contract_address,
+             from,
+             to,
+             interval
+           ),
          {:ok, daily_active_addresses} <-
            DailyActiveAddresses.Store.daily_active_addresses(contract_address, from, to, interval) do
       result =
@@ -166,12 +172,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   """
   def daily_active_addresses(
         _root,
-        %{slug: slug, from: from, to: to},
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
     with {:ok, contract_address, _token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(DailyActiveAddresses.Store, contract_address, from, to),
+           Utils.calibrate_interval(
+             DailyActiveAddresses.Store,
+             contract_address,
+             from,
+             to,
+             interval
+           ),
          {:ok, daily_active_addresses} <-
            DailyActiveAddresses.Store.daily_active_addresses(contract_address, from, to, interval) do
       result =
@@ -202,13 +214,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{
           slug: slug,
           from: from,
-          to: to
+          to: to,
+          interval: interval
         },
         _resolution
       ) do
     with {:ok, contract_address, _token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(Transactions.Store, contract_address, from, to),
+           Utils.calibrate_interval(Transactions.Store, contract_address, from, to, interval),
          {:ok, funds_flow_list} <-
            Transactions.Store.transactions_in_out_difference(
              contract_address,
@@ -245,13 +258,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{
           ticker: ticker,
           from: from,
-          to: to
+          to: to,
+          interval: interval
         },
         _resolution
       ) do
     with {:ok, contract_address, _token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(Transactions.Store, contract_address, from, to),
+           Utils.calibrate_interval(Transactions.Store, contract_address, from, to, interval),
          {:ok, funds_flow_list} <-
            Transactions.Store.transactions_in_out_difference(
              contract_address,

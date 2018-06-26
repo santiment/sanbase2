@@ -7,9 +7,7 @@ export const initialState = {
   account: null,
   token: null,
   hasMetamask: false,
-  consent: null,
-  privacyPolicyAccepted: false,
-  marketingAccepted: false
+  consent: null
 }
 
 export default (state = initialState, action) => {
@@ -68,8 +66,8 @@ export default (state = initialState, action) => {
         }
       }
     case actions.USER_SETTING_GDPR:
-      const {privacyPolicyAccepted = state.privacyPolicyAccepted,
-        marketingAccepted = state.marketingAccepted} = action.payload
+      const {privacyPolicyAccepted = false,
+        marketingAccepted = false} = action.payload
       return {
         ...state,
         data: {

@@ -21,6 +21,7 @@ const emailLoginVerifyGQL = gql`
         privacyPolicyAccepted,
         marketingAccepted,
         consent_id,
+        sanBalance,
         ethAccounts {
           address,
           sanBalance

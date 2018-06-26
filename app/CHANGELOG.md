@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-26-06 | v.0.6.1:
+
+  Updated settings
+
 - 2018-18-06 | v.0.6.0:
 
   Insights

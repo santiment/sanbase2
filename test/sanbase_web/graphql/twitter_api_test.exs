@@ -142,7 +142,8 @@ defmodule Sanbase.Github.TwitterApiTest do
       historyTwitterData(
         ticker: "SAN",
         from: "#{context.datetime1}",
-        to: "#{context.datetime3}"){
+        to: "#{context.datetime3}",
+        interval: "6h"){
           followersCount
         }
     }

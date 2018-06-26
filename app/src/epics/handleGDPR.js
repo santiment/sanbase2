@@ -62,7 +62,6 @@ const handleGDPR = (action$, store, { client }) =>
       })
       return Observable.from(mutationPromise)
         .mergeMap(({ data }) => {
-          console.log(data.updateTermsAndConditions)
           return Observable.merge(
             Observable.of({
               type: actions.USER_SETTING_GDPR,

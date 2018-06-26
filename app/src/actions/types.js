@@ -3,6 +3,8 @@ export const SHOW_NOTIFICATION = '[app] SHOW_NOTIFICATION'
 export const APP_CHANGE_ONLINE_STATUS = '[app] CHANGE_ONLINE_STATUS'
 export const APP_LAUNCHED = '[app] LAUNCHED'
 export const APP_SHOW_ONBOARDING = '[app] SHOW_ONBOARDING'
+export const APP_SHOW_GDPR_MODAL = '[app] SHOW_GDPR_MODAL'
+export const APP_TOGGLE_GDPR_MODAL = '[app] TOGGLE_GDPR_MODAL'
 export const APP_USER_HAS_INACTIVE_TOKEN = '[app] USER_HAS_INACTIVE_TOKEN'
 // user
 export const CHANGE_USER_DATA = '[user] CHANGE_USER_DATA'

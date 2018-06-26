@@ -6,7 +6,8 @@ export const initialState = {
   loginPending: false,
   loginSuccess: false,
   loginError: false,
-  loginErrorMessage: ''
+  loginErrorMessage: '',
+  isGDPRModalOpened: false
 }
 
 export default (state = initialState, action) => {
@@ -39,6 +40,22 @@ export default (state = initialState, action) => {
         loginSuccess: false,
         loginError: true,
         loginErrorMessage: action.payload
+      }
+    case actions.APP_SHOW_GDPR_MODAL:
+      return {
+        ...state,
+        isGDPRModalOpened: true
+      }
+    case actions.APP_TOGGLE_GDPR_MODAL:
+      return {
+        ...state,
+        isGDPRModalOpened: !state.isGDPRModalOpened
+      }
+    case actions.USER_SETTING_GDPR:
+      const {privacyPolicyAccepted = false} = action.payload
+      return {
+        ...state,
+        isGDPRModalOpened: !privacyPolicyAccepted
       }
     default:
       return state

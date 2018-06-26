@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
-  use ExUnit.Case
+  use Sanbase.DataCase, async: false
 
   alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
 

@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.PricesApiTest do
-  use SanbaseWeb.ConnCase
+  use SanbaseWeb.ConnCase, async: false
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement

@@ -3,7 +3,9 @@ defmodule Sanbase.InternalServices.TechIndicators do
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
 
-  @http_client Mockery.of("HTTPoison")
+  require Mockery.Macro
+  defp http_client, do: Mockery.Macro.mockable(HTTPoison)
+
   @recv_timeout 15_000
 
   def macd(
@@ -197,7 +199,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       ]
     ]
 
-    @http_client.get(url, [], options)
+    http_client().get(url, [], options)
   end
 
   defp macd_result(result) do
@@ -237,7 +239,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       ]
     ]
 
-    @http_client.get(url, [], options)
+    http_client().get(url, [], options)
   end
 
   defp rsi_result(result) do
@@ -281,7 +283,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       ]
     ]
 
-    @http_client.get(url, [], options)
+    http_client().get(url, [], options)
   end
 
   defp price_volume_diff_ma_result(result) do
@@ -327,7 +329,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       ]
     ]
 
-    @http_client.get(url, [], options)
+    http_client().get(url, [], options)
   end
 
   defp twitter_mention_count_result(result) do
@@ -367,7 +369,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
       ]
     ]
 
-    @http_client.get(url, [], options)
+    http_client().get(url, [], options)
   end
 
   defp emojis_sentiment_result(result) do

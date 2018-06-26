@@ -65,6 +65,10 @@ defmodule SanbaseWeb.Endpoint do
     Config.get(:website_url)
   end
 
+  def api_url() do
+    Config.get(:api_url)
+  end
+
   def login_url(token, email) do
     website_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
   end

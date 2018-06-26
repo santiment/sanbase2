@@ -1,0 +1,118 @@
+1. [Using the Sanbase API via explorer](#explorer)
+2. [Using the Sanbase API from the command line](#terminal)
+3. [Example metrics provided by our API](#examples)
+
+<a name='explorer'></a>
+
+# Using the Sanbase API explorer
+
+Our [GraphQL Explorer](<%= @explorer_url %>){:target="_blank"} allows you to experiment with our API.
+You can:
+* Run sample queries on the left pane
+* Read the compiled documentation of our GraphQL schema on the right sidebar
+
+**Note:** Some of the queries require authorization and a stake of <%= @required_san_stake_realtime_api %>`SAN`
+to return realtime data. Otherwise they show data upto the day before.
+
+<a name='terminal'></a>
+
+# Using the Sanbase API from the command line
+
+Our API can be also accessed from the command line. The endpoint is: `<%= @api_url %>`.
+You can copy&paste the provided `curl` examples in the terminal to explore the sample queries.
+
+<a name='examples'></a>
+
+# Example metrics provided by our API
+
+Here are some examples of interesting metrics provided by our API. On top of every example there is `Run in explorer` link.
+Clicking this link will lead you to the Explorer window with prefilled query. All sample queries are accompanied with a `curl`
+example that can be run in the terminal.
+
+### Daily Active Addresses
+
+<%= @daa[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@daa[:variables])}&query=#{URI.encode(@daa[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @daa[:query] %>
+```
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@daa[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```
+
+### Burn rate
+
+<%= @burn_rate[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@burn_rate[:variables])}&query=#{URI.encode(@burn_rate[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @burn_rate[:query] %>
+```
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@burn_rate[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```
+
+### Transaction volume
+
+<%= @tv[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@tv[:variables])}&query=#{URI.encode(@tv[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @tv[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@tv[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```
+
+### Github Activity
+
+<%= @ga[:docs] %>
+
+
+[An article explaining our approach to tracking github activity](https://medium.com/santiment/tracking-github-activity-of-crypto-projects-introducing-a-better-approach-9fb1af3f1c32){:target="_blank"}
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@ga[:variables])}&query=#{URI.encode(@ga[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @ga[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@ga[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```

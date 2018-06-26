@@ -38,21 +38,21 @@ defmodule SanbaseWeb.Router do
       log_level: :info
     )
 
-    if Mix.env() == :dev do
-      forward(
-        "/graphiql",
-        Absinthe.Plug.GraphiQL,
-        schema: SanbaseWeb.Graphql.Schema,
-        analyze_complexity: true,
-        max_complexity: 5000
-      )
-    end
+    forward(
+      "/graphiql",
+      Absinthe.Plug.GraphiQL,
+      schema: SanbaseWeb.Graphql.Schema,
+      analyze_complexity: true,
+      max_complexity: 5000,
+      interface: :simple
+    )
   end
 
   scope "/", SanbaseWeb do
     pipe_through(:browser)
 
     get("/consent", RootController, :consent)
+    get("/apiexamples", ApiExamplesController, :api_examples)
   end
 
   scope "/api", SanbaseWeb do

@@ -34,12 +34,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
 
   def history_twitter_data(
         _root,
-        %{ticker: ticker, from: from, to: to},
+        %{ticker: ticker, from: from, to: to, interval: interval},
         _resolution
       ) do
     with {:ok, twitter_link} <- get_twitter_link(ticker),
          {:ok, twitter_name} <- extract_twitter_name(twitter_link),
-         {:ok, from, to, interval} <- Utils.calibrate_interval(Store, twitter_name, from, to),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(Store, twitter_name, from, to, interval),
          twitter_historical_data <-
            Store.all_records_for_measurement!(twitter_name, from, to, interval) do
       result =

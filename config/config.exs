@@ -250,6 +250,9 @@ config :sanbase, SanbaseWeb.Graphql.PlugAttack,
   rate_limit_period: {:system, "RATE_LIMIT_PERIOD", "10000"},
   rate_limit_max_requests: {:system, "RATE_LIMIT_MAX_REQUESTS", "40"}
 
+config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiDelay,
+  required_san_stake_realtime_api: {:system, "REQUIRED_SAN_STAKE_REALTIME_API", "1000"}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

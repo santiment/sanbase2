@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.PriceStore do
 
   defp fetch_last_price_record(measurement) do
     with {:ok, [[_dt, price_usd, price_btc, _mcap, _volume]]} <-
-           Prices.Store.last_record(measurement) |> IO.inspect() do
+           Prices.Store.last_record(measurement) do
       {price_usd, price_btc}
     else
       _error -> {nil, nil}

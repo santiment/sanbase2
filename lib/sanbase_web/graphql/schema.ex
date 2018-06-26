@@ -341,7 +341,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
-    This indicator measures the difference in trend between price and volume, 
+    This indicator measures the difference in trend between price and volume,
     specifically when price goes up as volume goes down.
     """
     field :price_volume_diff, list_of(:price_volume_diff) do

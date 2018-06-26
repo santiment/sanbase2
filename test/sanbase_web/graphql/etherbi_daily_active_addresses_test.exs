@@ -119,94 +119,35 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "dailyActiveAddresses"))
 
-    active_addressess = json_response(result, 200)["data"]["dailyActiveAddresses"]
+    active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime1),
-             "activeAddresses" => 5000
-           } in active_addressess
+    assert Enum.find(active_addresses, fn %{"activeAddresses" => activeAddresses} ->
+             activeAddresses == 5000
+           end)
 
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime2),
-             "activeAddresses" => 1000
-           } in active_addressess
+    assert Enum.find(active_addresses, fn %{"activeAddresses" => activeAddresses} ->
+             activeAddresses == 1000
+           end)
 
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime3),
-             "activeAddresses" => 500
-           } in active_addressess
+    assert Enum.find(active_addresses, fn %{"activeAddresses" => activeAddresses} ->
+             activeAddresses == 500
+           end)
 
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime4),
-             "activeAddresses" => 15000
-           } in active_addressess
+    assert Enum.find(active_addresses, fn %{"activeAddresses" => activeAddresses} ->
+             activeAddresses == 15000
+           end)
 
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime5),
-             "activeAddresses" => 65000
-           } in active_addressess
+    assert Enum.find(active_addresses, fn %{"activeAddresses" => activeAddresses} ->
+             activeAddresses == 65000
+           end)
 
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime6),
-             "activeAddresses" => 50
-           } in active_addressess
+    assert Enum.find(active_addresses, fn %{"activeAddresses" => activeAddresses} ->
+             activeAddresses == 50
+           end)
 
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime7),
-             "activeAddresses" => 5
-           } in active_addressess
-
-    assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime8),
-             "activeAddresses" => 5000
-           } in active_addressess
-  end
-
-  test "fetch daily active addreses with aggregation - average for all the days in the interval",
-       context do
-    query = """
-    {
-      dailyActiveAddresses(
-        slug: "#{context.slug}",
-        from: "#{context.datetime1}",
-        to: "#{context.datetime8}",
-        interval: "2d") {
-          datetime
-          activeAddresses
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "dailyActiveAddresses"))
-
-    active_addressess = json_response(result, 200)["data"]["dailyActiveAddresses"]
-
-    assert %{
-             "datetime" => "2017-05-12T00:00:00Z",
-             "activeAddresses" => 5000
-           } in active_addressess
-
-    assert %{
-             "datetime" => "2017-05-14T00:00:00Z",
-             "activeAddresses" => 750
-           } in active_addressess
-
-    assert %{
-             "datetime" => "2017-05-16T00:00:00Z",
-             "activeAddresses" => 40000
-           } in active_addressess
-
-    assert %{
-             "datetime" => "2017-05-18T00:00:00Z",
-             "activeAddresses" => 28
-           } in active_addressess
-
-    assert %{
-             "datetime" => "2017-05-20T00:00:00Z",
-             "activeAddresses" => 5000
-           } in active_addressess
+    assert Enum.find(active_addresses, fn %{"activeAddresses" => activeAddresses} ->
+             activeAddresses == 5
+           end)
   end
 
   test "no data returned for daily active addresses", context do
@@ -230,9 +171,9 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "dailyActiveAddresses"))
 
-    active_addressess = json_response(result, 200)["data"]["dailyActiveAddresses"]
+    active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
-    assert active_addressess == []
+    assert active_addresses == []
   end
 
   test "fetch average daily active addreses", context do

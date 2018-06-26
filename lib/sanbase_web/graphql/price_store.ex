@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.PriceStore do
   alias Sanbase.Prices
-  alias SanbaseWeb.Graphql.Helpers.Cache
+  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
 
   def data() do
     Dataloader.KV.new(&query/2)
@@ -23,6 +23,8 @@ defmodule SanbaseWeb.Graphql.PriceStore do
   end
 
   defp fetch_price(pair, %{from: from, to: to, interval: interval} = args) do
+    {:ok, from, to, interval} = Utils.calibrate_interval(Prices.Store, pair, from, to)
+
     Cache.func(
       fn -> Prices.Store.fetch_prices_with_resolution(pair, from, to, interval) end,
       :fetch_prices_with_resolution,

@@ -2034,6 +2034,13 @@ CREATE UNIQUE INDEX tags_name_index ON public.tags USING btree (name);
 
 
 --
+-- Name: user_api_key_tokens_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_tokens USING btree (token);
+
+
+--
 -- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
 --
 

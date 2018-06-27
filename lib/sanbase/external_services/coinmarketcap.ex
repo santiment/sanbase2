@@ -147,10 +147,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   end
 
   defp process_notifications(%Project{} = project) do
-    CheckPrices.exec(project, "USD")
-    CheckPrices.exec(project, "BTC")
+    CheckPrices.exec(project, "usd")
+    CheckPrices.exec(project, "btc")
 
-    PriceVolumeDiff.exec(project, "USD")
+    PriceVolumeDiff.exec(project, "usd")
   end
 
   defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id}) do

@@ -247,7 +247,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
           "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
         )
 
-        GraphData.fetch_first_datetime("TOTAL_MARKET")
+        GraphData.fetch_first_datetime(measurement_name)
 
       datetime ->
         datetime

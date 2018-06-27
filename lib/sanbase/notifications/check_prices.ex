@@ -7,62 +7,62 @@ defmodule Sanbase.Notifications.CheckPrices do
   alias Sanbase.Notifications.CheckPrices.ComputeMovements
   alias Sanbase.Utils.Config
 
-  import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
+  import Sanbase.DateTimeUtils, only: [minutes_ago: 1]
 
   require Sanbase.Utils.Config
 
   require Mockery.Macro
   defp http_client(), do: Mockery.Macro.mockable(Tesla)
 
-  @cooldown_period_in_sec 60 * 60
-  @check_interval_in_sec 60 * 60
+  @cooldown_period_minutes 60
+  @check_interval_minutes 60
   @price_change_threshold 5
 
-  def exec(project, counter_currency) do
-    unless ComputeMovements.recent_notification?(
-             project,
-             seconds_ago(@cooldown_period_in_sec),
-             counter_currency
-           ) do
-      prices = fetch_price_points(project, counter_currency)
-
+  def exec(%Project{} = project, counter_currency) when counter_currency in ["BTC", "USD"] do
+    if not ComputeMovements.recent_notification?(
+         project,
+         minutes_ago(@cooldown_period_minutes),
+         counter_currency
+       ) do
       ComputeMovements.build_notification(
         project,
         counter_currency,
-        prices,
+        fetch_price_points(project),
         @price_change_threshold
       )
       |> send_notification(counter_currency)
     end
   end
 
-  defp fetch_price_points(project, counter_currency) do
-    ticker = price_ticker(project, counter_currency)
+  # Private functions
 
-    Store.fetch_price_points!(ticker, seconds_ago(@check_interval_in_sec), DateTime.utc_now())
-  end
-
-  def send_notification({notification, price_difference, project}, counter_currency) do
-    if slack_notifications_enabled?() do
+  defp send_notification({notification, price_difference, project}, counter_currency) do
+    if Config.get(:slack_notifications_enabled) do
       send_slack_notification(price_difference, project, counter_currency)
     end
 
     Repo.insert!(notification)
   end
 
-  def send_notification(_, _), do: false
+  defp send_notification(_, _), do: false
 
-  def send_slack_notification(price_difference, project, counter_currency) do
+  defp send_slack_notification(price_difference, project, counter_currency) do
     %{status: 200} =
       http_client().post(
-        webhook_url(),
+        Config.get(:webhook_url),
         notification_payload(price_difference, project, counter_currency),
         headers: %{"Content-Type" => "application/json"}
       )
   end
 
-  defp price_ticker(%Project{ticker: ticker}, counter_currency) do
-    "#{ticker}_#{String.upcase(counter_currency)}"
+  defp fetch_price_points(%Project{ticker: ticker, coinmarketcap_id: cmc_id} = project) do
+    ticker_cmc_id = ticker <> "_" <> cmc_id
+
+    Store.fetch_price_points!(
+      ticker_cmc_id,
+      minutes_ago(@check_interval_minutes),
+      DateTime.utc_now()
+    )
   end
 
   defp notification_payload(
@@ -90,12 +90,4 @@ defmodule Sanbase.Notifications.CheckPrices do
 
   defp notification_emoji(price_difference) when price_difference > 0, do: ":signal_up:"
   defp notification_emoji(price_difference) when price_difference < 0, do: ":signal_down:"
-
-  defp webhook_url() do
-    Config.get(:webhook_url)
-  end
-
-  defp slack_notifications_enabled?() do
-    Config.get(:slack_notifications_enabled)
-  end
 end

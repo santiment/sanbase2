@@ -79,6 +79,12 @@ defmodule Sanbase.Influxdb.Store do
         |> __MODULE__.execute(method: :post)
       end
 
+      def last_record(measurement) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1/
+        |> __MODULE__.query()
+        |> parse_time_series()
+      end
+
       def last_datetime(measurement) do
         ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1/
         |> __MODULE__.query()

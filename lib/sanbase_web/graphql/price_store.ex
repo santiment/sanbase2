@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.PriceStore do
     ids
     |> Enum.uniq()
     |> Enum.map(fn id ->
-      {id, fetch_price(pair, id)}
+      {id, fetch_price(measurement, id)}
     end)
     |> Map.new()
   end
@@ -31,9 +31,11 @@ defmodule SanbaseWeb.Graphql.PriceStore do
       Utils.calibrate_interval(Prices.Store, measurement, from, to, interval, 60)
 
     Cache.func(
-      fn -> Prices.Store.fetch_prices_with_resolution(pair, from, to, interval) end,
+      fn ->
+        Prices.Store.fetch_prices_with_resolution(measurement, from, to, interval)
+      end,
       :fetch_prices_with_resolution,
-      Map.merge(%{pair: pair}, args)
+      Map.merge(%{measurement: measurement}, args)
     ).()
   end
 
@@ -42,7 +44,7 @@ defmodule SanbaseWeb.Graphql.PriceStore do
            Prices.Store.last_record(measurement) do
       {price_usd, price_btc}
     else
-      _error -> nil
+      _error -> {nil, nil}
     end
   end
 end

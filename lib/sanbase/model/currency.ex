@@ -5,7 +5,10 @@ defmodule Sanbase.Model.Currency do
   import Ecto.Query, warn: false
   alias Sanbase.Repo
 
-  alias Sanbase.Model.Currency
+  alias Sanbase.Model.{
+    Currency,
+    Project
+  }
 
   schema "currencies" do
     field(:code, :string)
@@ -40,6 +43,19 @@ defmodule Sanbase.Model.Currency do
       end)
 
     currency
+  end
+
+  @doc ~s"""
+    Return a project with a matching ticker. `Repo.one` fails if there are more
+    than one project with the same ticker.
+  """
+  @spec to_project(%Currency{}) :: %Project{} | no_return()
+  def to_project(%Currency{code: code}) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.ticker == ^code and not is_nil(p.coinmarketcap_id)
+    )
+    |> Repo.one()
   end
 end
 

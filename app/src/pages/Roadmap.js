@@ -61,7 +61,7 @@ const Roadmap = () => (
                   Bring first data-feeds
                 </li>
                 <li>
-                  First set of signals (delivered to the slack channel)
+                  First set of signals (delivered to the slack channel, later moved to discord)
                 </li>
                 <li>
                   Initial SAN token integration
@@ -155,10 +155,10 @@ const Roadmap = () => (
                   <div className='status-row embedded' id='crypto-projects-item'>
                     <span className='status-item'>Bitcoin</span>
                     <span className='status'>
-                      <div className='status-percent'>90%</div>
+                      <div className='status-percent'>70%</div>
                       <div className='status-border'>
                         <div
-                          style={{width: '90%'}}
+                          style={{width: '70%'}}
                           className='status-progress' />
                       </div>
                     </span>
@@ -166,7 +166,7 @@ const Roadmap = () => (
                 </li>
                 <li>
                   <div className='status-row embedded' id='crypto-projects-item'>
-                    <span className='status-item'>Different interfaces to work with data (closed beta)</span>
+                    <span className='status-item'>Different interfaces to work with data (beta)</span>
                     <span className='status'>
                       <div className='status-percent'>80%</div>
                       <div className='status-border'>

@@ -77,7 +77,7 @@ defmodule Sanbase.Prices.Store do
     %Measurement{
       timestamp: 0,
       fields: %{last_updated: last_updated_datetime |> DateTime.to_unix(:nanoseconds)},
-      tags: [ticker: ticker_cmc_id],
+      tags: [ticker_cmc_id: ticker_cmc_id],
       name: @last_history_price_cmc_measurement
     }
     |> Store.import()
@@ -194,6 +194,6 @@ defmodule Sanbase.Prices.Store do
 
   defp last_history_datetime_cmc_query(ticker) do
     ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
-    WHERE ticker = '#{ticker}'/
+    WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
   end
 end

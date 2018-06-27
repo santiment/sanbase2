@@ -69,22 +69,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     loader
     |> eth_balance_loader(project)
     |> btc_balance_loader(project)
-    |> Dataloader.load(PriceStore, "ETH_USD", :last)
-    |> Dataloader.load(PriceStore, "BTC_USD", :last)
+    |> Dataloader.load(PriceStore, "ETH_ethereum", :last)
+    |> Dataloader.load(PriceStore, "BTC_bitcoin", :last)
   end
 
   def usd_balance_from_loader(loader, project) do
     with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
          {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
-         eth_price when not is_nil(eth_price) <-
-           Dataloader.get(loader, PriceStore, "ETH_USD", :last),
-         btc_price when not is_nil(btc_price) <-
-           Dataloader.get(loader, PriceStore, "BTC_USD", :last) do
+         {eth_price_usd, _eth_price_btc} when not is_nil(eth_price_usd) <-
+           Dataloader.get(loader, PriceStore, "ETH_ethereum", :last),
+         {btc_price_usd, _btc_price_btc} when not is_nil(btc_price_usd) <-
+           Dataloader.get(loader, PriceStore, "BTC_bitcoin", :last) do
       {:ok,
-       Decimal.add(
-         Decimal.mult(eth_balance, eth_price),
-         Decimal.mult(btc_balance, btc_price)
-       )}
+       (
+         Decimal.to_float(eth_balance) * eth_price_usd
+         +Decimal.to_float(btc_balance) * btc_price_usd
+       )
+       |> Decimal.new()}
     else
       error ->
         Logger.warn("Cannot calculate USD balance. Reason: #{inspect(error)}")

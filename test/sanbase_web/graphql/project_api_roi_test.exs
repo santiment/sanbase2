@@ -15,10 +15,11 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   defp setup do
-    Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
-    |> Keyword.get(:database)
-    |> Instream.Admin.Database.create()
-    |> Store.execute()
+    Store.create_db()
+
+    %Project{}
+    |> Project.changeset(%{name: "Ethereum", ticker: "ETH", coinmarketcap_id: "ethereum"})
+    |> Repo.insert!()
 
     date1 = "2017-08-19"
     date1_unix = 1_503_100_800_000_000_000
@@ -26,34 +27,36 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
     date2 = "2017-10-17"
     date2_unix = 1_508_198_400_000_000_000
 
-    now = Ecto.DateTime.utc()
-
     Store.import([
       %Measurement{
         timestamp: date1_unix,
-        fields: %{price: 5, volume: 200, marketcap: 500},
-        name: "ETH_USD"
+        fields: %{price_usd: 5, volume_usd: 200, marketcap_usd: 500},
+        name: "ETH_ethereum"
       },
       %Measurement{
         timestamp: date2_unix,
-        fields: %{price: 5, volume: 200, marketcap: 500},
-        name: "ETH_USD"
+        fields: %{price_usd: 5, volume_usd: 200, marketcap_usd: 500},
+        name: "ETH_ethereum"
       }
     ])
 
+    cmc_id = "TEST_ID"
+
+    project =
+      %Project{}
+      |> Project.changeset(%{name: "Project", ticker: "TEST", coinmarketcap_id: cmc_id})
+      |> Repo.insert!()
+
+    now = Ecto.DateTime.utc()
+
     %LatestCoinmarketcapData{}
     |> LatestCoinmarketcapData.changeset(%{
-      coinmarketcap_id: "TEST_ID",
+      coinmarketcap_id: cmc_id,
       price_usd: 50,
       available_supply: 500,
       update_time: now
     })
     |> Repo.insert!()
-
-    project =
-      %Project{}
-      |> Project.changeset(%{name: "Project", ticker: "TEST", coinmarketcap_id: "TEST_ID"})
-      |> Repo.insert!()
 
     %Ico{}
     |> Ico.changeset(%{project_id: project.id, token_usd_ico_price: 10, tokens_sold_at_ico: 100})

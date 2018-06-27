@@ -38,7 +38,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     end
   end
 
-  def handle_info(:sync, %{update_interval: update_interval} = state) do
+  def work() do
     # Fetch current coinmarketcap data for many tickers
     {:ok, tickers} = Ticker.fetch_data()
 
@@ -55,13 +55,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     tickers
     |> Enum.map(&Ticker.convert_for_importing/1)
     |> Store.import()
+  end
 
+  # Helper functions
+
+  def handle_info(:sync, %{update_interval: update_interval} = state) do
+    work()
     Process.send_after(self(), :sync, update_interval)
 
     {:noreply, state}
   end
-
-  # Helper functions
 
   defp get_or_create_latest_coinmarketcap_data(coinmarketcap_id) do
     case Repo.get_by(LatestCoinmarketcapData, coinmarketcap_id: coinmarketcap_id) do

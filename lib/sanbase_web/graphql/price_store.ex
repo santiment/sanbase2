@@ -6,11 +6,11 @@ defmodule SanbaseWeb.Graphql.PriceStore do
     Dataloader.KV.new(&query/2)
   end
 
-  def query(pair, ids) when is_list(ids) do
+  def query(measurement, ids) when is_list(ids) do
     ids
     |> Enum.uniq()
     |> Enum.map(fn id ->
-      {id, fetch_price(pair, id)}
+      {id, fetch_price(measurement, id)}
     end)
     |> Map.new()
   end
@@ -18,23 +18,28 @@ defmodule SanbaseWeb.Graphql.PriceStore do
   # Helper functions
 
   # TODO: not covered in tests
-  defp fetch_price(pair, :last) do
-    Cache.func(fn -> fetch_last_price_record(pair) end, :fetch_price_last_record, %{pair: pair}).()
+  defp fetch_price(measurement, :last) do
+    Cache.func(fn -> fetch_last_price_record(measurement) end, :fetch_price_last_record, %{
+      measurement: measurement
+    }).()
   end
 
-  defp fetch_price(pair, %{from: from, to: to, interval: interval} = args) do
+  defp fetch_price(measurement, %{from: from, to: to, interval: interval} = args) do
     Cache.func(
-      fn -> Prices.Store.fetch_prices_with_resolution(pair, from, to, interval) end,
+      fn ->
+        Prices.Store.fetch_prices_with_resolution(measurement, from, to, interval)
+      end,
       :fetch_prices_with_resolution,
-      Map.merge(%{pair: pair}, args)
+      Map.merge(%{measurement: measurement}, args)
     ).()
   end
 
-  defp fetch_last_price_record(pair) do
-    with {:ok, {_dt, price, _mcap, _volume}} <- Prices.Store.last_record(pair) do
-      Decimal.new(price)
+  defp fetch_last_price_record(measurement) do
+    with {:ok, [[_dt, price_usd, price_btc, _mcap, _volume]]} <-
+           Prices.Store.last_record(measurement) do
+      {price_usd, price_btc}
     else
-      _error -> nil
+      _error -> {nil, nil}
     end
   end
 end

@@ -112,7 +112,7 @@ const PrivacyPolicyPage = ({isLoggedIn}) => (
         <li>
           the right to lodge a complaint with the supervisory authority.
           As a company established under the laws of Switzerland, the competent supervisory authority regarding
-          Our compliance with the data protection laws is the Swiss (!!!We are waiting Tzanko layers [please, fill in the website]).
+          Our compliance with the data protection laws is the Swiss.
         </li>
       </ul>
 

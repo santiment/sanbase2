@@ -1,5 +1,5 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
-  def calibrate_interval(module, measurement, from, to, nil, data_points_count \\ 1000) do
+  def calibrate_interval(module, measurement, from, to, "", data_points_count \\ 1000) do
     {:ok, first_datetime} = module.first_datetime(measurement)
 
     from =

@@ -128,9 +128,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch price history for a given ticker and time interval."
     field :history_price, list_of(:price_point) do
-      # TODO: Make non null after ticker is no longer used
-      arg(:slug, :string)
-      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1h")

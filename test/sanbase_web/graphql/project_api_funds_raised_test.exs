@@ -15,29 +15,15 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Store.create_db()
+    Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
+    |> Keyword.get(:database)
+    |> Instream.Admin.Database.create()
+    |> Store.execute()
 
-    # Add the Projects to the Postgres
-    %Project{}
-    |> Project.changeset(%{name: "Test project", coinmarketcap_id: "test", ticker: "TEST"})
-    |> Repo.insert!()
-
-    %Project{}
-    |> Project.changeset(%{name: "Bitcoin", coinmarketcap_id: "bitcoin", ticker: "BTC"})
-    |> Repo.insert!()
-
-    %Project{}
-    |> Project.changeset(%{name: "Ethereum", coinmarketcap_id: "ethereum", ticker: "ETH"})
-    |> Repo.insert!()
-
-    # Initialize the Influxdb state
-    test_ticker_cmc_id = "TEST_test"
-    btc_ticker_cmc_id = "BTC_bitcoin"
-    eth_ticker_cmc_id = "ETH_ethereum"
-
-    Store.drop_measurement(test_ticker_cmc_id)
-    Store.drop_measurement(btc_ticker_cmc_id)
-    Store.drop_measurement(eth_ticker_cmc_id)
+    Store.drop_measurement("TEST_USD")
+    Store.drop_measurement("TEST_BTC")
+    Store.drop_measurement("BTC_USD")
+    Store.drop_measurement("ETH_USD")
 
     date1 = "2017-08-19"
     date1_unix = 1_503_100_800_000_000_000
@@ -48,27 +34,26 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     Store.import([
       %Measurement{
         timestamp: date1_unix,
-        fields: %{price_usd: 2, volume_usd: 200, marketcap_usd: 500},
-        name: btc_ticker_cmc_id
+        fields: %{price: 2, volume: 200, marketcap: 500},
+        name: "BTC_USD"
       },
       %Measurement{
         timestamp: date1_unix,
-        fields: %{price_usd: 4, volume_usd: 200, marketcap_usd: 500},
-        name: test_ticker_cmc_id
+        fields: %{price: 4, volume: 200, marketcap: 500},
+        name: "TEST_USD"
       },
       %Measurement{
         timestamp: date2_unix,
-        fields: %{price_usd: 5, volume_usd: 200, marketcap_usd: 500},
-        name: btc_ticker_cmc_id
+        fields: %{price: 5, volume: 200, marketcap: 500},
+        name: "BTC_USD"
       },
       %Measurement{
         timestamp: date2_unix,
-        fields: %{price_usd: 10, volume_usd: 200, marketcap_usd: 500},
-        name: eth_ticker_cmc_id
+        fields: %{price: 10, volume: 200, marketcap: 500},
+        name: "ETH_USD"
       }
     ])
 
-    # Add the 3 currencies
     currency_eth =
       %Currency{}
       |> Currency.changeset(%{code: "ETH"})
@@ -84,10 +69,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
       |> Currency.changeset(%{code: "TEST"})
       |> Repo.insert!()
 
-    # Add a random project and its ICOs
     project =
       %Project{}
-      |> Project.changeset(%{name: "Project", coinmarketcap_id: "projjject", ticker: "PROJ"})
+      |> Project.changeset(%{name: "Project"})
       |> Repo.insert!()
 
     ico1 =
@@ -147,9 +131,9 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     assert json_response(result, 200)["data"]["project"] ==
              %{
                "name" => "Project",
-               "fundsRaisedUsdIcoEndPrice" => 1200.0,
-               "fundsRaisedEthIcoEndPrice" => 250.0,
-               "fundsRaisedBtcIcoEndPrice" => 300.0
+               "fundsRaisedUsdIcoEndPrice" => "1200",
+               "fundsRaisedEthIcoEndPrice" => "250.0",
+               "fundsRaisedBtcIcoEndPrice" => "300"
              }
   end
 
@@ -184,21 +168,21 @@ defmodule SanbaseWeb.Graphql.ProjectApiFundsRaisedTest do
     assert json_response(result, 200)["data"]["project"] ==
              %{
                "name" => "Project",
-               "fundsRaisedUsdIcoEndPrice" => 1200.0,
-               "fundsRaisedEthIcoEndPrice" => 250.0,
-               "fundsRaisedBtcIcoEndPrice" => 300.0,
+               "fundsRaisedUsdIcoEndPrice" => "1200",
+               "fundsRaisedEthIcoEndPrice" => "250.0",
+               "fundsRaisedBtcIcoEndPrice" => "300",
                "icos" => [
                  %{
                    "endDate" => "2017-08-19",
-                   "fundsRaisedUsdIcoEndPrice" => 200.0,
-                   "fundsRaisedEthIcoEndPrice" => 150.0,
-                   "fundsRaisedBtcIcoEndPrice" => 100.0
+                   "fundsRaisedUsdIcoEndPrice" => "200",
+                   "fundsRaisedEthIcoEndPrice" => "150",
+                   "fundsRaisedBtcIcoEndPrice" => "100"
                  },
                  %{
                    "endDate" => "2017-10-17",
-                   "fundsRaisedUsdIcoEndPrice" => 1000.0,
-                   "fundsRaisedEthIcoEndPrice" => 100.0,
-                   "fundsRaisedBtcIcoEndPrice" => 200.0
+                   "fundsRaisedUsdIcoEndPrice" => "1000",
+                   "fundsRaisedEthIcoEndPrice" => "100.0",
+                   "fundsRaisedBtcIcoEndPrice" => "200"
                  }
                ]
              }

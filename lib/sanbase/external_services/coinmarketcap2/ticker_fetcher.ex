@@ -62,9 +62,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     tickers
     |> Enum.map(&Ticker.convert_for_importing/1)
     |> Store.import()
-  end
-
-  # Helper functions
 
     Logger.info(
       "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
@@ -79,6 +76,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
 
     {:noreply, state}
   end
+
+  # Helper functions
 
   defp get_or_create_latest_coinmarketcap_data(coinmarketcap_id) do
     case Repo.get_by(LatestCoinmarketcapData, coinmarketcap_id: coinmarketcap_id) do

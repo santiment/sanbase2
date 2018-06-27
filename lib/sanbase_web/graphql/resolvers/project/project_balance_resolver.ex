@@ -66,8 +66,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     loader
     |> eth_balance_loader(project)
     |> btc_balance_loader(project)
-    |> Dataloader.load(PriceStore, "ETH_ethereum", :last)
-    |> Dataloader.load(PriceStore, "BTC_bitcoin", :last)
+    |> Dataloader.load(PriceStore, "ETH_USD", :last)
+    |> Dataloader.load(PriceStore, "BTC_USD", :last)
   end
 
   def usd_balance_from_loader(loader, project) do

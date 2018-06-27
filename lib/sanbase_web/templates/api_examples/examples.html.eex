@@ -50,7 +50,7 @@ curl \
 
 ```
 
-### Burn rate
+### Token aging (burn rate) 
 
 <%= @burn_rate[:docs] %>
 

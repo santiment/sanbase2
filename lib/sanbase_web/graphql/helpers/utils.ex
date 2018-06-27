@@ -19,6 +19,24 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     {:ok, from, to, interval}
   end
 
+  def calibrate_interval_with_ma_interval(
+        module,
+        measurement,
+        from,
+        to,
+        interval,
+        _ma_interval,
+        data_points_count \\ 1000
+      ) do
+    {:ok, from, to, interval} =
+      calibrate_interval(module, measurement, from, to, interval, data_points_count)
+
+    {int_interval, _} = Integer.parse(interval)
+    ma_interval = div(7 * 24 * 60 * 60, int_interval)
+
+    {:ok, from, to, interval, ma_interval}
+  end
+
   def error_details(changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)

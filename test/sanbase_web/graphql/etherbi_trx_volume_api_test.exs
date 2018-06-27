@@ -101,6 +101,30 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     ]
   end
 
+  test "fetch transaction volume when no interval is provided", context do
+    query = """
+    {
+      transactionVolume(
+        slug: "#{context.slug}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime8}") {
+          datetime
+          transactionVolume
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "transactionVolume"))
+
+    trx_volumes = json_response(result, 200)["data"]["transactionVolume"]
+
+    assert Enum.find(trx_volumes, fn %{"transactionVolume" => transactionVolume} ->
+             transactionVolume == 1000
+           end)
+  end
+
   test "fetch transaction volume no aggregation", context do
     query = """
     {

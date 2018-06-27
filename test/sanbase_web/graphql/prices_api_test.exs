@@ -99,6 +99,33 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert json_response(result, 200)["data"]["historyPrice"] == []
   end
 
+  test "data aggregation for automatically calculated intervals", context do
+    query = """
+    {
+      historyPrice(ticker: "TEST", from: "#{context.datetime1}", to: "#{context.datetime3}") {
+        datetime
+        priceUsd
+        priceBtc
+        marketcap
+        volume
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+
+    history_price = json_response(result, 200)["data"]["historyPrice"]
+    assert Enum.count(history_price) == 2
+
+    [history_price | _] = history_price
+    assert history_price["priceUsd"] == "20"
+    assert history_price["priceBtc"] == "1000"
+    assert history_price["volume"] == "200"
+    assert history_price["marketcap"] == "500"
+  end
+
   test "data aggregation for larger intervals", context do
     query = """
     {

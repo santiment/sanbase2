@@ -79,6 +79,28 @@ defmodule Sanbase.Github.GithubApiTest do
     ]
   end
 
+  test "fetching github time series data when an interval is not provided", context do
+    query = """
+    {
+      githubActivity(
+        ticker: "SAN",
+        from: "#{context.datetime1}"
+        to: "#{context.datetime6}") {
+          activity
+        }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "githubActivity"))
+
+    activities = json_response(result, 200)["data"]["githubActivity"]
+
+    assert %{"activity" => 5} in activities
+    assert %{"activity" => 10} in activities
+  end
+
   test "fetching github time series data", context do
     query = """
     {

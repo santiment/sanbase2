@@ -1,5 +1,6 @@
 defmodule Sanbase.Auth.EthAccount do
   use Ecto.Schema
+  import Ecto.Changeset
 
   alias Sanbase.Auth.{User, EthAccount}
 
@@ -11,6 +12,14 @@ defmodule Sanbase.Auth.EthAccount do
     belongs_to(:user, User)
 
     timestamps()
+  end
+
+  def changeset(%EthAccount{} = eth_account, attrs \\ %{}) do
+    eth_account
+    |> cast(attrs, [
+      :address,
+      :user_id
+    ])
   end
 
   def san_balance(%EthAccount{address: address}) do

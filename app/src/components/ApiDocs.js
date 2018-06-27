@@ -1,13 +1,13 @@
 import React from 'react'
+import './ApiDocs.css'
 
 export const ApiDocs = (props) => {
   return (
-    <div>
+    <div className='apidocs-container'>
       <iframe
         src='/apiexamples'
         title='API documentation'
-        width='100%'
-        height='1000'
+        className='apidocs-iframe'
       />
     </div>
   )

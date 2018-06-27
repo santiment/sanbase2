@@ -65,21 +65,29 @@ defmodule Sanbase.Prices.Store do
     %Measurement{
       timestamp: 0,
       fields: %{last_updated: last_updated_datetime |> DateTime.to_unix(:nanoseconds)},
-      tags: [ticker: ticker_cmc_id],
+      tags: [ticker_cmc_id: ticker_cmc_id],
       name: @last_history_price_cmc_measurement
     }
     |> Store.import()
   end
 
-  def last_history_datetime_cmc(ticker) do
-    last_history_datetime_cmc_query(ticker)
+  def last_history_datetime_cmc(ticker_cmc_id) do
+    last_history_datetime_cmc_query(ticker_cmc_id)
     |> Store.query()
     |> parse_time_series()
     |> case do
-      {:ok, [[datetime | _rest]]} -> {:ok, datetime}
-      {:ok, nil} -> {:ok, nil}
-      {:ok, []} -> {:ok, nil}
-      {:error, error} -> {:error, error}
+      {:ok, [[_, iso8601_datetime | _rest]]} ->
+        {:ok, datetime} = DateTime.from_unix(iso8601_datetime, :nanoseconds)
+        {:ok, datetime}
+
+      {:ok, nil} ->
+        {:ok, nil}
+
+      {:ok, []} ->
+        {:ok, nil}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -126,8 +134,8 @@ defmodule Sanbase.Prices.Store do
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp last_history_datetime_cmc_query(ticker) do
+  defp last_history_datetime_cmc_query(ticker_cmc_id) do
     ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
-    WHERE ticker = '#{ticker}'/
+    WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
   end
 end

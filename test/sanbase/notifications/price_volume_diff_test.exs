@@ -11,13 +11,35 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
   require Sanbase.Utils.Config
 
   setup do
-    Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
-    |> Keyword.get(:database)
-    |> Instream.Admin.Database.create()
-    |> Store.execute()
+    Store.create_db()
 
-    Store.drop_measurement("TEST_USD")
-    Store.drop_measurement("TESTNOVOLUME_USD")
+    # TODO: Make projects with cmc_id and import correctly!!!
+
+    ticker1 = "TEST"
+    slug1 = "test"
+
+    project1 =
+      %Project{}
+      |> Project.changeset(%{name: "Test project", coinmarketcap_id: slug1, ticker: ticker1})
+      |> Sanbase.Repo.insert!()
+
+    ticker2 = "TESTNOVOLUME"
+    slug2 = "novol"
+
+    project2 =
+      %Project{}
+      |> Project.changeset(%{
+        name: "Test no volume project",
+        coinmarketcap_id: slug2,
+        ticker: ticker2
+      })
+      |> Sanbase.Repo.insert!()
+
+    ticker_cmc_id1 = ticker1 <> "_" <> slug1
+    ticker_cmc_id2 = ticker2 <> "_" <> slug2
+
+    Store.drop_measurement(ticker_cmc_id1)
+    Store.drop_measurement(ticker_cmc_id2)
 
     datetime =
       DateTime.utc_now()
@@ -26,13 +48,18 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
     Store.import([
       %Measurement{
         timestamp: datetime,
-        fields: %{volume: notification_volume_threshold()},
-        name: "TEST_USD"
+        fields: %{volume_usd: notification_volume_threshold()},
+        name: ticker_cmc_id1
       }
     ])
+
+    [
+      project1: project1,
+      project2: project2
+    ]
   end
 
-  test "price & volume not diverging", _context do
+  test "price & volume not diverging", context do
     mock(
       HTTPoison,
       :get,
@@ -50,12 +77,12 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       {:ok, %HTTPoison.Response{status_code: 204}}
     )
 
-    PriceVolumeDiff.exec(%Project{name: "TestProj", ticker: "TEST"}, "USD")
+    PriceVolumeDiff.exec(context.project1, "USD")
 
     refute_called(HTTPoison, :post)
   end
 
-  test "price & volume diverging", _context do
+  test "price & volume diverging", context do
     mock(
       HTTPoison,
       :get,
@@ -73,12 +100,12 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       {:ok, %HTTPoison.Response{status_code: 204}}
     )
 
-    PriceVolumeDiff.exec(%Project{name: "TestProj", ticker: "TEST"}, "USD")
+    PriceVolumeDiff.exec(context.project1, "USD")
 
     assert_called(HTTPoison, post: 3)
   end
 
-  test "volume threshold not met", _context do
+  test "volume threshold not met", context do
     mock(
       HTTPoison,
       :get,
@@ -96,7 +123,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       {:ok, %HTTPoison.Response{status_code: 204}}
     )
 
-    PriceVolumeDiff.exec(%Project{name: "TestProj", ticker: "TESTNOVOLUME"}, "USD")
+    PriceVolumeDiff.exec(context.project2, "USD")
 
     refute_called(HTTPoison, :post)
   end

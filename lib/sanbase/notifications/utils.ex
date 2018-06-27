@@ -1,4 +1,8 @@
 defmodule Sanbase.Notifications.Utils do
+  @moduledoc ~s"""
+    A module with helper functions for working with Notifications
+  """
+
   alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.Notifications.Notification
@@ -6,6 +10,10 @@ defmodule Sanbase.Notifications.Utils do
 
   import Ecto.Query
 
+  @doc ~s"""
+    Returns the count recently sent notifications from a given type sent for a
+    given project.
+  """
   def recent_notification?(project, cooldown_datetime, notification_type_name) do
     type = Repo.get_by(Type, name: notification_type_name)
 
@@ -22,6 +30,9 @@ defmodule Sanbase.Notifications.Utils do
     |> Repo.insert!()
   end
 
+  # Private functions
+
+  # Returns a changeset
   defp get_or_create_notification_type(notification_type_name) do
     Repo.get_by(Type, name: notification_type_name)
     |> case do
@@ -35,7 +46,9 @@ defmodule Sanbase.Notifications.Utils do
     end
   end
 
-  defp recent_notifications_count(_project, nil, _cooldown_datetime), do: 0
+  defp recent_notifications_count(project, type, _cooldown_datetime)
+       when is_nil(project) or is_nil(type),
+       do: 0
 
   defp recent_notifications_count(%Project{id: project_id}, %Type{id: type_id}, cooldown_datetime) do
     Notification

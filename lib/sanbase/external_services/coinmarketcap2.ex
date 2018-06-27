@@ -217,9 +217,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   defp process_notifications(%Project{} = project) do
-    Sanbase.Notifications.CheckPrices.exec(project, "usd")
-    Sanbase.Notifications.CheckPrices.exec(project, "btc")
-    Sanbase.Notifications.PriceVolumeDiff.exec(project, "usd")
+    Sanbase.Notifications.CheckPrices.exec(project, "USD")
+    Sanbase.Notifications.CheckPrices.exec(project, "BTC")
+    Sanbase.Notifications.PriceVolumeDiff.exec(project, "USD")
   end
 
   defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
@@ -247,7 +247,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
           "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
         )
 
-        GraphData.fetch_first_datetime("TOTAL_MARKET")
+        GraphData.fetch_first_datetime(measurement_name)
 
       datetime ->
         datetime

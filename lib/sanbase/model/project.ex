@@ -110,17 +110,18 @@ defmodule Sanbase.Model.Project do
   """
   def roi_usd(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project)
       when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
-    with project <- Repo.preload(project, [:latest_coinmarketcap_data, :icos]),
-         true <-
-           !is_nil(project.latest_coinmarketcap_data) and
-             !is_nil(project.latest_coinmarketcap_data.price_usd) and
-             !is_nil(project.latest_coinmarketcap_data.available_supply) do
+    with %Project{} = project <- Repo.preload(project, [:latest_coinmarketcap_data, :icos]),
+         false <- is_nil(project.latest_coinmarketcap_data),
+         false <- is_nil(project.latest_coinmarketcap_data.price_usd),
+         false <- is_nil(project.latest_coinmarketcap_data.available_supply) do
       zero = Decimal.new(0)
 
       tokens_and_initial_prices =
         project
         |> fill_missing_tokens_sold_at_icos()
-        |> Enum.map(fn ico -> {ico.tokens_sold_at_ico, token_usd_ico_price(project, ico)} end)
+        |> Enum.map(fn ico ->
+          {ico.tokens_sold_at_ico, calc_token_usd_ico_price_by_project(project, ico)}
+        end)
         |> Enum.reject(fn {tokens_sold_at_ico, token_usd_ico_price} ->
           is_nil(tokens_sold_at_ico) or is_nil(token_usd_ico_price)
         end)
@@ -191,7 +192,7 @@ defmodule Sanbase.Model.Project do
   # TODO:
   # Currently uses latest_coinmarketcap_data.available_supply, which also includes coins not issued at any ICO
   # Maybe it's better to keep historical data of available_supply so that we can calculate it better
-  defp fill_missing_tokens_sold_at_icos(project) do
+  defp fill_missing_tokens_sold_at_icos(%Project{} = project) do
     with tokens_sold_at_icos <- Enum.map(project.icos, & &1.tokens_sold_at_ico),
          unknown_count <- Enum.filter(tokens_sold_at_icos, &is_nil/1) |> length(),
          true <- unknown_count > 0 do
@@ -227,15 +228,15 @@ defmodule Sanbase.Model.Project do
     end
   end
 
-  defp token_usd_ico_price(project, ico) do
+  defp calc_token_usd_ico_price_by_project(%Project{} = project, %Ico{} = ico) do
     ico.token_usd_ico_price ||
-      token_usd_ico_price(
+      calc_token_usd_ico_price(
         ico.token_eth_ico_price,
         "ETH",
         ico.start_date,
         project.latest_coinmarketcap_data.update_time
       ) ||
-      token_usd_ico_price(
+      calc_token_usd_ico_price(
         ico.token_btc_ico_price,
         "BTC",
         ico.start_date,
@@ -243,14 +244,15 @@ defmodule Sanbase.Model.Project do
       )
   end
 
-  defp token_usd_ico_price(nil, _currency_from, _ico_start_date, _current_datetime), do: nil
-  defp token_usd_ico_price(_price_from, _currency_from, nil, _current_datetime), do: nil
+  defp calc_token_usd_ico_price(nil, _currency_from, _ico_start_date, _current_datetime), do: nil
+  defp calc_token_usd_ico_price(_price_from, _currency_from, nil, _current_datetime), do: nil
 
-  defp token_usd_ico_price(price_from, currency_from, ico_start_date, current_datetime) do
+  defp calc_token_usd_ico_price(price_from, currency_from, ico_start_date, current_datetime) do
     with :gt <- Ecto.DateTime.compare(current_datetime, Ecto.DateTime.from_date(ico_start_date)),
          timestamp <- Sanbase.DateTimeUtils.ecto_date_to_datetime(ico_start_date),
-         price <- Sanbase.Prices.Utils.fetch_last_price_before(currency_from, "USD", timestamp) do
-      Decimal.mult(price_from, price)
+         price_usd when not is_nil(price_usd) <-
+           Sanbase.Prices.Utils.fetch_last_price_before(currency_from, "USD", timestamp) do
+      Decimal.mult(price_from, Decimal.new(price_usd))
     else
       _ -> nil
     end
@@ -274,7 +276,7 @@ defmodule Sanbase.Model.Project do
     |> Enum.reject(&is_nil/1)
     |> case do
       [] -> nil
-      amounts -> Enum.reduce(amounts, Decimal.new(0), &Decimal.add/2)
+      amounts -> Enum.reduce(amounts, 0, &Kernel.+/2)
     end
   end
 
@@ -318,5 +320,16 @@ defmodule Sanbase.Model.Project do
       {ticker, eth_addresses}
     end)
     |> Enum.into(%{})
+  end
+
+  def ticker_by_slug(nil), do: nil
+
+  def ticker_by_slug(slug) when is_binary(slug) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      select: p.ticker
+    )
+    |> Sanbase.Repo.one()
   end
 end

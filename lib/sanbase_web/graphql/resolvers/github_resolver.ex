@@ -31,7 +31,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         _resolution
       ) do
     {:ok, from, to, interval, ma_interval} =
-      Utils.calibrate_interval_with_ma_interval(Store, ticker, from, to, interval, ma_interval)
+      Utils.calibrate_interval_with_ma_interval(
+        Store,
+        ticker,
+        from,
+        to,
+        interval,
+        ma_interval,
+        300
+      )
 
     result =
       Store.fetch_moving_average_for_hours!(ticker, from, to, interval, ma_interval)

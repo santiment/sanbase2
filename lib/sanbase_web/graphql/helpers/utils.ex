@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
       calibrate_interval(module, measurement, from, to, interval, data_points_count)
 
     {int_interval, _} = Integer.parse(interval)
-    ma_interval = div(7 * 24 * 60 * 60, int_interval)
+    ma_interval = max(div(7 * 24 * 60 * 60, int_interval), 2)
 
     {:ok, from, to, interval, ma_interval}
   end

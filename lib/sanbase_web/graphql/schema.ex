@@ -113,7 +113,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string)
+      arg(:interval, :string, default_value: "")
 
       complexity(&PriceComplexity.history_price/3)
       cache_resolve(&PriceResolver.history_price/3)
@@ -139,7 +139,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string)
+      arg(:interval, :string, default_value: "")
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval, :integer, default_value: 10)
 
@@ -158,7 +158,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string)
+      arg(:interval, :string, default_value: "")
 
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
@@ -179,7 +179,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string)
+      arg(:interval, :string, default_value: "")
 
       middleware(ApiDelay)
 
@@ -200,7 +200,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string)
+      arg(:interval, :string, default_value: "")
 
       middleware(ApiDelay)
 
@@ -224,7 +224,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string)
+      arg(:interval, :string, default_value: "")
 
       middleware(ApiDelay)
 
@@ -299,7 +299,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string)
+      arg(:interval, :string, default_value: "")
 
       middleware(ApiDelay)
 

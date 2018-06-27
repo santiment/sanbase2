@@ -101,7 +101,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     ]
   end
 
-  test "fetch daily active addresses no interval set", context do
+  test "fetch daily active addresses no interval provided", context do
     query = """
     {
       dailyActiveAddresses(

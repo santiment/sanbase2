@@ -101,6 +101,30 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
     ]
   end
 
+  test "fetch burn rate when no interval is provided", context do
+    query = """
+    {
+      burnRate(
+        slug: "#{context.slug}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime8}") {
+          datetime
+          burnRate
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "burnRate"))
+
+    burn_rates = json_response(result, 200)["data"]["burnRate"]
+
+    assert Enum.find(burn_rates, fn %{"burnRate" => burnRate} ->
+             burnRate == 5000
+           end)
+  end
+
   test "fetch burn rate no aggregation", context do
     query = """
     {

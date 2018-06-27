@@ -78,6 +78,7 @@ defmodule Sanbase.Prices.Store do
     |> case do
       {:ok, [[datetime | _rest]]} -> {:ok, datetime}
       {:ok, nil} -> {:ok, nil}
+      {:ok, []} -> {:ok, nil}
       {:error, error} -> {:error, error}
     end
   end

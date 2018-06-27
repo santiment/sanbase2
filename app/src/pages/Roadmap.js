@@ -80,14 +80,26 @@ const Roadmap = () => (
               <h3>Medium Orbit</h3>
               <p>2018</p>
               <hr />
-              <p>Slight pivot. Increase focus for on-chain data/analyses</p>
+              <p>
+                Business
+              </p>
+              <p>
+                Models
+              </p>
+              <p>
+                Token
+              </p>
+              <p>
+                Economy
+              </p>
             </div>
             <div className='body'>
+              <p>Slight pivot. Increase focus for on-chain data/analyses</p>
               <ul>
                 <li>
                   Data-feeds for all ERC-20 tokens
                 </li>
-                <li>
+                <li style={{marginLeft: '20px'}}>
                   <div className='status-row embedded' id='crypto-projects-item'>
                     <span className='status-item'>Daily Active Addresses (DAA), TokenAging (Burn Rate), Transaction volume</span>
                     <span className='status'>
@@ -100,7 +112,7 @@ const Roadmap = () => (
                     </span>
                   </div>
                 </li>
-                <li>
+                <li style={{marginLeft: '20px'}}>
                   <div className='status-row embedded' id='crypto-projects-item'>
                     <span className='status-item'>In/Out exchanges</span>
                     <span className='status'>
@@ -126,7 +138,7 @@ const Roadmap = () => (
                     </span>
                   </div>
                 </li>
-                <li>
+                <li style={{marginLeft: '20px'}}>
                   <div className='status-row embedded' id='crypto-projects-item'>
                     <span className='status-item'>EOS</span>
                     <span className='status'>
@@ -134,6 +146,19 @@ const Roadmap = () => (
                       <div className='status-border'>
                         <div
                           style={{width: '10%'}}
+                          className='status-progress' />
+                      </div>
+                    </span>
+                  </div>
+                </li>
+                <li style={{marginLeft: '20px'}}>
+                  <div className='status-row embedded' id='crypto-projects-item'>
+                    <span className='status-item'>Bitcoin</span>
+                    <span className='status'>
+                      <div className='status-percent'>90%</div>
+                      <div className='status-border'>
+                        <div
+                          style={{width: '90%'}}
                           className='status-progress' />
                       </div>
                     </span>

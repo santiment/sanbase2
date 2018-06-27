@@ -17,6 +17,8 @@ config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test"
 
+config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
+
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,

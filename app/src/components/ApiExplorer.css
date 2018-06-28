@@ -1,21 +1,9 @@
 .apiexplorer-container {
   height: 100%;
-  -webkit-overflow-scrolling: touch !important;
-  overflow-y: auto !important;
-}
-
-.apiexplorer-container iframe {
-  border: none;
 }
 
 .apiexplorer-iframe {
   width: 100%;
-  height: 99%;
-}
-
-.apiexplorer-iframe-iphone {
-  overflow-y: scroll !important;
-  width: 1px !important;
-  min-width: 100% !important;
-  height: 100%;
+  height: 800px;
+  border: none;
 }

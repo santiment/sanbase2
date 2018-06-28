@@ -1,12 +1,12 @@
 import React from 'react'
 import './ApiDocs.css'
-import {isMobileSafari} from 'react-device-detect'
+import {isMobile, isIOS} from 'react-device-detect'
 
 export const ApiDocs = (props) => {
   return (
     <div className='apidocs-container'>
       {
-        isMobileSafari ? (
+        isMobile && isIOS ? (
           <iframe
             scrolling='no'
             src='/apiexamples'

@@ -121,7 +121,11 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
     burn_rates = json_response(result, 200)["data"]["burnRate"]
 
     assert Enum.find(burn_rates, fn %{"burnRate" => burnRate} ->
-             burnRate == 5000
+             burnRate == 6000
+           end)
+
+    assert Enum.find(burn_rates, fn %{"burnRate" => burnRate} ->
+             burnRate == 85555
            end)
   end
 

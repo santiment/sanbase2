@@ -103,14 +103,14 @@ export const HistoryPriceGQL = gql`
 }`
 
 export const GithubActivityGQL = gql`
-  query queryGithubActivity($ticker: String, $from: DateTime, $to: DateTime, $interval: String, $transform: String, $movingAverageInterval: Int) {
+  query queryGithubActivity($ticker: String, $from: DateTime, $to: DateTime, $interval: String, $transform: String, $movingAverageIntervalBase: String) {
     githubActivity(
       ticker: $ticker,
       from: $from,
       to: $to,
       interval: $interval,
       transform: $transform,
-      movingAverageInterval: $movingAverageInterval
+      movingAverageIntervalBase: $movingAverageIntervalBase
     ) {
       datetime,
       activity

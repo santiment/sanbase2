@@ -13,7 +13,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   require Sanbase.Utils.Config
   require Logger
 
-  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.ProjectInfo
@@ -101,35 +101,26 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     end
   end
 
-  defp project_info_missing?(
-         %Project{
-           website_link: website_link,
-           email: email,
-           reddit_link: reddit_link,
-           twitter_link: twitter_link,
-           btt_link: btt_link,
-           blog_link: blog_link,
-           github_link: github_link,
-           telegram_link: telegram_link,
-           slack_link: slack_link,
-           facebook_link: facebook_link,
-           whitepaper_link: whitepaper_link,
-           ticker: ticker,
-           name: name,
-           token_decimals: token_decimals,
-           main_contract_address: main_contract_address
-         } = project
-       ) do
+  defp project_info_missing?(%Project{
+         website_link: website_link,
+         email: email,
+         reddit_link: reddit_link,
+         twitter_link: twitter_link,
+         btt_link: btt_link,
+         blog_link: blog_link,
+         github_link: github_link,
+         telegram_link: telegram_link,
+         slack_link: slack_link,
+         facebook_link: facebook_link,
+         whitepaper_link: whitepaper_link,
+         ticker: ticker,
+         name: name,
+         token_decimals: token_decimals,
+         main_contract_address: main_contract_address
+       }) do
     !website_link or !email or !reddit_link or !twitter_link or !btt_link or !blog_link or
       !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
       !ticker or !name or !main_contract_address or !token_decimals
-  end
-
-  defp missing_ico_info?(%Ico{
-         contract_abi: contract_abi,
-         contract_block_number: contract_block_number
-       }) do
-    !contract_abi or !contract_block_number
   end
 
   defp fetch_and_process_price_data(%Project{coinmarketcap_id: coinmarketcap_id} = project) do

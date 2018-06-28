@@ -194,7 +194,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
       _ ->
         Logger.error(
-          "Failed to fetch graph data for #{coinmarketcap_id} for the selected interval"
+          "Failed to fetch graph data for #{coinmarketcap_id} for the selected interval - #{
+            inspect(interval)
+          }"
         )
 
         []

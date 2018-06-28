@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
     with {:ok, twitter_link} <- get_twitter_link(ticker),
          {:ok, twitter_name} <- extract_twitter_name(twitter_link),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(Store, twitter_name, from, to, interval),
+           Utils.calibrate_interval(Store, twitter_name, from, to, interval, 60 * 60),
          twitter_historical_data <-
            Store.all_records_for_measurement!(twitter_name, from, to, interval) do
       result =

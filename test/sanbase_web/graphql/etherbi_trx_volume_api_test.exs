@@ -121,7 +121,11 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     trx_volumes = json_response(result, 200)["data"]["transactionVolume"]
 
     assert Enum.find(trx_volumes, fn %{"transactionVolume" => transactionVolume} ->
-             transactionVolume == 1000
+             transactionVolume == 1555
+           end)
+
+    assert Enum.find(trx_volumes, fn %{"transactionVolume" => transactionVolume} ->
+             transactionVolume == 84787
            end)
   end
 

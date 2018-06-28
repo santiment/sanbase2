@@ -9,7 +9,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         %{ticker: ticker, from: from, to: to, interval: interval, transform: "None"},
         _resolution
       ) do
-    {:ok, from, to, interval} = Utils.calibrate_interval(Store, ticker, from, to, interval)
+    {:ok, from, to, interval} =
+      Utils.calibrate_interval(Store, ticker, from, to, interval, 24 * 60 * 60)
 
     result =
       Store.fetch_activity_with_resolution!(ticker, from, to, interval)
@@ -26,7 +27,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
           to: to,
           interval: interval,
           transform: "movingAverage",
-          moving_average_interval: ma_interval
+          moving_average_interval_base: ma_base
         },
         _resolution
       ) do
@@ -37,7 +38,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         from,
         to,
         interval,
-        ma_interval,
+        24 * 60 * 60,
+        ma_base,
         300
       )
 

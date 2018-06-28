@@ -435,7 +435,7 @@ const enhance = compose(
           ticker,
           interval: '',
           transform: 'movingAverage',
-          movingAverageInterval: 7
+          movingAverageIntervalBase: '1w'
         }
       }
     }

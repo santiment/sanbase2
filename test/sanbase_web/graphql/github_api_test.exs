@@ -97,8 +97,7 @@ defmodule Sanbase.Github.GithubApiTest do
 
     activities = json_response(result, 200)["data"]["githubActivity"]
 
-    assert %{"activity" => 5} in activities
-    assert %{"activity" => 10} in activities
+    assert %{"activity" => 60} in activities
   end
 
   test "fetching github time series data", context do
@@ -193,7 +192,7 @@ defmodule Sanbase.Github.GithubApiTest do
         to: "#{context.datetime6}",
         interval: "1h",
         transform: "movingAverage",
-        moving_average_interval: 3) {
+        moving_average_interval_base: "3h") {
           activity
         }
     }

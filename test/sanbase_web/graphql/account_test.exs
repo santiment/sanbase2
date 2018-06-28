@@ -13,9 +13,14 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
-    conn = setup_jwt_auth(build_conn(), user)
+    user2 =
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
+      |> Repo.insert!()
 
-    {:ok, conn: conn}
+    conn = setup_jwt_auth(build_conn(), user)
+    conn2 = setup_jwt_auth(build_conn(), user2)
+
+    {:ok, conn: conn, conn2: conn2}
   end
 
   test "the default current user's san_balance is 0.0", %{conn: conn} do
@@ -51,6 +56,43 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       |> post("/graphql", mutation_skeleton(query))
 
     assert json_response(result, 200)["data"]["changeEmail"]["email"] == new_email
+  end
+
+  test "change email to an existing one gives meaningful error", %{conn: conn, conn2: conn2} do
+    # The first user should be able to change the email without troubles
+    new_email = "new_test_email@santiment.net"
+
+    query = """
+    mutation {
+      changeEmail(email: "#{new_email}") {
+        email
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
+
+    assert result["data"]["changeEmail"]["email"] == new_email
+
+    # The second user should not be able to add the same email
+    result2 =
+      conn2
+      |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
+
+    %{
+      "data" => %{"changeEmail" => nil},
+      "errors" => [
+        %{
+          "details" => details
+        }
+      ]
+    } = result2
+
+    assert details == %{"email" => ["has already been taken"]}
   end
 
   test "change username of current user", %{conn: conn} do

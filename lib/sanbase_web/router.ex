@@ -55,19 +55,6 @@ defmodule SanbaseWeb.Router do
     get("/apiexamples", ApiExamplesController, :api_examples)
   end
 
-  scope "/api", SanbaseWeb do
-    pipe_through(:api)
-
-    resources("/cashflow", CashflowController, only: [:index])
-    resources("/daily_prices", DailyPricesController, only: [:index])
-  end
-
-  scope "/api", SanbaseWeb do
-    pipe_through([:api, :basic_auth])
-
-    resources("/projects", ProjectsController, only: [:index])
-  end
-
   get("/env.js", SanbaseWeb.RootController, :react_env)
 
   if Mix.env() == :dev do

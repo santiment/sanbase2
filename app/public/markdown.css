@@ -7,7 +7,8 @@ body {
   padding-top: 10px;
   padding-bottom: 10px;
   background-color: white;
-  padding: 30px; }
+  padding: 30px;
+}
 
 body > *:first-child {
   margin-top: 0 !important; }
@@ -37,7 +38,6 @@ h1, h2, h3, h4, h5, h6 {
   position: relative; }
 
 h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
-  background: url("../../images/modules/styleguide/para.png") no-repeat 10px center;
   text-decoration: none; }
 
 h1 tt, h1 code {
@@ -84,7 +84,6 @@ p, blockquote, ul, ol, dl, li, table, pre {
   margin: 15px 0; }
 
 hr {
-  background: transparent url("../../images/modules/pulls/dirty-shade.png") repeat-x 0 0;
   border: 0 none;
   color: #cccccc;
   height: 4px;
@@ -180,67 +179,6 @@ table {
 
 img {
   max-width: 100%; }
-
-span.frame {
-  display: block;
-  overflow: hidden; }
-  span.frame > span {
-    border: 1px solid #dddddd;
-    display: block;
-    float: left;
-    overflow: hidden;
-    margin: 13px 0 0;
-    padding: 7px;
-    width: auto; }
-  span.frame span img {
-    display: block;
-    float: left; }
-  span.frame span span {
-    clear: both;
-    color: #333333;
-    display: block;
-    padding: 5px 0 0; }
-span.align-center {
-  display: block;
-  overflow: hidden;
-  clear: both; }
-  span.align-center > span {
-    display: block;
-    overflow: hidden;
-    margin: 13px auto 0;
-    text-align: center; }
-  span.align-center span img {
-    margin: 0 auto;
-    text-align: center; }
-span.align-right {
-  display: block;
-  overflow: hidden;
-  clear: both; }
-  span.align-right > span {
-    display: block;
-    overflow: hidden;
-    margin: 13px 0 0;
-    text-align: right; }
-  span.align-right span img {
-    margin: 0;
-    text-align: right; }
-span.float-left {
-  display: block;
-  margin-right: 13px;
-  overflow: hidden;
-  float: left; }
-  span.float-left span {
-    margin: 13px 0 0; }
-span.float-right {
-  display: block;
-  margin-left: 13px;
-  overflow: hidden;
-  float: right; }
-  span.float-right > span {
-    display: block;
-    overflow: hidden;
-    margin: 13px auto 0;
-    text-align: right; }
 
 code, tt {
   margin: 0 2px;

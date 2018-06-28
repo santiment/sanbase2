@@ -6,6 +6,7 @@ import { createStore, applyMiddleware } from 'redux'
 import { createEpicMiddleware } from 'redux-observable'
 import { composeWithDevTools } from 'redux-devtools-extension'
 import createRavenMiddleware from 'raven-for-redux'
+import throttle from 'lodash.throttle'
 import ApolloClient from 'apollo-client'
 import { createHttpLink } from 'apollo-link-http'
 import { from } from 'apollo-link'
@@ -54,9 +55,9 @@ const main = () => {
     composeWithDevTools(applyMiddleware(...middleware))
   )
 
-  store.subscribe(() => {
+  store.subscribe(throttle(() => {
     saveState(store.getState().user)
-  })
+  }, 1000))
 
   store.dispatch(launchApp())
 

@@ -11,7 +11,6 @@ import { connect } from 'react-redux'
 import { compose, withState } from 'recompose'
 import { FadeIn } from 'animate-components'
 import * as actions from './../actions/types'
-import './GDPRModal.css'
 
 const GDPRModal = ({
   isGDPRModalOpened,

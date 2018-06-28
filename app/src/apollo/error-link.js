@@ -12,7 +12,7 @@ const ErrorLink = onError(({graphQLErrors, networkError, operation}) => {
         if (process.env.NODE_ENV === 'development') {
           console.log(errorMessage)
         }
-        if (message !== 'unauthorized') {
+        if (message !== 'unauthorized' && !/Can't fetch/.test(message)) {
           Raven.captureException(errorMessage)
         }
       })

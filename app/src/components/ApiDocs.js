@@ -1,6 +1,6 @@
 import React from 'react'
 import './ApiDocs.css'
-import {isMobileSafari} from 'react-device-detect';
+import {isMobileSafari} from 'react-device-detect'
 
 export const ApiDocs = (props) => {
   return (

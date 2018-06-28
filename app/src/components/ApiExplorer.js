@@ -1,13 +1,13 @@
 import React from 'react'
+import './ApiExplorer.css'
 
 export const ApiExplorer = (props) => {
   return (
-    <div>
+    <div className='apiexplorer-container'>
       <iframe
         src={`/graphiql${props.location.search}`}
         title='API explorer'
-        width='100%'
-        height='800px'
+        className='apiexplorer-iframe'
       />
     </div>
   )

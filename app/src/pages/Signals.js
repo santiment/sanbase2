@@ -6,7 +6,7 @@ import './Signals.css'
 const Signals = () => (
   <div className='page signals'>
     <Helmet>
-      <title>SANbase: Signals</title>
+      <title>Signals</title>
       <link rel='canonical' href={`${getOrigin()}/signals`} />
     </Helmet>
     <div className='page-head'>

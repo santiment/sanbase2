@@ -6,7 +6,7 @@ import './Roadmap.css'
 const Roadmap = () => (
   <div className='page roadmap'>
     <Helmet>
-      <title>SANbase: Roadmap</title>
+      <title>Roadmap</title>
       <link rel='canonical' href={`${getOrigin()}/roadmap`} />
     </Helmet>
     <div className='page-head'>

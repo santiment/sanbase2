@@ -1,7 +1,7 @@
 import * as actions from './../actions/types'
 import { checkIsLoggedIn } from './../pages/UserSelectors'
 
-const ignoredPages = ['/privacy-policy']
+const ignoredPages = ['/privacy-policy', '/roadmap']
 
 const handleRouter = (action$, store, { client }) =>
   action$.ofType('@@router/LOCATION_CHANGE')
@@ -9,9 +9,9 @@ const handleRouter = (action$, store, { client }) =>
       const state = store.getState()
       const { privacyPolicyAccepted = false } = state.user.data
       const isLoggedIn = checkIsLoggedIn(state)
-      return !(ignoredPages.includes(payload.pathname) ||
-        privacyPolicyAccepted ||
-        !isLoggedIn)
+
+      return !state.user.isLoading && isLoggedIn && !privacyPolicyAccepted &&
+        !ignoredPages.includes(payload.pathname)
     })
     .map(() => ({
       type: actions.APP_SHOW_GDPR_MODAL

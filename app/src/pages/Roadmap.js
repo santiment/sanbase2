@@ -20,8 +20,6 @@ const Roadmap = () => (
             <div className='title'>
               <h3>Launch</h3>
               <p>Q1-Q2, 2017</p>
-              <hr />
-              <p>Completed to date</p>
             </div>
             <div className='body'>
               <p>Generate first proofs of concept and initial funding</p>
@@ -165,17 +163,33 @@ const Roadmap = () => (
                   </div>
                 </li>
                 <li>
-                  <div className='status-row embedded' id='crypto-projects-item'>
-                    <span className='status-item'>Different interfaces to work with data (beta)</span>
-                    <span className='status'>
-                      <div className='status-percent'>80%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{width: '80%'}}
-                          className='status-progress' />
-                      </div>
-                    </span>
-                  </div>
+                  <p>Different interfaces to work with data</p>
+                  <li style={{marginLeft: '20px'}}>
+                    <div className='status-row embedded' id='crypto-projects-item'>
+                      <span className='status-item'>API, SQL, Grafana</span>
+                      <span className='status'>
+                        <div className='status-percent'>80%</div>
+                        <div className='status-border'>
+                          <div
+                            style={{width: '80%'}}
+                            className='status-progress' />
+                        </div>
+                      </span>
+                    </div>
+                  </li>
+                  <li style={{marginLeft: '20px'}}>
+                    <div className='status-row embedded' id='crypto-projects-item'>
+                      <span className='status-item'>UI Components</span>
+                      <span className='status'>
+                        <div className='status-percent'>10%</div>
+                        <div className='status-border'>
+                          <div
+                            style={{width: '10%'}}
+                            className='status-progress' />
+                        </div>
+                      </span>
+                    </div>
+                  </li>
                 </li>
                 <li>
                   <div className='status-row embedded' id='crypto-projects-item'>

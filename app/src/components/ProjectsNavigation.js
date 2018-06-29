@@ -5,6 +5,8 @@ import {
   Checkbox,
   Popup
 } from 'semantic-ui-react'
+import HelpPopup from './HelpPopup/HelpPopup'
+import HelpPopupProjectsContent from './HelpPopup/HelpPopupProjectsContent'
 import './ProjectsNavigation.css'
 
 const HiddenElements = () => ''
@@ -74,6 +76,9 @@ const ProjectsNavigation = ({
           </div>
         </Popup>
       </HiddenElements>
+      <HelpPopup>
+        <HelpPopupProjectsContent />
+      </HelpPopup>
     </div>
   )
 }

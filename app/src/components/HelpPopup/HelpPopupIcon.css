@@ -1,0 +1,19 @@
+.HelpPopupIcon {
+  font-size: 17px;
+  font-weight: bold;
+  border: 1px solid black;
+  border-radius: 50%;
+  height: 29px;
+  width: 29px;
+  user-select: none;
+  cursor: pointer;
+  display: inline-block;
+  margin-left: 1rem;
+  text-align: center;
+}
+
+.HelpPopupIcon .HelpPopupIcon__symbol {
+  vertical-align: middle;
+  margin: 0;
+  padding: 0;
+}

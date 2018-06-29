@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 // import { action } from '@storybook/addon-actions'
 import Post from './../src/components/Post'
 import PostList from './../src/components/PostList'
-import EventVotesNew from './../src/pages/EventVotesNew/EventVotesNew.js'
+// import EventVotesNew from './../src/pages/EventVotesNew/EventVotesNew.js'
 
 const posts = {
   'asffe2f2f': {
@@ -55,25 +55,25 @@ const posts = {
 storiesOf('Event Votes', module)
   .add('Post', () => (
     <div>
-        Post component in Insights page
+      Post component in Insights page
       <hr />
-      <div style={{margin: 20}}>
+      <div style={{ margin: 20 }}>
         <Post {...posts['asf2342ff']} />
       </div>
     </div>
   ))
   .add('Posts List', () => (
-    <div style={{margin: 20}}>
+    <div style={{ margin: 20 }}>
       <PostList posts={posts} />
     </div>
   ))
   .add("User's list of insights", () => (
-    <div style={{margin: 20}}>
+    <div style={{ margin: 20 }}>
       <PostList userId={23} posts={posts} />
     </div>
   ))
   .add('Post Create Form', () => (
-    <div style={{margin: 20}}>
-      <EventVotesNew />
+    <div style={{ margin: 20 }}>
+      {/* <EventVotesNew /> */}
     </div>
   ))

@@ -8188,6 +8188,10 @@ react-dev-utils@^5.0.1:
     strip-ansi "3.0.1"
     text-table "0.2.0"
 
+react-device-detect@^1.4.6:
+  version "1.4.6"
+  resolved "https://registry.yarnpkg.com/react-device-detect/-/react-device-detect-1.4.6.tgz#3318295b602805d0d90d41bf6612c0fde20a1b67"
+
 react-docgen@^2.20.0:
   version "2.20.1"
   resolved "https://registry.yarnpkg.com/react-docgen/-/react-docgen-2.20.1.tgz#29c3a1216066f513958abb1a43678860bbd51c7f"

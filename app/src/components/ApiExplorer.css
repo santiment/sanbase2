@@ -1,0 +1,9 @@
+.apiexplorer-container {
+  height: 100%;
+}
+
+.apiexplorer-iframe {
+  width: 100%;
+  height: 800px;
+  border: none;
+}

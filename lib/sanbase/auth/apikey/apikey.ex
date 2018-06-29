@@ -1,5 +1,5 @@
 defmodule Sanbase.Auth.Apikey do
-  @doc ~s"""
+  @moduledoc ~s"""
   Apikey combines and exposes in a transparent manner all the operations with the
   apikeys.
 
@@ -43,8 +43,8 @@ defmodule Sanbase.Auth.Apikey do
   Generates a new User Token and stores it in the database.
   Generate the corresponding Apikey and return it.
   """
-  @spec generate_new_apikey(%User{}) :: {:ok, String.t()} | {:error | String.t()}
-  def generate_new_apikey(%User{id: user_id} = user) do
+  @spec generate_apikey(%User{}) :: {:ok, String.t()} | {:error | String.t()}
+  def generate_apikey(%User{id: user_id} = user) do
     with token <- Hmac.generate_token(),
          {:ok, user} <- UserApiKeyToken.add_user_token(user, token),
          {:ok, apikey} <- Hmac.generate_apikey(user_id, token) do
@@ -58,7 +58,7 @@ defmodule Sanbase.Auth.Apikey do
   @doc ~s"""
   Return a list of all apikeys for a given user
   """
-  @spec generate_new_apikey(%User{}) :: List.t()
+  @spec apikeys_list(%User{}) :: List.t()
   def apikeys_list(%User{id: user_id} = user) do
     with {:ok, tokens} <- UserApiKeyToken.user_tokens(user) do
       Enum.map(tokens, fn token ->

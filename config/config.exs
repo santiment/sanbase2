@@ -33,7 +33,7 @@ config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KE
 
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
-  pool_size: 5,
+  pool_size: 10,
   prepare: :unnamed
 
 # Configures the endpoint

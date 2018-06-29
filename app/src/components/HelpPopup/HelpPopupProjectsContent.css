@@ -1,0 +1,26 @@
+.HelpPopupProjectsContent h3,
+.HelpPopupProjectsContent h4 {
+  margin: 0;
+  font-weight: bold;
+  color: #000;
+  font-size: 1rem;
+}
+
+.HelpPopupProjectsContent__list {
+  padding: 0;
+  list-style: none;
+}
+
+.HelpPopupProjectsContent__item {
+  margin-bottom: 1rem;
+}
+
+.HelpPopupProjectsContent__item_inline h4,
+.HelpPopupProjectsContent__item_inline p {
+  display: inline;
+}
+
+.HelpPopupProjectsContent__link {
+  color: #26a987;
+  border-bottom: 0;
+}

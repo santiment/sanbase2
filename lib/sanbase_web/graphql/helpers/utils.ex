@@ -127,18 +127,4 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
       String.replace(acc, "%{#{key}}", to_string(inspect(value)))
     end)
   end
-
-  defp compound_duration_to_seconds(interval) do
-    {int_interval, duration_index} = Integer.parse(interval)
-
-    case duration_index do
-      "ns" -> div(int_interval, :math.pow(10, 9))
-      "s" -> int_interval
-      "m" -> int_interval * 60
-      "h" -> int_interval * 60 * 60
-      "d" -> int_interval * 24 * 60 * 60
-      "w" -> int_interval * 7 * 24 * 60 * 60
-      _ -> int_interval
-    end
-  end
 end

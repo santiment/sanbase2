@@ -17,7 +17,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   def burn_rate(_root, %{ticker: ticker, from: from, to: to, interval: interval}, _resolution) do
     with {:ok, contract_address, token_decimals} <- ticker_to_contract_info(ticker),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(BurnRate.Store, contract_address, from, to, interval, 60 * 60),
+           Utils.calibrate_interval(
+             BurnRate.Store,
+             contract_address,
+             from,
+             to,
+             interval,
+             60 * 60,
+             50
+           ),
          {:ok, burn_rates} <- BurnRate.Store.burn_rate(contract_address, from, to, interval) do
       result =
         burn_rates
@@ -44,7 +52,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(BurnRate.Store, contract_address, from, to, interval, 60 * 60),
+           Utils.calibrate_interval(
+             BurnRate.Store,
+             contract_address,
+             from,
+             to,
+             interval,
+             60 * 60,
+             50
+           ),
          {:ok, burn_rates} <- BurnRate.Store.burn_rate(contract_address, from, to, interval) do
       result =
         burn_rates
@@ -82,7 +98,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              from,
              to,
              interval,
-             60 * 60
+             60 * 60,
+             50
            ),
          {:ok, trx_volumes} <-
            TransactionVolume.Store.transaction_volume(contract_address, from, to, interval) do
@@ -121,7 +138,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              from,
              to,
              interval,
-             60 * 60
+             60 * 60,
+             50
            ),
          {:ok, trx_volumes} <-
            TransactionVolume.Store.transaction_volume(contract_address, from, to, interval) do
@@ -160,7 +178,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              from,
              to,
              interval,
-             24 * 60 * 60
+             24 * 60 * 60,
+             50
            ),
          {:ok, daily_active_addresses} <-
            DailyActiveAddresses.Store.daily_active_addresses(contract_address, from, to, interval) do
@@ -198,7 +217,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              from,
              to,
              interval,
-             24 * 60 * 60
+             24 * 60 * 60,
+             50
            ),
          {:ok, daily_active_addresses} <-
            DailyActiveAddresses.Store.daily_active_addresses(contract_address, from, to, interval) do

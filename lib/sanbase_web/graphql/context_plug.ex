@@ -92,6 +92,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp apikey_authorize(apikey) do
-    Sanbase.Auth.Apikey.api_key_secret_to_user(apikey)
+    Sanbase.Auth.Apikey.apikey_to_user(apikey)
   end
 end

@@ -157,4 +157,14 @@ defmodule Sanbase.Auth.User do
       LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
     })
   end
+
+  def by_id(user_id) when is_integer(user_id) do
+    case Sanbase.Repo.get_by(User, id: user_id) do
+      nil ->
+        {:error, "Cannot fetch the user with id #{user_id}"}
+
+      user ->
+        {:ok, user}
+    end
+  end
 end

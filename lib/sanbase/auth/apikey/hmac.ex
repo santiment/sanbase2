@@ -41,53 +41,27 @@ defmodule Sanbase.Auth.Hmac do
   alias Sanbase.Auth.User
 
   @rand_bytes_length 64
-  @api_key_length 32
+  @apikey_length 32
 
-  def hmac(api_key) do
-    api_key_secret =
-      :crypto.hmac(:sha256, secret_key(), api_key)
-      |> Base.encode16()
-      |> binary_part(0, @api_key_length)
+  def hmac(apikey) do
+    :crypto.hmac(:sha256, secret_key(), apikey)
+    |> Base.encode16()
+    |> binary_part(0, @apikey_length)
   end
 
   def generate_token() do
     :crypto.strong_rand_bytes(@rand_bytes_length)
     |> Base.encode16()
-    |> binary_part(0, @api_key_length)
+    |> binary_part(0, @apikey_length)
   end
 
-  def generate_api_key_secret(id, token) do
-    api_key_secret = "#{id}_" <> token
+  def generate_apikey(id, token) do
+    "#{id}_" <> hmac(token)
   end
 
-  def api_key_secret_to_user(id_api_key_secret) do
-    with [num_as_str, api_key_secret] <- String.split(id_api_key_secret, "_", parts: 2),
-         {user_id, _rest} <- Integer.parse(num_as_str) do
-      query =
-        from(
-          pair in UserApiKeyToken,
-          where: pair.user_id == ^user_id,
-          select: pair.token
-        )
-
-      tokens = Sanbase.Repo.all(query)
-
-      if api_key_secret_valid?(user_id, tokens, api_key_secret) do
-        fetch_user(user_id)
-      else
-        {:error, "Apikey not valid"}
-      end
-    else
-      error ->
-        {:error, "Provided apikey is malformed"}
-    end
-  end
-
-  defp secret_key(), do: Config.get(:secret_key)
-
-  defp api_key_secret_valid?(user_id, tokens, api_key_secret) do
+  def apikey_valid?(user_id, tokens, apikey) do
     Enum.find(tokens, fn token ->
-      generate_api_key_secret(user_id, token) == api_key_secret
+      generate_apikey(user_id, token) == apikey
     end)
     |> case do
       nil -> false
@@ -95,13 +69,7 @@ defmodule Sanbase.Auth.Hmac do
     end
   end
 
-  defp fetch_user(user_id) do
-    case Repo.one(User, user_id) do
-      nil ->
-        {:error, "Cannot fetch the user with id #{user_id}"}
+  # Private functions
 
-      user ->
-        {:ok, user}
-    end
-  end
+  defp secret_key(), do: Config.get(:secret_key)
 end

@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Message } from 'semantic-ui-react'
+import { Redirect } from 'react-router-dom'
 import AccountHeader from './AccountHeader'
 import AccountEmailForm from './AccountEmailForm'
 import AccountUsernameForm from './AccountUsernameForm'
@@ -74,6 +75,17 @@ class Account extends Component {
   render () {
     const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange } = this.props
     const { emailForm, usernameForm } = this.state
+
+    if (user && !user.username) {
+      return (
+        <Redirect
+          to={{
+            pathname: '/'
+          }}
+        />
+      )
+    }
+
     return (
       <div className='page account'>
         <AccountHeader />

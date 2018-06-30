@@ -10,7 +10,7 @@ const Footer = () => {
         <Link to={'/status'}>Status</Link>
         <a href='mailto:info@santiment.net'>Contact</a>
         <Link to={'/privacy-policy'}>Privacy</Link>
-        <a href='https://santiment.typeform.com/to/EzKW7E'>
+        <a href='https://docs.google.com/forms/d/e/1FAIpQLSeFuCxjJjId98u1Bp3qpXCq2A9YAQ02OEdhOgiM9Hr-rMDxhQ/viewform'>
           Request Token
         </a>
       </div>

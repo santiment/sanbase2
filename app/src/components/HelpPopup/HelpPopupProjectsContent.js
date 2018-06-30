@@ -36,7 +36,7 @@ const HelpPopupProjectsContent = () => {
       </p>
       <p>
         <a
-          href='https://santiment.typeform.com/to/EzKW7E'
+          href='https://docs.google.com/forms/d/e/1FAIpQLSeFuCxjJjId98u1Bp3qpXCq2A9YAQ02OEdhOgiM9Hr-rMDxhQ/viewform'
           className='HelpPopupProjectsContent__link'
         >
           Once you have the data - submit it here.{' '}

@@ -2,7 +2,7 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 import toJson from 'enzyme-to-json'
-import { Account } from './../pages/Account'
+import { UnwrappedAccount as Account } from './rAccount'
 
 describe('Account container', () => {
   it('it should render correctly', () => {

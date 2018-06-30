@@ -91,7 +91,7 @@ class Account extends Component {
         <AccountHeader />
         {!user.email &&
           <Message
-            className='account-message'
+            className='account-message account-message__dashboard'
             warning
             header='Email is not added yet!'
             list={[
@@ -101,26 +101,26 @@ class Account extends Component {
 
         {emailForm.SUCCESS &&
           <Message
-            className='account-message'
+            className='account-message account-message__email_success'
             positive
             content={`Email was changed to "${user.email || ''}"!`}
           />}
         {emailForm.ERROR &&
           <Message
-            className='account-message'
+            className='account-message account-message__email_error'
             negative
             header='Failed to change email!'
             list={['Try again later...']}
           />}
         {usernameForm.SUCCESS &&
           <Message
-            className='account-message'
+            className='account-message account-message__username_success'
             positive
             content={`Username was changed to "${user.username || ''}"!`}
           />}
         {usernameForm.ERROR &&
           <Message
-            className='account-message'
+            className='account-message account-message__username_error'
             negative
             header='Failed to change username!'
             list={['Try again later...']}

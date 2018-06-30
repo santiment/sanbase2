@@ -65,9 +65,17 @@ export default (state = initialState, action) => {
           email: action.email
         }
       }
+    case 'CHANGE_USERNAME':
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          username: action.username
+        }
+      }
     case actions.USER_SETTING_GDPR:
-      const {privacyPolicyAccepted = false,
-        marketingAccepted = false} = action.payload
+      const { privacyPolicyAccepted = false,
+        marketingAccepted = false } = action.payload
       return {
         ...state,
         data: {

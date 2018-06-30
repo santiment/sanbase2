@@ -2,9 +2,9 @@ import React from 'react'
 import { Form, Input } from 'semantic-ui-react'
 import copy from 'copy-to-clipboard'
 
-const AccountEthKeyForm = ({ user, loading }) => {
-  const doesUserHaveEthAccounts = user.ethAccounts && user.ethAccounts.length > 0
-  const inputValue = doesUserHaveEthAccounts ? user.ethAccounts[0].address : ''
+const AccountEthKeyForm = ({ ethAccounts, loading }) => {
+  const doesUserHaveEthAccounts = ethAccounts && ethAccounts.length > 0
+  const inputValue = doesUserHaveEthAccounts ? ethAccounts[0].address : ''
   return (
     <Form loading={loading}>
       <Form.Field>

@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react'
 import { Divider, Button } from 'semantic-ui-react'
 
-const AccountWallets = ({ onLogoutBtnClick }) => {
+const AccountSessions = ({ onLogoutBtnClick }) => {
   return (
     <Fragment>
       <h3>Sessions</h3>
@@ -14,4 +14,4 @@ const AccountWallets = ({ onLogoutBtnClick }) => {
   )
 }
 
-export default AccountWallets
+export default AccountSessions

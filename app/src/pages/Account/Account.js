@@ -132,7 +132,7 @@ class Account extends Component {
             isUsernamePending={usernameForm.PENDING}
           />
           <br />
-          <AccountEthKeyForm user={user} loading={loading} />
+          <AccountEthKeyForm ethAccounts={user.ethAccounts} loading={loading} />
           <AccountWallets user={user} />
           <AccountSessions onLogoutBtnClick={dispatchUserLogout} />
         </div>

@@ -39,8 +39,8 @@ const successValidator = ({ email, username }) => {
   }
 }
 
-class rAccount extends Component {
-  constructor(props) {
+class Account extends Component {
+  constructor (props) {
     super(props)
     this.state = {
       emailForm: {
@@ -58,7 +58,7 @@ class rAccount extends Component {
     this.usernameFormKey = 'usernameForm'
   }
 
-  setFormStatus(form) {
+  setFormStatus (form) {
     return (status, value) => {
       this.setState(prevState => {
         const newFormState = { ...prevState[form] }
@@ -71,7 +71,7 @@ class rAccount extends Component {
     }
   }
 
-  render() {
+  render () {
     const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange } = this.props
     const { emailForm, usernameForm } = this.state
     return (
@@ -158,5 +158,5 @@ const mapDispatchToProps = dispatch => ({
   })
 })
 
-export const UnwrappedAccount = rAccount // For tests
-export default connect(mapStateToProps, mapDispatchToProps)(rAccount)
+export const UnwrappedAccount = Account // For tests
+export default connect(mapStateToProps, mapDispatchToProps)(Account)

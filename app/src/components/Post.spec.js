@@ -67,16 +67,6 @@ describe('Post component', () => {
         />)
         expect(wrapper.find('.post-tag').prop('to')).toBe('/insights/tags/EOS')
       })
-      it('should have equal "to" and "href" prop', () => {
-        const wrapper = shallow(<Post
-          user={user}
-          {...postWithTag}
-        />)
-        const tag = wrapper.find('.post-tag')
-        const to = tag.prop('to')
-        const href = tag.prop('href')
-        expect(href).toBe(to)
-      })
       it('every tag should have correct link("to" prop)', () => {
         const wrapper = shallow(<Post
           user={user}

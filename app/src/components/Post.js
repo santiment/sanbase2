@@ -93,7 +93,7 @@ const Post = ({
             {tags.length > 0
               ? <div className='post-tags'>
                 {tags.map((tag, index) => (
-                  <Link key={index} className='post-tag' to={`/insights/tags/${tag.name}`} href={`/insights/tags/${tag.name}`}>{tag.label || tag.name}</Link>
+                  <Link key={index} className='post-tag' to={`/insights/tags/${tag.name}`}>{tag.label || tag.name}</Link>
                 ))}
               </div>
               : <Author {...user} />}

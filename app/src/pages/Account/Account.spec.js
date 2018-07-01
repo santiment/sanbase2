@@ -3,6 +3,7 @@ import React from 'react'
 import { shallow } from 'enzyme'
 import toJson from 'enzyme-to-json'
 import { UnwrappedAccount as Account } from './Account'
+import { Redirect } from 'react-router-dom'
 
 const userWithoutEmail = {
   username: '0xjsadhf92fhk2fjhe',
@@ -19,6 +20,17 @@ describe('Account container', () => {
       user={userWithoutEmail}
       loading={false} />)
     expect(toJson(account)).toMatchSnapshot()
+  })
+  describe('User store has no data', () => {
+    it('should return Redirect component', () => {
+      const wrapper = shallow(<Account user={{}} />)
+      expect(wrapper.type()).toBe(Redirect)
+    })
+    it('should redirect to "/"', () => {
+      const wrapper = shallow(<Account user={{}} />)
+      const redirect = wrapper.find(Redirect)
+      expect(redirect.prop('to').pathname).toBe('/')
+    })
   })
   describe('Form status messages', () => {
     it('should render no mesages initialy when client have an email', () => {

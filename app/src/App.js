@@ -263,7 +263,7 @@ export const App = ({
     <GDPRModal />
     {isDesktop && <Footer />}
   </div>
-  )
+)
 
 const mapStateToProps = state => {
   return {

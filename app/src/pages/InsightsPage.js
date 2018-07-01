@@ -160,15 +160,15 @@ const InsightsPage = ({
                   votePost={debounce(postId => {
                     user.token
                       ? votePost(voteMutationHelper({postId, action: 'vote'}))
-                        .then(data => Posts.refetch())
-                        .catch(e => Raven.captureException(e))
+                      .then(data => Posts.refetch())
+                      .catch(e => Raven.captureException(e))
                       : loginModalRequest()
                   }, 100)}
                   unvotePost={debounce(postId => {
                     user.token
                       ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
-                        .then(data => Posts.refetch())
-                        .catch(e => Raven.captureException(e))
+                      .then(data => Posts.refetch())
+                      .catch(e => Raven.captureException(e))
                       : loginModalRequest()
                   }, 100)}
                 />

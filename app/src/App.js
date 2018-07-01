@@ -94,13 +94,13 @@ export const App = ({
       duration='1.0s'
       timingFunction='ease-out'
       as='div'>
-          OFFLINE
+        OFFLINE
     </FadeInDown>}
     {isFullscreenMobile
-        ? undefined
-        : (isDesktop
-          ? <Menu />
-          : <MobileMenu />)}
+      ? undefined
+      : (isDesktop
+        ? <Menu />
+        : <MobileMenu />)}
     <ErrorBoundary>
       <Switch>
         <Route exact path='/projects' render={props => {
@@ -166,8 +166,8 @@ export const App = ({
             <LoginPage
               isDesktop={isDesktop}
               {...props} />
-            )}
-          />
+          )}
+        />
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>
@@ -176,7 +176,7 @@ export const App = ({
     <GDPRModal />
     {isDesktop && <Footer />}
   </div>
-  )
+)
 
 const mapStateToProps = state => {
   return {

@@ -146,4 +146,6 @@ const Post = ({
   )
 }
 
+export const UnwrappedPost = Post // for tests
+
 export default withRouter(Post)

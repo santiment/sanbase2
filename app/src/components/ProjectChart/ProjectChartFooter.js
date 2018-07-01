@@ -205,7 +205,7 @@ const ProjectChartFooter = ({
             <p>
               You can learn something new.
             </p>
-            <Link to='/insights'>{Insights.items.length}&nbsp;
+            <Link to={`/insights/tags/${props.project.ticker}`}>{Insights.items.length}&nbsp;
               Insight{Insights.items.length > 1 && 's'} about {props.project.ticker}</Link>
           </Message>
         }

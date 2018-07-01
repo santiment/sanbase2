@@ -94,13 +94,13 @@ export const App = ({
       duration='1.0s'
       timingFunction='ease-out'
       as='div'>
-        OFFLINE
+          OFFLINE
     </FadeInDown>}
     {isFullscreenMobile
-      ? undefined
-      : (isDesktop
-        ? <Menu />
-        : <MobileMenu />)}
+        ? undefined
+        : (isDesktop
+          ? <Menu />
+          : <MobileMenu />)}
     <ErrorBoundary>
       <Switch>
         <Route exact path='/projects' render={props => {
@@ -148,6 +148,7 @@ export const App = ({
         <Route exact path='/insights/popular' component={LoadableInsights} />
         <Route exact path='/insights/my' component={LoadableInsights} />
         <Route exact path='/insights/users/:userId' component={LoadableInsights} />
+        <Route exact path='/insights/tags/:tagName' component={LoadableInsights} />
         <Route exact path='/insights/:insightId' component={LoadableInsight} />
         <Route exact path='/projects/:slug' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
@@ -165,8 +166,8 @@ export const App = ({
             <LoginPage
               isDesktop={isDesktop}
               {...props} />
-          )}
-        />
+            )}
+          />
         <Redirect from='/' to='/projects' />
       </Switch>
     </ErrorBoundary>
@@ -175,7 +176,7 @@ export const App = ({
     <GDPRModal />
     {isDesktop && <Footer />}
   </div>
-)
+  )
 
 const mapStateToProps = state => {
   return {

@@ -227,3 +227,18 @@
 .projects-table-tips {
   text-align: 'center';
 }
+
+.page-head-projects {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-head-projects__left {
+  display: flex;
+  align-items: center;
+}
+
+.projects-search-row {
+  justify-content: initial;
+}

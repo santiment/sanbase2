@@ -60,7 +60,7 @@ defmodule Sanbase.Auth.Hmac do
   end
 
   def apikey_valid?(token, apikey) do
-    apikey == generate_apikey(token)
+    UserApikeyToken.has_token?(token) and apikey == generate_apikey(token)
   end
 
   def split_apikey(token_apikey) do

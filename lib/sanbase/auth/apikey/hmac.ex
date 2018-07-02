@@ -45,13 +45,13 @@ defmodule Sanbase.Auth.Hmac do
 
   def hmac(apikey) do
     :crypto.hmac(:sha256, secret_key(), apikey)
-    |> Base.encode16()
+    |> Base.encode32(case: :lower)
     |> binary_part(0, @apikey_length)
   end
 
   def generate_token() do
     :crypto.strong_rand_bytes(@rand_bytes_length)
-    |> Base.encode16()
+    |> Base.encode32(case: :lower)
     |> binary_part(0, @apikey_length)
   end
 

@@ -16,13 +16,6 @@ import ReactFormInput from '../../components/react-form-semantic-ui-react/ReactF
 import './EmailLogin.css'
 const validate = require('validate.js')
 
-// const emailLoginGQL = gql`
-//   mutation emailLogin($email: String!, $username: String!, $consent: String!) {
-//     emailLogin(email: $email, username: $username, consent: $consent) {
-//       success
-//     }
-//   }
-// `
 const emailLoginGQL = gql`
   mutation emailLogin($email: String!, $consent: String!) {
     emailLogin(email: $email, consent: $consent) {
@@ -65,12 +58,6 @@ const isErrorEmail = formApi => (
     !!formApi.getError().email
 )
 
-// const isErrorUsername = formApi => (
-//   !!formApi.getValue().username &&
-//     formApi.getTouched().username &&
-//     !!formApi.getError().username
-// )
-
 export const EmailField = ({
   formApi,
   className = undefined,
@@ -96,25 +83,6 @@ export const EmailField = ({
       </Message>}
   </div>
 )
-
-// const UsernameField = ({formApi}) => {
-//   return (
-//     <Fragment>
-//       <label>Username</label>
-//       <ReactFormInput
-//         fluid
-//         type='text'
-//         field='username'
-//         error={isErrorUsername(formApi)}
-//         className='username-input'
-//         placeholder='Your name' />
-//       {isErrorUsername(formApi) &&
-//         <Message negative>
-//           {formApi.getError().username}
-//         </Message>}
-//     </Fragment>
-//   )
-// }
 
 const EmailLogin = ({
   emailLogin,
@@ -175,16 +143,12 @@ const EmailLogin = ({
             onSubmit={formApi.submitForm}
             autoComplete='off'>
             <EmailField formApi={formApi} />
-            {/* {formApi.successes.email &&
-              <UsernameField formApi={formApi} />} */}
             <div className='email-form-control'>
               <Button
                 disabled={
                   !formApi.getSuccess().email ||
-                  // !formApi.getSuccess().username ||
                   isPending
                 }
-                // positive={!!formApi.getSuccess().email && !!formApi.getSuccess().username}
                 positive={!!formApi.getSuccess().email}
                 type='submit'>
                 {isPending ? 'Waiting...' : 'Continue'}

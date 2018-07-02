@@ -7,7 +7,7 @@ defmodule Sanbase.Auth.ApiKeyTest do
   }
 
   setup do
-    {:ok, user} = User.find_or_insert_by_email("test@santiment.net")
+    {:ok, user} = User.find_or_insert_by_email("as819asdnmaso1011@santiment.net")
 
     %{
       user: user

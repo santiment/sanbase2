@@ -41,6 +41,12 @@ class InsightsNew extends Component {
   }
 
   render () {
+    if (!this.props.username) {
+      return (
+        <Redirect to='/insights' />
+      )
+    }
+
     if (!this.state.text &&
       this.props.history.location.pathname !== '/insights/new' &&
       this.props.match.path.split('/')[2] !== 'update') {

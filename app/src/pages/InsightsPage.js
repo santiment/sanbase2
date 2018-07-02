@@ -249,6 +249,9 @@ const mapDataToProps = props => {
   const hasUserInsights = filteredBySelfUser(normalizedPosts).length > 0
   const filteredByUserID = posts => posts.filter(post => post.user.id === ownProps.match.params.userId)
 
+  const searchedTag = ownProps.match.params.tagName && ownProps.match.params.tagName.toLowerCase() // This optimize calculations inside filter func
+  const filteredByTagPosts = posts => posts.filter(post => post.tags.some(({ name }) => name.toLowerCase() === searchedTag))
+
   const postsByDay = normalizedPosts.reduce((acc, post) => {
     const day = moment(post.createdAt).endOf('day').unix()
     if (!acc[`${day}`]) {
@@ -271,11 +274,14 @@ const mapDataToProps = props => {
       return reduceAllKeys(posts)(
         compose(
           filteredByPublished,
-          filteredByUserID
+          filteredByUserID,
+          filteredByTagPosts
         )
       )
     } else if (filter === 'my') {
       return reduceAllKeys(posts)(filteredBySelfUser)
+    } else if (filter === 'tags') {
+      return reduceAllKeys(posts)(filteredByTagPosts)
     }
     return reduceAllKeys(posts)(filteredByPublished)
   }

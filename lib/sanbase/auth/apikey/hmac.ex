@@ -55,18 +55,12 @@ defmodule Sanbase.Auth.Hmac do
     |> binary_part(0, @apikey_length)
   end
 
-  def generate_apikey(id, token) do
-    "#{id}_" <> hmac(token)
+  def generate_apikey(token) do
+    token <> "_" <> hmac(token)
   end
 
-  def apikey_valid?(user_id, tokens, apikey) do
-    Enum.find(tokens, fn token ->
-      generate_apikey(user_id, token) == apikey
-    end)
-    |> case do
-      nil -> false
-      _ -> true
-    end
+  def apikey_valid?(token, apikey) do
+    apikey == generate_apikey(token)
   end
 
   # Private functions

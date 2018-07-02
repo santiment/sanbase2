@@ -10,6 +10,8 @@ defmodule Sanbase.Auth.Apikey do
   be used in the communication. By an apikey we can retrieve the owner (user) of it.
   """
 
+  require Logger
+
   alias Sanbase.Auth.{
     Hmac,
     UserApiKeyToken,
@@ -25,17 +27,14 @@ defmodule Sanbase.Auth.Apikey do
   tokens
   """
   @spec apikey_to_user(String.t()) :: {:ok, %User{}} | {:error, String.t()}
-  def apikey_to_user(id_apikey) do
-    with {:ok, {user_id, _rest}} <- split_apikey(id_apikey),
-         {:ok, tokens} <- UserApiKeyToken.user_tokens(user_id) do
-      if Hmac.apikey_valid?(user_id, tokens, id_apikey) do
-        User.by_id(user_id)
-      else
-        {:error, "Apikey not valid"}
-      end
+  def apikey_to_user(apikey) do
+    with {:ok, {token, _rest}} <- split_apikey(apikey),
+         true <- UserApiKeyToken.has_token?(token),
+         true <- Hmac.apikey_valid?(token, apikey) do
+      UserApiKeyToken.user_by_token(token)
     else
-      error ->
-        {:error, "Provided apikey is malformed. Inspecting error: #{inspect(error)}"}
+      _error ->
+        {:error, "Apikey not valid or malformed"}
     end
   end
 
@@ -47,7 +46,7 @@ defmodule Sanbase.Auth.Apikey do
   def generate_apikey(%User{id: user_id} = user) do
     with token when is_non_empty_string(token) <- Hmac.generate_token(),
          {:ok, _user_apikey_token} <- UserApiKeyToken.add_user_token(user, token),
-         apikey when is_non_empty_string(apikey) <- Hmac.generate_apikey(user_id, token) do
+         apikey when is_non_empty_string(apikey) <- Hmac.generate_apikey(token) do
       {:ok, apikey}
     else
       error ->
@@ -62,23 +61,14 @@ defmodule Sanbase.Auth.Apikey do
   Revokes the given apikey by removing its corresponding
   """
   @spec revoke_apikey(String.t()) :: :ok | {:error, String.t()}
-  def revoke_apikey(id_apikey) do
-    with {:ok, {user_id, apikey}} <- split_apikey(id_apikey),
-         {:ok, tokens} <- UserApiKeyToken.user_tokens(user_id) do
-      Enum.find(tokens, fn token ->
-        Hmac.generate_apikey(user_id, token) == id_apikey
-      end)
-      |> case do
-        nil ->
-          {:error, "Apikey does not exist."}
-
-        matched_token ->
-          UserApiKeyToken.remove_user_token(user_id, matched_token)
-          :ok
-      end
+  def revoke_apikey(apikey) do
+    with {:ok, {token, _rest}} <- split_apikey(apikey),
+         {:ok, %User{} = user} <- UserApiKeyToken.user_by_token(token) do
+      UserApiKeyToken.remove_user_token(user, token)
+      :ok
     else
       error ->
-        {:error, "Provided apikey is malformed. Inspecting error: #{inspect(error)}"}
+        {:error, "Provided apikey is malformed or not valid. Inspecting error: #{inspect(error)}"}
     end
   end
 
@@ -88,22 +78,27 @@ defmodule Sanbase.Auth.Apikey do
   @spec apikeys_list(%User{}) :: List.t()
   def apikeys_list(%User{id: user_id} = user) do
     with {:ok, tokens} <- UserApiKeyToken.user_tokens(user) do
-      Enum.map(tokens, fn token ->
-        Hmac.generate_apikey(user_id, token)
-      end)
+      apikeys =
+        Enum.map(tokens, fn token ->
+          Hmac.generate_apikey(token)
+        end)
+
+      {:ok, apikeys}
     else
       error ->
-        []
+        err_msg =
+          "Error getting apikeys list for user with id #{user_id} Error: #{inspect(error)}"
+
+        Logger.error(err_msg)
+        {:error, err_msg}
     end
   end
 
   # Private functions
 
   # Returns a list `[user_id, apikey]`
-  defp split_apikey(id_apikey) do
-    [num_as_str, apikey] = String.split(id_apikey, "_", parts: 2)
-    {num, ""} = Integer.parse(num_as_str)
-
-    {:ok, {num, apikey}}
+  defp split_apikey(token_apikey) do
+    [token, apikey] = String.split(token_apikey, "_", parts: 2)
+    {:ok, {token, apikey}}
   end
 end

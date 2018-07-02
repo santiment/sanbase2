@@ -13,7 +13,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     TechIndicatorsResolver,
     FileResolver,
     PostResolver,
-    MarketSegmentResolver
+    MarketSegmentResolver,
+    ApikeyResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -564,6 +565,18 @@ defmodule SanbaseWeb.Graphql.Schema do
       # Allow this mutation to be executed when the user has not accepted the privacy policy.
       middleware(JWTAuth, allow_access: true)
       resolve(&AccountResolver.update_terms_and_conditions/3)
+    end
+
+    field :generate_apikey, :user do
+      middleware(JWTAuth)
+      resolve(&ApikeyResolver.generate_apikey/3)
+    end
+
+    field :revoke_apikey, :user do
+      arg(:apikey, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&ApikeyResolver.revoke_apikey/3)
     end
   end
 end

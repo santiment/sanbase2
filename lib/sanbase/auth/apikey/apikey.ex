@@ -102,10 +102,8 @@ defmodule Sanbase.Auth.Apikey do
   # Private functions
 
   # Returns a list `[user_id, apikey]`
-  defp split_apikey(id_apikey) do
-    [num_as_str, apikey] = String.split(id_apikey, "_", parts: 2)
-    {num, ""} = Integer.parse(num_as_str)
-
-    {:ok, {num, apikey}}
+  defp split_apikey(token_apikey) do
+    [token, apikey] = String.split(token_apikey, "_", parts: 2)
+    {:ok, {token, apikey}}
   end
 end

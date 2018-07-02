@@ -60,9 +60,10 @@ export const Account = ({
   isPending,
   onSuccess,
   onError,
-  onPending
+  onPending,
+  isLoggedIn
 }) => {
-  if (user && !user.username) {
+  if (user && !isLoggedIn) {
     return (
       <Redirect to={{
         pathname: '/'
@@ -194,7 +195,8 @@ export const Account = ({
 const mapStateToProps = state => {
   return {
     user: state.user.data,
-    loading: state.user.isLoading
+    loading: state.user.isLoading,
+    isLoggedIn: !!state.user.token
   }
 }
 

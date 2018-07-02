@@ -14,7 +14,7 @@ defmodule Sanbase.Auth.Apikey do
 
   alias Sanbase.Auth.{
     Hmac,
-    UserApiKeyToken,
+    UserApikeyToken,
     User
   }
 
@@ -28,10 +28,10 @@ defmodule Sanbase.Auth.Apikey do
   """
   @spec apikey_to_user(String.t()) :: {:ok, %User{}} | {:error, String.t()}
   def apikey_to_user(apikey) do
-    with {:ok, {token, _rest}} <- split_apikey(apikey),
-         true <- UserApiKeyToken.has_token?(token),
+    with {:ok, {token, _rest}} <- Hmac.split_apikey(apikey),
+         true <- UserApikeyToken.has_token?(token),
          true <- Hmac.apikey_valid?(token, apikey) do
-      UserApiKeyToken.user_by_token(token)
+      UserApikeyToken.user_by_token(token)
     else
       _error ->
         {:error, "Apikey not valid or malformed"}
@@ -45,7 +45,7 @@ defmodule Sanbase.Auth.Apikey do
   @spec generate_apikey(%User{}) :: {:ok, String.t()} | {:error | String.t()}
   def generate_apikey(%User{id: user_id} = user) do
     with token when is_non_empty_string(token) <- Hmac.generate_token(),
-         {:ok, _user_apikey_token} <- UserApiKeyToken.add_user_token(user, token),
+         {:ok, _user_apikey_token} <- UserApikeyToken.add_user_token(user, token),
          apikey when is_non_empty_string(apikey) <- Hmac.generate_apikey(token) do
       {:ok, apikey}
     else
@@ -60,11 +60,11 @@ defmodule Sanbase.Auth.Apikey do
   @doc ~s"""
   Revokes the given apikey by removing its corresponding
   """
-  @spec revoke_apikey(String.t()) :: :ok | {:error, String.t()}
-  def revoke_apikey(apikey) do
-    with {:ok, {token, _rest}} <- split_apikey(apikey),
-         {:ok, %User{} = user} <- UserApiKeyToken.user_by_token(token) do
-      UserApiKeyToken.remove_user_token(user, token)
+  @spec revoke_apikey(%User{}, String.t()) :: :ok | {:error, String.t()}
+  def revoke_apikey(user, apikey) do
+    with {:ok, {token, _rest}} <- Hmac.split_apikey(apikey),
+         true <- UserApikeyToken.user_has_token?(user, token) do
+      UserApikeyToken.remove_user_token(user, token)
       :ok
     else
       error ->
@@ -77,7 +77,7 @@ defmodule Sanbase.Auth.Apikey do
   """
   @spec apikeys_list(%User{}) :: List.t()
   def apikeys_list(%User{id: user_id} = user) do
-    with {:ok, tokens} <- UserApiKeyToken.user_tokens(user) do
+    with {:ok, tokens} <- UserApikeyToken.user_tokens(user) do
       apikeys =
         Enum.map(tokens, fn token ->
           Hmac.generate_apikey(token)
@@ -92,13 +92,5 @@ defmodule Sanbase.Auth.Apikey do
         Logger.error(err_msg)
         {:error, err_msg}
     end
-  end
-
-  # Private functions
-
-  # Returns a list `[user_id, apikey]`
-  defp split_apikey(token_apikey) do
-    [token, apikey] = String.split(token_apikey, "_", parts: 2)
-    {:ok, {token, apikey}}
   end
 end

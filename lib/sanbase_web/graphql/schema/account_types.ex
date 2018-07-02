@@ -2,7 +2,11 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Sanbase.Repo
 
-  alias SanbaseWeb.Graphql.Resolvers.{AccountResolver, EthAccountResolver}
+  alias SanbaseWeb.Graphql.Resolvers.{
+    ApikeyResolver,
+    AccountResolver,
+    EthAccountResolver
+  }
 
   object :user do
     field(:id, non_null(:id))
@@ -20,6 +24,10 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
 
     field :followed_projects, list_of(:project) do
       resolve(&AccountResolver.followed_projects/3)
+    end
+
+    field :apikeys, list_of(:string) do
+      resolve(&ApikeyResolver.apikeys_list/3)
     end
   end
 

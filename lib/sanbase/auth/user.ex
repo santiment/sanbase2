@@ -4,7 +4,12 @@ defmodule Sanbase.Auth.User do
 
   import Ecto.Changeset
 
-  alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Auth.{
+    User,
+    EthAccount,
+    UserApikeyToken
+  }
+
   alias Sanbase.Voting.Vote
   alias Sanbase.Repo
 
@@ -43,6 +48,7 @@ defmodule Sanbase.Auth.User do
 
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
+    has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
 
     timestamps()
   end

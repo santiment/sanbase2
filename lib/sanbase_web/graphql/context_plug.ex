@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.ContextPlug do
   @moduledoc ~s"""
-
+  Plug that builds the Graphql context.
+  Currently only checks the `authorization` header and verifies the credentials
   """
 
   @behaviour Plug

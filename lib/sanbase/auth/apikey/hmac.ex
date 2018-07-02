@@ -1,9 +1,11 @@
 defmodule Sanbase.Auth.Hmac do
   @moduledoc """
   What is HMAC? HMAC is a way to combine a key and a hashing function in a way
-  that's harder to attack. HMAC does not encrypt the message.
+  that's harder to attack.
 
-  The calculation is the following:
+  HMAC does not encrypt the message.
+
+  The HMAC calculation is the following:
   `HMAC(K,m) = H((K' ⊕ opad) || H ((K' ⊕ ipad)||m))`
   where
     - H is a cryptographic hash function,
@@ -29,7 +31,8 @@ defmodule Sanbase.Auth.Hmac do
     2. When a apikey generation request is made, generate a token and store it in the database
     3. Feed the HMAC algorithm the sha256 hashing function, the secret key and generated token.
     The result of the HMAC is the apikey.
-    4. For easier search in the database prepend the apikey with the user id
+    4. For easier search in the database prepend the apikey with the token itself. This does not
+    compromise the security as the real secret is the secret key and not the user token.
   """
   import Ecto.Query
 

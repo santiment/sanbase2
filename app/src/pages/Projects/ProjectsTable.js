@@ -14,6 +14,8 @@ import ProjectIcon from '../../components/ProjectIcon'
 import Panel from '../../components/Panel'
 import PercentChanges from '../../components/PercentChanges'
 import ProjectsNavigation from '../../components/ProjectsNavigation'
+import HelpPopup from '../../components/HelpPopup/HelpPopup'
+import HelpPopupProjectsContent from '../../components/HelpPopup/HelpPopupProjectsContent'
 import './ProjectsTable.css'
 
 export const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
@@ -265,15 +267,25 @@ const ProjectsTable = ({
         <link rel='canonical' href={`${getOrigin()}/projects`} />
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
-        <ProjectsNavigation
-          path={match.path}
-          categories={categories}
-          handleSetCategory={handleSetCategory}
-          allMarketSegments={allMarketSegments}
-          user={user}
-        />
+        <div className='page-head page-head-projects'>
+          <div className='page-head-projects__left'>
+            <h1>Markets</h1>
+            <HelpPopup>
+              <HelpPopupProjectsContent />
+            </HelpPopup>
+          </div>
+          <div>
+            <ProjectsNavigation
+              path={match.path}
+              categories={categories}
+              handleSetCategory={handleSetCategory}
+              allMarketSegments={allMarketSegments}
+              user={user}
+              />
+          </div>
+        </div>
         <Panel>
-          <div className='row'>
+          <div className='row projects-search-row'>
             <div className='datatables-info'>
               {false && <label>
                 Showing {

@@ -8,7 +8,7 @@ import AccountUsernameForm from './AccountUsernameForm'
 import AccountEthKeyForm from './AccountEthKeyForm'
 import AccountWallets from './AccountWallets'
 import AccountSessions from './AccountSessions'
-import { USER_LOGOUT_SUCCESS } from '../../actions/types'
+import { USER_LOGOUT_SUCCESS, USER_USERNAME_CHANGE, USER_EMAIL_CHANGE } from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
@@ -161,11 +161,11 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
   dispatchUserLogout: () => dispatch({ type: USER_LOGOUT_SUCCESS }),
   dispatchEmailChange: email => dispatch({
-    type: 'CHANGE_EMAIL',
+    type: USER_EMAIL_CHANGE,
     email
   }),
   dispatchUsernameChange: username => dispatch({
-    type: 'CHANGE_USERNAME',
+    type: USER_USERNAME_CHANGE,
     username
   })
 })

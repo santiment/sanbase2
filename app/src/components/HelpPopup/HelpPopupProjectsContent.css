@@ -15,6 +15,11 @@
   margin-bottom: 1rem;
 }
 
+.HelpPopupProjectsContent__item h4,
+.HelpPopupProjectsContent__item p {
+  line-height: 1.3;
+}
+
 .HelpPopupProjectsContent__item_inline h4,
 .HelpPopupProjectsContent__item_inline p {
   display: inline;

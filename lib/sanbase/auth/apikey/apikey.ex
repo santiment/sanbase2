@@ -26,10 +26,8 @@ defmodule Sanbase.Auth.Apikey do
   """
   @spec apikey_to_user(String.t()) :: {:ok, %User{}} | {:error, String.t()}
   def apikey_to_user(id_apikey) do
-    with [num_as_str, _apikey] <- String.split(id_apikey, "_", parts: 2),
-         {user_id, _rest} <- Integer.parse(num_as_str) do
-      {:ok, tokens} = UserApiKeyToken.user_tokens(user_id)
-
+    with {:ok, {user_id, _rest}} <- split_apikey(id_apikey),
+         {:ok, tokens} <- UserApiKeyToken.user_tokens(user_id) do
       if Hmac.apikey_valid?(user_id, tokens, id_apikey) do
         User.by_id(user_id)
       else
@@ -37,7 +35,7 @@ defmodule Sanbase.Auth.Apikey do
       end
     else
       error ->
-        {:error, "Provided apikey is malformed"}
+        {:error, "Provided apikey is malformed. Inspecting error: #{inspect(error)}"}
     end
   end
 
@@ -61,6 +59,30 @@ defmodule Sanbase.Auth.Apikey do
   end
 
   @doc ~s"""
+  Revokes the given apikey by removing its corresponding
+  """
+  @spec revoke_apikey(String.t()) :: :ok | {:error, String.t()}
+  def revoke_apikey(id_apikey) do
+    with {:ok, {user_id, apikey}} <- split_apikey(id_apikey),
+         {:ok, tokens} <- UserApiKeyToken.user_tokens(user_id) do
+      Enum.find(tokens, fn token ->
+        Hmac.generate_apikey(user_id, token) == id_apikey
+      end)
+      |> case do
+        nil ->
+          {:error, "Apikey does not exist."}
+
+        matched_token ->
+          UserApiKeyToken.remove_user_token(user_id, matched_token)
+          :ok
+      end
+    else
+      error ->
+        {:error, "Provided apikey is malformed. Inspecting error: #{inspect(error)}"}
+    end
+  end
+
+  @doc ~s"""
   Return a list of all apikeys for a given user
   """
   @spec apikeys_list(%User{}) :: List.t()
@@ -73,5 +95,15 @@ defmodule Sanbase.Auth.Apikey do
       error ->
         []
     end
+  end
+
+  # Private functions
+
+  # Returns a list `[user_id, apikey]`
+  defp split_apikey(id_apikey) do
+    [num_as_str, apikey] = String.split(id_apikey, "_", parts: 2)
+    {num, ""} = Integer.parse(num_as_str)
+
+    {:ok, {num, apikey}}
   end
 end

@@ -148,6 +148,7 @@ export const App = ({
         <Route exact path='/insights/popular' component={LoadableInsights} />
         <Route exact path='/insights/my' component={LoadableInsights} />
         <Route exact path='/insights/users/:userId' component={LoadableInsights} />
+        <Route exact path='/insights/tags/:tagName' component={LoadableInsights} />
         <Route exact path='/insights/:insightId' component={LoadableInsight} />
         <Route exact path='/projects/:slug' render={props => (
           <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />

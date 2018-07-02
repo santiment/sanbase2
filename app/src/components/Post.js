@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import moment from 'moment'
-import { withRouter } from 'react-router-dom'
+import { withRouter, Link } from 'react-router-dom'
 import { Label, Button } from 'semantic-ui-react'
 import { createSkeletonElement } from '@trainline/react-skeletor'
 import LikeBtn from './../pages/InsightsNew/LikeBtn'
@@ -93,7 +93,7 @@ const Post = ({
             {tags.length > 0
               ? <div className='post-tags'>
                 {tags.map((tag, index) => (
-                  <div key={index} className='post-tag'>{tag.label || tag.name}</div>
+                  <Link key={index} className='post-tag' to={`/insights/tags/${tag.name}`}>{tag.label || tag.name}</Link>
                 ))}
               </div>
               : <Author {...user} />}
@@ -141,5 +141,7 @@ const Post = ({
     </div>
   )
 }
+
+export const UnwrappedPost = Post // for tests
 
 export default withRouter(Post)

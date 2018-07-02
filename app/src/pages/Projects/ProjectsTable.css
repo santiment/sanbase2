@@ -234,6 +234,16 @@
   justify-content: space-between;
 }
 
+.page-head.page-head-projects {
+  margin: 0;
+}
+
+@media (min-width: 1025px) {
+  .page-head.page-head-projects {
+    margin-top: 16px;
+  }
+}
+
 .page-head-projects__left {
   display: flex;
   align-items: center;

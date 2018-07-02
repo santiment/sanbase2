@@ -267,7 +267,7 @@ const ProjectsTable = ({
         <link rel='canonical' href={`${getOrigin()}/projects`} />
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
-        <div className='page-head page-head-projects' style={{margin: 0}}>
+        <div className='page-head page-head-projects'>
           <div className='page-head-projects__left'>
             <h1>Markets</h1>
             <HelpPopup>

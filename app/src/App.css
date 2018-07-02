@@ -72,7 +72,8 @@
   width: 100%;
 }
 
-.App .no-username-status-message a, .App .no-username-status-message a:hover {
+.App .no-username-status-message a,
+.App .no-username-status-message a:hover {
   color: #000;
 }
 

@@ -42,4 +42,12 @@ defmodule Sanbase.Auth.UserApiKeyToken do
     |> changeset(%{user_id: user_id, token: token})
     |> Repo.insert()
   end
+
+  def remove_user_token(user_id, token) do
+    from(
+      pair in UserApiKeyToken,
+      where: pair.token == ^token and pair.user_id == ^user_id
+    )
+    |> Repo.delete_all()
+  end
 end

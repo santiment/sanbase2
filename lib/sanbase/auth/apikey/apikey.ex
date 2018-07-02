@@ -98,12 +98,4 @@ defmodule Sanbase.Auth.Apikey do
         {:error, err_msg}
     end
   end
-
-  # Private functions
-
-  # Returns a list `[user_id, apikey]`
-  defp split_apikey(token_apikey) do
-    [token, apikey] = String.split(token_apikey, "_", parts: 2)
-    {:ok, {token, apikey}}
-  end
 end

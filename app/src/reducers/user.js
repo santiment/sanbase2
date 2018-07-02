@@ -57,7 +57,7 @@ export default (state = initialState, action) => {
         consent: null,
         errorMessage: action.payload
       }
-    case 'CHANGE_EMAIL':
+    case actions.USER_EMAIL_CHANGE:
       return {
         ...state,
         data: {
@@ -65,7 +65,7 @@ export default (state = initialState, action) => {
           email: action.email
         }
       }
-    case 'CHANGE_USERNAME':
+    case actions.USER_USERNAME_CHANGE:
       return {
         ...state,
         data: {

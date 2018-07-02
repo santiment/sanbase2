@@ -16,6 +16,8 @@ defmodule Sanbase.Auth.Apikey do
     User
   }
 
+  defguard is_non_empty_string(str) when is_binary(str) and str != ""
+
   @doc ~s"""
   Returns the User struct connected to the given apikey.
   Split the apikey by "_" and use the first part as a user id. Look for all
@@ -45,13 +47,16 @@ defmodule Sanbase.Auth.Apikey do
   """
   @spec generate_apikey(%User{}) :: {:ok, String.t()} | {:error | String.t()}
   def generate_apikey(%User{id: user_id} = user) do
-    with token <- Hmac.generate_token(),
-         {:ok, user} <- UserApiKeyToken.add_user_token(user, token),
-         {:ok, apikey} <- Hmac.generate_apikey(user_id, token) do
+    with token when is_non_empty_string(token) <- Hmac.generate_token(),
+         {:ok, _user_apikey_token} <- UserApiKeyToken.add_user_token(user, token),
+         apikey when is_non_empty_string(apikey) <- Hmac.generate_apikey(user_id, token) do
       {:ok, apikey}
     else
-      _error ->
-        {:error, "Error generating new apikey for user with id #{user_id}"}
+      error ->
+        {:error,
+         "Error generating new apikey for user with id #{user_id}. Inspecting error: #{
+           inspect(error)
+         }"}
     end
   end
 

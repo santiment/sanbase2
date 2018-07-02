@@ -87,7 +87,7 @@ export const App = ({
   isLoggedIn,
   isFullscreenMobile,
   isOffline,
-  hasNoUsername
+  hasUsername
 }) => (
   <div className='App'>
     {isOffline &&
@@ -98,7 +98,7 @@ export const App = ({
       as='div'>
         OFFLINE
     </FadeInDown>}
-    {hasNoUsername &&
+    {!hasUsername &&
     <div className='no-username-status-message'>
       <Link to='/account'>
         <i className='exclamation triangle icon' />
@@ -193,7 +193,7 @@ const mapStateToProps = state => {
     isLoggedIn: !!state.user.token,
     isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
     isOffline: !state.rootUi.isOnline,
-    hasNoUsername: !state.user.username
+    hasUsername: !!state.user.username
   }
 }
 

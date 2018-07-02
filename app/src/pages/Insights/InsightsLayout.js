@@ -13,8 +13,9 @@ const isShowedNewInsightsButton = (history, isLogin) => (
     history.location.pathname === '/insights/newest')
 )
 
-const NewInsightBtn = ({history}) => (
+const NewInsightBtn = ({history, disabled}) => (
   <Button
+    disabled={disabled}
     color='green'
     onClick={() => history.push('/insights/new')}>
     <Icon name='plus' />New insight
@@ -27,7 +28,8 @@ const InsightsLayout = ({
   sidebar = null,
   loginModalRequest,
   history,
-  children
+  children,
+  hasUsername
 }) => (
   <div className='page event-votes insights-page'>
     <Helmet>
@@ -50,7 +52,9 @@ const InsightsLayout = ({
             <NewInsightBtn
               isLogin={isLogin}
               loginModalRequest={loginModalRequest}
-              history={history} />}
+              history={history}
+              disabled={!hasUsername}
+              />}
         </div>
       </div>
       <div className='insights-page-content'>
@@ -92,6 +96,10 @@ const InsightsLayout = ({
   </div>
 )
 
+const mapStateToProps = state => ({
+  hasUsername: !!state.user.data.username
+})
+
 const mapDispatchToProps = dispatch => {
   return {
     loginModalRequest: () => {
@@ -103,6 +111,6 @@ const mapDispatchToProps = dispatch => {
 }
 
 export default compose(
-  connect(undefined, mapDispatchToProps),
+  connect(mapStateToProps, mapDispatchToProps),
   withRouter
 )(InsightsLayout)

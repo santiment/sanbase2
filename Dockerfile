@@ -14,7 +14,7 @@ COPY ./app /app
 RUN yarn build
 
 # Elixir and phoenix assets build image
-FROM elixir:1.6.6-alpine as code_builder
+FROM elixir:1.6.5-alpine as code_builder
 
 ENV MIX_ENV prod
 
@@ -46,7 +46,7 @@ RUN mix phx.digest
 RUN mix release
 
 # Release image
-FROM elixir:1.6.6-alpine
+FROM elixir:1.6.5-alpine
 
 RUN apk add --update bash
 

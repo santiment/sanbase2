@@ -2,7 +2,8 @@ import React from 'react'
 import {
   Route as BasicRoute,
   Switch,
-  Redirect
+  Redirect,
+  Link
 } from 'react-router-dom'
 import { FadeInDown } from 'animate-components'
 import Loadable from 'react-loadable'
@@ -85,7 +86,8 @@ export const App = ({
   isDesktop,
   isLoggedIn,
   isFullscreenMobile,
-  isOffline
+  isOffline,
+  hasUsername
 }) => (
   <div className='App'>
     {isOffline &&
@@ -96,6 +98,14 @@ export const App = ({
       as='div'>
         OFFLINE
     </FadeInDown>}
+    {isLoggedIn && !hasUsername &&
+    <div className='no-username-status-message'>
+      <Link to='/account'>
+        <i className='exclamation triangle icon' />
+        Without a username, some functionality will be restricted. Please, click on the notification to proceed to the account settings. <i className='exclamation triangle icon' />
+      </Link>
+    </div>
+    }
     {isFullscreenMobile
       ? undefined
       : (isDesktop
@@ -182,7 +192,8 @@ const mapStateToProps = state => {
   return {
     isLoggedIn: !!state.user.token,
     isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
-    isOffline: !state.rootUi.isOnline
+    isOffline: !state.rootUi.isOnline,
+    hasUsername: !!state.user.data.username
   }
 }
 

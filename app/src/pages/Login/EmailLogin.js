@@ -17,8 +17,8 @@ import './EmailLogin.css'
 const validate = require('validate.js')
 
 const emailLoginGQL = gql`
-  mutation emailLogin($email: String!, $username: String!, $consent: String!) {
-    emailLogin(email: $email, username: $username, consent: $consent) {
+  mutation emailLogin($email: String!, $consent: String!) {
+    emailLogin(email: $email, consent: $consent) {
       success
     }
   }
@@ -168,16 +168,13 @@ const EmailLogin = ({
             onSubmit={formApi.submitForm}
             autoComplete='off'>
             <EmailField formApi={formApi} />
-            {formApi.successes.email &&
-              <UsernameField formApi={formApi} />}
             <div className='email-form-control'>
               <Button
                 disabled={
                   !formApi.getSuccess().email ||
-                  !formApi.getSuccess().username ||
                   isPending
                 }
-                positive={!!formApi.getSuccess().email && !!formApi.getSuccess().username}
+                positive={!!formApi.getSuccess().email}
                 type='submit'>
                 {isPending ? 'Waiting...' : 'Continue'}
               </Button>

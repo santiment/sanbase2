@@ -60,6 +60,23 @@
   font-weight: bold;
 }
 
+.App .no-username-status-message {
+  text-align: center;
+  background-color: #ffbe00;
+}
+
+.App .no-username-status-message a {
+  display: inline-block;
+  padding: 5px;
+  border-bottom: 0;
+  width: 100%;
+}
+
+.App .no-username-status-message a,
+.App .no-username-status-message a:hover {
+  color: #000;
+}
+
 .button {
   box-shadow: 0 4px 6px rgba(45, 156, 129, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
   transition: all 0.15s ease;

@@ -139,14 +139,14 @@ describe('Account container', () => {
   describe('Form status messages', () => {
     describe('User without email', () => {
       it('should render dashboard mobile access message', () => {
-        const wrapper = shallow(<Account user={userWithoutEmail} />)
+        const wrapper = shallow(<Account user={userWithoutEmail} isLoggedIn />)
         expect(wrapper.find('.account-message__dashboard').exists()).toBe(true)
       })
     })
     describe('User with email', () => {
       let wrapper
       beforeEach(() => {
-        wrapper = shallow(<Account user={userWithEmail} />)
+        wrapper = shallow(<Account user={userWithEmail} isLoggedIn />)
       })
       it('should render no mesages initialy when client have an email', () => {
         expect(wrapper.find('.account-message').exists()).toBe(false)

@@ -35,7 +35,7 @@ defmodule Sanbase.Auth.ApiKeyTest do
   end
 
   # Splitting the apikey will fail
-  test "fail when the apikey cannot be splitted properly", %{user: user} do
+  test "fail when the apikey cannot be split properly" do
     assert {:error, "Apikey not valid or malformed"} ==
              Apikey.apikey_to_user("notproperlyformatedapikey")
   end

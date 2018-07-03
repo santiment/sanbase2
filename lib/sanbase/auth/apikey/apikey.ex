@@ -37,7 +37,7 @@ defmodule Sanbase.Auth.Apikey do
         {:error, "Apikey not valid or malformed"}
 
       error ->
-        Logger.info("Apikey #{apikey} cannot be splitted - #{inspect(error)}")
+        Logger.info("Apikey #{apikey} cannot be split - #{inspect(error)}")
         {:error, "Apikey not valid or malformed"}
     end
   end

@@ -3,6 +3,7 @@
 - 2018-26-06 | v.0.6.1:
 
   Updated settings
+  Fixed fetching of allTags
 
 - 2018-18-06 | v.0.6.0:
 

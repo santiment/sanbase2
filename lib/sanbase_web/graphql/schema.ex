@@ -13,7 +13,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     TechIndicatorsResolver,
     FileResolver,
     PostResolver,
-    MarketSegmentResolver
+    MarketSegmentResolver,
+    ApikeyResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -556,6 +557,28 @@ defmodule SanbaseWeb.Graphql.Schema do
       # Allow this mutation to be executed when the user has not accepted the privacy policy.
       middleware(JWTAuth, allow_access: true)
       resolve(&AccountResolver.update_terms_and_conditions/3)
+    end
+
+    @desc ~s"""
+    Generates a new apikey. There could be more than one apikey per user at every
+    given time. Only JWT authenticated users can generate apikeys. The apikeys can
+     be retrieved via the `apikeys` fields of the `user` GQL type.
+    """
+    field :generate_apikey, :user do
+      middleware(JWTAuth)
+      resolve(&ApikeyResolver.generate_apikey/3)
+    end
+
+    @desc ~s"""
+    Revoke the given apikey if only the currently logged in user is the owner of the
+    apikey. Only JWT authenticated users can revoke apikeys. You cannot revoke the apikey
+    using the apikey.
+    """
+    field :revoke_apikey, :user do
+      arg(:apikey, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&ApikeyResolver.revoke_apikey/3)
     end
   end
 end

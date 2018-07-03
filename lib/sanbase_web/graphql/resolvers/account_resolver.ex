@@ -185,6 +185,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     end
   end
 
+  # Private functions
+
   # No eth account and there is a user logged in
   defp fetch_user(
          %{address: address, context: %{auth: %{auth_method: :user_token, current_user: user}}},
@@ -199,9 +201,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   # No eth account and no user logged in
   defp fetch_user(%{address: address}, nil) do
     Multi.new()
-    |> Multi.insert(:add_user, %User{username: address, salt: User.generate_salt()})
+    |> Multi.insert(
+      :add_user,
+      User.changeset(%User{}, %{username: address, salt: User.generate_salt()})
+    )
     |> Multi.run(:add_eth_account, fn %{add_user: %User{id: id}} ->
-      eth_account = Repo.insert(%EthAccount{user_id: id, address: address})
+      eth_account =
+        EthAccount.changeset(%EthAccount{}, %{user_id: id, address: address})
+        |> Repo.insert()
 
       {:ok, eth_account}
     end)

@@ -4,7 +4,12 @@ defmodule Sanbase.Auth.User do
 
   import Ecto.Changeset
 
-  alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Auth.{
+    User,
+    EthAccount,
+    UserApikeyToken
+  }
+
   alias Sanbase.Voting.Vote
   alias Sanbase.Repo
 
@@ -43,6 +48,7 @@ defmodule Sanbase.Auth.User do
 
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
+    has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
 
     timestamps()
   end
@@ -156,5 +162,15 @@ defmodule Sanbase.Auth.User do
     mandrill_api().send(@login_email_template, user.email, %{
       LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
     })
+  end
+
+  def by_id(user_id) when is_integer(user_id) do
+    case Sanbase.Repo.get_by(User, id: user_id) do
+      nil ->
+        {:error, "Cannot fetch the user with id #{user_id}"}
+
+      user ->
+        {:ok, user}
+    end
   end
 end

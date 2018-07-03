@@ -1,4 +1,9 @@
 defmodule SanbaseWeb.Graphql.ContextPlug do
+  @moduledoc ~s"""
+  Plug that builds the Graphql context.
+  Currently only checks the `authorization` header and verifies the credentials
+  """
+
   @behaviour Plug
 
   import Plug.Conn
@@ -11,7 +16,11 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   require Logger
 
-  @auth_methods [&ContextPlug.bearer_authentication/1, &ContextPlug.basic_authentication/1]
+  @auth_methods [
+    &ContextPlug.bearer_authentication/1,
+    &ContextPlug.basic_authentication/1,
+    &ContextPlug.apikey_authentication/1
+  ]
 
   def init(opts), do: opts
 
@@ -30,7 +39,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   defp build_context(_conn, []), do: %{}
 
-  def bearer_authentication(conn) do
+  def bearer_authentication(%Plug.Conn{} = conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
          {:ok, current_user} <- bearer_authorize(token) do
       %{auth_method: :user_token, current_user: current_user}
@@ -39,10 +48,19 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  def basic_authentication(conn) do
+  def basic_authentication(%Plug.Conn{} = conn) do
     with ["Basic " <> auth_attempt] <- get_req_header(conn, "authorization"),
          {:ok, current_user} <- basic_authorize(auth_attempt) do
       %{auth_method: :basic, current_user: current_user}
+    else
+      _ -> :skip
+    end
+  end
+
+  def apikey_authentication(%Plug.Conn{} = conn) do
+    with ["Apikey " <> apikey] <- get_req_header(conn, "authorization"),
+         {:ok, current_user} <- apikey_authorize(apikey) do
+      %{auth_method: :apikey, current_user: current_user}
     else
       _ -> :skip
     end
@@ -72,5 +90,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
         Logger.warn("Invalid basic auth credentials in request")
         {:error, :invalid_credentials}
     end
+  end
+
+  defp apikey_authorize(apikey) do
+    Sanbase.Auth.Apikey.apikey_to_user(apikey)
   end
 end

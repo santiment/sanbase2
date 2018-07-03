@@ -23,8 +23,10 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
+    MultipleAuth,
     BasicAuth,
     JWTAuth,
+    ApikeyAuth,
     ProjectPermissions,
     PostPermissions,
     ApiDelay
@@ -383,13 +385,17 @@ defmodule SanbaseWeb.Graphql.Schema do
     Fetch the emoji sentiment for a given ticker and time period.
     This metric is a basic sentiment analysis, based on emojis used in social media.
     """
+    @emoji_sentiment_san_required 1000
     field :emojis_sentiment, list_of(:emojis_sentiment) do
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
-      middleware(JWTAuth, san_tokens: 1000)
+      middleware(MultipleAuth, [
+        {JWTAuth, san_tokens: @emoji_sentiment_san_required},
+        {ApikeyAuth, san_tokens: @emoji_sentiment_san_required}
+      ])
 
       complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
       resolve(&TechIndicatorsResolver.emojis_sentiment/3)

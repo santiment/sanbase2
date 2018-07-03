@@ -136,13 +136,37 @@ defmodule Sanbase.Github.TwitterApiTest do
     assert twitter_data["twitterName"] == nil
   end
 
-  test "fetch history twitter data", context do
+  test "fetch history twitter data when no interval is provided", context do
     query = """
     {
       historyTwitterData(
         ticker: "SAN",
         from: "#{context.datetime1}",
         to: "#{context.datetime3}"){
+          followersCount
+        }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyTwitterData"))
+
+    history_twitter_data = json_response(result, 200)["data"]["historyTwitterData"]
+
+    assert %{"followersCount" => 500} in history_twitter_data
+    assert %{"followersCount" => 1000} in history_twitter_data
+    assert %{"followersCount" => 1500} in history_twitter_data
+  end
+
+  test "fetch history twitter data", context do
+    query = """
+    {
+      historyTwitterData(
+        ticker: "SAN",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}",
+        interval: "6h"){
           followersCount
         }
     }

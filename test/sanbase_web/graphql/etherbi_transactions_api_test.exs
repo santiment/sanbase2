@@ -118,13 +118,38 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     ]
   end
 
-  test "fetch funds flow", context do
+  test "fetch funds flow when no interval is provided", context do
     query = """
     {
       exchangeFundsFlow(
         slug: "#{context.slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime8}") {
+          datetime
+          fundsFlow
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "exchangeFundsFlow"))
+
+    funds_flow_list = json_response(result, 200)["data"]["exchangeFundsFlow"]
+
+    assert Enum.find(funds_flow_list, fn %{"fundsFlow" => fundsFlow} ->
+             fundsFlow == 2000
+           end)
+  end
+
+  test "fetch funds flow", context do
+    query = """
+    {
+      exchangeFundsFlow(
+        slug: "#{context.slug}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime8}",
+        interval: "1d") {
           datetime
           fundsFlow
       }

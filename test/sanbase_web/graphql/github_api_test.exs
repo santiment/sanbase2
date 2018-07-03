@@ -79,6 +79,27 @@ defmodule Sanbase.Github.GithubApiTest do
     ]
   end
 
+  test "fetching github time series data when an interval is not provided", context do
+    query = """
+    {
+      githubActivity(
+        ticker: "SAN",
+        from: "#{context.datetime1}"
+        to: "#{context.datetime6}") {
+          activity
+        }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "githubActivity"))
+
+    activities = json_response(result, 200)["data"]["githubActivity"]
+
+    assert %{"activity" => 60} in activities
+  end
+
   test "fetching github time series data", context do
     query = """
     {
@@ -147,7 +168,7 @@ defmodule Sanbase.Github.GithubApiTest do
         ticker: "SAN",
         from: "#{context.datetime_no_activity1}",
         to: "#{context.datetime_no_activity2}",
-        interval: "1d") {
+        interval: "#{context.dates_interval}") {
           activity
         }
     }
@@ -169,8 +190,9 @@ defmodule Sanbase.Github.GithubApiTest do
         ticker: "SAN",
         from: "#{context.datetime1}",
         to: "#{context.datetime6}",
+        interval: "1h",
         transform: "movingAverage",
-        moving_average_interval: 3) {
+        moving_average_interval_base: "3h") {
           activity
         }
     }

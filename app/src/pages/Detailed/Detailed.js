@@ -347,7 +347,7 @@ const enhance = compose(
   graphql(TwitterHistoryGQL, {
     name: 'TwitterHistory',
     options: ({timeFilter, Project}) => {
-      const {from, to, interval} = timeFilter
+      const {from, to} = timeFilter
       const ticker = Project.project.ticker
       return {
         skip: !ticker,
@@ -355,7 +355,7 @@ const enhance = compose(
           ticker,
           from,
           to,
-          interval
+          interval: ''
         }
       }
     }
@@ -370,7 +370,7 @@ const enhance = compose(
           ticker: 'ETH',
           from,
           to,
-          interval: '7d'
+          interval: ''
         }
       }
     }
@@ -391,7 +391,7 @@ const enhance = compose(
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
     options: ({timeFilter, Project}) => {
-      const {from, to, interval} = timeFilter
+      const {from, to} = timeFilter
       const ticker = Project.project.ticker
       return {
         skip: !from || !ticker,
@@ -400,7 +400,7 @@ const enhance = compose(
           from,
           to,
           ticker,
-          interval
+          interval: ''
         }
       }
     }
@@ -410,7 +410,6 @@ const enhance = compose(
     options: ({timeFilter, match}) => {
       const {from, to} = timeFilter
       const slug = match.params.slug
-      const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
         skip: !from || !slug,
         errorPolicy: 'all',
@@ -418,7 +417,7 @@ const enhance = compose(
           from,
           to,
           slug,
-          interval
+          interval: ''
         }
       }
     }
@@ -434,9 +433,9 @@ const enhance = compose(
           from: from ? moment(from).subtract(7, 'days') : undefined,
           to,
           ticker,
-          interval: '1d',
+          interval: '',
           transform: 'movingAverage',
-          movingAverageInterval: 7
+          movingAverageIntervalBase: '1w'
         }
       }
     }
@@ -446,7 +445,6 @@ const enhance = compose(
     options: ({timeFilter, match}) => {
       const {from, to} = timeFilter
       const slug = match.params.slug
-      const interval = moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
       return {
         skip: !from || !slug,
         errorPolicy: 'all',
@@ -454,7 +452,7 @@ const enhance = compose(
           from,
           to,
           slug,
-          interval
+          interval: ''
         }
       }
     }
@@ -518,7 +516,7 @@ const enhance = compose(
           from,
           to,
           slug,
-          interval: moment(to).diff(from, 'days') > 300 ? '7d' : '1d'
+          interval: ''
         }
       }
     }

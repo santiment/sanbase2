@@ -48,7 +48,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
   end
 
   defp ticker(html) do
-    Floki.find(html, "h1 small.bold")
+    Floki.find(html, "h1 > .text-bold.h3.text-gray.hidden-xs")
     |> hd
     |> Floki.text()
     |> String.replace(~r/[\(\)]/, "")

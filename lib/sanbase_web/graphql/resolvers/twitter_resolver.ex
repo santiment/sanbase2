@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.ExternalServices.TwitterData.Store
-  alias SanbaseWeb.Graphql.Helpers.Cache
+  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
 
   import Ecto.Query
   import Absinthe.Resolution.Helpers
@@ -39,6 +39,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
       ) do
     with {:ok, twitter_link} <- get_twitter_link(ticker),
          {:ok, twitter_name} <- extract_twitter_name(twitter_link),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(Store, twitter_name, from, to, interval, 60 * 60),
          twitter_historical_data <-
            Store.all_records_for_measurement!(twitter_name, from, to, interval) do
       result =

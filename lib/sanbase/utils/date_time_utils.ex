@@ -54,4 +54,18 @@ defmodule Sanbase.DateTimeUtils do
 
     datetime
   end
+
+  def compound_duration_to_seconds(interval) do
+    {int_interval, duration_index} = Integer.parse(interval)
+
+    case duration_index do
+      "ns" -> div(int_interval, 1_000_000_000)
+      "s" -> int_interval
+      "m" -> int_interval * 60
+      "h" -> int_interval * 60 * 60
+      "d" -> int_interval * 24 * 60 * 60
+      "w" -> int_interval * 7 * 24 * 60 * 60
+      _ -> int_interval
+    end
+  end
 end

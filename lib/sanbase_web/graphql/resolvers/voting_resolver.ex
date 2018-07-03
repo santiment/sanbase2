@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.Resolvers.Helpers
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   def current_poll(_root, _args, _context) do
     poll =
@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
       {:error, changeset} ->
         {
           :error,
-          message: "Can't vote for post #{post_id}", details: Helpers.error_details(changeset)
+          message: "Can't vote for post #{post_id}", details: Utils.error_details(changeset)
         }
     end
   end

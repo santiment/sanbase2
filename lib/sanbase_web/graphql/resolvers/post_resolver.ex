@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Voting.{Post, Poll, Tag}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.Resolvers.Helpers
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   @preloaded_assoc [:votes, :user, :images, :tags]
 
@@ -113,7 +113,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       {:error, changeset} ->
         {
           :error,
-          message: "Can't create post", details: Helpers.error_details(changeset)
+          message: "Can't create post", details: Utils.error_details(changeset)
         }
     end
   end
@@ -137,7 +137,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
           {:error, changeset} ->
             {
               :error,
-              message: "Can't update post", details: Helpers.error_details(changeset)
+              message: "Can't update post", details: Utils.error_details(changeset)
             }
         end
 
@@ -169,7 +169,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
             {
               :error,
               message: "Can't delete post with id #{post_id}",
-              details: Helpers.error_details(changeset)
+              details: Utils.error_details(changeset)
             }
         end
 
@@ -198,7 +198,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
             {
               :error,
               message: "Can't publish post with id #{post_id}",
-              details: Helpers.error_details(changeset)
+              details: Utils.error_details(changeset)
             }
         end
 

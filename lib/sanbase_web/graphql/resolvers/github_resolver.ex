@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   require Logger
 
+  alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Github.Store
 
   def activity(
@@ -8,6 +9,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         %{ticker: ticker, from: from, to: to, interval: interval, transform: "None"},
         _resolution
       ) do
+    {:ok, from, to, interval} =
+      Utils.calibrate_interval(Store, ticker, from, to, interval, 24 * 60 * 60)
+
     result =
       Store.fetch_activity_with_resolution!(ticker, from, to, interval)
       |> Enum.map(fn {datetime, activity} -> %{datetime: datetime, activity: activity} end)
@@ -23,10 +27,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
           to: to,
           interval: interval,
           transform: "movingAverage",
-          moving_average_interval: ma_interval
+          moving_average_interval_base: ma_base
         },
         _resolution
       ) do
+    {:ok, from, to, interval, ma_interval} =
+      Utils.calibrate_interval_with_ma_interval(
+        Store,
+        ticker,
+        from,
+        to,
+        interval,
+        24 * 60 * 60,
+        ma_base,
+        300
+      )
+
     result =
       Store.fetch_moving_average_for_hours!(ticker, from, to, interval, ma_interval)
       |> Enum.map(fn {datetime, activity} -> %{datetime: datetime, activity: activity} end)

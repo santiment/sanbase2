@@ -131,7 +131,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1h")
+      arg(:interval, :string, default_value: "")
 
       complexity(&PriceComplexity.history_price/3)
       cache_resolve(&PriceResolver.history_price/3)
@@ -150,16 +150,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       * transform - one of the following:
         1. None (default)
         2. movingAverage
-      * movingAverageInterval - used only if transform is `movingAverage`.
-        Returns the simple moving average of the data calculated with this argument.
+      * movingAverageIntervalBase - used only if transform is `movingAverage`.
+        An integer followed by one of: `s`, `m`, `h`, `d` or `w`
+        Used to calculate the moving avarage interval.
     """
     field :github_activity, list_of(:activity_point) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1h")
+      arg(:interval, :string, default_value: "")
       arg(:transform, :string, default_value: "None")
-      arg(:moving_average_interval, :integer, default_value: 10)
+      arg(:moving_average_interval_base, :string, default_value: "1w")
 
       cache_resolve(&GithubResolver.activity/3)
     end
@@ -176,7 +177,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "6h")
+      arg(:interval, :string, default_value: "")
 
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
@@ -197,7 +198,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1h")
+      arg(:interval, :string, default_value: "")
 
       middleware(ApiDelay)
 
@@ -218,7 +219,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1h")
+      arg(:interval, :string, default_value: "")
 
       middleware(ApiDelay)
 
@@ -242,7 +243,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :string, default_value: "")
 
       middleware(ApiDelay)
 
@@ -313,7 +314,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "1d")
+      arg(:interval, :string, default_value: "")
 
       middleware(ApiDelay)
 

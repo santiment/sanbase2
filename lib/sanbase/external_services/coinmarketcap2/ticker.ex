@@ -52,7 +52,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
 
       %Tesla.Env{status: status, body: _body} ->
         error =
-          "Failed fetching top #{@project_numbers} projects' information from /v1/ticker. Status: #{
+          "Failed fetching top #{@projects_number} projects' information from /v1/ticker. Status: #{
             status
           }"
 
@@ -61,7 +61,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
 
       %Tesla.Error{message: error_msg} ->
         Logger.error(
-          "Error fetching top #{@project_numbers} projects' information from /v1/ticker. Error message #{
+          "Error fetching top #{@projects_number} projects' information from /v1/ticker. Error message #{
             inspect(error_msg)
           }"
         )

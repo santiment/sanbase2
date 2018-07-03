@@ -193,9 +193,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Grouping by interval works by summing all burn rate records in the interval.
     """
     field :burn_rate, list_of(:burn_rate_data) do
-      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
-      # TODO: Make non_null after removing :ticker
-      arg(:slug, :string)
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
@@ -214,9 +212,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Grouping by interval works by summing all transaction volume records in the interval.
     """
     field :transaction_volume, list_of(:transaction_volume) do
-      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
-      # TODO: Make non_null after removing :ticker
-      arg(:slug, :string)
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
@@ -238,9 +234,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     the exact number of unique addresses for each day.
     """
     field :daily_active_addresses, list_of(:active_addresses) do
-      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
-      # TODO: Make non_null after removing :ticker
-      arg(:slug, :string)
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
@@ -309,9 +303,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     This query returns the difference IN-OUT calculated for each interval.
     """
     field :exchange_funds_flow, list_of(:funds_flow) do
-      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
-      # TODO: Make non_null after removing :ticker
-      arg(:slug, :string)
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")

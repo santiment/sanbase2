@@ -1,10 +1,18 @@
 import React, { Component } from 'react'
+import gql from 'graphql-tag'
+import { graphql } from 'react-apollo'
 import PropTypes from 'prop-types'
 import Select from 'react-select'
-import tags from './../Insights/tags.json'
+
+const allTagsGQL = gql`{
+  allTags {
+    name
+  }
+}
+`
 
 const getOptionsFromTags = tags => {
-  return tags.allTags.map((tag, index) => {
+  return (tags.allTags || []).map((tag, index) => {
     return {value: tag.name, label: tag.name}
   })
 }
@@ -29,7 +37,8 @@ class TagsField extends Component {
         <Select
           isMulti
           placeholder='Add a tag...'
-          options={getOptionsFromTags(tags)}
+          options={this.props.tags}
+          isLoading={this.props.isTagsLoading}
           onChange={this.handleOnChange}
           value={this.state.tags}
         />
@@ -45,4 +54,20 @@ TagsField.propTypes = {
   setTags: PropTypes.func.isRequired
 }
 
-export default TagsField
+const mapDataToProps = ({allTags}) => ({
+  tags: getOptionsFromTags(allTags),
+  isTagsLoading: allTags.isLoading
+})
+
+const enhance =
+graphql(allTagsGQL, {
+  name: 'allTags',
+  props: mapDataToProps,
+  options: () => {
+    return {
+      errorPolicy: 'all'
+    }
+  }
+})
+
+export default enhance(TagsField)

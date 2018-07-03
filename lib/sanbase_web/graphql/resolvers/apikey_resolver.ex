@@ -6,8 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
 
   require Logger
 
-  alias SanbaseWeb.Graphql.Resolvers.Helpers
-  alias Sanbase.Auth.{User, Apikey}
+  alias Sanbase.Auth.{Apikey, User}
 
   @doc ~s"""
   Generates an apikey for the given user and returns the `user` struct.
@@ -19,7 +18,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
     with {:ok, _apikey} <- Apikey.generate_apikey(user) do
       {:ok, user}
     else
-      error -> {:error, "Failed to generate apikey. Inspecting error: #{inspect(error)}"}
+      error ->
+        Logger.error("#{inspect(error)}")
+
+        {:error, "Failed to generate apikey."}
     end
   end
 
@@ -33,7 +35,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ApikeyResolver do
     with :ok <- Apikey.revoke_apikey(user, apikey) do
       {:ok, user}
     else
-      _error ->
+      error ->
+        Logger.info("#{inspect(error)}")
+
         {:error, "Failed to revoke apikey. Provided apikey is malformed or not valid."}
     end
   end

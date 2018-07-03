@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   end
 
   test "revoke an apikey", %{conn: conn} do
-    # Check that there is generated a single apikey
+    # Generate and check that a valid single apikey is present
     apikeys =
       generate_apikey(conn)
       |> json_response(200)
@@ -51,8 +51,9 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
     assert Enum.count(apikeys) == 1
     apikey = List.first(apikeys)
+    assert apikey_valid?(apikey)
 
-    # Check that the apikey is now not present and not valid
+    # Revoke and check that the apikey is now not present and not valid
     apikeys2 =
       revoke_apikey(conn, apikey)
       |> json_response(200)
@@ -143,6 +144,22 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     refute apikey_valid?(apikey2)
     refute UserApikeyToken.has_token?(token1)
     refute UserApikeyToken.has_token?(token2)
+  end
+
+  test "cannot revoke malformed apikey", %{conn: conn} do
+    [apikey] =
+      generate_apikey(conn)
+      |> json_response(200)
+      |> extract_api_key_list()
+
+    apikey = apikey <> "s"
+
+    result =
+      revoke_apikey(conn, apikey)
+      |> json_response(200)
+
+    err_struct = result["errors"] |> List.first()
+    assert err_struct["message"] =~ "Provided apikey is malformed or not valid"
   end
 
   # Private functions

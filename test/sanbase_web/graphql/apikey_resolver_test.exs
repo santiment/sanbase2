@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
+  import Mockery
 
   alias Sanbase.Repo
 

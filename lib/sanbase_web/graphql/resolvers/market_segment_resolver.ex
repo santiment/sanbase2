@@ -1,14 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
   require Logger
 
-  import Ecto.Query
-  import Absinthe.Resolution.Helpers
-
   alias Sanbase.Model.{
     MarketSegment
   }
 
-  alias SanbaseWeb.Graphql.Helpers.Cache
   alias Sanbase.Repo
 
   def all_market_segments(_parent, _args, _resolution) do

@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.JWTAuth do
          true <- has_enough_san_tokens?(current_user, required_san_tokens) do
       resolution
     else
-      {:error, message} = error ->
+      {:error, _message} = error ->
         resolution
         |> Resolution.put_result(error)
     end

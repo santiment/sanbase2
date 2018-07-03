@@ -102,7 +102,7 @@ export const App = ({
     <div className='no-username-status-message'>
       <Link to='/account'>
         <i className='exclamation triangle icon' />
-        Without a username, some functionality will be restricted. Please, click on the notification to proceed to account settings. <i className='exclamation triangle icon' />
+        Without a username, some functionality will be restricted. Please, click on the notification to proceed to the account settings. <i className='exclamation triangle icon' />
       </Link>
     </div>
     }

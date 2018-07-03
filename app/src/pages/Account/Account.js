@@ -73,10 +73,10 @@ class Account extends Component {
   }
 
   render () {
-    const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange } = this.props
+    const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange, isLoggedIn } = this.props
     const { emailForm, usernameForm } = this.state
 
-    if (user && !user.username) {
+    if (user && !isLoggedIn) {
       return (
         <Redirect
           to={{
@@ -155,7 +155,8 @@ class Account extends Component {
 
 const mapStateToProps = state => ({
   user: state.user.data,
-  loading: state.user.isLoading
+  loading: state.user.isLoading,
+  isLoggedIn: !!state.user.token
 })
 
 const mapDispatchToProps = dispatch => ({

@@ -29,7 +29,6 @@ defmodule Sanbase.Auth.Apikey do
   @spec apikey_to_user(String.t()) :: {:ok, %User{}} | {:error, String.t()}
   def apikey_to_user(apikey) do
     with {:ok, {token, _rest}} <- Hmac.split_apikey(apikey),
-         true <- UserApikeyToken.has_token?(token),
          true <- Hmac.apikey_valid?(token, apikey) do
       UserApikeyToken.user_by_token(token)
     else
@@ -63,7 +62,8 @@ defmodule Sanbase.Auth.Apikey do
   @spec revoke_apikey(%User{}, String.t()) :: :ok | {:error, String.t()}
   def revoke_apikey(user, apikey) do
     with {:ok, {token, _rest}} <- Hmac.split_apikey(apikey),
-         true <- UserApikeyToken.user_has_token?(user, token) do
+         true <- UserApikeyToken.user_has_token?(user, token),
+         true <- Hmac.apikey_valid?(token, apikey) do
       UserApikeyToken.remove_user_token(user, token)
       :ok
     else

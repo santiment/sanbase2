@@ -34,14 +34,12 @@ defmodule Sanbase.Auth.Hmac do
     4. For easier search in the database prepend the apikey with the token itself. This does not
     compromise the security as the real secret is the secret key and not the user token.
   """
-  import Ecto.Query
 
   require Sanbase.Utils.Config
   require Logger
 
   alias Sanbase.Utils.Config
   alias Sanbase.Auth.UserApikeyToken
-  alias Sanbase.Auth.User
 
   @rand_bytes_length 64
   @apikey_length 32

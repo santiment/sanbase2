@@ -7,7 +7,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
     resolution
   end
 
-  def call(%Resolution{context: %{auth: %{auth_method: :user_token}}} = resolution, _) do
+  def call(%Resolution{context: %{auth: %{auth_method: method}}} = resolution, _)
+      when method in [:user_token, :apikey] do
     resolution
   end
 

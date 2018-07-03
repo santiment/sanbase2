@@ -17,12 +17,13 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiDelay do
   def call(
         %Resolution{
           context: %{
-            auth: %{auth_method: :user_token, current_user: current_user}
+            auth: %{auth_method: method, current_user: current_user}
           },
           arguments: %{to: _to}
         } = resolution,
         _
-      ) do
+      )
+      when method in [:user_token, :apikey] do
     if !has_enough_san_tokens?(current_user) do
       update_in(resolution.arguments.to, &delay_1day(&1))
     else

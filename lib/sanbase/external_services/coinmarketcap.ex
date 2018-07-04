@@ -133,7 +133,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       GraphData.fetch_and_store_prices(project, last_price_datetime)
 
       process_notifications(project)
-      Registry.unregister(Sanbase.Regstry, key)
+      Registry.unregister(Sanbase.Registry, key)
     end
   end
 

@@ -1,0 +1,26 @@
+import React, {Fragment} from 'react'
+import { Divider } from 'semantic-ui-react'
+
+/*
+  TODO:
+  1. Generate api key button.
+    a) Wait for response and populate store/field
+  2. API Key form
+    a) Api key should not be visible by default
+    b) Click on a [Reveal] button to see it
+  3. [Revoke] button ?
+*/
+
+const AccountApiKeyForm = () => {
+  return (
+    <Fragment>
+      <h3>API Key</h3>
+      <Divider />
+      <div className='api-key'>
+        <p>Here will be your API key</p>
+      </div>
+    </Fragment>
+  )
+}
+
+export default AccountApiKeyForm

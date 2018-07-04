@@ -23,6 +23,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:id, non_null(:id))
     field(:name, non_null(:string))
     field(:ticker, :string)
+
+    field(:slug, :string) do
+      resolve(&ProjectResolver.slug/3)
+    end
+
     field(:logo_url, :string)
     field(:website_link, :string)
     field(:email, :string)

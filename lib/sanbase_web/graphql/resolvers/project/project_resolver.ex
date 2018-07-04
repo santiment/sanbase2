@@ -109,6 +109,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, project}
   end
 
+  def slug(%Project{coinmarketcap_id: nil}, _, _), do: {:ok, nil}
+  def slug(%Project{coinmarketcap_id: coinmarketcap_id}, _, _), do: {:ok, coinmarketcap_id}
+
   def project_by_slug(_parent, %{slug: slug}, _resolution) do
     Project
     |> Repo.get_by(coinmarketcap_id: slug)

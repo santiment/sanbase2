@@ -1,12 +1,13 @@
 import React from 'react'
 import { graphql } from 'react-apollo'
+import { Button } from 'semantic-ui-react'
 import {generateApikeyGQL} from './apikeyGQL'
 
 const ApiKeyGenerateButton = ({generateApikey, dispatchApikeysGenerate}) => {
   return (
-    <button type='button' onClick={() => generateApikey().then(({data: {generateApikey}}) => {
+    <Button positive onClick={() => generateApikey().then(({data: {generateApikey}}) => {
       dispatchApikeysGenerate(generateApikey.apikeys)
-    }).catch(console.log)} >Generate API Key</button>
+    }).catch(console.log)} >Generate API Key</Button>
   )
 }
 

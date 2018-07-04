@@ -3,15 +3,26 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Model.Project
+  alias Sanbase.Repo
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
-    |> Keyword.get(:database)
-    |> Instream.Admin.Database.create()
-    |> Store.execute()
+    Store.create_db()
+
+    slug1 = "tester"
+
+    %Project{}
+    |> Project.changeset(%{name: "Project1", ticker: "TEST", coinmarketcap_id: slug1})
+    |> Repo.insert!()
+
+    slug2 = "tester2"
+
+    %Project{}
+    |> Project.changeset(%{name: "Project2", ticker: "XYZ", coinmarketcap_id: slug2})
+    |> Repo.insert!()
 
     Store.drop_measurement("TEST_BTC")
     Store.drop_measurement("TEST_USD")
@@ -76,18 +87,24 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       datetime1: datetime1,
       datetime2: datetime2,
       datetime3: datetime3,
-      years_ago: years_ago
+      years_ago: years_ago,
+      slug1: slug1,
+      slug2: slug2
     ]
   end
 
-  test "no information is available for a ticker", context do
+  test "no information is available for a non existing slug", context do
     Store.drop_measurement("SAN_USD")
 
     query = """
     {
-      historyPrice(ticker: "SAN", from: "#{context.datetime1}", to: "#{context.datetime2}", interval: "1h") {
-        datetime
-        priceUsd
+      historyPrice(
+        slug: "non_existing 1237819",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime2}",
+        interval: "1h") {
+          datetime
+          priceUsd
       }
     }
     """
@@ -102,7 +119,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "data aggregation for automatically calculated intervals", context do
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{context.datetime1}", to: "#{context.datetime3}") {
+      historyPrice(slug: "#{context.slug1}", from: "#{context.datetime1}", to: "#{
+      context.datetime3
+    }") {
         datetime
         priceUsd
         priceBtc
@@ -129,7 +148,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "data aggregation for larger intervals", context do
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{context.datetime1}", to: "#{context.datetime3}", interval: "2d") {
+      historyPrice(slug: "#{context.slug1}", from: "#{context.datetime1}", to: "#{
+      context.datetime3
+    }", interval: "2d") {
         datetime
         priceUsd
         priceBtc
@@ -156,11 +177,15 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "too complex queries are denied", context do
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{context.years_ago}", to: "#{context.datetime1}", interval: "5m"){
-        priceUsd
-        priceBtc
-        datetime
-        volume
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.years_ago}",
+        to: "#{context.datetime1}",
+        interval: "5m"){
+          priceUsd
+          priceBtc
+          datetime
+          volume
       }
     }
     """
@@ -177,7 +202,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     query = """
     {
       historyPrice(
-        ticker: "TEST",
+        slug: "#{context.slug1}",
         from: "#{context.datetime1}",
         interval: "1h"){
         priceUsd
@@ -199,11 +224,15 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "complexity is 0 with basic authentication", context do
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{context.years_ago}", to: "#{context.datetime1}", interval: "5m"){
-        priceUsd
-        priceBtc
-        datetime
-        volume
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.years_ago}",
+        to: "#{context.datetime1}",
+        interval: "5m"){
+          priceUsd
+          priceBtc
+          datetime
+          volume
       }
     }
     """
@@ -221,10 +250,14 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     query = """
     {
-      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}", to: "#{context.datetime2}", interval: "1h") {
-        datetime
-        volume
-        marketcap
+      historyPrice(
+        slug: "TOTAL_MARKET",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime2}",
+        interval: "1h") {
+          datetime
+          volume
+          marketcap
       }
     }
     """
@@ -240,7 +273,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     query = """
     {
       historyPrice(
-        ticker: "TOTAL_MARKET",
+        slug: "TOTAL_MARKET",
         from: "#{context.datetime1}",
         interval: "1h"){
         datetime

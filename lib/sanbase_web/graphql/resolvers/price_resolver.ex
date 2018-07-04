@@ -13,9 +13,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   def history_price(root, %{slug: slug} = args, resolution) do
     # Temporary solution while all frontend queries migrate to using slug. After that
     # only the slug query will remain
-    ticker = Utils.ticker_by_slug(slug)
-    args = args |> Map.delete(:slug) |> Map.put(:ticker, ticker)
-    history_price(root, args, resolution)
+    if ticker = Utils.ticker_by_slug(slug) do
+      args = args |> Map.delete(:slug) |> Map.put(:ticker, ticker)
+      history_price(root, args, resolution)
+    else
+      {:ok, []}
+    end
   end
 
   def history_price(_root, %{ticker: "TOTAL_MARKET"} = args, %{context: %{loader: loader}}) do

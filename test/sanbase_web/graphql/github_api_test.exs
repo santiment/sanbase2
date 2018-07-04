@@ -3,11 +3,19 @@ defmodule Sanbase.Github.GithubApiTest do
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Github
+  alias Sanbase.Model.Project
+  alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     Github.Store.create_db()
+
+    slug = "santiment"
+
+    %Project{}
+    |> Project.changeset(%{name: "Project1", ticker: "SAN", coinmarketcap_id: slug})
+    |> Repo.insert!()
 
     Github.Store.drop_measurement("SAN")
     Github.Store.drop_measurement("TEST1")
@@ -75,7 +83,8 @@ defmodule Sanbase.Github.GithubApiTest do
       datetime6: datetime6,
       dates_interval: dates_interval,
       datetime_no_activity1: datetime_no_activity1,
-      datetime_no_activity2: datetime_no_activity2
+      datetime_no_activity2: datetime_no_activity2,
+      slug: slug
     ]
   end
 
@@ -83,7 +92,7 @@ defmodule Sanbase.Github.GithubApiTest do
     query = """
     {
       githubActivity(
-        ticker: "SAN",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}"
         to: "#{context.datetime6}") {
           activity
@@ -104,7 +113,7 @@ defmodule Sanbase.Github.GithubApiTest do
     query = """
     {
       githubActivity(
-        ticker: "SAN",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}",
         interval: "1h") {
           activity
@@ -126,7 +135,7 @@ defmodule Sanbase.Github.GithubApiTest do
     query = """
     {
       githubActivity(
-        ticker: "SAN",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime6}",
         interval: "#{context.dates_interval}") {
@@ -165,7 +174,7 @@ defmodule Sanbase.Github.GithubApiTest do
     query = """
     {
       githubActivity(
-        ticker: "SAN",
+        slug: "#{context.slug}",
         from: "#{context.datetime_no_activity1}",
         to: "#{context.datetime_no_activity2}",
         interval: "#{context.dates_interval}") {
@@ -187,7 +196,7 @@ defmodule Sanbase.Github.GithubApiTest do
     query = """
     {
       githubActivity(
-        ticker: "SAN",
+        slug: "#{context.slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime6}",
         interval: "1h",

@@ -7,6 +7,7 @@ import AccountEmailForm from './AccountEmailForm'
 import AccountUsernameForm from './AccountUsernameForm'
 import AccountEthKeyForm from './AccountEthKeyForm'
 import AccountWallets from './AccountWallets'
+import AccountApiKeyForm from './AccountApiKeyForm'
 import AccountSessions from './AccountSessions'
 import { USER_LOGOUT_SUCCESS, USER_USERNAME_CHANGE, USER_EMAIL_CHANGE } from '../../actions/types'
 import './Account.css'
@@ -146,6 +147,7 @@ class Account extends Component {
           <br />
           <AccountEthKeyForm ethAccounts={user.ethAccounts} loading={loading} />
           <AccountWallets user={user} />
+          <AccountApiKeyForm />
           <AccountSessions onLogoutBtnClick={dispatchUserLogout} />
         </div>
       </div>

@@ -3,15 +3,26 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Model.Project
+  alias Sanbase.Repo
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Application.fetch_env!(:sanbase, Sanbase.Prices.Store)
-    |> Keyword.get(:database)
-    |> Instream.Admin.Database.create()
-    |> Store.execute()
+    Store.create_db()
+
+    slug1 = "tester"
+
+    %Project{}
+    |> Project.changeset(%{name: "Project1", ticker: "TEST", coinmarketcap_id: slug1})
+    |> Repo.insert!()
+
+    slug2 = "tester2"
+
+    %Project{}
+    |> Project.changeset(%{name: "Project2", ticker: "XYZ", coinmarketcap_id: slug2})
+    |> Repo.insert!()
 
     Store.drop_measurement("TEST_BTC")
     Store.drop_measurement("TEST_USD")
@@ -140,7 +151,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "data aggregation for automatically calculated intervals", context do
     query = """
     {
-      historyPrice(ticker: "TEST", from: "#{context.datetime1}", to: "#{context.datetime3}") {
+      historyPrice(slug: "#{context.slug1}", from: "#{context.datetime1}", to: "#{
+      context.datetime3
+    }") {
         datetime
         priceUsd
         priceBtc
@@ -379,10 +392,14 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     query = """
     {
-      historyPrice(ticker: "TOTAL_MARKET", from: "#{context.datetime1}", to: "#{context.datetime2}", interval: "1h") {
-        datetime
-        volume
-        marketcap
+      historyPrice(
+        slug: "TOTAL_MARKET",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime2}",
+        interval: "1h") {
+          datetime
+          volume
+          marketcap
       }
     }
     """

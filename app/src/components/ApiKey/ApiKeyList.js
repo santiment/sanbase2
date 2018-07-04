@@ -8,6 +8,13 @@ export class ApiKeyList extends Component {
   state = {
     isHidden: new Map(this.props.apikeys.map(apikey => [apikey, true]))
   }
+  componentWillReceiveProps ({apikeys}) {
+    if (apikeys.length !== this.state.isHidden.size) {
+      this.setState({
+        isHidden: new Map(apikeys.map(apikey => [apikey, true]))
+      })
+    }
+  }
   // eslint-disable-next-line
   onVisibilityButtonClick = (apikey) => {
     this.setState(prevState => {

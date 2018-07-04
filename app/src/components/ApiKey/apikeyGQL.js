@@ -7,3 +7,10 @@ export const generateApikeyGQL = gql`
     }
   }
 `
+export const revokeApikeyGQL = gql`
+  mutation revokeApikey($apikey: String!) {
+    revokeApikey(apikey: $apikey) {
+      apikeys
+    }
+  }
+`

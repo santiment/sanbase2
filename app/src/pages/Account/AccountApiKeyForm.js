@@ -9,7 +9,6 @@ const AccountApiKeyForm = ({ apikeys, dispatchApikeysGenerate, dispatchApikeyRev
       <h3>API Key</h3>
       <Divider />
       <div className='api-key'>
-        <p>Here will be your API key</p>
         <ApiKeyGenerateButton dispatchApikeysGenerate={dispatchApikeysGenerate} />
         <ApiKeyList apikeys={apikeys} dispatchApikeyRevoke={dispatchApikeyRevoke} />
       </div>

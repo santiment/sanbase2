@@ -95,7 +95,7 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
     query {
       githubActivity(
-        ticker: "SAN",
+        slug: "santiment",
         from: "2017-06-13 16:00:00Z",
         interval: "24h") {
           activity

@@ -16,7 +16,7 @@ export const changeUsernameGQL = gql`
   }
 `
 
-export const generateApiKeyGQL = gql`
+export const generateApikeyGQL = gql`
   mutation {
     generateApikey {
       apikeys

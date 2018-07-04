@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import ApiKey from './ApiKey'
 import ApiKeyRevokeButton from './ApiKeyRevokeButton'
-import { Map } from 'core-js'
+import './ApiKeyList.css'
 
 export class ApiKeyList extends Component {
   // eslint-disable-next-line
@@ -11,7 +11,7 @@ export class ApiKeyList extends Component {
   componentWillReceiveProps ({apikeys}) {
     if (apikeys.length !== this.state.isHidden.size) {
       this.setState({
-        isHidden: new Map(apikeys.map(apikey => [apikey, true]))
+        isHidden: new Map(apikeys.map(apikey => [apikey, true])) // TODO: adding and deleting api will reset state to defaul
       })
     }
   }
@@ -34,8 +34,8 @@ export class ApiKeyList extends Component {
     }
 
     return (
-      <ol>
-        {apikeys.map(apikey => <li key={apikey}>
+      <ol className='ApiKeyList' >
+        {apikeys.map(apikey => <li className='ApiKeyList__item' key={apikey}>
           <ApiKey apikey={apikey} isHidden={isHidden.get(apikey)} onVisibilityButtonClick={this.onVisibilityButtonClick} />
           {dispatchApikeyRevoke && <ApiKeyRevokeButton apikey={apikey} dispatchApikeyRevoke={dispatchApikeyRevoke} />}
         </li>)}

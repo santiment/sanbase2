@@ -213,6 +213,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
           Registry.unregister(Sanbase.Registry, key)
           :ok
       end
+    else
+      Logger.info(
+        "[CMC] Fetch and process job for #{measurement_name} is already running. Won't start it again"
+      )
     end
   end
 

@@ -127,9 +127,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
     end
 
-    @desc "Fetch price history for a given ticker and time interval."
+    @desc "Fetch price history for a given slug and time interval."
     field :history_price, list_of(:price_point) do
-      arg(:ticker, non_null(:string))
+      arg(:slug, :string)
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "")
@@ -144,7 +145,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Returns a list of github activity for a given ticker and time interval.
+    Returns a list of github activity for a given slug and time interval.
 
     Arguments description:
       * interval - an integer followed by one of: `s`, `m`, `h`, `d` or `w`
@@ -152,11 +153,12 @@ defmodule SanbaseWeb.Graphql.Schema do
         1. None (default)
         2. movingAverage
       * movingAverageIntervalBase - used only if transform is `movingAverage`.
-        An integer followed by one of: `s`, `m`, `h`, `d` or `w`
-        Used to calculate the moving avarage interval.
+        An integer followed by one of: `s`, `m`, `h`, `d` or `w`, representing time units.
+        It is used to calculate the moving avarage interval.
     """
     field :github_activity, list_of(:activity_point) do
-      arg(:ticker, non_null(:string))
+      arg(:slug, :string)
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "")

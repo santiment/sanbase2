@@ -85,6 +85,7 @@ export default (state = initialState, action) => {
         }
       }
     case actions.USER_APIKEY_GENERATE:
+    case actions.USER_APIKEY_REVOKE:
       return {
         ...state,
         data: {

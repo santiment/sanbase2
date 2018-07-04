@@ -2,9 +2,9 @@ import React from 'react'
 
 const ApiKey = ({apikey}) => {
   return (
-    <li>
+    <p>
       Your API key is: {apikey}
-    </li>
+    </p>
   )
 }
 

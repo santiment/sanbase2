@@ -79,7 +79,8 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
     query = """
     {
       allProjects{
-        name
+        name,
+        slug
       }
     }
     """
@@ -90,9 +91,9 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
 
     projects = json_response(result, 200)["data"]["allProjects"]
 
-    assert %{"name" => "Project1"} in projects
-    assert %{"name" => "Project2"} in projects
-    assert %{"name" => "Project3"} in projects
+    assert %{"name" => "Project1", "slug" => "proj1"} in projects
+    assert %{"name" => "Project2", "slug" => "proj2"} in projects
+    assert %{"name" => "Project3", "slug" => "proj3"} in projects
   end
 
   test "fetch all erc20 projects", context do

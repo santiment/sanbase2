@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
   alias Sanbase.DateTimeUtils
 
+  import Ecto.Query
+
   def calibrate_interval(
         module,
         measurement,
@@ -67,6 +69,19 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     changeset
     |> Ecto.Changeset.traverse_errors(&format_error/1)
   end
+
+  def ticker_by_slug("TOTAL_MARKET"), do: "TOTAL_MARKET"
+
+  def ticker_by_slug(slug) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      select: p.ticker
+    )
+    |> Sanbase.Repo.one()
+  end
+
+  # Private functions
 
   @spec format_error(Ecto.Changeset.error()) :: String.t()
   defp format_error({msg, opts}) do

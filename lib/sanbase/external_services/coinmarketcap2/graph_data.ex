@@ -142,7 +142,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
   def update_last_cmc_history_datetime(%Project{coinmarketcap_id: coinmarketcap_id}, []) do
     Logger.info(
-      "[CMC] Trying to update last cmc history datetime for #{coinmarketcap_id} but there are no price points imported."
+      "[CMC] Cannot update last cmc history datetime for #{coinmarketcap_id}. Reason: No price points fetched"
     )
 
     :ok
@@ -155,6 +155,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
           "[CMC] Cannot update last cmc history datetime for #{measurement_name}. Reason: No price points fetched"
         )
 
+        # Stop the task if there are no price points fetched so it does not continue with the next intervals
+        # that are most probably going to be empty
+        Process.exit(self(), :normal)
+
       points ->
         last_price_datetime_updated =
           points
@@ -163,7 +167,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
         Logger.info(
           "[CMC] Updating the last history cmc datetime for #{measurement_name} to " <>
-            inspect(last_price_datetime_updated)
+            inspect(last_price_datetime_updated) <> ". Curent datetime: #{DateTime.utc_now()}"
         )
 
         Store.update_last_history_datetime_cmc(measurement_name, last_price_datetime_updated)
@@ -293,6 +297,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
         nil
       end
     end)
+    |> Stream.take(10)
+
+    # Do not fetch the whole stream because it could be too large and block others
+    # Also if it's too big it will time out and kill the task
   end
 
   defp all_time_project_url(coinmarketcap_id) do

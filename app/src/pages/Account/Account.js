@@ -147,7 +147,7 @@ class Account extends Component {
           <br />
           <AccountEthKeyForm ethAccounts={user.ethAccounts} loading={loading} />
           <AccountWallets user={user} />
-          <AccountApiKeyForm />
+          <AccountApiKeyForm apikeys={user.apikeys} />
           <AccountSessions onLogoutBtnClick={dispatchUserLogout} />
         </div>
       </div>

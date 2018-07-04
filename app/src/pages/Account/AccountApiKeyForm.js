@@ -1,5 +1,6 @@
-import React, {Fragment} from 'react'
+import React, { Fragment } from 'react'
 import { Divider } from 'semantic-ui-react'
+import { Button } from 'glamorous';
 
 /*
   TODO:
@@ -11,13 +12,16 @@ import { Divider } from 'semantic-ui-react'
   3. [Revoke] button ?
 */
 
-const AccountApiKeyForm = () => {
+const AccountApiKeyForm = ({ apikeys }) => {
   return (
     <Fragment>
       <h3>API Key</h3>
       <Divider />
       <div className='api-key'>
         <p>Here will be your API key</p>
+        {apikeys.length === 0
+          ? <button type='button' >Generate API Key</button>
+          : apikeys.map(apiKey => `Your api key is: ${apiKey}`)}
       </div>
     </Fragment>
   )

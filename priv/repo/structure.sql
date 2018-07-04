@@ -2055,13 +2055,6 @@ CREATE UNIQUE INDEX users_email_token_index ON public.users USING btree (email_t
 
 
 --
--- Name: users_username_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
-
-
---
 -- Name: votes_post_id_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 

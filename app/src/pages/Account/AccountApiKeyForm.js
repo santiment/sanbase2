@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 import { Divider } from 'semantic-ui-react'
-import { Button } from 'glamorous';
+import { graphql } from 'react-apollo'
+import { generateApiKeyGQL } from './accountGQL';
 
 /*
   TODO:
@@ -12,7 +13,7 @@ import { Button } from 'glamorous';
   3. [Revoke] button ?
 */
 
-const AccountApiKeyForm = ({ apikeys }) => {
+const AccountApiKeyForm = ({ apikeys, generateApiKey }) => {
   return (
     <Fragment>
       <h3>API Key</h3>
@@ -20,11 +21,11 @@ const AccountApiKeyForm = ({ apikeys }) => {
       <div className='api-key'>
         <p>Here will be your API key</p>
         {apikeys.length === 0
-          ? <button type='button' >Generate API Key</button>
+          ? <button type='button' onClick={() => generateApiKey().then(console.log).catch(console.log)} >Generate API Key</button>
           : apikeys.map(apiKey => `Your api key is: ${apiKey}`)}
       </div>
     </Fragment>
   )
 }
 
-export default AccountApiKeyForm
+export default graphql(generateApiKeyGQL, { name: 'generateApiKey' })(AccountApiKeyForm)

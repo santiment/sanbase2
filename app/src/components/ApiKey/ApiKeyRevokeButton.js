@@ -7,10 +7,7 @@ const ApiKeyRevokeButton = ({apikey, revokeApikey, dispatchApikeyRevoke}) => {
   return (
     <Button negative onClick={() =>
       revokeApikey({variables: {apikey}})
-    .then(({data: {revokeApikey}}) => {
-      // console.log(data, data.revokeApikey)
-      dispatchApikeyRevoke(revokeApikey.apikeys)
-    }).catch(console.log)} >Revoke</Button>
+    .then(({data: {revokeApikey}}) => dispatchApikeyRevoke(revokeApikey.apikeys)).catch(console.log)} >Revoke</Button>
   )
 }
 

@@ -29,10 +29,6 @@ export class ApiKeyList extends Component {
     const {isHidden} = this.state
     const {apikeys, dispatchApikeyRevoke} = this.props
 
-    if (!apikeys.length) {
-      return 'You don\'t have any api keys for now'
-    }
-
     return (
       <ol className='ApiKeyList' >
         {apikeys.map(apikey => <li className='ApiKeyList__item' key={apikey}>

@@ -15,11 +15,3 @@ export const changeUsernameGQL = gql`
     }
   }
 `
-
-export const generateApikeyGQL = gql`
-  mutation {
-    generateApikey {
-      apikeys
-    }
-  }
-`

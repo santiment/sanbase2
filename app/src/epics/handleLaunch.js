@@ -18,7 +18,8 @@ export const userGQL = gql`
       ethAccounts{
         address,
         sanBalance
-      }
+      },
+      apikeys
     }
   }
 `

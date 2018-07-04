@@ -84,6 +84,14 @@ export default (state = initialState, action) => {
           marketingAccepted
         }
       }
+    case actions.USER_APIKEY_GENERATE:
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          apikeys: action.apikeys
+        }
+      }
     case actions.CHANGE_USER_DATA:
       if (!action.user) {
         return {

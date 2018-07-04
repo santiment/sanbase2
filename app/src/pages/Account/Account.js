@@ -9,7 +9,7 @@ import AccountEthKeyForm from './AccountEthKeyForm'
 import AccountWallets from './AccountWallets'
 import AccountApiKeyForm from './AccountApiKeyForm'
 import AccountSessions from './AccountSessions'
-import { USER_LOGOUT_SUCCESS, USER_USERNAME_CHANGE, USER_EMAIL_CHANGE } from '../../actions/types'
+import { USER_LOGOUT_SUCCESS, USER_USERNAME_CHANGE, USER_EMAIL_CHANGE, USER_APIKEY_GENERATE } from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
@@ -74,7 +74,7 @@ class Account extends Component {
   }
 
   render () {
-    const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange, isLoggedIn } = this.props
+    const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange, dispatchApikeysGenerate, isLoggedIn } = this.props
     const { emailForm, usernameForm } = this.state
 
     if (user && !isLoggedIn) {
@@ -147,7 +147,7 @@ class Account extends Component {
           <br />
           <AccountEthKeyForm ethAccounts={user.ethAccounts} loading={loading} />
           <AccountWallets user={user} />
-          <AccountApiKeyForm apikeys={user.apikeys} />
+          <AccountApiKeyForm apikeys={user.apikeys} dispatchApikeysGenerate={dispatchApikeysGenerate} />
           <AccountSessions onLogoutBtnClick={dispatchUserLogout} />
         </div>
       </div>
@@ -170,6 +170,10 @@ const mapDispatchToProps = dispatch => ({
   dispatchUsernameChange: username => dispatch({
     type: USER_USERNAME_CHANGE,
     username
+  }),
+  dispatchApikeysGenerate: apikeys => dispatch({
+    type: USER_APIKEY_GENERATE,
+    apikeys
   })
 })
 

@@ -1,10 +1,13 @@
-import React from 'react'
+import React, {Fragment} from 'react'
 
-const ApiKey = ({apikey}) => {
+const ApiKey = ({apikey, isHidden, onVisibilityButtonClick}) => {
   return (
-    <p>
-      Your API key is: {apikey}
-    </p>
+    <Fragment>
+      <p>
+        Your API key is: {isHidden ? '***' : apikey}
+      </p>
+      <button type="button" onClick={() => onVisibilityButtonClick(apikey)} >{isHidden ? 'REVEAL' : 'HIDE'}</button>
+    </Fragment>
   )
 }
 

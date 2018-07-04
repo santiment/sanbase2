@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
   import Ecto.Query
 
+  import Ecto.Query
+
   def calibrate_interval(
         module,
         measurement,

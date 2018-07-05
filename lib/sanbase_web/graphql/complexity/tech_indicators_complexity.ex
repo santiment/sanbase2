@@ -105,6 +105,7 @@ defmodule SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity do
            Regex.named_captures(~r/^(?<number>\d+)(?<unit>d|h|m|s)$/, interval),
          number <- String.to_integer(number_str) do
       case unit do
+        "w" -> number * 86400 * 7
         "d" -> number * 86400
         "h" -> number * 3600
         "m" -> number * 60

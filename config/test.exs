@@ -15,7 +15,9 @@ config :tesla, adapter: :mock
 # Configure your database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
-  database: "sanbase_test"
+  database: "sanbase_test",
+  # closest to real case as there are 3 pods with 10 connections each
+  pool_size: 30
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 

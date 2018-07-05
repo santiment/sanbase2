@@ -160,38 +160,43 @@ const ProjectsTable = ({
       return name.toLowerCase().indexOf(filter.value) !== -1 ||
         ticker.toLowerCase().indexOf(filter.value) !== -1
     }
-  },
-  {
+  }, {
     Header: 'Price',
     id: 'price',
     maxWidth: 100,
     accessor: d => ({
-      priceUsd: d.priceUsd,
-      change24h: d.percentChange24h
+      priceUsd: d.priceUsd
     }),
     Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
       {priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : 'No data'}
-      {<PercentChanges changes={change24h} />}
     </div>,
     sortable: true,
     sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
-  },
-  {
+  }, {
+    Header: 'Price +/-',
+    id: 'price_change',
+    maxWidth: 100,
+    accessor: d => ({
+      change24h: d.percentChange24h
+    }),
+    Cell: ({value: {change24h}}) => <div className='overview-price'>
+      {change24h
+        ? <PercentChanges changes={change24h} />
+        : 'No data'}
+    </div>,
+    sortable: true,
+    sortMethod: (a, b) => simpleSort(parseFloat(a.change24h || 0), parseFloat(b.change24h || 0))
+  }, {
     Header: 'Volume',
     id: 'volume',
     maxWidth: 100,
     accessor: d => ({
-      volumeUsd: d.volumeUsd,
-      change24h: d.volumeChange24h
+      volumeUsd: d.volumeUsd
     }),
-    Cell: ({value: {volumeUsd, change24h}}) => <div className='overview-volume'>
+    Cell: ({value: {volumeUsd}}) => <div className='overview-volume'>
       {volumeUsd
         ? `$${millify(volumeUsd, 2)}`
         : 'No data'}
-      &nbsp;
-      {change24h
-        ? <PercentChanges changes={change24h} />
-        : ''}
     </div>,
     sortable: true,
     sortMethod: (a, b) =>
@@ -199,8 +204,25 @@ const ProjectsTable = ({
         parseFloat(a.volumeUsd || 0),
         parseFloat(b.volumeUsd || 0)
       )
-  },
-  {
+  }, {
+    Header: 'Volume +/-',
+    id: 'volume_change_24h',
+    maxWidth: 100,
+    accessor: d => ({
+      change24h: d.volumeChange24h
+    }),
+    Cell: ({value: {change24h}}) => <div className='overview-volume'>
+      {change24h
+        ? <PercentChanges changes={change24h} />
+        : 'No data'}
+    </div>,
+    sortable: true,
+    sortMethod: (a, b) =>
+      simpleSort(
+        parseFloat(a.change24h || 0),
+        parseFloat(b.change24h || 0)
+      )
+  }, {
     Header: 'Market Cap',
     id: 'marketcapUsd',
     maxWidth: 130,

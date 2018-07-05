@@ -9,9 +9,13 @@ export class ApiKeyList extends Component {
     isHidden: new Map(this.props.apikeys.map(apikey => [apikey, true]))
   }
   componentWillReceiveProps ({apikeys}) {
-    if (apikeys.length !== this.state.isHidden.size) {
+    const {isHidden} = this.state
+    if (apikeys.length !== isHidden.size) {
       this.setState({
-        isHidden: new Map(apikeys.map(apikey => [apikey, true])) // TODO: adding and deleting api will reset state to defaul
+        isHidden: new Map(apikeys.map(apikey => {
+          const isPreviouslyHidden = isHidden.get(apikey)
+          return [apikey, isPreviouslyHidden !== undefined ? isPreviouslyHidden : true]
+        }))
       })
     }
   }

@@ -23,8 +23,10 @@ defmodule SanbaseWeb.Graphql.Schema do
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
+    MultipleAuth,
     BasicAuth,
     JWTAuth,
+    ApikeyAuth,
     ProjectPermissions,
     PostPermissions,
     ApiDelay
@@ -391,7 +393,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
-      middleware(JWTAuth, san_tokens: 1000)
+      middleware(MultipleAuth, [
+        {JWTAuth, san_tokens: 1000},
+        {ApikeyAuth, san_tokens: 1000}
+      ])
 
       complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
       resolve(&TechIndicatorsResolver.emojis_sentiment/3)

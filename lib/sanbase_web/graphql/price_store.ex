@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.PriceStore do
     Dataloader.KV.new(&query/2)
   end
 
-  def query(pair, ids) when is_list(ids) do
+  def query(pair, ids) do
     ids
     |> Enum.uniq()
     |> Enum.map(fn id ->

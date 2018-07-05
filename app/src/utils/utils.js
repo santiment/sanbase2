@@ -15,10 +15,7 @@ const calculateBTCMarketcap = ({marketcap, priceUsd, priceBtc}) => {
 }
 
 const getOrigin = () => {
-  if (process.env.NODE_ENV === 'development') {
-    return window.env.WEBSITE_URL || window.location.origin
-  }
-  return window.env.WEBSITE_URL
+  return (window.env || {}).WEBSITE_URL || window.location.origin
 }
 
 const sanitizeMediumDraftHtml = (html) => sanitizeHtml(html,

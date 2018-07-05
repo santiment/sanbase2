@@ -36,8 +36,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
           |> Enum.map(fn [dt, _, volume, marketcap] ->
             %{
               datetime: dt,
-              marketcap: marketcap,
-              volume: volume
+              marketcap: nil_or_decimal(marketcap),
+              volume: nil_or_decimal(volume)
             }
           end)
 
@@ -178,5 +178,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       error ->
         {:error, "Cannot fetch history price for #{slug}. Reason: #{inspect(error)}"}
     end
+  end
+
+  defp nil_or_decimal(nil), do: nil
+
+  defp nil_or_decimal(num) when is_number(num) do
+    Decimal.new(num)
   end
 end

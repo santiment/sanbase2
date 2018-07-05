@@ -171,10 +171,10 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert Enum.count(history_price) == 2
 
     [history_price | _] = history_price
-    assert history_price["priceUsd"] == "20"
-    assert history_price["priceBtc"] == "1000"
-    assert history_price["volume"] == "200"
-    assert history_price["marketcap"] == "500"
+    assert history_price["priceUsd"] == 20
+    assert history_price["priceBtc"] == 1000
+    assert history_price["volume"] == 200
+    assert history_price["marketcap"] == 500
   end
 
   test "data aggregation for larger intervals", context do

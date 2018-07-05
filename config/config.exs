@@ -31,6 +31,8 @@ config :sanbase, Sanbase.Timescaledb,
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 
+config :sanbase, Sanbase, environment: "#{Mix.env()}"
+
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: 10,

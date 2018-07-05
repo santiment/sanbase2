@@ -6,9 +6,12 @@ defmodule SanbaseWeb.Graphql.Helpers.Async do
   This macro falls back to the Absinthe's async in `:dev` and `:prod` but in
   `:test` env just executes the function as if no `async` has been used
   """
+
   defmacro async(func) do
     quote bind_quoted: [func: func] do
-      if Mix.env() == :test do
+      require Sanbase.Utils.Config
+
+      if Sanbase.Utils.Config.module_get(Sanbase, :environment) == "test" do
         func.()
       else
         Absinthe.Resolution.Helpers.async(func)

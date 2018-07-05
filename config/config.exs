@@ -8,6 +8,8 @@ use Mix.Config
 # General application configuration
 config :sanbase, ecto_repos: [Sanbase.Repo]
 
+config :sanbase, Sanbase, environment: "#{Mix.env()}"
+
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: 10,

@@ -32,7 +32,12 @@ defmodule Sanbase.Auth.Apikey do
          true <- Hmac.apikey_valid?(token, apikey) do
       UserApikeyToken.user_by_token(token)
     else
-      _error ->
+      false ->
+        Logger.info("Apikey #{apikey} is not valid")
+        {:error, "Apikey not valid or malformed"}
+
+      error ->
+        Logger.info("Apikey #{apikey} cannot be split - #{inspect(error)}")
         {:error, "Apikey not valid or malformed"}
     end
   end

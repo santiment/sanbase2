@@ -5,7 +5,7 @@ import ApiKeyList from '../../components/ApiKey/ApiKeyList'
 
 const AccountApiKeyForm = ({
   apikeys,
-  dispatchApikeysGenerate,
+  dispatchApikeyGenerate,
   dispatchApikeyRevoke
 }) => {
   return (
@@ -14,7 +14,7 @@ const AccountApiKeyForm = ({
       <Divider />
       <div className='api-key'>
         <ApiKeyGenerateButton
-          dispatchApikeysGenerate={dispatchApikeysGenerate}
+          dispatchApikeyGenerate={dispatchApikeyGenerate}
         />
         <ApiKeyList
           apikeys={apikeys}

@@ -2,7 +2,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   require Logger
 
   import Ecto.Query
-  import Absinthe.Resolution.Helpers
+  import Absinthe.Resolution.Helpers, except: [async: 1]
+  import SanbaseWeb.Graphql.Helpers.Async
 
   alias Sanbase.Model.{
     Project,

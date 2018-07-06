@@ -3,7 +3,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   import Absinthe.Resolution.Helpers
-  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1, cache_resolve_dataloader: 1]
+
+  import SanbaseWeb.Graphql.Helpers.Cache,
+    only: [cache_resolve: 1, cache_resolve_async: 1, cache_resolve_dataloader: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ProjectResolver,
@@ -111,16 +113,16 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :volume_change_24h, :float, name: "volume_change24h" do
-      resolve(&ProjectResolver.volume_change_24h/3)
+      cache_resolve_async(&ProjectResolver.volume_change_24h/3)
     end
 
     field :average_dev_activity, :float do
       description("Average dev activity for the last 30 days")
-      resolve(&ProjectResolver.average_dev_activity/3)
+      cache_resolve_async(&ProjectResolver.average_dev_activity/3)
     end
 
     field :twitter_data, :twitter_data do
-      resolve(&TwitterResolver.twitter_data/3)
+      cache_resolve_async(&TwitterResolver.twitter_data/3)
     end
 
     field :marketcap_usd, :decimal do
@@ -180,7 +182,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :eth_spent, :float do
       arg(:days, :integer, default_value: 30)
 
-      resolve(&ProjectResolver.eth_spent/3)
+      cache_resolve_async(&ProjectResolver.eth_spent/3)
     end
 
     field :eth_spent_over_time, list_of(:eth_spent_data) do
@@ -188,7 +190,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      resolve(&ProjectResolver.eth_spent_over_time/3)
+      cache_resolve_async(&ProjectResolver.eth_spent_over_time/3)
     end
 
     field :eth_top_transactions, list_of(:wallet_transaction) do
@@ -197,7 +199,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:transaction_type, :transaction_type, default_value: :all)
       arg(:limit, :integer, default_value: 10)
 
-      resolve(&ProjectResolver.eth_top_transactions/3)
+      cache_resolve_async(&ProjectResolver.eth_top_transactions/3)
     end
 
     @desc "Average daily active addresses for a ticker and given time period"
@@ -205,7 +207,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:from, :datetime)
       arg(:to, :datetime)
 
-      resolve(&EtherbiResolver.average_daily_active_addresses/3)
+      cache_resolve_async(&EtherbiResolver.average_daily_active_addresses/3)
     end
   end
 
@@ -213,7 +215,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:address, non_null(:string))
 
     field :balance, :decimal do
-      resolve(&ProjectBalanceResolver.eth_address_balance/3)
+      cache_resolve_dataloader(&ProjectBalanceResolver.eth_address_balance/3)
     end
   end
 

@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   import SanbaseWeb.Graphql.Helpers.Async
 
   def twitter_data(_root, %{ticker: ticker}, _resolution) do
-    async(Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}))
+    Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}).()
   end
 
   def twitter_data(%Project{ticker: ticker}, _args, _resolution) do

@@ -3,7 +3,9 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   use Absinthe.Ecto, repo: Sanbase.Repo
 
   import Absinthe.Resolution.Helpers
-  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1, cache_resolve_dataloader: 1]
+
+  import SanbaseWeb.Graphql.Helpers.Cache,
+    only: [cache_resolve: 1, cache_resolve_async: 1, cache_resolve_dataloader: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ProjectResolver,

@@ -166,7 +166,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   def dataloader_from(captured_mfa) when is_function(captured_mfa) do
     # Public so it can be used by the resolve macros. You should not use it.
     fun_name = captured_mfa |> captured_mfa_name()
-    dataloader_resolver(captured_mfa, fun_name)
+    middleware_resolver(captured_mfa, fun_name)
   end
 
   # Private functions

@@ -174,9 +174,9 @@ const mapDispatchToProps = dispatch => ({
   dispatchApikeyGenerate: () => dispatch({
     type: USER_APIKEY_GENERATE
   }),
-  dispatchApikeyRevoke: apikeys => dispatch({
+  dispatchApikeyRevoke: apikey => dispatch({
     type: USER_APIKEY_REVOKE,
-    apikeys
+    apikey
   })
 })
 

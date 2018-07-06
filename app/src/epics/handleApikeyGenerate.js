@@ -1,7 +1,10 @@
 import Raven from 'raven-js'
 import { Observable } from 'rxjs'
 import gql from 'graphql-tag'
-import { USER_APIKEY_GENERATE, USER_APIKEY_GENERATE_SUCCESS } from './../actions/types'
+import {
+  USER_APIKEY_GENERATE,
+  USER_APIKEY_GENERATE_SUCCESS
+} from './../actions/types'
 
 const generateApikeyGQL = gql`
   mutation {

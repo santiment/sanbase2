@@ -6,36 +6,41 @@ import './ApiKeyList.css'
 export class ApiKeyList extends Component {
   // eslint-disable-next-line
   state = {
-    isHidden: new Map(this.props.apikeys.map(apikey => [apikey, true]))
+    visibleKeys: new Set()
   }
-  componentWillReceiveProps ({ apikeys }) {
-    const { isHidden } = this.state
-    if (apikeys.length !== isHidden.size) {
-      this.setState({
-        isHidden: new Map(
-          apikeys.map(apikey => {
-            const isPreviouslyHidden = isHidden.get(apikey)
-            return [
-              apikey,
-              isPreviouslyHidden !== undefined ? isPreviouslyHidden : true
-            ]
-          })
-        )
-      })
-    }
+
+  // eslint-disable-next-line
+  onRevokeButtonClick = apikey => {
+    const { visibleKeys } = this.state
+    if (!visibleKeys.has(apikey)) return
+
+    const newVisibleKeys = new Set(visibleKeys)
+    newVisibleKeys.delete(apikey)
+    this.setState({
+      visibleKeys: newVisibleKeys
+    })
   }
+
   // eslint-disable-next-line
   onVisibilityButtonClick = apikey => {
     this.setState(prevState => {
-      const { isHidden } = prevState
+      const { visibleKeys } = prevState
+      const newVisibleKeys = new Set(visibleKeys)
+
+      if (newVisibleKeys.has(apikey)) {
+        newVisibleKeys.delete(apikey)
+      } else {
+        newVisibleKeys.add(apikey)
+      }
+
       return {
-        isHidden: new Map(isHidden).set(apikey, !isHidden.get(apikey))
+        visibleKeys: newVisibleKeys
       }
     })
   }
 
   render () {
-    const { isHidden } = this.state
+    const { visibleKeys } = this.state
     const { apikeys, dispatchApikeyRevoke } = this.props
 
     return (
@@ -44,13 +49,14 @@ export class ApiKeyList extends Component {
           <li className='ApiKeyList__item' key={apikey}>
             <ApiKey
               apikey={apikey}
-              isHidden={isHidden.get(apikey)}
+              isVisible={visibleKeys.has(apikey)}
               onVisibilityButtonClick={this.onVisibilityButtonClick}
             />
             {dispatchApikeyRevoke &&
               <ApiKeyRevokeButton
                 apikey={apikey}
                 dispatchApikeyRevoke={dispatchApikeyRevoke}
+                onRevokeButtonClick={this.onRevokeButtonClick}
               />}
           </li>
         ))}

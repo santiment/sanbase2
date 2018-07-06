@@ -24,6 +24,7 @@ import Panel from './../../components/Panel'
 import LikeBtn from './../InsightsNew/LikeBtn'
 import { votePostGQL, unvotePostGQL } from './../InsightsPage'
 import { getBalance } from './../UserSelectors'
+import InsightImageModal from './InsightImageModal'
 import './Insight.css'
 
 const POLLING_INTERVAL = 100000
@@ -37,7 +38,11 @@ class Insight extends Component {
     super(props)
 
     this.state = {
-      editorState: createEditorState()
+      editorState: createEditorState(),
+      modal: {
+        isShown: false,
+        pic: null
+      }
     }
   }
 
@@ -48,6 +53,19 @@ class Insight extends Component {
         editorState: createEditorState(convertToRaw(mediumDraftImporter(text || '')))
       })
     }
+  }
+
+  // eslint-disable-next-line
+  onInsightContentClick = ({target}) => {
+    if (target.tagName.toUpperCase() !== 'IMG') return
+    console.log(target)
+    this.setState(prevState => ({
+      ...prevState,
+      modal: {
+        isShown: true,
+        pic: target.src
+      }
+    }))
   }
 
   render () {
@@ -75,7 +93,7 @@ class Insight extends Component {
       votedAt: null,
       votes: {}
     }} = Post
-    const {editorState} = this.state
+    const {editorState, modal} = this.state
     if (!user.isLoading && !user.token) {
       return (<div className='insight'>
         <InsightsLayout
@@ -100,6 +118,7 @@ class Insight extends Component {
 
     return (
       <div className='insight'>
+        { modal.isShown && <InsightImageModal pic={modal.pic} /> }
         <InsightsLayout
           isLogin={!!user}
           title={`SANbase: Insight - ${post.title}`}>
@@ -126,7 +145,7 @@ class Insight extends Component {
             &nbsp;&#8226;&nbsp;
             {post.createdAt &&
               <Span>{moment(post.createdAt).format('MMM DD, YYYY')}</Span>}
-            <Div className='insight-content' style={{ marginTop: '1em' }}
+            <Div className='insight-content' style={{ marginTop: '1em' }} onClick={this.onInsightContentClick}
             >
               <Editor
                 editorEnabled={false}

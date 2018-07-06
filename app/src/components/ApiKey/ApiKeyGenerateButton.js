@@ -1,24 +1,16 @@
 import React from 'react'
-import { graphql } from 'react-apollo'
 import { Button } from 'semantic-ui-react'
-import { generateApikeyGQL } from './apikeyGQL'
+import debounce from 'lodash.debounce'
 
-const ApiKeyGenerateButton = ({ generateApikey, dispatchApikeyGenerate }) => {
+const ApiKeyGenerateButton = ({ dispatchApikeyGenerate }) => {
   return (
     <Button
       positive
-      onClick={() =>
-        generateApikey()
-          .then(({ data: { generateApikey } }) =>
-            dispatchApikeyGenerate(generateApikey.apikeys)
-          )
-          .catch(console.log)}
+      onClick={debounce(dispatchApikeyGenerate, 200)}
     >
       Generate new API Key
     </Button>
   )
 }
 
-export default graphql(generateApikeyGQL, { name: 'generateApikey' })(
-  ApiKeyGenerateButton
-)
+export default ApiKeyGenerateButton

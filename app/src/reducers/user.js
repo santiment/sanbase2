@@ -84,7 +84,8 @@ export default (state = initialState, action) => {
           marketingAccepted
         }
       }
-    case actions.USER_APIKEY_GENERATE:
+
+    case actions.USER_APIKEY_GENERATE_SUCCESS:
     case actions.USER_APIKEY_REVOKE:
       return {
         ...state,

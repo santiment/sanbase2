@@ -3,14 +3,14 @@ import { Input } from 'semantic-ui-react'
 import copy from 'copy-to-clipboard'
 import './ApiKey.css'
 
-const ApiKey = ({ apikey, isHidden, onVisibilityButtonClick }) => {
+const ApiKey = ({ apikey, isVisible, onVisibilityButtonClick }) => {
   return (
     <Fragment>
       <form className='ApiKey'>
         <Input
           fluid
           input={{ readOnly: true }}
-          value={isHidden ? '•'.repeat(apikey.length) : apikey}
+          value={isVisible ? apikey : '•'.repeat(apikey.length)}
           className='ApiKey__input'
         />
         <button
@@ -18,7 +18,7 @@ const ApiKey = ({ apikey, isHidden, onVisibilityButtonClick }) => {
           onClick={() => onVisibilityButtonClick(apikey)}
           className='ApiKey__btn'
         >
-          <i className={`icon eye ${isHidden ? '' : 'slash'}`} />
+          <i className={`icon eye ${isVisible ? 'slash' : ''}`} />
         </button>
         <button
           type='button'

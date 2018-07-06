@@ -3,15 +3,16 @@ import { graphql } from 'react-apollo'
 import { Button } from 'semantic-ui-react'
 import { revokeApikeyGQL } from './apikeyGQL'
 
-const ApiKeyRevokeButton = ({ apikey, revokeApikey, dispatchApikeyRevoke }) => {
+const ApiKeyRevokeButton = ({ apikey, revokeApikey, dispatchApikeyRevoke, onRevokeButtonClick }) => {
   return (
     <Button
       negative
       onClick={() =>
         revokeApikey({ variables: { apikey } })
-          .then(({ data: { revokeApikey } }) =>
+          .then(({ data: { revokeApikey } }) => {
             dispatchApikeyRevoke(revokeApikey.apikeys)
-          )
+            onRevokeButtonClick(apikey)
+          })
           .catch(console.log)}
     >
       Revoke

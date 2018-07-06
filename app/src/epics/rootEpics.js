@@ -7,6 +7,7 @@ import handleEmailLogin, { handleLoginSuccess } from './handleEmailLogin'
 import handleEthLogin from './handleEthLogin'
 import handleGDPR from './handleGDPR'
 import handleRouter from './handleRouter'
+import handleApikeyGenerate from './handleApikeyGenerate'
 
 export default combineEpics(
   handleFollowProject,
@@ -16,5 +17,6 @@ export default combineEpics(
   handleLoginSuccess,
   handleEthLogin,
   handleGDPR,
-  handleRouter
+  handleRouter,
+  handleApikeyGenerate
 )

@@ -75,42 +75,6 @@ config :sanbase, SanbaseWorkers.ImportGithubActivity,
 config :sanbase, SanbaseWorkers.ImportGithubActivity,
   s3_bucket: {:system, "GITHUB_ARCHIVE_BUCKET", "santiment-github-archive"}
 
-config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "twitter_followers_data"
-
-config :sanbase, Sanbase.Etherbi.Transactions.Store,
-  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "erc20_exchange_funds_flow"
-
-config :sanbase, Sanbase.Etherbi.BurnRate.Store,
-  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "erc20_burn_rate"
-
-config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
-  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "erc20_transaction_volume"
-
-config :sanbase, Sanbase.Etherbi.DailyActiveAddresses.Store,
-  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "erc20_daily_active_addresses"
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "etherscan_transactions"
-
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 
@@ -302,6 +266,12 @@ config :sanbase, SanbaseWeb.Graphql.PlugAttack,
 
 config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiDelay,
   required_san_stake_realtime_api: {:system, "REQUIRED_SAN_STAKE_REALTIME_API", "1000"}
+
+# Import configs
+import_config "ex_admin_config.exs"
+import_config "influxdb_config.exs"
+import_config "scrapers_config.exs"
+import_config "notifications_config.exs"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

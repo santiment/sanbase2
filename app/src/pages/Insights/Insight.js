@@ -39,10 +39,7 @@ class Insight extends Component {
 
     this.state = {
       editorState: createEditorState(),
-      modal: {
-        isShown: false,
-        pic: null
-      }
+      modalPicSrc: null
     }
   }
 
@@ -58,14 +55,18 @@ class Insight extends Component {
   // eslint-disable-next-line
   onInsightContentClick = ({target}) => {
     if (target.tagName.toUpperCase() !== 'IMG') return
-    console.log(target)
     this.setState(prevState => ({
       ...prevState,
-      modal: {
-        isShown: true,
-        pic: target.src
-      }
+      modalPicSrc: target.src
     }))
+  }
+
+  // eslint-disable-next-line
+  onInsightImageModalClose = () => {
+    this.setState({
+      ...this.state,
+      modalPicSrc: null
+    })
   }
 
   render () {
@@ -93,7 +94,7 @@ class Insight extends Component {
       votedAt: null,
       votes: {}
     }} = Post
-    const {editorState, modal} = this.state
+    const {editorState, modalPicSrc} = this.state
     if (!user.isLoading && !user.token) {
       return (<div className='insight'>
         <InsightsLayout
@@ -118,7 +119,7 @@ class Insight extends Component {
 
     return (
       <div className='insight'>
-        { modal.isShown && <InsightImageModal pic={modal.pic} /> }
+        { modalPicSrc && <InsightImageModal pic={modalPicSrc} onInsightImageModalClose={this.onInsightImageModalClose} /> }
         <InsightsLayout
           isLogin={!!user}
           title={`SANbase: Insight - ${post.title}`}>

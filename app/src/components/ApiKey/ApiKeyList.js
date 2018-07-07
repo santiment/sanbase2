@@ -41,7 +41,7 @@ export class ApiKeyList extends Component {
 
   render () {
     const { visibleKeys } = this.state
-    const { apikeys, dispatchApikeyRevoke } = this.props
+    const { apikeys, revokeAPIKey } = this.props
 
     return (
       <ol className='ApiKeyList'>
@@ -52,10 +52,10 @@ export class ApiKeyList extends Component {
               isVisible={visibleKeys.has(apikey)}
               onVisibilityButtonClick={this.onVisibilityButtonClick}
             />
-            {dispatchApikeyRevoke &&
+            {revokeAPIKey &&
               <ApiKeyRevokeButton
                 apikey={apikey}
-                dispatchApikeyRevoke={dispatchApikeyRevoke}
+                revokeAPIKey={revokeAPIKey}
                 onRevokeButtonClick={this.onRevokeButtonClick}
               />}
           </li>

@@ -1,12 +1,12 @@
 import React from 'react'
 import { Button } from 'semantic-ui-react'
 
-const ApiKeyRevokeButton = ({ apikey, dispatchApikeyRevoke, onRevokeButtonClick }) => {
+const ApiKeyRevokeButton = ({ apikey, revokeAPIKey, onRevokeButtonClick }) => {
   return (
     <Button
       negative
       onClick={() => {
-        dispatchApikeyRevoke(apikey)
+        revokeAPIKey(apikey)
         onRevokeButtonClick(apikey)
       }}
     >

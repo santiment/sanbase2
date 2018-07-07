@@ -74,7 +74,7 @@ class Account extends Component {
   }
 
   render () {
-    const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange, generateAPIKey, dispatchApikeyRevoke, isLoggedIn } = this.props
+    const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange, generateAPIKey, revokeAPIKey, isLoggedIn } = this.props
     const { emailForm, usernameForm } = this.state
 
     if (user && !isLoggedIn) {
@@ -147,7 +147,7 @@ class Account extends Component {
           <br />
           <AccountEthKeyForm ethAccounts={user.ethAccounts} loading={loading} />
           <AccountWallets user={user} />
-          <AccountApiKeyForm apikeys={user.apikeys} generateAPIKey={generateAPIKey} dispatchApikeyRevoke={dispatchApikeyRevoke} />
+          <AccountApiKeyForm apikeys={user.apikeys} generateAPIKey={generateAPIKey} revokeAPIKey={revokeAPIKey} />
           <AccountSessions onLogoutBtnClick={dispatchUserLogout} />
         </div>
       </div>
@@ -174,7 +174,7 @@ const mapDispatchToProps = dispatch => ({
   generateAPIKey: () => dispatch({
     type: USER_APIKEY_GENERATE
   }),
-  dispatchApikeyRevoke: apikey => dispatch({
+  revokeAPIKey: apikey => dispatch({
     type: USER_APIKEY_REVOKE,
     apikey
   })

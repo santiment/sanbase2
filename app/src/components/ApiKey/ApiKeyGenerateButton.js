@@ -1,11 +1,11 @@
 import React from 'react'
 import { Button } from 'semantic-ui-react'
 
-const ApiKeyGenerateButton = ({ dispatchApikeyGenerate }) => {
+const ApiKeyGenerateButton = ({ generateAPIKey }) => {
   return (
     <Button
       positive
-      onClick={dispatchApikeyGenerate}
+      onClick={generateAPIKey}
     >
       Generate new API Key
     </Button>

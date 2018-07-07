@@ -7,7 +7,7 @@ import { Button } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { changeUsernameGQL } from './accountGQL'
 
-const AccountUsernameForm = ({ user, changeUsernameQuery, dispatchUsernameChange, isUsernamePending, setFormStatus, errorValidator, successValidator }) => (<ReactForm
+const AccountUsernameForm = ({ user, changeUsernameQuery, changeUsername, isUsernamePending, setFormStatus, errorValidator, successValidator }) => (<ReactForm
   validateError={errorValidator}
   validateSuccess={successValidator}
   onSubmitFailure={(error, ...rest) => {
@@ -25,7 +25,7 @@ const AccountUsernameForm = ({ user, changeUsernameQuery, dispatchUsernameChange
         setFormStatus('PENDING', false)
         setFormStatus('ERROR', false)
         setFormStatus('SUCCESS', true)
-        dispatchUsernameChange(values.username)
+        changeUsername(values.username)
         formApi.resetAll()
       })
       .catch(error => {

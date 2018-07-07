@@ -7,7 +7,7 @@ import { Button } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { changeEmailGQL } from './accountGQL'
 
-const AccountEmailForm = ({ user, changeEmailQuery, dispatchEmailChange, isEmailPending, setFormStatus, errorValidator, successValidator }) => {
+const AccountEmailForm = ({ user, changeEmailQuery, changeEmail, isEmailPending, setFormStatus, errorValidator, successValidator }) => {
   return (
     <ReactForm
       validateError={errorValidator}
@@ -27,7 +27,7 @@ const AccountEmailForm = ({ user, changeEmailQuery, dispatchEmailChange, isEmail
             setFormStatus('PENDING', false)
             setFormStatus('ERROR', false)
             setFormStatus('SUCCESS', true)
-            dispatchEmailChange(values.email)
+            changeEmail(values.email)
             formApi.resetAll()
           })
           .catch(error => {

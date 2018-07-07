@@ -74,7 +74,7 @@ class Account extends Component {
   }
 
   render () {
-    const { user, loading, dispatchUserLogout, dispatchEmailChange, dispatchUsernameChange, generateAPIKey, revokeAPIKey, isLoggedIn } = this.props
+    const { user, loading, logoutUser, changeEmail, changeUsername, generateAPIKey, revokeAPIKey, isLoggedIn } = this.props
     const { emailForm, usernameForm } = this.state
 
     if (user && !isLoggedIn) {
@@ -130,7 +130,7 @@ class Account extends Component {
         <div className='panel'>
           <AccountEmailForm
             user={user}
-            dispatchEmailChange={dispatchEmailChange}
+            changeEmail={changeEmail}
             successValidator={successValidator}
             errorValidator={errorValidator}
             setFormStatus={this.setFormStatus(this.emailFormKey)}
@@ -138,7 +138,7 @@ class Account extends Component {
           />
           <AccountUsernameForm
             user={user}
-            dispatchUsernameChange={dispatchUsernameChange}
+            changeUsername={changeUsername}
             successValidator={successValidator}
             errorValidator={errorValidator}
             setFormStatus={this.setFormStatus(this.usernameFormKey)}
@@ -148,7 +148,7 @@ class Account extends Component {
           <AccountEthKeyForm ethAccounts={user.ethAccounts} loading={loading} />
           <AccountWallets user={user} />
           <AccountApiKeyForm apikeys={user.apikeys} generateAPIKey={generateAPIKey} revokeAPIKey={revokeAPIKey} />
-          <AccountSessions onLogoutBtnClick={dispatchUserLogout} />
+          <AccountSessions onLogoutBtnClick={logoutUser} />
         </div>
       </div>
     )
@@ -162,12 +162,12 @@ const mapStateToProps = state => ({
 })
 
 const mapDispatchToProps = dispatch => ({
-  dispatchUserLogout: () => dispatch({ type: USER_LOGOUT_SUCCESS }),
-  dispatchEmailChange: email => dispatch({
+  logoutUser: () => dispatch({ type: USER_LOGOUT_SUCCESS }),
+  changeEmail: email => dispatch({
     type: USER_EMAIL_CHANGE,
     email
   }),
-  dispatchUsernameChange: username => dispatch({
+  changeUsername: username => dispatch({
     type: USER_USERNAME_CHANGE,
     username
   }),

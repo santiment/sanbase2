@@ -15,7 +15,7 @@ const generateApikeyGQL = gql`
 `
 
 const handleApikeyGenerate = (action$, store, { client }) =>
-  action$.ofType(USER_APIKEY_GENERATE).switchMap(() => {
+  action$.ofType(USER_APIKEY_GENERATE).debounceTime(200).switchMap(() => {
     const mutation = client.mutate({
       mutation: generateApikeyGQL
     })

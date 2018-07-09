@@ -22,6 +22,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
+  import_types(SanbaseWeb.Graphql.UserListTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -415,6 +416,21 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       resolve(&AccountResolver.followed_projects/3)
     end
+
+    @desc "Fetch all favourites lists for current_user."
+    field :fetch_user_lists, list_of(:user_list) do
+      resolve(&UserListResolver.fetch_user_lists/3)
+    end
+
+    @desc "Fetch all public favourites lists for current_user."
+    field :fetch_public_user_lists, list_of(:user_list) do
+      resolve(&UserListResolver.fetch_public_user_lists/3)
+    end
+
+    @desc "Fetch all public favourites lists"
+    field :fetch_all_public_user_lists, list_of(:user_list) do
+      resolve(&UserListResolver.fetch_all_public_user_lists/3)
+    end
   end
 
   mutation do
@@ -568,6 +584,33 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&ApikeyResolver.revoke_apikey/3)
+    end
+
+    @desc """
+    Create user favourites list.
+    """
+
+    field :create_user_list, :user_list do
+      arg(:name, non_null(:string))
+      arg(:is_public, :boolean)
+      arg(:color, :string)
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.create_user_list/3)
+    end
+
+    @desc """
+    Update user favourites list.
+    """
+
+    field :update_user_list, :user_list do
+      arg(:name, non_null(:string))
+      arg(:is_public, :boolean)
+      arg(:color, :string)
+      arg(:list_items, list_of(:integer))
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.update_user_list/3)
     end
   end
 end

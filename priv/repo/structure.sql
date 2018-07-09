@@ -1149,6 +1149,40 @@ ALTER SEQUENCE public.user_lists_id_seq OWNED BY public.user_lists.id;
 
 
 --
+-- Name: user_lists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_lists (
+    id bigint NOT NULL,
+    name character varying(255),
+    is_public boolean DEFAULT false,
+    color public.color,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_lists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_lists_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_lists_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_lists_id_seq OWNED BY public.user_lists.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1560,6 +1594,14 @@ ALTER TABLE ONLY public.list_items
 
 
 --
+-- Name: list_items list_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.list_items
+    ADD CONSTRAINT list_items_pkey PRIMARY KEY (user_list_id, project_id);
+
+
+--
 -- Name: market_segments market_segments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1685,6 +1727,14 @@ ALTER TABLE ONLY public.tags
 
 ALTER TABLE ONLY public.user_api_key_tokens
     ADD CONSTRAINT user_api_key_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_lists user_lists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_lists
+    ADD CONSTRAINT user_lists_pkey PRIMARY KEY (id);
 
 
 --
@@ -2369,6 +2419,14 @@ ALTER TABLE ONLY public.user_followed_project
 
 ALTER TABLE ONLY public.user_followed_project
     ADD CONSTRAINT user_followed_project_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_lists user_lists_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_lists
+    ADD CONSTRAINT user_lists_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --

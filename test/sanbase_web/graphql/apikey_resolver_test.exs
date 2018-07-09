@@ -355,6 +355,8 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     alias Sanbase.Repo
     alias Sanbase.Model.Project
 
+    Store.create_db()
+
     contract_address = "0x123123123"
 
     Store.import([

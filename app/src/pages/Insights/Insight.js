@@ -119,7 +119,7 @@ class Insight extends Component {
 
     return (
       <div className='insight'>
-        { modalPicSrc && <InsightImageModal pic={modalPicSrc} onInsightImageModalClose={this.onInsightImageModalClose} /> }
+        <InsightImageModal pic={modalPicSrc} onInsightImageModalClose={this.onInsightImageModalClose} />
         <InsightsLayout
           isLogin={!!user}
           title={`SANbase: Insight - ${post.title}`}>

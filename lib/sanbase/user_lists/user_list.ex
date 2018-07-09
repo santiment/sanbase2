@@ -101,7 +101,7 @@ defmodule Sanbase.UserLists.UserList do
 
       list_items ->
         Map.delete(params, :list_items)
-        put_in(params[:list_items], list_items) |> IO.inspect()
+        put_in(params[:list_items], list_items)
     end
   end
 end

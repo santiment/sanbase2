@@ -31,7 +31,7 @@ class PrivacyPolicyPopup extends Component {
 
   // eslint-disable-next-line
   acceptPrivacyPolicy = () => {
-    this.setState({isPrivacyPolicyAccepted: true})
+    this.setState({ isPrivacyPolicyAccepted: true })
     savePrivacyPolicyAcceptance()
   }
 

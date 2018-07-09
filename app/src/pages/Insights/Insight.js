@@ -38,7 +38,7 @@ class Insight extends Component {
     super(props)
 
     this.state = {
-      editorState: createEditorState(),
+      content: createEditorState(),
       modalPicSrc: null
     }
   }
@@ -47,7 +47,7 @@ class Insight extends Component {
     const text = (nextProps.Post.post || {}).text
     if (text) {
       this.setState({
-        editorState: createEditorState(convertToRaw(mediumDraftImporter(text || '')))
+        content: createEditorState(convertToRaw(mediumDraftImporter(text || '')))
       })
     }
   }
@@ -94,7 +94,7 @@ class Insight extends Component {
       votedAt: null,
       votes: {}
     }} = Post
-    const {editorState, modalPicSrc} = this.state
+    const {content, modalPicSrc} = this.state
     if (!user.isLoading && !user.token) {
       return (<div className='insight'>
         <InsightsLayout
@@ -150,7 +150,7 @@ class Insight extends Component {
             >
               <Editor
                 editorEnabled={false}
-                editorState={editorState}
+                editorState={content}
                 disableToolbar
                 onChange={() => {}}
               />

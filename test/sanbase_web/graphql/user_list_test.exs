@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    user_list = json_response(result, 200)["data"]["createUserList"] |> IO.inspect()
+    user_list = json_response(result, 200)["data"]["createUserList"]
 
     assert user_list["name"] == "My list"
   end

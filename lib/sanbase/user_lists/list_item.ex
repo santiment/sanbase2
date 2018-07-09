@@ -15,10 +15,7 @@ defmodule Sanbase.UserLists.ListItem do
   end
 
   def changeset(list_item, attrs \\ %{}) do
-    IO.inspect(attrs)
-
     list_item
-    |> IO.inspect()
     |> cast(attrs, [:project_id, :user_list_id])
     |> validate_required([:project_id, :user_list_id])
   end

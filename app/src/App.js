@@ -36,6 +36,7 @@ import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import ApiDocs from './components/ApiDocs'
 import ApiExplorer from './components/ApiExplorer'
+import PrivacyPolicyPopup from './components/PrivacyPolicyPopup'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -111,6 +112,7 @@ export const App = ({
       : (isDesktop
         ? <Menu />
         : <MobileMenu />)}
+    <PrivacyPolicyPopup isLoggedIn={isLoggedIn} />
     <ErrorBoundary>
       <Switch>
         <Route exact path='/projects' render={props => {

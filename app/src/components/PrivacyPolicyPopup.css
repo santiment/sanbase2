@@ -1,0 +1,25 @@
+.PrivacyPolicyPopup {
+  position: fixed;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  z-index: 9999;
+}
+
+.PrivacyPolicyPopup__container {
+  display: flex;
+  text-align: center;
+  border-bottom-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom: 0 !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.PrivacyPolicyPopup__btn {
+  white-space: nowrap;
+}
+
+.PrivacyPolicyPopup__text {
+  margin: 0 1rem 0 0;
+}

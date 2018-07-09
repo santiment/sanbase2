@@ -3,7 +3,7 @@ import {Modal} from 'semantic-ui-react'
 import './InsightImageModal.css'
 
 const InsightImageModal = ({pic, onInsightImageModalClose}) => {
-  return (
+  return (pic &&
     <Modal defaultOpen closeIcon basic className='InsightImageModal' style={{width: 'auto'}} onUnmount={onInsightImageModalClose}>
       <Modal.Content>
         <img src={pic} alt='Modal pic' />

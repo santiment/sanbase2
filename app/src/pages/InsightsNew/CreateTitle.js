@@ -62,7 +62,8 @@ const CreateTitle = ({post, changePost}) => {
           formApi.values.tags = tags
         }} />
         <br />
-        <div className='event-posts-new-step-control'>
+        <div className='event-posts-step-control'>
+          <Button onClick={() => window.history.back()}>Back</Button>
           <Button
             disabled={!formApi.getSuccess().title}
             positive={!!formApi.getSuccess().title}

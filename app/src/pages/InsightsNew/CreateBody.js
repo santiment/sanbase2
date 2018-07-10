@@ -8,7 +8,7 @@ const CreateBody = ({changePost, post, postBody = null, setPostBody}) => (
     <CreateInsight initValue={post.text} changePost={raw => {
       setPostBody(raw)
     }} />
-    <div className='event-posts-new-step-control'>
+    <div className='event-posts-step-control event-posts-step-control_right'>
       <Button
         disabled={!postBody}
         positive={!!postBody}

@@ -4,13 +4,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   alias Sanbase.Auth.User
   alias Sanbase.UserLists.UserList
   alias SanbaseWeb.Graphql.Helpers.Utils
+  alias Sanbase.Repo
 
   def create_user_list(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     case UserList.create_user_list(current_user, args) do
       {:ok, user_list} ->
-        {:ok, user_list}
+        {:ok, user_list |> Repo.preload(:list_items)}
 
       {:error, changeset} ->
         {

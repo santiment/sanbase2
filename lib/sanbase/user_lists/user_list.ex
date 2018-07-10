@@ -11,7 +11,7 @@ defmodule Sanbase.UserLists.UserList do
   schema "user_lists" do
     field(:name, :string)
     field(:is_public, :boolean, default: false)
-    field(:color, ColorEnum)
+    field(:color, ColorEnum, default: :none)
 
     belongs_to(:user, User)
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)

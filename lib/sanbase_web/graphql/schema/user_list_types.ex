@@ -4,10 +4,10 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   import Absinthe.Resolution.Helpers
   alias SanbaseWeb.Graphql.SanbaseRepo
 
-  # enum :color_enum, values: [:none, :blue, :red, :green, :yellow, :grey, :black]
+  enum(:color_enum, values: [:none, :blue, :red, :green, :yellow, :grey, :black])
 
   object :list_item do
-    field(:project, :project)
+    field(:project, :project, resolve: dataloader(SanbaseRepo))
   end
 
   object :user_list do
@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:user, non_null(:post_author), resolve: dataloader(SanbaseRepo))
     field(:name, :string)
     field(:is_public, :boolean)
-    field(:color, :string)
-    field(:list_items, list_of(:list_item), resolve: dataloader(SanbaseRepo))
+    field(:color, :color_enum)
+    field(:list_items, list_of(:list_item))
   end
 end

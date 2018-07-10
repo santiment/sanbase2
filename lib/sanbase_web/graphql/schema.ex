@@ -612,7 +612,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :create_user_list, :user_list do
       arg(:name, non_null(:string))
       arg(:is_public, :boolean)
-      arg(:color, :string)
+      arg(:color, :color_enum)
 
       middleware(JWTAuth)
       resolve(&UserListResolver.create_user_list/3)
@@ -623,13 +623,25 @@ defmodule SanbaseWeb.Graphql.Schema do
     """
 
     field :update_user_list, :user_list do
-      arg(:name, non_null(:string))
+      arg(:id, non_null(:integer))
+      arg(:name, :string)
       arg(:is_public, :boolean)
-      arg(:color, :string)
-      arg(:list_items, list_of(:integer))
+      arg(:color, :color_enum)
+      arg(:list_items, list_of(:string))
 
       middleware(JWTAuth)
       resolve(&UserListResolver.update_user_list/3)
+    end
+
+    @desc """
+    Remove user favourites list.
+    """
+
+    field :remove_user_list, :user_list do
+      arg(:id, non_null(:integer))
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.remove_user_list/3)
     end
   end
 end

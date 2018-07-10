@@ -54,8 +54,12 @@
   font-size: 20px;
 }
 
-.event-posts-new-step-control {
+.event-posts-step-control {
   display: flex;
+  justify-content: space-between;
+}
+
+.event-posts-step-control_right {
   justify-content: flex-end;
 }
 

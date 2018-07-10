@@ -159,7 +159,8 @@ const ConfirmPost = ({
           unvotePost={() => {}}
           gotoInsight={() => {}}
           user={user} {...post} />
-        <div className='event-posts-new-step-control'>
+        <div className='event-posts-step-control'>
+          <Button onClick={() => window.history.back()}>Back</Button>
           <Button
             positive
             disabled={isPending}

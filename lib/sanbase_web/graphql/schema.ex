@@ -627,7 +627,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:name, :string)
       arg(:is_public, :boolean)
       arg(:color, :color_enum)
-      arg(:list_items, list_of(:string))
+      arg(:list_items, list_of(:input_list_item))
 
       middleware(JWTAuth)
       resolve(&UserListResolver.update_user_list/3)

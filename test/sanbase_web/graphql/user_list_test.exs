@@ -43,7 +43,9 @@ defmodule SanbaseWeb.Graphql.UserListTest do
           project {
             id
           }
-        }
+        },
+        inserted_at,
+        updated_at
       }
     }
     """
@@ -74,7 +76,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
         id: #{created_user_list.id},
         name: "#{update_name}",
         color: BLACK,
-        list_items: ["#{project.id}"]
+        list_items: [{project_id: #{project.id}}]
       ) {
         name,
         color,

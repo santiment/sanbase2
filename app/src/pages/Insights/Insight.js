@@ -33,6 +33,8 @@ const H2 = createSkeletonElement('h2', 'pending-home')
 const Span = createSkeletonElement('span', 'pending-home')
 const Div = createSkeletonElement('div', 'pending-home')
 
+const isPostADraftByDifferentUser = (post, user) => post.readyState === 'draft' && post.user.id !== user.data.id
+
 class Insight extends Component {
   constructor (props) {
     super(props)
@@ -113,7 +115,7 @@ class Insight extends Component {
       </div>)
     }
 
-    if (!post) {
+    if (!post || isPostADraftByDifferentUser(post, user)) {
       return <Redirect to='/insights' />
     }
 

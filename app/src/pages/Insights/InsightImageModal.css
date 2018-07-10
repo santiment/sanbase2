@@ -1,0 +1,8 @@
+.InsightImageModal {
+  max-width: 90%;
+  width: auto !important;
+}
+
+.InsightImageModal i {
+  left: 100%;
+}

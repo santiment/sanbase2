@@ -24,6 +24,7 @@ import Panel from './../../components/Panel'
 import LikeBtn from './../InsightsNew/LikeBtn'
 import { votePostGQL, unvotePostGQL } from './../InsightsPage'
 import { getBalance } from './../UserSelectors'
+import InsightImageModal from './InsightImageModal'
 import './Insight.css'
 
 const POLLING_INTERVAL = 100000
@@ -37,7 +38,8 @@ class Insight extends Component {
     super(props)
 
     this.state = {
-      editorState: createEditorState()
+      content: createEditorState(),
+      modalPicSrc: null
     }
   }
 
@@ -45,9 +47,26 @@ class Insight extends Component {
     const text = (nextProps.Post.post || {}).text
     if (text) {
       this.setState({
-        editorState: createEditorState(convertToRaw(mediumDraftImporter(text || '')))
+        content: createEditorState(convertToRaw(mediumDraftImporter(text || '')))
       })
     }
+  }
+
+  // eslint-disable-next-line
+  onInsightContentClick = ({target}) => {
+    if (target.tagName.toUpperCase() !== 'IMG') return
+    this.setState(prevState => ({
+      ...prevState,
+      modalPicSrc: target.src
+    }))
+  }
+
+  // eslint-disable-next-line
+  onInsightImageModalClose = () => {
+    this.setState({
+      ...this.state,
+      modalPicSrc: null
+    })
   }
 
   render () {
@@ -75,7 +94,7 @@ class Insight extends Component {
       votedAt: null,
       votes: {}
     }} = Post
-    const {editorState} = this.state
+    const {content, modalPicSrc} = this.state
     if (!user.isLoading && !user.token) {
       return (<div className='insight'>
         <InsightsLayout
@@ -100,6 +119,7 @@ class Insight extends Component {
 
     return (
       <div className='insight'>
+        <InsightImageModal pic={modalPicSrc} onInsightImageModalClose={this.onInsightImageModalClose} />
         <InsightsLayout
           isLogin={!!user}
           title={`SANbase: Insight - ${post.title}`}>
@@ -126,11 +146,11 @@ class Insight extends Component {
             &nbsp;&#8226;&nbsp;
             {post.createdAt &&
               <Span>{moment(post.createdAt).format('MMM DD, YYYY')}</Span>}
-            <Div className='insight-content' style={{ marginTop: '1em' }}
+            <Div className='insight-content' style={{ marginTop: '1em' }} onClick={this.onInsightContentClick}
             >
               <Editor
                 editorEnabled={false}
-                editorState={editorState}
+                editorState={content}
                 disableToolbar
                 onChange={() => {}}
               />

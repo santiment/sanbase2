@@ -19,7 +19,7 @@ const getOptionsFromTags = tags => {
 
 class TagsField extends Component {
   state = { // eslint-disable-line
-    tags: []
+    tags: this.props.savedChosenTags
   }
 
   handleOnChange = tags => { // eslint-disable-line

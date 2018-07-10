@@ -92,7 +92,7 @@ defmodule Sanbase.UserLists.UserList do
     list_items =
       list_items
       |> Enum.map(fn item ->
-        %{project_id: item, user_list_id: id}
+        %{project_id: item.project_id, user_list_id: id}
       end)
 
     case list_items do

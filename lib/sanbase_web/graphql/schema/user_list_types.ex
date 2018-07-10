@@ -6,6 +6,10 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
 
   enum(:color_enum, values: [:none, :blue, :red, :green, :yellow, :grey, :black])
 
+  input_object :input_list_item do
+    field(:project_id, :integer)
+  end
+
   object :list_item do
     field(:project, :project, resolve: dataloader(SanbaseRepo))
   end
@@ -17,5 +21,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
     field(:is_public, :boolean)
     field(:color, :color_enum)
     field(:list_items, list_of(:list_item))
+    field(:inserted_at, non_null(:naive_datetime))
+    field(:updated_at, non_null(:naive_datetime))
   end
 end

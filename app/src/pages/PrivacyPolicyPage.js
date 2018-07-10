@@ -168,6 +168,19 @@ const PrivacyPolicyPage = ({isLoggedIn}) => (
         let Us know by sending Us an email to {privacyEmail}
         or by post at Ibex Services Ltd, via Balestra 6, 6830 Chiasso, Switzerland.
       </p>
+
+      <h1>Tracking & Cookies</h1>
+      <p>
+        Santiment doesn’t track you across the Internet.
+        We track only your interactions within the Santiment network
+        (which encompasses santiment.net and custom domains hosted by Santiment).
+      </p>
+
+      <p>
+        Some third-party services that we use to provide the Santiment Service, such as Google Analytics,
+        may place their own cookies in your browser.
+        This Privacy Policy covers use of cookies by Santiment only and not the use of cookies by third parties.
+      </p>
     </div>
     <br />
     {isLoggedIn && <ManagerPrivacyActivity />}

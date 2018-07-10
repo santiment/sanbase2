@@ -14,7 +14,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     FileResolver,
     PostResolver,
     MarketSegmentResolver,
-    ApikeyResolver
+    ApikeyResolver,
+    UserListResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -45,6 +46,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
+  import_types(SanbaseWeb.Graphql.UserListTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -433,6 +435,21 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :followed_projects, list_of(:project) do
       resolve(&AccountResolver.followed_projects/3)
     end
+
+    @desc "Fetch all favourites lists for current_user."
+    field :fetch_user_lists, list_of(:user_list) do
+      resolve(&UserListResolver.fetch_user_lists/3)
+    end
+
+    @desc "Fetch all public favourites lists for current_user."
+    field :fetch_public_user_lists, list_of(:user_list) do
+      resolve(&UserListResolver.fetch_public_user_lists/3)
+    end
+
+    @desc "Fetch all public favourites lists"
+    field :fetch_all_public_user_lists, list_of(:user_list) do
+      resolve(&UserListResolver.fetch_all_public_user_lists/3)
+    end
   end
 
   mutation do
@@ -586,6 +603,45 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&ApikeyResolver.revoke_apikey/3)
+    end
+
+    @desc """
+    Create user favourites list.
+    """
+
+    field :create_user_list, :user_list do
+      arg(:name, non_null(:string))
+      arg(:is_public, :boolean)
+      arg(:color, :color_enum)
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.create_user_list/3)
+    end
+
+    @desc """
+    Update user favourites list.
+    """
+
+    field :update_user_list, :user_list do
+      arg(:id, non_null(:integer))
+      arg(:name, :string)
+      arg(:is_public, :boolean)
+      arg(:color, :color_enum)
+      arg(:list_items, list_of(:input_list_item))
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.update_user_list/3)
+    end
+
+    @desc """
+    Remove user favourites list.
+    """
+
+    field :remove_user_list, :user_list do
+      arg(:id, non_null(:integer))
+
+      middleware(JWTAuth)
+      resolve(&UserListResolver.remove_user_list/3)
     end
   end
 end

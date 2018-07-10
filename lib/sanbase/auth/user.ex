@@ -11,6 +11,7 @@ defmodule Sanbase.Auth.User do
   }
 
   alias Sanbase.Voting.Vote
+  alias Sanbase.UserLists.UserList
   alias Sanbase.Repo
 
   @login_email_template "login"
@@ -49,6 +50,7 @@ defmodule Sanbase.Auth.User do
     has_many(:eth_accounts, EthAccount)
     has_many(:votes, Vote, on_delete: :delete_all)
     has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
+    has_many(:user_lists, UserList, on_delete: :delete_all)
 
     timestamps()
   end

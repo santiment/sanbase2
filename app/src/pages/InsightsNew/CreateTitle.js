@@ -58,7 +58,7 @@ const CreateTitle = ({post, changePost}) => {
           <Message negative>
             {formApi.getError().title}
           </Message>}
-        <TagsField setTags={tags => {
+        <TagsField savedChosenTags={post.tags} setTags={tags => {
           formApi.values.tags = tags
         }} />
         <br />

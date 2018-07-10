@@ -53,7 +53,7 @@ const CreateLink = ({post, changePost}) => {
           <Message negative>
             {formApi.getError().link}
           </Message>}
-        <div className='event-posts-new-step-control'>
+        <div className='event-posts-step-control event-posts-step-control_right'>
           <Button
             disabled={!!formApi.getError().link}
             positive={!!formApi.getSuccess().link}

@@ -36,12 +36,12 @@ export const handleLoginSuccess = (action$, store, { client }) =>
     .switchMap(action => {
       return Observable.from(client.resetStore())
         .mergeMap(() => {
-          const { user, token, consent } = action
+          const { token, consent } = action
           return Observable.merge(
             Observable.of(showNotification('You are logged in!')),
             Observable.of(
               consent
-                ? window.location.replace(`/consent?consent=${user.consent_id}&token=${token}`)
+                ? window.location.replace(`/consent?consent=${consent}&token=${token}`)
                 : replace('/')
             )
           )

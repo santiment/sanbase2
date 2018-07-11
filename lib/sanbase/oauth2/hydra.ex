@@ -81,7 +81,7 @@ defmodule Sanbase.Oauth2.Hydra do
     ])
   end
 
-  defp do_reject_consent(consent, access_token, %User{username: username, id: id, email: email}) do
+  defp do_reject_consent(consent, access_token, %User{username: username, email: email}) do
     data = %{
       "reason" => "#{email || username} doesn't have enough SAN tokens"
     }

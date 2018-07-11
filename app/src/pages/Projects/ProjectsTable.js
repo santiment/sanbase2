@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactTable from 'react-table'
-import { NavLink as Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import classnames from 'classnames'
 import throttle from 'lodash.throttle'
 import { Helmet } from 'react-helmet'

@@ -4,7 +4,7 @@ import axios from 'axios'
 import { compose, withState } from 'recompose'
 import { connect } from 'react-redux'
 import { Button } from 'semantic-ui-react'
-import { withRouter } from 'react-router-dom'
+import { withRouter, Link } from 'react-router-dom'
 import { graphql } from 'react-apollo'
 import gql from 'graphql-tag'
 import Post from './../../components/Post'
@@ -160,7 +160,7 @@ const ConfirmPost = ({
           gotoInsight={() => {}}
           user={user} {...post} />
         <div className='event-posts-step-control'>
-          <Button onClick={() => window.history.back()}>Back</Button>
+          <Link to='/insights/new/title' className='event-posts-step-control__back-btn'>Back</Link>
           <Button
             positive
             disabled={isPending}

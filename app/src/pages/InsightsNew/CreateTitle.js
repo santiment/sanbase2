@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import {
   Button,
   Message
@@ -63,7 +64,7 @@ const CreateTitle = ({post, changePost}) => {
         }} />
         <br />
         <div className='event-posts-step-control'>
-          <Button onClick={() => window.history.back()}>Back</Button>
+          <Link to='/insights/new' className='event-posts-step-control__back-btn'>Back</Link>
           <Button
             disabled={!formApi.getSuccess().title}
             positive={!!formApi.getSuccess().title}

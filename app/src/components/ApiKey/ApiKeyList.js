@@ -45,7 +45,7 @@ export class ApiKeyList extends Component {
 
     return (
       <ol className='ApiKeyList'>
-        {apikeys.map(apikey => (
+        {apikeys && apikeys.map(apikey => (
           <li className='ApiKeyList__item' key={apikey}>
             <ApiKey
               apikey={apikey}

@@ -41,14 +41,14 @@ const handleLaunch = (action$, store, { client }) =>
               hasMetamask: hasMetamask()
             }
           }
-          client.resetStore()
+          client.cache.reset()
           return {
             type: actions.APP_USER_HAS_INACTIVE_TOKEN
           }
         })
         .catch(error => {
           Raven.captureException(error)
-          client.resetStore()
+          client.cache.reset()
           return {
             type: actions.APP_USER_HAS_INACTIVE_TOKEN,
             payload: {

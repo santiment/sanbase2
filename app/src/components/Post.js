@@ -48,7 +48,7 @@ const Author = ({id, username}) => (
   <div className='event-post-author'>
     {id &&
       <Fragment>
-        by&nbsp; <a href={`/insights/users/${id}`}>{username}</a>
+        by&nbsp; <Link to={`/insights/users/${id}`}>{username}</Link>
       </Fragment>}
   </div>
 )

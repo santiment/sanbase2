@@ -270,20 +270,16 @@ const mapDataToProps = props => {
   }, {})
 
   const applyFilter = posts => {
-    if (filter === 'users') {
-      return reduceAllKeys(posts)(
-        compose(
-          filteredByPublished,
-          filteredByUserID,
-          filteredByTagPosts
-        )
-      )
-    } else if (filter === 'my') {
-      return reduceAllKeys(posts)(filteredBySelfUser)
-    } else if (filter === 'tags') {
-      return reduceAllKeys(posts)(filteredByTagPosts)
+    switch (filter) {
+      case 'users':
+        return reduceAllKeys(posts)(filteredByUserID)
+      case 'my':
+        return reduceAllKeys(posts)(filteredBySelfUser)
+      case 'tags':
+        return reduceAllKeys(posts)(filteredByTagPosts)
+      default:
+        return reduceAllKeys(posts)(filteredByPublished)
     }
-    return reduceAllKeys(posts)(filteredByPublished)
   }
 
   const applySort = posts => {

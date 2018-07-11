@@ -33,22 +33,18 @@ const emailLoginVerifyGQL = gql`
 
 export const handleLoginSuccess = (action$, store, { client }) =>
   action$.ofType(actions.USER_LOGIN_SUCCESS)
-    .switchMap(action => {
-      return Observable.from(client.resetStore())
-        .mergeMap(() => {
-          const { token, consent } = action
-          return Observable.merge(
-            Observable.of(showNotification('You are logged in!')),
-            Observable.of(
-              consent
-                ? window.location.replace(`/consent?consent=${consent}&token=${token}`)
-                : replace('/')
-            )
-          )
-        })
-        .catch(error => {
-          return Observable.of({ type: actions.USER_LOGIN_FAILED, payload: error })
-        })
+    .mergeMap(action => {
+      const { token, consent } = action
+      return Observable.merge(
+        Observable.of(showNotification('You are logged in!')),
+        Observable.of(
+          consent
+            ? window.location.replace(`/consent?consent=${consent}&token=${token}`)
+            : replace('/')
+        )
+      )
+    }).catch(error => {
+      return Observable.of({ type: actions.USER_LOGIN_FAILED, payload: error })
     })
 
 const handleEmailLogin = (action$, store, { client }) =>
@@ -70,7 +66,7 @@ const handleEmailLogin = (action$, store, { client }) =>
             type: actions.USER_LOGIN_SUCCESS,
             token,
             user,
-            consent: user.consent_id
+            consent: user.consent_id || null
           })
         })
         .catch(error => {

@@ -45,6 +45,15 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     end
   end
 
+  defmacro cache_resolve_async(captured_mfa_ast) do
+    quote do
+      middleware(
+        Absinthe.Resolution,
+        CacheMod.middleware_from(unquote(captured_mfa_ast))
+      )
+    end
+  end
+
   @doc ~s"""
     Macro that's used instead of Absinthe's `resolve`. The value of the resolver is
     1. Get from a cache if it exists there
@@ -62,7 +71,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     quote do
       middleware(
         Absinthe.Resolution,
-        CacheMod.dataloader_from(unquote(captured_mfa_ast))
+        CacheMod.middleware_from(unquote(captured_mfa_ast))
       )
     end
   end
@@ -128,10 +137,10 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   end
 
   @doc false
-  def dataloader_from(captured_mfa) when is_function(captured_mfa) do
+  def middleware_from(captured_mfa) when is_function(captured_mfa) do
     # Public so it can be used by the resolve macros. You should not use it.
     fun_name = captured_mfa |> captured_mfa_name()
-    dataloader_resolver(captured_mfa, fun_name)
+    middleware_resolver(captured_mfa, fun_name)
   end
 
   # Private functions
@@ -139,8 +148,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   defp resolver(resolver_fn, name) do
     # Works only for top-level resolvers and fields with root object Project
     fn
-      %Sanbase.Model.Project{id: id} = project, args, resolution ->
-        fun = fn -> resolver_fn.(project, args, resolution) end
+      %{id: id} = root, args, resolution ->
+        fun = fn -> resolver_fn.(root, args, resolution) end
 
         cache_key({name, id}, args)
         |> get_or_store(fun)
@@ -153,10 +162,21 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     end
   end
 
+  # ==== ASYNC ====
+  # The actual work for the async cache resolver is done here.
+  #
+  # The most important part is how the cache is actually populated. The resolver
+  # returns a `{:middleware, Absinthe.Middleware.Async, {fun, opts}}` tuple.
+  # This is NOT the final result so it cannot be used. Instead, `fun` is replaced
+  # by a function that does the caching.
+  # That works because `fun` is always a function with zero arguments, which
+  # when executed (async) returns the actual result.
+  #
+  # ==== DATALOADER ====
   # The actual work for the dataloader cache resolver is done here.
   #
   # The most important part is how the cache is actually populated. The resolver
-  # returns a `{:middleware, Absinthe.Middleware.Dataloader, callback}` tuple.
+  # returns a `{:middleware, Absinthe.Middleware.Dataloader, {loader, callback}}` tuple.
   # This is NOT the final result so it cannot be used. Instead, `callback` is replaced
   # by a function that does the caching.
   # That works because `callback` is always a function with one argument `loader`, which
@@ -169,20 +189,20 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   #
   # Because Elixir's lambdas are correctly implemented, we can fetch what's needed
   # from the context to use it for `cache_key`
-  defp dataloader_resolver(resolver_fn, name) do
-    # Works only for top-level resolvers and fields with root object Project
+  defp middleware_resolver(resolver_fn, name) do
+    # Works only for top-level resolvers and fields with root object that has `id` attribute
     fn
-      %Sanbase.Model.Project{id: id} = project, args, resolution ->
-        fun = fn -> resolver_fn.(project, args, resolution) end
+      %{id: id} = root, args, resolution ->
+        fun = fn -> resolver_fn.(root, args, resolution) end
 
         cache_key({name, id}, args)
-        |> get_or_store_dataloader(fun)
+        |> get_or_store_middleware(fun)
 
       %{}, args, resolution ->
         fun = fn -> resolver_fn.(%{}, args, resolution) end
 
         cache_key(name, args)
-        |> get_or_store_dataloader(fun)
+        |> get_or_store_middleware(fun)
     end
   end
 
@@ -197,24 +217,51 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     value
   end
 
-  defp get_or_store_dataloader(cache_key, resolver_fn) do
+  defp get_or_store_middleware(cache_key, resolver_fn) do
     case ConCache.get(@cache_name, cache_key) do
       nil ->
-        {:middleware, midl, {loader, callback}} = resolver_fn.()
+        cache_modify_middleware(cache_key, resolver_fn.())
 
-        caching_callback = fn loader_arg ->
-          value = callback.(loader_arg)
-          ConCache.put(@cache_name, cache_key, {:ok, value})
-
-          value
-        end
-
-        {:middleware, midl, {loader, caching_callback}}
-
-      # Wrap in a tuple to distinguish value = nil from not having a record
+      # Wrapped in a tuple to distinguish value = nil from not having a record
+      # If we have the result in the cache the middleware tuple is skipped
       {:ok, value} ->
         value
     end
+  end
+
+  # Used because we disable the Async middleware in tests
+  defp cache_modify_middleware(cache_key, {:ok, value}) do
+    ConCache.put(@cache_name, cache_key, {:ok, value})
+
+    {:ok, value}
+  end
+
+  defp cache_modify_middleware(
+         cache_key,
+         {:middleware, Absinthe.Middleware.Async = midl, {fun, opts}}
+       ) do
+    caching_fun = fn ->
+      value = fun.()
+      ConCache.put(@cache_name, cache_key, {:ok, value})
+
+      value
+    end
+
+    {:middleware, midl, {caching_fun, opts}}
+  end
+
+  defp cache_modify_middleware(
+         cache_key,
+         {:middleware, Absinthe.Middleware.Dataloader = midl, {loader, callback}}
+       ) do
+    caching_callback = fn loader_arg ->
+      value = callback.(loader_arg)
+      ConCache.put(@cache_name, cache_key, {:ok, value})
+
+      value
+    end
+
+    {:middleware, midl, {loader, caching_callback}}
   end
 
   defp cache_key(name, args) do

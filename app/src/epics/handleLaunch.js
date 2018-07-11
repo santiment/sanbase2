@@ -1,7 +1,7 @@
 import Raven from 'raven-js'
 import { ofType } from 'redux-observable'
 import { Observable } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { mergeMap } from 'rxjs/operators'
 import gql from 'graphql-tag'
 import { hasMetamask } from './../web3Helpers'
 import * as actions from './../actions/types'
@@ -27,7 +27,7 @@ export const userGQL = gql`
 const handleLaunch = (action$, store, { client }) =>
   action$.pipe(
     ofType(actions.APP_LAUNCHED),
-    switchMap(() => {
+    mergeMap(() => {
       const queryPromise = client.query({
         options: { fetchPolicy: 'network-only' },
         query: userGQL
@@ -41,14 +41,14 @@ const handleLaunch = (action$, store, { client }) =>
               hasMetamask: hasMetamask()
             }
           }
-          client.resetStore()
+          client.cache.reset()
           return {
             type: actions.APP_USER_HAS_INACTIVE_TOKEN
           }
         })
         .catch(error => {
           Raven.captureException(error)
-          client.resetStore()
+          client.cache.reset()
           return {
             type: actions.APP_USER_HAS_INACTIVE_TOKEN,
             payload: {
@@ -56,6 +56,7 @@ const handleLaunch = (action$, store, { client }) =>
             }
           }
         })
+        .takeUntil(action$.ofType(actions.USER_LOGIN_SUCCESS))
     })
   )
 

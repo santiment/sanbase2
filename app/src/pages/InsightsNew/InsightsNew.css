@@ -57,10 +57,15 @@
 .event-posts-step-control {
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .event-posts-step-control_right {
   justify-content: flex-end;
+}
+
+.event-posts-step-control__back-btn {
+  border-bottom: 0;
 }
 
 .event-posts-step-confirm .event-post {

@@ -41,158 +41,15 @@ config :sentry,
   included_environments: [:prod],
   environment_name: Mix.env()
 
-config :sanbase, Sanbase.Prices.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "prices"
-
-config :sanbase, Sanbase.Github.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "github_activity"
-
 config :sanbase, SanbaseWorkers.ImportGithubActivity,
   s3_bucket: {:system, "GITHUB_ARCHIVE_BUCKET", "santiment-github-archive"}
-
-config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "twitter_followers_data"
-
-config :sanbase, Sanbase.Etherbi.Transactions.Store,
-  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "erc20_exchange_funds_flow"
-
-config :sanbase, Sanbase.Etherbi.BurnRate.Store,
-  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "erc20_burn_rate"
-
-config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
-  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "erc20_transaction_volume"
-
-config :sanbase, Sanbase.Etherbi.DailyActiveAddresses.Store,
-  host: {:system, "ETHERBI_INFLUXDB_HOST", "localhost"},
-  port: {:system, "ETHERBI_INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "erc20_daily_active_addresses"
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Store,
-  host: {:system, "INFLUXDB_HOST", "localhost"},
-  port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
-  database: "etherscan_transactions"
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 
-config :ex_admin,
-  repo: Sanbase.Repo,
-  # MyProject.Web for phoenix >= 1.3.0-rc
-  module: SanbaseWeb,
-  modules: [
-    Sanbase.ExAdmin.Dashboard,
-    Sanbase.ExAdmin.Model.Project,
-    Sanbase.ExAdmin.Model.ProjectBtcAddress,
-    Sanbase.ExAdmin.Model.ProjectEthAddress,
-    Sanbase.ExAdmin.Model.Ico,
-    Sanbase.ExAdmin.Model.ExchangeEthAddress,
-    Sanbase.ExAdmin.Model.Currency,
-    Sanbase.ExAdmin.Model.Infrastructure,
-    Sanbase.ExAdmin.Model.MarketSegment,
-    Sanbase.ExAdmin.Model.ProjectTransparencyStatus,
-    Sanbase.ExAdmin.Model.LatestCoinmarketcapData,
-    Sanbase.ExAdmin.Model.LatestEthWalletData,
-    Sanbase.ExAdmin.Model.LatestBtcWalletData,
-    Sanbase.ExAdmin.Notifications.Type,
-    Sanbase.ExAdmin.Notifications.Notification,
-    Sanbase.ExAdmin.Auth.User,
-    Sanbase.ExAdmin.Voting.Poll,
-    Sanbase.ExAdmin.Voting.Post
-  ],
-  basic_auth: [
-    username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},
-    password: {:system, "ADMIN_BASIC_AUTH_PASSWORD"},
-    realm: {:system, "ADMIN_BASIC_AUTH_REALM"}
-  ]
-
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
 config :tesla, adapter: :hackney, recv_timeout: 30_000
-
-config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  # 5 minutes
-  update_interval: 5 * 1000 * 60,
-  sync_enabled: {:system, "COINMARKETCAP_PRICES_ENABLED", false}
-
-# TODO: Change after switching over to only this cmc
-config :sanbase, Sanbase.ExternalServices.Coinmarketcap2,
-  # 5 minutes
-  update_interval: 5 * 1000 * 60,
-  sync_enabled: {:system, "COINMARKETCAP_SCRAPER_ENABLED", false}
-
-config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
-  update_interval: 5 * 1000 * 60,
-  sync_enabled: {:system, "COINMARKETCAP_TICKERS_ENABLED", false},
-  top_projects_to_follow: {:system, "TOP_PROJECTS_TO_FOLLOW", "25"}
-
-# TODO: Change after switching over to only this cmc
-config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2,
-  update_interval: 5 * 1000 * 60,
-  sync_enabled: {:system, "COINMARKETCAP_TICKER_FETCHER_ENABLED", false},
-  top_projects_to_follow: {:system, "TOP_PROJECTS_TO_FOLLOW", "25"}
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Worker,
-  # 5 minutes
-  update_interval: 5 * 1000 * 60,
-  sync_enabled: {:system, "ETHERSCAN_CRAWLER_ENABLED", false}
-
-config :sanbase, Sanbase.ExternalServices.Github,
-  # 60 minutes
-  update_interval: 60 * 1000 * 60,
-  sync_enabled: {:system, "GITHUB_SCHEDULER_ENABLED", false}
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
-  apikey: {:system, "ETHERSCAN_APIKEY"}
-
-config :sanbase, Sanbase.ExternalServices.TwitterData.Worker,
-  consumer_key: {:system, "TWITTER_CONSUMER_KEY"},
-  consumer_secret: {:system, "TWITTER_CONSUMER_SECRET"},
-  # 6 hours
-  update_interval: 1000 * 60 * 60 * 6,
-  sync_enabled: {:system, "TWITTER_SCRAPER_ENABLED", false}
-
-config :sanbase, Sanbase.ExternalServices.TwitterData.HistoricalData,
-  apikey: {:system, "TWITTERCOUNTER_API_KEY"},
-  # 1 day
-  update_interval: 1000 * 60 * 60 * 24,
-  sync_enabled: {:system, "TWITTERCOUNTER_SCRAPER_ENABLED", false}
-
-config :sanbase, Sanbase.Notifications.CheckPrices,
-  webhook_url: {:system, "CHECK_PRICES_WEBHOOK_URL"},
-  notification_channel: {:system, "CHECK_PRICES_CHANNEL", "#signals-stage"},
-  slack_notifications_enabled: {:system, "CHECK_PRICES_NOTIFICATIONS_ENABLED", false}
-
-config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
-  webhook_url: {:system, "PRICE_VOLUME_DIFF_WEBHOOK_URL"},
-  window_type: {:system, "PRICE_VOLUME_DIFF_WINDOW_TYPE"},
-  approximation_window: {:system, "PRICE_VOLUME_DIFF_APPROXIMATION_WINDOW", "14"},
-  comparison_window: {:system, "PRICE_VOLUME_DIFF_COMPARISON_WINDOW", "7"},
-  notification_threshold: {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_THRESHOLD", "0.01"},
-  notification_volume_threshold:
-    {:system, "PRICE_VOLUME_DIFF_NOTIFICATION_VOLUME_THRESHOLD", "100000"},
-  notifications_cooldown: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_COOLDOWN", "86400"},
-  debug_url: {:system, "PRICE_VOLUME_DIFF_DEBUG_URL"},
-  notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}
 
 config :sanbase, SanbaseWeb.Guardian,
   issuer: "santiment",
@@ -256,6 +113,12 @@ config :sanbase, SanbaseWeb.Graphql.PlugAttack,
 
 config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiDelay,
   required_san_stake_realtime_api: {:system, "REQUIRED_SAN_STAKE_REALTIME_API", "1000"}
+
+# Import configs
+import_config "ex_admin_config.exs"
+import_config "influxdb_config.exs"
+import_config "scrapers_config.exs"
+import_config "notifications_config.exs"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

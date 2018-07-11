@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactTable from 'react-table'
+import { NavLink as Link } from 'react-router-dom'
 import classnames from 'classnames'
 import throttle from 'lodash.throttle'
 import { Helmet } from 'react-helmet'
@@ -147,12 +148,12 @@ const ProjectsTable = ({
       cmcId: d.coinmarketcapId
     }),
     Cell: ({value}) => (
-      <div
+      <Link
         onMouseOver={() => preload()}
-        onClick={() => history.push(`/projects/${value.cmcId}`)}
+        to={`/projects/${value.cmcId}`}
         className='overview-name' >
         {value.name}
-      </div>
+      </Link>
     ),
     filterMethod: (filter, row) => {
       const name = row[filter.id].name || ''

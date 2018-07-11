@@ -93,7 +93,7 @@
   white-space: normal;
 }
 
-.ReactTable .rt-td > div {
+.ReactTable .rt-td > a,div {
   font-size: 18px;
   line-height: 1.2;
 }

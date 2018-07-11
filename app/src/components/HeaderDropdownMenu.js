@@ -1,13 +1,12 @@
 import React from 'react'
-import { Button, Popup } from 'semantic-ui-react'
-import { NavLink as Link } from 'react-router-dom'
+import { Button, Popup, Divider } from 'semantic-ui-react'
+import { NavLink, Link } from 'react-router-dom'
 import FeedbackBtn from './FeedbackBtn'
 import './HeaderDropdownMenu.css'
 
 const HeaderDesktopDropMenu = ({
   isLoggedin,
-  logout,
-  handleNavigation
+  logout
 }) => {
   if (isLoggedin) {
     return (
@@ -17,9 +16,17 @@ const HeaderDesktopDropMenu = ({
           <Button circular icon='user' />
         } on='click'>
           <div className='dropdown-menu'>
-            <Button basic onClick={() => handleNavigation('account')}>
-              Settings
-            </Button>
+            <Link
+              className='ui basic button'
+              to={'/roadmap'}>
+              Roadmap
+            </Link>
+            <Divider />
+            <Link
+              className='ui basic button'
+              to={'/account'}>
+              Account Settings
+            </Link>
             <Button
               className='logoutBtn'
               color='orange'
@@ -34,9 +41,9 @@ const HeaderDesktopDropMenu = ({
   }
   return (
     <div className='user-auth-control'>
-      <Link to={'/login'}>
+      <NavLink to={'/login'}>
         Login
-      </Link>
+      </NavLink>
     </div>
   )
 }

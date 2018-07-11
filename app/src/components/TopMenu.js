@@ -1,5 +1,5 @@
 import React from 'react'
-import { withRouter, Link } from 'react-router-dom'
+import { NavLink as Link } from 'react-router-dom'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import 'font-awesome/css/font-awesome.css'
@@ -13,7 +13,6 @@ import './TopMenu.css'
 export const TopMenu = ({
  isLoggedin,
  logout,
- history,
  location,
  projects = []
 }) => (
@@ -41,16 +40,8 @@ export const TopMenu = ({
             to={'/signals'}>
             Signals
           </Link>
-          <Link
-            className='app-menu__page-link'
-            to={'/roadmap'}>
-            Roadmap
-          </Link>
         </ul>
         <HeaderDropdownMenu
-          handleNavigation={nextRoute => {
-            history.push(`/${nextRoute}`)
-          }}
           isLoggedin={isLoggedin}
           logout={logout} />
       </div>
@@ -78,8 +69,7 @@ const enhance = compose(
   connect(
     mapStateToProps,
     mapDispatchToProps
-  ),
-  withRouter
+  )
 )
 
 export default enhance(TopMenu)

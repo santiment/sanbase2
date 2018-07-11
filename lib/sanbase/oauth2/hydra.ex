@@ -81,9 +81,9 @@ defmodule Sanbase.Oauth2.Hydra do
     ])
   end
 
-  defp do_reject_consent(consent, access_token, %User{username: username}) do
+  defp do_reject_consent(consent, access_token, %User{username: username, email: email}) do
     data = %{
-      "reason" => "#{username} doesn't have enough SAN tokens"
+      "reason" => "#{email || username} doesn't have enough SAN tokens"
     }
 
     HTTPoison.patch(consent_url() <> "/#{consent}/reject", Poison.encode!(data), [

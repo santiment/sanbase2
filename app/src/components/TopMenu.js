@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink as Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import 'font-awesome/css/font-awesome.css'

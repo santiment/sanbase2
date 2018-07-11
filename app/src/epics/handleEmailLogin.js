@@ -34,12 +34,12 @@ const emailLoginVerifyGQL = gql`
 export const handleLoginSuccess = (action$, store, { client }) =>
   action$.ofType(actions.USER_LOGIN_SUCCESS)
     .mergeMap(action => {
-      const { user, token, consent } = action
+      const { token, consent } = action
       return Observable.merge(
         Observable.of(showNotification('You are logged in!')),
         Observable.of(
           consent
-            ? window.location.replace(`/consent?consent=${user.consent_id}&token=${token}`)
+            ? window.location.replace(`/consent?consent=${consent}&token=${token}`)
             : replace('/')
         )
       )

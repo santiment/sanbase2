@@ -127,6 +127,16 @@ hr {
   color: #fff;
 }
 
+.night-mode a.ui.basic.button {
+  color: #a0a0a0 !important;
+  box-shadow: none !important;
+  border: 1px solid #2d3239;
+}
+
+.night-mode a.ui.basic.button:hover {
+  background-color: #252525 !important;
+}
+
 .night-mode input::placeholder,
 .night-mode textarea::placeholder {
   color: #a0a0a0 !important;

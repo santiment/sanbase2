@@ -142,7 +142,44 @@ hr {
   background-color: #a5a8b1;
 }
 
+.night-mode i {
+  color: #a0a0a0;
+}
+
+/* POPUP */
+
+.night-mode .ui.popup {
+  background-color: #23252a;
+  color: #a0a0a0;
+  border-color: #4a4a4a;
+}
+
+.night-mode .ui.popup::before {
+  background-color: #23252a;
+}
+
+.night-mode .ui.popup.bottom.left::before {
+  box-shadow: -1px -1px 0 0 #4a4a4a;
+}
+
 /* COMPONENTS */
+
+.night-mode .user-auth-control .button {
+  background-color: #1e2024;
+}
+
+.night-mode .user-auth-control .button i {
+  color: #a0a0a0;
+}
+
+.night-mode .menu-list-top a:hover {
+  background-color: #252525;
+}
+
+.night-mode .app-menu__page-link,
+.night-mode .app-menu__page-link:visited {
+  color: #cacaca;
+}
 
 .night-mode .app-menu {
   background: linear-gradient(270deg, #0c362b, #041d39, #0d2b22);

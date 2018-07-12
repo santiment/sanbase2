@@ -160,6 +160,10 @@
   margin-top: 5px;
 }
 
+.night-mode .premium-wall-button {
+  border-color: #a18825;
+}
+
 @media (min-width: 1024px) {
   .chart-footer {
     display: flex;

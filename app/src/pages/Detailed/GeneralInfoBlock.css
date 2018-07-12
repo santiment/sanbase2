@@ -8,6 +8,10 @@
   color: #26a987;
 }
 
+.night-mode .social-icons a {
+  color: #1d8166;
+}
+
 .info-disabled {
   color: #d3d3d3;
 }

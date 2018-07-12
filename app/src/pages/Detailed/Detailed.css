@@ -114,6 +114,10 @@
   padding: 6px 0;
 }
 
+.night-mode .row-info {
+  border-bottom-color: #2d3239;
+}
+
 .row-info .value {
   text-align: right;
 }

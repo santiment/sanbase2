@@ -77,6 +77,10 @@ h4 {
   font-weight: 500;
 }
 
+.night-mode h4 {
+  color: #727272;
+}
+
 .night-mode h1,
 .night-mode h2,
 .night-mode h3 {
@@ -92,6 +96,10 @@ hr {
   margin-bottom: 1rem;
   border: 0;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.night-mode hr {
+  border-top-color: #2d3239;
 }
 
 @media (max-width: 767px) {
@@ -156,16 +164,45 @@ hr {
   color: #a0a0a0;
 }
 
+/* BUTTONS */
+
+.night-mode .ui.button {
+  background-color: #4a4a4a;
+}
+
+.night-mode .ui.button:hover {
+  background-color: #656565;
+}
+
+.night-mode .ui.positive.button {
+  background-color: #1c5e4e;
+  color: #ccc;
+}
+
 /* POPUP */
 
-.night-mode .ui.popup {
+.night-mode .ui.popup,
+.night-mode .ui.popup.inverted {
   background-color: #23252a;
   color: #a0a0a0;
-  border-color: #4a4a4a;
+  border: 1px solid #4a4a4a;
+}
+
+.night-mode .ui.popup::before,
+.night-mode .ui.popup.inverted::before {
+  background-color: #23252a;
 }
 
 .night-mode .ui.popup::before {
-  background-color: #23252a;
+  box-shadow: 1px 1px 0 0 #4a4a4a !important;
+}
+
+.night-mode .ui.popup.bottom::before {
+  box-shadow: -1px -1px 0 0 #4a4a4a !important;
+}
+
+.night-mode .ui.popup.bottom.center::before {
+  box-shadow: -1px -1px 0 0 #4a4a4a;
 }
 
 .night-mode .ui.popup.bottom.left::before {

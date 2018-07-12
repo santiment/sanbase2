@@ -22,7 +22,7 @@
 
 .night-mode .projects-navigation-list__page-link {
   color: #727272;
-  box-shadow: rgba(50, 50, 93, 0.1) 0 1px inset, #2d3239 -1px 0 inset;
+  box-shadow: #2d3239 0 1px inset, #2d3239 -1px 0 inset;
 }
 
 .projects-navigation-list__page-link:first-child {
@@ -33,6 +33,10 @@
 .projects-navigation-list__page-link:last-child {
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
+}
+
+.night-mode .projects-navigation-list__page-link:first-child {
+  border-left: 1px solid #2d3239;
 }
 
 .projects-navigation-list__page-link--active {

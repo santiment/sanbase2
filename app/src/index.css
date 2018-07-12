@@ -174,6 +174,20 @@ hr {
 
 /* COMPONENTS */
 
+.night-mode .app-menu .search-panel .results {
+  background-color: #23252a;
+  border-color: #4a4a4a;
+}
+
+.night-mode .app-menu .search-panel .result {
+  color: #a0a0a0;
+}
+
+.night-mode .app-menu .search-panel .result.active,
+.night-mode .app-menu .search-panel .result:hover {
+  background-color: #2e2e2e;
+}
+
 .night-mode .user-auth-control .button {
   background-color: #1e2024;
 }
@@ -204,6 +218,11 @@ hr {
 }
 
 /* REACT TABLE */
+
+.night-mode .rt-noData {
+  background-color: #23252a;
+  color: #a0a0a0;
+}
 
 .night-mode .percent-changes--positive {
   color: #31a588;

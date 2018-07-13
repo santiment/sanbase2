@@ -11,8 +11,8 @@ You can:
 * Run sample queries on the left pane
 * Read the compiled documentation of our GraphQL schema on the right sidebar
 
-**Note:** Some of the queries require authorization and a stake of <%= @required_san_stake_realtime_api %>`SAN`
-to return realtime data. Otherwise they show data upto the day before.
+**Note:** Some of the queries require authorization and a stake of <%= @required_san_stake_full_access %>`SAN`
+to return realtime data or historical data before 3 months.
 
 <a name='terminal'></a>
 
@@ -50,7 +50,7 @@ curl \
 
 ```
 
-### Token aging (burn rate) 
+### Token aging (burn rate)
 
 <%= @burn_rate[:docs] %>
 

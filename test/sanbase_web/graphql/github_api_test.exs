@@ -7,11 +7,15 @@ defmodule Sanbase.Github.GithubApiTest do
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
 
   setup do
     Github.Store.create_db()
 
     slug = "santiment"
+
+    staked_user = insert(:staked_user)
+    conn = setup_jwt_auth(build_conn(), staked_user)
 
     %Project{}
     |> Project.changeset(%{name: "Project1", ticker: "SAN", coinmarketcap_id: slug})
@@ -84,7 +88,8 @@ defmodule Sanbase.Github.GithubApiTest do
       dates_interval: dates_interval,
       datetime_no_activity1: datetime_no_activity1,
       datetime_no_activity2: datetime_no_activity2,
-      slug: slug
+      slug: slug,
+      conn: conn
     ]
   end
 

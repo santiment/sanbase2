@@ -6,6 +6,7 @@ import { graphql } from 'react-apollo'
 import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
+import ListsPopup from './../../components/ListsPopup/ListsPopup'
 import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
 import { followedProjectsGQL } from './DetailedGQL'
 import './DetailedHeader.css'
@@ -51,6 +52,8 @@ const DetailedHeader = ({
                 content={isFollowed ? 'Unfollow this project' : 'Follow this project'}
                 position='bottom center'
               />
+              &nbsp;
+              <ListsPopup />
             </div>
           }
         </div>

@@ -25,7 +25,7 @@ defmodule Sanbase.UserLists.UserList do
     |> validate_required([:name, :user_id])
   end
 
-  def update_changeset(%UserList{id: id} = user_list, attrs \\ %{}) do
+  def update_changeset(%UserList{id: _id} = user_list, attrs \\ %{}) do
     user_list
     |> cast(attrs, [:name, :is_public, :color])
     |> cast_assoc(:list_items)

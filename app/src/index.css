@@ -288,7 +288,7 @@ hr {
 }
 
 .night-mode .app-menu {
-  background: linear-gradient(270deg, #0c362b, #041d39, #0d2b22);
+  background: linear-gradient(270deg, #0c362b, #1a2f47, #0d2b22);
   box-shadow: none;
   border-color: #2d3239;
 }

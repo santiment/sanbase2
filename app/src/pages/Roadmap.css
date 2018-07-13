@@ -40,6 +40,10 @@
   height: inherit;
 }
 
+.night-mode .timeline::before {
+  background-color: #4a4a4a;
+}
+
 @media (max-width: 767px) {
   .timeline::before {
     left: 10px;
@@ -120,6 +124,16 @@
   z-index: 99;
 }
 
+.night-mode .entry.past .title::before {
+  border-color: #727272;
+  background-color: #a0a0a0;
+}
+
+.night-mode .entry.future .title::before {
+  border-color: #e25a5a;
+  background-color: #a0a0a0;
+}
+
 @media (max-width: 767px) {
   .entry.past .title::before,
   .entry.present .title::before,
@@ -176,6 +190,11 @@
 
 .status-row:hover {
   background-color: rgba(0, 150, 99, 0.1);
+}
+
+.night-mode .status-row {
+  background-color: #23252a;
+  border-bottom-color: #23252a;
 }
 
 .status-row.embedded {
@@ -240,6 +259,11 @@
   width: 80%;
   margin: 0 0 0 auto;
   float: right;
+}
+
+.night-mode .status-border {
+  background-color: #1c1e21;
+  border-color: #2d3239;
 }
 
 .status-progress {

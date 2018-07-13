@@ -112,8 +112,8 @@ config :sanbase, SanbaseWeb.Graphql.PlugAttack,
   rate_limit_max_requests: {:system, "RATE_LIMIT_MAX_REQUESTS", "40"}
 
 config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction,
-  date_to_in_days: {:system, "DATE_TO_IN_DAYS", "1"},
-  date_from_in_months: {:system, "DATE_FROM_IN_MONTHS", "3"},
+  restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
+  restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"},
   required_san_stake_full_access: {:system, "REQUIRED_SAN_STAKE_FULL_ACCESS", "1000"}
 
 # Import configs

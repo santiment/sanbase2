@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
   @moduledoc """
   Middleware that is used to restrict the API access in a certain timeframe.
   The restriction is for anon users and for users without the required SAN stake.
-  By default configuration the allowed timeframe is in the inteval [now() - 3months, now() - 1day]
+  By default configuration the allowed timeframe is in the inteval [now() - 90days, now() - 1day]
   """
 
   @behaviour Absinthe.Middleware
@@ -48,12 +48,12 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
   end
 
   defp restrict_to(to_datetime) do
-    restrict_to = Timex.shift(Timex.now(), days: date_to_in_days())
+    restrict_to = Timex.shift(Timex.now(), days: restrict_to_in_days())
     Enum.min_by([to_datetime, restrict_to], &DateTime.to_unix/1)
   end
 
   defp restrict_from(from_datetime) do
-    restrict_from = Timex.shift(Timex.now(), months: date_from_in_months())
+    restrict_from = Timex.shift(Timex.now(), days: restrict_from_in_days())
     Enum.max_by([from_datetime, restrict_from], &DateTime.to_unix/1)
   end
 
@@ -61,11 +61,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
     Config.get(:required_san_stake_full_access) |> String.to_integer()
   end
 
-  defp date_to_in_days() do
-    -1 * (Config.get(:date_to_in_days) |> String.to_integer())
+  defp restrict_to_in_days() do
+    -1 * (Config.get(:restrict_to_in_days) |> String.to_integer())
   end
 
-  defp date_from_in_months do
-    -1 * (Config.get(:date_from_in_months) |> String.to_integer())
+  defp restrict_from_in_days do
+    -1 * (Config.get(:restrict_from_in_days) |> String.to_integer())
   end
 end

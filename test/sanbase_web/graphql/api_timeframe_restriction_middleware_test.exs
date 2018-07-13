@@ -127,15 +127,16 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   defp now(), do: Timex.now()
   defp hour_ago(), do: Timex.shift(Timex.now(), hours: -1)
   defp week_ago(), do: Timex.shift(Timex.now(), days: -7)
-  defp restricted_from(), do: Timex.shift(Timex.now(), months: date_from_in_months() - 1)
-  defp before_restricted_from(), do: Timex.shift(Timex.now(), months: date_from_in_months() - 2)
+  defp restricted_from(), do: Timex.shift(Timex.now(), days: restrict_from_in_days() - 1)
+  defp before_restricted_from(), do: Timex.shift(Timex.now(), days: restrict_from_in_days() - 2)
 
   defp required_san_stake_full_access() do
     Config.module_get(ApiTimeframeRestriction, :required_san_stake_full_access)
     |> String.to_integer()
   end
 
-  defp date_from_in_months do
-    -1 * (Config.module_get(ApiTimeframeRestriction, :date_from_in_months) |> String.to_integer())
+  defp restrict_from_in_days do
+    -1 *
+      (Config.module_get(ApiTimeframeRestriction, :restrict_from_in_days) |> String.to_integer())
   end
 end

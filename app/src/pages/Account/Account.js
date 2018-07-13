@@ -9,7 +9,14 @@ import AccountEthKeyForm from './AccountEthKeyForm'
 import AccountWallets from './AccountWallets'
 import AccountApiKeyForm from './AccountApiKeyForm'
 import AccountSessions from './AccountSessions'
-import { USER_LOGOUT_SUCCESS, USER_USERNAME_CHANGE, USER_EMAIL_CHANGE, USER_APIKEY_GENERATE, USER_APIKEY_REVOKE } from '../../actions/types'
+import {
+  USER_LOGOUT_SUCCESS,
+  USER_USERNAME_CHANGE,
+  USER_EMAIL_CHANGE,
+  USER_APIKEY_GENERATE,
+  USER_APIKEY_REVOKE,
+  USER_TOGGLE_COLOR_MODE
+} from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
@@ -74,7 +81,18 @@ class Account extends Component {
   }
 
   render () {
-    const { user, loading, logoutUser, changeEmail, changeUsername, generateAPIKey, revokeAPIKey, isLoggedIn } = this.props
+    const {
+      user,
+      loading,
+      logoutUser,
+      changeEmail,
+      changeUsername,
+      generateAPIKey,
+      revokeAPIKey,
+      changeColorMode,
+      isLoggedIn,
+      isNightModeEnabled
+    } = this.props
     const { emailForm, usernameForm } = this.state
 
     if (user && !isLoggedIn) {
@@ -147,8 +165,16 @@ class Account extends Component {
           <br />
           <AccountEthKeyForm ethAccounts={user.ethAccounts} loading={loading} />
           <AccountWallets user={user} />
-          <AccountApiKeyForm apikeys={user.apikeys} generateAPIKey={generateAPIKey} revokeAPIKey={revokeAPIKey} />
-          <AccountSessions onLogoutBtnClick={logoutUser} />
+          <AccountApiKeyForm
+            apikeys={user.apikeys}
+            generateAPIKey={generateAPIKey}
+            revokeAPIKey={revokeAPIKey}
+          />
+          <AccountSessions
+            onLogoutBtnClick={logoutUser}
+            isNightModeEnabled={isNightModeEnabled}
+            onColorModeToggleChange={changeColorMode}
+          />
         </div>
       </div>
     )
@@ -158,26 +184,36 @@ class Account extends Component {
 const mapStateToProps = state => ({
   user: state.user.data,
   loading: state.user.isLoading,
-  isLoggedIn: !!state.user.token
+  isLoggedIn: !!state.user.token,
+  isNightModeEnabled: state.isNightModeEnabled
 })
 
 const mapDispatchToProps = dispatch => ({
   logoutUser: () => dispatch({ type: USER_LOGOUT_SUCCESS }),
-  changeEmail: email => dispatch({
-    type: USER_EMAIL_CHANGE,
-    email
-  }),
-  changeUsername: username => dispatch({
-    type: USER_USERNAME_CHANGE,
-    username
-  }),
-  generateAPIKey: () => dispatch({
-    type: USER_APIKEY_GENERATE
-  }),
-  revokeAPIKey: apikey => dispatch({
-    type: USER_APIKEY_REVOKE,
-    apikey
-  })
+  changeEmail: email =>
+    dispatch({
+      type: USER_EMAIL_CHANGE,
+      email
+    }),
+  changeUsername: username =>
+    dispatch({
+      type: USER_USERNAME_CHANGE,
+      username
+    }),
+  generateAPIKey: () =>
+    dispatch({
+      type: USER_APIKEY_GENERATE
+    }),
+  revokeAPIKey: apikey =>
+    dispatch({
+      type: USER_APIKEY_REVOKE,
+      apikey
+    }),
+  changeColorMode: isNightModeEnabled =>
+    dispatch({
+      type: USER_TOGGLE_COLOR_MODE,
+      payload: isNightModeEnabled
+    })
 })
 
 export const UnwrappedAccount = Account // For tests

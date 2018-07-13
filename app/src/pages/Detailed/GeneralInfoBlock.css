@@ -16,6 +16,10 @@
   color: #d3d3d3;
 }
 
+.night-mode .info-disabled {
+  color: #595959;
+}
+
 /* whitepaper link is picking up disabled class even if there's a link
 .fa-disabled {
   display: none;

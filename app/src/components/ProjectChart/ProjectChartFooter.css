@@ -160,8 +160,13 @@
   margin-top: 5px;
 }
 
-.night-mode .premium-wall-button {
+.night-mode .chart-footer-filters .toggleBtn {
+  border: 1px solid #252932;
+}
+
+.night-mode .chart-footer-filters .premium-wall-button {
   border-color: #a18825;
+  border-width: 2px;
 }
 
 @media (min-width: 1024px) {

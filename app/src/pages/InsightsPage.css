@@ -53,6 +53,12 @@
   box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
 }
 
+.night-mode .posts-by-day {
+  box-shadow: none;
+  background-color: #1c1e21;
+  border: 1px solid #2d3239;
+}
+
 .posts-by-day-header {
   display: flex;
   justify-content: space-between;
@@ -60,6 +66,10 @@
   padding-right: 8px;
   user-select: none;
   border-bottom: 1px solid #e8e8e8;
+}
+
+.night-mode .posts-by-day-header {
+  border-color: #2d3239;
 }
 
 .posts-by-day-header .represent-day {

@@ -4,6 +4,10 @@
   padding: 10px 15px;
 }
 
+.night-mode .event-post {
+  border-color: #2d3239;
+}
+
 .event-post:hover {
   background-color: #e8e8e8;
   cursor: pointer;
@@ -12,6 +16,11 @@
 .event-posts-step-confirm .event-post:hover {
   background-color: white;
   cursor: default;
+}
+
+.night-mode .event-post:hover,
+.night-mode .event-posts-step-confirm .event-post:hover {
+  background-color: #252525;
 }
 
 .event-post .event-post-index {
@@ -43,6 +52,11 @@
   line-height: 32px;
   cursor: pointer;
   text-decoration: none;
+}
+
+.night-mode .event-post .event-storylink,
+.night-mode .event-post .post-status span {
+  color: #a0a0a0;
 }
 
 .event-post .event-storylink:visited {
@@ -105,6 +119,10 @@
   padding: 0 6px;
   margin-left: 5px;
   font-size: 12px;
+}
+
+.night-mode .event-post .post-tag {
+  border-color: #4a4a4a;
 }
 
 .event-post .post-tag:first-child {

@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react'
-import { Divider, Button } from 'semantic-ui-react'
+import { Divider, Button, Checkbox } from 'semantic-ui-react'
 
-const AccountSessions = ({ onLogoutBtnClick }) => {
+const AccountSessions = ({ onLogoutBtnClick, onColorModeToggleChange, isNightModeEnabled }) => {
   return (
     <Fragment>
       <h3>Sessions</h3>
@@ -9,6 +9,8 @@ const AccountSessions = ({ onLogoutBtnClick }) => {
       <div className='account-control'>
         <p>Your current session</p>
         <Button basic color='red' onClick={onLogoutBtnClick}>Log out</Button>
+        <p>Night Mode</p>
+        <Checkbox toggle onChange={onColorModeToggleChange} defaultChecked={isNightModeEnabled} />
       </div>
     </Fragment>
   )

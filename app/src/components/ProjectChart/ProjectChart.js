@@ -11,9 +11,9 @@ import { findIndexByDatetime } from './../../utils/utils'
 import './ProjectChart.css'
 import './react-dates-override.css'
 
-const COLORS = {
+const COLORS_DAY = {
   price: 'rgb(52, 171, 107)',
-  volume: '#3e3e3e',
+  volume: 'rgba(38, 43, 51, 0.25)',
   marketcap: 'rgb(52, 118, 153)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
   twitter: 'rgba(16, 195, 245, 0.7)',
@@ -334,7 +334,7 @@ const makeOptionsFromProps = props => ({
     : undefined
 }
 
-const makeOptionsFromProps = props => {
+const makeOptionsFromProps = (props, COLORS) => {
   return {
     annotation: props.isToggledICOPrice
       ? getICOPriceAnnotation(props)
@@ -512,7 +512,7 @@ const makeOptionsFromProps = props => {
         gridLines: {
           drawBorder: true,
           display: true,
-          color: '#4a4a4a'
+          color: COLORS.grid
         }
       },
       gridLines: {
@@ -811,7 +811,7 @@ const makeOptionsFromProps = props => {
           drawBorder: true,
           offsetGridLines: true,
           display: true,
-          color: '#4a4a4a'
+          color: COLORS.grid
         }
       }]
     }
@@ -825,6 +825,7 @@ class ProjectChart extends Component {
 
   render () {
     const {
+      isNightModeEnabled,
       isDesktop,
       isError,
       isEmpty,
@@ -841,8 +842,9 @@ class ProjectChart extends Component {
         </div>
       )
     }
-    const chartData = makeChartDataFromHistory(props)
-    const chartOptions = makeOptionsFromProps(props)
+    const colorMode = isNightModeEnabled ? COLORS_NIGHT : COLORS_DAY
+    const chartData = makeChartDataFromHistory(props, colorMode)
+    const chartOptions = makeOptionsFromProps(props, colorMode)
 
     return (
       <div className='project-chart-body'>

@@ -7,7 +7,8 @@ export const initialState = {
   loginSuccess: false,
   loginError: false,
   loginErrorMessage: '',
-  isGDPRModalOpened: false
+  isGDPRModalOpened: false,
+  isNightModeEnabled: false
 }
 
 export default (state = initialState, action) => {
@@ -56,6 +57,12 @@ export default (state = initialState, action) => {
       return {
         ...state,
         isGDPRModalOpened: !privacyPolicyAccepted
+      }
+    case actions.USER_TOGGLE_COLOR_MODE:
+      document.body.classList.toggle('night-mode')
+      return {
+        ...state,
+        isNightModeEnabled: action.payload
       }
     default:
       return state

@@ -378,7 +378,7 @@ const makeOptionsFromProps = props => {
       titleMarginBottom: 16,
       titleFontSize: 14,
       titleFontColor: '#a0a0a0',
-      backgroundColor: 'rgba(35, 37, 42, 0.87)',
+      backgroundColor: 'rgba(26, 27, 30, 0.87)',
       cornerRadius: 3,
       borderColor: '#4a4a4a',
       borderWidth: 1,

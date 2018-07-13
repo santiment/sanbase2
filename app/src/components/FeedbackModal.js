@@ -59,6 +59,7 @@ const FeedbackModal = ({
             onSubmit={() => handleSendFeedback(props)}>
             <TextArea
               value={props.message}
+              style={{background: 'none'}}
               onChange={e => {
                 const message = e.target.value
                 if (message.length < MAX_FEEDBACK_MESSAGE_LENGTH) {

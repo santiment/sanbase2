@@ -150,7 +150,8 @@ hr {
   color: #a0a0a0 !important;
 }
 
-.night-mode input {
+.night-mode input,
+.night-mode textarea {
   background-color: #17181b !important;
   border-color: #2d3239 !important;
   color: #a0a0a0 !important;
@@ -222,6 +223,16 @@ hr {
 .night-mode .ui.basic.red:hover {
   color: #f64c4c !important;
   box-shadow: 0 0 0 1px #df3226 inset !important;
+}
+
+.night-mode .ui.basic.green {
+  color: #31a588 !important;
+  box-shadow: 0 0 0 1px #31a588 !important;
+}
+
+.night-mode .ui.basic.green:hover {
+  color: #31a588 !important;
+  box-shadow: 0 0 0 1px #31a588 !important;
 }
 
 /* POPUP */
@@ -425,4 +436,20 @@ hr {
 
 .night-mode .project-chart-body {
   background-color: #23252a;
+}
+
+/* MODAL */
+.night-mode .modal,
+.night-mode .modal > .actions,
+.night-mode .modal > .content {
+  background-color: #23252a;
+}
+
+.night-mode .modal > .actions {
+  border-color: #4a4a4a;
+}
+
+.night-mode .ui.form textarea {
+  background: #17181b !important;
+  border-color: #2d3239;
 }

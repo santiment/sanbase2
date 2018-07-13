@@ -18,22 +18,23 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
           context: %{
             auth: %{auth_method: method, current_user: current_user}
           },
-          arguments: %{from: _from, to: _to}
+          arguments: %{from: from, to: to} = args
         } = resolution,
         _
       )
       when method in [:user_token, :apikey] do
     if !has_enough_san_tokens?(current_user) do
-      resolution = update_in(resolution.arguments.to, &restrict_to(&1))
-      update_in(resolution.arguments.from, &restrict_from(&1))
+      %Resolution{
+        resolution
+        | arguments: %{args | from: restrict_from(from), to: restrict_to(to)}
+      }
     else
       resolution
     end
   end
 
-  def call(%Resolution{arguments: %{from: _from, to: _to}} = resolution, _) do
-    resolution = update_in(resolution.arguments.to, &restrict_to(&1))
-    update_in(resolution.arguments.from, &restrict_from(&1))
+  def call(%Resolution{arguments: %{from: from, to: to} = args} = resolution, _) do
+    %Resolution{resolution | arguments: %{args | from: restrict_from(from), to: restrict_to(to)}}
   end
 
   def call(resolution, _) do

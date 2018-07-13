@@ -13,7 +13,7 @@ import './react-dates-override.css'
 
 const COLORS = {
   price: 'rgb(52, 171, 107)',
-  volume: 'rgba(38, 43, 51, 0.25)',
+  volume: '#3e3e3e',
   marketcap: 'rgb(52, 118, 153)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
   twitter: 'rgba(16, 195, 245, 0.7)',
@@ -377,14 +377,14 @@ const makeOptionsFromProps = props => {
       intersect: false,
       titleMarginBottom: 16,
       titleFontSize: 14,
-      titleFontColor: '#3d4450',
-      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      titleFontColor: '#a0a0a0',
+      backgroundColor: 'rgba(35, 37, 42, 0.87)',
       cornerRadius: 3,
-      borderColor: 'rgba(38, 43, 51, 0.7)',
+      borderColor: '#4a4a4a',
       borderWidth: 1,
       bodyFontSize: 14,
       bodySpacing: 8,
-      bodyFontColor: '#3d4450',
+      bodyFontColor: '#a0a0a0',
       displayColors: true,
       callbacks: {
         title: item => {
@@ -454,7 +454,7 @@ const makeOptionsFromProps = props => {
         gridLines: {
           drawBorder: true,
           display: true,
-          color: '#f0f0f0'
+          color: '#4a4a4a'
         }
       }, {
         id: 'y-axis-2',
@@ -727,7 +727,7 @@ const makeOptionsFromProps = props => {
           drawBorder: true,
           offsetGridLines: true,
           display: true,
-          color: '#f0f0f0'
+          color: '#4a4a4a'
         }
       }]
     }

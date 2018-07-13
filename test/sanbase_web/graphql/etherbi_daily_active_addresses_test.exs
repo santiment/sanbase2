@@ -7,9 +7,13 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
 
   setup do
     Store.create_db()
+
+    staked_user = insert(:staked_user)
+    conn = setup_jwt_auth(build_conn(), staked_user)
 
     ticker = "SAN"
     slug = "santiment"
@@ -97,7 +101,8 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
       datetime5: datetime5,
       datetime6: datetime6,
       datetime7: datetime7,
-      datetime8: datetime8
+      datetime8: datetime8,
+      conn: conn
     ]
   end
 

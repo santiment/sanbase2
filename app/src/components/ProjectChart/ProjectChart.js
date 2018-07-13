@@ -11,9 +11,9 @@ import { findIndexByDatetime } from './../../utils/utils'
 import './ProjectChart.css'
 import './react-dates-override.css'
 
-const COLORS = {
+const COLORS_DAY = {
   price: 'rgb(52, 171, 107)',
-  volume: '#3e3e3e',
+  volume: 'rgba(38, 43, 51, 0.25)',
   marketcap: 'rgb(52, 118, 153)',
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
   twitter: 'rgba(16, 195, 245, 0.7)',
@@ -21,7 +21,26 @@ const COLORS = {
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
   ethSpentOverTime: '#c82f3f',
   ethPrice: '#3c3c3d',
-  sentiment: '#e23ab4'
+  sentiment: '#e23ab4',
+  grid: '#f0f0f0',
+  TOOLTIP_X: {
+    titleFontColor: '#3d4450',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: 'rgba(38, 43, 51, 0.7)',
+    bodyFontColor: '#3d4450'
+  }
+}
+
+const COLORS_NIGHT = {
+  ...COLORS_DAY,
+  volume: '#3e3e3e',
+  grid: '#4a4a4a',
+  TOOLTIP_X: {
+    titleFontColor: '#a0a0a0',
+    backgroundColor: 'rgba(35, 37, 42, 0.87)',
+    borderColor: '#4a4a4a',
+    bodyFontColor: '#a0a0a0'
+  }
 }
 
 const makeChartDataFromHistory = ({
@@ -38,7 +57,7 @@ const makeChartDataFromHistory = ({
   isToggledDailyActiveAddresses = false,
   isToggledEmojisSentiment,
   ...props
-}) => {
+}, COLORS) => {
   const github = props.github.history.items || []
   const burnRate = props.burnRate.items || []
   const transactionVolume = props.transactionVolume.items || []
@@ -332,7 +351,7 @@ const getICOPriceAnnotation = props => {
     : undefined
 }
 
-const makeOptionsFromProps = props => {
+const makeOptionsFromProps = (props, COLORS) => {
   return {
     annotation: props.isToggledICOPrice
       ? getICOPriceAnnotation(props)
@@ -377,14 +396,14 @@ const makeOptionsFromProps = props => {
       intersect: false,
       titleMarginBottom: 16,
       titleFontSize: 14,
-      titleFontColor: '#a0a0a0',
-      backgroundColor: 'rgba(26, 27, 30, 0.87)',
+      titleFontColor: COLORS.TOOLTIP_X.titleFontColor,
+      backgroundColor: COLORS.TOOLTIP_X.backgroundColor,
       cornerRadius: 3,
-      borderColor: '#4a4a4a',
+      borderColor: COLORS.TOOLTIP_X.borderColor,
       borderWidth: 1,
       bodyFontSize: 14,
       bodySpacing: 8,
-      bodyFontColor: '#a0a0a0',
+      bodyFontColor: COLORS.TOOLTIP_X.bodyFontColor,
       displayColors: true,
       callbacks: {
         title: item => {
@@ -454,7 +473,7 @@ const makeOptionsFromProps = props => {
         gridLines: {
           drawBorder: true,
           display: true,
-          color: '#4a4a4a'
+          color: COLORS.grid
         }
       }, {
         id: 'y-axis-2',
@@ -727,7 +746,7 @@ const makeOptionsFromProps = props => {
           drawBorder: true,
           offsetGridLines: true,
           display: true,
-          color: '#4a4a4a'
+          color: COLORS.grid
         }
       }]
     }
@@ -741,6 +760,7 @@ class ProjectChart extends Component {
 
   render () {
     const {
+      isNightModeEnabled,
       isDesktop,
       isError,
       isEmpty,
@@ -757,8 +777,9 @@ class ProjectChart extends Component {
         </div>
       )
     }
-    const chartData = makeChartDataFromHistory(props)
-    const chartOptions = makeOptionsFromProps(props)
+    const colorMode = isNightModeEnabled ? COLORS_NIGHT : COLORS_DAY
+    const chartData = makeChartDataFromHistory(props, colorMode)
+    const chartOptions = makeOptionsFromProps(props, colorMode)
 
     return (
       <div className='project-chart-body'>

@@ -356,7 +356,6 @@ hr {
 
 .night-mode .md-RichEditor-root {
   background-color: #1c1e21;
-  /* border: 1px solid #4a4a4a; */
 }
 
 .night-mode .md-sb-button.md-sb-img-button {
@@ -365,10 +364,6 @@ hr {
 
 .night-mode .event-posts-new-navigation--active {
   color: #a0a0a0;
-}
-
-.night-mode .DraftEditor-editorContainer {
-  /* background-color: #1a1b1e; */
 }
 
 /* TAGS */
@@ -419,4 +414,15 @@ hr {
 .night-mode .tags-select__multi-value__remove:hover {
   color: #e25a5a;
   background-color: #661400;
+}
+
+/* CHART */
+
+.night-mode .chart-header,
+.night-mode .chart-footer {
+  border-color: #2d3239;
+}
+
+.night-mode .project-chart-body {
+  background-color: #1c1e21;
 }

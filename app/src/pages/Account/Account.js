@@ -185,7 +185,7 @@ const mapStateToProps = state => ({
   user: state.user.data,
   loading: state.user.isLoading,
   isLoggedIn: !!state.user.token,
-  isNightModeEnabled: state.isNightModeEnabled
+  isNightModeEnabled: state.rootUi.isNightModeEnabled
 })
 
 const mapDispatchToProps = dispatch => ({
@@ -209,10 +209,10 @@ const mapDispatchToProps = dispatch => ({
       type: USER_APIKEY_REVOKE,
       apikey
     }),
-  changeColorMode: isNightModeEnabled =>
+  changeColorMode: (evt, {checked}) =>
     dispatch({
       type: USER_TOGGLE_COLOR_MODE,
-      payload: isNightModeEnabled
+      payload: checked
     })
 })
 

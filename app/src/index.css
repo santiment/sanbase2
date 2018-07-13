@@ -293,6 +293,10 @@ hr {
 
 /* REACT TABLE */
 
+.night-mode .ReactTable .-loading {
+  background-color: #1c1e21cc;
+}
+
 .night-mode .rt-noData {
   background-color: #23252a;
   color: #a0a0a0;

@@ -11,7 +11,7 @@ You can:
 * Run sample queries on the left pane
 * Read the compiled documentation of our GraphQL schema on the right sidebar
 
-**Note:** Some of the queries require authorization and a stake of <%= @required_san_stake_full_access %>`SAN`
+**Note:** Some of the queries require authorization and a stake of <%= @required_san_stake_full_access %> `SAN`
 to return realtime data or historical data before 3 months.
 
 <a name='terminal'></a>

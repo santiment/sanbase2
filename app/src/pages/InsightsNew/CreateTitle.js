@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import {
   Button,
   Message
@@ -58,11 +59,12 @@ const CreateTitle = ({post, changePost}) => {
           <Message negative>
             {formApi.getError().title}
           </Message>}
-        <TagsField setTags={tags => {
+        <TagsField savedChosenTags={post.tags} setTags={tags => {
           formApi.values.tags = tags
         }} />
         <br />
-        <div className='event-posts-new-step-control'>
+        <div className='event-posts-step-control'>
+          <Link to='/insights/new' className='event-posts-step-control__back-btn'>Back</Link>
           <Button
             disabled={!formApi.getSuccess().title}
             positive={!!formApi.getSuccess().title}

@@ -164,10 +164,26 @@ hr {
   color: #a0a0a0;
 }
 
+.night-mode .ui.form label {
+  color: #a0a0a0;
+}
+
+.night-mode .ui[class*="right labeled"].icon.button > .icon {
+  box-shadow: 1px 0 0 0 #2d3239 inset;
+  color: #d1d1d1;
+}
+
+.night-mode .ui.message {
+  background-color: #23252a;
+  color: #a0a0a0;
+}
+
 /* BUTTONS */
 
 .night-mode .ui.button {
   background-color: #4a4a4a;
+  color: #ccc !important;
+  box-shadow: none !important;
 }
 
 .night-mode .ui.button:hover {
@@ -177,6 +193,20 @@ hr {
 .night-mode .ui.positive.button {
   background-color: #1c5e4e;
   color: #ccc;
+}
+
+.night-mode .ui.positive.button:hover {
+  background-color: #216e5b;
+}
+
+.night-mode .ui.basic.red {
+  color: #e25a5a !important;
+  box-shadow: 0 0 0 1px #e25a5a inset !important;
+}
+
+.night-mode .ui.basic.red:hover {
+  color: #f64c4c !important;
+  box-shadow: 0 0 0 1px #df3226 inset !important;
 }
 
 /* POPUP */

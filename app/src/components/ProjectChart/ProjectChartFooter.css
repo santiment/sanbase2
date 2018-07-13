@@ -112,6 +112,11 @@
   align-items: normal;
 }
 
+.night-mode .filter-category {
+  border-color: #2d3239;
+  border-radius: 0;
+}
+
 .filter-category:last-child {
   border: none;
 }

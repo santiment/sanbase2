@@ -287,7 +287,7 @@ const mapStateToProps = state => {
   return {
     isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
     timeFilter: state.detailedPageUi.timeFilter,
-    isNightModeEnabled: state.isNightModeEnabled
+    isNightModeEnabled: state.rootUi.isNightModeEnabled
   }
 }
 

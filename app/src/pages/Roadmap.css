@@ -130,8 +130,8 @@
 }
 
 .night-mode .entry.future .title::before {
-  border-color: #e25a5a;
-  background-color: #a0a0a0;
+  border-color: #d84f4d;
+  background-color: #ababab;
 }
 
 @media (max-width: 767px) {

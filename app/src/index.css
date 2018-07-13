@@ -180,7 +180,9 @@ hr {
 
 /* BUTTONS */
 
-.night-mode .ui.button {
+.night-mode .ui.button,
+.night-mode .ui.button:active,
+.night-mode .ui.button:focus {
   background-color: #4a4a4a;
   color: #ccc !important;
   box-shadow: none !important;
@@ -188,6 +190,11 @@ hr {
 
 .night-mode .ui.button:hover {
   background-color: #656565;
+}
+
+.night-mode .ui.basic.button:active,
+.night-mode .ui.basic.button:focus {
+  background-color: #4a4a4a !important;
 }
 
 .night-mode .ui.positive.button {

@@ -277,6 +277,14 @@ hr {
   border-color: #22252b;
 }
 
+.night-mode .ReactTable .rt-tbody .rt-tr-group {
+  border-color: #22252b;
+}
+
+.night-mode .ReactTable {
+  border-color: #22252b;
+}
+
 .night-mode .ReactTable .rt-thead .rt-th.-sort-desc {
   box-shadow: inset 0 -4px 0 0 #2d3239;
 }

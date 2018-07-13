@@ -122,14 +122,17 @@
 
 .night-mode .time-filter,
 .night-mode .currency-filter,
-.night-mode .chart-footer-filters {
-  color: #727272;
+.night-mode .chart-footer-filters,
+.night-mode .time-filter .activated,
+.night-mode .currency-filter .activated,
+.night-mode .chart-footer-filters .activated {
+  color: #a0a0a0;
 }
 
 .night-mode .time-filter .activated,
 .night-mode .currency-filter .activated,
 .night-mode .chart-footer-filters .activated {
-  color: #a0a0a0;
+  background-color: #252932;
 }
 
 .night-mode .time-filter .disabled,

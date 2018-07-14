@@ -8,6 +8,7 @@ import AccountUsernameForm from './AccountUsernameForm'
 import AccountEthKeyForm from './AccountEthKeyForm'
 import AccountWallets from './AccountWallets'
 import AccountApiKeyForm from './AccountApiKeyForm'
+import AccountAppearance from './AccountAppearance'
 import AccountSessions from './AccountSessions'
 import {
   USER_LOGOUT_SUCCESS,
@@ -170,11 +171,11 @@ class Account extends Component {
             generateAPIKey={generateAPIKey}
             revokeAPIKey={revokeAPIKey}
           />
-          <AccountSessions
-            onLogoutBtnClick={logoutUser}
+          <AccountAppearance
             isNightModeEnabled={isNightModeEnabled}
             onColorModeToggleChange={changeColorMode}
           />
+          <AccountSessions onLogoutBtnClick={logoutUser} />
         </div>
       </div>
     )
@@ -209,7 +210,7 @@ const mapDispatchToProps = dispatch => ({
       type: USER_APIKEY_REVOKE,
       apikey
     }),
-  changeColorMode: (evt, {checked}) =>
+  changeColorMode: (evt, { checked }) =>
     dispatch({
       type: USER_TOGGLE_COLOR_MODE,
       payload: checked

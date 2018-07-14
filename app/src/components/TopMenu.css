@@ -85,6 +85,10 @@
   color: white;
 }
 
+.night-mode .feedback-button-wrapper .icon {
+  color: #c0c0c0;
+}
+
 .feedback-button-wrapper button:hover {
   background: rgba(225, 225, 225, 0.2) !important;
 }

@@ -169,14 +169,10 @@ hr {
   color: #a0a0a0;
 }
 
-.night-mode .ui[class*="right labeled"].icon.button > .icon {
-  box-shadow: 1px 0 0 0 #2d3239 inset;
-  color: #d1d1d1;
-}
-
-.night-mode .ui.message {
-  background-color: #23252a;
-  color: #a0a0a0;
+.night-mode .panel {
+  background-color: #1c1e21;
+  box-shadow: none;
+  border: 1px solid #2d3239;
 }
 
 .night-mode .ui.basic.orange.label {
@@ -185,8 +181,19 @@ hr {
   border-color: #d96417 !important;
 }
 
+/* MESSAGE UI */
+
+.night-mode .ui.message {
+  background-color: #23252a;
+  color: #a0a0a0;
+}
+
 .night-mode .ui.info.message .header {
   color: #1f9dad;
+}
+
+.night-mode .ui.negative.message .header {
+  color: #d77070;
 }
 
 .night-mode .ui.search > .results > .message .header {
@@ -205,10 +212,6 @@ hr {
   box-shadow: 0 0 0 1px #973030 inset;
 }
 
-.night-mode .ui.negative.message .header {
-  color: #d77070;
-}
-
 /* LABELS */
 
 .night-mode .ui.green.label {
@@ -217,7 +220,12 @@ hr {
   color: #d2d2d2 !important;
 }
 
-/* BUTTONS */
+/* BUTTONS UI */
+
+.night-mode .ui[class*="right labeled"].icon.button > .icon {
+  box-shadow: 1px 0 0 0 #2d3239 inset;
+  color: #d1d1d1;
+}
 
 .night-mode .ui.button,
 .night-mode .ui.button:active,
@@ -275,7 +283,7 @@ hr {
   box-shadow: 0 0 0 1px #31a588 !important;
 }
 
-/* POPUP */
+/* POPUP UI */
 
 .night-mode .ui.popup,
 .night-mode .ui.popup.inverted {
@@ -303,51 +311,6 @@ hr {
 
 .night-mode .ui.popup.bottom.left::before {
   box-shadow: -1px -1px 0 0 #4a4a4a;
-}
-
-/* COMPONENTS */
-
-.night-mode .app-menu .search-panel .results {
-  background-color: #23252a;
-  border-color: #4a4a4a;
-}
-
-.night-mode .app-menu .search-panel .result {
-  color: #a0a0a0;
-}
-
-.night-mode .app-menu .search-panel .result.active,
-.night-mode .app-menu .search-panel .result:hover {
-  background-color: #2e2e2e;
-}
-
-.night-mode .user-auth-control .button {
-  background-color: #1e2024;
-}
-
-.night-mode .user-auth-control .button i {
-  color: #a0a0a0;
-}
-
-.night-mode .menu-list-top a:hover {
-  background-color: #252525;
-}
-
-.night-mode .app-menu__page-link,
-.night-mode .app-menu__page-link:visited {
-  color: #cacaca;
-}
-
-.night-mode .app-menu {
-  background: linear-gradient(270deg, #0c362b, #1a2f47, #0d2b22);
-  box-shadow: none;
-  border-color: #2d3239;
-}
-
-.night-mode .panel {
-  background-color: #1c1e21;
-  box-shadow: none;
-  border: 1px solid #2d3239;
 }
 
 /* REACT TABLE */
@@ -478,7 +441,7 @@ hr {
   background-color: #23252a;
 }
 
-/* MODAL */
+/* MODAL UI */
 .night-mode .modal,
 .night-mode .modal > .actions,
 .night-mode .modal > .content {

@@ -32,3 +32,8 @@
     margin: 16px !important;
   }
 }
+
+.account-control-appearance {
+  display: flex;
+  max-width: 40%;
+}

@@ -185,8 +185,36 @@ hr {
   border-color: #d96417 !important;
 }
 
+.night-mode .ui.info.message .header {
+  color: #1f9dad;
+}
+
 .night-mode .ui.search > .results > .message .header {
   color: #a0a0a0;
+}
+
+.night-mode .ui.info.message {
+  box-shadow: 0 0 0 1px #4a4a4a inset;
+}
+
+.night-mode .ui.positive.message {
+  box-shadow: 0 0 0 1px #237661 inset;
+}
+
+.night-mode .ui.negative.message {
+  box-shadow: 0 0 0 1px #973030 inset;
+}
+
+.night-mode .ui.negative.message .header {
+  color: #d77070;
+}
+
+/* LABELS */
+
+.night-mode .ui.green.label {
+  background-color: #0b651c !important;
+  border-color: #0b651c !important;
+  color: #d2d2d2 !important;
 }
 
 /* BUTTONS */
@@ -217,6 +245,14 @@ hr {
 
 .night-mode .ui.positive.button:hover {
   background-color: #216e5b;
+}
+
+.night-mode .ui.negative.button {
+  background-color: #973030 !important;
+}
+
+.night-mode .ui.negative.button:hover {
+  background-color: #a33333 !important;
 }
 
 .night-mode .ui.basic.red {

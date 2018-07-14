@@ -65,6 +65,14 @@
   background-color: #ffbe00;
 }
 
+.night-mode .App .no-username-status-message {
+  background-color: #cb8e25;
+}
+
+.night-mode .App .no-username-status-message i {
+  color: #000;
+}
+
 .App .no-username-status-message a {
   display: inline-block;
   padding: 5px;

@@ -185,6 +185,10 @@ hr {
   border-color: #d96417 !important;
 }
 
+.night-mode .ui.search > .results > .message .header {
+  color: #a0a0a0;
+}
+
 /* BUTTONS */
 
 .night-mode .ui.button,

@@ -3,6 +3,10 @@
   border-bottom: 1px solid #e8e8e8;
 }
 
+.night-mode .gdpr-settings-privacy__card {
+  border-color: #2d3239;
+}
+
 .gdpr-settings-privacy__card:last-child {
   border: none;
 }

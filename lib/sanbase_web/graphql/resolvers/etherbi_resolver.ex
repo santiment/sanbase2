@@ -138,7 +138,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         },
         _resolution
       ) do
-    with {:ok, contract_address, _token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Transactions.Store,
@@ -160,7 +160,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         |> Enum.map(fn {datetime, funds_flow} ->
           %{
             datetime: datetime,
-            funds_flow: funds_flow
+            funds_flow: funds_flow / :math.pow(10, token_decimals)
           }
         end)
 
@@ -229,9 +229,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
-  defp project_to_contract_info(%Project{main_contract_address: main_contract_address} = project)
+  defp project_to_contract_info(%Project{
+         main_contract_address: main_contract_address,
+         token_decimals: token_decimals
+       })
        when not is_nil(main_contract_address) do
-    {:ok, String.downcase(main_contract_address), project.token_decimals || 0}
+    {:ok, String.downcase(main_contract_address), token_decimals || 0}
   end
 
   defp project_to_contract_info(project) do

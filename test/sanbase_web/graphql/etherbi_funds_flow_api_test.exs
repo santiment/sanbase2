@@ -26,9 +26,12 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
         name: "Santiment",
         ticker: ticker,
         coinmarketcap_id: slug,
-        main_contract_address: contract_address
+        main_contract_address: contract_address,
+        token_decimals: 2
       }
       |> Repo.insert!()
+
+    token_decimals = :math.pow(10, project.token_decimals)
 
     %Ico{project_id: project.id}
     |> Repo.insert!()
@@ -45,65 +48,65 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
     Store.import([
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{incoming_exchange_funds: 5000},
+        fields: %{incoming_exchange_funds: token_decimals * 5000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
         # datetime 1: total 2000 in
-        fields: %{outgoing_exchange_funds: 3000},
+        fields: %{outgoing_exchange_funds: token_decimals * 3000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
         # datetime 2: total 2000 in
-        fields: %{incoming_exchange_funds: 6000},
+        fields: %{incoming_exchange_funds: token_decimals * 6000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{outgoing_exchange_funds: 4000},
+        fields: %{outgoing_exchange_funds: token_decimals * 4000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
         # datetime 3: total 9000 in
-        fields: %{incoming_exchange_funds: 9000},
+        fields: %{incoming_exchange_funds: token_decimals * 9000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
         # datetime 4: total 15000 in
-        fields: %{incoming_exchange_funds: 15000},
+        fields: %{incoming_exchange_funds: token_decimals * 15000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
         # datetime 5: total 18000 out
-        fields: %{outgoing_exchange_funds: 18000},
+        fields: %{outgoing_exchange_funds: token_decimals * 18000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
         # datetime 6: total 1000 in
-        fields: %{incoming_exchange_funds: 1000},
+        fields: %{incoming_exchange_funds: token_decimals * 1000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
-        fields: %{outgoing_exchange_funds: 10000},
+        fields: %{outgoing_exchange_funds: token_decimals * 10000},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
         # datetime 7: total 8450 out
-        fields: %{incoming_exchange_funds: 1550},
+        fields: %{incoming_exchange_funds: token_decimals * 1550},
         name: contract_address
       },
       %Measurement{
         timestamp: datetime8 |> DateTime.to_unix(:nanoseconds),
         # datetime 8; total 50000 out
-        fields: %{outgoing_exchange_funds: 50000},
+        fields: %{outgoing_exchange_funds: token_decimals * 50000},
         name: contract_address
       }
     ])
@@ -169,42 +172,42 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime1),
-             "fundsFlow" => 2000
+             "fundsFlow" => 2000.0
            } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime2),
-             "fundsFlow" => 2000
+             "fundsFlow" => 2000.0
            } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime3),
-             "fundsFlow" => 9000
+             "fundsFlow" => 9000.0
            } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime4),
-             "fundsFlow" => 15000
+             "fundsFlow" => 15000.0
            } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime5),
-             "fundsFlow" => -18000
+             "fundsFlow" => -18000.0
            } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime6),
-             "fundsFlow" => 1000
+             "fundsFlow" => 1000.0
            } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime7),
-             "fundsFlow" => -8450
+             "fundsFlow" => -8450.0
            } in funds_flow_list
 
     assert %{
              "datetime" => DateTime.to_iso8601(context.datetime8),
-             "fundsFlow" => -50000
+             "fundsFlow" => -50000.0
            } in funds_flow_list
   end
 end

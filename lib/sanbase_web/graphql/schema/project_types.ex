@@ -100,15 +100,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       resolve(&ProjectResolver.rank/3)
     end
 
-    field :price_usd, :decimal do
+    field :price_usd, :float do
       resolve(&ProjectResolver.price_usd/3)
     end
 
-    field :price_btc, :decimal do
+    field :price_btc, :float do
       resolve(&ProjectResolver.price_btc/3)
     end
 
-    field :volume_usd, :decimal do
+    field :volume_usd, :float do
       resolve(&ProjectResolver.volume_usd/3)
     end
 
@@ -125,7 +125,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve_async(&TwitterResolver.twitter_data/3)
     end
 
-    field :marketcap_usd, :decimal do
+    field :marketcap_usd, :float do
       resolve(&ProjectResolver.marketcap_usd/3)
     end
 

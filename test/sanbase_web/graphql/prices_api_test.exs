@@ -148,14 +148,16 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "data aggregation for larger intervals", context do
     query = """
     {
-      historyPrice(slug: "#{context.slug1}", from: "#{context.datetime1}", to: "#{
-      context.datetime3
-    }", interval: "2d") {
-        datetime
-        priceUsd
-        priceBtc
-        marketcap
-        volume
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}",
+        interval: "2d") {
+          datetime
+          priceUsd
+          priceBtc
+          marketcap
+          volume
       }
     }
     """
@@ -205,7 +207,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
         slug: "#{context.slug1}",
         from: "#{context.datetime1}",
         interval: "1h"){
-        priceUsd
+          priceUsd
       }
     }
     """

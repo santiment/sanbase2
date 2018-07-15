@@ -25,6 +25,10 @@ defmodule Sanbase.DateTimeUtils do
     seconds_ago(days * 60 * 60 * 24)
   end
 
+  def start_of_day(datetime \\ DateTime.utc_now()) do
+    %DateTime{datetime | hour: 0, minute: 0, second: 0, microsecond: {0, 0}}
+  end
+
   # Interval should be an integer followed by one of: s, m, h, d or w
   def str_to_sec(interval) do
     interval_type = String.last(interval)

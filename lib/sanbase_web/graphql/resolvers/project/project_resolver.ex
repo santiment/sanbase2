@@ -390,7 +390,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_usd}
+    {:ok, price_usd |> Decimal.to_float()}
   end
 
   def price_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -400,7 +400,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_btc}
+    {:ok, price_btc |> Decimal.to_float()}
   end
 
   def price_btc(_parent, _args, _resolution), do: {:ok, nil}
@@ -410,7 +410,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, volume_usd}
+    {:ok, volume_usd |> Decimal.to_float()}
   end
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -464,7 +464,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, market_cap_usd}
+    {:ok, market_cap_usd |> Decimal.to_float()}
   end
 
   def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}

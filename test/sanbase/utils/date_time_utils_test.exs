@@ -32,4 +32,14 @@ defmodule Sanbase.DateTimeUtilsTest do
              datetime1
            ) == :eq
   end
+
+  test "start of day" do
+    datetime1 = DateTime.from_naive!(~N[2014-10-02 10:29:10], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2014-10-02 00:00:00], "Etc/UTC")
+
+    assert DateTime.compare(
+             DateTimeUtils.start_of_day(datetime1),
+             datetime2
+           )
+  end
 end

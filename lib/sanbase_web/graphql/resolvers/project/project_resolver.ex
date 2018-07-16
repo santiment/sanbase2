@@ -390,7 +390,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_usd |> decimal_or_nil()}
+    {:ok, price_usd |> float_or_nil()}
   end
 
   def price_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -400,7 +400,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_btc |> decimal_or_nil()}
+    {:ok, price_btc |> float_or_nil()}
   end
 
   def price_btc(_parent, _args, _resolution), do: {:ok, nil}
@@ -410,7 +410,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, volume_usd |> decimal_or_nil()}
+    {:ok, volume_usd |> float_or_nil()}
   end
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -464,7 +464,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, market_cap_usd |> decimal_or_nil()}
+    {:ok, market_cap_usd |> float_or_nil()}
   end
 
   def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -591,7 +591,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
            false <- is_nil(usd_balance) || is_nil(market_cap),
            false <- Decimal.cmp(usd_balance, Decimal.new(0)) == :eq do
-        {:ok, Decimal.div(market_cap, usd_balance)}
+        {:ok, Decimal.div(Decimal.new(market_cap), usd_balance)}
       else
         _ ->
           {:ok, nil}
@@ -606,7 +606,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
            false <- is_nil(usd_balance) || is_nil(market_cap),
-           :lt <- Decimal.cmp(market_cap, usd_balance) do
+           :lt <- Decimal.cmp(Decimal.new(market_cap), usd_balance) do
         {:ok,
          [
            %{
@@ -643,6 +643,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   # Calling Decimal.to_float/1 with `nil` crashes the process
-  defp decimal_or_nil(nil), do: nil
-  defp decimal_or_nil(num), do: Decimal.to_float(num)
+  defp float_or_nil(nil), do: nil
+  defp float_or_nil(num), do: Decimal.to_float(num)
 end

@@ -221,8 +221,9 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
 
     active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
+    # Tests that the datetime is adjusted so it's not before `from`
     assert %{
-             "datetime" => "2017-05-12T00:00:00Z",
+             "datetime" => "2017-05-13T00:00:00Z",
              "activeAddresses" => 5000
            } in active_addresses
 

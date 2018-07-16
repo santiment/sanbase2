@@ -215,8 +215,9 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
     burn_rates = json_response(result, 200)["data"]["burnRate"]
 
+    # Tests that the datetime is adjusted so it's not before `from`
     assert %{
-             "datetime" => "2017-05-13T21:30:00Z",
+             "datetime" => "2017-05-13T21:45:00Z",
              "burnRate" => 6000.0
            } in burn_rates
 

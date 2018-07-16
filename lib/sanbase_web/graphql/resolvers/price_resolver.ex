@@ -35,6 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
               volume: volume
             }
           end)
+          |> Utils.fit_from_datetime(args)
 
         {:ok, result}
       else
@@ -65,6 +66,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
               volume: volume
             }
           end)
+          |> Utils.fit_from_datetime(args)
 
         {:ok, result}
       else

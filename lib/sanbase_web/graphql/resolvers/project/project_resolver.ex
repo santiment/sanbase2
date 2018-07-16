@@ -292,7 +292,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_usd |> Decimal.to_float()}
+    {:ok, price_usd |> decimal_or_nil()}
   end
 
   def price_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -302,7 +302,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, price_btc |> Decimal.to_float()}
+    {:ok, price_btc |> decimal_or_nil()}
   end
 
   def price_btc(_parent, _args, _resolution), do: {:ok, nil}
@@ -312,7 +312,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, volume_usd |> Decimal.to_float()}
+    {:ok, volume_usd |> decimal_or_nil()}
   end
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -366,7 +366,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, market_cap_usd |> Decimal.to_float()}
+    {:ok, market_cap_usd |> decimal_or_nil()}
   end
 
   def marketcap_usd(_parent, _args, _resolution), do: {:ok, nil}
@@ -543,4 +543,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
     {:ok, Repo.all(query)}
   end
+
+  # Calling Decimal.to_float/1 with `nil` crashes the process
+  defp decimal_or_nil(nil), do: nil
+  defp decimal_or_nil(num), do: Decimal.to_float(num)
 end

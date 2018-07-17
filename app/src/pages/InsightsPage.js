@@ -20,8 +20,8 @@ import './InsightsPage.css'
 
 const POLLING_INTERVAL = 5000
 
-export const voteMutationHelper = ({postId, action = 'vote'}) => ({
-  variables: {postId: parseInt(postId, 10)},
+export const voteMutationHelper = ({ postId, action = 'vote' }) => ({
+  variables: { postId: parseInt(postId, 10) },
   optimisticResponse: {
     __typename: 'Mutation',
     [action]: {
@@ -76,19 +76,22 @@ const InsightsPage = ({
   isOpenedLoginRequestModal,
   loginModalRequest
 }) => {
-  const showedMyPosts = match.path.split('/')[2] === 'my' && Posts.hasUserInsights
+  const showedMyPosts =
+    match.path.split('/')[2] === 'my' && Posts.hasUserInsights
   if (match.path.split('/')[2] === 'my' && !Posts.hasUserInsights) {
     return <Redirect to='/insights' />
   }
-  return ([
+  return [
     <Fragment key='modal-login-request'>
-      {isOpenedLoginRequestModal &&
+      {isOpenedLoginRequestModal && (
         <ModalRequestLogin
           toggleLoginRequest={loginModalRequest}
-          history={history} />}
+          history={history}
+        />
+      )}
     </Fragment>,
     <Fragment key='modal-delete-post-request'>
-      {isToggledDeletePostRequest &&
+      {isToggledDeletePostRequest && (
         <ModalConfirmDeletePost
           deletePostId={deletePostId}
           toggleForm={() => {
@@ -96,10 +99,12 @@ const InsightsPage = ({
               setDeletePostId(undefined)
             }
             toggleDeletePostRequest(!isToggledDeletePostRequest)
-          }} />}
+          }}
+        />
+      )}
     </Fragment>,
     <Fragment key='modal-publish-post-request'>
-      {isToggledPublishPostRequest &&
+      {isToggledPublishPostRequest && (
         <ModalConfirmPublishPost
           publishInsightId={publishInsightId}
           toggleForm={() => {
@@ -107,91 +112,113 @@ const InsightsPage = ({
               setPublishInsightId(undefined)
             }
             togglePublishPostRequest(!isToggledPublishPostRequest)
-          }} />}
+          }}
+        />
+      )}
     </Fragment>,
     <Fragment key='page-event-votes'>
       <InsightsLayout isLogin={isLoggedIn}>
         <div className='insight-list'>
-          {Posts.isEmpty && !showedMyPosts
-            ? <Message><h2>We don't have any insights yet.</h2></Message>
-            : Object.keys(Posts.posts).sort().reverse().map((key, index) => (
-              <div key={key} className='posts-by-day'>
-                <div className='posts-by-day-header'>
-                  <span className='represent-day'>{formatDay(key)}</span>
-                  {index === 0 &&
-                    <div className='event-votes-control'>
-                      <div className='event-votes-navigation'>
-                        <NavLink
-                          className='event-votes-navigation__link'
-                          activeClassName='event-votes-navigation__link--active'
-                          exact
-                          to={'?sort=popular'}>
-                          POPULAR
-                        </NavLink>
-                        <NavLink
-                          className='event-votes-navigation__link'
-                          activeClassName='event-votes-navigation__link--active'
-                          exact
-                          to={'?sort=newest'}>
-                          NEWEST
-                        </NavLink>
+          {Posts.isEmpty && !showedMyPosts ? (
+            <Message>
+              <h2>We don't have any insights yet.</h2>
+            </Message>
+          ) : (
+            Object.keys(Posts.posts)
+              .sort()
+              .reverse()
+              .map((key, index) => (
+                <div key={key} className='posts-by-day'>
+                  <div className='posts-by-day-header'>
+                    <span className='represent-day'>{formatDay(key)}</span>
+                    {index === 0 && (
+                      <div className='event-votes-control'>
+                        <div className='event-votes-navigation'>
+                          <NavLink
+                            className='event-votes-navigation__link'
+                            activeClassName='event-votes-navigation__link--active'
+                            exact
+                            to={'?sort=popular'}
+                          >
+                            POPULAR
+                          </NavLink>
+                          <NavLink
+                            className='event-votes-navigation__link'
+                            activeClassName='event-votes-navigation__link--active'
+                            exact
+                            to={'?sort=newest'}
+                          >
+                            NEWEST
+                          </NavLink>
+                        </div>
                       </div>
-                    </div>}
+                    )}
+                  </div>
+                  <PostList
+                    {...Posts}
+                    posts={Posts.posts[key]}
+                    userId={showedMyPosts ? user.data.id : undefined}
+                    balance={balance}
+                    gotoInsight={id => {
+                      if (!user.token) {
+                        loginModalRequest(true)
+                      } else {
+                        history.push(`/insights/${id}`)
+                      }
+                    }}
+                    deletePost={postId => {
+                      setDeletePostId(postId)
+                      toggleDeletePostRequest(true)
+                    }}
+                    publishPost={postId => {
+                      setPublishInsightId(postId)
+                      togglePublishPostRequest(true)
+                    }}
+                    votePost={debounce(postId => {
+                      user.token
+                        ? votePost(
+                          voteMutationHelper({ postId, action: 'vote' })
+                        )
+                          .then(data => Posts.refetch())
+                          .catch(e => Raven.captureException(e))
+                        : loginModalRequest()
+                    }, 100)}
+                    unvotePost={debounce(postId => {
+                      user.token
+                        ? unvotePost(
+                          voteMutationHelper({ postId, action: 'unvote' })
+                        )
+                          .then(data => Posts.refetch())
+                          .catch(e => Raven.captureException(e))
+                        : loginModalRequest()
+                    }, 100)}
+                  />
                 </div>
-                <PostList {...Posts}
-                  posts={Posts.posts[key]}
-                  userId={showedMyPosts ? user.data.id : undefined}
-                  balance={balance}
-                  gotoInsight={id => {
-                    if (!user.token) {
-                      loginModalRequest(true)
-                    } else {
-                      history.push(`/insights/${id}`)
-                    }
-                  }}
-                  deletePost={postId => {
-                    setDeletePostId(postId)
-                    toggleDeletePostRequest(true)
-                  }}
-                  publishPost={postId => {
-                    setPublishInsightId(postId)
-                    togglePublishPostRequest(true)
-                  }}
-                  votePost={debounce(postId => {
-                    user.token
-                      ? votePost(voteMutationHelper({postId, action: 'vote'}))
-                      .then(data => Posts.refetch())
-                      .catch(e => Raven.captureException(e))
-                      : loginModalRequest()
-                  }, 100)}
-                  unvotePost={debounce(postId => {
-                    user.token
-                      ? unvotePost(voteMutationHelper({postId, action: 'unvote'}))
-                      .then(data => Posts.refetch())
-                      .catch(e => Raven.captureException(e))
-                      : loginModalRequest()
-                  }, 100)}
-                />
-              </div>
-            ))}
+              ))
+          )}
         </div>
       </InsightsLayout>
     </Fragment>
-  ])
+  ]
 }
 
-const ModalRequestLogin = ({history, toggleLoginRequest}) => (
+const ModalRequestLogin = ({ history, toggleLoginRequest }) => (
   <Modal defaultOpen onClose={() => toggleLoginRequest(false)} closeIcon>
     <Header content='Create an account to get your Sanbase experience.' />
     <Modal.Content>
-      <p>By having a Sanbase account, you can see more data and insights about crypto projects.
-      You can vote and comment on all you favorite insights and more.</p>
+      <p>
+        By having a Sanbase account, you can see more data and insights about
+        crypto projects. You can vote and comment on all you favorite insights
+        and more.
+      </p>
     </Modal.Content>
     <Modal.Actions>
       <Button
         onClick={() =>
-          history.push(`/login?redirect_to=${history.location.pathname}`)}
-        color='green'>
+          history.push(`/login?redirect_to=${history.location.pathname}`)
+        }
+        color='green'
+      >
         <Icon name='checkmark' /> Login or Sign up
       </Button>
     </Modal.Actions>
@@ -199,7 +226,7 @@ const ModalRequestLogin = ({history, toggleLoginRequest}) => (
 )
 
 export const votePostGQL = gql`
-  mutation vote($postId: Int!){
+  mutation vote($postId: Int!) {
     vote(postId: $postId) {
       id
     }
@@ -207,7 +234,7 @@ export const votePostGQL = gql`
 `
 
 export const unvotePostGQL = gql`
-  mutation unvote($postId: Int!){
+  mutation unvote($postId: Int!) {
     unvote(postId: $postId) {
       id
     }
@@ -235,25 +262,36 @@ const mapDataToProps = props => {
   const qsData = qs.parse(ownProps.location.search)
   const sort = qsData['sort'] ? qsData.sort : 'popular'
   const posts = Insights.allInsights || []
-  let normalizedPosts = posts
-    .map(post => {
-      return {
-        votes: {
-          totalSanVotes: parseFloat(post.votes.totalSanVotes) || 0
-        },
-        ...post}
-    })
+  let normalizedPosts = posts.map(post => {
+    return {
+      votes: {
+        totalSanVotes: parseFloat(post.votes.totalSanVotes) || 0
+      },
+      ...post
+    }
+  })
 
-  const filteredByPublished = posts => posts.filter(post => post.readyState ? post.readyState === 'published' : true)
-  const filteredBySelfUser = posts => posts.filter(post => post.user.id === ownProps.user.data.id)
+  const filteredByPublished = posts =>
+    posts.filter(
+      post => (post.readyState ? post.readyState === 'published' : true)
+    )
+  const filteredBySelfUser = posts =>
+    posts.filter(post => post.user.id === ownProps.user.data.id)
   const hasUserInsights = filteredBySelfUser(normalizedPosts).length > 0
-  const filteredByUserID = posts => posts.filter(post => post.user.id === ownProps.match.params.userId)
+  const filteredByUserID = posts =>
+    posts.filter(post => post.user.id === ownProps.match.params.userId)
 
-  const searchedTag = ownProps.match.params.tagName && ownProps.match.params.tagName.toLowerCase() // This optimize calculations inside filter func
-  const filteredByTagPosts = posts => posts.filter(post => post.tags.some(({ name }) => name.toLowerCase() === searchedTag))
+  const searchedTag =
+    ownProps.match.params.tagName && ownProps.match.params.tagName.toLowerCase() // This optimize calculations inside filter func
+  const filteredByTagPosts = posts =>
+    posts.filter(post =>
+      post.tags.some(({ name }) => name.toLowerCase() === searchedTag)
+    )
 
   const postsByDay = normalizedPosts.reduce((acc, post) => {
-    const day = moment(post.createdAt).endOf('day').unix()
+    const day = moment(post.createdAt)
+      .endOf('day')
+      .unix()
     if (!acc[`${day}`]) {
       acc[`${day}`] = []
     }
@@ -261,13 +299,14 @@ const mapDataToProps = props => {
     return acc
   }, {})
 
-  const reduceAllKeys = postsByDay => filterFn => Object.keys(postsByDay).reduce((acc, key) => {
-    const filtered = filterFn(postsByDay[key])
-    if (filtered.length > 0) {
-      acc[key] = filtered
-    }
-    return acc
-  }, {})
+  const reduceAllKeys = postsByDay => filterFn =>
+    Object.keys(postsByDay).reduce((acc, key) => {
+      const filtered = filterFn(postsByDay[key])
+      if (filtered.length > 0) {
+        acc[key] = filtered
+      }
+      return acc
+    }, {})
 
   const applyFilter = posts => {
     switch (filter) {
@@ -289,10 +328,7 @@ const mapDataToProps = props => {
     return reduceAllKeys(posts)(sortByPopular)
   }
 
-  const visiblePosts = compose(
-    applyFilter,
-    applySort
-  )(postsByDay)
+  const visiblePosts = compose(applyFilter, applySort)(postsByDay)
 
   return {
     Posts: {
@@ -300,7 +336,8 @@ const mapDataToProps = props => {
       refetch: Insights.refetch,
       updateQuery: Insights.updateQuery,
       loading: Insights.loading,
-      isEmpty: Insights.currentPoll &&
+      isEmpty:
+        Insights.currentPoll &&
         visiblePosts &&
         Object.keys(visiblePosts).length === 0,
       hasUserInsights,
@@ -330,10 +367,7 @@ const mapDispatchToProps = dispatch => {
 }
 
 const enhance = compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
+  connect(mapStateToProps, mapDispatchToProps),
   withState('isToggledDeletePostRequest', 'toggleDeletePostRequest', false),
   withState('isToggledPublishPostRequest', 'togglePublishPostRequest', false),
   withState('deletePostId', 'setDeletePostId', undefined),
@@ -341,7 +375,7 @@ const enhance = compose(
   graphql(allInsightsPublicGQL, {
     name: 'Insights',
     props: mapDataToProps,
-    options: ({isLoggedIn}) => ({
+    options: ({ isLoggedIn }) => ({
       skip: isLoggedIn,
       pollInterval: POLLING_INTERVAL
     })
@@ -349,7 +383,7 @@ const enhance = compose(
   graphql(allInsightsGQL, {
     name: 'Insights',
     props: mapDataToProps,
-    options: ({isLoggedIn}) => ({
+    options: ({ isLoggedIn }) => ({
       skip: !isLoggedIn,
       pollInterval: POLLING_INTERVAL
     })

@@ -3,7 +3,7 @@ import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import { Button, Popup } from 'semantic-ui-react'
 
-const FeedbackBtn = ({toggleFeedback, ...props}) => {
+const FeedbackBtn = ({ toggleFeedback, ...props }) => {
   return (
     <div className='feedback-button-wrapper'>
       <Popup
@@ -12,9 +12,9 @@ const FeedbackBtn = ({toggleFeedback, ...props}) => {
         inverted
         position='bottom center'
         wide
-        trigger={
-          <Button onClick={toggleFeedback} circular icon='bullhorn' />
-      } on='hover'>
+        trigger={<Button onClick={toggleFeedback} circular icon='bullhorn' />}
+        on='hover'
+      >
         Send a feedback
       </Popup>
     </div>
@@ -31,11 +31,6 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const enhance = compose(
-  connect(
-    undefined,
-    mapDispatchToProps
-  )
-)
+const enhance = compose(connect(undefined, mapDispatchToProps))
 
 export default enhance(FeedbackBtn)

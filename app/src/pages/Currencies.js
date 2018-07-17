@@ -31,4 +31,4 @@ export const Currencies = ({
   />
 )
 
-export default withProjectsData({type: 'currency'})(Currencies)
+export default withProjectsData({ type: 'currency' })(Currencies)

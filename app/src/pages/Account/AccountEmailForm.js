@@ -7,7 +7,15 @@ import { Button } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { changeEmailGQL } from './accountGQL'
 
-const AccountEmailForm = ({ user, changeEmailQuery, changeEmail, isEmailPending, setFormStatus, errorValidator, successValidator }) => {
+const AccountEmailForm = ({
+  user,
+  changeEmailQuery,
+  changeEmail,
+  isEmailPending,
+  setFormStatus,
+  errorValidator,
+  successValidator
+}) => {
   return (
     <ReactForm
       validateError={errorValidator}
@@ -51,7 +59,7 @@ const AccountEmailForm = ({ user, changeEmailQuery, changeEmail, isEmailPending,
             formApi={formApi}
           />
 
-          {formApi.getSuccess().email &&
+          {formApi.getSuccess().email && (
             <FadeIn
               className='account-settings-email__button-container'
               duration='0.7s'
@@ -65,11 +73,14 @@ const AccountEmailForm = ({ user, changeEmailQuery, changeEmail, isEmailPending,
               >
                 {isEmailPending ? 'Waiting...' : 'Submit'}
               </Button>
-            </FadeIn>}
+            </FadeIn>
+          )}
         </form>
       )}
     </ReactForm>
   )
 }
 
-export default graphql(changeEmailGQL, { name: 'changeEmailQuery' })(AccountEmailForm)
+export default graphql(changeEmailGQL, { name: 'changeEmailQuery' })(
+  AccountEmailForm
+)

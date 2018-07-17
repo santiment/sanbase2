@@ -19,30 +19,36 @@ import HelpPopup from '../../components/HelpPopup/HelpPopup'
 import HelpPopupProjectsContent from '../../components/HelpPopup/HelpPopupProjectsContent'
 import './ProjectsTable.css'
 
-export const CustomThComponent = ({ toggleSort, className, children, ...rest }) => (
+export const CustomThComponent = ({
+  toggleSort,
+  className,
+  children,
+  ...rest
+}) => (
   <div
     className={classnames('rt-th', className)}
-    onClick={e => (
-      toggleSort && toggleSort(e)
-    )}
+    onClick={e => toggleSort && toggleSort(e)}
     role='columnheader'
     tabIndex='-1'
     {...rest}
   >
-    {((Array.isArray(children) ? children[0] : {}).props || {}).children === 'P/B'
-      ? <Popup
-        trigger={<div>{children}</div>}
-        content='Ratio between the market cap and the current crypto balance.
+    {((Array.isArray(children) ? children[0] : {}).props || {}).children ===
+    'P/B' ? (
+        <Popup
+          trigger={<div>{children}</div>}
+          content='Ratio between the market cap and the current crypto balance.
           Companies with low P/B ratio might be undervalued.'
-        inverted
-        position='top left'
-      />
-      : children}
+          inverted
+          position='top left'
+        />
+      ) : (
+        children
+      )}
   </div>
 )
 
 export const CustomHeadComponent = ({ children, className, ...rest }) => (
-  <Sticky enabled >
+  <Sticky enabled>
     <div className={classnames('rt-thead', className)} {...rest}>
       {children}
     </div>
@@ -51,10 +57,12 @@ export const CustomHeadComponent = ({ children, className, ...rest }) => (
 
 export const filterColumnsByTableSection = (tableSection, columns) => {
   if (tableSection === 'currencies') {
-    return columns.filter(column =>
-      column.id !== 'eth_spent' &&
-      column.id !== 'daily_active_addresses' &&
-      column.id !== 'signals')
+    return columns.filter(
+      column =>
+        column.id !== 'eth_spent' &&
+        column.id !== 'daily_active_addresses' &&
+        column.id !== 'signals'
+    )
   }
   return columns
 }
@@ -80,7 +88,11 @@ const ProjectsTable = ({
   user
 }) => {
   const { loading } = Projects
-  const projects = filterProjectsByMarketSegment(Projects.projects, categories, allMarketSegments)
+  const projects = filterProjectsByMarketSegment(
+    Projects.projects,
+    categories,
+    allMarketSegments
+  )
   const currentTableSection = match.path.split('/')[1] // currencies or projects ...
   const refetchThrottled = data => {
     throttle(data => data.refetch(), 1000)
@@ -94,194 +106,243 @@ const ProjectsTable = ({
   }
   const getFilter = search => {
     if (search) {
-      return [{
-        id: 'project',
-        value: search
-      }]
+      return [
+        {
+          id: 'project',
+          value: search
+        }
+      ]
     }
     return []
   }
 
-  if (Projects.isError && Projects.errorMessage !== 'Network error: Failed to fetch') {
+  if (
+    Projects.isError &&
+    Projects.errorMessage !== 'Network error: Failed to fetch'
+  ) {
     refetchThrottled(Projects)
     return (
-      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '80vh'
+        }}
+      >
         <Message warning>
-          <Message.Header>We're sorry, something has gone wrong on our server.</Message.Header>
+          <Message.Header>
+            We're sorry, something has gone wrong on our server.
+          </Message.Header>
           <p>Please try again later.</p>
         </Message>
       </div>
     )
   }
 
-  const columns = [{
-    Header: '',
-    id: 'icon',
-    filterable: true,
-    sortable: true,
-    minWidth: 44,
-    maxWidth: 100,
-    accessor: d => ({
-      name: d.name,
-      ticker: d.ticker
-    }),
-    Cell: ({value}) => (
-      <div className='overview-ticker' >
-        <ProjectIcon name={value.name} ticker={value.ticker} /><br />
-        <span className='ticker'>{value.ticker}</span>
-      </div>
-    ),
-    filterMethod: (filter, row) => {
-      const name = row[filter.id].name || ''
-      const ticker = row[filter.id].ticker || ''
-      return name.toLowerCase().indexOf(filter.value) !== -1 ||
-        ticker.toLowerCase().indexOf(filter.value) !== -1
+  const columns = [
+    {
+      Header: '',
+      id: 'icon',
+      filterable: true,
+      sortable: true,
+      minWidth: 44,
+      maxWidth: 100,
+      accessor: d => ({
+        name: d.name,
+        ticker: d.ticker
+      }),
+      Cell: ({ value }) => (
+        <div className='overview-ticker'>
+          <ProjectIcon name={value.name} ticker={value.ticker} />
+          <br />
+          <span className='ticker'>{value.ticker}</span>
+        </div>
+      ),
+      filterMethod: (filter, row) => {
+        const name = row[filter.id].name || ''
+        const ticker = row[filter.id].ticker || ''
+        return (
+          name.toLowerCase().indexOf(filter.value) !== -1 ||
+          ticker.toLowerCase().indexOf(filter.value) !== -1
+        )
+      }
+    },
+    {
+      Header: 'Project',
+      id: 'project',
+      filterable: true,
+      sortable: true,
+      accessor: d => ({
+        name: d.name,
+        ticker: d.ticker,
+        cmcId: d.coinmarketcapId
+      }),
+      Cell: ({ value }) => (
+        <Link
+          onMouseOver={() => preload()}
+          to={`/projects/${value.cmcId}`}
+          className='overview-name'
+        >
+          {value.name}
+        </Link>
+      ),
+      filterMethod: (filter, row) => {
+        const name = row[filter.id].name || ''
+        const ticker = row[filter.id].ticker || ''
+        return (
+          name.toLowerCase().indexOf(filter.value) !== -1 ||
+          ticker.toLowerCase().indexOf(filter.value) !== -1
+        )
+      }
+    },
+    {
+      Header: 'Price',
+      id: 'price',
+      maxWidth: 100,
+      accessor: d => ({
+        priceUsd: d.priceUsd
+      }),
+      Cell: ({ value: { priceUsd, change24h } }) => (
+        <div className='overview-price'>
+          {priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : 'No data'}
+        </div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) =>
+        simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
+    },
+    {
+      Header: 'Price +/-',
+      id: 'price_change',
+      maxWidth: 100,
+      accessor: d => ({
+        change24h: d.percentChange24h
+      }),
+      Cell: ({ value: { change24h } }) => (
+        <div className='overview-price'>
+          {change24h ? <PercentChanges changes={change24h} /> : 'No data'}
+        </div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) =>
+        simpleSort(parseFloat(a.change24h || 0), parseFloat(b.change24h || 0))
+    },
+    {
+      Header: 'Volume',
+      id: 'volume',
+      maxWidth: 100,
+      accessor: d => ({
+        volumeUsd: d.volumeUsd
+      }),
+      Cell: ({ value: { volumeUsd } }) => (
+        <div className='overview-volume'>
+          {volumeUsd ? `$${millify(volumeUsd, 2)}` : 'No data'}
+        </div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) =>
+        simpleSort(parseFloat(a.volumeUsd || 0), parseFloat(b.volumeUsd || 0))
+    },
+    {
+      Header: 'Volume +/-',
+      id: 'volume_change_24h',
+      maxWidth: 100,
+      accessor: d => ({
+        change24h: d.volumeChange24h
+      }),
+      Cell: ({ value: { change24h } }) => (
+        <div className='overview-volume'>
+          {change24h ? <PercentChanges changes={change24h} /> : 'No data'}
+        </div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) =>
+        simpleSort(parseFloat(a.change24h || 0), parseFloat(b.change24h || 0))
+    },
+    {
+      Header: 'Market Cap',
+      id: 'marketcapUsd',
+      maxWidth: 130,
+      accessor: 'marketcapUsd',
+      Cell: ({ value }) => (
+        <div className='overview-marketcap'>
+          {formatMarketCapProject(value)}
+        </div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) => simpleSort(+a, +b)
+    },
+    {
+      Header: 'ETH spent (30D)',
+      maxWidth: 110,
+      id: 'eth_spent',
+      accessor: d => d.ethSpent,
+      Cell: ({ value }) => (
+        <div className='overview-ethspent'>{`Ξ${millify(value, 2)}`}</div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) => simpleSort(a, b)
+    },
+    {
+      Header: 'Dev activity (30D)',
+      id: 'github_activity',
+      maxWidth: 110,
+      accessor: d => d.averageDevActivity,
+      Cell: ({ value }) => (
+        <div className='overview-devactivity'>
+          {value ? parseFloat(value).toFixed(2) : ''}
+        </div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) => simpleSort(a, b)
+    },
+    {
+      Header: 'Daily active addresses (30D)',
+      id: 'daily_active_addresses',
+      maxWidth: 110,
+      accessor: d => d.averageDailyActiveAddresses,
+      Cell: ({ value }) => (
+        <div className='overview-activeaddresses'>
+          {value ? formatNumber(value) : ''}
+        </div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) => simpleSort(a, b)
+    },
+    {
+      Header: 'Signals',
+      id: 'signals',
+      minWidth: 64,
+      accessor: d => ({
+        warning: d.signals && d.signals.length > 0,
+        description: d.signals[0] && d.signals[0].description
+      }),
+      Cell: ({ value: { warning, description } }) => (
+        <div className='cell-signals'>
+          {warning && (
+            <Popup
+              basic
+              position='right center'
+              hideOnScroll
+              wide
+              inverted
+              trigger={
+                <div style={{ width: '100%', height: '100%' }}>
+                  <Icon color='orange' fitted name='warning sign' />
+                </div>
+              }
+              on='hover'
+            >
+              {description}
+            </Popup>
+          )}
+        </div>
+      ),
+      sortable: true,
+      sortMethod: (a, b) => simpleSort(a.warning, b.warning)
     }
-  }, {
-    Header: 'Project',
-    id: 'project',
-    filterable: true,
-    sortable: true,
-    accessor: d => ({
-      name: d.name,
-      ticker: d.ticker,
-      cmcId: d.coinmarketcapId
-    }),
-    Cell: ({value}) => (
-      <Link
-        onMouseOver={() => preload()}
-        to={`/projects/${value.cmcId}`}
-        className='overview-name' >
-        {value.name}
-      </Link>
-    ),
-    filterMethod: (filter, row) => {
-      const name = row[filter.id].name || ''
-      const ticker = row[filter.id].ticker || ''
-      return name.toLowerCase().indexOf(filter.value) !== -1 ||
-        ticker.toLowerCase().indexOf(filter.value) !== -1
-    }
-  }, {
-    Header: 'Price',
-    id: 'price',
-    maxWidth: 100,
-    accessor: d => ({
-      priceUsd: d.priceUsd
-    }),
-    Cell: ({value: {priceUsd, change24h}}) => <div className='overview-price'>
-      {priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : 'No data'}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(parseFloat(a.priceUsd || 0), parseFloat(b.priceUsd || 0))
-  }, {
-    Header: 'Price +/-',
-    id: 'price_change',
-    maxWidth: 100,
-    accessor: d => ({
-      change24h: d.percentChange24h
-    }),
-    Cell: ({value: {change24h}}) => <div className='overview-price'>
-      {change24h
-        ? <PercentChanges changes={change24h} />
-        : 'No data'}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(parseFloat(a.change24h || 0), parseFloat(b.change24h || 0))
-  }, {
-    Header: 'Volume',
-    id: 'volume',
-    maxWidth: 100,
-    accessor: d => ({
-      volumeUsd: d.volumeUsd
-    }),
-    Cell: ({value: {volumeUsd}}) => <div className='overview-volume'>
-      {volumeUsd
-        ? `$${millify(volumeUsd, 2)}`
-        : 'No data'}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) =>
-      simpleSort(
-        parseFloat(a.volumeUsd || 0),
-        parseFloat(b.volumeUsd || 0)
-      )
-  }, {
-    Header: 'Volume +/-',
-    id: 'volume_change_24h',
-    maxWidth: 100,
-    accessor: d => ({
-      change24h: d.volumeChange24h
-    }),
-    Cell: ({value: {change24h}}) => <div className='overview-volume'>
-      {change24h
-        ? <PercentChanges changes={change24h} />
-        : 'No data'}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) =>
-      simpleSort(
-        parseFloat(a.change24h || 0),
-        parseFloat(b.change24h || 0)
-      )
-  }, {
-    Header: 'Market Cap',
-    id: 'marketcapUsd',
-    maxWidth: 130,
-    accessor: 'marketcapUsd',
-    Cell: ({value}) => <div className='overview-marketcap'>{formatMarketCapProject(value)}</div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(+a, +b)
-  },
-  {
-    Header: 'ETH spent (30D)',
-    maxWidth: 110,
-    id: 'eth_spent',
-    accessor: d => d.ethSpent,
-    Cell: ({value}) => <div className='overview-ethspent'>{`Ξ${millify(value, 2)}`}</div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(a, b)
-  }, {
-    Header: 'Dev activity (30D)',
-    id: 'github_activity',
-    maxWidth: 110,
-    accessor: d => d.averageDevActivity,
-    Cell: ({value}) => <div className='overview-devactivity'>{value ? parseFloat(value).toFixed(2) : ''}</div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(a, b)
-  }, {
-    Header: 'Daily active addresses (30D)',
-    id: 'daily_active_addresses',
-    maxWidth: 110,
-    accessor: d => d.averageDailyActiveAddresses,
-    Cell: ({value}) => <div className='overview-activeaddresses'>{value ? formatNumber(value) : ''}</div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(a, b)
-  }, {
-    Header: 'Signals',
-    id: 'signals',
-    minWidth: 64,
-    accessor: d => ({
-      warning: d.signals && d.signals.length > 0,
-      description: d.signals[0] && d.signals[0].description
-    }),
-    Cell: ({value: {warning, description}}) => <div className='cell-signals'>
-      {warning &&
-        <Popup basic
-          position='right center'
-          hideOnScroll
-          wide
-          inverted
-          trigger={
-            <div style={{width: '100%', height: '100%'}}>
-              <Icon color='orange' fitted name='warning sign' />
-            </div>}
-          on='hover'>
-          {description}
-        </Popup>}
-    </div>,
-    sortable: true,
-    sortMethod: (a, b) => simpleSort(a.warning, b.warning)
-  }]
+  ]
 
   return (
     <div className='page projects-table'>
@@ -304,24 +365,25 @@ const ProjectsTable = ({
               handleSetCategory={handleSetCategory}
               allMarketSegments={allMarketSegments}
               user={user}
-              />
+            />
           </div>
         </div>
         <Panel>
           <div className='row projects-search-row'>
             <div className='datatables-info'>
-              {false && <label>
-                Showing {
-                  (tableInfo.visibleItems !== 0)
+              {false && (
+                <label>
+                  Showing{' '}
+                  {tableInfo.visibleItems !== 0
                     ? (tableInfo.page - 1) * tableInfo.pageSize + 1
-                    : 0
-                } to {
-                  tableInfo.page * tableInfo.pageSize
-                } of {tableInfo.visibleItems}
-                &nbsp;entries&nbsp;
-                {tableInfo.visibleItems !== projects.length &&
-                  `(filtered from ${projects.length} total entries)`}
-              </label>}
+                    : 0}{' '}
+                  to {tableInfo.page * tableInfo.pageSize} of{' '}
+                  {tableInfo.visibleItems}
+                  &nbsp;entries&nbsp;
+                  {tableInfo.visibleItems !== projects.length &&
+                    `(filtered from ${projects.length} total entries)`}
+                </label>
+              )}
             </div>
             <div className='datatables-filter'>
               <label>
@@ -347,9 +409,18 @@ const ProjectsTable = ({
             data={projects}
             columns={filterColumnsByTableSection(currentTableSection, columns)}
             filtered={getFilter(search)}
-            LoadingComponent={({ className, loading, loadingText, ...rest }) => (
+            LoadingComponent={({
+              className,
+              loading,
+              loadingText,
+              ...rest
+            }) => (
               <div
-                className={classnames('-loading', { '-active': loading }, className)}
+                className={classnames(
+                  '-loading',
+                  { '-active': loading },
+                  className
+                )}
                 {...rest}
               >
                 <div className='-loading-inner'>
@@ -366,7 +437,9 @@ const ProjectsTable = ({
                     handleOriginal()
                   }
                   if (rowInfo && rowInfo.original && rowInfo.original.ticker) {
-                    history.push(`/projects/${rowInfo.original.coinmarketcapId}`)
+                    history.push(
+                      `/projects/${rowInfo.original.coinmarketcapId}`
+                    )
                   }
                 }
               }

@@ -1,0 +1,20 @@
+.app-menu-popup {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-menu-popup a {
+  text-decoration: none;
+  text-transform: uppercase;
+  border-bottom: none;
+  padding: 9px 0;
+  outline: none;
+  position: relative;
+  color: #3d4450;
+  transition: color 0.1s;
+  font-weight: bold;
+}
+
+.app-menu-popup .icon {
+  margin: 0 12px -3px -1px;
+}

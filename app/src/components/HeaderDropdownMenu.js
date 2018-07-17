@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Popup, Divider } from 'semantic-ui-react'
+import { Button, Popup, Divider, Icon } from 'semantic-ui-react'
 import { NavLink, Link } from 'react-router-dom'
 import FeedbackBtn from './FeedbackBtn'
 import './HeaderDropdownMenu.css'
@@ -12,21 +12,27 @@ const HeaderDesktopDropMenu = ({
     return (
       <div className='user-auth-control'>
         <FeedbackBtn />
-        <Popup basic wide trigger={
-          <Button circular icon='user' />
-        } on='click'>
-          <div className='dropdown-menu'>
+        <Popup
+          mouseLeaveDelay={2000}
+          basic
+          wide
+          trigger={
+            <Button circular icon='user' />
+          } on='hover'>
+          <div className='app-menu-popup'>
             <Link
-              className='ui basic button'
+              className='app-menu__page-link'
               to={'/roadmap'}>
+              <Icon name='map' />
               Roadmap
             </Link>
-            <Divider />
             <Link
-              className='ui basic button'
+              className='app-menu__page-link'
               to={'/account'}>
+              <Icon name='setting' />
               Account Settings
             </Link>
+            <Divider />
             <Button
               className='logoutBtn'
               color='orange'

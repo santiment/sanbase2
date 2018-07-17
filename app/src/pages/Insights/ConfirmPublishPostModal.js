@@ -1,10 +1,7 @@
 import React, { Fragment } from 'react'
 import Raven from 'raven-js'
 import { Button, Modal } from 'semantic-ui-react'
-import {
-  compose,
-  withState
-} from 'recompose'
+import { compose, withState } from 'recompose'
 import { graphql } from 'react-apollo'
 import { allInsightsGQL } from './currentPollGQL'
 import gql from 'graphql-tag'
@@ -22,23 +19,18 @@ const ConfirmPublishPostModal = ({
   isPending = false
 }) => {
   return (
-    <Modal
-      defaultOpen
-      dimmer={'blurring'}
-      onClose={toggleForm} closeIcon>
-      {isSuccess
-        ? <Modal.Content>
+    <Modal defaultOpen dimmer={'blurring'} onClose={toggleForm} closeIcon>
+      {isSuccess ? (
+        <Modal.Content>
           <p>Post was published.</p>
         </Modal.Content>
-        : <Fragment>
+      ) : (
+        <Fragment>
           <Modal.Content>
             <p>Do you want to publish this insight?</p>
           </Modal.Content>
           <Modal.Actions>
-            <Button
-              basic
-              onClick={toggleForm}
-            >
+            <Button basic onClick={toggleForm}>
               Cancel
             </Button>
             <Button
@@ -46,7 +38,7 @@ const ConfirmPublishPostModal = ({
               onClick={() => {
                 onPending(true)
                 publishInsight({
-                  variables: {id: parseInt(publishInsightId, 10)},
+                  variables: { id: parseInt(publishInsightId, 10) },
                   optimisticResponse: {
                     __typename: 'Mutation',
                     publishInsight: {
@@ -57,33 +49,36 @@ const ConfirmPublishPostModal = ({
                   update: (proxy, { data: { publishInsight } }) => {
                     const data = proxy.readQuery({ query: allInsightsGQL })
                     const newPosts = [...data.allInsights]
-                    const postIndex = newPosts.findIndex(post => post.id === publishInsight.id)
+                    const postIndex = newPosts.findIndex(
+                      post => post.id === publishInsight.id
+                    )
                     data.allInsights = [
                       ...newPosts.slice(0, postIndex),
                       {
                         ...newPosts[postIndex],
                         readyState: 'published'
                       },
-                      ...newPosts.slice(postIndex + 1)]
+                      ...newPosts.slice(postIndex + 1)
+                    ]
                     proxy.writeQuery({ query: allInsightsGQL, data })
                   }
                 })
-                .then(data => {
-                  onSuccess(true)
-                  onPending(false)
-                })
-                .catch(e => {
-                  Raven.captureException(e)
-                  onError(true)
-                  onPending(false)
-                })
+                  .then(data => {
+                    onSuccess(true)
+                    onPending(false)
+                  })
+                  .catch(e => {
+                    Raven.captureException(e)
+                    onError(true)
+                    onPending(false)
+                  })
               }}
             >
               {isPending ? 'Waiting...' : 'Publish'}
             </Button>
           </Modal.Actions>
         </Fragment>
-      }
+      )}
     </Modal>
   )
 }

@@ -4,12 +4,9 @@ import {
   APP_LAUNCHED
 } from './types'
 
-export const showNotification = (
-  payload = { message: 'Empty message' }
-) => {
-  const newPayload = (typeof payload === 'string')
-    ? { message: payload }
-    : payload
+export const showNotification = (payload = { message: 'Empty message' }) => {
+  const newPayload =
+    typeof payload === 'string' ? { message: payload } : payload
 
   return {
     type: SHOW_NOTIFICATION,

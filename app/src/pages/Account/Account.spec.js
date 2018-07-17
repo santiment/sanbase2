@@ -16,9 +16,7 @@ const userWithEmail = {
 
 describe('Account container', () => {
   xit('it should render correctly', () => {
-    const account = shallow(<Account
-      user={userWithoutEmail}
-      loading={false} />)
+    const account = shallow(<Account user={userWithoutEmail} loading={false} />)
     expect(toJson(account)).toMatchSnapshot()
   })
 
@@ -32,7 +30,9 @@ describe('Account container', () => {
         beforeEach(() => {
           AccountWrapper = shallow(<Account user={{}} />)
           AccountWrapperInstance = AccountWrapper.instance()
-          setFormStatus = AccountWrapperInstance.setFormStatus(AccountWrapperInstance.emailFormKey)
+          setFormStatus = AccountWrapperInstance.setFormStatus(
+            AccountWrapperInstance.emailFormKey
+          )
           emailForm = AccountWrapperInstance.emailFormKey
         })
         it('should change PENDING status ', () => {
@@ -81,7 +81,9 @@ describe('Account container', () => {
         beforeEach(() => {
           AccountWrapper = shallow(<Account user={{}} />)
           AccountWrapperInstance = AccountWrapper.instance()
-          setFormStatus = AccountWrapperInstance.setFormStatus(AccountWrapperInstance.usernameFormKey)
+          setFormStatus = AccountWrapperInstance.setFormStatus(
+            AccountWrapperInstance.usernameFormKey
+          )
           usernameForm = AccountWrapperInstance.usernameFormKey
         })
         it('should change PENDING status ', () => {
@@ -153,19 +155,27 @@ describe('Account container', () => {
       })
       it('should render email error message', () => {
         wrapper.setState({ emailForm: { ERROR: true } })
-        expect(wrapper.find('.account-message__email_error').exists()).toBe(true)
+        expect(wrapper.find('.account-message__email_error').exists()).toBe(
+          true
+        )
       })
       it('should render email success message', () => {
         wrapper.setState({ emailForm: { SUCCESS: true } })
-        expect(wrapper.find('.account-message__email_success').exists()).toBe(true)
+        expect(wrapper.find('.account-message__email_success').exists()).toBe(
+          true
+        )
       })
       it('should render username error message', () => {
         wrapper.setState({ usernameForm: { ERROR: true } })
-        expect(wrapper.find('.account-message__username_error').exists()).toBe(true)
+        expect(wrapper.find('.account-message__username_error').exists()).toBe(
+          true
+        )
       })
       it('should render username success message', () => {
         wrapper.setState({ usernameForm: { SUCCESS: true } })
-        expect(wrapper.find('.account-message__username_success').exists()).toBe(true)
+        expect(
+          wrapper.find('.account-message__username_success').exists()
+        ).toBe(true)
       })
     })
   })

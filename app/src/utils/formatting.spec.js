@@ -127,17 +127,22 @@ describe('formatNumber', () => {
 
 describe('millify', () => {
   it('identifies 0', () => expect(millify(0)).toEqual('0'))
-  it('identifies very small numbers', () => expect(millify(4.1e-16)).toEqual('0'))
+  it('identifies very small numbers', () =>
+    expect(millify(4.1e-16)).toEqual('0'))
   it('identifies hundreds', () => expect(millify(100)).toEqual('100'))
   it('identifies thousands', () => expect(millify(1000)).toEqual('1K'))
   it('identifies millions', () => expect(millify(1000000)).toEqual('1M'))
   it('identifies billions', () => expect(millify(1000000000)).toEqual('1B'))
   it('identifies trillions', () => expect(millify(1000000000000)).toEqual('1T'))
-  it('identifies bigger than trillions', () => expect(millify(10000000000000000)).toEqual('10000T'))
+  it('identifies bigger than trillions', () =>
+    expect(millify(10000000000000000)).toEqual('10000T'))
   it('handlea negative numbers', () => expect(millify(-2000)).toEqual('-2K'))
 
-  it('defaults to 0 decimal places for millified integers', () => expect(millify(2000)).toEqual('2K'))
+  it('defaults to 0 decimal places for millified integers', () =>
+    expect(millify(2000)).toEqual('2K'))
   it('defaults to 1 decimal place', () => expect(millify(2500)).toEqual('2.5K'))
-  it('returns desired decimal places', () => expect(millify(3333, 3)).toEqual('3.333K'))
-  it('trims insignificant zeroes', () => expect(millify(1201, 2)).toEqual('1.2K'))
+  it('returns desired decimal places', () =>
+    expect(millify(3333, 3)).toEqual('3.333K'))
+  it('trims insignificant zeroes', () =>
+    expect(millify(1201, 2)).toEqual('1.2K'))
 })

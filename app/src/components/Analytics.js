@@ -40,7 +40,7 @@ const getChartDataFromHistory = (data, label, chart = {}) => {
       datalabels: {
         display: false
       }
-    }]
+    ]
   }
 }
 
@@ -110,13 +110,13 @@ const getChartOptions = (label) => ({
 
 const renderData = (data, label, formatData = null) => {
   if (data.loading) {
-    return ('Loading ...')
+    return 'Loading ...'
   }
   if (data.error) {
-    return ('Server error. Try later...')
+    return 'Server error. Try later...'
   }
   if (!data.loading && data.items.length === 0) {
-    return ('No data')
+    return 'No data'
   }
   const value = data.items[data.items.length - 1][`${label}`]
   if (formatData) {
@@ -158,22 +158,23 @@ const Analytics = ({
       <div className='analytics-trend-row'>
         <div className='analytics-trend-info-label'>
           {show}
-          {showInfo &&
-          <div className='analytics-trend-info'>
-            <div
-              className='analytics-trend-details'
-              style={{color: borderColor}}
-            >
-              {index
-              ? (data.items[index] || {})[`${label}`]
-              : renderData(data, label, formatData)}
+          {showInfo && (
+            <div className='analytics-trend-info'>
+              <div
+                className='analytics-trend-details'
+                style={{ color: borderColor }}
+              >
+                {index
+                  ? (data.items[index] || {})[`${label}`]
+                  : renderData(data, label, formatData)}
+              </div>
             </div>
-          </div>}
+          )}
         </div>
       </div>
       <div className='analytics-trend-row'>
         <div className='analytics-trend-chart'>
-          {chart.type === 'bar' &&
+          {chart.type === 'bar' && (
             <ResponsiveContainer>
               <BarChart
                 syncId={syncId}
@@ -187,8 +188,9 @@ const Analytics = ({
                   tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
                   dataKey='x' height={50} />}
               </BarChart>
-            </ResponsiveContainer>}
-          {chart.type === 'line' &&
+            </ResponsiveContainer>
+          )}
+          {chart.type === 'line' && (
             <ResponsiveContainer>
               <LineChart
                 syncId='anyId'
@@ -206,23 +208,25 @@ const Analytics = ({
                   onMouseDown={(data, e) => {
                     console.log(data, e)
                   }}
-                  strokeWidth={2} />
-                {(referenceLine || {}).y &&
-                <ReferenceLine
-                  strokeDasharray='3 3'
-                  stroke='black'
-                  y={referenceLine.y}
-                  label={referenceLine.label} />}
+                  strokeWidth={2}
+                />
+                {(referenceLine || {}).y && (
+                  <ReferenceLine
+                    strokeDasharray='3 3'
+                    stroke='black'
+                    y={referenceLine.y}
+                    label={referenceLine.label}
+                  />
+                )}
               </LineChart>
-            </ResponsiveContainer>}
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-const enhance = compose(
-  withState('index', 'setIndex', null)
-)
+const enhance = compose(withState('index', 'setIndex', null))
 
 export default enhance(Analytics)

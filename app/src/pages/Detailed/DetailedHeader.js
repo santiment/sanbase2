@@ -1,5 +1,8 @@
 import React from 'react'
-import { createSkeletonProvider, createSkeletonElement } from '@trainline/react-skeletor'
+import {
+  createSkeletonProvider,
+  createSkeletonElement
+} from '@trainline/react-skeletor'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import { graphql } from 'react-apollo'
@@ -31,10 +34,7 @@ const DetailedHeader = ({
       <div className='detailed-project-about'>
         <div className='detailed-name'>
           <H1>{project.name}</H1>
-          <ProjectIcon
-            name={project.name || ''}
-            size={22}
-          />
+          <ProjectIcon name={project.name || ''} size={22} />
           <DIV className='detailed-ticker-name'>
             {(project.ticker || '').toUpperCase()}
           </DIV>
@@ -66,8 +66,8 @@ const DetailedHeader = ({
         <div className='detailed-price-description'>Today's changes</div>
         <div className='detailed-price-usd'>
           {formatNumber(project.priceUsd, { currency: 'USD' })}&nbsp;
-          {!loading && project &&
-            <PercentChanges changes={project.percentChange24h} />}
+          {!loading &&
+            project && <PercentChanges changes={project.percentChange24h} />}
         </div>
         <div className='detailed-price-btc'>
           {formatCryptoCurrency('BTC', formatBTC(project.priceBtc))}
@@ -79,7 +79,7 @@ const DetailedHeader = ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    handleFollow: ({projectId, actionType}) => {
+    handleFollow: ({ projectId, actionType }) => {
       dispatch({
         type: 'TOGGLE_FOLLOW',
         payload: {
@@ -109,20 +109,19 @@ export default compose(
       color: '#bdc3c7'
     })
   ),
-  connect(
-    undefined,
-    mapDispatchToProps
-  ),
+  connect(undefined, mapDispatchToProps),
   graphql(followedProjectsGQL, {
     name: 'FollowedProjects',
-    options: ({isLoggedIn}) => ({skip: !isLoggedIn}),
-    props: ({FollowedProjects, ownProps}) => {
+    options: ({ isLoggedIn }) => ({ skip: !isLoggedIn }),
+    props: ({ FollowedProjects, ownProps }) => {
       const { followedProjects = [] } = FollowedProjects
       const { project = {} } = ownProps
       return {
-        isFollowed: followedProjects && followedProjects.some(val => {
-          return val.id === project.id
-        })
+        isFollowed:
+          followedProjects &&
+          followedProjects.some(val => {
+            return val.id === project.id
+          })
       }
     }
   })

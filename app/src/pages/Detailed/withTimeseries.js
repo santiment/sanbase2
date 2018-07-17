@@ -17,7 +17,9 @@ const makeProps = (name, chartjs = {}) => props => {
   const Data = props[name] || {}
   return {
     [name]: {
-      dataset: chartjs.dataset ? makeDataset(chartjs.dataset, Data[name]) : undefined,
+      dataset: chartjs.dataset
+        ? makeDataset(chartjs.dataset, Data[name])
+        : undefined,
       scale: chartjs.scale || undefined,
       loading: Data.loading || false,
       error: Data.error || false,
@@ -36,7 +38,7 @@ const makeOptions = (name, options) => props => {
   }
 }
 
-const makeRequestFromTimeSeries = ({query, name, options, chartjs}) => {
+const makeRequestFromTimeSeries = ({ query, name, options, chartjs }) => {
   return graphql(query, {
     name,
     props: makeProps(name, chartjs),
@@ -47,7 +49,7 @@ const makeRequestFromTimeSeries = ({query, name, options, chartjs}) => {
 const withTimeseries = (...timeseries) => WrappedComponent => {
   return compose(
     ...timeseries.reduce((acc, item) => {
-      return [(makeRequestFromTimeSeries(item)), ...acc]
+      return [makeRequestFromTimeSeries(item), ...acc]
     }, [])
   )(WrappedComponent)
 }

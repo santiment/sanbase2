@@ -47,9 +47,7 @@ const LoadableInsight = Loadable({
 
 const LoadableInsight = Loadable({
   loader: () => import('./pages/Insights/Insight'),
-  loading: () => (
-    <PageLoader />
-  )
+  loading: () => <PageLoader />
 })
 
 const LoadableInsightsNew = Loadable({

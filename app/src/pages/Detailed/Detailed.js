@@ -173,7 +173,7 @@ export const Detailed = ({
     ? ethSpentOverTimeByErc20Projects
     : ethSpentOverTime
 
-  const projectContainerChart = project &&
+  const projectContainerChart = project && (
     <ProjectChartContainer
       routerHistory={history}
       location={location}
@@ -182,7 +182,9 @@ export const Detailed = ({
       price={price}
       github={github}
       burnRate={burnRate}
-      tokenDecimals={Project.project ? Project.project.tokenDecimals : undefined}
+      tokenDecimals={
+        Project.project ? Project.project.tokenDecimals : undefined
+      }
       transactionVolume={transactionVolume}
       ethSpentOverTime={_ethSpentOverTime}
       dailyActiveAddresses={dailyActiveAddresses}
@@ -203,9 +205,10 @@ export const Detailed = ({
   return (
     <div className='page detailed'>
       <Helmet>
-        <title>{Project.loading
-          ? 'SANbase...'
-          : `${Project.project.ticker} project page`}
+        <title>
+          {Project.loading
+            ? 'SANbase...'
+            : `${Project.project.ticker} project page`}
         </title>
       </Helmet>
       <DetailedHeader {...Project} />
@@ -213,60 +216,61 @@ export const Detailed = ({
         ? <Panel zero>{projectContainerChart}</Panel>
         : <div>{projectContainerChart}</div>}
       <div className='information'>
-        <PanelBlock
-          isLoading={Project.loading}
-          title='General Info'>
+        <PanelBlock isLoading={Project.loading} title='General Info'>
           <GeneralInfoBlock {...Project.project} />
         </PanelBlock>
-        <PanelBlock
-          isLoading={Project.loading}
-          title='Financials'>
+        <PanelBlock isLoading={Project.loading} title='Financials'>
           <FinancialsBlock {...Project.project} />
         </PanelBlock>
       </div>
       <div className='information'>
-        { project.ticker &&
-        project.ticker.toLowerCase() === 'eth' &&
-        <EthereumBlock
-          project={project}
-          loading={Project.loading} />}
+        {project.ticker &&
+          project.ticker.toLowerCase() === 'eth' && (
+            <EthereumBlock project={project} loading={Project.loading} />
+          )}
         {!exchangeFundFlow.loading &&
-          exchangeFundFlow.items &&
-          <PanelBlock
-            isLoading={false}
-            title='Exchange Fund Flows'>
-            <div>
-              {exchangeFundFlow.items.map((item, index) => (
-                <div key={index}>
-                  { item }
-                </div>
-              ))}
-            </div>
-          </PanelBlock>}
+          exchangeFundFlow.items && (
+            <PanelBlock isLoading={false} title='Exchange Fund Flows'>
+              <div>
+                {exchangeFundFlow.items.map((item, index) => (
+                  <div key={index}>{item}</div>
+                ))}
+              </div>
+            </PanelBlock>
+          )}
       </div>
       <div className='information'>
-        {isDesktop && project.isERC20 &&
-        project.ethTopTransactions &&
-        project.ethTopTransactions.length > 0 &&
-        <PanelBlock
-          isLoading={Project.loading}
-          title='Top ETH Transactions'>
-          <div>
-            {project.ethTopTransactions &&
-            project.ethTopTransactions.map((transaction, index) => (
-              <div className='top-eth-transaction' key={index}>
-                <div className='top-eth-transaction__hash'>
-                  <a href={`https://etherscan.io/tx/${transaction.trxHash}`}>{transaction.trxHash}</a>
-                </div>
-                <div>
-                  {millify(transaction.trxValue, 2)}
-                  &nbsp; | &nbsp;
-                  {moment(transaction.datetime).fromNow()}
-                </div>
+        {isDesktop &&
+          project.isERC20 &&
+          project.ethTopTransactions &&
+          project.ethTopTransactions.length > 0 && (
+            <PanelBlock
+              isLoading={Project.loading}
+              title='Top ETH Transactions'
+            >
+              <div>
+                {project.ethTopTransactions &&
+                  project.ethTopTransactions.map((transaction, index) => (
+                    <div className='top-eth-transaction' key={index}>
+                      <div className='top-eth-transaction__hash'>
+                        <a
+                          href={`https://etherscan.io/tx/${
+                            transaction.trxHash
+                          }`}
+                        >
+                          {transaction.trxHash}
+                        </a>
+                      </div>
+                      <div>
+                        {millify(transaction.trxValue, 2)}
+                        &nbsp; | &nbsp;
+                        {moment(transaction.datetime).fromNow()}
+                      </div>
+                    </div>
+                  ))}
               </div>
-            ))}
-          </div>
-        </PanelBlock>}
+            </PanelBlock>
+          )}
       </div>
     </div>
   )
@@ -284,9 +288,7 @@ const mapStateToProps = state => {
 }
 
 const enhance = compose(
-  connect(
-    mapStateToProps
-  ),
+  connect(mapStateToProps),
   withApollo,
   withState('chartVars', 'changeChartVars', {
     from: undefined,
@@ -297,7 +299,7 @@ const enhance = compose(
   }),
   graphql(projectBySlugGQL, {
     name: 'Project',
-    props: ({Project}) => ({
+    props: ({ Project }) => ({
       Project: {
         loading: Project.loading,
         empty: !Project.hasOwnProperty('project'),
@@ -309,14 +311,23 @@ const enhance = compose(
         }
       }
     }),
-    options: ({match}) => {
-      const to = moment().endOf('day').utc().format()
-      const fromOverTime = moment().subtract(2, 'years').utc().format()
+    options: ({ match }) => {
+      const to = moment()
+        .endOf('day')
+        .utc()
+        .format()
+      const fromOverTime = moment()
+        .subtract(2, 'years')
+        .utc()
+        .format()
       const interval = moment(to).diff(fromOverTime, 'days') > 300 ? '7d' : '1d'
       return {
         variables: {
           slug: match.params.slug,
-          from: moment().subtract(30, 'days').utc().format(),
+          from: moment()
+            .subtract(30, 'days')
+            .utc()
+            .format(),
           to,
           fromOverTime,
           interval
@@ -326,8 +337,8 @@ const enhance = compose(
   }),
   graphql(TwitterHistoryGQL, {
     name: 'TwitterHistory',
-    options: ({timeFilter, Project}) => {
-      const {from, to} = timeFilter
+    options: ({ timeFilter, Project }) => {
+      const { from, to } = timeFilter
       const ticker = Project.project.ticker
       return {
         skip: !ticker,
@@ -342,8 +353,8 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'EthPrice',
-    options: ({timeFilter}) => {
-      const {from, to} = timeFilter
+    options: ({ timeFilter }) => {
+      const { from, to } = timeFilter
       return {
         skip: !from,
         variables: {
@@ -357,7 +368,7 @@ const enhance = compose(
   }),
   graphql(TwitterDataGQL, {
     name: 'TwitterData',
-    options: ({Project}) => {
+    options: ({ Project }) => {
       const ticker = Project.project.ticker
       return {
         skip: !ticker,
@@ -370,8 +381,8 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
-    options: ({timeFilter, Project}) => {
-      const {from, to} = timeFilter
+    options: ({ timeFilter, Project }) => {
+      const { from, to } = timeFilter
       const ticker = Project.project.ticker
       return {
         skip: !from || !ticker,
@@ -404,8 +415,8 @@ const enhance = compose(
   }),
   graphql(GithubActivityGQL, {
     name: 'GithubActivity',
-    options: ({timeFilter, Project}) => {
-      const {from, to} = timeFilter
+    options: ({ timeFilter, Project }) => {
+      const { from, to } = timeFilter
       const ticker = Project.project.ticker
       return {
         skip: !from || !ticker,
@@ -454,8 +465,8 @@ const enhance = compose(
   }),
   graphql(EthSpentOverTimeByErc20ProjectsGQL, {
     name: 'EthSpentOverTimeByErc20Projects',
-    options: ({timeFilter, Project}) => {
-      const {from, to} = timeFilter
+    options: ({ timeFilter, Project }) => {
+      const { from, to } = timeFilter
       const ticker = Project.project.ticker
       return {
         skip: !from || ticker !== 'ETH',
@@ -470,8 +481,8 @@ const enhance = compose(
   }),
   graphql(EmojisSentimentGQL, {
     name: 'EmojisSentiment',
-    options: ({timeFilter, hasPremium}) => {
-      const {from, to} = timeFilter
+    options: ({ timeFilter, hasPremium }) => {
+      const { from, to } = timeFilter
       return {
         skip: !from || !hasPremium,
         errorPolicy: 'all',
@@ -501,15 +512,16 @@ const enhance = compose(
   }),
   graphql(AllInsightsByTagGQL, {
     name: 'AllInsights',
-    props: ({AllInsights}) => ({
+    props: ({ AllInsights }) => ({
       Insights: {
         loading: AllInsights.loading,
         error: AllInsights.error || false,
-        items: (AllInsights.allInsightsByTag || [])
-          .filter(insight => insight.readyState === 'published')
+        items: (AllInsights.allInsightsByTag || []).filter(
+          insight => insight.readyState === 'published'
+        )
       }
     }),
-    options: ({isLoggedIn, match, Project: { project = {} }}) => {
+    options: ({ isLoggedIn, match, Project: { project = {} } }) => {
       const { ticker } = project
       return {
         skip: !ticker || !isLoggedIn,

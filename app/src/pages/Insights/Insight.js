@@ -3,10 +3,7 @@ import { Redirect, withRouter } from 'react-router-dom'
 import { connect } from 'react-redux'
 import Raven from 'raven-js'
 import debounce from 'lodash.debounce'
-import {
-  compose,
-  pure
-} from 'recompose'
+import { compose, pure } from 'recompose'
 import moment from 'moment'
 import { Button, Icon } from 'semantic-ui-react'
 import gql from 'graphql-tag'
@@ -33,7 +30,8 @@ const H2 = createSkeletonElement('h2', 'pending-home')
 const Span = createSkeletonElement('span', 'pending-home')
 const Div = createSkeletonElement('div', 'pending-home')
 
-const isPostADraftByDifferentUser = (post, user) => post.readyState === 'draft' && post.user.id !== user.data.id
+const isPostADraftByDifferentUser = (post, user) =>
+  post.readyState === 'draft' && post.user.id !== user.data.id
 
 class Insight extends Component {
   constructor (props) {
@@ -49,13 +47,14 @@ class Insight extends Component {
     const text = (nextProps.Post.post || {}).text
     if (text) {
       this.setState({
-        content: createEditorState(convertToRaw(mediumDraftImporter(text || '')))
+        content: createEditorState(
+          convertToRaw(mediumDraftImporter(text || ''))
+        )
       })
     }
   }
 
-  // eslint-disable-next-line
-  onInsightContentClick = ({target}) => {
+  onInsightContentClick = ({ target }) => {
     if (target.tagName.toUpperCase() !== 'IMG') return
     this.setState(prevState => ({
       ...prevState,
@@ -63,7 +62,6 @@ class Insight extends Component {
     }))
   }
 
-  // eslint-disable-next-line
   onInsightImageModalClose = () => {
     this.setState({
       ...this.state,
@@ -72,7 +70,8 @@ class Insight extends Component {
   }
 
   render () {
-    const {history,
+    const {
+      history,
       Post = {
         loading: true,
         post: null
@@ -84,35 +83,43 @@ class Insight extends Component {
         data: {}
       }
     } = this.props
-    const {post = {
-      id: null,
-      title: '',
-      text: '',
-      createdAt: null,
-      user: {
-        username: null
-      },
-      readyState: 'draft',
-      votedAt: null,
-      votes: {}
-    }} = Post
-    const {content, modalPicSrc} = this.state
+    const {
+      post = {
+        id: null,
+        title: '',
+        text: '',
+        createdAt: null,
+        user: {
+          username: null
+        },
+        readyState: 'draft',
+        votedAt: null,
+        votes: {}
+      }
+    } = Post
+    const { content, modalPicSrc } = this.state
     if (!user.isLoading && !user.token) {
-      return (<div className='insight'>
-        <InsightsLayout
-          isLogin={false}
-          title={`SANbase...`}>
-          <div className='insight-login-request'>
-            <h2>You need to have SANbase account, if you want to see insights.</h2>
-            <Button
-              onClick={() =>
-                history.push(`/login?redirect_to=${history.location.pathname}`)}
-              color='green'>
-              <Icon name='checkmark' /> Login or Sign up
-            </Button>
-          </div>
-        </InsightsLayout>
-      </div>)
+      return (
+        <div className='insight'>
+          <InsightsLayout isLogin={false} title={`SANbase...`}>
+            <div className='insight-login-request'>
+              <h2>
+                You need to have SANbase account, if you want to see insights.
+              </h2>
+              <Button
+                onClick={() =>
+                  history.push(
+                    `/login?redirect_to=${history.location.pathname}`
+                  )
+                }
+                color='green'
+              >
+                <Icon name='checkmark' /> Login or Sign up
+              </Button>
+            </div>
+          </InsightsLayout>
+        </div>
+      )
     }
 
     if (!post || isPostADraftByDifferentUser(post, user)) {
@@ -121,34 +128,46 @@ class Insight extends Component {
 
     return (
       <div className='insight'>
-        <InsightImageModal pic={modalPicSrc} onInsightImageModalClose={this.onInsightImageModalClose} />
+        <InsightImageModal
+          pic={modalPicSrc}
+          onInsightImageModalClose={this.onInsightImageModalClose}
+        />
         <InsightsLayout
           isLogin={!!user}
-          title={`SANbase: Insight - ${post.title}`}>
+          title={`SANbase: Insight - ${post.title}`}
+        >
           <Panel className='insight-panel'>
             <div className='insight-panel-header'>
-              <H2>
-                {post.title}
-              </H2>
-              {post.readyState === 'draft' &&
+              <H2>{post.title}</H2>
+              {post.readyState === 'draft' && (
                 <Button
                   basic
                   onClick={() => {
-                    history.push(`/insights/update/${post.id}`, {post})
+                    history.push(`/insights/update/${post.id}`, { post })
                   }}
                 >
                   edit
-                </Button>}
+                </Button>
+              )}
             </div>
             <Span>
-              by {post.user.username
-                ? <a href={`/insights/users/${post.user.id}`}>{post.user.username}</a>
-                : 'unknown author'}
+              by{' '}
+              {post.user.username ? (
+                <a href={`/insights/users/${post.user.id}`}>
+                  {post.user.username}
+                </a>
+              ) : (
+                'unknown author'
+              )}
             </Span>
             &nbsp;&#8226;&nbsp;
-            {post.createdAt &&
-              <Span>{moment(post.createdAt).format('MMM DD, YYYY')}</Span>}
-            <Div className='insight-content' style={{ marginTop: '1em' }} onClick={this.onInsightContentClick}
+            {post.createdAt && (
+              <Span>{moment(post.createdAt).format('MMM DD, YYYY')}</Span>
+            )}
+            <Div
+              className='insight-content'
+              style={{ marginTop: '1em' }}
+              onClick={this.onInsightContentClick}
             >
               <Editor
                 editorEnabled={false}
@@ -163,24 +182,25 @@ class Insight extends Component {
                   if (post.votedAt) {
                     debounce((postId, unvote) => {
                       unvote({
-                        variables: {postId: parseInt(postId, 10)}
+                        variables: { postId: parseInt(postId, 10) }
                       })
-                      .then(() => Post.refetch())
-                      .catch(e => Raven.captureException(e))
+                        .then(() => Post.refetch())
+                        .catch(e => Raven.captureException(e))
                     }, 100)(post.id, unvotePost)
                   } else {
                     debounce((postId, vote) => {
                       vote({
-                        variables: {postId: parseInt(postId, 10)}
+                        variables: { postId: parseInt(postId, 10) }
                       })
-                      .then(() => Post.refetch())
-                      .catch(e => Raven.captureException(e))
+                        .then(() => Post.refetch())
+                        .catch(e => Raven.captureException(e))
                     }, 100)(post.id, votePost)
                   }
                 }}
                 balance={balance}
                 liked={!!post.votedAt}
-                votes={(post.votes || {}).totalSanVotes || 0} />
+                votes={(post.votes || {}).totalSanVotes || 0}
+              />
             </div>
           </Panel>
         </InsightsLayout>
@@ -191,9 +211,7 @@ class Insight extends Component {
 
 export const postGQL = gql`
   query postGQL($id: ID!) {
-    post(
-      id: $id,
-    ){
+    post(id: $id) {
       id
       title
       text
@@ -207,8 +225,8 @@ export const postGQL = gql`
       }
       votedAt
       votes {
-         totalSanVotes,
-         totalVotes
+        totalSanVotes
+        totalVotes
       }
     }
   }
@@ -223,12 +241,10 @@ const mapStateToProps = state => {
 
 const enhance = compose(
   withRouter,
-  connect(
-    mapStateToProps
-  ),
+  connect(mapStateToProps),
   graphql(postGQL, {
     name: 'Post',
-    options: ({match}) => ({
+    options: ({ match }) => ({
       skip: !match.params.insightId,
       errorPolicy: 'all',
       pollInterval: POLLING_INTERVAL,

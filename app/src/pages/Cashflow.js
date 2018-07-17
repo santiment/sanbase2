@@ -288,4 +288,4 @@ const enhance = compose(
   pure
 )
 
-export default withProjectsData({type: 'erc20'})(Cashflow)
+export default withProjectsData({ type: 'erc20' })(Cashflow)

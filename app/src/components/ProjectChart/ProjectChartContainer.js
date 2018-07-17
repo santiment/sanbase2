@@ -43,7 +43,9 @@ Chart.controllers.LineWithLine = Chart.controllers.line.extend({
       const activePoint = this.chart.tooltip._active[0]
       const x = activePoint.tooltipPosition().x
       const scale = getYAxisScale(this.chart.scales)
-      if (!scale) { return }
+      if (!scale) {
+        return
+      }
       const topY = scale.top
       const bottomY = scale.bottom
 
@@ -62,7 +64,7 @@ Chart.controllers.LineWithLine = Chart.controllers.line.extend({
 class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
-    const shareableState = ((shareable) => {
+    const shareableState = (shareable => {
       Object.keys(shareable).forEach(key => {
         shareable[`${key}`] = shareable[key] === 'true'
       })
@@ -106,7 +108,7 @@ class ProjectChartContainer extends Component {
   }
 
   setSelected (selected) {
-    this.setState({selected})
+    this.setState({ selected })
   }
 
   setFromTo (from, to) {

@@ -6,10 +6,13 @@ import { EmailLoginVerification } from './EmailLoginVerification.js'
 
 describe('EmailLoginVerification', () => {
   it('it should render correctly', () => {
-    const comp = shallow(<EmailLoginVerification
-      location={{
-        search: '?email=anyemail@sdf.com&token=adskfu2y9f2fejfhe'
-      }} />)
+    const comp = shallow(
+      <EmailLoginVerification
+        location={{
+          search: '?email=anyemail@sdf.com&token=adskfu2y9f2fejfhe'
+        }}
+      />
+    )
     expect(toJson(comp)).toMatchSnapshot()
   })
 })

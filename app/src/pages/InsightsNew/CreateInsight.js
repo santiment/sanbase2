@@ -16,13 +16,13 @@ export class CreateInsight extends React.Component {
     editorState: createEditorState()
   }
 
-  /* eslint-disable no-undef */
   onChange = editorState => {
     this.setState({ editorState })
-    const renderedHTML = sanitizeMediumDraftHtml(mediumDraftExporter(editorState.getCurrentContent()))
+    const renderedHTML = sanitizeMediumDraftHtml(
+      mediumDraftExporter(editorState.getCurrentContent())
+    )
     this.props.changePost(renderedHTML)
   }
-  /* eslint-enable no-undef */
 
   componentDidMount () {
     this.refs.editor.focus()
@@ -43,21 +43,24 @@ export class CreateInsight extends React.Component {
       <Editor
         ref='editor'
         editorState={editorState}
-        sideButtons={[{
-          title: 'Image',
-          component: CustomImageSideButton,
-          props: {
-            onPendingImg: this.props.onPendingImg,
-            onErrorImg: this.props.onErrorImg,
-            onSuccessImg: this.props.onSuccessImg
+        sideButtons={[
+          {
+            title: 'Image',
+            component: CustomImageSideButton,
+            props: {
+              onPendingImg: this.props.onPendingImg,
+              onErrorImg: this.props.onErrorImg,
+              onSuccessImg: this.props.onSuccessImg
+            }
           }
-        }]}
+        ]}
         toolbarConfig={{
           block: ['ordered-list-item', 'unordered-list-item'],
           inline: ['BOLD', 'UNDERLINE', 'hyperlink']
         }}
         placeholder='Write your insights here...'
-        onChange={this.onChange} />
+        onChange={this.onChange}
+      />
     )
   }
 }

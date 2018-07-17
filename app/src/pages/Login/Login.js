@@ -1,9 +1,5 @@
 import React, { Fragment } from 'react'
-import {
-  compose,
-  pure,
-  withState
-} from 'recompose'
+import { compose, pure, withState } from 'recompose'
 import GoogleAnalytics from 'react-ga'
 import { Button, Icon } from 'semantic-ui-react'
 import metamaskIcon from '../../assets/metamask-icon-64-2.png'
@@ -26,22 +22,21 @@ const AuthProviderButton = ({
   return (
     <div className='auth-provider-button'>
       {children}
-      {prevAuthProvider === authProvider &&
+      {prevAuthProvider === authProvider && (
         <div className='last-auth-provider-label'>
           Last login with <Icon name='arrow right' />
-        </div>}
+        </div>
+      )}
     </div>
   )
 }
 
-const AuthProvider = ({children, gotoBack}) => {
+const AuthProvider = ({ children, gotoBack }) => {
   return (
     <Fragment>
       <h2>Authenticate</h2>
       {children}
-      <Button
-        className='auth-goto-back-button'
-        onClick={gotoBack} basic >
+      <Button className='auth-goto-back-button' onClick={gotoBack} basic>
         <Icon name='long arrow left' /> All login options
       </Button>
     </Fragment>
@@ -56,37 +51,38 @@ const ChooseAuthProvider = ({
   prevAuthProvider = null
 }) => (
   <Fragment>
-    <h2>
-      Welcome to Sanbase
-    </h2>
+    <h2>Welcome to Sanbase</h2>
     <div className='login-actions'>
-      {isDesktop &&
-      <AuthProviderButton authProvider='metamask' prevAuthProvider={prevAuthProvider}>
-        <Button
-          onClick={gotoMetamask}
-          basic
-          className='metamask-btn'
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            paddingTop: '5px',
-            paddingBottom: '5px'
-          }}
+      {isDesktop && (
+        <AuthProviderButton
+          authProvider='metamask'
+          prevAuthProvider={prevAuthProvider}
         >
-          <img
-            src={metamaskIcon}
-            alt='metamask logo'
-            width={28}
-            height={28} />&nbsp;
-          Login with Metamask
-        </Button>
-      </AuthProviderButton>}
-      <AuthProviderButton authProvider='email' prevAuthProvider={prevAuthProvider}>
-        <Button
-          onClick={gotoEmail}
-          basic
-          className='sign-in-btn'
-        >
+          <Button
+            onClick={gotoMetamask}
+            basic
+            className='metamask-btn'
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              paddingTop: '5px',
+              paddingBottom: '5px'
+            }}
+          >
+            <img
+              src={metamaskIcon}
+              alt='metamask logo'
+              width={28}
+              height={28}
+            />&nbsp; Login with Metamask
+          </Button>
+        </AuthProviderButton>
+      )}
+      <AuthProviderButton
+        authProvider='email'
+        prevAuthProvider={prevAuthProvider}
+      >
+        <Button onClick={gotoEmail} basic className='sign-in-btn'>
           <Icon size='large' name='mail outline' />&nbsp;
           <span>Login with email</span>
         </Button>
@@ -95,9 +91,11 @@ const ChooseAuthProvider = ({
     <p>
       <strong>Why Log In?</strong>
       <br />
-      <Icon name='signal' style={{color: '#bbb'}} /> See more crypto data and insights.
+      <Icon name='signal' style={{ color: '#bbb' }} /> See more crypto data and
+      insights.
       <br />
-      <Icon name='heart empty' style={{color: '#bbb'}} /> Vote on all your favorite insights and more.
+      <Icon name='heart empty' style={{ color: '#bbb' }} /> Vote on all your
+      favorite insights and more.
     </p>
   </Fragment>
 )
@@ -110,12 +108,7 @@ const gotoBack = changeStep => {
   changeStep(STEPS.signin)
 }
 
-export const Login = ({
-  currentStep,
-  changeStep,
-  isDesktop,
-  consent
-}) => {
+export const Login = ({ currentStep, changeStep, isDesktop, consent }) => {
   if (currentStep === STEPS.metamask) {
     return (
       <AuthProvider gotoBack={() => gotoBack(changeStep)}>
@@ -147,7 +140,8 @@ export const Login = ({
       }}
       prevAuthProvider={loadPrevAuthProvider()}
       isDesktop={isDesktop}
-      consent={consent} />
+      consent={consent}
+    />
   )
 }
 

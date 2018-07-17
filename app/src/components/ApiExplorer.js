@@ -1,7 +1,7 @@
 import React from 'react'
 import './ApiExplorer.css'
 
-export const ApiExplorer = (props) => {
+export const ApiExplorer = props => {
   return (
     <div className='apiexplorer-container'>
       <iframe

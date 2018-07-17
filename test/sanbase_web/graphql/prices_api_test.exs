@@ -148,14 +148,16 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "data aggregation for larger intervals", context do
     query = """
     {
-      historyPrice(slug: "#{context.slug1}", from: "#{context.datetime1}", to: "#{
-      context.datetime3
-    }", interval: "2d") {
-        datetime
-        priceUsd
-        priceBtc
-        marketcap
-        volume
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}",
+        interval: "2d") {
+          datetime
+          priceUsd
+          priceBtc
+          marketcap
+          volume
       }
     }
     """
@@ -205,7 +207,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
         slug: "#{context.slug1}",
         from: "#{context.datetime1}",
         interval: "1h"){
-        priceUsd
+          priceUsd
       }
     }
     """
@@ -294,6 +296,51 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert Enum.at(history_price, 0)["marketcap"] == 1500
     assert Enum.at(history_price, 1)["volume"] == 1300
     assert Enum.at(history_price, 1)["marketcap"] == 1800
+  end
+
+  test "the whole response is as it's expected to be", context do
+    query = """
+    {
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}"
+        interval: "6h"){
+          datetime
+          volume
+          marketcap
+          priceUsd
+          priceBtc
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "historyPrice"))
+      |> json_response(200)
+
+    assert result ==
+             %{
+               "data" => %{
+                 "historyPrice" => [
+                   %{
+                     "datetime" => "2017-05-14T18:00:00Z",
+                     "marketcap" => 500,
+                     "priceBtc" => 1000,
+                     "priceUsd" => 20,
+                     "volume" => 200
+                   },
+                   %{
+                     "datetime" => "2017-05-15T18:00:00Z",
+                     "marketcap" => 800,
+                     "priceBtc" => 1200,
+                     "priceUsd" => 22,
+                     "volume" => 300
+                   }
+                 ]
+               }
+             }
   end
 
   defp basic_auth() do

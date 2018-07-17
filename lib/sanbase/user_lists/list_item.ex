@@ -1,12 +1,9 @@
 defmodule Sanbase.UserLists.ListItem do
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query
 
-  alias __MODULE__
   alias Sanbase.UserLists.UserList
   alias Sanbase.Model.Project
-  alias Sanbase.Repo
 
   @primary_key false
   schema "list_items" do

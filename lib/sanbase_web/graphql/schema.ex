@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     ApikeyAuth,
     ProjectPermissions,
     PostPermissions,
-    ApiDelay
+    ApiTimeframeRestriction
   }
 
   import_types(Absinthe.Plug.Types)
@@ -169,6 +169,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :string, default_value: "1w")
 
+      middleware(ApiTimeframeRestriction)
+
       cache_resolve(&GithubResolver.activity/3)
     end
 
@@ -205,7 +207,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiDelay)
+      middleware(ApiTimeframeRestriction)
 
       cache_resolve(&EtherbiResolver.burn_rate/3)
     end
@@ -224,7 +226,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiDelay)
+      middleware(ApiTimeframeRestriction)
 
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
@@ -246,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiDelay)
+      middleware(ApiTimeframeRestriction)
 
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
@@ -315,7 +317,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiDelay)
+      middleware(ApiTimeframeRestriction)
 
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
@@ -330,7 +332,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
-      middleware(ApiDelay)
+      middleware(ApiTimeframeRestriction)
 
       complexity(&TechIndicatorsComplexity.macd/3)
       cache_resolve(&TechIndicatorsResolver.macd/3)
@@ -347,7 +349,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:rsi_interval, non_null(:integer))
       arg(:result_size_tail, :integer, default_value: 0)
 
-      middleware(ApiDelay)
+      middleware(ApiTimeframeRestriction)
 
       complexity(&TechIndicatorsComplexity.rsi/3)
       cache_resolve(&TechIndicatorsResolver.rsi/3)
@@ -367,7 +369,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
-      middleware(ApiDelay)
+      middleware(ApiTimeframeRestriction)
 
       complexity(&TechIndicatorsComplexity.price_volume_diff/3)
       cache_resolve(&TechIndicatorsResolver.price_volume_diff/3)

@@ -7,6 +7,7 @@ import logo from '../assets/logo_sanbase.png'
 import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './SearchContainer'
 import * as actions from './../actions/types'
+import AnalysisDropdownMenu from './AnalysisDropdownMenu'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -35,11 +36,7 @@ export const TopMenu = ({
             to={'/projects'}>
             Markets
           </Link>
-          <Link
-            className='app-menu__page-link'
-            to={'/signals'}>
-            Signals
-          </Link>
+          <AnalysisDropdownMenu />
         </ul>
         <HeaderDropdownMenu
           isLoggedin={isLoggedin}

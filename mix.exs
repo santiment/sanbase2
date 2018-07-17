@@ -90,7 +90,8 @@ defmodule Sanbase.Mixfile do
       {:observer_cli, "~> 1.3"},
       {:plug_attack, "~> 0.3.1"},
       {:earmark, "~> 1.2"},
-      {:ecto_enum, "~> 1.1"}
+      {:ecto_enum, "~> 1.1"},
+      {:ex_machina, "~> 2.2", only: :test}
     ]
   end
 

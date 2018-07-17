@@ -1,6 +1,7 @@
 import * as actions from './../actions/types'
+import { loadKeyState, saveKeyState } from '../utils/localStorage'
 
-const isNightModeEnabled = JSON.parse(window.localStorage.getItem('isNightModeEnabled'))
+const isNightModeEnabled = loadKeyState('isNightModeEnabled') || false
 
 if (isNightModeEnabled) {
   document.body.classList.add('night-mode')
@@ -65,11 +66,7 @@ export default (state = initialState, action) => {
         isGDPRModalOpened: !privacyPolicyAccepted
       }
     case actions.APP_USER_COLOR_MODE_SAVE:
-      try {
-        window.localStorage.setItem('isNightModeEnabled', action.payload)
-      } catch (error) {
-        // Ignore write errors.
-      }
+      saveKeyState('isNightModeEnabled', action.payload)
       return {
         ...state,
         isNightModeEnabled: action.payload

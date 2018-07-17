@@ -15,24 +15,27 @@ const generateApikeyGQL = gql`
 `
 
 const handleApikeyGenerate = (action$, store, { client }) =>
-  action$.ofType(USER_APIKEY_GENERATE).debounceTime(200).switchMap(() => {
-    const mutation = client.mutate({
-      mutation: generateApikeyGQL
-    })
-    return Observable.from(mutation)
-      .mergeMap(({ data: { generateApikey } }) =>
-        Observable.of({
-          type: USER_APIKEY_GENERATE_SUCCESS,
-          apikeys: generateApikey.apikeys
-        })
-      )
-      .catch(error => {
-        Raven.captureException(error)
-        return Observable.of({
-          type: 'USER_APIKEY_GENERATE_FAIL',
-          payload: error
-        })
+  action$
+    .ofType(USER_APIKEY_GENERATE)
+    .debounceTime(200)
+    .switchMap(() => {
+      const mutation = client.mutate({
+        mutation: generateApikeyGQL
       })
-  })
+      return Observable.from(mutation)
+        .mergeMap(({ data: { generateApikey } }) =>
+          Observable.of({
+            type: USER_APIKEY_GENERATE_SUCCESS,
+            apikeys: generateApikey.apikeys
+          })
+        )
+        .catch(error => {
+          Raven.captureException(error)
+          return Observable.of({
+            type: 'USER_APIKEY_GENERATE_FAIL',
+            payload: error
+          })
+        })
+    })
 
 export default handleApikeyGenerate

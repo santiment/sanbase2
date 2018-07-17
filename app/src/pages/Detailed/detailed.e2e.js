@@ -5,17 +5,19 @@ let browser = null
 let page = null
 let mobilePage = null
 
-beforeAll(async() => {
+beforeAll(async () => {
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000
   const launchOptions = process.env.CI
     ? {}
-    : {headless: true, slowMo: 5, ignoreHTTPSErrors: true}
+    : { headless: true, slowMo: 5, ignoreHTTPSErrors: true }
 
   // Workaround till https://github.com/GoogleChrome/puppeteer/issues/290 is fixed
   // if (process.env.LAUNCH_CHROME_NO_SANDBOX) {
-    // console.warn('Launching Chrome with "--no-sandbox" option. ' +
-      // 'This is not recommended due to security reasons!')
-  Object.assign(launchOptions, { args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+  // console.warn('Launching Chrome with "--no-sandbox" option. ' +
+  // 'This is not recommended due to security reasons!')
+  Object.assign(launchOptions, {
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  })
   // }
 
   browser = await puppeteer.launch(launchOptions)
@@ -42,8 +44,12 @@ const detailedPageTests = () => {
     await mobilePage.goto('http://localhost:3000/projects/ppt')
     await page.waitForSelector('.datailed-project-description')
     await mobilePage.waitForSelector('.datailed-project-description')
-    await page.screenshot({path: '.screenshots/ppt-detailed-page-desktop.png'})
-    await mobilePage.screenshot({path: '.screenshots/ppt-detailed-page-mobile.png'})
+    await page.screenshot({
+      path: '.screenshots/ppt-detailed-page-desktop.png'
+    })
+    await mobilePage.screenshot({
+      path: '.screenshots/ppt-detailed-page-mobile.png'
+    })
   })
 
   it('Search should works correctly', async () => {
@@ -57,10 +63,14 @@ const detailedPageTests = () => {
       return resultDiv.innerText || null
     })
     expect(searchResult).toBe('Santiment Network Token (SAN)')
-    await page.screenshot({path: '.screenshots/eos-detailed-page-desktop.png'})
+    await page.screenshot({
+      path: '.screenshots/eos-detailed-page-desktop.png'
+    })
     await page.keyboard.press('Enter')
     await page.waitFor(4000)
-    await page.screenshot({path: '.screenshots/san-detailed-page-desktop.png'})
+    await page.screenshot({
+      path: '.screenshots/san-detailed-page-desktop.png'
+    })
   })
 }
 

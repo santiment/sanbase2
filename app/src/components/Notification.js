@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import { NotificationStack } from 'react-notification'
 
 class Notification extends Component {
-  state = { // eslint-disable-line
+  state = {
     notifications: []
   }
 
@@ -23,10 +23,13 @@ class Notification extends Component {
     return (
       <NotificationStack
         notifications={this.state.notifications}
-        onDismiss={notification => this.setState({
-          notifications: this.state.notifications
-            .filter(item => item.key !== notification.key)
-        })}
+        onDismiss={notification =>
+          this.setState({
+            notifications: this.state.notifications.filter(
+              item => item.key !== notification.key
+            )
+          })
+        }
       />
     )
   }

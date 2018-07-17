@@ -5,12 +5,13 @@
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
     "start:server": "node server",
+    "format": "prettier-standard 'src/**/*.js'",
+    "precommit": "lint-staged",
     "storybook": "start-storybook -p 9001 -c .storybook",
     "build": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) react-scripts build",
-    "test:lint:js": "standard | standard-reporter --stylish",
     "test:lint:css": "stylelint \"**/*.css\"",
     "test:js": "react-scripts test --env=jsdom",
-    "test": "npm run test:lint:js && npm run test:lint:css && CI=true npm run test:js",
+    "test": "npm run test:lint:css && CI=true npm run test:js",
     "eject": "react-scripts eject"
   },
   "dependencies": {
@@ -77,15 +78,16 @@
   "devDependencies": {
     "@storybook/addon-viewport": "^3.3.3",
     "@storybook/react": "^3.3.3",
-    "babel-eslint": "^8.0.3",
     "enzyme": "^3.2.0",
     "enzyme-adapter-react-16": "^1.1.0",
     "enzyme-to-json": "^3.2.2",
     "exit_on_eof": "^1.0.4",
+    "husky": "^0.14.3",
+    "lint-staged": "^7.2.0",
+    "prettier-standard": "^8.0.1",
     "puppeteer": "^1.1.1",
     "redux-axios-middleware": "^4.0.0",
     "redux-devtools-extension": "^2.13.2",
-    "standard": "^10.0.3",
     "standard-reporter": "^1.0.5",
     "stylelint": "^8.3.1",
     "stylelint-config-standard": "^18.0.0"
@@ -96,5 +98,13 @@
       "src/serviceWorker.js",
       "build"
     ]
+  },
+  "lint-staged": {
+    "linters": {
+      "src/**/*.js": [
+        "prettier-standard",
+        "git add"
+      ]
+    }
   }
 }

@@ -5,10 +5,8 @@ import './Filters.css'
 export const DEFAULT_SORT_BY = 'marketcap'
 export const DEFAULT_FILTER_BY = {}
 
-const FilterDivider = ({children}) => (
-  <div className='cashflow-mobile-filters__divider'>
-    {children}
-  </div>
+const FilterDivider = ({ children }) => (
+  <div className='cashflow-mobile-filters__divider'>{children}</div>
 )
 
 const Filters = ({
@@ -27,48 +25,59 @@ const Filters = ({
             onClick={() => {
               changeSort(DEFAULT_SORT_BY)
               changeFilter(DEFAULT_FILTER_BY)
-            }}>
+            }}
+          >
             Clear
           </Button>
           <h4>Filters</h4>
           <Button
-            onClick={() => onFilterChanged({
-              sortBy,
-              filterBy
-            })}
-            color='green'>
+            onClick={() =>
+              onFilterChanged({
+                sortBy,
+                filterBy
+              })
+            }
+            color='green'
+          >
             Done
           </Button>
         </div>
-        <FilterDivider>
-          Sort by
-        </FilterDivider>
+        <FilterDivider>Sort by</FilterDivider>
         <div className='cashflow-mobile-filters__item'>
           <Button
             color={sortBy === 'marketcap' ? 'blue' : undefined}
-            onClick={() => changeSort('marketcap')}>
+            onClick={() => changeSort('marketcap')}
+          >
             Marketcap
           </Button>
           <Button
             color={sortBy === 'github_activity' ? 'blue' : undefined}
-            onClick={() => changeSort('github_activity')}>
+            onClick={() => changeSort('github_activity')}
+          >
             Github Activity
           </Button>
         </div>
-        <FilterDivider>
-          Filter by
-        </FilterDivider>
+        <FilterDivider>Filter by</FilterDivider>
         <div className='cashflow-mobile-filters__item'>
           <Button
             basic
             color={filterBy['signals'] ? 'blue' : undefined}
-            onClick={() => changeFilter({...filterBy, signals: !filterBy['signals']})}>
+            onClick={() =>
+              changeFilter({ ...filterBy, signals: !filterBy['signals'] })
+            }
+          >
             Any signal was detected
           </Button>
           <Button
             basic
             color={filterBy['spent_eth_30d'] ? 'blue' : undefined}
-            onClick={() => changeFilter({...filterBy, spent_eth_30d: !filterBy['spent_eth_30d']})}>
+            onClick={() =>
+              changeFilter({
+                ...filterBy,
+                spent_eth_30d: !filterBy['spent_eth_30d']
+              })
+            }
+          >
             Spent eth in the last 30d
           </Button>
         </div>

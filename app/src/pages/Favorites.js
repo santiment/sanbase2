@@ -35,10 +35,10 @@ export const Favorites = ({
 )
 
 export default compose(
-  withProjectsData({type: 'all'}),
+  withProjectsData({ type: 'all' }),
   graphql(followedProjectsGQL, {
     name: 'FollowedProjects',
-    props: ({FollowedProjects, ownProps}) => {
+    props: ({ FollowedProjects, ownProps }) => {
       const { followedProjects = [] } = FollowedProjects
       const _followed = followedProjects.map(project => project.id)
       const { Projects = {} } = ownProps
@@ -46,7 +46,9 @@ export default compose(
         return {
           Projects: {
             ...Projects,
-            projects: Projects.projects.filter(project => _followed.includes(project.id))
+            projects: Projects.projects.filter(project =>
+              _followed.includes(project.id)
+            )
           }
         }
       } else {

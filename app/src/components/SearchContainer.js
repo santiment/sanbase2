@@ -6,27 +6,19 @@ import { allProjectsForSearchGQL } from './../pages/Projects/allProjectsGQL'
 import { getAll } from './../pages/Projects/projectSelectors'
 import Search from './Search'
 
-const SearchContainer = ({
-  history,
-  projects = []
-}) => {
+const SearchContainer = ({ history, projects = [] }) => {
   if (projects.length === 0) {
-    return (
-      <Search
-        loading
-        onSelectProject={() => {}}
-        projects={[]}
-      />
-    )
+    return <Search loading onSelectProject={() => {}} projects={[]} />
   }
   return (
     <Search
       onSelectProject={cmcId => history.push(`/projects/${cmcId}`)}
-      projects={projects} />
+      projects={projects}
+    />
   )
 }
 
-const mapDataToProps = ({allProjects}) => ({
+const mapDataToProps = ({ allProjects }) => ({
   projects: getAll(allProjects.allProjects)
 })
 

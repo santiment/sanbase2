@@ -11,7 +11,7 @@ const handleOffline = (action$, store, { client }) =>
   action$.pipe(
     ofType(APP_CHANGE_ONLINE_STATUS),
     skip(1),
-    map(({payload: { isOnline = true }}) => {
+    map(({ payload: { isOnline = true } }) => {
       if (!isOnline) {
         GoogleAnalytics.event({
           category: 'User',

@@ -9,7 +9,13 @@ import AccountEthKeyForm from './AccountEthKeyForm'
 import AccountWallets from './AccountWallets'
 import AccountApiKeyForm from './AccountApiKeyForm'
 import AccountSessions from './AccountSessions'
-import { USER_LOGOUT_SUCCESS, USER_USERNAME_CHANGE, USER_EMAIL_CHANGE, USER_APIKEY_GENERATE, USER_APIKEY_REVOKE } from '../../actions/types'
+import {
+  USER_LOGOUT_SUCCESS,
+  USER_USERNAME_CHANGE,
+  USER_EMAIL_CHANGE,
+  USER_APIKEY_GENERATE,
+  USER_APIKEY_REVOKE
+} from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
@@ -74,7 +80,16 @@ class Account extends Component {
   }
 
   render () {
-    const { user, loading, logoutUser, changeEmail, changeUsername, generateAPIKey, revokeAPIKey, isLoggedIn } = this.props
+    const {
+      user,
+      loading,
+      logoutUser,
+      changeEmail,
+      changeUsername,
+      generateAPIKey,
+      revokeAPIKey,
+      isLoggedIn
+    } = this.props
     const { emailForm, usernameForm } = this.state
 
     if (user && !isLoggedIn) {
@@ -90,7 +105,7 @@ class Account extends Component {
     return (
       <div className='page account'>
         <AccountHeader />
-        {!user.email &&
+        {!user.email && (
           <Message
             className='account-message account-message__dashboard'
             warning
@@ -98,34 +113,39 @@ class Account extends Component {
             list={[
               'For acces your dashboard from mobile device, you should add email address.'
             ]}
-          />}
+          />
+        )}
 
-        {emailForm.SUCCESS &&
+        {emailForm.SUCCESS && (
           <Message
             className='account-message account-message__email_success'
             positive
             content={`Email was changed to "${user.email || ''}"!`}
-          />}
-        {emailForm.ERROR &&
+          />
+        )}
+        {emailForm.ERROR && (
           <Message
             className='account-message account-message__email_error'
             negative
             header='Failed to change email!'
             list={['Try again later...']}
-          />}
-        {usernameForm.SUCCESS &&
+          />
+        )}
+        {usernameForm.SUCCESS && (
           <Message
             className='account-message account-message__username_success'
             positive
             content={`Username was changed to "${user.username || ''}"!`}
-          />}
-        {usernameForm.ERROR &&
+          />
+        )}
+        {usernameForm.ERROR && (
           <Message
             className='account-message account-message__username_error'
             negative
             header='Failed to change username!'
             list={['Try again later...']}
-          />}
+          />
+        )}
 
         <div className='panel'>
           <AccountEmailForm
@@ -147,7 +167,11 @@ class Account extends Component {
           <br />
           <AccountEthKeyForm ethAccounts={user.ethAccounts} loading={loading} />
           <AccountWallets user={user} />
-          <AccountApiKeyForm apikeys={user.apikeys} generateAPIKey={generateAPIKey} revokeAPIKey={revokeAPIKey} />
+          <AccountApiKeyForm
+            apikeys={user.apikeys}
+            generateAPIKey={generateAPIKey}
+            revokeAPIKey={revokeAPIKey}
+          />
           <AccountSessions onLogoutBtnClick={logoutUser} />
         </div>
       </div>
@@ -163,21 +187,25 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
   logoutUser: () => dispatch({ type: USER_LOGOUT_SUCCESS }),
-  changeEmail: email => dispatch({
-    type: USER_EMAIL_CHANGE,
-    email
-  }),
-  changeUsername: username => dispatch({
-    type: USER_USERNAME_CHANGE,
-    username
-  }),
-  generateAPIKey: () => dispatch({
-    type: USER_APIKEY_GENERATE
-  }),
-  revokeAPIKey: apikey => dispatch({
-    type: USER_APIKEY_REVOKE,
-    apikey
-  })
+  changeEmail: email =>
+    dispatch({
+      type: USER_EMAIL_CHANGE,
+      email
+    }),
+  changeUsername: username =>
+    dispatch({
+      type: USER_USERNAME_CHANGE,
+      username
+    }),
+  generateAPIKey: () =>
+    dispatch({
+      type: USER_APIKEY_GENERATE
+    }),
+  revokeAPIKey: apikey =>
+    dispatch({
+      type: USER_APIKEY_REVOKE,
+      apikey
+    })
 })
 
 export const UnwrappedAccount = Account // For tests

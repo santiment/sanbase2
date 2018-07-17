@@ -6,6 +6,8 @@ export const APP_SHOW_ONBOARDING = '[app] SHOW_ONBOARDING'
 export const APP_SHOW_GDPR_MODAL = '[app] SHOW_GDPR_MODAL'
 export const APP_TOGGLE_GDPR_MODAL = '[app] TOGGLE_GDPR_MODAL'
 export const APP_USER_HAS_INACTIVE_TOKEN = '[app] USER_HAS_INACTIVE_TOKEN'
+export const APP_USER_COLOR_MODE_SAVE = '[app] USER_COLOR_MODE_SAVE'
+
 // user
 export const CHANGE_USER_DATA = '[user] CHANGE_USER_DATA'
 export const USER_LOGIN_FAILED = '[user] LOGIN_FAILED'

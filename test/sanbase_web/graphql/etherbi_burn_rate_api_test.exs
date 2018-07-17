@@ -7,9 +7,13 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
 
   setup do
     Store.create_db()
+
+    staked_user = insert(:staked_user)
+    conn = setup_jwt_auth(build_conn(), staked_user)
 
     ticker = "SAN"
     slug = "santiment"
@@ -97,7 +101,8 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
       datetime5: datetime5,
       datetime6: datetime6,
       datetime7: datetime7,
-      datetime8: datetime8
+      datetime8: datetime8,
+      conn: conn
     ]
   end
 
@@ -210,8 +215,9 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
     burn_rates = json_response(result, 200)["data"]["burnRate"]
 
+    # Tests that the datetime is adjusted so it's not before `from`
     assert %{
-             "datetime" => "2017-05-13T21:30:00Z",
+             "datetime" => "2017-05-13T21:45:00Z",
              "burnRate" => 6000.0
            } in burn_rates
 

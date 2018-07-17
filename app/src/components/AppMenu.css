@@ -5,7 +5,8 @@
   cursor: pointer;
 }
 
-.app-menu a {
+.app-menu a,
+.app-menu__page-link {
   display: inline;
   font-family: Nunito Sans, sans-serif;
   margin: 0;

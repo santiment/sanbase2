@@ -58,12 +58,12 @@ export default (state = initialState, action) => {
         ...state,
         isGDPRModalOpened: !privacyPolicyAccepted
       }
-    case actions.USER_TOGGLE_COLOR_MODE:
-      document.body.classList.toggle('night-mode')
-      return {
-        ...state,
-        isNightModeEnabled: action.payload
-      }
+    // case actions.USER_TOGGLE_COLOR_MODE:
+    //   document.body.classList.toggle('night-mode')
+    //   return {
+    //     ...state,
+    //     isNightModeEnabled: action.payload
+    //   }
     default:
       return state
   }

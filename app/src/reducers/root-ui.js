@@ -1,5 +1,11 @@
 import * as actions from './../actions/types'
 
+const isNightModeEnabled = JSON.parse(window.localStorage.getItem('isNightModeEnabled'))
+
+if (isNightModeEnabled) {
+  document.body.classList.add('night-mode')
+}
+
 export const initialState = {
   isFeedbackModalOpened: false,
   isOnline: true,
@@ -8,7 +14,7 @@ export const initialState = {
   loginError: false,
   loginErrorMessage: '',
   isGDPRModalOpened: false,
-  isNightModeEnabled: false
+  isNightModeEnabled
 }
 
 export default (state = initialState, action) => {

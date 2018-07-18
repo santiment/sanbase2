@@ -4,7 +4,7 @@ import { Input } from 'semantic-ui-react'
 
 class ReactFormInput extends Component {
   componentWillMount () {
-    const {fieldApi, initvalue = ''} = this.props
+    const { fieldApi, initvalue = '' } = this.props
     fieldApi.setValue(initvalue)
   }
 
@@ -15,13 +15,15 @@ class ReactFormInput extends Component {
   }
 
   render () {
-    const {fieldApi, ...rest} = this.props
-    const {setValue, setTouched, getValue} = fieldApi
+    const { fieldApi, ...rest } = this.props
+    const { setValue, setTouched, getValue } = fieldApi
     return (
       <Input
         value={getValue() || ''}
         onChange={e => setValue(e.target.value)}
-        ref={input => { this.input = input }}
+        ref={input => {
+          this.input = input
+        }}
         onBlur={e => {
           if (e.target.value && e.target.value.length > 0) {
             setTouched()

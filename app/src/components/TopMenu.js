@@ -11,42 +11,29 @@ import AnalysisDropdownMenu from './AnalysisDropdownMenu'
 import './AppMenu.css'
 import './TopMenu.css'
 
-export const TopMenu = ({
- isLoggedin,
- logout,
- location,
- projects = []
-}) => (
+export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
   <div className='app-menu'>
     <div className='container'>
       <div className='left'>
         <Link to={'/'} className='brand'>
-          <img
-            src={logo}
-            width='115'
-            height='22'
-            alt='SANbase' />
+          <img src={logo} width='115' height='22' alt='SANbase' />
         </Link>
         <Search />
       </div>
       <div className='right'>
-        <ul className='menu-list-top' >
-          <Link
-            className='app-menu__page-link'
-            to={'/projects'}>
+        <ul className='menu-list-top'>
+          <Link className='app-menu__page-link' to={'/projects'}>
             Markets
           </Link>
           <AnalysisDropdownMenu />
         </ul>
-        <HeaderDropdownMenu
-          isLoggedin={isLoggedin}
-          logout={logout} />
+        <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
       </div>
     </div>
   </div>
 )
 
-const mapStateToProps = ({user = {}}) => {
+const mapStateToProps = ({ user = {} }) => {
   return {
     isLoggedin: !!user.token
   }
@@ -62,11 +49,6 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const enhance = compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )
-)
+const enhance = compose(connect(mapStateToProps, mapDispatchToProps))
 
 export default enhance(TopMenu)

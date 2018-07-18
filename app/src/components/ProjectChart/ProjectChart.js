@@ -60,209 +60,246 @@ const makeChartDataFromHistory = ({
       }
     },
 
-    data: history ? history.map(data => {
-      if (isToggledBTC) {
-        const price = parseFloat(data.priceBtc)
-        return formatBTC(price)
-      }
-      return data.priceUsd
-    }) : []}
-  const volumeDataset = !isToggledVolume ? null : {
-    label: 'Volume',
-    fill: false,
-    type: 'bar',
-    yAxisID: 'y-axis-2',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.volume,
-    backgroundColor: COLORS.volume,
-    borderWidth: 4,
-    pointBorderWidth: 2,
-    data: history ? history.map(data => {
-      if (isToggledBTC) {
-        return parseFloat(data.volumeBTC)
-      }
-      return parseFloat(data.volume)
-    }) : []}
-  const marketcapDataset = !isToggledMarketCap ? null : {
-    label: 'Marketcap',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-3',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.marketcap,
-    backgroundColor: 'rgba(52, 118, 153, 0.03)',
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    data: history.map(data => {
-      if (isToggledBTC) {
-        return parseFloat(data.marketcapBTC)
-      }
-      return parseFloat(data.marketcap)
-    })}
-  const githubActivityDataset = !isToggledGithubActivity ? null : {
-    label: 'Github Activity',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-4',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.githubActivity,
-    backgroundColor: COLORS.githubActivity,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: github.map(data => {
-      return {
-        x: data.datetime,
-        y: data.activity
-      }
-    })}
-  const twitterDataset = !isToggledTwitter ? null : {
-    label: 'Twitter',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-twitter',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.twitter,
-    backgroundColor: COLORS.twitter,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: props.twitterHistory.items.map(data => {
-      return {
-        x: data.datetime,
-        y: data.followersCount
-      }
-    })}
-
-  const burnrateDataset = !isToggledBurnRate ? null : {
-    label: 'Burn Rate',
-    type: 'bar',
-    fill: false,
-    yAxisID: 'y-axis-6',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.burnRate,
-    backgroundColor: COLORS.burnRate,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: burnRate.map(data => {
-      return {
-        x: data.datetime,
-        y: data.burnRate
-      }
-    })}
-  const transactionVolumeDataset = !isToggledTransactionVolume ? null : {
-    label: 'Transaction Volume',
-    type: 'bar',
-    fill: false,
-    yAxisID: 'y-axis-7',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.transactionVolume,
-    backgroundColor: COLORS.transactionVolume,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: transactionVolume.map(data => {
-      return {
-        x: data.datetime,
-        y: data.transactionVolume
-      }
-    })}
-
-  const ethSpentOverTimeByErc20ProjectsDataset = !isToggledEthSpentOverTime ? null : {
-    label: 'ETH Spent Over time',
-    type: 'bar',
-    fill: false,
-    yAxisID: 'y-axis-8',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.ethSpentOverTime,
-    backgroundColor: COLORS.ethSpentOverTime,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: props.ethSpentOverTimeByErc20Projects.items.map(data => {
-      return {
-        x: data.datetime,
-        y: data.ethSpent
-      }
-    })}
-  const ethPriceDataset = !isToggledEthPrice ? null : {
-    label: 'ETH Price',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-9',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.ethPrice,
-    backgroundColor: COLORS.ethPrice,
-    borderWidth: 1,
-    data: props.ethPrice.history.items ? props.ethPrice.history.items.map(data => {
-      if (isToggledBTC) {
+    data: history
+      ? history.map(data => {
+        if (isToggledBTC) {
+          const price = parseFloat(data.priceBtc)
+          return formatBTC(price)
+        }
+        return data.priceUsd
+      })
+      : []
+  }
+  const volumeDataset = !isToggledVolume
+    ? null
+    : {
+      label: 'Volume',
+      fill: false,
+      type: 'bar',
+      yAxisID: 'y-axis-2',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.volume,
+      backgroundColor: COLORS.volume,
+      borderWidth: 4,
+      pointBorderWidth: 2,
+      data: history
+        ? history.map(data => {
+          if (isToggledBTC) {
+            return parseFloat(data.volumeBTC)
+          }
+          return parseFloat(data.volume)
+        })
+        : []
+    }
+  const marketcapDataset = !isToggledMarketCap
+    ? null
+    : {
+      label: 'Marketcap',
+      type: 'line',
+      fill: false,
+      yAxisID: 'y-axis-3',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.marketcap,
+      backgroundColor: 'rgba(52, 118, 153, 0.03)',
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      data: history.map(data => {
+        if (isToggledBTC) {
+          return parseFloat(data.marketcapBTC)
+        }
+        return parseFloat(data.marketcap)
+      })
+    }
+  const githubActivityDataset = !isToggledGithubActivity
+    ? null
+    : {
+      label: 'Github Activity',
+      type: 'line',
+      fill: false,
+      yAxisID: 'y-axis-4',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.githubActivity,
+      backgroundColor: COLORS.githubActivity,
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      pointRadius: 2,
+      data: github.map(data => {
         return {
           x: data.datetime,
-          y: parseFloat(data.priceBtc)
+          y: data.activity
         }
-      }
-      return {
-        x: data.datetime,
-        y: parseFloat(data.priceUsd)
-      }
-    }) : []}
+      })
+    }
+  const twitterDataset = !isToggledTwitter
+    ? null
+    : {
+      label: 'Twitter',
+      type: 'line',
+      fill: false,
+      yAxisID: 'y-axis-twitter',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.twitter,
+      backgroundColor: COLORS.twitter,
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      pointRadius: 2,
+      data: props.twitterHistory.items.map(data => {
+        return {
+          x: data.datetime,
+          y: data.followersCount
+        }
+      })
+    }
 
-  const sentimentEmojisDataset = !isToggledEmojisSentiment ? null : {
-    label: 'Sentiment',
-    type: 'line',
-    fill: false,
-    yAxisID: 'y-axis-sentiment',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.sentiment,
-    backgroundColor: COLORS.sentiment,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: props.emojisSentiment.items.map(data => {
-      return {
-        x: data.datetime,
-        y: data.sentiment
-      }
-    })}
+  const burnrateDataset = !isToggledBurnRate
+    ? null
+    : {
+      label: 'Burn Rate',
+      type: 'bar',
+      fill: false,
+      yAxisID: 'y-axis-6',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.burnRate,
+      backgroundColor: COLORS.burnRate,
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      pointRadius: 2,
+      data: burnRate.map(data => {
+        return {
+          x: data.datetime,
+          y: data.burnRate
+        }
+      })
+    }
+  const transactionVolumeDataset = !isToggledTransactionVolume
+    ? null
+    : {
+      label: 'Transaction Volume',
+      type: 'bar',
+      fill: false,
+      yAxisID: 'y-axis-7',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.transactionVolume,
+      backgroundColor: COLORS.transactionVolume,
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      pointRadius: 2,
+      data: transactionVolume.map(data => {
+        return {
+          x: data.datetime,
+          y: data.transactionVolume
+        }
+      })
+    }
 
-  const dailyActiveAddressesDataset = !isToggledDailyActiveAddresses ? null : {
-    label: 'Daily Active Addresses',
-    type: 'bar',
-    fill: false,
-    yAxisID: 'y-axis-11',
-    datalabels: {
-      display: false
-    },
-    borderColor: COLORS.twitter,
-    backgroundColor: COLORS.twitter,
-    borderWidth: 1,
-    pointBorderWidth: 2,
-    pointRadius: 2,
-    data: dailyActiveAddresses.map(data => {
-      return {
-        x: data.datetime,
-        y: data.activeAddresses
-      }
-    })}
+  const ethSpentOverTimeByErc20ProjectsDataset = !isToggledEthSpentOverTime
+    ? null
+    : {
+      label: 'ETH Spent Over time',
+      type: 'bar',
+      fill: false,
+      yAxisID: 'y-axis-8',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.ethSpentOverTime,
+      backgroundColor: COLORS.ethSpentOverTime,
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      pointRadius: 2,
+      data: props.ethSpentOverTimeByErc20Projects.items.map(data => {
+        return {
+          x: data.datetime,
+          y: data.ethSpent
+        }
+      })
+    }
+  const ethPriceDataset = !isToggledEthPrice
+    ? null
+    : {
+      label: 'ETH Price',
+      type: 'line',
+      fill: false,
+      yAxisID: 'y-axis-9',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.ethPrice,
+      backgroundColor: COLORS.ethPrice,
+      borderWidth: 1,
+      data: props.ethPrice.history.items
+        ? props.ethPrice.history.items.map(data => {
+          if (isToggledBTC) {
+            return {
+              x: data.datetime,
+              y: parseFloat(data.priceBtc)
+            }
+          }
+          return {
+            x: data.datetime,
+            y: parseFloat(data.priceUsd)
+          }
+        })
+        : []
+    }
+
+  const sentimentEmojisDataset = !isToggledEmojisSentiment
+    ? null
+    : {
+      label: 'Sentiment',
+      type: 'line',
+      fill: false,
+      yAxisID: 'y-axis-sentiment',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.sentiment,
+      backgroundColor: COLORS.sentiment,
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      pointRadius: 2,
+      data: props.emojisSentiment.items.map(data => {
+        return {
+          x: data.datetime,
+          y: data.sentiment
+        }
+      })
+    }
+
+  const dailyActiveAddressesDataset = !isToggledDailyActiveAddresses
+    ? null
+    : {
+      label: 'Daily Active Addresses',
+      type: 'bar',
+      fill: false,
+      yAxisID: 'y-axis-11',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.twitter,
+      backgroundColor: COLORS.twitter,
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      pointRadius: 2,
+      data: dailyActiveAddresses.map(data => {
+        return {
+          x: data.datetime,
+          y: data.activeAddresses
+        }
+      })
+    }
 
   return {
     labels,
@@ -287,7 +324,9 @@ const makeChartDataFromHistory = ({
 
 const renderTicks = props => {
   return function (value, index, values) {
-    if (!values[index]) { return }
+    if (!values[index]) {
+      return
+    }
     return props.isToggledBTC
       ? formatBTC(value)
       : formatNumber(value, { currency: 'USD' })
@@ -295,7 +334,9 @@ const renderTicks = props => {
 }
 
 const getICOPriceAnnotation = props => {
-  if (props.isToggledBTC) { return undefined }
+  if (props.isToggledBTC) {
+    return undefined
+  }
   const icoPrice = props.project.icoPrice || undefined
   const icoPriceUSD = icoPrice
     ? formatNumber(icoPrice, { currency: 'USD' })
@@ -388,7 +429,9 @@ const makeOptionsFromProps = props => {
       displayColors: true,
       callbacks: {
         title: item => {
-          return moment(item[0].xLabel).format('dddd, MMM DD YYYY, HH:mm:ss UTC')
+          return moment(item[0].xLabel).format(
+            'dddd, MMM DD YYYY, HH:mm:ss UTC'
+          )
         },
         label: (tooltipItem, data) => {
           const label = data.datasets[tooltipItem.datasetIndex].label.toString()
@@ -416,9 +459,11 @@ const makeOptionsFromProps = props => {
           if (label === 'Daily Active Addresses') {
             return `${label}: ${millify(tooltipItem.yLabel)}`
           }
-          return `${label}: ${props.isToggledBTC
-            ? formatBTC(tooltipItem.yLabel)
-            : formatNumber(tooltipItem.yLabel, { currency: 'USD' })}`
+          return `${label}: ${
+            props.isToggledBTC
+              ? formatBTC(tooltipItem.yLabel)
+              : formatNumber(tooltipItem.yLabel, { currency: 'USD' })
+          }`
         }
       }
     },
@@ -433,303 +478,357 @@ const makeOptionsFromProps = props => {
       }
     },
     scales: {
-      yAxes: [{
-        id: 'y-axis-1',
-        type: 'linear',
-        display: true,
-        position: 'left',
-        scaleLabel: {
-          display: false,
-          labelString: `Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
-          fontColor: '#3d4450'
-        },
-        ticks: {
-          display: !props.isLoading,
-          beginAtZero: false,
-          autoSkip: false,
-          callback: renderTicks(props),
-          maxRotation: props.isToggledBTC ? 35 : 0,
-          minRotation: props.isToggledBTC ? 35 : 0
-        },
-        gridLines: {
-          drawBorder: true,
+      yAxes: [
+        {
+          id: 'y-axis-1',
+          type: 'linear',
           display: true,
-          color: '#f0f0f0'
-        }
-      }, {
-        id: 'y-axis-2',
-        type: 'linear',
-        display: false,
-        position: 'right',
-        scaleLabel: {
-          display: false,
-          labelString: 'Volume',
-          fontColor: '#3d4450'
-        },
-        ticks: {
-          // 2.2 is not a magic constant. We need to make volume
-          // chart is not very high. It should be 20-30% of the maximum
-          // In the future we have to make glued separate chart with volume.
-          max: Math.max(...props.history.map(data =>
-            props.isToggledBTC ? data.volumeBTC : data.volume)) * 2.2
-        },
-        labels: {
-          show: true
-        }
-      }, {
-        id: 'y-axis-3',
-        type: 'linear',
-        scaleLabel: {
-          display: true,
-          labelString: `MarketCap ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
-          fontColor: '#3d4450'
-        },
-        ticks: {
-          display: true,
-          callback: (value, index, values) => {
-            if (!values[index]) { return }
-            return millify(value)
-          }
-        },
-        gridLines: {
-          display: false
-        },
-        display: props.isToggledMarketCap,
-        position: 'right'
-      }, {
-        id: 'y-axis-4',
-        type: 'linear',
-        scaleLabel: {
-          display: true,
-          labelString: 'Github Activity',
-          fontColor: '#3d4450'
-        },
-        afterTickToLabelConversion: scaleInstance => {
-          scaleInstance.ticks[0] = null
-          scaleInstance.ticksAsNumbers[0] = null
-        },
-        ticks: {
-          display: true,
-          // same hack as in volume.
-          max: parseInt(
-            Math.max(...props.github.history.items.map(data => data.activity)) * 2.2, 10)
-        },
-        gridLines: {
-          display: false
-        },
-        display: props.isToggledGithubActivity &&
-          props.github.history.items.length !== 0,
-        position: 'right'
-      }, {
-        id: 'y-axis-twitter',
-        type: 'linear',
-        tooltips: {
-          mode: 'index',
-          intersect: false
-        },
-        scaleLabel: {
-          display: true,
-          labelString: 'Twitter',
-          fontColor: '#3d4450'
-        },
-        ticks: {
-          display: true
-        },
-        gridLines: {
-          display: false
-        },
-        display: props.isToggledTwitter &&
-          props.historyTwitter &&
-          props.historyTwitter.items &&
-          props.historyTwitter.items.length !== 0,
-        position: 'right'
-      }, {
-        id: 'y-axis-6',
-        type: 'linear',
-        tooltips: {
-          mode: 'index',
-          intersect: false
-        },
-        scaleLabel: {
-          display: true,
-          labelString: 'Burn Rate',
-          fontColor: '#3d4450'
-        },
-        afterTickToLabelConversion: scaleInstance => {
-          scaleInstance.ticks[0] = null
-          scaleInstance.ticksAsNumbers[0] = null
-        },
-        ticks: {
-          display: true,
-          // same hack as in volume.
-          max: parseInt(
-            Math.max(...props.burnRate.items.map(data => data.burnRate)) * 2.2, 10),
-          callback: (value, index, values) => {
-            if (!values[index]) { return }
-            return millify(value)
+          position: 'left',
+          scaleLabel: {
+            display: false,
+            labelString: `Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
+            fontColor: '#3d4450'
           },
-          maxRotation: 20
-        },
-        gridLines: {
-          display: false
-        },
-        display: props.isToggledBurnRate &&
-          props.burnRate.items.length !== 0,
-        position: 'right'
-      }, {
-        id: 'y-axis-7',
-        type: 'linear',
-        tooltips: {
-          mode: 'index',
-          intersect: false
-        },
-        scaleLabel: {
-          display: true,
-          labelString: 'Transaction Volume',
-          fontColor: '#3d4450'
-        },
-        afterTickToLabelConversion: scaleInstance => {
-          scaleInstance.ticks[0] = null
-          scaleInstance.ticksAsNumbers[0] = null
-        },
-        ticks: {
-          display: true,
-          max: parseInt(
-            Math.max(...props.transactionVolume.items.map(data => data.transactionVolume)) * 2.2, 10),
-          callback: (value, index, values) => {
-            if (!values[index]) { return }
-            return millify(value)
-          }
-        },
-        gridLines: {
-          display: false
-        },
-        display: props.isToggledTransactionVolume &&
-          props.transactionVolume.items.length !== 0,
-        position: 'right'
-      }, {
-        id: 'y-axis-8',
-        tooltips: {
-          mode: 'index',
-          intersect: false
-        },
-        scaleLabel: {
-          display: true,
-          labelString: 'ETH Spent Over Time',
-          fontColor: '#3d4450'
-        },
-        afterTickToLabelConversion: scaleInstance => {
-          scaleInstance.ticks[0] = null
-          scaleInstance.ticksAsNumbers[0] = null
-        },
-        ticks: {
-          display: true,
           ticks: {
-            max: parseInt(Math.max(...props.ethSpentOverTime.items.filter(data => {
-              return moment(data.datetime).isAfter(props.from) &&
-                moment(data.datetime).isBefore(props.to)
-            }).map(data => data.ethSpent)), 10)
+            display: !props.isLoading,
+            beginAtZero: false,
+            autoSkip: false,
+            callback: renderTicks(props),
+            maxRotation: props.isToggledBTC ? 35 : 0,
+            minRotation: props.isToggledBTC ? 35 : 0
           },
-          callback: (value, index, values) => {
-            if (!values[index]) { return }
-            return millify(value)
+          gridLines: {
+            drawBorder: true,
+            display: true,
+            color: '#f0f0f0'
           }
         },
-        gridLines: {
-          display: false
-        },
-        display: props.isToggledEthSpentOverTime &&
-          props.ethSpentOverTimeByErc20Projects.items.length !== 0,
-        position: 'right'
-      }, {
-        id: 'y-axis-9',
-        position: 'right',
-        scaleLabel: {
-          display: true,
-          labelString: `ETH Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
-          fontColor: '#3d4450'
-        },
-        ticks: {
+        {
+          id: 'y-axis-2',
+          type: 'linear',
           display: false,
-          beginAtZero: false,
-          callback: renderTicks(props)
-        },
-        gridLines: {
-          drawBorder: false,
-          display: false
-        },
-        display: props.isToggledEthPrice
-      }, {
-        id: 'y-axis-sentiment',
-        position: 'right',
-        scaleLabel: {
-          display: false,
-          labelString: `Sentiment`,
-          fontColor: '#3d4450'
-        },
-        ticks: {
-          display: false,
-          beginAtZero: false,
-          callback: renderTicks(props)
-        },
-        gridLines: {
-          drawBorder: false,
-          display: false
-        },
-        display: props.isToggledEmojisSentiment
-      }, {
-        id: 'y-axis-11',
-        position: 'right',
-        scaleLabel: {
-          display: false,
-          labelString: `Daily Active Addresses`,
-          fontColor: '#3d4450'
-        },
-        ticks: {
-          display: false,
-          beginAtZero: false,
-          callback: renderTicks(props)
-        },
-        gridLines: {
-          drawBorder: false,
-          display: false
-        },
-        display: props.isToggledDailyActiveAddresses
-      }],
-      xAxes: [{
-        type: 'time',
-        maxBarThickness: 10,
-        categoryPercentage: 0.6,
-        barPercentage: 0.6,
-        time: {
-          min: props.history && props.history.length > 0
-            ? moment(props.history[0].datetime)
-            : moment()
-        },
-        ticks: {
-          autoSkipPadding: 1,
-          display: !props.isLoading,
-          callback: function (value, index, values) {
-            if (!values[index]) { return }
-            const time = moment.utc(values[index]['value'])
-            const {from, to} = props.timeFilter
-            const diff = moment(to).diff(from, 'days')
-            if (diff <= 1) {
-              return time.format('HH:mm')
-            }
-            if (diff > 1 && diff < 95) {
-              return time.format('D MMM')
-            }
-            return time.format('MMMM Y')
+          position: 'right',
+          scaleLabel: {
+            display: false,
+            labelString: 'Volume',
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            // 2.2 is not a magic constant. We need to make volume
+            // chart is not very high. It should be 20-30% of the maximum
+            // In the future we have to make glued separate chart with volume.
+            max:
+              Math.max(
+                ...props.history.map(
+                  data => (props.isToggledBTC ? data.volumeBTC : data.volume)
+                )
+              ) * 2.2
+          },
+          labels: {
+            show: true
           }
         },
-        gridLines: {
-          drawBorder: true,
-          offsetGridLines: true,
-          display: true,
-          color: '#f0f0f0'
+        {
+          id: 'y-axis-3',
+          type: 'linear',
+          scaleLabel: {
+            display: true,
+            labelString: `MarketCap ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            display: true,
+            callback: (value, index, values) => {
+              if (!values[index]) {
+                return
+              }
+              return millify(value)
+            }
+          },
+          gridLines: {
+            display: false
+          },
+          display: props.isToggledMarketCap,
+          position: 'right'
+        },
+        {
+          id: 'y-axis-4',
+          type: 'linear',
+          scaleLabel: {
+            display: true,
+            labelString: 'Github Activity',
+            fontColor: '#3d4450'
+          },
+          afterTickToLabelConversion: scaleInstance => {
+            scaleInstance.ticks[0] = null
+            scaleInstance.ticksAsNumbers[0] = null
+          },
+          ticks: {
+            display: true,
+            // same hack as in volume.
+            max: parseInt(
+              Math.max(
+                ...props.github.history.items.map(data => data.activity)
+              ) * 2.2,
+              10
+            )
+          },
+          gridLines: {
+            display: false
+          },
+          display:
+            props.isToggledGithubActivity &&
+            props.github.history.items.length !== 0,
+          position: 'right'
+        },
+        {
+          id: 'y-axis-twitter',
+          type: 'linear',
+          tooltips: {
+            mode: 'index',
+            intersect: false
+          },
+          scaleLabel: {
+            display: true,
+            labelString: 'Twitter',
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            display: true
+          },
+          gridLines: {
+            display: false
+          },
+          display:
+            props.isToggledTwitter &&
+            props.historyTwitter &&
+            props.historyTwitter.items &&
+            props.historyTwitter.items.length !== 0,
+          position: 'right'
+        },
+        {
+          id: 'y-axis-6',
+          type: 'linear',
+          tooltips: {
+            mode: 'index',
+            intersect: false
+          },
+          scaleLabel: {
+            display: true,
+            labelString: 'Burn Rate',
+            fontColor: '#3d4450'
+          },
+          afterTickToLabelConversion: scaleInstance => {
+            scaleInstance.ticks[0] = null
+            scaleInstance.ticksAsNumbers[0] = null
+          },
+          ticks: {
+            display: true,
+            // same hack as in volume.
+            max: parseInt(
+              Math.max(...props.burnRate.items.map(data => data.burnRate)) *
+                2.2,
+              10
+            ),
+            callback: (value, index, values) => {
+              if (!values[index]) {
+                return
+              }
+              return millify(value)
+            },
+            maxRotation: 20
+          },
+          gridLines: {
+            display: false
+          },
+          display: props.isToggledBurnRate && props.burnRate.items.length !== 0,
+          position: 'right'
+        },
+        {
+          id: 'y-axis-7',
+          type: 'linear',
+          tooltips: {
+            mode: 'index',
+            intersect: false
+          },
+          scaleLabel: {
+            display: true,
+            labelString: 'Transaction Volume',
+            fontColor: '#3d4450'
+          },
+          afterTickToLabelConversion: scaleInstance => {
+            scaleInstance.ticks[0] = null
+            scaleInstance.ticksAsNumbers[0] = null
+          },
+          ticks: {
+            display: true,
+            max: parseInt(
+              Math.max(
+                ...props.transactionVolume.items.map(
+                  data => data.transactionVolume
+                )
+              ) * 2.2,
+              10
+            ),
+            callback: (value, index, values) => {
+              if (!values[index]) {
+                return
+              }
+              return millify(value)
+            }
+          },
+          gridLines: {
+            display: false
+          },
+          display:
+            props.isToggledTransactionVolume &&
+            props.transactionVolume.items.length !== 0,
+          position: 'right'
+        },
+        {
+          id: 'y-axis-8',
+          tooltips: {
+            mode: 'index',
+            intersect: false
+          },
+          scaleLabel: {
+            display: true,
+            labelString: 'ETH Spent Over Time',
+            fontColor: '#3d4450'
+          },
+          afterTickToLabelConversion: scaleInstance => {
+            scaleInstance.ticks[0] = null
+            scaleInstance.ticksAsNumbers[0] = null
+          },
+          ticks: {
+            display: true,
+            ticks: {
+              max: parseInt(
+                Math.max(
+                  ...props.ethSpentOverTime.items
+                    .filter(data => {
+                      return (
+                        moment(data.datetime).isAfter(props.from) &&
+                        moment(data.datetime).isBefore(props.to)
+                      )
+                    })
+                    .map(data => data.ethSpent)
+                ),
+                10
+              )
+            },
+            callback: (value, index, values) => {
+              if (!values[index]) {
+                return
+              }
+              return millify(value)
+            }
+          },
+          gridLines: {
+            display: false
+          },
+          display:
+            props.isToggledEthSpentOverTime &&
+            props.ethSpentOverTimeByErc20Projects.items.length !== 0,
+          position: 'right'
+        },
+        {
+          id: 'y-axis-9',
+          position: 'right',
+          scaleLabel: {
+            display: true,
+            labelString: `ETH Price ${props.isToggledBTC ? '(BTC)' : '(USD)'}`,
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            display: false,
+            beginAtZero: false,
+            callback: renderTicks(props)
+          },
+          gridLines: {
+            drawBorder: false,
+            display: false
+          },
+          display: props.isToggledEthPrice
+        },
+        {
+          id: 'y-axis-sentiment',
+          position: 'right',
+          scaleLabel: {
+            display: false,
+            labelString: `Sentiment`,
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            display: false,
+            beginAtZero: false,
+            callback: renderTicks(props)
+          },
+          gridLines: {
+            drawBorder: false,
+            display: false
+          },
+          display: props.isToggledEmojisSentiment
+        },
+        {
+          id: 'y-axis-11',
+          position: 'right',
+          scaleLabel: {
+            display: false,
+            labelString: `Daily Active Addresses`,
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            display: false,
+            beginAtZero: false,
+            callback: renderTicks(props)
+          },
+          gridLines: {
+            drawBorder: false,
+            display: false
+          },
+          display: props.isToggledDailyActiveAddresses
         }
-      }]
+      ],
+      xAxes: [
+        {
+          type: 'time',
+          maxBarThickness: 10,
+          categoryPercentage: 0.6,
+          barPercentage: 0.6,
+          time: {
+            min:
+              props.history && props.history.length > 0
+                ? moment(props.history[0].datetime)
+                : moment()
+          },
+          ticks: {
+            autoSkipPadding: 1,
+            display: !props.isLoading,
+            callback: function (value, index, values) {
+              if (!values[index]) {
+                return
+              }
+              const time = moment.utc(values[index]['value'])
+              const { from, to } = props.timeFilter
+              const diff = moment(to).diff(from, 'days')
+              if (diff <= 1) {
+                return time.format('HH:mm')
+              }
+              if (diff > 1 && diff < 95) {
+                return time.format('D MMM')
+              }
+              return time.format('MMMM Y')
+            }
+          },
+          gridLines: {
+            drawBorder: true,
+            offsetGridLines: true,
+            display: true,
+            color: '#f0f0f0'
+          }
+        }
+      ]
     }
   }
 }
@@ -762,8 +861,16 @@ class ProjectChart extends Component {
 
     return (
       <div className='project-chart-body'>
-        {isLoading && <div className='project-chart__isLoading'> Loading... </div>}
-        {!isLoading && isEmpty && <div className='project-chart__isEmpty'> We don't have any data </div>}
+        {isLoading && (
+          <div className='project-chart__isLoading'> Loading... </div>
+        )}
+        {!isLoading &&
+          isEmpty && (
+            <div className='project-chart__isEmpty'>
+              {' '}
+              We don't have any data{' '}
+            </div>
+          )}
         <Bar
           data={chartData}
           options={chartOptions}

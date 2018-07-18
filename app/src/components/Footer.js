@@ -19,12 +19,15 @@ const Footer = () => {
         <a
           href='https://santiment.net'
           rel='noopener noreferrer'
-          target='_blank'>Santiment</a>
+          target='_blank'
+        >
+          Santiment
+        </a>
       </div>
       <div>ver. {process.env.REACT_APP_VERSION}</div>
       <div className='cashflow-indev-message'>
-        NOTE: This app is an early release.
-        We give no guarantee data is correct as we are in active development.
+        NOTE: This app is an early release. We give no guarantee data is correct
+        as we are in active development.
       </div>
     </div>
   )

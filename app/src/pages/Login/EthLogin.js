@@ -18,28 +18,39 @@ const EthLogin = ({
   return (
     <Fragment>
       {user.isLoading && !user.hasMetamask && <div>Loading</div>}
-      {!user.hasMetamask && !user.isLoading &&
-        <Message warning>
-          <h4>We can't detect Metamask!</h4>
-          <p>We can auth you with Metamask account. It's secure and easy.</p>
-          <div className='help-links'>
-            <a
-              target='_blank'
-              rel='noopener noreferrer'
-              href='https://metamask.io/#how-it-works'>How Metamask works?</a>
-            <a href='https://metamask.io/'>
-              <img width={128} src={metamaskDownloadImg} alt='Metamask link' />
-            </a>
-          </div>
-        </Message>
-      }
+      {!user.hasMetamask &&
+        !user.isLoading && (
+          <Message warning>
+            <h4>We can't detect Metamask!</h4>
+            <p>We can auth you with Metamask account. It's secure and easy.</p>
+            <div className='help-links'>
+              <a
+                target='_blank'
+                rel='noopener noreferrer'
+                href='https://metamask.io/#how-it-works'
+              >
+                How Metamask works?
+              </a>
+              <a href='https://metamask.io/'>
+                <img
+                  width={128}
+                  src={metamaskDownloadImg}
+                  alt='Metamask link'
+                />
+              </a>
+            </div>
+          </Message>
+        )}
 
-      {user.hasMetamask && !user.token &&
-        <AuthForm
-          account={user.account}
-          pending={user.isLoading}
-          error={user.error}
-          handleAuth={() => requestAuth(user.account, consent)} />}
+      {user.hasMetamask &&
+        !user.token && (
+          <AuthForm
+            account={user.account}
+            pending={user.isLoading}
+            error={user.error}
+            handleAuth={() => requestAuth(user.account, consent)}
+          />
+        )}
     </Fragment>
   )
 }
@@ -77,10 +88,7 @@ const mapDispatchToProps = dispatch => {
 }
 
 export default compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
+  connect(mapStateToProps, mapDispatchToProps),
   withApollo,
   lifecycle({
     componentDidMount () {

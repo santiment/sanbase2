@@ -9,25 +9,17 @@ export const AnalysisDropdownMenu = () => (
     basic
     content={
       <div className='app-menu-popup'>
-        <Link
-          className='app-menu__page-link'
-          to={'/insights'}>
+        <Link className='app-menu__page-link' to={'/insights'}>
           <Icon name='world' />
           Insights
         </Link>
-        <Link
-          className='app-menu__page-link'
-          to={'/signals'}>
+        <Link className='app-menu__page-link' to={'/signals'}>
           <Icon name='fork' />
           Signals
         </Link>
       </div>
     }
-    trigger={
-      <span className='app-menu__page-link'>
-        Analysis
-      </span>
-    }
+    trigger={<span className='app-menu__page-link'>Analysis</span>}
     position='bottom center'
     on='hover'
   />

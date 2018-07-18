@@ -4,12 +4,10 @@ import ApiKeyRevokeButton from './ApiKeyRevokeButton'
 import './ApiKeyList.css'
 
 export class ApiKeyList extends Component {
-  // eslint-disable-next-line
   state = {
     visibleKeys: new Set()
   }
 
-  // eslint-disable-next-line
   onRevokeButtonClick = apikey => {
     const { visibleKeys } = this.state
     if (!visibleKeys.has(apikey)) return
@@ -21,7 +19,6 @@ export class ApiKeyList extends Component {
     })
   }
 
-  // eslint-disable-next-line
   onVisibilityButtonClick = apikey => {
     this.setState(prevState => {
       const { visibleKeys } = prevState
@@ -45,21 +42,23 @@ export class ApiKeyList extends Component {
 
     return (
       <ol className='ApiKeyList'>
-        {apikeys && apikeys.map(apikey => (
-          <li className='ApiKeyList__item' key={apikey}>
-            <ApiKey
-              apikey={apikey}
-              isVisible={visibleKeys.has(apikey)}
-              onVisibilityButtonClick={this.onVisibilityButtonClick}
-            />
-            {revokeAPIKey &&
-              <ApiKeyRevokeButton
+        {apikeys &&
+          apikeys.map(apikey => (
+            <li className='ApiKeyList__item' key={apikey}>
+              <ApiKey
                 apikey={apikey}
-                revokeAPIKey={revokeAPIKey}
-                onRevokeButtonClick={this.onRevokeButtonClick}
-              />}
-          </li>
-        ))}
+                isVisible={visibleKeys.has(apikey)}
+                onVisibilityButtonClick={this.onVisibilityButtonClick}
+              />
+              {revokeAPIKey && (
+                <ApiKeyRevokeButton
+                  apikey={apikey}
+                  revokeAPIKey={revokeAPIKey}
+                  onRevokeButtonClick={this.onRevokeButtonClick}
+                />
+              )}
+            </li>
+          ))}
       </ol>
     )
   }

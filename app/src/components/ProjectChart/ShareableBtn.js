@@ -1,10 +1,6 @@
 import React from 'react'
 import moment from 'moment'
-import {
-  Button,
-  Popup,
-  Input
-} from 'semantic-ui-react'
+import { Button, Popup, Input } from 'semantic-ui-react'
 import { compose, withState } from 'recompose'
 import copy from 'copy-to-clipboard'
 import './ShareableBtn.css'
@@ -26,16 +22,15 @@ const ShareableBtn = enhance(
     if (window.navigator.share) {
       return (
         <Button
-          onClick={
-            () => {
-              window.navigator.share({
-                title: 'Sanbase',
-                text: 'Check out the insight of crypto world in Sanbase.',
-                url: shareableURL
-              })
-            }
-          }
-          positive >
+          onClick={() => {
+            window.navigator.share({
+              title: 'Sanbase',
+              text: 'Check out the insight of crypto world in Sanbase.',
+              url: shareableURL
+            })
+          }}
+          positive
+        >
           Share
         </Button>
       )
@@ -47,39 +42,50 @@ const ShareableBtn = enhance(
         trigger={
           <Button
             onClick={() => {
-              const chartEl = document.getElementsByClassName('chartjs-render-monitor')[0]
+              const chartEl = document.getElementsByClassName(
+                'chartjs-render-monitor'
+              )[0]
               const img = chartEl ? chartEl.toDataURL('image/jpg') : null
               renderSanbaseChartImg(img)
             }}
-            positive>
+            positive
+          >
             Share <i className='fa fa-caret-down' />
           </Button>
-      } on='click'>
+        }
+        on='click'
+      >
         <div className='shareable-inner'>
           <div className='shareable-url'>
-            <Input
-              input={{readOnly: true}}
-              defaultValue={shareableURL} />
-            {!isSaved && <Button icon='clipboard' onClick={() => {
-              const result = copy(shareableURL)
-              setTimeout(() => {
-                save(false)
-              }, 1000)
-              save(result)
-            }} />}
+            <Input input={{ readOnly: true }} defaultValue={shareableURL} />
+            {!isSaved && (
+              <Button
+                icon='clipboard'
+                onClick={() => {
+                  const result = copy(shareableURL)
+                  setTimeout(() => {
+                    save(false)
+                  }, 1000)
+                  save(result)
+                }}
+              />
+            )}
             {isSaved && <div>Saved!</div>}
           </div>
-          {sanbaseChartImg &&
-          <div className='shareable-image'>
-            <a
-              download={`sanbase-chart-${ticker.toUpperCase()}-${moment().format()}.jpg`}
-              href={sanbaseChartImg}>
-              Download JPG
-            </a>
-          </div>}
+          {sanbaseChartImg && (
+            <div className='shareable-image'>
+              <a
+                download={`sanbase-chart-${ticker.toUpperCase()}-${moment().format()}.jpg`}
+                href={sanbaseChartImg}
+              >
+                Download JPG
+              </a>
+            </div>
+          )}
         </div>
       </Popup>
     )
-  })
+  }
+)
 
 export default ShareableBtn

@@ -234,8 +234,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   defp create_discourse_topic(%Post{id: id, title: title, inserted_at: inserted_at} = post) do
+    link = "#{sanbase_url()}/insights/#{id}"
+
     text = ~s"""
-      This topic hosts the discussion about <a href="#{sanbase_url()}/insights/#{id}" />
+      This topic hosts the discussion about [#{link}](#{link})
     """
 
     title = "##{id} | #{title} | #{DateTime.to_naive(inserted_at) |> to_string}"
@@ -256,6 +258,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.update()
   end
 
-  defp sanbase_url(), do: Config.module_get(Sanbase, :website_url)
+  defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :website_url)
   defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
 end

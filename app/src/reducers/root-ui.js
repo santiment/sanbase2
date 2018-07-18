@@ -52,7 +52,7 @@ export default (state = initialState, action) => {
         isGDPRModalOpened: !state.isGDPRModalOpened
       }
     case actions.USER_SETTING_GDPR:
-      const {privacyPolicyAccepted = false} = action.payload
+      const { privacyPolicyAccepted = false } = action.payload
       return {
         ...state,
         isGDPRModalOpened: !privacyPolicyAccepted

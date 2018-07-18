@@ -46,7 +46,9 @@ Chart.controllers.LineWithLine = Chart.controllers.line.extend({
       const activePoint = this.chart.tooltip._active[0]
       const x = activePoint.tooltipPosition().x
       const scale = getYAxisScale(this.chart.scales)
-      if (!scale) { return }
+      if (!scale) {
+        return
+      }
       const topY = scale.top
       const bottomY = scale.bottom
 
@@ -65,7 +67,7 @@ Chart.controllers.LineWithLine = Chart.controllers.line.extend({
 class ProjectChartContainer extends Component {
   constructor (props) {
     super(props)
-    const shareableState = ((shareable) => {
+    const shareableState = (shareable => {
       Object.keys(shareable).forEach(key => {
         shareable[`${key}`] = shareable[key] === 'true'
       })
@@ -111,7 +113,7 @@ class ProjectChartContainer extends Component {
   }
 
   setSelected (selected) {
-    this.setState({selected})
+    this.setState({ selected })
   }
 
   setFromTo (from, to) {
@@ -155,12 +157,14 @@ class ProjectChartContainer extends Component {
   }
 
   toggleBTC (isToggledBTC) {
-    this.setState({isToggledBTC})
+    this.setState({ isToggledBTC })
   }
 
   componentWillReceiveProps (nextProps) {
-    if (nextProps.ticker !== this.props.ticker &&
-      typeof this.props.ticker !== 'undefined') {
+    if (
+      nextProps.ticker !== this.props.ticker &&
+      typeof this.props.ticker !== 'undefined'
+    ) {
       this.setFilter('all')
       this.props.toggleVolume(true)
       this.props.toggleMarketcap(false)
@@ -177,7 +181,7 @@ class ProjectChartContainer extends Component {
   }
 
   componentDidMount () {
-    const {from, to, timeframe} = qs.parse(this.props.location.search)
+    const { from, to, timeframe } = qs.parse(this.props.location.search)
     if (timeframe) {
       this.setFilter(timeframe)
     }
@@ -231,28 +235,31 @@ class ProjectChartContainer extends Component {
     return (
       <div style={{ display: 'flex' }}>
         {this.props.isToggledInsights && <div>CEHCK</div>}
-        <div className={cx({
-          'project-dp-chart': true
-        })}
-          style={{ flex: 1 }}>
-          {(this.props.isDesktop || this.props.isFullscreenMobile) &&
-          <ProjectChartHeader
-            from={this.props.timeFilter.from}
-            to={this.props.timeFilter.to}
-            setFromTo={this.setFromTo}
-            focusedInput={this.state.focusedInput}
-            onFocusChange={this.onFocusChange}
-            setFilter={this.setFilter}
-            toggleBTC={this.toggleBTC}
-            isToggledBTC={this.state.isToggledBTC}
-            interval={this.props.timeFilter.timeframe}
-            shareableURL={shareableURL}
-            ticker={this.props.ticker}
-            isERC20={this.props.isERC20}
-            isDesktop={this.props.isDesktop}
-          />}
-          {(this.props.isDesktop || this.props.isFullscreenMobile)
-            ? <ProjectChart
+        <div
+          className={cx({
+            'project-dp-chart': true
+          })}
+          style={{ flex: 1 }}
+        >
+          {(this.props.isDesktop || this.props.isFullscreenMobile) && (
+            <ProjectChartHeader
+              from={this.props.timeFilter.from}
+              to={this.props.timeFilter.to}
+              setFromTo={this.setFromTo}
+              focusedInput={this.state.focusedInput}
+              onFocusChange={this.onFocusChange}
+              setFilter={this.setFilter}
+              toggleBTC={this.toggleBTC}
+              isToggledBTC={this.state.isToggledBTC}
+              interval={this.props.timeFilter.timeframe}
+              shareableURL={shareableURL}
+              ticker={this.props.ticker}
+              isERC20={this.props.isERC20}
+              isDesktop={this.props.isDesktop}
+            />
+          )}
+          {this.props.isDesktop || this.props.isFullscreenMobile ? (
+            <ProjectChart
               {...this.props}
               setSelected={this.setSelected}
               isToggledBTC={this.state.isToggledBTC}
@@ -264,19 +271,22 @@ class ProjectChartContainer extends Component {
               ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
               isLoading={this.props.price.history.loading}
               isERC20={this.props.isERC20}
-              isEmpty={this.props.price.history.items.length === 0} />
-            : <ProjectChartMobile
-              {...this.props}
-            /> }
-          {(this.props.isDesktop || this.props.isFullscreenMobile) &&
+              isEmpty={this.props.price.history.items.length === 0}
+            />
+          ) : (
+            <ProjectChartMobile {...this.props} />
+          )}
+          {(this.props.isDesktop || this.props.isFullscreenMobile) && (
             <ProjectChartFooter
               {...this.props}
               isToggledBTC={this.state.isToggledBTC}
-            />}
-          {this.props.isFullscreenMobile &&
-            <Button onClick={this.props.toggleFullscreen} basic >
+            />
+          )}
+          {this.props.isFullscreenMobile && (
+            <Button onClick={this.props.toggleFullscreen} basic>
               Back to newest mode
-            </Button>}
+            </Button>
+          )}
         </div>
       </div>
     )
@@ -297,7 +307,7 @@ const mapDispatchToProps = dispatch => {
         type: 'TOGGLE_FULLSCREEN_MOBILE'
       })
     },
-    changeTimeFilter: ({timeframe, from, to, interval}) => {
+    changeTimeFilter: ({ timeframe, from, to, interval }) => {
       dispatch({
         type: 'CHANGE_TIME_FILTER',
         timeframe,

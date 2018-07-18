@@ -3,11 +3,14 @@ import CreateInsight from './CreateInsight'
 import { withState } from 'recompose'
 import { Button } from 'semantic-ui-react'
 
-const CreateBody = ({changePost, post, postBody = null, setPostBody}) => (
-  <div style={{padding: '0 20px 20px 20px'}}>
-    <CreateInsight initValue={post.text} changePost={raw => {
-      setPostBody(raw)
-    }} />
+const CreateBody = ({ changePost, post, postBody = null, setPostBody }) => (
+  <div style={{ padding: '0 20px 20px 20px' }}>
+    <CreateInsight
+      initValue={post.text}
+      changePost={raw => {
+        setPostBody(raw)
+      }}
+    />
     <div className='event-posts-step-control event-posts-step-control_right'>
       <Button
         disabled={!postBody}
@@ -18,7 +21,8 @@ const CreateBody = ({changePost, post, postBody = null, setPostBody}) => (
             text: postBody
           }
           changePost(newPost, 'title')
-        }}>
+        }}
+      >
         Next
       </Button>
     </div>

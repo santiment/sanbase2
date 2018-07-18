@@ -8,7 +8,7 @@ export const allInsightsPublicGQL = gql`
       createdAt
       state
       votes {
-        totalSanVotes,
+        totalSanVotes
         totalVotes
       }
       tags {
@@ -34,7 +34,7 @@ export const allInsightsGQL = gql`
         name
       }
       votes {
-        totalSanVotes,
+        totalSanVotes
         totalVotes
       }
       moderationComment

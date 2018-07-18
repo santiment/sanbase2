@@ -20,14 +20,17 @@ const PanelBlock = ({
   <div className={'panel ' + classes}>
     <h4>{title}</h4>
     {withDelimeter && <hr />}
-    {isLoading ? 'Loading...'
-      : isUnauthorized
-        ? <Message
-          warning
-          header='You must login before you can view that!'
-          content='Visit our login page, then try again.'
-        />
-        : children}
+    {isLoading ? (
+      'Loading...'
+    ) : isUnauthorized ? (
+      <Message
+        warning
+        header='You must login before you can view that!'
+        content='Visit our login page, then try again.'
+      />
+    ) : (
+      children
+    )}
   </div>
 )
 

@@ -11,6 +11,7 @@ import handleRouter from './handleRouter'
 import handleApikeyGenerate from './handleApikeyGenerate'
 import handleApikeyRevoke from './handleApikeyRevoke'
 import addNewAssetsListEpic, { addNewSuccessEpic } from './addNewAssetsListEpic'
+import removeAssetsListEpic from './removeAssetsListEpic'
 
 export default combineEpics(
   handleFollowProject,
@@ -26,5 +27,6 @@ export default combineEpics(
   handleApikeyRevoke,
   // addNewAssetsList epics
   addNewAssetsListEpic,
-  addNewSuccessEpic
+  addNewSuccessEpic,
+  removeAssetsListEpic
 )

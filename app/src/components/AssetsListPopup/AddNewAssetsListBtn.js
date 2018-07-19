@@ -9,17 +9,18 @@ const initialState = {
 class AddNewAssetsList extends React.Component {
   state = initialState
 
-  componentDidUpdate(prevProps) {
-    if (this.props.assetsListUI.assetsListNewItemSuccess !==
-      prevProps.assetsListUI.assetsListNewItemSuccess
+  componentDidUpdate (prevProps) {
+    if (
+      this.props.assetsListUI.assetsListNewItemSuccess &&
+      this.props.assetsListUI.assetsListNewItemSuccess !==
+        prevProps.assetsListUI.assetsListNewItemSuccess
     ) {
-      console.log('check')
-      this.setState({newAssetsListTitle: initialState.newAssetsListTitle})
+      this.setState({ newAssetsListTitle: initialState.newAssetsListTitle })
     }
   }
 
   handleOnChange = (e, data) => {
-    this.setState({newAssetsListTitle: data.value})
+    this.setState({ newAssetsListTitle: data.value })
   }
 
   handleAddNewAssetsList = () => {
@@ -33,6 +34,7 @@ class AddNewAssetsList extends React.Component {
     return (
       <Input
         disabled={this.props.assetsListUI.assetsListNewItemPending}
+        value={this.state.newAssetsListTitle}
         action={{
           color: 'google plus',
           labelPosition: 'left',

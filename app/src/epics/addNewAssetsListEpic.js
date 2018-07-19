@@ -7,25 +7,23 @@ import * as actions from './../actions/types'
 
 const createUserListGQL = gql`
   mutation createUserList(
-    $color: ColorEnum,
-    $isPublic: Boolean,
+    $color: ColorEnum
+    $isPublic: Boolean
     $name: String!
   ) {
-    createUserList(
-      color: $color,
-      isPublic: $isPublic,
-      name: $name
-    ) {
-     id,
-     name,
-     isPublic
+    createUserList(color: $color, isPublic: $isPublic, name: $name) {
+      id
+      name
+      isPublic
     }
   }
 `
 
 const addNewAssetsListEpic = (action$, store, { client }) =>
-  action$.ofType(actions.USER_ADD_NEW_ASSET_LIST)
-    .switchMap(action => {
+  action$
+    .ofType(actions.USER_ADD_NEW_ASSET_LIST)
+    .debounceTime(200)
+    .mergeMap(action => {
       const { name, color = 'NONE', isPublic = false } = action.payload
       const mutationPromise = client.mutate({
         mutation: createUserListGQL,
@@ -44,7 +42,7 @@ const addNewAssetsListEpic = (action$, store, { client }) =>
             name
           }
         },
-        update: (proxy) => {
+        update: proxy => {
           let data = proxy.readQuery({ query: AssetsListGQL })
           const _userLists = data.fetchUserLists ? [...data.fetchUserLists] : []
           _userLists.push({
@@ -60,7 +58,6 @@ const addNewAssetsListEpic = (action$, store, { client }) =>
       })
       return Observable.from(mutationPromise)
         .mergeMap(({ data }) => {
-          console.log('success')
           return Observable.merge(
             Observable.of({
               type: actions.USER_ADD_NEW_ASSET_LIST_SUCCESS
@@ -70,14 +67,17 @@ const addNewAssetsListEpic = (action$, store, { client }) =>
         })
         .catch(error => {
           Raven.captureException(error)
-          return Observable.of({ type: actions.USER_ADD_NEW_ASSET_LIST_FAILED, payload: error })
+          return Observable.of({
+            type: actions.USER_ADD_NEW_ASSET_LIST_FAILED,
+            payload: error
+          })
         })
     })
 
-
 export const addNewSuccessEpic = (action$, store, { client }) =>
-  action$.ofType(actions.USER_ADD_NEW_ASSET_LIST_SUCCESS)
-  .delay(2000)
-  .mapTo({type: actions.USER_ADD_NEW_ASSET_LIST_CANCEL})
+  action$
+    .ofType(actions.USER_ADD_NEW_ASSET_LIST_SUCCESS)
+    .delay(2000)
+    .mapTo({ type: actions.USER_ADD_NEW_ASSET_LIST_CANCEL })
 
 export default addNewAssetsListEpic

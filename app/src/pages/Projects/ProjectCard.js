@@ -1,13 +1,6 @@
 import React from 'react'
 import cx from 'classnames'
-import {
-  Card,
-  Button,
-  Statistic,
-  Label,
-  Icon,
-  Popup
-} from 'semantic-ui-react'
+import { Card, Button, Statistic, Label, Icon, Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import { formatNumber, millify } from './../../utils/formatting'
@@ -16,29 +9,38 @@ import './ProjectCard.css'
 const HiddenElements = () => ''
 
 const MARKET_SEGMENT_COLORS = {
-  'Financial': 'violet',
-  'Media': 'yellow',
+  Financial: 'violet',
+  Media: 'yellow',
   'Blockchain Network': 'teal',
   'Prediction Market': 'olive',
-  'Advertising': 'orange',
-  'Transportation': 'grey',
-  'Gambling': 'red',
-  'Gaming': 'green',
-  'Legal': 'pink',
-  'Protocol': 'teal',
+  Advertising: 'orange',
+  Transportation: 'grey',
+  Gambling: 'red',
+  Gaming: 'green',
+  Legal: 'pink',
+  Protocol: 'teal',
   'Digital Identity': 'teal',
-  'Data': 'black'
+  Data: 'black'
 }
 
-const StatisticElement = ({name, value, up = undefined, disabled = false}) => (
-  <Statistic className={cx({
-    'statistic-disabled': disabled
-  })}>
+const StatisticElement = ({
+  name,
+  value,
+  up = undefined,
+  disabled = false
+}) => (
+  <Statistic
+    className={cx({
+      'statistic-disabled': disabled
+    })}
+  >
     <Statistic.Label>{name}</Statistic.Label>
     <Statistic.Value>
-      {typeof up !== 'undefined' && value !== '---'
-        ? <PercentChanges changes={value} />
-        : value}
+      {typeof up !== 'undefined' && value !== '---' ? (
+        <PercentChanges changes={value} />
+      ) : (
+        value
+      )}
     </Statistic.Value>
   </Statistic>
 )
@@ -72,8 +74,14 @@ const ProjectCard = ({
       <Card fluid onClick={toggleExpandCard}>
         <Card.Content>
           <Card.Header>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-              <div style={{display: 'flex', alignItems: 'center'}}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 {name}&nbsp;<ProjectIcon name={name} />
               </div>
               <Popup
@@ -86,16 +94,16 @@ const ProjectCard = ({
                     <div>rank by market cap</div>
                     <div>&nbsp;{rank}</div>
                   </div>
-                } on='click'>
-                Market capitalization in a cryptocurrency world is a multiple
-                of amount of tokens in the circulation * token price
+                }
+                on='click'
+              >
+                Market capitalization in a cryptocurrency world is a multiple of
+                amount of tokens in the circulation * token price
               </Popup>
             </div>
           </Card.Header>
           <Card.Meta>
-            <Label
-              size='mini'
-              color={MARKET_SEGMENT_COLORS[marketSegment]} tag>
+            <Label size='mini' color={MARKET_SEGMENT_COLORS[marketSegment]} tag>
               {marketSegment || 'unknown yet'}
             </Label>
           </Card.Meta>
@@ -105,37 +113,50 @@ const ProjectCard = ({
               : description}
           </Card.Description>
         </Card.Content>
-        <Card.Content extra style={{position: 'relative'}}>
-          {warning &&
-          <Popup basic
-            position='right center'
-            hideOnScroll
-            wide
-            inverted
-            trigger={
-              <Label
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  left: '-14px'
-                }}
-                color='orange' ribbon>
-                <Icon name='warning sign' />
-              </Label>} on='click'>
-            {signals[0] && signals[0].description}
-          </Popup>}
-          <Statistic.Group size='mini' widths='two' style={{paddingBottom: '1em'}}>
+        <Card.Content extra style={{ position: 'relative' }}>
+          {warning && (
+            <Popup
+              basic
+              position='right center'
+              hideOnScroll
+              wide
+              inverted
+              trigger={
+                <Label
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '-14px'
+                  }}
+                  color='orange'
+                  ribbon
+                >
+                  <Icon name='warning sign' />
+                </Label>
+              }
+              on='click'
+            >
+              {signals[0] && signals[0].description}
+            </Popup>
+          )}
+          <Statistic.Group
+            size='mini'
+            widths='two'
+            style={{ paddingBottom: '1em' }}
+          >
             <StatisticElement
               name='Price'
-              value={priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : '---'}
-              disabled={!priceUsd} />
+              value={
+                priceUsd ? formatNumber(priceUsd, { currency: 'USD' }) : '---'
+              }
+              disabled={!priceUsd}
+            />
             <StatisticElement
               name='Volume'
-              value={volumeUsd
-                ? `$${millify(volumeUsd)}`
-                : '---'}
-              disabled={!volumeUsd} />
-            {isExpanded &&
+              value={volumeUsd ? `$${millify(volumeUsd)}` : '---'}
+              disabled={!volumeUsd}
+            />
+            {isExpanded && (
               <React.Fragment>
                 <StatisticElement
                   name='24h Price'
@@ -151,51 +172,63 @@ const ProjectCard = ({
                 />
                 <StatisticElement
                   name='MarketCap'
-                  value={marketcapUsd
-                    ? `$${millify(marketcapUsd)}`
-                    : '---'}
+                  value={marketcapUsd ? `$${millify(marketcapUsd)}` : '---'}
                   disabled={!marketcapUsd}
                 />
-                {type === 'erc20' &&
+                {type === 'erc20' && (
                   <StatisticElement
                     name='Crypto Balance'
-                    value={ethBalance
-                      ? `ETH ${millify(parseFloat(ethBalance).toFixed(2))}`
-                      : '---'}
+                    value={
+                      ethBalance
+                        ? `ETH ${millify(parseFloat(ethBalance).toFixed(2))}`
+                        : '---'
+                    }
                     disabled={!ethBalance}
-                    />
-                }
+                  />
+                )}
               </React.Fragment>
-            }
-            {type === 'erc20' &&
-            <StatisticElement
-              name='ETH Spent 30d'
-              value={ethSpent
-                ? `ETH ${millify(parseFloat(ethSpent).toFixed(2))}`
-                : 0}
-              disabled={!ethSpent} />}
+            )}
+            {type === 'erc20' && (
+              <StatisticElement
+                name='ETH Spent 30d'
+                value={
+                  ethSpent
+                    ? `ETH ${millify(parseFloat(ethSpent).toFixed(2))}`
+                    : 0
+                }
+                disabled={!ethSpent}
+              />
+            )}
             <StatisticElement
               name='Dev Activity 30d'
-              value={averageDevActivity ? parseFloat(averageDevActivity).toFixed(2) : '---'}
-              disabled={!averageDevActivity} />
+              value={
+                averageDevActivity
+                  ? parseFloat(averageDevActivity).toFixed(2)
+                  : '---'
+              }
+              disabled={!averageDevActivity}
+            />
             <HiddenElements>
               <StatisticElement
                 name='Twitter 30d'
                 value={twitterData || '---'}
-                disabled={!twitterData} />
+                disabled={!twitterData}
+              />
             </HiddenElements>
           </Statistic.Group>
         </Card.Content>
-        {isExpanded &&
+        {isExpanded && (
           <Card.Content extra>
             <div className='ui two buttons'>
               <HiddenElements>
                 <Button basic size='large' icon='star' />
               </HiddenElements>
-              <Button basic size='large' onClick={handleMoreClick}>more...</Button>
+              <Button basic size='large' onClick={handleMoreClick}>
+                more...
+              </Button>
             </div>
           </Card.Content>
-        }
+        )}
       </Card>
     </div>
   )

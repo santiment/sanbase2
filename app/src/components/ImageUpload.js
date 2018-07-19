@@ -18,9 +18,10 @@ export default graphql(gql`
     required
     onChange={({ target: { validity, files } }) => {
       console.log(files)
-      validity.valid && mutate({ variables: { images: files } }).then((...rest) => {
-        console.log(rest)
-      })
+      validity.valid &&
+        mutate({ variables: { images: files } }).then((...rest) => {
+          console.log(rest)
+        })
     }}
   />
 ))

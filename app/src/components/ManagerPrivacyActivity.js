@@ -21,9 +21,8 @@ const ManagerPrivacyActivity = ({
           </div>
           <div className='gdpr-settings-privacy__card-content'>
             <p>
-              Process the personal data provided by me for the
-              registration on this website to support
-              and administer my user account.
+              Process the personal data provided by me for the registration on
+              this website to support and administer my user account.
             </p>
             <Checkbox
               toggle
@@ -38,8 +37,8 @@ const ManagerPrivacyActivity = ({
           </div>
           <div className='gdpr-settings-privacy__card-content'>
             <p>
-              Contact me to send me marketing materials related
-              to the Company’s services and operations.
+              Contact me to send me marketing materials related to the Company’s
+              services and operations.
             </p>
             <Checkbox
               toggle
@@ -71,7 +70,6 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ManagerPrivacyActivity)
+export default connect(mapStateToProps, mapDispatchToProps)(
+  ManagerPrivacyActivity
+)

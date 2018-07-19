@@ -1,8 +1,11 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   require Logger
+  require Sanbase.Utils.Config
+  require Mockery.Macro
 
   import Ecto.Query
 
+  alias Sanbase.Utils.Config
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Post, Poll, Tag}
   alias Sanbase.Model.Project
@@ -192,6 +195,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
         |> Repo.update()
         |> case do
           {:ok, post} ->
+            {:ok, post} = create_discourse_topic(post)
+
             {:ok, post}
 
           {:error, changeset} ->
@@ -203,7 +208,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
         end
 
       _post ->
-        {:error, "Cannot change ready_state of post with id: #{post_id}"}
+        {:error, "Cannot change ready_state of other user's post with id: #{post_id}"}
     end
   end
 
@@ -227,4 +232,32 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       tag in Enum.map(post.tags, & &1.name)
     end)
   end
+
+  defp create_discourse_topic(%Post{id: id, title: title, inserted_at: inserted_at} = post) do
+    link = "#{sanbase_url()}/insights/#{id}"
+
+    text = ~s"""
+      This topic hosts the discussion about [#{link}](#{link})
+    """
+
+    title = "##{id} | #{title} | #{DateTime.to_naive(inserted_at) |> to_string}"
+
+    {:ok,
+     %{
+       "topic_id" => topic_id,
+       "topic_slug" => topic_slug
+     }} = Sanbase.Discourse.Api.publish(title, text)
+
+    discourse_topic_url =
+      discourse_url()
+      |> URI.parse()
+      |> URI.merge("/t/#{topic_slug}/#{topic_id}")
+      |> URI.to_string()
+
+    Post.publish_changeset(post, %{discourse_topic_url: discourse_topic_url})
+    |> Repo.update()
+  end
+
+  defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :website_url)
+  defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
 end

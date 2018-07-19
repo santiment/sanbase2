@@ -5,49 +5,78 @@ export const makeItervalBounds = interval => {
   switch (interval) {
     case '1d':
       return {
-        from: moment().subtract(1, 'd').utc().format('YYYY-MM-DD') + 'T00:00:00Z',
-        to: moment().utc().format(),
+        from:
+          moment()
+            .subtract(1, 'd')
+            .utc()
+            .format('YYYY-MM-DD') + 'T00:00:00Z',
+        to: moment()
+          .utc()
+          .format(),
         minInterval: '5m'
       }
     case '1w':
       return {
-        from: moment().subtract(1, 'weeks').utc().format(),
-        to: moment().utc().format(),
+        from: moment()
+          .subtract(1, 'weeks')
+          .utc()
+          .format(),
+        to: moment()
+          .utc()
+          .format(),
         minInterval: '1h'
       }
     case '2w':
       return {
-        from: moment().subtract(2, 'weeks').utc().format(),
-        to: moment().utc().format(),
+        from: moment()
+          .subtract(2, 'weeks')
+          .utc()
+          .format(),
+        to: moment()
+          .utc()
+          .format(),
         minInterval: '1h'
       }
     case '3m':
       return {
-        from: moment().subtract(3, 'months').utc().format(),
-        to: moment().utc().format(),
+        from: moment()
+          .subtract(3, 'months')
+          .utc()
+          .format(),
+        to: moment()
+          .utc()
+          .format(),
         minInterval: '1d'
       }
     case 'all':
       return {
-        from: moment().subtract(2, 'years').utc().format(),
-        to: moment().utc().format(),
+        from: moment()
+          .subtract(2, 'years')
+          .utc()
+          .format(),
+        to: moment()
+          .utc()
+          .format(),
         minInterval: '1d'
       }
     default:
       return {
-        from: moment().subtract(1, 'months').utc().format(),
-        to: moment().utc().format(),
+        from: moment()
+          .subtract(1, 'months')
+          .utc()
+          .format(),
+        to: moment()
+          .utc()
+          .format(),
         minInterval: '1h'
       }
   }
 }
 
-export const normalizeData = ({
-  data = [],
-  fieldName,
-  filter = 'all'
-}) => {
-  if (data.length === 0) { return [] }
+export const normalizeData = ({ data = [], fieldName, filter = 'all' }) => {
+  if (data.length === 0) {
+    return []
+  }
   const normalizedData = data.map(el => {
     const normalizedField = parseFloat(el[`${fieldName}`])
     return {
@@ -59,8 +88,9 @@ export const normalizeData = ({
   // We use that lib, which helps find outliers. But if we want find rest we
   // need to do not very readable one liner.
   if (filter === 'only') {
-    return normalizedData.filter((val, i, arr) =>
-      !outliers(`${fieldName}`)(val, i, arr))
+    return normalizedData.filter(
+      (val, i, arr) => !outliers(`${fieldName}`)(val, i, arr)
+    )
   }
   if (filter === 'rest') {
     return normalizedData.filter(outliers(`${fieldName}`))

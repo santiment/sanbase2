@@ -3,10 +3,7 @@ import { Button } from 'semantic-ui-react'
 
 const ApiKeyGenerateButton = ({ generateAPIKey }) => {
   return (
-    <Button
-      positive
-      onClick={generateAPIKey}
-    >
+    <Button positive onClick={generateAPIKey}>
       Generate new API Key
     </Button>
   )

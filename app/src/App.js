@@ -1,10 +1,5 @@
 import React from 'react'
-import {
-  Route as BasicRoute,
-  Switch,
-  Redirect,
-  Link
-} from 'react-router-dom'
+import { Route as BasicRoute, Switch, Redirect, Link } from 'react-router-dom'
 import { FadeInDown } from 'animate-components'
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
@@ -40,30 +35,22 @@ import './App.css'
 
 const LoadableDetailedPage = Loadable({
   loader: () => import('./pages/Detailed/Detailed'),
-  loading: () => (
-    <PageLoader />
-  )
+  loading: () => <PageLoader />
 })
 
 const LoadableInsights = Loadable({
   loader: () => import('./pages/InsightsPage'),
-  loading: () => (
-    <PageLoader />
-  )
+  loading: () => <PageLoader />
 })
 
 const LoadableInsight = Loadable({
   loader: () => import('./pages/Insights/Insight'),
-  loading: () => (
-    <PageLoader />
-  )
+  loading: () => <PageLoader />
 })
 
 const LoadableInsightsNew = Loadable({
   loader: () => import('./pages/InsightsNew/InsightsNew'),
-  loading: () => (
-    <PageLoader />
-  )
+  loading: () => <PageLoader />
 })
 
 class Route extends React.Component {
@@ -76,9 +63,7 @@ class Route extends React.Component {
   }
 
   render () {
-    return (
-      <BasicRoute {...this.props} />
-    )
+    return <BasicRoute {...this.props} />
   }
 }
 
@@ -90,78 +75,104 @@ export const App = ({
   hasUsername
 }) => (
   <div className='App'>
-    {isOffline &&
-    <FadeInDown
-      className='offline-status-message'
-      duration='1.0s'
-      timingFunction='ease-out'
-      as='div'>
+    {isOffline && (
+      <FadeInDown
+        className='offline-status-message'
+        duration='1.0s'
+        timingFunction='ease-out'
+        as='div'
+      >
         OFFLINE
-    </FadeInDown>}
-    {isLoggedIn && !hasUsername &&
-    <div className='no-username-status-message'>
-      <Link to='/account'>
-        <i className='exclamation triangle icon' />
-        Without a username, some functionality will be restricted. Please, click on the notification to proceed to the account settings. <i className='exclamation triangle icon' />
-      </Link>
-    </div>
-    }
-    {isFullscreenMobile
-      ? undefined
-      : (isDesktop
-        ? <Menu />
-        : <MobileMenu />)}
+      </FadeInDown>
+    )}
+    {isLoggedIn &&
+      !hasUsername && (
+        <div className='no-username-status-message'>
+          <Link to='/account'>
+            <i className='exclamation triangle icon' />
+            Without a username, some functionality will be restricted. Please,
+            click on the notification to proceed to the account settings.{' '}
+            <i className='exclamation triangle icon' />
+          </Link>
+        </div>
+      )}
+    {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>
-        <Route exact path='/projects' render={props => {
-          if (isDesktop) {
-            return (
-              <Cashflow
-                preload={() => LoadableDetailedPage.preload()}
-                {...props} />
-            )
-          }
-          return (
-            <CashflowMobile {...props} />
-          )
-        }} />
-        <Route exact path='/currencies' render={props => {
-          if (isDesktop) {
-            return (
-              <Currencies
-                preload={() => LoadableDetailedPage.preload()}
-                {...props} />
-            )
-          }
-          return (
-            <CurrenciesMobile {...props} />
-          )
-        }} />
-        <Route exact path='/favorites' render={props => {
-          if (isDesktop && isLoggedIn) {
-            return (
-              <Favorites
-                preload={() => LoadableDetailedPage.preload()}
-                {...props} />
-            )
-          }
-          return (
-            <Redirect from='/favorites' to='/projects' />
-          )
-        }} />
+        <Route
+          exact
+          path='/projects'
+          render={props => {
+            if (isDesktop) {
+              return (
+                <Cashflow
+                  preload={() => LoadableDetailedPage.preload()}
+                  {...props}
+                />
+              )
+            }
+            return <CashflowMobile {...props} />
+          }}
+        />
+        <Route
+          exact
+          path='/currencies'
+          render={props => {
+            if (isDesktop) {
+              return (
+                <Currencies
+                  preload={() => LoadableDetailedPage.preload()}
+                  {...props}
+                />
+              )
+            }
+            return <CurrenciesMobile {...props} />
+          }}
+        />
+        <Route
+          exact
+          path='/favorites'
+          render={props => {
+            if (isDesktop && isLoggedIn) {
+              return (
+                <Favorites
+                  preload={() => LoadableDetailedPage.preload()}
+                  {...props}
+                />
+              )
+            }
+            return <Redirect from='/favorites' to='/projects' />
+          }}
+        />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
-        <Route path='/insights/update/:insightId' component={LoadableInsightsNew} />
+        <Route
+          path='/insights/update/:insightId'
+          component={LoadableInsightsNew}
+        />
         <Route exact path='/insights' component={LoadableInsights} />
         <Route exact path='/insights/newest' component={LoadableInsights} />
         <Route exact path='/insights/popular' component={LoadableInsights} />
         <Route exact path='/insights/my' component={LoadableInsights} />
-        <Route exact path='/insights/users/:userId' component={LoadableInsights} />
-        <Route exact path='/insights/tags/:tagName' component={LoadableInsights} />
+        <Route
+          exact
+          path='/insights/users/:userId'
+          component={LoadableInsights}
+        />
+        <Route
+          exact
+          path='/insights/tags/:tagName'
+          component={LoadableInsights}
+        />
         <Route exact path='/insights/:insightId' component={LoadableInsight} />
-        <Route exact path='/projects/:slug' render={props => (
-          <LoadableDetailedPage isDesktop={isDesktop} {...props} />)} />
+        <Route
+          exact
+          path='/projects/:slug'
+          render={props => (
+            <LoadableDetailedPage isDesktop={isDesktop} {...props} />
+          )}
+        />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
         <Route exact path='/build' component={BuildChallenge} />
@@ -172,11 +183,7 @@ export const App = ({
         <Route
           exact
           path='/login'
-          render={props => (
-            <LoginPage
-              isDesktop={isDesktop}
-              {...props} />
-          )}
+          render={props => <LoginPage isDesktop={isDesktop} {...props} />}
         />
         <Redirect from='/' to='/projects' />
       </Switch>
@@ -202,9 +209,7 @@ export const mapSizesToProps = ({ width }) => ({
 })
 
 const enchance = compose(
-  connect(
-    mapStateToProps
-  ),
+  connect(mapStateToProps),
   withSizes(mapSizesToProps),
   withTracker
 )

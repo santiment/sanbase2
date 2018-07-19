@@ -1,10 +1,13 @@
 import React from 'react'
 
-const Username = ({address}) => (
+const Username = ({ address }) => (
   <div className='account-name'>
-    <a className='address'
+    <a
+      className='address'
       href={`https://etherscan.io/address/${address}`}
-      target='_blank'>{address}
+      target='_blank'
+    >
+      {address}
     </a>
   </div>
 )

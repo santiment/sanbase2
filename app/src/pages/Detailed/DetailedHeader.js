@@ -66,7 +66,10 @@ const DetailedHeader = ({
                   position='bottom center'
                 />
                 &nbsp;
-                <AssetsListPopup isLoggedIn={isLoggedIn} />
+                <AssetsListPopup
+                  projectId={project.id}
+                  isLoggedIn={isLoggedIn}
+                />
               </div>
             )}
         </div>

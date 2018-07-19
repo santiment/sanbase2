@@ -10,7 +10,7 @@ import handleGDPR from './handleGDPR'
 import handleRouter from './handleRouter'
 import handleApikeyGenerate from './handleApikeyGenerate'
 import handleApikeyRevoke from './handleApikeyRevoke'
-import handleColorModeChange from './handleColorModeChange'
+import handleNightModeToggle from './handleNightModeToggle'
 
 export default combineEpics(
   handleFollowProject,
@@ -24,5 +24,5 @@ export default combineEpics(
   handleRouter,
   handleApikeyGenerate,
   handleApikeyRevoke,
-  handleColorModeChange
+  handleNightModeToggle
 )

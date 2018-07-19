@@ -1,5 +1,5 @@
 import * as actions from './../actions/types'
-import { loadKeyState, saveKeyState } from '../utils/localStorage'
+import { loadKeyState } from '../utils/localStorage'
 
 const isNightModeEnabled = loadKeyState('isNightModeEnabled') || false
 
@@ -65,8 +65,7 @@ export default (state = initialState, action) => {
         ...state,
         isGDPRModalOpened: !privacyPolicyAccepted
       }
-    case actions.APP_USER_COLOR_MODE_SAVE:
-      saveKeyState('isNightModeEnabled', action.payload)
+    case actions.APP_USER_NIGHT_MODE_SAVE:
       return {
         ...state,
         isNightModeEnabled: action.payload

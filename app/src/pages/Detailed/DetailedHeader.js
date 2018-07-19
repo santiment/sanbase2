@@ -6,7 +6,7 @@ import { graphql } from 'react-apollo'
 import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
-import ListsPopup from './../../components/ListsPopup/ListsPopup'
+import AssetsListPopup from './../../components/AssetsListPopup/AssetsListPopup'
 import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
 import { followedProjectsGQL } from './DetailedGQL'
 import './DetailedHeader.css'
@@ -53,7 +53,7 @@ const DetailedHeader = ({
                 position='bottom center'
               />
               &nbsp;
-              <ListsPopup />
+              <AssetsListPopup isLoggedIn={isLoggedIn} />
             </div>
           }
         </div>

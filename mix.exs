@@ -57,7 +57,7 @@ defmodule Sanbase.Mixfile do
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
       {:hammer, "~> 5.0"},
-      {:ex_admin, github: "smpallen99/ex_admin", branch: "master"},
+      {:ex_admin, github: "santiment/ex_admin", branch: "master"},
       {:basic_auth, "~> 2.2"},
       {:mockery, "~> 2.2"},
       {:distillery, "~> 1.5", runtime: false},
@@ -90,7 +90,8 @@ defmodule Sanbase.Mixfile do
       {:observer_cli, "~> 1.3"},
       {:plug_attack, "~> 0.3.1"},
       {:earmark, "~> 1.2"},
-      {:ecto_enum, "~> 1.1"}
+      {:ecto_enum, "~> 1.1"},
+      {:ex_machina, "~> 2.2", only: :test}
     ]
   end
 

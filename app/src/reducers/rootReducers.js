@@ -6,6 +6,7 @@ import rootUi, { initialState as rootUiState } from './root-ui'
 import detailedPageUi, { initialState as detailedPageUiState } from './detailed-page-ui'
 import insightsPageUi, { initialState as insightsPageUiState } from './insights-page-ui'
 import notification, { initialState as initialNotificationState } from './notification'
+import assetsListUI, { initialState as initialAssetsListUIState } from './assets-list-ui'
 
 export const intitialState = {
   user: userState,
@@ -23,5 +24,6 @@ export default combineReducers({
   rootUi,
   detailedPageUi,
   insightsPageUi,
+  assetsListUI,
   notification
 })

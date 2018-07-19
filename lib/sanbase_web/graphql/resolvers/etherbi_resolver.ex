@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Return the token burn rate for the given slug and time period.
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
-  def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
+  def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
@@ -34,6 +34,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
             burn_rate: burn_rate / :math.pow(10, token_decimals)
           }
         end)
+        |> Utils.fit_from_datetime(args)
 
       {:ok, result}
     else
@@ -50,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   """
   def transaction_volume(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
@@ -74,6 +75,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
             transaction_volume: trx_volume / :math.pow(10, token_decimals)
           }
         end)
+        |> Utils.fit_from_datetime(args)
 
       {:ok, result}
     else
@@ -89,7 +91,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   """
   def daily_active_addresses(
         _root,
-        %{slug: slug, from: from, to: to, interval: interval},
+        %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
     with {:ok, contract_address, _token_decimals} <- slug_to_contract_info(slug),
@@ -113,6 +115,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
             active_addresses: active_addresses |> round() |> trunc()
           }
         end)
+        |> Utils.fit_from_datetime(args)
 
       {:ok, result}
     else
@@ -135,10 +138,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
           from: from,
           to: to,
           interval: interval
-        },
+        } = args,
         _resolution
       ) do
-    with {:ok, contract_address, _token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Transactions.Store,
@@ -160,9 +163,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         |> Enum.map(fn {datetime, funds_flow} ->
           %{
             datetime: datetime,
-            funds_flow: funds_flow
+            funds_flow: funds_flow / :math.pow(10, token_decimals)
           }
         end)
+        |> Utils.fit_from_datetime(args)
 
       {:ok, result}
     else
@@ -229,9 +233,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
-  defp project_to_contract_info(%Project{main_contract_address: main_contract_address} = project)
+  defp project_to_contract_info(%Project{
+         main_contract_address: main_contract_address,
+         token_decimals: token_decimals
+       })
        when not is_nil(main_contract_address) do
-    {:ok, String.downcase(main_contract_address), project.token_decimals || 0}
+    {:ok, String.downcase(main_contract_address), token_decimals || 0}
   end
 
   defp project_to_contract_info(project) do

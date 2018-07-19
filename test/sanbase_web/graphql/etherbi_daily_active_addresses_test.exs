@@ -6,10 +6,15 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
 
+  import Sanbase.DateTimeUtils, only: [start_of_day: 1]
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
 
   setup do
     Store.create_db()
+
+    staked_user = insert(:staked_user)
+    conn = setup_jwt_auth(build_conn(), staked_user)
 
     ticker = "SAN"
     slug = "santiment"
@@ -28,14 +33,15 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     %Ico{project_id: project.id}
     |> Repo.insert!()
 
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-14 21:55:00], "Etc/UTC")
-    datetime3 = DateTime.from_naive!(~N[2017-05-15 22:05:00], "Etc/UTC")
-    datetime4 = DateTime.from_naive!(~N[2017-05-16 22:15:00], "Etc/UTC")
-    datetime5 = DateTime.from_naive!(~N[2017-05-17 22:25:00], "Etc/UTC")
-    datetime6 = DateTime.from_naive!(~N[2017-05-18 22:35:00], "Etc/UTC")
-    datetime7 = DateTime.from_naive!(~N[2017-05-19 22:45:00], "Etc/UTC")
-    datetime8 = DateTime.from_naive!(~N[2017-05-20 22:55:00], "Etc/UTC")
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC") |> start_of_day()
+    datetime2 = DateTime.from_naive!(~N[2017-05-14 21:55:00], "Etc/UTC") |> start_of_day()
+    datetime3 = DateTime.from_naive!(~N[2017-05-15 22:05:00], "Etc/UTC") |> start_of_day()
+    datetime4 = DateTime.from_naive!(~N[2017-05-16 22:15:00], "Etc/UTC") |> start_of_day()
+    datetime5 = DateTime.from_naive!(~N[2017-05-17 22:25:00], "Etc/UTC") |> start_of_day()
+    datetime6 = DateTime.from_naive!(~N[2017-05-18 22:35:00], "Etc/UTC") |> start_of_day()
+    datetime7 = DateTime.from_naive!(~N[2017-05-19 22:45:00], "Etc/UTC") |> start_of_day()
+    datetime8 = DateTime.from_naive!(~N[2017-05-20 22:55:00], "Etc/UTC") |> start_of_day()
+    datetime9 = DateTime.from_naive!(~N[2017-05-23 22:55:00], "Etc/UTC") |> start_of_day()
 
     Store.import([
       %Measurement{
@@ -85,6 +91,12 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
         fields: %{active_addresses: 5000},
         tags: [],
         name: contract_address
+      },
+      %Measurement{
+        timestamp: datetime9 |> DateTime.to_unix(:nanoseconds),
+        fields: %{active_addresses: 100},
+        tags: [],
+        name: contract_address
       }
     ])
 
@@ -97,7 +109,9 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
       datetime5: datetime5,
       datetime6: datetime6,
       datetime7: datetime7,
-      datetime8: datetime8
+      datetime8: datetime8,
+      datetime9: datetime9,
+      conn: conn
     ]
   end
 
@@ -207,8 +221,9 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
 
     active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
+    # Tests that the datetime is adjusted so it's not before `from`
     assert %{
-             "datetime" => "2017-05-12T00:00:00Z",
+             "datetime" => "2017-05-13T00:00:00Z",
              "activeAddresses" => 5000
            } in active_addresses
 
@@ -299,5 +314,33 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
       json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
 
     assert active_addresses == 0
+  end
+
+  test "days with no active addresses return 0", context do
+    query = """
+    {
+      dailyActiveAddresses(
+        slug: "#{context.slug}",
+        from: "#{context.datetime8}",
+        to: "#{context.datetime9}",
+        interval: "1d") {
+          datetime
+          activeAddresses
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "dailyActiveAddresses"))
+
+    active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
+
+    assert [
+             %{"activeAddresses" => 5000, "datetime" => "2017-05-20T00:00:00Z"},
+             %{"activeAddresses" => 0, "datetime" => "2017-05-21T00:00:00Z"},
+             %{"activeAddresses" => 0, "datetime" => "2017-05-22T00:00:00Z"},
+             %{"activeAddresses" => 100, "datetime" => "2017-05-23T00:00:00Z"}
+           ] == active_addresses
   end
 end

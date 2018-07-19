@@ -81,6 +81,22 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     |> Sanbase.Repo.one()
   end
 
+  @doc ~s"""
+  Works when the result is a list of elements that contain a datetime and the query arguments
+  have a `from` argument. In that case the first element's `datetime` is update to be
+  the max of `datetime` and `from` from the query.
+  This is used when a query to influxdb is made. Influxdb can return a timestamp
+  that's outside `from` - `to` interval due to its inner working with buckets
+  """
+  def fit_from_datetime([%{datetime: datetime} = first | rest], %{from: from_query_argument}) do
+    [
+      %{first | datetime: Enum.max_by([datetime, from_query_argument], &DateTime.to_unix/1)}
+      | rest
+    ]
+  end
+
+  def fit_from_datetime(enum, _args), do: enum
+
   # Private functions
 
   @spec format_error(Ecto.Changeset.error()) :: String.t()

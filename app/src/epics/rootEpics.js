@@ -10,6 +10,7 @@ import handleGDPR from './handleGDPR'
 import handleRouter from './handleRouter'
 import handleApikeyGenerate from './handleApikeyGenerate'
 import handleApikeyRevoke from './handleApikeyRevoke'
+import addNewAssetsListEpic, { addNewSuccessEpic } from './addNewAssetsListEpic'
 
 export default combineEpics(
   handleFollowProject,
@@ -22,5 +23,8 @@ export default combineEpics(
   handleGDPR,
   handleRouter,
   handleApikeyGenerate,
-  handleApikeyRevoke
+  handleApikeyRevoke,
+  // addNewAssetsList epics
+  addNewAssetsListEpic,
+  addNewSuccessEpic
 )

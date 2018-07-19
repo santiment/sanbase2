@@ -5,13 +5,13 @@ defmodule SanbaseWeb.ApiExamplesView do
   require Sanbase.Utils.Config
 
   alias Sanbase.Utils.Config
-  alias SanbaseWeb.Graphql.Middlewares.ApiDelay
+  alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
 
   def render("apiexample_view.html", _assigns) do
     Phoenix.View.render_to_string(SanbaseWeb.ApiExamplesView, "examples.html", %{
       api_url: SanbaseWeb.Endpoint.api_url(),
       explorer_url: explorer_url(),
-      required_san_stake_realtime_api: required_san_stake_realtime_api(),
+      required_san_stake_full_access: required_san_stake_full_access(),
       daa: %{
         query: daa(),
         variables: "{}",
@@ -114,7 +114,8 @@ defmodule SanbaseWeb.ApiExamplesView do
     |> Map.get(:description)
   end
 
-  defp required_san_stake_realtime_api() do
-    Config.module_get(ApiDelay, :required_san_stake_realtime_api) |> String.to_integer()
+  defp required_san_stake_full_access() do
+    Config.module_get(ApiTimeframeRestriction, :required_san_stake_full_access)
+    |> String.to_integer()
   end
 end

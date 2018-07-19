@@ -20,12 +20,6 @@ defmodule Sanbase.Etherbi.DailyActiveAddresses.Store do
 
   # Private functions
 
-  defp daily_active_addresses_query(measurement, from, to, "1d") do
-    ~s/SELECT active_addresses FROM "#{measurement}"
-    WHERE time >= #{influx_time(from)}
-    AND time <= #{influx_time(to)}/
-  end
-
   defp daily_active_addresses_query(measurement, from, to, interval) do
     ~s/SELECT MEAN(active_addresses) FROM "#{measurement}"
     WHERE time >= #{influx_time(from)}

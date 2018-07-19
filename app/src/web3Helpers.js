@@ -10,7 +10,7 @@ export const setupWeb3 = cbk => {
   if (typeof window.web3 === 'undefined') {
     return
   }
-  const localWeb3 = new Web3(web3.currentProvider)
+  const localWeb3 = new Web3(web3.currentProvider) // eslint-disable-line
   // Why the interval method here? ==> https://github.com/MetaMask/faq/blob/master/DEVELOPERS.md
   setInterval(() => {
     const selectedAccount = localWeb3.eth.accounts[0]
@@ -23,7 +23,7 @@ export const setupWeb3 = cbk => {
 
 export const signMessage = account => {
   const message = `Login in Santiment with address ${account}`
-  const localWeb3 = new Web3(web3.currentProvider)
+  const localWeb3 = new Web3(web3.currentProvider) // eslint-disable-line
   const messageHash = localWeb3.sha3(
     '\x19Ethereum Signed Message:\n' + message.length + message
   )

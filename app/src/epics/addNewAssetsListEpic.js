@@ -15,6 +15,11 @@ const createUserListGQL = gql`
       id
       name
       isPublic
+      list_items {
+        project {
+          id
+        }
+      }
     }
   }
 `

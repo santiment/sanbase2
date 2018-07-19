@@ -12,6 +12,7 @@ import handleApikeyGenerate from './handleApikeyGenerate'
 import handleApikeyRevoke from './handleApikeyRevoke'
 import addNewAssetsListEpic, { addNewSuccessEpic } from './addNewAssetsListEpic'
 import removeAssetsListEpic from './removeAssetsListEpic'
+import addAssetToListEpic from './addAssetToListEpic'
 
 export default combineEpics(
   handleFollowProject,
@@ -28,5 +29,6 @@ export default combineEpics(
   // addNewAssetsList epics
   addNewAssetsListEpic,
   addNewSuccessEpic,
-  removeAssetsListEpic
+  removeAssetsListEpic,
+  addAssetToListEpic
 )

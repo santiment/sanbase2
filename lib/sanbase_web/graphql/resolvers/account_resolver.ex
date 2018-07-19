@@ -12,11 +12,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   import Ecto.Query
 
   def san_balance(
-        %User{san_balance: san_balance, test_san_balance: test_san_balance},
+        %User{} = user,
         _args,
         _res
       ) do
-    {:ok, Decimal.to_float(test_san_balance || san_balance || Decimal.new(0))}
+    with {:ok, san_balance} <- User.san_balance(user) do
+      san_balance = san_balance || Decimal.new(0)
+      {:ok, Decimal.to_float(san_balance)}
+    else
+      error ->
+        Logger.warn("Error getting a user's san balance. Reason: #{inspect(error)}")
+        {:ok, 0.0}
+    end
   end
 
   def current_user(_root, _args, %{

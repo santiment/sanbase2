@@ -16,7 +16,7 @@ import {
   USER_EMAIL_CHANGE,
   USER_APIKEY_GENERATE,
   USER_APIKEY_REVOKE,
-  USER_TOGGLE_COLOR_MODE
+  USER_TOGGLE_NIGHT_MODE
 } from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
@@ -90,7 +90,7 @@ class Account extends Component {
       changeUsername,
       generateAPIKey,
       revokeAPIKey,
-      changeColorMode,
+      toggleNightMode,
       isLoggedIn,
       isNightModeEnabled
     } = this.props
@@ -173,7 +173,7 @@ class Account extends Component {
           />
           <AccountAppearance
             isNightModeEnabled={isNightModeEnabled}
-            onColorModeToggleChange={changeColorMode}
+            onColorModeToggleChange={toggleNightMode}
           />
           <AccountSessions onLogoutBtnClick={logoutUser} />
         </div>
@@ -210,9 +210,9 @@ const mapDispatchToProps = dispatch => ({
       type: USER_APIKEY_REVOKE,
       apikey
     }),
-  changeColorMode: (evt, { checked }) =>
+  toggleNightMode: (evt, { checked }) =>
     dispatch({
-      type: USER_TOGGLE_COLOR_MODE,
+      type: USER_TOGGLE_NIGHT_MODE,
       payload: checked
     })
 })

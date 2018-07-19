@@ -26,6 +26,7 @@ defmodule Sanbase.Voting.Post do
     field(:state, :string)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
+    field(:discourse_topic_url, :string)
 
     has_many(:images, PostImage, on_delete: :delete_all)
 
@@ -62,7 +63,7 @@ defmodule Sanbase.Voting.Post do
 
   def publish_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:ready_state])
+    |> cast(attrs, [:ready_state, :discourse_topic_url])
   end
 
   def approved_state(), do: @approved

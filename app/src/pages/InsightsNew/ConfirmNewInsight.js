@@ -13,11 +13,7 @@ import ErrorBoundary from './../../ErrorBoundary'
 
 const createPostGQL = gql`
   mutation createPost($title: String!, $text: String!, $tags: [String]) {
-    createPost(
-      title: $title
-      text: $text
-      tags: $tags
-    ) {
+    createPost(title: $title, text: $text, tags: $tags) {
       id
       title
       text
@@ -29,13 +25,13 @@ const createPostGQL = gql`
 `
 
 const updatePostGQL = gql`
-  mutation updatePost($id: ID!, $title: String!, $text: String!, $tags: [String]) {
-    updatePost(
-      id: $id
-      title: $title
-      text: $text
-      tags: $tags
-    ) {
+  mutation updatePost(
+    $id: ID!
+    $title: String!
+    $text: String!
+    $tags: [String]
+  ) {
+    updatePost(id: $id, title: $title, text: $text, tags: $tags) {
       id
       title
       text
@@ -46,101 +42,108 @@ const updatePostGQL = gql`
   }
 `
 
-const createNewPost = ({createPost, post, user, history}) => createPost({
-  variables: {
-    title: post.title,
-    text: post.text,
-    tags: post.tags.map(tag => {
-      return tag.label
-    })
-  },
-  optimisticResponse: {
-    __typename: 'Mutation',
-    createPost: {
-      __typename: 'Post',
-      id: 'last',
+const createNewPost = ({ createPost, post, user, history }) =>
+  createPost({
+    variables: {
       title: post.title,
       text: post.text,
       tags: post.tags.map(tag => {
         return tag.label
       })
+    },
+    optimisticResponse: {
+      __typename: 'Mutation',
+      createPost: {
+        __typename: 'Post',
+        id: 'last',
+        title: post.title,
+        text: post.text,
+        tags: post.tags.map(tag => {
+          return tag.label
+        })
+      }
+    },
+    update: (proxy, { data: { createPost } }) => {
+      const { id, title, text, tags } = createPost
+      const data = proxy.readQuery({ query: allInsightsGQL })
+      let newPosts = [...data.allInsights]
+      if (id === 'last') {
+        newPosts.push({
+          id,
+          title,
+          tags,
+          text,
+          votes: {
+            totalSanVotes: 0,
+            totalVotes: 0,
+            __typename: 'Vote'
+          },
+          createdAt: new Date(),
+          readyState: 'draft',
+          votedAt: null,
+          state: null,
+          moderationComment: '',
+          user: user,
+          __typename: 'Post'
+        })
+      } else {
+        const postIndex = newPosts.findIndex(post => post.id === 'last')
+        newPosts = [
+          ...newPosts.slice(0, postIndex),
+          ...newPosts.slice(postIndex + 1)
+        ]
+        newPosts.push({
+          id,
+          title,
+          tags,
+          text,
+          votes: {
+            totalSanVotes: 0,
+            totalVotes: 0,
+            __typename: 'Vote'
+          },
+          createdAt: new Date(),
+          readyState: 'draft',
+          votedAt: null,
+          state: null,
+          moderationComment: '',
+          user: user,
+          __typename: 'Post'
+        })
+      }
+      data.allInsights = newPosts
+      proxy.writeQuery({ query: allInsightsGQL, data })
     }
-  },
-  update: (proxy, { data: { createPost } }) => {
-    const { id, title, text, tags } = createPost
-    const data = proxy.readQuery({ query: allInsightsGQL })
-    let newPosts = [...data.allInsights]
-    if (id === 'last') {
-      newPosts.push({
-        id,
-        title,
-        tags,
-        text,
-        votes: {
-          totalSanVotes: 0,
-          totalVotes: 0,
-          __typename: 'Vote'
-        },
-        createdAt: new Date(),
-        readyState: 'draft',
-        votedAt: null,
-        state: null,
-        moderationComment: '',
-        user: user,
-        __typename: 'Post'
-      })
-    } else {
-      const postIndex = newPosts.findIndex(post => post.id === 'last')
-      newPosts = [
-        ...newPosts.slice(0, postIndex),
-        ...newPosts.slice(postIndex + 1)]
-      newPosts.push({
-        id,
-        title,
-        tags,
-        text,
-        votes: {
-          totalSanVotes: 0,
-          totalVotes: 0,
-          __typename: 'Vote'
-        },
-        createdAt: new Date(),
-        readyState: 'draft',
-        votedAt: null,
-        state: null,
-        moderationComment: '',
-        user: user,
-        __typename: 'Post'
-      })
-    }
-    data.allInsights = newPosts
-    proxy.writeQuery({ query: allInsightsGQL, data })
-  }
-})
-.then(data => {
-  if (process.env.NODE_ENV === 'production') {
-    try {
-      axios({
-        method: 'post',
-        url: 'https://us-central1-cryptofolio-15d92.cloudfunctions.net/alerts',
-        headers: {
-          'authorization': ''
-        },
-        data: {
-          title: post.title,
-          link: post.link,
-          user: user.id
+  })
+    .then(data => {
+      if (process.env.NODE_ENV === 'production') {
+        try {
+          axios({
+            method: 'post',
+            url:
+              'https://us-central1-cryptofolio-15d92.cloudfunctions.net/alerts',
+            headers: {
+              authorization: ''
+            },
+            data: {
+              title: post.title,
+              link: post.link,
+              user: user.id
+            }
+          })
+        } catch (error) {
+          Raven.captureException(
+            'Alert about new insight ' + JSON.stringify(error)
+          )
         }
-      })
-    } catch (error) {
-      Raven.captureException('Alert about new insight ' + JSON.stringify(error))
-    }
-  }
-  history.push('/insights/my')
-})
-.catch(error => {
-  Raven.captureException('User try to confirm new insight. ' + JSON.stringify(error))
-})
+      }
+      history.push('/insights/my')
+    })
+    .catch(error => {
+      Raven.captureException(
+        'User try to confirm new insight. ' + JSON.stringify(error)
+      )
+    })
 
 const ConfirmPost = ({
   history,
@@ -158,9 +161,16 @@ const ConfirmPost = ({
           votePost={() => {}}
           unvotePost={() => {}}
           gotoInsight={() => {}}
-          user={user} {...post} />
+          user={user}
+          {...post}
+        />
         <div className='event-posts-step-control'>
-          <Link to='/insights/new/title' className='event-posts-step-control__back-btn'>Back</Link>
+          <Link
+            to='/insights/new/title'
+            className='event-posts-step-control__back-btn'
+          >
+            Back
+          </Link>
           <Button
             positive
             disabled={isPending}
@@ -175,16 +185,20 @@ const ConfirmPost = ({
                     return tag.label
                   })
                 }
-                updatePost({variables}).then(data => {
-                  history.push('/insights/my')
-                })
-                .catch(error => {
-                  Raven.captureException('User try to update insight. ' + JSON.stringify(error))
-                })
+                updatePost({ variables })
+                  .then(data => {
+                    history.push('/insights/my')
+                  })
+                  .catch(error => {
+                    Raven.captureException(
+                      'User try to update insight. ' + JSON.stringify(error)
+                    )
+                  })
               } else {
-                createNewPost({user, createPost, post, history})
+                createNewPost({ user, createPost, post, history })
               }
-            }}>
+            }}
+          >
             {isPending ? 'Waiting' : 'Click && Confirm'}
           </Button>
         </div>
@@ -201,9 +215,7 @@ const mapStateToProps = state => {
 
 const enhance = compose(
   withRouter,
-  connect(
-    mapStateToProps
-  ),
+  connect(mapStateToProps),
   withState('isPending', 'onPending', false),
   graphql(createPostGQL, {
     name: 'createPost'

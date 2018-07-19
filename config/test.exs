@@ -2,6 +2,9 @@ use Mix.Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
+
+config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
+
 config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
   server: true

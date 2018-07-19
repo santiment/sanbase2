@@ -43,12 +43,17 @@ export default (state = initialState, action) => {
         error: true
       }
     case 'SET_SEARCH':
-      const visibleItems = (items !== null) ? state.items.filter(item => {
-        const name = item.name || ''
-        const ticker = item.ticker || ''
-        return name.toLowerCase().indexOf(action.payload.search) !== -1 ||
-          ticker.toLowerCase().indexOf(action.payload.search) !== -1
-      }).length : 0
+      const visibleItems =
+        items !== null
+          ? state.items.filter(item => {
+            const name = item.name || ''
+            const ticker = item.ticker || ''
+            return (
+              name.toLowerCase().indexOf(action.payload.search) !== -1 ||
+                ticker.toLowerCase().indexOf(action.payload.search) !== -1
+            )
+          }).length
+          : 0
 
       return {
         ...state,
@@ -65,12 +70,13 @@ export default (state = initialState, action) => {
       } else if (!action.payload.category.checked) {
         delete state.categories[action.payload.category.id]
       } else {
-        state.categories[action.payload.category.id] = action.payload.category.checked
+        state.categories[action.payload.category.id] =
+          action.payload.category.checked
       }
 
       return {
         ...state,
-        categories: {...state.categories}
+        categories: { ...state.categories }
       }
     default:
       return state

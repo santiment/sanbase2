@@ -18,7 +18,7 @@ const STATES = {
   published: 'published'
 }
 
-const Status = ({status = STATES.draft, moderationComment}) => {
+const Status = ({ status = STATES.draft, moderationComment }) => {
   const color = (status => {
     if (status === STATES.published) {
       return 'green'
@@ -29,27 +29,26 @@ const Status = ({status = STATES.draft, moderationComment}) => {
     <Div className='post-status'>
       <div>
         <span>Status:</span> &nbsp;
-        <Label
-          size='tiny'
-          basic
-          color={color}>
+        <Label size='tiny' basic color={color}>
           {status}
         </Label>
       </div>
-      {moderationComment &&
+      {moderationComment && (
         <div>
           <span>Comment:</span> {moderationComment}
-        </div>}
+        </div>
+      )}
     </Div>
   )
 }
 
-const Author = ({id, username}) => (
+const Author = ({ id, username }) => (
   <div className='event-post-author'>
-    {id &&
+    {id && (
       <Fragment>
         by&nbsp; <Link to={`/insights/users/${id}`}>{username}</Link>
-      </Fragment>}
+      </Fragment>
+    )}
   </div>
 )
 
@@ -76,11 +75,14 @@ const Post = ({
   showStatus = false
 }) => {
   return (
-    <div className='event-post' onClick={e => {
-      if (e.target.className === 'event-post-body') {
-        id && gotoInsight(id)
-      }
-    }}>
+    <div
+      className='event-post'
+      onClick={e => {
+        if (e.target.className === 'event-post-body') {
+          id && gotoInsight(id)
+        }
+      }}
+    >
       <div className='event-post-body'>
         <A className='event-storylink' href={`/insights/${id}`}>
           {title}
@@ -88,15 +90,23 @@ const Post = ({
         <br />
         <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
         {user && tags.length > 0 && <Author {...user} />}
-        {user &&
+        {user && (
           <Div className='event-post-info'>
-            {tags.length > 0
-              ? <div className='post-tags'>
+            {tags.length > 0 ? (
+              <div className='post-tags'>
                 {tags.map((tag, index) => (
-                  <Link key={index} className='post-tag' to={`/insights/tags/${tag.name}`}>{tag.label || tag.name}</Link>
+                  <Link
+                    key={index}
+                    className='post-tag'
+                    to={`/insights/tags/${tag.name}`}
+                  >
+                    {tag.label || tag.name}
+                  </Link>
                 ))}
               </div>
-              : <Author {...user} />}
+            ) : (
+              <Author {...user} />
+            )}
             <LikeBtn
               onLike={() => {
                 if (votedAt) {
@@ -107,34 +117,46 @@ const Post = ({
               }}
               balance={balance}
               liked={!!votedAt}
-              votes={votes.totalSanVotes || 0} />
-          </Div>}
+              votes={votes.totalSanVotes || 0}
+            />
+          </Div>
+        )}
         <Div className='event-post-controls'>
-          {showStatus && <Status
-            moderationComment={moderationComment}
-            status={readyState} />}
-          <div style={{
-            display: 'flex'
-          }} >
-            {showStatus && readyState === 'draft' && <Button
-              size='mini'
-              onClick={() => deletePost(id)}
-              basic
-              style={{
-                fontWeight: '700',
-                color: '#db2828'
-              }}>
-              Delete this insight
-            </Button>}
-            {showStatus && readyState === 'draft' && <Button
-              size='mini'
-              color='orange'
-              onClick={() => publishPost(id)}
-              style={{
-                fontWeight: '700'
-              }}>
-              Publish your insight
-            </Button>}
+          {showStatus && (
+            <Status moderationComment={moderationComment} status={readyState} />
+          )}
+          <div
+            style={{
+              display: 'flex'
+            }}
+          >
+            {showStatus &&
+              readyState === 'draft' && (
+                <Button
+                  size='mini'
+                  onClick={() => deletePost(id)}
+                  basic
+                  style={{
+                    fontWeight: '700',
+                    color: '#db2828'
+                  }}
+                >
+                  Delete this insight
+                </Button>
+              )}
+            {showStatus &&
+              readyState === 'draft' && (
+                <Button
+                  size='mini'
+                  color='orange'
+                  onClick={() => publishPost(id)}
+                  style={{
+                    fontWeight: '700'
+                  }}
+                >
+                  Publish your insight
+                </Button>
+              )}
           </div>
         </Div>
       </div>

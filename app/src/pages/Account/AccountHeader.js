@@ -5,9 +5,7 @@ const AccountHeader = () => {
   return (
     <Fragment>
       <Helmet>
-        <title>
-          SANbase: Settings
-        </title>
+        <title>SANbase: Settings</title>
       </Helmet>
       <div className='page-head'>
         <h1>Account settings</h1>

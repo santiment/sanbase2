@@ -1,15 +1,17 @@
 import React, { Component } from 'react'
 import { SlideDown } from 'animate-components'
 import { Loader, Message, Button } from 'semantic-ui-react'
-import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized'
+import {
+  List,
+  AutoSizer,
+  CellMeasurer,
+  CellMeasurerCache
+} from 'react-virtualized'
 
 import Search from './../../components/Search'
 import ProjectCard from './ProjectCard'
 import FloatingButton from './FloatingButton'
-import Filters, {
-  DEFAULT_SORT_BY,
-  DEFAULT_FILTER_BY
-} from './Filters'
+import Filters, { DEFAULT_SORT_BY, DEFAULT_FILTER_BY } from './Filters'
 import './ProjectsMobile.css'
 
 export default class ProjectsMobile extends Component {
@@ -20,9 +22,14 @@ export default class ProjectsMobile extends Component {
     }
   }
 
-  /* eslint-disable no-undef */
-  toggleExpandCard = (index) => () => {
-    this.setState({expandedCards: {...this.state.expandedCards, [index]: !this.state.expandedCards[index]}},
+  toggleExpandCard = index => () => {
+    this.setState(
+      {
+        expandedCards: {
+          ...this.state.expandedCards,
+          [index]: !this.state.expandedCards[index]
+        }
+      },
       this.updateRowHeight(index)
     )
   }
@@ -32,21 +39,14 @@ export default class ProjectsMobile extends Component {
     fixedWidth: true
   })
 
-  updateRowHeight = (index) => () => {
+  updateRowHeight = index => () => {
     this.cache.clear(index)
     this.projectsList.recomputeRowHeights(index)
   }
 
-  rowRenderer = ({
-    key,
-    index,
-    isScrolling,
-    isVisible,
-    style,
-    parent
-  }) => {
+  rowRenderer = ({ key, index, isScrolling, isVisible, style, parent }) => {
     const project = this.props.Projects.filteredProjects[index]
-    const {type = 'erc20', history} = this.props
+    const { type = 'erc20', history } = this.props
 
     return (
       <CellMeasurer
@@ -54,12 +54,10 @@ export default class ProjectsMobile extends Component {
         columnIndex={0}
         key={key}
         rowIndex={index}
-        parent={parent}>
-        {({measure}) => (
-          <div
-            key={key}
-            style={style}
-          >
+        parent={parent}
+      >
+        {({ measure }) => (
+          <div key={key} style={style}>
             <ProjectCard
               type={type}
               history={history}
@@ -73,7 +71,6 @@ export default class ProjectsMobile extends Component {
       </CellMeasurer>
     )
   }
-  /* eslint-enable no-undef */
 
   render () {
     const {
@@ -97,13 +94,22 @@ export default class ProjectsMobile extends Component {
     const { projects } = Projects
 
     if (Projects.loading) {
-      return (<Loader active size='large' />)
+      return <Loader active size='large' />
     }
     if (Projects.isError) {
       return (
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh'}}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '80vh'
+          }}
+        >
           <Message warning>
-            <Message.Header>Something going wrong on our server.</Message.Header>
+            <Message.Header>
+              Something going wrong on our server.
+            </Message.Header>
             <p>Please try again later.</p>
           </Message>
         </div>
@@ -112,26 +118,31 @@ export default class ProjectsMobile extends Component {
 
     return (
       <div className='cashflow-mobile'>
-        {isSearchFocused &&
+        {isSearchFocused && (
           <SlideDown duration='0.3s' timingFunction='ease-out' as='div'>
             <div className='cashflow-mobile-search'>
               <Search
                 focus={focusSearch}
                 onSelectProject={ticker => filterByName(ticker.toLowerCase())}
-                projects={projects} />
+                projects={projects}
+              />
               <Button
                 basic
                 onClick={() => toggleFilter(!isFilterOpened)}
-                className='cashflow-mobile-search__filter'>
+                className='cashflow-mobile-search__filter'
+              >
                 Filter
               </Button>
             </div>
-          </SlideDown>}
+          </SlideDown>
+        )}
         <AutoSizer>
           {({ height, width }) => (
             <List
               className='List'
-              ref={(ref) => { this.projectsList = ref }}
+              ref={ref => {
+                this.projectsList = ref
+              }}
               width={width}
               height={height}
               rowCount={Projects.filteredProjects.length}
@@ -142,7 +153,7 @@ export default class ProjectsMobile extends Component {
             />
           )}
         </AutoSizer>
-        {isFilterOpened &&
+        {isFilterOpened && (
           <Filters
             filterBy={filterBy}
             sortBy={sortBy}
@@ -150,12 +161,15 @@ export default class ProjectsMobile extends Component {
             changeSort={changeSort}
             onFilterChanged={filters => {
               toggleFilter(!isFilterOpened)
-            }} />
-        }
-        <FloatingButton handleSearchClick={() => {
-          filterByName(null)
-          focusSearch(!isSearchFocused)
-        }} />
+            }}
+          />
+        )}
+        <FloatingButton
+          handleSearchClick={() => {
+            filterByName(null)
+            focusSearch(!isSearchFocused)
+          }}
+        />
       </div>
     )
   }

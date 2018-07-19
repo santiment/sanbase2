@@ -107,26 +107,30 @@ export const allErc20ShortProjectsGQL = gql`
   ${ethereumData}
 `
 
-export const allShortProjectsGQL = gql`{
-  allProjects {
-    id
-    name
-    rank
-    ethSpent
-    coinmarketcapId
-    marketcapUsd
-    fundsRaisedIcos {
-      amount
-      currencyCode
-    }
-    ethAddresses {
-      address
+export const allShortProjectsGQL = gql`
+  {
+    allProjects {
+      id
+      name
+      rank
+      ethSpent
+      coinmarketcapId
+      marketcapUsd
+      fundsRaisedIcos {
+        amount
+        currencyCode
+      }
+      ethAddresses {
+        address
+      }
     }
   }
-}`
+`
 
-export const allMarketSegmentsGQL = gql`{
-  allMarketSegments
-}`
+export const allMarketSegmentsGQL = gql`
+  {
+    allMarketSegments
+  }
+`
 
 export default allProjectsGQL

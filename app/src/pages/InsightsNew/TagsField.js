@@ -2,7 +2,9 @@ import React, { Component } from 'react'
 import gql from 'graphql-tag'
 import { graphql } from 'react-apollo'
 import PropTypes from 'prop-types'
-import Select from 'react-select'
+import Select from 'react-virtualized-select'
+import './TagsField.css'
+import 'react-virtualized-select/styles.css'
 
 const allTagsGQL = gql`
   {
@@ -36,12 +38,13 @@ class TagsField extends Component {
       <div>
         <label>Tags</label>
         <Select
-          isMulti
+          multi
           placeholder='Add a tag...'
           options={this.props.tags}
           isLoading={this.props.isTagsLoading}
           onChange={this.handleOnChange}
           value={this.state.tags}
+          valueKey='value'
         />
         <div className='hint'>Up to 5 tags</div>
       </div>

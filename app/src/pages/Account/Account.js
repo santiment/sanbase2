@@ -10,14 +10,7 @@ import AccountWallets from './AccountWallets'
 import AccountApiKeyForm from './AccountApiKeyForm'
 import AccountAppearance from './AccountAppearance'
 import AccountSessions from './AccountSessions'
-import {
-  USER_LOGOUT_SUCCESS,
-  USER_USERNAME_CHANGE,
-  USER_EMAIL_CHANGE,
-  USER_APIKEY_GENERATE,
-  USER_APIKEY_REVOKE,
-  USER_TOGGLE_COLOR_MODE
-} from '../../actions/types'
+import * as actions from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
@@ -90,7 +83,7 @@ class Account extends Component {
       changeUsername,
       generateAPIKey,
       revokeAPIKey,
-      changeColorMode,
+      toggleNightMode,
       isLoggedIn,
       isNightModeEnabled
     } = this.props
@@ -173,7 +166,7 @@ class Account extends Component {
           />
           <AccountAppearance
             isNightModeEnabled={isNightModeEnabled}
-            onColorModeToggleChange={changeColorMode}
+            onNightModeToggleChange={toggleNightMode}
           />
           <AccountSessions onLogoutBtnClick={logoutUser} />
         </div>
@@ -190,29 +183,29 @@ const mapStateToProps = state => ({
 })
 
 const mapDispatchToProps = dispatch => ({
-  logoutUser: () => dispatch({ type: USER_LOGOUT_SUCCESS }),
+  logoutUser: () => dispatch({ type: actions.USER_LOGOUT_SUCCESS }),
   changeEmail: email =>
     dispatch({
-      type: USER_EMAIL_CHANGE,
+      type: actions.USER_EMAIL_CHANGE,
       email
     }),
   changeUsername: username =>
     dispatch({
-      type: USER_USERNAME_CHANGE,
+      type: actions.USER_USERNAME_CHANGE,
       username
     }),
   generateAPIKey: () =>
     dispatch({
-      type: USER_APIKEY_GENERATE
+      type: actions.USER_APIKEY_GENERATE
     }),
   revokeAPIKey: apikey =>
     dispatch({
-      type: USER_APIKEY_REVOKE,
+      type: actions.USER_APIKEY_REVOKE,
       apikey
     }),
-  changeColorMode: (evt, { checked }) =>
+  toggleNightMode: (evt, { checked }) =>
     dispatch({
-      type: USER_TOGGLE_COLOR_MODE,
+      type: actions.USER_TOGGLE_NIGHT_MODE,
       payload: checked
     })
 })

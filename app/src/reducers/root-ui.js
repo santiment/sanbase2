@@ -1,4 +1,11 @@
 import * as actions from './../actions/types'
+import { loadKeyState } from '../utils/localStorage'
+
+const isNightModeEnabled = loadKeyState('isNightModeEnabled') || false
+
+if (isNightModeEnabled) {
+  document.body.classList.add('night-mode')
+}
 
 export const initialState = {
   isFeedbackModalOpened: false,
@@ -8,7 +15,7 @@ export const initialState = {
   loginError: false,
   loginErrorMessage: '',
   isGDPRModalOpened: false,
-  isNightModeEnabled: false
+  isNightModeEnabled
 }
 
 export default (state = initialState, action) => {
@@ -58,8 +65,7 @@ export default (state = initialState, action) => {
         ...state,
         isGDPRModalOpened: !privacyPolicyAccepted
       }
-    case actions.USER_TOGGLE_COLOR_MODE:
-      document.body.classList.toggle('night-mode')
+    case actions.APP_USER_NIGHT_MODE_SAVE:
       return {
         ...state,
         isNightModeEnabled: action.payload

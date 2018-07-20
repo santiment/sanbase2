@@ -52,6 +52,10 @@
   align-items: center !important;
 }
 
+.night-mode .sign-in-btn {
+  border: 1px solid #2d3239 !important;
+}
+
 .sign-in-btn i {
   margin-left: 2px !important;
   margin-right: 5px !important;
@@ -94,6 +98,16 @@
 
 .ui.basic.button.metamask-btn:hover {
   border-color: rgba(235, 133, 37, 1) !important;
+}
+
+.night-mode .ui.basic.button.metamask-btn {
+  background-color: #a6570c !important;
+  color: #e8e8e8 !important;
+}
+
+.night-mode .ui.basic.button.metamask-btn:hover {
+  background-color: #c56d1b !important;
+  color: #e8e8e8 !important;
 }
 
 @media (min-width: 1024px) {

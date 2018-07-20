@@ -8,14 +8,9 @@ import AccountUsernameForm from './AccountUsernameForm'
 import AccountEthKeyForm from './AccountEthKeyForm'
 import AccountWallets from './AccountWallets'
 import AccountApiKeyForm from './AccountApiKeyForm'
+import AccountAppearance from './AccountAppearance'
 import AccountSessions from './AccountSessions'
-import {
-  USER_LOGOUT_SUCCESS,
-  USER_USERNAME_CHANGE,
-  USER_EMAIL_CHANGE,
-  USER_APIKEY_GENERATE,
-  USER_APIKEY_REVOKE
-} from '../../actions/types'
+import * as actions from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
@@ -88,7 +83,9 @@ class Account extends Component {
       changeUsername,
       generateAPIKey,
       revokeAPIKey,
-      isLoggedIn
+      toggleNightMode,
+      isLoggedIn,
+      isNightModeEnabled
     } = this.props
     const { emailForm, usernameForm } = this.state
 
@@ -172,6 +169,10 @@ class Account extends Component {
             generateAPIKey={generateAPIKey}
             revokeAPIKey={revokeAPIKey}
           />
+          <AccountAppearance
+            isNightModeEnabled={isNightModeEnabled}
+            onNightModeToggleChange={toggleNightMode}
+          />
           <AccountSessions onLogoutBtnClick={logoutUser} />
         </div>
       </div>
@@ -182,29 +183,35 @@ class Account extends Component {
 const mapStateToProps = state => ({
   user: state.user.data,
   loading: state.user.isLoading,
-  isLoggedIn: !!state.user.token
+  isLoggedIn: !!state.user.token,
+  isNightModeEnabled: state.rootUi.isNightModeEnabled
 })
 
 const mapDispatchToProps = dispatch => ({
-  logoutUser: () => dispatch({ type: USER_LOGOUT_SUCCESS }),
+  logoutUser: () => dispatch({ type: actions.USER_LOGOUT_SUCCESS }),
   changeEmail: email =>
     dispatch({
-      type: USER_EMAIL_CHANGE,
+      type: actions.USER_EMAIL_CHANGE,
       email
     }),
   changeUsername: username =>
     dispatch({
-      type: USER_USERNAME_CHANGE,
+      type: actions.USER_USERNAME_CHANGE,
       username
     }),
   generateAPIKey: () =>
     dispatch({
-      type: USER_APIKEY_GENERATE
+      type: actions.USER_APIKEY_GENERATE
     }),
   revokeAPIKey: apikey =>
     dispatch({
-      type: USER_APIKEY_REVOKE,
+      type: actions.USER_APIKEY_REVOKE,
       apikey
+    }),
+  toggleNightMode: (evt, { checked }) =>
+    dispatch({
+      type: actions.USER_TOGGLE_NIGHT_MODE,
+      payload: checked
     })
 })
 

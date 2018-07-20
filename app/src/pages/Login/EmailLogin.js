@@ -2,14 +2,8 @@ import React, { Fragment } from 'react'
 import Raven from 'raven-js'
 import gql from 'graphql-tag'
 import GoogleAnalytics from 'react-ga'
-import {
-  Button,
-  Message
-} from 'semantic-ui-react'
-import {
-  compose,
-  withState
-} from 'recompose'
+import { Button, Message } from 'semantic-ui-react'
+import { compose, withState } from 'recompose'
 import { graphql } from 'react-apollo'
 import { Form } from 'react-form'
 import ReactFormInput from '../../components/react-form-semantic-ui-react/ReactFormInput'
@@ -52,17 +46,15 @@ const successValidator = ({ email, username }) => {
   }
 }
 
-const isErrorEmail = formApi => (
+const isErrorEmail = formApi =>
   !!formApi.getValue().email &&
   formApi.getTouched().email &&
   !!formApi.getError().email
-)
 
-const isErrorUsername = formApi => (
+const isErrorUsername = formApi =>
   !!formApi.getValue().username &&
   formApi.getTouched().username &&
   !!formApi.getError().username
-)
 
 export const EmailField = ({
   formApi,
@@ -82,13 +74,13 @@ export const EmailField = ({
       field='email'
       error={isErrorEmail(formApi)}
       className='email-input'
-      placeholder={placeholder} />
-    {isErrorEmail(formApi) &&
-    <Message negative>
-      {formApi.getError().email}
-    </Message>}
+      placeholder={placeholder}
+    />
+    {isErrorEmail(formApi) && (
+      <Message negative>{formApi.getError().email}</Message>
+    )}
   </div>
-  )
+)
 
 export const UsernameField = ({ formApi, placeholder = 'Your name' }) => {
   return (
@@ -100,11 +92,11 @@ export const UsernameField = ({ formApi, placeholder = 'Your name' }) => {
         field='username'
         error={isErrorUsername(formApi)}
         className='username-input'
-        placeholder={placeholder} />
-      {isErrorUsername(formApi) &&
-        <Message negative>
-          {formApi.getError().username}
-        </Message>}
+        placeholder={placeholder}
+      />
+      {isErrorUsername(formApi) && (
+        <Message negative>{formApi.getError().username}</Message>
+      )}
     </Fragment>
   )
 }
@@ -122,7 +114,10 @@ const EmailLogin = ({
   if (isSuccess) {
     return (
       <div>
-        <p>We sent an email to you. Please login in to email provider and click the confirm link.</p>
+        <p>
+          We sent an email to you. Please login in to email provider and click
+          the confirm link.
+        </p>
         <p>Waiting for your confirmation...</p>
       </div>
     )
@@ -161,21 +156,21 @@ const EmailLogin = ({
               onError(true)
               Raven.captureException(error)
             })
-        }}>
+        }}
+      >
         {formApi => (
           <form
             className='email-login-form'
             onSubmit={formApi.submitForm}
-            autoComplete='off'>
+            autoComplete='off'
+          >
             <EmailField formApi={formApi} />
             <div className='email-form-control'>
               <Button
-                disabled={
-                  !formApi.getSuccess().email ||
-                  isPending
-                }
+                disabled={!formApi.getSuccess().email || isPending}
                 positive={!!formApi.getSuccess().email}
-                type='submit'>
+                type='submit'
+              >
                 {isPending ? 'Waiting...' : 'Continue'}
               </Button>
             </div>

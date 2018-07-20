@@ -23,36 +23,40 @@ const getChartDataFromHistory = (data, label, chart = {}) => {
   const borderColor = (data.dataset || {}).borderColor || COLOR
   return {
     labels: items ? items.map(data => moment(data.datetime).utc()) : [],
-    datasets: [{
-      label,
-      type: chart.type || 'LineWithLine',
-      fill: chart.fill || true,
-      borderColor: borderColor,
-      borderWidth: chart.borderWidth || 0.5,
-      yAxisID: makeAxisName(label),
-      backgroundColor: borderColor,
-      pointBorderWidth: chart.pointBorderWidth || 0.2,
-      pointRadius: 0.1,
-      data: items ? items.map(data => ({
-        x: data.datetime,
-        [`${label}`]: +data[`${label}`]
-      })) : [],
-      datalabels: {
-        display: false
+    datasets: [
+      {
+        label,
+        type: chart.type || 'LineWithLine',
+        fill: chart.fill || true,
+        borderColor: borderColor,
+        borderWidth: chart.borderWidth || 0.5,
+        yAxisID: makeAxisName(label),
+        backgroundColor: borderColor,
+        pointBorderWidth: chart.pointBorderWidth || 0.2,
+        pointRadius: 0.1,
+        data: items
+          ? items.map(data => ({
+            x: data.datetime,
+            [`${label}`]: +data[`${label}`]
+          }))
+          : [],
+        datalabels: {
+          display: false
+        }
       }
-    }]
+    ]
   }
 }
 
 const renderData = (data, label, formatData = null) => {
   if (data.loading) {
-    return ('Loading ...')
+    return 'Loading ...'
   }
   if (data.error) {
-    return ('Server error. Try later...')
+    return 'Server error. Try later...'
   }
   if (!data.loading && data.items.length === 0) {
-    return ('No data')
+    return 'No data'
   }
   const value = data.items[data.items.length - 1][`${label}`]
   if (formatData) {
@@ -88,7 +92,7 @@ const Analytics = ({
 }) => {
   const chartData = getChartDataFromHistory(data, label, chart)
   const borderColor = (data.dataset || {}).borderColor || chart.color || COLOR
-  const {referenceLine, withMiniMap, syncId = undefined} = chart
+  const { referenceLine, withMiniMap, syncId = undefined } = chart
   const tooltip = (
     <Tooltip
       formatter={formatData}
@@ -97,48 +101,53 @@ const Analytics = ({
         return moment(datetime).format('DD.MM.YYYY')
       }}
       label={'asdf'}
-    />)
+    />
+  )
   return (
     <div className='analytics'>
       <div className='analytics-trend-row'>
         <div className='analytics-trend-info-label'>
           {show}
-          {showInfo &&
-          <div className='analytics-trend-info'>
-            <div
-              className='analytics-trend-details'
-              style={{color: borderColor}}
-            >
-              {index
-              ? (data.items[index] || {})[`${label}`]
-              : renderData(data, label, formatData)}
+          {showInfo && (
+            <div className='analytics-trend-info'>
+              <div
+                className='analytics-trend-details'
+                style={{ color: borderColor }}
+              >
+                {index
+                  ? (data.items[index] || {})[`${label}`]
+                  : renderData(data, label, formatData)}
+              </div>
             </div>
-          </div>}
+          )}
         </div>
       </div>
       <div className='analytics-trend-row'>
         <div className='analytics-trend-chart'>
-          {chart.type === 'bar' &&
+          {chart.type === 'bar' && (
             <ResponsiveContainer>
-              <BarChart
-                syncId={syncId}
-                data={chartData.datasets[0].data} >
+              <BarChart syncId={syncId} data={chartData.datasets[0].data}>
                 {tooltip}
                 <Bar dataKey={label} stroke={borderColor} fill={borderColor} />
-                {withMiniMap &&
-                <Brush
-                  travellerWidth={20}
-                  data={chartData.datasets[0].data}
-                  tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
-                  dataKey='x' height={50} />}
+                {withMiniMap && (
+                  <Brush
+                    travellerWidth={20}
+                    data={chartData.datasets[0].data}
+                    tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
+                    dataKey='x'
+                    height={50}
+                  />
+                )}
               </BarChart>
-            </ResponsiveContainer>}
-          {chart.type === 'line' &&
+            </ResponsiveContainer>
+          )}
+          {chart.type === 'line' && (
             <ResponsiveContainer>
               <LineChart
                 syncId={syncId}
                 dot={false}
-                data={chartData.datasets[0].data} >
+                data={chartData.datasets[0].data}
+              >
                 {tooltip}
                 <Line
                   type='monotone'
@@ -152,23 +161,25 @@ const Analytics = ({
                   onMouseDown={(data, e) => {
                     console.log(data, e)
                   }}
-                  strokeWidth={2} />
-                {(referenceLine || {}).y &&
-                <ReferenceLine
-                  strokeDasharray='3 3'
-                  stroke='black'
-                  y={referenceLine.y}
-                  label={referenceLine.label} />}
+                  strokeWidth={2}
+                />
+                {(referenceLine || {}).y && (
+                  <ReferenceLine
+                    strokeDasharray='3 3'
+                    stroke='black'
+                    y={referenceLine.y}
+                    label={referenceLine.label}
+                  />
+                )}
               </LineChart>
-            </ResponsiveContainer>}
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-const enhance = compose(
-  withState('index', 'setIndex', null)
-)
+const enhance = compose(withState('index', 'setIndex', null))
 
 export default enhance(Analytics)

@@ -1,13 +1,14 @@
 import { graphql } from 'react-apollo'
 import { compose, withState, lifecycle } from 'recompose'
+import { DEFAULT_SORT_BY, DEFAULT_FILTER_BY } from './Filters'
 import {
-  DEFAULT_SORT_BY,
-  DEFAULT_FILTER_BY
-} from './Filters'
-import { allProjectsGQL, allErc20ProjectsGQL, currenciesGQL } from './allProjectsGQL'
+  allProjectsGQL,
+  allErc20ProjectsGQL,
+  currenciesGQL
+} from './allProjectsGQL'
 import { simpleSort } from './../../utils/sortMethods'
 
-const mapDataToProps = type => ({Projects, ownProps}) => {
+const mapDataToProps = type => ({ Projects, ownProps }) => {
   const loading = Projects.loading
   const isError = !!Projects.error
   const errorMessage = Projects.error ? Projects.error.message : ''
@@ -33,8 +34,10 @@ const mapDataToProps = type => ({Projects, ownProps}) => {
 
   if (ownProps.isSearchFocused && ownProps.filterName) {
     filteredProjects = filteredProjects.filter(project => {
-      return project.name.toLowerCase().indexOf(ownProps.filterName) !== -1 ||
-          project.ticker.toLowerCase().indexOf(ownProps.filterName) !== -1
+      return (
+        project.name.toLowerCase().indexOf(ownProps.filterName) !== -1 ||
+        project.ticker.toLowerCase().indexOf(ownProps.filterName) !== -1
+      )
     })
   }
 
@@ -77,32 +80,33 @@ const pickGQL = type => {
   }
 }
 
-const enhance = (type = 'all') => compose(
-  withState('isSearchFocused', 'focusSearch', false),
-  withState('filterName', 'filterByName', null),
-  withState('sortBy', 'changeSort', DEFAULT_SORT_BY),
-  withState('filterBy', 'changeFilter', DEFAULT_FILTER_BY),
-  withState('isFilterOpened', 'toggleFilter', false),
-  graphql(pickGQL(type), {
-    name: 'Projects',
-    props: mapDataToProps(type),
-    options: () => {
-      return {
-        errorPolicy: 'all'
+const enhance = (type = 'all') =>
+  compose(
+    withState('isSearchFocused', 'focusSearch', false),
+    withState('filterName', 'filterByName', null),
+    withState('sortBy', 'changeSort', DEFAULT_SORT_BY),
+    withState('filterBy', 'changeFilter', DEFAULT_FILTER_BY),
+    withState('isFilterOpened', 'toggleFilter', false),
+    graphql(pickGQL(type), {
+      name: 'Projects',
+      props: mapDataToProps(type),
+      options: () => {
+        return {
+          errorPolicy: 'all'
+        }
       }
-    }
-  }),
-  lifecycle({
-    componentDidUpdate (prevProps, prevState) {
-      if (this.props.isSearchFocused !== prevProps.isSearchFocused) {
-        const searchInput = document.querySelector('.search div input')
-        searchInput && searchInput.focus()
+    }),
+    lifecycle({
+      componentDidUpdate (prevProps, prevState) {
+        if (this.props.isSearchFocused !== prevProps.isSearchFocused) {
+          const searchInput = document.querySelector('.search div input')
+          searchInput && searchInput.focus()
+        }
       }
-    }
-  })
-)
+    })
+  )
 
-const withProjectsDataMobile = ({type = 'all'}) => WrappedComponent => {
+const withProjectsDataMobile = ({ type = 'all' }) => WrappedComponent => {
   return enhance(type)(WrappedComponent)
 }
 

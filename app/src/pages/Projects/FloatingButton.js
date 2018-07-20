@@ -3,11 +3,7 @@ import { withState } from 'recompose'
 import { Icon } from 'semantic-ui-react'
 import './FloatingButton.css'
 
-const FloatingButton = ({
-  isToggled = false,
-  toggle,
-  handleSearchClick
-}) => (
+const FloatingButton = ({ isToggled = false, toggle, handleSearchClick }) => (
   <div className='floating-btn-container'>
     <div
       onClick={e => {
@@ -15,7 +11,10 @@ const FloatingButton = ({
         toggle(!isToggled)
         handleSearchClick()
       }}
-      className={isToggled ? 'floating-btn floating-btn--rotation' : 'floating-btn'}>
+      className={
+        isToggled ? 'floating-btn floating-btn--rotation' : 'floating-btn'
+      }
+    >
       <Icon size='large' name={isToggled ? 'remove' : 'search'} />
     </div>
   </div>

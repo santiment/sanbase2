@@ -20,7 +20,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    onSearch: (event) => {
+    onSearch: event => {
       dispatch({
         type: 'SET_SEARCH',
         payload: {
@@ -28,7 +28,7 @@ const mapDispatchToProps = dispatch => {
         }
       })
     },
-    handleSetCategory: (event) => {
+    handleSetCategory: event => {
       dispatch({
         type: 'SET_CATEGORY',
         payload: {
@@ -39,7 +39,7 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const mapDataToProps = type => ({Projects}) => {
+const mapDataToProps = type => ({ Projects }) => {
   const loading = Projects.loading
   const isError = !!Projects.error
   const errorMessage = Projects.error ? Projects.error.message : ''
@@ -83,32 +83,32 @@ const pickProjectsType = type => {
   }
 }
 
-const enhance = (type = 'all') => compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
-  withRouter,
-  graphql(pickProjectsType(type).gql, {
-    name: 'Projects',
-    props: mapDataToProps(type),
-    options: () => {
-      return {
-        errorPolicy: 'all',
-        notifyOnNetworkStatusChange: true
+const enhance = (type = 'all') =>
+  compose(
+    connect(mapStateToProps, mapDispatchToProps),
+    withRouter,
+    graphql(pickProjectsType(type).gql, {
+      name: 'Projects',
+      props: mapDataToProps(type),
+      options: () => {
+        return {
+          errorPolicy: 'all',
+          notifyOnNetworkStatusChange: true
+        }
       }
-    }
-  }),
-  graphql(allMarketSegmentsGQL, {
-    name: 'allMarketSegments',
-    props: ({allMarketSegments: {allMarketSegments}}) => (
-      { allMarketSegments: allMarketSegments ? JSON.parse(allMarketSegments) : {} }
-    )
-  }),
-  pure
-)
+    }),
+    graphql(allMarketSegmentsGQL, {
+      name: 'allMarketSegments',
+      props: ({ allMarketSegments: { allMarketSegments } }) => ({
+        allMarketSegments: allMarketSegments
+          ? JSON.parse(allMarketSegments)
+          : {}
+      })
+    }),
+    pure
+  )
 
-const withProjectsData = ({type = 'all'}) => WrappedComponent => {
+const withProjectsData = ({ type = 'all' }) => WrappedComponent => {
   return enhance(type)(WrappedComponent)
 }
 

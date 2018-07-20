@@ -10,7 +10,7 @@ export const loadState = () => {
   }
 }
 
-export const saveState = (state) => {
+export const saveState = state => {
   try {
     const serializedState = JSON.stringify(state)
     window.localStorage.setItem('user', serializedState)
@@ -19,7 +19,7 @@ export const saveState = (state) => {
   }
 }
 
-export const loadKeyState = (key) => {
+export const loadKeyState = key => {
   try {
     const serializedState = window.localStorage.getItem(key)
     if (serializedState === null) {

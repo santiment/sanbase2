@@ -6,24 +6,30 @@ import { userGQL } from './handleLaunch'
 import * as actions from './../actions/types'
 
 const PrivacyGQL = gql`
-  mutation updateTermsAndConditions($privacyPolicyAccepted: Boolean!,
-  $marketingAccepted: Boolean!
+  mutation updateTermsAndConditions(
+    $privacyPolicyAccepted: Boolean!
+    $marketingAccepted: Boolean!
   ) {
-    updateTermsAndConditions(privacyPolicyAccepted: $privacyPolicyAccepted,
+    updateTermsAndConditions(
+      privacyPolicyAccepted: $privacyPolicyAccepted
       marketingAccepted: $marketingAccepted
     ) {
-     id,
-     privacyPolicyAccepted,
-     marketingAccepted
+      id
+      privacyPolicyAccepted
+      marketingAccepted
     }
   }
 `
 
 const privacyGQLHelper = (user, type) => {
-  const marketingAccepted = type === actions.USER_TOGGLE_MARKETING
-    ? !user.data.marketingAccepted : user.data.marketingAccepted
-  const privacyPolicyAccepted = type === actions.USER_TOGGLE_PRIVACY_POLICY
-    ? !user.data.privacyPolicyAccepted : user.data.privacyPolicyAccepted
+  const marketingAccepted =
+    type === actions.USER_TOGGLE_MARKETING
+      ? !user.data.marketingAccepted
+      : user.data.marketingAccepted
+  const privacyPolicyAccepted =
+    type === actions.USER_TOGGLE_PRIVACY_POLICY
+      ? !user.data.privacyPolicyAccepted
+      : user.data.privacyPolicyAccepted
   return {
     variables: {
       marketingAccepted,
@@ -52,8 +58,8 @@ const privacyGQLHelper = (user, type) => {
 }
 
 const handleGDPR = (action$, store, { client }) =>
-  action$.ofType(actions.USER_TOGGLE_PRIVACY_POLICY,
-    actions.USER_TOGGLE_MARKETING)
+  action$
+    .ofType(actions.USER_TOGGLE_PRIVACY_POLICY, actions.USER_TOGGLE_MARKETING)
     .switchMap(action => {
       const user = store.getState().user
       const mutationPromise = client.mutate({
@@ -66,8 +72,10 @@ const handleGDPR = (action$, store, { client }) =>
             Observable.of({
               type: actions.USER_SETTING_GDPR,
               payload: {
-                privacyPolicyAccepted: (data.updateTermsAndConditions || {}).privacyPolicyAccepted,
-                marketingAccepted: (data.updateTermsAndConditions || {}).marketingAccepted
+                privacyPolicyAccepted: (data.updateTermsAndConditions || {})
+                  .privacyPolicyAccepted,
+                marketingAccepted: (data.updateTermsAndConditions || {})
+                  .marketingAccepted
               }
             }),
             Observable.of(showNotification('Privacy settings is changed'))

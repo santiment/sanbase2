@@ -1,13 +1,17 @@
 /* eslint-env jest */
 import { filterColumnsByTableSection } from './ProjectsTable'
 
-const columns = [{
-  id: 'project'
-}, {
-  id: 'daily_active_addresses'
-}, {
-  id: 'eth_spent'
-}]
+const columns = [
+  {
+    id: 'project'
+  },
+  {
+    id: 'daily_active_addresses'
+  },
+  {
+    id: 'eth_spent'
+  }
+]
 
 describe('filterColumnsByTableSection', () => {
   it('should return columns for erc20 projects', () => {

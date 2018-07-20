@@ -31,4 +31,4 @@ export const Cashflow = ({
   />
 )
 
-export default withProjectsData({type: 'erc20'})(Cashflow)
+export default withProjectsData({ type: 'erc20' })(Cashflow)

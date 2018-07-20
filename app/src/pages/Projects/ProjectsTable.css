@@ -8,7 +8,7 @@
   display: flex;
   width: 100%;
   justify-content: space-between;
-  padding: 0 16px 5px 16px;
+  padding: 0;
 }
 
 .datatables-filter {
@@ -73,7 +73,51 @@
 
 .ReactTable .rt-tbody .rt-td {
   border-right: 1px solid rgba(0, 0, 0, 0.05);
-  padding: 8px;
+  padding: 6px;
+}
+
+.ReactTable .rt-td > a,
+.ReactTable .rt-td > div {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.percent-changes--negative,
+.percent-changes--positive {
+  font-size: 16px;
+}
+
+.ticker {
+  font-size: 13px;
+}
+
+.rt-td .overview-ticker {
+  padding-top: 3px;
+  font-size: 14px;
+  line-height: 1 !important;
+  text-align: center;
+}
+
+.rt-td .overview-name {
+  padding-top: 10px;
+  border-bottom: 1px solid #b1b7c1;
+  display: inline-block;
+  padding-bottom: 1px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rt-td .overview-price,
+.rt-td .overview-volume {
+  padding-top: 10px;
+}
+
+.rt-td .overview-activeaddresses,
+.rt-td .overview-devactivity,
+.rt-td .overview-ethspent,
+.rt-td .overview-marketcap {
+  padding-top: 10px;
 }
 
 .rt-tr:hover {
@@ -93,12 +137,6 @@
   white-space: normal;
 }
 
-.ReactTable .rt-td > a,
-.ReactTable .rt-td > div {
-  font-size: 18px;
-  line-height: 1.2;
-}
-
 .ReactTable .rt-thead .rt-tr {
   text-align: right;
 }
@@ -113,23 +151,9 @@
   text-align: center;
 }
 
-.ticker {
-  font-size: 14px;
-}
-
 .-sort-desc,
 .-sort-asc {
   background-color: rgba(0, 150, 99, 0.08);
-}
-
-.rt-td .overview-name {
-  border-bottom: 1px solid #b1b7c1;
-  display: inline-block;
-  padding-bottom: 1px;
-  padding-top: 12px;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .rt-td .overview-name:hover {
@@ -149,20 +173,6 @@
 
 .rt-td .overview-pb {
   padding-top: 12px;
-  text-align: center;
-}
-
-.rt-td .overview-marketcap,
-.rt-td .overview-ethspent,
-.rt-td .overview-devactivity,
-.rt-td .overview-activeaddresses {
-  padding-top: 12px;
-}
-
-.rt-td .overview-ticker {
-  font-size: 14px;
-  line-height: 1 !important;
-  padding-top: 6px;
   text-align: center;
 }
 

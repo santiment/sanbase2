@@ -50,18 +50,21 @@ const main = () => {
     createRavenMiddleware(getRaven())
   ]
 
-  const store = createStore(reducers,
-    {user: loadState()} || {},
+  const store = createStore(
+    reducers,
+    { user: loadState() } || {},
     composeWithDevTools(applyMiddleware(...middleware))
   )
 
-  store.subscribe(throttle(() => {
-    saveState(store.getState().user)
-  }, 1000))
+  store.subscribe(
+    throttle(() => {
+      saveState(store.getState().user)
+    }, 1000)
+  )
 
   store.dispatch(launchApp())
 
-  detectNetwork(({online = true}) => {
+  detectNetwork(({ online = true }) => {
     store.dispatch(changeNetworkStatus(online))
   })
 
@@ -73,7 +76,8 @@ const main = () => {
         </ConnectedRouter>
       </Provider>
     </ApolloProvider>,
-    document.getElementById('root'))
+    document.getElementById('root')
+  )
 
   // TODO: 2018-04-25 Yura Z.: Need to change deploy logic for frontend
   // Until we don't use s3 for static, we have problem with webworkers,

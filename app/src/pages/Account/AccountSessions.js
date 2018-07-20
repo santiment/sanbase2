@@ -8,7 +8,9 @@ const AccountSessions = ({ onLogoutBtnClick }) => {
       <Divider />
       <div className='account-control'>
         <p>Your current session</p>
-        <Button basic color='red' onClick={onLogoutBtnClick}>Log out</Button>
+        <Button basic color='red' onClick={onLogoutBtnClick}>
+          Log out
+        </Button>
       </div>
     </Fragment>
   )

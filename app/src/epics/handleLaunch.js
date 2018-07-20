@@ -9,16 +9,16 @@ import * as actions from './../actions/types'
 export const userGQL = gql`
   query {
     currentUser {
-      id,
-      email,
-      username,
-      sanBalance,
-      privacyPolicyAccepted,
-      marketingAccepted,
-      ethAccounts{
-        address,
+      id
+      email
+      username
+      sanBalance
+      privacyPolicyAccepted
+      marketingAccepted
+      ethAccounts {
+        address
         sanBalance
-      },
+      }
       apikeys
     }
   }

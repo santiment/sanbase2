@@ -28,7 +28,7 @@ export default (state = initialState, action) => {
         isToggledBurnRate: !state.isToggledBurnRate
       }
     case 'CHANGE_TIME_FILTER':
-      const {timeframe, from, to, interval} = action
+      const { timeframe, from, to, interval } = action
       return {
         ...state,
         timeFilter: {

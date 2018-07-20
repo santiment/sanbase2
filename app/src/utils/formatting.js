@@ -59,4 +59,11 @@ const millify = (value, precision = 1) => {
   return `${Number(prettifiedValue.toFixed(precision))}${suffixes[exponent]}`
 }
 
-export { formatCryptoCurrency, formatBTC, formatSAN, formatNumber, millify, getSymbolByCurrency }
+export {
+  formatCryptoCurrency,
+  formatBTC,
+  formatSAN,
+  formatNumber,
+  millify,
+  getSymbolByCurrency
+}

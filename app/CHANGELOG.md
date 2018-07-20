@@ -4,6 +4,7 @@
 
   Updated settings
   Fixed fetching of allTags
+  Change lint rules, add prettier
 
 - 2018-18-06 | v.0.6.0:
 

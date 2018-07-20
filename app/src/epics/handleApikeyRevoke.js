@@ -15,7 +15,7 @@ const revokeApikeyGQL = gql`
 `
 
 const handleApikeyRevoke = (action$, store, { client }) =>
-  action$.ofType(USER_APIKEY_REVOKE).switchMap(({apikey}) => {
+  action$.ofType(USER_APIKEY_REVOKE).switchMap(({ apikey }) => {
     const mutation = client.mutate({
       mutation: revokeApikeyGQL,
       variables: {

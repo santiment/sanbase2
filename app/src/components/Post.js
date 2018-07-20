@@ -4,6 +4,7 @@ import { withRouter, Link } from 'react-router-dom'
 import { Label, Button } from 'semantic-ui-react'
 import { createSkeletonElement } from '@trainline/react-skeletor'
 import LikeBtn from './../pages/InsightsNew/LikeBtn'
+import PostVisualBacktest from './PostVisualBacktest'
 import './Post.css'
 
 const A = createSkeletonElement('a', 'pending-home')
@@ -120,6 +121,9 @@ const Post = ({
               votes={votes.totalSanVotes || 0}
             />
           </Div>
+        )}
+        {tags.length > 0 && (
+          <PostVisualBacktest from={createdAt} ticker={tags[0].name} />
         )}
         <Div className='event-post-controls'>
           {showStatus && (

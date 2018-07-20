@@ -16,8 +16,8 @@ const propTypes = {
   history: PropTypes.object
 }
 
-const PostVisualBacktest = ({ ticker, change, changeProp }) => {
-  if (!change) return ''
+export const PostVisualBacktest = ({ ticker, change, changeProp }) => {
+  if (!change) return null
   return (
     <Message>
       <Label horizontal>{ticker}</Label>
@@ -43,10 +43,10 @@ const enhance = compose(
   }),
   withProps(({ ticker, history = {} }) => {
     const { historyPrice } = history
-    if (!historyPrice || historyPrice.length === 0) return
+    if (!historyPrice || historyPrice.length === 0) return {}
     const start = historyPrice[0]
     const last = historyPrice[historyPrice.length - 1]
-    if (!start || !last) return
+    if (!start || !last) return {}
     const changeProp = isTotalMarket(ticker) ? 'Total marketcap' : 'Prices'
     return {
       change: getChanges(

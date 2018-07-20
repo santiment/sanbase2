@@ -51,68 +51,10 @@ const createNewPost = ({ createPost, post, user, history }) =>
         return tag.label
       })
     },
-    optimisticResponse: {
-      __typename: 'Mutation',
-      createPost: {
-        __typename: 'Post',
-        id: 'last',
-        title: post.title,
-        text: post.text,
-        tags: post.tags.map(tag => {
-          return tag.label
-        })
-      }
-    },
-    update: (proxy, { data: { createPost } }) => {
-      const { id, title, text, tags } = createPost
-      const data = proxy.readQuery({ query: allInsightsGQL })
-      let newPosts = [...data.allInsights]
-      if (id === 'last') {
-        newPosts.push({
-          id,
-          title,
-          tags,
-          text,
-          votes: {
-            totalSanVotes: 0,
-            totalVotes: 0,
-            __typename: 'Vote'
-          },
-          createdAt: new Date(),
-          readyState: 'draft',
-          votedAt: null,
-          state: null,
-          moderationComment: '',
-          user: user,
-          __typename: 'Post'
-        })
-      } else {
-        const postIndex = newPosts.findIndex(post => post.id === 'last')
-        newPosts = [
-          ...newPosts.slice(0, postIndex),
-          ...newPosts.slice(postIndex + 1)
-        ]
-        newPosts.push({
-          id,
-          title,
-          tags,
-          text,
-          votes: {
-            totalSanVotes: 0,
-            totalVotes: 0,
-            __typename: 'Vote'
-          },
-          createdAt: new Date(),
-          readyState: 'draft',
-          votedAt: null,
-          state: null,
-          moderationComment: '',
-          user: user,
-          __typename: 'Post'
-        })
-      }
-      data.allInsights = newPosts
-      proxy.writeQuery({ query: allInsightsGQL, data })
+    update: (store, { data: { createPost } }) => {
+      const data = store.readQuery({ query: allInsightsGQL })
+      data.allInsights.push(createPost)
+      store.writeQuery({ query: allInsightsGQL, data })
     }
   })
     .then(data => {

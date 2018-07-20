@@ -13,15 +13,18 @@ const isTotalMarket = ticker => ticker === 'Crypto Market'
 
 const propTypes = {
   ticker: PropTypes.string.isRequired,
-  from: PropTypes.string.isRequired
+  history: PropTypes.object
 }
 
-const PostVisualBacktest = ({ ticker, change, changeProp }) => (
-  <Message>
-    {changeProp} changes after publication
-    {change && <PercentChanges changes={change} />}
-  </Message>
-)
+const PostVisualBacktest = ({ ticker, change, changeProp }) => {
+  if (!change) return ''
+  return (
+    <Message>
+      {changeProp} changes after publication
+      {change && <PercentChanges changes={change} />}
+    </Message>
+  )
+}
 
 const enhance = compose(
   graphql(HistoryPriceGQL, {

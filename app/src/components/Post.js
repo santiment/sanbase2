@@ -122,9 +122,10 @@ const Post = ({
             />
           </Div>
         )}
-        {tags.length > 0 && (
-          <PostVisualBacktest from={createdAt} ticker={tags[0].name} />
-        )}
+        {createdAt &&
+          tags.length > 0 && (
+            <PostVisualBacktest from={createdAt} ticker={tags[0].name} />
+          )}
         <Div className='event-post-controls'>
           {showStatus && (
             <Status moderationComment={moderationComment} status={readyState} />

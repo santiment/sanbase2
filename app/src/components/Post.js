@@ -121,7 +121,7 @@ const Post = ({
               }}
               balance={balance}
               liked={!!votedAt}
-              votes={votes.totalSanVotes || 0}
+              votes={votes}
             />
           </Div>
         )}

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Message } from 'semantic-ui-react'
+import { Message, Label } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { compose, withProps } from 'recompose'
 import { HistoryPriceGQL } from './../pages/Detailed/DetailedGQL'
@@ -20,6 +20,7 @@ const PostVisualBacktest = ({ ticker, change, changeProp }) => {
   if (!change) return ''
   return (
     <Message>
+      <Label horizontal>{ticker}</Label>
       {changeProp} changes after publication
       {change && <PercentChanges changes={change} />}
     </Message>
@@ -40,8 +41,9 @@ const enhance = compose(
       }
     }
   }),
-  withProps(({ ticker, history: { historyPrice = [] } }) => {
-    if (!historyPrice) return
+  withProps(({ ticker, history = {} }) => {
+    const { historyPrice } = history
+    if (!historyPrice || historyPrice.length === 0) return
     const start = historyPrice[0]
     const last = historyPrice[historyPrice.length - 1]
     if (!start || !last) return

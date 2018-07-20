@@ -199,7 +199,7 @@ class Insight extends Component {
                 }}
                 balance={balance}
                 liked={!!post.votedAt}
-                votes={(post.votes || {}).totalSanVotes || 0}
+                votes={post.votes}
               />
             </div>
           </Panel>

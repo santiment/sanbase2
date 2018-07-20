@@ -104,7 +104,8 @@
     "linters": {
       "src/**/*.js": [
         "prettier-standard",
-        "git add"
+        "git add",
+        "yarn test"
       ]
     }
   }

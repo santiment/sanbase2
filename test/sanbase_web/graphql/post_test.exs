@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.PostTest do
   use SanbaseWeb.ConnCase, async: false
+  use Mockery
 
   alias Sanbase.Voting.{Poll, Post, Vote, Tag}
   alias Sanbase.Auth.User
@@ -804,7 +805,18 @@ defmodule SanbaseWeb.Graphql.PostTest do
              [%{"name" => tag1.name}, %{"name" => tag2.name}]
   end
 
+  @discourse_response_file "#{System.cwd()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
   test "publish post", %{user: user, conn: conn} do
+    mock(
+      HTTPoison,
+      :post,
+      {:ok,
+       %HTTPoison.Response{
+         body: File.read!(@discourse_response_file),
+         status_code: 200
+       }}
+    )
+
     poll = Poll.find_or_insert_current_poll!()
 
     post =
@@ -822,7 +834,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
     mutation {
       publishInsight(id: #{post.id}) {
         id,
-        ready_state
+        readyState,
+        discourseTopicUrl
       }
     }
     """
@@ -832,7 +845,10 @@ defmodule SanbaseWeb.Graphql.PostTest do
       |> post("/graphql", mutation_skeleton(query))
 
     data = json_response(result, 200)["data"]
-    assert data["publishInsight"]["ready_state"] == Post.published()
+    assert data["publishInsight"]["readyState"] == Post.published()
+
+    assert data["publishInsight"]["discourseTopicUrl"] ==
+             "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
   end
 
   test "publish post returns error when user is not author", %{conn: conn} do

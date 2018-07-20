@@ -17,67 +17,61 @@ const MobileMenu = ({
   isLogined,
   logout
 }) => (
-  <div className={cx({
-    'mobile-app-menu': true,
-    'overlay': isOpened
-  })}>
+  <div
+    className={cx({
+      'mobile-app-menu': true,
+      overlay: isOpened
+    })}
+  >
     <div className='app-bar'>
-      <div
-        onClick={() => history.push('/')}
-        className='brand'>
-        <img
-          src={logo}
-          width='115'
-          height='22'
-          alt='SANbase' />
+      <div onClick={() => history.push('/')} className='brand'>
+        <img src={logo} width='115' height='22' alt='SANbase' />
       </div>
       <Icon
         className={isOpened ? 'close-btn--rotation' : ''}
         onClick={toggleMenu}
-        name={isOpened ? 'close' : 'bars'} />
+        name={isOpened ? 'close' : 'bars'}
+      />
     </div>
-    {isOpened &&
+    {isOpened && (
       <div className='overlay-content'>
         <div className='navigation-list'>
-          <Link
-            onClick={toggleMenu}
-            to={'/signals'}>
+          <Link onClick={toggleMenu} to={'/signals'}>
             Signals
           </Link>
-          <Link
-            onClick={toggleMenu}
-            to={'/roadmap'}>
+          <Link onClick={toggleMenu} to={'/roadmap'}>
             Roadmap
           </Link>
-          <Link
-            onClick={toggleMenu}
-            to={'/projects'}>
+          <Link onClick={toggleMenu} to={'/projects'}>
             ERC20 Projects
           </Link>
-          <Link
-            onClick={toggleMenu}
-            to={'/currencies'}>
+          <Link onClick={toggleMenu} to={'/currencies'}>
             Currencies
           </Link>
         </div>
-        {isLogined
-          ? <Button
+        {isLogined ? (
+          <Button
             color='orange'
             onClick={() => {
               toggleMenu()
               logout()
-            }}>
-              Logout
-            </Button>
-          : <Button
+            }}
+          >
+            Logout
+          </Button>
+        ) : (
+          <Button
             color='green'
             onClick={() => {
               toggleMenu()
               history.push('/login')
-            }}>
-              Login
-            </Button>}
-      </div>}
+            }}
+          >
+            Login
+          </Button>
+        )}
+      </div>
+    )}
   </div>
 )
 
@@ -99,14 +93,11 @@ const mapDispatchToProps = dispatch => {
 
 const enhance = compose(
   withRouter,
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
+  connect(mapStateToProps, mapDispatchToProps),
   withStateHandlers(
     { isOpened: false },
     {
-      toggleMenu: ({isOpened}) => () => ({isOpened: !isOpened})
+      toggleMenu: ({ isOpened }) => () => ({ isOpened: !isOpened })
     }
   )
 )

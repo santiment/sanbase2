@@ -2,7 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import cx from 'classnames'
 import { Label } from 'semantic-ui-react'
-import { formatCryptoCurrency, formatNumber, millify } from './../../utils/formatting'
+import {
+  formatCryptoCurrency,
+  formatNumber,
+  millify
+} from './../../utils/formatting'
 import './FinancialsBlock.css'
 
 const propTypes = {
@@ -18,7 +22,11 @@ export const collectedField = (currency, amount) => {
 
 const showStatus = status => {
   if (status === 'Certified') {
-    return (<Label color='green' horizontal>Certified</Label>)
+    return (
+      <Label color='green' horizontal>
+        Certified
+      </Label>
+    )
   }
   return status || 'Not Listed'
 }
@@ -33,61 +41,75 @@ const FinancialsBlock = ({
   isERC20
 }) => (
   <div>
-    Project Transparency:&nbsp;{isERC20 ? showStatus(projectTransparencyStatus) : 'Not applicable'}
+    Project Transparency:&nbsp;{isERC20
+      ? showStatus(projectTransparencyStatus)
+      : 'Not applicable'}
     <hr />
-    {fundsRaisedIcos && fundsRaisedIcos.length !== 0 &&
-    <div className='row-info'>
-      <div>
-        Collected
-      </div>
-      <div className='value'>
-        {fundsRaisedIcos ? fundsRaisedIcos.map((amountIco, index) => {
-          return <div key={index} >{
-            collectedField(amountIco.currencyCode, amountIco.amount)
-          }</div>
-        }) : '-'}
-      </div>
-    </div>}
-    {ethBalance &&
-    <div className={cx({
-      'row-info wallets': true,
-      'info-disabled': !isERC20 || !ethBalance
-    })}>
-      <div>
-        Wallet Balances
-      </div>
-    </div>}
-    {isERC20 &&
-    <div className='row-info wallets-balance'>
-      {ethAddresses.map((wallet, index) => (
-        <div key={index}>
-          <div className='wallets-addresses'>
-            <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
-            <span>ETH {millify(wallet.balance, 2)}</span>
+    {fundsRaisedIcos &&
+      fundsRaisedIcos.length !== 0 && (
+        <div className='row-info'>
+          <div>Collected</div>
+          <div className='value'>
+            {fundsRaisedIcos
+              ? fundsRaisedIcos.map((amountIco, index) => {
+                return (
+                  <div key={index}>
+                    {collectedField(amountIco.currencyCode, amountIco.amount)}
+                  </div>
+                )
+              })
+              : '-'}
           </div>
         </div>
-      ))}
-    </div>}
-    {ethBalance &&
-    <div className={cx({
-      'row-info': true,
-      'info-disabled': !isERC20 || !ethBalance
-    })}>
-      <div>
-        Total Balance
+      )}
+    {ethBalance && (
+      <div
+        className={cx({
+          'row-info wallets': true,
+          'info-disabled': !isERC20 || !ethBalance
+        })}
+      >
+        <div>Wallet Balances</div>
       </div>
-      {ethBalance && `ETH ${millify(ethBalance, 2)}`}
-    </div>}
-    {isERC20 &&
-    <div className={cx({
-      'row-info': true,
-      'info-disabled': !isERC20 || !ethBalance
-    })}>
-      <div>ETH Spent 30d</div>
-      <div style={{textAlign: 'right'}}>
-        {ethSpent ? `ETH ${millify(ethSpent, 2)}` : 0}
+    )}
+    {isERC20 && (
+      <div className='row-info wallets-balance'>
+        {ethAddresses.map((wallet, index) => (
+          <div key={index}>
+            <div className='wallets-addresses'>
+              <a href={`https://etherscan.io/address/${wallet.address}`}>
+                {wallet.address}
+              </a>
+              <span>ETH {millify(wallet.balance, 2)}</span>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>}
+    )}
+    {ethBalance && (
+      <div
+        className={cx({
+          'row-info': true,
+          'info-disabled': !isERC20 || !ethBalance
+        })}
+      >
+        <div>Total Balance</div>
+        {ethBalance && `ETH ${millify(ethBalance, 2)}`}
+      </div>
+    )}
+    {isERC20 && (
+      <div
+        className={cx({
+          'row-info': true,
+          'info-disabled': !isERC20 || !ethBalance
+        })}
+      >
+        <div>ETH Spent 30d</div>
+        <div style={{ textAlign: 'right' }}>
+          {ethSpent ? `ETH ${millify(ethSpent, 2)}` : 0}
+        </div>
+      </div>
+    )}
   </div>
 )
 

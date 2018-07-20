@@ -13,8 +13,13 @@ const BuildChallenge = () => {
       </p>
       <hr />
       <h2>Why?</h2>
-      <p>Santiment has a lot of great data about Blockchain world. And we collect this data in realtime.</p>
-      <p>We have great tools for developers and data for traders and crypto guru</p>
+      <p>
+        Santiment has a lot of great data about Blockchain world. And we collect
+        this data in realtime.
+      </p>
+      <p>
+        We have great tools for developers and data for traders and crypto guru
+      </p>
       <ul>
         <li>> 1,500 Coins and Blockchain Projects</li>
         <li>ETH spent per project, token burn rate and more...</li>

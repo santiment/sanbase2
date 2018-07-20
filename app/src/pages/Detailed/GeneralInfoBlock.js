@@ -38,69 +38,48 @@ const GeneralInfoBlock = ({
       </a>
       <a
         className={`${!whitepaperLink && 'fa-disabled'}`}
-        href={whitepaperLink || ''}>
+        href={whitepaperLink || ''}
+      >
         Whitepaper
       </a>
     </p>
     <hr />
     <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
-      <div>
-        Market Cap
-      </div>
-      <div>
-        {formatNumber(marketcapUsd, { currency: 'USD' })}
-      </div>
+      <div>Market Cap</div>
+      <div>{formatNumber(marketcapUsd, { currency: 'USD' })}</div>
     </div>
     <div className={`row-info ${!priceUsd && 'info-disabled'}`}>
-      <div>
-        Price
-      </div>
-      <div>
-        {formatNumber(priceUsd, { currency: 'USD' })}
-      </div>
+      <div>Price</div>
+      <div>{formatNumber(priceUsd, { currency: 'USD' })}</div>
     </div>
     <div className={`row-info ${!volumeUsd && 'info-disabled'}`}>
-      <div>
-        Volume
-      </div>
-      <div>
-        {formatNumber(volumeUsd, { currency: 'USD' })}
-      </div>
+      <div>Volume</div>
+      <div>{formatNumber(volumeUsd, { currency: 'USD' })}</div>
     </div>
     <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
-      <div>
-        Circulating
-      </div>
+      <div>Circulating</div>
       <div>
         {formatCryptoCurrency(ticker, formatNumber(marketcapUsd / priceUsd))}
       </div>
     </div>
-    <div className={cx({
-      'row-info': true,
-      'info-disabled': !isERC20
-    })}>
-      <div>
-        Total supply
-      </div>
+    <div
+      className={cx({
+        'row-info': true,
+        'info-disabled': !isERC20
+      })}
+    >
+      <div>Total supply</div>
       <div>
         {isERC20 ? formatCryptoCurrency(ticker, formatNumber(totalSupply)) : ''}
       </div>
     </div>
     <div className={`row-info ${!rank && 'info-disabled'}`}>
-      <div>
-        Rank
-      </div>
-      <div>
-        {rank}
-      </div>
+      <div>Rank</div>
+      <div>{rank}</div>
     </div>
     <div className={`row-info ${!roiUsd && 'info-disabled'}`}>
-      <div>
-        ROI since ICO
-      </div>
-      <div>
-        {roiUsd && parseFloat(roiUsd).toFixed(2)}
-      </div>
+      <div>ROI since ICO</div>
+      <div>{roiUsd && parseFloat(roiUsd).toFixed(2)}</div>
     </div>
   </div>
 )

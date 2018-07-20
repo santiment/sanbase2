@@ -28,28 +28,32 @@ const PostList = ({
         deletePost={deletePost}
         publishPost={publishPost}
         gotoInsight={gotoInsight}
-        {...posts[key]} />
+        {...posts[key]}
+      />
     ))}
   </div>
 )
 
 export default createSkeletonProvider(
   {
-    posts: [{
-      title: '_____',
-      link: 'https://sanbase.net',
-      createdAt: new Date(),
-      user: {
-        username: ''
+    posts: [
+      {
+        title: '_____',
+        link: 'https://sanbase.net',
+        createdAt: new Date(),
+        user: {
+          username: ''
+        }
+      },
+      {
+        title: '_____',
+        link: 'https://sanbase.net',
+        createdAt: new Date(),
+        user: {
+          username: ''
+        }
       }
-    }, {
-      title: '_____',
-      link: 'https://sanbase.net',
-      createdAt: new Date(),
-      user: {
-        username: ''
-      }
-    }]
+    ]
   },
   ({ posts }) => posts.length === 0,
   () => ({

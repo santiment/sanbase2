@@ -102,7 +102,7 @@ class Account extends Component {
     return (
       <div className='page account'>
         <AccountHeader />
-        {!user.email &&
+        {!user.email && (
           <Message
             className='account-message account-message__dashboard'
             warning
@@ -110,34 +110,39 @@ class Account extends Component {
             list={[
               'For acces your dashboard from mobile device, you should add email address.'
             ]}
-          />}
+          />
+        )}
 
-        {emailForm.SUCCESS &&
+        {emailForm.SUCCESS && (
           <Message
             className='account-message account-message__email_success'
             positive
             content={`Email was changed to "${user.email || ''}"!`}
-          />}
-        {emailForm.ERROR &&
+          />
+        )}
+        {emailForm.ERROR && (
           <Message
             className='account-message account-message__email_error'
             negative
             header='Failed to change email!'
             list={['Try again later...']}
-          />}
-        {usernameForm.SUCCESS &&
+          />
+        )}
+        {usernameForm.SUCCESS && (
           <Message
             className='account-message account-message__username_success'
             positive
             content={`Username was changed to "${user.username || ''}"!`}
-          />}
-        {usernameForm.ERROR &&
+          />
+        )}
+        {usernameForm.ERROR && (
           <Message
             className='account-message account-message__username_error'
             negative
             header='Failed to change username!'
             list={['Try again later...']}
-          />}
+          />
+        )}
 
         <div className='panel'>
           <AccountEmailForm

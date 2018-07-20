@@ -6,15 +6,17 @@ import { Login } from './Login'
 
 describe('Login container', () => {
   it('it should render loader while not loaded', () => {
-    const login = shallow(<Login
-      user={{
-        account: null,
-        data: {},
-        hasMetamask: false,
-        isLoading: true,
-        error: false
-      }}
-    />)
+    const login = shallow(
+      <Login
+        user={{
+          account: null,
+          data: {},
+          hasMetamask: false,
+          isLoading: true,
+          error: false
+        }}
+      />
+    )
     expect(toJson(login)).toMatchSnapshot()
   })
 })

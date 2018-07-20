@@ -10,7 +10,7 @@ import InsightsLayout from './../Insights/InsightsLayout'
 import './InsightsNew.css'
 
 class InsightsNew extends Component {
-  state = { // eslint-disable-line
+  state = {
     title: '',
     link: '',
     text: '',
@@ -20,13 +20,13 @@ class InsightsNew extends Component {
     created: new Date()
   }
 
-  changePost = (post, nextStepURL = '') => { // eslint-disable-line
-    this.setState({...post}, () => {
+  changePost = (post, nextStepURL = '') => {
+    this.setState({ ...post }, () => {
       this.props.history.push(`/insights/new/${nextStepURL}`)
     })
   }
 
-  savePost = post => { // eslint-disable-line
+  savePost = post => {
     console.log('Save the inisight', post)
   }
 
@@ -34,26 +34,30 @@ class InsightsNew extends Component {
     if (!this.props.isLogin) {
       this.props.history.push('/login')
     }
-    if (this.props.match.path.split('/')[2] === 'update' &&
-      !!this.props.match.params.insightId) {
+    if (
+      this.props.match.path.split('/')[2] === 'update' &&
+      !!this.props.match.params.insightId
+    ) {
       this.changePost(this.props.location.state.post)
     }
   }
 
   render () {
     if (!this.props.username) {
-      return (
-        <Redirect to='/insights' />
-      )
+      return <Redirect to='/insights' />
     }
 
-    if (!this.state.text &&
+    if (
+      !this.state.text &&
       this.props.history.location.pathname !== '/insights/new' &&
-      this.props.match.path.split('/')[2] !== 'update') {
+      this.props.match.path.split('/')[2] !== 'update'
+    ) {
       return (
-        <Redirect to={{
-          pathname: '/insights/new'
-        }} />
+        <Redirect
+          to={{
+            pathname: '/insights/new'
+          }}
+        />
       )
     }
     const { addPost } = this.props
@@ -64,7 +68,9 @@ class InsightsNew extends Component {
         sidebar={
           <div className='insights-pages-sidebar-highlights'>
             <div>
-              <Link to={'/insights/33'}>How to use Insights: Traders/Investors</Link>
+              <Link to={'/insights/33'}>
+                How to use Insights: Traders/Investors
+              </Link>
             </div>
             <div>
               <Link to={'/insights/34'}>How to use Insights: Researchers</Link>
@@ -72,17 +78,27 @@ class InsightsNew extends Component {
             <br />
             <div>
               <p>
-                Use Insights to journal your ideas, as a way to teach yourself, perform research, or share with others.
+                Use Insights to journal your ideas, as a way to teach yourself,
+                perform research, or share with others.
               </p>
               <p>
-                Record your trades or research notes, and learn more about your investing style, track your progress over time, and study trends. You can also share (“publish”) Insights publicly to teach others, build your reputation and educate yourself at the same time! You will be participating in the proper decentralisation of creating, owning and sharing financial information in our society.
+                Record your trades or research notes, and learn more about your
+                investing style, track your progress over time, and study
+                trends. You can also share (“publish”) Insights publicly to
+                teach others, build your reputation and educate yourself at the
+                same time! You will be participating in the proper
+                decentralisation of creating, owning and sharing financial
+                information in our society.
               </p>
               <p>
-                Plus, you could benefit financially from your skills in “understanding the crypto”.
+                Plus, you could benefit financially from your skills in
+                “understanding the crypto”.
               </p>
             </div>
-          </div>}
-        isLogin={this.state.isLogin}>
+          </div>
+        }
+        isLogin={this.state.isLogin}
+      >
         <div className='event-posts-new'>
           <Panel>
             <PostsNewHeader location={last} />
@@ -92,16 +108,20 @@ class InsightsNew extends Component {
               render={() => (
                 <CreateBody
                   changePost={this.changePost}
-                  post={{...this.state}} />
-            )} />
+                  post={{ ...this.state }}
+                />
+              )}
+            />
             <Route
               exact
               path='/insights/new/title'
               render={() => (
                 <CreateTitle
                   changePost={this.changePost}
-                  post={{...this.state}} />
-              )} />
+                  post={{ ...this.state }}
+                />
+              )}
+            />
             <Route
               exact
               path='/insights/new/confirm'
@@ -109,8 +129,10 @@ class InsightsNew extends Component {
                 <ConfirmPost
                   addPost={addPost}
                   savePost={this.savePost}
-                  post={{...this.state}} />
-              )} />
+                  post={{ ...this.state }}
+                />
+              )}
+            />
           </Panel>
         </div>
       </InsightsLayout>
@@ -138,7 +160,4 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(InsightsNew)
+export default connect(mapStateToProps, mapDispatchToProps)(InsightsNew)

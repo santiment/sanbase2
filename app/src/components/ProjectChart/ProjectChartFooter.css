@@ -112,6 +112,11 @@
   align-items: normal;
 }
 
+.night-mode .filter-category {
+  border-color: #2d3239;
+  border-radius: 0;
+}
+
 .filter-category:last-child {
   border: none;
 }
@@ -158,6 +163,15 @@
 .premium-wall-button {
   border: 2px solid gold;
   margin-top: 5px;
+}
+
+.night-mode .chart-footer-filters .toggleBtn {
+  border: 1px solid #252932;
+}
+
+.night-mode .chart-footer-filters .premium-wall-button {
+  border-color: #a18825;
+  border-width: 2px;
 }
 
 @media (min-width: 1024px) {

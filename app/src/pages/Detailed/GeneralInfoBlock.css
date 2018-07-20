@@ -8,8 +8,16 @@
   color: #26a987;
 }
 
+.night-mode .social-icons a {
+  color: #1d8166;
+}
+
 .info-disabled {
   color: #d3d3d3;
+}
+
+.night-mode .info-disabled {
+  color: #595959;
 }
 
 /* whitepaper link is picking up disabled class even if there's a link

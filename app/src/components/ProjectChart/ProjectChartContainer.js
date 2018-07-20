@@ -296,7 +296,8 @@ class ProjectChartContainer extends Component {
 const mapStateToProps = state => {
   return {
     isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
-    timeFilter: state.detailedPageUi.timeFilter
+    timeFilter: state.detailedPageUi.timeFilter,
+    isNightModeEnabled: state.rootUi.isNightModeEnabled
   }
 }
 

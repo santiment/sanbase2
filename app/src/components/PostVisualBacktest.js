@@ -55,4 +55,10 @@ const enhance = compose(
 
 PostVisualBacktest.propTypes = propTypes
 
+PostVisualBacktest.defaultProps = {
+  history: {
+    historyPrice: []
+  }
+}
+
 export default enhance(PostVisualBacktest)

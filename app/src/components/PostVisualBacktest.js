@@ -41,6 +41,7 @@ const enhance = compose(
     }
   }),
   withProps(({ ticker, history: { historyPrice = [] } }) => {
+    if (!historyPrice) return
     const start = historyPrice[0]
     const last = historyPrice[historyPrice.length - 1]
     if (!start || !last) return

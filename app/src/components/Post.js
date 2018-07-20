@@ -68,7 +68,6 @@ const Post = ({
   unvotePost,
   deletePost,
   publishPost,
-  history,
   moderationComment = null,
   state = STATES.approved,
   readyState = STATES.draft,

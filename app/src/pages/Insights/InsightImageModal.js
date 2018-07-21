@@ -13,7 +13,7 @@ const InsightImageModal = ({ pic, onInsightImageModalClose }) => {
         onUnmount={onInsightImageModalClose}
       >
         <Modal.Content>
-          <img src={pic} alt='Modal pic' />
+          <img src={pic} alt='Modal pic' className='InsightImageModal__pic' />
         </Modal.Content>
       </Modal>
     )

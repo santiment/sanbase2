@@ -61,8 +61,6 @@ export const savePrevAuthProvider = (authProviderType = 'email') => {
 }
 
 window.addEventListener('storage', evt => {
-  console.log(evt)
-
   if (
     evt.key === 'user' &&
     evt.oldValue.includes('"token":null') &&

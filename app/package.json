@@ -102,7 +102,7 @@
   },
   "lint-staged": {
     "linters": {
-      "src/**/*.js": [
+      "src/**/*.{js,css}": [
         "yarn test",
         "prettier-standard",
         "git add"

@@ -103,9 +103,9 @@
   "lint-staged": {
     "linters": {
       "src/**/*.js": [
+        "yarn test",
         "prettier-standard",
-        "git add",
-        "yarn test"
+        "git add"
       ]
     }
   }

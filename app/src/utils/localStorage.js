@@ -59,3 +59,13 @@ export const savePrevAuthProvider = (authProviderType = 'email') => {
     // Ignore write errors.
   }
 }
+
+window.addEventListener('storage', evt => {
+  if (
+    evt.key === 'user' &&
+    evt.oldValue.includes('"token":null') &&
+    evt.newValue.includes('"token":"')
+  ) {
+    window.location.reload()
+  }
+})

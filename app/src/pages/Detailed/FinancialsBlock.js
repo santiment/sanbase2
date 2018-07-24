@@ -34,10 +34,10 @@ const showStatus = status => {
 const FinancialsBlock = ({
   projectTransparencyStatus,
   fundsRaisedIcos,
-  ethSpent,
-  ethBalance,
-  btcBalance,
-  ethAddresses,
+  ethSpent = null,
+  ethBalance = null,
+  btcBalance = null,
+  ethAddresses = [],
   isERC20
 }) => (
   <div>
@@ -66,42 +66,43 @@ const FinancialsBlock = ({
       <div
         className={cx({
           'row-info wallets': true,
-          'info-disabled': !isERC20 || !ethBalance
+          'info-disabled': !ethBalance || ethAddresses.length === 0
         })}
       >
         <div>Wallet Balances</div>
       </div>
     )}
-    {isERC20 && (
-      <div className='row-info wallets-balance'>
-        {ethAddresses.map((wallet, index) => (
-          <div key={index}>
-            <div className='wallets-addresses'>
-              <a href={`https://etherscan.io/address/${wallet.address}`}>
-                {wallet.address}
-              </a>
-              <span>ETH {millify(wallet.balance, 2)}</span>
+    {ethAddresses &&
+      ethAddresses.length > 0 && (
+        <div className='row-info wallets-balance'>
+          {ethAddresses.map((wallet, index) => (
+            <div key={index}>
+              <div className='wallets-addresses'>
+                <a href={`https://etherscan.io/address/${wallet.address}`}>
+                  {wallet.address}
+                </a>
+                <span>ETH {millify(wallet.balance, 2)}</span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    )}
+          ))}
+        </div>
+      )}
     {ethBalance && (
       <div
         className={cx({
           'row-info': true,
-          'info-disabled': !isERC20 || !ethBalance
+          'info-disabled': ethAddresses.length === 0 && +ethBalance === 0
         })}
       >
         <div>Total Balance</div>
-        {ethBalance && `ETH ${millify(ethBalance, 2)}`}
+        {ethBalance ? `ETH ${millify(ethBalance, 2)}` : 0}
       </div>
     )}
-    {isERC20 && (
+    {ethSpent && (
       <div
         className={cx({
           'row-info': true,
-          'info-disabled': !isERC20 || !ethBalance
+          'info-disabled': !ethBalance
         })}
       >
         <div>ETH Spent 30d</div>

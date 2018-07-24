@@ -349,7 +349,7 @@ const renderTicks = props => {
     if (!values[index]) {
       return
     }
-    return props.isToggledBTC
+    return value && props.isToggledBTC
       ? formatBTC(value)
       : formatNumber(value, { currency: 'USD' })
   }

@@ -6,7 +6,7 @@
 use Mix.Config
 
 # General application configuration
-config :sanbase, ecto_repos: [Sanbase.Repo]
+config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.ClickhouseRepo]
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
@@ -14,6 +14,19 @@ config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: 10,
   prepare: :unnamed
+
+config :sanbase, Sanbase.ClickhouseRepo,
+  adapter: ClickhouseEcto,
+  loggers: [Ecto.LogEntry],
+  hostname: {:system, "CLICKHOUSE_HOSTNAME", "localhost"},
+  port: {:system, "CLICKHOUSE_PORT", 8123},
+  database: {:system, "CLICKHOUSE_DATABASE_NAME", "default"},
+  username: {:system, "CLICKHOUSE_USER_NAME", "web"},
+  password: {:system, "CLICKHOUSE_PASSWORD", ""},
+  timeout: 60_000,
+  pool_timeout: 60_000,
+  ownership_timeout: 60_000,
+  pool_size: 10
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 

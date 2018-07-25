@@ -21,6 +21,10 @@ defmodule Sanbase.Application do
         # Start the endpoint when the application starts
         supervisor(SanbaseWeb.Endpoint, []),
 
+        # Start the Clickhouse Repo
+        # {Sanbase.ClickhouseRepo, []},
+        supervisor(Sanbase.ClickhouseRepo, []),
+
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},
 

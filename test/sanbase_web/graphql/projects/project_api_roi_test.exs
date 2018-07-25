@@ -1,10 +1,15 @@
 defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.{Project, LatestCoinmarketcapData, Ico}
+  require Sanbase.Utils.Config
+
+  alias Sanbase.Model.Project
+  alias Sanbase.Model.LatestCoinmarketcapData
+  alias Sanbase.Model.Ico
   alias Sanbase.Repo
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Utils.Config
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
@@ -100,8 +105,6 @@ defmodule SanbaseWeb.Graphql.ProjectApiRoiTest do
   end
 
   defp context_config(key) do
-    require Sanbase.Utils.Config, as: Config
-
     Config.module_get(SanbaseWeb.Graphql.ContextPlug, key)
   end
 end

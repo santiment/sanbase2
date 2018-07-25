@@ -1,10 +1,12 @@
 defmodule Sanbase.Graphql.ProjectApiEthContractTest do
   use SanbaseWeb.ConnCase, async: false
 
-  require Sanbase.Utils.Config, as: Config
+  require Sanbase.Utils.Config
 
-  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Model.Project
+  alias Sanbase.Model.Ico
   alias Sanbase.Repo
+  alias Sanbase.Utils.Config
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers

@@ -1,17 +1,16 @@
 defmodule Sanbase.Graphql.ProjectApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  require Sanbase.Utils.Config, as: Config
+  require Sanbase.Utils.Config
 
-  alias Sanbase.Model.{
-    Project,
-    Ico,
-    Currency,
-    IcoCurrencies,
-    ProjectEthAddress
-  }
-
+  alias Sanbase.Model.Project
+  alias Sanbase.Model.Ico
+  alias Sanbase.Model.Currency
+  alias Sanbase.Model.IcoCurrencies
+  alias Sanbase.Model.ProjectEthAddress
+  alias Sanbase.Model.LatestEthWalletData
   alias Sanbase.Repo
+  alias Sanbase.Utils.Config
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
@@ -30,15 +29,24 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     })
     |> Repo.insert!()
 
-    Tesla.Mock.mock(fn %{method: :post} ->
-      %Tesla.Env{
-        status: 200,
-        body: %{"id" => 1, "jsonrpc" => "2.0", "result" => "0x1B1AE4D6E2EF500000"}
-      }
-    end)
+    %LatestEthWalletData{}
+    |> LatestEthWalletData.changeset(%{
+      address: "abcdefg",
+      update_time: Ecto.DateTime.utc(),
+      balance: 500
+    })
+    |> Repo.insert!()
 
     %ProjectEthAddress{}
     |> ProjectEthAddress.changeset(%{project_id: project1.id, address: "rrrrr"})
+    |> Repo.insert!()
+
+    %LatestEthWalletData{}
+    |> LatestEthWalletData.changeset(%{
+      address: "rrrrr",
+      update_time: Ecto.DateTime.utc(),
+      balance: 800
+    })
     |> Repo.insert!()
 
     query = """
@@ -61,8 +69,8 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     assert json_response(result, 200)["data"]["project"] == %{
              "name" => "Project1",
-             "btcBalance" => 0,
-             "ethBalance" => 1000
+             "btcBalance" => "0",
+             "ethBalance" => "1300"
            }
   end
 

@@ -1,6 +1,8 @@
 defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
   use SanbaseWeb.ConnCase, async: false
 
+  require Sanbase.Utils.Config
+
   alias Sanbase.Model.{
     Project,
     Infrastructure,

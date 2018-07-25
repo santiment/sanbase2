@@ -137,6 +137,24 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
   def fit_from_datetime(enum, _args), do: enum
 
+  def project_to_contract_info(%Project{
+        main_contract_address: main_contract_address,
+        token_decimals: token_decimals
+      })
+      when not is_nil(main_contract_address) do
+    {:ok, String.downcase(main_contract_address), token_decimals || 0}
+  end
+
+  def project_to_contract_info(%Project{coinmarketcap_id: nil, id: id}) do
+    # Handle the case with an without coinmarketcap id for better logging
+    {:error, "Can't find contract address of project with id #{id}"}
+  end
+
+  def project_to_contract_info(%Project{coinmarketcap_id: cmc_id}) do
+    # Handle the case with an without coinmarketcap id for better logging
+    {:error, "Can't find contract address of project #{cmc_id}"}
+  end
+
   # Private functions
 
   @spec format_error(Ecto.Changeset.error()) :: String.t()

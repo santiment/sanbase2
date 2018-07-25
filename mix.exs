@@ -10,7 +10,7 @@ defmodule Sanbase.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      aliases: aliases(),
+      aliases: aliases() ++ env_dependent_aliases(Mix.env()),
       deps: deps(),
       test_coverage: [
         tool: ExCoveralls
@@ -154,6 +154,12 @@ defmodule Sanbase.Mixfile do
         "ecto.load",
         "test --include timescaledb"
       ]
+    ]
+  end
+
+  defp env_dependent_aliases(_) do
+    [
+      test: ["load_dotenv", "ecto.create --quiet", "ecto.load", "test --exclude run_only_prod"]
     ]
   end
 end

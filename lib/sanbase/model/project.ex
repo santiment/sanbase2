@@ -577,4 +577,16 @@ defmodule Sanbase.Model.Project do
     )
     |> Sanbase.Repo.one()
   end
+
+  def eth_addresses(%Project{} = project) do
+    project =
+      project
+      |> Repo.preload([:eth_addresses])
+
+    addresses =
+      project.eth_addresses
+      |> Enum.map(fn %{address: address} -> address end)
+
+    {:ok, addresses}
+  end
 end

@@ -54,6 +54,11 @@ export default (state = initialState, action) => {
         ...state,
         isGDPRModalOpened: true
       }
+    case actions.APP_USER_HAS_INACTIVE_TOKEN:
+      return {
+        ...state,
+        isGDPRModalOpened: false
+      }
     case actions.APP_TOGGLE_GDPR_MODAL:
       return {
         ...state,

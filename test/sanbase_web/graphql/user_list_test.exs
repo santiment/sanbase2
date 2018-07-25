@@ -104,6 +104,108 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     assert user_list["list_items"] == [%{"project" => %{"id" => project.id |> to_string()}}]
   end
 
+  test "update user list - remove list items", %{user: user, conn: conn} do
+    {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
+
+    project =
+      Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+
+    firstyiw_update_query = """
+    mutation {
+      updateUserList(
+        id: #{created_user_list.id},
+        list_items: [{project_id: #{project.id}}]
+      ) {
+        list_items {
+          project {
+            id
+          }
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(firstyiw_update_query))
+
+    user_list = json_response(result, 200)["data"]["updateUserList"]
+    assert user_list["list_items"] == [%{"project" => %{"id" => "#{project.id}"}}]
+
+    update_name = "My updated list"
+
+    second_update_query = """
+    mutation {
+      updateUserList(
+        id: #{created_user_list.id},
+        name: "#{update_name}",
+        color: BLACK,
+        list_items: []
+      ) {
+        name,
+        color,
+        is_public,
+        user {
+          id
+        },
+        list_items {
+          project {
+            id
+          }
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(second_update_query))
+
+    user_list = json_response(result, 200)["data"]["updateUserList"]
+    assert user_list["name"] == update_name
+    assert user_list["color"] == "BLACK"
+    assert user_list["is_public"] == false
+    assert user_list["list_items"] == []
+  end
+
+  test "update user list - without list items", %{user: user, conn: conn} do
+    {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
+
+    update_name = "My updated list"
+
+    query = """
+    mutation {
+      updateUserList(
+        id: #{created_user_list.id},
+        name: "#{update_name}",
+        color: BLACK,
+      ) {
+        name,
+        color,
+        is_public,
+        user {
+          id
+        },
+        list_items {
+          project {
+            id
+          }
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+
+    user_list = json_response(result, 200)["data"]["updateUserList"]
+    assert user_list["name"] == update_name
+    assert user_list["color"] == "BLACK"
+    assert user_list["is_public"] == false
+    assert user_list["list_items"] == []
+  end
+
   test "cannot update not own user list", %{user2: user2, conn: conn} do
     {:ok, created_user_list} = UserList.create_user_list(user2, %{name: "My Test List"})
 

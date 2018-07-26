@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.BurnRate.Store
   alias Sanbase.Auth.User
-  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -16,20 +16,26 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     Store.create_db()
 
     ticker = "SAN"
-    slug = "santiment"
+    san_slug = "santiment"
+    not_san_slug = "some_other_name"
+
     contract_address = "0x1234"
     Store.drop_measurement(contract_address)
 
-    project =
-      %Project{
-        name: "Santiment",
-        ticker: ticker,
-        coinmarketcap_id: slug,
-        main_contract_address: contract_address
-      }
-      |> Repo.insert!()
+    %Project{
+      name: "Santiment",
+      ticker: ticker,
+      coinmarketcap_id: san_slug,
+      main_contract_address: contract_address
+    }
+    |> Repo.insert!()
 
-    %Ico{project_id: project.id}
+    %Project{
+      name: "Santiment",
+      ticker: ticker,
+      coinmarketcap_id: not_san_slug,
+      main_contract_address: contract_address
+    }
     |> Repo.insert!()
 
     Store.import([
@@ -67,13 +73,17 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
       }
       |> Repo.insert!()
 
-    {:ok, staked_user: staked_user, not_staked_user: not_staked_user}
+    {:ok,
+     staked_user: staked_user,
+     not_staked_user: not_staked_user,
+     santiment_slug: san_slug,
+     not_santiment_slug: not_san_slug}
   end
 
-  test "Does not show real time data and data before certain period to anon users" do
+  test "does not show real time data and data before certain period to anon users", context do
     result =
       build_conn()
-      |> post("/graphql", query_skeleton(burnRateQuery(), "burnRate"))
+      |> post("/graphql", query_skeleton(burnRateQuery(context.not_santiment_slug), "burnRate"))
 
     burn_rates = json_response(result, 200)["data"]["burnRate"]
 
@@ -82,26 +92,13 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     refute %{"burnRate" => 7000.0} in burn_rates
   end
 
-  test "Does not show real for user without SAN stake", context do
-    conn = setup_jwt_auth(build_conn(), context.not_staked_user)
-
+  # The Santiment project treatment is special. It serves the purpose of showing how
+  # the data looks like as if you have staked.
+  test "shows real time data and data before certain period to anon users for Santiment project",
+       context do
     result =
-      conn
-      |> post("/graphql", query_skeleton(burnRateQuery(), "burnRate"))
-
-    burn_rates = json_response(result, 200)["data"]["burnRate"]
-
-    refute %{"burnRate" => 5000.0} in burn_rates
-    assert %{"burnRate" => 6000.0} in burn_rates
-    refute %{"burnRate" => 7000.0} in burn_rates
-  end
-
-  test "Shows realtime data if user has SAN stake", context do
-    conn = setup_jwt_auth(build_conn(), context.staked_user)
-
-    result =
-      conn
-      |> post("/graphql", query_skeleton(burnRateQuery(), "burnRate"))
+      build_conn()
+      |> post("/graphql", query_skeleton(burnRateQuery(context.santiment_slug), "burnRate"))
 
     burn_rates = json_response(result, 200)["data"]["burnRate"]
 
@@ -110,11 +107,53 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     assert %{"burnRate" => 7000.0} in burn_rates
   end
 
-  defp burnRateQuery() do
+  test "does not show real for user without SAN stake", context do
+    conn = setup_jwt_auth(build_conn(), context.not_staked_user)
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(burnRateQuery(context.not_santiment_slug), "burnRate"))
+
+    burn_rates = json_response(result, 200)["data"]["burnRate"]
+
+    refute %{"burnRate" => 5000.0} in burn_rates
+    assert %{"burnRate" => 6000.0} in burn_rates
+    refute %{"burnRate" => 7000.0} in burn_rates
+  end
+
+  test "shows real for user without SAN stake for Santiment project", context do
+    conn = setup_jwt_auth(build_conn(), context.not_staked_user)
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(burnRateQuery(context.santiment_slug), "burnRate"))
+
+    burn_rates = json_response(result, 200)["data"]["burnRate"]
+
+    assert %{"burnRate" => 5000.0} in burn_rates
+    assert %{"burnRate" => 6000.0} in burn_rates
+    assert %{"burnRate" => 7000.0} in burn_rates
+  end
+
+  test "shows realtime data if user has SAN stake", context do
+    conn = setup_jwt_auth(build_conn(), context.staked_user)
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(burnRateQuery(context.not_santiment_slug), "burnRate"))
+
+    burn_rates = json_response(result, 200)["data"]["burnRate"]
+
+    assert %{"burnRate" => 5000.0} in burn_rates
+    assert %{"burnRate" => 6000.0} in burn_rates
+    assert %{"burnRate" => 7000.0} in burn_rates
+  end
+
+  defp burnRateQuery(slug) do
     """
     {
       burnRate(
-        slug: "santiment",
+        slug: "#{slug}",
         from: "#{before_restricted_from()}",
         to: "#{now()}"
         interval: "30m") {

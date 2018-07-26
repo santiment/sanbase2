@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import debounce from 'lodash.debounce'
-import { Search, Input } from 'semantic-ui-react'
+import { Search, Input, Ref } from 'semantic-ui-react'
 import './Search.css'
 
 const resultRenderer = ({ name, ticker }) => {
@@ -13,7 +13,15 @@ const resultRenderer = ({ name, ticker }) => {
 }
 
 const CustomInput = (
-  <Input id='search-input' iconPosition='left' placeholder='Search...' />
+  <div>
+    <Input
+      id='search-input'
+      icon='search'
+      iconPosition='left'
+      placeholder='Search...'
+    />
+    <span>/</span>
+  </div>
 )
 
 class SearchPanel extends Component {
@@ -29,6 +37,17 @@ class SearchPanel extends Component {
     this.handleSearchChange = this.handleSearchChange.bind(this)
     this.handleDebouncedChange = this.handleDebouncedChange.bind(this)
     this.handleDebouncedChange = debounce(this.handleDebouncedChange, 100)
+  }
+
+  handleSearchRef = c => {
+    this._searchInput = c && c.querySelector('input')
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.focus && this._searchInput) {
+      this._searchInput.focus()
+      this.props.resetFocus()
+    }
   }
 
   handleDebouncedChange (value) {
@@ -57,30 +76,46 @@ class SearchPanel extends Component {
   }
 
   handleResultSelect (e, { result }) {
-    this.setState({ value: '' })
-    this.props.onSelectProject(result.cmcid)
+    this.setState({ value: '' }, () => {
+      this._searchInput.blur()
+      this._searchInput.value = ''
+      this.props.onSelectProject(result.cmcid)
+    })
   }
 
   handleSearchChange (e, { value }) {
-    this.setState({ isLoading: true, value })
-    this.handleDebouncedChange(value)
+    const searchText = (value => {
+      if (value === '/') {
+        return ''
+      }
+      if (value.endsWith('/')) {
+        return value.substring(0, value.length - 1)
+      }
+      return value
+    })(value)
+    this._searchInput.value = searchText
+    this.setState({ isLoading: true, value: searchText }, () =>
+      this.handleDebouncedChange(searchText)
+    )
   }
 
   render () {
     return (
       <div className='search-panel'>
-        <Search
-          className={this.props.loading ? '' : 'search-data-loaded'}
-          key={'search'}
-          loading={this.state.isLoading || this.props.loading}
-          onResultSelect={this.handleResultSelect}
-          onSearchChange={this.handleSearchChange}
-          results={this.state.results}
-          value={this.state.value}
-          resultRenderer={resultRenderer}
-          selectFirstResult
-          input={CustomInput}
-        />
+        <Ref innerRef={this.handleSearchRef}>
+          <Search
+            className={this.props.loading ? '' : 'search-data-loaded'}
+            key={'search'}
+            loading={this.state.isLoading || this.props.loading}
+            onResultSelect={this.handleResultSelect}
+            onSearchChange={this.handleSearchChange}
+            results={this.state.results}
+            value={this.state.value}
+            resultRenderer={resultRenderer}
+            selectFirstResult
+            input={CustomInput}
+          />
+        </Ref>
       </div>
     )
   }

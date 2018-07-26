@@ -12,7 +12,7 @@ exports[`Project detail page container it should render correctly 1`] = `
       AE project page
     </title>
   </HelmetWrapper>
-  <withRouter(Apollo(SearchContainer)) />
+  <Connect(withRouter(Apollo(SearchContainer))) />
   <ExportedComponent
     project={
       Object {

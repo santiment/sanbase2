@@ -10,3 +10,13 @@
   border-radius: 4px !important;
   border: none !important;
 }
+
+.search-panel span {
+  position: absolute;
+  right: 10px;
+  top: 5px;
+  border: 1px solid gray;
+  border-radius: 3px;
+  padding: 0 6px;
+  color: gray;
+}

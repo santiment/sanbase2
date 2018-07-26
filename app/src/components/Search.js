@@ -60,7 +60,7 @@ class SearchPanel extends Component {
       }))
 
     this.setState({
-      results,
+      results: searchText.length > 0 ? results : [],
       isLoading: false
     })
   }, 100)

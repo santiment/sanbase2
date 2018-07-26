@@ -8,19 +8,23 @@ defmodule Sanbase.Clickhouse.EctoFunctions do
   """
   defmacro query_all_use_prewhere(query) do
     quote bind_quoted: [query: query] do
-      {query, args} =
-        Ecto.Adapters.SQL.to_sql(:all, Sanbase.ClickhouseRepo, query)
-        |> IO.inspect()
+      {query, args} = Ecto.Adapters.SQL.to_sql(:all, Sanbase.ClickhouseRepo, query)
 
       query = query |> String.replace(" WHERE ", " PREWHERE ")
 
-      Ecto.Adapters.SQL.query(Sanbase.ClickhouseRepo, query, args)
+      query_transform(Sanbase.ClickhouseRepo, query, args)
+    end
+  end
+
+  defmacro query_transform(repo, query, args) do
+    quote bind_quoted: [repo: repo, query: query, args: args] do
+      Ecto.Adapters.SQL.query(repo, query, args)
       |> case do
         {:ok, result} ->
           result =
             Enum.map(
               result.rows,
-              &Sanbase.ClickhouseRepo.load(__MODULE__, {result.columns, &1})
+              &repo.load(__MODULE__, {result.columns, &1})
             )
 
           {:ok, result}

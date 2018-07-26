@@ -48,8 +48,7 @@ defmodule Sanbase.Application do
          ]},
 
         # Start the Clickhouse Repo
-        # {Sanbase.ClickhouseRepo, []},
-        supervisor(Sanbase.ClickhouseRepo, []),
+        {Sanbase.ClickhouseRepo, []},
 
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},

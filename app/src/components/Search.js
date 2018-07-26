@@ -4,13 +4,11 @@ import debounce from 'lodash.debounce'
 import { Search, Input, Ref } from 'semantic-ui-react'
 import './Search.css'
 
-const resultRenderer = ({ name, ticker }) => {
-  return (
-    <div id='search-result'>
-      {name} ({ticker})
-    </div>
-  )
-}
+const resultRenderer = ({ name, ticker }) => (
+  <div id='search-result'>
+    {name} ({ticker})
+  </div>
+)
 
 const CustomInput = (
   <div>
@@ -24,19 +22,13 @@ const CustomInput = (
   </div>
 )
 
-class SearchPanel extends Component {
-  constructor (props) {
-    super(props)
+const contains = (str1, str2) => str1.search(new RegExp(str2, 'i')) === 0
 
-    this.state = {
-      isLoading: false,
-      results: [],
-      value: undefined
-    }
-    this.handleResultSelect = this.handleResultSelect.bind(this)
-    this.handleSearchChange = this.handleSearchChange.bind(this)
-    this.handleDebouncedChange = this.handleDebouncedChange.bind(this)
-    this.handleDebouncedChange = debounce(this.handleDebouncedChange, 100)
+class SearchPanel extends Component {
+  state = {
+    isLoading: false,
+    results: [],
+    value: undefined
   }
 
   handleSearchRef = c => {
@@ -44,38 +36,32 @@ class SearchPanel extends Component {
   }
 
   componentWillReceiveProps (nextProps) {
-    if (nextProps.focus && this._searchInput) {
+    if (!this.state.isLoading && nextProps.focus && this._searchInput) {
       this._searchInput.focus()
       this.props.resetFocus()
     }
   }
 
-  handleDebouncedChange (value) {
+  searchResults = debounce(searchText => {
     const results = this.props.projects
-      .filter(el => {
-        const name = el.name || ''
-        const ticker = el.ticker || ''
-        return (
-          name.toLowerCase().indexOf(value.toLowerCase()) !== -1 ||
-          ticker.toLowerCase().indexOf(value.toLowerCase()) !== -1
-        )
-      })
-      .map((el, index) => {
-        return {
-          name: el.name,
-          ticker: el.ticker,
-          cmcid: el.coinmarketcapId,
-          key: index
-        }
-      })
+      .filter(
+        ({ name = '', ticker = '' }) =>
+          contains(name, searchText) || contains(ticker, searchText)
+      )
+      .map((el, index) => ({
+        ticker: el.ticker,
+        name: el.name,
+        cmcid: el.coinmarketcapId,
+        key: index
+      }))
 
     this.setState({
-      isLoading: false,
-      results: results
+      results,
+      isLoading: false
     })
-  }
+  }, 100)
 
-  handleResultSelect (e, { result }) {
+  handleResultSelect = (e, { result }) => {
     this.setState({ value: '' }, () => {
       this._searchInput.blur()
       this._searchInput.value = ''
@@ -83,7 +69,7 @@ class SearchPanel extends Component {
     })
   }
 
-  handleSearchChange (e, { value }) {
+  handleSearchChange = (e, { value }) => {
     const searchText = (value => {
       if (value === '/') {
         return ''
@@ -95,7 +81,7 @@ class SearchPanel extends Component {
     })(value)
     this._searchInput.value = searchText
     this.setState({ isLoading: true, value: searchText }, () =>
-      this.handleDebouncedChange(searchText)
+      this.searchResults(searchText)
     )
   }
 
@@ -105,7 +91,6 @@ class SearchPanel extends Component {
         <Ref innerRef={this.handleSearchRef}>
           <Search
             className={this.props.loading ? '' : 'search-data-loaded'}
-            key={'search'}
             loading={this.state.isLoading || this.props.loading}
             onResultSelect={this.handleResultSelect}
             onSearchChange={this.handleSearchChange}
@@ -123,10 +108,13 @@ class SearchPanel extends Component {
 
 SearchPanel.propTypes = {
   projects: PropTypes.array,
-  onSelectProject: PropTypes.func
+  onSelectProject: PropTypes.func,
+  resetFocus: PropTypes.func
 }
 
 SearchPanel.defaultProps = {
+  onSelectProject: () => {},
+  resetFocus: () => {},
   projects: []
 }
 

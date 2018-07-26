@@ -5,6 +5,7 @@ import { graphql } from 'react-apollo'
 import { compose, withProps } from 'recompose'
 import { HistoryPriceGQL } from './../pages/Detailed/DetailedGQL'
 import PercentChanges from './PercentChanges'
+import PostVisualBacktestChart from './PostVisualBacktestChart'
 
 const getChanges = (start, last, prop = 'priceUsd') =>
   (last[`${prop}`] - start[`${prop}`]) / start[`${prop}`] * 100
@@ -16,13 +17,25 @@ const propTypes = {
   history: PropTypes.object
 }
 
-export const PostVisualBacktest = ({ ticker, change, changeProp }) => {
+export const PostVisualBacktest = ({
+  ticker,
+  change,
+  changeProp,
+  changePriceProp,
+  history,
+  from
+}) => {
   if (!change) return null
   return (
     <Message>
       <Label horizontal>{ticker}</Label>
       {changeProp} changes after publication
       {change && <PercentChanges changes={change} />}
+      <PostVisualBacktestChart
+        history={history}
+        postCreatedAt={from}
+        changePriceProp={changePriceProp}
+      />
     </Message>
   )
 }
@@ -48,13 +61,11 @@ const enhance = compose(
     const last = historyPrice[historyPrice.length - 1]
     if (!start || !last) return {}
     const changeProp = isTotalMarket(ticker) ? 'Total marketcap' : 'Prices'
+    const changePriceProp = isTotalMarket(ticker) ? 'marketcap' : 'priceUsd'
     return {
-      change: getChanges(
-        start,
-        last,
-        isTotalMarket(ticker) ? 'marketcap' : 'priceUsd'
-      ),
-      changeProp
+      change: getChanges(start, last, changePriceProp),
+      changeProp,
+      changePriceProp
     }
   })
 )

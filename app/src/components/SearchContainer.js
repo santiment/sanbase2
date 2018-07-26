@@ -1,5 +1,5 @@
 import React from 'react'
-import { withRouter } from 'react-router-dom'
+import { push } from 'react-router-redux'
 import { connect } from 'react-redux'
 import { graphql } from 'react-apollo'
 import { compose } from 'recompose'
@@ -8,13 +8,19 @@ import { getAll } from './../pages/Projects/projectSelectors'
 import * as actions from './../actions/types'
 import Search from './Search'
 
-const SearchContainer = ({ history, projects = [], isFocused, resetFocus }) => {
+const SearchContainer = ({
+  history,
+  projects = [],
+  isFocused,
+  resetFocus,
+  goto
+}) => {
   if (projects.length === 0) {
-    return <Search loading onSelectProject={() => {}} projects={[]} />
+    return <Search loading />
   }
   return (
     <Search
-      onSelectProject={cmcId => history.push(`/projects/${cmcId}`)}
+      onSelectProject={cmcId => goto(cmcId)}
       focus={isFocused}
       resetFocus={resetFocus}
       projects={projects}
@@ -31,12 +37,12 @@ const mapStateToProps = ({ rootUi }) => ({
 })
 
 const mapDispatchToProps = dispatch => ({
-  resetFocus: () => dispatch({ type: actions.APP_TOGGLE_SEARCH_FOCUS })
+  resetFocus: () => dispatch({ type: actions.APP_TOGGLE_SEARCH_FOCUS }),
+  goto: cmcId => dispatch(push(`/projects/${cmcId}`))
 })
 
 const enhance = compose(
   connect(mapStateToProps, mapDispatchToProps),
-  withRouter,
   graphql(allProjectsForSearchGQL, {
     name: 'allProjects',
     props: mapDataToProps,

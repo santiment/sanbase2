@@ -15,6 +15,7 @@
   position: absolute;
   right: 10px;
   top: 5px;
+  user-select: none;
   border: 1px solid gray;
   border-radius: 3px;
   padding: 0 6px;

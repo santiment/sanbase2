@@ -11,6 +11,7 @@ import handleRouter from './handleRouter'
 import handleApikeyGenerate from './handleApikeyGenerate'
 import handleApikeyRevoke from './handleApikeyRevoke'
 import handleNightModeToggle from './handleNightModeToggle'
+import keyboardEpic from './keyboardEpic'
 
 export default combineEpics(
   handleFollowProject,
@@ -24,5 +25,6 @@ export default combineEpics(
   handleRouter,
   handleApikeyGenerate,
   handleApikeyRevoke,
-  handleNightModeToggle
+  handleNightModeToggle,
+  keyboardEpic
 )

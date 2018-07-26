@@ -15,7 +15,8 @@ export const initialState = {
   loginError: false,
   loginErrorMessage: '',
   isGDPRModalOpened: false,
-  isNightModeEnabled
+  isNightModeEnabled: false,
+  isSearchInputFocused: false
 }
 
 export default (state = initialState, action) => {
@@ -74,6 +75,11 @@ export default (state = initialState, action) => {
       return {
         ...state,
         isNightModeEnabled: action.payload
+      }
+    case actions.APP_TOGGLE_SEARCH_FOCUS:
+      return {
+        ...state,
+        isSearchInputFocused: !state.isSearchInputFocused
       }
     default:
       return state

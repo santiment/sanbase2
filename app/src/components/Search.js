@@ -1,13 +1,17 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
+import ProjectIcon from './../components/ProjectIcon'
 import PropTypes from 'prop-types'
 import debounce from 'lodash.debounce'
 import { Search, Input, Ref } from 'semantic-ui-react'
 import './Search.css'
 
 const resultRenderer = ({ name, ticker }) => (
-  <div id='search-result'>
-    {name} ({ticker})
-  </div>
+  <Fragment>
+    <ProjectIcon name={name} ticker={ticker} />
+    <div>
+      {name} ({ticker})
+    </div>
+  </Fragment>
 )
 
 const CustomInput = (
@@ -18,7 +22,7 @@ const CustomInput = (
       iconPosition='left'
       placeholder='Search...'
     />
-    <span>/</span>
+    <span className='search-shortcut'>/</span>
   </div>
 )
 

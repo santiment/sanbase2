@@ -6,18 +6,35 @@
   min-width: 100%;
 }
 
+.search-panel .results .result {
+  display: flex !important;
+  align-items: center;
+}
+
+.search-panel .results .result img {
+  margin-right: 5px;
+}
+
 .search-panel input {
   border-radius: 4px !important;
   border: none !important;
 }
 
-.search-panel span {
-  position: absolute;
-  right: 10px;
-  top: 5px;
-  user-select: none;
-  border: 1px solid gray;
-  border-radius: 3px;
-  padding: 0 6px;
-  color: gray;
+@media (min-width: 768px) {
+  .search-panel .search-shortcut {
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    user-select: none;
+    border: 1px solid gray;
+    border-radius: 3px;
+    padding: 0 6px;
+    color: gray;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-panel .search-shortcut {
+    display: none;
+  }
 }

@@ -96,48 +96,28 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     |> ClickhouseRepo.one()
   end
 
-  # TODO: The group by specific to Clickhouse could be extracted as a macros that hide the implementation
   def eth_spent_over_time(wallets, from_datetime, to_datetime, interval) do
-    from(
-      transfer in EthTransfers,
-      where:
-        transfer.from in ^wallets and transfer.to not in ^wallets and transfer.dt > ^from_datetime and
-          transfer.dt < ^to_datetime,
-      group_by: fragment("time"),
-      order_by: fragment("time"),
-      select: %{
-        datetime:
-          fragment(
-            "intDiv(toUInt32(?), ?) * ? as time",
-            transfer.dt,
-            ^interval,
-            ^interval
-          ),
-        eth_spent: sum(transfer.value)
-      }
-    )
-    |> ClickhouseRepo.all()
-  end
-
-  def eth_spent_over_time2(wallets, from_datetime, to_datetime, interval) do
-    numbers = 30
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
-    span = div(to_datetime_unix - from_datetime_unix, interval) + 1
+    span = div(to_datetime_unix - from_datetime_unix, interval)
 
     query = """
     SELECT SUM(value), time
     FROM (
       SELECT
-        toUInt32((#{from_datetime_unix} + number * #{interval})) as time,
+        toDateTime(intDiv(toUInt32(#{from_datetime_unix} + number * #{interval}), #{interval}) * #{
+      interval
+    }) as time,
         toFloat64(0) AS value
       FROM numbers(#{span})
 
       UNION ALL
 
-      SELECT intDiv(toUInt32(e0."dt"), ?1) * ?2 as time,
-      sum(e0."value") as value FROM "eth_transfers2" AS e0
-      WHERE ((((e0."from" IN (?3)) AND NOT (e0."to" IN (?4))) AND (e0."dt" > ?5)) AND (e0."dt" < ?6))
+      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?2) as time,
+      sum(value) as value FROM eth_transfers2
+      WHERE from IN (?3) AND NOT to IN (?4)
+      AND dt >= toDateTime(?5)
+      AND dt <= toDateTime(?6)
       GROUP BY time
       ORDER BY time
     )
@@ -159,8 +139,24 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       query,
       args
     )
-    |> IO.inspect(limit: :infinity)
+    |> case do
+      {:ok, result} ->
+        result =
+          Enum.map(
+            result.rows,
+            fn [value, datetime_str] ->
+              %{
+                # |> String.to_integer() |> DateTime.from_unix!(),
+                datetime: datetime_str,
+                eth_spent: value
+              }
+            end
+          )
 
-    :ok
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 end

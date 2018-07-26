@@ -105,19 +105,17 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     SELECT SUM(value), time
     FROM (
       SELECT
-        toDateTime(intDiv(toUInt32(#{from_datetime_unix} + number * #{interval}), #{interval}) * #{
-      interval
-    }) as time,
+        toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
         toFloat64(0) AS value
-      FROM numbers(#{span})
+      FROM numbers(?2)
 
       UNION ALL
 
-      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?2) as time,
-      sum(value) as value FROM eth_transfers2
-      WHERE from IN (?3) AND NOT to IN (?4)
-      AND dt >= toDateTime(?5)
-      AND dt <= toDateTime(?6)
+      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
+      FROM eth_transfers2
+      WHERE from IN (?3) AND NOT to IN (?3)
+      AND dt >= toDateTime(?4)
+      AND dt <= toDateTime(?5)
       GROUP BY time
       ORDER BY time
     )
@@ -127,8 +125,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     args = [
       interval,
-      interval,
-      wallets,
+      span,
       wallets,
       from_datetime_unix,
       to_datetime_unix

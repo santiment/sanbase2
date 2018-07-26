@@ -13,6 +13,21 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
   alias Absinthe.Resolution
   alias Sanbase.Auth.User
 
+  @allow_access_without_staking ["santiment"]
+
+  # Allow access to historical data and real-time data for the Santiment project.
+  # This will serve the purpose of showing to anonymous and not-staking users how
+  # the data looks like.
+  def call(
+        %Resolution{
+          arguments: %{slug: slug}
+        } = resolution,
+        _
+      )
+      when slug in @allow_access_without_staking do
+    resolution
+  end
+
   def call(
         %Resolution{
           context: %{

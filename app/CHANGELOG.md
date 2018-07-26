@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+- 2018-27-07 | v.0.7.0 'Moon':
+
+  Added an icon in the search result
+  Added Night Mode
+  Added Insight Visual Backtest
+  Fixed bugs
+
 - 2018-26-06 | v.0.6.1:
 
   Updated settings

@@ -113,7 +113,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
       SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
       FROM eth_transfers2
-      WHERE from IN (?3) AND NOT to IN (?3)
+      PREWHERE from IN (?3) AND NOT to IN (?3)
       AND dt >= toDateTime(?4)
       AND dt <= toDateTime(?5)
       GROUP BY time
@@ -143,8 +143,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
             result.rows,
             fn [value, datetime_str] ->
               %{
-                # |> String.to_integer() |> DateTime.from_unix!(),
-                datetime: datetime_str,
+                datetime: datetime_str |> Sanbase.DateTimeUtils.from_erl!(),
                 eth_spent: value
               }
             end

@@ -20,7 +20,6 @@ const binarySearchIndex = (list, value, predicate) => {
 
   while (start < stop) {
     const searchResult = predicate(list[middle], value)
-    // console.log(searchResult)
 
     if (searchResult < 0) {
       stop = middle - 1
@@ -34,19 +33,12 @@ const binarySearchIndex = (list, value, predicate) => {
   return middle
 }
 
-const isDatetimeSameDay = (item, value) => {
-  // console.log(item, value)
-  const itemDate = moment(item.datetime).utc()
-  const valueDate = moment(value)
-  // console.log(
-  //   itemDate.calendar(),
-  //   valueDate.calendar(),
-  //   itemDate.isSame(valueDate)
-  // )
-  // console.log(itemDate.date(), moment(value).date())
-  // console.log(itemDate.day(), moment(value).day())
-  return itemDate.isBefore(valueDate) ? 1 : -1
-}
+const isDatetimeSameDay = (item, value) =>
+  moment(item.datetime)
+    .utc()
+    .isBefore(moment(value))
+    ? 1
+    : -1
 
 const propTypes = {
   ticker: PropTypes.string.isRequired,
@@ -59,11 +51,9 @@ export const PostVisualBacktest = ({
   changeProp,
   changePriceProp,
   history,
-  from,
   postCreatedAt
 }) => {
   if (!change) return null
-  // const
   return (
     <Message>
       <Label horizontal>{ticker}</Label>
@@ -71,6 +61,7 @@ export const PostVisualBacktest = ({
       {change && <PercentChanges changes={change} />}
       <PostVisualBacktestChart
         history={history}
+        change={change}
         postCreatedAt={postCreatedAt}
         changePriceProp={changePriceProp}
       />
@@ -98,9 +89,6 @@ const enhance = compose(
   withProps(({ ticker, history = {}, from }) => {
     const { historyPrice } = history
     if (!historyPrice || historyPrice.length === 0) return {}
-    // console.log(from, historyPrice)
-    // console.log(binarySearchIndex(historyPrice, from, isDatetimeSameDay), from)
-    // console.log(historyPrice)
     const start =
       historyPrice[binarySearchIndex(historyPrice, from, isDatetimeSameDay)]
     const last = historyPrice[historyPrice.length - 1]

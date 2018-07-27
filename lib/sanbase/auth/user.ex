@@ -74,6 +74,7 @@ defmodule Sanbase.Auth.User do
       :marketing_accepted
     ])
     |> unique_constraint(:email)
+    |> unique_constraint(:username)
   end
 
   def san_balance_cache_stale?(%User{san_balance_updated_at: nil}), do: true

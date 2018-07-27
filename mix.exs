@@ -106,10 +106,19 @@ defmodule Sanbase.Mixfile do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      "ecto.setup": ["load_dotenv", "ecto.create", "ecto.load", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["load_dotenv", "ecto.drop", "ecto.setup"],
-      "ecto.migrate": ["load_dotenv", "ecto.migrate -r Sanbase.Repo", "ecto.dump"],
-      "ecto.rollback": ["load_dotenv", "ecto.rollback", "ecto.dump"]
+      "ecto.setup": [
+        "load_dotenv",
+        "ecto.create -r Sanbase.Repo",
+        "ecto.load -r Sanbase.Repo",
+        "run priv/repo/seeds.exs"
+      ],
+      "ecto.reset": ["load_dotenv", "ecto.drop -r Sanbase.Repo", "ecto.setup -r Sanbase.Repo"],
+      "ecto.migrate": ["load_dotenv", "ecto.migrate -r Sanbase.Repo", "ecto.dump -r Sanbase.Repo"],
+      "ecto.rollback": [
+        "load_dotenv",
+        "ecto.rollback -r Sanbase.Repo",
+        "ecto.dump -r Sanbase.Repo"
+      ]
     ]
   end
 

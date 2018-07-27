@@ -10,19 +10,55 @@ defmodule SanbaseWeb.Graphql.Resolvers.MarketSegmentResolver do
   def all_market_segments(_parent, _args, _resolution) do
     market_segments =
       Repo.all(MarketSegment)
-      |> Map.new(fn market_segment ->
-        {to_snake_case(market_segment.name), market_segment.name}
+      |> Repo.preload(:projects)
+      |> Enum.map(fn %{name: name, projects: projects} ->
+        %{
+          name: name,
+          count: Enum.count(projects)
+        }
       end)
-      |> Map.merge(%{unknown: nil})
-      |> Poison.encode!()
 
     {:ok, market_segments}
   end
 
-  defp to_snake_case(string) do
-    string
-    |> String.downcase()
-    |> String.replace(~r/'|`|"/, "")
-    |> String.replace(~r/[^A-za-z0-9]/, "_")
+  def erc20_market_segments(_parent, _args, _resolution) do
+    market_segments =
+      Repo.all(MarketSegment)
+      |> Repo.preload(projects: :infrastructure)
+      |> Enum.filter(fn %{projects: projects} ->
+        Enum.any?(projects, fn project ->
+          not is_nil(project.coinmarketcap_id) and not is_nil(project.main_contract_address) and
+            not is_nil(project.infrastructure) and project.infrastructure.code === "ETH"
+        end)
+      end)
+      |> Enum.map(fn %{name: name, projects: projects} ->
+        %{
+          name: name,
+          count: Enum.count(projects)
+        }
+      end)
+
+    {:ok, market_segments}
+  end
+
+  def currencies_market_segments(_parent, _args, _resolution) do
+    market_segments =
+      Repo.all(MarketSegment)
+      |> Repo.preload(projects: :infrastructure)
+      |> Enum.filter(fn %{projects: projects} ->
+        Enum.any?(projects, fn project ->
+          not is_nil(project.coinmarketcap_id) and
+            (is_nil(project.main_contract_address) or
+               (not is_nil(project.infrastructure) and project.infrastructure.code !== "ETH"))
+        end)
+      end)
+      |> Enum.map(fn %{name: name, projects: projects} ->
+        %{
+          name: name,
+          count: Enum.count(projects)
+        }
+      end)
+
+    {:ok, market_segments}
   end
 end

@@ -39,21 +39,13 @@ const sanitizeMediumDraftHtml = html =>
     }
   })
 
-const filterProjectsByMarketSegment = (
-  projects,
-  categories,
-  allMarketSegments
-) => {
+const filterProjectsByMarketSegment = (projects, categories) => {
   if (projects === undefined || Object.keys(categories).length === 0) {
     return projects
   }
 
   return projects.filter(project =>
-    Object.keys(categories).includes(
-      Object.keys(allMarketSegments).find(
-        key => allMarketSegments[key] === project.marketSegment
-      )
-    )
+    Object.keys(categories).includes(project.marketSegment)
   )
 }
 

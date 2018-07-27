@@ -60,7 +60,7 @@ export const PostVisualBacktest = ({
   changePriceProp,
   history,
   from,
-  postCreationDateInfo = {}
+  postCreatedAt
 }) => {
   if (!change) return null
   // const
@@ -71,7 +71,7 @@ export const PostVisualBacktest = ({
       {change && <PercentChanges changes={change} />}
       <PostVisualBacktestChart
         history={history}
-        postCreationDateInfo={postCreationDateInfo}
+        postCreatedAt={postCreatedAt}
         changePriceProp={changePriceProp}
       />
     </Message>
@@ -111,7 +111,7 @@ const enhance = compose(
       change: getChanges(start, last, changePriceProp),
       changeProp,
       changePriceProp,
-      postCreationDateInfo: start
+      postCreatedAt: start.datetime
     }
   })
 )

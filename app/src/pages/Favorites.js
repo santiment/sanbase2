@@ -15,7 +15,7 @@ export const Favorites = ({
   search,
   tableInfo,
   categories,
-  allMarketSegments,
+  marketSegments,
   preload,
   user
 }) => (
@@ -28,7 +28,7 @@ export const Favorites = ({
     search={search}
     tableInfo={tableInfo}
     categories={categories}
-    allMarketSegments={allMarketSegments}
+    marketSegments={marketSegments}
     preload={preload}
     user={user}
   />

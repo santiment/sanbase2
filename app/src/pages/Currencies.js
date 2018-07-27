@@ -12,7 +12,7 @@ export const Currencies = ({
   search,
   tableInfo,
   categories,
-  allMarketSegments,
+  marketSegments,
   preload,
   user
 }) => (
@@ -25,7 +25,7 @@ export const Currencies = ({
     search={search}
     tableInfo={tableInfo}
     categories={categories}
-    allMarketSegments={allMarketSegments}
+    marketSegments={marketSegments}
     preload={preload}
     user={user}
   />

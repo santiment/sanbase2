@@ -7,6 +7,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   alias __MODULE__
   alias Sanbase.ClickhouseRepo
 
+  @eth_decimals 1_000_000_000_000_000_000
+
   @primary_key false
   @timestamps_opts updated_at: false
   schema "eth_transfers2" do
@@ -58,14 +60,17 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   end
 
   def eth_spent(wallets, from_datetime, to_datetime) do
-    from(
-      transfer in EthTransfers,
-      where:
-        transfer.from in ^wallets and transfer.to not in ^wallets and transfer.dt > ^from_datetime and
-          transfer.dt < ^to_datetime,
-      select: sum(transfer.value)
-    )
-    |> ClickhouseRepo.one()
+    eth_spent =
+      from(
+        transfer in EthTransfers,
+        where:
+          transfer.from in ^wallets and transfer.to not in ^wallets and
+            transfer.dt > ^from_datetime and transfer.dt < ^to_datetime,
+        select: sum(transfer.value)
+      )
+      |> ClickhouseRepo.one()
+
+    {:ok, eth_spent / @eth_decimals}
   end
 
   @doc ~s"""
@@ -87,7 +92,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
             fn [value, datetime_str] ->
               %{
                 datetime: datetime_str |> Sanbase.DateTimeUtils.from_erl!(),
-                eth_spent: value
+                eth_spent: value / @eth_decimals
               }
             end
           )

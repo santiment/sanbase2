@@ -129,7 +129,28 @@ export const allShortProjectsGQL = gql`
 
 export const allMarketSegmentsGQL = gql`
   {
-    allMarketSegments
+    allMarketSegments {
+      name
+      count
+    }
+  }
+`
+
+export const erc20MarketSegmentsGQL = gql`
+  {
+    erc20MarketSegments {
+      name
+      count
+    }
+  }
+`
+
+export const currenciesMarketSegmentsGQL = gql`
+  {
+    currenciesMarketSegments {
+      name
+      count
+    }
   }
 `
 

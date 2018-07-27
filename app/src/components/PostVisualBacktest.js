@@ -20,11 +20,7 @@ const binarySearchIndex = (list, value, predicate) => {
 
   while (start < stop) {
     const searchResult = predicate(list[middle], value)
-    console.log(searchResult)
-
-    if (searchResult === true) {
-      return list[middle]
-    }
+    // console.log(searchResult)
 
     if (searchResult < 0) {
       stop = middle - 1
@@ -35,17 +31,21 @@ const binarySearchIndex = (list, value, predicate) => {
     middle = Math.floor((start + stop) / 2)
   }
 
-  return -1
+  return middle
 }
 
 const isDatetimeSameDay = (item, value) => {
   // console.log(item, value)
-  const itemDate = moment(item.datetime, 'DD-MM-YYYY')
-  const valueDate = moment(value, 'DD-MM-YYYY')
-  console.log(itemDate.isSame(valueDate))
+  const itemDate = moment(item.datetime).utc()
+  const valueDate = moment(value)
+  // console.log(
+  //   itemDate.calendar(),
+  //   valueDate.calendar(),
+  //   itemDate.isSame(valueDate)
+  // )
   // console.log(itemDate.date(), moment(value).date())
   // console.log(itemDate.day(), moment(value).day())
-  return itemDate.isSame(valueDate) || (itemDate.isBefore(valueDate) ? -1 : 1)
+  return itemDate.isBefore(valueDate) ? 1 : -1
 }
 
 const propTypes = {
@@ -59,7 +59,8 @@ export const PostVisualBacktest = ({
   changeProp,
   changePriceProp,
   history,
-  from
+  from,
+  postCreationDateInfo = {}
 }) => {
   if (!change) return null
   // const
@@ -70,7 +71,7 @@ export const PostVisualBacktest = ({
       {change && <PercentChanges changes={change} />}
       <PostVisualBacktestChart
         history={history}
-        postCreatedAt={from}
+        postCreationDateInfo={postCreationDateInfo}
         changePriceProp={changePriceProp}
       />
     </Message>
@@ -98,8 +99,10 @@ const enhance = compose(
     const { historyPrice } = history
     if (!historyPrice || historyPrice.length === 0) return {}
     // console.log(from, historyPrice)
-    console.log(binarySearchIndex(historyPrice, from, isDatetimeSameDay), from)
-    const start = historyPrice[0]
+    // console.log(binarySearchIndex(historyPrice, from, isDatetimeSameDay), from)
+    // console.log(historyPrice)
+    const start =
+      historyPrice[binarySearchIndex(historyPrice, from, isDatetimeSameDay)]
     const last = historyPrice[historyPrice.length - 1]
     if (!start || !last) return {}
     const changeProp = isTotalMarket(ticker) ? 'Total marketcap' : 'Prices'
@@ -107,7 +110,8 @@ const enhance = compose(
     return {
       change: getChanges(start, last, changePriceProp),
       changeProp,
-      changePriceProp
+      changePriceProp,
+      postCreationDateInfo: start
     }
   })
 )

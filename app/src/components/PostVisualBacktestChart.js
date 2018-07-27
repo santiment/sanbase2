@@ -1,4 +1,5 @@
 import React from 'react'
+import annotation from 'chartjs-plugin-annotation'
 import { Line } from 'react-chartjs-2'
 import './PostVisualBacktestChart.css'
 
@@ -46,7 +47,8 @@ const datasetOptions = {
 const PostVisualBacktestChart = ({
   history: { historyPrice },
   postCreatedAt,
-  changePriceProp
+  changePriceProp,
+  postCreationDateInfo
 }) => {
   // console.log(postCreatedAt)
   const dataset = {
@@ -55,6 +57,21 @@ const PostVisualBacktestChart = ({
       {
         data: historyPrice.map(data => data[changePriceProp]),
         ...datasetOptions
+      }
+    ]
+  }
+  console.log(postCreationDateInfo.datetime)
+  chartOptions.annotation = {
+    annotations: [
+      {
+        drawTime: 'afterDatasetsDraw',
+        id: 'hline',
+        type: 'line',
+        mode: 'vertical',
+        scaleID: 'y-axis-0',
+        value: -10,
+        borderColor: 'black',
+        borderWidth: 1
       }
     ]
   }

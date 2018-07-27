@@ -39,50 +39,22 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   end
 
   @doc ~s"""
-  Return the `size` biggest transfers for a given wallet or list of wallets and time period.
-  If a list of wallet is provided, then only transfers which `from` address is in the
-  list and `to` address is not in the list are selected.
+  Return the `size` biggest transfers for a list of wallets and time period.
+  Only transfers which `from` address is in the list and `to` address is
+  not in the list are selected.
   """
-  def top_wallet_transfers([], _, _, _, _), do: []
-
-  def top_wallet_transfers(wallets, from_datetime, to_datetime, size, :out)
-      when is_list(wallets) do
-    from(
-      transfer in EthTransfers,
-      where:
-        transfer.from in ^wallets and transfer.to not in ^wallets and transfer.dt > ^from_datetime and
-          transfer.dt < ^to_datetime,
-      order_by: [desc: transfer.value],
-      limit: ^size
-    )
-    |> query_all_use_prewhere()
+  def top_wallet_transfers(wallets, from_datetime, to_datetime, size, type) do
+    wallet_transfers(wallets, from_datetime, to_datetime, size, type, desc: :value)
   end
 
-  def top_wallet_transfers(wallets, from_datetime, to_datetime, size, :in)
-      when is_list(wallets) do
-    from(
-      transfer in EthTransfers,
-      where:
-        transfer.from not in ^wallets and transfer.to in ^wallets and transfer.dt > ^from_datetime and
-          transfer.dt < ^to_datetime,
-      order_by: [desc: transfer.value],
-      limit: ^size
-    )
-    |> query_all_use_prewhere()
-  end
-
-  def top_wallet_transfers(wallets, from_datetime, to_datetime, size, :all)
-      when is_list(wallets) do
-    from(
-      transfer in EthTransfers,
-      where:
-        transfer.dt > ^from_datetime and transfer.dt < ^to_datetime and
-          ((transfer.from in ^wallets and transfer.to not in ^wallets) or
-             (transfer.from not in ^wallets and transfer.to in ^wallets)),
-      order_by: [desc: transfer.value],
-      limit: ^size
-    )
-    |> query_all_use_prewhere()
+  @doc ~s"""
+  Return the `size` last transfers for a list of wallets and time period.
+  Only transfers which `from` address is in the list and `to` address is
+  not in the list are selected.
+  """
+  def last_wallet_transfers(wallets, from_datetime, to_datetime, size, type) do
+    wallet_transfers(wallets, from_datetime, to_datetime, size, type, desc: :dt)
+    |> Enum.reverse()
   end
 
   def eth_spent(wallets, from_datetime, to_datetime) do
@@ -96,7 +68,82 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     |> ClickhouseRepo.one()
   end
 
+  @doc ~s"""
+  Return a list of maps `%{datetime: datetime, eth_spent: ethspent}` that shows
+  how much ETH has been spent for the list of `wallets` for each `interval` in the
+  time period [`from_datetime`, `to_datetime`]
+  """
+  @spec eth_spent_over_time(list(String.t()), %DateTime{}, %DateTime{}, Integer.t()) ::
+          list(map())
   def eth_spent_over_time(wallets, from_datetime, to_datetime, interval) do
+    {query, args} = eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval)
+
+    ClickhouseRepo.query(query, args)
+    |> case do
+      {:ok, %{rows: rows}} ->
+        result =
+          Enum.map(
+            rows,
+            fn [value, datetime_str] ->
+              %{
+                datetime: datetime_str |> Sanbase.DateTimeUtils.from_erl!(),
+                eth_spent: value
+              }
+            end
+          )
+
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  # Private functions
+
+  defp wallet_transfers([], _, _, _, _, _), do: []
+
+  defp wallet_transfers(wallets, from_datetime, to_datetime, size, :out, order_by)
+       when is_list(wallets) do
+    from(
+      transfer in EthTransfers,
+      where:
+        transfer.from in ^wallets and transfer.to not in ^wallets and transfer.dt > ^from_datetime and
+          transfer.dt < ^to_datetime,
+      order_by: ^order_by,
+      limit: ^size
+    )
+    |> query_all_use_prewhere()
+  end
+
+  defp wallet_transfers(wallets, from_datetime, to_datetime, size, :in, order_by)
+       when is_list(wallets) do
+    from(
+      transfer in EthTransfers,
+      where:
+        transfer.from not in ^wallets and transfer.to in ^wallets and transfer.dt > ^from_datetime and
+          transfer.dt < ^to_datetime,
+      order_by: ^order_by,
+      limit: ^size
+    )
+    |> query_all_use_prewhere()
+  end
+
+  defp wallet_transfers(wallets, from_datetime, to_datetime, size, :all, order_by)
+       when is_list(wallets) do
+    from(
+      transfer in EthTransfers,
+      where:
+        transfer.dt > ^from_datetime and transfer.dt < ^to_datetime and
+          ((transfer.from in ^wallets and transfer.to not in ^wallets) or
+             (transfer.from not in ^wallets and transfer.to in ^wallets)),
+      order_by: ^order_by,
+      limit: ^size
+    )
+    |> query_all_use_prewhere()
+  end
+
+  defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
     span = div(to_datetime_unix - from_datetime_unix, interval)
@@ -131,28 +178,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       to_datetime_unix
     ]
 
-    Ecto.Adapters.SQL.query(
-      ClickhouseRepo,
-      query,
-      args
-    )
-    |> case do
-      {:ok, result} ->
-        result =
-          Enum.map(
-            result.rows,
-            fn [value, datetime_str] ->
-              %{
-                datetime: datetime_str |> Sanbase.DateTimeUtils.from_erl!(),
-                eth_spent: value
-              }
-            end
-          )
-
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    {query, args}
   end
 end

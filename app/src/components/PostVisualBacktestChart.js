@@ -17,7 +17,8 @@ const chartOptions = {
           display: false
         },
         gridLines: {
-          display: false
+          display: false,
+          color: '#4a4a4a'
         }
       }
     ],
@@ -27,7 +28,8 @@ const chartOptions = {
           display: false
         },
         gridLines: {
-          display: false
+          display: false,
+          color: '#4a4a4a'
         }
       }
     ]
@@ -35,9 +37,10 @@ const chartOptions = {
 }
 
 const datasetOptions = {
-  borderColor: 'rgba(45, 94, 57, 1)',
+  borderColor: 'rgba(255, 193, 7, 1)',
   borderWidth: 1,
-  pointRadius: 0
+  pointRadius: 0,
+  fill: false
 }
 
 const PostVisualBacktestChart = ({
@@ -45,7 +48,7 @@ const PostVisualBacktestChart = ({
   postCreatedAt,
   changePriceProp
 }) => {
-  console.log(postCreatedAt)
+  // console.log(postCreatedAt)
   const dataset = {
     labels: historyPrice.map(data => data.datetime),
     datasets: [

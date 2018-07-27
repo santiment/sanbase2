@@ -3,13 +3,18 @@ import annotation from 'chartjs-plugin-annotation'
 import { Line } from 'react-chartjs-2'
 import './PostVisualBacktestChart.css'
 
+const Color = {
+  POSITIVE: 'rgb(48, 157, 129)',
+  NEGATIVE: 'rgb(200, 47, 63)'
+}
+
 const chartOptions = {
   animation: false,
   legend: {
     display: false
   },
   tooltips: {
-    // enabled: false
+    enabled: false
   },
   scales: {
     yAxes: [
@@ -48,7 +53,8 @@ const datasetOptions = {
 const PostVisualBacktestChart = ({
   history: { historyPrice },
   postCreatedAt,
-  changePriceProp
+  changePriceProp,
+  change
 }) => {
   // console.log(postCreatedAt)
   const dataset = {
@@ -75,7 +81,7 @@ const PostVisualBacktestChart = ({
                 mode: 'vertical',
                 scaleID: 'x-axis-0',
                 value: postCreatedAt,
-                borderColor: 'red',
+                borderColor: change > 0 ? Color.POSITIVE : Color.NEGATIVE,
                 borderWidth: 1
               }
             ]

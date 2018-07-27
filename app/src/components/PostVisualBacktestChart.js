@@ -9,7 +9,7 @@ const chartOptions = {
     display: false
   },
   tooltips: {
-    enabled: false
+    // enabled: false
   },
   scales: {
     yAxes: [
@@ -25,6 +25,7 @@ const chartOptions = {
     ],
     xAxes: [
       {
+        id: 'x-axis-0',
         ticks: {
           display: false
         },
@@ -47,8 +48,7 @@ const datasetOptions = {
 const PostVisualBacktestChart = ({
   history: { historyPrice },
   postCreatedAt,
-  changePriceProp,
-  postCreationDateInfo
+  changePriceProp
 }) => {
   // console.log(postCreatedAt)
   const dataset = {
@@ -60,27 +60,27 @@ const PostVisualBacktestChart = ({
       }
     ]
   }
-  console.log(postCreationDateInfo.datetime)
-  chartOptions.annotation = {
-    annotations: [
-      {
-        drawTime: 'afterDatasetsDraw',
-        id: 'hline',
-        type: 'line',
-        mode: 'vertical',
-        scaleID: 'y-axis-0',
-        value: -10,
-        borderColor: 'black',
-        borderWidth: 1
-      }
-    ]
-  }
 
   return (
     <div className='PostVisualBacktestChart'>
       <Line
         className='PostVisualBacktestChart'
-        options={chartOptions}
+        options={{
+          ...chartOptions,
+          annotation: {
+            annotations: [
+              {
+                drawTime: 'afterDatasetsDraw',
+                type: 'line',
+                mode: 'vertical',
+                scaleID: 'x-axis-0',
+                value: postCreatedAt,
+                borderColor: 'red',
+                borderWidth: 1
+              }
+            ]
+          }
+        }}
         // width={200}
         data={dataset}
       />

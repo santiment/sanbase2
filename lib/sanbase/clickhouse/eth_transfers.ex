@@ -35,6 +35,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
 
+  @eth_decimals 1_000_000_000_000_000_000
+
   @primary_key false
   @timestamps_opts updated_at: false
   schema @table do

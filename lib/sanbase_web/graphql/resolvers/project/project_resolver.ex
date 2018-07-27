@@ -21,6 +21,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Github
   alias Sanbase.ExternalServices.Etherscan
 
+  alias Sanbase.Clickhouse
+
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
@@ -98,7 +100,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         Cache.func(
           fn ->
             result =
-              Sanbase.Clickhouse.Erc20Transfers.token_top_transfers(
+              Clickhouse.Erc20Transfers.token_top_transfers(
                 contract_address,
                 from,
                 to,
@@ -130,19 +132,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
-    async(Cache.func(fn -> calculate_eth_spent(ticker, days) end, {:eth_spent, ticker, days}))
+  def eth_spent(%Project{id: id} = project, %{days: days}, _resolution) do
+    async(Cache.func(fn -> calculate_eth_spent(project, days) end, {:eth_spent, id, days}))
   end
 
-  def calculate_eth_spent(ticker, days) do
+  def calculate_eth_spent(%Project{id: id} = project, days) do
     today = Timex.now()
     days_ago = Timex.shift(today, days: -days)
 
-    with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
+    with {:ok, eth_addresses} <- Project.eth_addresses(project),
+         {:ok, eth_spent} <- Clickhouse.EthTransfers.eth_spent(eth_addresses, days_ago, today) do
       {:ok, eth_spent}
     else
       error ->
-        Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
+        Logger.warn(
+          "Cannot calculate ETH spent for project with id #{id}. Reason: #{inspect(error)}"
+        )
+
         {:ok, nil}
     end
   end

@@ -3,18 +3,12 @@ import { push } from 'react-router-redux'
 import { connect } from 'react-redux'
 import { graphql } from 'react-apollo'
 import { compose } from 'recompose'
-import { allProjectsForSearchGQL } from './../pages/Projects/allProjectsGQL'
-import { getAll } from './../pages/Projects/projectSelectors'
-import * as actions from './../actions/types'
+import { allProjectsForSearchGQL } from './../../pages/Projects/allProjectsGQL'
+import { getAll } from './../../pages/Projects/projectSelectors'
+import * as actions from './../../actions/types'
 import Search from './Search'
 
-const SearchContainer = ({
-  history,
-  projects = [],
-  isFocused,
-  resetFocus,
-  goto
-}) => {
+const SearchContainer = ({ projects = [], isFocused, resetFocus, goto }) => {
   if (projects.length === 0) {
     return <Search loading />
   }

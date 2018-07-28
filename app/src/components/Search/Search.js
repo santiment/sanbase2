@@ -55,6 +55,7 @@ class SearchPanel extends Component {
       .map((el, index) => ({
         ticker: el.ticker,
         name: el.name,
+        title: el.name,
         cmcid: el.coinmarketcapId,
         key: index
       }))

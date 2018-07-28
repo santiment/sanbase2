@@ -56,7 +56,6 @@ const PostVisualBacktestChart = ({
   changePriceProp,
   change
 }) => {
-  // console.log(postCreatedAt)
   const dataset = {
     labels: historyPrice.map(data => data.datetime),
     datasets: [
@@ -87,7 +86,6 @@ const PostVisualBacktestChart = ({
             ]
           }
         }}
-        // width={200}
         data={dataset}
       />
     </div>

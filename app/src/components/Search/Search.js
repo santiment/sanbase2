@@ -1,8 +1,8 @@
 import React, { Component, Fragment } from 'react'
-import ProjectIcon from './../components/ProjectIcon'
 import PropTypes from 'prop-types'
 import debounce from 'lodash.debounce'
 import { Search, Input, Ref } from 'semantic-ui-react'
+import ProjectIcon from './../../components/ProjectIcon'
 import './Search.css'
 
 const resultRenderer = ({ name, ticker }) => (

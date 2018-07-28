@@ -368,19 +368,26 @@ const getICOPriceAnnotation = props => {
       events: ['hover'],
       annotations: [
         {
-          drawTime: 'afterDraw', // overrides annotation.drawTime if set
-          id: 'a-line-1', // optional
+          drawTime: 'afterDatasetsDraw',
+          id: 'hline',
           type: 'line',
           mode: 'horizontal',
-          scaleID: 'y-axis-0',
-          value: '25',
-          borderColor: 'red',
-          borderWidth: 2,
-
-          // Fires when the user clicks this annotation on the chart
-          // (be sure to enable the event in the events array below).
-          onClick: function (e) {
-            // `this` is bound to the annotation element
+          scaleID: 'y-axis-1',
+          value: icoPrice,
+          borderColor: 'black',
+          borderWidth: 1,
+          borderDash: [2, 2],
+          label: {
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            fontColor: 'black',
+            content: `ICO Price ${icoPriceUSD}`,
+            enabled: true,
+            position: 'left',
+            yAdjust: -10
+          },
+          onHover: function (e) {
+            // The annotation is is bound to the `this` variable
+            console.log('Annotation', e.type, this)
           }
         }
       ]

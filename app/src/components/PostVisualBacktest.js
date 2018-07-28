@@ -37,17 +37,6 @@ const binarySearchIndex = (list, value, predicate) => {
       .isBefore(moment(value))
   ) {
     middle--
-    console.log(
-      moment(list[middle].datetime)
-        .utc()
-        .format(),
-      value
-    )
-    console.log(
-      moment(list[middle - 1].datetime)
-        .utc()
-        .format()
-    )
   }
 
   return middle

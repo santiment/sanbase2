@@ -30,6 +30,26 @@ const binarySearchIndex = (list, value, predicate) => {
     middle = Math.floor((start + stop) / 2)
   }
 
+  // Correcting the result to the first data of post's creation date
+  while (
+    !moment(list[middle].datetime)
+      .utc()
+      .isBefore(moment(value))
+  ) {
+    middle--
+    console.log(
+      moment(list[middle].datetime)
+        .utc()
+        .format(),
+      value
+    )
+    console.log(
+      moment(list[middle - 1].datetime)
+        .utc()
+        .format()
+    )
+  }
+
   return middle
 }
 

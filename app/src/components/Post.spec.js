@@ -1,7 +1,7 @@
 /* eslint-env jest */
 import React from 'react'
 import { shallow } from 'enzyme'
-import { UnwrappedPost as Post } from './Post'
+import { Post } from './Post'
 
 const user = {
   username: '0xjsadhf92fhk2fjhe',
@@ -34,6 +34,14 @@ const postWithTag = {
 }
 
 describe('Post component', () => {
+  it('should render corresponding insight link', () => {
+    const wrapper = shallow(<Post user={user} {...post} />)
+    expect(wrapper.find('.event-storylink').prop('href')).toBe('/insights/0')
+  })
+  it('should render corresponding author', () => {
+    const wrapper = shallow(<Post user={user} />)
+    expect(wrapper.find('Author').prop('username')).toBe(user.username)
+  })
   describe('Tags render', () => {
     it('should render no tags', () => {
       const wrapper = shallow(<Post user={user} {...post} />)

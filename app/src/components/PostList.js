@@ -4,7 +4,7 @@ import Post from './Post.js'
 import './PostList.css'
 
 const PostList = ({
-  posts = {},
+  posts = [],
   userId = null,
   balance = null,
   loading = true,

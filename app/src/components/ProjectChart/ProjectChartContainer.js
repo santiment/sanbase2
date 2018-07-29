@@ -256,6 +256,7 @@ class ProjectChartContainer extends Component {
               ticker={this.props.ticker}
               isERC20={this.props.isERC20}
               isDesktop={this.props.isDesktop}
+              isPremium={this.props.isPremium}
             />
           )}
           {this.props.isDesktop || this.props.isFullscreenMobile ? (

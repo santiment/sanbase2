@@ -7,6 +7,7 @@ export const APP_SHOW_GDPR_MODAL = '[app] SHOW_GDPR_MODAL'
 export const APP_TOGGLE_GDPR_MODAL = '[app] TOGGLE_GDPR_MODAL'
 export const APP_USER_HAS_INACTIVE_TOKEN = '[app] USER_HAS_INACTIVE_TOKEN'
 export const APP_USER_NIGHT_MODE_SAVE = '[app] USER_NIGHT_MODE_SAVE'
+export const APP_TOGGLE_SEARCH_FOCUS = '[app] TOGGLE_SEARCH_FOCUS'
 
 // user
 export const CHANGE_USER_DATA = '[user] CHANGE_USER_DATA'

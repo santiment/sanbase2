@@ -18,32 +18,27 @@ const PricingHelpMessage = (isPremium = false) => {
             <strong>We are free now for general usage.</strong>
           </p>
           <p>
-            <strong>SANbase:</strong> 1000 SAN tokens staking
+            <strong>Upgrade to access more, including:</strong>
           </p>
           <ul>
             <li>Historical data more than 3 month</li>
-            <li>Social: Project sentiment feed</li>
-            <li>Insights voting</li>
-          </ul>
-          <p>
-            <strong>API:</strong> 1000 SAN tokens staking
-          </p>
-          <ul>
-            <li>Realtime data</li>
+            <li>Additional sentiment data</li>
+            <li>Insights voting capabilities</li>
+            <li>Real-time data (API)</li>
           </ul>
           <hr />
-          <strong>How do I stake SAN?</strong>
+          <strong>How to upgrade?</strong>
           <ul>
-            <li>Get Metamask and create an ETH address</li>
+            <li>Install the MetaMask add-on</li>
             <li>
-              Obtain $SAN tokens from any of the exchanges listed here:
-              https://coinmarketcap.com/currencies/santiment/#markets
+              Buy $SAN tokens from an exchange:
+              https://coinmarketcap.com/currencies/santiment/#markets a minimum
+              of $SAN 1000 is required
             </li>
             <li>
-              Transfer $SAN tokens from exchange to your Metamask ETH address.
-              Note: Be sure to have required amount of SAN for access.
+              Transfer $SAN tokens from exchange to MetaMask wallet. Note: Be
+              sure to have required amount of SAN for access.
             </li>
-            <li>Sign in to desired platform with Metamask for access.</li>
           </ul>
         </div>
       </HelpPopup>

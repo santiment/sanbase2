@@ -92,7 +92,7 @@ export const Post = ({
         {user && user.id && <Author {...user} />}
         {user && (
           <Div className='event-post-info'>
-            {tags.length > 0 ? (
+            {tags.length > 0 && (
               <div className='post-tags'>
                 {tags.map((tag, index) => (
                   <Link
@@ -104,8 +104,6 @@ export const Post = ({
                   </Link>
                 ))}
               </div>
-            ) : (
-              <Author {...user} />
             )}
             <LikeBtn
               onLike={() => {

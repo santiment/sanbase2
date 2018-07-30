@@ -26,7 +26,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   timeout: 60_000,
   pool_timeout: 60_000,
   ownership_timeout: 60_000,
-  pool_size: 10
+  pool_size: 50
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 

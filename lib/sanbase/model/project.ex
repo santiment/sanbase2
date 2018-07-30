@@ -103,6 +103,41 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
+  def erc20_projects() do
+    query =
+      from(
+        p in Project,
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        where:
+          not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
+            infr.code == "ETH",
+        order_by: p.name
+      )
+
+    erc20_projects =
+      query
+      |> Repo.all()
+  end
+
+  def currency_projects() do
+    query =
+      from(
+        p in Project,
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        # The opposite of ERC20. Classify everything except ERC20 as Currency.
+        where:
+          not is_nil(p.coinmarketcap_id) and
+            (is_nil(p.main_contract_address) or infr.code != "ETH"),
+        order_by: p.name
+      )
+
+    currency_projects =
+      query
+      |> Repo.all()
+  end
+
   @doc ~S"""
   ROI = current_price*(ico1_tokens + ico2_tokens + ...)/(ico1_tokens*ico1_initial_price + ico2_tokens*ico2_initial_price + ...)
   We skip ICOs for which we can't calculate the initial_price or the tokens sold

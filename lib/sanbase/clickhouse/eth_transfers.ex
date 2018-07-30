@@ -78,9 +78,22 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   how much ETH has been spent for the list of `wallets` for each `interval` in the
   time period [`from_datetime`, `to_datetime`]
   """
-  @spec eth_spent_over_time(list(String.t()), %DateTime{}, %DateTime{}, Integer.t()) ::
-          list(map())
-  def eth_spent_over_time(wallets, from_datetime, to_datetime, interval) do
+  def eth_spent_over_time(%Project{} = project, from_datetime, to_datetime, interval) do
+    with {:ok, eth_addresses} <- Project.eth_addresses(project) do
+      eth_spent_over_time(eth_addresses, from_datetime, to_datetime, interval)
+    else
+      {:error, error} ->
+        Logger.warn(
+          "Cannot get ETH addresses for project with id #{project.id}. Reason: #{inspect(error)}"
+        )
+
+        {:error, error}
+    end
+  end
+
+  def eth_spent_over_time([], _, _, _), do: {:ok, []}
+
+  def eth_spent_over_time(wallets, from_datetime, to_datetime, interval) when is_list(wallets) do
     {query, args} = eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval)
 
     ClickhouseRepo.query(query, args)
@@ -102,6 +115,64 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  @doc ~s"""
+  Returns the sum of the total ETH spent of all projects from the list projects
+  """
+  @spec eth_spent_by_projects(list(), %DateTime{}, %DateTime{}) ::
+          {:ok, number()} | {:ok, nil} | {:error, String.t()}
+  def eth_spent_by_projects([], _from_datetime, _to_datetime), do: {:ok, nil}
+
+  def eth_spent_by_projects(projects, from_datetime, to_datetime) do
+    total_eth_spent =
+      projects
+      |> Enum.map(&Task.async(fn -> eth_spent(&1, from_datetime, to_datetime) end))
+      |> Stream.map(&Task.await(&1, 25_000))
+      |> Stream.reject(fn {:ok, sum} -> sum == nil end)
+      |> Enum.reduce(0, fn
+        {:ok, sum}, acc ->
+          acc + sum
+
+        {:error, error}, acc ->
+          Logger.warn("Error while calculating the total ETH spent by projects: #{error}")
+
+          acc
+      end)
+
+    {:ok, total_eth_spent}
+  end
+
+  @doc ~s"""
+  Returns the sum of 'out' transactions over the specified period of time for all projecs,
+  grouped by the specified interval.
+  """
+  @spec eth_spent_over_time_by_projects(list(), %DateTime{}, %DateTime{}, String.t()) ::
+          {:ok, list()} | {:error, String.t()}
+  def eth_spent_over_time_by_projects([], _from_datetime, _to_datetime, _interval), do: {:ok, []}
+
+  def eth_spent_over_time_by_projects(projects, from_datetime, to_datetime, interval) do
+    {:ok, eth_addresses} = Project.eth_addresses(projects)
+
+    total_eth_spent_over_time =
+      eth_addresses
+      |> Enum.map(
+        &Task.async(fn ->
+          eth_spent_over_time(&1, from_datetime, to_datetime, interval)
+        end)
+      )
+      |> Stream.map(&Task.await(&1, 25_000))
+      |> Stream.reject(fn
+        {:error, _} -> true
+        {:ok, []} -> true
+        {:ok, _} -> false
+      end)
+      |> Enum.map(fn {:ok, data} -> data end)
+      |> Stream.zip()
+      |> Stream.map(&Tuple.to_list/1)
+      |> Enum.map(&reduce_values/1)
+
+    {:ok, total_eth_spent_over_time}
   end
 
   # Private functions

@@ -55,20 +55,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def all_erc20_projects(_root, _args, _resolution) do
-    query =
-      from(
-        p in Project,
-        inner_join: infr in Infrastructure,
-        on: p.infrastructure_id == infr.id,
-        where:
-          not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
-            infr.code == "ETH",
-        order_by: p.name
-      )
-
     erc20_projects =
-      query
-      |> Repo.all()
+      Project.erc20_projects()
       |> Repo.preload([
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
@@ -79,21 +67,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def all_currency_projects(_root, _args, _resolution) do
-    query =
-      from(
-        p in Project,
-        inner_join: infr in Infrastructure,
-        on: p.infrastructure_id == infr.id,
-        # The opposite of ERC20. Classify everything except ERC20 as Currency.
-        where:
-          not is_nil(p.coinmarketcap_id) and
-            (is_nil(p.main_contract_address) or infr.code != "ETH"),
-        order_by: p.name
-      )
-
     currency_projects =
-      query
-      |> Repo.all()
+      Project.currency_projects()
       |> Repo.preload([
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
@@ -231,10 +206,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
-    with {:ok, measurements} <- Etherscan.Store.public_measurements(),
-         {:ok, measurements_list} <- gen_measurements_list(measurements),
+    with projects when is_list(projects) <- Project.erc20_projects(),
          {:ok, total_eth_spent} <-
-           Etherscan.Store.eth_spent_by_projects(measurements_list, from, to) do
+           Clickhouse.EthTransfers.eth_spent_by_projects(projects, from, to) do
       {:ok, total_eth_spent}
     end
   end
@@ -248,25 +222,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, measurements} <- Etherscan.Store.public_measurements(),
-         {:ok, measurements_list} <- gen_measurements_list(measurements),
-         {:ok, total_eth_spent_over_time} <-
-           Etherscan.Store.eth_spent_over_time_by_projects(
-             measurements_list,
+    with interval when is_integer(interval) <-
+           Sanbase.DateTimeUtils.compound_duration_to_seconds(interval),
+         projects when is_list(projects) <- Project.erc20_projects(),
+         {:ok, total_eth_spent} <-
+           Clickhouse.EthTransfers.eth_spent_over_time_by_projects(
+             projects,
              from,
              to,
              interval
            ) do
-      result =
-        total_eth_spent_over_time
-        |> Enum.map(fn [datetime, eth_spent] ->
-          %{
-            datetime: datetime,
-            eth_spent: eth_spent
-          }
-        end)
-
-      {:ok, result}
+      {:ok, total_eth_spent}
     end
   end
 

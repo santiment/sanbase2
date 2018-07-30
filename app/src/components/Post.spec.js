@@ -4,6 +4,7 @@ import { shallow } from 'enzyme'
 import { Post } from './Post'
 
 const user = {
+  id: 1,
   username: '0xjsadhf92fhk2fjhe',
   email: null
 }

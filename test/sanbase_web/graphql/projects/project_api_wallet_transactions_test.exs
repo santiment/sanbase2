@@ -1,9 +1,6 @@
 defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.ExternalServices.Etherscan.Store
-
   alias Sanbase.Model.{
     Project,
     ProjectEthAddress
@@ -22,10 +19,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   @datetime6 DateTime.from_naive!(~N[2017-05-18 20:00:00], "Etc/UTC")
 
   setup do
-    Store.create_db()
-
     ticker = "TESTXYZ"
-    Store.drop_measurement(ticker)
 
     p =
       %Project{}

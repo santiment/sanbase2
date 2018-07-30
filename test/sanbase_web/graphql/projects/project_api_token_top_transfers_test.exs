@@ -175,7 +175,7 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
     assert json_response(result, 200)["data"]["projectBySlug"] == %{"tokenTopTransactions" => []}
   end
 
-  test "cannot get top transfers by all projects query", %{conn: conn, project: project} do
+  test "cannot get top transfers by all projects query", %{conn: conn} do
     query = """
     {
       allErc20Projects{
@@ -196,6 +196,9 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "allErc20Projects"))
+      |> json_response(200)
+
+    assert %{"data" => %{"allErc20Projects" => []}} = result
   end
 
   # Private functions

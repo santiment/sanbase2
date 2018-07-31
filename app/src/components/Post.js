@@ -67,6 +67,7 @@ export const Post = ({
   moderationComment = null,
   state = STATES.approved,
   readyState = STATES.draft,
+  discourseTopicUrl = '',
   gotoInsight,
   showStatus = false
 }) => {
@@ -119,6 +120,11 @@ export const Post = ({
           tags.length > 0 && (
             <PostVisualBacktest from={createdAt} ticker={tags[0].name} />
           )}
+        {discourseTopicUrl && (
+          <a className='discussion-btn' href={discourseTopicUrl}>
+            goto discussion
+          </a>
+        )}
         <Div className='event-post-controls'>
           {showStatus && (
             <Status moderationComment={moderationComment} status={readyState} />

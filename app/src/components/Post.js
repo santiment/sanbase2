@@ -116,15 +116,16 @@ export const Post = ({
             />
           </Div>
         )}
+        {discourseTopicUrl && (
+          <a className='discussion-btn' href={discourseTopicUrl}>
+            go to discussion
+          </a>
+        )}
+        <br />
         {createdAt &&
           tags.length > 0 && (
             <PostVisualBacktest from={createdAt} ticker={tags[0].name} />
           )}
-        {discourseTopicUrl && (
-          <a className='discussion-btn' href={discourseTopicUrl}>
-            goto discussion
-          </a>
-        )}
         <Div className='event-post-controls'>
           {showStatus && (
             <Status moderationComment={moderationComment} status={readyState} />

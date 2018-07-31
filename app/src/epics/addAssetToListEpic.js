@@ -5,7 +5,7 @@ import { showNotification } from './../actions/rootActions'
 import { AssetsListGQL } from './../components/AssetsListPopup/AssetsListGQL'
 import * as actions from './../actions/types'
 
-const updateUserListGQL = gql`
+export const updateUserListGQL = gql`
   mutation updateUserList(
     $id: Int!
     $isPublic: Boolean
@@ -21,6 +21,16 @@ const updateUserListGQL = gql`
       listItems: $listItems
     ) {
       id
+      listItems {
+        project {
+          id
+        }
+      }
+      isPublic
+      name
+      color
+      insertedAt
+      updatedAt
     }
   }
 `
@@ -30,12 +40,24 @@ const addAssetToListEpic = (action$, store, { client }) =>
     .ofType(actions.USER_ADD_ASSET_TO_LIST)
     .debounceTime(200)
     .mergeMap(action => {
-      const { projectId, assetsListId } = action.payload
+      const { assetsListId, listItems = [], projectId } = action.payload
+      const normalizedList = listItems.map(val => {
+        return { project_id: +val.project.id }
+      })
+      const newListItems = [...normalizedList, { project_id: +projectId }]
       const mutationPromise = client.mutate({
         mutation: updateUserListGQL,
         variables: {
           id: +assetsListId,
-          listItems: [{ project_id: +projectId }]
+          listItems: newListItems
+        },
+        update: (store, { data: { updateUserList } }) => {
+          const data = store.readQuery({ query: AssetsListGQL })
+          const index = data.fetchUserLists.findIndex(
+            list => list.id === updateUserList.id
+          )
+          data.fetchUserLists[index] = updateUserList
+          store.writeQuery({ query: AssetsListGQL, data })
         }
       })
       return Observable.from(mutationPromise)

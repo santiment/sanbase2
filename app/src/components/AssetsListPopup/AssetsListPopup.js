@@ -36,8 +36,8 @@ export default compose(
   graphql(AssetsListGQL, {
     name: 'AssetsList',
     options: ({ isLoggedIn }) => ({
-      skip: !isLoggedIn
-      // pollInterval: POLLING_INTERVAL
+      skip: !isLoggedIn,
+      pollInterval: POLLING_INTERVAL
     }),
     props: ({ AssetsList, ownProps }) => {
       const { fetchUserLists = [] } = AssetsList

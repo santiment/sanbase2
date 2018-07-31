@@ -15,8 +15,11 @@ defmodule Sanbase.Application do
         # Start the Task Supervisor
         supervisor(Task.Supervisor, [[name: Sanbase.TaskSupervisor]]),
 
-        # Start the Ecto repository
-        supervisor(Sanbase.Repo, []),
+        # Start the Postgres Ecto repository
+        Sanbase.Repo,
+
+        # Start the TimescaleDB Ecto repository
+        Sanbase.TimescaleRepo,
 
         # Start the endpoint when the application starts
         supervisor(SanbaseWeb.Endpoint, []),

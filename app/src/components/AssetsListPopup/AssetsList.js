@@ -5,16 +5,20 @@ import { Button, Label } from 'semantic-ui-react'
 import AddNewAssetsListBtn from './AddNewAssetsListBtn'
 import * as actions from './../../actions/types'
 
-const ConfigurationListBtn = ({ isConfigOpened = false, setConfigOpened }) =>
-  isConfigOpened ? (
-    <Button onClick={() => setConfigOpened(!isConfigOpened)} icon='close' />
-  ) : (
-    <Button onClick={() => setConfigOpened(!isConfigOpened)} icon='setting' />
-  )
+const ConfigurationListBtn = ({ isConfigOpened = false, setConfigOpened }) => (
+  <Button
+    onClick={() => setConfigOpened(!isConfigOpened)}
+    icon={isConfigOpened ? 'close' : 'setting'}
+  />
+)
 
 // id is a number of current date for new list,
 // until backend will have returned a real id
 const isNewestList = id => typeof id === 'number'
+
+export const hasAssetById = ({ id, listItems }) => {
+  return listItems.some(item => item.project.id === id)
+}
 
 class AssetsList extends React.Component {
   render () {
@@ -26,7 +30,7 @@ class AssetsList extends React.Component {
       isConfigOpened,
       setConfigOpened,
       removeAssetList,
-      addAssetToList
+      toggleAssetInList
     } = this.props
     return (
       <div>
@@ -37,9 +41,16 @@ class AssetsList extends React.Component {
           />
         )}
         {lists.length > 0 &&
-          lists.map(({ id, name }) => (
-            <div key={id} onClick={addAssetToList.bind(this, projectId, id)}>
+          lists.map(({ id, name, listItems = [] }) => (
+            <div
+              key={id}
+              onClick={toggleAssetInList.bind(this, projectId, id, listItems)}
+            >
               {name}
+              {hasAssetById({
+                listItems,
+                id: projectId
+              }) && 'Yes'}
               {isConfigOpened &&
                 !isNewestList(id) && (
                   <Button
@@ -70,12 +81,24 @@ const mapStateToProps = state => {
 }
 
 const mapDispatchToProps = (dispatch, ownProps) => ({
-  addAssetToList: (projectId, assetsListId) => {
+  toggleAssetInList: (projectId, assetsListId, listItems) => {
     if (ownProps.isConfigOpened) return
-    return dispatch({
-      type: actions.USER_ADD_ASSET_TO_LIST,
-      payload: { projectId, assetsListId }
+    const isAssetInList = hasAssetById({
+      listItems: ownProps.lists.find(list => list.id === assetsListId)
+        .listItems,
+      id: projectId
     })
+    if (isAssetInList) {
+      return dispatch({
+        type: actions.USER_REMOVE_ASSET_FROM_LIST,
+        payload: { projectId, assetsListId, listItems }
+      })
+    } else {
+      return dispatch({
+        type: actions.USER_ADD_ASSET_TO_LIST,
+        payload: { projectId, assetsListId, listItems }
+      })
+    }
   },
   addNewAssetList: payload =>
     dispatch({
@@ -90,6 +113,6 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
 })
 
 export default compose(
-  connect(mapStateToProps, mapDispatchToProps),
-  withState('isConfigOpened', 'setConfigOpened', false)
+  withState('isConfigOpened', 'setConfigOpened', false),
+  connect(mapStateToProps, mapDispatchToProps)
 )(AssetsList)

@@ -15,7 +15,10 @@ const createUserListGQL = gql`
       id
       name
       isPublic
-      list_items {
+      color
+      insertedAt
+      updatedAt
+      listItems {
         project {
           id
         }
@@ -29,7 +32,12 @@ const addNewAssetsListEpic = (action$, store, { client }) =>
     .ofType(actions.USER_ADD_NEW_ASSET_LIST)
     .debounceTime(200)
     .mergeMap(action => {
-      const { name, color = 'NONE', isPublic = false } = action.payload
+      const {
+        name,
+        color = 'NONE',
+        isPublic = false,
+        listItems = []
+      } = action.payload
       const mutationPromise = client.mutate({
         mutation: createUserListGQL,
         variables: {
@@ -44,21 +52,16 @@ const addNewAssetsListEpic = (action$, store, { client }) =>
             id: +new Date(),
             color,
             isPublic,
-            name
+            name,
+            listItems,
+            insertedAt: new Date(),
+            updatedAt: new Date()
           }
         },
-        update: proxy => {
-          let data = proxy.readQuery({ query: AssetsListGQL })
-          const _userLists = data.fetchUserLists ? [...data.fetchUserLists] : []
-          _userLists.push({
-            id: +new Date(),
-            color,
-            name,
-            isPublic,
-            __typename: 'UserList'
-          })
-          data.fetchUserLists = _userLists
-          proxy.writeQuery({ query: AssetsListGQL, data })
+        update: (store, { data: { createUserList } }) => {
+          const data = store.readQuery({ query: AssetsListGQL })
+          data.fetchUserLists.push(createUserList)
+          store.writeQuery({ query: AssetsListGQL, data })
         }
       })
       return Observable.from(mutationPromise)

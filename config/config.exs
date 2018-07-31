@@ -6,13 +6,20 @@
 use Mix.Config
 
 # General application configuration
-config :sanbase, ecto_repos: [Sanbase.Repo]
+config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: 10,
+  # because of pgbouncer
+  prepare: :unnamed
+
+config :sanbase, Sanbase.TimescaleRepo,
+  adapter: Ecto.Adapters.Postgres,
+  pool_size: 30,
+  # because of pgbouncer
   prepare: :unnamed
 
 # Clickhousex does not support `:system` tuples. The configuration is done

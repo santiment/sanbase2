@@ -139,6 +139,7 @@ export const App = ({
               return (
                 <AssetsPage
                   type={name}
+                  isLoggedIn={isLoggedIn}
                   preload={() => LoadableDetailedPage.preload()}
                   {...props}
                 />

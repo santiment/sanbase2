@@ -1,10 +1,10 @@
 import React from 'react'
 import { Helmet } from 'react-helmet'
 import { getOrigin } from '../../utils/utils'
-import { FadeIn } from 'animate-components'
 import Assets from './Assets'
 import AssetsTable from './AssetsTable'
 import HelpPopupAssets from './HelpPopupAssets'
+import AssetsPageNavigation from './AssetsPageNavigation'
 
 const AssetsPage = props => (
   <div className='page projects-table'>
@@ -17,21 +17,20 @@ const AssetsPage = props => (
         <h1>Assets</h1>
         <HelpPopupAssets />
       </div>
+      <AssetsPageNavigation isLoggedIn={props.isLoggedIn} />
     </div>
     <Assets
       {...props}
       type={props.type}
       render={({ items, ...rest }) => (
-        <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
-          <AssetsTable
-            Assets={{
-              items,
-              ...rest
-            }}
-            goto={props.history.push}
-            preload={props.preload}
-          />
-        </FadeIn>
+        <AssetsTable
+          Assets={{
+            items,
+            ...rest
+          }}
+          goto={props.history.push}
+          preload={props.preload}
+        />
       )}
     />
   </div>

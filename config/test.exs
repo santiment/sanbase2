@@ -23,6 +23,12 @@ config :sanbase, Sanbase.Repo,
   database: "sanbase_test",
   pool_size: 30
 
+# Configure your database
+config :sanbase, Sanbase.TimescaleRepo,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_timescale_test",
+  pool_size: 30
+
 # Configure ClickHouseRepo for testing. It will be tested by using Postgres
 config :sanbase, Sanbase.ClickhouseRepo,
   pool: Ecto.Adapters.SQL.Sandbox,

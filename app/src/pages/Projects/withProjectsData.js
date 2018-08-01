@@ -41,28 +41,32 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const mapProjectsToProps = type => ({ Projects }) => {
-  const loading = Projects.loading
-  const isError = !!Projects.error
-  const errorMessage = Projects.error ? Projects.error.message : ''
-  const projects = Projects[pickProjectsType(type).projects] || []
-
-  const isEmpty = projects && projects.length === 0
+const mapDataToProps = type => {
   return {
-    Projects: {
-      loading,
-      isEmpty,
-      isError,
-      projects,
-      errorMessage,
-      refetch: Projects.refetch
+    projects: ({ Projects }) => {
+      const loading = Projects.loading
+      const isError = !!Projects.error
+      const errorMessage = Projects.error ? Projects.error.message : ''
+      const projects = Projects[pickProjectsType(type).projects] || []
+
+      const isEmpty = projects && projects.length === 0
+      return {
+        Projects: {
+          loading,
+          isEmpty,
+          isError,
+          projects,
+          errorMessage,
+          refetch: Projects.refetch
+        }
+      }
+    },
+    marketSegments: ({ marketSegments }) => {
+      marketSegments =
+        marketSegments[pickProjectsType(type).marketSegments] || []
+      return { marketSegments }
     }
   }
-}
-
-const mapMarketSegmentsToProps = type => ({ marketSegments }) => {
-  marketSegments = marketSegments[pickProjectsType(type).marketSegments] || []
-  return { marketSegments }
 }
 
 const pickProjectsType = type => {
@@ -104,7 +108,7 @@ const enhance = (type = 'all') =>
     withRouter,
     graphql(pickProjectsType(type).projectsGQL, {
       name: 'Projects',
-      props: mapProjectsToProps(type),
+      props: mapDataToProps(type).projects,
       options: () => {
         return {
           errorPolicy: 'all',
@@ -114,7 +118,7 @@ const enhance = (type = 'all') =>
     }),
     graphql(pickProjectsType(type).marketSegmentsGQL, {
       name: 'marketSegments',
-      props: mapMarketSegmentsToProps(type)
+      props: mapDataToProps(type).marketSegments
     }),
     pure
   )

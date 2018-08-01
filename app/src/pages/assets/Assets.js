@@ -1,4 +1,7 @@
 import React from 'react'
+import * as qs from 'query-string'
+import { Observable } from 'rxjs'
+import { tap, zip, mergeMap, concat } from 'rxjs/operators'
 import { withApollo } from 'react-apollo'
 import { compose, pure } from 'recompose'
 import {
@@ -7,20 +10,22 @@ import {
   currenciesGQL
 } from './../Projects/allProjectsGQL'
 
-const mapDataToProps = (type, result) => {
-  const loading = result.loading
-  const isError = !!result.error
-  const errorMessage = result.error ? result.error.message : ''
-  const assets = result.data[pickProjectsType(type).projects] || []
+const MAX_RETRIES = 10
 
-  const isEmpty = assets && assets.length === 0
+const getTimeout = ({ minTimeout, maxTimeout, attempt }) =>
+  Math.min(Math.random() * minTimeout * Math.pow(2, attempt), maxTimeout)
+
+const mapDataToProps = (type, result) => {
+  const { loading, error } = result
+  const items = !result.error
+    ? result.data[pickProjectsType(type).projects]
+    : []
+  const isEmpty = items && items.length === 0
   return {
     loading,
     isEmpty,
-    isError,
-    assets,
-    errorMessage,
-    refetch: Assets.refetch
+    items,
+    error
   }
 }
 
@@ -54,7 +59,7 @@ const enhance = compose(withApollo, pure)
 class Assets extends React.Component {
   state = {
     Assets: {
-      loading: false,
+      loading: true,
       isEmpty: true,
       isError: false,
       assets: [],
@@ -63,24 +68,57 @@ class Assets extends React.Component {
     }
   }
 
+  getType = () => {
+    const { type = qs.parse(this.props.location.search) } = this.props
+    return type
+  }
+
   componentDidMount () {
-    this.props.client
-      .query({
-        options: {
-          fetchPolicy: 'network-only'
-        },
-        query: pickProjectsType(this.props.type).gql
+    const type = this.getType()
+
+    const fetchAssets$ = type =>
+      Observable.of(type).switchMap(type =>
+        Observable.from(
+          this.props.client.query({ query: pickProjectsType(type).gql })
+        )
+      )
+
+    this.subscription = fetchAssets$(type)
+      .retryWhen(errors => {
+        return errors.pipe(
+          zip(Observable.range(1, MAX_RETRIES), (_, i) => i),
+          tap(time => console.log(`Retry to fetch ${time}`)),
+          mergeMap(retryCount =>
+            Observable.timer(
+              getTimeout({
+                minTimeout: 1000,
+                maxTimeout: 10000,
+                attempt: retryCount
+              })
+            )
+          ),
+          concat(Observable.throw(new Error('Retry limit exceeded!')))
+        )
       })
-      .then(res => {
-        this.setState({ Assets: mapDataToProps(this.props.type, res) })
+      .catch(error => {
+        return Observable.of({
+          error,
+          loading: false,
+          assets: []
+        })
       })
-      .catch(err => {
-        console.log('error', err)
+      .subscribe(result => {
+        this.setState({ Assets: mapDataToProps(type, result) })
       })
   }
 
+  componentWillUnmount () {
+    this.subscription && this.subscription.unsubscribe()
+  }
+
   render () {
-    const { children, render, type = 'all' } = this.props
+    const { children, render } = this.props
+    const type = this.getType()
     const { Assets = {} } = this.state
     const props = { type, ...Assets }
 

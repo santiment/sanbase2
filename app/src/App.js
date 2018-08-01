@@ -31,7 +31,7 @@ import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import ApiDocs from './components/ApiDocs'
 import ApiExplorer from './components/ApiExplorer'
-import Assets from './pages/assets/Assets'
+import AssetsPage from './pages/assets/AssetsPage'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -130,24 +130,23 @@ export const App = ({
             return <CurrenciesMobile {...props} />
           }}
         />
-        <Route
-          exact
-          path='/test'
-          render={props => {
-            return (
-              <Assets
-                {...props}
-                type='all'
-                render={({ loading, isError, assets }) => (
-                  <div>
-                    {loading && 'loading...'}
-                    {JSON.stringify(assets)}
-                  </div>
-                )}
-              />
-            )
-          }}
-        />
+        {['currencies', 'erc20', 'all'].map(name => (
+          <Route
+            exact
+            key={name}
+            path={`/assets/${name}`}
+            render={props => {
+              return (
+                <AssetsPage
+                  type={name}
+                  preload={() => LoadableDetailedPage.preload()}
+                  {...props}
+                />
+              )
+            }}
+          />
+        ))}
+        <Redirect from='/assets' to='/assets/all' />
         <Route
           exact
           path='/favorites'

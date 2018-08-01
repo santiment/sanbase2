@@ -83,16 +83,12 @@ const ProjectsTable = ({
   search,
   tableInfo,
   categories,
-  allMarketSegments,
+  marketSegments,
   preload,
   user
 }) => {
   const { loading } = Projects
-  const projects = filterProjectsByMarketSegment(
-    Projects.projects,
-    categories,
-    allMarketSegments
-  )
+  const projects = filterProjectsByMarketSegment(Projects.projects, categories)
   const currentTableSection = match.path.split('/')[1] // currencies or projects ...
   const refetchThrottled = data => {
     throttle(data => data.refetch(), 1000)
@@ -363,7 +359,7 @@ const ProjectsTable = ({
               path={match.path}
               categories={categories}
               handleSetCategory={handleSetCategory}
-              allMarketSegments={allMarketSegments}
+              marketSegments={marketSegments}
               user={user}
             />
           </div>

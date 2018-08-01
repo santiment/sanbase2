@@ -39,7 +39,7 @@ const projects = [
   }
 ]
 
-const allMarketSegments = {
+const marketSegments = {
   advertising: 'Advertising',
   blockchain_network: 'Blockchain Network',
   data: 'Data',
@@ -66,7 +66,7 @@ describe('Cashflow container', () => {
           pageSize: 32,
           page: 1
         }}
-        allMarketSegments={allMarketSegments}
+        marketSegments={marketSegments}
         categories={categories}
         match={{ path: '/products' }}
       />

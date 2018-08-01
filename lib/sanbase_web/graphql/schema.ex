@@ -47,6 +47,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
+  import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -74,9 +75,18 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Fetch all market segments."
-    field :all_market_segments, :string do
-      middleware(ProjectPermissions)
+    field :all_market_segments, list_of(:market_segment) do
       cache_resolve(&MarketSegmentResolver.all_market_segments/3)
+    end
+
+    @desc "Fetch ERC20 projects' market segments."
+    field :erc20_market_segments, list_of(:market_segment) do
+      cache_resolve(&MarketSegmentResolver.erc20_market_segments/3)
+    end
+
+    @desc "Fetch currency projects' market segments."
+    field :currencies_market_segments, list_of(:market_segment) do
+      cache_resolve(&MarketSegmentResolver.currencies_market_segments/3)
     end
 
     @desc "Fetch all projects that have price data."

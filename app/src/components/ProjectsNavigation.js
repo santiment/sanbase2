@@ -2,14 +2,14 @@ import React from 'react'
 import { NavLink as Link } from 'react-router-dom'
 import { Button, Checkbox, Popup } from 'semantic-ui-react'
 import './ProjectsNavigation.css'
+import { simpleSortStrings } from '../utils/sortMethods'
 
 const HiddenElements = () => ''
 
 const ProjectsNavigation = ({
-  path,
   categories,
   handleSetCategory,
-  allMarketSegments,
+  marketSegments,
   user
 }) => {
   return (
@@ -19,6 +19,8 @@ const ProjectsNavigation = ({
           activeClassName='projects-navigation-list__page-link--active'
           className='projects-navigation-list__page-link'
           to={'/projects'}
+          onClick={handleSetCategory}
+          name='clearAllCategories'
         >
           ERC20 Projects
         </Link>
@@ -26,6 +28,8 @@ const ProjectsNavigation = ({
           activeClassName='projects-navigation-list__page-link--active'
           className='projects-navigation-list__page-link'
           to={'/currencies'}
+          onClick={handleSetCategory}
+          name='clearAllCategories'
         >
           Currencies
         </Link>
@@ -34,6 +38,8 @@ const ProjectsNavigation = ({
             activeClassName='projects-navigation-list__page-link--active'
             className='projects-navigation-list__page-link'
             to={'/favorites'}
+            onClick={handleSetCategory}
+            name='clearAllCategories'
           >
             Favorites
           </Link>
@@ -57,20 +63,23 @@ const ProjectsNavigation = ({
           position='bottom center'
         >
           <div className='categories-links'>
-            {Object.entries(allMarketSegments).length > 0
-              ? Object.entries(allMarketSegments)
-                .sort()
-                .map(([key, value]) => (
+            {marketSegments.length > 0
+              ? [...marketSegments]
+                .filter(marketSegment => marketSegment.count > 0)
+                .sort((previous, next) =>
+                  simpleSortStrings(previous.name, next.name)
+                )
+                .map(({ name, count }) => (
                   <Checkbox
-                    key={key}
-                    id={key}
-                    label={value || 'Unknown'}
+                    key={name}
+                    id={name}
+                    label={`${name} (${count})`}
                     onChange={handleSetCategory}
-                    checked={categories[key]}
+                    checked={categories[name]}
                   />
                 ))
               : 'Categories not founded'}
-            {Object.entries(allMarketSegments).length > 0 && (
+            {marketSegments.length > 0 && (
               <Button
                 className='clear-all-categories'
                 content='Clear All'

@@ -31,6 +31,7 @@ import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import ApiDocs from './components/ApiDocs'
 import ApiExplorer from './components/ApiExplorer'
+import Assets from './pages/assets/Assets'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -127,6 +128,24 @@ export const App = ({
               )
             }
             return <CurrenciesMobile {...props} />
+          }}
+        />
+        <Route
+          exact
+          path='/test'
+          render={props => {
+            return (
+              <Assets
+                {...props}
+                type='all'
+                render={({ loading, isError, assets }) => (
+                  <div>
+                    {loading && 'loading...'}
+                    {JSON.stringify(assets)}
+                  </div>
+                )}
+              />
+            )
           }}
         />
         <Route

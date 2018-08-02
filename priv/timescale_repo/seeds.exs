@@ -1,4 +1,2 @@
-# Populate with BurnRate
-require Sanbase.Seeds.BurnRateSeed
-alias Sanbase.Seeds.BurnRateSeed
-_ = BurnRateSeed.populate()
+Sanbase.Seeds.BurnRateSeed.populate()
+Sanbase.Seeds.DailyActiveAddressesSeed.populate()

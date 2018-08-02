@@ -6,6 +6,8 @@ defmodule Sanbase.Blockchain.BurnRate do
 
   @table Timescaledb.table_name("eth_burn_rate")
 
+  @table "eth_burn_rate"
+
   @primary_key false
   schema @table do
     field(:timestamp, :naive_datetime, primary_key: true)

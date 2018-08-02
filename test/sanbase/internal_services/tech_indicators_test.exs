@@ -226,4 +226,101 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
                 }
               ]}
   end
+
+  describe "social_volume/5" do
+    test "response: success" do
+      from = 1_523_876_400
+      to = 1_523_880_000
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body:
+             "[{\"mentions_count\": 5, \"timestamp\": 1523876400}, {\"mentions_count\": 15, \"timestamp\": 1523880000}]",
+           status_code: 200
+         }}
+      )
+
+      result =
+        TechIndicators.social_volume(
+          "Foo",
+          DateTime.from_unix!(from),
+          DateTime.from_unix!(to),
+          "1h",
+          :telegram_discussion_overview
+        )
+
+      assert result ==
+               {:ok,
+                [
+                  %{
+                    mentions_count: 5,
+                    datetime: DateTime.from_unix!(from)
+                  },
+                  %{
+                    mentions_count: 15,
+                    datetime: DateTime.from_unix!(to)
+                  }
+                ]}
+    end
+
+    test "response: 404" do
+      from = 1_523_876_400
+      to = 1_523_880_000
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: "Some message",
+           status_code: 404
+         }}
+      )
+
+      log_id = 1234
+      mock(Ecto.UUID, :generate, log_id)
+
+      result =
+        TechIndicators.social_volume(
+          "Foo",
+          DateTime.from_unix!(from),
+          DateTime.from_unix!(to),
+          "1h",
+          :telegram_discussion_overview
+        )
+
+      assert result == {:error, "[#{log_id}] Error executing query. See logs for details."}
+    end
+
+    test "response: error" do
+      from = 1_523_876_400
+      to = 1_523_880_000
+
+      mock(
+        HTTPoison,
+        :get,
+        {:error,
+         %HTTPoison.Error{
+           reason: :econnrefused
+         }}
+      )
+
+      log_id = 1234
+      mock(Ecto.UUID, :generate, log_id)
+
+      result =
+        TechIndicators.social_volume(
+          "Foo",
+          DateTime.from_unix!(from),
+          DateTime.from_unix!(to),
+          "1h",
+          :telegram_discussion_overview
+        )
+
+      assert result == {:error, "[#{log_id}] Error executing query. See logs for details."}
+    end
+  end
 end

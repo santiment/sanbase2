@@ -4,15 +4,17 @@ defmodule Sanbase.Blockchain.BurnRate do
   import Ecto.Changeset
   import Sanbase.Timescaledb
 
+  @table "eth_burn_rate"
+
   @primary_key false
-  schema "eth_burn_rate" do
+  schema @table do
     field(:timestamp, :naive_datetime, primary_key: true)
     field(:contract_address, :string, primary_key: true)
     field(:burn_rate, :float)
   end
 
   @doc false
-  def changeset(burn_rate, attrs \\ %{}) do
+  def changeset(%__MODULE__{} = burn_rate, attrs \\ %{}) do
     burn_rate
     |> cast(attrs, [:timestamp, :contract_address, :burn_rate])
     |> validate_number(:burn_rate, greater_than_or_equal_to: 0.0)
@@ -24,7 +26,7 @@ defmodule Sanbase.Blockchain.BurnRate do
 
     """
     SELECT sum(burn_rate) AS value
-    FROM eth_burn_rate
+    FROM #{@table}
     WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
     """
     |> bucket_by_interval(args, interval)

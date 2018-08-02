@@ -59,6 +59,17 @@ CREATE TABLE public.eth_burn_rate (
 
 
 --
+-- Name: eth_daily_active_addresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eth_daily_active_addresses (
+    "timestamp" timestamp without time zone NOT NULL,
+    contract_address character varying(255) NOT NULL,
+    active_addresses integer
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -77,6 +88,14 @@ ALTER TABLE ONLY public.eth_burn_rate
 
 
 --
+-- Name: eth_daily_active_addresses eth_daily_active_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eth_daily_active_addresses
+    ADD CONSTRAINT eth_daily_active_addresses_pkey PRIMARY KEY ("timestamp", contract_address);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -88,5 +107,5 @@ ALTER TABLE ONLY public.schema_migrations
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO public."schema_migrations" (version) VALUES (20180731110511);
+INSERT INTO public."schema_migrations" (version) VALUES (20180731110511), (20180802132742);
 

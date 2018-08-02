@@ -6,7 +6,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
-  defp ecto_uuid, do: Mockery.Macro.mockable(Ecto.UUID)
 
   @recv_timeout 15_000
 
@@ -275,6 +274,20 @@ defmodule Sanbase.InternalServices.TechIndicators do
             HTTPoison.Error.message(error)
           }"
         )
+    end
+  end
+
+  def social_volume_tickers() do
+    social_volume_tickers_request()
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        Poison.decode(body)
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        error_result("Error status #{status} fetching social volume tickers: #{body}")
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result("Cannot fetch social volume tickers data: #{HTTPoison.Error.message(error)}")
     end
   end
 
@@ -819,8 +832,16 @@ defmodule Sanbase.InternalServices.TechIndicators do
     {:ok, result}
   end
 
+  defp social_volume_tickers_request() do
+    url = "#{tech_indicators_url()}/indicator/social_volume_tickers"
+
+    options = [recv_timeout: @recv_timeout]
+
+    http_client().get(url, [], options)
+  end
+
   defp error_result(message) do
-    log_id = ecto_uuid().generate()
+    log_id = Ecto.UUID.generate()
     Logger.error("[#{log_id}] #{message}")
     {:error, "[#{log_id}] Error executing query. See logs for details."}
   end

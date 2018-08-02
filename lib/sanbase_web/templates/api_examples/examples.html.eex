@@ -138,3 +138,25 @@ curl \
     <%= "  #{ @api_url }" %>
 
 ```
+
+### Social Volume Tickers
+
+<%= @social_volume_tickers[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@social_volume_tickers[:variables])}&query=#{URI.encode(@social_volume_tickers[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @social_volume_tickers[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@social_volume_tickers[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```

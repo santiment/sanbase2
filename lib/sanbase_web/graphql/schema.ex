@@ -446,6 +446,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TechIndicatorsResolver.social_volume/3)
     end
 
+    @desc ~s"""
+    Returns a list of tickers for which there is social volume data.
+    """
+    field :social_volume_tickers, list_of(:string) do
+      resolve(&TechIndicatorsResolver.social_volume_tickers/3)
+    end
+
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
     field :exchange_wallets, list_of(:wallet) do
       middleware(BasicAuth)

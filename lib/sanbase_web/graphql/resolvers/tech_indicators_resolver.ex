@@ -118,6 +118,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
     )
   end
 
+  def social_volume_tickers(
+        _root,
+        %{},
+        _resolution
+      ) do
+    TechIndicators.social_volume_tickers()
+  end
+
   defp price_volume_diff_ma_window_type() do
     Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :window_type)
   end

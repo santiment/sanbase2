@@ -2,6 +2,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mockery
+  import ExUnit.CaptureLog
 
   alias Sanbase.InternalServices.TechIndicators
 
@@ -267,9 +268,6 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
     end
 
     test "response: 404" do
-      from = 1_523_876_400
-      to = 1_523_880_000
-
       mock(
         HTTPoison,
         :get,
@@ -280,25 +278,21 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
          }}
       )
 
-      log_id = 1234
-      mock(Ecto.UUID, :generate, log_id)
-
-      result =
+      result = fn ->
         TechIndicators.social_volume(
           "Foo",
-          DateTime.from_unix!(from),
-          DateTime.from_unix!(to),
+          DateTime.from_unix!(1_523_876_400),
+          DateTime.from_unix!(1_523_880_000),
           "1h",
           :telegram_discussion_overview
         )
+      end
 
-      assert result == {:error, "[#{log_id}] Error executing query. See logs for details."}
+      assert capture_log(result) =~
+               "Error status 404 fetching social volume for ticker Foo: Some message\n"
     end
 
     test "response: error" do
-      from = 1_523_876_400
-      to = 1_523_880_000
-
       mock(
         HTTPoison,
         :get,
@@ -308,19 +302,68 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
          }}
       )
 
-      log_id = 1234
-      mock(Ecto.UUID, :generate, log_id)
-
-      result =
+      result = fn ->
         TechIndicators.social_volume(
           "Foo",
-          DateTime.from_unix!(from),
-          DateTime.from_unix!(to),
+          DateTime.from_unix!(1_523_876_400),
+          DateTime.from_unix!(1_523_880_000),
           "1h",
           :telegram_discussion_overview
         )
+      end
 
-      assert result == {:error, "[#{log_id}] Error executing query. See logs for details."}
+      assert capture_log(result) =~
+               "Cannot fetch social volume data for ticker Foo: :econnrefused\n"
+    end
+  end
+
+  describe "social_volume_tickers/0" do
+    test "response: success" do
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: "[\"ADA\", \"BCH\", \"BTC\", \"DRGN\", \"EOS\"]",
+           status_code: 200
+         }}
+      )
+
+      result = TechIndicators.social_volume_tickers()
+
+      assert result == {:ok, ["ADA", "BCH", "BTC", "DRGN", "EOS"]}
+    end
+
+    test "response: 404" do
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: "Some message",
+           status_code: 404
+         }}
+      )
+
+      result = fn -> TechIndicators.social_volume_tickers() end
+
+      assert capture_log(result) =~
+               "Error status 404 fetching social volume tickers: Some message\n"
+    end
+
+    test "response: error" do
+      mock(
+        HTTPoison,
+        :get,
+        {:error,
+         %HTTPoison.Error{
+           reason: :econnrefused
+         }}
+      )
+
+      result = fn -> TechIndicators.social_volume_tickers() end
+
+      assert capture_log(result) =~ "Cannot fetch social volume tickers data: :econnrefused\n"
     end
   end
 end

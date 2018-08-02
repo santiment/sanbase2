@@ -36,6 +36,11 @@ defmodule SanbaseWeb.ApiExamplesView do
         query: social_volume(),
         variables: "{}",
         docs: docs(:social_volume)
+      },
+      social_volume_tickers: %{
+        query: social_volume_tickers(),
+        variables: "{}",
+        docs: docs(:social_volume_tickers)
       }
     })
     |> as_html()
@@ -122,6 +127,14 @@ defmodule SanbaseWeb.ApiExamplesView do
           mentionsCount,
           datetime
         }
+    }
+    """
+  end
+
+  defp social_volume_tickers do
+    """
+    query {
+      socialVolumeTickers
     }
     """
   end

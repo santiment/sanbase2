@@ -6,6 +6,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
+  defp ecto_uuid, do: Mockery.Macro.mockable(Ecto.UUID)
 
   @recv_timeout 15_000
 
@@ -777,8 +778,49 @@ defmodule Sanbase.InternalServices.TechIndicators do
     {:ok, result}
   end
 
+  defp social_volume_request(
+         ticker,
+         datetime_from,
+         datetime_to,
+         interval,
+         social_volume_type
+       ) do
+    from_unix = DateTime.to_unix(datetime_from)
+    to_unix = DateTime.to_unix(datetime_to)
+
+    url = "#{tech_indicators_url()}/indicator/#{social_volume_type}"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"ticker", ticker},
+        {"datetime_from", from_unix},
+        {"datetime_to", to_unix},
+        {"interval", interval}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
+  defp social_volume_result(result) do
+    result =
+      result
+      |> Enum.map(fn %{
+                       "timestamp" => timestamp,
+                       "mentions_count" => mentions_count
+                     } ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          mentions_count: mentions_count
+        }
+      end)
+
+    {:ok, result}
+  end
+
   defp error_result(message) do
-    log_id = Ecto.UUID.generate()
+    log_id = ecto_uuid().generate()
     Logger.error("[#{log_id}] #{message}")
     {:error, "[#{log_id}] Error executing query. See logs for details."}
   end

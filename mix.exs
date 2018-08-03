@@ -10,7 +10,7 @@ defmodule Sanbase.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      aliases: aliases(),
+      aliases: aliases(Mix.env()),
       deps: deps(),
       test_coverage: [
         tool: ExCoveralls
@@ -98,13 +98,7 @@ defmodule Sanbase.Mixfile do
     ]
   end
 
-  # Aliases are shortcuts or tasks specific to the current project.
-  # For example, to create, migrate and run the seeds file at once:
-  #
-  #     $ mix ecto.setup
-  #
-  # See the documentation for `Mix` for more info on aliases.
-  defp aliases do
+  defp aliases(env) when env in [:dev, :test] do
     [
       "ecto.setup": [
         "load_dotenv",
@@ -120,6 +114,30 @@ defmodule Sanbase.Mixfile do
         "ecto.dump -r Sanbase.Repo"
       ],
       test: ["load_dotenv", "ecto.create --quiet", "ecto.load", "test"]
+    ]
+  end
+
+  defp aliases(:prod) do
+    [
+      "ecto.setup": [
+        "load_dotenv",
+        "ecto.create",
+        "ecto.load",
+        "run priv/repo/seeds.exs"
+      ],
+      "ecto.reset": ["load_dotenv", "ecto.drop -r Sanbase.Repo", "ecto.setup -r Sanbase.Repo"],
+      "ecto.migrate": ["load_dotenv", "ecto.migrate -r Sanbase.Repo", "ecto.dump -r Sanbase.Repo"],
+      "ecto.rollback": [
+        "load_dotenv",
+        "ecto.rollback -r Sanbase.Repo",
+        "ecto.dump -r Sanbase.Repo"
+      ],
+      test: [
+        "load_dotenv",
+        "ecto.create -r Sanbase.Repo --quiet",
+        "ecto.load -r Sanbase.Repo",
+        "test"
+      ]
     ]
   end
 end

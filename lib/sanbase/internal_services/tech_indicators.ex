@@ -794,7 +794,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp social_volume_request(
-         project,
+         ticker_slug,
          datetime_from,
          datetime_to,
          interval,
@@ -808,7 +808,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"project", project},
+        {"project", ticker_slug},
         {"datetime_from", from_unix},
         {"datetime_to", to_unix},
         {"interval", interval}

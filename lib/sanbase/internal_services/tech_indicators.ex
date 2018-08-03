@@ -277,17 +277,19 @@ defmodule Sanbase.InternalServices.TechIndicators do
     end
   end
 
-  def social_volume_tickers() do
-    social_volume_tickers_request()
+  def social_volume_projects() do
+    social_volume_projects_request()
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         Poison.decode(body)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching social volume tickers: #{body}")
+        error_result("Error status #{status} fetching social volume projects: #{body}")
 
       {:error, %HTTPoison.Error{} = error} ->
-        error_result("Cannot fetch social volume tickers data: #{HTTPoison.Error.message(error)}")
+        error_result(
+          "Cannot fetch social volume projects data: #{HTTPoison.Error.message(error)}"
+        )
     end
   end
 
@@ -792,7 +794,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp social_volume_request(
-         ticker,
+         project,
          datetime_from,
          datetime_to,
          interval,
@@ -806,7 +808,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"ticker", ticker},
+        {"project", project},
         {"datetime_from", from_unix},
         {"datetime_to", to_unix},
         {"interval", interval}
@@ -832,8 +834,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
     {:ok, result}
   end
 
-  defp social_volume_tickers_request() do
-    url = "#{tech_indicators_url()}/indicator/social_volume_tickers"
+  defp social_volume_projects_request() do
+    url = "#{tech_indicators_url()}/indicator/social_volume_projects"
 
     options = [recv_timeout: @recv_timeout]
 

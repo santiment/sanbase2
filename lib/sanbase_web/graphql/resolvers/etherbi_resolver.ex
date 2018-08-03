@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   alias Sanbase.Model.{Project, ExchangeEthAddress}
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
 
+  alias Sanbase.Blockchain
+
   import SanbaseWeb.Graphql.Helpers.Async
   import Ecto.Query
 
@@ -15,9 +17,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   """
   def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
+         # TODO: Implement the same function for Timescale, too
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             BurnRate.Store,
+             Blockchain.BurnRate,
              contract_address,
              from,
              to,
@@ -25,15 +28,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              60 * 60,
              50
            ),
-         {:ok, burn_rates} <- BurnRate.Store.burn_rate(contract_address, from, to, interval) do
+         {:ok, burn_rates} <-
+           Blockchain.BurnRate.burn_rate(
+             contract_address,
+             from,
+             to,
+             "#{interval}s",
+             token_decimals
+           ) do
       result =
         burn_rates
-        |> Enum.map(fn {datetime, burn_rate} ->
-          %{
-            datetime: datetime,
-            burn_rate: burn_rate / :math.pow(10, token_decimals)
-          }
-        end)
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}

@@ -175,14 +175,14 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   def social_volume(
-        project,
+        ticker_slug,
         datetime_from,
         datetime_to,
         interval,
         social_volume_type
       ) do
     social_volume_request(
-      project,
+      ticker_slug,
       datetime_from,
       datetime_to,
       interval,
@@ -195,12 +195,12 @@ defmodule Sanbase.InternalServices.TechIndicators do
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         error_result(
-          "Error status #{status} fetching social volume for project #{project}: #{body}"
+          "Error status #{status} fetching social volume for project #{ticker_slug}: #{body}"
         )
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch social volume data for project #{project}: #{
+          "Cannot fetch social volume data for project #{ticker_slug}: #{
             HTTPoison.Error.message(error)
           }"
         )
@@ -438,7 +438,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp social_volume_request(
-         project,
+         ticker_slug,
          datetime_from,
          datetime_to,
          interval,
@@ -452,7 +452,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"project", project},
+        {"project", ticker_slug},
         {"datetime_from", from_unix},
         {"datetime_to", to_unix},
         {"interval", interval}

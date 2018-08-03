@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   def social_volume(
         _root,
         %{
-          project: project,
+          ticker_slug: ticker_slug,
           from: from,
           to: to,
           interval: interval,
@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
         _resolution
       ) do
     TechIndicators.social_volume(
-      project,
+      ticker_slug,
       from,
       to,
       interval,

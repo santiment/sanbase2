@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   def social_volume(
         _root,
         %{
-          ticker: ticker,
+          project: project,
           from: from,
           to: to,
           interval: interval,
@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
         _resolution
       ) do
     TechIndicators.social_volume(
-      ticker,
+      project,
       from,
       to,
       interval,
@@ -118,12 +118,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
     )
   end
 
-  def social_volume_tickers(
+  def social_volume_projects(
         _root,
         %{},
         _resolution
       ) do
-    TechIndicators.social_volume_tickers()
+    TechIndicators.social_volume_projects()
   end
 
   defp price_volume_diff_ma_window_type() do

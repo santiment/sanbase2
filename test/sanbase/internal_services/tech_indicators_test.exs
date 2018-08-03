@@ -246,7 +246,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result =
         TechIndicators.social_volume(
-          "Foo",
+          "SAN_santiment",
           DateTime.from_unix!(from),
           DateTime.from_unix!(to),
           "1h",
@@ -280,7 +280,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result = fn ->
         TechIndicators.social_volume(
-          "Foo",
+          "SAN_santiment",
           DateTime.from_unix!(1_523_876_400),
           DateTime.from_unix!(1_523_880_000),
           "1h",
@@ -289,7 +289,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       end
 
       assert capture_log(result) =~
-               "Error status 404 fetching social volume for ticker Foo: Some message\n"
+               "Error status 404 fetching social volume for project SAN_santiment: Some message\n"
     end
 
     test "response: error" do
@@ -304,7 +304,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result = fn ->
         TechIndicators.social_volume(
-          "Foo",
+          "SAN_santiment",
           DateTime.from_unix!(1_523_876_400),
           DateTime.from_unix!(1_523_880_000),
           "1h",
@@ -313,25 +313,28 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       end
 
       assert capture_log(result) =~
-               "Cannot fetch social volume data for ticker Foo: :econnrefused\n"
+               "Cannot fetch social volume data for project SAN_santiment: :econnrefused\n"
     end
   end
 
-  describe "social_volume_tickers/0" do
+  describe "social_volume_projects/0" do
     test "response: success" do
       mock(
         HTTPoison,
         :get,
         {:ok,
          %HTTPoison.Response{
-           body: "[\"ADA\", \"BCH\", \"BTC\", \"DRGN\", \"EOS\"]",
+           body:
+             "[\"ADA_cardano\", \"BCH_bitcoin-cash\", \"BTC_bitcoin\", \"DRGN_dragonchain\", \"EOS_eos\"]",
            status_code: 200
          }}
       )
 
-      result = TechIndicators.social_volume_tickers()
+      result = TechIndicators.social_volume_projects()
 
-      assert result == {:ok, ["ADA", "BCH", "BTC", "DRGN", "EOS"]}
+      assert result ==
+               {:ok,
+                ["ADA_cardano", "BCH_bitcoin-cash", "BTC_bitcoin", "DRGN_dragonchain", "EOS_eos"]}
     end
 
     test "response: 404" do
@@ -345,10 +348,10 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
          }}
       )
 
-      result = fn -> TechIndicators.social_volume_tickers() end
+      result = fn -> TechIndicators.social_volume_projects() end
 
       assert capture_log(result) =~
-               "Error status 404 fetching social volume tickers: Some message\n"
+               "Error status 404 fetching social volume projects: Some message\n"
     end
 
     test "response: error" do
@@ -361,9 +364,9 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
          }}
       )
 
-      result = fn -> TechIndicators.social_volume_tickers() end
+      result = fn -> TechIndicators.social_volume_projects() end
 
-      assert capture_log(result) =~ "Cannot fetch social volume tickers data: :econnrefused\n"
+      assert capture_log(result) =~ "Cannot fetch social volume projects data: :econnrefused\n"
     end
   end
 end

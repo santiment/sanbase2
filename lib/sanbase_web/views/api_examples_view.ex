@@ -37,10 +37,10 @@ defmodule SanbaseWeb.ApiExamplesView do
         variables: "{}",
         docs: docs(:social_volume)
       },
-      social_volume_tickers: %{
-        query: social_volume_tickers(),
+      social_volume_projects: %{
+        query: social_volume_projects(),
         variables: "{}",
-        docs: docs(:social_volume_tickers)
+        docs: docs(:social_volume_projects)
       }
     })
     |> as_html()
@@ -131,10 +131,10 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
   end
 
-  defp social_volume_tickers do
+  defp social_volume_projects do
     """
     query {
-      socialVolumeTickers
+      socialVolumeProjects
     }
     """
   end

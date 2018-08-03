@@ -70,6 +70,18 @@ CREATE TABLE public.eth_daily_active_addresses (
 
 
 --
+-- Name: eth_exchange_funds_flow; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eth_exchange_funds_flow (
+    "timestamp" timestamp without time zone NOT NULL,
+    contract_address character varying(255) NOT NULL,
+    incoming_exchange_funds double precision,
+    outgoing_exchange_funds double precision
+);
+
+
+--
 -- Name: eth_transaction_volume; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -107,6 +119,14 @@ ALTER TABLE ONLY public.eth_daily_active_addresses
 
 
 --
+-- Name: eth_exchange_funds_flow eth_exchange_funds_flow_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eth_exchange_funds_flow
+    ADD CONSTRAINT eth_exchange_funds_flow_pkey PRIMARY KEY ("timestamp", contract_address);
+
+
+--
 -- Name: eth_transaction_volume eth_transaction_volume_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -126,5 +146,5 @@ ALTER TABLE ONLY public.schema_migrations
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO public."schema_migrations" (version) VALUES (20180731110511), (20180802132742), (20180802142827);
+INSERT INTO public."schema_migrations" (version) VALUES (20180731110511), (20180802132742), (20180802142827), (20180803131502);
 

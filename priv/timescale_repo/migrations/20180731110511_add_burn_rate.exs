@@ -2,8 +2,6 @@ defmodule Sanbase.TimescaleRepo.Migrations.AddBurnRate do
   use Ecto.Migration
 
   def up do
-    # execute("CREATE EXTENSION IF NOT EXISTS timescaledb WITH SCHEMA public;")
-
     create table(:eth_burn_rate, primary_key: false) do
       add(:timestamp, :naive_datetime, primary_key: true)
       add(:contract_address, :string, primary_key: true)

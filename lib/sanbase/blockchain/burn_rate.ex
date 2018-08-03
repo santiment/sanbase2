@@ -21,7 +21,7 @@ defmodule Sanbase.Blockchain.BurnRate do
     |> validate_length(:contract_address, min: 1)
   end
 
-  def burn_rate(contract, from, to, interval) do
+  def burn_rate(contract, from, to, interval, token_decimals \\ 0) do
     args = [from, to, contract]
 
     """
@@ -33,15 +33,22 @@ defmodule Sanbase.Blockchain.BurnRate do
     |> timescaledb_execute(fn [datetime, burn_rate] ->
       %{
         datetime: timestamp_to_datetime(datetime),
-        burn_rate: burn_rate
+        burn_rate: burn_rate / :math.pow(10, token_decimals)
       }
     end)
   end
 
-  def burn_rate!(contract, from, to, interval) do
+  def burn_rate!(contract, from, to, interval, token_decimals \\ 0) do
     case burn_rate(contract, from, to, interval) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end
+  end
+
+  def first_datetime(contract) do
+    timescale_first_datetime(
+      "FROM #{@table} WHERE contract_address = $1",
+      [contract]
+    )
   end
 end

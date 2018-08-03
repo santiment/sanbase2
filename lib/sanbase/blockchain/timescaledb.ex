@@ -141,4 +141,18 @@ defmodule Sanbase.Timescaledb do
     NaiveDateTime.from_erl!({date, {h, m, s}}, {us, 6})
     |> DateTime.from_naive!("Etc/UTC")
   end
+
+  def timescale_first_datetime(from_where, args) do
+    query = [
+      "SELECT timestamp",
+      from_where,
+      "ORDER BY timestamp LIMIT 1"
+    ]
+
+    timescaledb_execute({query, args}, fn [timestamp] ->
+      {:ok, timestamp_to_datetime(timestamp)}
+    end)
+
+    # |> List.first()
+  end
 end

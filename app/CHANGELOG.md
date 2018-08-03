@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-04-08 | v.0.7.1 'Moon':
+
+  Fix keyboard shortcut usage in any input form
+
 - 2018-27-07 | v.0.7.0 'Moon':
 
   Added an icon in the search result

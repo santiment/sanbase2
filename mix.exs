@@ -10,7 +10,7 @@ defmodule Sanbase.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      aliases: aliases(),
+      aliases: aliases(Mix.env()),
       deps: deps(),
       test_coverage: [
         tool: ExCoveralls
@@ -153,6 +153,30 @@ defmodule Sanbase.Mixfile do
         "ecto.create --quiet",
         "ecto.load",
         "test --include timescaledb"
+      ]
+    ]
+  end
+
+  defp aliases(:prod) do
+    [
+      "ecto.setup": [
+        "load_dotenv",
+        "ecto.create",
+        "ecto.load",
+        "run priv/repo/seeds.exs"
+      ],
+      "ecto.reset": ["load_dotenv", "ecto.drop -r Sanbase.Repo", "ecto.setup -r Sanbase.Repo"],
+      "ecto.migrate": ["load_dotenv", "ecto.migrate -r Sanbase.Repo", "ecto.dump -r Sanbase.Repo"],
+      "ecto.rollback": [
+        "load_dotenv",
+        "ecto.rollback -r Sanbase.Repo",
+        "ecto.dump -r Sanbase.Repo"
+      ],
+      test: [
+        "load_dotenv",
+        "ecto.create -r Sanbase.Repo --quiet",
+        "ecto.load -r Sanbase.Repo",
+        "test"
       ]
     ]
   end

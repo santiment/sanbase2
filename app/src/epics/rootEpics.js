@@ -13,7 +13,9 @@ import handleApikeyRevoke from './handleApikeyRevoke'
 import addNewAssetsListEpic, { addNewSuccessEpic } from './addNewAssetsListEpic'
 import removeAssetsListEpic from './removeAssetsListEpic'
 import addAssetToListEpic from './addAssetToListEpic'
-import removeAssetFromListEpic from './removeAssetFromListEpic.js'
+import removeAssetFromListEpic from './removeAssetFromListEpic'
+import { fetchAssetsEpic, fetchAssetsFromListEpic } from './fetchAssetsEpic'
+import chooseAssetsListEpic from './chooseAssetsListEpic'
 
 export default combineEpics(
   handleFollowProject,
@@ -27,10 +29,14 @@ export default combineEpics(
   handleRouter,
   handleApikeyGenerate,
   handleApikeyRevoke,
-  // User's assets lists
+  // user's assets lists
   addNewAssetsListEpic,
   addNewSuccessEpic,
   removeAssetsListEpic,
   addAssetToListEpic,
-  removeAssetFromListEpic
+  removeAssetFromListEpic,
+  // assets
+  fetchAssetsEpic,
+  fetchAssetsFromListEpic,
+  chooseAssetsListEpic
 )

@@ -1,115 +1,100 @@
 import React from 'react'
 import * as qs from 'query-string'
+import { connect } from 'react-redux'
 import { Observable } from 'rxjs'
 import { tap, zip, mergeMap, concat } from 'rxjs/operators'
 import { withApollo } from 'react-apollo'
 import { compose, pure } from 'recompose'
+import * as actions from './../../actions/types.js'
 import {
   allProjectsGQL,
   allErc20ProjectsGQL,
   currenciesGQL
 } from './../Projects/allProjectsGQL'
+import { AssetsListGQL } from './../../components/AssetsListPopup/AssetsListGQL'
+import { projectBySlugGQL } from './../../pages/Projects/allProjectsGQL'
 
 const MAX_RETRIES = 10
 
 const getTimeout = ({ minTimeout, maxTimeout, attempt }) =>
   Math.min(Math.random() * minTimeout * Math.pow(2, attempt), maxTimeout)
 
-const mapDataToProps = (type, result) => {
-  const { loading, error } = result
-  const items = !result.error
-    ? result.data[pickProjectsType(type).projects]
-    : []
-  const isEmpty = items && items.length === 0
+const getNameIdFromListname = (listname = '') => {
+  const data = listname.split('@')
   return {
-    loading,
-    isEmpty,
-    items,
-    error
+    listName: data[0],
+    listId: data[1]
   }
 }
-
-const pickProjectsType = type => {
-  switch (type) {
-    case 'all':
-      return {
-        projects: 'allProjects',
-        gql: allProjectsGQL
-      }
-    case 'currency':
-      return {
-        projects: 'allCurrencyProjects',
-        gql: currenciesGQL
-      }
-    case 'erc20':
-      return {
-        projects: 'allErc20Projects',
-        gql: allErc20ProjectsGQL
-      }
-    default:
-      return {
-        projects: 'allProjects',
-        gql: allProjectsGQL
-      }
-  }
-}
-
-const enhance = compose(withApollo, pure)
 
 class Assets extends React.Component {
-  state = {
-    Assets: {
-      loading: true,
-      isEmpty: true,
-      isError: false,
-      assets: [],
-      errorMessage: null,
-      refetch: null
-    }
-  }
-
   getType = () => {
+    const { listName, listId } = compose(
+      getNameIdFromListname,
+      parsed => parsed.name,
+      qs.parse
+    )(this.props.location.search)
     const { type = qs.parse(this.props.location.search) } = this.props
-    return type
+    return { type, listName, listId }
   }
 
   componentDidMount () {
-    const type = this.getType()
+    console.log('did mount')
+    const { type, listName, listId } = this.getType()
+    this.props.fetchAssets({
+      type,
+      list: {
+        name: listName,
+        id: listId
+      }
+    })
 
-    const fetchAssets$ = type =>
-      Observable.of(type).switchMap(type =>
-        Observable.from(
-          this.props.client.query({ query: pickProjectsType(type).gql })
-        )
-      )
+    // this.subscription = fetchAssets$(type)
+    // .retryWhen(errors => {
+    // return errors.pipe(
+    // zip(Observable.range(1, MAX_RETRIES), (_, i) => i),
+    // tap(time => console.log(`Retry to fetch ${time}`)),
+    // mergeMap(retryCount =>
+    // Observable.timer(
+    // getTimeout({
+    // minTimeout: 1000,
+    // maxTimeout: 10000,
+    // attempt: retryCount
+    // })
+    // )
+    // ),
+    // concat(Observable.throw(new Error('Retry limit exceeded!')))
+    // )
+    // })
+    // .catch(error => {
+    // console.log('error')
+    // return Observable.of({
+    // error,
+    // loading: false,
+    // assets: []
+    // })
+    // })
+    // .subscribe(result => {
+    // console.log(result)
+    // this.setState({ Assets: mapDataToProps(type, result) })
+    // })
+  }
 
-    this.subscription = fetchAssets$(type)
-      .retryWhen(errors => {
-        return errors.pipe(
-          zip(Observable.range(1, MAX_RETRIES), (_, i) => i),
-          tap(time => console.log(`Retry to fetch ${time}`)),
-          mergeMap(retryCount =>
-            Observable.timer(
-              getTimeout({
-                minTimeout: 1000,
-                maxTimeout: 10000,
-                attempt: retryCount
-              })
-            )
-          ),
-          concat(Observable.throw(new Error('Retry limit exceeded!')))
-        )
+  componentDidUpdate (prevProps, prevState) {
+    if (
+      this.props.location.pathname !== prevProps.location.pathname ||
+      this.props.location.search !== prevProps.location.search
+    ) {
+      console.log('fetch')
+      const { type, listName, listId } = this.getType()
+      this.props.fetchAssets({
+        type,
+        list: {
+          name: listName,
+          id: listId
+        }
       })
-      .catch(error => {
-        return Observable.of({
-          error,
-          loading: false,
-          assets: []
-        })
-      })
-      .subscribe(result => {
-        this.setState({ Assets: mapDataToProps(type, result) })
-      })
+    }
   }
 
   componentWillUnmount () {
@@ -119,7 +104,7 @@ class Assets extends React.Component {
   render () {
     const { children, render } = this.props
     const type = this.getType()
-    const { Assets = {} } = this.state
+    const { Assets = {} } = this.props
     const props = { type, ...Assets }
 
     if (typeof children === 'function') return children(props)
@@ -127,5 +112,26 @@ class Assets extends React.Component {
     return render(props)
   }
 }
+
+const mapStateToProps = state => {
+  return {
+    Assets: state.projects
+  }
+}
+
+const mapDispatchToProps = dispatch => ({
+  fetchAssets: ({ type, list }) => {
+    return dispatch({
+      type: actions.ASSETS_FETCH,
+      payload: { type, list }
+    })
+  }
+})
+
+const enhance = compose(
+  withApollo,
+  connect(mapStateToProps, mapDispatchToProps),
+  pure
+)
 
 export default enhance(Assets)

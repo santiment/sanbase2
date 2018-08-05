@@ -130,7 +130,7 @@ export const App = ({
             return <CurrenciesMobile {...props} />
           }}
         />
-        {['currencies', 'erc20', 'all'].map(name => (
+        {['currencies', 'erc20', 'all', 'list'].map(name => (
           <Route
             exact
             key={name}

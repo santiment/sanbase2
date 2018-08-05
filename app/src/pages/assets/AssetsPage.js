@@ -22,17 +22,13 @@ const AssetsPage = props => (
     <Assets
       {...props}
       type={props.type}
-      render={Assets => {
-        return !Assets.isLoading ? (
-          <AssetsTable
-            Assets={Assets}
-            goto={props.history.push}
-            preload={props.preload}
-          />
-        ) : (
-          <h2>Loading...</h2>
-        )
-      }}
+      render={Assets => (
+        <AssetsTable
+          Assets={Assets}
+          goto={props.history.push}
+          preload={props.preload}
+        />
+      )}
     />
   </div>
 )

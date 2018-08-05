@@ -1,7 +1,6 @@
 import Raven from 'raven-js'
-import gql from 'graphql-tag'
 import { Observable } from 'rxjs'
-import { showNotification } from './../actions/rootActions'
+import { tap, zip, mergeMap, retryWhen, concat } from 'rxjs/operators'
 import { projectBySlugGQL } from './../pages/Projects/allProjectsGQL'
 import { AssetsListGQL } from './../components/AssetsListPopup/AssetsListGQL'
 import {
@@ -11,9 +10,31 @@ import {
 } from './../pages/Projects/allProjectsGQL'
 import * as actions from './../actions/types'
 
+const getTimeout = ({ minTimeout, maxTimeout, attempt }) =>
+  Math.min(Math.random() * minTimeout * Math.pow(2, attempt), maxTimeout)
+
+export const retry = (times = 3, fallback) => {
+  return retryWhen(errors => {
+    return errors.pipe(
+      zip(Observable.range(1, 3), (_, i) => i),
+      tap(time => console.log(`Retry to fetch ${time}`)),
+      mergeMap(retryCount =>
+        Observable.timer(
+          getTimeout({
+            minTimeout: 1000,
+            maxTimeout: 10000,
+            attempt: retryCount
+          })
+        )
+      ),
+      concat(Observable.throw(new Error('Retry limit exceeded!')))
+    )
+  }).catchError(() => Observable.of(fallback))
+}
+
 const fetchAssets$ = ({ type = 'all', client }) => {
   return Observable.of(type).switchMap(type =>
-    Observable.from(client.query({ query: pickProjectsType(type).gql }))
+    client.query({ query: pickProjectsType(type).gql })
   )
 }
 
@@ -62,13 +83,16 @@ export const fetchAssetsEpic = (action$, store, { client }) =>
     })
     .mergeMap(action => {
       const { type } = action.payload
+      const startTime = Date.now()
       return fetchAssets$({ type, client })
-        .mergeMap(data => {
+        .delayWhen(() => Observable.timer(500 + startTime - Date.now()))
+        .exhaustMap(data => {
           return Observable.of({
             type: actions.ASSETS_FETCH_SUCCESS,
             payload: mapDataToAssets({ type, data })
           })
         })
+
         .catch(error => {
           Raven.captureException(error)
           return Observable.of({
@@ -87,6 +111,7 @@ export const fetchAssetsFromListEpic = (action$, store, { client }) =>
     .mergeMap(({ payload }) => {
       return Observable.from(client.query({ query: AssetsListGQL })).concatMap(
         ({ data = {} }) => {
+          const startTime = Date.now()
           const { fetchUserLists } = data
           const { listItems = [] } =
             fetchUserLists.find(item => item.id === payload.list.id) || {}
@@ -113,6 +138,7 @@ export const fetchAssetsFromListEpic = (action$, store, { client }) =>
           }
 
           return Observable.forkJoin(queries)
+            .delayWhen(() => Observable.timer(500 + startTime - Date.now()))
             .mergeMap(data => {
               const items =
                 data.map(project => {

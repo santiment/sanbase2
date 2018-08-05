@@ -1,36 +1,21 @@
 import React from 'react'
 import * as qs from 'query-string'
 import { connect } from 'react-redux'
-import { Observable } from 'rxjs'
-import { tap, zip, mergeMap, concat } from 'rxjs/operators'
-import { withApollo } from 'react-apollo'
 import { compose, pure } from 'recompose'
 import * as actions from './../../actions/types.js'
-import {
-  allProjectsGQL,
-  allErc20ProjectsGQL,
-  currenciesGQL
-} from './../Projects/allProjectsGQL'
-import { AssetsListGQL } from './../../components/AssetsListPopup/AssetsListGQL'
-import { projectBySlugGQL } from './../../pages/Projects/allProjectsGQL'
-
-const MAX_RETRIES = 10
-
-const getTimeout = ({ minTimeout, maxTimeout, attempt }) =>
-  Math.min(Math.random() * minTimeout * Math.pow(2, attempt), maxTimeout)
-
-const getNameIdFromListname = (listname = '') => {
-  const data = listname.split('@')
-  return {
-    listName: data[0],
-    listId: data[1]
-  }
-}
 
 class Assets extends React.Component {
+  getNameIdFromListname = (listname = '') => {
+    const data = listname.split('@')
+    return {
+      listName: data[0],
+      listId: data[1]
+    }
+  }
+
   getType = () => {
     const { listName, listId } = compose(
-      getNameIdFromListname,
+      this.getNameIdFromListname,
       parsed => parsed.name,
       qs.parse
     )(this.props.location.search)
@@ -39,7 +24,6 @@ class Assets extends React.Component {
   }
 
   componentDidMount () {
-    console.log('did mount')
     const { type, listName, listId } = this.getType()
     this.props.fetchAssets({
       type,
@@ -48,36 +32,6 @@ class Assets extends React.Component {
         id: listId
       }
     })
-
-    // this.subscription = fetchAssets$(type)
-    // .retryWhen(errors => {
-    // return errors.pipe(
-    // zip(Observable.range(1, MAX_RETRIES), (_, i) => i),
-    // tap(time => console.log(`Retry to fetch ${time}`)),
-    // mergeMap(retryCount =>
-    // Observable.timer(
-    // getTimeout({
-    // minTimeout: 1000,
-    // maxTimeout: 10000,
-    // attempt: retryCount
-    // })
-    // )
-    // ),
-    // concat(Observable.throw(new Error('Retry limit exceeded!')))
-    // )
-    // })
-    // .catch(error => {
-    // console.log('error')
-    // return Observable.of({
-    // error,
-    // loading: false,
-    // assets: []
-    // })
-    // })
-    // .subscribe(result => {
-    // console.log(result)
-    // this.setState({ Assets: mapDataToProps(type, result) })
-    // })
   }
 
   componentDidUpdate (prevProps, prevState) {
@@ -85,7 +39,6 @@ class Assets extends React.Component {
       this.props.location.pathname !== prevProps.location.pathname ||
       this.props.location.search !== prevProps.location.search
     ) {
-      console.log('fetch')
       const { type, listName, listId } = this.getType()
       this.props.fetchAssets({
         type,
@@ -128,10 +81,6 @@ const mapDispatchToProps = dispatch => ({
   }
 })
 
-const enhance = compose(
-  withApollo,
-  connect(mapStateToProps, mapDispatchToProps),
-  pure
-)
+const enhance = compose(connect(mapStateToProps, mapDispatchToProps), pure)
 
 export default enhance(Assets)

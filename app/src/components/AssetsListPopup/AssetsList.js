@@ -21,8 +21,6 @@ export const hasAssetById = ({ id, listItems }) => {
   return listItems.some(item => item.project.id === id)
 }
 
-const Div = children => <div>{children}</div>
-
 class AssetsList extends React.Component {
   handleListClick = ({ id, projectId, name, listItems }) => {
     this.props.toggleAssetInList(projectId, id, listItems)
@@ -37,10 +35,9 @@ class AssetsList extends React.Component {
       addNewAssetList,
       isConfigOpened,
       setConfigOpened,
-      removeAssetList,
-      toggleAssetInList
+      removeAssetList
     } = this.props
-    const Component = this.props.isNavigation ? Link : Div
+    const Component = isNavigation ? Link : 'div'
     return (
       <div>
         {lists.length > 0 && (

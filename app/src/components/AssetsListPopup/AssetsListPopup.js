@@ -4,6 +4,7 @@ import { compose } from 'recompose'
 import { Popup, Button } from 'semantic-ui-react'
 import { AssetsListGQL } from './AssetsListGQL'
 import AssetsList from './AssetsList'
+import './WatchlistsPopup.css'
 
 const POLLING_INTERVAL = 2000
 
@@ -22,6 +23,7 @@ const AssetsListPopup = ({
 }) => {
   return (
     <Popup
+      className='watchlists-popup'
       content={
         <AssetsList
           isNavigation={isNavigation}

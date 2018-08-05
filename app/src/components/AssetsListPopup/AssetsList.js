@@ -2,12 +2,14 @@ import React from 'react'
 import { connect } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { compose, withState } from 'recompose'
-import { Button, Label } from 'semantic-ui-react'
+import { Button, Label, Icon } from 'semantic-ui-react'
 import AddNewAssetsListBtn from './AddNewAssetsListBtn'
 import * as actions from './../../actions/types'
+import './Watchlists.css'
 
 const ConfigurationListBtn = ({ isConfigOpened = false, setConfigOpened }) => (
   <Button
+    className='watchlists__config-btn'
     onClick={() => setConfigOpened(!isConfigOpened)}
     icon={isConfigOpened ? 'close' : 'setting'}
   />
@@ -21,7 +23,7 @@ export const hasAssetById = ({ id, listItems }) => {
   return listItems.some(item => item.project.id === id)
 }
 
-class AssetsList extends React.Component {
+class Watchlists extends React.Component {
   handleListClick = ({ id, projectId, name, listItems }) => {
     this.props.toggleAssetInList(projectId, id, listItems)
   }
@@ -39,44 +41,64 @@ class AssetsList extends React.Component {
     } = this.props
     const Component = isNavigation ? Link : 'div'
     return (
-      <div>
+      <div className='watchlists'>
         {lists.length > 0 && (
           <ConfigurationListBtn
             setConfigOpened={setConfigOpened}
             isConfigOpened={isConfigOpened}
           />
         )}
-        {lists.length > 0 &&
-          lists.map(({ id, name, listItems = [] }) => (
-            <Component
-              key={id}
-              to={`/assets/list?name=${name}@${id}`}
-              onClick={this.handleListClick.bind(this, {
-                projectId,
-                id,
-                name,
-                listItems
-              })}
-            >
-              {name}
-              {hasAssetById({
-                listItems,
-                id: projectId
-              }) && 'Yes'}
-              {isConfigOpened &&
-                !isNewestList(id) && (
-                  <Button
-                    onClick={removeAssetList.bind(this, id)}
-                    icon='trash'
-                  />
-                )}
-              {isNewestList(id) && (
-                <Label color='green' horizontal>
-                  NEW
-                </Label>
-              )}
-            </Component>
-          ))}
+        <div className='watchlists__list'>
+          {lists.length > 0 ? (
+            lists.map(({ id, name, listItems = [] }) => (
+              <Component
+                key={id}
+                className={'watchlists__item'}
+                to={`/assets/list?name=${name}@${id}`}
+                onClick={this.handleListClick.bind(this, {
+                  projectId,
+                  id,
+                  name,
+                  listItems
+                })}
+              >
+                {isConfigOpened
+                  ? !isNewestList(id) && (
+                    <Icon
+                      size='big'
+                      onClick={removeAssetList.bind(this, id)}
+                      name='trash'
+                    />
+                  )
+                  : !isNavigation && (
+                    <Icon
+                      size='big'
+                      name={
+                        hasAssetById({
+                          listItems,
+                          id: projectId
+                        })
+                          ? 'check circle outline'
+                          : 'circle outline'
+                      }
+                    />
+                  )}
+                <span>
+                  {name}
+                  {isNewestList(id) && (
+                    <Label color='green' horizontal>
+                      NEW
+                    </Label>
+                  )}
+                </span>
+              </Component>
+            ))
+          ) : (
+            <div className='watchlists__empty-list-msg'>
+              You don't have any watchlists yet.
+            </div>
+          )}
+        </div>
         <AddNewAssetsListBtn
           assetsListUI={assetsListUI}
           addNewAssetList={addNewAssetList}
@@ -133,4 +155,4 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
 export default compose(
   withState('isConfigOpened', 'setConfigOpened', false),
   connect(mapStateToProps, mapDispatchToProps)
-)(AssetsList)
+)(Watchlists)

@@ -39,7 +39,7 @@ class AddNewAssetsList extends React.Component {
           color: 'google plus',
           labelPosition: 'left',
           icon: 'plus',
-          content: 'Add new',
+          content: 'create',
           onClick: this.handleAddNewAssetsList
         }}
         onChange={this.handleOnChange}

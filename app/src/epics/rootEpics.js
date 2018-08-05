@@ -15,7 +15,6 @@ import removeAssetsListEpic from './removeAssetsListEpic'
 import addAssetToListEpic from './addAssetToListEpic'
 import removeAssetFromListEpic from './removeAssetFromListEpic'
 import { fetchAssetsEpic, fetchAssetsFromListEpic } from './fetchAssetsEpic'
-import chooseAssetsListEpic from './chooseAssetsListEpic'
 
 export default combineEpics(
   handleFollowProject,
@@ -37,6 +36,5 @@ export default combineEpics(
   removeAssetFromListEpic,
   // assets
   fetchAssetsEpic,
-  fetchAssetsFromListEpic,
-  chooseAssetsListEpic
+  fetchAssetsFromListEpic
 )

@@ -1,3 +1,5 @@
+import * as actions from './../actions/types'
+
 export const initialState = {
   isLoading: true,
   error: false,
@@ -14,6 +16,18 @@ export const initialState = {
 
 export default (state = initialState, action) => {
   switch (action.type) {
+    case actions.ASSETS_FETCH:
+      return {
+        ...state,
+        isLoading: true,
+        error: false,
+        items: []
+      }
+    case actions.ASSETS_FETCH_SUCCESS:
+      return {
+        ...state,
+        ...action.payload
+      }
     case 'LOADING_PROJECTS':
       return {
         ...state,

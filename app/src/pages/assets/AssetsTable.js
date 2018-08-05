@@ -32,14 +32,14 @@ export const filterColumnsByTableSection = (tableSection, columns) => {
 const AssetsTable = ({
   Assets = {
     items: [],
-    loading: true,
+    isLoading: true,
     error: undefined,
     type: 'all'
   },
   goto,
   preload
 }) => {
-  const { loading, items, error, type } = Assets
+  const { isLoading, items, error, type } = Assets
   if (error && error.message !== 'Network error: Failed to fetch') {
     return <AssetsTableErrorMessage />
   }
@@ -47,7 +47,7 @@ const AssetsTable = ({
   return (
     <Panel>
       <ReactTable
-        loading={loading}
+        loading={isLoading}
         showPagination={false}
         showPaginationTop={false}
         showPaginationBottom={false}

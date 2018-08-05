@@ -14,17 +14,21 @@ const AddToListBtn = (
 )
 
 const AssetsListPopup = ({
+  isNavigation = false,
   isLoggedIn,
   projectId,
   lists,
-  assetsListUI,
-  addNewAssetList,
-  removeAssetList,
   trigger = AddToListBtn
 }) => {
   return (
     <Popup
-      content={<AssetsList projectId={projectId} lists={lists} />}
+      content={
+        <AssetsList
+          isNavigation={isNavigation}
+          projectId={projectId}
+          lists={lists}
+        />
+      }
       trigger={trigger}
       position='bottom center'
       on='click'

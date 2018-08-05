@@ -10,6 +10,7 @@ export const AssetsListGQL = gql`
       listItems {
         project {
           id
+          slug
         }
       }
       insertedAt

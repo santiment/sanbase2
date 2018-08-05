@@ -1,5 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux'
+import { Link } from 'react-router-dom'
 import { compose, withState } from 'recompose'
 import { Button, Label } from 'semantic-ui-react'
 import AddNewAssetsListBtn from './AddNewAssetsListBtn'
@@ -20,10 +21,17 @@ export const hasAssetById = ({ id, listItems }) => {
   return listItems.some(item => item.project.id === id)
 }
 
+const Div = children => <div>{children}</div>
+
 class AssetsList extends React.Component {
+  handleListClick = ({ id, projectId, name, listItems }) => {
+    this.props.toggleAssetInList(projectId, id, listItems)
+  }
+
   render () {
     const {
       lists = [],
+      isNavigation = false,
       projectId,
       assetsListUI,
       addNewAssetList,
@@ -32,6 +40,7 @@ class AssetsList extends React.Component {
       removeAssetList,
       toggleAssetInList
     } = this.props
+    const Component = this.props.isNavigation ? Link : Div
     return (
       <div>
         {lists.length > 0 && (
@@ -42,9 +51,15 @@ class AssetsList extends React.Component {
         )}
         {lists.length > 0 &&
           lists.map(({ id, name, listItems = [] }) => (
-            <div
+            <Component
               key={id}
-              onClick={toggleAssetInList.bind(this, projectId, id, listItems)}
+              to={`/assets/list?name=${name}@${id}`}
+              onClick={this.handleListClick.bind(this, {
+                projectId,
+                id,
+                name,
+                listItems
+              })}
             >
               {name}
               {hasAssetById({
@@ -63,7 +78,7 @@ class AssetsList extends React.Component {
                   NEW
                 </Label>
               )}
-            </div>
+            </Component>
           ))}
         <AddNewAssetsListBtn
           assetsListUI={assetsListUI}
@@ -82,7 +97,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = (dispatch, ownProps) => ({
   toggleAssetInList: (projectId, assetsListId, listItems) => {
-    if (ownProps.isConfigOpened) return
+    if (ownProps.isConfigOpened || !projectId) return
     const isAssetInList = hasAssetById({
       listItems: ownProps.lists.find(list => list.id === assetsListId)
         .listItems,
@@ -109,7 +124,13 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     dispatch({
       type: actions.USER_REMOVE_ASSET_LIST,
       payload: { id }
+    }),
+  chooseAssetList: (id, name) => {
+    return dispatch({
+      type: actions.USER_CHOOSE_ASSET_LIST,
+      payload: { id, name }
     })
+  }
 })
 
 export default compose(

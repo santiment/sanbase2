@@ -1,7 +1,11 @@
 import React from 'react'
 import { NavLink as Link } from 'react-router-dom'
-import { Button, Checkbox, Popup } from 'semantic-ui-react'
+import AssetsListPopup from './../../components/AssetsListPopup/AssetsListPopup'
 import './AssetsPageNavigation.css'
+
+const MyListBtn = (
+  <div className='projects-navigation-list__page-link'>my lists</div>
+)
 
 const AssetsPageNavigation = ({ isLoggedIn = false }) => {
   return (
@@ -29,6 +33,13 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
           >
             Favorites
           </Link>
+        )}
+        {isLoggedIn && (
+          <AssetsListPopup
+            isNavigation
+            isLoggedIn={isLoggedIn}
+            trigger={MyListBtn}
+          />
         )}
         <Link
           activeClassName='projects-navigation-list__page-link--active'

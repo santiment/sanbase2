@@ -55,6 +55,17 @@ export const allProjectsGQL = gql`
   ${project}
 `
 
+export const projectBySlugGQL = gql`
+  query projectBySlugGQL($slug: String!) {
+    projectBySlug(slug: $slug) {
+      ...generalData
+      ...project
+    }
+  }
+  ${generalData}
+  ${project}
+`
+
 export const allProjectsForSearchGQL = gql`
   query allProjects {
     allProjects {

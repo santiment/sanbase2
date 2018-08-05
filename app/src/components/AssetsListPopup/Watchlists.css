@@ -1,0 +1,34 @@
+.watchlists {
+  position: relative;
+}
+
+.watchlists .watchlists__empty-list-msg {
+  margin: 0 auto;
+  margin-top: 20px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.watchlists__config-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+.watchlists .watchlists__list {
+  margin-bottom: 10px;
+  min-height: 100px;
+}
+
+.watchlists__list .watchlists__item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 5px;
+  min-height: 2em;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.watchlists__list .watchlists__item:first-child {
+  border-top: none;
+}

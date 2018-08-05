@@ -14,6 +14,8 @@
 .projects-navigation-list__page-link {
   padding: 12px;
   box-shadow: rgba(50, 50, 93, 0.1) 0 1px inset, rgb(230, 235, 241) -1px 0 inset;
+  border: none;
+  cursor: pointer;
 }
 
 .projects-navigation-list__page-link:first-child {

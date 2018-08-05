@@ -4,7 +4,7 @@ import AssetsListPopup from './../../components/AssetsListPopup/AssetsListPopup'
 import './AssetsPageNavigation.css'
 
 const MyListBtn = (
-  <div className='projects-navigation-list__page-link'>my lists</div>
+  <div className='projects-navigation-list__page-link'>Watchlists</div>
 )
 
 const AssetsPageNavigation = ({ isLoggedIn = false }) => {

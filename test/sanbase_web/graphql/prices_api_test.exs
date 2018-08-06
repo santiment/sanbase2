@@ -1,34 +1,37 @@
 defmodule SanbaseWeb.Graphql.PricesApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Plug.Conn
+  import SanbaseWeb.Graphql.TestHelpers
+
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
   alias Sanbase.Repo
 
-  import Plug.Conn
-  import SanbaseWeb.Graphql.TestHelpers
-
   setup do
     Store.create_db()
 
-    slug1 = "tester"
+    slug1 = "test122"
+    ticker1 = "TEST"
+    slug2 = "xyz122"
+    ticker2 = "XYZ"
+    total_market_ticker_cmc_id = "TOTAL_MARKET_total-market"
+
+    ticker_cmc_id1 = ticker1 <> "_" <> slug1
+    ticker_cmc_id2 = ticker2 <> "_" <> slug2
 
     %Project{}
-    |> Project.changeset(%{name: "Project1", ticker: "TEST", coinmarketcap_id: slug1})
+    |> Project.changeset(%{name: "Test project", coinmarketcap_id: slug1, ticker: ticker1})
     |> Repo.insert!()
-
-    slug2 = "tester2"
 
     %Project{}
-    |> Project.changeset(%{name: "Project2", ticker: "XYZ", coinmarketcap_id: slug2})
+    |> Project.changeset(%{name: "XYZ project", coinmarketcap_id: slug2, ticker: ticker2})
     |> Repo.insert!()
 
-    Store.drop_measurement("TEST_BTC")
-    Store.drop_measurement("TEST_USD")
-    Store.drop_measurement("XYZ_USD")
-    Store.drop_measurement("XYZ_BTC")
-    Store.drop_measurement("TOTAL_MARKET_USD")
+    Store.drop_measurement(ticker_cmc_id1)
+    Store.drop_measurement(ticker_cmc_id2)
+    Store.drop_measurement(total_market_ticker_cmc_id)
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 21:45:00], "Etc/UTC")
@@ -36,50 +39,30 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     years_ago = DateTime.from_naive!(~N[2007-01-01 21:45:00], "Etc/UTC")
 
     Store.import([
-      # older
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{price: 1000, volume: 200, marketcap: 500},
-        name: "TEST_BTC"
+        fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
+        name: ticker_cmc_id1
+      },
+      %Measurement{
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        fields: %{price_usd: 22, price_btc: 1200, volume_usd: 300, marketcap_usd: 800},
+        name: ticker_cmc_id1
+      },
+      %Measurement{
+        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        fields: %{price_usd: 20, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
+        name: ticker_cmc_id2
       },
       %Measurement{
         timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{price: 20, volume: 200, marketcap: 500},
-        name: "TEST_USD"
-      },
-      # newer
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{price: 1200, volume: 300, marketcap: 800},
-        name: "TEST_BTC"
+        fields: %{volume_usd: 1200, marketcap_usd: 1500},
+        name: total_market_ticker_cmc_id
       },
       %Measurement{
         timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{price: 22, volume: 300, marketcap: 800},
-        name: "TEST_USD"
-      },
-      # older
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{price: 1, volume: 5, marketcap: 500},
-        name: "XYZ_BTC"
-      },
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{price: 20, volume: 200, marketcap: 500},
-        name: "XYZ_USD"
-      },
-      # older
-      %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 1200, marketcap: 1500},
-        name: "TOTAL_MARKET_USD"
-      },
-      # newer
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{volume: 1300, marketcap: 1800},
-        name: "TOTAL_MARKET_USD"
+        fields: %{volume_usd: 1300, marketcap_usd: 1800},
+        name: total_market_ticker_cmc_id
       }
     ])
 
@@ -89,7 +72,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       datetime3: datetime3,
       years_ago: years_ago,
       slug1: slug1,
-      slug2: slug2
+      slug2: slug2,
+      total_market_slug: "TOTAL_MARKET",
+      total_market_measurement: total_market_ticker_cmc_id
     ]
   end
 
@@ -113,20 +98,21 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       context.conn
       |> post("/graphql", query_skeleton(query, "historyPrice"))
 
-    assert json_response(result, 200)["data"]["historyPrice"] == []
+    assert json_response(result, 200)["data"]["historyPrice"] == nil
   end
 
   test "data aggregation for automatically calculated intervals", context do
     query = """
     {
-      historyPrice(slug: "#{context.slug1}", from: "#{context.datetime1}", to: "#{
-      context.datetime3
-    }") {
-        datetime
-        priceUsd
-        priceBtc
-        marketcap
-        volume
+      historyPrice(
+        slug: "#{context.slug1}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}") {
+          datetime
+          priceUsd
+          priceBtc
+          marketcap
+          volume
       }
     }
     """
@@ -218,6 +204,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     history_price = json_response(result, 200)["data"]["historyPrice"]
+
     assert Enum.count(history_price) == 2
     assert Enum.at(history_price, 0)["priceUsd"] == 20
     assert Enum.at(history_price, 1)["priceUsd"] == 22
@@ -248,12 +235,12 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   end
 
   test "no information is available for total marketcap", context do
-    Store.drop_measurement("TOTAL_MARKET_USD")
+    Store.drop_measurement(context.total_market_measurement)
 
     query = """
     {
       historyPrice(
-        slug: "TOTAL_MARKET",
+        slug: "#{context.total_market_slug}",
         from: "#{context.datetime1}",
         to: "#{context.datetime2}",
         interval: "1h") {
@@ -275,7 +262,7 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     query = """
     {
       historyPrice(
-        slug: "TOTAL_MARKET",
+        slug: "#{context.total_market_slug}",
         from: "#{context.datetime1}",
         interval: "1h"){
         datetime

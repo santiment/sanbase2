@@ -26,6 +26,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
         data_points_count
       ) do
     {:ok, first_datetime} = module.first_datetime(measurement)
+
     first_datetime = first_datetime || from
 
     first_datetime = first_datetime || from

@@ -1,5 +1,4 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
-  alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume, DailyActiveAddresses}
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, ExchangeEthAddress}
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
@@ -17,7 +16,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   """
   def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
-         # TODO: Implement the same function for Timescale, too
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Blockchain.BurnRate,
@@ -33,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              contract_address,
              from,
              to,
-             "#{interval}s",
+             interval,
              token_decimals
            ) do
       result =
@@ -61,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             TransactionVolume.Store,
+             Blockchain.TransactionVolume,
              contract_address,
              from,
              to,
@@ -70,15 +68,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              50
            ),
          {:ok, trx_volumes} <-
-           TransactionVolume.Store.transaction_volume(contract_address, from, to, interval) do
+           Blockchain.TransactionVolume.transaction_volume(
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
       result =
         trx_volumes
-        |> Enum.map(fn {datetime, trx_volume} ->
-          %{
-            datetime: datetime,
-            transaction_volume: trx_volume / :math.pow(10, token_decimals)
-          }
-        end)
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}
@@ -101,7 +99,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     with {:ok, contract_address, _token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             DailyActiveAddresses.Store,
+             Blockchain.DailyActiveAddresses,
              contract_address,
              from,
              to,
@@ -110,15 +108,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              50
            ),
          {:ok, daily_active_addresses} <-
-           DailyActiveAddresses.Store.daily_active_addresses(contract_address, from, to, interval) do
+           Blockchain.DailyActiveAddresses.active_addresses(
+             contract_address,
+             from,
+             to,
+             interval
+           ) do
       result =
         daily_active_addresses
-        |> Enum.map(fn [datetime, active_addresses] ->
-          %{
-            datetime: datetime,
-            active_addresses: active_addresses |> round() |> trunc()
-          }
-        end)
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}
@@ -148,28 +145,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             Transactions.Store,
+             Blockchain.ExchangeFundsFlow,
              contract_address,
              from,
              to,
              interval,
              60 * 60
            ),
-         {:ok, funds_flow_list} <-
-           Transactions.Store.transactions_in_out_difference(
+         {:ok, exchange_funds_flow} <-
+           Blockchain.ExchangeFundsFlow.transactions_in_out_difference(
              contract_address,
              from,
              to,
-             interval
+             interval,
+             token_decimals
            ) do
       result =
-        funds_flow_list
-        |> Enum.map(fn {datetime, funds_flow} ->
-          %{
-            datetime: datetime,
-            funds_flow: funds_flow / :math.pow(10, token_decimals)
-          }
-        end)
+        exchange_funds_flow
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}

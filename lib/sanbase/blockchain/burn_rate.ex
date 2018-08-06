@@ -39,7 +39,7 @@ defmodule Sanbase.Blockchain.BurnRate do
   end
 
   def burn_rate!(contract, from, to, interval, token_decimals \\ 0) do
-    case burn_rate(contract, from, to, interval) do
+    case burn_rate(contract, from, to, interval, token_decimals) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end

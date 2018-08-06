@@ -62,6 +62,8 @@ defmodule Sanbase.Timescaledb do
 
           {query, args} = bucket_by_interval(query, args, interval)
   """
+  def bucket_by_interval(query, args, nil), do: {query, args}
+
   def bucket_by_interval("SELECT " <> rest_query, args, interval)
       when is_list(args) and is_binary(interval) do
     interval = transform_interval(interval)
@@ -119,7 +121,7 @@ defmodule Sanbase.Timescaledb do
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do
     Sanbase.TimescaleRepo.query(query, args)
     |> case do
-      {:ok, %{rows: rows}} ->
+      {:ok, %{rows: rows} = result} ->
         result =
           Enum.map(
             rows,
@@ -138,21 +140,25 @@ defmodule Sanbase.Timescaledb do
   with UTC timezone
   """
   def timestamp_to_datetime({date, {h, m, s, us}}) do
-    NaiveDateTime.from_erl!({date, {h, m, s}}, {us, 6})
+    NaiveDateTime.from_erl!({date, {h, m, s}}, {us, 2})
     |> DateTime.from_naive!("Etc/UTC")
   end
 
   def timescale_first_datetime(from_where, args) do
     query = [
-      "SELECT timestamp",
+      "SELECT timestamp ",
       from_where,
       "ORDER BY timestamp LIMIT 1"
     ]
 
-    timescaledb_execute({query, args}, fn [timestamp] ->
-      {:ok, timestamp_to_datetime(timestamp)}
-    end)
+    {:ok, result} =
+      timescaledb_execute({query, args}, fn [timestamp] ->
+        {:ok, timestamp_to_datetime(timestamp)}
+      end)
 
-    # |> List.first()
+    case List.first(result) do
+      nil -> {:ok, nil}
+      data -> data
+    end
   end
 end

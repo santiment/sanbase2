@@ -21,7 +21,7 @@ defmodule Sanbase.Blockchain.TransactionVolume do
     |> validate_length(:contract_address, min: 1)
   end
 
-  def transaction_volume(contract, from, to, interval) do
+  def transaction_volume(contract, from, to, interval, token_decimals \\ 0) do
     args = [from, to, contract]
 
     """
@@ -33,15 +33,20 @@ defmodule Sanbase.Blockchain.TransactionVolume do
     |> timescaledb_execute(fn [datetime, transaction_volume] ->
       %{
         datetime: timestamp_to_datetime(datetime),
-        transaction_volume: transaction_volume
+        transaction_volume: transaction_volume / :math.pow(10, token_decimals)
       }
     end)
   end
 
-  def transaction_volume!(contract, from, to, interval) do
-    case transaction_volume(contract, from, to, interval) do
+  def transaction_volume!(contract, from, to, interval, token_decimals \\ 0) do
+    case transaction_volume(contract, from, to, interval, token_decimals) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end
+  end
+
+  def first_datetime(contract) do
+    "FROM #{@table} WHERE contract_address = $1"
+    |> timescale_first_datetime([contract])
   end
 end

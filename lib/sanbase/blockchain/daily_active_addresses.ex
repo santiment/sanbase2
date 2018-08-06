@@ -21,6 +21,32 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
     |> validate_length(:contract_address, min: 1)
   end
 
+  def active_addresses(contract, from, to) do
+    args = [from, to, contract]
+
+    query = """
+    SELECT avg(active_addresses) AS value
+    FROM #{@table}
+    WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
+    """
+
+    {:ok, result} =
+      {query, args}
+      |> timescaledb_execute(fn [active_addresses] ->
+        case active_addresses do
+          nil ->
+            0
+
+          %Decimal{} = d ->
+            d
+            |> Decimal.round()
+            |> Decimal.to_integer()
+        end
+      end)
+
+    {:ok, result |> List.first()}
+  end
+
   def active_addresses(contract, from, to, interval) do
     args = [from, to, contract]
 
@@ -33,7 +59,10 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
     |> timescaledb_execute(fn [datetime, active_addresses] ->
       %{
         datetime: datetime |> timestamp_to_datetime(),
-        active_addresses: active_addresses |> Decimal.round() |> Decimal.to_integer()
+        active_addresses:
+          active_addresses
+          |> Decimal.round()
+          |> Decimal.to_integer()
       }
     end)
   end
@@ -43,5 +72,10 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end
+  end
+
+  def first_datetime(contract) do
+    "FROM #{@table} WHERE contract_address = $1"
+    |> timescale_first_datetime([contract])
   end
 end

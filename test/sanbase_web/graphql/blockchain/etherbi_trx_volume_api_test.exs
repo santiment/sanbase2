@@ -1,7 +1,6 @@
 defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
   use SanbaseWeb.ConnCase, async: false
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
-  @moduletag timescaledb: true
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
@@ -27,14 +26,14 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     }
     |> Repo.insert!()
 
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
-    datetime3 = DateTime.from_naive!(~N[2017-05-13 22:05:00], "Etc/UTC")
-    datetime4 = DateTime.from_naive!(~N[2017-05-13 22:15:00], "Etc/UTC")
-    datetime5 = DateTime.from_naive!(~N[2017-05-13 22:25:00], "Etc/UTC")
-    datetime6 = DateTime.from_naive!(~N[2017-05-13 22:35:00], "Etc/UTC")
-    datetime7 = DateTime.from_naive!(~N[2017-05-13 22:45:00], "Etc/UTC")
-    datetime8 = DateTime.from_naive!(~N[2017-05-13 22:55:00], "Etc/UTC")
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00.00], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00.00], "Etc/UTC")
+    datetime3 = DateTime.from_naive!(~N[2017-05-13 22:05:00.00], "Etc/UTC")
+    datetime4 = DateTime.from_naive!(~N[2017-05-13 22:15:00.00], "Etc/UTC")
+    datetime5 = DateTime.from_naive!(~N[2017-05-13 22:25:00.00], "Etc/UTC")
+    datetime6 = DateTime.from_naive!(~N[2017-05-13 22:35:00.00], "Etc/UTC")
+    datetime7 = DateTime.from_naive!(~N[2017-05-13 22:45:00.00], "Etc/UTC")
+    datetime8 = DateTime.from_naive!(~N[2017-05-13 22:55:00.00], "Etc/UTC")
 
     insert(:transaction_volume, %{
       contract_address: contract_address,
@@ -208,27 +207,27 @@ defmodule Sanbase.Etherbi.TransactionVolumeApiTest do
     trx_volumes = json_response(result, 200)["data"]["transactionVolume"]
 
     assert %{
-             "datetime" => "2017-05-13T21:45:00Z",
+             "datetime" => "2017-05-13T21:45:00.00Z",
              "transactionVolume" => 1555.0
            } in trx_volumes
 
     assert %{
-             "datetime" => "2017-05-13T22:00:00Z",
+             "datetime" => "2017-05-13T22:00:00.00Z",
              "transactionVolume" => 123.0
            } in trx_volumes
 
     assert %{
-             "datetime" => "2017-05-13T22:15:00Z",
+             "datetime" => "2017-05-13T22:15:00.00Z",
              "transactionVolume" => 70766.0
            } in trx_volumes
 
     assert %{
-             "datetime" => "2017-05-13T22:30:00Z",
+             "datetime" => "2017-05-13T22:30:00.00Z",
              "transactionVolume" => 1232.0
            } in trx_volumes
 
     assert %{
-             "datetime" => "2017-05-13T22:45:00Z",
+             "datetime" => "2017-05-13T22:45:00.00Z",
              "transactionVolume" => 12666.0
            } in trx_volumes
   end

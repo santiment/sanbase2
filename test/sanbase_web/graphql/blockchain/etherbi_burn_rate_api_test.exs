@@ -1,7 +1,6 @@
 defmodule Sanbase.Etherbi.BurnRateApiTest do
   use SanbaseWeb.ConnCase, async: false
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
-  @moduletag timescaledb: true
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
@@ -27,14 +26,14 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
     }
     |> Repo.insert!()
 
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
-    datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00], "Etc/UTC")
-    datetime3 = DateTime.from_naive!(~N[2017-05-13 22:05:00], "Etc/UTC")
-    datetime4 = DateTime.from_naive!(~N[2017-05-13 22:15:00], "Etc/UTC")
-    datetime5 = DateTime.from_naive!(~N[2017-05-13 22:25:00], "Etc/UTC")
-    datetime6 = DateTime.from_naive!(~N[2017-05-13 22:35:00], "Etc/UTC")
-    datetime7 = DateTime.from_naive!(~N[2017-05-13 22:45:00], "Etc/UTC")
-    datetime8 = DateTime.from_naive!(~N[2017-05-13 22:55:00], "Etc/UTC")
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00.00], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2017-05-13 21:55:00.00], "Etc/UTC")
+    datetime3 = DateTime.from_naive!(~N[2017-05-13 22:05:00.00], "Etc/UTC")
+    datetime4 = DateTime.from_naive!(~N[2017-05-13 22:15:00.00], "Etc/UTC")
+    datetime5 = DateTime.from_naive!(~N[2017-05-13 22:25:00.00], "Etc/UTC")
+    datetime6 = DateTime.from_naive!(~N[2017-05-13 22:35:00.00], "Etc/UTC")
+    datetime7 = DateTime.from_naive!(~N[2017-05-13 22:45:00.00], "Etc/UTC")
+    datetime8 = DateTime.from_naive!(~N[2017-05-13 22:55:00.00], "Etc/UTC")
 
     insert(:burn_rate, %{
       contract_address: contract_address,
@@ -196,17 +195,17 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
 
     # Tests that the datetime is adjusted so it's not before `from`
     assert %{
-             "datetime" => "2017-05-13T21:45:00Z",
+             "datetime" => "2017-05-13T21:45:00.00Z",
              "burnRate" => 6000.0
            } in burn_rates
 
     assert %{
-             "datetime" => "2017-05-13T22:00:00Z",
+             "datetime" => "2017-05-13T22:00:00.00Z",
              "burnRate" => 80500.0
            } in burn_rates
 
     assert %{
-             "datetime" => "2017-05-13T22:30:00Z",
+             "datetime" => "2017-05-13T22:30:00.00Z",
              "burnRate" => 5055.0
            } in burn_rates
   end

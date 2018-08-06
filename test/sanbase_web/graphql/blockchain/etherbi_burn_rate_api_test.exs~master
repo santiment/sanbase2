@@ -1,35 +1,30 @@
 defmodule Sanbase.Etherbi.BurnRateApiTest do
   use SanbaseWeb.ConnCase, async: false
+  @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
+  @moduletag timescaledb: true
 
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Etherbi.BurnRate.Store
-  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
 
+  require Sanbase.Factory
+
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
+  import Sanbase.TimescaleFactory
 
   setup do
-    Store.create_db()
-
-    staked_user = insert(:staked_user)
+    staked_user = Sanbase.Factory.insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), staked_user)
 
     ticker = "SAN"
     slug = "santiment"
     contract_address = "0x1234"
-    Store.drop_measurement(contract_address)
 
-    project =
-      %Project{
-        name: "Santiment",
-        ticker: ticker,
-        coinmarketcap_id: slug,
-        main_contract_address: contract_address
-      }
-      |> Repo.insert!()
-
-    %Ico{project_id: project.id}
+    %Project{
+      name: "Santiment",
+      ticker: ticker,
+      coinmarketcap_id: slug,
+      main_contract_address: contract_address
+    }
     |> Repo.insert!()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC")
@@ -41,56 +36,40 @@ defmodule Sanbase.Etherbi.BurnRateApiTest do
     datetime7 = DateTime.from_naive!(~N[2017-05-13 22:45:00], "Etc/UTC")
     datetime8 = DateTime.from_naive!(~N[2017-05-13 22:55:00], "Etc/UTC")
 
-    Store.import([
-      %Measurement{
-        timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 5000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 1000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 500},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 15000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 65000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 50},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 5},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime8 |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 5000},
-        tags: [],
-        name: contract_address
-      }
-    ])
+    insert(:burn_rate, %{
+      contract_address: contract_address,
+      timestamp: datetime1,
+      burn_rate: 5000
+    })
+
+    insert(:burn_rate, %{
+      contract_address: contract_address,
+      timestamp: datetime2,
+      burn_rate: 1000
+    })
+
+    insert(:burn_rate, %{contract_address: contract_address, timestamp: datetime3, burn_rate: 500})
+
+    insert(:burn_rate, %{
+      contract_address: contract_address,
+      timestamp: datetime4,
+      burn_rate: 15000
+    })
+
+    insert(:burn_rate, %{
+      contract_address: contract_address,
+      timestamp: datetime5,
+      burn_rate: 65000
+    })
+
+    insert(:burn_rate, %{contract_address: contract_address, timestamp: datetime6, burn_rate: 50})
+    insert(:burn_rate, %{contract_address: contract_address, timestamp: datetime7, burn_rate: 5})
+
+    insert(:burn_rate, %{
+      contract_address: contract_address,
+      timestamp: datetime8,
+      burn_rate: 5000
+    })
 
     [
       slug: slug,

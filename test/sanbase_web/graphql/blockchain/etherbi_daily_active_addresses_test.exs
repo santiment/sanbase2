@@ -1,7 +1,6 @@
 defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
   use SanbaseWeb.ConnCase, async: false
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
-  @moduletag timescaledb: true
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
@@ -151,42 +150,42 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
     assert %{
-             "datetime" => "2017-05-13T00:00:00Z",
+             "datetime" => "2017-05-13T00:00:00.00Z",
              "activeAddresses" => 5000
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-14T00:00:00Z",
+             "datetime" => "2017-05-14T00:00:00.00Z",
              "activeAddresses" => 100
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-15T00:00:00Z",
+             "datetime" => "2017-05-15T00:00:00.00Z",
              "activeAddresses" => 500
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-16T00:00:00Z",
+             "datetime" => "2017-05-16T00:00:00.00Z",
              "activeAddresses" => 15000
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-17T00:00:00Z",
+             "datetime" => "2017-05-17T00:00:00.00Z",
              "activeAddresses" => 65000
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-18T00:00:00Z",
+             "datetime" => "2017-05-18T00:00:00.00Z",
              "activeAddresses" => 50
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-19T00:00:00Z",
+             "datetime" => "2017-05-19T00:00:00.00Z",
              "activeAddresses" => 5
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-20T00:00:00Z",
+             "datetime" => "2017-05-20T00:00:00.00Z",
              "activeAddresses" => 0
            } in active_addresses
   end
@@ -214,22 +213,22 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
 
     # Tests that the datetime is adjusted so it's not before `from`
     assert %{
-             "datetime" => "2017-05-13T00:00:00Z",
+             "datetime" => "2017-05-13T00:00:00.00Z",
              "activeAddresses" => 2550
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-15T00:00:00Z",
+             "datetime" => "2017-05-15T00:00:00.00Z",
              "activeAddresses" => 7750
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-17T00:00:00Z",
+             "datetime" => "2017-05-17T00:00:00.00Z",
              "activeAddresses" => 32525
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-19T00:00:00Z",
+             "datetime" => "2017-05-19T00:00:00.00Z",
              "activeAddresses" => 3
            } in active_addresses
   end
@@ -257,11 +256,11 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
 
     active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
-    assert %{"activeAddresses" => 0, "datetime" => "2017-05-03T00:00:00Z"} in active_addresses
-    assert %{"activeAddresses" => 0, "datetime" => "2017-05-05T00:00:00Z"} in active_addresses
-    assert %{"activeAddresses" => 0, "datetime" => "2017-05-07T00:00:00Z"} in active_addresses
-    assert %{"activeAddresses" => 0, "datetime" => "2017-05-09T00:00:00Z"} in active_addresses
-    assert %{"activeAddresses" => 0, "datetime" => "2017-05-11T00:00:00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-03T00:00:00.00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-05T00:00:00.00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-07T00:00:00.00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-09T00:00:00.00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-11T00:00:00.00Z"} in active_addresses
   end
 
   test "fetch average daily active addreses", context do
@@ -327,10 +326,10 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
     assert [
-             %{"activeAddresses" => 0, "datetime" => "2017-05-20T00:00:00Z"},
-             %{"activeAddresses" => 0, "datetime" => "2017-05-21T00:00:00Z"},
-             %{"activeAddresses" => 0, "datetime" => "2017-05-22T00:00:00Z"},
-             %{"activeAddresses" => 100, "datetime" => "2017-05-23T00:00:00Z"}
+             %{"activeAddresses" => 0, "datetime" => "2017-05-20T00:00:00.00Z"},
+             %{"activeAddresses" => 0, "datetime" => "2017-05-21T00:00:00.00Z"},
+             %{"activeAddresses" => 0, "datetime" => "2017-05-22T00:00:00.00Z"},
+             %{"activeAddresses" => 100, "datetime" => "2017-05-23T00:00:00.00Z"}
            ] == active_addresses
   end
 end

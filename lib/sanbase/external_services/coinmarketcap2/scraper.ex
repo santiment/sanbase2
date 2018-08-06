@@ -65,7 +65,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
     |> String.replace(~r/[\(\)]/, "")
   end
 
-
   defp website_link(html) do
     Floki.attribute(html, ".bottom-margin-2x a:fl-contains('Website')", "href")
     |> List.first()

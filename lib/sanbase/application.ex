@@ -48,18 +48,6 @@ defmodule Sanbase.Application do
         # Time series Github DB connection
         Sanbase.Github.Store.child_spec(),
 
-        # Time series transactions DB connection
-        Sanbase.Etherbi.Transactions.Store.child_spec(),
-
-        # Time series burn rate DB connection
-        Sanbase.Etherbi.BurnRate.Store.child_spec(),
-
-        # Time series transaction volume DB connection
-        Sanbase.Etherbi.TransactionVolume.Store.child_spec(),
-
-        # Time series DAT DB connection
-        Sanbase.Etherbi.DailyActiveAddresses.Store.child_spec(),
-
         # Etherscan rate limiter
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(
           :etherscan_rate_limiter,

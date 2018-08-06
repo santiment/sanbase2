@@ -24,18 +24,8 @@ defmodule Sanbase.DataCase do
   end
 
   setup tags do
-    repo =
-      if tags[:datacase_repo] do
-        tags[:datacase_repo]
-      else
-        Sanbase.Repo
-      end
-
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(repo)
-
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(repo, {:shared, self()})
-    end
+    require Sanbase.CaseHelpers
+    Sanbase.CaseHelpers.checkout_shared(tags)
 
     :ok
   end

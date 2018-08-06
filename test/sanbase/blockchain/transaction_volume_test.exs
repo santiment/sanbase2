@@ -1,6 +1,6 @@
 defmodule Sanbase.Blockchain.TransactionVolumeTest do
-  use Sanbase.DataCase, async: false
-  @moduletag datacase_repo: Sanbase.TimescaleRepo
+  use Sanbase.DataCase, async: true
+  @moduletag checkout_repo: Sanbase.TimescaleRepo
   @moduletag timescaledb: true
 
   import Sanbase.TimescaleFactory
@@ -9,7 +9,7 @@ defmodule Sanbase.Blockchain.TransactionVolumeTest do
   alias Sanbase.DateTimeUtils
 
   setup do
-    contract1 = "0x123123"
+    contract1 = "0x" <> Sanbase.TestUtils.random_string()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 23:30:30], "Etc/UTC")
@@ -58,31 +58,31 @@ defmodule Sanbase.Blockchain.TransactionVolumeTest do
 
     assert result == [
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z"),
                transaction_volume: 500.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00.00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00.00Z"),
                transaction_volume: 1.5e3
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00.00Z"),
                transaction_volume: 5.0e3
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 12:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 12:00:00.00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.00Z"),
                transaction_volume: 100.0
              }
            ]
@@ -99,23 +99,23 @@ defmodule Sanbase.Blockchain.TransactionVolumeTest do
 
     assert result == [
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00.00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00.00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 06:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 06:00:00.00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.000000Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.00Z"),
                transaction_volume: 0.0
              }
            ]
@@ -133,7 +133,7 @@ defmodule Sanbase.Blockchain.TransactionVolumeTest do
     assert result == [
              %{
                transaction_volume: 7100.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
              }
            ]
   end

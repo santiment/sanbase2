@@ -1,6 +1,6 @@
 defmodule Sanbase.Blockchain.BurnRateTest do
-  use Sanbase.DataCase, async: false
-  @moduletag datacase_repo: Sanbase.TimescaleRepo
+  use Sanbase.DataCase, async: true
+  @moduletag checkout_repo: Sanbase.TimescaleRepo
   @moduletag timescaledb: true
 
   import Sanbase.TimescaleFactory
@@ -9,16 +9,16 @@ defmodule Sanbase.Blockchain.BurnRateTest do
   alias Sanbase.DateTimeUtils
 
   setup do
-    contract1 = "0x123123"
+    contract = "0x" <> Sanbase.TestUtils.random_string()
 
     datetime1 = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 00:00:00], "Etc/UTC")
 
-    insert(:burn_rate, %{contract_address: contract1, timestamp: datetime1, burn_rate: 500.0})
-    insert(:burn_rate, %{contract_address: contract1, timestamp: datetime2, burn_rate: 1500.0})
+    insert(:burn_rate, %{contract_address: contract, timestamp: datetime1, burn_rate: 500.0})
+    insert(:burn_rate, %{contract_address: contract, timestamp: datetime2, burn_rate: 1500.0})
 
     %{
-      contract: contract1,
+      contract: contract,
       datetime_from: datetime1,
       datetime_to: datetime2
     }
@@ -36,23 +36,23 @@ defmodule Sanbase.Blockchain.BurnRateTest do
     assert result == [
              %{
                burn_rate: 500.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
              },
              %{
                burn_rate: 0.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 06:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 06:00:00.00Z")
              },
              %{
                burn_rate: 0.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00.00Z")
              },
              %{
                burn_rate: 0.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00.00Z")
              },
              %{
                burn_rate: 1.5e3,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.00Z")
              }
            ]
   end
@@ -69,15 +69,15 @@ defmodule Sanbase.Blockchain.BurnRateTest do
     assert result == [
              %{
                burn_rate: 0.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
              },
              %{
                burn_rate: 0.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00.00Z")
              },
              %{
                burn_rate: 0.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.00Z")
              }
            ]
   end
@@ -94,7 +94,7 @@ defmodule Sanbase.Blockchain.BurnRateTest do
     assert result == [
              %{
                burn_rate: 2000.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.000000Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
              }
            ]
   end

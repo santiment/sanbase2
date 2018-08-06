@@ -28,7 +28,7 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
     |> validate_length(:contract_address, min: 1)
   end
 
-  def exchange_funds_flow(contract, from, to, interval) do
+  def transactions_in_out_difference(contract, from, to, interval, token_decimals \\ 0) do
     args = [from, to, contract]
 
     """
@@ -40,15 +40,20 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
     |> timescaledb_execute(fn [datetime, exchange_funds_flow] ->
       %{
         datetime: timestamp_to_datetime(datetime),
-        exchange_funds_flow: exchange_funds_flow
+        funds_flow: exchange_funds_flow / :math.pow(10, token_decimals)
       }
     end)
   end
 
-  def exchange_funds_flow!(contract, from, to, interval) do
-    case exchange_funds_flow(contract, from, to, interval) do
+  def transactions_in_out_difference!(contract, from, to, interval, token_decimals \\ 0) do
+    case transactions_in_out_difference(contract, from, to, interval, token_decimals) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end
+  end
+
+  def first_datetime(contract) do
+    "FROM #{@table} WHERE contract_address = $1"
+    |> timescale_first_datetime([contract])
   end
 end

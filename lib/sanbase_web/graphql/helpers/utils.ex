@@ -10,12 +10,21 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
         from,
         to,
         interval,
-        min_interval,
+        min_interval_seconds \\ 300,
         data_points_count \\ 500
       )
 
-  def calibrate_interval(module, measurement, from, to, "", min_interval, data_points_count) do
+  def calibrate_interval(
+        module,
+        measurement,
+        from,
+        to,
+        "",
+        min_interval_seconds,
+        data_points_count
+      ) do
     {:ok, first_datetime} = module.first_datetime(measurement)
+
     first_datetime = first_datetime || from
 
     from =
@@ -24,7 +33,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
         DateTime.to_unix(first_datetime, :second)
       )
 
-    interval = max(div(DateTime.to_unix(to, :second) - from, data_points_count), min_interval)
+    interval =
+      max(
+        div(DateTime.to_unix(to, :second) - from, data_points_count),
+        min_interval_seconds
+      )
 
     {:ok, DateTime.from_unix!(from), to, "#{interval}s"}
   end

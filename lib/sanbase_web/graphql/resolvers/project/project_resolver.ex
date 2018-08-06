@@ -415,19 +415,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def volume_change_24h(%Project{ticker: ticker}, _args, _resolution) do
-    async(Cache.func(fn -> calculate_volume_change_24h(ticker) end, {:volume_change_24h, ticker}))
+  def volume_change_24h(%Project{id: id} = project, _args, _resolution) do
+    async(Cache.func(fn -> calculate_volume_change_24h(project) end, {:volume_change_24h, id}))
   end
 
-  defp calculate_volume_change_24h(ticker) do
-    pair = "#{ticker}_USD"
+  defp calculate_volume_change_24h(%Project{} = project) do
+    measurement_name = Sanbase.Influxdb.Measurement.name_from(project)
     yesterday = Timex.shift(Timex.now(), days: -1)
     the_other_day = Timex.shift(Timex.now(), days: -2)
 
     with {:ok, [[_dt, today_vol]]} <-
-           Prices.Store.fetch_mean_volume(pair, yesterday, Timex.now()),
+           Prices.Store.fetch_mean_volume(measurement_name, yesterday, Timex.now()),
          {:ok, [[_dt, yesterday_vol]]} <-
-           Prices.Store.fetch_mean_volume(pair, the_other_day, yesterday),
+           Prices.Store.fetch_mean_volume(measurement_name, the_other_day, yesterday),
          true <- yesterday_vol > 0 do
       {:ok, (today_vol - yesterday_vol) * 100 / yesterday_vol}
     else

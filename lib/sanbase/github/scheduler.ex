@@ -70,11 +70,12 @@ defmodule Sanbase.Github.Scheduler do
     !Repo.get_by(Github.ProcessedGithubArchive, project_id: id, archive: archive_name)
   end
 
-  defp get_initial_scrape_datetime(%Project{ticker: ticker}) do
+  defp get_initial_scrape_datetime(%Project{ticker: ticker} = project) do
     if Github.Store.first_datetime!(ticker) do
       Github.Store.last_datetime!(ticker)
     else
-      Prices.Store.first_datetime!(ticker <> "_USD")
+      measurement_name = Sanbase.Influxdb.Measurement.name_from(project)
+      Prices.Store.first_datetime!(measurement_name)
     end
   end
 

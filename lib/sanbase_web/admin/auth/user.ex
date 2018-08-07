@@ -6,6 +6,8 @@ defmodule Sanbase.ExAdmin.Auth.User do
 
   @environment Mix.env()
 
+  @environment Mix.env()
+
   register_resource Sanbase.Auth.User do
     controller do
       before_filter(:assign_insights_anonymous, only: [:destroy])

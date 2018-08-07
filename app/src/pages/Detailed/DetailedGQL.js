@@ -11,6 +11,7 @@ export const projectBySlugGQL = gql`
     projectBySlug(slug: $slug) {
       id
       name
+      slug
       ticker
       description
       websiteLink

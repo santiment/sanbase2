@@ -18,6 +18,7 @@ const AssetsListPopup = ({
   isNavigation = false,
   isLoggedIn,
   projectId,
+  slug,
   lists,
   trigger = AddToListBtn
 }) => {
@@ -28,6 +29,7 @@ const AssetsListPopup = ({
         <AssetsList
           isNavigation={isNavigation}
           projectId={projectId}
+          slug={slug}
           lists={lists}
         />
       }

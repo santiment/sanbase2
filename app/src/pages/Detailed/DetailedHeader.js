@@ -25,7 +25,8 @@ const DetailedHeader = ({
   project = {
     ticker: '',
     name: '',
-    description: ''
+    description: '',
+    slug: ''
   },
   loading,
   empty,
@@ -68,6 +69,7 @@ const DetailedHeader = ({
                 &nbsp;
                 <AssetsListPopup
                   projectId={project.id}
+                  slug={project.slug}
                   isLoggedIn={isLoggedIn}
                 />
               </div>

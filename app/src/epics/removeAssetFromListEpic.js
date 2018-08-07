@@ -32,17 +32,23 @@ const removeAssetFromListEpic = (action$, store, { client }) =>
           const index = data.fetchUserLists.findIndex(
             list => list.id === updateUserList.id
           )
-          data.fetchUserLists[index].listItems = newListItems
+          data.fetchUserLists[index] = updateUserList
           store.writeQuery({ query: AssetsListGQL, data })
         }
       })
       return Observable.from(mutationPromise)
         .mergeMap(({ data }) => {
+          const assetSlug = action.payload.slug
+          const watchlistName = data.updateUserList.name
           return Observable.merge(
             Observable.of({
               type: actions.USER_REMOVED_ASSET_FROM_LIST_SUCCESS
             }),
-            Observable.of(showNotification('Removed this asset from the list'))
+            Observable.of(
+              showNotification(
+                `Removed "${assetSlug}" from the list "${watchlistName}"`
+              )
+            )
           )
         })
         .catch(error => {

@@ -803,10 +803,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
        ) do
     from_unix = DateTime.to_unix(datetime_from)
     to_unix = DateTime.to_unix(datetime_to)
-
-    ticker_slug =
-      Repo.get_by(Project, coinmarketcap_id: slug)
-      |> Measurement.name_from()
+    ticker = Utils.ticker_by_slug(slug)
+    ticker_slug = "#{ticker}_#{slug}"
 
     url = "#{tech_indicators_url()}/indicator/#{social_volume_type}"
 

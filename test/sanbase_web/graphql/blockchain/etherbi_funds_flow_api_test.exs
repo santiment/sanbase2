@@ -120,7 +120,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
         from: "#{context.datetime1}",
         to: "#{context.datetime8}") {
           datetime
-          fundsFlow
+          exchangeFundsFlow
       }
     }
     """
@@ -131,7 +131,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
 
     funds_flow_list = json_response(result, 200)["data"]["exchangeFundsFlow"]
 
-    assert Enum.find(funds_flow_list, fn %{"fundsFlow" => fundsFlow} ->
+    assert Enum.find(funds_flow_list, fn %{"exchangeFundsFlow" => fundsFlow} ->
              fundsFlow == 2000
            end)
   end
@@ -145,7 +145,7 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
         to: "#{context.datetime8}",
         interval: "1d") {
           datetime
-          fundsFlow
+          exchangeFundsFlow
       }
     }
     """
@@ -156,13 +156,20 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
 
     funds_flow_list = json_response(result, 200)["data"]["exchangeFundsFlow"]
 
-    assert %{"datetime" => "2017-05-13T00:00:00.00Z", "fundsFlow" => 2.0e3} in funds_flow_list
-    assert %{"datetime" => "2017-05-14T00:00:00.00Z", "fundsFlow" => 2.0e3} in funds_flow_list
-    assert %{"datetime" => "2017-05-15T00:00:00.00Z", "fundsFlow" => 9.0e3} in funds_flow_list
-    assert %{"datetime" => "2017-05-16T00:00:00.00Z", "fundsFlow" => 1.5e4} in funds_flow_list
-    assert %{"datetime" => "2017-05-17T00:00:00.00Z", "fundsFlow" => -1.8e4} in funds_flow_list
-    assert %{"datetime" => "2017-05-18T00:00:00.00Z", "fundsFlow" => 1.0e3} in funds_flow_list
-    assert %{"datetime" => "2017-05-19T00:00:00.00Z", "fundsFlow" => -8450.0} in funds_flow_list
-    assert %{"datetime" => "2017-05-20T00:00:00.00Z", "fundsFlow" => -5.0e4} in funds_flow_list
+    assert %{"datetime" => "2017-05-13T00:00:00.00Z", "exchangeFundsFlow" => 2.0e3} in funds_flow_list
+
+    assert %{"datetime" => "2017-05-14T00:00:00.00Z", "exchangeFundsFlow" => 2.0e3} in funds_flow_list
+
+    assert %{"datetime" => "2017-05-15T00:00:00.00Z", "exchangeFundsFlow" => 9.0e3} in funds_flow_list
+
+    assert %{"datetime" => "2017-05-16T00:00:00.00Z", "exchangeFundsFlow" => 1.5e4} in funds_flow_list
+
+    assert %{"datetime" => "2017-05-17T00:00:00.00Z", "exchangeFundsFlow" => -1.8e4} in funds_flow_list
+
+    assert %{"datetime" => "2017-05-18T00:00:00.00Z", "exchangeFundsFlow" => 1.0e3} in funds_flow_list
+
+    assert %{"datetime" => "2017-05-19T00:00:00.00Z", "exchangeFundsFlow" => -8450.0} in funds_flow_list
+
+    assert %{"datetime" => "2017-05-20T00:00:00.00Z", "exchangeFundsFlow" => -5.0e4} in funds_flow_list
   end
 end

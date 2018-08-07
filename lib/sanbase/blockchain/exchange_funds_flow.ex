@@ -40,7 +40,7 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
     |> Timescaledb.timescaledb_execute(fn [datetime, exchange_funds_flow] ->
       %{
         datetime: Timescaledb.timestamp_to_datetime(datetime),
-        funds_flow: exchange_funds_flow / :math.pow(10, token_decimals)
+        exchange_funds_flow: exchange_funds_flow / :math.pow(10, token_decimals)
       }
     end)
   end

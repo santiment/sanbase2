@@ -5,6 +5,26 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.InternalServices.TechIndicators
+  alias Sanbase.ExternalServices.Etherscan.Store
+  alias Sanbase.Model.Project
+  alias Sanbase.Repo
+
+  setup do
+    ticker = "SAN"
+
+    Store.create_db()
+    Store.drop_measurement(ticker)
+
+    %Project{}
+    |> Project.changeset(%{
+      name: "Santiment",
+      ticker: ticker,
+      coinmarketcap_id: "santiment"
+    })
+    |> Repo.insert!()
+
+    []
+  end
 
   test "fetch macd", _context do
     mock(
@@ -246,7 +266,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result =
         TechIndicators.social_volume(
-          "SAN_santiment",
+          "santiment",
           DateTime.from_unix!(from),
           DateTime.from_unix!(to),
           "1h",
@@ -280,7 +300,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result = fn ->
         TechIndicators.social_volume(
-          "SAN_santiment",
+          "santiment",
           DateTime.from_unix!(1_523_876_400),
           DateTime.from_unix!(1_523_880_000),
           "1h",
@@ -289,7 +309,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       end
 
       assert capture_log(result) =~
-               "Error status 404 fetching social volume for project SAN_santiment: Some message\n"
+               "Error status 404 fetching social volume for project santiment: Some message\n"
     end
 
     test "response: error" do
@@ -304,7 +324,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result = fn ->
         TechIndicators.social_volume(
-          "SAN_santiment",
+          "santiment",
           DateTime.from_unix!(1_523_876_400),
           DateTime.from_unix!(1_523_880_000),
           "1h",
@@ -313,7 +333,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       end
 
       assert capture_log(result) =~
-               "Cannot fetch social volume data for project SAN_santiment: :econnrefused\n"
+               "Cannot fetch social volume data for project santiment: :econnrefused\n"
     end
   end
 
@@ -332,9 +352,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result = TechIndicators.social_volume_projects()
 
-      assert result ==
-               {:ok,
-                ["ADA_cardano", "BCH_bitcoin-cash", "BTC_bitcoin", "DRGN_dragonchain", "EOS_eos"]}
+      assert result == {:ok, ["cardano", "bitcoin-cash", "bitcoin", "dragonchain", "eos"]}
     end
 
     test "response: 404" do

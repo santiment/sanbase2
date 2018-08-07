@@ -2,6 +2,9 @@ defmodule Sanbase.InternalServices.TechIndicators do
   require Logger
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
+  alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Repo
+  alias Sanbase.Model.Project
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
@@ -175,14 +178,14 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   def social_volume(
-        ticker_slug,
+        slug,
         datetime_from,
         datetime_to,
         interval,
         social_volume_type
       ) do
     social_volume_request(
-      ticker_slug,
+      slug,
       datetime_from,
       datetime_to,
       interval,
@@ -194,15 +197,11 @@ defmodule Sanbase.InternalServices.TechIndicators do
         social_volume_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result(
-          "Error status #{status} fetching social volume for project #{ticker_slug}: #{body}"
-        )
+        error_result("Error status #{status} fetching social volume for project #{slug}: #{body}")
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch social volume data for project #{ticker_slug}: #{
-            HTTPoison.Error.message(error)
-          }"
+          "Cannot fetch social volume data for project #{slug}: #{HTTPoison.Error.message(error)}"
         )
     end
   end
@@ -211,7 +210,8 @@ defmodule Sanbase.InternalServices.TechIndicators do
     social_volume_projects_request()
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Poison.decode(body)
+        {:ok, result} = Poison.decode(body)
+        social_volume_projects_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         error_result("Error status #{status} fetching social volume projects: #{body}")
@@ -438,7 +438,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp social_volume_request(
-         ticker_slug,
+         slug,
          datetime_from,
          datetime_to,
          interval,
@@ -446,6 +446,10 @@ defmodule Sanbase.InternalServices.TechIndicators do
        ) do
     from_unix = DateTime.to_unix(datetime_from)
     to_unix = DateTime.to_unix(datetime_to)
+
+    ticker_slug =
+      Repo.get_by(Project, coinmarketcap_id: slug)
+      |> Measurement.name_from()
 
     url = "#{tech_indicators_url()}/indicator/#{social_volume_type}"
 
@@ -484,6 +488,17 @@ defmodule Sanbase.InternalServices.TechIndicators do
     options = [recv_timeout: @recv_timeout]
 
     http_client().get(url, [], options)
+  end
+
+  defp social_volume_projects_result(result) do
+    result =
+      result
+      |> Enum.map(fn ticker_slug ->
+        String.split(ticker_slug, "_", parts: 2)
+        |> Enum.at(1)
+      end)
+
+    {:ok, result}
   end
 
   defp error_result(message) do

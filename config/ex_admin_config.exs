@@ -26,6 +26,7 @@ config :ex_admin,
     Sanbase.ExAdmin.Notifications.Type,
     Sanbase.ExAdmin.Notifications.Notification,
     Sanbase.ExAdmin.Auth.User,
+    Sanbase.ExAdmin.Auth.EthAccount,
     Sanbase.ExAdmin.Voting.Poll,
     Sanbase.ExAdmin.Voting.Post
   ],

@@ -4,6 +4,7 @@ const generalData = gql`
   fragment generalData on Project {
     id
     name
+    slug
     description
     ticker
     coinmarketcapId

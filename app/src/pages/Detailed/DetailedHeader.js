@@ -21,7 +21,8 @@ const DetailedHeader = ({
   project = {
     ticker: '',
     name: '',
-    description: ''
+    description: '',
+    slug: ''
   },
   loading,
   empty,

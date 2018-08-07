@@ -5,26 +5,6 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.InternalServices.TechIndicators
-  alias Sanbase.ExternalServices.Etherscan.Store
-  alias Sanbase.Model.Project
-  alias Sanbase.Repo
-
-  setup do
-    ticker = "SAN"
-
-    Store.create_db()
-    Store.drop_measurement(ticker)
-
-    %Project{}
-    |> Project.changeset(%{
-      name: "Santiment",
-      ticker: ticker,
-      coinmarketcap_id: "santiment"
-    })
-    |> Repo.insert!()
-
-    []
-  end
 
   test "fetch macd", _context do
     mock(

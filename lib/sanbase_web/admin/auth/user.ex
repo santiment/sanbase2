@@ -1,7 +1,6 @@
 defmodule Sanbase.ExAdmin.Auth.User do
   use ExAdmin.Register
 
-  import Ecto.Query, warn: false
   alias Sanbase.Auth.EthAccount
 
   register_resource Sanbase.Auth.User do

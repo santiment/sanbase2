@@ -3,6 +3,8 @@ defmodule Sanbase.ExAdmin.Auth.User do
 
   alias Sanbase.Auth.EthAccount
 
+  @environment Mix.env()
+
   register_resource Sanbase.Auth.User do
     show user do
       attributes_table
@@ -12,7 +14,7 @@ defmodule Sanbase.ExAdmin.Auth.User do
           column(:id, link: true)
           column(:address)
 
-          unless Mix.env() == :dev do
+          unless @environment == :dev do
             column("San balance", fn eth_account ->
               EthAccount.san_balance(eth_account)
             end)

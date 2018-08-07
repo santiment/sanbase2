@@ -29,15 +29,6 @@ const ProjectsNavigation = ({
         >
           Currencies
         </Link>
-        {user.token && (
-          <Link
-            activeClassName='projects-navigation-list__page-link--active'
-            className='projects-navigation-list__page-link'
-            to={'/favorites'}
-          >
-            Favorites
-          </Link>
-        )}
         <Link
           activeClassName='projects-navigation-list__page-link--active'
           className='projects-navigation-list__page-link'

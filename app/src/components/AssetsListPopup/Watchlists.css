@@ -26,12 +26,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  align-items: center;
   padding: 8px 15px;
   cursor: pointer;
   min-height: 2em;
-  /*border-top: 1px solid rgba(0, 0, 0, 0.05);*/
   border-bottom: 1px solid #eee;
+}
+
+.watchlists__list .watchlists__item:hover {
+  background-color: #e8e8e8;
 }
 
 .watchlists__list .watchlists__item:first-child {
@@ -40,4 +42,10 @@
 
 .watchlists__item__name {
   display: flex;
+}
+
+.watchlists__item__name div {
+  display: flex;
+  padding-top: 4px;
+  text-transform: uppercase;
 }

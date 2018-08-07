@@ -2,7 +2,7 @@ defmodule Sanbase.Blockchain.TransactionVolume do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Sanbase.Timescaledb
+  alias Sanbase.Timescaledb
 
   @table "eth_transaction_volume"
 
@@ -29,10 +29,10 @@ defmodule Sanbase.Blockchain.TransactionVolume do
     FROM #{@table}
     WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
     """
-    |> bucket_by_interval(args, interval)
-    |> timescaledb_execute(fn [datetime, transaction_volume] ->
+    |> Timescaledb.bucket_by_interval(args, interval)
+    |> Timescaledb.timescaledb_execute(fn [datetime, transaction_volume] ->
       %{
-        datetime: timestamp_to_datetime(datetime),
+        datetime: Timescaledb.timestamp_to_datetime(datetime),
         transaction_volume: transaction_volume / :math.pow(10, token_decimals)
       }
     end)
@@ -47,6 +47,6 @@ defmodule Sanbase.Blockchain.TransactionVolume do
 
   def first_datetime(contract) do
     "FROM #{@table} WHERE contract_address = $1"
-    |> timescale_first_datetime([contract])
+    |> Timescaledb.first_datetime([contract])
   end
 end

@@ -2,7 +2,7 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Sanbase.Timescaledb
+  alias Sanbase.Timescaledb
 
   @table "eth_exchange_funds_flow"
 
@@ -36,10 +36,10 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
     FROM #{@table}
     WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
     """
-    |> bucket_by_interval(args, interval)
-    |> timescaledb_execute(fn [datetime, exchange_funds_flow] ->
+    |> Timescaledb.bucket_by_interval(args, interval)
+    |> Timescaledb.timescaledb_execute(fn [datetime, exchange_funds_flow] ->
       %{
-        datetime: timestamp_to_datetime(datetime),
+        datetime: Timescaledb.timestamp_to_datetime(datetime),
         funds_flow: exchange_funds_flow / :math.pow(10, token_decimals)
       }
     end)
@@ -54,6 +54,6 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
 
   def first_datetime(contract) do
     "FROM #{@table} WHERE contract_address = $1"
-    |> timescale_first_datetime([contract])
+    |> Timescaledb.first_datetime([contract])
   end
 end

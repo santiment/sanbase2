@@ -2,7 +2,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Sanbase.Timescaledb
+  alias Sanbase.Timescaledb
 
   @table "eth_daily_active_addresses"
 
@@ -32,7 +32,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
 
     {:ok, result} =
       {query, args}
-      |> timescaledb_execute(fn [active_addresses] ->
+      |> Timescaledb.timescaledb_execute(fn [active_addresses] ->
         case active_addresses do
           nil ->
             0
@@ -55,10 +55,10 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
     FROM #{@table}
     WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
     """
-    |> bucket_by_interval(args, interval)
-    |> timescaledb_execute(fn [datetime, active_addresses] ->
+    |> Timescaledb.bucket_by_interval(args, interval)
+    |> Timescaledb.timescaledb_execute(fn [datetime, active_addresses] ->
       %{
-        datetime: datetime |> timestamp_to_datetime(),
+        datetime: datetime |> Timescaledb.timestamp_to_datetime(),
         active_addresses:
           active_addresses
           |> Decimal.round()
@@ -76,6 +76,6 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
 
   def first_datetime(contract) do
     "FROM #{@table} WHERE contract_address = $1"
-    |> timescale_first_datetime([contract])
+    |> Timescaledb.first_datetime([contract])
   end
 end

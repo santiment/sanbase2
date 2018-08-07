@@ -4,40 +4,6 @@ defmodule Sanbase.Timescaledb do
   It provides some common abstractions that are missing in Timescaledb, most
   notably bucketing by time and filling the gaps with zeroes.
   """
-  defmacro time_bucket(interval) do
-    quote do
-      fragment(
-        "time_bucket(?::interval, timestamp)",
-        unquote(interval)
-      )
-    end
-  end
-
-  defmacro time_bucket() do
-    quote do
-      fragment("time_bucket")
-    end
-  end
-
-  defmacro coalesce(left, right) do
-    quote do
-      fragment("coalesce(?, ?)", unquote(left), unquote(right))
-    end
-  end
-
-  defmacro generate_series(from, to, interval) do
-    quote do
-      fragment(
-        """
-        select generate_series(time_bucket(?::interval, ?), ?, ?::interval)::timestamp AS d
-        """,
-        unquote(interval),
-        unquote(from),
-        unquote(to),
-        unquote(interval)
-      )
-    end
-  end
 
   @doc ~s"""
   Temporary helper function that rewrites the query so it fills empty time buckets with 0.
@@ -121,7 +87,7 @@ defmodule Sanbase.Timescaledb do
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do
     Sanbase.TimescaleRepo.query(query, args)
     |> case do
-      {:ok, %{rows: rows} = result} ->
+      {:ok, %{rows: rows}} ->
         result =
           Enum.map(
             rows,
@@ -137,14 +103,21 @@ defmodule Sanbase.Timescaledb do
 
   @doc ~s"""
   Converts the Elixir's representation of postgres' timestamp to DateTime struct
-  with UTC timezone
+  with UTC timezone.
+
+   ## Examples
+
+      iex> Sanbase.Timescaledb.timestamp_to_datetime({{2018, 8, 7}, {12, 55, 5, 00}})
+      #DateTime<2018-08-07 12:55:05.00Z>
+      iex> Sanbase.Timescaledb.timestamp_to_datetime({{2015, 1, 17}, {12, 55, 37, 00005}})
+      #DateTime<2015-01-17 12:55:37.00Z>
   """
   def timestamp_to_datetime({date, {h, m, s, us}}) do
     NaiveDateTime.from_erl!({date, {h, m, s}}, {us, 2})
     |> DateTime.from_naive!("Etc/UTC")
   end
 
-  def timescale_first_datetime(from_where, args) do
+  def first_datetime(from_where, args) do
     query = [
       "SELECT timestamp ",
       from_where,
@@ -159,6 +132,45 @@ defmodule Sanbase.Timescaledb do
     case List.first(result) do
       nil -> {:ok, nil}
       data -> data
+    end
+  end
+
+  # Currently unused
+  defmacro time_bucket(interval) do
+    quote do
+      fragment(
+        "time_bucket(?::interval, timestamp)",
+        unquote(interval)
+      )
+    end
+  end
+
+  # Currently unused
+  defmacro time_bucket() do
+    quote do
+      fragment("time_bucket")
+    end
+  end
+
+  # Currently unused
+  defmacro coalesce(left, right) do
+    quote do
+      fragment("coalesce(?, ?)", unquote(left), unquote(right))
+    end
+  end
+
+  # Currently unused
+  defmacro generate_series(from, to, interval) do
+    quote do
+      fragment(
+        """
+        select generate_series(time_bucket(?::interval, ?), ?, ?::interval)::timestamp AS d
+        """,
+        unquote(interval),
+        unquote(from),
+        unquote(to),
+        unquote(interval)
+      )
     end
   end
 end

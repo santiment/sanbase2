@@ -2,7 +2,7 @@ defmodule Sanbase.Blockchain.BurnRate do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Sanbase.Timescaledb
+  alias Sanbase.Timescaledb
 
   @table "eth_burn_rate"
 
@@ -29,10 +29,10 @@ defmodule Sanbase.Blockchain.BurnRate do
     FROM #{@table}
     WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
     """
-    |> bucket_by_interval(args, interval)
-    |> timescaledb_execute(fn [datetime, burn_rate] ->
+    |> Timescaledb.bucket_by_interval(args, interval)
+    |> Timescaledb.timescaledb_execute(fn [datetime, burn_rate] ->
       %{
-        datetime: timestamp_to_datetime(datetime),
+        datetime: Timescaledb.timestamp_to_datetime(datetime),
         burn_rate: burn_rate / :math.pow(10, token_decimals)
       }
     end)
@@ -46,9 +46,7 @@ defmodule Sanbase.Blockchain.BurnRate do
   end
 
   def first_datetime(contract) do
-    timescale_first_datetime(
-      "FROM #{@table} WHERE contract_address = $1",
-      [contract]
-    )
+    "FROM #{@table} WHERE contract_address = $1"
+    |> Timescaledb.first_datetime([contract])
   end
 end

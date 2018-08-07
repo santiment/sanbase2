@@ -9,7 +9,7 @@ import 'react-table/react-table.css'
 import { FadeIn } from 'animate-components'
 import Sticky from 'react-stickynode'
 import { formatNumber, millify } from '../../utils/formatting'
-import { getOrigin, filterProjectsByMarketSegment } from '../../utils/utils'
+import { getFrontend, filterProjectsByMarketSegment } from '../../utils/utils'
 import { simpleSort } from '../../utils/sortMethods'
 import ProjectIcon from '../../components/ProjectIcon'
 import Panel from '../../components/Panel'
@@ -344,7 +344,7 @@ const ProjectsTable = ({
     <div className='page projects-table'>
       <Helmet>
         <title>SANbase</title>
-        <link rel='canonical' href={`${getOrigin()}/projects`} />
+        <link rel='canonical' href={`${getFrontend()}/projects`} />
       </Helmet>
       <FadeIn duration='0.3s' timingFunction='ease-in' as='div'>
         <div className='page-head page-head-projects'>

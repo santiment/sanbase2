@@ -118,7 +118,7 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
     query {
       socialVolume(
-        tickerSlug: "DRGN_dragonchain",
+        slug: "dragonchain",
         from: "2018-04-16T10:02:19Z",
         to: "2018-05-23T10:02:19Z",
         interval:"1h",

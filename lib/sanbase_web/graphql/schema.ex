@@ -420,7 +420,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns a list of mentions count for a given project and time interval.
 
     Arguments description:
-      * ticker_slug - a string
+      * slug - a string
       * interval - an integer followed by one of: `m`, `h`, `d`
       * from - a string representation of datetime value, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value, e.g. "2018-04-16T10:02:19Z"
@@ -431,7 +431,7 @@ defmodule SanbaseWeb.Graphql.Schema do
         It is used to select the source of the mentions count.
     """
     field :social_volume, list_of(:social_volume) do
-      arg(:ticker_slug, non_null(:string))
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, non_null(:string), default_value: "1d")
@@ -447,7 +447,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Returns a list of ticker_slug pair for which there is social volume data.
+    Returns a list of slugs for which there is social volume data.
     """
     field :social_volume_projects, list_of(:string) do
       resolve(&TechIndicatorsResolver.social_volume_projects/3)

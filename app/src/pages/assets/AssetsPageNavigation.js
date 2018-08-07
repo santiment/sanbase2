@@ -26,15 +26,6 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
           Currencies
         </Link>
         {isLoggedIn && (
-          <Link
-            activeClassName='projects-navigation-list__page-link--active'
-            className='projects-navigation-list__page-link'
-            to={'/favorites'}
-          >
-            Favorites
-          </Link>
-        )}
-        {isLoggedIn && (
           <AssetsListPopup
             isNavigation
             isLoggedIn={isLoggedIn}

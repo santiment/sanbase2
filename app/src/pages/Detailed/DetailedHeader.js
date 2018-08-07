@@ -66,7 +66,6 @@ const DetailedHeader = ({
                   }
                   position='bottom center'
                 />
-                &nbsp;
                 <AssetsListPopup
                   projectId={project.id}
                   slug={project.slug}

@@ -1,5 +1,7 @@
 .watchlists {
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .watchlists .watchlists__empty-list-msg {
@@ -9,10 +11,10 @@
   font-weight: bold;
 }
 
-.watchlists__config-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
+.watchlists__header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 5px 0;
 }
 
 .watchlists .watchlists__list {
@@ -23,12 +25,19 @@
 .watchlists__list .watchlists__item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 15px;
   cursor: pointer;
-  padding: 5px;
   min-height: 2em;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  /*border-top: 1px solid rgba(0, 0, 0, 0.05);*/
+  border-bottom: 1px solid #eee;
 }
 
 .watchlists__list .watchlists__item:first-child {
   border-top: none;
+}
+
+.watchlists__item__name {
+  display: flex;
 }

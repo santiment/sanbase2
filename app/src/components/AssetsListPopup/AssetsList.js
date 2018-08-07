@@ -11,8 +11,11 @@ const ConfigurationListBtn = ({ isConfigOpened = false, setConfigOpened }) => (
   <Button
     className='watchlists__config-btn'
     onClick={() => setConfigOpened(!isConfigOpened)}
-    icon={isConfigOpened ? 'close' : 'setting'}
-  />
+    basic
+  >
+    <Icon name={isConfigOpened ? 'close' : 'setting'} />
+    settings
+  </Button>
 )
 
 // id is a number of current date for new list,
@@ -39,12 +42,14 @@ class Watchlists extends React.Component {
     const Component = isNavigation ? Link : 'div'
     return (
       <div className='watchlists'>
-        {lists.length > 0 && (
-          <ConfigurationListBtn
-            setConfigOpened={setConfigOpened}
-            isConfigOpened={isConfigOpened}
-          />
-        )}
+        <div className='watchlists__header'>
+          {lists.length > 0 && (
+            <ConfigurationListBtn
+              setConfigOpened={setConfigOpened}
+              isConfigOpened={isConfigOpened}
+            />
+          )}
+        </div>
         <div className='watchlists__list'>
           {lists.length > 0 ? (
             lists.map(({ id, name, listItems = [] }) => (
@@ -59,35 +64,41 @@ class Watchlists extends React.Component {
                   listItems
                 })}
               >
-                {isConfigOpened
-                  ? !isNewestList(id) && (
-                    <Icon
-                      size='big'
-                      onClick={removeAssetList.bind(this, id)}
-                      name='trash'
-                    />
-                  )
-                  : !isNavigation && (
-                    <Icon
-                      size='big'
-                      name={
-                        hasAssetById({
-                          listItems,
-                          id: projectId
-                        })
-                          ? 'check circle outline'
-                          : 'circle outline'
-                      }
-                    />
-                  )}
-                <span>
-                  {name}
+                <div className='watchlists__item__name'>
+                  {!isConfigOpened &&
+                    !isNavigation && (
+                      <Icon
+                        size='big'
+                        name={
+                          hasAssetById({
+                            listItems,
+                            id: projectId
+                          })
+                            ? 'check circle outline'
+                            : 'circle outline'
+                        }
+                      />
+                    )}
+                  <div>{name}</div>
+                </div>
+                <div className='watchlists__item__description'>
+                  <Label>
+                    {listItems.length > 0 ? listItems.length : 'empty'}
+                  </Label>
                   {isNewestList(id) && (
                     <Label color='green' horizontal>
                       NEW
                     </Label>
                   )}
-                </span>
+                  {isConfigOpened &&
+                    !isNewestList(id) && (
+                      <Icon
+                        size='big'
+                        onClick={removeAssetList.bind(this, id)}
+                        name='trash'
+                      />
+                    )}
+                </div>
               </Component>
             ))
           ) : (

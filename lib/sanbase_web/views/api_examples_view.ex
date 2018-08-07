@@ -105,7 +105,7 @@ defmodule SanbaseWeb.ApiExamplesView do
   end
 
   defp explorer_url() do
-    SanbaseWeb.Endpoint.website_url() <> "/apiexplorer"
+    SanbaseWeb.Endpoint.backend_url() <> "/graphiql"
   end
 
   def docs(field) do

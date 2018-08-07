@@ -5,6 +5,7 @@ import { Redirect } from 'react-router-dom'
 import Panel from './../../components/Panel'
 import Login from './Login'
 import './Login.css'
+import { getBackend } from './../utils/utils'
 
 export const LoginPage = ({
   user,
@@ -20,7 +21,7 @@ export const LoginPage = ({
   const consent = qsData && qsData.consent ? qsData.consent : ''
   if (user.data.hasOwnProperty('username') || user.token) {
     if (consent) {
-      window.location.replace(`/consent?consent=${consent}&token=${user.token}`)
+      window.location.replace(`${getBackend()}/consent?consent=${consent}&token=${user.token}`)
     }
     return <Redirect to='/' />
   }

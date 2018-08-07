@@ -1,13 +1,13 @@
 import React from 'react'
 import { Helmet } from 'react-helmet'
-import { getOrigin } from './../utils/utils'
+import { getFrontend } from './../utils/utils'
 import './Roadmap.css'
 
 const Roadmap = () => (
   <div className='page roadmap'>
     <Helmet>
       <title>Roadmap</title>
-      <link rel='canonical' href={`${getOrigin()}/roadmap`} />
+      <link rel='canonical' href={`${getFrontend()}/roadmap`} />
     </Helmet>
     <div className='page-head'>
       <h1>SANbase Roadmap</h1>

@@ -14,12 +14,16 @@ const calculateBTCMarketcap = ({ marketcap, priceUsd, priceBtc }) => {
   return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
 }
 
-const getOrigin = () => {
+const getBackend = () => {
+  return (window.env || {}).BACKEND_URL
+}
+
+const getFrontend = () => {
   if (process.env.NODE_ENV === 'development') {
     return process.env.REACT_APP_WEBSITE_URL || window.location.origin
   }
   return (
-    (window.env || {}).WEBSITE_URL ||
+    (window.env || {}).FRONTEND_URL ||
     process.env.REACT_APP_WEBSITE_URL ||
     window.location.origin
   )
@@ -53,7 +57,8 @@ export {
   findIndexByDatetime,
   calculateBTCVolume,
   calculateBTCMarketcap,
-  getOrigin,
+  getBackend,
+  getFrontend,
   sanitizeMediumDraftHtml,
   filterProjectsByMarketSegment
 }

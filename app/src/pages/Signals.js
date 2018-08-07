@@ -1,13 +1,13 @@
 import React from 'react'
 import { Helmet } from 'react-helmet'
-import { getOrigin } from './../utils/utils'
+import { getFrontend } from './../utils/utils'
 import './Signals.css'
 
 const Signals = () => (
   <div className='page signals'>
     <Helmet>
       <title>Signals</title>
-      <link rel='canonical' href={`${getOrigin()}/signals`} />
+      <link rel='canonical' href={`${getFrontend()}/signals`} />
     </Helmet>
     <div className='page-head'>
       <h1>Signals</h1>

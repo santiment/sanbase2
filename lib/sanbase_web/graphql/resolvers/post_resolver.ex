@@ -258,6 +258,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.update()
   end
 
-  defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :website_url)
+  defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
   defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
 end

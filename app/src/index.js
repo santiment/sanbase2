@@ -18,7 +18,7 @@ import App from './App'
 import reducers from './reducers/rootReducers.js'
 import epics from './epics/rootEpics.js'
 import { loadState, saveState } from './utils/localStorage'
-import { getOrigin } from './utils/utils'
+import { getBackend } from './utils/utils'
 import detectNetwork from './utils/detectNetwork'
 import getRaven from './utils/getRaven'
 import { changeNetworkStatus, launchApp } from './actions/rootActions'
@@ -31,7 +31,7 @@ import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
 const main = () => {
-  const httpLink = createHttpLink({ uri: `${getOrigin()}/graphql` })
+  const httpLink = createHttpLink({ uri: `${getBackend()}/graphql` })
   const client = new ApolloClient({
     link: from([authLink, errorLink, uploadLink, httpLink]),
     shouldBatch: true,

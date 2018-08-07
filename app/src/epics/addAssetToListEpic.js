@@ -62,11 +62,17 @@ const addAssetToListEpic = (action$, store, { client }) =>
       })
       return Observable.from(mutationPromise)
         .mergeMap(({ data }) => {
+          const assetSlug = action.payload.slug
+          const watchlistName = data.updateUserList.name
           return Observable.merge(
             Observable.of({
               type: actions.USER_ADD_ASSET_TO_LIST_SUCCESS
             }),
-            Observable.of(showNotification('Added this asset to the list'))
+            Observable.of(
+              showNotification(
+                `Added "${assetSlug}" to the list "${watchlistName}"`
+              )
+            )
           )
         })
         .catch(error => {

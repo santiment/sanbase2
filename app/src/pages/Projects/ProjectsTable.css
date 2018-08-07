@@ -4,6 +4,11 @@
   min-width: 80%;
 }
 
+.assets-table-panel {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .row {
   display: flex;
   width: 100%;

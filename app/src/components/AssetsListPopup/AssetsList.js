@@ -24,15 +24,12 @@ export const hasAssetById = ({ id, listItems }) => {
 }
 
 class Watchlists extends React.Component {
-  handleListClick = ({ id, projectId, name, listItems }) => {
-    this.props.toggleAssetInList(projectId, id, listItems)
-  }
-
   render () {
     const {
       lists = [],
       isNavigation = false,
       projectId,
+      slug,
       assetsListUI,
       addNewAssetList,
       isConfigOpened,
@@ -55,10 +52,10 @@ class Watchlists extends React.Component {
                 key={id}
                 className={'watchlists__item'}
                 to={`/assets/list?name=${name}@${id}`}
-                onClick={this.handleListClick.bind(this, {
+                onClick={this.props.toggleAssetInList.bind(this, {
                   projectId,
-                  id,
-                  name,
+                  assetsListId: id,
+                  slug,
                   listItems
                 })}
               >
@@ -115,7 +112,7 @@ const mapStateToProps = state => {
 }
 
 const mapDispatchToProps = (dispatch, ownProps) => ({
-  toggleAssetInList: (projectId, assetsListId, listItems) => {
+  toggleAssetInList: ({ projectId, assetsListId, listItems, slug }) => {
     if (ownProps.isConfigOpened || !projectId) return
     const isAssetInList = hasAssetById({
       listItems: ownProps.lists.find(list => list.id === assetsListId)
@@ -125,12 +122,12 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     if (isAssetInList) {
       return dispatch({
         type: actions.USER_REMOVE_ASSET_FROM_LIST,
-        payload: { projectId, assetsListId, listItems }
+        payload: { projectId, assetsListId, listItems, slug }
       })
     } else {
       return dispatch({
         type: actions.USER_ADD_ASSET_TO_LIST,
-        payload: { projectId, assetsListId, listItems }
+        payload: { projectId, assetsListId, listItems, slug }
       })
     }
   },

@@ -45,7 +45,7 @@ const AssetsTable = ({
   }
 
   return (
-    <Panel>
+    <Panel className='assets-table-panel'>
       <ReactTable
         loading={isLoading}
         showPagination={false}

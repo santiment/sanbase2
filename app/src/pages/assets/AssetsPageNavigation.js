@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink as Link } from 'react-router-dom'
-import AssetsListPopup from './../../components/AssetsListPopup/AssetsListPopup'
+import WatchlistsPopup from './../../components/AssetsListPopup/WatchlistsPopup'
 import './AssetsPageNavigation.css'
 
 const MyListBtn = (
@@ -26,7 +26,7 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
           Currencies
         </Link>
         {isLoggedIn && (
-          <AssetsListPopup
+          <WatchlistsPopup
             isNavigation
             isLoggedIn={isLoggedIn}
             trigger={MyListBtn}

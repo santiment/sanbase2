@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { compose, withState } from 'recompose'
 import { Button, Label, Icon } from 'semantic-ui-react'
-import AddNewAssetsListBtn from './AddNewAssetsListBtn'
+import CreateWatchlistBtn from './CreateWatchlistBtn'
 import * as actions from './../../actions/types'
 import './Watchlists.css'
 
@@ -107,7 +107,7 @@ class Watchlists extends React.Component {
             </div>
           )}
         </div>
-        <AddNewAssetsListBtn
+        <CreateWatchlistBtn
           assetsListUI={assetsListUI}
           addNewAssetList={addNewAssetList}
         />

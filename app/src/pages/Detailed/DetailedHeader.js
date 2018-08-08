@@ -4,8 +4,6 @@ import {
   createSkeletonElement
 } from '@trainline/react-skeletor'
 import { compose } from 'recompose'
-import { graphql } from 'react-apollo'
-import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import ListsPopup from './../../components/ListsPopup/ListsPopup'

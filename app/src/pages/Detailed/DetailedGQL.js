@@ -216,30 +216,6 @@ export const DailyActiveAddressesGQL = gql`
   }
 `
 
-export const followedProjectsGQL = gql`
-  query followedProjects {
-    followedProjects {
-      id
-    }
-  }
-`
-
-export const FollowProjectGQL = gql`
-  mutation followProject($projectId: Int!) {
-    followProject(projectId: $projectId) {
-      id
-    }
-  }
-`
-
-export const UnfollowProjectGQL = gql`
-  mutation unfollowProject($projectId: Int!) {
-    unfollowProject(projectId: $projectId) {
-      id
-    }
-  }
-`
-
 export const AllInsightsByTagGQL = gql`
   query allInsightsByTag($tag: String!) {
     allInsightsByTag(tag: $tag) {

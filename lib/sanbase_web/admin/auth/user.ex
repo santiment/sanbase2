@@ -16,7 +16,7 @@ defmodule Sanbase.ExAdmin.Auth.User do
 
           unless @environment == :dev do
             column("San balance", fn eth_account ->
-              EthAccount.san_balance(eth_account)
+              EthAccount.san_balance(eth_account) |> Decimal.to_string()
             end)
           end
         end

@@ -333,6 +333,43 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
+    @desc ~s"""
+    Fetch the exchange funds flow for all ERC20 projects in the given interval.
+
+    Arguments description:
+      * from - a string representation of datetime value, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value, e.g. "2018-05-23T10:02:19Z"
+
+    Fields description:
+      * ticker - The ticker of the project
+      * contract - The contract identifier of the project
+      * exchange_in - How many tokens were bought in the given period
+      * exchange_out - How many tokens were sold in the given period
+      * exchange_diff - The diffrence between the bought and the sold tokens: exchange_in - exchange_out
+      * exchange_in_usd - How many tokens were bought in the given period converted to USD based on the daily avarage price of the token
+      * exchange_out_usd - How many tokens were sold in the given period converted to USD based on the daily avarage price of the token
+      * exchange_diff_usd - The diffrence between the bought and the sold tokens in USD: exchange_in_usd - exchange_out_usd
+      * percent_diff_exchange_diff_usd - The percent difference beetween exchange_diff_usd for the current period minus the exchange_diff_usd for the previous period
+          based on exchange_diff_usd for the current period: (exchange_diff_usd for current period - exchange_diff_usd for previous period) * 100 / abs(exchange_diff_usd for current period)
+      * exchange_volume_usd - The volume of all tokens in and out for the given period in USD: exchange_in_usd + exchange_out_usd
+      * percent_diff_exchange_volume_usd - The percent difference beetween exchange_volume_usd for the current period minus the exchange_volume_usd for the previous period
+          based on exchange_volume_usd for the current period: (exchange_volume_usd for current period - exchange_volume_usd for previous period) * 100 / abs(exchange_volume_usd for current period)
+      * exchange_in_btc - How many tokens were bought in the given period converted to BTC based on the daily avarage price of the token
+      * exchange_out_btc - How many tokens were sold in the given period converted to BTC based on the daily avarage price of the token
+      * exchange_diff_btc - The diffrence between the bought and the sold tokens in BTC: exchange_in_btc - exchange_out_btc
+      * percent_diff_exchange_diff_btc - The percent difference beetween exchange_diff_btc for the current period minus the exchange_diff_btc for the previous period
+          based on exchange_diff_btc for the current period: (exchange_diff_btc for current period - exchange_diff_btc for previous period) * 100 / abs(exchange_diff_btc for current period)
+      * exchange_volume_btc - The volume of all tokens in and out for the given period in BTC: exchange_in_btc + exchange_out_btc
+      * percent_diff_exchange_volume_btc - The percent difference beetween exchange_volume_btc for the current period minus the exchange_volume_btc for the previous period
+          based on exchange_volume_btc for the current period: (exchange_volume_btc for current period - exchange_volume_btc for previous period) * 100 / abs(exchange_volume_btc for current period)
+    """
+    field :erc20_exchange_funds_flow, list_of(:erc20_exchange_funds_flow) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
+    end
+
     @desc "Fetch the MACD technical indicator for a given ticker, display currency and time period."
     field :macd, list_of(:macd) do
       arg(:ticker, non_null(:string))

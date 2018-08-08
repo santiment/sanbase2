@@ -1,6 +1,5 @@
 import 'rxjs'
 import { combineEpics } from 'redux-observable'
-import handleFollowProject from './handleFollowProject'
 import handleOffline from './handleOffline'
 import handleLauched from './handleLaunch'
 import handleLogout from './handleLogout'
@@ -17,7 +16,6 @@ import removeAssetFromListEpic from './removeAssetFromListEpic'
 import { fetchAssetsEpic, fetchAssetsFromListEpic } from './fetchAssetsEpic'
 
 export default combineEpics(
-  handleFollowProject,
   handleOffline,
   handleLauched,
   handleLogout,

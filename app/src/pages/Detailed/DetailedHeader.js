@@ -4,7 +4,6 @@ import {
   createSkeletonElement
 } from '@trainline/react-skeletor'
 import { compose } from 'recompose'
-import { connect } from 'react-redux'
 import { graphql } from 'react-apollo'
 import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
@@ -30,9 +29,7 @@ const DetailedHeader = ({
   },
   loading,
   empty,
-  isLoggedIn,
-  isFollowed,
-  handleFollow
+  isLoggedIn
 }) => {
   return (
     <div className='detailed-head'>
@@ -45,33 +42,11 @@ const DetailedHeader = ({
           </DIV>
           {isLoggedIn &&
             !loading && (
-              <div className='detailed-favorite'>
-                <Popup
-                  trigger={
-                    <i
-                      className={`fa fa-2x fa-star${isFollowed ? '' : '-o'}`}
-                      onClick={() =>
-                        handleFollow({
-                          projectId: project.id,
-                          actionType: isFollowed
-                            ? 'unfollowProject'
-                            : 'followProject'
-                        })
-                      }
-                      aria-hidden='true'
-                    />
-                  }
-                  content={
-                    isFollowed ? 'Unfollow this project' : 'Follow this project'
-                  }
-                  position='bottom center'
-                />
-                <AssetsListPopup
-                  projectId={project.id}
-                  slug={project.slug}
-                  isLoggedIn={isLoggedIn}
-                />
-              </div>
+              <AssetsListPopup
+                projectId={project.id}
+                slug={project.slug}
+                isLoggedIn={isLoggedIn}
+              />
             )}
         </div>
         <DIV className='datailed-project-description'>
@@ -94,20 +69,6 @@ const DetailedHeader = ({
   )
 }
 
-const mapDispatchToProps = dispatch => {
-  return {
-    handleFollow: ({ projectId, actionType }) => {
-      dispatch({
-        type: 'TOGGLE_FOLLOW',
-        payload: {
-          projectId,
-          actionType
-        }
-      })
-    }
-  }
-}
-
 export default compose(
   createSkeletonProvider(
     {
@@ -125,21 +86,5 @@ export default compose(
       backgroundColor: '#bdc3c7',
       color: '#bdc3c7'
     })
-  ),
-  connect(undefined, mapDispatchToProps),
-  graphql(followedProjectsGQL, {
-    name: 'FollowedProjects',
-    options: ({ isLoggedIn }) => ({ skip: !isLoggedIn }),
-    props: ({ FollowedProjects, ownProps }) => {
-      const { followedProjects = [] } = FollowedProjects
-      const { project = {} } = ownProps
-      return {
-        isFollowed:
-          followedProjects &&
-          followedProjects.some(val => {
-            return val.id === project.id
-          })
-      }
-    }
-  })
+  )
 )(DetailedHeader)

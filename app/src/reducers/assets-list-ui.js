@@ -2,9 +2,9 @@ import * as actions from './../actions/types'
 
 export const initialState = {
   selectedId: null,
-  assetsListNewItemPending: false,
-  assetsListNewItemFailed: false,
-  assetsListNewItemSuccess: false
+  newItemPending: false,
+  newItemFailed: false,
+  newItemSuccess: false
 }
 
 export default (state = initialState, action) => {
@@ -17,16 +17,16 @@ export default (state = initialState, action) => {
     case actions.USER_ADD_NEW_ASSET_LIST_SUCCESS:
       return {
         ...state,
-        assetsListNewItemSuccess: true,
-        assetsListNewItemFailed: false,
-        assetsListNewItemPending: false
+        newItemSuccess: true,
+        newItemFailed: false,
+        newItemPending: false
       }
     case actions.USER_ADD_NEW_ASSET_LIST_FAILED:
       return {
         ...state,
-        assetsListNewItemFailed: true,
-        assetsListNewItemSuccess: false,
-        assetsListNewItemPending: false
+        newItemFailed: true,
+        newItemSuccess: false,
+        newItemPending: false
       }
     case actions.USER_ADD_NEW_ASSET_LIST_CANCEL:
       return {

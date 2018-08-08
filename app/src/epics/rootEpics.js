@@ -1,6 +1,5 @@
 import 'rxjs'
 import { combineEpics } from 'redux-observable'
-import handleFollowProject from './handleFollowProject'
 import handleOffline from './handleOffline'
 import handleLauched from './handleLaunch'
 import handleLogout from './handleLogout'
@@ -14,7 +13,6 @@ import handleNightModeToggle from './handleNightModeToggle'
 import keyboardEpic from './keyboardEpic'
 
 export default combineEpics(
-  handleFollowProject,
   handleOffline,
   handleLauched,
   handleLogout,

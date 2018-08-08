@@ -4,7 +4,7 @@ import { Input } from 'semantic-ui-react'
 import './CreateWatchlistBtn.css'
 
 const initialState = {
-  newAssetsListTitle: ''
+  newTitle: ''
 }
 
 class CreateWatchlistBtn extends React.Component {
@@ -15,19 +15,19 @@ class CreateWatchlistBtn extends React.Component {
       this.props.assetsListUI.newItemSuccess !==
       prevProps.assetsListUI.newItemSuccess
     ) {
-      this.setState({ newAssetsListTitle: initialState.newAssetsListTitle })
+      this.setState({ newTitle: initialState.newTitle })
     }
   }
 
   handleOnChange = (e, data) => {
-    this.setState({ newAssetsListTitle: data.value })
+    this.setState({ newTitle: data.value })
   }
 
   handleAddNewAssetsList = () => {
-    const name = this.state.newAssetsListTitle
+    const name = this.state.newTitle
     if (name && name.length > 0) {
       this.props.addNewAssetList({
-        name: this.state.newAssetsListTitle.toLowerCase()
+        name: this.state.newTitle.toLowerCase()
       })
     }
   }
@@ -37,7 +37,7 @@ class CreateWatchlistBtn extends React.Component {
       <div className='create-new-watchlist-btn'>
         <Input
           disabled={this.props.assetsListUI.newItemPending}
-          value={this.state.newAssetsListTitle}
+          value={this.state.newTitle}
           action={{
             color: 'google plus',
             labelPosition: 'left',

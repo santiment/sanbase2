@@ -4,8 +4,6 @@ import {
   createSkeletonElement
 } from '@trainline/react-skeletor'
 import { compose } from 'recompose'
-import { graphql } from 'react-apollo'
-import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import AssetsListPopup from './../../components/AssetsListPopup/AssetsListPopup'
@@ -14,7 +12,6 @@ import {
   formatBTC,
   formatNumber
 } from './../../utils/formatting'
-import { followedProjectsGQL } from './DetailedGQL'
 import './DetailedHeader.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')

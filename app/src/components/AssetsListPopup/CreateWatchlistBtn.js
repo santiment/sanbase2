@@ -1,20 +1,19 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Input } from 'semantic-ui-react'
-import './AddNewWatchlistBtn.css'
+import './CreateWatchlistBtn.css'
 
 const initialState = {
   newAssetsListTitle: ''
 }
 
-class AddNewAssetsList extends React.Component {
+class CreateWatchlistBtn extends React.Component {
   state = initialState
 
   componentDidUpdate (prevProps) {
     if (
-      this.props.assetsListUI.assetsListNewItemSuccess &&
-      this.props.assetsListUI.assetsListNewItemSuccess !==
-        prevProps.assetsListUI.assetsListNewItemSuccess
+      this.props.assetsListUI.newItemSuccess !==
+      prevProps.assetsListUI.newItemSuccess
     ) {
       this.setState({ newAssetsListTitle: initialState.newAssetsListTitle })
     }
@@ -37,7 +36,7 @@ class AddNewAssetsList extends React.Component {
     return (
       <div className='create-new-watchlist-btn'>
         <Input
-          disabled={this.props.assetsListUI.assetsListNewItemPending}
+          disabled={this.props.assetsListUI.newItemPending}
           value={this.state.newAssetsListTitle}
           action={{
             color: 'google plus',
@@ -59,8 +58,8 @@ class AddNewAssetsList extends React.Component {
   }
 }
 
-AddNewAssetsList.propTypes = {
+CreateWatchlistBtn.propTypes = {
   addNewAssetList: PropTypes.func.isRequired
 }
 
-export default AddNewAssetsList
+export default CreateWatchlistBtn

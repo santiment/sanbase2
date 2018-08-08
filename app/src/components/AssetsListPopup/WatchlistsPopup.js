@@ -3,7 +3,7 @@ import { graphql } from 'react-apollo'
 import { compose } from 'recompose'
 import { Popup, Button } from 'semantic-ui-react'
 import { AssetsListGQL } from './AssetsListGQL'
-import AssetsList from './AssetsList'
+import Watchlists from './Watchlists'
 import './WatchlistsPopup.css'
 
 const POLLING_INTERVAL = 2000
@@ -26,7 +26,7 @@ const AssetsListPopup = ({
     <Popup
       className='watchlists-popup'
       content={
-        <AssetsList
+        <Watchlists
           isNavigation={isNavigation}
           projectId={projectId}
           slug={slug}
@@ -42,13 +42,13 @@ const AssetsListPopup = ({
 
 export default compose(
   graphql(AssetsListGQL, {
-    name: 'AssetsList',
+    name: 'Watchlists',
     options: ({ isLoggedIn }) => ({
       skip: !isLoggedIn,
       pollInterval: POLLING_INTERVAL
     }),
-    props: ({ AssetsList, ownProps }) => {
-      const { fetchUserLists = [] } = AssetsList
+    props: ({ Watchlists }) => {
+      const { fetchUserLists = [] } = Watchlists
       return {
         lists: fetchUserLists
       }

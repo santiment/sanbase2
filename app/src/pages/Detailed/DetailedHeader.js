@@ -6,7 +6,7 @@ import {
 import { compose } from 'recompose'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
-import AssetsListPopup from './../../components/AssetsListPopup/AssetsListPopup'
+import WatchlistsPopup from './../../components/AssetsListPopup/WatchlistsPopup'
 import {
   formatCryptoCurrency,
   formatBTC,
@@ -39,7 +39,7 @@ const DetailedHeader = ({
           </DIV>
           {isLoggedIn &&
             !loading && (
-              <AssetsListPopup
+              <WatchlistsPopup
                 projectId={project.id}
                 slug={project.slug}
                 isLoggedIn={isLoggedIn}

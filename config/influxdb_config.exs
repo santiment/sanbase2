@@ -8,13 +8,13 @@ use Mix.Config
 config :sanbase, Sanbase.Prices.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
+  pool: [max_overflow: 15, size: 30],
   database: "prices"
 
 config :sanbase, Sanbase.Github.Store,
   host: {:system, "INFLUXDB_HOST", "localhost"},
   port: {:system, "INFLUXDB_PORT", 8086},
-  pool: [max_overflow: 10, size: 20],
+  pool: [max_overflow: 15, size: 30],
   database: "github_activity"
 
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,

@@ -3,23 +3,23 @@ defmodule Sanbase.Seeds.DailyActiveAddressesSeed do
 
   def populate() do
     changesets = [
-      make_changeset("0x123123", random_date(), random_non_neg_integer()),
-      make_changeset("0x123123", random_date(), random_non_neg_integer()),
-      make_changeset("0x123123", random_date(), random_non_neg_integer()),
-      make_changeset("0x123123", random_date(), random_non_neg_integer()),
-      make_changeset("0x123123", random_date(), random_non_neg_integer()),
-      make_changeset("0x123123", random_date(), random_non_neg_integer()),
-      make_changeset("0x123123", random_date(), random_non_neg_integer()),
-      make_changeset("0x123123", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer()),
-      make_changeset("0x543210", random_date(), random_non_neg_integer())
+      make_changeset(contract1(), random_date(), random_non_neg_integer()),
+      make_changeset(contract1(), random_date(), random_non_neg_integer()),
+      make_changeset(contract1(), random_date(), random_non_neg_integer()),
+      make_changeset(contract1(), random_date(), random_non_neg_integer()),
+      make_changeset(contract1(), random_date(), random_non_neg_integer()),
+      make_changeset(contract1(), random_date(), random_non_neg_integer()),
+      make_changeset(contract1(), random_date(), random_non_neg_integer()),
+      make_changeset(contract1(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer()),
+      make_changeset(contract2(), random_date(), random_non_neg_integer())
     ]
 
     Enum.map(changesets, &Sanbase.TimescaleRepo.insert/1)

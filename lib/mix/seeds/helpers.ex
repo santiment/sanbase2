@@ -1,4 +1,10 @@
 defmodule Sanbase.Seeds.Helpers do
+  @moduledoc ~s"""
+  Provides helper functions for easier consturcing of seeds.
+  """
+  def contract1(), do: "0x123123"
+  def contract2(), do: "0x543210"
+
   def random_date(days \\ 90) do
     day_shift = :rand.uniform(days)
 

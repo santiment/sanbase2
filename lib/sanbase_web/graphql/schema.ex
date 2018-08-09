@@ -420,10 +420,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns a list of mentions count for a given project and time interval.
 
     Arguments description:
-      * slug - a string
-      * interval - an integer followed by one of: `m`, `h`, `d`
-      * from - a string representation of datetime value, e.g. "2018-04-16T10:02:19Z"
-      * to - a string representation of datetime value, e.g. "2018-04-16T10:02:19Z"
+      * slug - a string uniquely identifying a project
+      * interval - an integer followed by one of: `m`, `h`, `d`, `w`
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * socialVolumeType - one of the following:
         1. PROFESSIONAL_TRADERS_CHAT_OVERVIEW
         2. TELEGRAM_CHATS_OVERVIEW

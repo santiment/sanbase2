@@ -6,7 +6,6 @@ import { replace } from 'react-router-redux'
 import { showNotification } from './../actions/rootActions'
 import * as actions from './../actions/types'
 import { savePrevAuthProvider } from './../utils/localStorage'
-import { getBackend } from './../utils/utils'
 
 const emailLoginVerifyGQL = gql`
   mutation emailLoginVerify($email: String!, $token: String!) {
@@ -39,7 +38,7 @@ export const handleLoginSuccess = (action$, store, { client }) =>
         Observable.of(
           consent
             ? window.location.replace(
-              `${getBackend()}/consent?consent=${consent}&token=${token}`
+              `/consent?consent=${consent}&token=${token}`
             )
             : replace('/')
         )

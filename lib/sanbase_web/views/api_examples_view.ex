@@ -26,6 +26,11 @@ defmodule SanbaseWeb.ApiExamplesView do
         variables: "{}",
         docs: docs(:transaction_volume)
       },
+      exchange_funds_flow: %{
+        query: exchange_funds_flow(),
+        variables: "{}",
+        docs: docs(:exchange_funds_flow)
+      },
       ga: %{
         query: ga(),
         variables: "{}",
@@ -182,6 +187,22 @@ defmodule SanbaseWeb.ApiExamplesView do
           }
         }
       }
+    }
+    """
+  end
+
+  defp exchange_funds_flow do
+    """
+    query {
+      exchangeFundsFlow(
+        slug: "santiment",
+        from: "2018-01-01 16:00:00Z",
+        to: "2018-06-05 16:00:00Z",
+        interval: "6h") {
+          datetime
+          inOutDifference
+        }
+      )
     }
     """
   end

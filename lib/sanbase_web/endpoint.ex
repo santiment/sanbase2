@@ -61,6 +61,10 @@ defmodule SanbaseWeb.Endpoint do
     end
   end
 
+  def website_url() do
+    Config.get(:website_url)
+  end
+
   def frontend_url() do
     Config.get(:frontend_url)
   end

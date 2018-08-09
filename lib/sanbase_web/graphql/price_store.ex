@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.PriceStore do
   end
 
   defp fetch_last_price_record(measurement) do
-    with {:ok, [[_dt, price_usd, price_btc, _mcap, _volume]]} <-
+    with {:ok, [[_dt, _mcap, price_btc, price_usd, _volume]]} <-
            Prices.Store.last_record(measurement) do
       {price_usd, price_btc}
     else

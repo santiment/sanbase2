@@ -32,15 +32,15 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
     args = [from, to, contract]
 
     """
-    SELECT sum(incoming_exchange_funds) - sum(outgoing_exchange_funds) AS value
+    SELECT (coalesce(sum(incoming_exchange_funds),0)-coalesce(sum(outgoing_exchange_funds),0)) AS value
     FROM #{@table}
     WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
     """
     |> Timescaledb.bucket_by_interval(args, interval)
-    |> Timescaledb.timescaledb_execute(fn [datetime, exchange_funds_flow] ->
+    |> Timescaledb.timescaledb_execute(fn [datetime, in_out_difference] ->
       %{
         datetime: Timescaledb.timestamp_to_datetime(datetime),
-        exchange_funds_flow: exchange_funds_flow / :math.pow(10, token_decimals)
+        in_out_difference: in_out_difference / :math.pow(10, token_decimals)
       }
     end)
   end

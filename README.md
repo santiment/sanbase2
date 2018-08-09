@@ -28,7 +28,7 @@ This setup is going to start 2 processes:
   Additional setup:
 
   * To run features requiring TimescaleDB you have to manually install it.
-   Here the the instructions for [Mac](http://docs.timescale.com/v0.10/getting-started/installation/mac/installation-homebrew) and [Linux](http://docs.timescale.com/v0.10/getting-started/installation/linux/installation-apt-ubuntu). With TimescaleDB you need to the ecto commands with `_all` suffix - `mix ecto.setup_all`, `mix ecto.migrate_all`, etc.
+   Here the the instructions for [Mac](http://docs.timescale.com/v0.10/getting-started/installation/mac/installation-homebrew) and [Linux](http://docs.timescale.com/v0.10/getting-started/installation/linux/installation-apt-ubuntu). With TimescaleDB you need to use the ecto commands with `_all` suffix - `mix ecto.setup_all`, `mix ecto.migrate_all`, etc.
   * By default the `mix test` command excludes all tests with `timescaledb` tag. To run all tests you should either use `mix test --include timescaledb` or run the predefined alias `MIX_ENV=test mix test_all`
 
 ## Running with docker

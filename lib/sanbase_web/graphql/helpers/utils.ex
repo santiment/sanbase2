@@ -84,17 +84,6 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     |> Ecto.Changeset.traverse_errors(&format_error/1)
   end
 
-  def ticker_by_slug("TOTAL_MARKET"), do: "TOTAL_MARKET"
-
-  def ticker_by_slug(slug) do
-    from(
-      p in Sanbase.Model.Project,
-      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
-      select: p.ticker
-    )
-    |> Sanbase.Repo.one()
-  end
-
   @doc ~s"""
   Works when the result is a list of elements that contain a datetime and the query arguments
   have a `from` argument. In that case the first element's `datetime` is update to be

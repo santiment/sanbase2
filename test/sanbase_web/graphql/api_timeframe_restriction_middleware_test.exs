@@ -87,10 +87,10 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
       |> Repo.insert!()
 
     [
-     staked_user: staked_user,
-     not_staked_user: not_staked_user,
-     santiment_slug: san_slug,
-     not_santiment_slug: not_san_slug
+      staked_user: staked_user,
+      not_staked_user: not_staked_user,
+      santiment_slug: san_slug,
+      not_santiment_slug: not_san_slug
     ]
   end
 

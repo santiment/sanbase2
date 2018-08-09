@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
   def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
-    with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Blockchain.BurnRate,
@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Blockchain.TransactionVolume,
@@ -96,7 +96,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
-    with {:ok, contract_address, _token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, _token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Blockchain.DailyActiveAddresses,
@@ -142,7 +142,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         } = args,
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Blockchain.ExchangeFundsFlow,
@@ -210,7 +210,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   def calculate_average_daily_active_addresses(project, from, to) do
-    with {:ok, contract_address, _token_decimals} <- project_to_contract_info(project),
+    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project),
          {:ok, active_addresses} <-
            Blockchain.DailyActiveAddresses.active_addresses(contract_address, from, to) do
       {:ok, active_addresses}
@@ -222,6 +222,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         {:ok, 0}
     end
   end
+<<<<<<< HEAD
 
   defp slug_to_contract_info(slug) do
     with project when not is_nil(project) <- get_project_by_slug(slug),
@@ -237,4 +238,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     |> where([p], p.coinmarketcap_id == ^slug)
     |> Repo.one()
   end
+=======
+>>>>>>> Refactor Graphql Utils module and move the appropriate functions to Project Context module
 end

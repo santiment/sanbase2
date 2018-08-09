@@ -435,7 +435,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     result =
       result
       |> Enum.map(fn item ->
-        for {key, val} <- item, into: %{}, do: {String.to_atom(key), val}
+        for {key, val} <- item, into: %{}, do: {String.to_existing_atom(key), val}
       end)
 
     {:ok, result}

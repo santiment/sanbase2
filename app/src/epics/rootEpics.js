@@ -7,8 +7,8 @@ import handleEmailLogin, { handleLoginSuccess } from './handleEmailLogin'
 import handleEthLogin from './handleEthLogin'
 import handleGDPR from './handleGDPR'
 import handleRouter from './handleRouter'
-import handleApikeyGenerate from './handleApikeyGenerate'
-import handleApikeyRevoke from './handleApikeyRevoke'
+import apikeyGenerateEpic from './apikeyGenerateEpic'
+import apikeyRevokeEpic from './apikeyRevokeEpic'
 import addNewAssetsListEpic, { addNewSuccessEpic } from './addNewAssetsListEpic'
 import removeAssetsListEpic from './removeAssetsListEpic'
 import addAssetToListEpic from './addAssetToListEpic'
@@ -24,8 +24,8 @@ export default combineEpics(
   handleEthLogin,
   handleGDPR,
   handleRouter,
-  handleApikeyGenerate,
-  handleApikeyRevoke,
+  apikeyGenerateEpic,
+  apikeyRevokeEpic,
   // user's assets lists
   addNewAssetsListEpic,
   addNewSuccessEpic,

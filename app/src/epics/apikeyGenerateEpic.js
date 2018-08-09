@@ -14,7 +14,7 @@ const generateApikeyGQL = gql`
   }
 `
 
-const handleApikeyGenerate = (action$, store, { client }) =>
+const apikeyGenerateEpic = (action$, store, { client }) =>
   action$
     .ofType(USER_APIKEY_GENERATE)
     .debounceTime(200)
@@ -38,4 +38,4 @@ const handleApikeyGenerate = (action$, store, { client }) =>
         })
     })
 
-export default handleApikeyGenerate
+export default apikeyGenerateEpic

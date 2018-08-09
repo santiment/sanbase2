@@ -6,7 +6,7 @@
 use Mix.Config
 
 # General application configuration
-config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.ClickhouseRepo]
+config :sanbase, ecto_repos: [Sanbase.Repo]
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 

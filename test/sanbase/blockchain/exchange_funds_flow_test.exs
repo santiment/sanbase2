@@ -63,31 +63,31 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlowTest do
     assert result == [
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z"),
-               exchange_funds_flow: 1000.0
+               in_out_difference: 1000.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00.00Z"),
-               exchange_funds_flow: 0.0
+               in_out_difference: 0.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.00Z"),
-               exchange_funds_flow: 0.0
+               in_out_difference: 0.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00.00Z"),
-               exchange_funds_flow: -245.0
+               in_out_difference: -245.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00.00Z"),
-               exchange_funds_flow: -4850.0
+               in_out_difference: -4850.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-15 12:00:00.00Z"),
-               exchange_funds_flow: 0.0
+               in_out_difference: 0.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.00Z"),
-               exchange_funds_flow: 3950.0
+               in_out_difference: 3950.0
              }
            ]
   end
@@ -104,23 +104,23 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlowTest do
     assert result == [
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z"),
-               exchange_funds_flow: 0.0
+               in_out_difference: 0.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00.00Z"),
-               exchange_funds_flow: 0.0
+               in_out_difference: 0.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00.00Z"),
-               exchange_funds_flow: 0.0
+               in_out_difference: 0.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-15 06:00:00.00Z"),
-               exchange_funds_flow: 0.0
+               in_out_difference: 0.0
              },
              %{
                datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.00Z"),
-               exchange_funds_flow: 0.0
+               in_out_difference: 0.0
              }
            ]
   end
@@ -136,7 +136,7 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlowTest do
 
     assert result == [
              %{
-               exchange_funds_flow: -145.0,
+               in_out_difference: -145.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
              }
            ]

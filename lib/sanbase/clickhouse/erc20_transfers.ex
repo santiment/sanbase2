@@ -5,10 +5,10 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   use Ecto.Schema
 
   import Ecto.Query
-  import Sanbase.Clickhouse.EctoFunctions
 
-  alias Sanbase.ClickhouseRepo
   alias __MODULE__
+  require Sanbase.ClickhouseRepo
+  alias Sanbase.ClickhouseRepo
 
   @primary_key false
   @timestamps_opts updated_at: false
@@ -20,6 +20,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     field(:transactionHash, :string, primary_key: true)
     field(:value, :float)
     field(:blockNumber, :integer)
+    alias Sanbase.ClickhouseRepo
     field(:logIndex, :integer)
   end
 
@@ -41,7 +42,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       order_by: [desc: transfer.value],
       limit: ^limit
     )
-    |> query_all_use_prewhere()
+    |> ClickhouseRepo.all_prewhere()
   end
 
   def count_contract_transfers(contract, from_datetime, to_datetime) do
@@ -52,6 +53,6 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
           transfer.dt < ^to_datetime,
       select: count("*")
     )
-    |> query_all_use_prewhere()
+    |> ClickhouseRepo.all_prewhere()
   end
 end

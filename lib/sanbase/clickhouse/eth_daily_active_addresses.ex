@@ -8,10 +8,9 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
   use Ecto.Schema
 
   import Ecto.Query
-  import Sanbase.Clickhouse.EctoFunctions
 
-  alias Sanbase.ClickhouseRepo
   alias __MODULE__
+  alias Sanbase.ClickhouseRepo
 
   @timestamps_opts updated_at: false
   @primary_key false
@@ -23,16 +22,5 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
 
   def changeset(_, _attrs \\ %{}) do
     raise "Should not try to change eth daily active addresses"
-  end
-
-  def count_eth_daa(from_datetime, to_datetime) do
-    from(
-      daa in EthDailyActiveAddresses,
-      where: daa.dt > ^from_datetime and daa.dt < ^to_datetime,
-      group_by: daa.dt,
-      order_by: daa.dt,
-      select: {daa.dt, count("*")}
-    )
-    |> query_all_use_prewhere()
   end
 end

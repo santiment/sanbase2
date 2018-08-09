@@ -1,17 +1,21 @@
 defmodule Sanbase.Clickhouse.EthTransfers do
   use Ecto.Schema
 
+  require Logger
+
   import Ecto.Query
-  import Sanbase.Clickhouse.EctoFunctions
 
   alias __MODULE__
+  require Sanbase.ClickhouseRepo
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Model.Project
 
+  @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
 
   @primary_key false
   @timestamps_opts updated_at: false
-  schema "eth_transfers2" do
+  schema @table do
     field(:dt, :utc_datetime)
     field(:from, :string, primary_key: true)
     field(:to, :string, primary_key: true)
@@ -37,7 +41,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
         order_by: [desc: transfer.value],
         limit: ^size
       )
-      |> query_all_use_prewhere()
+      |> ClickhouseRepo.all_prewhere()
   end
 
   @doc ~s"""
@@ -170,7 +174,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       |> Enum.map(fn {:ok, data} -> data end)
       |> Stream.zip()
       |> Stream.map(&Tuple.to_list/1)
-      |> Enum.map(&reduce_values/1)
+      |> Enum.map(&reduce_eth_spent/1)
 
     {:ok, total_eth_spent_over_time}
   end
@@ -189,7 +193,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       order_by: ^order_by,
       limit: ^size
     )
-    |> query_all_use_prewhere()
+    |> ClickhouseRepo.all_prewhere()
   end
 
   defp wallet_transfers(wallets, from_datetime, to_datetime, size, :in, order_by)
@@ -202,7 +206,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       order_by: ^order_by,
       limit: ^size
     )
-    |> query_all_use_prewhere()
+    |> ClickhouseRepo.all_prewhere()
   end
 
   defp wallet_transfers(wallets, from_datetime, to_datetime, size, :all, order_by)
@@ -216,7 +220,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       order_by: ^order_by,
       limit: ^size
     )
-    |> query_all_use_prewhere()
+    |> ClickhouseRepo.all_prewhere()
   end
 
   defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do
@@ -235,7 +239,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       UNION ALL
 
       SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
-      FROM eth_transfers2
+      FROM #{@table}
       PREWHERE from IN (?3) AND NOT to IN (?3)
       AND dt >= toDateTime(?4)
       AND dt <= toDateTime(?5)
@@ -255,5 +259,15 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     ]
 
     {query, args}
+  end
+
+  defp reduce_eth_spent([%{datetime: datetime} = elem | _] = values) do
+    total_eth_spent =
+      values
+      |> Enum.reduce(0, fn %{eth_spent: eth_spent}, acc ->
+        eth_spent + acc
+      end)
+
+    %{datetime: datetime, eth_spent: total_eth_spent}
   end
 end

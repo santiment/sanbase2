@@ -7,8 +7,9 @@ defmodule Sanbase.Clickhouse.Erc20TransactionVolume do
   use Ecto.Schema
 
   import Ecto.Query
-  alias Sanbase.ClickhouseRepo
+
   alias __MODULE__
+  alias Sanbase.ClickhouseRepo
 
   @primary_key false
   @timestamps_opts updated_at: false

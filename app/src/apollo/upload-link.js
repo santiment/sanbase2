@@ -1,6 +1,6 @@
 import { ApolloLink, Observable } from 'apollo-link'
 import { printAST } from 'apollo-client'
-import { getBackend } from './../utils/utils'
+import { getOrigin } from './../utils/utils'
 
 const isObject = value => value !== null && typeof value === 'object'
 
@@ -23,7 +23,7 @@ const UploadLink = new ApolloLink((operation, forward) => {
       formData.append('variables', JSON.stringify(variables))
 
       return new Observable(observer => {
-        fetch(`${getBackend()}/graphql`, {
+        fetch(`${getOrigin()}/graphql`, {
           method: 'POST',
           headers: {
             ...headers

@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   end
 
   def history_price(_root, %{slug: slug} = args, %{context: %{loader: loader}}) do
-    with ticker when not is_nil(ticker) <- Sanbase.Model.Project.ticker_by_slug(slug) do
+    with ticker when not is_nil(ticker) <- Project.ticker_by_slug(slug) do
       ticker_cmc_id = ticker <> "_" <> slug
 
       loader

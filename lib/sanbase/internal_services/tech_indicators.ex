@@ -2,6 +2,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   require Logger
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
@@ -193,6 +194,52 @@ defmodule Sanbase.InternalServices.TechIndicators do
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
           "Cannot fetch erc20 exchange funds flow data: #{HTTPoison.Error.message(error)}"
+        )
+    end
+  end
+
+  def social_volume(
+        slug,
+        datetime_from,
+        datetime_to,
+        interval,
+        social_volume_type
+      ) do
+    social_volume_request(
+      slug,
+      datetime_from,
+      datetime_to,
+      interval,
+      social_volume_type
+    )
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Poison.decode(body)
+        social_volume_result(result)
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        error_result("Error status #{status} fetching social volume for project #{slug}: #{body}")
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result(
+          "Cannot fetch social volume data for project #{slug}: #{HTTPoison.Error.message(error)}"
+        )
+    end
+  end
+
+  def social_volume_projects() do
+    social_volume_projects_request()
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Poison.decode(body)
+        social_volume_projects_result(result)
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        error_result("Error status #{status} fetching social volume projects: #{body}")
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result(
+          "Cannot fetch social volume projects data: #{HTTPoison.Error.message(error)}"
         )
     end
   end
@@ -436,6 +483,68 @@ defmodule Sanbase.InternalServices.TechIndicators do
       result
       |> Enum.map(fn item ->
         for {key, val} <- item, into: %{}, do: {String.to_existing_atom(key), val}
+      end)
+
+    {:ok, result}
+  end
+
+  defp social_volume_request(
+         slug,
+         datetime_from,
+         datetime_to,
+         interval,
+         social_volume_type
+       ) do
+    from_unix = DateTime.to_unix(datetime_from)
+    to_unix = DateTime.to_unix(datetime_to)
+    ticker = Utils.ticker_by_slug(slug)
+    ticker_slug = "#{ticker}_#{slug}"
+
+    url = "#{tech_indicators_url()}/indicator/#{social_volume_type}"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"project", ticker_slug},
+        {"datetime_from", from_unix},
+        {"datetime_to", to_unix},
+        {"interval", interval}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
+  defp social_volume_result(result) do
+    result =
+      result
+      |> Enum.map(fn %{
+                       "timestamp" => timestamp,
+                       "mentions_count" => mentions_count
+                     } ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          mentions_count: mentions_count
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  defp social_volume_projects_request() do
+    url = "#{tech_indicators_url()}/indicator/social_volume_projects"
+
+    options = [recv_timeout: @recv_timeout]
+
+    http_client().get(url, [], options)
+  end
+
+  defp social_volume_projects_result(result) do
+    result =
+      result
+      |> Enum.map(fn ticker_slug ->
+        String.split(ticker_slug, "_", parts: 2)
+        |> Enum.at(1)
       end)
 
     {:ok, result}

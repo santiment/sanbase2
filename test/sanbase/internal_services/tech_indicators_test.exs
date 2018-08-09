@@ -371,4 +371,144 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       assert capture_log(result) =~ "Cannot fetch erc20 exchange funds flow data: :econnrefused\n"
     end
   end
+
+  describe "social_volume/5" do
+    test "response: success" do
+      from = 1_523_876_400
+      to = 1_523_880_000
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body:
+             "[{\"mentions_count\": 5, \"timestamp\": 1523876400}, {\"mentions_count\": 15, \"timestamp\": 1523880000}]",
+           status_code: 200
+         }}
+      )
+
+      result =
+        TechIndicators.social_volume(
+          "santiment",
+          DateTime.from_unix!(from),
+          DateTime.from_unix!(to),
+          "1h",
+          :telegram_discussion_overview
+        )
+
+      assert result ==
+               {:ok,
+                [
+                  %{
+                    mentions_count: 5,
+                    datetime: DateTime.from_unix!(from)
+                  },
+                  %{
+                    mentions_count: 15,
+                    datetime: DateTime.from_unix!(to)
+                  }
+                ]}
+    end
+
+    test "response: 404" do
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: "Some message",
+           status_code: 404
+         }}
+      )
+
+      result = fn ->
+        TechIndicators.social_volume(
+          "santiment",
+          DateTime.from_unix!(1_523_876_400),
+          DateTime.from_unix!(1_523_880_000),
+          "1h",
+          :telegram_discussion_overview
+        )
+      end
+
+      assert capture_log(result) =~
+               "Error status 404 fetching social volume for project santiment: Some message\n"
+    end
+
+    test "response: error" do
+      mock(
+        HTTPoison,
+        :get,
+        {:error,
+         %HTTPoison.Error{
+           reason: :econnrefused
+         }}
+      )
+
+      result = fn ->
+        TechIndicators.social_volume(
+          "santiment",
+          DateTime.from_unix!(1_523_876_400),
+          DateTime.from_unix!(1_523_880_000),
+          "1h",
+          :telegram_discussion_overview
+        )
+      end
+
+      assert capture_log(result) =~
+               "Cannot fetch social volume data for project santiment: :econnrefused\n"
+    end
+  end
+
+  describe "social_volume_projects/0" do
+    test "response: success" do
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body:
+             "[\"ADA_cardano\", \"BCH_bitcoin-cash\", \"BTC_bitcoin\", \"DRGN_dragonchain\", \"EOS_eos\"]",
+           status_code: 200
+         }}
+      )
+
+      result = TechIndicators.social_volume_projects()
+
+      assert result == {:ok, ["cardano", "bitcoin-cash", "bitcoin", "dragonchain", "eos"]}
+    end
+
+    test "response: 404" do
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: "Some message",
+           status_code: 404
+         }}
+      )
+
+      result = fn -> TechIndicators.social_volume_projects() end
+
+      assert capture_log(result) =~
+               "Error status 404 fetching social volume projects: Some message\n"
+    end
+
+    test "response: error" do
+      mock(
+        HTTPoison,
+        :get,
+        {:error,
+         %HTTPoison.Error{
+           reason: :econnrefused
+         }}
+      )
+
+      result = fn -> TechIndicators.social_volume_projects() end
+
+      assert capture_log(result) =~ "Cannot fetch social volume projects data: :econnrefused\n"
+    end
+  end
 end

@@ -47,4 +47,15 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:exchange_volume_btc, :float)
     field(:percent_diff_exchange_volume_btc, :float)
   end
+
+  object :social_volume do
+    field(:datetime, non_null(:datetime))
+    field(:mentions_count, :integer)
+  end
+
+  enum :social_volume_type do
+    value(:professional_traders_chat_overview)
+    value(:telegram_chats_overview)
+    value(:telegram_discussion_overview)
+  end
 end

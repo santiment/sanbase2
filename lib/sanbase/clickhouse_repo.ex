@@ -93,12 +93,12 @@ defmodule Sanbase.ClickhouseRepo do
       ClickhouseRepo.query(query, args)
       |> case do
         {:ok, result} ->
-          transform_fn = transform_fn
+          transform_fn = transform_fn || (&ClickhouseRepo.load(__MODULE__, {result.columns, &1}))
 
           result =
             Enum.map(
               result.rows,
-              &ClickhouseRepo.load(__MODULE__, {result.columns, &1})
+              transform_fn
             )
 
           {:ok, result}
@@ -106,13 +106,6 @@ defmodule Sanbase.ClickhouseRepo do
         {:error, error} ->
           {:error, error}
       end
-    end
-  end
-
-  # Private functions and macros
-
-  defmacro query_transform(repo, query, args, transform_fn) do
-    quote bind_quoted: [repo: repo, query: query, args: args, transform_fn: transform_fn] do
     end
   end
 end

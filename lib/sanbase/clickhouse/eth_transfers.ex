@@ -29,12 +29,14 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   import Ecto.Query
 
   alias __MODULE__
+  require Sanbase.ClickhouseRepo
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
 
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
 
+  @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
 
   @primary_key false
@@ -192,7 +194,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       |> Enum.map(fn {:ok, data} -> data end)
       |> Stream.zip()
       |> Stream.map(&Tuple.to_list/1)
-      |> Enum.map(&reduce_values/1)
+      |> Enum.map(&reduce_eth_spent/1)
 
     {:ok, total_eth_spent_over_time}
   end

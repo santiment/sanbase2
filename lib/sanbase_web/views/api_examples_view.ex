@@ -32,6 +32,11 @@ defmodule SanbaseWeb.ApiExamplesView do
         variables: "{}",
         docs: docs(:github_activity)
       },
+      erc20_exchange_funds_flow: %{
+        query: erc20_exchange_funds_flow(),
+        variables: "{}",
+        docs: docs(:erc20_exchange_funds_flow)
+      },
       social_volume: %{
         query: social_volume(),
         variables: "{}",
@@ -109,6 +114,34 @@ defmodule SanbaseWeb.ApiExamplesView do
         from: "2017-06-13 16:00:00Z",
         interval: "24h") {
           activity
+        }
+    }
+    """
+  end
+
+  defp erc20_exchange_funds_flow do
+    """
+    query {
+      erc20ExchangeFundsFlow(
+        from: "2018-04-16T10:02:19Z",
+        to: "2018-05-23T10:02:19Z") {
+          ticker,
+          contract,
+          exchangeIn,
+          exchangeOut,
+          exchangeDiff,
+          exchangeInUsd,
+          exchangeOutUsd,
+          exchangeDiffUsd,
+          percentDiffExchangeDiffUsd,
+          exchangeVolumeUsd,
+          percentDiffExchangeVolumeUsd,
+          exchangeInBtc,
+          exchangeOutBtc,
+          exchangeDiffBtc,
+          percentDiffExchangeDiffBtc,
+          exchangeVolumeBtc,
+          percentDiffExchangeVolumeBtc
         }
     }
     """

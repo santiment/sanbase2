@@ -98,6 +98,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
     )
   end
 
+  def erc20_exchange_funds_flow(
+        _root,
+        %{
+          from: from,
+          to: to
+        },
+        _resolution
+      ) do
+    TechIndicators.erc20_exchange_funds_flow(
+      from,
+      to
+    )
+  end
+
   def social_volume(
         _root,
         %{

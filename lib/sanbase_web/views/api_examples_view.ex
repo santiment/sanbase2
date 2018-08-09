@@ -31,6 +31,16 @@ defmodule SanbaseWeb.ApiExamplesView do
         query: ga(),
         variables: "{}",
         docs: docs(:github_activity)
+      },
+      social_volume: %{
+        query: social_volume(),
+        variables: "{}",
+        docs: docs(:social_volume)
+      },
+      social_volume_projects: %{
+        query: social_volume_projects(),
+        variables: "{}",
+        docs: docs(:social_volume_projects)
       }
     })
     |> as_html()
@@ -100,6 +110,31 @@ defmodule SanbaseWeb.ApiExamplesView do
         interval: "24h") {
           activity
         }
+    }
+    """
+  end
+
+  defp social_volume do
+    """
+    query {
+      socialVolume(
+        slug: "dragonchain",
+        from: "2018-04-16T10:02:19Z",
+        to: "2018-05-23T10:02:19Z",
+        interval:"1h",
+        socialVolumeType: TELEGRAM_DISCUSSION_OVERVIEW
+        ) {
+          mentionsCount,
+          datetime
+        }
+    }
+    """
+  end
+
+  defp social_volume_projects do
+    """
+    query {
+      socialVolumeProjects
     }
     """
   end

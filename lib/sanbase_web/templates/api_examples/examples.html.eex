@@ -116,3 +116,47 @@ curl \
     <%= "  #{ @api_url }" %>
 
 ```
+
+### Social Volume
+
+<%= @social_volume[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@social_volume[:variables])}&query=#{URI.encode(@social_volume[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @social_volume[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@social_volume[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```
+
+### Social Volume Projects
+
+<%= @social_volume_projects[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@social_volume_projects[:variables])}&query=#{URI.encode(@social_volume_projects[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @social_volume_projects[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@social_volume_projects[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```

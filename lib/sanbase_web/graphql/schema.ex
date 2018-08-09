@@ -417,6 +417,43 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end
 
+    @desc ~s"""
+    Returns a list of mentions count for a given project and time interval.
+
+    Arguments description:
+      * slug - a string uniquely identifying a project
+      * interval - an integer followed by one of: `m`, `h`, `d`, `w`
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * socialVolumeType - one of the following:
+        1. PROFESSIONAL_TRADERS_CHAT_OVERVIEW
+        2. TELEGRAM_CHATS_OVERVIEW
+        3. TELEGRAM_DISCUSSION_OVERVIEW
+        It is used to select the source of the mentions count.
+    """
+    field :social_volume, list_of(:social_volume) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, non_null(:string), default_value: "1d")
+      arg(:social_volume_type, non_null(:social_volume_type))
+
+      middleware(MultipleAuth, [
+        {JWTAuth, san_tokens: 1000},
+        {ApikeyAuth, san_tokens: 1000}
+      ])
+
+      complexity(&TechIndicatorsComplexity.social_volume/3)
+      resolve(&TechIndicatorsResolver.social_volume/3)
+    end
+
+    @desc ~s"""
+    Returns a list of slugs for which there is social volume data.
+    """
+    field :social_volume_projects, list_of(:string) do
+      resolve(&TechIndicatorsResolver.social_volume_projects/3)
+    end
+
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
     field :exchange_wallets, list_of(:wallet) do
       middleware(BasicAuth)

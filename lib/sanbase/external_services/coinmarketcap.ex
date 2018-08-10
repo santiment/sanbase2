@@ -18,7 +18,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.Notifications.CheckPrices
   alias Sanbase.Notifications.PriceVolumeDiff
   alias Sanbase.Utils.Config
 
@@ -132,16 +131,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       last_price_datetime = last_price_datetime(project)
       GraphData.fetch_and_store_prices(project, last_price_datetime)
 
-      process_notifications(project)
       Registry.unregister(Sanbase.Registry, key)
     end
-  end
-
-  defp process_notifications(%Project{} = project) do
-    CheckPrices.exec(project, "USD")
-    CheckPrices.exec(project, "BTC")
-
-    PriceVolumeDiff.exec(project, "USD")
   end
 
   defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id}) do

@@ -106,6 +106,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
       select: p.coinmarketcap_id
     )
-    |> Sanbase.Repo.one()
+    |> Sanbase.Repo.all()
+    |> case do
+      [] -> {:error, "There is no project with ticker #{ticker} that has a slug."}
+      [cmc_id | _] -> {:ok, cmc_id}
+    end
   end
 end

@@ -4,7 +4,7 @@ defmodule Sanbase.ExAdmin.Model.ExchangeEthAddress do
   alias Sanbase.Repo
   alias Sanbase.Model.ExchangeEthAddress
 
-  register_resource Sanbase.Model.ExchangeEthAddress do
+  register_resource ExchangeEthAddress do
     form exchange_eth_address do
       inputs do
         content do

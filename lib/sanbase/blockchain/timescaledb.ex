@@ -315,6 +315,17 @@ defmodule Sanbase.Timescaledb do
     end
   end
 
+  def table_name(table, schema \\ nil) do
+    require Sanbase.Utils.Config
+    schema = schema || Sanbase.Utils.Config.get(:blockchain_schema)
+
+    if schema do
+      "#{schema}.#{table}"
+    else
+      table
+    end
+  end
+
   # Currently unused
   defmacro time_bucket(interval) do
     quote do

@@ -59,6 +59,9 @@ config :sanbase, Sanbase.ClickhouseRepo,
   timeout: 60_000,
   pool_size: 50
 
+config :sanbase, Sanbase.Timescaledb,
+  blockchain_schema: {:system, "TIMESCALEDB_BLOCKCHAIN_SCHEMA", "etherbi"}
+
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 
 # Configures the endpoint

@@ -208,8 +208,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
           GraphData.fetch_and_store_prices(project, last_price_datetime)
 
-          # TODO: Activate later when old coinmarketcap is disabled
-          # process_notifications(project)
+          process_notifications(project)
           Registry.unregister(Sanbase.Registry, key)
           :ok
       end
@@ -221,8 +220,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   defp process_notifications(%Project{} = project) do
-    Sanbase.Notifications.CheckPrices.exec(project, "USD")
-    Sanbase.Notifications.CheckPrices.exec(project, "BTC")
     Sanbase.Notifications.PriceVolumeDiff.exec(project, "USD")
   end
 

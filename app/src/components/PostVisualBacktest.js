@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Message, Label } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { compose, withProps } from 'recompose'
-import { HistoryPriceGQL } from './../pages/Detailed/DetailedGQL'
+import { HistoryPriceByTickerGQL } from './../pages/Detailed/DetailedGQL'
 import PercentChanges from './PercentChanges'
 
 const getChanges = (start, last, prop = 'priceUsd') =>
@@ -28,7 +28,7 @@ export const PostVisualBacktest = ({ ticker, change, changeProp }) => {
 }
 
 const enhance = compose(
-  graphql(HistoryPriceGQL, {
+  graphql(HistoryPriceByTickerGQL, {
     name: 'history',
     options: ({ ticker, from }) => {
       return {

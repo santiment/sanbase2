@@ -1,8 +1,9 @@
 import React from 'react'
 import { graphql } from 'react-apollo'
 import { compose } from 'recompose'
+import moment from 'moment'
 import { Popup, Button } from 'semantic-ui-react'
-import { AssetsListGQL } from './AssetsListGQL'
+import { WatchlistGQL } from './WatchlistGQL'
 import Watchlists from './Watchlists'
 import './WatchlistsPopup.css'
 
@@ -14,8 +15,9 @@ const AddToListBtn = (
   </Button>
 )
 
-const AssetsListPopup = ({
+const WatchlistPopup = ({
   isNavigation = false,
+  isLoading,
   isLoggedIn,
   projectId,
   slug,
@@ -28,6 +30,7 @@ const AssetsListPopup = ({
       content={
         <Watchlists
           isNavigation={isNavigation}
+          isLoading={isLoading}
           projectId={projectId}
           slug={slug}
           lists={lists}
@@ -40,18 +43,22 @@ const AssetsListPopup = ({
   )
 }
 
+const sortWatchlists = (list, list2) =>
+  moment.utc(list.insertedAt).diff(moment.utc(list2.insertedAt))
+
 export default compose(
-  graphql(AssetsListGQL, {
+  graphql(WatchlistGQL, {
     name: 'Watchlists',
     options: ({ isLoggedIn }) => ({
       skip: !isLoggedIn,
       pollInterval: POLLING_INTERVAL
     }),
     props: ({ Watchlists }) => {
-      const { fetchUserLists = [] } = Watchlists
+      const { fetchUserLists = [], loading = true } = Watchlists
       return {
-        lists: fetchUserLists
+        lists: [...fetchUserLists].sort(sortWatchlists),
+        isLoading: loading
       }
     }
   })
-)(AssetsListPopup)
+)(WatchlistPopup)

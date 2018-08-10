@@ -1,11 +1,11 @@
 import Raven from 'raven-js'
 import { Observable } from 'rxjs'
 import { showNotification } from './../actions/rootActions'
-import { AssetsListGQL } from './../components/AssetsListPopup/AssetsListGQL'
-import { updateUserListGQL } from './addAssetToListEpic'
+import { WatchlistGQL } from './../components/WatchlistPopup/WatchlistGQL'
+import { updateUserListGQL } from './addAssetToWatchlistEpic'
 import * as actions from './../actions/types'
 
-const removeAssetFromListEpic = (action$, store, { client }) =>
+const removeAssetFromWatchlist = (action$, store, { client }) =>
   action$
     .ofType(actions.USER_REMOVE_ASSET_FROM_LIST)
     .debounceTime(200)
@@ -28,12 +28,12 @@ const removeAssetFromListEpic = (action$, store, { client }) =>
           id: +assetsListId
         },
         update: (store, { data: { updateUserList } }) => {
-          const data = store.readQuery({ query: AssetsListGQL })
+          const data = store.readQuery({ query: WatchlistGQL })
           const index = data.fetchUserLists.findIndex(
             list => list.id === updateUserList.id
           )
           data.fetchUserLists[index] = updateUserList
-          store.writeQuery({ query: AssetsListGQL, data })
+          store.writeQuery({ query: WatchlistGQL, data })
         }
       })
       return Observable.from(mutationPromise)
@@ -60,4 +60,4 @@ const removeAssetFromListEpic = (action$, store, { client }) =>
         })
     })
 
-export default removeAssetFromListEpic
+export default removeAssetFromWatchlist

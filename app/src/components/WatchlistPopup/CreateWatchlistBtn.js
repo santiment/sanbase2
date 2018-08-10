@@ -12,8 +12,8 @@ class CreateWatchlistBtn extends React.Component {
 
   componentDidUpdate (prevProps) {
     if (
-      this.props.assetsListUI.newItemSuccess !==
-      prevProps.assetsListUI.newItemSuccess
+      this.props.watchlistUi.newItemSuccess !==
+      prevProps.watchlistUi.newItemSuccess
     ) {
       this.setState({ newTitle: initialState.newTitle })
     }
@@ -23,10 +23,10 @@ class CreateWatchlistBtn extends React.Component {
     this.setState({ newTitle: data.value })
   }
 
-  handleAddNewAssetsList = () => {
+  handleCreateWatchlist = () => {
     const name = this.state.newTitle
     if (name && name.length > 0) {
-      this.props.addNewAssetList({
+      this.props.createWatchlist({
         name: this.state.newTitle.toLowerCase()
       })
     }
@@ -36,19 +36,19 @@ class CreateWatchlistBtn extends React.Component {
     return (
       <div className='create-new-watchlist-btn'>
         <Input
-          disabled={this.props.assetsListUI.newItemPending}
+          disabled={this.props.watchlistUi.newItemPending}
           value={this.state.newTitle}
           action={{
             color: 'google plus',
             labelPosition: 'left',
             icon: 'plus',
             content: 'create',
-            onClick: this.handleAddNewAssetsList
+            onClick: this.handleCreateWatchlist
           }}
           onChange={this.handleOnChange}
           onKeyPress={(e, data) => {
             if (e.key === 'Enter') {
-              this.handleAddNewAssetsList()
+              this.handleCreateWatchlist()
             }
           }}
           actionPosition='left'
@@ -59,7 +59,7 @@ class CreateWatchlistBtn extends React.Component {
 }
 
 CreateWatchlistBtn.propTypes = {
-  addNewAssetList: PropTypes.func.isRequired
+  createWatchlist: PropTypes.func.isRequired
 }
 
 export default CreateWatchlistBtn

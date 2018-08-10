@@ -2,7 +2,7 @@ import Raven from 'raven-js'
 import { Observable } from 'rxjs'
 import { tap, zip, mergeMap, retryWhen, concat } from 'rxjs/operators'
 import { projectBySlugGQL } from './../pages/Projects/allProjectsGQL'
-import { AssetsListGQL } from './../components/AssetsListPopup/AssetsListGQL'
+import { WatchlistGQL } from './../components/WatchlistPopup/WatchlistGQL.js'
 import {
   allProjectsGQL,
   allErc20ProjectsGQL,
@@ -109,7 +109,7 @@ export const fetchAssetsFromListEpic = (action$, store, { client }) =>
       return payload.type === 'list'
     })
     .mergeMap(({ payload }) => {
-      return Observable.from(client.query({ query: AssetsListGQL })).concatMap(
+      return Observable.from(client.query({ query: WatchlistGQL })).concatMap(
         ({ data = {} }) => {
           const startTime = Date.now()
           const { fetchUserLists } = data

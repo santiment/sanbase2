@@ -2,7 +2,7 @@ import Raven from 'raven-js'
 import gql from 'graphql-tag'
 import { Observable } from 'rxjs'
 import { showNotification } from './../actions/rootActions'
-import { AssetsListGQL } from './../components/AssetsListPopup/AssetsListGQL'
+import { WatchlistGQL } from './../components/WatchlistPopup/WatchlistGQL.js'
 import * as actions from './../actions/types'
 
 export const updateUserListGQL = gql`
@@ -35,7 +35,7 @@ export const updateUserListGQL = gql`
   }
 `
 
-const addAssetToListEpic = (action$, store, { client }) =>
+const addAssetToWatchlistEpic = (action$, store, { client }) =>
   action$
     .ofType(actions.USER_ADD_ASSET_TO_LIST)
     .debounceTime(200)
@@ -52,12 +52,12 @@ const addAssetToListEpic = (action$, store, { client }) =>
           listItems: newListItems
         },
         update: (store, { data: { updateUserList } }) => {
-          const data = store.readQuery({ query: AssetsListGQL })
+          const data = store.readQuery({ query: WatchlistGQL })
           const index = data.fetchUserLists.findIndex(
             list => list.id === updateUserList.id
           )
           data.fetchUserLists[index] = updateUserList
-          store.writeQuery({ query: AssetsListGQL, data })
+          store.writeQuery({ query: WatchlistGQL, data })
         }
       })
       return Observable.from(mutationPromise)
@@ -84,4 +84,4 @@ const addAssetToListEpic = (action$, store, { client }) =>
         })
     })
 
-export default addAssetToListEpic
+export default addAssetToWatchlistEpic

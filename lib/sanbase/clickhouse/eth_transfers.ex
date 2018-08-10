@@ -16,13 +16,13 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   @primary_key false
   @timestamps_opts updated_at: false
   schema @table do
-    field(:dt, :utc_datetime)
-    field(:from, :string, primary_key: true)
-    field(:to, :string, primary_key: true)
-    field(:transactionHash, :string)
-    field(:value, :float)
-    field(:blockNumber, :integer)
-    field(:transactionPosition, :integer)
+    field(:datetime, :utc_datetime, source: :dt)
+    field(:from_address, :string, primary_key: true, source: :from)
+    field(:to_address, :string, primary_key: true, source: :to)
+    field(:trx_hash, :string, source: :transactionHash)
+    field(:trx_value, :float, source: :value)
+    field(:block_number, :integer, source: :blockNumber)
+    field(:trx_position, :integer, source: :transactionPosition)
   end
 
   def changeset(_, _attrs \\ %{}) do
@@ -32,16 +32,25 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   @doc ~s"""
   Return the `size` biggest transfers for a given address and time period.
   """
-  def top_address_transfers(from, from_datetime, to_datetime, size \\ 10) do
-    query =
-      from(
-        transfer in EthTransfers,
-        where:
-          transfer.from == ^from and transfer.dt > ^from_datetime and transfer.dt < ^to_datetime,
-        order_by: [desc: transfer.value],
-        limit: ^size
-      )
-      |> ClickhouseRepo.all_prewhere()
+  def top_address_transfers(from_address, from_datetime, to_datetime, size) do
+    # The fragment should be `as value` and not `as trx_value` as the underlaying column name is `value`
+    # `trx_value` comes from ecto schema
+    from(
+      transfer in EthTransfers,
+      where:
+        transfer.from_address == ^from_address and transfer.datetime > ^from_datetime and
+          transfer.datetime < ^to_datetime,
+      select: %{
+        datetime: transfer.datetime,
+        from_address: transfer.from_address,
+        to_address: transfer.to_address,
+        trx_hash: transfer.trx_hash,
+        trx_value: fragment("divide(?,?) as value", transfer.trx_value, @eth_decimals)
+      },
+      order_by: [desc: transfer.trx_value],
+      limit: ^size
+    )
+    |> ClickhouseRepo.all_prewhere()
   end
 
   @doc ~s"""
@@ -50,7 +59,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   not in the list are selected.
   """
   def top_wallet_transfers(wallets, from_datetime, to_datetime, size, type) do
-    wallet_transfers(wallets, from_datetime, to_datetime, size, type, desc: :value)
+    wallet_transfers(wallets, from_datetime, to_datetime, size, type, desc: :trx_value)
   end
 
   @doc ~s"""
@@ -59,7 +68,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   not in the list are selected.
   """
   def last_wallet_transfers(wallets, from_datetime, to_datetime, size, type) do
-    wallet_transfers(wallets, from_datetime, to_datetime, size, type, desc: :dt)
+    wallet_transfers(wallets, from_datetime, to_datetime, size, type, desc: :datetime)
     |> Enum.reverse()
   end
 
@@ -68,9 +77,9 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       from(
         transfer in EthTransfers,
         where:
-          transfer.from in ^wallets and transfer.to not in ^wallets and
-            transfer.dt > ^from_datetime and transfer.dt < ^to_datetime,
-        select: sum(transfer.value)
+          transfer.from_address in ^wallets and transfer.to_address not in ^wallets and
+            transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime,
+        select: sum(transfer.trx_value)
       )
       |> ClickhouseRepo.one()
 
@@ -188,8 +197,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     from(
       transfer in EthTransfers,
       where:
-        transfer.from in ^wallets and transfer.to not in ^wallets and transfer.dt > ^from_datetime and
-          transfer.dt < ^to_datetime,
+        transfer.from_address in ^wallets and transfer.to_address not in ^wallets and
+          transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime,
       order_by: ^order_by,
       limit: ^size
     )
@@ -261,7 +270,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
-  defp reduce_eth_spent([%{datetime: datetime} = elem | _] = values) do
+  defp reduce_eth_spent([%{datetime: datetime} | _] = values) do
     total_eth_spent =
       values
       |> Enum.reduce(0, fn %{eth_spent: eth_spent}, acc ->

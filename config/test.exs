@@ -43,10 +43,6 @@ config :faktory_worker_ex,
   ],
   start_workers: false
 
-config :sanbase, Sanbase.Notifications.CheckPrices,
-  webhook_url: "http://example.com/webhook_url",
-  slack_notifications_enabled: true
-
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: "http://example.com/webhook_url",
   notifications_enabled: true

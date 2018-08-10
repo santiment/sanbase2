@@ -18,7 +18,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.Notifications.CheckPrices
   alias Sanbase.Notifications.PriceVolumeDiff
   alias Sanbase.Utils.Config
 

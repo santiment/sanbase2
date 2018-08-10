@@ -5,11 +5,6 @@
 # is restricted to this project.
 use Mix.Config
 
-config :sanbase, Sanbase.Notifications.CheckPrices,
-  webhook_url: {:system, "CHECK_PRICES_WEBHOOK_URL"},
-  notification_channel: {:system, "CHECK_PRICES_CHANNEL", "#signals-stage"},
-  slack_notifications_enabled: {:system, "CHECK_PRICES_NOTIFICATIONS_ENABLED", false}
-
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: {:system, "PRICE_VOLUME_DIFF_WEBHOOK_URL"},
   window_type: {:system, "PRICE_VOLUME_DIFF_WINDOW_TYPE"},

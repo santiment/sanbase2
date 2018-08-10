@@ -4,7 +4,7 @@ defmodule Sanbase.Blockchain.BurnRate do
   import Ecto.Changeset
   alias Sanbase.Timescaledb
 
-  @table "eth_burn_rate"
+  @table Timescaledb.table_name("eth_burn_rate")
 
   @primary_key false
   schema @table do

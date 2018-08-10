@@ -222,22 +222,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         {:ok, 0}
     end
   end
-<<<<<<< HEAD
-
-  defp slug_to_contract_info(slug) do
-    with project when not is_nil(project) <- get_project_by_slug(slug),
-         {:ok, contract_address, token_decimals} <- Utils.project_to_contract_info(project) do
-      {:ok, contract_address, token_decimals}
-    else
-      _ -> {:error, "Can't find contract address for #{slug}"}
-    end
-  end
-
-  defp get_project_by_slug(slug) do
-    Project
-    |> where([p], p.coinmarketcap_id == ^slug)
-    |> Repo.one()
-  end
-=======
->>>>>>> Refactor Graphql Utils module and move the appropriate functions to Project Context module
 end

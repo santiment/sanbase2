@@ -4,7 +4,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
   import Ecto.Changeset
   alias Sanbase.Timescaledb
 
-  @table "eth_daily_active_addresses"
+  @table Timescaledb.table_name("eth_daily_active_addresses")
 
   @primary_key false
   schema @table do

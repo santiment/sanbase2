@@ -13,15 +13,15 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   @primary_key false
   @timestamps_opts updated_at: false
   schema "erc20_transfers" do
-    field(:dt, :utc_datetime, primary_key: true)
+    field(:datetime, :utc_datetime, source: :dt)
     field(:contract, :string, primary_key: true)
-    field(:from, :string, primary_key: true)
-    field(:to, :string, primary_key: true)
-    field(:transactionHash, :string, primary_key: true)
-    field(:value, :float)
-    field(:blockNumber, :integer)
-    alias Sanbase.ClickhouseRepo
-    field(:logIndex, :integer)
+    field(:from_address, :string, primary_key: true, source: :from)
+    field(:to_address, :string, primary_key: true, source: :to)
+    field(:trx_hash, :string, source: :transactionHash)
+    field(:trx_value, :float, source: :value)
+    field(:block_number, :integer, source: :blockNumber)
+    field(:trx_position, :integer, source: :transactionPosition)
+    field(:log_index, :integer, source: :logIndex)
   end
 
   def changeset(_, _attrs \\ %{}) do
@@ -33,25 +33,23 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   If the top transactions for SAN token are needed, the SAN contract address must be
   provided as a first argument.
   """
-  def token_top_transfers(contract, from_datetime, to_datetime, limit \\ 10) do
-    from(
-      transfer in Erc20Transfers,
-      where:
-        transfer.contract == ^contract and transfer.dt > ^from_datetime and
-          transfer.dt < ^to_datetime,
-      order_by: [desc: transfer.value],
-      limit: ^limit
-    )
-    |> ClickhouseRepo.all_prewhere()
-  end
+  def token_top_transfers(contract, from_datetime, to_datetime, limit, token_decimals \\ 0) do
+    token_decimals = :math.pow(10, token_decimals)
 
-  def count_contract_transfers(contract, from_datetime, to_datetime) do
     from(
       transfer in Erc20Transfers,
       where:
-        transfer.contract == ^contract and transfer.dt > ^from_datetime and
-          transfer.dt < ^to_datetime,
-      select: count("*")
+        transfer.contract == ^contract and transfer.datetime > ^from_datetime and
+          transfer.datetime < ^to_datetime,
+      select: %{
+        datetime: transfer.datetime,
+        from_address: transfer.from_address,
+        to_address: transfer.to_address,
+        trx_hash: transfer.trx_hash,
+        trx_value: fragment("divide(?,?) as value", transfer.trx_value, ^token_decimals)
+      },
+      order_by: [desc: transfer.trx_value],
+      limit: ^limit
     )
     |> ClickhouseRepo.all_prewhere()
   end

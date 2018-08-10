@@ -19,8 +19,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.{
     Prices,
-    Github,
-    ExternalServices.Etherscan
+    Github
   }
 
   alias Sanbase.Clickhouse
@@ -120,9 +119,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
                 contract_address,
                 from,
                 to,
-                limit
+                limit,
+                token_decimals
               )
-              |> Enum.map(&transaction_struct_to_gql_type(&1, token_decimals))
 
             {:ok, result}
           end,
@@ -266,9 +265,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
              limit,
              trx_type
            ) do
-      result =
-        eth_transactions
-        |> Enum.map(&transaction_struct_to_gql_type(&1, 18))
+      result = eth_transactions
 
       {:ok, result}
     else
@@ -284,17 +281,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   # Helper functions1
-
-  defp gen_measurements_list(measurements) do
-    # Ugly hack to ignore the measurements with coinmarketcap_id as name. They should be removed
-    # and this should be removed, too. The tickers are only with capital letters, numbers and '/'
-    # Reject all measurements that contain a lower letter
-    list =
-      measurements
-      |> Enum.reject(fn elem -> elem =~ ~r/[a-z]/ end)
-
-    {:ok, list}
-  end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
     funds_raised = Project.funds_raised_icos(project)
@@ -650,42 +636,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   # Calling Decimal.to_float/1 with `nil` crashes the process
   defp float_or_nil(nil), do: nil
   defp float_or_nil(num), do: Decimal.to_float(num)
-
-  defp transaction_struct_to_gql_type(
-         %Sanbase.Clickhouse.Erc20Transfers{
-           dt: datetime,
-           from: from,
-           to: to,
-           transactionHash: trx_hash,
-           value: value
-         },
-         token_decimals
-       ) do
-    %{
-      datetime: datetime,
-      trx_hash: trx_hash,
-      trx_value: value / :math.pow(10, token_decimals),
-      from_address: from,
-      to_address: to
-    }
-  end
-
-  defp transaction_struct_to_gql_type(
-         %{
-           dt: datetime,
-           from: from,
-           to: to,
-           transactionHash: trx_hash,
-           value: value
-         },
-         token_decimals
-       ) do
-    %{
-      datetime: datetime,
-      trx_hash: trx_hash,
-      trx_value: value / :math.pow(10, token_decimals),
-      from_address: from,
-      to_address: to
-    }
-  end
 end

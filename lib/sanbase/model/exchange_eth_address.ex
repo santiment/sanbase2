@@ -8,6 +8,7 @@ defmodule Sanbase.Model.ExchangeEthAddress do
     field(:name, :string)
     field(:source, :string)
     field(:comments, :string)
+    field(:csv, :string, virtual: true)
   end
 
   @doc false

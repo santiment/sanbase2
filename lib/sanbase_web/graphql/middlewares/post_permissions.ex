@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
     "votes",
     "user",
     "createdAt",
+    "updatedAt",
     "state",
     "readyState",
     "tags",

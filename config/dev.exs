@@ -63,6 +63,8 @@ config :sanbase, Sanbase.TimescaleRepo,
   database: "sanbase_timescale_dev",
   hostname: "localhost"
 
+config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
+
 config :ex_admin,
   basic_auth: [
     username: "admin",

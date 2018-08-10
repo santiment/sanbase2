@@ -4,7 +4,7 @@ defmodule Sanbase.Blockchain.TransactionVolume do
   import Ecto.Changeset
   alias Sanbase.Timescaledb
 
-  @table "eth_transaction_volume"
+  @table Timescaledb.table_name("eth_transaction_volume")
 
   @primary_key false
   schema @table do

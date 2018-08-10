@@ -2,7 +2,7 @@ import Raven from 'raven-js'
 import gql from 'graphql-tag'
 import { Observable } from 'rxjs'
 import { showNotification } from './../actions/rootActions'
-import { AssetsListGQL } from './../components/AssetsListPopup/AssetsListGQL'
+import { WatchlistGQL } from './../components/WatchlistPopup/WatchlistGQL'
 import * as actions from './../actions/types'
 
 const removeUserListGQL = gql`
@@ -13,7 +13,7 @@ const removeUserListGQL = gql`
   }
 `
 
-const removeAssetsListEpic = (action$, store, { client }) =>
+const removeWatchlistEpic = (action$, store, { client }) =>
   action$
     .ofType(actions.USER_REMOVE_ASSET_LIST)
     .debounceTime(200)
@@ -38,10 +38,10 @@ const removeAssetsListEpic = (action$, store, { client }) =>
           }
         },
         update: proxy => {
-          let data = proxy.readQuery({ query: AssetsListGQL })
+          let data = proxy.readQuery({ query: WatchlistGQL })
           const _userLists = data.fetchUserLists ? [...data.fetchUserLists] : []
           data.fetchUserLists = _userLists.filter(obj => +obj.id !== id)
-          proxy.writeQuery({ query: AssetsListGQL, data })
+          proxy.writeQuery({ query: WatchlistGQL, data })
         }
       })
       return Observable.from(mutationPromise)
@@ -62,4 +62,4 @@ const removeAssetsListEpic = (action$, store, { client }) =>
         })
     })
 
-export default removeAssetsListEpic
+export default removeWatchlistEpic

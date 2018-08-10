@@ -2,7 +2,7 @@ import Raven from 'raven-js'
 import gql from 'graphql-tag'
 import { Observable } from 'rxjs'
 import { showNotification } from './../actions/rootActions'
-import { AssetsListGQL } from './../components/AssetsListPopup/AssetsListGQL'
+import { WatchlistGQL } from './../components/WatchlistPopup/WatchlistGQL'
 import * as actions from './../actions/types'
 
 const createUserListGQL = gql`
@@ -27,7 +27,7 @@ const createUserListGQL = gql`
   }
 `
 
-const addNewAssetsListEpic = (action$, store, { client }) =>
+const createWatchlistEpic = (action$, store, { client }) =>
   action$
     .ofType(actions.USER_ADD_NEW_ASSET_LIST)
     .debounceTime(200)
@@ -59,9 +59,9 @@ const addNewAssetsListEpic = (action$, store, { client }) =>
           }
         },
         update: (store, { data: { createUserList } }) => {
-          const data = store.readQuery({ query: AssetsListGQL })
+          const data = store.readQuery({ query: WatchlistGQL })
           data.fetchUserLists.push(createUserList)
-          store.writeQuery({ query: AssetsListGQL, data })
+          store.writeQuery({ query: WatchlistGQL, data })
         }
       })
       return Observable.from(mutationPromise)
@@ -82,10 +82,10 @@ const addNewAssetsListEpic = (action$, store, { client }) =>
         })
     })
 
-export const addNewSuccessEpic = (action$, store, { client }) =>
+export const createWatchlistSuccessEpic = (action$, store, { client }) =>
   action$
     .ofType(actions.USER_ADD_NEW_ASSET_LIST_SUCCESS)
     .delay(2000)
     .mapTo({ type: actions.USER_ADD_NEW_ASSET_LIST_CANCEL })
 
-export default addNewAssetsListEpic
+export default createWatchlistEpic

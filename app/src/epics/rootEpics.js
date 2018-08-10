@@ -9,10 +9,12 @@ import handleGDPR from './handleGDPR'
 import handleRouter from './handleRouter'
 import apikeyGenerateEpic from './apikeyGenerateEpic'
 import apikeyRevokeEpic from './apikeyRevokeEpic'
-import addNewAssetsListEpic, { addNewSuccessEpic } from './addNewAssetsListEpic'
-import removeAssetsListEpic from './removeAssetsListEpic'
-import addAssetToListEpic from './addAssetToListEpic'
-import removeAssetFromListEpic from './removeAssetFromListEpic'
+import createWatchlistEpic, {
+  createWatchlistSuccessEpic
+} from './createWatchlistEpic'
+import addAssetToWatchlistEpic from './addAssetToWatchlistEpic'
+import removeWatchlistEpic from './removeWatchlistEpic'
+import removeAssetFromWatchlistEpic from './removeAssetFromWatchlistEpic'
 import { fetchAssetsEpic, fetchAssetsFromListEpic } from './fetchAssetsEpic'
 
 export default combineEpics(
@@ -27,11 +29,11 @@ export default combineEpics(
   apikeyGenerateEpic,
   apikeyRevokeEpic,
   // user's assets lists
-  addNewAssetsListEpic,
-  addNewSuccessEpic,
-  removeAssetsListEpic,
-  addAssetToListEpic,
-  removeAssetFromListEpic,
+  createWatchlistEpic,
+  createWatchlistSuccessEpic,
+  removeWatchlistEpic,
+  addAssetToWatchlistEpic,
+  removeAssetFromWatchlistEpic,
   // assets
   fetchAssetsEpic,
   fetchAssetsFromListEpic

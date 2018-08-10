@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink as Link } from 'react-router-dom'
-import WatchlistsPopup from './../../components/AssetsListPopup/WatchlistsPopup'
+import WatchlistsPopup from './../../components/WatchlistPopup/WatchlistsPopup'
 import './AssetsPageNavigation.css'
 
 const MyListBtn = (

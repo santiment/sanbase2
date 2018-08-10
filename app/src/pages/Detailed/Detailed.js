@@ -358,10 +358,9 @@ const enhance = compose(
       return {
         skip: !from,
         variables: {
-          ticker: 'ETH',
+          slug: 'ethereum',
           from,
-          to,
-          interval: ''
+          to
         }
       }
     }
@@ -381,17 +380,16 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
-    options: ({ timeFilter, Project }) => {
+    options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
-      const ticker = Project.project.ticker
+      const slug = match.params.slug
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
-          interval: ''
+          slug
         }
       }
     }

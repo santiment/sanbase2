@@ -79,7 +79,7 @@ export const PostVisualBacktest = ({
 }
 
 const enhance = compose(
-  graphql(HistoryPriceGQL, {
+  graphql(HistoryPriceByTickerGQL, {
     name: 'history',
     options: ({ ticker, from }) => {
       return {

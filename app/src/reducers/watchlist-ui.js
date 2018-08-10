@@ -12,7 +12,7 @@ export default (state = initialState, action) => {
     case actions.USER_ADD_NEW_ASSET_LIST:
       return {
         ...state,
-        assetsListNewItemPending: true
+        newItemPending: true
       }
     case actions.USER_ADD_NEW_ASSET_LIST_SUCCESS:
       return {

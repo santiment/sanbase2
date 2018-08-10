@@ -6,7 +6,7 @@ import {
 import { compose } from 'recompose'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
-import WatchlistsPopup from './../../components/AssetsListPopup/WatchlistsPopup'
+import WatchlistsPopup from './../../components/WatchlistPopup/WatchlistsPopup'
 import {
   formatCryptoCurrency,
   formatBTC,

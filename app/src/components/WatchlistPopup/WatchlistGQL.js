@@ -1,6 +1,6 @@
 import gql from 'graphql-tag'
 
-export const AssetsListGQL = gql`
+export const WatchlistGQL = gql`
   query fetchUserLists {
     fetchUserLists {
       id

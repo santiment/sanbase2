@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-10-08 | v.0.7.2 'Moon':
+
+  Change ticker to slug in gqls
+
 - 2018-04-08 | v.0.7.1 'Moon':
 
   Fix keyboard shortcut usage in any input form

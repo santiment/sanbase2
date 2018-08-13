@@ -87,21 +87,18 @@ defmodule Sanbase.UserLists.UserList do
   end
 
   defp update_list_items_params(params, id) do
-    list_items = Map.get(params, :list_items, [])
-
-    list_items =
-      list_items
-      |> Enum.map(fn item ->
-        %{project_id: item.project_id, user_list_id: id}
-      end)
+    list_items = Map.get(params, :list_items)
 
     case list_items do
-      [] ->
-        Map.delete(params, :list_items)
+      nil ->
+        params
 
       list_items ->
-        Map.delete(params, :list_items)
-        put_in(params[:list_items], list_items)
+        list_items =
+          list_items
+          |> Enum.map(fn item -> %{project_id: item.project_id, user_list_id: id} end)
+
+        Map.replace!(params, :list_items, list_items)
     end
   end
 end

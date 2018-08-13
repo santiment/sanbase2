@@ -1,11 +1,24 @@
 /* eslint-env jest */
-import { simpleSort, sortDate, sortBalances } from './sortMethods'
+import {
+  simpleSort,
+  simpleSortStrings,
+  sortDate,
+  sortBalances
+} from './sortMethods'
 
 describe('Sort date method', () => {
-  it('simple', () => {
+  it('simpleSort', () => {
     expect(simpleSort(5, 234)).toEqual(1)
     expect(simpleSort(234235, 234)).toEqual(-1)
     expect(simpleSort(234, 234)).toEqual(0)
+  })
+})
+
+describe('Sort strings method', () => {
+  it('simpleSortStrings', () => {
+    expect(simpleSortStrings('bbc', 'abc')).toEqual(1)
+    expect(simpleSortStrings('abc', 'bbc')).toEqual(-1)
+    expect(simpleSortStrings('abc', 'abc')).toEqual(0)
   })
 })
 

@@ -47,6 +47,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
+  import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -74,9 +75,18 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Fetch all market segments."
-    field :all_market_segments, :string do
-      middleware(ProjectPermissions)
+    field :all_market_segments, list_of(:market_segment) do
       cache_resolve(&MarketSegmentResolver.all_market_segments/3)
+    end
+
+    @desc "Fetch ERC20 projects' market segments."
+    field :erc20_market_segments, list_of(:market_segment) do
+      cache_resolve(&MarketSegmentResolver.erc20_market_segments/3)
+    end
+
+    @desc "Fetch currency projects' market segments."
+    field :currencies_market_segments, list_of(:market_segment) do
+      cache_resolve(&MarketSegmentResolver.currencies_market_segments/3)
     end
 
     @desc "Fetch all projects that have price data."
@@ -133,6 +143,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch price history for a given slug and time interval."
     field :history_price, list_of(:price_point) do
+      # TODO: Make non null after ticker is no longer used
       arg(:slug, :string)
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
@@ -322,6 +333,39 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
+    @desc ~s"""
+    Fetch the exchange funds flow for all ERC20 projects in the given interval.
+
+    Arguments description:
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-05-23T10:02:19Z"
+
+    Fields description:
+      * ticker - The ticker of the project
+      * contract - The contract identifier of the project
+      * exchangeIn - How many tokens were deposited in the given period
+      * exchangeOut - How many tokens were withdrawn in the given period
+      * exchangeDiff - The difference between the deposited and the withdrawn tokens: exchangeIn - exchangeOut
+      * exchangeInUsd - How many tokens were deposited in the given period converted to USD based on the daily average price of the token
+      * exchangeOutUsd - How many tokens were withdrawn in the given period converted to USD based on the daily average price of the token
+      * exchangeDiffUsd - The difference between the deposited and the withdrawn tokens in USD: exchangeInUsd - exchangeOutUsd
+      * percentDiffExchangeDiffUsd - The percent difference between exchangeDiffUsd for the current period minus the exchangeDiffUsd for the previous period based on exchangeDiffUsd for the current period: (exchangeDiffUsd for current period - exchangeDiffUsd for previous period) * 100 / abs(exchangeDiffUsd for current period)
+      * exchangeVolumeUsd - The volume of all tokens in and out for the given period in USD: exchangeInUsd + exchangeOutUsd
+      * percentDiffExchangeVolumeUsd - The percent difference between exchangeVolumeUsd for the current period minus the exchangeVolumeUsd for the previous period based on exchangeVolumeUsd for the current period: (exchangeVolumeUsd for current period - exchangeVolumeUsd for previous period) * 100 / abs(exchangeVolumeUsd for current period)
+      * exchangeInBtc - How many tokens were deposited in the given period converted to BTC based on the daily average price of the token
+      * exchangeOutBtc - How many tokens were withdrawn in the given period converted to BTC based on the daily average price of the token
+      * exchangeDiffBtc - The difference between the deposited and the withdrawn tokens in BTC: exchangeInBtc - exchangeOutBtc
+      * percentDiffExchangeDiffBtc - The percent difference between exchangeDiffBtc for the current period minus the exchangeDiffBtc for the previous period based on exchangeDiffBtc for the current period: (exchangeDiffBtc for current period - exchangeDiffBtc for previous period) * 100 / abs(exchangeDiffBtc for current period)
+      * exchangeVolumeBtc - The volume of all tokens in and out for the given period in BTC: exchangeInBtc + exchangeOutBtc
+      * percentDiffExchangeVolumeBtc - The percent difference between exchangeVolumeBtc for the current period minus the exchangeVolumeBtc for the previous period based on exchangeVolumeBtc for the current period: (exchangeVolumeBtc for current period - exchangeVolumeBtc for previous period) * 100 / abs(exchangeVolumeBtc for current period)
+    """
+    field :erc20_exchange_funds_flow, list_of(:erc20_exchange_funds_flow) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
+    end
+
     @desc "Fetch the MACD technical indicator for a given ticker, display currency and time period."
     field :macd, list_of(:macd) do
       arg(:ticker, non_null(:string))
@@ -404,6 +448,43 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
       resolve(&TechIndicatorsResolver.emojis_sentiment/3)
+    end
+
+    @desc ~s"""
+    Returns a list of mentions count for a given project and time interval.
+
+    Arguments description:
+      * slug - a string uniquely identifying a project
+      * interval - an integer followed by one of: `m`, `h`, `d`, `w`
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * socialVolumeType - one of the following:
+        1. PROFESSIONAL_TRADERS_CHAT_OVERVIEW
+        2. TELEGRAM_CHATS_OVERVIEW
+        3. TELEGRAM_DISCUSSION_OVERVIEW
+        It is used to select the source of the mentions count.
+    """
+    field :social_volume, list_of(:social_volume) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, non_null(:string), default_value: "1d")
+      arg(:social_volume_type, non_null(:social_volume_type))
+
+      middleware(MultipleAuth, [
+        {JWTAuth, san_tokens: 1000},
+        {ApikeyAuth, san_tokens: 1000}
+      ])
+
+      complexity(&TechIndicatorsComplexity.social_volume/3)
+      resolve(&TechIndicatorsResolver.social_volume/3)
+    end
+
+    @desc ~s"""
+    Returns a list of slugs for which there is social volume data.
+    """
+    field :social_volume_projects, list_of(:string) do
+      resolve(&TechIndicatorsResolver.social_volume_projects/3)
     end
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."

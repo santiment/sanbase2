@@ -116,3 +116,69 @@ curl \
     <%= "  #{ @api_url }" %>
 
 ```
+
+### ERC20 Exchange Funds Flow
+
+<%= @erc20_exchange_funds_flow[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@erc20_exchange_funds_flow[:variables])}&query=#{URI.encode(@erc20_exchange_funds_flow[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @erc20_exchange_funds_flow[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@erc20_exchange_funds_flow[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```
+
+### Social Volume
+
+<%= @social_volume[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@social_volume[:variables])}&query=#{URI.encode(@social_volume[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @social_volume[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@social_volume[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```
+
+### Social Volume Projects
+
+<%= @social_volume_projects[:docs] %>
+
+
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@social_volume_projects[:variables])}&query=#{URI.encode(@social_volume_projects[:query])}"| %>" target='_blank'>Run in explorer</a>
+
+```graphql
+<%= @social_volume_projects[:query] %>
+```
+
+Run in terminal
+
+```bash
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": <%= Poison.encode!(@social_volume_projects[:query]) %> }' \
+    <%= "  #{ @api_url }" %>
+
+```

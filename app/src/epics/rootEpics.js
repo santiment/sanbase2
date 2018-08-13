@@ -16,6 +16,8 @@ import addAssetToWatchlistEpic from './addAssetToWatchlistEpic'
 import removeWatchlistEpic from './removeWatchlistEpic'
 import removeAssetFromWatchlistEpic from './removeAssetFromWatchlistEpic'
 import { fetchAssetsEpic, fetchAssetsFromListEpic } from './fetchAssetsEpic'
+import handleNightModeToggle from './handleNightModeToggle'
+import keyboardEpic from './keyboardEpic'
 
 export default combineEpics(
   handleOffline,
@@ -28,6 +30,8 @@ export default combineEpics(
   handleRouter,
   apikeyGenerateEpic,
   apikeyRevokeEpic,
+  handleNightModeToggle,
+  keyboardEpic,
   // user's assets lists
   createWatchlistEpic,
   createWatchlistSuccessEpic,

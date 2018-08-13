@@ -46,6 +46,8 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
       end)
     end
 
+    field(:updated_at, non_null(:datetime))
+
     field :voted_at, :datetime do
       resolve(&VotingResolver.voted_at/3)
     end

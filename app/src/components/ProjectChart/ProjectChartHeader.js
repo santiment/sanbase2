@@ -5,6 +5,7 @@ import { fadeIn, slideUp } from 'animate-keyframes'
 import { withState, compose, lifecycle } from 'recompose'
 import { DateRangePicker } from 'react-dates'
 import { formatNumber } from './../../utils/formatting'
+import PricingHelpMessage from './PricingHelpMessage'
 import ShareableBtn from './ShareableBtn'
 import './ProjectChartHeader.css'
 
@@ -75,7 +76,7 @@ const ProjectChartHeader = ({
   ticker,
   changeFromTo,
   dates,
-  isERC20
+  isPremium
 }) => {
   return (
     <div className='chart-header'>
@@ -116,6 +117,7 @@ const ProjectChartHeader = ({
             />
           )}
         </HiddenElements>
+        <PricingHelpMessage isPremium={isPremium} />
       </div>
       <div className='chart-header-actions'>
         <CurrencyFilter

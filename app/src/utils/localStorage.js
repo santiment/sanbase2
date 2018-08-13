@@ -19,6 +19,27 @@ export const saveState = state => {
   }
 }
 
+export const loadKeyState = key => {
+  try {
+    const serializedState = window.localStorage.getItem(key)
+    if (serializedState === null) {
+      return undefined
+    }
+    return JSON.parse(serializedState)
+  } catch (error) {
+    return undefined
+  }
+}
+
+export const saveKeyState = (key, state) => {
+  try {
+    const serializedState = JSON.stringify(state)
+    window.localStorage.setItem(key, serializedState)
+  } catch (error) {
+    // Ignore write errors.
+  }
+}
+
 export const loadPrevAuthProvider = () => {
   try {
     const authProviderType = window.localStorage.getItem('prev_auth_provider')
@@ -38,3 +59,13 @@ export const savePrevAuthProvider = (authProviderType = 'email') => {
     // Ignore write errors.
   }
 }
+
+window.addEventListener('storage', evt => {
+  if (
+    evt.key === 'user' &&
+    evt.oldValue.includes('"token":null') &&
+    evt.newValue.includes('"token":"')
+  ) {
+    window.location.reload()
+  }
+})

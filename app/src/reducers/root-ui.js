@@ -1,4 +1,11 @@
 import * as actions from './../actions/types'
+import { loadKeyState } from '../utils/localStorage'
+
+const isNightModeEnabled = loadKeyState('isNightModeEnabled') || false
+
+if (isNightModeEnabled) {
+  document.body.classList.add('night-mode')
+}
 
 export const initialState = {
   isFeedbackModalOpened: false,
@@ -7,7 +14,9 @@ export const initialState = {
   loginSuccess: false,
   loginError: false,
   loginErrorMessage: '',
-  isGDPRModalOpened: false
+  isGDPRModalOpened: false,
+  isNightModeEnabled: false,
+  isSearchInputFocused: false
 }
 
 export default (state = initialState, action) => {
@@ -46,6 +55,11 @@ export default (state = initialState, action) => {
         ...state,
         isGDPRModalOpened: true
       }
+    case actions.APP_USER_HAS_INACTIVE_TOKEN:
+      return {
+        ...state,
+        isGDPRModalOpened: false
+      }
     case actions.APP_TOGGLE_GDPR_MODAL:
       return {
         ...state,
@@ -56,6 +70,16 @@ export default (state = initialState, action) => {
       return {
         ...state,
         isGDPRModalOpened: !privacyPolicyAccepted
+      }
+    case actions.APP_USER_NIGHT_MODE_SAVE:
+      return {
+        ...state,
+        isNightModeEnabled: action.payload
+      }
+    case actions.APP_TOGGLE_SEARCH_FOCUS:
+      return {
+        ...state,
+        isSearchInputFocused: !state.isSearchInputFocused
       }
     default:
       return state

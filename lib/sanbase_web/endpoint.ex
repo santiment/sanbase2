@@ -65,11 +65,19 @@ defmodule SanbaseWeb.Endpoint do
     Config.get(:website_url)
   end
 
+  def frontend_url() do
+    Config.get(:frontend_url)
+  end
+
+  def backend_url() do
+    Config.get(:backend_url)
+  end
+
   def api_url() do
-    Config.get(:api_url)
+    backend_url() <> "/graphql"
   end
 
   def login_url(token, email) do
-    website_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
+    frontend_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
   end
 end

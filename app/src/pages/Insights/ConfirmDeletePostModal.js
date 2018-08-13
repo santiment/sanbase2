@@ -18,6 +18,7 @@ const ConfirmDeletePostModal = ({
   isError = false,
   isPending = false
 }) => {
+  if (isSuccess) return ''
   return (
     <Modal defaultOpen dimmer={'blurring'} onClose={toggleForm} closeIcon>
       {isSuccess ? (

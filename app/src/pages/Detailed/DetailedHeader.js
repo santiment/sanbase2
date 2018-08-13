@@ -37,6 +37,7 @@ const DetailedHeader = ({
           <DIV className='detailed-ticker-name'>
             {(project.ticker || '').toUpperCase()}
           </DIV>
+          &nbsp; &nbsp;
           {isLoggedIn &&
             !loading && (
               <WatchlistsPopup

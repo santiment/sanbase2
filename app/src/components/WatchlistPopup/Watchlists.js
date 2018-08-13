@@ -1,28 +1,18 @@
 import React from 'react'
 import { connect } from 'react-redux'
+import cx from 'classnames'
 import {
   createSkeletonProvider,
   createSkeletonElement
 } from '@trainline/react-skeletor'
 import { Link } from 'react-router-dom'
-import { compose, withState } from 'recompose'
-import { Button, Label, Icon } from 'semantic-ui-react'
+import { compose } from 'recompose'
+import { Label, Icon, Popup } from 'semantic-ui-react'
 import CreateWatchlistBtn from './CreateWatchlistBtn'
 import * as actions from './../../actions/types'
 import './Watchlists.css'
 
 const DIV = createSkeletonElement('div', 'pending-header pending-div')
-
-const ConfigurationListBtn = ({ isConfigOpened = false, setConfigOpened }) => (
-  <Button
-    className='watchlists__config-btn'
-    onClick={() => setConfigOpened(!isConfigOpened)}
-    basic
-  >
-    <Icon name={isConfigOpened ? 'close' : 'setting'} />
-    settings
-  </Button>
-)
 
 // id is a number of current date for new list,
 // until backend will have returned a real id
@@ -42,73 +32,93 @@ class Watchlists extends React.Component {
       slug,
       watchlistUi,
       createWatchlist,
-      isConfigOpened,
-      setConfigOpened,
       removeAssetList
     } = this.props
-    const Component = isNavigation ? Link : 'div'
     return (
       <div className='watchlists'>
-        <div className='watchlists__header'>
-          {lists.length > 0 && (
-            <ConfigurationListBtn
-              setConfigOpened={setConfigOpened}
-              isConfigOpened={isConfigOpened}
-            />
-          )}
-        </div>
         <div className='watchlists__list'>
           {lists.length > 0 ? (
             lists.map(({ id, name, listItems = [] }) => (
-              <Component
-                key={id}
-                className={'watchlists__item'}
-                to={`/assets/list?name=${name}@${id}`}
-                onClick={this.props.toggleAssetInList.bind(this, {
-                  projectId,
-                  assetsListId: id,
-                  slug,
-                  listItems
-                })}
-              >
-                <DIV className='watchlists__item__name'>
-                  {!isConfigOpened &&
-                    !isNavigation && (
-                      <Icon
-                        size='big'
-                        name={
-                          hasAssetById({
-                            listItems,
-                            id: projectId
-                          })
-                            ? 'check circle outline'
-                            : 'circle outline'
-                        }
-                      />
-                    )}
-                  <div>{name}</div>
-                </DIV>
-                {!isLoading && (
-                  <div className='watchlists__item__description'>
-                    <Label>
-                      {listItems.length > 0 ? listItems.length : 'empty'}
-                    </Label>
-                    {isNewestList(id) && (
-                      <Label color='green' horizontal>
-                        NEW
+              <div key={id} className='watchlists__item'>
+                <Link
+                  className='watchlists__item__link'
+                  to={`/assets/list?name=${name}@${id}`}
+                >
+                  <DIV className='watchlists__item__name'>
+                    <div>{name}</div>
+                  </DIV>
+                  {!isLoading && (
+                    <div className='watchlists__item__description'>
+                      <Label>
+                        {listItems.length > 0 ? listItems.length : 'empty'}
                       </Label>
-                    )}
-                    {isConfigOpened &&
-                      !isNewestList(id) && (
+                      {isNewestList(id) && (
+                        <Label color='green' horizontal>
+                          NEW
+                        </Label>
+                      )}
+                    </div>
+                  )}
+                </Link>
+                <div className='watchlists__tools'>
+                  {!isNavigation && (
+                    <Popup
+                      inverted
+                      trigger={
                         <Icon
                           size='big'
+                          className={cx({
+                            'icon-green': hasAssetById({
+                              listItems,
+                              id: projectId
+                            })
+                          })}
+                          onClick={this.props.toggleAssetInList.bind(this, {
+                            projectId,
+                            assetsListId: id,
+                            slug,
+                            listItems
+                          })}
+                          name={
+                            hasAssetById({
+                              listItems,
+                              id: projectId
+                            })
+                              ? 'check circle outline'
+                              : 'add'
+                          }
+                        />
+                      }
+                      content={
+                        hasAssetById({
+                          listItems,
+                          id: projectId
+                        })
+                          ? 'remove from list'
+                          : 'add to list'
+                      }
+                      position='right center'
+                      size='mini'
+                    />
+                  )}
+                  {!isNewestList(id) && (
+                    <Popup
+                      inverted
+                      trigger={
+                        <Icon
+                          size='big'
+                          className='watchlists__tools__move-to-trash'
                           onClick={removeAssetList.bind(this, id)}
                           name='trash'
                         />
-                      )}
-                  </div>
-                )}
-              </Component>
+                      }
+                      content='remove this list'
+                      position='right center'
+                      size='mini'
+                    />
+                  )}
+                </div>
+              </div>
             ))
           ) : (
             <div className='watchlists__empty-list-msg'>
@@ -133,7 +143,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = (dispatch, ownProps) => ({
   toggleAssetInList: ({ projectId, assetsListId, listItems, slug }) => {
-    if (ownProps.isConfigOpened || !projectId) return
+    if (!projectId) return
     const isAssetInList = hasAssetById({
       listItems: ownProps.lists.find(list => list.id === assetsListId)
         .listItems,
@@ -185,6 +195,5 @@ export default compose(
       color: '#bdc3c7'
     })
   ),
-  withState('isConfigOpened', 'setConfigOpened', false),
   connect(mapStateToProps, mapDispatchToProps)
 )(Watchlists)

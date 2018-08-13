@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+- 2018-13-09 | v.0.8.0 'Phobos':
+
+  Added user's watchlists
+
+- 2018-10-08 | v.0.7.2 'Moon':
+
+  Change ticker to slug in gqls
+
 - 2018-04-08 | v.0.7.1 'Moon':
 
   Fix keyboard shortcut usage in any input form

@@ -9,9 +9,6 @@ import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
 import Notification from './components/Notification'
 import LoginPage from './pages/Login/LoginPage'
-import Cashflow from './pages/Cashflow'
-import Currencies from './pages/Currencies'
-import Favorites from './pages/Favorites'
 import CashflowMobile from './pages/CashflowMobile'
 import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
@@ -31,6 +28,7 @@ import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import ApiDocs from './components/ApiDocs'
 import ApiExplorer from './components/ApiExplorer'
+import AssetsPage from './pages/assets/AssetsPage'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -104,12 +102,7 @@ export const App = ({
           path='/projects'
           render={props => {
             if (isDesktop) {
-              return (
-                <Cashflow
-                  preload={() => LoadableDetailedPage.preload()}
-                  {...props}
-                />
-              )
+              return <Redirect to='/assets/erc20' />
             }
             return <CashflowMobile {...props} />
           }}
@@ -119,31 +112,32 @@ export const App = ({
           path='/currencies'
           render={props => {
             if (isDesktop) {
-              return (
-                <Currencies
-                  preload={() => LoadableDetailedPage.preload()}
-                  {...props}
-                />
-              )
+              return <Redirect to='/assets/currencies' />
             }
             return <CurrenciesMobile {...props} />
           }}
         />
-        <Route
-          exact
-          path='/favorites'
-          render={props => {
-            if (isDesktop && isLoggedIn) {
-              return (
-                <Favorites
-                  preload={() => LoadableDetailedPage.preload()}
-                  {...props}
-                />
-              )
-            }
-            return <Redirect from='/favorites' to='/projects' />
-          }}
-        />
+        {['currencies', 'erc20', 'all', 'list'].map(name => (
+          <Route
+            exact
+            key={name}
+            path={`/assets/${name}`}
+            render={props => {
+              if (isDesktop) {
+                return (
+                  <AssetsPage
+                    type={name}
+                    isLoggedIn={isLoggedIn}
+                    preload={() => LoadableDetailedPage.preload()}
+                    {...props}
+                  />
+                )
+              }
+              return <Redirect to='/projects' />
+            }}
+          />
+        ))}
+        <Redirect from='/assets' to='/assets/all' />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route path='/insights/new' component={LoadableInsightsNew} />

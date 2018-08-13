@@ -1,6 +1,5 @@
 import 'rxjs'
 import { combineEpics } from 'redux-observable'
-import handleFollowProject from './handleFollowProject'
 import handleOffline from './handleOffline'
 import handleLauched from './handleLaunch'
 import handleLogout from './handleLogout'
@@ -8,13 +7,19 @@ import handleEmailLogin, { handleLoginSuccess } from './handleEmailLogin'
 import handleEthLogin from './handleEthLogin'
 import handleGDPR from './handleGDPR'
 import handleRouter from './handleRouter'
-import handleApikeyGenerate from './handleApikeyGenerate'
-import handleApikeyRevoke from './handleApikeyRevoke'
+import apikeyGenerateEpic from './apikeyGenerateEpic'
+import apikeyRevokeEpic from './apikeyRevokeEpic'
+import createWatchlistEpic, {
+  createWatchlistSuccessEpic
+} from './createWatchlistEpic'
+import addAssetToWatchlistEpic from './addAssetToWatchlistEpic'
+import removeWatchlistEpic from './removeWatchlistEpic'
+import removeAssetFromWatchlistEpic from './removeAssetFromWatchlistEpic'
+import { fetchAssetsEpic, fetchAssetsFromListEpic } from './fetchAssetsEpic'
 import handleNightModeToggle from './handleNightModeToggle'
 import keyboardEpic from './keyboardEpic'
 
 export default combineEpics(
-  handleFollowProject,
   handleOffline,
   handleLauched,
   handleLogout,
@@ -23,8 +28,17 @@ export default combineEpics(
   handleEthLogin,
   handleGDPR,
   handleRouter,
-  handleApikeyGenerate,
-  handleApikeyRevoke,
+  apikeyGenerateEpic,
+  apikeyRevokeEpic,
   handleNightModeToggle,
-  keyboardEpic
+  keyboardEpic,
+  // user's assets lists
+  createWatchlistEpic,
+  createWatchlistSuccessEpic,
+  removeWatchlistEpic,
+  addAssetToWatchlistEpic,
+  removeAssetFromWatchlistEpic,
+  // assets
+  fetchAssetsEpic,
+  fetchAssetsFromListEpic
 )

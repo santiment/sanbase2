@@ -4,17 +4,14 @@ import {
   createSkeletonElement
 } from '@trainline/react-skeletor'
 import { compose } from 'recompose'
-import { connect } from 'react-redux'
-import { graphql } from 'react-apollo'
-import { Popup } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
+import WatchlistsPopup from './../../components/WatchlistPopup/WatchlistsPopup'
 import {
   formatCryptoCurrency,
   formatBTC,
   formatNumber
 } from './../../utils/formatting'
-import { followedProjectsGQL } from './DetailedGQL'
 import './DetailedHeader.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
@@ -24,13 +21,12 @@ const DetailedHeader = ({
   project = {
     ticker: '',
     name: '',
-    description: ''
+    description: '',
+    slug: ''
   },
   loading,
   empty,
-  isLoggedIn,
-  isFollowed,
-  handleFollow
+  isLoggedIn
 }) => {
   return (
     <div className='detailed-head'>
@@ -41,30 +37,14 @@ const DetailedHeader = ({
           <DIV className='detailed-ticker-name'>
             {(project.ticker || '').toUpperCase()}
           </DIV>
+          &nbsp; &nbsp;
           {isLoggedIn &&
             !loading && (
-              <div className='detailed-favorite'>
-                <Popup
-                  trigger={
-                    <i
-                      className={`fa fa-2x fa-star${isFollowed ? '' : '-o'}`}
-                      onClick={() =>
-                        handleFollow({
-                          projectId: project.id,
-                          actionType: isFollowed
-                            ? 'unfollowProject'
-                            : 'followProject'
-                        })
-                      }
-                      aria-hidden='true'
-                    />
-                  }
-                  content={
-                    isFollowed ? 'Unfollow this project' : 'Follow this project'
-                  }
-                  position='bottom center'
-                />
-              </div>
+              <WatchlistsPopup
+                projectId={project.id}
+                slug={project.slug}
+                isLoggedIn={isLoggedIn}
+              />
             )}
         </div>
         <DIV className='datailed-project-description'>
@@ -87,20 +67,6 @@ const DetailedHeader = ({
   )
 }
 
-const mapDispatchToProps = dispatch => {
-  return {
-    handleFollow: ({ projectId, actionType }) => {
-      dispatch({
-        type: 'TOGGLE_FOLLOW',
-        payload: {
-          projectId,
-          actionType
-        }
-      })
-    }
-  }
-}
-
 export default compose(
   createSkeletonProvider(
     {
@@ -118,21 +84,5 @@ export default compose(
       backgroundColor: '#bdc3c7',
       color: '#bdc3c7'
     })
-  ),
-  connect(undefined, mapDispatchToProps),
-  graphql(followedProjectsGQL, {
-    name: 'FollowedProjects',
-    options: ({ isLoggedIn }) => ({ skip: !isLoggedIn }),
-    props: ({ FollowedProjects, ownProps }) => {
-      const { followedProjects = [] } = FollowedProjects
-      const { project = {} } = ownProps
-      return {
-        isFollowed:
-          followedProjects &&
-          followedProjects.some(val => {
-            return val.id === project.id
-          })
-      }
-    }
-  })
+  )
 )(DetailedHeader)

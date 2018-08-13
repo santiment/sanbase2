@@ -107,10 +107,13 @@
 .detailed-favorite {
   margin-left: 15px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
 .detailed-favorite i {
-  margin-right: 0;
+  margin-right: 10px;
 }
 
 .pending-h1 {

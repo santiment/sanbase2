@@ -56,7 +56,7 @@
   color: #794b02;
   background: #fffaf3;
   text-align: center;
-  font: 15px/1.6 "Nunito Sans", sans-serif;
+  font: 15px/1.6 'Nunito Sans', sans-serif;
   font-weight: bold;
 }
 
@@ -150,7 +150,8 @@
   }
 
   #nprogress .peg {
-    box-shadow: 0 0 10px var(--progress-bg-color), 0 0 5px var(--progress-bg-color);
+    box-shadow: 0 0 10px var(--progress-bg-color),
+      0 0 5px var(--progress-bg-color);
   }
 
   #nprogress .spinner-icon {

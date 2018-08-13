@@ -2,7 +2,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: #f0f4f8;
-  font: 14px/1.6 "Source Sans Pro", sans-serif;
+  font: 14px/1.6 'Source Sans Pro', sans-serif;
   font-weight: 400;
   color: #3d4450;
 }
@@ -37,7 +37,7 @@ h2,
 h3,
 h4,
 h5 {
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
 }
 
 h1 {
@@ -222,7 +222,7 @@ hr {
 
 /* BUTTONS UI */
 
-.night-mode .ui[class*="right labeled"].icon.button > .icon {
+.night-mode .ui[class*='right labeled'].icon.button > .icon {
   box-shadow: 1px 0 0 0 #2d3239 inset;
   color: #d1d1d1;
 }

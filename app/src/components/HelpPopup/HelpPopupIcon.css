@@ -13,3 +13,7 @@
   user-select: none;
   cursor: pointer;
 }
+
+.night-mode .HelpPopupIcon {
+  border-color: #a0a0a0;
+}

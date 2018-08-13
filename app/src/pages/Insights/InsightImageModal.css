@@ -6,3 +6,7 @@
 .InsightImageModal i {
   left: 100%;
 }
+
+.InsightImageModal__pic {
+  max-width: 100%;
+}

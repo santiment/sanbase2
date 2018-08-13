@@ -12,7 +12,7 @@ import DetailedHeader from './DetailedHeader'
 import ProjectChartContainer from './../../components/ProjectChart/ProjectChartContainer'
 import PanelBlock from './../../components/PanelBlock'
 import Panel from './../../components/Panel'
-import Search from './../../components/SearchContainer'
+import Search from './../../components/Search/SearchContainer'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
 import { millify } from './../../utils/formatting'
@@ -382,10 +382,9 @@ const enhance = compose(
       return {
         skip: !from,
         variables: {
-          ticker: 'ETH',
+          slug: 'ethereum',
           from,
-          to,
-          interval: ''
+          to
         }
       }
     }
@@ -405,17 +404,16 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
-    options: ({ timeFilter, Project }) => {
+    options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
-      const ticker = Project.project.ticker
+      const slug = match.params.slug
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
           to,
-          ticker,
-          interval: ''
+          slug
         }
       }
     }

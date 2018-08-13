@@ -29,3 +29,12 @@
   color: #26a987;
   border-bottom: 0;
 }
+
+.night-mode .HelpPopupProjectsContent h3,
+.night-mode .HelpPopupProjectsContent h4 {
+  color: #a0a0a0;
+}
+
+.night-mode .HelpPopupProjectsContent p {
+  color: #949494;
+}

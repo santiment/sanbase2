@@ -1,5 +1,20 @@
 ## CHANGELOG
 
+- 2018-10-08 | v.0.7.2 'Moon':
+
+  Change ticker to slug in gqls
+
+- 2018-04-08 | v.0.7.1 'Moon':
+
+  Fix keyboard shortcut usage in any input form
+
+- 2018-27-07 | v.0.7.0 'Moon':
+
+  Added an icon in the search result
+  Added Night Mode
+  Added Insight Visual Backtest
+  Fixed bugs
+
 - 2018-26-06 | v.0.6.1:
 
   Updated settings

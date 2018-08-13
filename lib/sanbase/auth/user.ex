@@ -74,6 +74,7 @@ defmodule Sanbase.Auth.User do
       :marketing_accepted
     ])
     |> unique_constraint(:email)
+    |> unique_constraint(:username)
   end
 
   def san_balance_cache_stale?(%User{san_balance_updated_at: nil}), do: true
@@ -90,18 +91,31 @@ defmodule Sanbase.Auth.User do
     |> change(san_balance: san_balance, san_balance_updated_at: Timex.now())
   end
 
-  def san_balance!(%User{test_san_balance: test_san_balance} = _user)
+  def san_balance(%User{test_san_balance: test_san_balance} = _user)
       when not is_nil(test_san_balance) do
-    test_san_balance
+    {:ok, test_san_balance}
   end
 
-  def san_balance!(%User{san_balance: san_balance} = user) do
+  def san_balance(%User{san_balance: san_balance} = user) do
     if san_balance_cache_stale?(user) do
       update_san_balance_changeset(user)
-      |> Repo.update!()
-      |> Map.get(:san_balance)
+      |> Repo.update()
+      |> case do
+        {:ok, user} ->
+          {:ok, user |> Map.get(:san_balance)}
+
+        {:error, error} ->
+          {:error, error}
+      end
     else
-      san_balance
+      {:ok, san_balance}
+    end
+  end
+
+  def san_balance!(%User{} = user) do
+    case san_balance(user) do
+      {:ok, san_balance} -> san_balance
+      {:error, error} -> raise(error)
     end
   end
 

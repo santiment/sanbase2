@@ -56,13 +56,21 @@
   color: #794b02;
   background: #fffaf3;
   text-align: center;
-  font: 15px/1.6 "Nunito Sans", sans-serif;
+  font: 15px/1.6 'Nunito Sans', sans-serif;
   font-weight: bold;
 }
 
 .App .no-username-status-message {
   text-align: center;
   background-color: #ffbe00;
+}
+
+.night-mode .App .no-username-status-message {
+  background-color: #cb8e25;
+}
+
+.night-mode .App .no-username-status-message i {
+  color: #000;
 }
 
 .App .no-username-status-message a {
@@ -142,7 +150,8 @@
   }
 
   #nprogress .peg {
-    box-shadow: 0 0 10px var(--progress-bg-color), 0 0 5px var(--progress-bg-color);
+    box-shadow: 0 0 10px var(--progress-bg-color),
+      0 0 5px var(--progress-bg-color);
   }
 
   #nprogress .spinner-icon {

@@ -27,4 +27,35 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:datetime, non_null(:datetime))
     field(:sentiment, :float)
   end
+
+  object :erc20_exchange_funds_flow do
+    field(:ticker, :string)
+    field(:contract, :string)
+    field(:exchange_in, :float)
+    field(:exchange_out, :float)
+    field(:exchange_diff, :float)
+    field(:exchange_in_usd, :float)
+    field(:exchange_out_usd, :float)
+    field(:exchange_diff_usd, :float)
+    field(:percent_diff_exchange_diff_usd, :float)
+    field(:exchange_volume_usd, :float)
+    field(:percent_diff_exchange_volume_usd, :float)
+    field(:exchange_in_btc, :float)
+    field(:exchange_out_btc, :float)
+    field(:exchange_diff_btc, :float)
+    field(:percent_diff_exchange_diff_btc, :float)
+    field(:exchange_volume_btc, :float)
+    field(:percent_diff_exchange_volume_btc, :float)
+  end
+
+  object :social_volume do
+    field(:datetime, non_null(:datetime))
+    field(:mentions_count, :integer)
+  end
+
+  enum :social_volume_type do
+    value(:professional_traders_chat_overview)
+    value(:telegram_chats_overview)
+    value(:telegram_discussion_overview)
+  end
 end

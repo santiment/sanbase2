@@ -89,6 +89,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
         shortDesc,
         state,
         createdAt,
+        updatedAt,
         user {
           id,
           username
@@ -104,7 +105,26 @@ defmodule SanbaseWeb.Graphql.PostTest do
       build_conn()
       |> post("/graphql", query_skeleton(query, "post"))
 
-    assert json_response(result, 200)["data"]["post"] |> Map.get("state") == post.state
+    fetched_post = json_response(result, 200)["data"]["post"]
+    assert fetched_post["state"] == post.state
+
+    {:ok, created_at, 0} = DateTime.from_iso8601(fetched_post["createdAt"])
+
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             created_at,
+             2,
+             :seconds
+           )
+
+    {:ok, updated_at, 0} = DateTime.from_iso8601(fetched_post["updatedAt"])
+
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             updated_at,
+             2,
+             :seconds
+           )
   end
 
   test "getting all posts as anon user", %{user: user} do

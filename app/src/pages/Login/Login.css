@@ -12,7 +12,8 @@
   text-align: center;
   background-color: rgba(255, 255, 255, 1);
   border-radius: 2px;
-  box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1), 0 3px 6px 0 rgba(0, 0, 0, 0.07);
+  box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1),
+    0 3px 6px 0 rgba(0, 0, 0, 0.07);
 }
 
 .login-inner .ui.negative.message.content {
@@ -50,6 +51,10 @@
 .sign-in-btn {
   display: flex !important;
   align-items: center !important;
+}
+
+.night-mode .sign-in-btn {
+  border: 1px solid #2d3239 !important;
 }
 
 .sign-in-btn i {
@@ -94,6 +99,16 @@
 
 .ui.basic.button.metamask-btn:hover {
   border-color: rgba(235, 133, 37, 1) !important;
+}
+
+.night-mode .ui.basic.button.metamask-btn {
+  background-color: #a6570c !important;
+  color: #e8e8e8 !important;
+}
+
+.night-mode .ui.basic.button.metamask-btn:hover {
+  background-color: #c56d1b !important;
+  color: #e8e8e8 !important;
 }
 
 @media (min-width: 1024px) {

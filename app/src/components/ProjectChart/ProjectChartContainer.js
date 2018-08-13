@@ -256,6 +256,7 @@ class ProjectChartContainer extends Component {
               ticker={this.props.ticker}
               isERC20={this.props.isERC20}
               isDesktop={this.props.isDesktop}
+              isPremium={this.props.isPremium}
             />
           )}
           {this.props.isDesktop || this.props.isFullscreenMobile ? (
@@ -296,7 +297,8 @@ class ProjectChartContainer extends Component {
 const mapStateToProps = state => {
   return {
     isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
-    timeFilter: state.detailedPageUi.timeFilter
+    timeFilter: state.detailedPageUi.timeFilter,
+    isNightModeEnabled: state.rootUi.isNightModeEnabled
   }
 }
 

@@ -260,7 +260,7 @@ const mapDataToProps = props => {
   const { Insights, ownProps } = props
   const filter = ownProps.match.path.split('/')[2] || 'all'
   const qsData = qs.parse(ownProps.location.search)
-  const sort = qsData['sort'] ? qsData.sort : 'popular'
+  const sort = qsData['sort'] ? qsData.sort : 'newest'
   const posts = Insights.allInsights || []
   let normalizedPosts = posts.map(post => {
     return {

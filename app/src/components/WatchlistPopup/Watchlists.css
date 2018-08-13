@@ -2,6 +2,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  min-width: 350px;
 }
 
 .watchlists .watchlists__empty-list-msg {
@@ -26,18 +27,38 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 15px;
-  cursor: pointer;
   min-height: 2em;
   border-bottom: 1px solid #eee;
 }
 
-.watchlists__list .watchlists__item:hover {
+.watchlists__list .watchlists__item__link {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 15px;
+  cursor: pointer;
+  min-height: 2em;
+  border-bottom: none;
+}
+
+.watchlists__list .watchlists__item__link:hover {
   background-color: #e8e8e8;
 }
 
-.watchlists__list .watchlists__item:first-child {
+.watchlists__list .watchlists__item__link:first-child {
   border-top: none;
+}
+
+.watchlists__tools .icon {
+  cursor: pointer;
+  margin: 5px;
+  margin-left: 0;
+  margin-right: 10px;
+}
+
+.watchlists__tools .icon-green {
+  color: green;
 }
 
 .watchlists__item__name {
@@ -48,4 +69,13 @@
   display: flex;
   padding-top: 4px;
   text-transform: uppercase;
+}
+
+.watchlists__tools__move-to-trash {
+  opacity: 0.1 !important;
+  transition: all 0.2s ease;
+}
+
+.watchlists__tools__move-to-trash:hover {
+  opacity: 1 !important;
 }

@@ -23,7 +23,7 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
       <div className='right'>
         <ul className='menu-list-top'>
           <Link className='app-menu__page-link' to={'/projects'}>
-            Markets
+            Assets
           </Link>
           <AnalysisDropdownMenu />
         </ul>

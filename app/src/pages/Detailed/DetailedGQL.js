@@ -103,7 +103,7 @@ export const TwitterDataGQL = gql`
   }
 `
 
-export const HistoryPriceGQL = gql`
+export const HistoryPriceByTickerGQL = gql`
   query queryHistoryPrice(
     $ticker: String
     $from: DateTime
@@ -111,6 +111,23 @@ export const HistoryPriceGQL = gql`
     $interval: String
   ) {
     historyPrice(ticker: $ticker, from: $from, to: $to, interval: $interval) {
+      priceBtc
+      priceUsd
+      volume
+      datetime
+      marketcap
+    }
+  }
+`
+
+export const HistoryPriceGQL = gql`
+  query queryHistoryPrice(
+    $slug: String
+    $from: DateTime
+    $to: DateTime
+    $interval: String
+  ) {
+    historyPrice(slug: $slug, from: $from, to: $to, interval: $interval) {
       priceBtc
       priceUsd
       volume

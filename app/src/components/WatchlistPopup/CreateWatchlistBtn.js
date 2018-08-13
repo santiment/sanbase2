@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Input } from 'semantic-ui-react'
+import { Input, Button } from 'semantic-ui-react'
 import './CreateWatchlistBtn.css'
 
 const initialState = {
@@ -38,21 +38,19 @@ class CreateWatchlistBtn extends React.Component {
         <Input
           disabled={this.props.watchlistUi.newItemPending}
           value={this.state.newTitle}
-          action={{
-            color: 'google plus',
-            labelPosition: 'left',
-            icon: 'plus',
-            content: 'create',
-            onClick: this.handleCreateWatchlist
-          }}
+          placeholder='a name of new list'
           onChange={this.handleOnChange}
           onKeyPress={(e, data) => {
             if (e.key === 'Enter') {
               this.handleCreateWatchlist()
             }
           }}
-          actionPosition='left'
         />
+        {this.state.newTitle.length > 0 && (
+          <Button color='google plus' onClick={this.handleCreateWatchlist}>
+            Create
+          </Button>
+        )}
       </div>
     )
   }

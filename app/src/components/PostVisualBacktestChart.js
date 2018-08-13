@@ -52,7 +52,7 @@ const datasetOptions = {
 
 const PostVisualBacktestChart = ({
   history: { historyPrice },
-  postCreatedAt,
+  postUpdatedAt,
   changePriceProp,
   change
 }) => {
@@ -79,7 +79,7 @@ const PostVisualBacktestChart = ({
                 type: 'line',
                 mode: 'vertical',
                 scaleID: 'x-axis-0',
-                value: postCreatedAt,
+                value: postUpdatedAt,
                 borderColor: change > 0 ? Color.POSITIVE : Color.NEGATIVE,
                 borderWidth: 1
               }

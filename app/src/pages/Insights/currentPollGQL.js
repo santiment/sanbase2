@@ -28,6 +28,7 @@ export const allInsightsGQL = gql`
       id
       title
       createdAt
+      updatedAt
       votedAt
       state
       tags {

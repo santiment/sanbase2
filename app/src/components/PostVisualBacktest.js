@@ -60,7 +60,7 @@ export const PostVisualBacktest = ({
   changeProp,
   changePriceProp,
   history,
-  postCreatedAt
+  postUpdatedAt
 }) => {
   if (!change) return null
   return (
@@ -71,7 +71,7 @@ export const PostVisualBacktest = ({
       <PostVisualBacktestChart
         history={history}
         change={change}
-        postCreatedAt={postCreatedAt}
+        postUpdatedAt={postUpdatedAt}
         changePriceProp={changePriceProp}
       />
     </Message>
@@ -95,11 +95,14 @@ const enhance = compose(
       }
     }
   }),
-  withProps(({ ticker, history = {}, from }) => {
+  withProps(({ ticker, history = {}, updatedAt }) => {
     const { historyPrice } = history
     if (!historyPrice || historyPrice.length === 0) return {}
     const start =
-      historyPrice[binarySearchIndex(historyPrice, from, isDatetimeSameDay)]
+      historyPrice[
+        binarySearchIndex(historyPrice, updatedAt, isDatetimeSameDay)
+      ]
+
     const last = historyPrice[historyPrice.length - 1]
     if (!start || !last) return {}
     const changeProp = isTotalMarket(ticker) ? 'Total marketcap' : 'Prices'
@@ -108,7 +111,7 @@ const enhance = compose(
       change: getChanges(start, last, changePriceProp),
       changeProp,
       changePriceProp,
-      postCreatedAt: start.datetime
+      postUpdatedAt: start.datetime
     }
   })
 )

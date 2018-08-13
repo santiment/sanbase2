@@ -16,11 +16,22 @@ const calculateBTCMarketcap = ({ marketcap, priceUsd, priceBtc }) => {
 
 const getOrigin = () => {
   if (process.env.NODE_ENV === 'development') {
-    return process.env.REACT_APP_WEBSITE_URL || window.location.origin
+    return process.env.REACT_APP_FRONTEND_URL || window.location.origin
   }
   return (
-    (window.env || {}).WEBSITE_URL ||
-    process.env.REACT_APP_WEBSITE_URL ||
+    (window.env || {}).FRONTEND_URL ||
+    process.env.REACT_APP_FRONTEND_URL ||
+    window.location.origin
+  )
+}
+
+const getAPIUrl = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.REACT_APP_BACKEND_URL || window.location.origin
+  }
+  return (
+    (window.env || {}).BACKEND_URL ||
+    process.env.REACT_APP_BACKEND_URL ||
     window.location.origin
   )
 }
@@ -54,6 +65,7 @@ export {
   calculateBTCVolume,
   calculateBTCMarketcap,
   getOrigin,
+  getAPIUrl,
   sanitizeMediumDraftHtml,
   filterProjectsByMarketSegment
 }

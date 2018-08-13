@@ -63,6 +63,7 @@ export const Post = ({
   tags = [],
   balance = null,
   createdAt,
+  updatedAt,
   votedAt,
   votePost,
   unvotePost,
@@ -128,7 +129,11 @@ export const Post = ({
         <br />
         {createdAt &&
           tags.length > 0 && (
-            <PostVisualBacktest from={createdAt} ticker={tags[0].name} />
+            <PostVisualBacktest
+              from={createdAt}
+              ticker={tags[0].name}
+              updatedAt={updatedAt}
+            />
           )}
         <Div className='event-post-controls'>
           {showStatus && (

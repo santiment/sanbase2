@@ -1,10 +1,12 @@
 import React from 'react'
 import { graphql } from 'react-apollo'
+import { connect } from 'react-redux'
 import { compose } from 'recompose'
 import moment from 'moment'
 import { Popup, Button } from 'semantic-ui-react'
 import { WatchlistGQL } from './WatchlistGQL'
-import Watchlists from './Watchlists'
+import Watchlists, { hasAssetById } from './Watchlists'
+import * as actions from './../../actions/types'
 import './WatchlistsPopup.css'
 
 const POLLING_INTERVAL = 2000
@@ -22,7 +24,11 @@ const WatchlistPopup = ({
   projectId,
   slug,
   lists,
-  trigger = AddToListBtn
+  trigger = AddToListBtn,
+  watchlistUi,
+  createWatchlist,
+  removeAssetList,
+  toggleAssetInList
 }) => {
   return (
     <Popup
@@ -32,6 +38,10 @@ const WatchlistPopup = ({
           isNavigation={isNavigation}
           isLoading={isLoading}
           projectId={projectId}
+          createWatchlist={createWatchlist}
+          removeAssetList={removeAssetList}
+          toggleAssetInList={toggleAssetInList}
+          watchlistUi={watchlistUi}
           slug={slug}
           lists={lists}
         />
@@ -45,6 +55,44 @@ const WatchlistPopup = ({
 
 const sortWatchlists = (list, list2) =>
   moment.utc(list.insertedAt).diff(moment.utc(list2.insertedAt))
+
+const mapStateToProps = state => {
+  return {
+    watchlistUi: state.watchlistUi
+  }
+}
+
+const mapDispatchToProps = (dispatch, ownProps) => ({
+  toggleAssetInList: ({ projectId, assetsListId, listItems, slug }) => {
+    if (!projectId) return
+    const isAssetInList = hasAssetById({
+      listItems: ownProps.lists.find(list => list.id === assetsListId)
+        .listItems,
+      id: projectId
+    })
+    if (isAssetInList) {
+      return dispatch({
+        type: actions.USER_REMOVE_ASSET_FROM_LIST,
+        payload: { projectId, assetsListId, listItems, slug }
+      })
+    } else {
+      return dispatch({
+        type: actions.USER_ADD_ASSET_TO_LIST,
+        payload: { projectId, assetsListId, listItems, slug }
+      })
+    }
+  },
+  createWatchlist: payload =>
+    dispatch({
+      type: actions.USER_ADD_NEW_ASSET_LIST,
+      payload
+    }),
+  removeAssetList: id =>
+    dispatch({
+      type: actions.USER_REMOVE_ASSET_LIST,
+      payload: { id }
+    })
+})
 
 export default compose(
   graphql(WatchlistGQL, {
@@ -60,5 +108,6 @@ export default compose(
         isLoading: loading
       }
     }
-  })
+  }),
+  connect(mapStateToProps, mapDispatchToProps)
 )(WatchlistPopup)

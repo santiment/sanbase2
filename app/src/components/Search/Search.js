@@ -36,7 +36,7 @@ class SearchPanel extends Component {
   }
 
   handleSearchRef = c => {
-    this._searchInput = c && c.querySelector('input')
+    this._searchInput = c && c.querySelector('#search-input')
   }
 
   componentWillReceiveProps (nextProps) {
@@ -112,7 +112,8 @@ class SearchPanel extends Component {
 }
 
 SearchPanel.propTypes = {
-  projects: PropTypes.array,
+  projects: PropTypes.array.isRequired,
+  focus: PropTypes.bool.isRequired,
   onSelectProject: PropTypes.func,
   resetFocus: PropTypes.func
 }
@@ -120,7 +121,8 @@ SearchPanel.propTypes = {
 SearchPanel.defaultProps = {
   onSelectProject: () => {},
   resetFocus: () => {},
-  projects: []
+  projects: [],
+  focus: false
 }
 
 export default SearchPanel

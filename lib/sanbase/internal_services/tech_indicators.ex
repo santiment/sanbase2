@@ -468,7 +468,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     url = "#{tech_indicators_url()}/indicator/erc20_tokens_exchange_flow"
 
     options = [
-      recv_timeout: @recv_timeout,
+      recv_timeout: 2 * @recv_timeout,
       params: [
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix}

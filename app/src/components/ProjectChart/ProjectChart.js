@@ -711,8 +711,9 @@ const makeOptionsFromProps = (props, COLORS) => {
             beginAtZero: false,
             autoSkip: false,
             callback: renderTicks(props),
-            maxRotation: props.isToggledBTC ? 35 : 0,
-            minRotation: props.isToggledBTC ? 35 : 0
+            maxRotation: 35,
+            minRotation: 0,
+            padding: -5
           },
           gridLines: {
             drawBorder: true,

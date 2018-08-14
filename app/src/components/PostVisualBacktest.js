@@ -90,7 +90,8 @@ const enhance = compose(
             .subtract(6, 'months')
             .utc()
             .format(),
-          ticker: isTotalMarket(ticker) ? 'TOTAL_MARKET' : ticker
+          ticker: isTotalMarket(ticker) ? 'TOTAL_MARKET' : ticker,
+          interval: '1d'
         }
       }
     }

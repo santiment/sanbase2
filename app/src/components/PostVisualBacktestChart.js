@@ -19,25 +19,13 @@ const chartOptions = {
   scales: {
     yAxes: [
       {
-        ticks: {
-          display: false
-        },
-        gridLines: {
-          display: false,
-          color: '#4a4a4a'
-        }
+        display: false
       }
     ],
     xAxes: [
       {
         id: 'x-axis-0',
-        ticks: {
-          display: false
-        },
-        gridLines: {
-          display: false,
-          color: '#4a4a4a'
-        }
+        display: false
       }
     ]
   }
@@ -69,7 +57,6 @@ const PostVisualBacktestChart = ({
   return (
     <div className='PostVisualBacktestChart'>
       <Line
-        className='PostVisualBacktestChart'
         options={{
           ...chartOptions,
           annotation: {

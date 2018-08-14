@@ -8,6 +8,8 @@ import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './Search/SearchContainer'
 import * as actions from './../actions/types'
 import AnalysisDropdownMenu from './AnalysisDropdownMenu'
+import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
+import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -21,13 +23,19 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
         <Search />
       </div>
       <div className='right'>
-        <ul className='menu-list-top'>
-          <Link className='app-menu__page-link' to={'/projects'}>
-            Assets
-          </Link>
-          <AnalysisDropdownMenu />
-        </ul>
-        <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
+        <SmoothDropdown id='nav-dropdown'>
+          <ul className='menu-list-top'>
+            <Link className='app-menu__page-link' to={'/projects'}>
+              Assets
+            </Link>
+            <AnalysisDropdownMenu />
+            <SmoothDropdownItem>
+              testing 123. it's first drop
+            </SmoothDropdownItem>
+          </ul>
+          <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
+          <SmoothDropdownItem>It's second one</SmoothDropdownItem>
+        </SmoothDropdown>
       </div>
     </div>
   </div>

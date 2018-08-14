@@ -29,7 +29,7 @@ const formatNumber = (amount, options = {}) => {
   let value = new Intl.NumberFormat('en', {
     style: options.currency ? 'currency' : 'decimal',
     maximumFractionDigits,
-    minimumFractionDigits: maximumFractionDigits,
+    minimumFractionDigits: 2,
     ...options
   }).format(amount)
 

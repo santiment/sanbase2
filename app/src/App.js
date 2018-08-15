@@ -1,5 +1,6 @@
 import React from 'react'
 import { Route as BasicRoute, Switch, Redirect, Link } from 'react-router-dom'
+import { Label, Icon } from 'semantic-ui-react'
 import { FadeInDown } from 'animate-components'
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
@@ -17,6 +18,7 @@ import Account from './pages/Account/Account'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
+import EthSpent from './pages/EthSpent'
 import Menu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
@@ -94,6 +96,17 @@ export const App = ({
           </Link>
         </div>
       )}
+    {isDesktop && (
+      <div className='new-status-message'>
+        <Link to='/ethereum-spent'>
+          <Label color='green' horizontal>
+            NEW
+          </Label>
+          We prepared for you ethereum spent overview{' '}
+          <Icon name='angle right' />
+        </Link>
+      </div>
+    )}
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>
@@ -169,6 +182,7 @@ export const App = ({
         />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
+        <Route exact path='/ethereum-spent' component={EthSpent} />
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />

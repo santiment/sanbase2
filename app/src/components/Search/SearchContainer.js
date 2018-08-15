@@ -39,7 +39,10 @@ const enhance = compose(
   connect(mapStateToProps, mapDispatchToProps),
   graphql(allProjectsForSearchGQL, {
     name: 'allProjects',
-    props: mapDataToProps
+    props: mapDataToProps,
+    options: () => ({
+      context: { isRetriable: true }
+    })
   })
 )
 

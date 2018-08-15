@@ -49,12 +49,17 @@ const handleLaunch = (action$, store, { client }) =>
         .catch(error => {
           Raven.captureException(error)
           client.cache.reset()
-          return {
-            type: actions.APP_USER_HAS_INACTIVE_TOKEN,
-            payload: {
-              error
-            }
+          if (!/Network error/.test(error)) {
+            return Observable.of({
+              type: actions.APP_USER_HAS_INACTIVE_TOKEN,
+              payload: {
+                error
+              }
+            })
           }
+          return Observable.of({
+            type: '_'
+          })
         })
         .takeUntil(action$.ofType(actions.USER_LOGIN_SUCCESS))
     })

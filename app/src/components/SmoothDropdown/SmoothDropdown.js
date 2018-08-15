@@ -7,6 +7,11 @@ export const SmoothDropdownContext = React.createContext({
   changeDrop: id => {}
 })
 
+const dropdowns = new WeakMap()
+
+export const createDrop = (trigger, dropdown) =>
+  dropdowns.set(trigger, dropdown)
+
 // const SmoothDropdown = ({ id, children }) => {
 //   const portal = document.createElement('ul')
 //   portal.classList.add('smooth-dropdown__list')
@@ -30,11 +35,18 @@ class SmoothDropdown extends Component {
     currentDrop: null
   }
 
-  changeDrop = id => {
-    console.log(id)
-    this.setState(prevState => ({
-      ...prevState,
-      currentDrop: id
+  // changeDrop = id => {
+  //   console.log(id)
+  //   this.setState(prevState => ({
+  //     ...prevState,
+  //     currentDrop: id
+  //   }))
+  // }
+  changeDrop = trigger => {
+    // console.log(trigger)
+    console.log(dropdowns.has(trigger))
+    this.setState(() => ({
+      currentDrop: trigger
     }))
   }
 

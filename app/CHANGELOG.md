@@ -3,6 +3,7 @@
 - 2018-15-09 | v.0.8.1 'Phobos':
 
   Fixed chart axis's styles
+  Added retriable requests
 
 - 2018-13-09 | v.0.8.0 'Phobos':
 

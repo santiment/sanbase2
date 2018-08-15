@@ -3,17 +3,20 @@ import { Button, Popup, Divider, Icon } from 'semantic-ui-react'
 import { NavLink, Link } from 'react-router-dom'
 import FeedbackBtn from './FeedbackBtn'
 import './HeaderDropdownMenu.css'
+import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 
 const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
   if (isLoggedin) {
     return (
       <div className='user-auth-control'>
         <FeedbackBtn />
-        <Popup
+        {/* <Popup */}
+        <SmoothDropdownItem
           mouseLeaveDelay={2000}
           basic
           wide
           trigger={<Button circular icon='user' />}
+          id={0}
           on='hover'
         >
           <div className='app-menu-popup'>
@@ -30,7 +33,8 @@ const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
               Logout
             </Button>
           </div>
-        </Popup>
+        </SmoothDropdownItem>
+        {/* </Popup> */}
       </div>
     )
   }

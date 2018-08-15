@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-15-09 | v.0.9.0 'Phobos':
+
+  Added ethereum spent overview
+
 - 2018-15-09 | v.0.8.1 'Phobos':
 
   Fixed chart axis's styles

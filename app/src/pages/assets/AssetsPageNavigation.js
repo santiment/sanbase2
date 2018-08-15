@@ -25,6 +25,13 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
         >
           Currencies
         </Link>
+        <Link
+          activeClassName='projects-navigation-list__page-link--active'
+          className='projects-navigation-list__page-link'
+          to={'/ethereum-spent'}
+        >
+          Ethereum Spent Overview
+        </Link>
         {isLoggedIn && (
           <WatchlistsPopup
             isNavigation
@@ -32,13 +39,6 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
             trigger={MyListBtn}
           />
         )}
-        <Link
-          activeClassName='projects-navigation-list__page-link--active'
-          className='projects-navigation-list__page-link'
-          to={'/projects/ethereum'}
-        >
-          More data about Ethereum
-        </Link>
       </div>
     </div>
   )

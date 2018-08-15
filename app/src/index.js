@@ -25,6 +25,7 @@ import { changeNetworkStatus, launchApp } from './actions/rootActions'
 import uploadLink from './apollo/upload-link'
 import errorLink from './apollo/error-link'
 import authLink from './apollo/auth-link'
+import retryLink from './apollo/retry-link'
 // Look at 77 line. ;)
 // import * as serviceWorker from './serviceWorker'
 import 'semantic-ui-css/semantic.min.css'
@@ -33,7 +34,7 @@ import './index.css'
 const main = () => {
   const httpLink = createHttpLink({ uri: `${getAPIUrl()}/graphql` })
   const client = new ApolloClient({
-    link: from([authLink, errorLink, uploadLink, httpLink]),
+    link: from([authLink, errorLink, retryLink, uploadLink, httpLink]),
     shouldBatch: true,
     cache: new InMemoryCache()
   })

@@ -51,7 +51,8 @@ export default compose(
     name: 'Watchlists',
     options: ({ isLoggedIn }) => ({
       skip: !isLoggedIn,
-      pollInterval: POLLING_INTERVAL
+      pollInterval: POLLING_INTERVAL,
+      context: { isRetriable: true }
     }),
     props: ({ Watchlists }) => {
       const { fetchUserLists = [], loading = true } = Watchlists

@@ -73,6 +73,18 @@
   font-weight: bold;
 }
 
+.App .new-status-message {
+  color: #794b02;
+  background: #fffaf3;
+  text-align: center;
+  font: 15px/1.6 'Nunito Sans', sans-serif;
+  font-weight: bold;
+}
+
+.App .new-status-message a {
+  border-bottom: none;
+}
+
 .App .no-username-status-message {
   text-align: center;
   background-color: #ffbe00;

@@ -26,7 +26,6 @@ import {
   EthSpentOverTimeByErc20ProjectsGQL,
   DailyActiveAddressesGQL
 } from './DetailedGQL'
-import EthereumBlock from './EthereumBlock'
 import './Detailed.css'
 
 const propTypes = {
@@ -224,10 +223,6 @@ export const Detailed = ({
         </PanelBlock>
       </div>
       <div className='information'>
-        {project.ticker &&
-          project.ticker.toLowerCase() === 'eth' && (
-            <EthereumBlock project={project} loading={Project.loading} />
-          )}
         {!exchangeFundFlow.loading &&
           exchangeFundFlow.items && (
             <PanelBlock isLoading={false} title='Exchange Fund Flows'>

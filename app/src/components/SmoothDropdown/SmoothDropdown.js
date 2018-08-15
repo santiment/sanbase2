@@ -3,10 +3,7 @@ import React from 'react'
 export const SmoothDropdownContext = React.createContext()
 
 const SmoothDropdown = ({ id, children }) => {
-  // const el =
   const portal = document.createElement('div')
-  // const portal = <div className='my-portal' ref={myRef} />
-  // console.log(myRef)
   return (
     <SmoothDropdownContext.Provider value={portal}>
       {children}

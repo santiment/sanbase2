@@ -14,12 +14,13 @@ class Assets extends React.Component {
   }
 
   getType = () => {
+    const { search } = this.props.location || {}
     const { listName, listId } = compose(
       this.getNameIdFromListname,
       parsed => parsed.name,
       qs.parse
-    )(this.props.location.search)
-    const { type = qs.parse(this.props.location.search) } = this.props
+    )(search)
+    const { type = qs.parse(search) } = this.props
     return { type, listName, listId }
   }
 
@@ -35,9 +36,10 @@ class Assets extends React.Component {
   }
 
   componentDidUpdate (prevProps, prevState) {
+    const { pathname, search } = this.props.location || {}
     if (
-      this.props.location.pathname !== prevProps.location.pathname ||
-      this.props.location.search !== prevProps.location.search
+      pathname !== (prevProps.location || {}).pathname ||
+      search !== (prevProps.location || {}).search
     ) {
       const { type, listName, listId } = this.getType()
       this.props.fetchAssets({

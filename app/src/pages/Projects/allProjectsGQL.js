@@ -30,6 +30,7 @@ const project = gql`
     ethSpent
     averageDevActivity
     averageDailyActiveAddresses
+    fundsRaisedUsdIcoEndPrice
     marketcapUsd
     ethBalance
     btcBalance

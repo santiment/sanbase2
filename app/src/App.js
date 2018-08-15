@@ -1,5 +1,6 @@
 import React from 'react'
 import { Route as BasicRoute, Switch, Redirect, Link } from 'react-router-dom'
+import { Label, Icon } from 'semantic-ui-react'
 import { FadeInDown } from 'animate-components'
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
@@ -95,6 +96,17 @@ export const App = ({
           </Link>
         </div>
       )}
+    {isDesktop && (
+      <div className='new-status-message'>
+        <Link to='/ethereum-spent'>
+          <Label color='green' horizontal>
+            NEW
+          </Label>
+          We prepared for you ethereum spent overview{' '}
+          <Icon name='angle right' />
+        </Link>
+      </div>
+    )}
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>

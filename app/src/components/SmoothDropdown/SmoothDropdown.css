@@ -1,0 +1,55 @@
+.cd-morph-dropdown {
+  position: relative;
+}
+
+.cd-morph-dropdown .morph-dropdown-wrapper {
+  display: none;
+  position: absolute;
+  top: 60px;
+  left: 0;
+  width: 100%;
+}
+
+.cd-morph-dropdown.nav-open .morph-dropdown-wrapper {
+  display: block;
+}
+
+.cd-morph-dropdown .dropdown-list {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+}
+
+.cd-morph-dropdown .dropdown {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  visibility: hidden;
+  width: 100%;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.cd-morph-dropdown .dropdown.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.cd-morph-dropdown .bg-layer {
+  /* morph dropdown background */
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 1px;
+  width: 1px;
+  background: #fff;
+  opacity: 0;
+  transition: opacity 0.3s;
+  transform-origin: top left;
+}
+
+.cd-morph-dropdown.is-dropdown-visible .bg-layer {
+  opacity: 1;
+  transition: transform 0.3s, opacity 0.3s;
+}

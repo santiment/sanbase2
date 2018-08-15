@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
@@ -22,19 +22,26 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
         </Link>
         <Search />
       </div>
-      <div className='right'>
+      <div className='right cd-morph-dropdown'>
         <SmoothDropdown id='nav-dropdown'>
-          <ul className='menu-list-top'>
-            <Link className='app-menu__page-link' to={'/projects'}>
-              Assets
-            </Link>
-            <AnalysisDropdownMenu />
-            <SmoothDropdownItem trigger={<p>testing 123. it's first drop</p>}>
-              testing popup
-            </SmoothDropdownItem>
-          </ul>
-          <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
-          <SmoothDropdownItem>It's second one</SmoothDropdownItem>
+          {test => (
+            <Fragment>
+              {console.log(test)}
+              <ul className='menu-list-top'>
+                <Link className='app-menu__page-link' to={'/projects'}>
+                  Assets
+                </Link>
+                <AnalysisDropdownMenu />
+              </ul>
+              <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
+              <SmoothDropdownItem
+                id={1}
+                trigger={<p>testing 123. it's first drop</p>}
+              >
+                testing popup
+              </SmoothDropdownItem>
+            </Fragment>
+          )}
         </SmoothDropdown>
       </div>
     </div>

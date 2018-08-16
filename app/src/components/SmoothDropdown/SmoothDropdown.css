@@ -64,6 +64,15 @@
   min-width: 200px;
 }
 
+/* .dropdown-menu {
+  opacity: 0;
+} */
+
 .dropdown-menu.active .dropdown-menu__content {
+  opacity: 1;
+}
+
+.dd.dropdown-holder.has-dropdown-active .dropdown__arrow,
+.dd.dropdown-holder.has-dropdown-active .dropdown__bg {
   opacity: 1;
 }

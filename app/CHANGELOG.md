@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-16-09 | v.0.9.1 'Phobos':
+
+  Comeback of serviceworkers
+
 - 2018-15-09 | v.0.9.0 'Phobos':
 
   Added ethereum spent overview

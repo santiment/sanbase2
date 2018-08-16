@@ -23,22 +23,31 @@ import { SmoothDropdownContext, createDrop } from './SmoothDropdown'
 
 export class SmoothDropdownItem extends Component {
   myRef = React.createRef()
+  triggerRef = React.createRef()
 
   render () {
     const { trigger, children } = this.props
+    const { current: dropdown } = this.myRef
+    const { current: triggerRef } = this.triggerRef
     const child = (
       <li className='dropdown smooth-dropdown__item' ref={this.myRef}>
-        {children}
+        <div className='content'>{children}</div>
       </li>
     )
     console.log(this.myRef)
-    createDrop(trigger, this.myRef.current)
+    createDrop(triggerRef, dropdown)
     return (
       <SmoothDropdownContext.Consumer>
-        {({ portal, changeDrop }) => (
+        {({ portal, changeDrop, hideDrop }) => (
           <Fragment>
             {/* {console.log(portal)} */}
-            <div onMouseEnter={() => changeDrop(trigger)}>{trigger}</div>
+            <div
+              onMouseEnter={() => changeDrop(triggerRef)}
+              onMouseLeave={hideDrop}
+              ref={this.triggerRef}
+            >
+              {trigger}
+            </div>
             {portal && ReactDOM.createPortal(child, portal)}
           </Fragment>
         )}

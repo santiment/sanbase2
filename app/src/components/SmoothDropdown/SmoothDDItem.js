@@ -1,22 +1,29 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
+import ReactDOM from 'react-dom'
+import { SmoothDdContext, createDrop } from './SmoothDD'
 
 export class SmoothDDItem extends Component {
+  dropdownRef = React.createRef()
+
   render () {
     const { trigger, children } = this.props
     // const { current: dropdown } = this.myRef
     // const { current: triggerRef } = this.triggerRef
 
-    console.log(this.myRef)
-    createDrop(trigger, dropdown)
+    // console.log(this.myRef)
+    createDrop(trigger, this.dropdownRef)
     return (
-      <SmoothDropdownContext.Consumer>
-        {({ portal, changeDrop, hideDrop, activeTrigger }) => (
+      <SmoothDdContext.Consumer>
+        {({ portal, handleMouseEnter, handleMouseLeave, currentTrigger }) => (
           <Fragment>
             {/* {console.log(portal)} */}
             <div
-              onMouseEnter={() => changeDrop(trigger)}
-              onMouseLeave={hideDrop}
-              className={`${trigger === activeTrigger ? 'active' : ''}`}
+              onMouseEnter={() => {
+                console.log(portal, currentTrigger, handleMouseEnter)
+                handleMouseEnter(trigger)
+              }}
+              onMouseLeave={handleMouseLeave}
+              className={`${trigger === currentTrigger ? 'active' : ''}`}
             >
               {trigger}
             </div>
@@ -24,8 +31,9 @@ export class SmoothDDItem extends Component {
               ReactDOM.createPortal(
                 <div
                   className={`dd__item dropdown-menu ${
-                    trigger === activeTrigger ? 'active' : ''
+                    trigger === currentTrigger ? 'active' : ''
                   }`}
+                  ref={this.dropdownRef}
                 >
                   <div className='dd__content dropdown-menu__content'>
                     {children}
@@ -35,7 +43,7 @@ export class SmoothDDItem extends Component {
               )}
           </Fragment>
         )}
-      </SmoothDropdownContext.Consumer>
+      </SmoothDdContext.Consumer>
     )
   }
 }

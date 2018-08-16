@@ -159,9 +159,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       content:
         "#{name}: #{ticker}/#{String.upcase(currency)} #{notification_emoji(price_change)} Price #{
           notification_emoji(volume_change)
-        } Volume opposite trends (as of #{notification_date_string} UTC). https://coinmarketcap.com/currencies/#{
-          coinmarketcap_id
-        } #{debug_info}",
+        } Volume opposite trends (as of #{notification_date_string} UTC). #{
+          SanbaseWeb.Endpoint.frontend_url()
+        }/projects/#{coinmarketcap_id} #{debug_info}",
       username: "Price-Volume Difference"
     })
   end

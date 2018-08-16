@@ -8,8 +8,8 @@ import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './Search/SearchContainer'
 import * as actions from './../actions/types'
 import AnalysisDropdownMenu from './AnalysisDropdownMenu'
-import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
-import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
+import SmoothDD from './SmoothDropdown/SmoothDD'
+import SmoothDDItem from './SmoothDropdown/SmoothDDItem'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -22,8 +22,8 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
         </Link>
         <Search />
       </div>
-      <div className='right cd-morph-dropdown'>
-        <SmoothDropdown id='nav-dropdown'>
+      <div className='right'>
+        <SmoothDD id='nav-dropdown'>
           {test => (
             <Fragment>
               {console.log(test)}
@@ -34,15 +34,15 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
                 <AnalysisDropdownMenu />
               </ul>
               <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
-              <SmoothDropdownItem
+              <SmoothDDItem
                 id={1}
                 trigger={<p>testing 123. it's first drop</p>}
               >
                 testing popup
-              </SmoothDropdownItem>
+              </SmoothDDItem>
             </Fragment>
           )}
-        </SmoothDropdown>
+        </SmoothDD>
       </div>
     </div>
   </div>

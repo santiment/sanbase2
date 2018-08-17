@@ -35,7 +35,7 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
               </ul>
               <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
               <SmoothDDItem
-                id={1}
+                id='testing'
                 trigger={<p>testing 123. it's first drop</p>}
               >
                 testing popup

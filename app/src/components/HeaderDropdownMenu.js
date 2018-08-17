@@ -2,8 +2,8 @@ import React from 'react'
 import { Button, Popup, Divider, Icon } from 'semantic-ui-react'
 import { NavLink, Link } from 'react-router-dom'
 import FeedbackBtn from './FeedbackBtn'
-import './HeaderDropdownMenu.css'
 import SmoothDDItem from './SmoothDropdown/SmoothDDItem'
+import './HeaderDropdownMenu.css'
 
 const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
   if (isLoggedin) {
@@ -16,7 +16,7 @@ const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
           basic
           wide
           trigger={<Button circular icon='user' />}
-          id={0}
+          id='profile'
           on='hover'
         >
           <div className='app-menu-popup'>

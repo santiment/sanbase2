@@ -19,14 +19,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   alias Sanbase.{
     Prices,
-    Github
+    Github,
+    ExternalServices.Etherscan
   }
 
-  alias Sanbase.Clickhouse
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
-  alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
+  alias Sanbase.Repo
 
   def all_projects(_parent, args, _resolution, only_project_transparency \\ nil) do
     only_project_transparency =
@@ -54,8 +54,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def all_erc20_projects(_root, _args, _resolution) do
+    query =
+      from(
+        p in Project,
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        where:
+          not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
+            infr.code == "ETH",
+        order_by: p.name
+      )
+
     erc20_projects =
-      Project.erc20_projects()
+      query
+      |> Repo.all()
       |> Repo.preload([
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
@@ -66,8 +78,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def all_currency_projects(_root, _args, _resolution) do
+    query =
+      from(
+        p in Project,
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        # The opposite of ERC20. Classify everything except ERC20 as Currency.
+        where:
+          not is_nil(p.coinmarketcap_id) and
+            (is_nil(p.main_contract_address) or infr.code != "ETH"),
+        order_by: p.name
+      )
+
     currency_projects =
-      Project.currency_projects()
+      query
+      |> Repo.all()
       |> Repo.preload([
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
@@ -103,134 +128,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def token_top_transactions(
-        %Project{} = project,
-        %{from: from, to: to, limit: limit},
-        _resolution
-      ) do
-    # Cannot get more than the top 30 transactions
-    with {:ok, contract_address, token_decimals} <- Utils.project_to_contract_info(project),
-         limit <- Enum.max([limit, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.Erc20Transfers.token_top_transfers(
-                contract_address,
-                from,
-                to,
-                limit,
-                token_decimals
-              )
-
-            {:ok, result}
-          end,
-          :token_top_transfers
-        )
-      )
-    else
-      error ->
-        Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
-  end
-
-  def top_address_transfers(
-        _root,
-        %{from_address: from_address, from: from, to: to, size: size},
-        _resolution
-      ) do
-    # Cannot get more than the top 30 transfers
-    with limit <- Enum.max([size, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.EthTransfers.top_address_transfers(
-                from_address,
-                from,
-                to,
-                size
-              )
-
-            {:ok, result}
-          end,
-          :top_address_transfers
-        )
-      )
-    else
-      error ->
-        Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
-  end
-
-  def top_wallet_transfers(
-        _root,
-        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type},
-        _resolution
-      ) do
-    # Cannot get more than the top 30 transfers
-    with limit <- Enum.max([size, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.EthTransfers.top_wallet_transfers(
-                wallets,
-                from,
-                to,
-                size,
-                type
-              )
-
-            {:ok, result}
-          end,
-          :top_wallet_transfers
-        )
-      )
-    else
-      error ->
-        Logger.info("Cannot get wallet top transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
-  end
-
-  def last_wallet_transfers(
-        _root,
-        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type},
-        _resolution
-      ) do
-    # Cannot get more than the top 30 transfers
-    with limit <- Enum.max([size, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.EthTransfers.last_wallet_transfers(
-                wallets,
-                from,
-                to,
-                size,
-                type
-              )
-
-            {:ok, result}
-          end,
-          :last_wallet_transfers
-        )
-      )
-    else
-      error ->
-        Logger.info("Cannot get wallet last transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
-  end
-
   def all_projects_with_eth_contract_info(_parent, _args, _resolution) do
     query = Project.all_projects_with_eth_contract_query()
 
@@ -242,54 +139,51 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_spent(%Project{id: id} = project, %{days: days}, _resolution) do
-    async(Cache.func(fn -> calculate_eth_spent(project, days) end, {:eth_spent, id, days}))
+  def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
+    async(Cache.func(fn -> calculate_eth_spent(ticker, days) end, {:eth_spent, ticker, days}))
   end
 
-  def calculate_eth_spent(%Project{id: id} = project, days) do
+  def calculate_eth_spent(ticker, days) do
     today = Timex.now()
     days_ago = Timex.shift(today, days: -days)
 
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
-         {:ok, eth_spent} <- Clickhouse.EthTransfers.eth_spent(eth_addresses, days_ago, today) do
+    with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
       {:ok, eth_spent}
     else
       error ->
-        Logger.warn(
-          "Cannot calculate ETH spent for project with id #{id}. Reason: #{inspect(error)}"
-        )
-
+        Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
         {:ok, nil}
     end
   end
 
   def eth_spent_over_time(
-        %Project{id: id} = project,
+        %Project{ticker: ticker},
         %{from: from, to: to, interval: interval} = args,
         _resolution
       ) do
     async(
       Cache.func(
-        fn -> calculate_eth_spent_over_time(project, from, to, interval) end,
-        {:eth_spent_over_time, id},
+        fn -> calculate_eth_spent_over_time(ticker, from, to, interval) end,
+        {:eth_spent_over_time, ticker},
         args
       )
     )
   end
 
-  defp calculate_eth_spent_over_time(%Project{id: id} = project, from, to, interval) do
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
-         interval when is_integer(interval) <-
-           Sanbase.DateTimeUtils.compound_duration_to_seconds(interval),
-         {:ok, eth_spent_over_time} <-
-           Clickhouse.EthTransfers.eth_spent_over_time(eth_addresses, from, to, interval) do
-      {:ok, eth_spent_over_time}
+  defp calculate_eth_spent_over_time(ticker, from, to, interval) do
+    with {:ok, eth_spent_over_time} <-
+           Etherscan.Store.trx_sum_over_time_in_interval(ticker, from, to, interval, "out") do
+      result =
+        eth_spent_over_time
+        |> Enum.map(fn [datetime, eth_spent] ->
+          %{datetime: datetime, eth_spent: eth_spent}
+        end)
+
+      {:ok, result}
     else
       error ->
         Logger.warn(
-          "Cannot calculate ETH spent over time for project with id #{id}. Reason: #{
-            inspect(error)
-          }"
+          "Cannot calculate ETH spent over time for #{ticker}. Reason: #{inspect(error)}"
         )
 
         {:ok, []}
@@ -300,9 +194,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
-    with projects when is_list(projects) <- Project.erc20_projects(),
+    with {:ok, measurements} <- Etherscan.Store.public_measurements(),
+         {:ok, measurements_list} <- gen_measurements_list(measurements),
          {:ok, total_eth_spent} <-
-           Clickhouse.EthTransfers.eth_spent_by_projects(projects, from, to) do
+           Etherscan.Store.eth_spent_by_projects(measurements_list, from, to) do
       {:ok, total_eth_spent}
     end
   end
@@ -316,66 +211,85 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    with interval when is_integer(interval) <-
-           Sanbase.DateTimeUtils.compound_duration_to_seconds(interval),
-         projects when is_list(projects) <- Project.erc20_projects(),
-         {:ok, total_eth_spent} <-
-           Clickhouse.EthTransfers.eth_spent_over_time_by_projects(
-             projects,
+    with {:ok, measurements} <- Etherscan.Store.public_measurements(),
+         {:ok, measurements_list} <- gen_measurements_list(measurements),
+         {:ok, total_eth_spent_over_time} <-
+           Etherscan.Store.eth_spent_over_time_by_projects(
+             measurements_list,
              from,
              to,
              interval
            ) do
-      {:ok, total_eth_spent}
+      result =
+        total_eth_spent_over_time
+        |> Enum.map(fn [datetime, eth_spent] ->
+          %{
+            datetime: datetime,
+            eth_spent: eth_spent
+          }
+        end)
+
+      {:ok, result}
     end
   end
 
   def eth_top_transactions(
-        %Project{} = project,
+        %Project{ticker: ticker} = project,
         args,
         _resolution
       ) do
     async(
       Cache.func(
         fn -> calculate_eth_top_transactions(project, args) end,
-        :eth_top_transactions,
+        {:eth_top_transactions, ticker},
         args
       )
     )
   end
 
-  defp calculate_eth_top_transactions(%Project{} = project, %{
+  defp calculate_eth_top_transactions(%Project{ticker: ticker}, %{
          from: from,
          to: to,
          transaction_type: trx_type,
          limit: limit
        }) do
-    with trx_type <- trx_type,
-         {:ok, project_addresses} <- Project.eth_addresses(project),
+    with trx_type <- trx_type |> Atom.to_string(),
          {:ok, eth_transactions} <-
-           Sanbase.Clickhouse.EthTransfers.top_wallet_transfers(
-             project_addresses,
-             from,
-             to,
-             limit,
-             trx_type
-           ) do
-      result = eth_transactions
+           Etherscan.Store.top_transactions(ticker, from, to, trx_type, limit) do
+      result =
+        eth_transactions
+        |> Enum.map(fn [datetime, trx_hash, trx_value, trx_type, from_addr, to_addr] ->
+          %{
+            datetime: datetime,
+            trx_hash: trx_hash,
+            trx_value: trx_value |> Decimal.new(),
+            transaction_type: trx_type,
+            from_address: from_addr,
+            to_address: to_addr
+          }
+        end)
 
       {:ok, result}
     else
       error ->
-        Logger.warn(
-          "Cannot fetch ETH transactions for project with id #{project.id}. Reason: #{
-            inspect(error)
-          }"
-        )
+        Logger.warn("Cannot fetch ETH transactions for #{ticker}. Reason: #{inspect(error)}")
 
         {:ok, []}
     end
   end
 
-  # Helper functions1
+  # Helper functions
+
+  defp gen_measurements_list(measurements) do
+    # Ugly hack to ignore the measurements with coinmarketcap_id as name. They should be removed
+    # and this should be removed, too. The tickers are only with capital letters, numbers and '/'
+    # Reject all measurements that contain a lower letter
+    list =
+      measurements
+      |> Enum.reject(fn elem -> elem =~ ~r/[a-z]/ end)
+
+    {:ok, list}
+  end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
     funds_raised = Project.funds_raised_icos(project)

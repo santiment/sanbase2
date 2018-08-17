@@ -214,7 +214,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   def calculate_average_daily_active_addresses(project, from, to) do
-    with {:ok, contract_address, _token_decimals} <- Utils.project_to_contract_info(project),
+    with {:ok, contract_address, _token_decimals} <- project_to_contract_info(project),
          {:ok, average_daily_active_addresses} <-
            DailyActiveAddresses.Store.average_daily_active_addresses(contract_address, from, to) do
       case average_daily_active_addresses do
@@ -233,9 +233,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
+  defp project_to_contract_info(%Project{
+         main_contract_address: main_contract_address,
+         token_decimals: token_decimals
+       })
+       when not is_nil(main_contract_address) do
+    {:ok, String.downcase(main_contract_address), token_decimals || 0}
+  end
+
+  defp project_to_contract_info(project) do
+    {:error, "Can't find contract address of #{project.coinmarketcap_id}"}
+  end
+
   defp slug_to_contract_info(slug) do
     with project when not is_nil(project) <- get_project_by_slug(slug),
-         {:ok, contract_address, token_decimals} <- Utils.project_to_contract_info(project) do
+         {:ok, contract_address, token_decimals} <- project_to_contract_info(project) do
       {:ok, contract_address, token_decimals}
     else
       _ -> {:error, "Can't find contract address for #{slug}"}

@@ -66,7 +66,6 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   test "update user list", %{user: user, conn: conn} do
     {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
 
-
     project =
       Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 

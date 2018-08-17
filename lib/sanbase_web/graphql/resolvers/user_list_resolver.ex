@@ -5,6 +5,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   alias Sanbase.UserLists.UserList
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Repo
+  alias Sanbase.UserLists.ListItem
+  alias Sanbase.Model.Project
 
   def create_user_list(_root, args, %{
         context: %{auth: %{current_user: current_user}}
@@ -99,6 +101,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
           :error,
           message: "Cannot fetch public user lists", details: Utils.error_details(changeset)
         }
+    end
+  end
+
+  def project_by_list_item(%ListItem{project_id: project_id}, _, _resolution) do
+    Project
+    |> Repo.get(project_id)
+    |> case do
+      nil ->
+        {:error, "Project with id '#{project_id}' not found."}
+
+      project ->
+        project =
+          project
+          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+
+        {:ok, project}
     end
   end
 

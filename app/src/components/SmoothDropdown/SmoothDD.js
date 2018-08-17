@@ -1,4 +1,5 @@
 import React, { Component, Fragment } from 'react'
+import './SmoothDropdown.css'
 
 export const SmoothDdContext = React.createContext({
   portal: document.createElement('div'),
@@ -21,12 +22,11 @@ export class SmoothDD extends Component {
   }
 
   startCloseTimeout = () =>
-    (this.dropdownTimer = setTimeout(() => this.closeDropdown(), 50))
+    (this.dropdownTimer = setTimeout(() => this.closeDropdown(), 400))
 
   stopCloseTimeout = () => clearTimeout(this.dropdownTimer)
 
   openDropdown = trigger => {
-    if (!trigger) return
     if (dropdowns.has(trigger)) {
       this.setState(prevState => ({
         ...prevState,
@@ -36,8 +36,9 @@ export class SmoothDD extends Component {
     // const { currentTrigger } = this.state
 
     const dropdown = dropdowns.get(trigger)
+    if (!dropdown) return
     const triggerMeta = trigger.getBoundingClientRect()
-    const ddMeta = dropdown.getBoundingClientRect()
+    const ddMeta = dropdown.firstElementChild.getBoundingClientRect()
 
     // ddList.style.opacity = 1
     // ddList.style.left =
@@ -52,7 +53,8 @@ export class SmoothDD extends Component {
       dropdownStyles: {
         left,
         width,
-        height
+        height,
+        opacity: 1
       }
     }))
   }
@@ -65,7 +67,7 @@ export class SmoothDD extends Component {
   }
 
   handleMouseEnter = trigger => {
-    console.log(trigger)
+    if (!trigger) return
     this.stopCloseTimeout()
     this.openDropdown(trigger)
   }
@@ -75,32 +77,34 @@ export class SmoothDD extends Component {
   render () {
     const { children } = this.props
     const { currentTrigger, dropdownStyles } = this.state
-    const { handleMouseEnter, handleMouseLeave } = this
+    const { portalRef, handleMouseEnter, handleMouseLeave } = this
     return (
-      <Fragment>
+      <SmoothDdContext.Provider
+        value={{
+          portal: portalRef.current,
+          currentTrigger,
+          handleMouseEnter,
+          handleMouseLeave
+        }}
+      >
         {children('tester')}
-        <div className='dd dropdown-holder'>
-          <div class='dd__arrow dropdown__arrow' />
+        <div
+          className={`dd dropdown-holder ${
+            currentTrigger ? 'has-dropdown-active' : ''
+          }`}
+        >
           <div
-            class='dd__bg dropdown__bg'
+            className='dd__list dropdown__wrap'
+            style={currentTrigger && dropdownStyles}
+            ref={portalRef}
+          />
+          <div className='dd__arrow dropdown__arrow' />
+          <div
+            className='dd__bg dropdown__bg'
             style={currentTrigger && dropdownStyles}
           />
-          <SmoothDdContext.Provider
-            value={{
-              portal: this.portalRef.current,
-              currentTrigger,
-              handleMouseEnter,
-              handleMouseLeave
-            }}
-          >
-            <div
-              className='dd__list dropdown__wrap'
-              style={currentTrigger && dropdownStyles}
-              ref={this.portalRef}
-            />
-          </SmoothDdContext.Provider>
         </div>
-      </Fragment>
+      </SmoothDdContext.Provider>
     )
   }
 }

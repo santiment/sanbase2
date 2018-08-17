@@ -4,14 +4,19 @@ import { SmoothDdContext, createDrop } from './SmoothDD'
 
 export class SmoothDDItem extends Component {
   dropdownRef = React.createRef()
+  triggerRef = React.createRef()
 
   render () {
     const { trigger, children } = this.props
+    const {
+      triggerRef: { current: ddTrigger },
+      dropdownRef: { current: ddDropdown }
+    } = this
     // const { current: dropdown } = this.myRef
     // const { current: triggerRef } = this.triggerRef
 
-    // console.log(this.myRef)
-    createDrop(trigger, this.dropdownRef)
+    console.log(ddDropdown, this.dropdownRef)
+    createDrop(ddTrigger, ddDropdown)
     return (
       <SmoothDdContext.Consumer>
         {({ portal, handleMouseEnter, handleMouseLeave, currentTrigger }) => (
@@ -19,19 +24,20 @@ export class SmoothDDItem extends Component {
             {/* {console.log(portal)} */}
             <div
               onMouseEnter={() => {
-                console.log(portal, currentTrigger, handleMouseEnter)
-                handleMouseEnter(trigger)
+                console.log(ddTrigger)
+                handleMouseEnter(ddTrigger)
               }}
               onMouseLeave={handleMouseLeave}
-              className={`${trigger === currentTrigger ? 'active' : ''}`}
+              className={`${ddTrigger === currentTrigger ? 'active' : ''}`}
+              ref={this.triggerRef}
             >
               {trigger}
             </div>
             {portal &&
               ReactDOM.createPortal(
                 <div
-                  className={`dd__item dropdown-menu ${
-                    trigger === currentTrigger ? 'active' : ''
+                  className={`dd__item dd-dropdown-menu ${
+                    ddTrigger === currentTrigger ? 'active' : ''
                   }`}
                   ref={this.dropdownRef}
                 >

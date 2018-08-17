@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
 
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
+  alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Repo
   alias Sanbase.UserLists.UserList
 
@@ -65,8 +66,11 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   test "update user list", %{user: user, conn: conn} do
     {:ok, created_user_list} = UserList.create_user_list(user, %{name: "My Test List"})
 
+
     project =
       Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+
+    Repo.insert!(%LatestCoinmarketcapData{price_usd: 0.5, coinmarketcap_id: project.coinmarketcap_id, update_time: Ecto.DateTime.utc})
 
     update_name = "My updated list"
 
@@ -86,7 +90,8 @@ defmodule SanbaseWeb.Graphql.UserListTest do
         },
         list_items {
           project {
-            id
+            id,
+            priceUsd
           }
         }
       }
@@ -101,7 +106,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     assert user_list["name"] == update_name
     assert user_list["color"] == "BLACK"
     assert user_list["is_public"] == false
-    assert user_list["list_items"] == [%{"project" => %{"id" => project.id |> to_string()}}]
+    assert user_list["list_items"] == [%{"project" => %{"id" => project.id |> to_string(), "priceUsd" => 0.5}}]
   end
 
   test "update user list - remove list items", %{user: user, conn: conn} do

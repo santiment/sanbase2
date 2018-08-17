@@ -63,20 +63,25 @@
   opacity: 0;
   transition: 0.3s ease;
   padding: 0.833em 1em;
+  z-index: 1;
 }
-
-/* .dropdown-menu {
-  opacity: 0;
-} */
 
 .dd-dropdown-menu.active .dropdown-menu__content {
   opacity: 1;
+  z-index: 999;
 }
 
 .dd.dropdown-holder.has-dropdown-active .dropdown__arrow,
 .dd.dropdown-holder.has-dropdown-active .dropdown__bg {
   opacity: 1;
 }
+
+/* .dd.dropdown-holder.has-dropdown-active .dropdown__bg,
+.dd-dropdown-menu.active .dropdown-menu__content,
+.dd.dropdown-holder.has-dropdown-active .dropdown__arrow,
+.dd.dropdown-holder.has-dropdown-active .dropdown__wrap {
+
+} */
 
 .dd {
   z-index: 9999;

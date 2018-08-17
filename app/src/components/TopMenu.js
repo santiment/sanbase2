@@ -24,24 +24,19 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
       </div>
       <div className='right'>
         <SmoothDD id='nav-dropdown'>
-          {test => (
-            <Fragment>
-              {console.log(test)}
-              <ul className='menu-list-top'>
-                <Link className='app-menu__page-link' to={'/projects'}>
-                  Assets
-                </Link>
-                <AnalysisDropdownMenu />
-              </ul>
-              <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
-              <SmoothDDItem
-                id='testing'
-                trigger={<p>testing 123. it's first drop</p>}
-              >
-                testing popup
-              </SmoothDDItem>
-            </Fragment>
-          )}
+          <ul className='menu-list-top'>
+            <Link className='app-menu__page-link' to={'/projects'}>
+              Assets
+            </Link>
+            <AnalysisDropdownMenu />
+          </ul>
+          <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
+          <SmoothDDItem
+            id='testing'
+            trigger={<p>testing 123. it's first drop</p>}
+          >
+            testing popup
+          </SmoothDDItem>
         </SmoothDD>
       </div>
     </div>

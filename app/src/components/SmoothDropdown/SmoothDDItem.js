@@ -6,6 +6,10 @@ export class SmoothDDItem extends Component {
   dropdownRef = React.createRef()
   triggerRef = React.createRef()
 
+  componentDidMount () {
+    setTimeout(() => this.forceUpdate(), 100) // VERY HACKY
+  }
+
   render () {
     const { trigger, children, id } = this.props
     const {
@@ -16,7 +20,7 @@ export class SmoothDDItem extends Component {
     // const { current: triggerRef } = this.triggerRef
 
     // console.log(ddDropdown, this.dropdownRef)
-    createDrop(ddTrigger, ddDropdown)
+    // createDrop(ddTrigger, ddDropdown)
     return (
       <SmoothDdContext.Consumer>
         {({
@@ -31,8 +35,10 @@ export class SmoothDDItem extends Component {
             {/* {console.log(portal)} */}
             <div
               onMouseEnter={() => {
-                // console.log(ddTrigger)
-                handleMouseEnter(ddTrigger)
+                console.log(`Mouse entered on #${id}`)
+                // console.log(ddTrigger, ddDropdown, portal)
+                console.dir(ddDropdown)
+                handleMouseEnter(ddTrigger, ddDropdown)
               }}
               onMouseLeave={handleMouseLeave}
               className={`dd__trigger ${
@@ -42,25 +48,24 @@ export class SmoothDDItem extends Component {
             >
               {trigger}
             </div>
-            {portal &&
-              ReactDOM.createPortal(
+            {ReactDOM.createPortal(
+              <div
+                id={id}
+                className={`dd__item dd-dropdown-menu ${
+                  ddTrigger === currentTrigger ? 'active' : ''
+                }`}
+                ref={this.dropdownRef}
+              >
                 <div
-                  id={id}
-                  className={`dd__item dd-dropdown-menu ${
-                    ddTrigger === currentTrigger ? 'active' : ''
-                  }`}
-                  ref={this.dropdownRef}
+                  className='dd__content dropdown-menu__content'
+                  onMouseEnter={stopCloseTimeout}
+                  onMouseLeave={startCloseTimeout}
                 >
-                  <div
-                    className='dd__content dropdown-menu__content'
-                    onMouseEnter={stopCloseTimeout}
-                    onMouseLeave={startCloseTimeout}
-                  >
-                    {children}
-                  </div>
-                </div>,
-                portal
-              )}
+                  {children}
+                </div>
+              </div>,
+              portal
+            )}
           </Fragment>
         )}
       </SmoothDdContext.Consumer>

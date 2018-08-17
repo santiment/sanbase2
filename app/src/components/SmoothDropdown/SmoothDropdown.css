@@ -28,8 +28,6 @@
 }
 
 .dropdown__bg {
-  width: 450px;
-  height: 400px;
   background-color: #fff;
   opacity: 0;
   transition: 0.3s ease;

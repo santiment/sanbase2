@@ -2,7 +2,7 @@ import React, { Component, Fragment } from 'react'
 import './SmoothDropdown.css'
 
 export const SmoothDdContext = React.createContext({
-  portal: document.createElement('div'),
+  portal: {},
   currentTrigger: null,
   handleMouseEnter: trigger => {},
   handleMouseLeave: () => {}
@@ -17,8 +17,19 @@ export class SmoothDD extends Component {
   portalRef = React.createRef()
 
   state = {
+    portalMounted: false,
     currentTrigger: null,
     dropdownStyles: {}
+  }
+
+  componentDidMount () {
+    if (this.state.portalMounted === false) {
+      this.setState(prevState => ({
+        ...prevState,
+        portalMounted: true
+      })) // HACK TO POPULATE PORTAL AND UPDATE REFS
+      // console.log(`Portal was not mounted. Updating...`)
+    }
   }
 
   startCloseTimeout = () =>
@@ -26,19 +37,14 @@ export class SmoothDD extends Component {
 
   stopCloseTimeout = () => clearTimeout(this.dropdownTimer)
 
-  openDropdown = trigger => {
-    // if (dropdowns.has(trigger)) {
-    //   this.setState(prevState => ({
-    //     ...prevState,
-    //     currentTrigger: trigger
-    //   }))
-    // }
-    // const { currentTrigger } = this.state
-
-    const dropdown = dropdowns.get(trigger)
+  openDropdown = (trigger, dropdown) => {
     if (!dropdown) return
     const triggerMeta = trigger.getBoundingClientRect()
     const ddMeta = dropdown.firstElementChild.getBoundingClientRect()
+
+    console.log(dropdown.parentNode)
+    console.log(triggerMeta, ddMeta)
+    // console.log(ddMeta)
 
     // ddList.style.opacity = 1
     // ddList.style.left =
@@ -47,8 +53,13 @@ export class SmoothDD extends Component {
       triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
     const width = ddMeta.width + 'px'
     const height = ddMeta.height + 'px'
-
-    console.table({ dropdown: dropdown.id, width, height })
+    // console.table({
+    //   dropdown: dropdown.id,
+    //   width,
+    //   height,
+    //   offWidth: dropdown.firstElementChild.offsetWidth,
+    //   offHeight: dropdown.firstElementChild.offsetHeight
+    // })
 
     this.setState(prevState => ({
       ...prevState,
@@ -68,10 +79,19 @@ export class SmoothDD extends Component {
     }))
   }
 
-  handleMouseEnter = trigger => {
-    if (!trigger) return
+  handleMouseEnter = (trigger, dropdown) => {
+    // console.log(dropdowns)
+    if (!trigger || !dropdown) {
+      console.log(
+        `there is no trigger,`,
+        !!trigger,
+        'or dropdown: ',
+        !!dropdown
+      )
+      return
+    }
     this.stopCloseTimeout()
-    this.openDropdown(trigger)
+    this.openDropdown(trigger, dropdown)
   }
 
   handleMouseLeave = () => this.startCloseTimeout()
@@ -89,7 +109,7 @@ export class SmoothDD extends Component {
     return (
       <SmoothDdContext.Provider
         value={{
-          portal: portalRef.current,
+          portal: portalRef.current || document.createElement('ul'),
           currentTrigger,
           handleMouseEnter,
           handleMouseLeave,
@@ -97,7 +117,7 @@ export class SmoothDD extends Component {
           stopCloseTimeout
         }}
       >
-        {children('tester')}
+        {children}
         <div
           className={`dd dropdown-holder ${
             currentTrigger ? 'has-dropdown-active' : ''
@@ -105,6 +125,7 @@ export class SmoothDD extends Component {
         >
           <div
             className='dd__list dropdown__wrap'
+            id='dd-portal'
             style={dropdownStyles}
             ref={portalRef}
           />

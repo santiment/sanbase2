@@ -2,10 +2,10 @@ import React, { Component } from 'react'
 import './SmoothDropdown.css'
 
 export const SmoothDropdownContext = React.createContext({
-  portal: document.createElement('ul'),
+  portal: {},
   currentTrigger: null,
-  changeDrop: id => {},
-  hideDrop: () => {}
+  handleMouseEnter: trigger => {},
+  handleMouseLeave: () => {}
 })
 
 const dropdowns = new WeakMap()
@@ -13,108 +13,101 @@ const dropdowns = new WeakMap()
 export const createDrop = (trigger, dropdown) =>
   trigger && dropdowns.set(trigger, dropdown)
 
-// const SmoothDropdown = ({ id, children }) => {
-//   const portal = document.createElement('ul')
-//   portal.classList.add('smooth-dropdown__list')
-//   return (
-//     <SmoothDropdownContext.Provider value={portal}>
-//       {children('tester')}
-//       <div className='morph-dropdown-wrapper SmoothDropdown' id={id}>
-//         <div
-//           className='dropdown-list smooth-dropdown'
-//           ref={node => node.appendChild(portal)}
-//         />
-//       </div>
-//     </SmoothDropdownContext.Provider>
-//   )
-// }
-
-class SmoothDropdown extends Component {
-  myRef = React.createRef()
+export class SmoothDropdown extends Component {
+  portalRef = React.createRef()
 
   state = {
-    currentTrigger: null
+    portalMounted: false,
+    currentTrigger: null,
+    dropdownStyles: {}
   }
 
-  // changeDrop = id => {
-  //   console.log(id)
-  //   this.setState(prevState => ({
-  //     ...prevState,
-  //     currentTrigger: id
-  //   }))
-  // }
-  changeDrop = trigger => {
-    // console.log(trigger)
-    this.setState(() => {
-      this.calculateGeometry()
-      return {
-        currentTrigger: trigger
+  componentDidMount () {
+    if (this.state.portalMounted === false) {
+      this.setState(prevState => ({
+        ...prevState,
+        portalMounted: true
+      })) // HACK TO POPULATE PORTAL AND UPDATE REFS
+    }
+  }
+
+  startCloseTimeout = () =>
+    (this.dropdownTimer = setTimeout(() => this.closeDropdown(), 150))
+
+  stopCloseTimeout = () => clearTimeout(this.dropdownTimer)
+
+  openDropdown = (trigger, dropdown) => {
+    const triggerMeta = trigger.getBoundingClientRect()
+    const ddMeta = dropdown.firstElementChild.getBoundingClientRect()
+
+    console.log(dropdown.parentNode)
+    console.log(triggerMeta, ddMeta)
+
+    const left =
+      triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
+    const width = ddMeta.width + 'px'
+    const height = ddMeta.height + 'px'
+
+    this.setState(prevState => ({
+      ...prevState,
+      currentTrigger: trigger,
+      dropdownStyles: {
+        left,
+        width,
+        height
       }
-    })
+    }))
   }
 
-  hideDrop = () => {
-    const { currentTrigger } = this.state
-    const selectedDropdown = dropdowns.get(currentTrigger)
-    if (!selectedDropdown) return
-    selectedDropdown.classList.remove('active')
-    selectedDropdown.classList.remove('is-dropdown-visible')
+  closeDropdown = () => {
+    this.setState(prevState => ({
+      ...prevState,
+      currentTrigger: null
+    }))
   }
 
-  calculateGeometry () {
-    const { currentTrigger } = this.state
-    const selectedDropdown = dropdowns.get(currentTrigger)
-    if (!selectedDropdown) return
-    const selectedDropdownHeight = selectedDropdown.offsetHeight
-    const selectedDropdownWidth = selectedDropdown.firstElementChild.clientWidth
-    // .innerWidth()
-    const selectedDropdownLeft =
-      currentTrigger.getBoundingClientRect().left +
-      currentTrigger.offsetWidth / 2 -
-      selectedDropdownWidth / 2
-
-    // console.log(
-    //   selectedDropdownHeight,
-    //   selectedDropdownWidth,
-    //   selectedDropdownLeft
-    // )
-    this.updateDropdown(
-      selectedDropdown,
-      selectedDropdownHeight,
-      selectedDropdownWidth,
-      selectedDropdownLeft
-    )
-
-    selectedDropdown.classList.add('is-dropdown-visible')
-    selectedDropdown.classList.add('active')
+  handleMouseEnter = (trigger, dropdown) => {
+    this.stopCloseTimeout()
+    this.openDropdown(trigger, dropdown)
   }
 
-  updateDropdown (dropdown, height, width, left) {
-    const dropdownList = document.querySelector('.dropdown-list')
-    dropdownList.style.transform = 'translateX(' + left + 'px)'
-    dropdownList.style.width = width + 'px'
-    dropdownList.style.height = height + 'px'
-  }
+  handleMouseLeave = () => this.startCloseTimeout()
 
   render () {
-    const { children, id } = this.props
-    const { currentTrigger } = this.state
-    // portal.classList.add('smooth-dropdown__list')
+    const { children } = this.props
+    const { currentTrigger, dropdownStyles } = this.state
+    const {
+      portalRef,
+      handleMouseEnter,
+      handleMouseLeave,
+      startCloseTimeout,
+      stopCloseTimeout
+    } = this
     return (
       <SmoothDropdownContext.Provider
         value={{
-          ...this.state,
-          portal: this.myRef.current,
-          changeDrop: this.changeDrop,
-          hideDrop: this.hideDrop
+          portal: portalRef.current || document.createElement('ul'),
+          currentTrigger,
+          handleMouseEnter,
+          handleMouseLeave,
+          startCloseTimeout,
+          stopCloseTimeout
         }}
       >
-        {children('tester')}
-        <div className='morph-dropdown-wrapper SmoothDropdown' id={id}>
-          <div className='dropdown-list smooth-dropdown'>
-            {/* // ref={node => node.appendChild(portal)} */}
-            <ul ref={this.myRef} />
-          </div>
+        {children}
+        <div
+          className={`dd dropdown-holder ${
+            currentTrigger ? 'has-dropdown-active' : ''
+          }`}
+        >
+          <div
+            className='dd__list dropdown__wrap'
+            id='dd-portal'
+            style={dropdownStyles}
+            ref={portalRef}
+          />
+          <div className='dd__arrow dropdown__arrow' />
+          <div className='dd__bg dropdown__bg' style={dropdownStyles} />
         </div>
       </SmoothDropdownContext.Provider>
     )

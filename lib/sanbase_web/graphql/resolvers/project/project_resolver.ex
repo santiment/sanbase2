@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       async(
         Cache.func(
           fn ->
-            result =
+            {:ok, result} =
               Clickhouse.Erc20Transfers.token_top_transfers(
                 contract_address,
                 from,
@@ -116,6 +116,101 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     else
       error ->
         Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
+
+        {:ok, []}
+    end
+  end
+
+  def top_address_transfers(
+        _root,
+        %{from_address: from_address, from: from, to: to, size: size},
+        _resolution
+      ) do
+    # Cannot get more than the top 30 transfers
+    with limit <- Enum.max([size, 30]) do
+      async(
+        Cache.func(
+          fn ->
+            {:ok, result} =
+              Clickhouse.EthTransfers.top_address_transfers(
+                from_address,
+                from,
+                to,
+                size
+              )
+
+            {:ok, result}
+          end,
+          :top_address_transfers
+        )
+      )
+    else
+      error ->
+        Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
+
+        {:ok, []}
+    end
+  end
+
+  def top_wallet_transfers(
+        _root,
+        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type},
+        _resolution
+      ) do
+    # Cannot get more than the top 30 transfers
+    with limit <- Enum.max([size, 30]) do
+      async(
+        Cache.func(
+          fn ->
+            {:ok, result} =
+              Clickhouse.EthTransfers.top_wallet_transfers(
+                wallets,
+                from,
+                to,
+                size,
+                type
+              )
+
+            {:ok, result}
+          end,
+          :top_wallet_transfers
+        )
+      )
+    else
+      error ->
+        Logger.info("Cannot get wallet top transfers. Reason: #{inspect(error)}")
+
+        {:ok, []}
+    end
+  end
+
+  def last_wallet_transfers(
+        _root,
+        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type},
+        _resolution
+      ) do
+    # Cannot get more than the top 30 transfers
+    with limit <- Enum.max([size, 30]) do
+      async(
+        Cache.func(
+          fn ->
+            {:ok, result} =
+              Clickhouse.EthTransfers.last_wallet_transfers(
+                wallets,
+                from,
+                to,
+                size,
+                type
+              )
+
+            {:ok, result}
+          end,
+          :last_wallet_transfers
+        )
+      )
+    else
+      error ->
+        Logger.info("Cannot get wallet last transfers. Reason: #{inspect(error)}")
 
         {:ok, []}
     end

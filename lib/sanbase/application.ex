@@ -47,9 +47,6 @@ defmodule Sanbase.Application do
            acquire_lock_timeout: 30_000
          ]},
 
-        # Start the Clickhouse Repo
-        {Sanbase.ClickhouseRepo, []},
-
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},
 

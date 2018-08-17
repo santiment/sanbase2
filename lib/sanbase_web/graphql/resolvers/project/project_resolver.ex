@@ -21,11 +21,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Github
   alias Sanbase.ExternalServices.Etherscan
 
-  alias Sanbase.Clickhouse
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
-  alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
+  alias Sanbase.Repo
 
   def all_projects(parent, args, %{context: %{basic_auth: true}}), do: all_projects(parent, args)
 
@@ -88,134 +87,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def token_top_transactions(
-        %Project{} = project,
-        %{from: from, to: to, limit: limit},
-        _resolution
-      ) do
-    # Cannot get more than the top 30 transactions
-    with {:ok, contract_address, token_decimals} <- Utils.project_to_contract_info(project),
-         limit <- Enum.max([limit, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.Erc20Transfers.token_top_transfers(
-                contract_address,
-                from,
-                to,
-                limit,
-                token_decimals
-              )
-
-            {:ok, result}
-          end,
-          :token_top_transfers
-        )
-      )
-    else
-      error ->
-        Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
-  end
-
-  def top_address_transfers(
-        _root,
-        %{from_address: from_address, from: from, to: to, size: size},
-        _resolution
-      ) do
-    # Cannot get more than the top 30 transfers
-    with limit <- Enum.max([size, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.EthTransfers.top_address_transfers(
-                from_address,
-                from,
-                to,
-                size
-              )
-
-            {:ok, result}
-          end,
-          :top_address_transfers
-        )
-      )
-    else
-      error ->
-        Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
-  end
-
-  def top_wallet_transfers(
-        _root,
-        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type},
-        _resolution
-      ) do
-    # Cannot get more than the top 30 transfers
-    with limit <- Enum.max([size, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.EthTransfers.top_wallet_transfers(
-                wallets,
-                from,
-                to,
-                size,
-                type
-              )
-
-            {:ok, result}
-          end,
-          :top_wallet_transfers
-        )
-      )
-    else
-      error ->
-        Logger.info("Cannot get wallet top transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
-  end
-
-  def last_wallet_transfers(
-        _root,
-        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type},
-        _resolution
-      ) do
-    # Cannot get more than the top 30 transfers
-    with limit <- Enum.max([size, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.EthTransfers.last_wallet_transfers(
-                wallets,
-                from,
-                to,
-                size,
-                type
-              )
-
-            {:ok, result}
-          end,
-          :last_wallet_transfers
-        )
-      )
-    else
-      error ->
-        Logger.info("Cannot get wallet last transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
-  end
-
   def all_projects_with_eth_contract_info(_parent, _args, _resolution) do
     query = Project.all_projects_with_eth_contract_query()
 
@@ -227,23 +98,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_spent(%Project{id: id} = project, %{days: days}, _resolution) do
-    async(Cache.func(fn -> calculate_eth_spent(project, days) end, {:eth_spent, id, days}))
+  def eth_spent(%Project{ticker: ticker}, %{days: days}, _resolution) do
+    async(Cache.func(fn -> calculate_eth_spent(ticker, days) end, {:eth_spent, ticker, days}))
   end
 
-  def calculate_eth_spent(%Project{id: id} = project, days) do
+  def calculate_eth_spent(ticker, days) do
     today = Timex.now()
     days_ago = Timex.shift(today, days: -days)
 
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
-         {:ok, eth_spent} <- Clickhouse.EthTransfers.eth_spent(eth_addresses, days_ago, today) do
+    with {:ok, eth_spent} <- Etherscan.Store.trx_sum_in_interval(ticker, days_ago, today, "out") do
       {:ok, eth_spent}
     else
       error ->
-        Logger.warn(
-          "Cannot calculate ETH spent for project with id #{id}. Reason: #{inspect(error)}"
-        )
-
+        Logger.warn("Cannot calculate ETH spent for #{ticker}. Reason: #{inspect(error)}")
         {:ok, nil}
     end
   end

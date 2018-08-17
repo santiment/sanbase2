@@ -195,14 +195,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve_dataloader(&ProjectResolver.price_to_book_ratio/3)
     end
 
-    @desc "Total ETH spent from the project's team wallets for the last `days`"
     field :eth_spent, :float do
       arg(:days, :integer, default_value: 30)
 
       cache_resolve_async(&ProjectTransactionsResolver.eth_spent/3)
     end
 
-    @desc "ETH spent for each `interval` from the project's team wallet and time period"
     field :eth_spent_over_time, list_of(:eth_spent_data) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -211,8 +209,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve_async(&ProjectTransactionsResolver.eth_spent_over_time/3)
     end
 
-    @desc "Top ETH transactions for project's team wallets"
-    field :eth_top_transactions, list_of(:transaction) do
+    field :eth_top_transactions, list_of(:wallet_transaction) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:transaction_type, :transaction_type, default_value: :all)

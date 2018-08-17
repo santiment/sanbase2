@@ -30,7 +30,7 @@
 .dropdown__bg {
   width: 450px;
   height: 400px;
-  background-color: white;
+  background-color: #cecece;
   opacity: 0;
   transition: 0.25s ease;
   border-radius: 5px;
@@ -54,7 +54,7 @@
   overflow: hidden;
   position: absolute;
   transition: 0.25s ease;
-  z-index: 1;
+  z-index: 999999;
 }
 
 .dropdown-menu__content {
@@ -68,11 +68,16 @@
   opacity: 0;
 } */
 
-.dropdown-menu.active .dropdown-menu__content {
+.dd-dropdown-menu.active .dropdown-menu__content {
   opacity: 1;
 }
 
 .dd.dropdown-holder.has-dropdown-active .dropdown__arrow,
 .dd.dropdown-holder.has-dropdown-active .dropdown__bg {
   opacity: 1;
+}
+
+.dd {
+  z-index: 9999;
+  top: 60px;
 }

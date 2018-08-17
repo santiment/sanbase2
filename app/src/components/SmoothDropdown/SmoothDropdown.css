@@ -30,12 +30,13 @@
 .dropdown__bg {
   width: 450px;
   height: 400px;
-  background-color: #cecece;
+  background-color: #fff;
   opacity: 0;
-  transition: 0.25s ease;
+  transition: 0.3s ease;
   border-radius: 5px;
   overflow: hidden;
   z-index: -1;
+  border: 1px solid #777;
 }
 
 .dropdown__arrow {
@@ -46,22 +47,22 @@
   border-color: transparent transparent white;
   top: -20px;
   opacity: 0;
-  transition: 0.2s ease;
+  transition: 0.3s ease;
   pointer-events: none;
 }
 
 .dropdown__wrap {
   overflow: hidden;
   position: absolute;
-  transition: 0.25s ease;
+  transition: 0.3s ease;
   z-index: 999999;
 }
 
 .dropdown-menu__content {
   position: absolute;
   opacity: 0;
-  transition: 0.25s ease;
-  min-width: 200px;
+  transition: 0.3s ease;
+  padding: 0.833em 1em;
 }
 
 /* .dropdown-menu {
@@ -80,4 +81,12 @@
 .dd {
   z-index: 9999;
   top: 60px;
+}
+
+.dd__trigger {
+  display: inline-block;
+}
+
+.dd__content {
+  white-space: nowrap;
 }

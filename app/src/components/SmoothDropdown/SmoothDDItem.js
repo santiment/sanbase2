@@ -7,7 +7,7 @@ export class SmoothDDItem extends Component {
   triggerRef = React.createRef()
 
   render () {
-    const { trigger, children } = this.props
+    const { trigger, children, id } = this.props
     const {
       triggerRef: { current: ddTrigger },
       dropdownRef: { current: ddDropdown }
@@ -15,7 +15,7 @@ export class SmoothDDItem extends Component {
     // const { current: dropdown } = this.myRef
     // const { current: triggerRef } = this.triggerRef
 
-    console.log(ddDropdown, this.dropdownRef)
+    // console.log(ddDropdown, this.dropdownRef)
     createDrop(ddTrigger, ddDropdown)
     return (
       <SmoothDdContext.Consumer>
@@ -24,11 +24,13 @@ export class SmoothDDItem extends Component {
             {/* {console.log(portal)} */}
             <div
               onMouseEnter={() => {
-                console.log(ddTrigger)
+                // console.log(ddTrigger)
                 handleMouseEnter(ddTrigger)
               }}
               onMouseLeave={handleMouseLeave}
-              className={`${ddTrigger === currentTrigger ? 'active' : ''}`}
+              className={`dd__trigger ${
+                ddTrigger === currentTrigger ? 'active' : ''
+              }`}
               ref={this.triggerRef}
             >
               {trigger}
@@ -36,6 +38,7 @@ export class SmoothDDItem extends Component {
             {portal &&
               ReactDOM.createPortal(
                 <div
+                  id={id}
                   className={`dd__item dd-dropdown-menu ${
                     ddTrigger === currentTrigger ? 'active' : ''
                   }`}

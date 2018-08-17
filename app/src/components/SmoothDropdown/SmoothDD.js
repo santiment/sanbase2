@@ -45,8 +45,11 @@ export class SmoothDD extends Component {
     //   triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
     const left =
       triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
+    const offWidth = dropdown.firstElementChild.offsetWidth
     const width = ddMeta.width + 'px'
     const height = ddMeta.height + 'px'
+
+    console.table({ dropdown: dropdown.id, width, height, offWidth })
 
     this.setState(prevState => ({
       ...prevState,

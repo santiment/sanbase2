@@ -36,7 +36,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
       "initial_ico",
       "eth_spent_over_time",
       "eth_top_transactions",
-      "token_top_transactions",
       "funds_raised_icos",
       "funds_raised_eth_ico_end_price",
       "funds_raised_usd_ico_end_price",

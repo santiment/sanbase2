@@ -68,8 +68,10 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   not in the list are selected.
   """
   def last_wallet_transfers(wallets, from_datetime, to_datetime, size, type) do
-    wallet_transfers(wallets, from_datetime, to_datetime, size, type, desc: :datetime)
-    |> Enum.reverse()
+    {:ok, transfers} =
+      wallet_transfers(wallets, from_datetime, to_datetime, size, type, desc: :datetime)
+
+    {:ok, transfers |> Enum.reverse()}
   end
 
   def eth_spent(wallets, from_datetime, to_datetime) do
@@ -210,8 +212,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     from(
       transfer in EthTransfers,
       where:
-        transfer.from not in ^wallets and transfer.to in ^wallets and transfer.dt > ^from_datetime and
-          transfer.dt < ^to_datetime,
+        transfer.from_address not in ^wallets and transfer.to_address in ^wallets and
+          transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime,
       order_by: ^order_by,
       limit: ^size
     )

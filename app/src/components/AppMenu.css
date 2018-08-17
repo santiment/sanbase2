@@ -51,6 +51,11 @@
   user-select: none;
 }
 
+.app-menu-popup a.app-menu__page-link:hover,
+.app-menu-popup a.app-menu__page-link:focus {
+  color: #26a987;
+}
+
 .night-mode .menu-list-top a:hover {
   background-color: #252525;
 }

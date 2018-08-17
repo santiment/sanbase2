@@ -1,140 +1,115 @@
-import React, { Component, Fragment } from 'react'
-import './SmoothDropdown.css'
+// import React, { Component, Fragment } from 'react'
+// import './SmoothDropdown.css'
 
-export const SmoothDdContext = React.createContext({
-  portal: {},
-  currentTrigger: null,
-  handleMouseEnter: trigger => {},
-  handleMouseLeave: () => {}
-})
+// export const SmoothDropdownContext = React.createContext({
+//   portal: {},
+//   currentTrigger: null,
+//   handleMouseEnter: trigger => {},
+//   handleMouseLeave: () => {}
+// })
 
-const dropdowns = new WeakMap()
+// const dropdowns = new WeakMap()
 
-export const createDrop = (trigger, dropdown) =>
-  trigger && dropdowns.set(trigger, dropdown)
+// export const createDrop = (trigger, dropdown) =>
+//   trigger && dropdowns.set(trigger, dropdown)
 
-export class SmoothDD extends Component {
-  portalRef = React.createRef()
+// export class SmoothDropdown extends Component {
+//   portalRef = React.createRef()
 
-  state = {
-    portalMounted: false,
-    currentTrigger: null,
-    dropdownStyles: {}
-  }
+//   state = {
+//     portalMounted: false,
+//     currentTrigger: null,
+//     dropdownStyles: {}
+//   }
 
-  componentDidMount () {
-    if (this.state.portalMounted === false) {
-      this.setState(prevState => ({
-        ...prevState,
-        portalMounted: true
-      })) // HACK TO POPULATE PORTAL AND UPDATE REFS
-      // console.log(`Portal was not mounted. Updating...`)
-    }
-  }
+//   componentDidMount () {
+//     if (this.state.portalMounted === false) {
+//       this.setState(prevState => ({
+//         ...prevState,
+//         portalMounted: true
+//       })) // HACK TO POPULATE PORTAL AND UPDATE REFS
+//     }
+//   }
 
-  startCloseTimeout = () =>
-    (this.dropdownTimer = setTimeout(() => this.closeDropdown(), 150))
+//   startCloseTimeout = () =>
+//     (this.dropdownTimer = setTimeout(() => this.closeDropdown(), 150))
 
-  stopCloseTimeout = () => clearTimeout(this.dropdownTimer)
+//   stopCloseTimeout = () => clearTimeout(this.dropdownTimer)
 
-  openDropdown = (trigger, dropdown) => {
-    if (!dropdown) return
-    const triggerMeta = trigger.getBoundingClientRect()
-    const ddMeta = dropdown.firstElementChild.getBoundingClientRect()
+//   openDropdown = (trigger, dropdown) => {
+//     const triggerMeta = trigger.getBoundingClientRect()
+//     const ddMeta = dropdown.firstElementChild.getBoundingClientRect()
 
-    console.log(dropdown.parentNode)
-    console.log(triggerMeta, ddMeta)
-    // console.log(ddMeta)
+//     console.log(dropdown.parentNode)
+//     console.log(triggerMeta, ddMeta)
 
-    // ddList.style.opacity = 1
-    // ddList.style.left =
-    //   triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
-    const left =
-      triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
-    const width = ddMeta.width + 'px'
-    const height = ddMeta.height + 'px'
-    // console.table({
-    //   dropdown: dropdown.id,
-    //   width,
-    //   height,
-    //   offWidth: dropdown.firstElementChild.offsetWidth,
-    //   offHeight: dropdown.firstElementChild.offsetHeight
-    // })
+//     const left =
+//       triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
+//     const width = ddMeta.width + 'px'
+//     const height = ddMeta.height + 'px'
 
-    this.setState(prevState => ({
-      ...prevState,
-      currentTrigger: trigger,
-      dropdownStyles: {
-        left,
-        width,
-        height
-      }
-    }))
-  }
+//     this.setState(prevState => ({
+//       ...prevState,
+//       currentTrigger: trigger,
+//       dropdownStyles: {
+//         left,
+//         width,
+//         height
+//       }
+//     }))
+//   }
 
-  closeDropdown = () => {
-    this.setState(prevState => ({
-      ...prevState,
-      currentTrigger: null
-    }))
-  }
+//   closeDropdown = () => {
+//     this.setState(prevState => ({
+//       ...prevState,
+//       currentTrigger: null
+//     }))
+//   }
 
-  handleMouseEnter = (trigger, dropdown) => {
-    // console.log(dropdowns)
-    if (!trigger || !dropdown) {
-      console.log(
-        `there is no trigger,`,
-        !!trigger,
-        'or dropdown: ',
-        !!dropdown
-      )
-      return
-    }
-    this.stopCloseTimeout()
-    this.openDropdown(trigger, dropdown)
-  }
+//   handleMouseEnter = (trigger, dropdown) => {
+//     this.stopCloseTimeout()
+//     this.openDropdown(trigger, dropdown)
+//   }
 
-  handleMouseLeave = () => this.startCloseTimeout()
+//   handleMouseLeave = () => this.startCloseTimeout()
 
-  render () {
-    const { children } = this.props
-    const { currentTrigger, dropdownStyles } = this.state
-    const {
-      portalRef,
-      handleMouseEnter,
-      handleMouseLeave,
-      startCloseTimeout,
-      stopCloseTimeout
-    } = this
-    return (
-      <SmoothDdContext.Provider
-        value={{
-          portal: portalRef.current || document.createElement('ul'),
-          currentTrigger,
-          handleMouseEnter,
-          handleMouseLeave,
-          startCloseTimeout,
-          stopCloseTimeout
-        }}
-      >
-        {children}
-        <div
-          className={`dd dropdown-holder ${
-            currentTrigger ? 'has-dropdown-active' : ''
-          }`}
-        >
-          <div
-            className='dd__list dropdown__wrap'
-            id='dd-portal'
-            style={dropdownStyles}
-            ref={portalRef}
-          />
-          <div className='dd__arrow dropdown__arrow' />
-          <div className='dd__bg dropdown__bg' style={dropdownStyles} />
-        </div>
-      </SmoothDdContext.Provider>
-    )
-  }
-}
+//   render () {
+//     const { children } = this.props
+//     const { currentTrigger, dropdownStyles } = this.state
+//     const {
+//       portalRef,
+//       handleMouseEnter,
+//       handleMouseLeave,
+//       startCloseTimeout,
+//       stopCloseTimeout
+//     } = this
+//     return (
+//       <SmoothDropdownContext.Provider
+//         value={{
+//           portal: portalRef.current || document.createElement('ul'),
+//           currentTrigger,
+//           handleMouseEnter,
+//           handleMouseLeave,
+//           startCloseTimeout,
+//           stopCloseTimeout
+//         }}
+//       >
+//         {children}
+//         <div
+//           className={`dd dropdown-holder ${currentTrigger ? 'has-dropdown-active' : ''}`}
+//         >
+//           <div
+//             className='dd__list dropdown__wrap'
+//             id='dd-portal'
+//             style={dropdownStyles}
+//             ref={portalRef}
+//           />
+//           <div className='dd__arrow dropdown__arrow' />
+//           <div className='dd__bg dropdown__bg' style={dropdownStyles} />
+//         </div>
+//       </SmoothDropdownContext.Provider>
+//     )
+//   }
+// }
 
-export default SmoothDD
+// export default SmoothDropdown

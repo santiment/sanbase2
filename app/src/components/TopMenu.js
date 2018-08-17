@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
@@ -8,8 +8,8 @@ import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './Search/SearchContainer'
 import * as actions from './../actions/types'
 import AnalysisDropdownMenu from './AnalysisDropdownMenu'
-import SmoothDD from './SmoothDropdown/SmoothDD'
-import SmoothDDItem from './SmoothDropdown/SmoothDDItem'
+import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
+import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -23,7 +23,7 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
         <Search />
       </div>
       <div className='right'>
-        <SmoothDD id='nav-dropdown'>
+        <SmoothDropdown id='nav-dropdown'>
           <ul className='menu-list-top'>
             <Link className='app-menu__page-link' to={'/projects'}>
               Assets
@@ -31,13 +31,13 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
             <AnalysisDropdownMenu />
           </ul>
           <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
-          <SmoothDDItem
+          <SmoothDropdownItem
             id='testing'
             trigger={<p>testing 123. it's first drop</p>}
           >
             testing popup
-          </SmoothDDItem>
-        </SmoothDD>
+          </SmoothDropdownItem>
+        </SmoothDropdown>
       </div>
     </div>
   </div>

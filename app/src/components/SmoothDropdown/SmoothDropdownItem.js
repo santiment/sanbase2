@@ -1,82 +1,70 @@
 import React, { Component, Fragment } from 'react'
 import ReactDOM from 'react-dom'
-import { SmoothDropdownContext, createDrop } from './SmoothDropdown'
-
-// const SmoothDropdownItem = ({ trigger, children, id }) => {
-//   const child = (
-//     <li className='dropdown smooth-dropdown__item' data-id={id}>{children}</li>
-//   )
-//   return (
-//     <Fragment>
-//       <div
-//         onMouseEnter={evt => console.log(evt.currentTarget.dataset.id)}
-//         data-id={id}
-//       >
-//         {trigger}
-//       </div>
-//       <SmoothDropdownContext.Consumer>
-//         {portal => ReactDOM.createPortal(child, portal)}
-//       </SmoothDropdownContext.Consumer>
-//     </Fragment>
-//   )
-// }
+import { SmoothDropdownContext } from './SmoothDropdown'
 
 export class SmoothDropdownItem extends Component {
-  myRef = React.createRef()
+  dropdownRef = React.createRef()
   triggerRef = React.createRef()
 
+  componentDidMount () {
+    setTimeout(() => this.forceUpdate(), 100) // VERY HACKY - NECESSARY TO UPDATE DROPDOWN IN DOM
+  }
+
   render () {
-    const { trigger, children } = this.props
-    const { current: dropdown } = this.myRef
-    const { current: triggerRef } = this.triggerRef
-    const child = (
-      <li className='dropdown smooth-dropdown__item' ref={this.myRef}>
-        <div className='content'>{children}</div>
-      </li>
-    )
-    console.log(this.myRef)
-    createDrop(triggerRef, dropdown)
+    const { trigger, children, id } = this.props
+    const {
+      triggerRef: { current: ddTrigger },
+      dropdownRef: { current: ddDropdown }
+    } = this
+
     return (
       <SmoothDropdownContext.Consumer>
-        {({ portal, changeDrop, hideDrop }) => (
+        {({
+          portal,
+          handleMouseEnter,
+          handleMouseLeave,
+          currentTrigger,
+          startCloseTimeout,
+          stopCloseTimeout
+        }) => (
           <Fragment>
-            {/* {console.log(portal)} */}
             <div
-              onMouseEnter={() => changeDrop(triggerRef)}
-              onMouseLeave={hideDrop}
+              onMouseEnter={() => {
+                // console.log(`Mouse entered on #${id}`)
+                // console.dir(ddDropdown)
+                handleMouseEnter(ddTrigger, ddDropdown)
+              }}
+              onMouseLeave={handleMouseLeave}
+              className={`dd__trigger ${
+                ddTrigger === currentTrigger ? 'active' : ''
+              }`}
               ref={this.triggerRef}
             >
               {trigger}
             </div>
-            {portal && ReactDOM.createPortal(child, portal)}
+            {ReactDOM.createPortal(
+              <div
+                id={id}
+                className={`dd__item dd-dropdown-menu ${
+                  ddTrigger === currentTrigger ? 'active' : ''
+                }`}
+                ref={this.dropdownRef}
+              >
+                <div
+                  className='dd__content dropdown-menu__content'
+                  onMouseEnter={stopCloseTimeout}
+                  onMouseLeave={startCloseTimeout}
+                >
+                  {children}
+                </div>
+              </div>,
+              portal
+            )}
           </Fragment>
         )}
       </SmoothDropdownContext.Consumer>
     )
   }
 }
-
-// const SmoothDropdownItem = ({ trigger, children, id }) => {
-//   const child = (
-//     <li className='dropdown smooth-dropdown__item' data-id={id}>
-//       {children}
-//     </li>
-//   )
-//   console.log(child)
-//   createDrop(trigger, child)
-//   return (
-//     <SmoothDropdownContext.Consumer>
-//       {({ portal, changeDrop }) => (
-//         <Fragment>
-//           {/* {console.log(portal)} */}
-//           <div onMouseEnter={() => changeDrop(trigger)} data-id={id}>
-//             {trigger}
-//           </div>
-//           {portal && ReactDOM.createPortal(child, portal)}
-//         </Fragment>
-//       )}
-//     </SmoothDropdownContext.Consumer>
-//   )
-// }
 
 export default SmoothDropdownItem

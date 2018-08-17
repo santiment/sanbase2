@@ -1,12 +1,12 @@
 import React from 'react'
 import { Popup, Icon } from 'semantic-ui-react'
 import { Link } from 'react-router-dom'
-import SmoothDDItem from './SmoothDropdown/SmoothDDItem'
+import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import './AnalysisDropdownMenu.css'
 
 export const AnalysisDropdownMenu = () => (
   // <Popup
-  <SmoothDDItem
+  <SmoothDropdownItem
     mouseLeaveDelay={2000}
     basic
     trigger={<span className='app-menu__page-link'>Analysis</span>}
@@ -24,7 +24,7 @@ export const AnalysisDropdownMenu = () => (
         Signals
       </Link>
     </div>
-  </SmoothDDItem>
+  </SmoothDropdownItem>
 )
 
 export default AnalysisDropdownMenu

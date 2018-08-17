@@ -12,6 +12,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   @primary_key false
   @timestamps_opts updated_at: false
+
   schema "erc20_transfers" do
     field(:datetime, :utc_datetime, source: :dt)
     field(:contract, :string, primary_key: true)

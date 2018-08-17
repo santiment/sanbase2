@@ -18,7 +18,6 @@ podTemplate(label: 'sanbase-builder', containers: [
             --link test_postgres_${scmVars.GIT_COMMIT}:test_db \
             --link test_influxdb_${scmVars.GIT_COMMIT}:test_influxdb \
             --env DATABASE_URL=postgres://postgres:password@test_db:5432/postgres \
-            --env CLICKHOUSE_DATABASE_URL=postgres://postgres:password@test_db:5432/postgres \
             --env INFLUXDB_HOST=test_influxdb \
             --env ETHERBI_INFLUXDB_HOST=test_influxdb \
             -t sanbase-test:${scmVars.GIT_COMMIT}"

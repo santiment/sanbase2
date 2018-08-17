@@ -19,7 +19,14 @@ export class SmoothDDItem extends Component {
     createDrop(ddTrigger, ddDropdown)
     return (
       <SmoothDdContext.Consumer>
-        {({ portal, handleMouseEnter, handleMouseLeave, currentTrigger }) => (
+        {({
+          portal,
+          handleMouseEnter,
+          handleMouseLeave,
+          currentTrigger,
+          startCloseTimeout,
+          stopCloseTimeout
+        }) => (
           <Fragment>
             {/* {console.log(portal)} */}
             <div
@@ -44,7 +51,11 @@ export class SmoothDDItem extends Component {
                   }`}
                   ref={this.dropdownRef}
                 >
-                  <div className='dd__content dropdown-menu__content'>
+                  <div
+                    className='dd__content dropdown-menu__content'
+                    onMouseEnter={stopCloseTimeout}
+                    onMouseLeave={startCloseTimeout}
+                  >
                     {children}
                   </div>
                 </div>,

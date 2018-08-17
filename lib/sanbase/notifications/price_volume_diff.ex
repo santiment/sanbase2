@@ -265,6 +265,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   end
 
   defp project_page(coinmarketcap_id) do
-    SanbaseWeb.Endpoint.frontend_url() <> "/projects/" <> coinmarketcap_id
+    "https://app.santiment.net" <> "/projects/" <> coinmarketcap_id
   end
 end

@@ -1,14 +1,16 @@
 import React, { Component, Fragment } from 'react'
 import ReactDOM from 'react-dom'
 import cx from 'classnames'
-import { SmoothDropdownContext } from './SmoothDropdown'
+import { SmoothDropdownContext, ddAsyncUpdateTimeout } from './SmoothDropdown'
+
+const ddItemAsyncUpdateTimeout = ddAsyncUpdateTimeout + 1
 
 class SmoothDropdownItem extends Component {
   dropdownRef = React.createRef()
   triggerRef = React.createRef()
 
   componentDidMount () {
-    setTimeout(() => this.forceUpdate(), 100) // VERY HACKY - NECESSARY TO UPDATE DROPDOWN IN DOM
+    setTimeout(() => this.forceUpdate(), ddItemAsyncUpdateTimeout) // VERY HACKY - NECESSARY TO UPDATE DROPDOWN IN DOM
   }
 
   render () {
@@ -31,8 +33,6 @@ class SmoothDropdownItem extends Component {
           <Fragment>
             <div
               onMouseEnter={() => {
-                // console.log(`Mouse entered on #${id}`)
-                // console.dir(ddDropdown)
                 handleMouseEnter(ddTrigger, ddDropdown)
               }}
               onMouseLeave={handleMouseLeave}

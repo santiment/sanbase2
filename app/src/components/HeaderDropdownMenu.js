@@ -10,14 +10,9 @@ const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
     return (
       <div className='user-auth-control'>
         <FeedbackBtn />
-        {/* <Popup */}
         <SmoothDropdownItem
-          mouseLeaveDelay={2000}
-          basic
-          wide
           trigger={<Button circular icon='user' />}
           id='profile'
-          on='hover'
         >
           <div className='app-menu-popup'>
             <Link className='app-menu__page-link' to={'/roadmap'}>
@@ -34,7 +29,6 @@ const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
             </Button>
           </div>
         </SmoothDropdownItem>
-        {/* </Popup> */}
       </div>
     )
   }

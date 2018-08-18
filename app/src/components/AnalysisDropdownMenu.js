@@ -5,13 +5,8 @@ import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import './AnalysisDropdownMenu.css'
 
 export const AnalysisDropdownMenu = () => (
-  // <Popup
   <SmoothDropdownItem
-    mouseLeaveDelay={2000}
-    basic
     trigger={<span className='app-menu__page-link'>Analysis</span>}
-    position='bottom center'
-    on='hover'
     id='analysis'
   >
     <div className='app-menu-popup'>

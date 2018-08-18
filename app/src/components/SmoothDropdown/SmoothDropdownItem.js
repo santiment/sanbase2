@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import cx from 'classnames'
 import { SmoothDropdownContext } from './SmoothDropdown'
 
-export class SmoothDropdownItem extends Component {
+class SmoothDropdownItem extends Component {
   dropdownRef = React.createRef()
   triggerRef = React.createRef()
 
@@ -12,7 +12,7 @@ export class SmoothDropdownItem extends Component {
   }
 
   render () {
-    const { trigger, children, id } = this.props
+    const { trigger, children, id, className } = this.props
     const {
       triggerRef: { current: ddTrigger },
       dropdownRef: { current: ddDropdown }
@@ -51,7 +51,7 @@ export class SmoothDropdownItem extends Component {
                 ref={this.dropdownRef}
               >
                 <div
-                  className='dd__content'
+                  className={`dd__content ${className}`}
                   onMouseEnter={stopCloseTimeout}
                   onMouseLeave={startCloseTimeout}
                 >

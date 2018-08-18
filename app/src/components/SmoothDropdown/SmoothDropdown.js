@@ -19,6 +19,7 @@ class SmoothDropdown extends Component {
   state = {
     currentTrigger: null,
     ddFirstTime: false,
+    arrowCorrectionX: 0,
     dropdownStyles: {}
   }
 
@@ -41,10 +42,12 @@ class SmoothDropdown extends Component {
   openDropdown = (trigger, dropdown) => {
     const ddContent = dropdown.querySelector('.dd__content')
 
-    const left =
-      trigger.offsetLeft -
-      (ddContent.clientWidth - trigger.clientWidth) / 2 +
-      'px'
+    const leftOffset =
+      trigger.offsetLeft - (ddContent.clientWidth - trigger.clientWidth) / 2
+
+    const correction = this.correctViewportOverflow(trigger, ddContent)
+
+    const left = leftOffset - correction.left + 'px'
     const width = ddContent.clientWidth + 'px'
     const height = ddContent.clientHeight + 'px'
 
@@ -56,7 +59,8 @@ class SmoothDropdown extends Component {
         left,
         width,
         height
-      }
+      },
+      arrowCorrectionX: correction.left
     }))
   }
 
@@ -67,9 +71,31 @@ class SmoothDropdown extends Component {
     }))
   }
 
+  correctViewportOverflow (trigger, ddContent) {
+    const correction = { left: 0 }
+    const triggerViewport = trigger.getBoundingClientRect()
+
+    const ddLeftCornerX =
+      triggerViewport.left - (ddContent.clientWidth - triggerViewport.width) / 2
+    const ddRightCornerX = ddLeftCornerX + ddContent.clientWidth
+
+    if (ddRightCornerX > window.innerWidth) {
+      correction.left = ddRightCornerX - window.innerWidth
+    } else if (ddLeftCornerX < 0) {
+      correction.left = ddLeftCornerX
+    }
+
+    return correction
+  }
+
   render () {
     const { children, className } = this.props
-    const { currentTrigger, dropdownStyles, ddFirstTime } = this.state
+    const {
+      currentTrigger,
+      dropdownStyles,
+      ddFirstTime,
+      arrowCorrectionX
+    } = this.state
     const {
       handleMouseEnter,
       handleMouseLeave,
@@ -77,7 +103,7 @@ class SmoothDropdown extends Component {
       stopCloseTimeout
     } = this
     return (
-      <div className={`dd-wrapper ${className}`}>
+      <div className={`dd-wrapper ${className || ''}`}>
         <SmoothDropdownContext.Provider
           value={{
             portal: this.portalRef.current || document.createElement('ul'),
@@ -98,7 +124,10 @@ class SmoothDropdown extends Component {
             })}
           >
             <div className='dd__list' ref={this.portalRef} />
-            <div className='dd__arrow' />
+            <div
+              className='dd__arrow'
+              style={{ left: `calc(50% + ${arrowCorrectionX}px)` }}
+            />
             <div className='dd__bg' />
           </div>
         </SmoothDropdownContext.Provider>

@@ -45,13 +45,13 @@ export class SmoothDropdownItem extends Component {
             {ReactDOM.createPortal(
               <div
                 id={id}
-                className={`dd__item dd-dropdown-menu ${
+                className={`dd__item ${
                   ddTrigger === currentTrigger ? 'active' : ''
                 }`}
                 ref={this.dropdownRef}
               >
                 <div
-                  className='dd__content dropdown-menu__content'
+                  className='dd__content'
                   onMouseEnter={stopCloseTimeout}
                   onMouseLeave={startCloseTimeout}
                 >

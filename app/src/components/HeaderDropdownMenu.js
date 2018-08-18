@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Popup, Divider, Icon } from 'semantic-ui-react'
+import { Button, Divider, Icon } from 'semantic-ui-react'
 import { NavLink, Link } from 'react-router-dom'
 import FeedbackBtn from './FeedbackBtn'
 import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'

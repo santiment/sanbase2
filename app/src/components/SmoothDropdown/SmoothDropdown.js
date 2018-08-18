@@ -8,11 +8,6 @@ export const SmoothDropdownContext = React.createContext({
   handleMouseLeave: () => {}
 })
 
-const dropdowns = new WeakMap()
-
-export const createDrop = (trigger, dropdown) =>
-  trigger && dropdowns.set(trigger, dropdown)
-
 export class SmoothDropdown extends Component {
   portalRef = React.createRef()
 
@@ -40,13 +35,14 @@ export class SmoothDropdown extends Component {
     const triggerMeta = trigger.getBoundingClientRect()
     const ddMeta = dropdown.firstElementChild.getBoundingClientRect()
 
-    console.log(dropdown.parentNode)
-    console.log(triggerMeta, ddMeta)
+    // console.log(dropdown.parentNode)
+    // console.log(triggerMeta, ddMeta)
 
     const left =
       triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
     const width = ddMeta.width + 'px'
     const height = ddMeta.height + 'px'
+    const arrowLeft = triggerMeta.left + triggerMeta.width / 2 + 'px'
 
     this.setState(prevState => ({
       ...prevState,
@@ -54,7 +50,8 @@ export class SmoothDropdown extends Component {
       dropdownStyles: {
         left,
         width,
-        height
+        height,
+        arrowLeft
       }
     }))
   }
@@ -106,7 +103,10 @@ export class SmoothDropdown extends Component {
             style={dropdownStyles}
             ref={portalRef}
           />
-          <div className='dd__arrow dropdown__arrow' />
+          <div
+            className='dd__arrow dropdown__arrow'
+            style={{ left: dropdownStyles.arrowLeft }}
+          />
           <div className='dd__bg dropdown__bg' style={dropdownStyles} />
         </div>
       </SmoothDropdownContext.Provider>

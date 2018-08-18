@@ -79,6 +79,11 @@
   color: #cacaca !important;
 }
 
+.night-mode .app-menu__page-link:hover,
+.night-mode .app-menu__page-link:hover i {
+  color: #1d8166 !important;
+}
+
 .night-mode .app-menu {
   background: linear-gradient(270deg, #0c362b, #1a2f47, #0d2b22);
   box-shadow: none;

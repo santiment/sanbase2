@@ -1,7 +1,7 @@
 import React from 'react'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
-import { Button, Popup } from 'semantic-ui-react'
+import { Button } from 'semantic-ui-react'
 import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 
 const FeedbackBtn = ({ toggleFeedback, ...props }) => {

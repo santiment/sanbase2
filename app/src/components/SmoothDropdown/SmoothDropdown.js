@@ -2,6 +2,8 @@ import React, { Component } from 'react'
 import cx from 'classnames'
 import './SmoothDropdown.css'
 
+export const ddAsyncUpdateTimeout = 99
+
 export const SmoothDropdownContext = React.createContext({
   portal: {},
   currentTrigger: null,
@@ -15,19 +17,13 @@ class SmoothDropdown extends Component {
   portalRef = React.createRef()
 
   state = {
-    portalMounted: false,
     currentTrigger: null,
     ddFirstTime: false,
     dropdownStyles: {}
   }
 
   componentDidMount () {
-    if (this.state.portalMounted === false) {
-      this.setState(prevState => ({
-        ...prevState,
-        portalMounted: true
-      })) // HACK TO POPULATE PORTAL AND UPDATE REFS
-    }
+    setTimeout(() => this.forceUpdate(), ddAsyncUpdateTimeout) // HACK TO POPULATE PORTAL AND UPDATE REFS
   }
 
   startCloseTimeout = () =>
@@ -75,17 +71,16 @@ class SmoothDropdown extends Component {
     const { children, className } = this.props
     const { currentTrigger, dropdownStyles, ddFirstTime } = this.state
     const {
-      portalRef,
       handleMouseEnter,
       handleMouseLeave,
       startCloseTimeout,
       stopCloseTimeout
     } = this
     return (
-      <div className={`${className} dd-wrapper`}>
+      <div className={`dd-wrapper ${className}`}>
         <SmoothDropdownContext.Provider
           value={{
-            portal: portalRef.current || document.createElement('ul'),
+            portal: this.portalRef.current || document.createElement('ul'),
             currentTrigger,
             handleMouseEnter,
             handleMouseLeave,
@@ -102,7 +97,7 @@ class SmoothDropdown extends Component {
               'dd-first-time': ddFirstTime
             })}
           >
-            <div className='dd__list' ref={portalRef} />
+            <div className='dd__list' ref={this.portalRef} />
             <div className='dd__arrow' />
             <div className='dd__bg' />
           </div>

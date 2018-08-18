@@ -1,11 +1,14 @@
 import React, { Component } from 'react'
+import cx from 'classnames'
 import './SmoothDropdown.css'
 
 export const SmoothDropdownContext = React.createContext({
   portal: {},
   currentTrigger: null,
   handleMouseEnter: trigger => {},
-  handleMouseLeave: () => {}
+  handleMouseLeave: () => {},
+  startCloseTimeout: () => {},
+  stopCloseTimeout: () => {}
 })
 
 export class SmoothDropdown extends Component {
@@ -94,9 +97,11 @@ export class SmoothDropdown extends Component {
         {children}
         <div
           style={dropdownStyles}
-          className={`dd ${currentTrigger ? 'has-dropdown-active' : ''} ${
-            ddFirstTime ? 'dd-first-time' : ''
-          }`}
+          className={cx({
+            dd: true,
+            'has-dropdown-active': currentTrigger !== null,
+            'dd-first-time': ddFirstTime
+          })}
         >
           <div className='dd__list' id='dd-portal' ref={portalRef} />
           <div className='dd__arrow' />

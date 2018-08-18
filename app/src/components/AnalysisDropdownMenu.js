@@ -1,5 +1,5 @@
 import React from 'react'
-import { Popup, Icon } from 'semantic-ui-react'
+import { Icon } from 'semantic-ui-react'
 import { Link } from 'react-router-dom'
 import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import './AnalysisDropdownMenu.css'

@@ -29,7 +29,7 @@
 
 .dropdown__bg {
   background-color: #fff;
-  opacity: 0;
+  opacity: 1;
   transition: 0.3s ease;
   border-radius: 5px;
   overflow: hidden;
@@ -38,15 +38,15 @@
 }
 
 .dropdown__arrow {
-  width: 0;
-  height: 0;
-  border-width: 10px;
-  border-style: solid;
-  border-color: transparent transparent white;
-  top: -20px;
-  opacity: 0;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  opacity: 1;
   transition: 0.3s ease;
   pointer-events: none;
+  transform: translate3d(-50%, -50%, 0) rotate(45deg);
+  border-left: 1px solid #777;
+  border-top: 1px solid #777;
 }
 
 .dropdown__wrap {
@@ -64,26 +64,20 @@
   z-index: 1;
 }
 
+.dd.dropdown-holder.has-dropdown-active {
+  opacity: 1;
+}
+
 .dd-dropdown-menu.active .dropdown-menu__content {
   opacity: 1;
   z-index: 999;
 }
 
-.dd.dropdown-holder.has-dropdown-active .dropdown__arrow,
-.dd.dropdown-holder.has-dropdown-active .dropdown__bg {
-  opacity: 1;
-}
-
-/* .dd.dropdown-holder.has-dropdown-active .dropdown__bg,
-.dd-dropdown-menu.active .dropdown-menu__content,
-.dd.dropdown-holder.has-dropdown-active .dropdown__arrow,
-.dd.dropdown-holder.has-dropdown-active .dropdown__wrap {
-
-} */
-
 .dd {
   z-index: 9999;
   top: 60px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .dd__trigger {

@@ -6,9 +6,9 @@
   position: absolute;
   width: 100%;
   left: 0;
-  z-index: 9999;
-  top: 60px;
+  top: calc(100% + 6px);
   opacity: 0;
+  visibility: hidden;
   transition: 0.25s ease;
 }
 
@@ -23,7 +23,6 @@
 
 .dd__bg {
   background-color: #fff;
-  opacity: 1;
   transition: 0.25s ease;
   border-radius: 5px;
   overflow: hidden;
@@ -37,19 +36,15 @@
   width: 10px;
   height: 10px;
   background: #fff;
-  opacity: 1;
-  transition: 0.25s ease;
   pointer-events: none;
   transform: translate3d(-50%, -50%, 0) rotate(45deg);
   border-left: 1px solid #777;
   border-top: 1px solid #777;
-  left: 50%;
 }
 
 .dd__list {
   overflow: hidden;
   position: absolute;
-  z-index: 999999;
   width: 100%;
   height: 100%;
 }
@@ -59,7 +54,6 @@
   opacity: 0;
   transition: 0.25s ease;
   padding: 0.833em 1em;
-  z-index: 1;
   white-space: nowrap;
 }
 
@@ -69,11 +63,12 @@
 
 .dd.has-dropdown-active {
   opacity: 1;
+  visibility: visible;
 }
 
 .dd__item.active .dd__content {
   opacity: 1;
-  z-index: 999;
+  z-index: 2;
 }
 
 .night-mode .dd__bg,

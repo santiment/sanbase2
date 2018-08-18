@@ -9,7 +9,6 @@ import Search from './Search/SearchContainer'
 import * as actions from './../actions/types'
 import AnalysisDropdownMenu from './AnalysisDropdownMenu'
 import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
-import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import './AppMenu.css'
 import './TopMenu.css'
 

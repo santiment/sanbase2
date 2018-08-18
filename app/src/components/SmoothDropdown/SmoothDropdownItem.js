@@ -51,7 +51,7 @@ class SmoothDropdownItem extends Component {
                 ref={this.dropdownRef}
               >
                 <div
-                  className={`dd__content ${className}`}
+                  className={`dd__content ${className || ''}`}
                   onMouseEnter={stopCloseTimeout}
                   onMouseLeave={startCloseTimeout}
                 >

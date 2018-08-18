@@ -30,12 +30,6 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
           <AnalysisDropdownMenu />
         </ul>
         <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
-        <SmoothDropdownItem
-          id='testing'
-          trigger={<p>testing 123. it's first drop</p>}
-        >
-          testing popup
-        </SmoothDropdownItem>
       </SmoothDropdown>
     </div>
   </div>

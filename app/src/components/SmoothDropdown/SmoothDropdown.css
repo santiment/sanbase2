@@ -87,3 +87,9 @@
 .dd__content {
   white-space: nowrap;
 }
+
+.night-mode .dd__bg,
+.night-mode .dd__arrow {
+  background-color: #23252a;
+  border-color: #4a4a4a;
+}

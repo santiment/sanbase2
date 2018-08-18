@@ -1,33 +1,19 @@
-.menu {
-  list-style: none;
-  margin: 0;
-  padding-left: 0;
-  display: flex;
-  justify-content: center;
-}
-
-.menu .sub-menu-shadow {
-  position: absolute;
-  display: none;
-}
-
-.menu__item:hover > .sub-menu-shadow {
-  display: block;
-}
-
-.dropdown-holder {
+.dd {
   position: absolute;
   width: 100%;
   left: 0;
-  top: 100%;
+  z-index: 9999;
+  top: 60px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.dropdown__bg,
-.dropdown__arrow {
+.dd__bg,
+.dd__arrow {
   position: absolute;
 }
 
-.dropdown__bg {
+.dd__bg {
   background-color: #fff;
   opacity: 1;
   transition: 0.3s ease;
@@ -37,7 +23,7 @@
   border: 1px solid #777;
 }
 
-.dropdown__arrow {
+.dd__arrow {
   width: 10px;
   height: 10px;
   background: #fff;
@@ -49,43 +35,33 @@
   border-top: 1px solid #777;
 }
 
-.dropdown__wrap {
+.dd__list {
   overflow: hidden;
   position: absolute;
   transition: 0.3s ease;
   z-index: 999999;
 }
 
-.dropdown-menu__content {
+.dd__content {
   position: absolute;
   opacity: 0;
   transition: 0.3s ease;
   padding: 0.833em 1em;
   z-index: 1;
-}
-
-.dd.dropdown-holder.has-dropdown-active {
-  opacity: 1;
-}
-
-.dd-dropdown-menu.active .dropdown-menu__content {
-  opacity: 1;
-  z-index: 999;
-}
-
-.dd {
-  z-index: 9999;
-  top: 60px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  white-space: nowrap;
 }
 
 .dd__trigger {
   display: inline-block;
 }
 
-.dd__content {
-  white-space: nowrap;
+.dd.has-dropdown-active {
+  opacity: 1;
+}
+
+.dd__item.active .dd__content {
+  opacity: 1;
+  z-index: 999;
 }
 
 .night-mode .dd__bg,

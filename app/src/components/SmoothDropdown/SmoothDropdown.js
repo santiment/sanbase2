@@ -92,22 +92,18 @@ export class SmoothDropdown extends Component {
         }}
       >
         {children}
-        <div
-          className={`dd dropdown-holder ${
-            currentTrigger ? 'has-dropdown-active' : ''
-          }`}
-        >
+        <div className={`dd ${currentTrigger ? 'has-dropdown-active' : ''}`}>
           <div
-            className='dd__list dropdown__wrap'
+            className='dd__list'
             id='dd-portal'
             style={dropdownStyles}
             ref={portalRef}
           />
           <div
-            className='dd__arrow dropdown__arrow'
+            className='dd__arrow'
             style={{ left: dropdownStyles.arrowLeft }}
           />
-          <div className='dd__bg dropdown__bg' style={dropdownStyles} />
+          <div className='dd__bg' style={dropdownStyles} />
         </div>
       </SmoothDropdownContext.Provider>
     )

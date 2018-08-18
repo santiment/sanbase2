@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import ReactDOM from 'react-dom'
+import cx from 'classnames'
 import { SmoothDropdownContext } from './SmoothDropdown'
 
 export class SmoothDropdownItem extends Component {
@@ -35,9 +36,7 @@ export class SmoothDropdownItem extends Component {
                 handleMouseEnter(ddTrigger, ddDropdown)
               }}
               onMouseLeave={handleMouseLeave}
-              className={`dd__trigger ${
-                ddTrigger === currentTrigger ? 'active' : ''
-              }`}
+              className='dd__trigger'
               ref={this.triggerRef}
             >
               {trigger}
@@ -45,9 +44,10 @@ export class SmoothDropdownItem extends Component {
             {ReactDOM.createPortal(
               <div
                 id={id}
-                className={`dd__item ${
-                  ddTrigger === currentTrigger ? 'active' : ''
-                }`}
+                className={cx({
+                  dd__item: true,
+                  active: ddTrigger === currentTrigger
+                })}
                 ref={this.dropdownRef}
               >
                 <div

@@ -11,7 +11,7 @@ export const SmoothDropdownContext = React.createContext({
   stopCloseTimeout: () => {}
 })
 
-export class SmoothDropdown extends Component {
+class SmoothDropdown extends Component {
   portalRef = React.createRef()
 
   state = {
@@ -43,7 +43,7 @@ export class SmoothDropdown extends Component {
   handleMouseLeave = () => this.startCloseTimeout()
 
   openDropdown = (trigger, dropdown) => {
-    const ddContent = dropdown.firstElementChild
+    const ddContent = dropdown.querySelector('.dd__content')
 
     const left =
       trigger.offsetLeft -

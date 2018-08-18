@@ -42,7 +42,6 @@ export class SmoothDropdown extends Component {
       triggerMeta.left - (ddMeta.width / 2 - triggerMeta.width / 2) + 'px'
     const width = ddMeta.width + 'px'
     const height = ddMeta.height + 'px'
-    const arrowLeft = triggerMeta.left + triggerMeta.width / 2 + 'px'
 
     this.setState(prevState => ({
       ...prevState,
@@ -50,8 +49,7 @@ export class SmoothDropdown extends Component {
       dropdownStyles: {
         left,
         width,
-        height,
-        arrowLeft
+        height
       }
     }))
   }
@@ -92,18 +90,13 @@ export class SmoothDropdown extends Component {
         }}
       >
         {children}
-        <div className={`dd ${currentTrigger ? 'has-dropdown-active' : ''}`}>
-          <div
-            className='dd__list'
-            id='dd-portal'
-            style={dropdownStyles}
-            ref={portalRef}
-          />
-          <div
-            className='dd__arrow'
-            style={{ left: dropdownStyles.arrowLeft }}
-          />
-          <div className='dd__bg' style={dropdownStyles} />
+        <div
+          style={dropdownStyles}
+          className={`dd ${currentTrigger ? 'has-dropdown-active' : ''}`}
+        >
+          <div className='dd__list' id='dd-portal' ref={portalRef} />
+          <div className='dd__arrow' />
+          <div className='dd__bg' />
         </div>
       </SmoothDropdownContext.Provider>
     )

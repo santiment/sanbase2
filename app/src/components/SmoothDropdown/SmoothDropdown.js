@@ -14,6 +14,7 @@ export class SmoothDropdown extends Component {
   state = {
     portalMounted: false,
     currentTrigger: null,
+    ddFirstTime: false,
     dropdownStyles: {}
   }
 
@@ -35,7 +36,7 @@ export class SmoothDropdown extends Component {
     const triggerMeta = trigger.getBoundingClientRect()
     const ddMeta = dropdown.firstElementChild.getBoundingClientRect()
 
-    // console.log(dropdown.parentNode)
+    // console.log(dropdown.offsetLeft, ddMeta.left)
     // console.log(triggerMeta, ddMeta)
 
     const left =
@@ -46,6 +47,7 @@ export class SmoothDropdown extends Component {
     this.setState(prevState => ({
       ...prevState,
       currentTrigger: trigger,
+      ddFirstTime: prevState.currentTrigger === null,
       dropdownStyles: {
         left,
         width,
@@ -70,7 +72,7 @@ export class SmoothDropdown extends Component {
 
   render () {
     const { children } = this.props
-    const { currentTrigger, dropdownStyles } = this.state
+    const { currentTrigger, dropdownStyles, ddFirstTime } = this.state
     const {
       portalRef,
       handleMouseEnter,
@@ -92,7 +94,9 @@ export class SmoothDropdown extends Component {
         {children}
         <div
           style={dropdownStyles}
-          className={`dd ${currentTrigger ? 'has-dropdown-active' : ''}`}
+          className={`dd ${currentTrigger ? 'has-dropdown-active' : ''} ${
+            ddFirstTime ? 'dd-first-time' : ''
+          }`}
         >
           <div className='dd__list' id='dd-portal' ref={portalRef} />
           <div className='dd__arrow' />

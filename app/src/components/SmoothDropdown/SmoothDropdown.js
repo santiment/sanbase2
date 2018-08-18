@@ -40,6 +40,8 @@ class SmoothDropdown extends Component {
   handleMouseLeave = () => this.startCloseTimeout()
 
   openDropdown = (trigger, dropdown) => {
+    if (!dropdown) return
+
     const ddContent = dropdown.querySelector('.dd__content')
 
     const leftOffset =

@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import PropTypes from 'prop-types'
 import cx from 'classnames'
 import './SmoothDropdown.css'
 
@@ -21,6 +22,13 @@ class SmoothDropdown extends Component {
     ddFirstTime: false,
     arrowCorrectionX: 0,
     dropdownStyles: {}
+  }
+
+  static propTypes = {
+    children: PropTypes.oneOfType([
+      PropTypes.element,
+      PropTypes.arrayOf(PropTypes.element)
+    ]).isRequired
   }
 
   componentDidMount () {

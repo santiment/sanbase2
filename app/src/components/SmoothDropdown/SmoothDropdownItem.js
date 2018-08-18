@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import ReactDOM from 'react-dom'
+import PropTypes from 'prop-types'
 import cx from 'classnames'
 import { SmoothDropdownContext, ddAsyncUpdateTimeout } from './SmoothDropdown'
 
@@ -8,6 +9,13 @@ const ddItemAsyncUpdateTimeout = ddAsyncUpdateTimeout + 1
 class SmoothDropdownItem extends Component {
   dropdownRef = React.createRef()
   triggerRef = React.createRef()
+
+  static propTypes = {
+    children: PropTypes.oneOfType([PropTypes.element, PropTypes.string])
+      .isRequired,
+    trigger: PropTypes.element.isRequired,
+    id: PropTypes.string
+  }
 
   componentDidMount () {
     setTimeout(() => this.forceUpdate(), ddItemAsyncUpdateTimeout) // VERY HACKY - NECESSARY TO UPDATE DROPDOWN IN DOM

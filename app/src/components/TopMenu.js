@@ -22,23 +22,21 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
         </Link>
         <Search />
       </div>
-      <div className='right'>
-        <SmoothDropdown id='nav-dropdown'>
-          <ul className='menu-list-top'>
-            <Link className='app-menu__page-link' to={'/projects'}>
-              Assets
-            </Link>
-            <AnalysisDropdownMenu />
-          </ul>
-          <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
-          <SmoothDropdownItem
-            id='testing'
-            trigger={<p>testing 123. it's first drop</p>}
-          >
-            testing popup
-          </SmoothDropdownItem>
-        </SmoothDropdown>
-      </div>
+      <SmoothDropdown className='right'>
+        <ul className='menu-list-top'>
+          <Link className='app-menu__page-link' to={'/projects'}>
+            Assets
+          </Link>
+          <AnalysisDropdownMenu />
+        </ul>
+        <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
+        <SmoothDropdownItem
+          id='testing'
+          trigger={<p>testing 123. it's first drop</p>}
+        >
+          testing popup
+        </SmoothDropdownItem>
+      </SmoothDropdown>
     </div>
   </div>
 )

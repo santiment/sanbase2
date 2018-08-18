@@ -1,3 +1,7 @@
+.dd-wrapper {
+  position: relative;
+}
+
 .dd {
   position: absolute;
   width: 100%;

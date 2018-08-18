@@ -42,7 +42,7 @@
 }
 
 .app-menu .user-auth-control {
-  position: relative;
+  /* position: relative; */
   display: flex;
   padding: 8px;
 }

@@ -5,7 +5,7 @@
   z-index: 9999;
   top: 60px;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: 0.3s ease;
 }
 
 .dd__bg,
@@ -21,6 +21,8 @@
   overflow: hidden;
   z-index: -1;
   border: 1px solid #777;
+  width: 100%;
+  height: 100%;
 }
 
 .dd__arrow {
@@ -33,6 +35,7 @@
   transform: translate3d(-50%, -50%, 0) rotate(45deg);
   border-left: 1px solid #777;
   border-top: 1px solid #777;
+  left: 50%;
 }
 
 .dd__list {
@@ -40,6 +43,8 @@
   position: absolute;
   transition: 0.3s ease;
   z-index: 999999;
+  width: 100%;
+  height: 100%;
 }
 
 .dd__content {

@@ -7,6 +7,8 @@ import { Button } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { changeUsernameGQL } from './accountGQL'
 
+const USERNAME_TAKEN_MSG = 'has already been taken'
+
 const AccountUsernameForm = ({
   user,
   changeUsernameQuery,
@@ -40,6 +42,13 @@ const AccountUsernameForm = ({
         .catch(error => {
           setFormStatus('PENDING', false)
           setFormStatus('ERROR', true)
+
+          if (
+            error.graphQLErrors[0].details.username.includes(USERNAME_TAKEN_MSG)
+          ) {
+            setFormStatus('TAKEN', true)
+          }
+
           Raven.captureException(`User try to change username: ${error}`)
         })
     }}

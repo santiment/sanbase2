@@ -14,6 +14,7 @@ import {
 } from './../pages/Projects/ProjectsTable'
 import './../pages/Projects/ProjectsTable.css'
 import './../pages/Detailed/EthereumBlock.css'
+import './EthSpentTable.css'
 
 const EthSpentTable = ({
   items = [],
@@ -148,7 +149,7 @@ const EthSpentTable = ({
         showPaginationTop={false}
         showPaginationBottom={false}
         pageSize={items && items.length}
-        sortable={true}
+        sortable
         resizable
         defaultSorted={[
           {
@@ -156,7 +157,7 @@ const EthSpentTable = ({
             desc: false
           }
         ]}
-        className='-highlight'
+        className='-highlight eth-spent-table'
         data={items}
         columns={columns}
         LoadingComponent={({ className, loading, loadingText, ...rest }) => (

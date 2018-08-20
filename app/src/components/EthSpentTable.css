@@ -1,0 +1,3 @@
+.eth-spent-table.ReactTable .rt-tbody .rt-tr-group {
+  max-height: none;
+}

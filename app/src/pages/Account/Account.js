@@ -54,7 +54,8 @@ class Account extends Component {
       usernameForm: {
         PENDING: false,
         ERROR: false,
-        SUCCESS: false
+        SUCCESS: false,
+        TAKEN: false
       }
     }
     this.emailFormKey = 'emailForm'
@@ -140,7 +141,11 @@ class Account extends Component {
             className='account-message account-message__username_error'
             negative
             header='Failed to change username!'
-            list={['Try again later...']}
+            list={[
+              usernameForm.TAKEN
+                ? 'This username is already taken! Please, choose another username...'
+                : 'Try again later...'
+            ]}
           />
         )}
 

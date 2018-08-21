@@ -140,6 +140,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
     TechIndicators.social_volume_projects()
   end
 
+  def topic_search(
+        _root,
+        %{
+          sources: sources,
+          search_text: search_text,
+          from: from,
+          to: to,
+          interval: interval
+        },
+        _resolution
+      ) do
+    TechIndicators.topic_search(
+      sources,
+      search_text,
+      from,
+      to,
+      interval
+    )
+  end
+
   defp price_volume_diff_ma_window_type() do
     Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :window_type)
   end

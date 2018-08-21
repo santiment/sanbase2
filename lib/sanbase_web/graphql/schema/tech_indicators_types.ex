@@ -58,4 +58,37 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     value(:telegram_chats_overview)
     value(:telegram_discussion_overview)
   end
+
+  enum :topic_search_sources do
+    value(:telegram)
+    value(:professional_traders_chat)
+    value(:reddit)
+  end
+
+  object :topic_search do
+    field(:messages, :messages)
+    field(:charts_data, :charts_data)
+  end
+
+  object :messages do
+    field(:telegram, list_of(:topic_search_messages))
+    field(:professional_traders_chat, list_of(:topic_search_messages))
+    field(:reddit, list_of(:topic_search_messages))
+  end
+
+  object :charts_data do
+    field(:telegram, list_of(:topic_search_chart_data))
+    field(:professional_traders_chat, list_of(:topic_search_chart_data))
+    field(:reddit, list_of(:topic_search_chart_data))
+  end
+
+  object :topic_search_messages do
+    field(:text, :string)
+    field(:datetime, non_null(:datetime))
+  end
+
+  object :topic_search_chart_data do
+    field(:mentions_count, :integer)
+    field(:datetime, non_null(:datetime))
+  end
 end

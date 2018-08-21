@@ -46,6 +46,11 @@ defmodule SanbaseWeb.ApiExamplesView do
         query: social_volume_projects(),
         variables: "{}",
         docs: docs(:social_volume_projects)
+      },
+      topic_search: %{
+        query: topic_search(),
+        variables: "{}",
+        docs: docs(:topic_search)
       }
     })
     |> as_html()
@@ -168,6 +173,49 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
     query {
       socialVolumeProjects
+    }
+    """
+  end
+
+  defp topic_search do
+    """
+    query {
+      topicSearch(
+        sources: [TELEGRAM, PROFESSIONAL_TRADERS_CHAT, REDDIT],
+        searchText: "btc moon",
+        from: "2018-08-01T12:00:00Z",
+        to: "2018-08-15T12:00:00Z",
+        interval: "6h"
+      ) {
+        messages {
+          telegram {
+            datetime
+            text
+          }
+          professional_traders_chat {
+            datetime
+            text
+          }
+          reddit {
+            datetime
+            text
+          }
+        }
+        chartsData {
+          telegram {
+            mentionsCount
+            datetime
+          }
+          professional_traders_chat {
+            mentionsCount
+            datetime
+          }
+          reddit {
+            mentionsCount
+            datetime
+          }
+        }
+      }
     }
     """
   end

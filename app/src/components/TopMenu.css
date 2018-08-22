@@ -42,7 +42,6 @@
 }
 
 .app-menu .user-auth-control {
-  position: relative;
   display: flex;
   padding: 8px;
 }

@@ -8,6 +8,7 @@ import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './Search/SearchContainer'
 import * as actions from './../actions/types'
 import AnalysisDropdownMenu from './AnalysisDropdownMenu'
+import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -20,7 +21,7 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
         </Link>
         <Search />
       </div>
-      <div className='right'>
+      <SmoothDropdown className='right'>
         <ul className='menu-list-top'>
           <Link className='app-menu__page-link' to={'/projects'}>
             Assets
@@ -28,7 +29,7 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
           <AnalysisDropdownMenu />
         </ul>
         <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
-      </div>
+      </SmoothDropdown>
     </div>
   </div>
 )

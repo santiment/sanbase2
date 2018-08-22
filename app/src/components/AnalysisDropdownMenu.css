@@ -3,7 +3,7 @@
   flex-direction: column;
 }
 
-.app-menu-popup a {
+.app-menu-popup a.app-menu__page-link {
   text-decoration: none;
   text-transform: uppercase;
   border-bottom: none;

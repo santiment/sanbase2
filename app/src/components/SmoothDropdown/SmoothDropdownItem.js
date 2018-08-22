@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import cx from 'classnames'
 import { SmoothDropdownContext, ddAsyncUpdateTimeout } from './SmoothDropdown'
 
-const ddItemAsyncUpdateTimeout = ddAsyncUpdateTimeout + 1
+const ddItemAsyncUpdateTimeout = ddAsyncUpdateTimeout + 5
 
 class SmoothDropdownItem extends Component {
   dropdownRef = React.createRef()

@@ -6,8 +6,7 @@ import { FadeIn } from 'animate-components'
 import { Button } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { changeUsernameGQL } from './accountGQL'
-
-const USERNAME_TAKEN_MSG = 'has already been taken'
+import { TAKEN_MSG } from './Account'
 
 const AccountUsernameForm = ({
   user,
@@ -43,9 +42,7 @@ const AccountUsernameForm = ({
           setFormStatus('PENDING', false)
           setFormStatus('ERROR', true)
 
-          if (
-            error.graphQLErrors[0].details.username.includes(USERNAME_TAKEN_MSG)
-          ) {
+          if (error.graphQLErrors[0].details.username.includes(TAKEN_MSG)) {
             setFormStatus('TAKEN', true)
           }
 

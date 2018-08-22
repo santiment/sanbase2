@@ -30,10 +30,6 @@
   transition: all 0.5s ease;
 }
 
-.app-menu a:visited {
-  color: hsla(0, 0%, 100%, 0.8);
-}
-
 .menu-list-top a:hover {
   background-color: #4f5b69;
   color: hsla(0, 0%, 100%, 0.8);
@@ -49,6 +45,11 @@
   padding: 0;
   text-align: right;
   user-select: none;
+}
+
+.app-menu-popup a.app-menu__page-link:hover,
+.app-menu-popup a.app-menu__page-link:focus {
+  color: #26a987;
 }
 
 .night-mode .menu-list-top a:hover {
@@ -72,6 +73,11 @@
 .night-mode .app-menu__page-link,
 .night-mode .app-menu__page-link:visited {
   color: #cacaca !important;
+}
+
+.night-mode .app-menu__page-link:hover,
+.night-mode .app-menu__page-link:hover i {
+  color: #1d8166 !important;
 }
 
 .night-mode .app-menu {

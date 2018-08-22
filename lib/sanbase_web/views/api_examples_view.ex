@@ -192,7 +192,7 @@ defmodule SanbaseWeb.ApiExamplesView do
             datetime
             text
           }
-          professional_traders_chat {
+          professionalTradersChat {
             datetime
             text
           }
@@ -206,7 +206,7 @@ defmodule SanbaseWeb.ApiExamplesView do
             mentionsCount
             datetime
           }
-          professional_traders_chat {
+          professionalTradersChat {
             mentionsCount
             datetime
           }

@@ -343,6 +343,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
+      middleware(ApiTimeframeRestriction)
+
       cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
     end
 
@@ -451,10 +453,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, non_null(:string), default_value: "1d")
       arg(:social_volume_type, non_null(:social_volume_type))
 
-      middleware(MultipleAuth, [
-        {JWTAuth, san_tokens: 1000},
-        {ApikeyAuth, san_tokens: 1000}
-      ])
+      middleware(ApiTimeframeRestriction)
 
       complexity(&TechIndicatorsComplexity.social_volume/3)
       resolve(&TechIndicatorsResolver.social_volume/3)
@@ -487,10 +486,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, non_null(:string), default_value: "1d")
 
-      middleware(MultipleAuth, [
-        {JWTAuth, san_tokens: 1000},
-        {ApikeyAuth, san_tokens: 1000}
-      ])
+      middleware(ApiTimeframeRestriction)
 
       complexity(&TechIndicatorsComplexity.topic_search/3)
       resolve(&TechIndicatorsResolver.topic_search/3)

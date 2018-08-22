@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import cx from 'classnames'
 import './SmoothDropdown.css'
 
-export const ddAsyncUpdateTimeout = 99
+export const ddAsyncUpdateTimeout = 95
 
 export const SmoothDropdownContext = React.createContext({
   portal: {},

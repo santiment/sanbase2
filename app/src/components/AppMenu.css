@@ -30,10 +30,6 @@
   transition: all 0.5s ease;
 }
 
-/* .app-menu a:visited {
-  color: hsla(0, 0%, 100%, 0.8);
-} */
-
 .menu-list-top a:hover {
   background-color: #4f5b69;
   color: hsla(0, 0%, 100%, 0.8);

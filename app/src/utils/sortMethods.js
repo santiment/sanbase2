@@ -1,8 +1,17 @@
 export const simpleSort = (a, b) => {
-  if (a === b) {
-    return 0
-  }
+  if (a === b) return 0
+
   return b > a ? 1 : -1
+}
+
+export const simpleSortStrings = (a, b) => {
+  a = a.toUpperCase()
+  b = b.toUpperCase()
+
+  if (a < b) return -1
+  if (a > b) return 1
+
+  return 0
 }
 
 // Why we have so long sort method
@@ -15,20 +24,12 @@ export const sortDate = (a, b, isDesc = true) => {
     return simpleSort(_a, _b)
   }
   if (isDesc) {
-    if (!a && b) {
-      return -1
-    }
-    if (a && !b) {
-      return 1
-    }
+    if (!a && b) return -1
+    if (a && !b) return 1
   }
   if (!isDesc) {
-    if (!a && b) {
-      return 1
-    }
-    if (a && !b) {
-      return -1
-    }
+    if (!a && b) return 1
+    if (a && !b) return -1
   }
 }
 

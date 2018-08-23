@@ -17,11 +17,22 @@ const calculateBTCMarketcap = ({ marketcap, priceUsd, priceBtc }) => {
 
 const getOrigin = () => {
   if (process.env.NODE_ENV === 'development') {
-    return process.env.REACT_APP_WEBSITE_URL || window.location.origin
+    return process.env.REACT_APP_FRONTEND_URL || window.location.origin
   }
   return (
-    (window.env || {}).WEBSITE_URL ||
-    process.env.REACT_APP_WEBSITE_URL ||
+    (window.env || {}).FRONTEND_URL ||
+    process.env.REACT_APP_FRONTEND_URL ||
+    window.location.origin
+  )
+}
+
+const getAPIUrl = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.REACT_APP_BACKEND_URL || window.location.origin
+  }
+  return (
+    (window.env || {}).BACKEND_URL ||
+    process.env.REACT_APP_BACKEND_URL ||
     window.location.origin
   )
 }
@@ -40,21 +51,13 @@ const sanitizeMediumDraftHtml = html =>
     }
   })
 
-const filterProjectsByMarketSegment = (
-  projects,
-  categories,
-  allMarketSegments
-) => {
+const filterProjectsByMarketSegment = (projects, categories) => {
   if (projects === undefined || Object.keys(categories).length === 0) {
     return projects
   }
 
   return projects.filter(project =>
-    Object.keys(categories).includes(
-      Object.keys(allMarketSegments).find(
-        key => allMarketSegments[key] === project.marketSegment
-      )
-    )
+    Object.keys(categories).includes(project.marketSegment)
   )
 }
 
@@ -99,6 +102,7 @@ export {
   calculateBTCVolume,
   calculateBTCMarketcap,
   getOrigin,
+  getAPIUrl,
   sanitizeMediumDraftHtml,
   filterProjectsByMarketSegment,
   binarySearchHistoryPriceIndex

@@ -1,6 +1,6 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import moment from 'moment'
-import { withRouter, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Label, Button } from 'semantic-ui-react'
 import { createSkeletonElement } from '@trainline/react-skeletor'
 import LikeBtn from './../pages/InsightsNew/LikeBtn'
@@ -45,15 +45,11 @@ const Status = ({ status = STATES.draft, moderationComment }) => {
 
 const Author = ({ id, username }) => (
   <div className='event-post-author'>
-    {id && (
-      <Fragment>
-        by&nbsp; <Link to={`/insights/users/${id}`}>{username}</Link>
-      </Fragment>
-    )}
+    by&nbsp; <Link to={`/insights/users/${id}`}>{username}</Link>
   </div>
 )
 
-const Post = ({
+export const Post = ({
   index = 1,
   id,
   title,
@@ -72,6 +68,7 @@ const Post = ({
   moderationComment = null,
   state = STATES.approved,
   readyState = STATES.draft,
+  discourseTopicUrl = '',
   gotoInsight,
   showStatus = false
 }) => {
@@ -90,10 +87,10 @@ const Post = ({
         </A>
         <br />
         <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
-        {user && tags.length > 0 && <Author {...user} />}
+        {user && user.id && <Author {...user} />}
         {user && (
           <Div className='event-post-info'>
-            {tags.length > 0 ? (
+            {tags.length > 0 && (
               <div className='post-tags'>
                 {tags.map((tag, index) => (
                   <Link
@@ -105,8 +102,6 @@ const Post = ({
                   </Link>
                 ))}
               </div>
-            ) : (
-              <Author {...user} />
             )}
             <LikeBtn
               onLike={() => {
@@ -122,6 +117,12 @@ const Post = ({
             />
           </Div>
         )}
+        {discourseTopicUrl && (
+          <a className='discussion-btn' href={discourseTopicUrl}>
+            go to discussion
+          </a>
+        )}
+        <br />
         {createdAt &&
           tags.length > 0 && (
             <PostVisualBacktest
@@ -134,13 +135,9 @@ const Post = ({
           {showStatus && (
             <Status moderationComment={moderationComment} status={readyState} />
           )}
-          <div
-            style={{
-              display: 'flex'
-            }}
-          >
-            {showStatus &&
-              readyState === 'draft' && (
+          {showStatus &&
+            readyState === 'draft' && (
+              <div style={{ display: 'flex' }}>
                 <Button
                   size='mini'
                   onClick={() => deletePost(id)}
@@ -152,9 +149,6 @@ const Post = ({
                 >
                   Delete this insight
                 </Button>
-              )}
-            {showStatus &&
-              readyState === 'draft' && (
                 <Button
                   size='mini'
                   color='orange'
@@ -165,14 +159,12 @@ const Post = ({
                 >
                   Publish your insight
                 </Button>
-              )}
-          </div>
+              </div>
+            )}
         </Div>
       </div>
     </div>
   )
 }
 
-export const UnwrappedPost = Post // for tests
-
-export default withRouter(Post)
+export default Post

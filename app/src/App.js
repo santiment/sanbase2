@@ -1,5 +1,6 @@
 import React from 'react'
 import { Route as BasicRoute, Switch, Redirect, Link } from 'react-router-dom'
+import { Label, Icon } from 'semantic-ui-react'
 import { FadeInDown } from 'animate-components'
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
@@ -9,9 +10,6 @@ import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
 import Notification from './components/Notification'
 import LoginPage from './pages/Login/LoginPage'
-import Cashflow from './pages/Cashflow'
-import Currencies from './pages/Currencies'
-import Favorites from './pages/Favorites'
 import CashflowMobile from './pages/CashflowMobile'
 import CurrenciesMobile from './pages/CurrenciesMobile'
 import Roadmap from './pages/Roadmap'
@@ -20,6 +18,7 @@ import Account from './pages/Account/Account'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
+import EthSpent from './pages/EthSpent'
 import Menu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
@@ -31,6 +30,7 @@ import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import ApiDocs from './components/ApiDocs'
 import ApiExplorer from './components/ApiExplorer'
+import AssetsPage from './pages/assets/AssetsPage'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -96,6 +96,17 @@ export const App = ({
           </Link>
         </div>
       )}
+    {isDesktop && (
+      <div className='new-status-message'>
+        <Link to='/ethereum-spent'>
+          <Label color='green' horizontal>
+            NEW
+          </Label>
+          We prepared for you ethereum spent overview{' '}
+          <Icon name='angle right' />
+        </Link>
+      </div>
+    )}
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>
@@ -104,12 +115,7 @@ export const App = ({
           path='/projects'
           render={props => {
             if (isDesktop) {
-              return (
-                <Cashflow
-                  preload={() => LoadableDetailedPage.preload()}
-                  {...props}
-                />
-              )
+              return <Redirect to='/assets/erc20' />
             }
             return <CashflowMobile {...props} />
           }}
@@ -119,31 +125,32 @@ export const App = ({
           path='/currencies'
           render={props => {
             if (isDesktop) {
-              return (
-                <Currencies
-                  preload={() => LoadableDetailedPage.preload()}
-                  {...props}
-                />
-              )
+              return <Redirect to='/assets/currencies' />
             }
             return <CurrenciesMobile {...props} />
           }}
         />
-        <Route
-          exact
-          path='/favorites'
-          render={props => {
-            if (isDesktop && isLoggedIn) {
-              return (
-                <Favorites
-                  preload={() => LoadableDetailedPage.preload()}
-                  {...props}
-                />
-              )
-            }
-            return <Redirect from='/favorites' to='/projects' />
-          }}
-        />
+        {['currencies', 'erc20', 'all', 'list'].map(name => (
+          <Route
+            exact
+            key={name}
+            path={`/assets/${name}`}
+            render={props => {
+              if (isDesktop) {
+                return (
+                  <AssetsPage
+                    type={name}
+                    isLoggedIn={isLoggedIn}
+                    preload={() => LoadableDetailedPage.preload()}
+                    {...props}
+                  />
+                )
+              }
+              return <Redirect to='/projects' />
+            }}
+          />
+        ))}
+        <Redirect from='/assets' to='/assets/all' />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
@@ -175,6 +182,7 @@ export const App = ({
         />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
+        <Route exact path='/ethereum-spent' component={EthSpent} />
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />

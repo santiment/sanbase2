@@ -2,7 +2,8 @@
 
 exports[`Cashflow container it should render correctly 1`] = `
 <ProjectsTable
-  allMarketSegments={
+  categories={Object {}}
+  marketSegments={
     Object {
       "advertising": "Advertising",
       "blockchain_network": "Blockchain Network",
@@ -19,7 +20,6 @@ exports[`Cashflow container it should render correctly 1`] = `
       "unknown": null,
     }
   }
-  categories={Object {}}
   match={
     Object {
       "path": "/products",
@@ -33,4 +33,4 @@ exports[`Cashflow container it should render correctly 1`] = `
     }
   }
 />
-`
+`;

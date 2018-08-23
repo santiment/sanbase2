@@ -1,5 +1,38 @@
 ## CHANGELOG
 
+- 2018-16-09 | v.0.9.1 'Phobos':
+
+  Comeback of serviceworkers
+
+- 2018-15-09 | v.0.9.0 'Phobos':
+
+  Added ethereum spent overview
+
+- 2018-15-09 | v.0.8.1 'Phobos':
+
+  Fixed chart axis's styles
+  Added retriable requests
+
+- 2018-13-09 | v.0.8.0 'Phobos':
+
+  Added user's watchlists
+  Header smooth dropdown navigation
+
+- 2018-10-08 | v.0.7.2 'Moon':
+
+  Change ticker to slug in gqls
+
+- 2018-04-08 | v.0.7.1 'Moon':
+
+  Fix keyboard shortcut usage in any input form
+
+- 2018-27-07 | v.0.7.0 'Moon':
+
+  Added an icon in the search result
+  Added Night Mode
+  Added Insight Visual Backtest
+  Fixed bugs
+
 - 2018-26-06 | v.0.6.1:
 
   Updated settings

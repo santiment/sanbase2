@@ -208,8 +208,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
           GraphData.fetch_and_store_prices(project, last_price_datetime)
 
-          # TODO: Activate later when old coinmarketcap is disabled
-          # process_notifications(project)
+          process_notifications(project)
           Registry.unregister(Sanbase.Registry, key)
           :ok
       end
@@ -221,9 +220,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   defp process_notifications(%Project{} = project) do
-    Sanbase.Notifications.CheckPrices.exec(project, "usd")
-    Sanbase.Notifications.CheckPrices.exec(project, "btc")
-    Sanbase.Notifications.PriceVolumeDiff.exec(project, "usd")
+    Sanbase.Notifications.PriceVolumeDiff.exec(project, "USD")
   end
 
   defp last_price_datetime(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
@@ -251,7 +248,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
           "[CMC] Last CMC history datetime scraped for #{measurement_name} not found in the database."
         )
 
-        GraphData.fetch_first_datetime("TOTAL_MARKET")
+        GraphData.fetch_first_datetime(measurement_name)
 
       datetime ->
         datetime

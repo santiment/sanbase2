@@ -4,7 +4,7 @@ import { Message, Label } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { compose, withProps } from 'recompose'
 import moment from 'moment'
-import { HistoryPriceGQL } from './../pages/Detailed/DetailedGQL'
+import { HistoryPriceByTickerGQL } from './../pages/Detailed/DetailedGQL'
 import PercentChanges from './PercentChanges'
 import PostVisualBacktestChart from './PostVisualBacktestChart'
 import { binarySearchHistoryPriceIndex } from '../utils/utils'
@@ -44,7 +44,7 @@ export const PostVisualBacktest = ({
 }
 
 const enhance = compose(
-  graphql(HistoryPriceGQL, {
+  graphql(HistoryPriceByTickerGQL, {
     name: 'history',
     options: ({ ticker, from }) => {
       return {

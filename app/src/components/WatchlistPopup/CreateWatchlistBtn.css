@@ -1,0 +1,9 @@
+.create-new-watchlist-btn {
+  padding: 5px;
+  display: flex;
+}
+
+.create-new-watchlist-btn .input {
+  width: 100%;
+  margin-right: 5px;
+}

@@ -12,12 +12,16 @@ import insightsPageUi, {
 import notification, {
   initialState as initialNotificationState
 } from './notification'
+import watchlistUi, {
+  initialState as initialWatchlistUiState
+} from './watchlist-ui'
 
 export const intitialState = {
   user: userState,
   projects: projectsState,
   detailedPageUi: detailedPageUiState,
   insightsPageUi: insightsPageUiState,
+  watchlistUi: initialWatchlistUiState,
   rootUi: rootUiState,
   notification: initialNotificationState,
   router: routerReducer
@@ -29,5 +33,6 @@ export default combineReducers({
   rootUi,
   detailedPageUi,
   insightsPageUi,
+  watchlistUi,
   notification
 })

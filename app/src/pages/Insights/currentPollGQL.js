@@ -39,6 +39,7 @@ export const allInsightsGQL = gql`
         totalVotes
       }
       moderationComment
+      discourseTopicUrl
       readyState
       votedAt
       user {

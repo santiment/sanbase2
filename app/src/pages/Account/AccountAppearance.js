@@ -8,7 +8,11 @@ const AccountAppearance = ({ onNightModeToggleChange, isNightModeEnabled }) => {
       <Divider />
       <div className='account-control account-control-appearance'>
         <p>Night Mode</p>
-        <Checkbox toggle onChange={onNightModeToggleChange} defaultChecked={isNightModeEnabled} />
+        <Checkbox
+          toggle
+          onChange={onNightModeToggleChange}
+          defaultChecked={isNightModeEnabled}
+        />
       </div>
     </Fragment>
   )

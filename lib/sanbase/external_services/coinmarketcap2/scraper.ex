@@ -47,7 +47,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
         main_contract_address: project_info.main_contract_address || main_contract_address(html),
         website_link: project_info.website_link || website_link(html),
         github_link: project_info.github_link || github_link(html),
-        etherscan_token_name: etherscan_token_name(html)
+        etherscan_token_name: project_info.etherscan_token_name || etherscan_token_name(html)
     }
   end
 
@@ -59,7 +59,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
   end
 
   defp ticker(html) do
-    Floki.find(html, "h1 small.bold")
+    Floki.find(html, "h1 > .text-bold.h3.text-gray.hidden-xs")
     |> hd
     |> Floki.text()
     |> String.replace(~r/[\(\)]/, "")

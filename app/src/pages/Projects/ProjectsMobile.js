@@ -8,7 +8,7 @@ import {
   CellMeasurerCache
 } from 'react-virtualized'
 
-import Search from './../../components/Search'
+import Search from './../../components/Search/SearchContainer'
 import ProjectCard from './ProjectCard'
 import FloatingButton from './FloatingButton'
 import Filters, { DEFAULT_SORT_BY, DEFAULT_FILTER_BY } from './Filters'

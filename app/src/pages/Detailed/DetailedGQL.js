@@ -11,6 +11,7 @@ export const projectBySlugGQL = gql`
     projectBySlug(slug: $slug) {
       id
       name
+      slug
       ticker
       description
       websiteLink
@@ -103,7 +104,7 @@ export const TwitterDataGQL = gql`
   }
 `
 
-export const HistoryPriceGQL = gql`
+export const HistoryPriceByTickerGQL = gql`
   query queryHistoryPrice(
     $ticker: String
     $from: DateTime
@@ -111,6 +112,23 @@ export const HistoryPriceGQL = gql`
     $interval: String
   ) {
     historyPrice(ticker: $ticker, from: $from, to: $to, interval: $interval) {
+      priceBtc
+      priceUsd
+      volume
+      datetime
+      marketcap
+    }
+  }
+`
+
+export const HistoryPriceGQL = gql`
+  query queryHistoryPrice(
+    $slug: String
+    $from: DateTime
+    $to: DateTime
+    $interval: String
+  ) {
+    historyPrice(slug: $slug, from: $from, to: $to, interval: $interval) {
       priceBtc
       priceUsd
       volume
@@ -224,30 +242,6 @@ export const DailyActiveAddressesGQL = gql`
       datetime
       activeAddresses
       __typename
-    }
-  }
-`
-
-export const followedProjectsGQL = gql`
-  query followedProjects {
-    followedProjects {
-      id
-    }
-  }
-`
-
-export const FollowProjectGQL = gql`
-  mutation followProject($projectId: Int!) {
-    followProject(projectId: $projectId) {
-      id
-    }
-  }
-`
-
-export const UnfollowProjectGQL = gql`
-  mutation unfollowProject($projectId: Int!) {
-    unfollowProject(projectId: $projectId) {
-      id
     }
   }
 `

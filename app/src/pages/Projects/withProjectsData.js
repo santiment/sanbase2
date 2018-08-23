@@ -6,7 +6,9 @@ import {
   allProjectsGQL,
   allErc20ProjectsGQL,
   currenciesGQL,
-  allMarketSegmentsGQL
+  allMarketSegmentsGQL,
+  currenciesMarketSegmentsGQL,
+  erc20MarketSegmentsGQL
 } from './allProjectsGQL'
 
 const mapStateToProps = state => {
@@ -39,21 +41,30 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const mapDataToProps = type => ({ Projects }) => {
-  const loading = Projects.loading
-  const isError = !!Projects.error
-  const errorMessage = Projects.error ? Projects.error.message : ''
-  const projects = Projects[pickProjectsType(type).projects] || []
-
-  const isEmpty = projects && projects.length === 0
+const mapDataToProps = type => {
   return {
-    Projects: {
-      loading,
-      isEmpty,
-      isError,
-      projects,
-      errorMessage,
-      refetch: Projects.refetch
+    projects: ({ Projects }) => {
+      const loading = Projects.loading
+      const isError = !!Projects.error
+      const errorMessage = Projects.error ? Projects.error.message : ''
+      const projects = Projects[pickProjectsType(type).projects] || []
+
+      const isEmpty = projects && projects.length === 0
+      return {
+        Projects: {
+          loading,
+          isEmpty,
+          isError,
+          projects,
+          errorMessage,
+          refetch: Projects.refetch
+        }
+      }
+    },
+    marketSegments: ({ marketSegments }) => {
+      marketSegments =
+        marketSegments[pickProjectsType(type).marketSegments] || []
+      return { marketSegments }
     }
   }
 }
@@ -63,22 +74,30 @@ const pickProjectsType = type => {
     case 'all':
       return {
         projects: 'allProjects',
-        gql: allProjectsGQL
+        projectsGQL: allProjectsGQL,
+        marketSegments: 'allMarketSegments',
+        marketSegmentsGQL: allMarketSegmentsGQL
       }
     case 'currency':
       return {
         projects: 'allCurrencyProjects',
-        gql: currenciesGQL
+        projectsGQL: currenciesGQL,
+        marketSegments: 'currenciesMarketSegments',
+        marketSegmentsGQL: currenciesMarketSegmentsGQL
       }
     case 'erc20':
       return {
         projects: 'allErc20Projects',
-        gql: allErc20ProjectsGQL
+        projectsGQL: allErc20ProjectsGQL,
+        marketSegments: 'erc20MarketSegments',
+        marketSegmentsGQL: erc20MarketSegmentsGQL
       }
     default:
       return {
         projects: 'allProjects',
-        gql: allProjectsGQL
+        projectsGQL: allProjectsGQL,
+        marketSegments: 'allMarketSegments',
+        marketSegmentsGQL: allMarketSegmentsGQL
       }
   }
 }
@@ -87,9 +106,9 @@ const enhance = (type = 'all') =>
   compose(
     connect(mapStateToProps, mapDispatchToProps),
     withRouter,
-    graphql(pickProjectsType(type).gql, {
+    graphql(pickProjectsType(type).projectsGQL, {
       name: 'Projects',
-      props: mapDataToProps(type),
+      props: mapDataToProps(type).projects,
       options: () => {
         return {
           errorPolicy: 'all',
@@ -97,13 +116,9 @@ const enhance = (type = 'all') =>
         }
       }
     }),
-    graphql(allMarketSegmentsGQL, {
-      name: 'allMarketSegments',
-      props: ({ allMarketSegments: { allMarketSegments } }) => ({
-        allMarketSegments: allMarketSegments
-          ? JSON.parse(allMarketSegments)
-          : {}
-      })
+    graphql(pickProjectsType(type).marketSegmentsGQL, {
+      name: 'marketSegments',
+      props: mapDataToProps(type).marketSegments
     }),
     pure
   )

@@ -31,6 +31,26 @@ defmodule SanbaseWeb.ApiExamplesView do
         query: ga(),
         variables: "{}",
         docs: docs(:github_activity)
+      },
+      erc20_exchange_funds_flow: %{
+        query: erc20_exchange_funds_flow(),
+        variables: "{}",
+        docs: docs(:erc20_exchange_funds_flow)
+      },
+      social_volume: %{
+        query: social_volume(),
+        variables: "{}",
+        docs: docs(:social_volume)
+      },
+      social_volume_projects: %{
+        query: social_volume_projects(),
+        variables: "{}",
+        docs: docs(:social_volume_projects)
+      },
+      topic_search: %{
+        query: topic_search(),
+        variables: "{}",
+        docs: docs(:topic_search)
       }
     })
     |> as_html()
@@ -104,8 +124,104 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
   end
 
+  defp erc20_exchange_funds_flow do
+    """
+    query {
+      erc20ExchangeFundsFlow(
+        from: "2018-04-16T10:02:19Z",
+        to: "2018-05-23T10:02:19Z") {
+          ticker,
+          contract,
+          exchangeIn,
+          exchangeOut,
+          exchangeDiff,
+          exchangeInUsd,
+          exchangeOutUsd,
+          exchangeDiffUsd,
+          percentDiffExchangeDiffUsd,
+          exchangeVolumeUsd,
+          percentDiffExchangeVolumeUsd,
+          exchangeInBtc,
+          exchangeOutBtc,
+          exchangeDiffBtc,
+          percentDiffExchangeDiffBtc,
+          exchangeVolumeBtc,
+          percentDiffExchangeVolumeBtc
+        }
+    }
+    """
+  end
+
+  defp social_volume do
+    """
+    query {
+      socialVolume(
+        slug: "dragonchain",
+        from: "2018-04-16T10:02:19Z",
+        to: "2018-05-23T10:02:19Z",
+        interval:"1h",
+        socialVolumeType: TELEGRAM_DISCUSSION_OVERVIEW
+        ) {
+          mentionsCount,
+          datetime
+        }
+    }
+    """
+  end
+
+  defp social_volume_projects do
+    """
+    query {
+      socialVolumeProjects
+    }
+    """
+  end
+
+  defp topic_search do
+    """
+    query {
+      topicSearch(
+        sources: [TELEGRAM, PROFESSIONAL_TRADERS_CHAT, REDDIT],
+        searchText: "btc moon",
+        from: "2018-08-01T12:00:00Z",
+        to: "2018-08-15T12:00:00Z",
+        interval: "6h"
+      ) {
+        messages {
+          telegram {
+            datetime
+            text
+          }
+          professionalTradersChat {
+            datetime
+            text
+          }
+          reddit {
+            datetime
+            text
+          }
+        }
+        chartsData {
+          telegram {
+            mentionsCount
+            datetime
+          }
+          professionalTradersChat {
+            mentionsCount
+            datetime
+          }
+          reddit {
+            mentionsCount
+            datetime
+          }
+        }
+      }
+    }
+    """
+  end
+
   defp explorer_url() do
-    SanbaseWeb.Endpoint.website_url() <> "/apiexplorer"
+    SanbaseWeb.Endpoint.backend_url() <> "/graphiql"
   end
 
   def docs(field) do

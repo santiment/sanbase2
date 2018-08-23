@@ -1,4 +1,5 @@
 import sanitizeHtml from 'sanitize-html'
+import moment from 'moment'
 
 const findIndexByDatetime = (labels, datetime) => {
   return labels.findIndex(label => {
@@ -60,6 +61,42 @@ const filterProjectsByMarketSegment = (projects, categories) => {
   )
 }
 
+const binarySearchDirection = {
+  MOVE_STOP_TO_LEFT: -1,
+  MOVE_START_TO_RIGHT: 1
+}
+
+const isCurrentDatetimeBeforeTarget = (current, target) =>
+  moment(current.datetime).isBefore(moment(target))
+
+const binarySearchHistoryPriceIndex = (history, targetDatetime) => {
+  let start = 0
+  let stop = history.length - 1
+  let middle = Math.floor((start + stop) / 2)
+  while (start < stop) {
+    const searchResult = isCurrentDatetimeBeforeTarget(
+      history[middle],
+      targetDatetime
+    )
+      ? binarySearchDirection.MOVE_START_TO_RIGHT
+      : binarySearchDirection.MOVE_STOP_TO_LEFT
+
+    if (searchResult === binarySearchDirection.MOVE_START_TO_RIGHT) {
+      start = middle + 1
+    } else {
+      stop = middle - 1
+    }
+
+    middle = Math.floor((start + stop) / 2)
+  }
+  // Correcting the result to the first data of post's creation date
+  while (!isCurrentDatetimeBeforeTarget(history[middle], targetDatetime)) {
+    middle--
+  }
+
+  return middle
+}
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
@@ -67,5 +104,6 @@ export {
   getOrigin,
   getAPIUrl,
   sanitizeMediumDraftHtml,
-  filterProjectsByMarketSegment
+  filterProjectsByMarketSegment,
+  binarySearchHistoryPriceIndex
 }

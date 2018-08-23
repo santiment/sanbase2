@@ -13,6 +13,36 @@ const getChanges = (start, last, prop = 'priceUsd') =>
 
 const isTotalMarket = ticker => ticker === 'Crypto Market'
 
+const binarySearchIndex = (list, value, predicate) => {
+  let start = 0
+  let stop = list.length - 1
+  let middle = Math.floor((start + stop) / 2)
+  while (start < stop) {
+    const searchResult = predicate(list[middle], value)
+    if (searchResult < 0) {
+      stop = middle - 1
+    } else {
+      start = middle + 1
+    }
+    middle = Math.floor((start + stop) / 2)
+  }
+  // Correcting the result to the first data of post's creation date
+  while (
+    !moment(list[middle].datetime)
+      .utc()
+      .isBefore(moment(value))
+  ) {
+    middle--
+  }
+  return middle
+}
+const isDatetimeSameDay = (item, value) =>
+  moment(item.datetime)
+    .utc()
+    .isBefore(moment(value))
+    ? 1
+    : -1
+
 const propTypes = {
   ticker: PropTypes.string.isRequired,
   history: PropTypes.object
@@ -64,11 +94,18 @@ const enhance = compose(
     const { historyPrice } = history
     if (!historyPrice || historyPrice.length === 0) return {}
 
-    const start = historyPrice.find(item =>
-      moment(item.datetime)
-        .utc()
-        .isBefore(moment(updatedAt))
-    )
+    console.time('history-search')
+    // const start =
+    //   historyPrice[
+    //     historyPrice.findIndex(item =>
+    //       moment(item.datetime).utc().isAfter(moment(updatedAt))
+    //     ) - 1
+    //   ]
+    const start =
+      historyPrice[
+        binarySearchIndex(historyPrice, updatedAt, isDatetimeSameDay)
+      ]
+    console.timeEnd('history-search')
 
     const last = historyPrice[historyPrice.length - 1]
     if (!start || !last) return {}

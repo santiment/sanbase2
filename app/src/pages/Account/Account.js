@@ -14,6 +14,8 @@ import * as actions from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
+export const TAKEN_MSG = 'has already been taken'
+
 const validateFields = (email, username) => {
   var constraints = {
     email: {
@@ -49,12 +51,14 @@ class Account extends Component {
       emailForm: {
         PENDING: false,
         ERROR: false,
-        SUCCESS: false
+        SUCCESS: false,
+        TAKEN: false
       },
       usernameForm: {
         PENDING: false,
         ERROR: false,
-        SUCCESS: false
+        SUCCESS: false,
+        TAKEN: false
       }
     }
     this.emailFormKey = 'emailForm'
@@ -125,7 +129,11 @@ class Account extends Component {
             className='account-message account-message__email_error'
             negative
             header='Failed to change email!'
-            list={['Try again later...']}
+            list={[
+              emailForm.TAKEN
+                ? 'This email is already taken! Please, choose another email...'
+                : 'Try again later...'
+            ]}
           />
         )}
         {usernameForm.SUCCESS && (
@@ -140,7 +148,11 @@ class Account extends Component {
             className='account-message account-message__username_error'
             negative
             header='Failed to change username!'
-            list={['Try again later...']}
+            list={[
+              usernameForm.TAKEN
+                ? 'This username is already taken! Please, choose another username...'
+                : 'Try again later...'
+            ]}
           />
         )}
 

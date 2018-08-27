@@ -35,10 +35,9 @@ defmodule Sanbase.Auth.Hmac do
     compromise the security as the real secret is the secret key and not the user token.
   """
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Utils.Config
   alias Sanbase.Auth.UserApikeyToken
 
   @rand_bytes_length 64

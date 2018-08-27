@@ -8,14 +8,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   """
   use GenServer, restart: :permanent, shutdown: 5_000
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{LatestCoinmarketcapData, Project}
   alias Sanbase.Repo
   # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker2, as: Ticker
-  alias Sanbase.Utils.Config
   alias Sanbase.Prices.Store
 
   # 5 minutes

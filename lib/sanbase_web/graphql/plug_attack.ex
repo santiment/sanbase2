@@ -1,8 +1,7 @@
 defmodule SanbaseWeb.Graphql.PlugAttack do
   use PlugAttack
   import Plug.Conn
-  require Sanbase.Utils.Config
-  alias Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
   rule "allow local", conn do
     allow(conn.remote_ip == {127, 0, 0, 1})

@@ -22,5 +22,15 @@ exports[`PostVisualBacktest component SAN icon should render correctly 1`] = `
     </i>
      25.00%
   </div>
+  <div
+    class="PostVisualBacktestChart"
+  >
+    <canvas
+      height="150"
+      width="300"
+    >
+      
+    </canvas>
+  </div>
 </div>
 `;

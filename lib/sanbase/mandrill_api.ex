@@ -1,6 +1,5 @@
 defmodule Sanbase.MandrillApi do
-  alias Sanbase.Utils.Config
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
   @send_email_url "https://mandrillapp.com/api/1.0/messages/send-template.json"
   @environment Mix.env()

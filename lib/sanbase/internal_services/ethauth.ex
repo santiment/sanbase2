@@ -1,6 +1,8 @@
 defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
 
+  plug(Tesla.Middleware.Timeout, timeout: 15_000)
+
   require Sanbase.Utils.Config
   alias Sanbase.Utils.Config
 

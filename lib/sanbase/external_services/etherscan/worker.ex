@@ -5,17 +5,14 @@ defmodule Sanbase.ExternalServices.Etherscan.Worker do
   use GenServer, restart: :permanent, shutdown: 5_000
 
   require Logger
-
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
   import Ecto.Query
 
-  alias Sanbase.Model.LatestEthWalletData
-  alias Sanbase.Model.ProjectEthAddress
   alias Sanbase.Repo
   alias Sanbase.InternalServices.Parity
+  alias Sanbase.Model.{LatestEthWalletData, ProjectEthAddress}
   alias Sanbase.ExternalServices.Etherscan.Requests.{Balance, Tx, InternalTx}
-  alias Sanbase.Utils.Config
 
   alias Sanbase.ExternalServices.Etherscan.Store
 

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   alias Sanbase.InternalServices.TechIndicators
   alias Sanbase.Utils.Config
 
-  require Sanbase.Utils.Config
+  alias Sanbase.InternalServices.TechIndicators
 
   def macd(
         _root,

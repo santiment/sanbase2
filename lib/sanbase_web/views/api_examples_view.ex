@@ -2,9 +2,8 @@ defmodule SanbaseWeb.ApiExamplesView do
   use SanbaseWeb, :view
 
   require Logger
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Utils.Config
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
 
   def render("apiexample_view.html", _assigns) do

@@ -8,11 +8,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   import Plug.Conn
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
   alias SanbaseWeb.Graphql.ContextPlug
   alias Sanbase.Auth.User
-  alias Sanbase.Utils.Config
 
   require Logger
 

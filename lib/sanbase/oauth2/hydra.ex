@@ -2,7 +2,6 @@ defmodule Sanbase.Oauth2.Hydra do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Utils.Config
   alias Sanbase.Auth.User
 
   def get_access_token() do

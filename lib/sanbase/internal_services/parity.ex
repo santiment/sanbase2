@@ -1,6 +1,5 @@
 defmodule Sanbase.InternalServices.Parity do
-  require Sanbase.Utils.Config
-  alias Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
   use Tesla
 

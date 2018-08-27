@@ -18,7 +18,6 @@ defmodule Sanbase.ExternalServices.TwitterData.Worker do
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.RateLimiting.Server
   alias Sanbase.ExternalServices.TwitterData.Store
-  alias Sanbase.Utils.Config
 
   @default_update_interval 1000 * 60 * 60 * 6
 

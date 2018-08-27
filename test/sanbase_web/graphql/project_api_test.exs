@@ -1,16 +1,18 @@
 defmodule Sanbase.Graphql.ProjectApiTest do
   use SanbaseWeb.ConnCase, async: false
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.Project
-  alias Sanbase.Model.Ico
-  alias Sanbase.Model.Currency
-  alias Sanbase.Model.IcoCurrencies
-  alias Sanbase.Model.ProjectEthAddress
-  alias Sanbase.Model.LatestEthWalletData
+  alias Sanbase.Model.{
+    Project,
+    Ico,
+    Currency,
+    IcoCurrencies,
+    ProjectEthAddress,
+    LatestEthWalletData
+  }
+
   alias Sanbase.Repo
-  alias Sanbase.Utils.Config
 
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers

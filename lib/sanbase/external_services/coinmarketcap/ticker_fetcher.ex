@@ -6,13 +6,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   # into a local DB
   use GenServer, restart: :permanent, shutdown: 5_000
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.LatestCoinmarketcapData
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{LatestCoinmarketcapData, Project}
   alias Sanbase.Repo
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker
-  alias Sanbase.Utils.Config
   alias Sanbase.Prices.Store
 
   # 5 minutes

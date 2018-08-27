@@ -66,5 +66,9 @@ defmodule SanbaseWeb.Router do
     scope "/" do
       get("/*path", ReverseProxy, upstream: ["http://localhost:3000"])
     end
+  else
+    scope "/", SanbaseWeb do
+      get("/*path", RootController, :index)
+    end
   end
 end

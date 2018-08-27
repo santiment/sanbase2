@@ -91,6 +91,7 @@
     "redux-axios-middleware": "^4.0.0",
     "redux-devtools-extension": "^2.13.2",
     "standard-reporter": "^1.0.5",
+    "storybook-react-router": "^1.0.1",
     "stylelint": "^8.3.1",
     "stylelint-config-standard": "^18.0.0"
   },

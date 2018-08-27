@@ -21,8 +21,5 @@ describe('PostVisualBacktest component', () => {
       />
     )
     expect(toJson(component)).toMatchSnapshot()
-    expect(component.html()).toEqual(
-      '<div class="ui horizontal label">SAN</div>priceUsd changes after publication<div class="percent-changes percent-changes--positive"><i class="fa fa-caret-up"></i>&#xA0;25.00%</div>'
-    )
   })
 })

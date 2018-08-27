@@ -17,11 +17,10 @@ config :logger, :console,
 # Test adapter that allows mocking
 config :tesla, adapter: Tesla.Mock
 
-# Configure your database
+# Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
-  # closest to real case as there are 3 pods with 10 connections each
   pool_size: 30
 
 # Configure your database

@@ -1,7 +1,7 @@
 defmodule Sanbase.InternalServices.TechIndicators do
   require Logger
-  require Sanbase.Utils.Config
-  alias Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
+
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   require Mockery.Macro

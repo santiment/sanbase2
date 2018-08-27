@@ -6,6 +6,7 @@ import { FadeIn } from 'animate-components'
 import { Button } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { changeUsernameGQL } from './accountGQL'
+import { TAKEN_MSG } from './Account'
 
 const AccountUsernameForm = ({
   user,
@@ -40,6 +41,11 @@ const AccountUsernameForm = ({
         .catch(error => {
           setFormStatus('PENDING', false)
           setFormStatus('ERROR', true)
+
+          if (error.graphQLErrors[0].details.username.includes(TAKEN_MSG)) {
+            setFormStatus('TAKEN', true)
+          }
+
           Raven.captureException(`User try to change username: ${error}`)
         })
     }}

@@ -6,6 +6,7 @@ import { FadeIn } from 'animate-components'
 import { Button } from 'semantic-ui-react'
 import { graphql } from 'react-apollo'
 import { changeEmailGQL } from './accountGQL'
+import { TAKEN_MSG } from './Account'
 
 const AccountEmailForm = ({
   user,
@@ -41,6 +42,11 @@ const AccountEmailForm = ({
           .catch(error => {
             setFormStatus('PENDING', false)
             setFormStatus('ERROR', true)
+
+            if (error.graphQLErrors[0].details.email.includes(TAKEN_MSG)) {
+              setFormStatus('TAKEN', true)
+            }
+
             Raven.captureException(`User try to change email: ${error}`)
           })
       }}

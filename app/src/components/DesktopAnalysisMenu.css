@@ -1,0 +1,8 @@
+.analysis-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.analysis-menu .analysis-menu-row {
+  display: flex;
+}

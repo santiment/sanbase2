@@ -4,11 +4,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   """
   use Tesla
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Utils.Config
-  alias Sanbase.ExternalServices.RateLimiting
-  alias Sanbase.ExternalServices.ErrorCatcher
+  alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
 
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
   plug(ErrorCatcher.Middleware)

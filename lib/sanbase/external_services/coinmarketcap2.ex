@@ -8,14 +8,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
   import Ecto.Query
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
   require Logger
 
   alias Sanbase.Model.Project
   alias Sanbase.Prices.Store
   # TODO: Change
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData2, as: GraphData
-  alias Sanbase.Utils.Config
   alias Sanbase.Influxdb.Measurement
 
   # 5 minutes

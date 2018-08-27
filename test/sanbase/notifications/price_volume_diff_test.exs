@@ -6,9 +6,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
   alias Sanbase.Model.Project
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Utils.Config
-
-  require Sanbase.Utils.Config
 
   setup do
     Store.create_db()
@@ -129,6 +126,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
   end
 
   defp notification_volume_threshold() do
+    require Sanbase.Utils.Config, as: Config
+
     {res, _} =
       Config.module_get(Sanbase.Notifications.PriceVolumeDiff, :notification_volume_threshold)
       |> Integer.parse()

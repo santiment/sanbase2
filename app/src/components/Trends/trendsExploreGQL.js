@@ -8,7 +8,7 @@ export const trendsExploreGQL = gql`
       searchText: $searchText
       from: "2018-08-01T12:00:00Z"
       to: "2018-08-15T12:00:00Z"
-      interval: "6h"
+      interval: "1d"
     ) {
       chartsData {
         telegram {

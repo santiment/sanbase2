@@ -13,7 +13,7 @@ defmodule SanbaseWeb.RootController do
     |> Plug.Conn.send_file(200, path("priv/static/index.html"))
   end
 
-  def ok(conn, _params) do
+  def healthcheck(conn, _params) do
     conn
     |> put_resp_content_type("text/plain")
     |> send_resp(200, "")

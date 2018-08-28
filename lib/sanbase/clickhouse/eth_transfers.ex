@@ -205,6 +205,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       limit: ^size
     )
     |> ClickhouseRepo.all_prewhere()
+    |> divide_by_eth_decimals()
   end
 
   defp wallet_transfers(wallets, from_datetime, to_datetime, size, :in, order_by)
@@ -218,6 +219,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       limit: ^size
     )
     |> ClickhouseRepo.all_prewhere()
+    |> divide_by_eth_decimals()
   end
 
   defp wallet_transfers(wallets, from_datetime, to_datetime, size, :all, order_by)
@@ -225,13 +227,14 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     from(
       transfer in EthTransfers,
       where:
-        transfer.dt > ^from_datetime and transfer.dt < ^to_datetime and
-          ((transfer.from in ^wallets and transfer.to not in ^wallets) or
-             (transfer.from not in ^wallets and transfer.to in ^wallets)),
+        transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime and
+          ((transfer.from_address in ^wallets and transfer.to_address not in ^wallets) or
+             (transfer.from_address not in ^wallets and transfer.to_address in ^wallets)),
       order_by: ^order_by,
       limit: ^size
     )
     |> ClickhouseRepo.all_prewhere()
+    |> divide_by_eth_decimals()
   end
 
   defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do
@@ -281,4 +284,16 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     %{datetime: datetime, eth_spent: total_eth_spent}
   end
+
+  defp divide_by_eth_decimals({:ok, transfers} = tuple) do
+    transfers =
+      transfers
+      |> Enum.map(fn %EthTransfers{trx_value: trx_value} = eth_transfer ->
+        %EthTransfers{eth_transfer | trx_value: trx_value / @eth_decimals}
+      end)
+
+    {:ok, transfers}
+  end
+
+  defp divide_by_eth_decimals(data), do: data
 end

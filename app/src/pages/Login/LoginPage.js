@@ -21,7 +21,9 @@ export const LoginPage = ({
   const consent = qsData && qsData.consent ? qsData.consent : ''
   if (user.data.hasOwnProperty('username') || user.token) {
     if (consent) {
-      window.location.replace(`https://login-stage.santiment.net/consent?consent=${consent}&token=${user.token}`)
+      window.location.replace(
+        `${getAPIUrl()}/consent?consent=${consent}&token=${user.token}`
+      )
     }
     return <Redirect to='/' />
   }

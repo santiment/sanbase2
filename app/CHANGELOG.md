@@ -1,14 +1,19 @@
 ## CHANGELOG
 
-- 2018-16-09 | v.0.9.1 'Phobos':
+- 2018-28-08 | v.0.9.2 'Phobos':
+
+  New menu look
+  Update styles
+
+- 2018-16-08 | v.0.9.1 'Phobos':
 
   Comeback of serviceworkers
 
-- 2018-15-09 | v.0.9.0 'Phobos':
+- 2018-15-08 | v.0.9.0 'Phobos':
 
   Added ethereum spent overview
 
-- 2018-15-09 | v.0.8.1 'Phobos':
+- 2018-15-08 | v.0.8.1 'Phobos':
 
   Fixed chart axis's styles
   Added retriable requests

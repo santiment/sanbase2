@@ -28,8 +28,6 @@ import Status from './pages/Status'
 import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
-import ApiDocs from './components/ApiDocs'
-import ApiExplorer from './components/ApiExplorer'
 import AssetsPage from './pages/assets/AssetsPage'
 import './App.css'
 
@@ -67,6 +65,18 @@ class Route extends React.Component {
   }
 }
 
+class ExternalRedirect extends React.Component {
+  componentWillMount () {
+    window.location = this.props.to
+  }
+
+  render () {
+    return <section>Redirecting...</section>
+  }
+}
+
+const HiddenElements = () => ''
+
 export const App = ({
   isDesktop,
   isLoggedIn,
@@ -96,17 +106,19 @@ export const App = ({
           </Link>
         </div>
       )}
-    {isDesktop && (
-      <div className='new-status-message'>
-        <Link to='/ethereum-spent'>
-          <Label color='green' horizontal>
-            NEW
-          </Label>
-          We prepared for you ethereum spent overview{' '}
-          <Icon name='angle right' />
-        </Link>
-      </div>
-    )}
+    <HiddenElements>
+      {isDesktop && (
+        <div className='new-status-message'>
+          <Link to='/ethereum-spent'>
+            <Label color='green' horizontal>
+              NEW
+            </Label>
+            We prepared for you ethereum spent overview{' '}
+            <Icon name='angle right' />
+          </Link>
+        </div>
+      )}
+    </HiddenElements>
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>
@@ -186,8 +198,18 @@ export const App = ({
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />
-        <Route path='/apidocs' component={ApiDocs} />
-        <Route path='/apiexplorer' component={ApiExplorer} />
+        <Route
+          path='/data'
+          render={props => (
+            <ExternalRedirect to={'https://data.santiment.net'} />
+          )}
+        />
+        <Route
+          path='/docs'
+          render={props => (
+            <ExternalRedirect to={'https://docs.santiment.net'} />
+          )}
+        />
         <Route
           exact
           path='/login'

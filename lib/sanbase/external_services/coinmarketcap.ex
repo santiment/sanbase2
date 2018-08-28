@@ -10,7 +10,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
 
   import Ecto.Query
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
   require Logger
 
   alias Sanbase.Model.Project
@@ -19,7 +19,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
   alias Sanbase.Notifications.PriceVolumeDiff
-  alias Sanbase.Utils.Config
 
   # 5 minutes
   @default_update_interval 1000 * 60 * 5

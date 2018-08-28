@@ -7,9 +7,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
 
   @behaviour Absinthe.Middleware
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Utils.Config
   alias Absinthe.Resolution
   alias Sanbase.Auth.User
 

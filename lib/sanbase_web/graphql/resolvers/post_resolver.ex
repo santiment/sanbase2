@@ -1,11 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   require Logger
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
   require Mockery.Macro
 
   import Ecto.Query
 
-  alias Sanbase.Utils.Config
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Post, Poll, Tag}
   alias Sanbase.Model.Project

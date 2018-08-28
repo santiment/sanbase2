@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
-import linkIcon from './../assets/top_menu_insights.svg'
 import './DesktopMenuLinkContainer.css'
 
 const DesktopMenuLinkContainer = ({ title, description, linkIcon, to }) => {
@@ -11,6 +10,7 @@ const DesktopMenuLinkContainer = ({ title, description, linkIcon, to }) => {
     <Component href={to} to={to} className='link-container'>
       <img
         className='link-icon'
+        alt={`icon of ${linkIcon}`}
         src={require(`../assets/top_menu_${linkIcon}.svg`)}
       />
       <div className='link-text'>

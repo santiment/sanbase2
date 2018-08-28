@@ -98,7 +98,6 @@ export const App = ({
   hasUsername
 }) => (
   <div className='App'>
-    <TotalMarketcapWidget />
     {isOffline && (
       <FadeInDown
         className='offline-status-message'

@@ -31,7 +31,6 @@ import GDPRModal from './components/GDPRModal.js'
 import ApiDocs from './components/ApiDocs'
 import ApiExplorer from './components/ApiExplorer'
 import AssetsPage from './pages/assets/AssetsPage'
-import TotalMarketcapWidget from './components/TotalMarketcapWidget/TotalMarketcapWidget'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -76,7 +75,6 @@ export const App = ({
   hasUsername
 }) => (
   <div className='App'>
-    <TotalMarketcapWidget />
     {isOffline && (
       <FadeInDown
         className='offline-status-message'

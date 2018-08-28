@@ -15,7 +15,7 @@ const DesktopAnalysisMenu = () => (
         title='Research tools'
         description='Advanced dashboards with experimental visualizations and more robust tools for experienced data scientists.'
         linkIcon='research'
-        to='https://data.santiments.net'
+        to='https://data.santiment.net'
       />
     </div>
     <div className='analysis-menu-row'>
@@ -29,7 +29,7 @@ const DesktopAnalysisMenu = () => (
         title='Sanbase api'
         description='Access our data feeds to perform your own research and analysis, build UI tools... whatever you can imagine.'
         linkIcon='api'
-        to='https://docs.santiments.net'
+        to='https://docs.santiment.net'
       />
     </div>
   </div>

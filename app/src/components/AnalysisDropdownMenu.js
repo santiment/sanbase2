@@ -2,6 +2,7 @@ import React from 'react'
 import { Icon } from 'semantic-ui-react'
 import { Link } from 'react-router-dom'
 import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
+import DesktopAnalysisMenu from './DesktopAnalysisMenu'
 import './AnalysisDropdownMenu.css'
 
 export const AnalysisDropdownMenu = () => (
@@ -9,16 +10,7 @@ export const AnalysisDropdownMenu = () => (
     trigger={<span className='app-menu__page-link'>Analysis</span>}
     id='analysis'
   >
-    <div className='app-menu-popup'>
-      <Link className='app-menu__page-link' to={'/insights'}>
-        <Icon name='world' />
-        Insights
-      </Link>
-      <Link className='app-menu__page-link' to={'/signals'}>
-        <Icon name='fork' />
-        Signals
-      </Link>
-    </div>
+    <DesktopAnalysisMenu />
   </SmoothDropdownItem>
 )
 

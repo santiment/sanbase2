@@ -9,16 +9,16 @@ podTemplate(label: 'sanbase-builder', containers: [
         def scmVars = checkout scm
         def gitHead = scmVars.GIT_COMMIT.substring(0,7)
 
-        sh "docker build -t sanbase-test:${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID} -f Dockerfile-test ."
-        sh "docker build -t sanbase-frontend-test:${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID} -f app/Dockerfile-test app"
-        sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID} -d postgres:9.6-alpine"
-        sh "docker run --rm --name test_influxdb_${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID} -d influxdb:1.4-alpine"
+        sh "docker build -t sanbase-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -f Dockerfile-test ."
+        sh "docker build -t sanbase-frontend-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -f app/Dockerfile-test app"
+        sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -d postgres:9.6-alpine"
+        sh "docker run --rm --name test_influxdb_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -d influxdb:1.4-alpine"
         try {
-          sh "docker run --rm --link test_postgres_${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID}:test_db --link test_influxdb_${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID}:test_influxdb --env DATABASE_URL=postgres://postgres:password@test_db:5432/postgres --env INFLUXDB_HOST=test_influxdb --env ETHERBI_INFLUXDB_HOST=test_influxdb -t sanbase-test:${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID}"
-          sh "docker run --rm -t sanbase-frontend-test:${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID} yarn test --ci"
+          sh "docker run --rm --link test_postgres_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID}:test_db --link test_influxdb_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID}:test_influxdb --env DATABASE_URL=postgres://postgres:password@test_db:5432/postgres --env INFLUXDB_HOST=test_influxdb --env ETHERBI_INFLUXDB_HOST=test_influxdb -t sanbase-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID}"
+          sh "docker run --rm -t sanbase-frontend-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} yarn test --ci"
         } finally {
-          sh "docker kill test_influxdb_${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID}"
-          sh "docker kill test_postgres_${scmVars.GIT_COMMIT}_${BUILD_ID}_${CHANGE_ID}"
+          sh "docker kill test_influxdb_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID}"
+          sh "docker kill test_postgres_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID}"
         }
 
         if (env.BRANCH_NAME == "master") {

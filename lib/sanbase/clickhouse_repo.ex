@@ -3,7 +3,7 @@ defmodule Sanbase.ClickhouseRepo do
 
   @doc """
   Dynamically loads the repository url from the
-  DATABASE_URL environment variable.
+  CLICKHOUSE_DATABASE_URL environment variable.
   """
   def init(_, opts) do
     {:ok, Keyword.put(opts, :url, System.get_env("CLICKHOUSE_DATABASE_URL"))}

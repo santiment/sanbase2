@@ -1,9 +1,6 @@
 defmodule PlugAttackTest do
   use SanbaseWeb.ConnCase, async: false
 
-  require Sanbase.Utils.Config
-  alias Sanbase.Utils.Config
-
   setup do
     :ets.delete_all_objects(:"Elixir.SanbaseWeb.Graphql.PlugAttack.Storage")
     :ok
@@ -32,6 +29,8 @@ defmodule PlugAttackTest do
   end
 
   defp get_max_requests() do
+    require Sanbase.Utils.Config, as: Config
+
     Config.module_get(SanbaseWeb.Graphql.PlugAttack, :rate_limit_max_requests)
     |> String.to_integer()
   end

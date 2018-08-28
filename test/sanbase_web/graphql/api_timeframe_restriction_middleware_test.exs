@@ -1,8 +1,7 @@
 defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   use SanbaseWeb.ConnCase
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Utils.Config
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Etherbi.BurnRate.Store

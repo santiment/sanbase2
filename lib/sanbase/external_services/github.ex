@@ -9,8 +9,7 @@ defmodule Sanbase.ExternalServices.Github do
   """
   use GenServer, restart: :permanent, shutdown: 5_000
 
-  require Sanbase.Utils.Config
-  alias Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
   # 60 minutes
   @default_update_interval 1000 * 60 * 60

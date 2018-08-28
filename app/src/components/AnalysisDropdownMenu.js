@@ -1,6 +1,4 @@
 import React from 'react'
-import { Icon } from 'semantic-ui-react'
-import { Link } from 'react-router-dom'
 import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import DesktopAnalysisMenu from './DesktopAnalysisMenu'
 import './AnalysisDropdownMenu.css'

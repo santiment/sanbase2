@@ -39,7 +39,7 @@ export const handleLoginSuccess = (action$, store, { client }) =>
         Observable.of(
           consent
             ? window.location.replace(
-              `${getAPIUrl()}/consent?consent=${consent}&token=${token}`
+              `https://login-stage.santiment.net/consent?consent=${consent}&token=${token}`
             )
             : replace('/')
         )

@@ -6,8 +6,7 @@ import TrendsExploreChart from '../../components/Trends/TrendsExploreChart'
 const TrendsExplorePage = ({ data: { topicSearch = {} } }) => {
   return (
     <div>
-      {/* {console.log(topicSearch)} */}
-      <TrendsExploreChart sources={topicSearch.chartsData} />
+      <TrendsExploreChart data={topicSearch.chartsData || {}} />
     </div>
   )
 }

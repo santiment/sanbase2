@@ -126,30 +126,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         %{from_address: from_address, from: from, to: to, size: size},
         _resolution
       ) do
-    # Cannot get more than the top 30 transfers
-    with limit <- Enum.max([size, 30]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, result} =
-              Clickhouse.EthTransfers.top_address_transfers(
-                from_address,
-                from,
-                to,
-                size
-              )
+    # Cannot get more than the top 100 transfers
+    limit = Enum.max([size, 100])
 
-            {:ok, result}
-          end,
-          :top_address_transfers
-        )
+    async(
+      Cache.func(
+        fn ->
+          {:ok, result} =
+            Clickhouse.EthTransfers.top_address_transfers(
+              from_address,
+              from,
+              to,
+              size
+            )
+
+          {:ok, result}
+        end,
+        :top_address_transfers
       )
-    else
-      error ->
-        Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
+    )
   end
 
   def top_wallet_transfers(

@@ -1,29 +1,17 @@
 import React from 'react'
 
-/*
-telegram [{
-        mentionsCount,
-        datetime
-      }x10]
-professionalTradersChat [{
-  mentionsCount,
-  datetime
-      }]
-reddit [{
-  mentionsCount,
-  datetime
-      }]
-*/
-
 const mergeSources = sources =>
-  sources.reduce((acc, source) => {
-    for (const { datetime, mentionsCount } of source) {
-      acc.set(datetime, mentionsCount + (acc.get(datetime) || 0))
-    }
-  }, new Map())
+  Object.keys(sources)
+    .slice(0, -1)
+    .reduce((acc, source) => {
+      for (const { datetime, mentionsCount } of sources[source]) {
+        acc.set(datetime, mentionsCount + (acc.get(datetime) || 0))
+      }
+      return acc
+    }, new Map())
 
 const TrendsExploreChart = ({ sources }) => {
-  console.log(mergeSources(sources))
+  console.log(sources && mergeSources(sources))
   return <div />
 }
 

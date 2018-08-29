@@ -194,6 +194,7 @@ export const App = ({
         />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
+        <Route exact path='/loader' component={PageLoader} />
         <Route exact path='/ethereum-spent' component={EthSpent} />
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />

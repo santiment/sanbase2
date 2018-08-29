@@ -1,7 +1,6 @@
 import React from 'react'
 import ReactTable from 'react-table'
 import cx from 'classnames'
-import { Loader } from 'semantic-ui-react'
 import Sticky from 'react-stickynode'
 import 'react-table/react-table.css'
 import Panel from '../../components/Panel'
@@ -68,9 +67,7 @@ const AssetsTable = ({
             className={cx('-loading', { '-active': loading }, className)}
             {...rest}
           >
-            <div className='-loading-inner'>
-              <Loader active size='large' />
-            </div>
+            <div className='-loading-inner'>Loading...</div>
           </div>
         )}
         TheadComponent={CustomHeadComponent}

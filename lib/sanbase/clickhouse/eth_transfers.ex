@@ -151,6 +151,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   def eth_spent_by_projects(projects, from_datetime, to_datetime) do
     total_eth_spent =
       projects
+      |> Project.eth_addresses()
       |> Enum.map(&Task.async(fn -> eth_spent(&1, from_datetime, to_datetime) end))
       |> Stream.map(&Task.await(&1, 25_000))
       |> Stream.reject(fn {:ok, sum} -> sum == nil end)
@@ -159,7 +160,9 @@ defmodule Sanbase.Clickhouse.EthTransfers do
           acc + sum
 
         {:error, error}, acc ->
-          Logger.warn("Error while calculating the total ETH spent by projects: #{error}")
+          Logger.warn(
+            "Error while calculating the total ETH spent by projects: #{error}. Won't include it in the calculation"
+          )
 
           acc
       end)

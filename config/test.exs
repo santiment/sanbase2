@@ -9,8 +9,10 @@ config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
   server: true
 
-# Print only warnings and errors during test
-config :logger, level: :warn
+# Print only warnings and errors during test. Do not log JSON in tests.
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  level: :warn
 
 # Test adapter that allows mocking
 config :tesla, adapter: :mock

@@ -379,4 +379,23 @@ defmodule Sanbase.Model.Project do
 
     {:ok, addresses}
   end
+
+  def eth_addresses(projects) when is_list(projects) do
+    ids = for %Project{id: id} <- projects, do: id
+
+    addresses =
+      from(
+        p in Project,
+        where: p.id in ^ids,
+        preload: [:eth_addresses]
+      )
+      |> Repo.all()
+      |> Enum.map(fn %Project{eth_addresses: project_eth_addresses} ->
+        project_eth_addresses
+        |> Enum.map(fn %ProjectEthAddress{address: address} -> address end)
+      end)
+      |> Enum.reject(fn x -> x == [] end)
+
+    {:ok, addresses}
+  end
 end

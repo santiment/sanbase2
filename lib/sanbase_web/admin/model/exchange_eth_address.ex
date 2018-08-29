@@ -28,7 +28,7 @@ defmodule Sanbase.ExAdmin.Model.ExchangeEthAddress do
     end
 
     controller do
-      before_filter(:process_csv, only: [:create])
+      before_filter(:process_csv, only: [:create, :update])
     end
   end
 

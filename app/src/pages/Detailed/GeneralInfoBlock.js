@@ -3,6 +3,8 @@ import cx from 'classnames'
 import { formatCryptoCurrency, formatNumber } from './../../utils/formatting'
 import './GeneralInfoBlock.css'
 
+const DATA_IS_EMPTY = 'No data'
+
 const GeneralInfoBlock = ({
   websiteLink,
   slackLink,
@@ -59,27 +61,31 @@ const GeneralInfoBlock = ({
     <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
       <div>Circulating</div>
       <div>
-        {formatCryptoCurrency(ticker, formatNumber(marketcapUsd / priceUsd))}
+        {marketcapUsd && priceUsd
+          ? formatCryptoCurrency(ticker, formatNumber(marketcapUsd / priceUsd))
+          : DATA_IS_EMPTY}
       </div>
     </div>
     <div
       className={cx({
         'row-info': true,
-        'info-disabled': !isERC20
+        'info-disabled': !totalSupply
       })}
     >
       <div>Total supply</div>
       <div>
-        {isERC20 ? formatCryptoCurrency(ticker, formatNumber(totalSupply)) : ''}
+        {totalSupply
+          ? formatCryptoCurrency(ticker, formatNumber(totalSupply))
+          : DATA_IS_EMPTY}
       </div>
     </div>
     <div className={`row-info ${!rank && 'info-disabled'}`}>
       <div>Rank</div>
-      <div>{rank}</div>
+      <div>{rank || DATA_IS_EMPTY}</div>
     </div>
     <div className={`row-info ${!roiUsd && 'info-disabled'}`}>
       <div>ROI since ICO</div>
-      <div>{roiUsd && parseFloat(roiUsd).toFixed(2)}</div>
+      <div>{roiUsd ? parseFloat(roiUsd).toFixed(2) : DATA_IS_EMPTY}</div>
     </div>
   </div>
 )

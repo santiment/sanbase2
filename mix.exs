@@ -102,25 +102,6 @@ defmodule Sanbase.Mixfile do
     [
       "ecto.setup": [
         "load_dotenv",
-        "ecto.create -r Sanbase.Repo",
-        "ecto.load -r Sanbase.Repo",
-        "run priv/repo/seeds.exs"
-      ],
-      "ecto.reset": ["load_dotenv", "ecto.drop -r Sanbase.Repo", "ecto.setup -r Sanbase.Repo"],
-      "ecto.migrate": ["load_dotenv", "ecto.migrate -r Sanbase.Repo", "ecto.dump -r Sanbase.Repo"],
-      "ecto.rollback": [
-        "load_dotenv",
-        "ecto.rollback -r Sanbase.Repo",
-        "ecto.dump -r Sanbase.Repo"
-      ],
-      test: ["load_dotenv", "ecto.create --quiet", "ecto.load", "test"]
-    ]
-  end
-
-  defp aliases(:prod) do
-    [
-      "ecto.setup": [
-        "load_dotenv",
         "ecto.drop -r Sanbase.Repo",
         "ecto.setup -r Sanbase.Repo"
       ],

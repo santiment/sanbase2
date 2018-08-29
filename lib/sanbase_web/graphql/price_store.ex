@@ -19,9 +19,11 @@ defmodule SanbaseWeb.Graphql.PriceStore do
 
   # TODO: not covered in tests
   defp fetch_price(measurement, :last) do
-    Cache.func(fn -> fetch_last_price_record(measurement) end, :fetch_price_last_record, %{
-      measurement: measurement
-    }).()
+    Cache.func(
+      fn -> fetch_last_price_record(measurement) end,
+      :fetch_price_last_record,
+      %{measurement: measurement}
+    ).()
   end
 
   defp fetch_price(measurement, %{from: from, to: to, interval: interval} = args) do

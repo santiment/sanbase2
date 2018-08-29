@@ -5,7 +5,7 @@ import { Redirect } from 'react-router-dom'
 import Panel from './../../components/Panel'
 import Login from './Login'
 import './Login.css'
-import { getAPIUrl } from './../../utils/utils'
+import { getConsentUrl } from './../../utils/utils'
 
 export const LoginPage = ({
   user,
@@ -22,7 +22,7 @@ export const LoginPage = ({
   if (user.data.hasOwnProperty('username') || user.token) {
     if (consent) {
       window.location.replace(
-        `${getAPIUrl()}/consent?consent=${consent}&token=${user.token}`
+        `${getConsentUrl()}/consent?consent=${consent}&token=${user.token}`
       )
     }
     return <Redirect to='/' />

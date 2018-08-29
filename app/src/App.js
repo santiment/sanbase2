@@ -250,6 +250,12 @@ export const App = ({
           )}
         />
         <Route
+          path='/consent'
+          render={props => (
+            <ExternalRedirect to={`${getConsentUrl()}/consent${props.location.search}`} />
+          )}
+        />
+        <Route
           exact
           path='/login'
           render={props => <LoginPage isDesktop={isDesktop} {...props} />}

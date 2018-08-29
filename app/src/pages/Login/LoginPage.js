@@ -5,7 +5,6 @@ import { Redirect } from 'react-router-dom'
 import Panel from './../../components/Panel'
 import Login from './Login'
 import './Login.css'
-import { getConsentUrl } from './../../utils/utils'
 
 export const LoginPage = ({
   user,

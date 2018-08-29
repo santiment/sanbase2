@@ -29,6 +29,7 @@ import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/assets/AssetsPage'
+import { getConsentUrl } from './utils/utils'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -208,6 +209,12 @@ export const App = ({
           path='/docs'
           render={props => (
             <ExternalRedirect to={'https://docs.santiment.net'} />
+          )}
+        />
+        <Route
+          path='/consent'
+          render={props => (
+            <ExternalRedirect to={`${getConsentUrl()}/consent${props.location.search}`} />
           )}
         />
         <Route

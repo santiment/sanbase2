@@ -13,8 +13,7 @@ config :sanbase, Sanbase, environment: "#{Mix.env()}"
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: 10,
-  prepare: :unnamed,
-  ownership_log: :debug
+  prepare: :unnamed
 
 # Clickhousex does not support `:system` tuples. The configuration is done
 # by defining defining `:url` in the ClickhouseRepo `init` function.

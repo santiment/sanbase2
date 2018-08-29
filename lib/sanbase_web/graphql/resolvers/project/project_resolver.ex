@@ -89,8 +89,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def token_top_transactions(
-        %Project{} = project,
-        %{from: from, to: to, limit: limit},
+        %Project{id: id} = project,
+        %{from: from, to: to, limit: limit} = args,
         _resolution
       ) do
     # Cannot get more than the top 30 transactions
@@ -110,7 +110,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
             {:ok, result}
           end,
-          :token_top_transfers
+          {:token_top_transfers, id},
+          args
         )
       )
     else
@@ -123,7 +124,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def top_address_transfers(
         _root,
-        %{from_address: from_address, from: from, to: to, size: size},
+        %{from_address: from_address, from: from, to: to, size: size} = args,
         _resolution
       ) do
     # Cannot get more than the top 100 transfers
@@ -142,14 +143,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
           {:ok, result}
         end,
-        :top_address_transfers
+        :top_address_transfers,
+        args
       )
     )
   end
 
   def top_wallet_transfers(
         _root,
-        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type},
+        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type} = args,
         _resolution
       ) do
     # Cannot get more than the top 30 transfers
@@ -168,7 +170,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
             {:ok, result}
           end,
-          :top_wallet_transfers
+          :top_wallet_transfers,
+          args
         )
       )
     else
@@ -181,7 +184,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def last_wallet_transfers(
         _root,
-        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type},
+        %{wallets: wallets, from: from, to: to, size: size, transaction_type: type} = args,
         _resolution
       ) do
     # Cannot get more than the top 30 transfers
@@ -200,7 +203,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
             {:ok, result}
           end,
-          :last_wallet_transfers
+          :last_wallet_transfers,
+          args
         )
       )
     else
@@ -222,8 +226,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def eth_spent(%Project{id: id} = project, %{days: days}, _resolution) do
-    async(Cache.func(fn -> calculate_eth_spent(project, days) end, {:eth_spent, id, days}))
+  def eth_spent(%Project{id: id} = project, %{days: days} = args, _resolution) do
+    async(Cache.func(fn -> calculate_eth_spent(project, days) end, {:eth_spent, id}, args))
   end
 
   def calculate_eth_spent(%Project{id: id} = project, days) do

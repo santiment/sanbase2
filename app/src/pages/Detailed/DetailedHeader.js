@@ -67,7 +67,8 @@ const DetailedHeader = ({
             project && <PercentChanges changes={project.percentChange24h} />}
         </div>
         <div className='detailed-price-btc'>
-          {formatCryptoCurrency('BTC', formatBTC(project.priceBtc))}
+          {project.priceBtc &&
+            formatCryptoCurrency('BTC', formatBTC(project.priceBtc))}
         </div>
       </div>
     </div>

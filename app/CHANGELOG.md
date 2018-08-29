@@ -1,8 +1,9 @@
 ## CHANGELOG
 
-- 2018-29-08 | v.0.9.3 'Phobos':
+- 2018-29-08 | v.0.9.4 'Phobos':
 
   Fixed NAN bug in project detailed page
+  Fixed broken animation of loader
 
 - 2018-28-08 | v.0.9.2 'Phobos':
 

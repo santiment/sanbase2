@@ -1,0 +1,10 @@
+.analysis-menu {
+  display: flex;
+  flex-direction: column;
+  white-space: initial;
+  min-width: 600px;
+}
+
+.analysis-menu .analysis-menu-row {
+  display: flex;
+}

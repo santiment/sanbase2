@@ -37,6 +37,18 @@ const getAPIUrl = () => {
   )
 }
 
+const getConsentUrl = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.REACT_APP_BACKEND_URL || window.location.origin
+  }
+  return (
+    (window.env || {}).LOGIN_URL ||
+    (window.env || {}).BACKEND_URL ||
+    process.env.REACT_APP_BACKEND_URL ||
+    window.location.origin
+  )
+}
+
 const sanitizeMediumDraftHtml = html =>
   sanitizeHtml(html, {
     allowedTags: [
@@ -103,6 +115,7 @@ export {
   calculateBTCMarketcap,
   getOrigin,
   getAPIUrl,
+  getConsentUrl,
   sanitizeMediumDraftHtml,
   filterProjectsByMarketSegment,
   binarySearchHistoryPriceIndex

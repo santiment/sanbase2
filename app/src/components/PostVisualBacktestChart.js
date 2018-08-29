@@ -1,5 +1,5 @@
 import React from 'react'
-import annotation from 'chartjs-plugin-annotation'
+import 'chartjs-plugin-annotation'
 import { Line } from 'react-chartjs-2'
 import './PostVisualBacktestChart.css'
 

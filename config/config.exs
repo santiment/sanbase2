@@ -13,7 +13,22 @@ config :sanbase, Sanbase, environment: "#{Mix.env()}"
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: 10,
-  prepare: :unnamed
+  prepare: :unnamed,
+  ownership_log: :debug
+
+# Clickhousex does not support `:system` tuples. The configuration is done
+# by defining defining `:url` in the ClickhouseRepo `init` function.
+config :sanbase, Sanbase.ClickhouseRepo,
+  adapter: ClickhouseEcto,
+  loggers: [Ecto.LogEntry],
+  hostname: "clickhouse-0",
+  port: 8123,
+  database: "default",
+  username: "default",
+  password: "",
+  pool_timeout: 60_000,
+  timeout: 60_000,
+  pool_size: 50
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 

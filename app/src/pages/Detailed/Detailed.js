@@ -356,11 +356,15 @@ const enhance = compose(
   }),
   graphql(TwitterHistoryGQL, {
     name: 'TwitterHistory',
+    skip: ({ timeFilter, Project }) => {
+      const { from } = timeFilter
+      const ticker = Project.project.ticker
+      return !from || !ticker
+    },
     options: ({ timeFilter, Project }) => {
       const { from, to } = timeFilter
       const ticker = Project.project.ticker
       return {
-        skip: !ticker,
         variables: {
           ticker,
           from,
@@ -372,10 +376,13 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'EthPrice',
+    skip: ({ timeFilter }) => {
+      const { from } = timeFilter
+      return !from
+    },
     options: ({ timeFilter }) => {
       const { from, to } = timeFilter
       return {
-        skip: !from,
         variables: {
           slug: 'ethereum',
           from,
@@ -386,10 +393,13 @@ const enhance = compose(
   }),
   graphql(TwitterDataGQL, {
     name: 'TwitterData',
+    skip: ({ Project }) => {
+      const ticker = Project.project.ticker
+      return !ticker
+    },
     options: ({ Project }) => {
       const ticker = Project.project.ticker
       return {
-        skip: !ticker,
         errorPolicy: 'all',
         variables: {
           ticker
@@ -399,11 +409,15 @@ const enhance = compose(
   }),
   graphql(HistoryPriceGQL, {
     name: 'HistoryPrice',
+    skip: ({ timeFilter, match }) => {
+      const { from } = timeFilter
+      const slug = match.params.slug
+      return !from || !slug
+    },
     options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
       const slug = match.params.slug
       return {
-        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
@@ -415,11 +429,15 @@ const enhance = compose(
   }),
   graphql(BurnRateGQL, {
     name: 'BurnRate',
+    skip: ({ timeFilter, match }) => {
+      const { from } = timeFilter
+      const slug = match.params.slug
+      return !from || !slug
+    },
     options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
       const slug = match.params.slug
       return {
-        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
@@ -432,11 +450,15 @@ const enhance = compose(
   }),
   graphql(GithubActivityGQL, {
     name: 'GithubActivity',
+    skip: ({ timeFilter, match }) => {
+      const { from } = timeFilter
+      const slug = match.params.slug
+      return !from || !slug
+    },
     options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
       const slug = match.params.slug
       return {
-        skip: !from || !slug,
         variables: {
           from: from ? moment(from).subtract(7, 'days') : undefined,
           to,
@@ -450,11 +472,15 @@ const enhance = compose(
   }),
   graphql(TransactionVolumeGQL, {
     name: 'TransactionVolume',
+    skip: ({ timeFilter, match }) => {
+      const { from } = timeFilter
+      const slug = match.params.slug
+      return !from || !slug
+    },
     options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
       const slug = match.params.slug
       return {
-        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
@@ -467,11 +493,15 @@ const enhance = compose(
   }),
   graphql(ExchangeFundFlowGQL, {
     name: 'ExchangeFundFlow',
-    options: ({ timeFilter, match, Project }) => {
+    skip: ({ timeFilter, match, Project }) => {
+      const { from } = timeFilter
+      const slug = match.params.slug
+      return !from || !slug || (Project && !Project.isERC20)
+    },
+    options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
       const slug = match.params.slug
       return {
-        skip: !from || !slug || (Project && !Project.isERC20),
         errorPolicy: 'all',
         variables: {
           from,
@@ -483,11 +513,14 @@ const enhance = compose(
   }),
   graphql(EthSpentOverTimeByErc20ProjectsGQL, {
     name: 'EthSpentOverTimeByErc20Projects',
-    options: ({ timeFilter, Project }) => {
+    skip: ({ timeFilter, match }) => {
+      const { from } = timeFilter
+      const slug = match.params.slug
+      return !from || slug !== 'ethereum'
+    },
+    options: ({ timeFilter }) => {
       const { from, to } = timeFilter
-      const ticker = Project.project.ticker
       return {
-        skip: !from || ticker !== 'ETH',
         errorPolicy: 'all',
         variables: {
           from,
@@ -499,10 +532,13 @@ const enhance = compose(
   }),
   graphql(EmojisSentimentGQL, {
     name: 'EmojisSentiment',
-    options: ({ timeFilter, hasPremium }) => {
+    skip: ({ timeFilter, hasPremium }) => {
+      const { from } = timeFilter
+      return !from || !hasPremium
+    },
+    options: ({ timeFilter }) => {
       const { from, to } = timeFilter
       return {
-        skip: !from || !hasPremium,
         errorPolicy: 'all',
         variables: {
           from,
@@ -514,11 +550,15 @@ const enhance = compose(
   }),
   graphql(DailyActiveAddressesGQL, {
     name: 'DailyActiveAddresses',
+    skip: ({ timeFilter, match }) => {
+      const { from } = timeFilter
+      const slug = match.params.slug
+      return !from || !slug
+    },
     options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
       const slug = match.params.slug
       return {
-        skip: !from || !slug,
         errorPolicy: 'all',
         variables: {
           from,
@@ -540,10 +580,13 @@ const enhance = compose(
         )
       }
     }),
+    skip: ({ isLoggedIn, Project: { project = {} } }) => {
+      const { ticker } = project
+      return !ticker || !isLoggedIn
+    },
     options: ({ isLoggedIn, match, Project: { project = {} } }) => {
       const { ticker } = project
       return {
-        skip: !ticker || !isLoggedIn,
         errorPolicy: 'all',
         variables: {
           tag: ticker

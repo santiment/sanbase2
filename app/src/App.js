@@ -205,16 +205,21 @@ export const App = ({
             <ExternalRedirect to={'https://data.santiment.net'} />
           )}
         />
-        <Route
-          path='/docs'
-          render={props => (
-            <ExternalRedirect to={'https://docs.santiment.net'} />
-          )}
-        />
+        {['docs', 'apidocs', 'apiexamples'].map(name => (
+          <Route
+            key={name}
+            path={`/${name}`}
+            render={props => (
+              <ExternalRedirect to={'https://docs.santiment.net'} />
+            )}
+          />
+        ))}
         <Route
           path='/consent'
           render={props => (
-            <ExternalRedirect to={`${getConsentUrl()}/consent${props.location.search}`} />
+            <ExternalRedirect
+              to={`${getConsentUrl()}/consent${props.location.search}`}
+            />
           )}
         />
         <Route

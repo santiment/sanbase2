@@ -21,7 +21,6 @@ describe('Project detail page container', () => {
           }
         }}
         user={{
-          followedProjects: []
         }}
         TwitterData={{
           loading: true

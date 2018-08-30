@@ -180,7 +180,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :string, default_value: "1w")
 
-      middleware(ApiTimeframeRestriction)
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 
       cache_resolve(&GithubResolver.activity/3)
     end
@@ -259,7 +259,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiTimeframeRestriction)
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end

@@ -23,6 +23,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     field(:trx_value, :float, source: :value)
     field(:block_number, :integer, source: :blockNumber)
     field(:trx_position, :integer, source: :transactionPosition)
+    field(:type, :string)
   end
 
   def changeset(_, _attrs \\ %{}) do
@@ -80,7 +81,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
         transfer in EthTransfers,
         where:
           transfer.from_address in ^wallets and transfer.to_address not in ^wallets and
-            transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime,
+            transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime and
+            transfer.type == "call",
         select: sum(transfer.trx_value)
       )
       |> ClickhouseRepo.one()
@@ -203,7 +205,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       transfer in EthTransfers,
       where:
         transfer.from_address in ^wallets and transfer.to_address not in ^wallets and
-          transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime,
+          transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime and
+          transfer.type == "call",
       order_by: ^order_by,
       limit: ^size
     )
@@ -217,7 +220,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       transfer in EthTransfers,
       where:
         transfer.from_address not in ^wallets and transfer.to_address in ^wallets and
-          transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime,
+          transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime and
+          transfer.type == "call",
       order_by: ^order_by,
       limit: ^size
     )
@@ -232,7 +236,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       where:
         transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime and
           ((transfer.from_address in ^wallets and transfer.to_address not in ^wallets) or
-             (transfer.from_address not in ^wallets and transfer.to_address in ^wallets)),
+             (transfer.from_address not in ^wallets and transfer.to_address in ^wallets)) and
+          transfer.type == "call",
       order_by: ^order_by,
       limit: ^size
     )
@@ -260,6 +265,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       PREWHERE from IN (?3) AND NOT to IN (?3)
       AND dt >= toDateTime(?4)
       AND dt <= toDateTime(?5)
+      AND type == 'call'
       GROUP BY time
       ORDER BY time
     )

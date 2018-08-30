@@ -29,7 +29,7 @@ import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/assets/AssetsPage'
-import TrendsExplorePage from './pages/Trends/TrendsExplorePage'
+// import TrendsExplorePage from './pages/Trends/TrendsExplorePage'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -204,11 +204,11 @@ export const App = ({
           )}
         />
         <Route exact path='/trends' component={LoadableTrendsPage} />
-        <Route exact path='/trends/explore' component={LoadableTrendsPage} />
+        {/* <Route exact path='/trends/explore' component={LoadableTrendsPage} /> */}
         <Route
           exact
           path='/trends/explore/:topic'
-          component={TrendsExplorePage}
+          component={LoadableTrendsExplorePage}
         />
         <Route
           exact

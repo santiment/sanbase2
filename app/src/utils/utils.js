@@ -43,6 +43,7 @@ const getConsentUrl = () => {
   }
   return (
     (window.env || {}).LOGIN_URL ||
+    (window.env || {}).BACKEND_URL ||
     process.env.REACT_APP_BACKEND_URL ||
     window.location.origin
   )

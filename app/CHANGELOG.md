@@ -3,6 +3,7 @@
 - 2018-30-08 | v.0.9.5 'Phobos':
 
   Fixed Github Activity request in project detailed page
+  Fixed skip logic in queries after Apollo update
 
 - 2018-29-08 | v.0.9.4 'Phobos':
 

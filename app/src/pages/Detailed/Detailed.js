@@ -432,15 +432,15 @@ const enhance = compose(
   }),
   graphql(GithubActivityGQL, {
     name: 'GithubActivity',
-    options: ({ timeFilter, Project }) => {
+    options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
-      const ticker = Project.project.ticker
+      const slug = match.params.slug
       return {
-        skip: !from || !ticker,
+        skip: !from || !slug,
         variables: {
           from: from ? moment(from).subtract(7, 'days') : undefined,
           to,
-          ticker,
+          slug,
           interval: '',
           transform: 'movingAverage',
           movingAverageIntervalBase: '1w'

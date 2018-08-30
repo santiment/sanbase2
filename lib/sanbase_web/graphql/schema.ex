@@ -631,20 +631,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.change_username/3)
     end
 
-    field :follow_project, :user do
-      arg(:project_id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&AccountResolver.follow_project/3)
-    end
-
-    field :unfollow_project, :user do
-      arg(:project_id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&AccountResolver.unfollow_project/3)
-    end
-
     field :vote, :post do
       arg(:post_id, non_null(:integer))
 

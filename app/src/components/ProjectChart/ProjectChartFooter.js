@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import cx from 'classnames'
 import { Popup, Icon, Label, Loader, Message } from 'semantic-ui-react'
+import AlertMessage from './../../components/AlertMessage'
 import './ProjectChartFooter.css'
 
 export const ToggleBtn = ({
@@ -76,6 +77,9 @@ const ProjectChartFooter = ({
   ...props
 }) => (
   <div className='chart-footer'>
+    <AlertMessage>
+      Much more in our research tool! <Link to='/data'>Go to our grafana</Link>
+    </AlertMessage>
     <div className='chart-footer-filters'>
       <FilterCategory name='Financial'>
         <ToggleBtn

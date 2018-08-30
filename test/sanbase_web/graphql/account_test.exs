@@ -308,7 +308,6 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       |> post("/graphql", mutation_skeleton(query))
 
     assert Repo.get_by(User, email: "john@example.com")
-
     assert json_response(result, 200)["data"]["emailLogin"]["success"]
   end
 end

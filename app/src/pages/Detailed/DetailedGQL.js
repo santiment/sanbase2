@@ -179,11 +179,10 @@ export const TransactionVolumeGQL = gql`
 `
 
 export const ExchangeFundFlowGQL = gql`
-  query exchangeFundFlowGQL($slug: String, $from: DateTime, $to: DateTime) {
-    exchangeFundFlow(slug: $slug, from: $from, to: $to, transactionType: ALL) {
+  query exchangeFundsFlowGQL($slug: String, $from: DateTime, $to: DateTime) {
+    exchangeFundsFlow(slug: $slug, from: $from, to: $to) {
       datetime
-      transactionVolume
-      address
+      fundsFlow
       __typename
     }
   }

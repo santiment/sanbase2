@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.AccountTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.Project
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 
@@ -111,48 +110,6 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       |> post("/graphql", mutation_skeleton(query))
 
     assert json_response(result, 200)["data"]["changeUsername"]["username"] == new_username
-  end
-
-  test "follow and unfollow a project", %{conn: conn} do
-    project =
-      %Project{name: "TestProjectName"}
-      |> Repo.insert!()
-
-    follow_mutation = """
-    mutation {
-      followProject(projectId: #{project.id}){
-        followedProjects {
-          id
-        }
-      }
-    }
-    """
-
-    follow_result =
-      conn
-      |> post("/graphql", mutation_skeleton(follow_mutation))
-
-    assert [%{"id" => "#{project.id}"}] ==
-             json_response(follow_result, 200)["data"]["followProject"]["followedProjects"]
-
-    unfollow_mutation = """
-    mutation {
-      unfollowProject(projectId: #{project.id}){
-        followedProjects {
-          id
-        }
-      }
-    }
-    """
-
-    unfollow_result =
-      conn
-      |> post("/graphql", mutation_skeleton(unfollow_mutation))
-
-    followed_projects =
-      json_response(unfollow_result, 200)["data"]["followProject"]["followedProjects"]
-
-    assert followed_projects == nil || [%{"ticker" => "#{project.id}"}] not in followed_projects
   end
 
   test "trying to login using invalid token for a user", %{conn: conn} do

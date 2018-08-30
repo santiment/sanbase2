@@ -1,3 +1,16 @@
 .TrendsExploreChart {
   max-width: 50%;
+  position: relative;
+}
+
+.chart-loading-msg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate3d(-50%, -50%, 0);
+  color: rgb(38, 43, 51);
+  font-size: 2em;
+  font-weight: 300;
+  user-select: none;
+  z-index: 9999;
 }

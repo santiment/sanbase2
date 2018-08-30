@@ -1,4 +1,6 @@
 import React, { Component } from 'react'
+import { Input } from 'semantic-ui-react'
+import './TrendsForm.css'
 
 export class TrendsForm extends Component {
   state = {
@@ -16,14 +18,16 @@ export class TrendsForm extends Component {
 
   render () {
     return (
-      <div>
-        <form onSubmit={this.handleSubmit}>
-          <input
-            type='text'
+      <div className='TrendsForm'>
+        <form className='TrendsForm__form' onSubmit={this.handleSubmit}>
+          <Input
+            className='TrendsForm__input'
+            icon='search'
+            iconPosition='right'
+            placeholder='Enter your search query'
             value={this.state.topic}
             onChange={this.handleChange}
           />
-          <button type='submit'>Submit</button>
         </form>
       </div>
     )

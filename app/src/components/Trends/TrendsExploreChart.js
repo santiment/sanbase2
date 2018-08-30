@@ -2,6 +2,7 @@ import React from 'react'
 import moment from 'moment'
 import 'chartjs-plugin-annotation'
 import { Line } from 'react-chartjs-2'
+import { mergeDataSourcesForChart } from './trendsUtils'
 import './TrendsExploreChart.css'
 
 const chartOptions = {
@@ -17,8 +18,13 @@ const chartOptions = {
     ],
     xAxes: [
       {
-        id: 'x-axis-0'
-        // display: false
+        ticks: {
+          // Include a dollar sign in the ticks
+          callback: date =>
+            moment(date)
+              .utc()
+              .format('DD MMM YY')
+        }
       }
     ]
   },
@@ -45,12 +51,10 @@ const chartOptions = {
     displayColors: true,
     callbacks: {
       title: item => {
-        return moment(item[0].xLabel).format('MMM DD YYYY')
+        return moment(item[0].xLabel)
+          .utc()
+          .format('MMM DD YYYY')
       }
-      //   label: tooltipItem =>
-      //     formatNumber(tooltipItem.yLabel, {
-      //       currency: 'USD'
-      //     })
     }
   }
 }
@@ -62,18 +66,12 @@ const datasetOptions = {
   fill: false
 }
 
-const mergeSources = sources =>
-  Object.keys(sources).reduce((acc, source) => {
-    for (const { datetime, mentionsCount } of sources[source]) {
-      acc.set(datetime, mentionsCount + (acc.get(datetime) || 0))
-    }
-    return acc
-  }, new Map())
+const TrendsExploreChart = ({ data }) => {
+  console.log('TCL: TrendsExploreChart -> data', data)
 
-const TrendsExploreChart = ({ data: { __typename, ...sources } }) => {
-  if (!sources) return null
+  const isLoading = Object.keys(data).length === 0
 
-  const mergedSources = mergeSources(sources)
+  const mergedSources = mergeDataSourcesForChart(data)
 
   const dataset = {
     labels: [...mergedSources.keys()],
@@ -86,6 +84,7 @@ const TrendsExploreChart = ({ data: { __typename, ...sources } }) => {
   }
   return (
     <div className='TrendsExploreChart'>
+      {isLoading && <div className='chart-loading-msg'>Loading...</div>}
       <Line options={chartOptions} data={dataset} />
     </div>
   )

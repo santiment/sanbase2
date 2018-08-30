@@ -2,7 +2,7 @@ import React from 'react'
 import moment from 'moment'
 import 'chartjs-plugin-annotation'
 import { Line } from 'react-chartjs-2'
-import { mergeDataSourcesForChart } from './trendsUtils'
+import { mergeDataSourcesForChart } from '../trendsUtils'
 import './TrendsExploreChart.css'
 
 const chartOptions = {
@@ -13,13 +13,23 @@ const chartOptions = {
   scales: {
     yAxes: [
       {
-        // display: false
+        ticks: {
+          autoSkip: true,
+          maxTicksLimit: 5,
+          callback: (item, index) => (item !== 0 ? item : '')
+        }
       }
     ],
     xAxes: [
       {
+        gridLines: {
+          display: false
+        },
         ticks: {
-          // Include a dollar sign in the ticks
+          autoSkip: true,
+          maxTicksLimit: 4,
+          maxRotation: 0,
+          // minRotation: 0,
           callback: date =>
             moment(date)
               .utc()
@@ -61,7 +71,7 @@ const chartOptions = {
 
 const datasetOptions = {
   borderColor: 'rgba(255, 193, 7, 1)',
-  borderWidth: 1,
+  borderWidth: 2,
   pointRadius: 0,
   fill: false
 }

@@ -22,10 +22,6 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
 
     field(:eth_accounts, list_of(:eth_account), resolve: assoc(:eth_accounts))
 
-    field :followed_projects, list_of(:project) do
-      resolve(&AccountResolver.followed_projects/3)
-    end
-
     field :apikeys, list_of(:string) do
       resolve(&ApikeyResolver.apikeys_list/3)
     end

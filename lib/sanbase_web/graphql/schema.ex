@@ -577,11 +577,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&ProjectResolver.last_wallet_transfers/3)
     end
 
-    @desc "Fetch a list of followed projects for the user currently logged in."
-    field :followed_projects, list_of(:project) do
-      resolve(&AccountResolver.followed_projects/3)
-    end
-
     @desc "Fetch all favourites lists for current_user."
     field :fetch_user_lists, list_of(:user_list) do
       resolve(&UserListResolver.fetch_user_lists/3)
@@ -634,20 +629,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&AccountResolver.change_username/3)
-    end
-
-    field :follow_project, :user do
-      arg(:project_id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&AccountResolver.follow_project/3)
-    end
-
-    field :unfollow_project, :user do
-      arg(:project_id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&AccountResolver.unfollow_project/3)
     end
 
     field :vote, :post do

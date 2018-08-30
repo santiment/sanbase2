@@ -1,0 +1,9 @@
+.TrendsExamplesItemQuery {
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.TrendsExamplesItemQuery span:first-child {
+  border-bottom: 2px solid #ffc107;
+}

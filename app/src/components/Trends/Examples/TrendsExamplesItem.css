@@ -1,0 +1,26 @@
+.TrendsExamplesItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  background: #fff;
+}
+
+.TrendsExamplesItem__settings {
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.TrendsExamplesItem__icon {
+  display: inline-block;
+  border-right: 1px solid #eee;
+  margin-top: 10px;
+  margin-right: 5px;
+  padding-right: 5px;
+}
+
+.TrendsExamplesItem__chart {
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  padding: 10px;
+}

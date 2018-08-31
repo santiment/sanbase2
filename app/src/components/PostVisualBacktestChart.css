@@ -1,9 +1,15 @@
 .PostVisualBacktestChart {
-  max-width: 150px;
-  border: 1px solid #adadad;
-  border-radius: 3px;
+  width: 60%;
+  max-height: 75px;
 }
 
 .night-mode .PostVisualBacktestChart {
   border-color: #4a4a4a;
+}
+
+@media (min-width: 768px) {
+  .PostVisualBacktestChart {
+    width: none;
+    max-width: 150px;
+  }
 }

@@ -76,3 +76,7 @@ export default graphql(trendsExploreGQL, {
     }
   }
 })(TrendsExamplesItemChart)
+
+/* TODO:
+  1. Memoize graphql results
+*/

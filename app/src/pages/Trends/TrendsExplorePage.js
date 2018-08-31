@@ -5,11 +5,13 @@ import { trendsExploreGQL } from '../../components/Trends/trendsExploreGQL'
 import TrendsExploreChart from '../../components/Trends/Explore/TrendsExploreChart'
 import './TrendsExplorePage.css'
 import TrendsExploreTimeFilter from '../../components/Trends/Explore/TrendsExploreTimeFilter'
+import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
 
-const TrendsExplorePage = ({ data: { topicSearch = {} } }) => {
+const TrendsExplorePage = ({ data: { topicSearch = {} }, match }) => {
   return (
     <div className='TrendsExplorePage'>
       <div className='TrendsExplorePage__content'>
+        <TrendsExploreHeader topic={match.params.topic} />
         <TrendsExploreTimeFilter selectedOption='6m' />
 
         <TrendsExploreChart data={topicSearch.chartsData || {}} />

@@ -2,8 +2,10 @@ defmodule Sanbase.Auth.UserTest do
   use Sanbase.DataCase, async: false
 
   import Mockery
+  import Sanbase.Factory
 
   alias Sanbase.Auth.{User, EthAccount}
+  alias Sanbase.Repo
 
   test "san balance cache is stale when the cache is never updated" do
     user = %User{san_balance_updated_at: nil, privacy_policy_accepted: true}
@@ -192,5 +194,25 @@ defmodule Sanbase.Auth.UserTest do
     }
 
     assert User.email_token_valid?(user, "test_token")
+  end
+
+  test "return error on insert/update username with non ascii" do
+    user = insert(:user)
+
+    {:error, changeset} =
+    User.changeset(user, %{username: "周必聪"})
+    |> Repo.update()
+
+    refute changeset.valid?
+    assert errors_on(changeset)[:username] |> Enum.at(0) == "Username contains non ascii characters"
+  end
+
+  test "trim whitespace on username" do
+    user = insert(:user)
+
+    {:ok, user} = User.changeset(user, %{username: " portokala "})
+    |> Repo.update()
+
+    assert user.username == "portokala"
   end
 end

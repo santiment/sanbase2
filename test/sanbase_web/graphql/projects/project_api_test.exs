@@ -8,8 +8,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     Ico,
     Currency,
     IcoCurrencies,
-    ProjectEthAddress,
-    LatestEthWalletData
+    ProjectEthAddress
   }
 
   alias Sanbase.Repo
@@ -31,24 +30,8 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     })
     |> Repo.insert!()
 
-    %LatestEthWalletData{}
-    |> LatestEthWalletData.changeset(%{
-      address: "abcdefg",
-      update_time: Ecto.DateTime.utc(),
-      balance: 500
-    })
-    |> Repo.insert!()
-
     %ProjectEthAddress{}
     |> ProjectEthAddress.changeset(%{project_id: project1.id, address: "rrrrr"})
-    |> Repo.insert!()
-
-    %LatestEthWalletData{}
-    |> LatestEthWalletData.changeset(%{
-      address: "rrrrr",
-      update_time: Ecto.DateTime.utc(),
-      balance: 800
-    })
     |> Repo.insert!()
 
     query = """

@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-31-08 | v.0.9.6 'Phobos':
+
+  Update Insights styles
+
 - 2018-30-08 | v.0.9.5 'Phobos':
 
   Fixed Github Activity request in project detailed page

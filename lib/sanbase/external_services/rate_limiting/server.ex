@@ -1,5 +1,4 @@
 defmodule Sanbase.ExternalServices.RateLimiting.Server do
-  # A rate limiter for Etherscan
   use GenServer, restart: :permanent, shutdown: 5_000
   require Logger
 

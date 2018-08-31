@@ -1,0 +1,23 @@
+.TrendsExploreTimeFilterOption {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.TrendsExploreTimeFilterOption:last-child {
+  margin-right: 0;
+}
+
+.TrendsExploreTimeFilterOption input {
+  display: none;
+}
+
+.TrendsExploreTimeFilterOption label {
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 2px 5px;
+}
+
+.TrendsExploreTimeFilterOption_active label {
+  background: #555658;
+  color: white;
+}

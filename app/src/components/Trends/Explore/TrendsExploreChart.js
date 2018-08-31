@@ -6,7 +6,9 @@ import { mergeDataSourcesForChart } from '../trendsUtils'
 import './TrendsExploreChart.css'
 
 const chartOptions = {
-  animation: false,
+  responsive: true,
+  scaleFontSize: 0,
+  // maintainAspectRatio: true,
   legend: {
     display: false
   },
@@ -64,7 +66,8 @@ const chartOptions = {
         return moment(item[0].xLabel)
           .utc()
           .format('MMM DD YYYY')
-      }
+      },
+      label: tooltipItem => `Mentions: ${tooltipItem.yLabel}`
     }
   }
 }
@@ -95,7 +98,7 @@ const TrendsExploreChart = ({ data }) => {
   return (
     <div className='TrendsExploreChart'>
       {isLoading && <div className='chart-loading-msg'>Loading...</div>}
-      <Line options={chartOptions} data={dataset} />
+      <Line options={chartOptions} data={dataset} height={80} />
     </div>
   )
 }

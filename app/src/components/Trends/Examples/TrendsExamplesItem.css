@@ -4,11 +4,13 @@
   flex-direction: column;
   padding: 15px;
   background: #fff;
+  cursor: pointer;
 }
 
 .TrendsExamplesItem__settings {
   color: #999;
   font-size: 0.9rem;
+  pointer-events: none;
 }
 
 .TrendsExamplesItem__icon {

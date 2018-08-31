@@ -9,7 +9,7 @@ const TrendsPage = ({ history }) => {
     <div className='TrendsPage'>
       <h1 className='TrendsPage__title'>Explore any crypto trend</h1>
       <TrendsForm history={history} />
-      <TrendsExamples />
+      <TrendsExamples history={history} />
     </div>
   )
 }

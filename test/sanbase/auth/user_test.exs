@@ -441,4 +441,24 @@ defmodule Sanbase.Auth.UserTest do
 
     assert User.email_token_valid?(user, "test_token")
   end
+
+  test "return error on insert/update username with non ascii" do
+    user = insert(:user)
+
+    {:error, changeset} =
+    User.changeset(user, %{username: "周必聪"})
+    |> Repo.update()
+
+    refute changeset.valid?
+    assert errors_on(changeset)[:username] |> Enum.at(0) == "Username contains non ascii characters"
+  end
+
+  test "trim whitespace on username" do
+    user = insert(:user)
+
+    {:ok, user} = User.changeset(user, %{username: " portokala "})
+    |> Repo.update()
+
+    assert user.username == "portokala"
+  end
 end

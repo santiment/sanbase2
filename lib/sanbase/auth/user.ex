@@ -101,6 +101,28 @@ defmodule Sanbase.Auth.User do
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+    |> normalize_username(attrs)
+    |> validate_change(:username, &validate_username_change/2)
+  end
+
+  def ascii_username?(username) do
+    username
+    |> String.to_charlist()
+    |> List.ascii_printable?()
+  end
+
+  defp normalize_username(changeset, %{username: username}) when not is_nil(username) do
+    put_change(changeset, :username, String.trim(username))
+  end
+
+  defp normalize_username(changeset, _), do: changeset
+
+  defp validate_username_change(_, username) do
+    if ascii_username?(username) do
+      []
+    else
+      [username: "Username contains non ascii characters"]
+    end
   end
 
   def ascii_username?(nil), do: true

@@ -41,8 +41,14 @@ const InsightsLayout = ({
       <div className='insights-page-sidebar'>
         <h2>Insights</h2>
         <div className='insights-page-navs'>
-          <NavLink to={'/insights'}>All</NavLink>
-          {isLogin && <NavLink to={'/insights/my'}>Mine</NavLink>}
+          <NavLink exact to={'/insights'}>
+            All
+          </NavLink>
+          {isLogin && (
+            <NavLink exact to={'/insights/my'}>
+              Mine
+            </NavLink>
+          )}
           {isShowedNewInsightsButton(history, isLogin) && (
             <NewInsightBtn
               isLogin={isLogin}

@@ -30,6 +30,13 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     })
     |> Repo.insert!()
 
+    Tesla.Mock.mock(fn %{method: :post} ->
+      %Tesla.Env{
+        status: 200,
+        body: %{"id" => 1, "jsonrpc" => "2.0", "result" => "0x1B1AE4D6E2EF500000"}
+      }
+    end)
+
     %ProjectEthAddress{}
     |> ProjectEthAddress.changeset(%{project_id: project1.id, address: "rrrrr"})
     |> Repo.insert!()
@@ -54,8 +61,8 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     assert json_response(result, 200)["data"]["project"] == %{
              "name" => "Project1",
-             "btcBalance" => "0",
-             "ethBalance" => "1300"
+             "btcBalance" => 0,
+             "ethBalance" => 1000
            }
   end
 

@@ -17,7 +17,6 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
     Logger.debug("trim_whitespace")
 
     all_users_non_nil_username()
-    |> Enum.reject(&(&1.username == nil))
     |> Enum.each(&trim_whitespace/1)
 
     Logger.debug("find_users_with_non_ascii")
@@ -68,7 +67,7 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
     usernames
     |> Enum.reject(fn user ->
       user.username
-      |> User.ascii_username?
+      |> User.ascii_username?()
     end)
   end
 

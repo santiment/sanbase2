@@ -95,7 +95,7 @@ defmodule Sanbase.Auth.User do
     if ascii_username?(username) do
       []
     else
-      [username: "Username contains non ascii characters"]
+      [username: "Username can contain only latin letters and numbers"]
     end
   end
 

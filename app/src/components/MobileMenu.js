@@ -35,19 +35,12 @@ const MobileMenu = ({
     </div>
     {isOpened && (
       <div className='overlay-content'>
-        <div className='navigation-list'>
-          <Link onClick={toggleMenu} to={'/signals'}>
-            Signals
-          </Link>
-          <Link onClick={toggleMenu} to={'/roadmap'}>
-            Roadmap
-          </Link>
-          <Link onClick={toggleMenu} to={'/projects'}>
-            ERC20 Projects
-          </Link>
-          <Link onClick={toggleMenu} to={'/currencies'}>
-            Currencies
-          </Link>
+        <div onClick={toggleMenu} className='navigation-list'>
+          <Link to={'/insights'}>Insights</Link>
+          <Link to={'/signals'}>Signals</Link>
+          <Link to={'/roadmap'}>Roadmap</Link>
+          <Link to={'/projects'}>ERC20 Projects</Link>
+          <Link to={'/currencies'}>Currencies</Link>
         </div>
         {isLogined ? (
           <Button

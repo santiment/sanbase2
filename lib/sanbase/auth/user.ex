@@ -73,11 +73,13 @@ defmodule Sanbase.Auth.User do
       :privacy_policy_accepted,
       :marketing_accepted
     ])
-    |> unique_constraint(:email)
-    |> unique_constraint(:username)
     |> normalize_username(attrs)
     |> validate_change(:username, &validate_username_change/2)
+    |> unique_constraint(:email)
+    |> unique_constraint(:username)
   end
+
+  def ascii_username?(nil), do: true
 
   def ascii_username?(username) do
     username

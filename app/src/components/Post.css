@@ -1,7 +1,7 @@
 .event-post {
   display: flex;
   border-bottom: 1px solid #e8e8e8;
-  padding: 10px 15px;
+  flex-direction: column;
 }
 
 .night-mode .event-post {
@@ -9,7 +9,7 @@
 }
 
 .event-post:hover {
-  background-color: #e8e8e8;
+  background-color: #e8e8e8a3;
   cursor: pointer;
 }
 
@@ -35,6 +35,17 @@
 
 .event-post .event-post-body {
   flex: 1;
+  display: flex;
+  padding: 10px 15px;
+  justify-content: space-between;
+}
+
+.event-post .event-post-body div:first-child {
+  flex: 2;
+}
+
+.event-post .event-post-body div:last-child {
+  flex: 1;
 }
 
 .event-post-body-link {
@@ -48,6 +59,7 @@
 
 .event-post .event-storylink {
   color: black;
+  font-weight: 400;
   font-size: 20px;
   line-height: 32px;
   cursor: pointer;
@@ -58,16 +70,23 @@
   color: #828282;
 }
 
+.event-post-body .post-date-author {
+  display: flex;
+}
+
 .event-post .event-post-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 2px;
+  padding: 5px 10px;
 }
 
 .event-post .event-post-author {
   color: #828282;
-  font-size: 0.8em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 160px;
+  white-space: nowrap;
 }
 
 .event-post .event-post-info .account-name {
@@ -96,7 +115,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 10px;
+  padding: 10px 15px;
 }
 
 .event-post .post-status {

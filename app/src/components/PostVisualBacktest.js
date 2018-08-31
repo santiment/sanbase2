@@ -29,9 +29,8 @@ export const PostVisualBacktest = ({
 }) => {
   if (!change) return null
   return (
-    <Message>
-      <Label horizontal>{ticker}</Label>
-      {changeProp} changes after publication
+    <div>
+      {ticker} {changeProp} changes after publication
       {change && <PercentChanges changes={change} />}
       <PostVisualBacktestChart
         history={history}
@@ -39,7 +38,7 @@ export const PostVisualBacktest = ({
         postUpdatedAt={postUpdatedAt}
         changePriceProp={changePriceProp}
       />
-    </Message>
+    </div>
   )
 }
 

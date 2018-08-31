@@ -3,15 +3,8 @@
 exports[`PostVisualBacktest component (smoke) it should render correctly 1`] = `null`;
 
 exports[`PostVisualBacktest component SAN icon should render correctly 1`] = `
-<div
-  class="ui message"
->
-  <div
-    class="ui horizontal label"
-  >
-    SAN
-  </div>
-  priceUsd changes after publication
+<div>
+  SAN priceUsd changes after publication
   <div
     class="percent-changes percent-changes--positive"
   >

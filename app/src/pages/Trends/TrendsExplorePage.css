@@ -5,3 +5,7 @@
 .TrendsExplorePage__content {
   background-color: #fff;
 }
+
+.TrendsExplorePage ul {
+  list-style: none;
+}

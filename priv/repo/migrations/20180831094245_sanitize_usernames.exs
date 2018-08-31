@@ -7,10 +7,14 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
 
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  def change do
+  def up do
     Application.ensure_all_started(:tzdata)
 
     work()
+  end
+
+  def down do
+    :ok
   end
 
   def work() do
@@ -49,27 +53,15 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
 
   def update_with_new_username(id, username, new_username) when username != new_username do
     user = Repo.get(User, id)
-    changeset = User.changeset(user, %{username: new_username})
+    changeset = user |> User.changeset(%{username: new_username})
 
-    case Repo.update(changeset) do
-      {:ok, _struct} ->
+    case Repo.get_by(User, username: new_username) do
+      nil ->
         Logger.warn("Sanitize Usersnames: from: [#{username}] -> [#{new_username}]")
+        Repo.update!(changeset)
 
-      {:error, changeset} ->
-        new_changeset = User.changeset(user, %{username: nil})
-        Logger.warn("Try Sanitize Usersnames: from: [#{username}] -> [nil]")
-
-        case Repo.update(new_changeset) do
-          {:ok, _} ->
-            Logger.warn("Success Sanitize Usersnames: from: [#{username}] -> [nil]")
-
-          {:error, changeset} ->
-            Logger.error(
-              "Sanitize Usersnames: error sanitizing from: [#{username}] -> [nil] | details: #{
-                Utils.error_details(changeset)
-              }"
-            )
-        end
+      _ ->
+        update_to_nil(user)
     end
   end
 
@@ -85,16 +77,7 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
     user = Repo.get(User, id)
     changeset = User.changeset(user, %{username: nil})
 
-    case Repo.update(changeset) do
-      {:ok, _struct} ->
-        Logger.warn("Sanitize Usersnames: from: [#{username}] -> [nil]")
-
-      {:error, changeset} ->
-        Logger.error(
-          "Sanitize Usersnames: error sanitizing from: [#{user.username}] -> [nil] | details: #{
-            Utils.error_details(changeset)
-          }"
-        )
-    end
+    Logger.warn("Sanitize Usersnames: from: [#{username}] -> [nil]")
+    Repo.update!(changeset)
   end
 end

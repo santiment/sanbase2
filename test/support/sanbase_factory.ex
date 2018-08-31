@@ -3,6 +3,12 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Auth.User
 
+  def user_factory do
+    %User{
+      salt: User.generate_salt()
+    }
+  end
+
   def staked_user_factory do
     %User{
       salt: User.generate_salt(),

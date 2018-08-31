@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-31-08 | v.0.9.7 'Phobos':
+
+  Hot fix of Insights Page
+
 - 2018-31-08 | v.0.9.6 'Phobos':
 
   Update Insights styles

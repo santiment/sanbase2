@@ -5,7 +5,7 @@ defmodule Sanbase.Factory do
 
   def user_factory do
     %User{
-      salt: User.generate_salt(),
+      salt: User.generate_salt()
     }
   end
 

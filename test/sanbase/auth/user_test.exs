@@ -200,18 +200,21 @@ defmodule Sanbase.Auth.UserTest do
     user = insert(:user)
 
     {:error, changeset} =
-    User.changeset(user, %{username: "周必聪"})
-    |> Repo.update()
+      User.changeset(user, %{username: "周必聪"})
+      |> Repo.update()
 
     refute changeset.valid?
-    assert errors_on(changeset)[:username] |> Enum.at(0) == "Username contains non ascii characters"
+
+    assert errors_on(changeset)[:username] |> Enum.at(0) ==
+             "Username can contain only latin letters and numbers"
   end
 
   test "trim whitespace on username" do
     user = insert(:user)
 
-    {:ok, user} = User.changeset(user, %{username: " portokala "})
-    |> Repo.update()
+    {:ok, user} =
+      User.changeset(user, %{username: " portokala "})
+      |> Repo.update()
 
     assert user.username == "portokala"
   end

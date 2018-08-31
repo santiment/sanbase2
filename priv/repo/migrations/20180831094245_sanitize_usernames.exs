@@ -14,12 +14,12 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
   end
 
   def work() do
-    Logger.debug("trim_whitespace")
+    Logger.warn("trim_whitespace")
 
     all_users_non_nil_username()
     |> Enum.each(&trim_whitespace/1)
 
-    Logger.debug("find_users_with_non_ascii")
+    Logger.warn("find_users_with_non_ascii")
 
     all_users_non_nil_username()
     |> find_users_with_non_ascii()
@@ -38,7 +38,7 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
 
   defp trim_whitespace(%User{id: id, username: username}) do
     new_username = String.trim(username)
-    Logger.debug("Sanitize Usersnames: Trying to trim: from: [#{username}] -> [#{new_username}]")
+    Logger.warn("Sanitize Usersnames: Trying to trim: from: [#{username}] -> [#{new_username}]")
 
     update_with_new_username(id, username, new_username)
   end
@@ -56,10 +56,20 @@ defmodule Sanbase.Repo.Migrations.SanitizeUsernames do
         Logger.warn("Sanitize Usersnames: from: [#{username}] -> [#{new_username}]")
 
       {:error, changeset} ->
-        Utils.error_details(changeset)
-        changeset = User.changeset(user, %{username: nil})
-        Repo.update!(changeset)
-        Logger.warn("Sanitize Usersnames: from: [#{username}] -> [nil]")
+        new_changeset = User.changeset(user, %{username: nil})
+        Logger.warn("Try Sanitize Usersnames: from: [#{username}] -> [nil]")
+
+        case Repo.update(new_changeset) do
+          {:ok, _} ->
+            Logger.warn("Success Sanitize Usersnames: from: [#{username}] -> [nil]")
+
+          {:error, changeset} ->
+            Logger.error(
+              "Sanitize Usersnames: error sanitizing from: [#{username}] -> [nil] | details: #{
+                Utils.error_details(changeset)
+              }"
+            )
+        end
     end
   end
 

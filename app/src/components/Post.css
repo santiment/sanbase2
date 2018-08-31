@@ -24,7 +24,7 @@
 }
 
 .event-post .event-post-index {
-  margin-right: 4px;
+  margin-right: 0;
   margin-top: 2px;
   height: 22px;
 }
@@ -38,6 +38,7 @@
   display: flex;
   padding: 10px 15px;
   justify-content: space-between;
+  align-items: stretch;
 }
 
 .event-post .event-post-body div:first-child {
@@ -191,4 +192,10 @@
   animation-duration: 1.5s;
   animation-iteration-count: infinite;
   animation-timing-function: linear;
+}
+
+@media (min-width: 768px) {
+  .event-post .event-post-index {
+    margin-right: 4px;
+  }
 }

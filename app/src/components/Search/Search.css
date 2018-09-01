@@ -33,3 +33,7 @@
     min-width: 425px;
   }
 }
+
+.search-panel .ui.search > .results {
+  margin-top: 2px;
+}

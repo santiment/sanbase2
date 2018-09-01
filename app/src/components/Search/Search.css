@@ -34,6 +34,14 @@
   color: white;
 }
 
+.search-panel .focus .ui.icon.input > i {
+  color: rgba(0, 0, 0, 0.87);
+}
+
 .search-panel .ui.input > input::placeholder {
   color: white;
+}
+
+.search-panel .ui.search > .results {
+  margin-top: 2px;
 }

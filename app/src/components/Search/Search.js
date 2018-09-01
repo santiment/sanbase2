@@ -15,15 +15,12 @@ const resultRenderer = ({ name, ticker }) => (
 )
 
 const CustomInput = (
-  <div>
-    <Input
-      id='search-input'
-      icon='search'
-      iconPosition='left'
-      placeholder='Search...'
-    />
-    <span className='search-shortcut'>/</span>
-  </div>
+  <Input
+    id='search-input'
+    icon='search'
+    iconPosition='left'
+    placeholder='Search...'
+  />
 )
 
 const contains = (str1, str2) => str1.search(new RegExp(str2, 'i')) === 0
@@ -52,6 +49,7 @@ class SearchPanel extends Component {
         ({ name = '', ticker = '' }) =>
           contains(name, searchText) || contains(ticker, searchText)
       )
+      .filter((_, index) => index < 10)
       .map((el, index) => ({
         ticker: el.ticker,
         name: el.name,

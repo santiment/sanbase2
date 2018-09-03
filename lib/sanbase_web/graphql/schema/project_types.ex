@@ -70,15 +70,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:project_transparency_description, :string)
 
-    field :eth_balance, :decimal do
+    field :eth_balance, :float do
       cache_resolve_dataloader(&ProjectBalanceResolver.eth_balance/3)
     end
 
-    field :btc_balance, :decimal do
+    field :btc_balance, :float do
       cache_resolve_dataloader(&ProjectBalanceResolver.btc_balance/3)
     end
 
-    field :usd_balance, :decimal do
+    field :usd_balance, :float do
       cache_resolve_dataloader(&ProjectBalanceResolver.usd_balance/3)
     end
 

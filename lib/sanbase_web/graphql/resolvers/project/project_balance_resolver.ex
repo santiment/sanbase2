@@ -26,11 +26,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     balance =
       loader
       |> Dataloader.get(SanbaseRepo, :eth_addresses, project)
+      |> Stream.map(&ProjectEthAddress.balance(&1))
       |> Stream.reject(&is_nil/1)
-      |> Stream.map(& &1.latest_eth_wallet_data)
-      |> Stream.reject(&is_nil/1)
-      |> Stream.map(& &1.balance)
-      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+      |> Enum.reduce(0, &+/2)
 
     {:ok, balance}
   end
@@ -53,8 +51,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
       |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.latest_btc_wallet_data)
       |> Stream.reject(&is_nil/1)
-      |> Stream.map(& &1.balance)
-      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+      |> Stream.map(&Decimal.to_float(&1.balance))
+      |> Enum.reduce(0, &+/2)
 
     {:ok, balance}
   end
@@ -80,11 +78,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
            Dataloader.get(loader, PriceStore, "ETH_ethereum", :last),
          {btc_price_usd, _btc_price_btc} when not is_nil(btc_price_usd) <-
            Dataloader.get(loader, PriceStore, "BTC_bitcoin", :last) do
-      usd_balance_float =
-        Decimal.to_float(eth_balance) * eth_price_usd +
-          Decimal.to_float(btc_balance) * btc_price_usd
+      usd_balance_float = eth_balance * eth_price_usd + btc_balance * btc_price_usd
 
-      {:ok, Decimal.new(usd_balance_float)}
+      {:ok, usd_balance_float}
     else
       error ->
         Logger.warn("Cannot calculate USD balance. Reason: #{inspect(error)}")
@@ -95,16 +91,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
   def eth_address_balance(%ProjectEthAddress{} = eth_address, _args, %{
         context: %{loader: loader}
       }) do
-    loader
-    |> Dataloader.load(SanbaseRepo, :latest_eth_wallet_data, eth_address)
-    |> on_load(fn loader ->
-      with latest_eth_wallet_data when not is_nil(latest_eth_wallet_data) <-
-             Dataloader.get(loader, SanbaseRepo, :latest_eth_wallet_data, eth_address),
-           balance <- latest_eth_wallet_data.balance do
-        {:ok, balance}
-      else
-        _ -> {:ok, nil}
-      end
-    end)
+    ProjectEthAddress.balance(eth_address)
   end
 end

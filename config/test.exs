@@ -42,11 +42,7 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   limit: 5,
   time_between_requests: 1000
 
-config :sanbase, Sanbase.ExternalServices.Etherscan.Requests, apikey: "myapikey"
-
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, sync_enabled: false
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Worker, sync_enabled: false
 
 config :faktory_worker_ex,
   client: [
@@ -78,8 +74,6 @@ config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_password: "pass"
 
 config :sanbase, Sanbase.Prices.Store, database: "prices_test"
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Store, database: "etherscan_transactions_test"
 
 config :arc,
   storage: Arc.Storage.Local,

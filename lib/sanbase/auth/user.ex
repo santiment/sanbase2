@@ -28,6 +28,10 @@ defmodule Sanbase.Auth.User do
   # 5 minutes
   @san_balance_cache_seconds 60 * 5
 
+  # Fallback username and email for Insights owned by deleted user accounts
+  @insights_fallback_username "anonymous"
+  @insights_fallback_email "anonymous@santiment.net"
+
   require Mockery.Macro
   defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
@@ -213,4 +217,7 @@ defmodule Sanbase.Auth.User do
         {:ok, user}
     end
   end
+
+  def insights_fallback_username, do: @insights_fallback_username
+  def insights_fallback_email, do: @insights_fallback_email
 end

@@ -196,7 +196,7 @@ defmodule Sanbase.Voting.Post do
 
   # Helper functions
   defp tags_cast(changeset, %{tags: tags}) do
-    tags = Tag |> where([t], t.name in ^tags) |> Sanbase.Repo.all()
+    tags = Tag |> where([t], t.name in ^tags) |> Repo.all()
 
     changeset
     |> put_assoc(:tags, tags)
@@ -205,7 +205,7 @@ defmodule Sanbase.Voting.Post do
   defp tags_cast(changeset, _), do: changeset
 
   defp images_cast(changeset, %{image_urls: image_urls}) do
-    images = PostImage |> where([i], i.image_url in ^image_urls) |> Sanbase.Repo.all()
+    images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
 
     if Enum.any?(images, fn %{post_id: post_id} -> not is_nil(post_id) end) do
       changeset

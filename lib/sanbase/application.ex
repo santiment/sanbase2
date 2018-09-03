@@ -21,6 +21,9 @@ defmodule Sanbase.Application do
         # Start the endpoint when the application starts
         supervisor(SanbaseWeb.Endpoint, []),
 
+        # Start the Clickhouse Repo
+        {Sanbase.ClickhouseRepo, []},
+
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},
 
@@ -53,9 +56,6 @@ defmodule Sanbase.Application do
 
         # Time series DAT DB connection
         Sanbase.Etherbi.DailyActiveAddresses.Store.child_spec(),
-
-        # Time series ethscan team wallet transactions DB connection
-        Sanbase.ExternalServices.Etherscan.Store.child_spec(),
 
         # Etherscan rate limiter
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(
@@ -118,9 +118,6 @@ defmodule Sanbase.Application do
         # TODO: Change after switching over to only this cmc
         Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
         Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2.child_spec(%{}),
-
-        # Etherscan wallet tracking worker
-        Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),
 
         # Twitter account data tracking worker
         Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),

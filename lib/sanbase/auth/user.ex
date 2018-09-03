@@ -73,8 +73,32 @@ defmodule Sanbase.Auth.User do
       :privacy_policy_accepted,
       :marketing_accepted
     ])
+    |> normalize_username(attrs)
+    |> validate_change(:username, &validate_username_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+  end
+
+  def ascii_username?(nil), do: true
+
+  def ascii_username?(username) do
+    username
+    |> String.to_charlist()
+    |> List.ascii_printable?()
+  end
+
+  defp normalize_username(changeset, %{username: username}) when not is_nil(username) do
+    put_change(changeset, :username, String.trim(username))
+  end
+
+  defp normalize_username(changeset, _), do: changeset
+
+  defp validate_username_change(_, username) do
+    if ascii_username?(username) do
+      []
+    else
+      [username: "Username can contain only latin letters and numbers"]
+    end
   end
 
   def san_balance_cache_stale?(%User{san_balance_updated_at: nil}), do: true

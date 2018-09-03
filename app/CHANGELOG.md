@@ -4,6 +4,25 @@
   Trends page with example cards.
   Trends explore page with merged sources chart.
 
+- 2018-31-08 | v.0.9.7 'Phobos':
+
+  Hot fix of Insights Page
+
+- 2018-31-08 | v.0.9.6 'Phobos':
+
+  Update Insights styles
+
+- 2018-30-08 | v.0.9.5 'Phobos':
+
+  Fixed Github Activity request in project detailed page
+  Fixed skip logic in queries after Apollo update
+
+- 2018-29-08 | v.0.9.4 'Phobos':
+
+  Fixed NAN bug in project detailed page
+  Fixed broken animation of loader
+>>>>>>> master
+
 - 2018-28-08 | v.0.9.2 'Phobos':
 
   New menu look

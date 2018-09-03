@@ -45,7 +45,7 @@ const Status = ({ status = STATES.draft, moderationComment }) => {
 
 const Author = ({ id, username }) => (
   <div className='event-post-author'>
-    by&nbsp; <Link to={`/insights/users/${id}`}>{username}</Link>
+    by <Link to={`/insights/users/${id}`}>{username}</Link>
   </div>
 )
 
@@ -73,35 +73,52 @@ export const Post = ({
   showStatus = false
 }) => {
   return (
-    <div
-      className='event-post'
-      onClick={e => {
-        if (e.target.className === 'event-post-body') {
+    <div className='event-post'>
+      <div
+        onClick={e => {
           id && gotoInsight(id)
-        }
-      }}
-    >
-      <div className='event-post-body'>
-        <A className='event-storylink' href={`/insights/${id}`}>
-          {title}
-        </A>
-        <br />
-        <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
-        {user && user.id && <Author {...user} />}
-        {user && (
+        }}
+        className='event-post-body'
+      >
+        <div>
+          {tags.length > 0 && (
+            <div className='post-tags'>
+              {tags.map((tag, index) => (
+                <Link
+                  key={index}
+                  className='post-tag'
+                  to={`/insights/tags/${tag.name}`}
+                >
+                  {tag.label || tag.name}
+                </Link>
+              ))}
+            </div>
+          )}
+          <A className='event-storylink' href={`/insights/${id}`}>
+            {title}
+          </A>
+          <div className='post-date-author'>
+            <Span>{moment(createdAt).format('MMM DD, YYYY')}</Span>
+            &nbsp;•&nbsp;
+            {user && user.id && <Author {...user} />}
+          </div>
+        </div>
+        {createdAt &&
+          tags.length > 0 && (
+            <PostVisualBacktest
+              from={createdAt}
+              ticker={tags[0].name}
+              updatedAt={updatedAt}
+            />
+          )}
+      </div>
+      {user &&
+        !showStatus && (
           <Div className='event-post-info'>
-            {tags.length > 0 && (
-              <div className='post-tags'>
-                {tags.map((tag, index) => (
-                  <Link
-                    key={index}
-                    className='post-tag'
-                    to={`/insights/tags/${tag.name}`}
-                  >
-                    {tag.label || tag.name}
-                  </Link>
-                ))}
-              </div>
+            {discourseTopicUrl && (
+              <a className='discussion-btn' href={discourseTopicUrl}>
+                Comments
+              </a>
             )}
             <LikeBtn
               onLike={() => {
@@ -117,52 +134,36 @@ export const Post = ({
             />
           </Div>
         )}
-        {discourseTopicUrl && (
-          <a className='discussion-btn' href={discourseTopicUrl}>
-            go to discussion
-          </a>
-        )}
-        <br />
-        {createdAt &&
-          tags.length > 0 && (
-            <PostVisualBacktest
-              from={createdAt}
-              ticker={tags[0].name}
-              updatedAt={updatedAt}
-            />
-          )}
+      {showStatus && (
         <Div className='event-post-controls'>
-          {showStatus && (
-            <Status moderationComment={moderationComment} status={readyState} />
+          <Status moderationComment={moderationComment} status={readyState} />
+          {readyState === 'draft' && (
+            <div style={{ display: 'flex' }}>
+              <Button
+                size='mini'
+                onClick={() => deletePost(id)}
+                basic
+                style={{
+                  fontWeight: '700',
+                  color: '#db2828'
+                }}
+              >
+                Delete this insight
+              </Button>
+              <Button
+                size='mini'
+                color='orange'
+                onClick={() => publishPost(id)}
+                style={{
+                  fontWeight: '700'
+                }}
+              >
+                Publish your insight
+              </Button>
+            </div>
           )}
-          {showStatus &&
-            readyState === 'draft' && (
-              <div style={{ display: 'flex' }}>
-                <Button
-                  size='mini'
-                  onClick={() => deletePost(id)}
-                  basic
-                  style={{
-                    fontWeight: '700',
-                    color: '#db2828'
-                  }}
-                >
-                  Delete this insight
-                </Button>
-                <Button
-                  size='mini'
-                  color='orange'
-                  onClick={() => publishPost(id)}
-                  style={{
-                    fontWeight: '700'
-                  }}
-                >
-                  Publish your insight
-                </Button>
-              </div>
-            )}
         </Div>
-      </div>
+      )}
     </div>
   )
 }

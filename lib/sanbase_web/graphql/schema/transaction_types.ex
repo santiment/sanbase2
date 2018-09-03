@@ -7,6 +7,11 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
     value(:all)
   end
 
+  object :address do
+    field(:address, non_null(:string))
+    field(:is_exchange, non_null(:boolean))
+  end
+
   object :transaction do
     field(:datetime, non_null(:datetime))
     field(:trx_hash, non_null(:string))

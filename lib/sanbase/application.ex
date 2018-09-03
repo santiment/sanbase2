@@ -114,7 +114,11 @@ defmodule Sanbase.Application do
         Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
 
         # Twitter account historical data
-        Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{})
+        Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
+
+        # Transform a list of transactions into a list of transactions
+        # where addresses are marked whether or not they are an exchange address
+        Sanbase.Clickhouse.MarkExchanges.child_spec(%{})
       ] ++
         faktory_supervisor() ++
         [

@@ -21,7 +21,7 @@ const TrendsExamplesItem = ({ query, settings, onClick }) => {
       </div>
       <div className='TrendsExamplesItem__settings'>
         {/* <TrendsExamplesItemIcon name='settings' /> */}
-        For 7 days, Merged sources
+        For 6 months, Merged sources
       </div>
     </li>
   )

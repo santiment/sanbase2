@@ -67,7 +67,7 @@ const chartOptions = {
           .utc()
           .format('MMM DD YYYY')
       },
-      label: tooltipItem => `Mentions: ${tooltipItem.yLabel}`
+      label: tooltipItem => `Merged Mentions: ${tooltipItem.yLabel}`
     }
   }
 }
@@ -80,7 +80,7 @@ const datasetOptions = {
 }
 
 const TrendsExploreChart = ({ data }) => {
-  console.log('TCL: TrendsExploreChart -> data', data)
+  // console.log('TCL: TrendsExploreChart -> data', data)
 
   const isLoading = Object.keys(data).length === 0
 

@@ -2,7 +2,7 @@ import React from 'react'
 import TrendsExploreTimeFilterOption from './TrendsExploreTimeFilterOption'
 import './TrendsExploreTimeFilter.css'
 
-const timeOptions = ['all', '1y', '6m', '3m', '1m', '1w']
+const timeOptions = ['1w', '1m', '3m', '6m', '1y', 'all']
 
 const TrendsExploreTimeFilter = ({ selectedOption }) => {
   return (
@@ -12,7 +12,7 @@ const TrendsExploreTimeFilter = ({ selectedOption }) => {
           key={option}
           label={option}
           isActive={selectedOption === option}
-          onClick={() => console.log(option)}
+          // onClick={() => console.log(option)}
         />
       ))}
     </ul>

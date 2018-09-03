@@ -204,15 +204,14 @@ export const App = ({
           )}
         />
         <Route exact path='/trends' component={LoadableTrendsPage} />
-        {/* <Route exact path='/trends/explore' component={LoadableTrendsPage} /> */}
         <Route
           exact
-          path='/trends/explore/:topic'
-          component={LoadableTrendsExplorePage}
+          path='/trends/explore'
+          render={() => <Redirect to='/trends' />}
         />
         <Route
           exact
-          path='/trends/explore/:topicA/:condition(and|or)/:topicB'
+          path='/trends/explore/:topic'
           component={LoadableTrendsExplorePage}
         />
         <Route exact path='/account' component={Account} />

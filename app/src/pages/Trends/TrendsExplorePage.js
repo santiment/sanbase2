@@ -6,6 +6,7 @@ import TrendsExploreChart from '../../components/Trends/Explore/TrendsExploreCha
 import './TrendsExplorePage.css'
 import TrendsExploreTimeFilter from '../../components/Trends/Explore/TrendsExploreTimeFilter'
 import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
+import TrendsExploreFooter from '../../components/Trends/Explore/TrendsExploreFooter'
 
 const TrendsExplorePage = ({ data: { topicSearch = {} }, match }) => {
   return (
@@ -15,6 +16,7 @@ const TrendsExplorePage = ({ data: { topicSearch = {} }, match }) => {
         <TrendsExploreTimeFilter selectedOption='6m' />
 
         <TrendsExploreChart data={topicSearch.chartsData || {}} />
+        <TrendsExploreFooter />
       </div>
     </div>
   )

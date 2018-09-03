@@ -48,10 +48,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     balance =
       loader
       |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
-      |> Stream.reject(&is_nil/1)
       |> Stream.map(& &1.latest_btc_wallet_data)
       |> Stream.reject(&is_nil/1)
-      |> Stream.map(&Decimal.to_float(&1.balance))
+      |> Stream.map(&(Decimal.to_float(&1.satoshi_balance) / 100_000_000))
       |> Enum.reduce(0, &+/2)
 
     {:ok, balance}

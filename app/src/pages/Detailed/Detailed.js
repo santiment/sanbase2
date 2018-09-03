@@ -13,6 +13,7 @@ import ProjectChartContainer from './../../components/ProjectChart/ProjectChartC
 import PanelBlock from './../../components/PanelBlock'
 import Panel from './../../components/Panel'
 import Search from './../../components/Search/SearchContainer'
+import ServerErrorMessage from './../../components/ServerErrorMessage'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
 import { millify } from './../../utils/formatting'
@@ -68,7 +69,8 @@ export const Detailed = ({
   Project = {
     project: undefined,
     loading: true,
-    error: false
+    error: false,
+    errorMessage: ''
   },
   ExchangeFundFlow = {
     transactionVolume: [],
@@ -202,6 +204,10 @@ export const Detailed = ({
     project.ticker === 'ETH'
       ? ethSpentOverTimeByErc20Projects
       : ethSpentOverTime
+
+  if (Project.error) {
+    return <ServerErrorMessage />
+  }
 
   const projectContainerChart = project && (
     <ProjectChartContainer

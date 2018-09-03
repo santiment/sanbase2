@@ -48,15 +48,17 @@ const GeneralInfoBlock = ({
     <hr />
     <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
       <div>Market Cap</div>
-      <div>{formatNumber(marketcapUsd, { currency: 'USD' })}</div>
+      <div>
+        {marketcapUsd && formatNumber(marketcapUsd, { currency: 'USD' })}
+      </div>
     </div>
     <div className={`row-info ${!priceUsd && 'info-disabled'}`}>
       <div>Price</div>
-      <div>{formatNumber(priceUsd, { currency: 'USD' })}</div>
+      <div>{priceUsd && formatNumber(priceUsd, { currency: 'USD' })}</div>
     </div>
     <div className={`row-info ${!volumeUsd && 'info-disabled'}`}>
       <div>Volume</div>
-      <div>{formatNumber(volumeUsd, { currency: 'USD' })}</div>
+      <div>{volumeUsd && formatNumber(volumeUsd, { currency: 'USD' })}</div>
     </div>
     <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
       <div>Circulating</div>

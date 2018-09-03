@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
-  alias Sanbase.Model.{Project, UserFollowedProject}
+  alias Sanbase.Model.Project
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Repo
   alias Ecto.Multi
@@ -111,60 +111,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
           details: Utils.error_details(changeset)
         }
     end
-  end
-
-  def unfollow_project(_root, %{project_id: project_id}, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
-      }) do
-    from(
-      pair in UserFollowedProject,
-      where: pair.project_id == ^project_id and pair.user_id == ^user.id
-    )
-    |> Repo.delete_all()
-
-    {:ok, user}
-  end
-
-  def follow_project(_root, %{project_id: project_id}, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
-      }) do
-    with %Project{} <- Repo.get(Project, project_id) do
-      %UserFollowedProject{project_id: project_id, user_id: user.id}
-      |> UserFollowedProject.changeset(%{project_id: project_id, user_id: user.id})
-      |> Repo.insert(on_conflict: :nothing)
-      |> case do
-        {:ok, _} ->
-          {:ok, user}
-
-        {:error, changeset} ->
-          {
-            :error,
-            message: "Cannot follow project with id #{project_id}",
-            details: Utils.error_details(changeset)
-          }
-      end
-    else
-      _ ->
-        {:error, message: "Project with the given ID does not exist."}
-    end
-  end
-
-  def followed_projects(_root, _args, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
-      }) do
-    query =
-      from(
-        p in Project,
-        inner_join: ufp in UserFollowedProject,
-        on: p.id == ufp.project_id,
-        where: ufp.user_id == ^user.id
-      )
-
-    {:ok, Repo.all(query)}
-  end
-
-  def followed_projects(_root, _args, _resolution) do
-    {:error, "You must be logged in to fetch followed projects"}
   end
 
   def update_terms_and_conditions(_root, args, %{

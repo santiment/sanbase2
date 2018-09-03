@@ -38,6 +38,19 @@ defmodule Sanbase.InternalServices.Parity do
     end
   end
 
+  def get_eth_balance(address) do
+    with %Tesla.Env{status: 200, body: body} <-
+           post(client(), "/", json_rpc_call("eth_getBalance", [address])),
+         "0x" <> number <- body["result"],
+         {balance, ""} <- Integer.parse(number, 16) do
+      {:ok, balance}
+    else
+      error -> {:error, error}
+    end
+  end
+
+  # Private functions
+
   defp client() do
     parity_url = Config.get(:url)
     basic_auth_username = Config.get(:basic_auth_username)

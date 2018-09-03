@@ -1,12 +1,11 @@
 import React from 'react'
 import ReactTable from 'react-table'
 import cx from 'classnames'
-import { Loader } from 'semantic-ui-react'
 import Sticky from 'react-stickynode'
 import 'react-table/react-table.css'
 import Panel from '../../components/Panel'
+import ServerErrorMessage from './../../components/ServerErrorMessage'
 import columns from './asset-columns'
-import AssetsTableErrorMessage from './AssetsTableErrorMessage'
 import './../Projects/ProjectsTable.css'
 
 export const CustomHeadComponent = ({ children, className, ...rest }) => (
@@ -41,7 +40,7 @@ const AssetsTable = ({
 }) => {
   const { isLoading, items, error, type } = Assets
   if (error && error.message !== 'Network error: Failed to fetch') {
-    return <AssetsTableErrorMessage />
+    return <ServerErrorMessage />
   }
 
   return (
@@ -68,9 +67,7 @@ const AssetsTable = ({
             className={cx('-loading', { '-active': loading }, className)}
             {...rest}
           >
-            <div className='-loading-inner'>
-              <Loader active size='large' />
-            </div>
+            <div className='-loading-inner'>Loading...</div>
           </div>
         )}
         TheadComponent={CustomHeadComponent}

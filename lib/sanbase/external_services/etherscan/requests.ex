@@ -1,6 +1,9 @@
 defmodule Sanbase.ExternalServices.Etherscan.Requests do
   @moduledoc ~s"""
-    Module which is used to send requests to etherscan.io
+    Module which is used to send requests to etherscan.io.
+
+    Used to fetch a contract's ABI. The ABI is not stored on the blockchain and
+    cannot be fetched from Parity
   """
   use Tesla
 

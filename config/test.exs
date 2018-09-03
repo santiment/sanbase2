@@ -9,18 +9,29 @@ config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
   server: true
 
-# Print only warnings and errors during test
-config :logger, level: :warn
+# Print only warnings and errors during test. Do not log JSON in tests.
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  level: :warn
 
 # Test adapter that allows mocking
 config :tesla, adapter: :mock
 
-# Configure your database
+# Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
-  # closest to real case as there are 3 pods with 10 connections each
   pool_size: 30
+
+# Configure ClickHouseRepo for testing. It will be tested by using Postgres
+config :sanbase, Sanbase.ClickhouseRepo,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  adapter: Ecto.Adapters.Postgres,
+  database: "sanbase_test",
+  hostname: "localhost",
+  port: 5432,
+  username: "postgres",
+  password: "postgres"
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
@@ -31,11 +42,7 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   limit: 5,
   time_between_requests: 1000
 
-config :sanbase, Sanbase.ExternalServices.Etherscan.Requests, apikey: "myapikey"
-
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, sync_enabled: false
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Worker, sync_enabled: false
 
 config :faktory_worker_ex,
   client: [
@@ -67,8 +74,6 @@ config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_password: "pass"
 
 config :sanbase, Sanbase.Prices.Store, database: "prices_test"
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Store, database: "etherscan_transactions_test"
 
 config :arc,
   storage: Arc.Storage.Local,

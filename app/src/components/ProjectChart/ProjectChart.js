@@ -865,6 +865,7 @@ const makeOptionsFromProps = (props, COLORS) => {
         {
           id: 'y-axis-7',
           type: 'linear',
+          stacked: true,
           tooltips: {
             mode: 'index',
             intersect: false
@@ -991,6 +992,7 @@ const makeOptionsFromProps = (props, COLORS) => {
         {
           id: 'y-axis-11',
           position: 'right',
+          stacked: true,
           scaleLabel: {
             display: false,
             labelString: `Daily Active Addresses`,

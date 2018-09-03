@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.Resolvers.{
     ProjectResolver,
     ProjectBalanceResolver,
+    ProjectTransactionsResolver,
     IcoResolver,
     TwitterResolver,
     EtherbiResolver

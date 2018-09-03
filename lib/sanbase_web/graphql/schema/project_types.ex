@@ -227,7 +227,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:address, non_null(:string))
 
     field :balance, :decimal do
-      cache_resolve_dataloader(&ProjectBalanceResolver.eth_address_balance/3)
+      cache_resolve(&ProjectBalanceResolver.eth_address_balance/3)
     end
   end
 

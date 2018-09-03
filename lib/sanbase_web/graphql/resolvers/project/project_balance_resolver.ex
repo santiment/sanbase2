@@ -90,6 +90,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
   def eth_address_balance(%ProjectEthAddress{} = eth_address, _args, %{
         context: %{loader: loader}
       }) do
-    ProjectEthAddress.balance(eth_address)
+    {:ok, ProjectEthAddress.balance(eth_address)}
   end
 end

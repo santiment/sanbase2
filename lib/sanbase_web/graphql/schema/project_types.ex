@@ -10,6 +10,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   alias SanbaseWeb.Graphql.Resolvers.{
     ProjectResolver,
     ProjectBalanceResolver,
+    ProjectTransactionsResolver,
     IcoResolver,
     TwitterResolver,
     EtherbiResolver
@@ -183,7 +184,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :eth_spent, :float do
       arg(:days, :integer, default_value: 30)
 
-      cache_resolve_async(&ProjectResolver.eth_spent/3)
+      cache_resolve_async(&ProjectTransactionsResolver.eth_spent/3)
     end
 
     @desc "ETH spent for each `interval` from the project's team wallet and time period"
@@ -192,7 +193,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      cache_resolve_async(&ProjectResolver.eth_spent_over_time/3)
+      cache_resolve_async(&ProjectTransactionsResolver.eth_spent_over_time/3)
     end
 
     @desc "Top ETH transactions for project's team wallets"
@@ -202,7 +203,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:transaction_type, :transaction_type, default_value: :all)
       arg(:limit, :integer, default_value: 10)
 
-      cache_resolve_async(&ProjectResolver.eth_top_transactions/3)
+      cache_resolve_async(&ProjectTransactionsResolver.eth_top_transactions/3)
     end
 
     @desc "Top transactions for the token of a given project"
@@ -211,7 +212,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:limit, :integer, default_value: 10)
 
-      cache_resolve(&ProjectResolver.token_top_transactions/3)
+      cache_resolve(&ProjectTransactionsResolver.token_top_transactions/3)
     end
 
     @desc "Average daily active addresses for a ERC20 project and given time period"

@@ -4,8 +4,8 @@ import cx from 'classnames'
 import Sticky from 'react-stickynode'
 import 'react-table/react-table.css'
 import Panel from '../../components/Panel'
+import ServerErrorMessage from './../../components/ServerErrorMessage'
 import columns from './asset-columns'
-import AssetsTableErrorMessage from './AssetsTableErrorMessage'
 import './../Projects/ProjectsTable.css'
 
 export const CustomHeadComponent = ({ children, className, ...rest }) => (
@@ -40,7 +40,7 @@ const AssetsTable = ({
 }) => {
   const { isLoading, items, error, type } = Assets
   if (error && error.message !== 'Network error: Failed to fetch') {
-    return <AssetsTableErrorMessage />
+    return <ServerErrorMessage />
   }
 
   return (

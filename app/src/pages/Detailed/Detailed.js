@@ -64,7 +64,8 @@ export const Detailed = ({
   Project = {
     project: undefined,
     loading: true,
-    error: false
+    error: false,
+    errorMessage: ''
   },
   ExchangeFundFlow = {
     transactionVolume: [],
@@ -171,6 +172,10 @@ export const Detailed = ({
   const _ethSpentOverTime = project.ticker === 'ETH'
     ? ethSpentOverTimeByErc20Projects
     : ethSpentOverTime
+
+  if (Project.error) {
+    return <ServerErrorMessage />
+  }
 
   const projectContainerChart = project && (
     <ProjectChartContainer

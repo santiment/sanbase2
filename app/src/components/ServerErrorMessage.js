@@ -1,7 +1,7 @@
 import React from 'react'
 import { Message } from 'semantic-ui-react'
 
-const ServerErrorMessage = () => (
+const AssetsTableErrorMessage = () => (
   <div
     style={{
       display: 'flex',
@@ -19,4 +19,4 @@ const ServerErrorMessage = () => (
   </div>
 )
 
-export default ServerErrorMessage
+export default AssetsTableErrorMessage

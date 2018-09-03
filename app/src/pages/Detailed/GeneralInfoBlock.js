@@ -50,7 +50,7 @@ const GeneralInfoBlock = ({
     </div>
     <div className={`row-info ${!volumeUsd && 'info-disabled'}`}>
       <div>Volume</div>
-      <div>{formatNumber(volumeUsd, { currency: 'USD' })}</div>
+      <div>{volumeUsd && formatNumber(volumeUsd, { currency: 'USD' })}</div>
     </div>
     <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
       <div>Circulating</div>

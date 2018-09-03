@@ -1,6 +1,7 @@
 .TrendsExploreTimeFilterOption {
   display: inline-block;
   margin-right: 5px;
+  color: #ddd;
 }
 
 .TrendsExploreTimeFilterOption:last-child {

@@ -23,7 +23,6 @@ export class TrendsForm extends Component {
           <Input
             className='TrendsForm__input'
             icon='search'
-            iconPosition='right'
             placeholder='Enter your search query'
             value={this.state.topic}
             onChange={this.handleChange}

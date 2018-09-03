@@ -226,7 +226,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :eth_address do
     field(:address, non_null(:string))
 
-    field :balance, :decimal do
+    field :balance, :float do
       cache_resolve(&ProjectBalanceResolver.eth_address_balance/3)
     end
   end

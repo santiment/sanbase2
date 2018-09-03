@@ -675,8 +675,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
            false <- is_nil(usd_balance) || is_nil(market_cap),
-           false <- Decimal.cmp(usd_balance, Decimal.new(0)) == :eq do
-        {:ok, Decimal.div(Decimal.new(market_cap), usd_balance)}
+           false <- usd_balance <= 0.001 do
+        {:ok, market_cap / usd_balance}
       else
         _ ->
           {:ok, nil}
@@ -691,7 +691,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       with {:ok, usd_balance} <- ProjectBalanceResolver.usd_balance_from_loader(loader, project),
            {:ok, market_cap} <- marketcap_usd(project, nil, nil),
            false <- is_nil(usd_balance) || is_nil(market_cap),
-           :lt <- Decimal.cmp(Decimal.new(market_cap), usd_balance) do
+           true <- usd_balance > market_cap do
         {:ok,
          [
            %{

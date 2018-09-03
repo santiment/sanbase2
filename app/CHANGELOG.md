@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-03-09 | v.0.10.0 'Phobos':
+  Trends page with example cards.
+  Trends explore page with merged sources chart.
+
 - 2018-28-08 | v.0.9.2 'Phobos':
 
   New menu look

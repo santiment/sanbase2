@@ -9,7 +9,7 @@ import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHe
 import TrendsExploreFooter from '../../components/Trends/Explore/TrendsExploreFooter'
 import { parseTrendsGQLProps } from '../../components/Trends/trendsUtils'
 
-const TrendsExplorePage = ({ sources, match }) => {
+const TrendsExplorePage = ({ sources, match, isDesktop }) => {
   return (
     <div className='TrendsExplorePage'>
       <div className='TrendsExplorePage__content'>
@@ -19,7 +19,7 @@ const TrendsExplorePage = ({ sources, match }) => {
           defaultSelected='6m'
           disabled
         />
-        <TrendsExploreChart sources={sources} />
+        <TrendsExploreChart sources={sources} isDesktop={isDesktop} />
         <TrendsExploreFooter />
       </div>
     </div>

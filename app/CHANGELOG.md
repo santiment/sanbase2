@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-04-09 | v.0.11.0 'Phobos':
+
+  Add TimeFilter UI Component
+
 - 2018-03-09 | v.0.10.0 'Phobos':
   Trends page with example cards.
   Trends explore page with merged sources chart.

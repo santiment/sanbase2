@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.9.7",
+  "version": "0.11.0",
   "private": true,
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -78,8 +78,9 @@
     "validate.js": "^0.12.0"
   },
   "devDependencies": {
+    "@storybook/addon-info": "^3.4.10",
     "@storybook/addon-viewport": "^3.3.3",
-    "@storybook/react": "^3.3.3",
+    "@storybook/react": "latest",
     "enzyme": "^3.2.0",
     "enzyme-adapter-react-16": "^1.1.0",
     "enzyme-to-json": "^3.2.2",

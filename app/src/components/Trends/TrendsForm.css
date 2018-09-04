@@ -1,0 +1,12 @@
+.TrendsForm {
+  display: flex;
+  justify-content: center;
+}
+
+.TrendsForm__form {
+  width: 50%;
+}
+
+.TrendsForm__input {
+  width: 100%;
+}

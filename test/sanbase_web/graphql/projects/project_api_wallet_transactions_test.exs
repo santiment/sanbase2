@@ -3,7 +3,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
   alias Sanbase.Model.{
     Project,
-    ProjectEthAddress
+    ProjectEthAddress,
+    ExchangeEthAddress
   }
 
   alias Sanbase.Repo
@@ -17,6 +18,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   @datetime4 DateTime.from_naive!(~N[2017-05-16 18:00:00], "Etc/UTC")
   @datetime5 DateTime.from_naive!(~N[2017-05-17 19:00:00], "Etc/UTC")
   @datetime6 DateTime.from_naive!(~N[2017-05-18 20:00:00], "Etc/UTC")
+  @exchange_wallet "0xe1e1e1e1e1e1e1"
 
   setup do
     slug = "santiment" <> Sanbase.TestUtils.random_string()
@@ -40,6 +42,18 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     })
     |> Repo.insert!()
 
+    %ExchangeEthAddress{}
+    |> ExchangeEthAddress.changeset(%{
+      address: @exchange_wallet,
+      name: "Test exchange wallet"
+    })
+    |> Repo.insert!()
+
+    # MarkExchanges GenServer is started by the top-level supervisor and not this process.
+    # Due to the SQL Sandbox the added exchange address is not seen from the genserver.
+    # Adding it manually
+    Sanbase.Clickhouse.MarkExchanges.add_exchange_wallets([@exchange_wallet])
+
     [
       slug: slug,
       datetime_from: @datetime1,
@@ -61,8 +75,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
             transaction_type: IN){
               datetime,
               trxValue,
-              fromAddress{ address },
-              toAddress{ address }
+              fromAddress{ address, isExchange },
+              toAddress{ address, isExchange }
           }
         }
       }
@@ -76,29 +90,29 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
       assert %{
                "datetime" => "2017-05-16T18:00:00Z",
-               "fromAddress" => %{"address" => "0x2"},
-               "toAddress" => %{"address" => "0x1"},
+               "fromAddress" => %{"address" => "0x2", "isExchange" => false},
+               "toAddress" => %{"address" => "0x1", "isExchange" => false},
                "trxValue" => 20_000.0
              } in trx_in
 
       assert %{
                "datetime" => "2017-05-17T19:00:00Z",
-               "fromAddress" => %{"address" => "0x2"},
-               "toAddress" => %{"address" => "0x1"},
+               "fromAddress" => %{"address" => "0x2", "isExchange" => false},
+               "toAddress" => %{"address" => "0x1", "isExchange" => false},
                "trxValue" => 45_000.0
              } in trx_in
 
       assert %{
                "datetime" => "2017-05-13T15:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 500.0
              } not in trx_in
 
       assert %{
                "datetime" => "2017-05-14T16:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 1500.0
              } not in trx_in
     end
@@ -118,8 +132,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
             transaction_type: OUT){
               datetime,
               trxValue,
-              fromAddress{ address },
-              toAddress{ address }
+              fromAddress{ address, isExchange },
+              toAddress{ address, isExchange }
           }
         }
       }
@@ -133,36 +147,36 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
       assert %{
                "datetime" => "2017-05-13T15:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 500.0
              } in trx_out
 
       assert %{
                "datetime" => "2017-05-14T16:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 1500.0
              } in trx_out
 
       assert %{
                "datetime" => "2017-05-15T17:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 2500.0
              } in trx_out
 
       assert %{
                "datetime" => "2017-05-17T19:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => @exchange_wallet, "isExchange" => true},
                "trxValue" => 5500.0
              } in trx_out
 
       assert %{
                "datetime" => "2017-05-18T20:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => @exchange_wallet, "isExchange" => true},
                "trxValue" => 6500.0
              } in trx_out
     end
@@ -182,8 +196,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
             transaction_type: ALL){
               datetime,
               trxValue,
-              fromAddress{ address },
-              toAddress{ address }
+              fromAddress{ address, isExchange },
+              toAddress{ address, isExchange }
           }
         }
       }
@@ -197,57 +211,57 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
 
       assert %{
                "datetime" => "2017-05-13T15:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-14T16:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 1500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-15T17:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 2500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-16T18:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => "0x2", "isExchange" => false},
                "trxValue" => 3500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-17T19:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => @exchange_wallet, "isExchange" => true},
                "trxValue" => 5500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-18T20:00:00Z",
-               "fromAddress" => %{"address" => "0x1"},
-               "toAddress" => %{"address" => "0x2"},
+               "fromAddress" => %{"address" => "0x1", "isExchange" => false},
+               "toAddress" => %{"address" => @exchange_wallet, "isExchange" => true},
                "trxValue" => 6500.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-16T18:00:00Z",
-               "fromAddress" => %{"address" => "0x2"},
-               "toAddress" => %{"address" => "0x1"},
+               "fromAddress" => %{"address" => "0x2", "isExchange" => false},
+               "toAddress" => %{"address" => "0x1", "isExchange" => false},
                "trxValue" => 20_000.0
              } in trx_all
 
       assert %{
                "datetime" => "2017-05-17T19:00:00Z",
-               "fromAddress" => %{"address" => "0x2"},
-               "toAddress" => %{"address" => "0x1"},
+               "fromAddress" => %{"address" => "0x2", "isExchange" => false},
+               "toAddress" => %{"address" => "0x1", "isExchange" => false},
                "trxValue" => 45_000.0
              } in trx_all
     end
@@ -321,7 +335,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         datetime: @datetime5,
         from_address: "0x1",
         trx_position: 4,
-        to_address: "0x2",
+        to_address: @exchange_wallet,
         trx_hash: "0x398772430a2e39f5f1addfbba56b7db1e30e5417de52c15001e157e350c18e52",
         trx_value: 5500.0
       },
@@ -330,7 +344,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
         datetime: @datetime6,
         from_address: "0x1",
         trx_position: 58,
-        to_address: "0x2",
+        to_address: @exchange_wallet,
         trx_hash: "0xa99da23a274c33d40d950fbc03bee7330e518ef6a9622ddd818cb9b967f9f520",
         trx_value: 6500.0
       }

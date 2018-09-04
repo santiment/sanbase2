@@ -140,7 +140,7 @@ export const HistoryPriceGQL = gql`
 
 export const GithubActivityGQL = gql`
   query queryGithubActivity(
-    $ticker: String
+    $slug: String
     $from: DateTime
     $to: DateTime
     $interval: String
@@ -148,7 +148,7 @@ export const GithubActivityGQL = gql`
     $movingAverageIntervalBase: String
   ) {
     githubActivity(
-      ticker: $ticker
+      slug: $slug
       from: $from
       to: $to
       interval: $interval
@@ -192,11 +192,10 @@ export const TransactionVolumeGQL = gql`
 `
 
 export const ExchangeFundFlowGQL = gql`
-  query exchangeFundFlowGQL($slug: String, $from: DateTime, $to: DateTime) {
-    exchangeFundFlow(slug: $slug, from: $from, to: $to, transactionType: ALL) {
+  query exchangeFundsFlowGQL($slug: String, $from: DateTime, $to: DateTime) {
+    exchangeFundsFlow(slug: $slug, from: $from, to: $to) {
       datetime
-      transactionVolume
-      address
+      fundsFlow
       __typename
     }
   }

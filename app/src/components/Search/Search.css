@@ -1,14 +1,20 @@
 .search-panel {
   margin-top: 10px;
+  width: 250px;
 }
 
 .search-panel .ui .input {
   min-width: 100%;
 }
 
+.search-panel .results {
+  min-width: 250px;
+}
+
 .search-panel .results .result {
   display: flex !important;
   align-items: center;
+  width: 100%;
 }
 
 .search-panel .results .result img {
@@ -20,21 +26,22 @@
   border: none !important;
 }
 
-@media (min-width: 768px) {
-  .search-panel .search-shortcut {
-    position: absolute;
-    right: 10px;
-    top: 5px;
-    user-select: none;
-    border: 1px solid gray;
-    border-radius: 3px;
-    padding: 0 6px;
-    color: gray;
-  }
+.search-panel .ui.input > input {
+  background: #ffffff1f;
 }
 
-@media (max-width: 768px) {
-  .search-panel .search-shortcut {
-    display: none;
-  }
+.search-panel .search .icon {
+  color: white;
+}
+
+.search-panel .focus .ui.icon.input > i {
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.search-panel .ui.input > input::placeholder {
+  color: white;
+}
+
+.search-panel .ui.search > .results {
+  margin-top: 2px;
 }

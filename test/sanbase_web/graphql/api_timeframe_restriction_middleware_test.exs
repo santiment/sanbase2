@@ -4,7 +4,8 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
 
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Etherbi.BurnRate.Store
+  alias Sanbase.Etherbi.BurnRate
+  alias Sanbase.Etherbi.DailyActiveAddresses
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Repo
@@ -12,14 +13,16 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
-    Store.create_db()
+    BurnRate.Store.create_db()
+    DailyActiveAddresses.Store.create_db()
 
     ticker = "SAN"
     san_slug = "santiment"
     not_san_slug = "some_other_name"
 
     contract_address = "0x1234"
-    Store.drop_measurement(contract_address)
+    BurnRate.Store.drop_measurement(contract_address)
+    DailyActiveAddresses.Store.drop_measurement(contract_address)
 
     %Project{
       name: "Santiment",
@@ -37,7 +40,7 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     }
     |> Repo.insert!()
 
-    Store.import([
+    BurnRate.Store.import([
       %Measurement{
         timestamp: hour_ago() |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 5000},
@@ -53,6 +56,27 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
       %Measurement{
         timestamp: restricted_from() |> DateTime.to_unix(:nanoseconds),
         fields: %{burn_rate: 7000},
+        tags: [],
+        name: contract_address
+      }
+    ])
+
+    DailyActiveAddresses.Store.import([
+      %Measurement{
+        timestamp: hour_ago() |> DateTime.to_unix(:nanoseconds),
+        fields: %{active_addresses: 100},
+        tags: [],
+        name: contract_address
+      },
+      %Measurement{
+        timestamp: week_ago() |> DateTime.to_unix(:nanoseconds),
+        fields: %{active_addresses: 200},
+        tags: [],
+        name: contract_address
+      },
+      %Measurement{
+        timestamp: restricted_from() |> DateTime.to_unix(:nanoseconds),
+        fields: %{active_addresses: 300},
         tags: [],
         name: contract_address
       }
@@ -148,6 +172,24 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     assert %{"burnRate" => 7000.0} in burn_rates
   end
 
+  test "shows historical data but not realtime for DAA", context do
+    result =
+      build_conn()
+      |> post(
+        "/graphql",
+        query_skeleton(
+          dailyActiveAddressesQuery(context.not_santiment_slug),
+          "dailyActiveAddresses"
+        )
+      )
+
+    daas = json_response(result, 200)["data"]["dailyActiveAddresses"]
+
+    refute %{"activeAddresses" => 100} in daas
+    assert %{"activeAddresses" => 200} in daas
+    assert %{"activeAddresses" => 300} in daas
+  end
+
   defp burnRateQuery(slug) do
     """
     {
@@ -157,6 +199,19 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
         to: "#{now()}"
         interval: "30m") {
           burnRate
+      }
+    }
+    """
+  end
+
+  defp dailyActiveAddressesQuery(slug) do
+    """
+    {
+      dailyActiveAddresses(
+        slug: "#{slug}",
+        from: "#{before_restricted_from()}",
+        to: "#{now()}") {
+          activeAddresses
       }
     }
     """

@@ -50,11 +50,6 @@ defmodule SanbaseWeb.ApiExamplesView do
         query: topic_search(),
         variables: "{}",
         docs: docs(:topic_search)
-      },
-      topic_search_overview: %{
-        query: topic_search_overview(),
-        variables: "{}",
-        docs: docs(:topic_search_overview)
       }
     })
     |> as_html()
@@ -185,49 +180,6 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
     query {
       topicSearch(
-        sources: [TELEGRAM, PROFESSIONAL_TRADERS_CHAT, REDDIT],
-        searchText: "btc moon",
-        from: "2018-08-01T12:00:00Z",
-        to: "2018-08-15T12:00:00Z",
-        interval: "6h"
-      ) {
-        messages {
-          telegram {
-            datetime
-            text
-          }
-          professionalTradersChat {
-            datetime
-            text
-          }
-          reddit {
-            datetime
-            text
-          }
-        }
-        chartsData {
-          telegram {
-            mentionsCount
-            datetime
-          }
-          professionalTradersChat {
-            mentionsCount
-            datetime
-          }
-          reddit {
-            mentionsCount
-            datetime
-          }
-        }
-      }
-    }
-    """
-  end
-
-  defp topic_search_overview do
-    """
-    query {
-      topicSearchOverview(
         source: TELEGRAM,
         searchText: "btc moon",
         from: "2018-08-01T12:00:00Z",

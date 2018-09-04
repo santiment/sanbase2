@@ -29,7 +29,6 @@ import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/assets/AssetsPage'
-import TrendsExplorePage from './pages/Trends/TrendsExplorePage'
 import { getConsentUrl } from './utils/utils'
 import './App.css'
 

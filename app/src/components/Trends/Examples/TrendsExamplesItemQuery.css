@@ -5,6 +5,6 @@
   text-overflow: ellipsis;
 }
 
-.TrendsExamplesItemQuery span:first-child {
+.TrendsExamplesItemQuery span {
   border-bottom: 2px solid #ffc107;
 }

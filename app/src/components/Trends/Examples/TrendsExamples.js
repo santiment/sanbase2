@@ -1,27 +1,22 @@
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
+import { connect } from 'react-redux'
 import TrendsExamplesItem from './TrendsExamplesItem'
+import { gotoExplore } from '../trendsUtils'
 import './TrendsExamples.css'
 
-const examples = [
-  { query: 'crypto', description: 'some description', settings: '' },
-  { query: 'btc', description: 'some description', settings: '' },
-  { query: 'eth', description: 'some description', settings: '' }
-]
+const examples = [{ topic: 'crypto' }, { topic: 'btc' }, { topic: 'eth' }]
 
 export class TrendsExamples extends Component {
   handleExampleClick = ({ currentTarget }) => {
-    this.props.history.push(`/trends/explore/${currentTarget.dataset.query}`)
+    this.props.gotoExplore(currentTarget.dataset.topic)
   }
   render () {
     return (
       <ul className='TrendsExamples'>
-        {examples.map(({ query, description, settings }, index) => (
+        {examples.map(({ topic }) => (
           <TrendsExamplesItem
-            key={index}
-            query={query}
-            description={description}
-            settings={settings}
+            key={topic}
+            topic={topic}
             onClick={this.handleExampleClick}
           />
         ))}
@@ -30,12 +25,4 @@ export class TrendsExamples extends Component {
   }
 }
 
-TrendsExamples.propTypes = {
-  history: PropTypes.object
-}
-
-export default TrendsExamples
-
-/* TODO:
-  1. Settings interface
-*/
+export default connect(null, gotoExplore)(TrendsExamples)

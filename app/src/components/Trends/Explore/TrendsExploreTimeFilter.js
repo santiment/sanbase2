@@ -12,7 +12,6 @@ const TrendsExploreTimeFilter = ({ selectedOption }) => {
           key={option}
           label={option}
           isActive={selectedOption === option}
-          // onClick={() => console.log(option)}
         />
       ))}
     </ul>

@@ -1,6 +1,13 @@
 import React from 'react'
 import './TrendsExploreSourcesFilter.css'
 
+const sourceTitles = [
+  'Telegram',
+  'Reddit',
+  'Professional Traders Chat',
+  'Merged sources'
+]
+
 const TrendsExploreSourcesFilterItem = ({ title, onClick }) => {
   return (
     <button className='TrendsExploreSourcesFilter__item' onClick={onClick}>
@@ -12,10 +19,9 @@ const TrendsExploreSourcesFilterItem = ({ title, onClick }) => {
 const TrendsExploreSourcesFilter = () => {
   return (
     <div className='TrendsExploreSourcesFilter'>
-      <TrendsExploreSourcesFilterItem title='Telegram' />
-      <TrendsExploreSourcesFilterItem title='Reddit' />
-      <TrendsExploreSourcesFilterItem title='Professional Traders Chat' />
-      <TrendsExploreSourcesFilterItem title='Merged sources' />
+      {sourceTitles.map(sourceTitle => (
+        <TrendsExploreSourcesFilterItem key={sourceTitle} title={sourceTitle} />
+      ))}
     </div>
   )
 }

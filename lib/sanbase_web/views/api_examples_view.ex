@@ -50,11 +50,6 @@ defmodule SanbaseWeb.ApiExamplesView do
         query: topic_search(),
         variables: "{}",
         docs: docs(:topic_search)
-      },
-      topic_search_overview: %{
-        query: topic_search_overview(),
-        variables: "{}",
-        docs: docs(:topic_search_overview)
       }
     })
     |> as_html()

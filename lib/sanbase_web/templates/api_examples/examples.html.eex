@@ -204,25 +204,3 @@ curl \
     <%= "  #{ @api_url }" %>
 
 ```
-
-### Topic search overview
-
-<%= @topic_search_overview[:docs] %>
-
-
-<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@topic_search_overview[:variables])}&query=#{URI.encode(@topic_search_overview[:query])}"| %>" target='_blank'>Run in explorer</a>
-
-```graphql
-<%= @topic_search_overview[:query] %>
-```
-
-Run in terminal
-
-```bash
-curl \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@topic_search_overview[:query]) %> }' \
-    <%= "  #{ @api_url }" %>
-
-```

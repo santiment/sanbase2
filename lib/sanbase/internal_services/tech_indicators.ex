@@ -295,46 +295,13 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   def topic_search(
-        sources,
-        search_text,
-        datetime_from,
-        datetime_to,
-        interval
-      ) do
-    topic_search_request(
-      sources,
-      search_text,
-      datetime_from,
-      datetime_to,
-      interval
-    )
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
-        topic_search_result(result)
-
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result(
-          "Error status #{status} fetching results for search text \"#{search_text}\": #{body}"
-        )
-
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch results for search text \"#{search_text}\": #{
-            HTTPoison.Error.message(error)
-          }"
-        )
-    end
-  end
-
-  def topic_search_overview(
         source,
         search_text,
         datetime_from,
         datetime_to,
         interval
       ) do
-    topic_search_overview_request(
+    topic_search_request(
       source,
       search_text,
       datetime_from,
@@ -344,7 +311,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Poison.decode(body)
-        topic_search_overview_result(result)
+        topic_search_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         error_result(
@@ -923,60 +890,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp topic_search_request(
-         sources,
-         search_text,
-         datetime_from,
-         datetime_to,
-         interval
-       ) do
-    sources = Enum.join(sources, ", ")
-    from_unix = DateTime.to_unix(datetime_from)
-    to_unix = DateTime.to_unix(datetime_to)
-
-    url = "#{tech_indicators_url()}/indicator/topic_search"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"sources", sources},
-        {"search_text", search_text},
-        {"from_timestamp", from_unix},
-        {"to_timestamp", to_unix},
-        {"interval", interval}
-      ]
-    ]
-
-    http_client().get(url, [], options)
-  end
-
-  defp topic_search_result(%{"messages" => messages, "charts_data" => charts_data}) do
-    messages = parse_topic_search_sources(messages, "text")
-    charts_data = parse_topic_search_sources(charts_data, "mentions_count")
-
-    result = %{messages: messages, charts_data: charts_data}
-
-    {:ok, result}
-  end
-
-  defp parse_topic_search_sources(source_data, key) do
-    source_data
-    |> Enum.map(fn {source, data} ->
-      {String.to_atom(source), parse_topic_search_data(data, key)}
-    end)
-    |> Map.new()
-  end
-
-  defp parse_topic_search_data(data, key) do
-    data
-    |> Enum.map(fn result ->
-      %{
-        :datetime => Map.get(result, "timestamp") |> DateTime.from_unix!(),
-        String.to_atom(key) => Map.get(result, key)
-      }
-    end)
-  end
-
-  defp topic_search_overview_request(
          source,
          search_text,
          datetime_from,
@@ -986,7 +899,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     from_unix = DateTime.to_unix(datetime_from)
     to_unix = DateTime.to_unix(datetime_to)
 
-    url = "#{tech_indicators_url()}/indicator/topic_search_overview"
+    url = "#{tech_indicators_url()}/indicator/topic_search"
 
     options = [
       recv_timeout: @recv_timeout,
@@ -1002,13 +915,23 @@ defmodule Sanbase.InternalServices.TechIndicators do
     http_client().get(url, [], options)
   end
 
-  defp topic_search_overview_result(%{"messages" => messages, "chart_data" => chart_data}) do
+  defp topic_search_result(%{"messages" => messages, "chart_data" => chart_data}) do
     messages = parse_topic_search_data(messages, "text")
     chart_data = parse_topic_search_data(chart_data, "mentions_count")
 
     result = %{messages: messages, chart_data: chart_data}
 
     {:ok, result}
+  end
+
+  defp parse_topic_search_data(data, key) do
+    data
+    |> Enum.map(fn result ->
+      %{
+        :datetime => Map.get(result, "timestamp") |> DateTime.from_unix!(),
+        String.to_atom(key) => Map.get(result, key)
+      }
+    end)
   end
 
   defp error_result(message) do

@@ -173,7 +173,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
         },
         _resolution
       ) do
-    TechIndicators.topic_search_overview(
+    TechIndicators.topic_search(
       source,
       search_text,
       from,

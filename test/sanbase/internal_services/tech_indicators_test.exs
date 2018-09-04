@@ -621,7 +621,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       )
 
       result =
-        TechIndicators.topic_search_overview(
+        TechIndicators.topic_search(
           :telegram,
           "btc moon",
           DateTime.from_unix!(from),
@@ -658,7 +658,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       )
 
       result = fn ->
-        TechIndicators.topic_search_overview(
+        TechIndicators.topic_search(
           :telegram,
           "btc moon",
           DateTime.from_unix!(1_533_114_000),
@@ -682,7 +682,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       )
 
       result = fn ->
-        TechIndicators.topic_search_overview(
+        TechIndicators.topic_search(
           :telegram,
           "btc moon",
           DateTime.from_unix!(1_533_114_000),

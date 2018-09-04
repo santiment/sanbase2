@@ -1,4 +1,5 @@
 import React from 'react'
+import cx from 'classnames'
 import './TrendsExploreSourcesFilter.css'
 
 const sourceTitles = [
@@ -8,9 +9,16 @@ const sourceTitles = [
   'Merged sources'
 ]
 
-const TrendsExploreSourcesFilterItem = ({ title, onClick }) => {
+const TrendsExploreSourcesFilterItem = ({ title, disabled, onClick }) => {
   return (
-    <button className='TrendsExploreSourcesFilter__item' onClick={onClick}>
+    <button
+      className={cx({
+        'ui basic button': true,
+        disabled: disabled,
+        active: !disabled
+      })}
+      onClick={onClick}
+    >
       <span>{title}</span>
     </button>
   )
@@ -19,8 +27,12 @@ const TrendsExploreSourcesFilterItem = ({ title, onClick }) => {
 const TrendsExploreSourcesFilter = () => {
   return (
     <div className='TrendsExploreSourcesFilter'>
-      {sourceTitles.map(sourceTitle => (
-        <TrendsExploreSourcesFilterItem key={sourceTitle} title={sourceTitle} />
+      {sourceTitles.map((sourceTitle, index) => (
+        <TrendsExploreSourcesFilterItem
+          key={sourceTitle}
+          disabled={index !== 3}
+          title={sourceTitle}
+        />
       ))}
     </div>
   )

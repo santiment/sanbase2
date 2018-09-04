@@ -1,17 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   require Logger
 
-  import Absinthe.Resolution.Helpers, except: [async: 1]
   import SanbaseWeb.Graphql.Helpers.Async
 
   alias Sanbase.Model.Project
-
-  alias Sanbase.Voting.{Post, Tag}
-
-  alias Sanbase.{
-    Prices,
-    Github
-  }
 
   alias Sanbase.Clickhouse
 
@@ -30,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
       async(
         Cache.func(
           fn ->
-            {:ok, result} =
+            {:ok, token_transactions} =
               Clickhouse.Erc20Transfers.token_top_transfers(
                 contract_address,
                 from,
@@ -38,6 +30,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
                 limit,
                 token_decimals
               )
+
+            result =
+              token_transactions
+              |> Clickhouse.MarkExchanges.mark_exchange_wallets()
 
             {:ok, result}
           end,
@@ -53,44 +49,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     end
   end
 
-  def top_address_transfers(
-        _root,
-        %{from_address: from_address, from: from, to: to, size: size} = args,
-        _resolution
-      ) do
-    # Cannot get more than the top 100 transfers
-    limit = Enum.max([size, 100])
-
-    async(
-      Cache.func(
-        fn ->
-          {:ok, result} =
-            Clickhouse.EthTransfers.top_address_transfers(
-              from_address,
-              from,
-              to,
-              size
-            )
-
-          {:ok, result}
-        end,
-        :top_address_transfers,
-        args
-      )
-    )
-  end
-
   def last_wallet_transfers(
         _root,
         %{wallets: wallets, from: from, to: to, size: size, transaction_type: type} = args,
         _resolution
       ) do
-    # Cannot get more than the top 30 transfers
-    with limit <- Enum.max([size, 30]) do
+    # Cannot get more than the top 100 transfers
+    with size <- Enum.max([size, 100]) do
       async(
         Cache.func(
           fn ->
-            {:ok, result} =
+            {:ok, last_transfers} =
               Clickhouse.EthTransfers.last_wallet_transfers(
                 wallets,
                 from,
@@ -98,6 +67,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
                 size,
                 type
               )
+
+            result =
+              last_transfers
+              |> Clickhouse.MarkExchanges.mark_exchange_wallets()
 
             {:ok, result}
           end,
@@ -231,7 +204,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              limit,
              trx_type
            ) do
-      result = eth_transactions
+      result =
+        eth_transactions
+        |> Clickhouse.MarkExchanges.mark_exchange_wallets()
 
       {:ok, result}
     else

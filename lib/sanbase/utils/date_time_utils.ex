@@ -68,4 +68,18 @@ defmodule Sanbase.DateTimeUtils do
       _ -> int_interval
     end
   end
+
+  def from_erl(erl_datetime) do
+    with {:ok, naive_dt} <- NaiveDateTime.from_erl(erl_datetime),
+         {:ok, datetime} <- DateTime.from_naive(naive_dt, "Etc/UTC") do
+      {:ok, datetime}
+    end
+  end
+
+  def from_erl!(erl_datetime) do
+    case from_erl(erl_datetime) do
+      {:ok, datetime} -> datetime
+      {:error, error} -> raise(error)
+    end
+  end
 end

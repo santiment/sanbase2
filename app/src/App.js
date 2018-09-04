@@ -29,7 +29,8 @@ import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/assets/AssetsPage'
-// import TrendsExplorePage from './pages/Trends/TrendsExplorePage'
+import TrendsExplorePage from './pages/Trends/TrendsExplorePage'
+import { getConsentUrl } from './utils/utils'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -226,10 +227,21 @@ export const App = ({
             <ExternalRedirect to={'https://data.santiment.net'} />
           )}
         />
+        {['docs', 'apidocs', 'apiexamples'].map(name => (
+          <Route
+            key={name}
+            path={`/${name}`}
+            render={props => (
+              <ExternalRedirect to={'https://docs.santiment.net'} />
+            )}
+          />
+        ))}
         <Route
-          path='/docs'
+          path='/consent'
           render={props => (
-            <ExternalRedirect to={'https://docs.santiment.net'} />
+            <ExternalRedirect
+              to={`${getConsentUrl()}/consent${props.location.search}`}
+            />
           )}
         />
         <Route

@@ -32,8 +32,9 @@ const chartOptions = {
 }
 
 const datasetOptions = {
-  borderColor: 'rgba(255, 193, 7, 1)',
-  borderWidth: 1,
+  // borderColor: 'rgba(255, 193, 7, 1)',
+  borderColor: 'rgba(0, 0, 0, 0.9)',
+  borderWidth: 2,
   pointRadius: 0,
   fill: false
 }

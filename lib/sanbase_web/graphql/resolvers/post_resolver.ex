@@ -9,6 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   alias Sanbase.Voting.{Post, Poll, Tag}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
+  alias Sanbase.Notifications
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   @preloaded_assoc [:votes, :user, :images, :tags]
@@ -196,6 +197,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
           {:ok, post} ->
             {:ok, post} = create_discourse_topic(post)
 
+            publish_insight_in_discord(post)
+
             {:ok, post}
 
           {:error, changeset} ->
@@ -233,7 +236,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   defp create_discourse_topic(%Post{id: id, title: title, inserted_at: inserted_at} = post) do
-    link = "#{sanbase_url()}/insights/#{id}"
+    link = posts_url(id)
 
     text = ~s"""
       This topic hosts the discussion about [#{link}](#{link})
@@ -257,6 +260,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.update()
   end
 
+  defp publish_insight_in_discord(post) do
+    post
+    |> new_insight_discord_content()
+    |> Notifications.Insight.publish_discord()
+  end
+
+  defp new_insight_discord_content(%Post{id: id, title: title} = post) do
+    link = posts_url(id)
+
+    content = ~s"""
+    New insight published: #{title} [#{link}]
+    """
+  end
+
+  defp posts_url(id), do: "#{sanbase_url()}/insights/#{id}"
   defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
   defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
 end

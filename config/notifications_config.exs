@@ -16,3 +16,6 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   notifications_cooldown: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_COOLDOWN", "86400"},
   debug_url: {:system, "PRICE_VOLUME_DIFF_DEBUG_URL"},
   notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}
+
+config :sanbase, Sanbase.Notifications.Insight,
+  insights_discord_publish_user: {:system, "INSIGHTS_DISCORD_PUBLISH_USER", "New Insight"}

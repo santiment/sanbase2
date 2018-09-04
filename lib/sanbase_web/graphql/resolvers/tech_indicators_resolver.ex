@@ -142,26 +142,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   def topic_search(
         _root,
         %{
-          sources: sources,
-          search_text: search_text,
-          from: from,
-          to: to,
-          interval: interval
-        },
-        _resolution
-      ) do
-    TechIndicators.topic_search(
-      sources,
-      search_text,
-      from,
-      to,
-      interval
-    )
-  end
-
-  def topic_search_overview(
-        _root,
-        %{
           source: source,
           search_text: search_text,
           from: from,
@@ -170,7 +150,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
         },
         _resolution
       ) do
-    TechIndicators.topic_search_overview(
+    TechIndicators.topic_search(
       source,
       search_text,
       from,

@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { graphql } from 'react-apollo'
 import moment from 'moment'
 import { Line } from 'react-chartjs-2'
 import { trendsExploreGQL } from '../trendsExploreGQL'
-import { mergeDataSourcesForChart } from '../trendsUtils'
+import { mergeDataSourcesForChart, parseTrendsGQLProps } from '../trendsUtils'
+import PropTypes from 'prop-types'
 
 const chartOptions = {
   animation: false,
@@ -25,7 +26,6 @@ const chartOptions = {
   elements: {
     point: {
       hitRadius: 0,
-      // hoverRadius: 5,
       radius: 0
     }
   }
@@ -38,12 +38,15 @@ const datasetOptions = {
   fill: false
 }
 
-const TrendsExamplesItemChart = ({
-  data: { topicSearch = { chartsData: {} } }
-}) => {
-  const isLoading = Object.keys(topicSearch.chartsData).length === 0
+const propTypes = {
+  sources: PropTypes.object.isRequired,
+  topic: PropTypes.string.isRequired
+}
 
-  const mergedSources = mergeDataSourcesForChart(topicSearch.chartsData)
+const TrendsExamplesItemChart = ({ sources }) => {
+  const isLoading = !sources
+
+  const mergedSources = mergeDataSourcesForChart(sources)
 
   const dataset = {
     labels: [...mergedSources.keys()],
@@ -56,18 +59,21 @@ const TrendsExamplesItemChart = ({
   }
 
   return (
-    <div>
+    <Fragment>
       {isLoading && <div className='chart-loading-msg'>Loading...</div>}
       <Line options={chartOptions} data={dataset} />
-    </div>
+    </Fragment>
   )
 }
 
+TrendsExamplesItemChart.propTypes = propTypes
+
 export default graphql(trendsExploreGQL, {
-  options: ({ query }) => {
+  props: parseTrendsGQLProps,
+  options: ({ topic }) => {
     return {
       variables: {
-        searchText: query,
+        searchText: topic,
         from: moment()
           .utc()
           .subtract(7, 'days')
@@ -76,7 +82,3 @@ export default graphql(trendsExploreGQL, {
     }
   }
 })(TrendsExamplesItemChart)
-
-/* TODO:
-  1. Memoize graphql results
-*/

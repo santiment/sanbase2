@@ -9,22 +9,25 @@
     0 3px 6px 0 rgba(0, 0, 0, 0.07);
 }
 
+.TrendsExamplesItem__topic {
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.TrendsExamplesItem__topic span {
+  border-bottom: 2px solid #ffc107;
+}
+
 .TrendsExamplesItem__settings {
   color: #999;
   font-size: 0.9rem;
   pointer-events: none;
 }
 
-.TrendsExamplesItem__icon {
-  display: inline-block;
-  border-right: 1px solid #eee;
-  margin-top: 10px;
-  margin-right: 5px;
-  padding-right: 5px;
-}
-
 .TrendsExamplesItem__chart {
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
+  border-top: 1px solid #d8d8da;
+  border-bottom: 1px solid #d8d8da;
   padding: 10px;
 }

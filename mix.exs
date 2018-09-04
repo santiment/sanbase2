@@ -61,7 +61,7 @@ defmodule Sanbase.Mixfile do
       {:basic_auth, "~> 2.2"},
       {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
-      {:distillery, "~> 1.5", runtime: false},
+      {:distillery, "~> 2.0", runtime: false},
       {:timex, "~> 3.0"},
       {:timex_ecto, "~> 3.0"},
       {:hackney, "~> 1.10"},

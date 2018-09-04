@@ -327,6 +327,39 @@ defmodule Sanbase.InternalServices.TechIndicators do
     end
   end
 
+  def topic_search_overview(
+        source,
+        search_text,
+        datetime_from,
+        datetime_to,
+        interval
+      ) do
+    topic_search_overview_request(
+      source,
+      search_text,
+      datetime_from,
+      datetime_to,
+      interval
+    )
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Poison.decode(body)
+        topic_search_overview_result(result)
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        error_result(
+          "Error status #{status} fetching results for search text \"#{search_text}\": #{body}"
+        )
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result(
+          "Cannot fetch results for search text \"#{search_text}\": #{
+            HTTPoison.Error.message(error)
+          }"
+        )
+    end
+  end
+
   defp macd_request(
          ticker,
          currency,
@@ -941,6 +974,41 @@ defmodule Sanbase.InternalServices.TechIndicators do
         String.to_atom(key) => Map.get(result, key)
       }
     end)
+  end
+
+  defp topic_search_overview_request(
+         source,
+         search_text,
+         datetime_from,
+         datetime_to,
+         interval
+       ) do
+    from_unix = DateTime.to_unix(datetime_from)
+    to_unix = DateTime.to_unix(datetime_to)
+
+    url = "#{tech_indicators_url()}/indicator/topic_search_overview"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"source", source},
+        {"search_text", search_text},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"interval", interval}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
+  defp topic_search_overview_result(%{"messages" => messages, "chart_data" => chart_data}) do
+    messages = parse_topic_search_data(messages, "text")
+    chart_data = parse_topic_search_data(chart_data, "mentions_count")
+
+    result = %{messages: messages, chart_data: chart_data}
+
+    {:ok, result}
   end
 
   defp error_result(message) do

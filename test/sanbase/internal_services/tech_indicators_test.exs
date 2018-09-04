@@ -603,4 +603,96 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
                "Cannot fetch results for search text \"btc moon\": :econnrefused\n"
     end
   end
+
+  describe "topic_search_overview/5" do
+    test "response: success" do
+      from = 1_533_114_000
+      to = 1_534_323_600
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body:
+             "{\"messages\": [{\"text\": \"BTC moon\", \"timestamp\": 1533307652}, {\"text\": \"0.1c of usd won't make btc moon, you realize that?\", \"timestamp\": 1533694150}], \"chart_data\": [{\"mentions_count\": 1, \"timestamp\": 1533146400}, {\"mentions_count\": 0, \"timestamp\": 1533168000}]}",
+           status_code: 200
+         }}
+      )
+
+      result =
+        TechIndicators.topic_search_overview(
+          :telegram,
+          "btc moon",
+          DateTime.from_unix!(from),
+          DateTime.from_unix!(to),
+          "6h"
+        )
+
+      assert result ==
+               {:ok,
+                %{
+                  chart_data: [
+                    %{datetime: DateTime.from_unix!(1_533_146_400), mentions_count: 1},
+                    %{datetime: DateTime.from_unix!(1_533_168_000), mentions_count: 0}
+                  ],
+                  messages: [
+                    %{datetime: DateTime.from_unix!(1_533_307_652), text: "BTC moon"},
+                    %{
+                      datetime: DateTime.from_unix!(1_533_694_150),
+                      text: "0.1c of usd won't make btc moon, you realize that?"
+                    }
+                  ]
+                }}
+    end
+
+    test "response: 404" do
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body: "Some message",
+           status_code: 404
+         }}
+      )
+
+      result = fn ->
+        TechIndicators.topic_search_overview(
+          :telegram,
+          "btc moon",
+          DateTime.from_unix!(1_533_114_000),
+          DateTime.from_unix!(1_534_323_600),
+          "6h"
+        )
+      end
+
+      assert capture_log(result) =~
+               "Error status 404 fetching results for search text \"btc moon\": Some message\n"
+    end
+
+    test "response: error" do
+      mock(
+        HTTPoison,
+        :get,
+        {:error,
+         %HTTPoison.Error{
+           reason: :econnrefused
+         }}
+      )
+
+      result = fn ->
+        TechIndicators.topic_search_overview(
+          :telegram,
+          "btc moon",
+          DateTime.from_unix!(1_533_114_000),
+          DateTime.from_unix!(1_534_323_600),
+          "6h"
+        )
+      end
+
+      assert capture_log(result) =~
+               "Cannot fetch results for search text \"btc moon\": :econnrefused\n"
+    end
+  end
 end

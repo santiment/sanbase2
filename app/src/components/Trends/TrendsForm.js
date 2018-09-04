@@ -1,5 +1,7 @@
 import React, { Component } from 'react'
+import { connect } from 'react-redux'
 import { Input } from 'semantic-ui-react'
+import { gotoExplore } from './trendsUtils'
 import './TrendsForm.css'
 
 export class TrendsForm extends Component {
@@ -9,7 +11,7 @@ export class TrendsForm extends Component {
 
   handleSubmit = evt => {
     evt.preventDefault()
-    this.props.history.push(`/trends/explore/${this.state.topic}`)
+    this.props.gotoExplore(this.state.topic)
   }
 
   handleChange = evt => {
@@ -33,4 +35,4 @@ export class TrendsForm extends Component {
   }
 }
 
-export default TrendsForm
+export default connect(null, gotoExplore)(TrendsForm)

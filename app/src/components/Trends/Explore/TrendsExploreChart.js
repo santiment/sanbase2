@@ -8,7 +8,6 @@ import './TrendsExploreChart.css'
 const chartOptions = {
   responsive: true,
   scaleFontSize: 0,
-  // maintainAspectRatio: true,
   legend: {
     display: false
   },
@@ -31,7 +30,6 @@ const chartOptions = {
           autoSkip: true,
           maxTicksLimit: 4,
           maxRotation: 0,
-          // minRotation: 0,
           callback: date =>
             moment(date)
               .utc()
@@ -79,12 +77,10 @@ const datasetOptions = {
   fill: false
 }
 
-const TrendsExploreChart = ({ data }) => {
-  // console.log('TCL: TrendsExploreChart -> data', data)
+const TrendsExploreChart = ({ sources }) => {
+  const isLoading = !sources
 
-  const isLoading = Object.keys(data).length === 0
-
-  const mergedSources = mergeDataSourcesForChart(data)
+  const mergedSources = mergeDataSourcesForChart(sources)
 
   const dataset = {
     labels: [...mergedSources.keys()],

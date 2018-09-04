@@ -1,12 +1,10 @@
 import React from 'react'
-import TrendsExamplesItemIcon from './TrendsExamplesItemIcon'
 import './TrendsExamplesItemQuery.css'
 
-const TrendsExamplesItemQuery = ({ query, fontSize }) => {
+const TrendsExamplesItemQuery = ({ topic, fontSize = '2em' }) => {
   return (
-    <div className='TrendsExamplesItemQuery' style={fontSize && { fontSize }}>
-      {/* <TrendsExamplesItemIcon name='search' /> */}
-      <span>{query}</span>
+    <div className='TrendsExamplesItemQuery' style={{ fontSize }}>
+      <span>{topic}</span>
     </div>
   )
 }

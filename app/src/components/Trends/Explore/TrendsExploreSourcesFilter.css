@@ -1,0 +1,5 @@
+.TrendsExploreSourcesFilter {
+  display: flex;
+  justify-content: space-evenly;
+  padding: 30px 15px;
+}

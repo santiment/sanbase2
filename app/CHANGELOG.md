@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+- 2018-04-09 | v.0.11.0 'Phobos':
+
+  Add TimeFilter UI Component
+
+- 2018-03-09 | v.0.10.0 'Phobos':
+  Trends page with example cards.
+  Trends explore page with merged sources chart.
+
 - 2018-31-08 | v.0.9.7 'Phobos':
 
   Hot fix of Insights Page
@@ -17,6 +25,7 @@
 
   Fixed NAN bug in project detailed page
   Fixed broken animation of loader
+>>>>>>> master
 
 - 2018-28-08 | v.0.9.2 'Phobos':
 

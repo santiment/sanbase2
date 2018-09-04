@@ -52,6 +52,16 @@ const LoadableInsightsNew = Loadable({
   loading: () => <PageLoader />
 })
 
+const LoadableTrendsPage = Loadable({
+  loader: () => import('./pages/Trends/TrendsPage'),
+  loading: () => <PageLoader />
+})
+
+const LoadableTrendsExplorePage = Loadable({
+  loader: () => import('./pages/Trends/TrendsExplorePage'),
+  loading: () => <PageLoader />
+})
+
 class Route extends React.Component {
   componentWillMount () {
     nprogress.start()
@@ -192,6 +202,17 @@ export const App = ({
           render={props => (
             <LoadableDetailedPage isDesktop={isDesktop} {...props} />
           )}
+        />
+        <Route exact path='/trends' component={LoadableTrendsPage} />
+        <Route
+          exact
+          path='/trends/explore'
+          render={() => <Redirect to='/trends' />}
+        />
+        <Route
+          exact
+          path='/trends/explore/:topic'
+          component={LoadableTrendsExplorePage}
         />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />

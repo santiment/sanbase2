@@ -1,8 +1,9 @@
 ## CHANGELOG
 
-- 2018-04-09 | v.0.11.0 'Phobos':
+- 2018-04-09 | v.0.11.1 'Phobos':
 
   Add TimeFilter UI Component
+  Make Trends mobile friendly
 
 - 2018-03-09 | v.0.10.0 'Phobos':
   Trends page with example cards.

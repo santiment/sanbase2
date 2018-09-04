@@ -4,7 +4,7 @@ import moment from 'moment'
 import { trendsExploreGQL } from '../../components/Trends/trendsExploreGQL'
 import TrendsExploreChart from '../../components/Trends/Explore/TrendsExploreChart'
 import './TrendsExplorePage.css'
-import TrendsExploreTimeFilter from '../../components/Trends/Explore/TrendsExploreTimeFilter'
+import TimeFilter from './../../components/TimeFilter/TimeFilter'
 import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
 import TrendsExploreFooter from '../../components/Trends/Explore/TrendsExploreFooter'
 import { parseTrendsGQLProps } from '../../components/Trends/trendsUtils'
@@ -14,8 +14,11 @@ const TrendsExplorePage = ({ sources, match }) => {
     <div className='TrendsExplorePage'>
       <div className='TrendsExplorePage__content'>
         <TrendsExploreHeader topic={match.params.topic} />
-        <TrendsExploreTimeFilter selectedOption='6m' />
-
+        <TimeFilter
+          timeOptions={['1w', '1m', '3m', '6m', '1y', 'all']}
+          defaultSelected='6m'
+          disabled
+        />
         <TrendsExploreChart sources={sources} />
         <TrendsExploreFooter />
       </div>

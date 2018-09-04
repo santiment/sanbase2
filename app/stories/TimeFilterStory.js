@@ -1,32 +1,36 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
-import TimeFilter from './../src/components/TimeFilter'
-
-class CompWithTimeFilter extends React.Component {
-  state = {
-    selected: this.props.selected || '1w'
-  }
-
-  setFilter = option => {
-    this.setState({selected: option})
-  }
-
-  render() {
-    const { children } = this.props
-    const { selected } = this.state
-    const setFilter = this.setFilter
-    return this.props.render({setFilter, selected})
-  }
-}
+import { action } from '@storybook/addon-actions'
+import TimeFilter from './../src/components/TimeFilter/TimeFilter'
 
 const stories = storiesOf('TimeFilter', module)
 
-stories.add('TimeFilter', () => (
-  <CompWithTimeFilter render={({setFilter, selected}) => (
-    <TimeFilter setFilter={setFilter} selected={selected} />
-  )} />
-))
+const TimeFilterExample = () => (
+  <TimeFilter
+    timeOptions={['1w', '1m', '3m', 'all']}
+    onSelectOption={action('clicked')}
+    defaultSelected='1w' />
+)
+
+stories.add('TimeFilter', TimeFilterExample)
 
 stories.add('TimeFilter: disabled', () => (
   <TimeFilter disabled />
 ))
+
+stories.addWithInfo(
+  'TimeFilter (usage info)',
+  `
+    TimeFilter component is made for Charts filter.
+
+
+    ~~~js
+      const onSelectOption = (newSelectedOption) => console.log(newSelectedOption)
+
+      <TimeFilter
+        onSelectOption={onSelectOption}
+        timeOptions={['1w', '1m', '3m', 'all']}
+        defaultSelected='1w' />
+    ~~~
+  `, TimeFilterExample, { inline: true, source: false }
+)

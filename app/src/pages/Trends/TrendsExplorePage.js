@@ -7,15 +7,16 @@ import './TrendsExplorePage.css'
 import TrendsExploreTimeFilter from '../../components/Trends/Explore/TrendsExploreTimeFilter'
 import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
 import TrendsExploreFooter from '../../components/Trends/Explore/TrendsExploreFooter'
+import { parseTrendsGQLProps } from '../../components/Trends/trendsUtils'
 
-const TrendsExplorePage = ({ data: { topicSearch = {} }, match }) => {
+const TrendsExplorePage = ({ sources, match }) => {
   return (
     <div className='TrendsExplorePage'>
       <div className='TrendsExplorePage__content'>
         <TrendsExploreHeader topic={match.params.topic} />
         <TrendsExploreTimeFilter selectedOption='6m' />
 
-        <TrendsExploreChart data={topicSearch.chartsData || {}} />
+        <TrendsExploreChart sources={sources} />
         <TrendsExploreFooter />
       </div>
     </div>
@@ -23,6 +24,7 @@ const TrendsExplorePage = ({ data: { topicSearch = {} }, match }) => {
 }
 
 export default graphql(trendsExploreGQL, {
+  props: parseTrendsGQLProps,
   options: ({ match }) => {
     return {
       variables: {

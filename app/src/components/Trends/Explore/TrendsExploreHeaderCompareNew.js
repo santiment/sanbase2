@@ -12,7 +12,7 @@ const TrendsExploreHeaderCompareNew = () => {
         border: 'none',
         flex: '50%'
       }}
-      // onFocus={evt => console.log(evt.currentTarget)}
+      onFocus={evt => console.log(evt.currentTarget)}
     >
       + New comparison
     </div>

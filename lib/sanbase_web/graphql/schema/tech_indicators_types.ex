@@ -70,6 +70,11 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:charts_data, :charts_data)
   end
 
+  object :topic_search_overview do
+    field(:messages, list_of(:topic_search_messages))
+    field(:chart_data, list_of(:topic_search_chart_data))
+  end
+
   object :messages do
     field(:telegram, list_of(:topic_search_messages))
     field(:professional_traders_chat, list_of(:topic_search_messages))

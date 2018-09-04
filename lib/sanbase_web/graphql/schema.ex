@@ -487,6 +487,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
+    This endpoint is deprecated and soon won't be available! Please use `topic_search_overview` instead.
+
     Returns lists with the mentions of the search phrase grouped by source. The results are in two formats - the messages themselves and the data for building graph representation of the result.
 
     Arguments description:
@@ -500,6 +502,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
     field :topic_search, :topic_search do
+      deprecate("Use topic_search_overview")
       arg(:sources, non_null(list_of(:topic_search_sources)))
       arg(:search_text, non_null(:string))
       arg(:from, non_null(:datetime))
@@ -510,6 +513,32 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&TechIndicatorsComplexity.topic_search/3)
       resolve(&TechIndicatorsResolver.topic_search/3)
+    end
+
+    @desc ~s"""
+    Returns lists with the mentions of the search phrase from the selected source. The results are in two formats - the messages themselves and the data for building graph representation of the result.
+
+    Arguments description:
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+      * searchText - a string containing the key words for which the sources should be searched.
+      * interval - an integer followed by one of: `m`, `h`, `d`, `w`
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :topic_search_overview, :topic_search_overview do
+      arg(:source, non_null(:topic_search_sources))
+      arg(:search_text, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+
+      complexity(&TechIndicatorsComplexity.topic_search/3)
+      resolve(&TechIndicatorsResolver.topic_search_overview/3)
     end
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."

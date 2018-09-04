@@ -1,35 +1,30 @@
 defmodule Sanbase.Clickhouse.MarkExchanges do
   @moduledoc ~s"""
-  Used to transform a list of transactions in the form of
-
-  `[
-    %{
-      from_address: from,
-      to_address: to,
-      ...
-    }
-  ]`
-
-  into a list of transactions where
-  addresses have a flag wheter or not they are an exchange address:
-  `[
-    %{
-      from_address:
-      %{
-        address: from,
-        is_exchange: false
-        },
-      to_address: %{
-        address: to,
-        is_exchange: true
-      },
-      ...
-    }
-  ]`
-
-  This module is tightly coupled with the format of the input.
-  The user of this module is tightly coupled with the output of the function.
+  Used to transform a list of transactions in the form of `input_transaction` type
+  to `output_transaction` type.
   """
+
+  @type input_transaction :: %{
+          from_address: string,
+          to_address: string,
+          trx_value: float,
+          trx_hash: string,
+          datetime: Datetime.t()
+        }
+
+  @type output_transaction :: %{
+          from_address: %{
+            address: String.t(),
+            is_exhange: boolean
+          },
+          to_address: %{
+            address: String.t(),
+            is_exhange: boolean
+          },
+          trx_value: float,
+          trx_hash: String,
+          datetime: Datetime.t()
+        }
 
   use GenServer
   require Sanbase.Utils.Config, as: Config
@@ -57,9 +52,12 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
   end
 
   @doc ~s"""
-
+  Transform a list of transactions where the `from_address` and `to_address` are strings
+  to a list of transactions where the `from_address` and `to_address` are compound
+  fields with `address` string and `is_exchange` boolean fields
   """
-  def mark_exchange_wallets(transactions) do
+  @spec mark_exchange_wallets(list(input_transaction)) :: list(output_transaction)
+  def mark_exchange_wallets(transactions) when is_list(transactions) do
     GenServer.call(@name, :update_state_if_staled)
     GenServer.call(@name, {:mark_exchange_wallets, transactions})
   end

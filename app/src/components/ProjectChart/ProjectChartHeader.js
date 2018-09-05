@@ -117,7 +117,7 @@ const ProjectChartHeader = ({
             />
           )}
         </HiddenElements>
-        <PricingHelpMessage isPremium={isPremium} />
+        {!isPremium && <PricingHelpMessage />}
       </div>
       <div className='chart-header-actions'>
         <CurrencyFilter

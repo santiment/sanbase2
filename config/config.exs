@@ -6,13 +6,20 @@
 use Mix.Config
 
 # General application configuration
-config :sanbase, ecto_repos: [Sanbase.Repo]
+config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: 10,
+  # because of pgbouncer
+  prepare: :unnamed
+
+config :sanbase, Sanbase.TimescaleRepo,
+  adapter: Ecto.Adapters.Postgres,
+  pool_size: 30,
+  # because of pgbouncer
   prepare: :unnamed
 
 # Clickhousex does not support `:system` tuples. The configuration is done
@@ -28,6 +35,9 @@ config :sanbase, Sanbase.ClickhouseRepo,
   pool_timeout: 60_000,
   timeout: 60_000,
   pool_size: 50
+
+config :sanbase, Sanbase.Timescaledb,
+  blockchain_schema: {:system, "TIMESCALEDB_BLOCKCHAIN_SCHEMA", "etherbi"}
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: {:system, "APIKEY_HMAC_SECRET_KEY", nil}
 

@@ -82,4 +82,9 @@ defmodule Sanbase.DateTimeUtils do
       {:error, error} -> raise(error)
     end
   end
+
+  def from_iso8601!(datetime_str) when is_binary(datetime_str) do
+    {:ok, datetime, _} = DateTime.from_iso8601(datetime_str)
+    datetime
+  end
 end

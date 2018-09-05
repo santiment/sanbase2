@@ -212,7 +212,9 @@ export const App = ({
         <Route
           exact
           path='/trends/explore/:topic'
-          component={LoadableTrendsExplorePage}
+          render={props => (
+            <LoadableTrendsExplorePage isDesktop={isDesktop} {...props} />
+          )}
         />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />

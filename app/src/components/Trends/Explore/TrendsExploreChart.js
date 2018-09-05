@@ -77,7 +77,7 @@ const datasetOptions = {
   fill: false
 }
 
-const TrendsExploreChart = ({ sources }) => {
+const TrendsExploreChart = ({ sources, isDesktop }) => {
   const isLoading = !sources
 
   const mergedSources = mergeDataSourcesForChart(sources)
@@ -94,7 +94,11 @@ const TrendsExploreChart = ({ sources }) => {
   return (
     <div className='TrendsExploreChart'>
       {isLoading && <div className='chart-loading-msg'>Loading...</div>}
-      <Line options={chartOptions} data={dataset} height={80} />
+      <Line
+        options={chartOptions}
+        data={dataset}
+        height={isDesktop ? 80 : 200}
+      />
     </div>
   )
 }

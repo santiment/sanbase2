@@ -27,13 +27,11 @@ defmodule SanbaseWeb.ConnCase do
   end
 
   setup tags do
+    require Sanbase.CaseHelpers
+
     SanbaseWeb.Graphql.Helpers.Cache.clear_all()
 
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Sanbase.Repo)
-
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Sanbase.Repo, {:shared, self()})
-    end
+    Sanbase.CaseHelpers.checkout_shared(tags)
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end

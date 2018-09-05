@@ -340,6 +340,51 @@ defmodule Sanbase.Model.Project do
     Repo.all(query)
   end
 
+  def by_slug(slug) when is_binary(slug) do
+    Project
+    |> where([p], p.coinmarketcap_id == ^slug)
+    |> Repo.one()
+  end
+
+  def contract_info(%Project{
+        main_contract_address: main_contract_address,
+        token_decimals: token_decimals
+      })
+      when not is_nil(main_contract_address) do
+    {:ok, String.downcase(main_contract_address), token_decimals || 0}
+  end
+
+  def contract_info(project) do
+    {:error, "Can't find contract address of project #{project.coinmarketcap_id || project.id}"}
+  end
+
+  def ticker_by_slug("TOTAL_MARKET"), do: "TOTAL_MARKET"
+
+  def ticker_by_slug(slug) do
+    from(
+      p in Project,
+      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      select: p.ticker
+    )
+    |> Sanbase.Repo.one()
+  end
+
+  def contract_info_by_slug("ethereum") do
+    # Internally when we have a table with blockchain related data
+    # contract address is used to identify projects. In case of ethereum
+    # the contract address contains simply 'ETH'
+    {:ok, "ETH", 18}
+  end
+
+  def contract_info_by_slug(slug) do
+    with %Project{} = project when not is_nil(project) <- Project.by_slug(slug),
+         {:ok, contract_address, token_decimals} <- Project.contract_info(project) do
+      {:ok, contract_address, token_decimals}
+    else
+      _ -> {:error, "Can't find contract address for #{slug}"}
+    end
+  end
+
   def eth_addresses_by_tickers(tickers) do
     query =
       from(

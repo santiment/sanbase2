@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   require Logger
   require Sanbase.Utils.Config, as: Config
-  require Mockery.Macro
+  import Mockery.Macro
 
   import Ecto.Query
 
@@ -197,7 +197,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
           {:ok, post} ->
             {:ok, post} = create_discourse_topic(post)
 
-            Notifications.Insight.publish_in_discord(post)
+            mockable(Notifications.Insight).publish_in_discord(post)
 
             {:ok, post}
 
@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
      %{
        "topic_id" => topic_id,
        "topic_slug" => topic_slug
-     }} = Sanbase.Discourse.Api.publish(title, text)
+     }} = mockable(Sanbase.Discourse.Api).publish(title, text)
 
     discourse_topic_url =
       discourse_url()

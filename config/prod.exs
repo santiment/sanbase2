@@ -15,6 +15,20 @@ config :sanbase, SanbaseWeb.Endpoint,
 # to have it locally for test and development
 config :sanbase, ecto_repos: [Sanbase.Repo]
 
+# Clickhousex does not support `:system` tuples. The configuration is done
+# by defining defining `:url` in the ClickhouseRepo `init` function.
+config :sanbase, Sanbase.ClickhouseRepo,
+  adapter: ClickhouseEcto,
+  loggers: [Ecto.LogEntry],
+  hostname: "clickhouse",
+  port: 8123,
+  database: "default",
+  username: "default",
+  password: "",
+  pool_timeout: 60_000,
+  timeout: 60_000,
+  pool_size: 50
+
 # Do not print debug messages in production
 config :logger, level: :info
 

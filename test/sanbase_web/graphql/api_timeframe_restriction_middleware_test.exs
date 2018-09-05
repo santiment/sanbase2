@@ -53,23 +53,22 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
       burn_rate: 7000
     })
 
-
     insert(:daily_active_addresses, %{
       contract_address: contract_address,
       timestamp: hour_ago(),
-      burn_rate: 100
+      active_addresses: 100
     })
 
     insert(:daily_active_addresses, %{
       contract_address: contract_address,
       timestamp: week_ago(),
-      burn_rate: 200
+      active_addresses: 200
     })
 
     insert(:daily_active_addresses, %{
       contract_address: contract_address,
       timestamp: restricted_from(),
-      burn_rate: 300
+      active_addresses: 300
     })
 
     staked_user =

@@ -10,7 +10,7 @@ defmodule Sanbase.Auth.User do
     UserApikeyToken
   }
 
-  alias Sanbase.Voting.Vote
+  alias Sanbase.Voting.{Vote, Post}
   alias Sanbase.UserLists.UserList
   alias Sanbase.Repo
 
@@ -51,10 +51,11 @@ defmodule Sanbase.Auth.User do
     field(:privacy_policy_accepted, :boolean, default: false)
     field(:marketing_accepted, :boolean, default: false)
 
-    has_many(:eth_accounts, EthAccount)
+    has_many(:eth_accounts, EthAccount, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
     has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
     has_many(:user_lists, UserList, on_delete: :delete_all)
+    has_many(:posts, Post, on_delete: :delete_all)
 
     timestamps()
   end

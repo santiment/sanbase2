@@ -1,104 +1,95 @@
 defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
   use SanbaseWeb.ConnCase, async: false
+  @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
+  @moduletag timescaledb: true
 
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Etherbi.DailyActiveAddresses.Store
-  alias Sanbase.Model.{Project, Ico}
+  alias Sanbase.Model.Project
   alias Sanbase.Repo
 
-  import Sanbase.DateTimeUtils, only: [start_of_day: 1]
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.Factory
+
+  require Sanbase.Factory
+  import Sanbase.TimescaleFactory
 
   setup do
-    Store.create_db()
-
-    staked_user = insert(:staked_user)
+    staked_user = Sanbase.Factory.insert(:staked_user)
     conn = setup_jwt_auth(build_conn(), staked_user)
 
     ticker = "SAN"
     slug = "santiment"
     contract_address = "0x1234"
-    Store.drop_measurement(contract_address)
 
-    project =
-      %Project{
-        name: "Santiment",
-        ticker: ticker,
-        coinmarketcap_id: slug,
-        main_contract_address: contract_address
-      }
-      |> Repo.insert!()
-
-    %Ico{project_id: project.id}
+    %Project{
+      name: "Santiment",
+      ticker: ticker,
+      coinmarketcap_id: slug,
+      main_contract_address: contract_address
+    }
     |> Repo.insert!()
 
-    datetime1 = DateTime.from_naive!(~N[2017-05-13 21:45:00], "Etc/UTC") |> start_of_day()
-    datetime2 = DateTime.from_naive!(~N[2017-05-14 21:55:00], "Etc/UTC") |> start_of_day()
-    datetime3 = DateTime.from_naive!(~N[2017-05-15 22:05:00], "Etc/UTC") |> start_of_day()
-    datetime4 = DateTime.from_naive!(~N[2017-05-16 22:15:00], "Etc/UTC") |> start_of_day()
-    datetime5 = DateTime.from_naive!(~N[2017-05-17 22:25:00], "Etc/UTC") |> start_of_day()
-    datetime6 = DateTime.from_naive!(~N[2017-05-18 22:35:00], "Etc/UTC") |> start_of_day()
-    datetime7 = DateTime.from_naive!(~N[2017-05-19 22:45:00], "Etc/UTC") |> start_of_day()
-    datetime8 = DateTime.from_naive!(~N[2017-05-20 22:55:00], "Etc/UTC") |> start_of_day()
-    datetime9 = DateTime.from_naive!(~N[2017-05-23 22:55:00], "Etc/UTC") |> start_of_day()
+    datetime1 = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
+    datetime2 = DateTime.from_naive!(~N[2017-05-14 00:00:00], "Etc/UTC")
+    datetime3 = DateTime.from_naive!(~N[2017-05-15 00:00:00], "Etc/UTC")
+    datetime4 = DateTime.from_naive!(~N[2017-05-16 00:00:00], "Etc/UTC")
+    datetime5 = DateTime.from_naive!(~N[2017-05-17 00:00:00], "Etc/UTC")
+    datetime6 = DateTime.from_naive!(~N[2017-05-18 00:00:00], "Etc/UTC")
+    datetime7 = DateTime.from_naive!(~N[2017-05-19 00:00:00], "Etc/UTC")
+    datetime8 = DateTime.from_naive!(~N[2017-05-20 00:00:00], "Etc/UTC")
+    datetime9 = DateTime.from_naive!(~N[2017-05-23 00:00:00], "Etc/UTC")
 
-    Store.import([
-      %Measurement{
-        timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 5000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 1000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 500},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime4 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 15000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime5 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 65000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime6 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 50},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime7 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 5},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime8 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 5000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: datetime9 |> DateTime.to_unix(:nanoseconds),
-        fields: %{active_addresses: 100},
-        tags: [],
-        name: contract_address
-      }
-    ])
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime1,
+      active_addresses: 5000
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime2,
+      active_addresses: 100
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime3,
+      active_addresses: 500
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime4,
+      active_addresses: 15000
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime5,
+      active_addresses: 65000
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime6,
+      active_addresses: 50
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime7,
+      active_addresses: 5
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime8,
+      active_addresses: 0
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: datetime9,
+      active_addresses: 100
+    })
 
     [
       slug: slug,
@@ -160,43 +151,43 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
     assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime1),
+             "datetime" => "2017-05-13T00:00:00.00Z",
              "activeAddresses" => 5000
            } in active_addresses
 
     assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime2),
-             "activeAddresses" => 1000
+             "datetime" => "2017-05-14T00:00:00.00Z",
+             "activeAddresses" => 100
            } in active_addresses
 
     assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime3),
+             "datetime" => "2017-05-15T00:00:00.00Z",
              "activeAddresses" => 500
            } in active_addresses
 
     assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime4),
+             "datetime" => "2017-05-16T00:00:00.00Z",
              "activeAddresses" => 15000
            } in active_addresses
 
     assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime5),
+             "datetime" => "2017-05-17T00:00:00.00Z",
              "activeAddresses" => 65000
            } in active_addresses
 
     assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime6),
+             "datetime" => "2017-05-18T00:00:00.00Z",
              "activeAddresses" => 50
            } in active_addresses
 
     assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime7),
+             "datetime" => "2017-05-19T00:00:00.00Z",
              "activeAddresses" => 5
            } in active_addresses
 
     assert %{
-             "datetime" => DateTime.to_iso8601(context.datetime8),
-             "activeAddresses" => 5000
+             "datetime" => "2017-05-20T00:00:00.00Z",
+             "activeAddresses" => 0
            } in active_addresses
   end
 
@@ -207,7 +198,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
       dailyActiveAddresses(
         slug: "#{context.slug}",
         from: "#{context.datetime1}",
-        to: "#{context.datetime8}",
+        to: "#{context.datetime9}",
         interval: "2d") {
           datetime
           activeAddresses
@@ -223,32 +214,27 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
 
     # Tests that the datetime is adjusted so it's not before `from`
     assert %{
-             "datetime" => "2017-05-13T00:00:00Z",
-             "activeAddresses" => 5000
+             "datetime" => "2017-05-13T00:00:00.00Z",
+             "activeAddresses" => 2550
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-14T00:00:00Z",
-             "activeAddresses" => 750
+             "datetime" => "2017-05-15T00:00:00.00Z",
+             "activeAddresses" => 7750
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-16T00:00:00Z",
-             "activeAddresses" => 40000
+             "datetime" => "2017-05-17T00:00:00.00Z",
+             "activeAddresses" => 32525
            } in active_addresses
 
     assert %{
-             "datetime" => "2017-05-18T00:00:00Z",
-             "activeAddresses" => 28
-           } in active_addresses
-
-    assert %{
-             "datetime" => "2017-05-20T00:00:00Z",
-             "activeAddresses" => 5000
+             "datetime" => "2017-05-19T00:00:00.00Z",
+             "activeAddresses" => 3
            } in active_addresses
   end
 
-  test "no data returned for daily active addresses", context do
+  test "zeroes returned for daily active addresses", context do
     from_no_data = Timex.shift(context.datetime1, days: -10)
     to_no_data = Timex.shift(context.datetime1, days: -2)
 
@@ -271,7 +257,11 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
 
     active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
-    assert active_addresses == []
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-03T00:00:00.00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-05T00:00:00.00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-07T00:00:00.00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-09T00:00:00.00Z"} in active_addresses
+    assert %{"activeAddresses" => 0, "datetime" => "2017-05-11T00:00:00.00Z"} in active_addresses
   end
 
   test "fetch average daily active addreses", context do
@@ -292,7 +282,7 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     active_addresses =
       json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
 
-    assert active_addresses == 11444
+    assert active_addresses == 10707
   end
 
   test "fetch average daily active addreses returns 0 if there is no activity", context do
@@ -337,10 +327,10 @@ defmodule Sanbase.Etherbi.DailyActiveAddressesApiTest do
     active_addresses = json_response(result, 200)["data"]["dailyActiveAddresses"]
 
     assert [
-             %{"activeAddresses" => 5000, "datetime" => "2017-05-20T00:00:00Z"},
-             %{"activeAddresses" => 0, "datetime" => "2017-05-21T00:00:00Z"},
-             %{"activeAddresses" => 0, "datetime" => "2017-05-22T00:00:00Z"},
-             %{"activeAddresses" => 100, "datetime" => "2017-05-23T00:00:00Z"}
+             %{"activeAddresses" => 0, "datetime" => "2017-05-20T00:00:00.00Z"},
+             %{"activeAddresses" => 0, "datetime" => "2017-05-21T00:00:00.00Z"},
+             %{"activeAddresses" => 0, "datetime" => "2017-05-22T00:00:00.00Z"},
+             %{"activeAddresses" => 100, "datetime" => "2017-05-23T00:00:00.00Z"}
            ] == active_addresses
   end
 end

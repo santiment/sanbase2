@@ -56,6 +56,15 @@ config :sanbase, Sanbase.Repo,
   database: "sanbase_dev",
   hostname: "localhost"
 
+# Configure your database
+config :sanbase, Sanbase.TimescaleRepo,
+  username: "postgres",
+  password: "postgres",
+  database: "sanbase_timescale_dev",
+  hostname: "localhost"
+
+config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
+
 config :ex_admin,
   basic_auth: [
     username: "admin",

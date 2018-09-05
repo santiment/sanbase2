@@ -222,17 +222,20 @@ export const App = ({
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />
-        <Route
-          path='/data'
-          render={props => (
-            <ExternalRedirect to={'https://data.santiment.net'} />
-          )}
-        />
+        {['data', 'dashboards'].map(name => (
+          <Route
+            key={name}
+            path={`/${name}`}
+            render={() => (
+              <ExternalRedirect to={'https://data.santiment.net'} />
+            )}
+          />
+        ))}
         {['docs', 'apidocs', 'apiexamples'].map(name => (
           <Route
             key={name}
             path={`/${name}`}
-            render={props => (
+            render={() => (
               <ExternalRedirect to={'https://docs.santiment.net'} />
             )}
           />

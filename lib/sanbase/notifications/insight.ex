@@ -7,7 +7,6 @@ defmodule Sanbase.Notifications.Insight do
 
   def publish_in_discord(post) do
     post
-    |> new_insight_discord_content()
     |> create_discord_payload()
     |> publish()
     |> case do
@@ -19,20 +18,18 @@ defmodule Sanbase.Notifications.Insight do
     end
   end
 
-  defp new_insight_discord_content(%Post{id: id, title: title} = _post) do
+  defp create_discord_payload(%Post{id: id, title: title} = _post) do
     link = posts_url(id)
 
-    ~s"""
+    content = ~s"""
     New insight published: #{title} [#{link}]
     """
+
+    Poison.encode!(%{content: content, username: insights_discord_publish_user()})
   end
 
   defp publish(payload) do
     http_client().post(discord_webhook_url(), payload, [{"Content-Type", "application/json"}])
-  end
-
-  defp create_discord_payload(content) do
-    Poison.encode!(%{content: content, username: insights_discord_publish_user()})
   end
 
   defp discord_webhook_url do

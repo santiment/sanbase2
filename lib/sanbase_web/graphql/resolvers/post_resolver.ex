@@ -197,7 +197,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
           {:ok, post} ->
             {:ok, post} = create_discourse_topic(post)
 
-            publish_insight_in_discord(post)
+            Notifications.Insight.publish_in_discord(post)
 
             {:ok, post}
 
@@ -258,20 +258,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
     Post.publish_changeset(post, %{discourse_topic_url: discourse_topic_url})
     |> Repo.update()
-  end
-
-  defp publish_insight_in_discord(post) do
-    post
-    |> new_insight_discord_content()
-    |> Notifications.Insight.publish_discord()
-  end
-
-  defp new_insight_discord_content(%Post{id: id, title: title} = post) do
-    link = posts_url(id)
-
-    content = ~s"""
-    New insight published: #{title} [#{link}]
-    """
   end
 
   defp posts_url(id), do: "#{sanbase_url()}/insights/#{id}"

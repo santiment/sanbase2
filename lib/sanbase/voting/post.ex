@@ -9,6 +9,8 @@ defmodule Sanbase.Voting.Post do
   alias Sanbase.Voting.{Poll, Post, Vote, PostImage, Tag}
   alias Sanbase.Auth.User
 
+  alias Sanbase.Repo
+
   @approved "approved"
   @declined "declined"
   @draft "draft"
@@ -100,11 +102,11 @@ defmodule Sanbase.Voting.Post do
         ) AS ranked_posts;
     """
 
-    result = Ecto.Adapters.SQL.query!(Sanbase.Repo, query)
+    result = Ecto.Adapters.SQL.query!(Repo, query)
 
     result.rows
     |> Enum.map(fn row ->
-      Sanbase.Repo.load(Post, {result.columns, row})
+      Repo.load(Post, {result.columns, row})
     end)
   end
 
@@ -126,9 +128,22 @@ defmodule Sanbase.Voting.Post do
     |> get_only_published_or_own_posts(user_id)
   end
 
+  @doc """
+    Change insights owner to be the fallback user
+  """
+  def change_owner_to_anonymous(user_id) do
+    anon_user_id =
+      User
+      |> Repo.get_by(username: User.insights_fallback_username())
+      |> Map.get(:id)
+
+    from(p in Post, where: p.user_id == ^user_id)
+    |> Repo.update_all(set: [user_id: anon_user_id])
+  end
+
   # Helper functions
   defp tags_cast(changeset, %{tags: tags}) do
-    tags = Tag |> where([t], t.name in ^tags) |> Sanbase.Repo.all()
+    tags = Tag |> where([t], t.name in ^tags) |> Repo.all()
 
     changeset
     |> put_assoc(:tags, tags)
@@ -137,7 +152,7 @@ defmodule Sanbase.Voting.Post do
   defp tags_cast(changeset, _), do: changeset
 
   defp images_cast(changeset, %{image_urls: image_urls}) do
-    images = PostImage |> where([i], i.image_url in ^image_urls) |> Sanbase.Repo.all()
+    images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
 
     if Enum.any?(images, fn %{post_id: post_id} -> not is_nil(post_id) end) do
       changeset

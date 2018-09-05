@@ -828,14 +828,12 @@ defmodule SanbaseWeb.Graphql.PostTest do
   @discourse_response_file "#{System.cwd()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
   test "publish post", %{user: user, conn: conn} do
     mock(
-      HTTPoison,
-      :post,
-      {:ok,
-       %HTTPoison.Response{
-         body: File.read!(@discourse_response_file),
-         status_code: 200
-       }}
+      Sanbase.Discourse.Api,
+      :publish,
+      @discourse_response_file |> File.read!() |> Poison.decode()
     )
+
+    mock(Sanbase.Notifications.Insight, :publish_in_discord, :ok)
 
     poll = Poll.find_or_insert_current_poll!()
 

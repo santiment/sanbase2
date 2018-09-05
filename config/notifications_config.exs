@@ -18,4 +18,5 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   notifications_enabled: {:system, "PRICE_VOLUME_DIFF_NOTIFICATIONS_ENABLED", false}
 
 config :sanbase, Sanbase.Notifications.Insight,
+  webhook_url: {:system, "INSIGHTS_DISCORD_WEBHOOK_URL"},
   insights_discord_publish_user: {:system, "INSIGHTS_DISCORD_PUBLISH_USER", "New Insight"}

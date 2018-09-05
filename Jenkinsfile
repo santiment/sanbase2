@@ -11,14 +11,13 @@ podTemplate(label: 'sanbase-builder', containers: [
 
         sh "docker build -t sanbase-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -f Dockerfile-test ."
         sh "docker build -t sanbase-frontend-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -f app/Dockerfile-test app"
-        sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -d timescale/timescaledb:latest-pg9.6"
+        sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -d postgres:9.6-alpine"
         sh "docker run --rm --name test_influxdb_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -d influxdb:1.4-alpine"
         try {
           sh "docker run --rm \
             --link test_postgres_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID}:test_db \
             --link test_influxdb_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID}:test_influxdb \
             --env DATABASE_URL=postgres://postgres:password@test_db:5432/postgres \
-            --env TIMESCALE_DATABASE_URL=postgres://postgres:password@test_db:5432/postgres \
             --env INFLUXDB_HOST=test_influxdb \
             --env ETHERBI_INFLUXDB_HOST=test_influxdb \
             -t sanbase-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID}"

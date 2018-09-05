@@ -322,7 +322,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Fetch the flow of funds into and out of an exchange wallet.
     This query returns the difference IN-OUT calculated for each interval.
     """
-    field :exchange_funds_flow, list_of(:exchange_funds_flow) do
+    field :exchange_funds_flow, list_of(:funds_flow) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))

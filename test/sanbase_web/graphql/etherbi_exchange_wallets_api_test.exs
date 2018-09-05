@@ -1,7 +1,5 @@
 defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   use SanbaseWeb.ConnCase, async: false
-  @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
-  @moduletag timescaledb: true
 
   alias Sanbase.Model.ExchangeEthAddress
   alias Sanbase.Repo

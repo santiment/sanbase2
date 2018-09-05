@@ -26,14 +26,4 @@ defmodule Sanbase.TestUtils do
       false
     end
   end
-
-  def random_string(length \\ 16) do
-    :crypto.strong_rand_bytes(length)
-    |> Base.url_encode64()
-    |> binary_part(0, length)
-  end
-
-  def counter() do
-    System.unique_integer([:positive])
-  end
 end

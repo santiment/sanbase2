@@ -15,8 +15,8 @@ defmodule SanbaseWeb.Graphql.TransactionTypes do
     field(:to_address, non_null(:string))
   end
 
-  object :exchange_funds_flow do
+  object :funds_flow do
     field(:datetime, non_null(:datetime))
-    field(:in_out_difference, non_null(:float))
+    field(:funds_flow, non_null(:float))
   end
 end

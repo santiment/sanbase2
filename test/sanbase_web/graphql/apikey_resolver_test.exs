@@ -1,7 +1,5 @@
 defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   use SanbaseWeb.ConnCase, async: false
-  @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
-  @moduletag timescaledb: true
 
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
@@ -352,23 +350,31 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
   end
 
   defp init_databases(slug, datetime1, datetime2) do
-    import Sanbase.TimescaleFactory
+    alias Sanbase.Influxdb.Measurement
+    alias Sanbase.Etherbi.BurnRate.Store
+    alias Sanbase.Repo
+    alias Sanbase.Model.Project
 
-    contract_address = "0" <> Sanbase.TestUtils.random_string()
+    Store.create_db()
 
-    insert(:burn_rate, %{
-      contract_address: contract_address,
-      timestamp: datetime1,
-      burn_rate: 5000
-    })
+    contract_address = "0x123123123"
 
-    insert(:burn_rate, %{
-      contract_address: contract_address,
-      timestamp: datetime2,
-      burn_rate: 1000
-    })
+    Store.import([
+      %Measurement{
+        timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
+        fields: %{burn_rate: 5000},
+        tags: [],
+        name: contract_address
+      },
+      %Measurement{
+        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        fields: %{burn_rate: 1000},
+        tags: [],
+        name: contract_address
+      }
+    ])
 
-    %Sanbase.Model.Project{
+    %Project{
       name: "Santiment",
       ticker: "SAN",
       coinmarketcap_id: slug,

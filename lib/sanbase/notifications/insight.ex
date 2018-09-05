@@ -13,8 +13,11 @@ defmodule Sanbase.Notifications.Insight do
       {:ok, %HTTPoison.Response{status_code: 204}} ->
         :ok
 
+      {:ok, %HTTPoison.Response{status_code: status_code}} ->
+        Logger.error("Cannot publish insight [#{post.id}] in discord: code[#{status_code}]")
+
       {:error, error} ->
-        Logger.error("Cannot publish insight [#{post.id}] in discord" <> inspect(error))
+        Logger.error("Cannot publish insight [#{post.id}] in discord: " <> inspect(error))
     end
   end
 

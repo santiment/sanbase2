@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   require Logger
   require Sanbase.Utils.Config, as: Config
-  import Mockery.Macro
+  require Mockery.Macro
 
   import Ecto.Query
 

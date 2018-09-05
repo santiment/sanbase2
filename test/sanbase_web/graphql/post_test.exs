@@ -1436,6 +1436,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
        }}
     )
 
+    mock(Sanbase.Notifications.Insight, :publish_in_discord, :ok)
+
     poll = Poll.find_or_insert_current_poll!()
 
     post =

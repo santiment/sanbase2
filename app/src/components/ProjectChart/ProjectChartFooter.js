@@ -78,7 +78,7 @@ const ProjectChartFooter = ({
 }) => (
   <div className='chart-footer'>
     <AlertMessage>
-      Much more in our research tool! <Link to='/data'>Go to our grafana</Link>
+      See much more data in our <Link to='/dashboards'>SANbase Dashboards</Link>
     </AlertMessage>
     <div className='chart-footer-filters'>
       <FilterCategory name='Financial'>
@@ -214,6 +214,12 @@ const ProjectChartFooter = ({
         >
           <Label circular className='sentimentLabel' empty />
           Sentiment
+          <Popup
+            trigger={<Icon name='info circle' />}
+            inverted
+            content="This feed plots an aggregated sentiment metric for the general crypto market against the token's price. The higher the number, the more positive the sentiment. Requires 1000 SAN to access."
+            position='top left'
+          />
         </ToggleBtn>
         {!Insights.loading &&
           Insights.items.length > 0 && (

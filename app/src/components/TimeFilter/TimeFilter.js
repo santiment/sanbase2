@@ -49,7 +49,7 @@ class TimeFilter extends Component {
 
   render () {
     const { selected } = this.state
-    const { timeOptions, setFilter, disabled } = this.props
+    const { timeOptions, disabled } = this.props
     return (
       <div className='time-filter'>
         {timeOptions.map(option => (

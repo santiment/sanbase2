@@ -503,7 +503,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:source, non_null(:topic_search_sources))
       arg(:search_text, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, :datetime)
       arg(:interval, non_null(:string), default_value: "1d")
 
       middleware(ApiTimeframeRestriction)

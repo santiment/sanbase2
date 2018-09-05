@@ -1,15 +1,21 @@
 import React from 'react'
 import cx from 'classnames'
+import { Source } from '../trendsUtils'
 import './TrendsExploreSourcesFilter.css'
 
-const sourceTitles = [
-  'Telegram',
-  'Reddit',
-  'Professional Traders Chat',
-  'Merged sources'
-]
+// const sourceTitles = [
+//   'Telegram',
+//   'Reddit',
+//   'Professional Traders Chat',
+//   'Merged sources'
+// ]
 
-const TrendsExploreSourcesFilterItem = ({ title, disabled, onClick }) => {
+const TrendsExploreSourcesFilterItem = ({
+  title,
+  disabled,
+  dataSource,
+  onClick
+}) => {
   return (
     <button
       className={cx({
@@ -18,20 +24,25 @@ const TrendsExploreSourcesFilterItem = ({ title, disabled, onClick }) => {
         active: !disabled
       })}
       onClick={onClick}
+      data-source={dataSource}
     >
       <span>{title}</span>
     </button>
   )
 }
 
-const TrendsExploreSourcesFilter = () => {
+const TrendsExploreSourcesFilter = ({
+  selectedSources,
+  handleSourceSelect
+}) => {
   return (
     <div className='TrendsExploreSourcesFilter'>
-      {sourceTitles.map((sourceTitle, index) => (
+      {Object.keys(Source).map(source => (
         <TrendsExploreSourcesFilterItem
-          key={sourceTitle}
-          disabled={index !== 3}
-          title={sourceTitle}
+          key={source}
+          dataSource={source}
+          title={Source[source]}
+          onClick={handleSourceSelect}
         />
       ))}
     </div>

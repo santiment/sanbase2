@@ -2,7 +2,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.Project
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
@@ -530,7 +530,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
        ) do
     from_unix = DateTime.to_unix(datetime_from)
     to_unix = DateTime.to_unix(datetime_to)
-    ticker = Project.ticker_by_slug(slug)
+    ticker = Utils.ticker_by_slug(slug)
     ticker_slug = "#{ticker}_#{slug}"
 
     url = "#{tech_indicators_url()}/indicator/#{social_volume_type}"

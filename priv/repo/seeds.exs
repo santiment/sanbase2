@@ -226,6 +226,53 @@ Github.Store.drop_measurement("SAN")
 
 SeedsGithubActivityImporter.import_gh_activity(DateTime.utc_now(), 50, "SAN", [], 500)
 
+### Import random daily active addresses: for SAN ticker
+
+alias Sanbase.Etherbi.DailyActiveAddresses
+
+defmodule SeedsDailyActiveAddressesImporter do
+  def import_daily_active_addresses(_datetime, _active_addresses, _contract_address, to_import, 0) do
+    DailyActiveAddresses.Store.import(to_import)
+    :ok
+  end
+
+  def import_daily_active_addresses(datetime, active_addresses, contract_address, to_import, days) do
+    to_import = [
+      %Measurement{
+        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
+        fields: %{active_addresses: active_addresses},
+        tags: [],
+        name: contract_address
+      }
+      | to_import
+    ]
+
+    datetime = Timex.shift(datetime, days: -1)
+    active_addresses = :rand.uniform(10000)
+
+    import_daily_active_addresses(
+      datetime,
+      active_addresses,
+      contract_address,
+      to_import,
+      days - 1
+    )
+  end
+end
+
+contract_address = "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
+
+DailyActiveAddresses.Store.create_db()
+DailyActiveAddresses.Store.drop_measurement(contract_address)
+
+SeedsDailyActiveAddressesImporter.import_daily_active_addresses(
+  DateTime.utc_now(),
+  1000,
+  contract_address,
+  [],
+  50
+)
+
 #########
 # Exchange addresses
 #########

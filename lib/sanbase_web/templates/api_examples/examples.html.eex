@@ -93,28 +93,6 @@ curl \
 
 ```
 
-### Exchange Funds Flow
-
-<%= @exchange_funds_flow[:docs] %>
-
-
-<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@exchange_funds_flow[:variables])}&query=#{URI.encode(@exchange_funds_flow[:query])}"| %>" target='_blank'>Run in explorer</a>
-
-```graphql
-<%= @exchange_funds_flow[:query] %>
-```
-
-Run in terminal
-
-```bash
-curl \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@exchange_funds_flow[:query]) %> }' \
-    <%= "  #{ @api_url }" %>
-
-```
-
 ### Github Activity
 
 <%= @ga[:docs] %>

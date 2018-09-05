@@ -2,13 +2,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   require Logger
 
   alias SanbaseWeb.Graphql.Helpers.Utils
-  alias Sanbase.Model.Project
   alias Sanbase.Github.Store
 
   def activity(root, %{slug: slug} = args, resolution) do
     # Temporary solution while all frontend queries migrate to using slug. After that
     # only the slug query will remain
-    if ticker = Project.ticker_by_slug(slug) do
+    if ticker = Utils.ticker_by_slug(slug) do
       args = args |> Map.delete(:slug) |> Map.put(:ticker, ticker)
       activity(root, args, resolution)
     else

@@ -2,74 +2,85 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   use SanbaseWeb.ConnCase
   require Sanbase.Utils.Config, as: Config
 
-  @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
-
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
+  alias Sanbase.Influxdb.Measurement
+  alias Sanbase.Etherbi.BurnRate
+  alias Sanbase.Etherbi.DailyActiveAddresses
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
-  import Sanbase.TimescaleFactory
 
   setup do
+    BurnRate.Store.create_db()
+    DailyActiveAddresses.Store.create_db()
+
+    ticker = "SAN"
     san_slug = "santiment"
     not_san_slug = "some_other_name"
 
-    contract_address = "0x12345"
+    contract_address = "0x1234"
+    BurnRate.Store.drop_measurement(contract_address)
+    DailyActiveAddresses.Store.drop_measurement(contract_address)
 
-    # Both projects use the have same contract address for easier testing.
-    # Accessing through the slug that is not "santiment" has timeframe restriction
-    # while accessing through "santiment" does not
     %Project{
       name: "Santiment",
+      ticker: ticker,
       coinmarketcap_id: san_slug,
       main_contract_address: contract_address
     }
     |> Repo.insert!()
 
     %Project{
-      name: "Santiment2",
+      name: "Santiment",
+      ticker: ticker,
       coinmarketcap_id: not_san_slug,
       main_contract_address: contract_address
     }
     |> Repo.insert!()
 
-    insert(:burn_rate, %{
-      contract_address: contract_address,
-      timestamp: hour_ago(),
-      burn_rate: 5000
-    })
+    BurnRate.Store.import([
+      %Measurement{
+        timestamp: hour_ago() |> DateTime.to_unix(:nanoseconds),
+        fields: %{burn_rate: 5000},
+        tags: [],
+        name: contract_address
+      },
+      %Measurement{
+        timestamp: week_ago() |> DateTime.to_unix(:nanoseconds),
+        fields: %{burn_rate: 6000},
+        tags: [],
+        name: contract_address
+      },
+      %Measurement{
+        timestamp: restricted_from() |> DateTime.to_unix(:nanoseconds),
+        fields: %{burn_rate: 7000},
+        tags: [],
+        name: contract_address
+      }
+    ])
 
-    insert(:burn_rate, %{
-      contract_address: contract_address,
-      timestamp: week_ago(),
-      burn_rate: 6000
-    })
-
-    insert(:burn_rate, %{
-      contract_address: contract_address,
-      timestamp: restricted_from(),
-      burn_rate: 7000
-    })
-
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: hour_ago(),
-      active_addresses: 100
-    })
-
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: week_ago(),
-      active_addresses: 200
-    })
-
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: restricted_from(),
-      active_addresses: 300
-    })
+    DailyActiveAddresses.Store.import([
+      %Measurement{
+        timestamp: hour_ago() |> DateTime.to_unix(:nanoseconds),
+        fields: %{active_addresses: 100},
+        tags: [],
+        name: contract_address
+      },
+      %Measurement{
+        timestamp: week_ago() |> DateTime.to_unix(:nanoseconds),
+        fields: %{active_addresses: 200},
+        tags: [],
+        name: contract_address
+      },
+      %Measurement{
+        timestamp: restricted_from() |> DateTime.to_unix(:nanoseconds),
+        fields: %{active_addresses: 300},
+        tags: [],
+        name: contract_address
+      }
+    ])
 
     staked_user =
       %User{
@@ -85,12 +96,11 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
       }
       |> Repo.insert!()
 
-    [
-      staked_user: staked_user,
-      not_staked_user: not_staked_user,
-      santiment_slug: san_slug,
-      not_santiment_slug: not_san_slug
-    ]
+    {:ok,
+     staked_user: staked_user,
+     not_staked_user: not_staked_user,
+     santiment_slug: san_slug,
+     not_santiment_slug: not_san_slug}
   end
 
   test "does not show real time data and data before certain period to anon users", context do

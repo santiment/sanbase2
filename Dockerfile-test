@@ -17,4 +17,4 @@ RUN mix deps.compile
 
 COPY . /app
 
-CMD mix test_all --trace
+CMD mix test

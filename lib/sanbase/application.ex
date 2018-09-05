@@ -15,11 +15,8 @@ defmodule Sanbase.Application do
         # Start the Task Supervisor
         supervisor(Task.Supervisor, [[name: Sanbase.TaskSupervisor]]),
 
-        # Start the Postgres Ecto repository
-        Sanbase.Repo,
-
-        # Start the TimescaleDB Ecto repository
-        Sanbase.TimescaleRepo,
+        # Start the Ecto repository
+        supervisor(Sanbase.Repo, []),
 
         # Start the endpoint when the application starts
         supervisor(SanbaseWeb.Endpoint, []),
@@ -47,6 +44,18 @@ defmodule Sanbase.Application do
 
         # Time series Github DB connection
         Sanbase.Github.Store.child_spec(),
+
+        # Time series transactions DB connection
+        Sanbase.Etherbi.Transactions.Store.child_spec(),
+
+        # Time series burn rate DB connection
+        Sanbase.Etherbi.BurnRate.Store.child_spec(),
+
+        # Time series transaction volume DB connection
+        Sanbase.Etherbi.TransactionVolume.Store.child_spec(),
+
+        # Time series DAT DB connection
+        Sanbase.Etherbi.DailyActiveAddresses.Store.child_spec(),
 
         # Etherscan rate limiter
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(

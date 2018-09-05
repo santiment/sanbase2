@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-05-09 | v.0.11.2 'Phobos':
+
+  Unregister SW
+  Remove Limited data message for premium users
+
 - 2018-04-09 | v.0.11.1 'Phobos':
 
   Add TimeFilter UI Component

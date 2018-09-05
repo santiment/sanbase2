@@ -197,7 +197,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
           {:ok, post} ->
             {:ok, post} = create_discourse_topic(post)
 
-            mockable(Notifications.Insight).publish_in_discord(post)
+            notifiy_insight().publish_in_discord(post)
 
             {:ok, post}
 
@@ -248,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
      %{
        "topic_id" => topic_id,
        "topic_slug" => topic_slug
-     }} = mockable(Sanbase.Discourse.Api).publish(title, text)
+     }} = discourse_api().publish(title, text)
 
     discourse_topic_url =
       discourse_url()
@@ -263,4 +263,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   defp posts_url(id), do: "#{sanbase_url()}/insights/#{id}"
   defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
   defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
+  defp notifiy_insight(), do: Mockery.Macro.mockable(Notifications.Insight)
+  defp discourse_api(), do: Mockery.Macro.mockable(Sanbase.Discourse.Api)
 end

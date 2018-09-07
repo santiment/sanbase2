@@ -2,61 +2,74 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   use SanbaseWeb.ConnCase
   require Sanbase.Utils.Config, as: Config
 
+  @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
+
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
-  alias Sanbase.Influxdb.Measurement
-  alias Sanbase.Etherbi.BurnRate.Store
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.TimescaleFactory
 
   setup do
-    Store.create_db()
-
-    ticker = "SAN"
     san_slug = "santiment"
     not_san_slug = "some_other_name"
 
-    contract_address = "0x1234"
-    Store.drop_measurement(contract_address)
+    contract_address = "0x12345"
 
+    # Both projects use the have same contract address for easier testing.
+    # Accessing through the slug that is not "santiment" has timeframe restriction
+    # while accessing through "santiment" does not
     %Project{
       name: "Santiment",
-      ticker: ticker,
       coinmarketcap_id: san_slug,
       main_contract_address: contract_address
     }
     |> Repo.insert!()
 
     %Project{
-      name: "Santiment",
-      ticker: ticker,
+      name: "Santiment2",
       coinmarketcap_id: not_san_slug,
       main_contract_address: contract_address
     }
     |> Repo.insert!()
 
-    Store.import([
-      %Measurement{
-        timestamp: hour_ago() |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 5000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: week_ago() |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 6000},
-        tags: [],
-        name: contract_address
-      },
-      %Measurement{
-        timestamp: restricted_from() |> DateTime.to_unix(:nanoseconds),
-        fields: %{burn_rate: 7000},
-        tags: [],
-        name: contract_address
-      }
-    ])
+    insert(:burn_rate, %{
+      contract_address: contract_address,
+      timestamp: hour_ago(),
+      burn_rate: 5000
+    })
+
+    insert(:burn_rate, %{
+      contract_address: contract_address,
+      timestamp: week_ago(),
+      burn_rate: 6000
+    })
+
+    insert(:burn_rate, %{
+      contract_address: contract_address,
+      timestamp: restricted_from(),
+      burn_rate: 7000
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: hour_ago(),
+      active_addresses: 100
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: week_ago(),
+      active_addresses: 200
+    })
+
+    insert(:daily_active_addresses, %{
+      contract_address: contract_address,
+      timestamp: restricted_from(),
+      active_addresses: 300
+    })
 
     staked_user =
       %User{
@@ -72,11 +85,12 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
       }
       |> Repo.insert!()
 
-    {:ok,
-     staked_user: staked_user,
-     not_staked_user: not_staked_user,
-     santiment_slug: san_slug,
-     not_santiment_slug: not_san_slug}
+    [
+      staked_user: staked_user,
+      not_staked_user: not_staked_user,
+      santiment_slug: san_slug,
+      not_santiment_slug: not_san_slug
+    ]
   end
 
   test "does not show real time data and data before certain period to anon users", context do
@@ -148,6 +162,24 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     assert %{"burnRate" => 7000.0} in burn_rates
   end
 
+  test "shows historical data but not realtime for DAA", context do
+    result =
+      build_conn()
+      |> post(
+        "/graphql",
+        query_skeleton(
+          dailyActiveAddressesQuery(context.not_santiment_slug),
+          "dailyActiveAddresses"
+        )
+      )
+
+    daas = json_response(result, 200)["data"]["dailyActiveAddresses"]
+
+    refute %{"activeAddresses" => 100} in daas
+    assert %{"activeAddresses" => 200} in daas
+    assert %{"activeAddresses" => 300} in daas
+  end
+
   defp burnRateQuery(slug) do
     """
     {
@@ -157,6 +189,19 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
         to: "#{now()}"
         interval: "30m") {
           burnRate
+      }
+    }
+    """
+  end
+
+  defp dailyActiveAddressesQuery(slug) do
+    """
+    {
+      dailyActiveAddresses(
+        slug: "#{slug}",
+        from: "#{before_restricted_from()}",
+        to: "#{now()}") {
+          activeAddresses
       }
     }
     """

@@ -1,18 +1,22 @@
 import React from 'react'
 import { compose } from 'recompose'
 import { connect } from 'react-redux'
-import { Button } from 'semantic-ui-react'
-import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
+import { Button, Popup } from 'semantic-ui-react'
 
 const FeedbackBtn = ({ toggleFeedback, ...props }) => {
   return (
     <div className='feedback-button-wrapper'>
-      <SmoothDropdownItem
-        className='feedback-body-wrapper'
+      <Popup
+        basic
+        position='bottom center'
+        hideOnScroll
+        wide
+        inverted
         trigger={<Button onClick={toggleFeedback} circular icon='bullhorn' />}
+        on='hover'
       >
         Send a feedback
-      </SmoothDropdownItem>
+      </Popup>
     </div>
   )
 }

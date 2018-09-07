@@ -1,6 +1,7 @@
 defmodule Sanbase.Voting.PostTest do
   use Sanbase.DataCase, async: false
 
+  import Sanbase.Factory
   alias Sanbase.Repo
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Poll, Post}
@@ -24,5 +25,18 @@ defmodule Sanbase.Voting.PostTest do
       |> Repo.insert!()
 
     assert post.state == nil
+  end
+
+  test "changes the owner to the fallback user" do
+    poll = Poll.find_or_insert_current_poll!()
+    insights_user = insert(:insights_fallback_user)
+    user = insert(:user)
+    post = insert(:post, poll_id: poll.id, user_id: user.id)
+
+    Post.change_owner_to_anonymous(user.id)
+
+    updated_post = Post |> Repo.get(post.id)
+
+    assert updated_post.user_id == insights_user.id
   end
 end

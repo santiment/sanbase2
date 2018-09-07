@@ -70,15 +70,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
     field(:project_transparency_description, :string)
 
-    field :eth_balance, :decimal do
+    field :eth_balance, :float do
       cache_resolve_dataloader(&ProjectBalanceResolver.eth_balance/3)
     end
 
-    field :btc_balance, :decimal do
+    field :btc_balance, :float do
       cache_resolve_dataloader(&ProjectBalanceResolver.btc_balance/3)
     end
 
-    field :usd_balance, :decimal do
+    field :usd_balance, :float do
       cache_resolve_dataloader(&ProjectBalanceResolver.usd_balance/3)
     end
 
@@ -175,16 +175,18 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve_dataloader(&ProjectResolver.signals/3)
     end
 
-    field :price_to_book_ratio, :decimal do
+    field :price_to_book_ratio, :float do
       cache_resolve_dataloader(&ProjectResolver.price_to_book_ratio/3)
     end
 
+    @desc "Total ETH spent from the project's team wallets for the last `days`"
     field :eth_spent, :float do
       arg(:days, :integer, default_value: 30)
 
       cache_resolve_async(&ProjectResolver.eth_spent/3)
     end
 
+    @desc "ETH spent for each `interval` from the project's team wallet and time period"
     field :eth_spent_over_time, list_of(:eth_spent_data) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -193,7 +195,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve_async(&ProjectResolver.eth_spent_over_time/3)
     end
 
-    field :eth_top_transactions, list_of(:wallet_transaction) do
+    @desc "Top ETH transactions for project's team wallets"
+    field :eth_top_transactions, list_of(:transaction) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:transaction_type, :transaction_type, default_value: :all)
@@ -202,7 +205,16 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve_async(&ProjectResolver.eth_top_transactions/3)
     end
 
-    @desc "Average daily active addresses for a ticker and given time period"
+    @desc "Top transactions for the token of a given project"
+    field :token_top_transactions, list_of(:transaction) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:limit, :integer, default_value: 10)
+
+      cache_resolve(&ProjectResolver.token_top_transactions/3)
+    end
+
+    @desc "Average daily active addresses for a ERC20 project and given time period"
     field :average_daily_active_addresses, :integer do
       arg(:from, :datetime)
       arg(:to, :datetime)
@@ -214,8 +226,8 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :eth_address do
     field(:address, non_null(:string))
 
-    field :balance, :decimal do
-      cache_resolve_dataloader(&ProjectBalanceResolver.eth_address_balance/3)
+    field :balance, :float do
+      cache_resolve(&ProjectBalanceResolver.eth_address_balance/3)
     end
   end
 

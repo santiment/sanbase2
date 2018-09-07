@@ -1,0 +1,19 @@
+.post-visual-backtest {
+  line-height: 16px;
+}
+
+.post-visual-backtest__info {
+  margin-right: 4px;
+  margin-bottom: 1em;
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .post-visual-backtest {
+    display: flex;
+  }
+
+  .post-visual-backtest__info {
+    flex-direction: column;
+  }
+}

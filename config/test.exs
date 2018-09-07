@@ -9,18 +9,34 @@ config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
   server: true
 
-# Print only warnings and errors during test
-config :logger, level: :warn
+# Print only warnings and errors during test. Do not log JSON in tests.
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  level: :warn
 
 # Test adapter that allows mocking
 config :tesla, adapter: :mock
 
-# Configure your database
+# Configure postgres database
 config :sanbase, Sanbase.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
-  # closest to real case as there are 3 pods with 10 connections each
   pool_size: 30
+
+# Configure your database
+config :sanbase, Sanbase.TimescaleRepo,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_timescale_test",
+  pool_size: 30
+
+# Configure ClickHouseRepo for testing. It will be tested by using Postgres
+config :sanbase, Sanbase.ClickhouseRepo,
+  adapter: Ecto.Adapters.Postgres,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "sanbase_test",
+  pool_size: 30
+
+config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
@@ -31,11 +47,7 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   limit: 5,
   time_between_requests: 1000
 
-config :sanbase, Sanbase.ExternalServices.Etherscan.Requests, apikey: "myapikey"
-
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, sync_enabled: false
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Worker, sync_enabled: false
 
 config :faktory_worker_ex,
   client: [
@@ -52,23 +64,11 @@ config :sanbase, Sanbase.Github.Store, database: "github_activity_test"
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data_test"
 
-config :sanbase, Sanbase.Etherbi.Transactions.Store, database: "erc20_exchange_funds_flow_test"
-
-config :sanbase, Sanbase.Etherbi.BurnRate.Store, database: "erc20_burn_rate_flow_test"
-
-config :sanbase, Sanbase.Etherbi.TransactionVolume.Store,
-  database: "erc20_transaction_volume_test"
-
-config :sanbase, Sanbase.Etherbi.DailyActiveAddresses.Store,
-  database: "erc20_daily_active_addresses_test"
-
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: "user",
   basic_auth_password: "pass"
 
 config :sanbase, Sanbase.Prices.Store, database: "prices_test"
-
-config :sanbase, Sanbase.ExternalServices.Etherscan.Store, database: "etherscan_transactions_test"
 
 config :arc,
   storage: Arc.Storage.Local,

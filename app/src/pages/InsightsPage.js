@@ -375,16 +375,16 @@ const enhance = compose(
   graphql(allInsightsPublicGQL, {
     name: 'Insights',
     props: mapDataToProps,
+    skip: ({ isLoggedIn }) => isLoggedIn,
     options: ({ isLoggedIn }) => ({
-      skip: isLoggedIn,
       pollInterval: POLLING_INTERVAL
     })
   }),
   graphql(allInsightsGQL, {
     name: 'Insights',
     props: mapDataToProps,
+    skip: ({ isLoggedIn }) => !isLoggedIn,
     options: ({ isLoggedIn }) => ({
-      skip: !isLoggedIn,
       pollInterval: POLLING_INTERVAL
     })
   }),

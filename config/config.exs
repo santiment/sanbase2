@@ -22,6 +22,8 @@ config :sanbase, Sanbase.TimescaleRepo,
   # because of pgbouncer
   prepare: :unnamed
 
+config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
+
 config :sanbase, Sanbase.Timescaledb,
   blockchain_schema: {:system, "TIMESCALEDB_BLOCKCHAIN_SCHEMA", "etherbi"}
 

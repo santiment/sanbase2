@@ -87,24 +87,34 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   def eth_spent(%Project{id: id} = project, %{days: days} = args, _resolution) do
-    async(Cache.func(fn -> calculate_eth_spent(project, days) end, {:eth_spent, id}, args))
-  end
-
-  def calculate_eth_spent(%Project{id: id} = project, days) do
     today = Timex.now()
     days_ago = Timex.shift(today, days: -days)
 
+    async(
+      Cache.func(fn -> calculate_eth_spent(project, days_ago, today) end, {:eth_spent, id}, args)
+    )
+  end
+
+  def calculate_eth_spent(%Project{id: id} = project, from_datetime, to_datetime) do
     with {:ok, eth_addresses} <- Project.eth_addresses(project),
-         {:ok, eth_spent} <- Clickhouse.EthTransfers.eth_spent(eth_addresses, days_ago, today) do
+         {:ok, eth_spent} <-
+           Clickhouse.EthTransfers.eth_spent(eth_addresses, from_datetime, to_datetime) do
       {:ok, eth_spent}
     else
       error ->
         Logger.warn(
-          "Cannot calculate ETH spent for project with id #{id}. Reason: #{inspect(error)}"
+          "Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
         {:ok, nil}
     end
+  rescue
+    e ->
+      Logger.error(
+        "Error calculating ETH spent for #{Project.describe(project)}. Reason: #{inspect(e)}"
+      )
+
+      {:ok, nil}
   end
 
   def eth_spent_over_time(
@@ -138,22 +148,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
         {:ok, []}
     end
+  rescue
+    e ->
+      Logger.error(
+        "Error calculating ETH spent over time for #{Project.describe(project)}. Reason: #{
+          inspect(e)
+        }"
+      )
+
+      {:ok, nil}
   end
 
   @doc ~s"""
-    Returns the accumulated ETH spent by all ERC20 projects for a given time period.
+  Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
-    with projects when is_list(projects) <- Project.erc20_projects(),
-         {:ok, total_eth_spent} <-
-           Clickhouse.EthTransfers.eth_spent_by_projects(projects, from, to) do
+    with projects when is_list(projects) <- Project.erc20_projects() do
+      total_spent_list =
+        for project <- projects do
+          case calculate_eth_spent(project, from, to) do
+            {:ok, nil} -> 0
+            {:ok, eth_spent} -> eth_spent
+            {:error, _error} -> 0
+          end
+        end
+
+      total_eth_spent = total_spent_list |> Enum.sum()
+
       {:ok, total_eth_spent}
     end
   end
 
   @doc ~s"""
-    Returns a list of ETH spent by all ERC20 projects for a given time period,
-    grouped by the given `interval`.
+  Returns a list of ETH spent by all ERC20 projects for a given time period,
+  grouped by the given `interval`.
   """
   def eth_spent_over_time_by_erc20_projects(
         _root,
@@ -204,9 +232,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              limit,
              trx_type
            ) do
-      result =
-        eth_transactions
-        |> Clickhouse.MarkExchanges.mark_exchange_wallets()
+      result = eth_transactions
 
       {:ok, result}
     else

@@ -7,6 +7,7 @@ import './TrendsExploreChart.css'
 const chartOptions = {
   responsive: true,
   scaleFontSize: 0,
+  animation: false,
   legend: {
     display: false
   },
@@ -41,8 +42,11 @@ const chartOptions = {
   elements: {
     point: {
       hitRadius: 5,
-      hoverRadius: 5,
+      hoverRadius: 0.5,
       radius: 0
+    },
+    line: {
+      tension: 0.2
     }
   },
   tooltips: {

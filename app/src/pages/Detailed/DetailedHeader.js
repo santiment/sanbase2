@@ -55,12 +55,14 @@ const DetailedHeader = ({
       <div className='detailed-price'>
         <div className='detailed-price-description'>Today's changes</div>
         <div className='detailed-price-usd'>
-          {formatNumber(project.priceUsd, { currency: 'USD' })}&nbsp;
+          {project.priceUsd &&
+            formatNumber(project.priceUsd, { currency: 'USD' })}&nbsp;
           {!loading &&
             project && <PercentChanges changes={project.percentChange24h} />}
         </div>
         <div className='detailed-price-btc'>
-          {formatCryptoCurrency('BTC', formatBTC(project.priceBtc))}
+          {project.priceBtc &&
+            formatCryptoCurrency('BTC', formatBTC(project.priceBtc))}
         </div>
       </div>
     </div>

@@ -1,0 +1,50 @@
+.TrendsExamplesItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  margin-bottom: 1em;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1),
+    0 3px 6px 0 rgba(0, 0, 0, 0.07);
+}
+
+.TrendsExamplesItem:last-child {
+  margin-bottom: 0;
+}
+
+.TrendsExamplesItem__topic {
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.TrendsExamplesItem__topic span {
+  border-bottom: 2px solid #ffc107;
+}
+
+.TrendsExamplesItem__settings {
+  color: #999;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.TrendsExamplesItem__chart {
+  max-width: 320px;
+  border-top: 1px solid #d8d8da;
+  border-bottom: 1px solid #d8d8da;
+  padding: 10px;
+}
+
+@media (min-width: 768px) {
+  .TrendsExamplesItem {
+    margin-right: 1em;
+    margin-bottom: 0;
+  }
+
+  .TrendsExamplesItem:last-child {
+    margin-right: 0;
+  }
+}

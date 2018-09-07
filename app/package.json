@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.9.1",
+  "version": "0.11.3",
   "private": true,
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -78,8 +78,9 @@
     "validate.js": "^0.12.0"
   },
   "devDependencies": {
+    "@storybook/addon-info": "^3.4.10",
     "@storybook/addon-viewport": "^3.3.3",
-    "@storybook/react": "^3.3.3",
+    "@storybook/react": "latest",
     "enzyme": "^3.2.0",
     "enzyme-adapter-react-16": "^1.1.0",
     "enzyme-to-json": "^3.2.2",
@@ -91,8 +92,9 @@
     "redux-axios-middleware": "^4.0.0",
     "redux-devtools-extension": "^2.13.2",
     "standard-reporter": "^1.0.5",
-    "stylelint": "^8.3.1",
-    "stylelint-config-standard": "^18.0.0"
+    "storybook-react-router": "^1.0.1",
+    "stylelint": "^9.5.0",
+    "stylelint-config-standard": "^18.2.0"
   },
   "standard": {
     "parser": "babel-eslint",

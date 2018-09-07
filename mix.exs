@@ -30,7 +30,7 @@ defmodule Sanbase.Mixfile do
   def application do
     [
       mod: {Sanbase.Application, []},
-      extra_applications: [:logger, :runtime_tools, :sasl],
+      extra_applications: [:logger, :runtime_tools, :sasl, :clickhousex],
       included_applications: [:faktory_worker_ex, :oauther]
     ]
   end
@@ -59,6 +59,7 @@ defmodule Sanbase.Mixfile do
       {:hammer, "~> 5.0"},
       {:ex_admin, github: "santiment/ex_admin", branch: "master"},
       {:basic_auth, "~> 2.2"},
+      {:mock, "~> 0.3"},
       {:mockery, "~> 2.2"},
       {:distillery, "~> 1.5", runtime: false},
       {:timex, "~> 3.0"},
@@ -70,7 +71,7 @@ defmodule Sanbase.Mixfile do
       {:absinthe_plug, "~> 1.4.0"},
       {:faktory_worker_ex, git: "https://github.com/santiment/faktory_worker_ex"},
       {:temp, "~> 0.4"},
-      {:httpoison, "~> 0.13"},
+      {:httpoison, "~> 1.2", override: true},
       {:floki, "~> 0.20"},
       {:sentry, "~> 6.0.4"},
       {:extwitter, "~> 0.9.0"},
@@ -92,23 +93,65 @@ defmodule Sanbase.Mixfile do
       {:plug_attack, "~> 0.3.1"},
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.1"},
-      {:ex_machina, "~> 2.2", only: :test}
+      {:ex_machina, "~> 2.2", only: :test},
+      {:clickhouse_ecto, git: "https://github.com/santiment/clickhouse_ecto"}
     ]
   end
 
-  # Aliases are shortcuts or tasks specific to the current project.
-  # For example, to create, migrate and run the seeds file at once:
-  #
-  #     $ mix ecto.setup
-  #
-  # See the documentation for `Mix` for more info on aliases.
-  defp aliases do
+  defp aliases() do
     [
-      "ecto.setup": ["load_dotenv", "ecto.create", "ecto.load", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["load_dotenv", "ecto.drop", "ecto.setup"],
-      "ecto.migrate": ["load_dotenv", "ecto.migrate", "ecto.dump"],
-      "ecto.rollback": ["load_dotenv", "ecto.rollback", "ecto.dump"],
-      test: ["load_dotenv", "ecto.create --quiet", "ecto.load", "test"]
+      "ecto.setup": [
+        "load_dotenv",
+        "ecto.drop -r Sanbase.Repo",
+        "ecto.setup -r Sanbase.Repo"
+      ],
+      "ecto.migrate": [
+        "load_dotenv",
+        "ecto.migrate -r Sanbase.Repo",
+        "ecto.dump -r Sanbase.Repo"
+      ],
+      "ecto.rollback": [
+        "load_dotenv",
+        "ecto.rollback -r Sanbase.Repo",
+        "ecto.dump -r Sanbase.Repo"
+      ],
+      test: [
+        "load_dotenv",
+        "ecto.create -r Sanbase.Repo --quiet",
+        "ecto.load -r Sanbase.Repo",
+        "test"
+      ],
+
+      # Append `_all` so the Ecto commands apply to all repos.
+      # and run all tests
+      "ecto.setup_all": [
+        "load_dotenv",
+        "ecto.create",
+        "ecto.load",
+        "run priv/repo/seeds.exs",
+        "run priv/timescale_repo/seeds.exs"
+      ],
+      "ecto.reset_all": [
+        "load_dotenv",
+        "ecto.drop",
+        "ecto.setup_all"
+      ],
+      "ecto.migrate_all": [
+        "load_dotenv",
+        "ecto.migrate",
+        "ecto.dump"
+      ],
+      "ecto.rollback_all": [
+        "load_dotenv",
+        "ecto.rollback",
+        "ecto.dump"
+      ],
+      test_all: [
+        "load_dotenv",
+        "ecto.create --quiet",
+        "ecto.load",
+        "test --include timescaledb"
+      ]
     ]
   end
 end

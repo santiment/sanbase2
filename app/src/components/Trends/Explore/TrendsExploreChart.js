@@ -14,6 +14,7 @@ const chartOptions = {
   scales: {
     yAxes: [
       {
+        id: 'y-axis-0',
         ticks: {
           autoSkip: true,
           maxTicksLimit: 5,
@@ -51,7 +52,7 @@ const chartOptions = {
     titleMarginBottom: 10,
     titleFontSize: 13,
     titleFontColor: '#3d4450',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     cornerRadius: 3,
     borderColor: 'rgba(38, 43, 51, 0.7)',
     borderWidth: 1,
@@ -65,31 +66,60 @@ const chartOptions = {
           .utc()
           .format('MMM DD YYYY')
       },
-      label: tooltipItem => `Merged Mentions: ${tooltipItem.yLabel}`
+      label: (tooltipItem, data) => {
+        const label = data.datasets[tooltipItem.datasetIndex].label.toString()
+        return `${label} Mentions: ${tooltipItem.yLabel}`
+      }
     }
   }
 }
 
-const datasetOptions = {
-  borderColor: 'rgba(255, 193, 7, 1)',
-  borderWidth: 2,
+const createDatasetOptions = (label, borderColor) => ({
+  label,
+  yAxisID: 'y-axis-0',
+  borderColor,
+  borderWidth: 0,
   pointRadius: 0,
   fill: false
+})
+
+const chartDatasetOptions = {
+  merged: createDatasetOptions('Merged', 'rgb(255, 193, 7)'),
+  telegram: createDatasetOptions('Telegram', 'rgb(0, 0, 255)'),
+  reddit: createDatasetOptions('Reddit', 'rgb(255, 0, 0)'),
+  professionalTradersChat: createDatasetOptions(
+    'Professional Traders Chat',
+    'rgb(255, 0, 255)'
+  )
 }
 
-const TrendsExploreChart = ({ sources, isDesktop }) => {
+const composeSourcesChartDatasets = (sources, selectedSources) => {
+  if (selectedSources.includes('merged')) {
+    return [
+      {
+        data: [...mergeDataSourcesForChart(sources).values()],
+        ...chartDatasetOptions['merged']
+      }
+    ]
+  }
+  // AS ternary
+  return selectedSources.map(selectedSource => ({
+    data:
+      sources[selectedSource] &&
+      sources[selectedSource].map(item => item.mentionsCount),
+    ...chartDatasetOptions[selectedSource]
+  }))
+}
+
+const TrendsExploreChart = ({ sources, selectedSources, isDesktop }) => {
+  console.log('TCL: TrendsExploreChart -> selectedSources', selectedSources)
   const isLoading = !sources
 
   const mergedSources = mergeDataSourcesForChart(sources)
 
   const dataset = {
     labels: [...mergedSources.keys()],
-    datasets: [
-      {
-        data: [...mergedSources.values()],
-        ...datasetOptions
-      }
-    ]
+    datasets: composeSourcesChartDatasets(sources, selectedSources)
   }
   return (
     <div className='TrendsExploreChart'>

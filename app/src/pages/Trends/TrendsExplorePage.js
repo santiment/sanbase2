@@ -98,7 +98,11 @@ export class TrendsExplorePage extends Component {
             defaultSelected='6m'
             disabled
           />
-          <TrendsExploreChart sources={sources} isDesktop={isDesktop} />
+          <TrendsExploreChart
+            sources={sources}
+            isDesktop={isDesktop}
+            selectedSources={selectedSources}
+          />
           <TrendsExploreSourcesFilter
             selectedSources={selectedSources}
             handleSourceSelect={this.handleSourceSelect}

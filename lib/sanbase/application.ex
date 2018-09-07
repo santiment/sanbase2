@@ -1,6 +1,7 @@
 defmodule Sanbase.Application do
   use Application
   import Supervisor.Spec
+  import Sanbase.Utils.App
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -25,7 +26,7 @@ defmodule Sanbase.Application do
         supervisor(SanbaseWeb.Endpoint, []),
 
         # Start the Clickhouse Repo
-        {Sanbase.ClickhouseRepo, []},
+        run_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},
@@ -125,6 +126,8 @@ defmodule Sanbase.Application do
           # Github activity scraping scheduler
           Sanbase.ExternalServices.Github.child_spec(%{})
         ]
+
+    children = children |> Enum.reject(&is_nil/1)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

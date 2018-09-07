@@ -92,7 +92,10 @@ export class TrendsExplorePage extends Component {
     return (
       <div className='TrendsExplorePage'>
         <div className='TrendsExplorePage__content'>
-          <TrendsExploreHeader topic={match.params.topic} />
+          <TrendsExploreHeader
+            topic={match.params.topic}
+            selectedSources={selectedSources}
+          />
           <TimeFilter
             timeOptions={['1w', '1m', '3m', '6m', '1y', 'all']}
             defaultSelected='6m'

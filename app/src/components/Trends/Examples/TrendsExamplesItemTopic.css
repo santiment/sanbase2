@@ -1,0 +1,19 @@
+.TrendsExamplesItemTopic {
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.TrendsExamplesItemTopic__underline {
+  transition: 300ms;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 3px;
+}
+
+.TrendsExamplesItemTopic span {
+  position: relative;
+}

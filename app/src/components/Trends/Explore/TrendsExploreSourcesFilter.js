@@ -2,6 +2,7 @@ import React from 'react'
 import cx from 'classnames'
 import { Source } from '../trendsUtils'
 import './TrendsExploreSourcesFilter.css'
+import { select } from 'async'
 
 // const sourceTitles = [
 //   'Telegram',
@@ -13,6 +14,7 @@ import './TrendsExploreSourcesFilter.css'
 const TrendsExploreSourcesFilterItem = ({
   title,
   disabled,
+  active,
   dataSource,
   onClick
 }) => {
@@ -21,7 +23,7 @@ const TrendsExploreSourcesFilterItem = ({
       className={cx({
         'ui basic button': true,
         disabled: disabled,
-        active: !disabled
+        active: active
       })}
       onClick={onClick}
       data-source={dataSource}
@@ -40,6 +42,8 @@ const TrendsExploreSourcesFilter = ({
       {Object.keys(Source).map(source => (
         <TrendsExploreSourcesFilterItem
           key={source}
+          active={selectedSources.includes(source)}
+          disabled={selectedSources.includes('merged') && source !== 'merged'}
           dataSource={source}
           title={Source[source]}
           onClick={handleSourceSelect}

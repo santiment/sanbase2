@@ -8,6 +8,7 @@ import './TotalMarketcapWidget.css'
 
 const chartOptions = {
   pointRadius: 0,
+  animation: false,
   legend: {
     display: false
   },
@@ -19,28 +20,7 @@ const chartOptions = {
     }
   },
   tooltips: {
-    mode: 'x',
-    intersect: false,
-    titleMarginBottom: 10,
-    titleFontSize: 13,
-    titleFontColor: '#3d4450',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    cornerRadius: 3,
-    borderColor: 'rgba(38, 43, 51, 0.7)',
-    borderWidth: 1,
-    bodyFontSize: 12,
-    bodySpacing: 8,
-    bodyFontColor: '#3d4450',
-    displayColors: true,
-    callbacks: {
-      title: item => {
-        return moment(item[0].xLabel).format('MMM DD YYYY')
-      },
-      label: tooltipItem =>
-        formatNumber(tooltipItem.yLabel, {
-          currency: 'USD'
-        })
-    }
+    enabled: false
   },
   scales: {
     yAxes: [

@@ -14,9 +14,16 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
         <Link
           activeClassName='projects-navigation-list__page-link--active'
           className='projects-navigation-list__page-link'
+          to={'/assets/all'}
+        >
+          All Assets
+        </Link>
+        <Link
+          activeClassName='projects-navigation-list__page-link--active'
+          className='projects-navigation-list__page-link'
           to={'/assets/erc20'}
         >
-          ERC20 Projects
+          ERC20 Assets
         </Link>
         <Link
           activeClassName='projects-navigation-list__page-link--active'
@@ -28,7 +35,7 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
         <Link
           activeClassName='projects-navigation-list__page-link--active'
           className='projects-navigation-list__page-link'
-          to={'/ethereum-spent'}
+          to={'/ethereum'}
         >
           Ethereum Spent Overview
         </Link>

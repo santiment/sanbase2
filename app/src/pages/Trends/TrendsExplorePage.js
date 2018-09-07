@@ -45,8 +45,6 @@ export class TrendsExplorePage extends Component {
   }
 
   handleSourceSelect = ({ currentTarget }) => {
-    console.log(this.props)
-    console.log(currentTarget.dataset.source)
     const { selectedSources } = this.state
     const source = currentTarget.dataset.source
     let newSelectedSources

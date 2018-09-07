@@ -199,9 +199,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              limit,
              trx_type
            ) do
-      result =
-        eth_transactions
-        |> Clickhouse.MarkExchanges.mark_exchange_wallets()
+      result = eth_transactions
 
       {:ok, result}
     else

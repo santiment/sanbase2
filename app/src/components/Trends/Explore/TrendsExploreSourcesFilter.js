@@ -2,14 +2,6 @@ import React from 'react'
 import cx from 'classnames'
 import { Source } from '../trendsUtils'
 import './TrendsExploreSourcesFilter.css'
-import { select } from 'async'
-
-// const sourceTitles = [
-//   'Telegram',
-//   'Reddit',
-//   'Professional Traders Chat',
-//   'Merged sources'
-// ]
 
 const TrendsExploreSourcesFilterItem = ({
   title,

@@ -2,7 +2,7 @@ import React from 'react'
 import moment from 'moment'
 import 'chartjs-plugin-annotation'
 import { Line } from 'react-chartjs-2'
-import { mergeDataSourcesForChart } from '../trendsUtils'
+import { mergeDataSourcesForChart, SourceColor } from '../trendsUtils'
 import './TrendsExploreChart.css'
 
 const chartOptions = {
@@ -84,12 +84,12 @@ const createDatasetOptions = (label, borderColor) => ({
 })
 
 const chartDatasetOptions = {
-  merged: createDatasetOptions('Merged', 'rgb(255, 193, 7)'),
-  telegram: createDatasetOptions('Telegram', 'rgb(0, 0, 255)'),
-  reddit: createDatasetOptions('Reddit', 'rgb(255, 0, 0)'),
+  merged: createDatasetOptions('Merged', SourceColor['merged']),
+  telegram: createDatasetOptions('Telegram', SourceColor['telegram']),
+  reddit: createDatasetOptions('Reddit', SourceColor['reddit']),
   professionalTradersChat: createDatasetOptions(
     'Professional Traders Chat',
-    'rgb(255, 0, 255)'
+    SourceColor['professionalTradersChat']
   )
 }
 

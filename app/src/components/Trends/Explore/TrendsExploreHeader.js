@@ -1,13 +1,16 @@
 import React from 'react'
 import './TrendsExploreHeader.css'
-import TrendsExamplesItemQuery from '../Examples/TrendsExamplesItemQuery'
+import TrendsExamplesItemTopic from '../Examples/TrendsExamplesItemTopic'
 
-const TrendsExploreHeader = ({ topic }) => {
+const TrendsExploreHeader = ({ topic, selectedSources }) => {
   return (
     <div className='TrendsExploreHeader'>
       <div className='TrendsExploreHeaderTitles'>
         <div className='TrendsExploreHeaderTitles__item'>
-          <TrendsExamplesItemQuery topic={topic} />
+          <TrendsExamplesItemTopic
+            topic={topic}
+            selectedSources={selectedSources}
+          />
         </div>
       </div>
     </div>

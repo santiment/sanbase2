@@ -31,13 +31,10 @@ config :sanbase, Sanbase.TimescaleRepo,
 
 # Configure ClickHouseRepo for testing. It will be tested by using Postgres
 config :sanbase, Sanbase.ClickhouseRepo,
-  pool: Ecto.Adapters.SQL.Sandbox,
   adapter: Ecto.Adapters.Postgres,
+  pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_test",
-  hostname: "localhost",
-  port: 5432,
-  username: "postgres",
-  password: "postgres"
+  pool_size: 30
 
 config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 

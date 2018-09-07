@@ -1,9 +1,14 @@
 ## CHANGELOG
 
+- 2018-07-09 | v.0.11.3 'Phobos':
+
+  Fixed financial block, if assets don't have wallets info
+  Moved ethereum spent table to ethereum page
+
 - 2018-05-09 | v.0.11.2 'Phobos':
 
   Unregister SW
-  Remove Limited data message for premium users
+  Remove limited data message for premium users
 
 - 2018-04-09 | v.0.11.1 'Phobos':
 
@@ -11,6 +16,7 @@
   Make Trends mobile friendly
 
 - 2018-03-09 | v.0.10.0 'Phobos':
+
   Trends page with example cards.
   Trends explore page with merged sources chart.
 
@@ -31,7 +37,6 @@
 
   Fixed NAN bug in project detailed page
   Fixed broken animation of loader
->>>>>>> master
 
 - 2018-28-08 | v.0.9.2 'Phobos':
 

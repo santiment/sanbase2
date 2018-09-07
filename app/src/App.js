@@ -18,7 +18,6 @@ import Account from './pages/Account/Account'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
-import EthSpent from './pages/EthSpent'
 import Menu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
@@ -218,7 +217,7 @@ export const App = ({
         />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
-        <Route exact path='/ethereum-spent' component={EthSpent} />
+        <Redirect from='/ethereum-spent' to='/projects/ethereum' />
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />

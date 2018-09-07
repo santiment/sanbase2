@@ -14,6 +14,7 @@ import PanelBlock from './../../components/PanelBlock'
 import Panel from './../../components/Panel'
 import Search from './../../components/Search/SearchContainer'
 import ServerErrorMessage from './../../components/ServerErrorMessage'
+import EthSpent from './../../pages/EthSpent'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
 import { millify } from './../../utils/formatting'
@@ -251,6 +252,7 @@ export const Detailed = ({
       ) : (
         <div>{projectContainerChart}</div>
       )}
+      {project.slug === 'ethereum' && <EthSpent />}
       <div className='information'>
         <PanelBlock isLoading={Project.loading} title='General Info'>
           <GeneralInfoBlock {...Project.project} />

@@ -28,6 +28,37 @@ export const Source = {
   merged: 'Merged sources'
 }
 
+export const SourceColor = {
+  telegram: 'rgb(0, 0, 255)',
+  reddit: 'rgb(255, 0, 0)',
+  professionalTradersChat: 'rgb(20, 200, 20)',
+  merged: 'rgb(255, 193, 7)'
+}
+
+export const composeBorderBottomGradient = selectedSources => {
+  let gradient = ''
+  const gradientPercentageStep = 100 / selectedSources.length
+  let currentStep = 0
+
+  for (const source of selectedSources) {
+    gradient += `, ${SourceColor[source]} ${currentStep}%`
+    currentStep += gradientPercentageStep
+    gradient += `, ${SourceColor[source]} ${currentStep}%`
+  }
+
+  // const redStart = 0
+  // currentStep += gradientPercentageStep
+  // const redEnd = currentStep
+  // const greenStart = currentStep
+  // currentStep += gradientPercentageStep
+  // const greenEnd = currentStep
+  // const blueStart = currentStep
+  // currentStep += gradientPercentageStep
+  // const blueEnd = 100
+
+  return `linear-gradient(to right ${gradient})`
+}
+
 const defaultValidSources = ['merged']
 
 export const validateSearchSources = (sources = defaultValidSources) => {

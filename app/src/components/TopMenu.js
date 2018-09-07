@@ -1,6 +1,5 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { compose } from 'recompose'
 import { connect } from 'react-redux'
 import 'font-awesome/css/font-awesome.css'
 import logo from '../assets/logo_sanbase.png'
@@ -9,21 +8,22 @@ import Search from './Search/SearchContainer'
 import * as actions from './../actions/types'
 import AnalysisDropdownMenu from './AnalysisDropdownMenu'
 import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
+import { checkIsLoggedIn } from './../pages/UserSelectors'
 import './AppMenu.css'
 import './TopMenu.css'
 
-export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
+export const TopMenu = ({ isLoggedin, logout }) => (
   <div className='app-menu'>
     <div className='container'>
       <div className='left'>
-        <Link to={'/'} className='brand'>
+        <Link to='/' className='brand'>
           <img src={logo} width='115' height='22' alt='SANbase' />
         </Link>
         <Search />
       </div>
       <SmoothDropdown className='right'>
         <ul className='menu-list-top'>
-          <Link className='app-menu__page-link' to={'/projects'}>
+          <Link className='app-menu__page-link active' to='/assets'>
             Assets
           </Link>
           <AnalysisDropdownMenu />
@@ -34,11 +34,7 @@ export const TopMenu = ({ isLoggedin, logout, location, projects = [] }) => (
   </div>
 )
 
-const mapStateToProps = ({ user = {} }) => {
-  return {
-    isLoggedin: !!user.token
-  }
-}
+const mapStateToProps = state => ({ isLoggedin: checkIsLoggedIn(state) })
 
 const mapDispatchToProps = dispatch => {
   return {
@@ -50,6 +46,4 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const enhance = compose(connect(mapStateToProps, mapDispatchToProps))
-
-export default enhance(TopMenu)
+export default connect(mapStateToProps, mapDispatchToProps)(TopMenu)

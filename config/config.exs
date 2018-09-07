@@ -22,20 +22,6 @@ config :sanbase, Sanbase.TimescaleRepo,
   # because of pgbouncer
   prepare: :unnamed
 
-# Clickhousex does not support `:system` tuples. The configuration is done
-# by defining defining `:url` in the ClickhouseRepo `init` function.
-config :sanbase, Sanbase.ClickhouseRepo,
-  adapter: ClickhouseEcto,
-  loggers: [Ecto.LogEntry],
-  hostname: "clickhouse-0",
-  port: 8123,
-  database: "default",
-  username: "default",
-  password: "",
-  pool_timeout: 60_000,
-  timeout: 60_000,
-  pool_size: 50
-
 config :sanbase, Sanbase.Timescaledb,
   blockchain_schema: {:system, "TIMESCALEDB_BLOCKCHAIN_SCHEMA", "etherbi"}
 

@@ -25,7 +25,7 @@ export const Source = {
   telegram: 'Telegram',
   reddit: 'Reddit',
   professionalTradersChat: 'Professional Traders Chat',
-  merged: 'Merged sources'
+  merged: 'Merged Sources'
 }
 
 export const SourceColor = {
@@ -33,30 +33,6 @@ export const SourceColor = {
   reddit: 'rgb(255, 0, 0)',
   professionalTradersChat: 'rgb(20, 200, 20)',
   merged: 'rgb(255, 193, 7)'
-}
-
-export const composeBorderBottomGradient = selectedSources => {
-  let gradient = ''
-  const gradientPercentageStep = 100 / selectedSources.length
-  let currentStep = 0
-
-  for (const source of selectedSources) {
-    gradient += `, ${SourceColor[source]} ${currentStep}%`
-    currentStep += gradientPercentageStep
-    gradient += `, ${SourceColor[source]} ${currentStep}%`
-  }
-
-  // const redStart = 0
-  // currentStep += gradientPercentageStep
-  // const redEnd = currentStep
-  // const greenStart = currentStep
-  // currentStep += gradientPercentageStep
-  // const greenEnd = currentStep
-  // const blueStart = currentStep
-  // currentStep += gradientPercentageStep
-  // const blueEnd = 100
-
-  return `linear-gradient(to right ${gradient})`
 }
 
 const defaultValidSources = ['merged']
@@ -69,4 +45,32 @@ export const validateSearchSources = (sources = defaultValidSources) => {
   const validSources = sources.filter(source => Source.hasOwnProperty(source))
 
   return validSources.length !== 0 ? validSources : defaultValidSources
+}
+
+export const parseExampleSettings = ({ interval, sources }) => {
+  let text = 'For '
+
+  switch (interval) {
+    case '6m':
+      text += '6 months'
+      break
+    case '1w':
+      text += '7 days'
+      break
+    case '3m':
+      text += '3 months'
+      break
+
+    default:
+      text += '6 months'
+      break
+  }
+
+  for (const source of sources) {
+    text += `, ${Source[source]}`
+  }
+
+  text += ' mentions'
+  return text
+  // For 7 days, Merged sources
 }

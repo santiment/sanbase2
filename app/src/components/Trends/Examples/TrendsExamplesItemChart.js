@@ -3,7 +3,11 @@ import { graphql } from 'react-apollo'
 import moment from 'moment'
 import { Line } from 'react-chartjs-2'
 import { trendsExploreGQL } from '../trendsExploreGQL'
-import { mergeDataSourcesForChart, parseTrendsGQLProps } from '../trendsUtils'
+import {
+  mergeDataSourcesForChart,
+  parseTrendsGQLProps,
+  SourceColor
+} from '../trendsUtils'
 import PropTypes from 'prop-types'
 
 const chartOptions = {
@@ -43,19 +47,51 @@ const propTypes = {
   topic: PropTypes.string.isRequired
 }
 
-const TrendsExamplesItemChart = ({ sources }) => {
+const createDatasetOptions = (label, borderColor) => ({
+  label,
+  yAxisID: 'y-axis-0',
+  borderColor,
+  borderWidth: 0,
+  pointRadius: 0,
+  fill: false
+})
+
+const chartDatasetOptions = {
+  merged: createDatasetOptions('Merged', SourceColor['merged']),
+  telegram: createDatasetOptions('Telegram', SourceColor['telegram']),
+  reddit: createDatasetOptions('Reddit', SourceColor['reddit']),
+  professionalTradersChat: createDatasetOptions(
+    'Professional Traders Chat',
+    SourceColor['professionalTradersChat']
+  )
+}
+
+const composeSourcesChartDatasets = (sources, selectedSources) => {
+  if (selectedSources.includes('merged')) {
+    return [
+      {
+        data: [...mergeDataSourcesForChart(sources).values()],
+        ...chartDatasetOptions['merged']
+      }
+    ]
+  }
+  // AS ternary
+  return selectedSources.map(selectedSource => ({
+    data:
+      sources[selectedSource] &&
+      sources[selectedSource].map(item => item.mentionsCount),
+    ...chartDatasetOptions[selectedSource]
+  }))
+}
+
+const TrendsExamplesItemChart = ({ sources, selectedSources }) => {
   const isLoading = !sources
 
   const mergedSources = mergeDataSourcesForChart(sources)
 
   const dataset = {
     labels: [...mergedSources.keys()],
-    datasets: [
-      {
-        data: [...mergedSources.values()],
-        ...datasetOptions
-      }
-    ]
+    datasets: composeSourcesChartDatasets(sources, selectedSources)
   }
 
   return (

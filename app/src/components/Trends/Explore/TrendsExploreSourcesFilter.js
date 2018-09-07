@@ -1,26 +1,28 @@
 import React from 'react'
 import cx from 'classnames'
-import { Source } from '../trendsUtils'
+import { Source, SourceColor } from '../trendsUtils'
 import './TrendsExploreSourcesFilter.css'
+import './TrendsExploreSourcesFilterItem.css'
 
 const TrendsExploreSourcesFilterItem = ({
   title,
   disabled,
   active,
   dataSource,
-  onClick
+  onClick,
+  borderColor
 }) => {
   return (
     <button
       className={cx({
-        'ui basic button': true,
+        'TrendsExploreSourcesFilterItem ui basic button': true,
         disabled: disabled,
         active: active
       })}
       onClick={onClick}
       data-source={dataSource}
     >
-      <span>{title}</span>
+      <span style={{ borderColor }}>{title}</span>
     </button>
   )
 }
@@ -39,6 +41,7 @@ const TrendsExploreSourcesFilter = ({
           dataSource={source}
           title={Source[source]}
           onClick={handleSourceSelect}
+          borderColor={SourceColor[source]}
         />
       ))}
     </div>

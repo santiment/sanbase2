@@ -1,8 +1,7 @@
 import React from 'react'
-import moment from 'moment'
 import 'chartjs-plugin-annotation'
-import { Line } from 'react-chartjs-2'
-import { mergeDataSourcesForChart, SourceColor } from '../trendsUtils'
+import TrendsChart from '../TrendsChart'
+import moment from 'moment'
 import './TrendsExploreChart.css'
 
 const chartOptions = {
@@ -18,7 +17,7 @@ const chartOptions = {
         ticks: {
           autoSkip: true,
           maxTicksLimit: 5,
-          callback: (item, index) => (item !== 0 ? item : '')
+          callback: item => (item !== 0 ? item : '')
         }
       }
     ],
@@ -74,60 +73,14 @@ const chartOptions = {
   }
 }
 
-const createDatasetOptions = (label, borderColor) => ({
-  label,
-  yAxisID: 'y-axis-0',
-  borderColor,
-  borderWidth: 0,
-  pointRadius: 0,
-  fill: false
-})
-
-const chartDatasetOptions = {
-  merged: createDatasetOptions('Merged', SourceColor['merged']),
-  telegram: createDatasetOptions('Telegram', SourceColor['telegram']),
-  reddit: createDatasetOptions('Reddit', SourceColor['reddit']),
-  professionalTradersChat: createDatasetOptions(
-    'Professional Traders Chat',
-    SourceColor['professionalTradersChat']
-  )
-}
-
-const composeSourcesChartDatasets = (sources, selectedSources) => {
-  if (selectedSources.includes('merged')) {
-    return [
-      {
-        data: [...mergeDataSourcesForChart(sources).values()],
-        ...chartDatasetOptions['merged']
-      }
-    ]
-  }
-  // AS ternary
-  return selectedSources.map(selectedSource => ({
-    data:
-      sources[selectedSource] &&
-      sources[selectedSource].map(item => item.mentionsCount),
-    ...chartDatasetOptions[selectedSource]
-  }))
-}
-
 const TrendsExploreChart = ({ sources, selectedSources, isDesktop }) => {
-  console.log('TCL: TrendsExploreChart -> selectedSources', selectedSources)
-  const isLoading = !sources
-
-  const mergedSources = mergeDataSourcesForChart(sources)
-
-  const dataset = {
-    labels: [...mergedSources.keys()],
-    datasets: composeSourcesChartDatasets(sources, selectedSources)
-  }
   return (
     <div className='TrendsExploreChart'>
-      {isLoading && <div className='chart-loading-msg'>Loading...</div>}
-      <Line
-        options={chartOptions}
-        data={dataset}
-        height={isDesktop ? 80 : 200}
+      <TrendsChart
+        sources={sources}
+        selectedSources={selectedSources}
+        chartOptions={chartOptions}
+        isDesktop={isDesktop}
       />
     </div>
   )

@@ -41,10 +41,16 @@ export const projectBySlugGQL = gql`
         limit: 10
         transactionType: OUT
       ) {
-        fromAddress
+        fromAddress {
+          address
+          isExchange
+        }
+        toAddress {
+          address
+          isExchange
+        }
         trxValue
         trxHash
-        toAddress
         datetime
       }
       ethSpentOverTime(from: $fromOverTime, to: $to, interval: $interval) {

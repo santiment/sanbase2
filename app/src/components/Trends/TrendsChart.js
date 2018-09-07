@@ -8,8 +8,10 @@ const createDatasetOptions = (label, borderColor) => ({
   label,
   yAxisID: 'y-axis-0',
   borderColor,
-  borderWidth: 0,
+  backgroundColor: borderColor,
+  borderWidth: 0.8,
   pointRadius: 0,
+  pointHoverRadius: 2,
   fill: false
 })
 

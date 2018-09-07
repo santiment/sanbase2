@@ -21,10 +21,6 @@
   text-overflow: ellipsis;
 }
 
-.TrendsExamplesItem__topic span {
-  border-bottom: 2px solid #ffc107;
-}
-
 .TrendsExamplesItem__settings {
   color: #999;
   font-size: 0.9rem;

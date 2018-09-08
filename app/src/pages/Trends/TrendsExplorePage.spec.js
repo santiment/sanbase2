@@ -2,7 +2,7 @@
 import React from 'react'
 import toJson from 'enzyme-to-json'
 import { shallow, mount } from 'enzyme'
-import TrendsExplorePage from './TrendsExplorePage'
+import TrendsExplorePage, { calculateNewSources } from './TrendsExplorePage'
 
 describe('TrendsExplorePage', () => {
   it('smoke', () => {
@@ -15,7 +15,7 @@ describe('TrendsExplorePage', () => {
     const sources = ['merged', 'telegram', 'reddit']
 
     it("it should return rest sources if clicked on 'merged' and 'merged' is actived", () => {
-      const newSelected = TrendsExplorePage.calculateNewSources({
+      const newSelected = calculateNewSources({
         sources,
         source: 'merged',
         selectedSources: 'merged'
@@ -26,7 +26,7 @@ describe('TrendsExplorePage', () => {
     })
 
     it("it should return merged sources if clicked on 'merged' and 'merged' is unactived", () => {
-      const newSelected = TrendsExplorePage.calculateNewSources({
+      const newSelected = calculateNewSources({
         sources,
         source: 'merged',
         selectedSources: ['reddit']
@@ -35,7 +35,7 @@ describe('TrendsExplorePage', () => {
     })
 
     it('it should return merged sources if clicked on any source and this source is last and single activated', () => {
-      const newSelected = TrendsExplorePage.calculateNewSources({
+      const newSelected = calculateNewSources({
         sources,
         source: 'reddit',
         selectedSources: ['reddit']

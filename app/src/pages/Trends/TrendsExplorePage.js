@@ -13,17 +13,9 @@ import GetTrends from './../../components/Trends/GetTrends'
 import './TrendsExplorePage.css'
 
 export class TrendsExplorePage extends Component {
-  state = (() => {
-    const { location } = this.props
-    const { interval, source } = qs.parse(location.search, {
-      arrayFormat: 'bracket'
-    })
-
-    return {
-      interval: interval || '6m',
-      selectedSources: validateSearchSources(source)
-    }
-  })()
+  state = {
+    ...getStateFromQS(this.props)
+  }
 
   static defaultProps = {
     match: { params: {} },
@@ -35,6 +27,12 @@ export class TrendsExplorePage extends Component {
     match: PropTypes.object,
     location: PropTypes.object,
     history: PropTypes.object
+  }
+
+  static getDerivedStateFromProps (nextProps, prevState) {
+    return {
+      ...getStateFromQS(nextProps)
+    }
   }
 
   render () {
@@ -74,7 +72,7 @@ export class TrendsExplorePage extends Component {
   handleSourceSelect = ({ currentTarget }) => {
     const { selectedSources } = this.state
     const source = currentTarget.dataset.source
-    const newSelectedSource = TrendsExplorePage.calculateNewSources({
+    const newSelectedSource = calculateNewSources({
       source,
       selectedSources,
       sources: Object.keys(Source)
@@ -88,31 +86,6 @@ export class TrendsExplorePage extends Component {
     )
   }
 
-  static calculateNewSources = ({
-    source,
-    selectedSources = ['merged'],
-    sources
-  }) => {
-    if (source === 'merged') {
-      if (selectedSources.includes('merged')) {
-        return sources.filter(selectedSource => selectedSource !== 'merged')
-      } else {
-        return ['merged']
-      }
-    } else {
-      if (selectedSources.includes(source)) {
-        if (selectedSources.length === 1) {
-          return ['merged']
-        }
-        return selectedSources.filter(
-          selectedSource => selectedSource !== source
-        )
-      } else {
-        return [...selectedSources, source]
-      }
-    }
-  }
-
   mapStateToQS = ({ interval, selectedSources }) =>
     '?' +
     qs.stringify(
@@ -124,6 +97,40 @@ export class TrendsExplorePage extends Component {
     this.props.history.push({
       search: this.mapStateToQS(this.state)
     })
+  }
+}
+
+export const getStateFromQS = ({ location }) => {
+  const { interval, source } = qs.parse(location.search, {
+    arrayFormat: 'bracket'
+  })
+
+  return {
+    interval: interval || '6m',
+    selectedSources: validateSearchSources(source)
+  }
+}
+
+export const calculateNewSources = ({
+  source,
+  selectedSources = ['merged'],
+  sources
+}) => {
+  if (source === 'merged') {
+    if (selectedSources.includes('merged')) {
+      return sources.filter(selectedSource => selectedSource !== 'merged')
+    } else {
+      return ['merged']
+    }
+  } else {
+    if (selectedSources.includes(source)) {
+      if (selectedSources.length === 1) {
+        return ['merged']
+      }
+      return selectedSources.filter(selectedSource => selectedSource !== source)
+    } else {
+      return [...selectedSources, source]
+    }
   }
 }
 

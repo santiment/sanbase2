@@ -26,13 +26,8 @@ const chartOptions = {
   }
 }
 
-const TrendsExamplesItemChart = ({ sources, selectedSources }) => (
-  <TrendsChart
-    sources={sources}
-    selectedSources={selectedSources}
-    chartOptions={chartOptions}
-    height={null}
-  />
+const TrendsExamplesItemChart = props => (
+  <TrendsChart {...props} chartOptions={chartOptions} height={null} />
 )
 
 export default TrendsExamplesItemChart

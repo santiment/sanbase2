@@ -1,0 +1,44 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TrendsExplorePage smoke 1`] = `
+<div
+  className="TrendsExplorePage"
+>
+  <div
+    className="TrendsExplorePage__content"
+  >
+    <TrendsExploreHeader
+      selectedSources={
+        Array [
+          "merged",
+        ]
+      }
+    />
+    <TimeFilter
+      defaultSelected="6m"
+      disabled={true}
+      timeOptions={
+        Array [
+          "1w",
+          "1m",
+          "3m",
+          "6m",
+          "1y",
+          "all",
+        ]
+      }
+    />
+    <Apollo(GetTrends)
+      render={[Function]}
+    />
+    <TrendsExploreSourcesFilter
+      handleSourceSelect={[Function]}
+      selectedSources={
+        Array [
+          "merged",
+        ]
+      }
+    />
+  </div>
+</div>
+`;

@@ -36,9 +36,9 @@ const composeSourcesChartDatasets = (sources, selectedSources) => {
   }
 
   return selectedSources.map(selectedSource => ({
-    data:
-      sources[selectedSource] &&
-      sources[selectedSource].map(item => item.mentionsCount),
+    data: sources[selectedSource]
+      ? sources[selectedSource].map(item => item.mentionsCount)
+      : [],
     ...chartDatasetOptions[selectedSource]
   }))
 }
@@ -63,6 +63,7 @@ const TrendsChart = ({
     labels: [...mergedSources.keys()],
     datasets: composeSourcesChartDatasets(sources, selectedSources)
   }
+
   return (
     <Fragment>
       {isLoading && <div className='chart-loading-msg'>Loading...</div>}

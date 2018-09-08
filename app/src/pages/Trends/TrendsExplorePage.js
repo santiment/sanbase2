@@ -1,25 +1,21 @@
 import React, { Component } from 'react'
-import queryString from 'query-string'
-import { graphql } from 'react-apollo'
-import moment from 'moment'
-import { trendsExploreGQL } from '../../components/Trends/trendsExploreGQL'
+import PropTypes from 'prop-types'
+import * as qs from 'query-string'
 import TrendsExploreChart from '../../components/Trends/Explore/TrendsExploreChart'
 import TimeFilter from './../../components/TimeFilter/TimeFilter'
 import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
 import TrendsExploreSourcesFilter from '../../components/Trends/Explore/TrendsExploreSourcesFilter'
 import {
-  parseTrendsGQLProps,
   validateSearchSources,
   Source
 } from '../../components/Trends/trendsUtils'
+import GetTrends from './../../components/Trends/GetTrends'
 import './TrendsExplorePage.css'
 
 export class TrendsExplorePage extends Component {
-  state = this.parseSearchQuerySourcesToState()
-
-  parseSearchQuerySourcesToState () {
+  state = (() => {
     const { location } = this.props
-    const { interval, source } = queryString.parse(location.search, {
+    const { interval, source } = qs.parse(location.search, {
       arrayFormat: 'bracket'
     })
 
@@ -27,65 +23,22 @@ export class TrendsExplorePage extends Component {
       interval: interval || '6m',
       selectedSources: validateSearchSources(source)
     }
+  })()
+
+  static defaultProps = {
+    match: { params: {} },
+    location: {},
+    history: {}
   }
 
-  formatStateToSearchQuery () {
-    const { interval, selectedSources } = this.state
-
-    return (
-      '?' +
-      queryString.stringify(
-        {
-          interval,
-          source: selectedSources
-        },
-        { arrayFormat: 'bracket' }
-      )
-    )
-  }
-
-  handleSourceSelect = ({ currentTarget }) => {
-    const { selectedSources } = this.state
-    const source = currentTarget.dataset.source
-    let newSelectedSources
-
-    if (source === 'merged') {
-      if (selectedSources.includes('merged')) {
-        newSelectedSources = Object.keys(Source).filter(
-          selectedSource => selectedSource !== 'merged'
-        )
-      } else {
-        newSelectedSources = ['merged']
-      }
-    } else {
-      if (selectedSources.includes(source)) {
-        if (selectedSources.length === 1) return
-        newSelectedSources = selectedSources.filter(
-          selectedSource => selectedSource !== source
-        )
-      } else {
-        newSelectedSources = [...selectedSources, source]
-      }
-    }
-
-    this.setState(prevState => ({
-      ...prevState,
-      selectedSources: newSelectedSources
-    }))
-    this.updateSearchQuery()
-  }
-
-  updateSearchQuery () {
-    // HACK
-    // FIX: PASS ARGUMENT STATE
-    setTimeout(
-      () => this.props.history.push(this.formatStateToSearchQuery()),
-      0
-    )
+  static propTypes = {
+    match: PropTypes.object,
+    location: PropTypes.object,
+    history: PropTypes.object
   }
 
   render () {
-    const { sources, match, isDesktop } = this.props
+    const { match, isDesktop } = this.props
     const { selectedSources } = this.state
     return (
       <div className='TrendsExplorePage'>
@@ -99,10 +52,15 @@ export class TrendsExplorePage extends Component {
             defaultSelected='6m'
             disabled
           />
-          <TrendsExploreChart
-            sources={sources}
-            isDesktop={isDesktop}
-            selectedSources={selectedSources}
+          <GetTrends
+            topic={match.params.topic}
+            render={props => (
+              <TrendsExploreChart
+                {...props}
+                isDesktop={isDesktop}
+                selectedSources={selectedSources}
+              />
+            )}
           />
           <TrendsExploreSourcesFilter
             selectedSources={selectedSources}
@@ -112,19 +70,61 @@ export class TrendsExplorePage extends Component {
       </div>
     )
   }
-}
 
-export default graphql(trendsExploreGQL, {
-  props: parseTrendsGQLProps,
-  options: ({ match }) => {
-    return {
-      variables: {
-        searchText: match.params.topic,
-        from: moment()
-          .utc()
-          .subtract(6, 'months')
-          .format()
+  handleSourceSelect = ({ currentTarget }) => {
+    const { selectedSources } = this.state
+    const source = currentTarget.dataset.source
+    const newSelectedSource = TrendsExplorePage.calculateNewSources({
+      source,
+      selectedSources,
+      sources: Object.keys(Source)
+    })
+
+    this.setState(
+      {
+        selectedSources: newSelectedSource
+      },
+      this.updateSearchQuery
+    )
+  }
+
+  static calculateNewSources = ({
+    source,
+    selectedSources = ['merged'],
+    sources
+  }) => {
+    if (source === 'merged') {
+      if (selectedSources.includes('merged')) {
+        return sources.filter(selectedSource => selectedSource !== 'merged')
+      } else {
+        return ['merged']
+      }
+    } else {
+      if (selectedSources.includes(source)) {
+        if (selectedSources.length === 1) {
+          return ['merged']
+        }
+        return selectedSources.filter(
+          selectedSource => selectedSource !== source
+        )
+      } else {
+        return [...selectedSources, source]
       }
     }
   }
-})(TrendsExplorePage)
+
+  mapStateToQS = ({ interval, selectedSources }) =>
+    '?' +
+    qs.stringify(
+      { interval, source: selectedSources },
+      { arrayFormat: 'bracket' }
+    )
+
+  updateSearchQuery = () => {
+    this.props.history.push({
+      search: this.mapStateToQS(this.state)
+    })
+  }
+}
+
+export default TrendsExplorePage

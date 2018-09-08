@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import queryString from 'query-string'
 import TrendsExamplesItemChart from './TrendsExamplesItemChart'
 import { parseExampleSettings } from '../trendsUtils'
+import GetTrends from './../GetTrends'
 import './TrendsExamplesItem.css'
 
 const propTypes = {
@@ -29,9 +30,14 @@ const TrendsExamplesItem = ({ topic, settings, onClick }) => {
         <span>{topic}</span>
       </div>
       <div className='TrendsExamplesItem__chart'>
-        <TrendsExamplesItemChart
+        <GetTrends
           topic={topic}
-          selectedSources={settings.sources}
+          render={props => (
+            <TrendsExamplesItemChart
+              {...props}
+              selectedSources={settings.sources}
+            />
+          )}
         />
       </div>
       <div className='TrendsExamplesItem__settings'>

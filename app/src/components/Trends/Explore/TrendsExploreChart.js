@@ -77,17 +77,10 @@ const chartOptions = {
   }
 }
 
-const TrendsExploreChart = ({ sources, selectedSources, isDesktop }) => {
-  return (
-    <div className='TrendsExploreChart'>
-      <TrendsChart
-        sources={sources}
-        selectedSources={selectedSources}
-        chartOptions={chartOptions}
-        isDesktop={isDesktop}
-      />
-    </div>
-  )
-}
+const TrendsExploreChart = props => (
+  <div className='TrendsExploreChart'>
+    <TrendsChart {...props} chartOptions={chartOptions} />
+  </div>
+)
 
 export default TrendsExploreChart

@@ -51,13 +51,12 @@ const propTypes = {
 
 const TrendsChart = ({
   sources,
+  isLoading,
   selectedSources,
   chartOptions,
   isDesktop = true,
   ...props
 }) => {
-  const isLoading = !sources
-
   const mergedSources = mergeDataSourcesForChart(sources)
 
   const dataset = {

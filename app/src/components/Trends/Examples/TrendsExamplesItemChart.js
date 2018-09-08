@@ -1,8 +1,4 @@
 import React from 'react'
-import { graphql } from 'react-apollo'
-import moment from 'moment'
-import { trendsExploreGQL } from '../trendsExploreGQL'
-import { parseTrendsGQLProps } from '../trendsUtils'
 import TrendsChart from '../TrendsChart'
 
 const chartOptions = {
@@ -30,28 +26,13 @@ const chartOptions = {
   }
 }
 
-const TrendsExamplesItemChart = ({ sources, selectedSources }) => {
-  return (
-    <TrendsChart
-      sources={sources}
-      selectedSources={selectedSources}
-      chartOptions={chartOptions}
-      height={null}
-    />
-  )
-}
+const TrendsExamplesItemChart = ({ sources, selectedSources }) => (
+  <TrendsChart
+    sources={sources}
+    selectedSources={selectedSources}
+    chartOptions={chartOptions}
+    height={null}
+  />
+)
 
-export default graphql(trendsExploreGQL, {
-  props: parseTrendsGQLProps,
-  options: ({ topic }) => {
-    return {
-      variables: {
-        searchText: topic,
-        from: moment()
-          .utc()
-          .subtract(7, 'days')
-          .format()
-      }
-    }
-  }
-})(TrendsExamplesItemChart)
+export default TrendsExamplesItemChart

@@ -1,12 +1,5 @@
 import { push } from 'react-router-redux'
 
-export const parseTrendsGQLProps = ({
-  data: { topicSearch = { chartsData: {} } }
-}) => {
-  const { __typename, ...sources } = topicSearch.chartsData
-  return { sources }
-}
-
 export const mergeDataSourcesForChart = sources =>
   Object.keys(sources).reduce((acc, source) => {
     if (!sources[source]) return acc
@@ -35,16 +28,17 @@ export const SourceColor = {
   merged: 'rgb(255, 193, 7)'
 }
 
-const defaultValidSources = ['merged']
+const defaultSources = ['merged']
 
-export const validateSearchSources = (sources = defaultValidSources) => {
+export const validateSearchSources = (sources = defaultSources) => {
+  if (!(sources instanceof Array)) return defaultSources
   if (sources.includes('merged')) {
-    return defaultValidSources
+    return defaultSources
   }
 
   const validSources = sources.filter(source => Source.hasOwnProperty(source))
 
-  return validSources.length !== 0 ? validSources : defaultValidSources
+  return validSources.length !== 0 ? validSources : defaultSources
 }
 
 export const parseExampleSettings = ({ interval, sources }) => {

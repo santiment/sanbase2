@@ -23,7 +23,7 @@ const examples = [
     topic: 'eth',
     settings: {
       interval: '3m',
-      sources: ['professionalTradersChat']
+      sources: ['professional_traders_chat']
     }
   }
 ]

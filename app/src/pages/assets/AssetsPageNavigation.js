@@ -35,7 +35,7 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
         <Link
           activeClassName='projects-navigation-list__page-link--active'
           className='projects-navigation-list__page-link'
-          to={'/ethereum'}
+          to={'/ethereum-spent'}
         >
           ETH Spent
         </Link>

@@ -142,7 +142,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   def topic_search(
         _root,
         %{
-          sources: sources,
+          source: source,
           search_text: search_text,
           from: from,
           to: to,
@@ -151,7 +151,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
         _resolution
       ) do
     TechIndicators.topic_search(
-      sources,
+      source,
       search_text,
       from,
       to,

@@ -1,37 +1,47 @@
 import React from 'react'
 import cx from 'classnames'
+import { Source, SourceColor } from '../trendsUtils'
 import './TrendsExploreSourcesFilter.css'
+import './TrendsExploreSourcesFilterItem.css'
 
-const sourceTitles = [
-  'Telegram',
-  'Reddit',
-  'Professional Traders Chat',
-  'Merged sources'
-]
-
-const TrendsExploreSourcesFilterItem = ({ title, disabled, onClick }) => {
+const TrendsExploreSourcesFilterItem = ({
+  title,
+  disabled,
+  active,
+  dataSource,
+  onClick,
+  borderColor
+}) => {
   return (
     <button
       className={cx({
-        'ui basic button': true,
+        'TrendsExploreSourcesFilterItem ui basic button': true,
         disabled: disabled,
-        active: !disabled
+        active: active
       })}
       onClick={onClick}
+      data-source={dataSource}
     >
-      <span>{title}</span>
+      <span style={{ borderColor }}>{title}</span>
     </button>
   )
 }
 
-const TrendsExploreSourcesFilter = () => {
+const TrendsExploreSourcesFilter = ({
+  selectedSources,
+  handleSourceSelect
+}) => {
   return (
     <div className='TrendsExploreSourcesFilter'>
-      {sourceTitles.map((sourceTitle, index) => (
+      {Object.keys(Source).map(source => (
         <TrendsExploreSourcesFilterItem
-          key={sourceTitle}
-          disabled={index !== 3}
-          title={sourceTitle}
+          key={source}
+          active={selectedSources.includes(source)}
+          disabled={selectedSources.includes('merged') && source !== 'merged'}
+          dataSource={source}
+          title={Source[source]}
+          onClick={handleSourceSelect}
+          borderColor={SourceColor[source]}
         />
       ))}
     </div>

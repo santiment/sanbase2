@@ -32,36 +32,6 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
     %{project: project, project_no_contract: project_no_contract}
   end
 
-  test "top transactions by address", %{conn: conn} do
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      top_address_transfers: fn _, _, _, _ ->
-        top_address_transfers()
-      end do
-      query = """
-      {
-        topAddressTransfers(
-          from_address: "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-          from: "#{DateTime.from_naive!(~N[2018-06-10 10:33:47], "Etc/UTC")}",
-          to: "#{DateTime.from_naive!(~N[2018-06-18 12:33:47], "Etc/UTC")}",
-        ) {
-          datetime
-          trxHash
-          trxValue
-          fromAddress
-          toAddress
-        }
-      }
-      """
-
-      result =
-        conn
-        |> post("/graphql", query_skeleton(query, "topAddressTransfers"))
-
-      assert json_response(result, 200)["data"]["topAddressTransfers"] ==
-               top_address_transfers_map()
-    end
-  end
-
   test "top token transactons for a project", %{conn: conn, project: project} do
     with_mock Sanbase.Clickhouse.Erc20Transfers,
       token_top_transfers: fn _, _, _, _, _ ->
@@ -78,8 +48,8 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
             datetime
             trxHash
             trxValue
-            fromAddress
-            toAddress
+            fromAddress{ address }
+            toAddress{ address }
           }
         }
       }
@@ -107,8 +77,8 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
               datetime
               trxHash
               trxValue
-              fromAddress
-              toAddress
+              fromAddress{ address }
+              toAddress{ address }
           }
       }
     }
@@ -132,8 +102,8 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
           datetime
           trxHash
           trxValue
-          fromAddress
-          toAddress
+          fromAddress{ address }
+          toAddress{ address }
         }
       }
     }
@@ -148,97 +118,6 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
   end
 
   # Private functions
-
-  defp top_address_transfers() do
-    {:ok,
-     [
-       %Sanbase.Clickhouse.EthTransfers{
-         block_number: nil,
-         datetime: DateTime.from_naive!(~N[2018-01-06 02:10:06], "Etc/UTC"),
-         from_address: "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-         to_address: "0xa53e3da0f99b49b2b4974b344153f6be67f1f8d9",
-         trx_hash: "0x2aaf5382e4f7de07df68d620533a8425402d95029725e1b5dba313c7a757bf1e",
-         trx_position: nil,
-         trx_value: 7.0e4
-       },
-       %Sanbase.Clickhouse.EthTransfers{
-         block_number: nil,
-         datetime: DateTime.from_naive!(~N[2018-02-07 09:03:57], "Etc/UTC"),
-         from_address: "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-         to_address: "0x5ed8cee6b63b1c6afce3ad7c92f4fd7e1b8fad9f",
-         trx_hash: "0x8418d0294ac7690c33fec5a17c2af8193a765d1d3341e38b416dd07664fe9349",
-         trx_position: nil,
-         trx_value: 1.0e3
-       },
-       %Sanbase.Clickhouse.EthTransfers{
-         block_number: nil,
-         datetime: DateTime.from_naive!(~N[2018-07-02 16:28:39], "Etc/UTC"),
-         from_address: "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-         to_address: "0x01b03620abbeac509a013fb433bbf9d5156bf6b8",
-         trx_hash: "0xf5c40015fd4f9ebefb421462bcf6b9cf2cc3a6b6f592222a5a8361cdbc7c40f4",
-         trx_position: nil,
-         trx_value: 1.0e3
-       },
-       %Sanbase.Clickhouse.EthTransfers{
-         block_number: nil,
-         datetime: DateTime.from_naive!(~N[2018-01-26 19:05:03], "Etc/UTC"),
-         from_address: "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-         to_address: "0x5ed8cee6b63b1c6afce3ad7c92f4fd7e1b8fad9f",
-         trx_hash: "0x8d7dc51c3f967c75215fd6c9ce537c032ff1ae8b7b1e6c704123d594a0efa278",
-         trx_position: nil,
-         trx_value: 1.0e3
-       },
-       %Sanbase.Clickhouse.EthTransfers{
-         block_number: nil,
-         datetime: DateTime.from_naive!(~N[2018-06-11 11:38:11], "Etc/UTC"),
-         from_address: "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-         to_address: "0x01b03620abbeac509a013fb433bbf9d5156bf6b8",
-         trx_hash: "0x7e70025d38f4aaf78f62f57e07ef9657f7f0f6e79389ee5932eaa2ae5c2093f8",
-         trx_position: nil,
-         trx_value: 1.0e3
-       }
-     ]}
-  end
-
-  defp top_address_transfers_map() do
-    [
-      %{
-        "datetime" => "2018-01-06T02:10:06Z",
-        "fromAddress" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-        "toAddress" => "0xa53e3da0f99b49b2b4974b344153f6be67f1f8d9",
-        "trxHash" => "0x2aaf5382e4f7de07df68d620533a8425402d95029725e1b5dba313c7a757bf1e",
-        "trxValue" => 7.0e4
-      },
-      %{
-        "datetime" => "2018-02-07T09:03:57Z",
-        "fromAddress" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-        "toAddress" => "0x5ed8cee6b63b1c6afce3ad7c92f4fd7e1b8fad9f",
-        "trxHash" => "0x8418d0294ac7690c33fec5a17c2af8193a765d1d3341e38b416dd07664fe9349",
-        "trxValue" => 1.0e3
-      },
-      %{
-        "datetime" => "2018-07-02T16:28:39Z",
-        "fromAddress" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-        "toAddress" => "0x01b03620abbeac509a013fb433bbf9d5156bf6b8",
-        "trxHash" => "0xf5c40015fd4f9ebefb421462bcf6b9cf2cc3a6b6f592222a5a8361cdbc7c40f4",
-        "trxValue" => 1.0e3
-      },
-      %{
-        "datetime" => "2018-01-26T19:05:03Z",
-        "fromAddress" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-        "toAddress" => "0x5ed8cee6b63b1c6afce3ad7c92f4fd7e1b8fad9f",
-        "trxHash" => "0x8d7dc51c3f967c75215fd6c9ce537c032ff1ae8b7b1e6c704123d594a0efa278",
-        "trxValue" => 1.0e3
-      },
-      %{
-        "datetime" => "2018-06-11T11:38:11Z",
-        "fromAddress" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-        "toAddress" => "0x01b03620abbeac509a013fb433bbf9d5156bf6b8",
-        "trxHash" => "0x7e70025d38f4aaf78f62f57e07ef9657f7f0f6e79389ee5932eaa2ae5c2093f8",
-        "trxValue" => 1.0e3
-      }
-    ]
-  end
 
   defp transactions() do
     {:ok,
@@ -361,71 +240,71 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
       "tokenTopTransactions" => [
         %{
           "datetime" => "2018-06-10T10:33:47Z",
-          "fromAddress" => "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8",
-          "toAddress" => "0x742d35cc6634c0532925a3b844bc454e4438f44e",
+          "fromAddress" => %{"address" => "0xf4b51b14b9ee30dc37ec970b50a486f37686e2a8"},
+          "toAddress" => %{"address" => "0x742d35cc6634c0532925a3b844bc454e4438f44e"},
           "trxHash" => "0x9a561c88bb59a1f6dfe63ed4fe036466b3a328d1d86d039377481ab7c4defe4e",
           "trxValue" => 4.5488374321456405e7
         },
         %{
           "datetime" => "2018-06-10T12:33:47Z",
-          "fromAddress" => "0x416eda5d6ed29cac3e6d97c102d61bc578c5db87",
-          "toAddress" => "0xf9428b0e4959cb8d0e68d056a12dcd64ddef066e",
+          "fromAddress" => %{"address" => "0x416eda5d6ed29cac3e6d97c102d61bc578c5db87"},
+          "toAddress" => %{"address" => "0xf9428b0e4959cb8d0e68d056a12dcd64ddef066e"},
           "trxHash" => "0xccbb803caabebd3665eec49673e23ef5cd08bd0be50a2b1f1506d77a523827ce",
           "trxValue" => 8.990420000000001e5
         },
         %{
           "datetime" => "2018-06-11T12:33:47Z",
-          "fromAddress" => "0xf9428b0e4959cb8d0e68d056a12dcd64ddef066e",
-          "toAddress" => "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa",
+          "fromAddress" => %{"address" => "0xf9428b0e4959cb8d0e68d056a12dcd64ddef066e"},
+          "toAddress" => %{"address" => "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa"},
           "trxHash" => "0x923f8054bf571ecd56db56f8aaf7b71b97f03ac7cf63e5cac929869cdbdd3863",
           "trxValue" => 8.990420000000001e5
         },
         %{
           "datetime" => "2018-06-12T12:33:47Z",
-          "fromAddress" => "0x17125b59ac51cee029e4bd78d7f5947d1ea49bb2",
-          "toAddress" => "0x8f47cc86055f35ba939ff48e569105183fea64e8",
+          "fromAddress" => %{"address" => "0x17125b59ac51cee029e4bd78d7f5947d1ea49bb2"},
+          "toAddress" => %{"address" => "0x8f47cc86055f35ba939ff48e569105183fea64e8"},
           "trxHash" => "0xa891e1bbe292e546f40d23772b53a396ae2d37697665157bc6e019c647e9531a",
           "trxValue" => 2.5e5
         },
         %{
           "datetime" => "2018-06-13T12:33:47Z",
-          "fromAddress" => "0x8f47cc86055f35ba939ff48e569105183fea64e8",
-          "toAddress" => "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa",
+          "fromAddress" => %{"address" => "0x8f47cc86055f35ba939ff48e569105183fea64e8"},
+          "toAddress" => %{"address" => "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa"},
           "trxHash" => "0xd4341953103d0d850d3284910213482dae5f7677c929f768d72f121e5a556fb3",
           "trxValue" => 2.5e5
         },
         %{
           "datetime" => "2018-06-14T12:33:47Z",
-          "fromAddress" => "0x826d1ba25d5bf1485c755c8efecff3744f90d137",
-          "toAddress" => "0x4976b5204c10a8de91cbc9224fb6d314454cf7d8",
+          "fromAddress" => %{"address" => "0x826d1ba25d5bf1485c755c8efecff3744f90d137"},
+          "toAddress" => %{"address" => "0x4976b5204c10a8de91cbc9224fb6d314454cf7d8"},
           "trxHash" => "0x398772430a2e39f5f1addfbba56b7db1e30e5417de52c15001e157e350c18e52",
           "trxValue" => 1.6667399999999998e5
         },
         %{
           "datetime" => "2018-06-15T12:33:47Z",
-          "fromAddress" => "0x4976b5204c10a8de91cbc9224fb6d314454cf7d8",
-          "toAddress" => "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa",
+          "fromAddress" => %{"address" => "0x4976b5204c10a8de91cbc9224fb6d314454cf7d8"},
+          "toAddress" => %{"address" => "0x876eabf441b2ee5b5b0554fd502a8e0600950cfa"},
           "trxHash" => "0x31a5d24e2fa078b88b49bd1180f6b29dfe145bb51b6f98543fe9bccf6e15bba2",
           "trxValue" => 1.6667399999999998e5
         },
         %{
           "datetime" => "2018-06-16T12:33:47Z",
-          "fromAddress" => "0x17125b59ac51cee029e4bd78d7f5947d1ea49bb2",
-          "toAddress" => "0x0bd1b5cc4c63f99d00f4a3c5cad3619070c5c1c3",
+          "fromAddress" => %{"address" => "0x17125b59ac51cee029e4bd78d7f5947d1ea49bb2"},
+          "toAddress" => %{"address" => "0x0bd1b5cc4c63f99d00f4a3c5cad3619070c5c1c3"},
           "trxHash" => "0xa99da23a274c33d40d950fbc03bee7330e518ef6a9622ddd818cb9b967f9f520",
           "trxValue" => 1.0e7
         },
         %{
           "datetime" => "2018-06-17T12:33:47Z",
-          "fromAddress" => "0x0bd1b5cc4c63f99d00f4a3c5cad3619070c5c1c3",
-          "toAddress" => "0x5e575279bf9f4acf0a130c186861454247394c06",
+          "fromAddress" => %{"address" => "0x0bd1b5cc4c63f99d00f4a3c5cad3619070c5c1c3"},
+          "toAddress" => %{"address" => "0x5e575279bf9f4acf0a130c186861454247394c06"},
           "trxHash" => "0x2110456180d0990d1f58c375faab828bb85abc16fe5e56264e84f32864708f3b",
           "trxValue" => 1.0e7
         },
         %{
           "datetime" => "2018-06-18T12:33:47Z",
-          "fromAddress" => "0x1f3df0b8390bb8e9e322972c5e75583e87608ec2",
-          "toAddress" => "0x157dd308abb91ed2cd5a770bc1cf0fd458c7498c",
+          "fromAddress" => %{"address" => "0x1f3df0b8390bb8e9e322972c5e75583e87608ec2"},
+          "toAddress" => %{"address" => "0x157dd308abb91ed2cd5a770bc1cf0fd458c7498c"},
           "trxHash" => "0x77ffc9c2ff1678d3f536357eb6e2a032981c98c46e541266ef152752f159187d",
           "trxValue" => 8.3336e7
         }

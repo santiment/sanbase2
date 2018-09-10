@@ -1,26 +1,23 @@
 import gql from 'graphql-tag'
 
+// TopicSearchSources: TELEGRAM, PROFESSIONAL_TRADERS_CHAT, REDDIT]
 export const trendsExploreGQL = gql`
-  query topicSearch($from: DateTime!, $searchText: String!) {
+  query topicSearch(
+    $from: DateTime!
+    $to: DateTime!
+    $searchText: String!
+    $source: TopicSearchSources
+  ) {
     topicSearch(
-      sources: [TELEGRAM, PROFESSIONAL_TRADERS_CHAT, REDDIT]
+      source: $source
       searchText: $searchText
       from: $from
       interval: "1d"
+      to: $to
     ) {
-      chartsData {
-        telegram {
-          mentionsCount
-          datetime
-        }
-        professionalTradersChat {
-          mentionsCount
-          datetime
-        }
-        reddit {
-          mentionsCount
-          datetime
-        }
+      chartData {
+        mentionsCount
+        datetime
       }
     }
   }

@@ -185,39 +185,19 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
     query {
       topicSearch(
-        sources: [TELEGRAM, PROFESSIONAL_TRADERS_CHAT, REDDIT],
+        source: TELEGRAM,
         searchText: "btc moon",
         from: "2018-08-01T12:00:00Z",
         to: "2018-08-15T12:00:00Z",
         interval: "6h"
       ) {
         messages {
-          telegram {
-            datetime
-            text
-          }
-          professionalTradersChat {
-            datetime
-            text
-          }
-          reddit {
-            datetime
-            text
-          }
+          datetime
+          text
         }
-        chartsData {
-          telegram {
-            mentionsCount
-            datetime
-          }
-          professionalTradersChat {
-            mentionsCount
-            datetime
-          }
-          reddit {
-            mentionsCount
-            datetime
-          }
+        chartData {
+          mentionsCount
+          datetime
         }
       }
     }

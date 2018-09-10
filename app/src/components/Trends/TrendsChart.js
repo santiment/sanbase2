@@ -19,7 +19,7 @@ const chartDatasetOptions = {
   merged: createDatasetOptions('Merged', SourceColor['merged']),
   telegram: createDatasetOptions('Telegram', SourceColor['telegram']),
   reddit: createDatasetOptions('Reddit', SourceColor['reddit']),
-  professionalTradersChat: createDatasetOptions(
+  professional_traders_chat: createDatasetOptions(
     'Professional Traders Chat',
     SourceColor['professionalTradersChat']
   )

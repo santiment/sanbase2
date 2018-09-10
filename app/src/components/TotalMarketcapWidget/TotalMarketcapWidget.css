@@ -1,0 +1,76 @@
+.TotalMarketcapWidget {
+  max-width: 250px;
+  margin: 10px;
+  border: 1px solid #adadad;
+  border-radius: 3px;
+}
+
+.night-mode .TotalMarketcapWidget {
+  border-color: #4a4a4a;
+}
+
+.TotalMarketcapWidget__right {
+  text-align: right;
+}
+
+.TotalMarketcapWidget__info {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px;
+}
+
+.TotalMarketcapWidget__label {
+  color: #555;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.TotalMarketcapWidget__value {
+  color: #000;
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: bold;
+  position: relative;
+}
+
+.TotalMarketcapWidget__value_loading {
+  background: #ddd;
+  overflow: hidden;
+  color: #ddd;
+}
+
+.TotalMarketcapWidget__value_loading::before {
+  display: block;
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  animation: loading 1.3s linear infinite;
+  background: linear-gradient(
+      to right,
+      transparent 50%,
+      rgba(255, 255, 255, 0.35) 60%,
+      transparent 50%
+    )
+    50% 50%;
+}
+
+.TotalMarketcapWidget canvas {
+  margin-top: 20px;
+}
+
+@keyframes loading {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+
+  80% {
+    transform: translate3d(200%, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(200%, 0, 0);
+  }
+}

@@ -5,6 +5,7 @@ import Assets from './Assets'
 import AssetsTable from './AssetsTable'
 import HelpPopupAssets from './HelpPopupAssets'
 import AssetsPageNavigation from './AssetsPageNavigation'
+import './Assets.css'
 
 const AssetsPage = props => (
   <div className='page projects-table'>

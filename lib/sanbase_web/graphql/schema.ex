@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     AccountResolver,
     PriceResolver,
     ProjectResolver,
+    ProjectTransactionsResolver,
     GithubResolver,
     TwitterResolver,
     EtherbiResolver,
@@ -524,7 +525,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&ProjectResolver.eth_spent_by_erc20_projects/3)
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3)
     end
 
     @desc ~s"""
@@ -536,35 +537,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      cache_resolve(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
-    end
-
-    @desc ~s"""
-      Returns top ETH transfers for address by transaction value
-      Arguments:
-        * fromAddress: ERC20 address
-        * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-        * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-        * size - how many results to return. default: 10
-    """
-
-    field :top_address_transfers, list_of(:transaction) do
-      arg(:from_address, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:size, :integer, default_value: 10)
-
-      resolve(&ProjectResolver.top_address_transfers/3)
-    end
-
-    field :top_wallet_transfers, list_of(:transaction) do
-      arg(:wallets, non_null(list_of(:string)))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:size, :integer, default_value: 10)
-      arg(:transaction_type, :transaction_type)
-
-      resolve(&ProjectResolver.top_wallet_transfers/3)
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3)
     end
 
     field :last_wallet_transfers, list_of(:transaction) do
@@ -574,7 +547,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:size, :integer, default_value: 10)
       arg(:transaction_type, :transaction_type)
 
-      resolve(&ProjectResolver.last_wallet_transfers/3)
+      resolve(&ProjectTransactionsResolver.last_wallet_transfers/3)
     end
 
     @desc "Fetch all favourites lists for current_user."

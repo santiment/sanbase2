@@ -1,0 +1,13 @@
+.TrendsExploreSourcesFilter {
+  display: flex;
+  justify-content: space-evenly;
+  flex-direction: column;
+  padding: 30px 15px;
+}
+
+@media (min-width: 768px) {
+  .TrendsExploreSourcesFilter {
+    display: flex;
+    flex-direction: row;
+  }
+}

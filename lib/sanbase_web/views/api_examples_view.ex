@@ -2,9 +2,8 @@ defmodule SanbaseWeb.ApiExamplesView do
   use SanbaseWeb, :view
 
   require Logger
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Utils.Config
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
 
   def render("apiexample_view.html", _assigns) do
@@ -26,6 +25,11 @@ defmodule SanbaseWeb.ApiExamplesView do
         query: tv(),
         variables: "{}",
         docs: docs(:transaction_volume)
+      },
+      exchange_funds_flow: %{
+        query: exchange_funds_flow(),
+        variables: "{}",
+        docs: docs(:exchange_funds_flow)
       },
       ga: %{
         query: ga(),
@@ -181,41 +185,37 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
     query {
       topicSearch(
-        sources: [TELEGRAM, PROFESSIONAL_TRADERS_CHAT, REDDIT],
+        source: TELEGRAM,
         searchText: "btc moon",
         from: "2018-08-01T12:00:00Z",
         to: "2018-08-15T12:00:00Z",
         interval: "6h"
       ) {
         messages {
-          telegram {
-            datetime
-            text
-          }
-          professionalTradersChat {
-            datetime
-            text
-          }
-          reddit {
-            datetime
-            text
-          }
+          datetime
+          text
         }
-        chartsData {
-          telegram {
-            mentionsCount
-            datetime
-          }
-          professionalTradersChat {
-            mentionsCount
-            datetime
-          }
-          reddit {
-            mentionsCount
-            datetime
-          }
+        chartData {
+          mentionsCount
+          datetime
         }
       }
+    }
+    """
+  end
+
+  defp exchange_funds_flow do
+    """
+    query {
+      exchangeFundsFlow(
+        slug: "santiment",
+        from: "2018-01-01 16:00:00Z",
+        to: "2018-06-05 16:00:00Z",
+        interval: "6h") {
+          datetime
+          inOutDifference
+        }
+      )
     }
     """
   end

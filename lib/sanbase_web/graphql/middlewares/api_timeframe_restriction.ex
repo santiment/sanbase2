@@ -7,9 +7,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
 
   @behaviour Absinthe.Middleware
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Utils.Config
   alias Absinthe.Resolution
   alias Sanbase.Auth.User
 
@@ -35,21 +34,32 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
           },
           arguments: %{from: from, to: to} = args
         } = resolution,
-        _
+        middleware_args
       )
       when method in [:user_token, :apikey] do
     if !has_enough_san_tokens?(current_user) do
       %Resolution{
         resolution
-        | arguments: %{args | from: restrict_from(from), to: restrict_to(to)}
+        | arguments: %{
+            args
+            | from: restrict_from(from, middleware_args),
+              to: restrict_to(to, middleware_args)
+          }
       }
     else
       resolution
     end
   end
 
-  def call(%Resolution{arguments: %{from: from, to: to} = args} = resolution, _) do
-    %Resolution{resolution | arguments: %{args | from: restrict_from(from), to: restrict_to(to)}}
+  def call(%Resolution{arguments: %{from: from, to: to} = args} = resolution, middleware_args) do
+    %Resolution{
+      resolution
+      | arguments: %{
+          args
+          | from: restrict_from(from, middleware_args),
+            to: restrict_to(to, middleware_args)
+        }
+    }
   end
 
   def call(resolution, _) do
@@ -63,12 +73,16 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
     ) != :lt
   end
 
-  defp restrict_to(to_datetime) do
+  defp restrict_to(to_datetime, %{allow_realtime_data: true}), do: to_datetime
+
+  defp restrict_to(to_datetime, _) do
     restrict_to = Timex.shift(Timex.now(), days: restrict_to_in_days())
     Enum.min_by([to_datetime, restrict_to], &DateTime.to_unix/1)
   end
 
-  defp restrict_from(from_datetime) do
+  defp restrict_from(from_datetime, %{allow_historical_data: true}), do: from_datetime
+
+  defp restrict_from(from_datetime, _) do
     restrict_from = Timex.shift(Timex.now(), days: restrict_from_in_days())
     Enum.max_by([from_datetime, restrict_from], &DateTime.to_unix/1)
   end

@@ -1,20 +1,18 @@
 defmodule Sanbase.Model.ProjectEthAddress do
   use Ecto.Schema
+
   import Ecto.Changeset
-  alias Sanbase.Model.{ProjectEthAddress, Project, LatestEthWalletData}
+
+  alias __MODULE__
+  alias Sanbase.Model.Project
+
+  require Logger
+
+  @eth_decimals 1_000_000_000_000_000_000
 
   schema "project_eth_address" do
     field(:address, :string)
     belongs_to(:project, Project)
-
-    belongs_to(
-      :latest_eth_wallet_data,
-      LatestEthWalletData,
-      foreign_key: :address,
-      references: :address,
-      define_field: false
-    )
-
     field(:source, :string)
     field(:comments, :string)
   end
@@ -26,5 +24,19 @@ defmodule Sanbase.Model.ProjectEthAddress do
     |> validate_required([:address, :project_id])
     |> update_change(:address, &String.downcase/1)
     |> unique_constraint(:address)
+  end
+
+  def balance(%ProjectEthAddress{address: address}) do
+    case Sanbase.InternalServices.Parity.get_eth_balance(address) do
+      {:ok, balance} ->
+        balance / @eth_decimals
+
+      {:error, error} ->
+        Logger.error(
+          "Cannot fetch the ETH balance for #{address} from Parity. Reason: #{inspect(error)}"
+        )
+
+        nil
+    end
   end
 end

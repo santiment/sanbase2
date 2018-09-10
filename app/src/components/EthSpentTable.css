@@ -16,3 +16,11 @@
 .eth-spent-table.ReactTable .rt-td .overview-name {
   padding-top: 0;
 }
+
+.eth-spent-table.ReactTable .rt-tbody .rt-tr-group {
+  max-height: none;
+}
+
+.ReactTable .rt-tbody .rt-td:last-child {
+  width: 100%;
+}

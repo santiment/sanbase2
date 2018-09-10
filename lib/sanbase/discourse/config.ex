@@ -1,6 +1,5 @@
 defmodule Sanbase.Discourse.Config do
-  require Sanbase.Utils.Config
-  alias Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
   @config_module Sanbase.Discourse
 

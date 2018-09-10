@@ -34,7 +34,8 @@ const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
   }
   return (
     <div className='user-auth-control'>
-      <NavLink to={'/login'}>Login</NavLink>
+      <FeedbackBtn />
+      <NavLink to='/login'>Login</NavLink>
     </div>
   )
 }

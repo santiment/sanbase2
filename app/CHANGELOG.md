@@ -1,14 +1,61 @@
 ## CHANGELOG
 
-- 2018-16-09 | v.0.9.1 'Phobos':
+- 2018-10-09 | v.0.11.4 'Phobos':
+
+  Upgrade Trends page with new API
+
+- 2018-07-09 | v.0.11.3 'Phobos':
+
+  Fixed financial block, if assets don't have wallets info
+  Moved ethereum spent table to ethereum page
+
+- 2018-05-09 | v.0.11.2 'Phobos':
+
+  Unregister SW
+  Remove limited data message for premium users
+
+- 2018-04-09 | v.0.11.1 'Phobos':
+
+  Add TimeFilter UI Component
+  Make Trends mobile friendly
+
+- 2018-03-09 | v.0.10.0 'Phobos':
+
+  Trends page with example cards.
+  Trends explore page with merged sources chart.
+
+- 2018-31-08 | v.0.9.7 'Phobos':
+
+  Hot fix of Insights Page
+
+- 2018-31-08 | v.0.9.6 'Phobos':
+
+  Update Insights styles
+
+- 2018-30-08 | v.0.9.5 'Phobos':
+
+  Fixed Github Activity request in project detailed page
+  Fixed skip logic in queries after Apollo update
+
+- 2018-29-08 | v.0.9.4 'Phobos':
+
+  Fixed NAN bug in project detailed page
+  Fixed broken animation of loader
+
+- 2018-28-08 | v.0.9.2 'Phobos':
+
+  New menu look
+  Update styles
+
+- 2018-16-08 | v.0.9.1 'Phobos':
 
   Comeback of serviceworkers
 
-- 2018-15-09 | v.0.9.0 'Phobos':
+- 2018-15-08 | v.0.9.0 'Phobos':
 
   Added ethereum spent overview
 
-- 2018-15-09 | v.0.8.1 'Phobos':
+- 2018-15-08 | v.0.8.1 'Phobos':
 
   Fixed chart axis's styles
   Added retriable requests

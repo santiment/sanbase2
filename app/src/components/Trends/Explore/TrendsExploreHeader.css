@@ -1,0 +1,22 @@
+.TrendsExploreHeader {
+  border-bottom: 1px solid #ccc;
+}
+
+.TrendsExploreHeader ul {
+  padding: 0;
+  margin: 0;
+}
+
+.TrendsExploreHeaderTitles {
+  display: flex;
+}
+
+.TrendsExploreHeaderTitles > div {
+  flex: 50%;
+  padding: 20px;
+  border-right: 1px solid #ccc;
+}
+
+.TrendsExploreHeaderTitles > div:last-child {
+  border-right: none;
+}

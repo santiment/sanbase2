@@ -15,11 +15,17 @@ defmodule Sanbase.Application do
         # Start the Task Supervisor
         supervisor(Task.Supervisor, [[name: Sanbase.TaskSupervisor]]),
 
-        # Start the Ecto repository
-        supervisor(Sanbase.Repo, []),
+        # Start the Postgres Ecto repository
+        Sanbase.Repo,
+
+        # Start the TimescaleDB Ecto repository
+        Sanbase.TimescaleRepo,
 
         # Start the endpoint when the application starts
         supervisor(SanbaseWeb.Endpoint, []),
+
+        # Start the Clickhouse Repo
+        {Sanbase.ClickhouseRepo, []},
 
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},
@@ -41,21 +47,6 @@ defmodule Sanbase.Application do
 
         # Time series Github DB connection
         Sanbase.Github.Store.child_spec(),
-
-        # Time series transactions DB connection
-        Sanbase.Etherbi.Transactions.Store.child_spec(),
-
-        # Time series burn rate DB connection
-        Sanbase.Etherbi.BurnRate.Store.child_spec(),
-
-        # Time series transaction volume DB connection
-        Sanbase.Etherbi.TransactionVolume.Store.child_spec(),
-
-        # Time series DAT DB connection
-        Sanbase.Etherbi.DailyActiveAddresses.Store.child_spec(),
-
-        # Time series ethscan team wallet transactions DB connection
-        Sanbase.ExternalServices.Etherscan.Store.child_spec(),
 
         # Etherscan rate limiter
         Sanbase.ExternalServices.RateLimiting.Server.child_spec(
@@ -119,14 +110,15 @@ defmodule Sanbase.Application do
         Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
         Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2.child_spec(%{}),
 
-        # Etherscan wallet tracking worker
-        Sanbase.ExternalServices.Etherscan.Worker.child_spec(%{}),
-
         # Twitter account data tracking worker
         Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
 
         # Twitter account historical data
-        Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{})
+        Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
+
+        # Transform a list of transactions into a list of transactions
+        # where addresses are marked whether or not they are an exchange address
+        Sanbase.Clickhouse.MarkExchanges.child_spec(%{})
       ] ++
         faktory_supervisor() ++
         [

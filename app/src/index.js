@@ -26,7 +26,7 @@ import uploadLink from './apollo/upload-link'
 import errorLink from './apollo/error-link'
 import authLink from './apollo/auth-link'
 import retryLink from './apollo/retry-link'
-import * as serviceWorker from './serviceWorker'
+import { unregister } from './serviceWorker'
 import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 
@@ -68,6 +68,8 @@ const main = () => {
     store.dispatch(changeNetworkStatus(online))
   })
 
+  unregister()
+
   ReactDOM.render(
     <ApolloProvider client={client}>
       <Provider store={store}>
@@ -78,18 +80,11 @@ const main = () => {
     </ApolloProvider>,
     document.getElementById('root')
   )
-
-  serviceWorker.register({
-    onUpdate: registration => {
-      console.log('App updated... Refresh your browser, please.')
-    },
-    onSuccess: registration => {
-      console.log('Your browser makes cached SANbase version')
-    }
-  })
 }
 
 if (process.env.NODE_ENV === 'development') {
+  const { whyDidYouUpdate } = require('why-did-you-update')
+  whyDidYouUpdate(React)
   main()
 } else {
   const script = document.createElement('script')

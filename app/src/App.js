@@ -18,7 +18,6 @@ import Account from './pages/Account/Account'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import BuildChallenge from './pages/BuildChallenge'
 import EmailLoginVerification from './pages/EmailLoginVerification'
-import EthSpent from './pages/EthSpent'
 import Menu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
@@ -28,9 +27,8 @@ import Status from './pages/Status'
 import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
-import ApiDocs from './components/ApiDocs'
-import ApiExplorer from './components/ApiExplorer'
 import AssetsPage from './pages/assets/AssetsPage'
+import { getConsentUrl } from './utils/utils'
 import './App.css'
 
 const LoadableDetailedPage = Loadable({
@@ -53,6 +51,16 @@ const LoadableInsightsNew = Loadable({
   loading: () => <PageLoader />
 })
 
+const LoadableTrendsPage = Loadable({
+  loader: () => import('./pages/Trends/TrendsPage'),
+  loading: () => <PageLoader />
+})
+
+const LoadableTrendsExplorePage = Loadable({
+  loader: () => import('./pages/Trends/TrendsExplorePage'),
+  loading: () => <PageLoader />
+})
+
 class Route extends React.Component {
   componentWillMount () {
     nprogress.start()
@@ -66,6 +74,18 @@ class Route extends React.Component {
     return <BasicRoute {...this.props} />
   }
 }
+
+class ExternalRedirect extends React.Component {
+  componentWillMount () {
+    window.location = this.props.to
+  }
+
+  render () {
+    return <section>Redirecting...</section>
+  }
+}
+
+const HiddenElements = () => ''
 
 export const App = ({
   isDesktop,
@@ -96,17 +116,19 @@ export const App = ({
           </Link>
         </div>
       )}
-    {isDesktop && (
-      <div className='new-status-message'>
-        <Link to='/ethereum-spent'>
-          <Label color='green' horizontal>
-            NEW
-          </Label>
-          We prepared for you ethereum spent overview{' '}
-          <Icon name='angle right' />
-        </Link>
-      </div>
-    )}
+    <HiddenElements>
+      {isDesktop && (
+        <div className='new-status-message'>
+          <Link to='/ethereum-spent'>
+            <Label color='green' horizontal>
+              NEW
+            </Label>
+            We prepared for you ethereum spent overview{' '}
+            <Icon name='angle right' />
+          </Link>
+        </div>
+      )}
+    </HiddenElements>
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>
@@ -180,14 +202,51 @@ export const App = ({
             <LoadableDetailedPage isDesktop={isDesktop} {...props} />
           )}
         />
+        <Route exact path='/trends' component={LoadableTrendsPage} />
+        <Route
+          exact
+          path='/trends/explore'
+          render={() => <Redirect to='/trends' />}
+        />
+        <Route
+          exact
+          path='/trends/explore/:topic'
+          render={props => (
+            <LoadableTrendsExplorePage isDesktop={isDesktop} {...props} />
+          )}
+        />
         <Route exact path='/account' component={Account} />
         <Route exact path='/status' component={Status} />
-        <Route exact path='/ethereum-spent' component={EthSpent} />
+        <Redirect from='/ethereum-spent' to='/projects/ethereum' />
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />
-        <Route path='/apidocs' component={ApiDocs} />
-        <Route path='/apiexplorer' component={ApiExplorer} />
+        {['data', 'dashboards'].map(name => (
+          <Route
+            key={name}
+            path={`/${name}`}
+            render={() => (
+              <ExternalRedirect to={'https://data.santiment.net'} />
+            )}
+          />
+        ))}
+        {['docs', 'apidocs', 'apiexamples'].map(name => (
+          <Route
+            key={name}
+            path={`/${name}`}
+            render={() => (
+              <ExternalRedirect to={'https://docs.santiment.net'} />
+            )}
+          />
+        ))}
+        <Route
+          path='/consent'
+          render={props => (
+            <ExternalRedirect
+              to={`${getConsentUrl()}/consent${props.location.search}`}
+            />
+          )}
+        />
         <Route
           exact
           path='/login'

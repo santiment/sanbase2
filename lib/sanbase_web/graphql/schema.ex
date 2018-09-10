@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     AccountResolver,
     PriceResolver,
     ProjectResolver,
+    ProjectTransactionsResolver,
     GithubResolver,
     TwitterResolver,
     EtherbiResolver,
@@ -180,7 +181,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :string, default_value: "1w")
 
-      middleware(ApiTimeframeRestriction)
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 
       cache_resolve(&GithubResolver.activity/3)
     end
@@ -259,7 +260,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiTimeframeRestriction)
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
@@ -322,7 +323,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Fetch the flow of funds into and out of an exchange wallet.
     This query returns the difference IN-OUT calculated for each interval.
     """
-    field :exchange_funds_flow, list_of(:funds_flow) do
+    field :exchange_funds_flow, list_of(:exchange_funds_flow) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -487,10 +488,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Returns lists with the mentions of the search phrase grouped by source. The results are in two formats - the messages themselves and the data for building graph representation of the result.
+    Returns lists with the mentions of the search phrase from the selected source. The results are in two formats - the messages themselves and the data for building graph representation of the result.
 
     Arguments description:
-      * sources - an array of enum values that specify which sources should be searched. The sources are:
+      * source - one of the following:
         1. TELEGRAM
         2. PROFESSIONAL_TRADERS_CHAT
         3. REDDIT
@@ -500,10 +501,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
     field :topic_search, :topic_search do
-      arg(:sources, non_null(list_of(:topic_search_sources)))
+      arg(:source, non_null(:topic_search_sources))
       arg(:search_text, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, :datetime)
       arg(:interval, non_null(:string), default_value: "1d")
 
       middleware(ApiTimeframeRestriction)
@@ -524,7 +525,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&ProjectResolver.eth_spent_by_erc20_projects/3)
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3)
     end
 
     @desc ~s"""
@@ -536,12 +537,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      cache_resolve(&ProjectResolver.eth_spent_over_time_by_erc20_projects/3)
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3)
     end
 
-    @desc "Fetch a list of followed projects for the user currently logged in."
-    field :followed_projects, list_of(:project) do
-      resolve(&AccountResolver.followed_projects/3)
+    field :last_wallet_transfers, list_of(:transaction) do
+      arg(:wallets, non_null(list_of(:string)))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:size, :integer, default_value: 10)
+      arg(:transaction_type, :transaction_type)
+
+      resolve(&ProjectTransactionsResolver.last_wallet_transfers/3)
     end
 
     @desc "Fetch all favourites lists for current_user."
@@ -596,20 +602,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&AccountResolver.change_username/3)
-    end
-
-    field :follow_project, :user do
-      arg(:project_id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&AccountResolver.follow_project/3)
-    end
-
-    field :unfollow_project, :user do
-      arg(:project_id, non_null(:integer))
-
-      middleware(JWTAuth)
-      resolve(&AccountResolver.unfollow_project/3)
     end
 
     field :vote, :post do

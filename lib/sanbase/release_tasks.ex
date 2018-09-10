@@ -3,7 +3,7 @@ defmodule Sanbase.ReleaseTasks do
 
   def run do
     # Load the code for myapp, but don't start it
-    :ok = Application.load(:sanbase)
+    Application.load(:sanbase)
 
     Migrate.run()
 

@@ -1,14 +1,15 @@
 defmodule Sanbase.ExternalServices.Etherscan.Requests do
   @moduledoc ~s"""
-    Module which is used to send requests to etherscan.io
+    Module which is used to send requests to etherscan.io.
+
+    Used to fetch a contract's ABI. The ABI is not stored on the blockchain and
+    cannot be fetched from Parity
   """
   use Tesla
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Utils.Config
-  alias Sanbase.ExternalServices.RateLimiting
-  alias Sanbase.ExternalServices.ErrorCatcher
+  alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
 
   plug(RateLimiting.Middleware, name: :etherscan_rate_limiter)
   plug(ErrorCatcher.Middleware)

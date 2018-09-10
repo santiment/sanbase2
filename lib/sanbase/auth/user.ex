@@ -10,7 +10,7 @@ defmodule Sanbase.Auth.User do
     UserApikeyToken
   }
 
-  alias Sanbase.Voting.Vote
+  alias Sanbase.Voting.{Vote, Post}
   alias Sanbase.UserLists.UserList
   alias Sanbase.Repo
 
@@ -27,6 +27,10 @@ defmodule Sanbase.Auth.User do
 
   # 5 minutes
   @san_balance_cache_seconds 60 * 5
+
+  # Fallback username and email for Insights owned by deleted user accounts
+  @insights_fallback_username "anonymous"
+  @insights_fallback_email "anonymous@santiment.net"
 
   require Mockery.Macro
   defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
@@ -47,10 +51,11 @@ defmodule Sanbase.Auth.User do
     field(:privacy_policy_accepted, :boolean, default: false)
     field(:marketing_accepted, :boolean, default: false)
 
-    has_many(:eth_accounts, EthAccount)
+    has_many(:eth_accounts, EthAccount, on_delete: :delete_all)
     has_many(:votes, Vote, on_delete: :delete_all)
     has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
     has_many(:user_lists, UserList, on_delete: :delete_all)
+    has_many(:posts, Post, on_delete: :delete_all)
 
     timestamps()
   end
@@ -73,8 +78,32 @@ defmodule Sanbase.Auth.User do
       :privacy_policy_accepted,
       :marketing_accepted
     ])
+    |> normalize_username(attrs)
+    |> validate_change(:username, &validate_username_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+  end
+
+  def ascii_username?(nil), do: true
+
+  def ascii_username?(username) do
+    username
+    |> String.to_charlist()
+    |> List.ascii_printable?()
+  end
+
+  defp normalize_username(changeset, %{username: username}) when not is_nil(username) do
+    put_change(changeset, :username, String.trim(username))
+  end
+
+  defp normalize_username(changeset, _), do: changeset
+
+  defp validate_username_change(_, username) do
+    if ascii_username?(username) do
+      []
+    else
+      [username: "Username can contain only latin letters and numbers"]
+    end
   end
 
   def san_balance_cache_stale?(%User{san_balance_updated_at: nil}), do: true
@@ -189,4 +218,7 @@ defmodule Sanbase.Auth.User do
         {:ok, user}
     end
   end
+
+  def insights_fallback_username, do: @insights_fallback_username
+  def insights_fallback_email, do: @insights_fallback_email
 end

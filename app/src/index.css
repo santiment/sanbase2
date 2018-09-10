@@ -113,6 +113,10 @@ hr {
   }
 }
 
+.ui.basic.label {
+  background: none #fff !important;
+}
+
 .hidden {
   visibility: false;
   display: none;

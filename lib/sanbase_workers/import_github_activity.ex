@@ -3,13 +3,12 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
   require Logger
 
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.Github
   alias Sanbase.Github.Store
   alias Sanbase.Influxdb.Measurement
   alias ExAws.S3
-  alias Sanbase.Utils.Config
 
   @github_archive "http://data.gharchive.org/"
 

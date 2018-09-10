@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   import Ecto.Query
 
   alias SanbaseWeb.Graphql.PriceStore
+  alias Sanbase.Model.Project
 
   @total_market "TOTAL_MARKET"
   @total_market_measurement "TOTAL_MARKET_total-market"
@@ -45,7 +46,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   end
 
   def history_price(_root, %{slug: slug} = args, %{context: %{loader: loader}}) do
-    with ticker when not is_nil(ticker) <- Sanbase.Model.Project.ticker_by_slug(slug) do
+    with ticker when not is_nil(ticker) <- Project.ticker_by_slug(slug) do
       ticker_cmc_id = ticker <> "_" <> slug
 
       loader
@@ -102,7 +103,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   @deprecated "This should no longer be used after price by ticker is removed"
   def slug_by_ticker(ticker) do
     from(
-      p in Sanbase.Model.Project,
+      p in Project,
       where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
       select: p.coinmarketcap_id
     )

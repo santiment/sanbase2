@@ -1,8 +1,8 @@
 defmodule Sanbase.InternalServices.TechIndicators do
   require Logger
-  require Sanbase.Utils.Config
-  alias Sanbase.Utils.Config
-  alias SanbaseWeb.Graphql.Helpers.Utils
+  require Sanbase.Utils.Config, as: Config
+
+  alias Sanbase.Model.Project
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
@@ -245,14 +245,14 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   def topic_search(
-        sources,
+        source,
         search_text,
         datetime_from,
         datetime_to,
         interval
       ) do
     topic_search_request(
-      sources,
+      source,
       search_text,
       datetime_from,
       datetime_to,
@@ -530,7 +530,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
        ) do
     from_unix = DateTime.to_unix(datetime_from)
     to_unix = DateTime.to_unix(datetime_to)
-    ticker = Utils.ticker_by_slug(slug)
+    ticker = Project.ticker_by_slug(slug)
     ticker_slug = "#{ticker}_#{slug}"
 
     url = "#{tech_indicators_url()}/indicator/#{social_volume_type}"
@@ -584,13 +584,12 @@ defmodule Sanbase.InternalServices.TechIndicators do
   end
 
   defp topic_search_request(
-         sources,
+         source,
          search_text,
          datetime_from,
          datetime_to,
          interval
        ) do
-    sources = Enum.join(sources, ", ")
     from_unix = DateTime.to_unix(datetime_from)
     to_unix = DateTime.to_unix(datetime_to)
 
@@ -599,7 +598,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"sources", sources},
+        {"source", source},
         {"search_text", search_text},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
@@ -610,21 +609,13 @@ defmodule Sanbase.InternalServices.TechIndicators do
     http_client().get(url, [], options)
   end
 
-  defp topic_search_result(%{"messages" => messages, "charts_data" => charts_data}) do
-    messages = parse_topic_search_sources(messages, "text")
-    charts_data = parse_topic_search_sources(charts_data, "mentions_count")
+  defp topic_search_result(%{"messages" => messages, "chart_data" => chart_data}) do
+    messages = parse_topic_search_data(messages, "text")
+    chart_data = parse_topic_search_data(chart_data, "mentions_count")
 
-    result = %{messages: messages, charts_data: charts_data}
+    result = %{messages: messages, chart_data: chart_data}
 
     {:ok, result}
-  end
-
-  defp parse_topic_search_sources(source_data, key) do
-    source_data
-    |> Enum.map(fn {source, data} ->
-      {String.to_atom(source), parse_topic_search_data(data, key)}
-    end)
-    |> Map.new()
   end
 
   defp parse_topic_search_data(data, key) do

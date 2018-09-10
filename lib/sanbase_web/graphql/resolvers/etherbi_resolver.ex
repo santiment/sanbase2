@@ -1,8 +1,9 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
-  alias Sanbase.Etherbi.{Transactions, BurnRate, TransactionVolume, DailyActiveAddresses}
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, ExchangeEthAddress}
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
+
+  alias Sanbase.Blockchain
 
   import SanbaseWeb.Graphql.Helpers.Async
   import Ecto.Query
@@ -14,10 +15,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     Uses the influxdb cached values instead of issuing a GET request to etherbi
   """
   def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
-    with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             BurnRate.Store,
+             Blockchain.BurnRate,
              contract_address,
              from,
              to,
@@ -25,15 +26,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              60 * 60,
              50
            ),
-         {:ok, burn_rates} <- BurnRate.Store.burn_rate(contract_address, from, to, interval) do
+         {:ok, burn_rates} <-
+           Blockchain.BurnRate.burn_rate(
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
       result =
         burn_rates
-        |> Enum.map(fn {datetime, burn_rate} ->
-          %{
-            datetime: datetime,
-            burn_rate: burn_rate / :math.pow(10, token_decimals)
-          }
-        end)
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}
@@ -54,10 +56,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             TransactionVolume.Store,
+             Blockchain.TransactionVolume,
              contract_address,
              from,
              to,
@@ -66,15 +68,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              50
            ),
          {:ok, trx_volumes} <-
-           TransactionVolume.Store.transaction_volume(contract_address, from, to, interval) do
+           Blockchain.TransactionVolume.transaction_volume(
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
       result =
         trx_volumes
-        |> Enum.map(fn {datetime, trx_volume} ->
-          %{
-            datetime: datetime,
-            transaction_volume: trx_volume / :math.pow(10, token_decimals)
-          }
-        end)
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}
@@ -94,10 +96,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
-    with {:ok, contract_address, _token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, _token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             DailyActiveAddresses.Store,
+             Blockchain.DailyActiveAddresses,
              contract_address,
              from,
              to,
@@ -106,15 +108,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              50
            ),
          {:ok, daily_active_addresses} <-
-           DailyActiveAddresses.Store.daily_active_addresses(contract_address, from, to, interval) do
+           Blockchain.DailyActiveAddresses.active_addresses(
+             contract_address,
+             from,
+             to,
+             interval
+           ) do
       result =
         daily_active_addresses
-        |> Enum.map(fn [datetime, active_addresses] ->
-          %{
-            datetime: datetime,
-            active_addresses: active_addresses |> round() |> trunc()
-          }
-        end)
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}
@@ -141,31 +142,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         } = args,
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- slug_to_contract_info(slug),
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             Transactions.Store,
+             Blockchain.ExchangeFundsFlow,
              contract_address,
              from,
              to,
              interval,
              60 * 60
            ),
-         {:ok, funds_flow_list} <-
-           Transactions.Store.transactions_in_out_difference(
+         {:ok, exchange_funds_flow} <-
+           Blockchain.ExchangeFundsFlow.transactions_in_out_difference(
              contract_address,
              from,
              to,
-             interval
+             interval,
+             token_decimals
            ) do
       result =
-        funds_flow_list
-        |> Enum.map(fn {datetime, funds_flow} ->
-          %{
-            datetime: datetime,
-            funds_flow: funds_flow / :math.pow(10, token_decimals)
-          }
-        end)
+        exchange_funds_flow
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}
@@ -214,49 +210,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   def calculate_average_daily_active_addresses(project, from, to) do
-    with {:ok, contract_address, _token_decimals} <- project_to_contract_info(project),
-         {:ok, average_daily_active_addresses} <-
-           DailyActiveAddresses.Store.average_daily_active_addresses(contract_address, from, to) do
-      case average_daily_active_addresses do
-        [[_dt, active_addresses]] ->
-          average_activity = active_addresses |> round() |> trunc()
-          {:ok, average_activity}
-
-        _ ->
-          {:ok, 0}
-      end
+    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project),
+         {:ok, active_addresses} <-
+           Blockchain.DailyActiveAddresses.active_addresses(contract_address, from, to) do
+      {:ok, active_addresses}
     else
       error ->
         error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+
         {:ok, 0}
     end
-  end
-
-  defp project_to_contract_info(%Project{
-         main_contract_address: main_contract_address,
-         token_decimals: token_decimals
-       })
-       when not is_nil(main_contract_address) do
-    {:ok, String.downcase(main_contract_address), token_decimals || 0}
-  end
-
-  defp project_to_contract_info(project) do
-    {:error, "Can't find contract address of #{project.coinmarketcap_id}"}
-  end
-
-  defp slug_to_contract_info(slug) do
-    with project when not is_nil(project) <- get_project_by_slug(slug),
-         {:ok, contract_address, token_decimals} <- project_to_contract_info(project) do
-      {:ok, contract_address, token_decimals}
-    else
-      _ -> {:error, "Can't find contract address for #{slug}"}
-    end
-  end
-
-  defp get_project_by_slug(slug) do
-    Project
-    |> where([p], p.coinmarketcap_id == ^slug)
-    |> Repo.one()
   end
 end

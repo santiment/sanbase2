@@ -4,23 +4,36 @@ exports[`PostVisualBacktest component (smoke) it should render correctly 1`] = `
 
 exports[`PostVisualBacktest component SAN icon should render correctly 1`] = `
 <div
-  class="ui message"
+  class="post-visual-backtest"
 >
   <div
-    class="ui horizontal label"
+    class="post-visual-backtest__info"
   >
-    SAN
+    <div
+      class="post-visual-backtest__changes"
+    >
+      SAN priceUsd since publication
+    </div>
+    <div
+      class="percent-changes percent-changes--positive"
+    >
+      <i
+        class="fa fa-caret-up"
+      >
+        
+      </i>
+       25.00%
+    </div>
   </div>
-  priceUsd changes after publication
   <div
-    class="percent-changes percent-changes--positive"
+    class="PostVisualBacktestChart"
   >
-    <i
-      class="fa fa-caret-up"
+    <canvas
+      height="150"
+      width="300"
     >
       
-    </i>
-     25.00%
+    </canvas>
   </div>
 </div>
 `;

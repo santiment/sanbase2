@@ -54,5 +54,5 @@ release :sanbase do
     :inets,
     :oauther
   ]
-  set pre_start_hook: "rel/commands/migrate.sh"
+  set pre_start_hooks: "rel/pre_start_hooks"
 end

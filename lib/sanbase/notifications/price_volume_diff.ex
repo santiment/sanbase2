@@ -1,14 +1,13 @@
 defmodule Sanbase.Notifications.PriceVolumeDiff do
+  require Sanbase.Utils.Config, as: Config
+  require Mockery.Macro
+
   alias Sanbase.Model.Project
   alias Sanbase.InternalServices.TechIndicators
-  alias Sanbase.Utils.Config
   alias Sanbase.Notifications.Utils
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
 
-  require Sanbase.Utils.Config
-
-  require Mockery.Macro
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 
   @notification_type_name "price_volume_diff"

@@ -1,15 +1,15 @@
 defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   require Logger
-  require Sanbase.Utils.Config
+  require Sanbase.Utils.Config, as: Config
   require Mockery.Macro
 
   import Ecto.Query
 
-  alias Sanbase.Utils.Config
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Post, Poll, Tag}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
+  alias Sanbase.Notifications
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   @preloaded_assoc [:votes, :user, :images, :tags]
@@ -197,6 +197,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
           {:ok, post} ->
             {:ok, post} = create_discourse_topic(post)
 
+            notifiy_insight().publish_in_discord(post)
+
             {:ok, post}
 
           {:error, changeset} ->
@@ -234,7 +236,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   defp create_discourse_topic(%Post{id: id, title: title, inserted_at: inserted_at} = post) do
-    link = "#{sanbase_url()}/insights/#{id}"
+    link = posts_url(id)
 
     text = ~s"""
       This topic hosts the discussion about [#{link}](#{link})
@@ -246,7 +248,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
      %{
        "topic_id" => topic_id,
        "topic_slug" => topic_slug
-     }} = Sanbase.Discourse.Api.publish(title, text)
+     }} = discourse_api().publish(title, text)
 
     discourse_topic_url =
       discourse_url()
@@ -258,6 +260,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.update()
   end
 
+  defp posts_url(id), do: "#{sanbase_url()}/insights/#{id}"
   defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
   defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
+  defp notifiy_insight(), do: Mockery.Macro.mockable(Notifications.Insight)
+  defp discourse_api(), do: Mockery.Macro.mockable(Sanbase.Discourse.Api)
 end

@@ -1,13 +1,19 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
-import { BrowserRouter as Router } from 'react-router-dom'
-import { Analysis } from './../src/components/TopMenu.js'
+import StoryRouter from 'storybook-react-router'
+import DesktopMenuLinkContainer from './../src/components/DesktopMenuLinkContainer'
+import DesktopAnalysisMenu from './../src/components/DesktopAnalysisMenu'
 
-storiesOf('Menu', module)
-  .add('TopMenu', () => (
-    <div style={{ padding: 20 }}>
-      <Router>
-        <Analysis />
-      </Router>
-    </div>
-  ))
+const stories = storiesOf('Menu', module)
+stories.addDecorator(StoryRouter())
+stories.add('Dropdown Top Submenu', () => (
+  <DesktopMenuLinkContainer
+    title='Insights'
+    description='Check'
+    linkIcon='insights'
+    to='/insights'
+  />
+))
+stories.add('Dropdown Top', () => (
+  <DesktopAnalysisMenu />
+))

@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import cx from 'classnames'
 import { Popup, Icon, Label, Loader, Message } from 'semantic-ui-react'
+import AlertMessage from './../../components/AlertMessage'
 import './ProjectChartFooter.css'
 
 export const ToggleBtn = ({
@@ -77,6 +78,9 @@ const ProjectChartFooter = ({
   ...props
 }) => (
   <div className='chart-footer'>
+    <AlertMessage>
+      See much more data in our <Link to='/dashboards'>SANbase Dashboards</Link>
+    </AlertMessage>
     <div className='chart-footer-filters'>
       <FilterCategory name='Financial'>
         <ToggleBtn
@@ -216,6 +220,12 @@ const ProjectChartFooter = ({
         >
           <Label circular className='sentimentLabel' empty />
           Sentiment
+          <Popup
+            trigger={<Icon name='info circle' />}
+            inverted
+            content="This feed plots an aggregated sentiment metric for the general crypto market against the token's price. The higher the number, the more positive the sentiment. Requires 1000 SAN to access."
+            position='top left'
+          />
         </ToggleBtn>
         {!Insights.loading &&
           Insights.items.length > 0 && (

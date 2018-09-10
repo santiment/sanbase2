@@ -16,6 +16,9 @@ defmodule Sanbase.Prices.Store do
   alias Sanbase.Influxdb.Measurement
 
   @last_history_price_cmc_measurement "sanbase-internal-last-history-price-cmc"
+  def last_history_price_cmc_measurement() do
+    @last_history_price_cmc_measurement
+  end
 
   @doc ~s"""
     Fetch all price points in the given `from-to` time interval from `measurement`.
@@ -100,6 +103,15 @@ defmodule Sanbase.Prices.Store do
 
   def fetch_last_price_point_before(measurement, timestamp) do
     fetch_last_price_point_before_query(measurement, timestamp)
+    |> Store.query()
+    |> parse_time_series()
+  end
+
+  def all_with_data_after_datetime(datetime) do
+    datetime_unix_ns = DateTime.to_unix(datetime, :nanoseconds)
+
+    ~s/SELECT last_updated, ticker_cmc_id FROM "#{@last_history_price_cmc_measurement}"
+    WHERE ticker_cmc_id != "" AND last_updated >= #{datetime_unix_ns}/
     |> Store.query()
     |> parse_time_series()
   end

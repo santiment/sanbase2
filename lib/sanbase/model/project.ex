@@ -103,6 +103,41 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
+  def erc20_projects() do
+    query =
+      from(
+        p in Project,
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        where:
+          not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
+            infr.code == "ETH",
+        order_by: p.name
+      )
+
+    erc20_projects =
+      query
+      |> Repo.all()
+  end
+
+  def currency_projects() do
+    query =
+      from(
+        p in Project,
+        inner_join: infr in Infrastructure,
+        on: p.infrastructure_id == infr.id,
+        # The opposite of ERC20. Classify everything except ERC20 as Currency.
+        where:
+          not is_nil(p.coinmarketcap_id) and
+            (is_nil(p.main_contract_address) or infr.code != "ETH"),
+        order_by: p.name
+      )
+
+    currency_projects =
+      query
+      |> Repo.all()
+  end
+
   @doc ~S"""
   ROI = current_price*(ico1_tokens + ico2_tokens + ...)/(ico1_tokens*ico1_initial_price + ico2_tokens*ico2_initial_price + ...)
   We skip ICOs for which we can't calculate the initial_price or the tokens sold
@@ -305,6 +340,51 @@ defmodule Sanbase.Model.Project do
     Repo.all(query)
   end
 
+  def by_slug(slug) when is_binary(slug) do
+    Project
+    |> where([p], p.coinmarketcap_id == ^slug)
+    |> Repo.one()
+  end
+
+  def contract_info(%Project{
+        main_contract_address: main_contract_address,
+        token_decimals: token_decimals
+      })
+      when not is_nil(main_contract_address) do
+    {:ok, String.downcase(main_contract_address), token_decimals || 0}
+  end
+
+  def contract_info(project) do
+    {:error, "Can't find contract address of project #{project.coinmarketcap_id || project.id}"}
+  end
+
+  def ticker_by_slug("TOTAL_MARKET"), do: "TOTAL_MARKET"
+
+  def ticker_by_slug(slug) do
+    from(
+      p in Project,
+      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      select: p.ticker
+    )
+    |> Sanbase.Repo.one()
+  end
+
+  def contract_info_by_slug("ethereum") do
+    # Internally when we have a table with blockchain related data
+    # contract address is used to identify projects. In case of ethereum
+    # the contract address contains simply 'ETH'
+    {:ok, "ETH", 18}
+  end
+
+  def contract_info_by_slug(slug) do
+    with %Project{} = project when not is_nil(project) <- Project.by_slug(slug),
+         {:ok, contract_address, token_decimals} <- Project.contract_info(project) do
+      {:ok, contract_address, token_decimals}
+    else
+      _ -> {:error, "Can't find contract address for #{slug}"}
+    end
+  end
+
   def eth_addresses_by_tickers(tickers) do
     query =
       from(
@@ -331,5 +411,36 @@ defmodule Sanbase.Model.Project do
       select: p.ticker
     )
     |> Sanbase.Repo.one()
+  end
+
+  def eth_addresses(%Project{} = project) do
+    project =
+      project
+      |> Repo.preload([:eth_addresses])
+
+    addresses =
+      project.eth_addresses
+      |> Enum.map(fn %{address: address} -> address end)
+
+    {:ok, addresses}
+  end
+
+  def eth_addresses(projects) when is_list(projects) do
+    ids = for %Project{id: id} <- projects, do: id
+
+    addresses =
+      from(
+        p in Project,
+        where: p.id in ^ids,
+        preload: [:eth_addresses]
+      )
+      |> Repo.all()
+      |> Enum.map(fn %Project{eth_addresses: project_eth_addresses} ->
+        project_eth_addresses
+        |> Enum.map(fn %ProjectEthAddress{address: address} -> address end)
+      end)
+      |> Enum.reject(fn x -> x == [] end)
+
+    {:ok, addresses}
   end
 end

@@ -16,8 +16,6 @@ defmodule Sanbase.DataCase do
 
   using do
     quote do
-      alias Sanbase.Repo
-
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
@@ -26,11 +24,8 @@ defmodule Sanbase.DataCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Sanbase.Repo)
-
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Sanbase.Repo, {:shared, self()})
-    end
+    require Sanbase.CaseHelpers
+    Sanbase.CaseHelpers.checkout_shared(tags)
 
     :ok
   end

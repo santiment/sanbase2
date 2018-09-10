@@ -28,8 +28,13 @@ exports[`TrendsExplorePage smoke 1`] = `
         ]
       }
     />
-    <Apollo(GetTrends)
+    <Apollo(Apollo(Apollo(GetTrends)))
       render={[Function]}
+      selectedSources={
+        Array [
+          "merged",
+        ]
+      }
     />
     <TrendsExploreSourcesFilter
       handleSourceSelect={[Function]}

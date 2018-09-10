@@ -523,14 +523,14 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
         {:ok,
          %HTTPoison.Response{
            body:
-             "{\"messages\": {\"telegram\": [{\"text\": \"BTC moon\", \"timestamp\": 1533307652}, {\"text\": \"0.1c of usd won't make btc moon, you realize that?\", \"timestamp\": 1533694150}], \"professional_traders_chat\": [{\"text\": \"ow ... yea ... after btc moon and u become rich u mean ::D:\", \"timestamp\": 1533373739}, {\"text\": \"Next btc moon\", \"timestamp\": 1533741643}]}, \"charts_data\": {\"telegram\": [{\"mentions_count\": 1, \"timestamp\": 1533146400}, {\"mentions_count\": 0, \"timestamp\": 1533168000}], \"professional_traders_chat\": [{\"mentions_count\": 1, \"timestamp\": 1533362400}, {\"mentions_count\": 1, \"timestamp\": 1533384000}]}}",
+             "{\"messages\": [{\"text\": \"BTC moon\", \"timestamp\": 1533307652}, {\"text\": \"0.1c of usd won't make btc moon, you realize that?\", \"timestamp\": 1533694150}], \"chart_data\": [{\"mentions_count\": 1, \"timestamp\": 1533146400}, {\"mentions_count\": 0, \"timestamp\": 1533168000}]}",
            status_code: 200
          }}
       )
 
       result =
         TechIndicators.topic_search(
-          [:telegram, :professional_traders_chat],
+          :telegram,
           "btc moon",
           DateTime.from_unix!(from),
           DateTime.from_unix!(to),
@@ -540,32 +540,17 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       assert result ==
                {:ok,
                 %{
-                  charts_data: %{
-                    telegram: [
-                      %{datetime: DateTime.from_unix!(1_533_146_400), mentions_count: 1},
-                      %{datetime: DateTime.from_unix!(1_533_168_000), mentions_count: 0}
-                    ],
-                    professional_traders_chat: [
-                      %{datetime: DateTime.from_unix!(1_533_362_400), mentions_count: 1},
-                      %{datetime: DateTime.from_unix!(1_533_384_000), mentions_count: 1}
-                    ]
-                  },
-                  messages: %{
-                    telegram: [
-                      %{datetime: DateTime.from_unix!(1_533_307_652), text: "BTC moon"},
-                      %{
-                        datetime: DateTime.from_unix!(1_533_694_150),
-                        text: "0.1c of usd won't make btc moon, you realize that?"
-                      }
-                    ],
-                    professional_traders_chat: [
-                      %{
-                        datetime: DateTime.from_unix!(1_533_373_739),
-                        text: "ow ... yea ... after btc moon and u become rich u mean ::D:"
-                      },
-                      %{datetime: DateTime.from_unix!(1_533_741_643), text: "Next btc moon"}
-                    ]
-                  }
+                  chart_data: [
+                    %{datetime: DateTime.from_unix!(1_533_146_400), mentions_count: 1},
+                    %{datetime: DateTime.from_unix!(1_533_168_000), mentions_count: 0}
+                  ],
+                  messages: [
+                    %{datetime: DateTime.from_unix!(1_533_307_652), text: "BTC moon"},
+                    %{
+                      datetime: DateTime.from_unix!(1_533_694_150),
+                      text: "0.1c of usd won't make btc moon, you realize that?"
+                    }
+                  ]
                 }}
     end
 
@@ -582,7 +567,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result = fn ->
         TechIndicators.topic_search(
-          [:telegram, :professional_traders_chat],
+          :telegram,
           "btc moon",
           DateTime.from_unix!(1_533_114_000),
           DateTime.from_unix!(1_534_323_600),
@@ -606,7 +591,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result = fn ->
         TechIndicators.topic_search(
-          [:telegram, :professional_traders_chat],
+          :telegram,
           "btc moon",
           DateTime.from_unix!(1_533_114_000),
           DateTime.from_unix!(1_534_323_600),

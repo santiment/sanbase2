@@ -487,10 +487,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Returns lists with the mentions of the search phrase grouped by source. The results are in two formats - the messages themselves and the data for building graph representation of the result.
+    Returns lists with the mentions of the search phrase from the selected source. The results are in two formats - the messages themselves and the data for building graph representation of the result.
 
     Arguments description:
-      * sources - an array of enum values that specify which sources should be searched. The sources are:
+      * source - one of the following:
         1. TELEGRAM
         2. PROFESSIONAL_TRADERS_CHAT
         3. REDDIT
@@ -500,10 +500,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
     field :topic_search, :topic_search do
-      arg(:sources, non_null(list_of(:topic_search_sources)))
+      arg(:source, non_null(:topic_search_sources))
       arg(:search_text, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, :datetime)
       arg(:interval, non_null(:string), default_value: "1d")
 
       middleware(ApiTimeframeRestriction)

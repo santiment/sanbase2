@@ -37,7 +37,7 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
           className='projects-navigation-list__page-link'
           to={'/ethereum'}
         >
-          Ethereum Spent Overview
+          ETH Spent
         </Link>
         {isLoggedIn && (
           <WatchlistsPopup

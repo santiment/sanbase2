@@ -32,6 +32,7 @@ const TrendsExamplesItem = ({ topic, settings, onClick }) => {
       <div className='TrendsExamplesItem__chart'>
         <GetTrends
           topic={topic}
+          selectedSources={settings.sources}
           render={props => (
             <TrendsExamplesItemChart
               {...props}

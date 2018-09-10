@@ -52,6 +52,7 @@ export class TrendsExplorePage extends Component {
           />
           <GetTrends
             topic={match.params.topic}
+            selectedSources={selectedSources}
             render={props => (
               <TrendsExploreChart
                 {...props}

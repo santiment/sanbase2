@@ -23,7 +23,7 @@ export const TopMenu = ({ isLoggedin, logout }) => (
       </div>
       <SmoothDropdown className='right'>
         <ul className='menu-list-top'>
-          <Link className='app-menu__page-link active' to='/assets'>
+          <Link className='app-menu__page-link' to='/assets'>
             Assets
           </Link>
           <AnalysisDropdownMenu />

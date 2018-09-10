@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import { Helmet } from 'react-helmet'
 import { getOrigin } from '../../utils/utils'
 import Assets from './Assets'
@@ -13,9 +13,12 @@ const AssetsPage = props => (
       <title>Assets</title>
       <link rel='canonical' href={`${getOrigin()}/assets`} />
     </Helmet>
-    <div className='page-head page-head-assets'>
+    <div className='page-head page-head-projects'>
+      <div className='page-head-projects__left'>
+        <h1>Assets</h1>
+        <HelpPopupAssets />
+      </div>
       <AssetsPageNavigation isLoggedIn={props.isLoggedIn} />
-      <HelpPopupAssets />
     </div>
     <Assets
       {...props}

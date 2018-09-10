@@ -83,6 +83,8 @@ const main = () => {
 }
 
 if (process.env.NODE_ENV === 'development') {
+  const { whyDidYouUpdate } = require('why-did-you-update')
+  whyDidYouUpdate(React)
   main()
 } else {
   const script = document.createElement('script')

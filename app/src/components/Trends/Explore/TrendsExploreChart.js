@@ -1,23 +1,24 @@
 import React from 'react'
-import moment from 'moment'
 import 'chartjs-plugin-annotation'
-import { Line } from 'react-chartjs-2'
-import { mergeDataSourcesForChart } from '../trendsUtils'
+import TrendsChart from '../TrendsChart'
+import moment from 'moment'
 import './TrendsExploreChart.css'
 
 const chartOptions = {
   responsive: true,
   scaleFontSize: 0,
+  animation: false,
   legend: {
     display: false
   },
   scales: {
     yAxes: [
       {
+        id: 'y-axis-0',
         ticks: {
           autoSkip: true,
           maxTicksLimit: 5,
-          callback: (item, index) => (item !== 0 ? item : '')
+          callback: item => (item !== 0 ? item : '')
         }
       }
     ],
@@ -41,8 +42,11 @@ const chartOptions = {
   elements: {
     point: {
       hitRadius: 5,
-      hoverRadius: 5,
+      hoverRadius: 0.5,
       radius: 0
+    },
+    line: {
+      tension: 0.2
     }
   },
   tooltips: {
@@ -51,7 +55,7 @@ const chartOptions = {
     titleMarginBottom: 10,
     titleFontSize: 13,
     titleFontColor: '#3d4450',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     cornerRadius: 3,
     borderColor: 'rgba(38, 43, 51, 0.7)',
     borderWidth: 1,
@@ -65,42 +69,18 @@ const chartOptions = {
           .utc()
           .format('MMM DD YYYY')
       },
-      label: tooltipItem => `Merged Mentions: ${tooltipItem.yLabel}`
+      label: (tooltipItem, data) => {
+        const label = data.datasets[tooltipItem.datasetIndex].label.toString()
+        return `${label} Mentions: ${tooltipItem.yLabel}`
+      }
     }
   }
 }
 
-const datasetOptions = {
-  borderColor: 'rgba(255, 193, 7, 1)',
-  borderWidth: 2,
-  pointRadius: 0,
-  fill: false
-}
-
-const TrendsExploreChart = ({ sources, isDesktop }) => {
-  const isLoading = !sources
-
-  const mergedSources = mergeDataSourcesForChart(sources)
-
-  const dataset = {
-    labels: [...mergedSources.keys()],
-    datasets: [
-      {
-        data: [...mergedSources.values()],
-        ...datasetOptions
-      }
-    ]
-  }
-  return (
-    <div className='TrendsExploreChart'>
-      {isLoading && <div className='chart-loading-msg'>Loading...</div>}
-      <Line
-        options={chartOptions}
-        data={dataset}
-        height={isDesktop ? 80 : 200}
-      />
-    </div>
-  )
-}
+const TrendsExploreChart = props => (
+  <div className='TrendsExploreChart'>
+    <TrendsChart {...props} chartOptions={chartOptions} />
+  </div>
+)
 
 export default TrendsExploreChart

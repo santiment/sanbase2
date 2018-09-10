@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-10-09 | v.0.11.4 'Phobos':
+
+  Upgrade Trends page with new API
+
 - 2018-07-09 | v.0.11.3 'Phobos':
 
   Fixed financial block, if assets don't have wallets info

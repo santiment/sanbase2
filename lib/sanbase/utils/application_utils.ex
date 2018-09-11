@@ -3,7 +3,7 @@ defmodule Sanbase.ApplicationUtils do
   Start a worker/supervisor only in particular environment(s).
   Example: Not startuing `MySupervisor` in tests can now be done by replacing
   `{MySupervisor, []}` in the supervisor children by
-  `run_in({MySupervisor, []}, [:dev, :prod])`
+  `start_in({MySupervisor, []}, [:dev, :prod])`
 
   INPORTANT NOTE: If you use it, you must use `normalize_children` on the children list.
   """

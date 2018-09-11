@@ -75,6 +75,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {:ok, transfers |> Enum.reverse()}
   end
 
+  def eth_spent([], _, _), do: {:ok, nil}
+
   def eth_spent(wallets, from_datetime, to_datetime) do
     eth_spent =
       from(

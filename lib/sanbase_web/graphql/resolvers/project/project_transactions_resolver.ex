@@ -120,9 +120,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    projects = Project.erc20_projects()
-
-    projects
+    Project.erc20_projects()
     |> Enum.map(
       &Task.async(fn -> calculate_eth_spent_over_time_cached(&1, from, to, interval).() end)
     )

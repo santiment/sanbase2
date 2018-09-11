@@ -113,7 +113,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
   test "eth spent over time by erc20 projects", context do
     with_mock Sanbase.Clickhouse.EthTransfers,
-      eth_spent_over_time_by_projects: fn _, _, _, _ ->
+      eth_spent_over_time: fn _, _, _, _ ->
         {:ok,
          [
            %{eth_spent: 16500},

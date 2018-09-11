@@ -7,14 +7,12 @@ defmodule Sanbase.ApplicationUtils do
 
   INPORTANT NOTE: If you use it, you must use `normalize_children` on the children list.
   """
-  defmacro start_in(expr, environments) do
-    quote bind_quoted: [expr: expr, environments: environments] do
-      require Sanbase.Utils.Config, as: Config
-      env = Config.module_get(Sanbase, :environment) |> String.to_existing_atom()
+  def start_in(expr, environments) do
+    require Sanbase.Utils.Config, as: Config
+    env = Config.module_get(Sanbase, :environment) |> String.to_existing_atom()
 
-      if env in environments do
-        expr
-      end
+    if env in environments do
+      expr
     end
   end
 

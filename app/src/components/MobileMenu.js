@@ -3,7 +3,7 @@ import { withRouter, NavLink as Link } from 'react-router-dom'
 import cx from 'classnames'
 import { connect } from 'react-redux'
 import { Icon } from 'react-fa'
-import { Button } from 'semantic-ui-react'
+import { Button, Label } from 'semantic-ui-react'
 import { compose, withStateHandlers } from 'recompose'
 import 'font-awesome/css/font-awesome.css'
 import './MobileMenu.css'
@@ -36,6 +36,12 @@ const MobileMenu = ({
     {isOpened && (
       <div className='overlay-content'>
         <div onClick={toggleMenu} className='navigation-list'>
+          <Link to={'/trends'}>
+            Trends{' '}
+            <Label color='green' horizontal>
+              new
+            </Label>
+          </Link>
           <Link to={'/insights'}>Insights</Link>
           <Link to={'/signals'}>Signals</Link>
           <Link to={'/roadmap'}>Roadmap</Link>

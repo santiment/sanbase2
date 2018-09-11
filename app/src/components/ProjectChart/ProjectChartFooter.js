@@ -146,11 +146,11 @@ const ProjectChartFooter = ({
             toggle={props.toggleBurnRate}
           >
             <Label circular className='burnRateLabel' empty />
-            Burn Rate
+            Token Age Consumed
             <Popup
               trigger={<Icon name='info circle' />}
               inverted
-              content='Token Burn Rate shows the amount of movement
+              content='Token Age Consumed shows the amount of movement
             of tokens between addresses. One use for this metric is
             to spot large amounts of tokens moving after sitting for long periods of time'
               position='top left'

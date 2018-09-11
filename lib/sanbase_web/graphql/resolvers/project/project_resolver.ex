@@ -21,10 +21,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Github
   alias Sanbase.ExternalServices.Etherscan
 
-  alias Sanbase.Clickhouse
-
   alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
+  alias SanbaseWeb.Graphql.Helpers.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
 
   def all_projects(parent, args, %{context: %{basic_auth: true}}), do: all_projects(parent, args)

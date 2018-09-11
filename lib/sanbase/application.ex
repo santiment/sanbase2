@@ -1,7 +1,8 @@
 defmodule Sanbase.Application do
   use Application
+
   import Supervisor.Spec
-  import Sanbase.Utils.App
+  import Sanbase.ApplicationUtils
 
   import Supervisor.Spec
   import Sanbase.ApplicationUtils
@@ -49,7 +50,7 @@ defmodule Sanbase.Application do
          ]},
 
         # Start the Clickhouse Repo
-        run_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
+        start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},

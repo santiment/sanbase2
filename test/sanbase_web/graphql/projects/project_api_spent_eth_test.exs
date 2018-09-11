@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{Project, Infrastructure}
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -12,9 +12,19 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     datetime2 = Timex.shift(datetime1, days: -10)
     datetime3 = Timex.shift(datetime1, days: -15)
 
+    eth_infrastructure =
+      %Infrastructure{code: "ETH"}
+      |> Repo.insert!()
+
     p =
       %Project{}
-      |> Project.changeset(%{name: "Santiment", ticker: "SAN"})
+      |> Project.changeset(%{
+        name: "Santiment",
+        ticker: "SAN",
+        coinmarketcap_id: "santiment",
+        main_contract_address: "0x123123",
+        infrastructure_id: eth_infrastructure.id
+      })
       |> Repo.insert!()
 
     [
@@ -80,7 +90,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     eth_spent = 30_000
 
     with_mock Sanbase.Clickhouse.EthTransfers,
-      eth_spent_by_projects: fn _, _, _ ->
+      eth_spent: fn _, _, _ ->
         {:ok, eth_spent}
       end do
       query = """

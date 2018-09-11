@@ -141,58 +141,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {:ok, total_eth_spent_over_time}
   end
 
-  @doc ~s"""
-  Returns the sum of the total ETH spent of all projects from the list projects
-  """
-  @spec eth_spent_by_projects(list(), %DateTime{}, %DateTime{}) ::
-          {:ok, number()} | {:ok, nil} | {:error, String.t()}
-  def eth_spent_by_projects([], _from_datetime, _to_datetime), do: {:ok, nil}
-
-  def eth_spent_by_projects(projects, from_datetime, to_datetime) do
-    total_eth_spent =
-      projects
-      |> Project.eth_addresses()
-      |> Enum.map(&Task.async(fn -> eth_spent(&1, from_datetime, to_datetime) end))
-      |> Stream.map(&Task.await(&1, 25_000))
-      |> Stream.reject(fn {:ok, sum} -> sum == nil end)
-      |> Enum.reduce(0, fn
-        {:ok, sum}, acc ->
-          acc + sum
-
-        {:error, error}, acc ->
-          Logger.warn(
-            "Error while calculating the total ETH spent by projects: #{error}. Won't include it in the calculation"
-          )
-
-          acc
-      end)
-
-    {:ok, total_eth_spent}
-  end
-
-  @doc ~s"""
-  Returns the sum of 'out' transactions over the specified period of time for all projecs,
-  grouped by the specified interval.
-  """
-  @spec eth_spent_over_time_by_projects(list(), %DateTime{}, %DateTime{}, String.t()) ::
-          {:ok, list()} | {:error, String.t()}
-  def eth_spent_over_time_by_projects([], _from_datetime, _to_datetime, _interval), do: {:ok, []}
-
-  def eth_spent_over_time_by_projects(projects, from_datetime, to_datetime, interval) do
-    {:ok, eth_addresses} = Project.eth_addresses(projects)
-
+  def combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
     total_eth_spent_over_time =
-      eth_addresses
-      |> Enum.map(
-        &Task.async(fn ->
-          eth_spent_over_time(&1, from_datetime, to_datetime, interval)
-        end)
-      )
-      |> Stream.map(&Task.await(&1, 25_000))
-      |> Stream.reject(fn
-        {:error, _} -> true
-        {:ok, []} -> true
-        {:ok, _} -> false
+      eth_spent_over_time_list
+      |> Enum.reject(fn
+        {:ok, elem} when elem != [] and elem != nil -> false
+        _ -> true
       end)
       |> Enum.map(fn {:ok, data} -> data end)
       |> Stream.zip()

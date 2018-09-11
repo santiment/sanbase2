@@ -112,15 +112,15 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   end
 
   test "eth spent over time by erc20 projects", context do
-    with_mock Sanbase.Clickhouse.EthTransfers,
+    with_mock Sanbase.Clickhouse.EthTransfers, [:passthrough],
       eth_spent_over_time: fn _, _, _, _ ->
         {:ok,
          [
-           %{eth_spent: 16500},
-           %{eth_spent: 5500},
-           %{eth_spent: 3500},
-           %{eth_spent: 2500},
-           %{eth_spent: 500}
+           %{datetime: Timex.now(), eth_spent: 16500},
+           %{datetime: Timex.shift(Timex.now(), days: -1), eth_spent: 5500},
+           %{datetime: Timex.shift(Timex.now(), days: -2), eth_spent: 3500},
+           %{datetime: Timex.shift(Timex.now(), days: -3), eth_spent: 2500},
+           %{datetime: Timex.shift(Timex.now(), days: -4), eth_spent: 500}
          ]}
       end do
       query = """

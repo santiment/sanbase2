@@ -10,6 +10,8 @@ config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
+config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
+
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: 10,
@@ -21,8 +23,6 @@ config :sanbase, Sanbase.TimescaleRepo,
   pool_size: 30,
   # because of pgbouncer
   prepare: :unnamed
-
-config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
 
 config :sanbase, Sanbase.Timescaledb,
   blockchain_schema: {:system, "TIMESCALEDB_BLOCKCHAIN_SCHEMA", "etherbi"}

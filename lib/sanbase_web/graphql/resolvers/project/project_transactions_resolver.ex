@@ -7,9 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   alias Sanbase.Clickhouse
 
-  alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
-  alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
 
   def token_top_transactions(
         %Project{id: id} = project,
@@ -55,35 +53,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         _resolution
       ) do
     # Cannot get more than the top 100 transfers
-    with size <- Enum.max([size, 100]) do
-      async(
-        Cache.func(
-          fn ->
-            {:ok, last_transfers} =
-              Clickhouse.EthTransfers.last_wallet_transfers(
-                wallets,
-                from,
-                to,
-                size,
-                type
-              )
+    size = Enum.max([size, 100])
 
-            result =
-              last_transfers
-              |> Clickhouse.MarkExchanges.mark_exchange_wallets()
+    async(
+      Cache.func(
+        fn ->
+          {:ok, last_transfers} =
+            Clickhouse.EthTransfers.last_wallet_transfers(
+              wallets,
+              from,
+              to,
+              size,
+              type
+            )
 
-            {:ok, result}
-          end,
-          :last_wallet_transfers,
-          args
-        )
+          result =
+            last_transfers
+            |> Clickhouse.MarkExchanges.mark_exchange_wallets()
+
+          {:ok, result}
+        end,
+        :last_wallet_transfers,
+        args
       )
-    else
-      error ->
-        Logger.info("Cannot get wallet last transfers. Reason: #{inspect(error)}")
-
-        {:ok, []}
-    end
+    )
   end
 
   def eth_spent(%Project{id: id} = project, %{days: days} = args, _resolution) do
@@ -95,7 +88,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     )
   end
 
-  def calculate_eth_spent(%Project{id: id} = project, from_datetime, to_datetime) do
+  def calculate_eth_spent(%Project{} = project, from_datetime, to_datetime) do
     with {:ok, eth_addresses} <- Project.eth_addresses(project),
          {:ok, eth_spent} <-
            Clickhouse.EthTransfers.eth_spent(eth_addresses, from_datetime, to_datetime) do
@@ -232,7 +225,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              limit,
              trx_type
            ) do
-      result = eth_transactions
+      result =
+        eth_transactions
+        |> Clickhouse.MarkExchanges.mark_exchange_wallets()
 
       {:ok, result}
     else

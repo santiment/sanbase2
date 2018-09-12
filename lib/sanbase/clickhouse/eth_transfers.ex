@@ -78,18 +78,16 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   def eth_spent([], _, _), do: {:ok, nil}
 
   def eth_spent(wallets, from_datetime, to_datetime) do
-    eth_spent =
-      from(
-        transfer in EthTransfers,
-        where:
-          transfer.from_address in ^wallets and transfer.to_address not in ^wallets and
-            transfer.datetime > ^from_datetime and transfer.datetime < ^to_datetime and
-            transfer.type == "call",
-        select: sum(transfer.trx_value)
-      )
-      |> ClickhouseRepo.one()
+    {query, args} = eth_spent_query(wallets, from_datetime, to_datetime)
 
-    {:ok, eth_spent / @eth_decimals}
+    ClickhouseRepo.query_transform(query, args, fn [value] -> value / @eth_decimals end)
+    |> case do
+      {:ok, result} ->
+        {:ok, result |> List.first()}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   @doc ~s"""
@@ -115,25 +113,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   def eth_spent_over_time(wallets, from_datetime, to_datetime, interval) when is_list(wallets) do
     {query, args} = eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval)
 
-    ClickhouseRepo.query(query, args)
-    |> case do
-      {:ok, %{rows: rows}} ->
-        result =
-          Enum.map(
-            rows,
-            fn [value, datetime_str] ->
-              %{
-                datetime: datetime_str |> Sanbase.DateTimeUtils.from_erl!(),
-                eth_spent: value / @eth_decimals
-              }
-            end
-          )
-
-        {:ok, result}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    ClickhouseRepo.query_transform(query, args, fn [value, datetime_str] ->
+      %{
+        datetime: datetime_str |> Sanbase.DateTimeUtils.from_erl!(),
+        eth_spent: value / @eth_decimals
+      }
+    end)
   end
 
   def combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
@@ -201,6 +186,33 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     |> divide_by_eth_decimals()
   end
 
+  defp eth_spent_query(wallets, from_datetime, to_datetime) do
+    from_datetime_unix = DateTime.to_unix(from_datetime)
+    to_datetime_unix = DateTime.to_unix(to_datetime)
+
+    query = """
+    SELECT SUM(value)
+    FROM (
+      SELECT any(value) as value
+      FROM #{@table}
+      PREWHERE from IN (?1) AND NOT to IN (?1)
+      AND dt >= toDateTime(?2)
+      AND dt <= toDateTime(?3)
+      AND type == 'call'
+      GROUP BY from, type, to, dt, transactionHash
+      ORDER BY value desc
+    )
+    """
+
+    args = [
+      wallets,
+      from_datetime_unix,
+      to_datetime_unix
+    ]
+
+    {query, args}
+  end
+
   defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
@@ -208,23 +220,26 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     query = """
     SELECT SUM(value), time
-    FROM (
-      SELECT
-        toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
-        toFloat64(0) AS value
-      FROM numbers(?2)
+      FROM (
+        SELECT
+          toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
+          toFloat64(0) AS value
+        FROM numbers(?2)
 
-      UNION ALL
+        UNION ALL
 
-      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
-      FROM #{@table}
-      PREWHERE from IN (?3) AND NOT to IN (?3)
-      AND dt >= toDateTime(?4)
-      AND dt <= toDateTime(?5)
-      AND type == 'call'
-      GROUP BY time
-      ORDER BY time
-    )
+        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
+          FROM (
+            SELECT any(value) as value, dt
+            FROM #{@table}
+            PREWHERE from IN (?3) AND NOT to IN (?3)
+            AND dt >= toDateTime(?4)
+            AND dt <= toDateTime(?5)
+            AND type == 'call'
+            GROUP BY from, type, to, dt, transactionHash
+          )
+        GROUP BY time
+      )
     GROUP BY time
     ORDER BY time
     """

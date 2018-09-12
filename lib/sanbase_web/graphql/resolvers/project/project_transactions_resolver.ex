@@ -99,8 +99,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     with projects when is_list(projects) <- Project.erc20_projects() do
       total_eth_spent =
         projects
-        |> Enum.map(&Task.async(fn -> calculate_eth_spent_cached(&1, from, to).() end))
-        |> Enum.map(&Task.await/1)
+        |> Sanbase.Parallel.pmap(&calculate_eth_spent_cached(&1, from, to).())
         |> Enum.map(fn
           {:ok, value} when not is_nil(value) -> value
           _ -> 0
@@ -121,10 +120,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         _resolution
       ) do
     Project.erc20_projects()
-    |> Enum.map(
-      &Task.async(fn -> calculate_eth_spent_over_time_cached(&1, from, to, interval).() end)
-    )
-    |> Enum.map(&Task.await/1)
+    |> Sanbase.Parallel.pmap(&calculate_eth_spent_over_time_cached(&1, from, to, interval).())
     |> Clickhouse.EthTransfers.combine_eth_spent_by_all_projects()
   end
 

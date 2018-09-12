@@ -2,10 +2,12 @@ defmodule Sanbase.Parallel do
   @doc ~s"""
 
   """
-  def pmap(collection, func) when is_function(func, 1) do
+  def pmap(collection, func, opts \\ []) when is_function(func, 1) do
+    timeout = Keyword.get(opts, :timeout) || 5_000
+
     collection
     |> Enum.map(&Task.async(fn -> func.(&1) end))
-    |> Enum.map(&Task.await/1)
+    |> Enum.map(&Task.await(&1, timeout))
   end
 
   def pmap_concurrent(collection, func, opts \\ []) when is_function(func, 1) do

@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{Project, Infrastructure}
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -12,9 +12,19 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     datetime2 = Timex.shift(datetime1, days: -10)
     datetime3 = Timex.shift(datetime1, days: -15)
 
+    eth_infrastructure =
+      %Infrastructure{code: "ETH"}
+      |> Repo.insert!()
+
     p =
       %Project{}
-      |> Project.changeset(%{name: "Santiment", ticker: "SAN"})
+      |> Project.changeset(%{
+        name: "Santiment",
+        ticker: "SAN",
+        coinmarketcap_id: "santiment",
+        main_contract_address: "0x123123",
+        infrastructure_id: eth_infrastructure.id
+      })
       |> Repo.insert!()
 
     [
@@ -80,7 +90,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
     eth_spent = 30_000
 
     with_mock Sanbase.Clickhouse.EthTransfers,
-      eth_spent_by_projects: fn _, _, _ ->
+      eth_spent: fn _, _, _ ->
         {:ok, eth_spent}
       end do
       query = """
@@ -102,15 +112,15 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   end
 
   test "eth spent over time by erc20 projects", context do
-    with_mock Sanbase.Clickhouse.EthTransfers,
-      eth_spent_over_time_by_projects: fn _, _, _, _ ->
+    with_mock Sanbase.Clickhouse.EthTransfers, [:passthrough],
+      eth_spent_over_time: fn _, _, _, _ ->
         {:ok,
          [
-           %{eth_spent: 16500},
-           %{eth_spent: 5500},
-           %{eth_spent: 3500},
-           %{eth_spent: 2500},
-           %{eth_spent: 500}
+           %{datetime: Timex.now(), eth_spent: 16500},
+           %{datetime: Timex.shift(Timex.now(), days: -1), eth_spent: 5500},
+           %{datetime: Timex.shift(Timex.now(), days: -2), eth_spent: 3500},
+           %{datetime: Timex.shift(Timex.now(), days: -3), eth_spent: 2500},
+           %{datetime: Timex.shift(Timex.now(), days: -4), eth_spent: 500}
          ]}
       end do
       query = """

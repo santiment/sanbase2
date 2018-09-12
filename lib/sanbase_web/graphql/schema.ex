@@ -544,7 +544,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:wallets, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:size, :integer, default_value: 10)
+      arg(:limit, :integer, default_value: 10)
       arg(:transaction_type, :transaction_type)
 
       resolve(&ProjectTransactionsResolver.last_wallet_transfers/3)

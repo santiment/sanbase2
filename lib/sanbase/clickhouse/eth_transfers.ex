@@ -239,7 +239,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
             GROUP BY from, type, to, dt, transactionHash
           )
         GROUP BY time
-        ORDER BY time
       )
     GROUP BY time
     ORDER BY time

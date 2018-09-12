@@ -220,23 +220,27 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     query = """
     SELECT SUM(value), time
-    FROM (
-      SELECT
-        toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
-        toFloat64(0) AS value
-      FROM numbers(?2)
+      FROM (
+        SELECT
+          toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
+          toFloat64(0) AS value
+        FROM numbers(?2)
 
-      UNION ALL
+        UNION ALL
 
-      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
-      FROM #{@table}
-      PREWHERE from IN (?3) AND NOT to IN (?3)
-      AND dt >= toDateTime(?4)
-      AND dt <= toDateTime(?5)
-      AND type == 'call'
-      GROUP BY time
-      ORDER BY time
-    )
+        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, sum(value) as value
+          FROM (
+            SELECT any(value) as value, dt
+            FROM #{@table}
+            PREWHERE from IN (?3) AND NOT to IN (?3)
+            AND dt >= toDateTime(?4)
+            AND dt <= toDateTime(?5)
+            AND type == 'call'
+            GROUP BY from, type, to, dt, transactionHash
+          )
+        GROUP BY time
+        ORDER BY time
+      )
     GROUP BY time
     ORDER BY time
     """

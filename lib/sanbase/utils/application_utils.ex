@@ -1,4 +1,6 @@
 defmodule Sanbase.ApplicationUtils do
+  require Sanbase.Utils.Config, as: Config
+
   @doc ~s"""
   Start a worker/supervisor only in particular environment(s).
   Example: Not startuing `MySupervisor` in tests can now be done by replacing
@@ -8,8 +10,9 @@ defmodule Sanbase.ApplicationUtils do
   INPORTANT NOTE: If you use it, you must use `normalize_children` on the children list.
   """
   def start_in(expr, environments) do
-    require Sanbase.Utils.Config, as: Config
-    env = Config.module_get(Sanbase, :environment) |> String.to_existing_atom()
+    env =
+      Config.module_get(Sanbase, :environment)
+      |> String.to_existing_atom()
 
     if env in environments do
       expr

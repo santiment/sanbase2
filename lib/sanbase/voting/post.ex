@@ -25,7 +25,7 @@ defmodule Sanbase.Voting.Post do
     field(:short_desc, :string)
     field(:link, :string)
     field(:text, :string)
-    field(:state, :string)
+    field(:state, :string, default: @approved)
     field(:moderation_comment, :string)
     field(:ready_state, :string, default: @draft)
     field(:discourse_topic_url, :string)
@@ -43,6 +43,11 @@ defmodule Sanbase.Voting.Post do
     timestamps()
   end
 
+  # Needed by ex_admin :(
+  def changeset(%Post{} = post, attrs \\ %{}) do
+    post |> cast(attrs, [])
+  end
+
   def create_changeset(%Post{} = post, attrs) do
     post
     |> cast(attrs, [:title, :short_desc, :link, :text])
@@ -55,7 +60,7 @@ defmodule Sanbase.Voting.Post do
 
   def update_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :moderation_comment, :state])
     |> tags_cast(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])

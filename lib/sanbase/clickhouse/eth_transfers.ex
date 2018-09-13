@@ -1,7 +1,9 @@
 defmodule Sanbase.Clickhouse.EthTransfers do
-  alias __MODULE__
+  @moduledoc ~s"""
+  Uses ClickHouse to work with ETH transfers.
+  """
 
-  @type t :: %EthTransfers{
+  @type t :: %__MODULE__{
           datetime: %DateTime{},
           from_address: String.t(),
           to_address: String.t(),
@@ -26,6 +28,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
   import Ecto.Query
 
+  alias __MODULE__
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
 
@@ -54,6 +57,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   Only transfers which `from` address is in the list and `to` address is
   not in the list are selected.
   """
+  @spec top_wallet_transfers(wallets, %DateTime{}, %DateTime{}, integer, String.t()) ::
+          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def top_wallet_transfers(wallets, from_datetime, to_datetime, limit, type) do
     wallet_transfers(wallets, from_datetime, to_datetime, limit, type)
   end

@@ -67,7 +67,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     to_datetime_unix = DateTime.to_unix(to_datetime)
 
     query = """
-    SELECT from, to, dt, transactionHash, any(value) / ?1 as value
+    SELECT any(contract), from, to, dt, transactionHash, any(value) / ?1 as value
     FROM #{@table}
     PREWHERE contract = ?2
     AND dt >= toDateTime(?3)

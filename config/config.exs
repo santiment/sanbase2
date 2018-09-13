@@ -14,13 +14,13 @@ config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
 
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
-  pool_size: 10,
+  pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   # because of pgbouncer
   prepare: :unnamed
 
 config :sanbase, Sanbase.TimescaleRepo,
   adapter: Ecto.Adapters.Postgres,
-  pool_size: 30,
+  pool_size: {:system, "TIMESCALE_POOL_SIZE", "30"},
   # because of pgbouncer
   prepare: :unnamed
 

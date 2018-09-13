@@ -45,38 +45,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     end
   end
 
-  def last_wallet_transfers(
-        _root,
-        %{wallets: wallets, from: from, to: to, limit: limit, transaction_type: type} = args,
-        _resolution
-      ) do
-    # Cannot get more than the top 100 transfers
-    limit = Enum.max([limit, 100])
-
-    async(
-      Cache.func(
-        fn ->
-          {:ok, last_transfers} =
-            Clickhouse.EthTransfers.last_wallet_transfers(
-              wallets,
-              from,
-              to,
-              limit,
-              type
-            )
-
-          result =
-            last_transfers
-            |> Clickhouse.MarkExchanges.mark_exchange_wallets()
-
-          {:ok, result}
-        end,
-        :last_wallet_transfers,
-        args
-      )
-    )
-  end
-
   def eth_spent(%Project{} = project, %{days: days}, _resolution) do
     today = Timex.now()
     days_ago = Timex.shift(today, days: -days)

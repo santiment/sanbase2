@@ -540,16 +540,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3)
     end
 
-    field :last_wallet_transfers, list_of(:transaction) do
-      arg(:wallets, non_null(list_of(:string)))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:limit, :integer, default_value: 10)
-      arg(:transaction_type, :transaction_type)
-
-      resolve(&ProjectTransactionsResolver.last_wallet_transfers/3)
-    end
-
     @desc "Fetch all favourites lists for current_user."
     field :fetch_user_lists, list_of(:user_list) do
       resolve(&UserListResolver.fetch_user_lists/3)

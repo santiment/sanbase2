@@ -43,20 +43,26 @@ defmodule Sanbase.ClickhouseRepo do
     end
   end
 
-  def query_transform(query, args, transform_fn) do
-    Sanbase.ClickhouseRepo.query(query, args)
-    |> case do
-      {:ok, %{rows: rows}} ->
-        result =
-          Enum.map(
-            rows,
-            transform_fn
-          )
+  defmacro query_transform(query, args, transform_fn \\ nil) do
+    quote bind_quoted: [query: query, args: args, transform_fn: transform_fn] do
+      require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-        {:ok, result}
+      ClickhouseRepo.query(query, args)
+      |> case do
+        {:ok, result} ->
+          transform_fn = transform_fn || (&ClickhouseRepo.load(__MODULE__, {result.columns, &1}))
 
-      {:error, error} ->
-        {:error, error}
+          result =
+            Enum.map(
+              result.rows,
+              transform_fn
+            )
+
+          {:ok, result}
+
+        {:error, error} ->
+          {:error, error}
+      end
     end
   end
 end

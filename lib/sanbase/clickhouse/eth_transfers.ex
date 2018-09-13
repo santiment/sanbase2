@@ -28,6 +28,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
   import Ecto.Query
 
+  alias __MODULE__
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
 

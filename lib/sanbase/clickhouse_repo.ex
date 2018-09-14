@@ -1,12 +1,21 @@
 defmodule Sanbase.ClickhouseRepo do
   use Ecto.Repo, otp_app: :sanbase
 
+  require Sanbase.Utils.Config, as: Config
+
   @doc """
   Dynamically loads the repository url from the
   CLICKHOUSE_DATABASE_URL environment variable.
   """
   def init(_, opts) do
-    {:ok, Keyword.put(opts, :url, System.get_env("CLICKHOUSE_DATABASE_URL"))}
+    pool_size = Config.get(:pool_size) |> Sanbase.Utils.Math.to_integer()
+
+    opts =
+      opts
+      |> Keyword.put(:pool_size, pool_size)
+      |> Keyword.put(:url, System.get_env("CLICKHOUSE_DATABASE_URL"))
+
+    {:ok, opts}
   end
 
   @doc ~s"""

@@ -4,6 +4,7 @@ defmodule Sanbase.Auth.EthAccount do
 
   alias Sanbase.Auth.{User, EthAccount}
 
+  require Logger
   require Mockery.Macro
   defp ethauth, do: Mockery.Macro.mockable(Sanbase.InternalServices.Ethauth)
 
@@ -23,6 +24,16 @@ defmodule Sanbase.Auth.EthAccount do
   end
 
   def san_balance(%EthAccount{address: address}) do
-    ethauth().san_balance(address)
+    case ethauth().san_balance(address) do
+      {:ok, san_balance} ->
+        san_balance
+
+      {:error, error} ->
+        Logger.error(
+          "Failed to get san balance for address: #{address}. Reason: #{inspect(error)}"
+        )
+
+        nil
+    end
   end
 end

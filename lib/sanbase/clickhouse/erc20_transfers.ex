@@ -67,12 +67,12 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     to_datetime_unix = DateTime.to_unix(to_datetime)
 
     query = """
-    SELECT any(contract), from, to, dt, transactionHash, any(value) / ?1 as value
+    SELECT contract, from, to, dt, transactionHash, any(value) / ?1 as value
     FROM #{@table}
     PREWHERE contract = ?2
     AND dt >= toDateTime(?3)
     AND dt <= toDateTime(?4)
-    GROUP BY from, to, dt, transactionHash
+    GROUP BY contract, from, to, dt, transactionHash, logIndex
     ORDER BY value desc
     LIMIT ?5
     """

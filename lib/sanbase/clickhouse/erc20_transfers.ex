@@ -2,18 +2,33 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   @moduledoc ~s"""
   Uses ClickHouse to work with ERC20 transfers.
   """
+
+  @type t :: %__MODULE__{
+          datetime: %DateTime{},
+          contract: String.t(),
+          from_address: String.t(),
+          to_address: String.t(),
+          trx_hash: String.t(),
+          trx_value: float,
+          block_number: non_neg_integer,
+          trx_position: non_neg_integer,
+          log_index: non_neg_integer
+        }
+
   use Ecto.Schema
 
   import Ecto.Query
 
-  alias __MODULE__
   require Sanbase.ClickhouseRepo
+
+  alias __MODULE__
   alias Sanbase.ClickhouseRepo
+
+  @table "erc20_transfers"
 
   @primary_key false
   @timestamps_opts updated_at: false
-
-  schema "erc20_transfers" do
+  schema @table do
     field(:datetime, :utc_datetime, source: :dt)
     field(:contract, :string, primary_key: true)
     field(:from_address, :string, primary_key: true, source: :from)
@@ -34,24 +49,42 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   If the top transactions for SAN token are needed, the SAN contract address must be
   provided as a first argument.
   """
+  @spec token_top_transfers(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
+          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def token_top_transfers(contract, from_datetime, to_datetime, limit, token_decimals \\ 0) do
-    token_decimals = :math.pow(10, token_decimals)
+    token_decimals = Sanbase.Utils.Math.ipow(10, token_decimals)
 
-    from(
-      transfer in Erc20Transfers,
-      where:
-        transfer.contract == ^contract and transfer.datetime > ^from_datetime and
-          transfer.datetime < ^to_datetime,
-      select: %{
-        datetime: transfer.datetime,
-        from_address: transfer.from_address,
-        to_address: transfer.to_address,
-        trx_hash: transfer.trx_hash,
-        trx_value: fragment("divide(?,?) as value", transfer.trx_value, ^token_decimals)
-      },
-      order_by: [desc: transfer.trx_value],
-      limit: ^limit
-    )
-    |> ClickhouseRepo.all_prewhere()
+    {query, args} =
+      token_top_transfers_query(contract, from_datetime, to_datetime, limit, token_decimals)
+
+    ClickhouseRepo.query_transform(query, args)
+  end
+
+  # Private functions
+
+  defp token_top_transfers_query(contract, from_datetime, to_datetime, limit, token_decimals) do
+    from_datetime_unix = DateTime.to_unix(from_datetime)
+    to_datetime_unix = DateTime.to_unix(to_datetime)
+
+    query = """
+    SELECT contract, from, to, dt, transactionHash, any(value) / ?1 as value
+    FROM #{@table}
+    PREWHERE contract = ?2
+    AND dt >= toDateTime(?3)
+    AND dt <= toDateTime(?4)
+    GROUP BY contract, from, to, dt, transactionHash, logIndex
+    ORDER BY value desc
+    LIMIT ?5
+    """
+
+    args = [
+      token_decimals,
+      contract,
+      from_datetime,
+      to_datetime_unix,
+      limit
+    ]
+
+    {query, args}
   end
 end

@@ -22,7 +22,8 @@ defmodule Sanbase.Parallel do
       func,
       ordered: ordered,
       max_concurrency: max_concurrency,
-      timeout: timeout
+      timeout: timeout,
+      on_timeout: on_timeout
     )
     |> Enum.to_list()
   end

@@ -34,6 +34,7 @@ defmodule Sanbase.InternalServices.Ethauth do
     ethauth_url = Config.get(:url)
 
     Tesla.build_client([
+      {Tesla.Middleware.Timeout, timeout: 30_000},
       Sanbase.ExternalServices.ErrorCatcher.Middleware,
       {Tesla.Middleware.BaseUrl, ethauth_url},
       Tesla.Middleware.Logger

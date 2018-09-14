@@ -26,8 +26,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     balance =
       loader
       |> Dataloader.get(SanbaseRepo, :eth_addresses, project)
-      |> Stream.map(&ProjectEthAddress.balance(&1))
-      |> Stream.reject(&is_nil/1)
+      |> Enum.map(&ProjectEthAddress.balance/1)
+      |> Enum.reject(&is_nil/1)
       |> Enum.reduce(0, &+/2)
 
     {:ok, balance}
@@ -48,9 +48,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     balance =
       loader
       |> Dataloader.get(SanbaseRepo, :btc_addresses, project)
-      |> Stream.map(& &1.latest_btc_wallet_data)
-      |> Stream.reject(&is_nil/1)
-      |> Stream.map(&(Decimal.to_float(&1.satoshi_balance) / 100_000_000))
+      |> Enum.map(& &1.latest_btc_wallet_data)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&(Decimal.to_float(&1.satoshi_balance) / 100_000_000))
       |> Enum.reduce(0, &+/2)
 
     {:ok, balance}
@@ -87,9 +87,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     end
   end
 
-  def eth_address_balance(%ProjectEthAddress{} = eth_address, _args, %{
-        context: %{loader: loader}
-      }) do
+  def eth_address_balance(%ProjectEthAddress{} = eth_address, _args, _resolution) do
     {:ok, ProjectEthAddress.balance(eth_address)}
   end
 end

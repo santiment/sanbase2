@@ -27,7 +27,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   password: "",
   pool_timeout: 60_000,
   timeout: 60_000,
-  pool_size: 50
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"}
 
 # Do not print debug messages in production
 config :logger, level: :info

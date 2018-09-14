@@ -180,7 +180,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     query = """
     SELECT from, type, to, dt, transactionHash, any(value) / #{@eth_decimals} as value
     FROM #{@table}
-    PREWHERE NOT from IN (?1) AND NOT from IN (?1)
+    PREWHERE NOT from IN (?1) AND to IN (?1)
     AND dt >= toDateTime(?2)
     AND dt <= toDateTime(?3)
     AND type == 'call'

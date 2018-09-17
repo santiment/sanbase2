@@ -12,35 +12,36 @@ defmodule Sanbase.InternalServices.Parity do
 
   def get_transaction_by_hash(transaction_hash) do
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
-           post(client(), "/", json_rpc_call("eth_getTransactionByHash", [transaction_hash])),
+           post(
+             client(),
+             "/",
+             json_rpc_call("eth_getTransactionByHash", [transaction_hash]),
+             opts: [adapter: [recv_timeout: 15_000]]
+           ),
          %{"result" => result} <- body do
       {:ok, result}
     else
-      error -> {:error, error}
-    end
-  end
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        {:error,
+         "Error get_transaction_by_hash for hash #{transaction_hash}. Status #{status}. Body: #{
+           inspect(body)
+         }"}
 
-  def get_latest_block_number!() do
-    case get_latest_block_number() do
-      {:ok, blockNumber} -> blockNumber
-      {:error, error} -> raise error
-    end
-  end
+      {:error, error} ->
+        {:error,
+         "Error get_transaction_by_hash for hash #{transaction_hash}. Reason: #{inspect(error)}"}
 
-  def get_latest_block_number do
-    with {:ok, %Tesla.Env{status: 200, body: body}} <-
-           post(client(), "/", json_rpc_call("eth_blockNumber", [])),
-         "0x" <> number <- body["result"],
-         {blockNumber, ""} <- Integer.parse(number, 16) do
-      {:ok, blockNumber}
-    else
-      error -> {:error, error}
+      error ->
+        {:error,
+         "Error get_transaction_by_hash for hash #{transaction_hash}. Reason: #{inspect(error)}"}
     end
   end
 
   def get_eth_balance(address) do
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
-           post(client(), "/", json_rpc_call("eth_getBalance", [address])),
+           post(client(), "/", json_rpc_call("eth_getBalance", [address]),
+             opts: [adapter: [recv_timeout: 15_000]]
+           ),
          "0x" <> number <- body["result"],
          {balance, ""} <- Integer.parse(number, 16) do
       {:ok, balance}
@@ -55,7 +56,7 @@ defmodule Sanbase.InternalServices.Parity do
         {:error, "Failed getting ETH balance for address #{address}. Reason: #{inspect(error)}"}
 
       error ->
-        {:error, error}
+        {:error, "Failed getting ETH balance for address #{address}. Reason: #{inspect(error)}"}
     end
   end
 

@@ -32,7 +32,7 @@ defmodule Sanbase.Auth.UserTest do
   end
 
   test "update_san_balance_changeset is returning a changeset with updated san balance" do
-    mock(Sanbase.InternalServices.Ethauth, :san_balance, Decimal.new(5))
+    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, Decimal.new(5)})
 
     user = %User{
       san_balance: 0,
@@ -71,7 +71,7 @@ defmodule Sanbase.Auth.UserTest do
       }
       |> Repo.insert!()
 
-    mock(Sanbase.InternalServices.Ethauth, :san_balance, Decimal.new(10))
+    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:ok, Decimal.new(10)})
 
     %EthAccount{address: "0x000000000001", user_id: user.id}
     |> Repo.insert!()

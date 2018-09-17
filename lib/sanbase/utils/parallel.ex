@@ -25,6 +25,6 @@ defmodule Sanbase.Parallel do
       timeout: timeout,
       on_timeout: on_timeout
     )
-    |> Enum.to_list()
+    |> Enum.map(fn {:ok, elem} -> elem end)
   end
 end

@@ -53,12 +53,10 @@ defmodule Sanbase.InternalServices.Parity do
 
   defp client() do
     parity_url = Config.get(:url)
-    basic_auth_username = Config.get(:basic_auth_username)
-    basic_auth_password = Config.get(:basic_auth_password)
 
     Tesla.build_client([
+      Sanbase.ExternalServices.ErrorCatcher.Middleware,
       {Tesla.Middleware.BaseUrl, parity_url},
-      {Tesla.Middleware.BasicAuth, username: basic_auth_username, password: basic_auth_password},
       Tesla.Middleware.JSON,
       Tesla.Middleware.Logger
     ])

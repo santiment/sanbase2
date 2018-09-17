@@ -32,6 +32,7 @@ defmodule SanbaseWeb.Router do
     forward(
       "/graphql",
       Absinthe.Plug,
+      json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
       max_complexity: 5000,
@@ -41,6 +42,7 @@ defmodule SanbaseWeb.Router do
     forward(
       "/graphiql",
       Absinthe.Plug.GraphiQL,
+      json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
       max_complexity: 5000,

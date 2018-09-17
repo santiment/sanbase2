@@ -17,7 +17,7 @@ defmodule Sanbase.Discourse.Api do
       {:ok, %HTTPoison.Response{body: body, status_code: code}}
       when code >= 200 and code < 300 ->
         Logger.info("Successfully created a topic '#{title}' in Discourse")
-        Poison.decode(body)
+        Jason.decode(body)
 
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
         err_msg =

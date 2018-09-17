@@ -8,7 +8,7 @@ defmodule Sanbase.InternalServices.Ethauth do
   def verify_signature(signature, address, message_hash) do
     with %Tesla.Env{status: 200, body: body} <-
            get(client(), "recover", query: [sign: signature, hash: message_hash]),
-         {:ok, %{"recovered" => recovered}} <- Poison.decode!(body) do
+         {:ok, %{"recovered" => recovered}} <- Jason.decode!(body) do
       String.downcase(address) == String.downcase(recovered)
     else
       {:error, error} -> {:error, error}

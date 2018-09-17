@@ -106,7 +106,7 @@ defmodule Sanbase.Oauth2.Hydra do
       "reason" => "#{email || username} doesn't have enough SAN tokens"
     }
 
-    HTTPoison.patch(consent_url() <> "/#{consent}/reject", Poison.encode!(data), [
+    HTTPoison.patch(consent_url() <> "/#{consent}/reject", Jason.encode!(data), [
       {"Authorization", "Bearer #{access_token}"},
       {"Content-type", "application/json"},
       {"Accept", "application/json"}
@@ -148,6 +148,6 @@ defmodule Sanbase.Oauth2.Hydra do
 
   defp json_config_value(key) do
     Config.get(key)
-    |> Poison.decode!()
+    |> Jason.decode!()
   end
 end

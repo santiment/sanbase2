@@ -179,7 +179,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end
   end
 
-  defp convert_to_price_points(%GraphData{
+  defp convert_to_price_points(%{
          market_cap_by_available_supply: market_cap_by_available_supply,
          price_usd: nil,
          volume_usd: volume_usd,

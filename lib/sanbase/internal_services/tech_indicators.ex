@@ -310,7 +310,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
         topic_search_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->

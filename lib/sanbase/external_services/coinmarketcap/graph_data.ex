@@ -167,6 +167,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       %{status: 200, body: body} ->
         body |> json_to_price_points()
+
+      _ ->
+        nil
     end
   end
 
@@ -174,8 +177,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     graph_data_marketcap_total_all_time_url()
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
+
+      _ ->
+        nil
     end
   end
 

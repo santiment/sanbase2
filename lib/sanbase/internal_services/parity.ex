@@ -11,7 +11,7 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_transaction_by_hash(transaction_hash) do
-    with %Tesla.Env{status: 200, body: body} <-
+    with {:ok, %Tesla.Env{status: 200, body: body}} <-
            post(client(), "/", json_rpc_call("eth_getTransactionByHash", [transaction_hash])),
          %{"result" => result} <- body do
       {:ok, result}
@@ -28,7 +28,7 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_latest_block_number do
-    with %Tesla.Env{status: 200, body: body} <-
+    with {:ok, %Tesla.Env{status: 200, body: body}} <-
            post(client(), "/", json_rpc_call("eth_blockNumber", [])),
          "0x" <> number <- body["result"],
          {blockNumber, ""} <- Integer.parse(number, 16) do
@@ -39,13 +39,23 @@ defmodule Sanbase.InternalServices.Parity do
   end
 
   def get_eth_balance(address) do
-    with %Tesla.Env{status: 200, body: body} <-
+    with {:ok, %Tesla.Env{status: 200, body: body}} <-
            post(client(), "/", json_rpc_call("eth_getBalance", [address])),
          "0x" <> number <- body["result"],
          {balance, ""} <- Integer.parse(number, 16) do
       {:ok, balance}
     else
-      error -> {:error, error}
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        {:error,
+         "Failed getting ETH balance for address #{address}. Status: #{status}. Body: #{
+           inspect(body)
+         }"}
+
+      {:error, error} ->
+        {:error, "Failed getting ETH balance for address #{address}. Reason: #{inspect(error)}"}
+
+      error ->
+        {:error, error}
     end
   end
 

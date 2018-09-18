@@ -7,6 +7,7 @@ import './TrendsExamples.css'
 const examples = [
   {
     topic: 'crypto',
+    // topic: 'stablecoin',
     settings: {
       interval: '1w',
       sources: ['merged']
@@ -14,6 +15,7 @@ const examples = [
   },
   {
     topic: 'btc',
+    // topic: 'etf',
     settings: {
       interval: '6m',
       sources: ['telegram', 'reddit']
@@ -21,6 +23,7 @@ const examples = [
   },
   {
     topic: 'eth',
+    // topic: 'ico',
     settings: {
       interval: '3m',
       sources: ['professional_traders_chat']

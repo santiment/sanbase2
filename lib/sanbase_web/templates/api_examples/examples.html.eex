@@ -45,7 +45,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@daa[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@daa[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```
@@ -66,7 +66,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@burn_rate[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@burn_rate[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```
@@ -88,7 +88,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@tv[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@tv[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```
@@ -110,7 +110,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@exchange_funds_flow[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@exchange_funds_flow[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```
@@ -134,7 +134,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@ga[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@ga[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```
@@ -156,7 +156,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@erc20_exchange_funds_flow[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@erc20_exchange_funds_flow[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```
@@ -178,7 +178,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@social_volume[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@social_volume[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```
@@ -200,7 +200,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@social_volume_projects[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@social_volume_projects[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```
@@ -222,7 +222,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Poison.encode!(@topic_search[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@topic_search[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```

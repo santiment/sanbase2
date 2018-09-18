@@ -8,6 +8,8 @@ use Mix.Config
 # General application configuration
 config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
+config :ecto, json_library: Jason
+
 config :sanbase, Sanbase, environment: "#{Mix.env()}"
 
 config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres

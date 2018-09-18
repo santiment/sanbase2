@@ -6,7 +6,7 @@ defmodule Sanbase.Utils.JsonLogger do
         level: level,
         message: "#{message}"
       }
-      |> Poison.encode_to_iodata!()
+      |> Jason.encode_to_iodata!()
       | "\n"
     ]
   rescue

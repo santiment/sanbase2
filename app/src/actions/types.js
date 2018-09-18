@@ -52,3 +52,8 @@ export const USER_CHOOSE_ASSET_LIST = '[user] USER_CHOOSE_ASSET_LIST'
 export const ASSETS_FETCH = '[assets] ASSETS_FETCH'
 export const ASSETS_FETCH_SUCCESS = '[assets] ASSETS_FETCH_SUCCESS'
 export const ASSETS_FETCH_FAILED = '[assets] ASSETS_FETCH_FAILED'
+
+// timeseries
+export const TIMESERIES_FETCH = '[timeseries] TIMESERIES_FETCH'
+export const TIMESERIES_FETCH_SUCCESS = '[timeseries] TIMESERIES_FETCH_SUCCESS'
+export const TIMESERIES_FETCH_FAILED = '[timeseries] TIMESERIES_FETCH_FAILED'

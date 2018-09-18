@@ -156,14 +156,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Fetch open/high/low/close price values for a given slug and time interval."
-    field :ohlcv, :ohlcv do
+    field :ohlcv, list_of(:ohlcv) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "")
 
-      complexity(&PriceComplexity.history_price/3)
-      cache_resolve(&PriceResolver.ohlcv/3)
+      # complexity(&PriceComplexity.history_price/3)
+      resolve(&PriceResolver.ohlcv/3)
     end
 
     @desc "Returns a list of available github repositories."

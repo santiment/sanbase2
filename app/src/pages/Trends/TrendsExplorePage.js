@@ -38,7 +38,7 @@ export class TrendsExplorePage extends Component {
 
   render () {
     const { match, isDesktop } = this.props
-    const { timeFilter } = this.state
+    const { timeFilter, assetSlug } = this.state
     return (
       <div className='TrendsExplorePage'>
         <div className='TrendsExplorePage__content'>
@@ -46,14 +46,15 @@ export class TrendsExplorePage extends Component {
           <TimeFilter
             timeOptions={['1w', '1m', '3m', '6m', '1y', 'all']}
             onSelectOption={this.handleSourceSelect}
-            defaultSelected='6m'
+            defaultSelected={timeFilter}
           />
           <GetTrends
             topic={match.params.topic}
             render={trends => (
               <GetTimeSeries
                 price={{
-                  from: timeFilter,
+                  timeFilter,
+                  slug: assetSlug,
                   interval: '1d'
                 }}
                 render={({ timeseries }) => (
@@ -89,7 +90,8 @@ export const getStateFromQS = ({ location }) => {
   })
 
   return {
-    timeFilter: timeFilter || '6m'
+    timeFilter: timeFilter || '6m',
+    assetSlug: 'bitcoin'
   }
 }
 

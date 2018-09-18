@@ -163,6 +163,7 @@ defmodule Sanbase.Auth.User do
   defp san_balance_for_eth_accounts(eth_accounts) do
     eth_accounts
     |> Enum.map(&EthAccount.san_balance/1)
+    |> Enum.reject(&is_nil/1)
     |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
   end
 

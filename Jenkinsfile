@@ -11,7 +11,7 @@ podTemplate(label: 'sanbase-builder', containers: [
 
         sh "docker build -t sanbase-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -f Dockerfile-test ."
         sh "docker build -t sanbase-frontend-test:${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -f app/Dockerfile-test app"
-        sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -d timescale/timescaledb:latest-pg9.6"
+        sh "docker run --rm --name test_postgres_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -d timescale/timescaledb:0.10.1-pg10"
         sh "docker run --rm --name test_influxdb_${scmVars.GIT_COMMIT}_${env.BUILD_ID}_${env.CHANGE_ID} -d influxdb:1.4-alpine"
         try {
           sh "docker run --rm \

@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   require Sanbase.Utils.Config, as: Config
 
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
+  @moduletag timescaledb: true
 
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
   alias Sanbase.Auth.User

@@ -7,14 +7,14 @@ defmodule Sanbase.MandrillApi do
   def send(template, recepient, variables) do
     request_body =
       build_request(template, recepient, variables)
-      |> Poison.encode!()
+      |> Jason.encode!()
 
     case HTTPoison.post(@send_email_url, request_body) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, Poison.decode!(body)}
+        {:ok, Jason.decode!(body)}
 
       {:ok, %HTTPoison.Response{body: body}} ->
-        {:error, Poison.decode!(body)}
+        {:error, Jason.decode!(body)}
 
       {:error, error} ->
         {:error, error}

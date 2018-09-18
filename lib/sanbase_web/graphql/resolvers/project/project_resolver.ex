@@ -22,10 +22,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Github
   }
 
-  alias Sanbase.Clickhouse
-
   alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
+  alias SanbaseWeb.Graphql.Helpers.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
 
   def all_projects(_parent, args, _resolution, only_project_transparency \\ nil) do

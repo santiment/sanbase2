@@ -62,6 +62,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     tickers
     |> Enum.map(&Ticker.convert_for_importing/1)
     |> Store.import()
+
+    Logger.info(
+      "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
+    )
   end
 
   # Helper functions

@@ -31,12 +31,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     |> on_load(&total_market_history_price_on_load(&1, args))
   end
 
-  def ohlcv(_root, %{slug: @total_market} = args, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(PriceStore, @total_market_measurement, args)
-    |> on_load(&total_market_history_price_on_load(&1, args))
-  end
-
   @deprecated "Use history price by slug"
   def history_price(_root, %{ticker: ticker} = args, %{context: %{loader: loader}}) do
     with slug when not is_nil(slug) <- slug_by_ticker(ticker) do
@@ -68,9 +62,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     with ticker when not is_nil(ticker) <- Project.ticker_by_slug(slug) do
       ticker_cmc_id = ticker <> "_" <> slug
 
-      loader
-      |> Dataloader.load(PriceStore, ticker_cmc_id, args)
-      |> on_load(&ohlcv_on_load(&1, ticker_cmc_id, args))
+      # interval_secs = Sanbase.DateTimeUtils.str_to_sec(args.interval) |>Integer.to_string
+      # interval_secs = interval_secs <> "s"
+      {:ok, prices} = Sanbase.Prices.Store.fetch_ohlcv(ticker, args.from, args.to, args.interval)
+
+      result =
+        prices
+        |> Enum.map(fn [dt, open, high, low, close] ->
+          %{
+            datetime: dt,
+            open_price_usd: open,
+            high_price_usd: high,
+            low_price_usd: low,
+            close_price_usd: close
+          }
+        end)
+
+      {:ok, result}
     else
       error ->
         {:error, "Cannot fetch history price for #{slug}. Reason: #{inspect(error)}"}

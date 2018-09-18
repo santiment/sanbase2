@@ -11,14 +11,10 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
   end
 
   object :ohlcv do
-    field(:price_points, list_of(:price_point))
+    field(:datetime, non_null(:datetime))
     field(:open_price_usd, :float)
     field(:high_price_usd, :float)
     field(:low_price_usd, :float)
     field(:close_price_usd, :float)
-    field(:open_price_btc, :float)
-    field(:high_price_btc, :float)
-    field(:low_price_btc, :float)
-    field(:close_price_btc, :float)
   end
 end

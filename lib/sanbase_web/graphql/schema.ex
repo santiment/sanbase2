@@ -157,9 +157,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch open/high/low/close price values for a given slug and time interval."
     field :ohlcv, :ohlcv do
-      # TODO: Make non null after ticker is no longer used
-      arg(:slug, :string)
-      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "")

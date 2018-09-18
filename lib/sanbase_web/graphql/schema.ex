@@ -130,6 +130,19 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&PriceResolver.history_price/3)
     end
 
+    @desc "Fetch open/high/low/close price values for a given slug and time interval."
+    field :ohlcv, :ohlcv do
+      # TODO: Make non null after ticker is no longer used
+      arg(:slug, :string)
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:interval, :string, default_value: "")
+
+      complexity(&PriceComplexity.history_price/3)
+      cache_resolve(&PriceResolver.ohlcv/3)
+    end
+
     @desc "Returns a list of available github repositories."
     field :github_availables_repos, list_of(:string) do
       cache_resolve(&GithubResolver.available_repos/3)

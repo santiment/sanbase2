@@ -360,6 +360,70 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
              }
   end
 
+  test "ohlcv", context do
+    query = """
+    {
+      ohlcv(
+        slug: "#{context.slug1}",
+        from: "#{context.datetime1}",
+        to: "#{context.datetime3}"
+        interval: "6h"){
+          price_points {
+            datetime
+            volume
+            marketcap
+            priceUsd
+            priceBtc
+          }
+          open_price_usd
+          high_price_usd
+          low_price_usd
+          close_price_usd
+          open_price_btc
+          high_price_btc
+          low_price_btc
+          close_price_btc
+        }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "ohlcv"))
+      |> json_response(200)
+
+    assert result == %{
+             "data" => %{
+               "ohlcv" => %{
+                 "close_price_btc" => 1200,
+                 "close_price_usd" => 22,
+                 "high_price_btc" => 1200,
+                 "high_price_usd" => 22,
+                 "low_price_btc" => 1000,
+                 "low_price_usd" => 20,
+                 "open_price_btc" => 1000,
+                 "open_price_usd" => 20,
+                 "price_points" => [
+                   %{
+                     "datetime" => "2017-05-14T18:00:00Z",
+                     "marketcap" => 500,
+                     "priceBtc" => 1000,
+                     "priceUsd" => 20,
+                     "volume" => 200
+                   },
+                   %{
+                     "datetime" => "2017-05-15T18:00:00Z",
+                     "marketcap" => 800,
+                     "priceBtc" => 1200,
+                     "priceUsd" => 22,
+                     "volume" => 300
+                   }
+                 ]
+               }
+             }
+           }
+  end
+
   defp basic_auth() do
     username =
       Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)

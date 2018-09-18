@@ -31,6 +31,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     |> on_load(&total_market_history_price_on_load(&1, args))
   end
 
+  def ohlcv(_root, %{slug: @total_market} = args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(PriceStore, @total_market_measurement, args)
+    |> on_load(&total_market_history_price_on_load(&1, args))
+  end
+
   @deprecated "Use history price by slug"
   def history_price(_root, %{ticker: ticker} = args, %{context: %{loader: loader}}) do
     with slug when not is_nil(slug) <- slug_by_ticker(ticker) do

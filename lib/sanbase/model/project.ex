@@ -96,6 +96,14 @@ defmodule Sanbase.Model.Project do
     |> unique_constraint(:coinmarketcap_id)
   end
 
+  def describe(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
+    "project with coinmarketap_id #{cmc_id}"
+  end
+
+  def describe(%Project{id: id}) do
+    "project with id #{id}"
+  end
+
   def initial_ico(%Project{id: id}) do
     Ico
     |> where([i], i.project_id == ^id)

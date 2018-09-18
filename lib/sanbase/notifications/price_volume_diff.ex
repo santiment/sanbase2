@@ -154,7 +154,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       |> Timex.shift(days: 1)
       |> Timex.format("{YYYY}-{0M}-{0D} {h24}:{m}:{s}")
 
-    Poison.encode!(%{
+    Jason.encode!(%{
       content:
         "#{name}: #{ticker}/#{String.upcase(currency)} #{notification_emoji(price_change)} Price #{
           notification_emoji(volume_change)

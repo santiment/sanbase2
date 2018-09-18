@@ -268,7 +268,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     args_hash =
       args
       |> convert_values()
-      |> Poison.encode!()
+      |> Jason.encode!()
       |> sha256()
 
     {name, args_hash}

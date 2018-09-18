@@ -109,7 +109,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
     case get("/?twitter_id=" <> twitter_id_str <> "&apikey=" <> apikey) do
       %Tesla.Env{status: 200, body: body} ->
         body
-        |> Poison.decode!()
+        |> Jason.decode!()
         |> Map.get("followersperdate")
 
       %Tesla.Env{status: 401} ->

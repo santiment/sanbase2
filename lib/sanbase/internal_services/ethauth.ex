@@ -1,40 +1,42 @@
 defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
-  plug(Tesla.Middleware.Timeout, timeout: 15_000)
-
   require Sanbase.Utils.Config, as: Config
 
   @san_token_decimals Decimal.new(:math.pow(10, 18))
+  def san_token_decimals(), do: @san_token_decimals
 
   def verify_signature(signature, address, message_hash) do
-    %Tesla.Env{status: 200, body: body} =
-      get(client(), "recover", query: [sign: signature, hash: message_hash])
-
-    %{"recovered" => recovered} = Poison.decode!(body)
-
-    String.downcase(address) == String.downcase(recovered)
+    with %Tesla.Env{status: 200, body: body} <-
+           get(client(), "recover", query: [sign: signature, hash: message_hash]),
+         {:ok, %{"recovered" => recovered}} <- Jason.decode!(body) do
+      String.downcase(address) == String.downcase(recovered)
+    else
+      {:error, error} -> {:error, error}
+      error -> {:error, error}
+    end
   end
 
   def san_balance(address) do
-    %Tesla.Env{status: 200, body: body} = get(client(), "san_balance", query: [addr: address])
+    with %Tesla.Env{status: 200, body: body} <-
+           get(client(), "san_balance", query: [addr: address]) do
+      san_balance =
+        body
+        |> Decimal.new()
+        |> Decimal.div(@san_token_decimals)
 
-    body
-    |> Decimal.new()
-    |> Decimal.div(@san_token_decimals)
-  end
-
-  def san_token_decimals() do
-    @san_token_decimals
+      {:ok, san_balance}
+    else
+      error -> {:error, error}
+    end
   end
 
   defp client() do
     ethauth_url = Config.get(:url)
-    basic_auth_username = Config.get(:basic_auth_username)
-    basic_auth_password = Config.get(:basic_auth_password)
 
     Tesla.build_client([
+      {Tesla.Middleware.Timeout, timeout: 30_000},
+      Sanbase.ExternalServices.ErrorCatcher.Middleware,
       {Tesla.Middleware.BaseUrl, ethauth_url},
-      {Tesla.Middleware.BasicAuth, username: basic_auth_username, password: basic_auth_password},
       Tesla.Middleware.Logger
     ])
   end

@@ -136,7 +136,7 @@ defmodule SanbaseWorkers.ImportGithubActivity do
 
   defp reduce_to_counts(stream, orgs) do
     stream
-    |> Stream.map(&Poison.decode!/1)
+    |> Stream.map(&Jason.decode!/1)
     |> Stream.map(&get_repository_name/1)
     |> Stream.reject(&is_nil/1)
     |> Enum.reduce(%{}, fn repo, counts ->

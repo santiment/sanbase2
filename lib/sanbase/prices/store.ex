@@ -134,10 +134,10 @@ defmodule Sanbase.Prices.Store do
   defp fetch_query_ohlcv(measurement, from, to, interval) do
     ~s/SELECT 
      time,
-     first(price) as open,
-     last(price) as close,
-     min(price) as low,
-     max(price) as high
+     first(price_usd) as open,
+     last(price_usd) as close,
+     min(price_usd) as low,
+     max(price_usd) as high
      FROM "#{measurement}"
      WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
      AND time <= #{DateTime.to_unix(to, :nanoseconds)}

@@ -66,7 +66,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
       # interval_secs = Sanbase.DateTimeUtils.str_to_sec(args.interval) |>Integer.to_string
       # interval_secs = interval_secs <> "s"
-      {:ok, prices} = Sanbase.Prices.Store.fetch_ohlcv(ticker, args.from, args.to, args.interval)
+      {:ok, prices} =
+        Sanbase.Prices.Store.fetch_ohlcv(ticker_cmc_id, args.from, args.to, args.interval)
 
       result =
         prices

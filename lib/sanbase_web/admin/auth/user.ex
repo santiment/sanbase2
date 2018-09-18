@@ -32,11 +32,9 @@ defmodule Sanbase.ExAdmin.Auth.User do
     end
 
     form user do
-      if params[:id] do
-        inputs do
-          input(user, :test_san_balance)
-          input(user, :email)
-        end
+      inputs do
+        input(user, :test_san_balance)
+        input(user, :email)
       end
     end
   end

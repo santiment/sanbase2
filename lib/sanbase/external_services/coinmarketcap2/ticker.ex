@@ -49,28 +49,29 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
     "/?limit=#{@projects_number}"
     |> get()
     |> case do
-      %Tesla.Env{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         Logger.info(
           "[CMC] Successfully fetched the realtime data for top #{@projects_number} projects"
         )
 
         {:ok, parse_json(body)}
 
-      %Tesla.Env{status: status, body: _body} ->
+      {:ok, %Tesla.Env{status: status, body: body}} ->
         error =
           "Failed fetching top #{@projects_number} projects' information from /v1/ticker. Status: #{
             status
-          }"
+          }. Body: #{inspect(body)}"
 
         Logger.warn(error)
         {:error, error}
 
-      %Tesla.Error{message: error_msg} ->
-        Logger.error(
+      {:error, error} ->
+        error_msg =
           "Error fetching top #{@projects_number} projects' information from /v1/ticker. Error message #{
-            inspect(error_msg)
+            inspect(error)
           }"
-        )
+
+        Logger.error(error_msg)
 
         {:error, error_msg}
     end

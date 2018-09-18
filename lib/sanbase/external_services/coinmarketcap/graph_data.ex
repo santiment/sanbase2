@@ -7,10 +7,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
-  alias Sanbase.ExternalServices.RateLimiting
-  alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
-  alias Sanbase.ExternalServices.ErrorCatcher
+  alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
+  alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
   alias Sanbase.Prices.Store
 
   plug(RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter)
@@ -24,9 +22,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   def fetch_first_price_datetime(coinmarketcap_id) do
     fetch_all_time_prices(coinmarketcap_id)
-    |> Enum.take(1)
-    |> hd
-    |> Map.get(:datetime)
+    |> List.first()
+    |> case do
+      %PricePoint{datetime: datetime} ->
+        datetime
+
+      _ ->
+        nil
+    end
   end
 
   def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id} = project, to_datetime) do
@@ -43,9 +46,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   def fetch_first_marketcap_total_datetime() do
     fetch_all_time_marketcap()
-    |> Enum.take(1)
-    |> hd
-    |> Map.get(:datetime)
+    |> List.first()
+    |> case do
+      %PricePoint{datetime: datetime} ->
+        datetime
+
+      _ ->
+        nil
+    end
   end
 
   def fetch_and_store_marketcap_total(to_datetime) do
@@ -117,8 +125,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     graph_data_currencies_all_time_url(coinmarketcap_id)
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
+
+      _ ->
+        nil
     end
   end
 
@@ -126,8 +137,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     graph_data_marketcap_total_all_time_url()
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
+
+      _ ->
+        nil
     end
   end
 
@@ -169,7 +183,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     graph_data_marketcap_total_interval_url(start_interval_sec * 1000, end_interval_sec * 1000)
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
       _ ->
@@ -189,7 +203,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     )
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
       _ ->

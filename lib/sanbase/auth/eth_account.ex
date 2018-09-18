@@ -29,9 +29,7 @@ defmodule Sanbase.Auth.EthAccount do
         san_balance
 
       {:error, error} ->
-        Logger.error(
-          "Failed to get san balance for address: #{address}. Reason: #{inspect(error)}"
-        )
+        Logger.error(error)
 
         nil
     end

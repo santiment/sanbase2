@@ -33,8 +33,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     "/?limit=10000"
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         parse_json(body)
+
+      _ ->
+        nil
     end
   end
 

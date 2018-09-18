@@ -16,10 +16,10 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
   def fetch_address_page(address) do
     case get("/address/#{address}") do
-      %Tesla.Env{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body
 
-      %Tesla.Env{status: status, body: body} ->
+      {:ok, %Tesla.Env{status: status, body: body}} ->
         Logger.warn(
           "Invalid response from etherscan for address #{address}. Status: #{status}, body: #{
             inspect(body)
@@ -28,18 +28,21 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
         nil
 
-      %Tesla.Error{message: error_msg} ->
-        Logger.warn("Error response from etherscan for address #{address}. #{error_msg}")
+      {:error, error} ->
+        Logger.warn(
+          "Error response from etherscan for address #{address}. Reason: #{inspect(error)}"
+        )
+
         nil
     end
   end
 
   def fetch_token_page(token_name) do
     case get("/token/#{token_name}") do
-      %Tesla.Env{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body
 
-      %Tesla.Env{status: status, body: body} ->
+      {:ok, %Tesla.Env{status: status, body: body}} ->
         Logger.warn(
           "Invalid response from etherscan for #{token_name}. Status: #{status}, body: #{
             inspect(body)
@@ -48,8 +51,9 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
 
         nil
 
-      %Tesla.Error{message: error_msg} ->
-        Logger.warn("Error response from etherscan for #{token_name}. #{error_msg}")
+      {:error, error} ->
+        Logger.warn("Error response from etherscan for #{token_name}. Reason: #{inspect(error)}")
+
         nil
     end
   end

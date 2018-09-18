@@ -1,6 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { compose, pure } from 'recompose'
+import { compose } from 'recompose'
 import * as actions from './../actions/types.js'
 
 class GetTimeSeries extends React.Component {
@@ -50,6 +50,6 @@ const mapDispatchToProps = dispatch => ({
   }
 })
 
-const enhance = compose(connect(mapStateToProps, mapDispatchToProps), pure)
+const enhance = compose(connect(mapStateToProps, mapDispatchToProps))
 
 export default enhance(GetTimeSeries)

@@ -1,7 +1,9 @@
 defmodule Sanbase.InternalServices.Parity do
+  use Tesla
+
   require Sanbase.Utils.Config, as: Config
 
-  use Tesla
+  @eth_decimals 1_000_000_000_000_000_000
 
   def get_transaction_by_hash!(transaction_hash) do
     case get_transaction_by_hash(transaction_hash) do
@@ -44,7 +46,7 @@ defmodule Sanbase.InternalServices.Parity do
            ),
          "0x" <> number <- body["result"],
          {balance, ""} <- Integer.parse(number, 16) do
-      {:ok, balance}
+      {:ok, balance / @eth_decimals}
     else
       {:ok, %Tesla.Env{status: status, body: body}} ->
         {:error,

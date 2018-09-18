@@ -1,5 +1,6 @@
 import sanitizeHtml from 'sanitize-html'
 import moment from 'moment'
+import ms from 'ms'
 
 const findIndexByDatetime = (labels, datetime) => {
   return labels.findIndex(label => {
@@ -134,6 +135,22 @@ const mergeTimeseriesByKey = ({ timeseries, key }) => {
   })
 }
 
+const getTimeFromFromString = (time = '1y') => {
+  if (isNaN(new Date(time).getDate())) {
+    const timeExpression = time.replace(/\d/g, '')
+    let diff = 0
+    if (timeExpression === 'all') {
+      diff = 2 * 12 * 60 * 30 * 24 * 60 * 1000
+    } else if (timeExpression === 'm') {
+      diff = 60 * 30 * 24 * 60 * 1000
+    } else {
+      diff = ms(time)
+    }
+    return new Date(+new Date() - diff).toISOString()
+  }
+  return time
+}
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
@@ -145,5 +162,6 @@ export {
   filterProjectsByMarketSegment,
   binarySearchHistoryPriceIndex,
   getStartOfTheDay,
-  mergeTimeseriesByKey
+  mergeTimeseriesByKey,
+  getTimeFromFromString
 }

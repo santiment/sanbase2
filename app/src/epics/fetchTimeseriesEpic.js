@@ -3,7 +3,7 @@ import gql from 'graphql-tag'
 import Raven from 'raven-js'
 import { Observable } from 'rxjs'
 import * as actions from './../actions/types'
-import { getStartOfTheDay } from './../utils/utils'
+import { getStartOfTheDay, getTimeFromFromString } from './../utils/utils'
 
 const HistoryPriceGQL = gql`
   query queryHistoryPrice(
@@ -35,13 +35,10 @@ const fetchTimeseries$ = ({ settings, client }) => {
     client.query({
       query: HistoryPriceGQL,
       variables: {
-        slug: 'bitcoin',
+        slug: settings.slug || 'bitcoin',
         interval: settings.interval || '1d',
         to: getStartOfTheDay(),
-        from: moment()
-          .utc()
-          .subtract(6, 'months')
-          .format()
+        from: getTimeFromFromString(settings.timeFilter)
       },
       context: { isRetriable: true }
     })

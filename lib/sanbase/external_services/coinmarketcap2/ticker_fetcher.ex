@@ -9,6 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   use GenServer, restart: :permanent, shutdown: 5_000
 
   require Sanbase.Utils.Config, as: Config
+  require Logger
 
   alias Sanbase.Model.{LatestCoinmarketcapData, Project}
   alias Sanbase.Repo
@@ -30,6 +31,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
       Process.send(self(), :sync, [:noconnect])
 
       update_interval = Config.get(:update_interval, @default_update_interval)
+
+      Logger.info(
+        "[CMC] Starting TickerFetcher scraper. It will query coinmarketcap every #{
+          update_interval / 1000
+        } seconds."
+      )
+
       {:ok, %{update_interval: update_interval}}
     else
       :ignore
@@ -37,6 +45,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   end
 
   def work() do
+    Logger.info("[CMC] Fetching realtime data from coinmarketcap")
     # Fetch current coinmarketcap data for many tickers
     {:ok, tickers} = Ticker.fetch_data()
 
@@ -47,12 +56,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
 
     # Store the data in LatestCoinmarketcapData in postgres
     tickers
-    |> Enum.each(&store_latest_coinmarketcap_data/1)
+    |> Enum.each(&store_latest_coinmarketcap_data!/1)
 
     # Store the data in Influxdb
     tickers
     |> Enum.map(&Ticker.convert_for_importing/1)
     |> Store.import()
+
+    Logger.info(
+      "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
+    )
   end
 
   # Helper functions
@@ -74,7 +87,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     end
   end
 
-  defp store_latest_coinmarketcap_data(%Ticker{id: coinmarketcap_id} = ticker) do
+  defp store_latest_coinmarketcap_data!(%Ticker{id: coinmarketcap_id} = ticker) do
     coinmarketcap_id
     |> get_or_create_latest_coinmarketcap_data()
     |> LatestCoinmarketcapData.changeset(%{

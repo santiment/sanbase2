@@ -44,10 +44,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   alias __MODULE__, as: Ticker
 
   def fetch_data() do
+    Logger.info("[CMC] Fetching the realtime data for top #{@projects_number} projects")
+
     "/?limit=#{@projects_number}"
     |> get()
     |> case do
       %Tesla.Env{status: 200, body: body} ->
+        Logger.info(
+          "[CMC] Successfully fetched the realtime data for top #{@projects_number} projects"
+        )
+
         {:ok, parse_json(body)}
 
       %Tesla.Env{status: status, body: _body} ->

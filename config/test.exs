@@ -15,7 +15,7 @@ config :logger, :console,
   level: :warn
 
 # Test adapter that allows mocking
-config :tesla, adapter: :mock
+config :tesla, adapter: Tesla.Mock
 
 # Configure postgres database
 config :sanbase, Sanbase.Repo,

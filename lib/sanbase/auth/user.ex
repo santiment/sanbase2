@@ -14,7 +14,7 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.UserLists.UserList
   alias Sanbase.Repo
 
-  @login_email_template "login"
+  @verification_email_template "login"
 
   # The Login links will be valid 1 hour
   @login_email_valid_minutes 60
@@ -37,6 +37,7 @@ defmodule Sanbase.Auth.User do
 
   schema "users" do
     field(:email, :string)
+    field(:email_candidate, :string)
     field(:username, :string)
     field(:salt, :string)
     field(:san_balance, :decimal)
@@ -72,6 +73,8 @@ defmodule Sanbase.Auth.User do
     user
     |> cast(attrs, [
       :email,
+      :email_candidate,
+      :email_token_validated_at,
       :username,
       :salt,
       :test_san_balance,
@@ -80,6 +83,7 @@ defmodule Sanbase.Auth.User do
     ])
     |> normalize_username(attrs)
     |> validate_change(:username, &validate_username_change/2)
+    |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
   end
@@ -103,6 +107,14 @@ defmodule Sanbase.Auth.User do
       []
     else
       [username: "Username can contain only latin letters and numbers"]
+    end
+  end
+
+  defp validate_email_candidate_change(_, email_candidate) do
+    if Repo.get_by(User, email: email_candidate) do
+      [email: "Email has already been taken"]
+    else
+      []
     end
   end
 
@@ -157,8 +169,19 @@ defmodule Sanbase.Auth.User do
   def find_or_insert_by_email(email, username \\ nil) do
     case Repo.get_by(User, email: email) do
       nil ->
-        %User{email: email, username: username, salt: generate_salt()}
+        %User{}
+        |> changeset(%{email_candidate: email, username: username, salt: generate_salt()})
         |> Repo.insert()
+
+      user ->
+        {:ok, user}
+    end
+  end
+
+  def find_by_email_candidate(email_candidate, email_token) do
+    case Repo.get_by(User, email_candidate: email_candidate, email_token: email_token) do
+      nil ->
+        {:error, "Can't find user"}
 
       user ->
         {:ok, user}
@@ -176,9 +199,19 @@ defmodule Sanbase.Auth.User do
     |> Repo.update()
   end
 
-  def mark_email_token_as_validated(user) do
+  def update_email(user) do
     user
-    |> change(email_token_validated_at: user.email_token_validated_at || Timex.now())
+    |> changeset(%{
+      email_token_validated_at: user.email_token_validated_at || Timex.now(),
+      email: user.email_candidate,
+      email_candidate: nil
+    })
+    |> Repo.update()
+  end
+
+  def set_email_candidate(user, email_candidate) do
+    user
+    |> changeset(%{email_candidate: email_candidate})
     |> Repo.update()
   end
 
@@ -203,9 +236,9 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  def send_login_email(user) do
-    mandrill_api().send(@login_email_template, user.email, %{
-      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email)
+  def send_verification_email(user) do
+    mandrill_api().send(@verification_email_template, user.email_candidate, %{
+      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email_candidate)
     })
   end
 

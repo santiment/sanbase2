@@ -58,7 +58,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     mutation = """
     mutation {
       changeEmail(email: "#{new_email}") {
-        email
+        email_candidate
       }
     }
     """
@@ -67,7 +67,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
       conn
       |> post("/graphql", mutation_skeleton(mutation))
 
-    assert json_response(result, 200)["data"]["changeEmail"]["email"] == new_email
+    assert json_response(result, 200)["data"]["changeEmail"]["email_candidate"] == new_email
   end
 
   test "can update only a single privacy policy", %{conn: conn} do
@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
     mutation = """
     mutation {
       changeEmail(email: "#{new_email}") {
-        email
+        email_candidate
       }
     }
     """
@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
       conn
       |> post("/graphql", mutation_skeleton(mutation))
 
-    assert json_response(result, 200)["data"]["changeEmail"]["email"] == new_email
+    assert json_response(result, 200)["data"]["changeEmail"]["email_candidate"] == new_email
   end
 
   test "update marketing accepted policy", %{conn: conn} do

@@ -116,7 +116,8 @@ defmodule Sanbase.Auth.UserTest do
   test "find_or_insert_by_email when the user does not exist" do
     {:ok, user} = User.find_or_insert_by_email("test@example.com", "john_snow")
 
-    assert user.email == "test@example.com"
+    assert user.email == nil
+    assert user.email_candidate == "test@example.com"
     assert user.username == "john_snow"
   end
 
@@ -137,6 +138,28 @@ defmodule Sanbase.Auth.UserTest do
     assert user.username == existing_user.username
   end
 
+  test "find_by_email_candidate when the user does not exist" do
+    {:error, "Can't find user"} = User.find_by_email_candidate("test@example.com", "some_token")
+  end
+
+  test "find_by_email_candidate when the user exists" do
+    existing_user =
+      %User{
+        email_candidate: "test@example.com",
+        email_token: "some_token",
+        username: "cersei",
+        salt: User.generate_salt(),
+        privacy_policy_accepted: true
+      }
+      |> Repo.insert!()
+
+    {:ok, user} = User.find_by_email_candidate("test@example.com", "some_token")
+
+    assert user.id == existing_user.id
+    assert user.email_candidate == existing_user.email_candidate
+    assert user.email_token == existing_user.email_token
+  end
+
   test "update_email_token updates the email_token and the email_token_generated_at" do
     user =
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}
@@ -154,12 +177,16 @@ defmodule Sanbase.Auth.UserTest do
            )
   end
 
-  test "mark_email_token_as_validated updates the email_token_validated_at" do
+  test "update_email updates the email_token_validated_at, email, and email_candidate" do
     user =
-      %User{salt: User.generate_salt()}
+      %User{
+        email_candidate: "test@example.com",
+        email: nil,
+        salt: User.generate_salt()
+      }
       |> Repo.insert!()
 
-    {:ok, user} = User.mark_email_token_as_validated(user)
+    {:ok, user} = User.update_email(user)
 
     assert Sanbase.TestUtils.date_close_to(
              Timex.now(),
@@ -167,6 +194,19 @@ defmodule Sanbase.Auth.UserTest do
              2,
              :seconds
            )
+
+    assert user.email == "test@example.com"
+    assert user.email_candidate == nil
+  end
+
+  test "set_email_candidate sets the email candidate" do
+    user =
+      %User{salt: User.generate_salt()}
+      |> Repo.insert!()
+
+    {:ok, user} = User.set_email_candidate(user, "test@example.com")
+
+    assert user.email_candidate == "test@example.com"
   end
 
   test "email_token_valid? validates the token properly" do

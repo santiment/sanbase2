@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     query = """
     mutation {
       changeEmail(email: "#{new_email}") {
-        email
+        email_candidate
       }
     }
     """
@@ -54,31 +54,28 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    assert json_response(result, 200)["data"]["changeEmail"]["email"] == new_email
+    assert json_response(result, 200)["data"]["changeEmail"]["email_candidate"] == new_email
   end
 
-  test "change email to an existing one gives meaningful error", %{conn: conn, conn2: conn2} do
-    # The first user should be able to change the email without troubles
+  test "change email to an existing one gives meaningful error", %{conn: conn} do
     new_email = "new_test_email@santiment.net"
+
+    %User{
+      salt: User.generate_salt(),
+      email: new_email
+    }
+    |> Repo.insert!()
 
     query = """
     mutation {
       changeEmail(email: "#{new_email}") {
-        email
+        email_candidate
       }
     }
     """
 
     result =
       conn
-      |> post("/graphql", mutation_skeleton(query))
-      |> json_response(200)
-
-    assert result["data"]["changeEmail"]["email"] == new_email
-
-    # The second user should not be able to add the same email
-    result2 =
-      conn2
       |> post("/graphql", mutation_skeleton(query))
       |> json_response(200)
 
@@ -86,12 +83,12 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       "data" => %{"changeEmail" => nil},
       "errors" => [
         %{
-          "details" => details
+          "message" => message
         }
       ]
-    } = result2
+    } = result
 
-    assert details == %{"email" => ["has already been taken"]}
+    assert message == "Cannot change current user's email to #{new_email}"
   end
 
   test "change username of current user", %{conn: conn} do
@@ -143,7 +140,8 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     {:ok, user} =
       %User{
         salt: User.generate_salt(),
-        email: "example@santiment.net",
+        email: "old@santiment.net",
+        email_candidate: "new@santiment.net",
         privacy_policy_accepted: true
       }
       |> Repo.insert!()
@@ -151,7 +149,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     query = """
     mutation {
-      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
+      emailLoginVerify(email: "#{user.email_candidate}", token: "#{user.email_token}") {
         user {
           email
         },
@@ -166,7 +164,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     loginData = json_response(result, 200)["data"]["emailLoginVerify"]
 
-    {:ok, user} = User.find_or_insert_by_email(user.email)
+    {:ok, user} = User.find_or_insert_by_email(user.email_candidate)
 
     assert loginData["token"] != nil
     assert loginData["user"]["email"] == user.email
@@ -217,7 +215,8 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     {:ok, user} =
       %User{
         salt: User.generate_salt(),
-        email: "example@santiment.net",
+        email: "old@santiment.net",
+        email_candidate: "new@santiment.net",
         privacy_policy_accepted: true
       }
       |> Repo.insert!()
@@ -233,7 +232,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     query = """
     mutation {
-      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
+      emailLoginVerify(email: "#{user.email_candidate}", token: "#{user.email_token}") {
         user {
           email
         }
@@ -249,7 +248,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     loginData = json_response(result, 200)["data"]["emailLoginVerify"]
 
     assert loginData["token"] != nil
-    assert loginData["user"]["email"] == user.email
+    assert loginData["user"]["email"] == user.email_candidate
   end
 
   test "trying to login again with a valid email token after it has been validated 20 min ago", %{
@@ -307,7 +306,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    assert Repo.get_by(User, email: "john@example.com")
+    assert Repo.get_by(User, email_candidate: "john@example.com")
     assert json_response(result, 200)["data"]["emailLogin"]["success"]
   end
 end

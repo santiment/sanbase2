@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
+    "start:light": "react-scripts start",
     "start:server": "node server",
     "format": "prettier-standard 'src/**/*.js'",
     "precommit": "lint-staged",

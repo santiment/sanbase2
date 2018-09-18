@@ -109,6 +109,31 @@ const binarySearchHistoryPriceIndex = (history, targetDatetime) => {
   return middle
 }
 
+const getStartOfTheDay = () => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today.toISOString()
+}
+
+const mergeTimeseriesByKey = ({ timeseries, key }) => {
+  const longestTS = timeseries.reduce((acc, val) => {
+    return acc.length > val.length ? acc : val
+  }, [])
+  return longestTS.map(data => {
+    return timeseries.reduce(
+      (acc, val) => {
+        return {
+          ...acc,
+          ...val.find(data2 => data2[key] === data[key])
+        }
+      },
+      {
+        ...data
+      }
+    )
+  })
+}
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
@@ -118,5 +143,7 @@ export {
   getConsentUrl,
   sanitizeMediumDraftHtml,
   filterProjectsByMarketSegment,
-  binarySearchHistoryPriceIndex
+  binarySearchHistoryPriceIndex,
+  getStartOfTheDay,
+  mergeTimeseriesByKey
 }

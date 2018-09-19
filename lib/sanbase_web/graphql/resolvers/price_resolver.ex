@@ -6,6 +6,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   alias SanbaseWeb.Graphql.PriceStore
   alias Sanbase.Model.Project
+  alias Sanbase.Influxdb.Measurement
+  alias Sanbase.DateTimeUtils
 
   @total_market "TOTAL_MARKET"
   @total_market_measurement "TOTAL_MARKET_total-market"
@@ -55,6 +57,35 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     else
       error ->
         {:error, "Cannot fetch history price for #{slug}. Reason: #{inspect(error)}"}
+    end
+  end
+
+  def ohlc(_root, %{slug: slug} = args, _context) do
+    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
+         true <- DateTimeUtils.valid_interval_string?(args.interval),
+         {:ok, prices} <-
+           Sanbase.Prices.Store.fetch_ohlc(
+             measurement,
+             args.from,
+             args.to,
+             args.interval
+           ) do
+      result =
+        prices
+        |> Enum.map(fn [dt, open, high, low, close] ->
+          %{
+            datetime: dt,
+            open_price_usd: open,
+            high_price_usd: high,
+            low_price_usd: low,
+            close_price_usd: close
+          }
+        end)
+
+      {:ok, result}
+    else
+      error ->
+        {:error, "Cannot fetch ohlc for #{slug}. Reason: #{inspect(error)}"}
     end
   end
 

@@ -38,11 +38,16 @@ export class TrendsExplorePage extends Component {
       <div className='TrendsExplorePage'>
         <div className='TrendsExplorePage__content'>
           <TrendsExploreHeader topic={match.params.topic} />
-          <TimeFilter
-            timeOptions={['1w', '1m', '3m', '6m']}
-            onSelectOption={this.handleSelectTimeFilter}
-            defaultSelected={timeFilter}
-          />
+          <div className='TrendsExplorePage__settings'>
+            <TimeFilter
+              timeOptions={['1w', '1m', '3m', '6m']}
+              onSelectOption={this.handleSelectTimeFilter}
+              defaultSelected={timeFilter}
+            />
+            <span>
+              Compared to <strong>BTC/USD</strong>
+            </span>
+          </div>
           <GetTrends
             topic={match.params.topic}
             timeFilter={timeFilter}

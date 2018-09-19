@@ -87,4 +87,16 @@ defmodule Sanbase.DateTimeUtils do
     {:ok, datetime, _} = DateTime.from_iso8601(datetime_str)
     datetime
   end
+
+  def valid_interval_string?(interval_string) when not is_binary(interval_string) do
+    {:error, "The provided string #{interval_string} is not a valid string interval"}
+  end
+
+  def valid_interval_string?(interval_string) when is_binary(interval_string) do
+    if Regex.match?(~r/^\d+[smhdw]{1}$/, interval_string) do
+      true
+    else
+      {:error, "The provided string #{interval_string} is not a valid string interval"}
+    end
+  end
 end

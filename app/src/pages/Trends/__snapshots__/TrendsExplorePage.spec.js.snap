@@ -8,19 +8,29 @@ exports[`TrendsExplorePage smoke 1`] = `
     className="TrendsExplorePage__content"
   >
     <TrendsExploreHeader />
-    <TimeFilter
-      defaultSelected="3m"
-      disabled={false}
-      onSelectOption={[Function]}
-      timeOptions={
-        Array [
-          "1w",
-          "1m",
-          "3m",
-          "6m",
-        ]
-      }
-    />
+    <div
+      className="TrendsExplorePage__settings"
+    >
+      <TimeFilter
+        defaultSelected="3m"
+        disabled={false}
+        onSelectOption={[Function]}
+        timeOptions={
+          Array [
+            "1w",
+            "1m",
+            "3m",
+            "6m",
+          ]
+        }
+      />
+      <span>
+        Compared to 
+        <strong>
+          BTC/USD
+        </strong>
+      </span>
+    </div>
     <Apollo(Apollo(Apollo(GetTrends)))
       interval="1d"
       render={[Function]}

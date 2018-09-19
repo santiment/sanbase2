@@ -4,10 +4,8 @@ import { compose, withProps, branch, renderComponent } from 'recompose'
 import {
   ResponsiveContainer,
   ComposedChart,
-  LineChart,
   Legend,
   Line,
-  Bar,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -34,7 +32,7 @@ const chartsMeta = {
   }
 }
 
-const Loading = () => <h2>Loading...</h2>
+const Loading = () => <h2 style={{ marginLeft: 30 }}>Loading...</h2>
 
 const displayLoadingState = branch(
   props => props.isLoading,
@@ -137,7 +135,7 @@ export default compose(
       'professional_traders_chat',
       trends
     )
-    if (!telegram[0] || isLoading) {
+    if (!telegram[0] || trends.isLoading || isLoading) {
       return {
         isLoading: true
       }

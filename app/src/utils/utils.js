@@ -140,9 +140,11 @@ const getTimeFromFromString = (time = '1y') => {
     const timeExpression = time.replace(/\d/g, '')
     let diff = 0
     if (timeExpression === 'all') {
-      diff = 2 * 12 * 60 * 30 * 24 * 60 * 1000
+      diff = 2 * 12 * 30 * 24 * 60 * 60 * 1000
     } else if (timeExpression === 'm') {
-      diff = 60 * 30 * 24 * 60 * 1000
+      diff = 30 * 24 * 60 * 60 * 1000
+    } else if (timeExpression === 'w') {
+      diff = 7 * 24 * 60 * 60 * 1000
     } else {
       diff = ms(time)
     }

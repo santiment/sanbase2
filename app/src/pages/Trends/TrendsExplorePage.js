@@ -3,11 +3,6 @@ import PropTypes from 'prop-types'
 import * as qs from 'query-string'
 import TimeFilter from './../../components/TimeFilter/TimeFilter'
 import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
-import TrendsExploreSourcesFilter from '../../components/Trends/Explore/TrendsExploreSourcesFilter'
-import {
-  validateSearchSources,
-  Source
-} from '../../components/Trends/trendsUtils'
 import GetTrends from './../../components/Trends/GetTrends'
 import GetTimeSeries from './../../components/GetTimeSeries'
 import TrendsReChart from './../../components/Trends/TrendsReChart'
@@ -45,11 +40,13 @@ export class TrendsExplorePage extends Component {
           <TrendsExploreHeader topic={match.params.topic} />
           <TimeFilter
             timeOptions={['1w', '1m', '3m', '6m', '1y', 'all']}
-            onSelectOption={this.handleSourceSelect}
+            onSelectOption={this.handleSelectTimeFilter}
             defaultSelected={timeFilter}
           />
           <GetTrends
             topic={match.params.topic}
+            timeFilter={timeFilter}
+            interval={'1d'}
             render={trends => (
               <GetTimeSeries
                 price={{
@@ -70,7 +67,7 @@ export class TrendsExplorePage extends Component {
     )
   }
 
-  handleSourceSelect = timeFilter => {
+  handleSelectTimeFilter = timeFilter => {
     this.setState({ timeFilter }, this.updateSearchQuery)
   }
 

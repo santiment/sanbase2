@@ -33,6 +33,7 @@ import {
   AllInsightsByTagGQL
 } from './DetailedGQL'
 import './Detailed.css'
+import DetailedEthTopTransactions from './DetailedEthTopTransactions'
 
 const propTypes = {
   match: PropTypes.object.isRequired
@@ -278,32 +279,7 @@ export const Detailed = ({
           project.isERC20 &&
           project.ethTopTransactions &&
           project.ethTopTransactions.length > 0 && (
-            <PanelBlock
-              isLoading={Project.loading}
-              title='Top ETH Transactions'
-            >
-              <div>
-                {project.ethTopTransactions &&
-                  project.ethTopTransactions.map((transaction, index) => (
-                    <div className='top-eth-transaction' key={index}>
-                      <div className='top-eth-transaction__hash'>
-                        <a
-                          href={`https://etherscan.io/tx/${
-                            transaction.trxHash
-                          }`}
-                        >
-                          {transaction.trxHash}
-                        </a>
-                      </div>
-                      <div>
-                        {millify(transaction.trxValue, 2)}
-                        &nbsp; | &nbsp;
-                        {moment(transaction.datetime).fromNow()}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </PanelBlock>
+            <DetailedEthTopTransactions Project={Project} />
           )}
       </div>
     </div>

@@ -6,24 +6,21 @@ import './TrendsExamples.css'
 
 const examples = [
   {
-    topic: 'crypto',
-    // topic: 'stablecoin',
+    topic: 'stablecoin',
     settings: {
-      interval: '1w',
+      interval: '3m',
       sources: ['merged']
     }
   },
   {
-    topic: 'btc',
-    // topic: 'etf',
+    topic: 'etf',
     settings: {
-      interval: '6m',
+      interval: '3m',
       sources: ['telegram', 'reddit']
     }
   },
   {
-    topic: 'eth',
-    // topic: 'ico',
+    topic: 'ico',
     settings: {
       interval: '3m',
       sources: ['professional_traders_chat']

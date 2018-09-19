@@ -178,6 +178,6 @@ export default compose(
       chartsMeta
     }
   }),
-  displayLoadingState,
-  pure
+  displayLoadingState
+  // pure
 )(TrendsReChart)

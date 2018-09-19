@@ -1,4 +1,3 @@
-import moment from 'moment'
 import gql from 'graphql-tag'
 import Raven from 'raven-js'
 import { Observable } from 'rxjs'
@@ -52,8 +51,8 @@ const mapDataToAssets = ({ data: { data, loading, error } }) => {
     price: {
       items,
       error,
-      isLoading: loading,
-      isEmpty: true
+      isEmpty,
+      isLoading: loading
     }
   }
 }

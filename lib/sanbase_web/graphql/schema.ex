@@ -130,14 +130,16 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&PriceResolver.history_price/3)
     end
 
-    @desc "Fetch open/high/low/close price values for a given slug and time interval."
+    @desc ~s"""
+    Fetch open, high, low close price values for a given slug and every time interval between from-to.
+    """
+
     field :ohlcv, list_of(:ohlcv) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "5m")
 
-      # complexity(&PriceComplexity.history_price/3)
       resolve(&PriceResolver.ohlcv/3)
     end
 

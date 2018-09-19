@@ -60,11 +60,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
-  def ohlcv(_root, %{slug: slug} = args, _context) do
+  def ohlc(_root, %{slug: slug} = args, _context) do
     with ticker when not is_nil(ticker) <- Project.ticker_by_slug(slug),
          true <- Regex.match?(~r/^\d+[smhdw]{1}$/, args.interval),
          {:ok, prices} <-
-           Sanbase.Prices.Store.fetch_ohlcv(
+           Sanbase.Prices.Store.fetch_ohlc(
              ticker <> "_" <> slug,
              args.from,
              args.to,
@@ -85,7 +85,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       {:ok, result}
     else
       error ->
-        {:error, "Cannot fetch ohlcv for #{slug}. Reason: #{inspect(error)}"}
+        {:error, "Cannot fetch ohlc for #{slug}. Reason: #{inspect(error)}"}
     end
   end
 

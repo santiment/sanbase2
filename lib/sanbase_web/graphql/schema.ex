@@ -137,10 +137,11 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :ohlc, list_of(:ohlc) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "5m")
+      arg(:to, :datetime)
+      arg(:interval, :string, default_value: "1d")
 
-      resolve(&PriceResolver.ohlc/3)
+      complexity(&PriceComplexity.history_price/3)
+      cache_resolve(&PriceResolver.ohlc/3)
     end
 
     @desc "Returns a list of available github repositories."

@@ -1,6 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import { compose } from 'recompose'
+import isEqual from 'lodash.isequal'
 import * as actions from './../actions/types.js'
 
 class GetTimeSeries extends React.Component {
@@ -10,22 +11,13 @@ class GetTimeSeries extends React.Component {
     })
   }
 
-  // componentDidUpdate (prevProps, prevState) {
-  // const { pathname, search } = this.props.location || {}
-  // if (
-  // pathname !== (prevProps.location || {}).pathname ||
-  // search !== (prevProps.location || {}).search
-  // ) {
-  // const { type, listName, listId } = this.getType()
-  // this.props.fetchAssets({
-  // type,
-  // list: {
-  // name: listName,
-  // id: listId
-  // }
-  // })
-  // }
-  // }
+  componentDidUpdate (prevProps, prevState) {
+    if (!isEqual(this.props.price, prevProps.price)) {
+      this.props.fetchTimeseries({
+        price: this.props.price
+      })
+    }
+  }
 
   render () {
     const { render, timeseries = {} } = this.props

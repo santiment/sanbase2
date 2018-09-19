@@ -68,7 +68,7 @@ const TrendsReChart = ({ chartsMeta = {}, pieData = [], merged }) => (
           <Tooltip
             labelFormatter={date => moment(date).format('dddd, MMM DD YYYY')}
             formatter={(value, name) => {
-              if (name === 'price') {
+              if (name === 'BTC/USD') {
                 return formatNumber(value, { currency: 'USD' })
               }
               return value
@@ -77,7 +77,7 @@ const TrendsReChart = ({ chartsMeta = {}, pieData = [], merged }) => (
           <Line
             type='linear'
             yAxisId='axis-price'
-            name='price'
+            name='BTC/USD'
             dot={false}
             strokeWidth={2}
             dataKey='priceUsd'

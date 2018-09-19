@@ -145,43 +145,45 @@ export default compose(
       key: 'datetime'
     })
 
-    const pieData = merged.reduce(
-      (acc, val) => {
-        if (val.telegram) {
-          acc[0] = {
-            ...acc[0],
-            value: acc[0].value + val.telegram
+    const pieData = merged
+      .reduce(
+        (acc, val) => {
+          if (val.telegram) {
+            acc[0] = {
+              ...acc[0],
+              value: acc[0].value + val.telegram
+            }
           }
-        }
-        if (val.reddit) {
-          acc[1] = {
-            ...acc[1],
-            value: acc[1].value + val.reddit
+          if (val.reddit) {
+            acc[1] = {
+              ...acc[1],
+              value: acc[1].value + val.reddit
+            }
           }
-        }
-        if (val.professional_traders_chat) {
-          acc[2] = {
-            ...acc[2],
-            value: acc[2].value + val.professional_traders_chat
+          if (val.professional_traders_chat) {
+            acc[2] = {
+              ...acc[2],
+              value: acc[2].value + val.professional_traders_chat
+            }
           }
-        }
-        return acc
-      },
-      [
-        {
-          name: 'telegram',
-          value: 0
+          return acc
         },
-        {
-          name: 'reddit',
-          value: 0
-        },
-        {
-          name: 'professional_traders_chat',
-          value: 0
-        }
-      ]
-    )
+        [
+          {
+            name: 'telegram',
+            value: 0
+          },
+          {
+            name: 'reddit',
+            value: 0
+          },
+          {
+            name: 'professional_traders_chat',
+            value: 0
+          }
+        ]
+      )
+      .filter(source => source.value > 0)
 
     return {
       pieData,

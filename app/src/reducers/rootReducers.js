@@ -2,6 +2,7 @@ import { combineReducers } from 'redux'
 import { routerReducer } from 'react-router-redux'
 import user, { initialState as userState } from './user'
 import projects, { initialState as projectsState } from './projects'
+import timeseries, { initialState as timeseriesState } from './timeseries'
 import rootUi, { initialState as rootUiState } from './root-ui'
 import detailedPageUi, {
   initialState as detailedPageUiState
@@ -19,6 +20,7 @@ import watchlistUi, {
 export const intitialState = {
   user: userState,
   projects: projectsState,
+  timeseries: timeseriesState,
   detailedPageUi: detailedPageUiState,
   insightsPageUi: insightsPageUiState,
   watchlistUi: initialWatchlistUiState,
@@ -30,6 +32,7 @@ export const intitialState = {
 export default combineReducers({
   user,
   projects,
+  timeseries,
   rootUi,
   detailedPageUi,
   insightsPageUi,

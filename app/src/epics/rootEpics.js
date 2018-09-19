@@ -16,6 +16,7 @@ import addAssetToWatchlistEpic from './addAssetToWatchlistEpic'
 import removeWatchlistEpic from './removeWatchlistEpic'
 import removeAssetFromWatchlistEpic from './removeAssetFromWatchlistEpic'
 import { fetchAssetsEpic, fetchAssetsFromListEpic } from './fetchAssetsEpic'
+import fetchTimeseriesEpic from './fetchTimeseriesEpic'
 import handleNightModeToggle from './handleNightModeToggle'
 import keyboardEpic from './keyboardEpic'
 
@@ -40,5 +41,7 @@ export default combineEpics(
   removeAssetFromWatchlistEpic,
   // assets
   fetchAssetsEpic,
-  fetchAssetsFromListEpic
+  fetchAssetsFromListEpic,
+  // timeseries
+  fetchTimeseriesEpic
 )

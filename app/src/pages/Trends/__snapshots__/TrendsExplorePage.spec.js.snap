@@ -7,42 +7,34 @@ exports[`TrendsExplorePage smoke 1`] = `
   <div
     className="TrendsExplorePage__content"
   >
-    <TrendsExploreHeader
-      selectedSources={
-        Array [
-          "merged",
-        ]
-      }
-    />
-    <TimeFilter
-      defaultSelected="6m"
-      disabled={true}
-      timeOptions={
-        Array [
-          "1w",
-          "1m",
-          "3m",
-          "6m",
-          "1y",
-          "all",
-        ]
-      }
-    />
+    <TrendsExploreHeader />
+    <div
+      className="TrendsExplorePage__settings"
+    >
+      <TimeFilter
+        defaultSelected="3m"
+        disabled={false}
+        onSelectOption={[Function]}
+        timeOptions={
+          Array [
+            "1w",
+            "1m",
+            "3m",
+            "6m",
+          ]
+        }
+      />
+      <span>
+        Compared to 
+        <strong>
+          BTC/USD
+        </strong>
+      </span>
+    </div>
     <Apollo(Apollo(Apollo(GetTrends)))
+      interval="1d"
       render={[Function]}
-      selectedSources={
-        Array [
-          "merged",
-        ]
-      }
-    />
-    <TrendsExploreSourcesFilter
-      handleSourceSelect={[Function]}
-      selectedSources={
-        Array [
-          "merged",
-        ]
-      }
+      timeFilter="3m"
     />
   </div>
 </div>

@@ -10,6 +10,16 @@
   list-style: none;
 }
 
+.TrendsExplorePage__settings {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.TrendsExplorePage__settings span {
+  margin-right: 1em;
+}
+
 @media (min-width: 768px) {
   .TrendsExplorePage {
     margin: 30px 10%;

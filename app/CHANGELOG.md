@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-10-09 | v.0.12.0 'Phobos':
+
+  Trends with new look from scratch
+  And it works :)
+
 - 2018-10-09 | v.0.11.4 'Phobos':
 
   Upgrade Trends page with new API

@@ -33,11 +33,21 @@ const chartsMeta = {
 }
 
 const Loading = () => <h2 style={{ marginLeft: 30 }}>Loading...</h2>
+const Empty = () => (
+  <h2 style={{ marginLeft: 30 }}>
+    We can't find any data{' '}
+    <span aria-label='sadly' role='img'>
+      😞
+    </span>
+  </h2>
+)
 
 const displayLoadingState = branch(
   props => props.isLoading,
   renderComponent(Loading)
 )
+
+const displayEmptyState = branch(props => props.isEmpty, renderComponent(Empty))
 
 const TrendsReChart = ({ chartsMeta = {}, pieData = [], merged }) => (
   <div className='TrendsExploreChart'>
@@ -135,7 +145,7 @@ export default compose(
       'professional_traders_chat',
       trends
     )
-    if (!telegram[0] || trends.isLoading || isLoading) {
+    if (trends.isLoading || isLoading) {
       return {
         isLoading: true
       }
@@ -144,6 +154,15 @@ export default compose(
       timeseries: [items, telegram, reddit, professional_traders_chat],
       key: 'datetime'
     })
+    if (
+      telegram.length === 0 &&
+      reddit.length === 0 &&
+      professional_traders_chat.length === 0
+    ) {
+      return {
+        isEmpty: true
+      }
+    }
 
     const pieData = merged
       .reduce(
@@ -192,5 +211,6 @@ export default compose(
       chartsMeta
     }
   }),
-  displayLoadingState
+  displayLoadingState,
+  displayEmptyState
 )(TrendsReChart)

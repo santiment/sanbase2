@@ -9,7 +9,7 @@ exports[`TrendsExplorePage smoke 1`] = `
   >
     <TrendsExploreHeader />
     <TimeFilter
-      defaultSelected="6m"
+      defaultSelected="3m"
       disabled={false}
       onSelectOption={[Function]}
       timeOptions={
@@ -18,13 +18,13 @@ exports[`TrendsExplorePage smoke 1`] = `
           "1m",
           "3m",
           "6m",
-          "1y",
-          "all",
         ]
       }
     />
     <Apollo(Apollo(Apollo(GetTrends)))
+      interval="1d"
       render={[Function]}
+      timeFilter="3m"
     />
   </div>
 </div>

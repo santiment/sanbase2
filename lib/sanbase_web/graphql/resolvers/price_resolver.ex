@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   alias SanbaseWeb.Graphql.PriceStore
   alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.DateTimeUtils
 
   @total_market "TOTAL_MARKET"
   @total_market_measurement "TOTAL_MARKET_total-market"
@@ -60,9 +61,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   end
 
   def ohlc(_root, %{slug: slug} = args, _context) do
-    with measurement when not is_nil(measurement) <-
-           Measurement.name_from_slug(slug) |> IO.inspect(),
-         true <- Regex.match?(~r/^\d+[smhdw]{1}$/, args.interval),
+    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
+         true <- DateTimeUtils.valid_interval_string?(args.interval),
          {:ok, prices} <-
            Sanbase.Prices.Store.fetch_ohlc(
              measurement,

@@ -1,11 +1,13 @@
 import React from 'react'
-import PropTypes from 'prop-types'
 import moment from 'moment'
-import { compose, pure, withProps, branch, renderComponent } from 'recompose'
+import { compose, withProps, branch, renderComponent } from 'recompose'
 import {
   ResponsiveContainer,
+  ComposedChart,
   LineChart,
+  Legend,
   Line,
+  Bar,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -43,10 +45,10 @@ const TrendsReChart = ({ chartsMeta = {}, pieData = [], merged }) => (
   <div className='TrendsExploreChart'>
     {Object.keys(chartsMeta).map(key => (
       <ResponsiveContainer key={key} width='100%' height={300}>
-        <LineChart
+        <ComposedChart
           data={merged}
           syncId='trends'
-          margin={{ top: 5, right: 0, left: 10, bottom: 5 }}
+          margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
         >
           <XAxis
             dataKey='datetime'
@@ -65,21 +67,33 @@ const TrendsReChart = ({ chartsMeta = {}, pieData = [], merged }) => (
             domain={['dataMin', 'dataMax']}
           />
           <CartesianGrid strokeDasharray='3 3' />
-          <Tooltip />
-          <Line
-            type='linear'
-            dot={false}
-            dataKey={key}
-            stroke={chartsMeta[key].color}
+          <Tooltip
+            labelFormatter={date => moment(date).format('dddd, MMM DD YYYY')}
+            formatter={(value, name) => {
+              if (name === 'price') {
+                return formatNumber(value, { currency: 'USD' })
+              }
+              return value
+            }}
           />
           <Line
             type='linear'
             yAxisId='axis-price'
+            name='price'
             dot={false}
+            strokeWidth={2}
             dataKey='priceUsd'
             stroke='gold'
           />
-        </LineChart>
+          <Line
+            type='linear'
+            dataKey={key}
+            dot={false}
+            strokeWidth={3}
+            stroke={chartsMeta[key].color}
+          />
+          <Legend />
+        </ComposedChart>
       </ResponsiveContainer>
     ))}
     <br />
@@ -179,5 +193,4 @@ export default compose(
     }
   }),
   displayLoadingState
-  // pure
 )(TrendsReChart)

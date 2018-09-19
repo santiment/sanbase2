@@ -10,37 +10,4 @@ describe('TrendsExplorePage', () => {
     const wrapper = shallow(<TrendsExplorePage />)
     expect(toJson(wrapper)).toMatchSnapshot()
   })
-
-  describe('calculateNewSources', () => {
-    const sources = ['merged', 'telegram', 'reddit']
-
-    it("it should return rest sources if clicked on 'merged' and 'merged' is actived", () => {
-      const newSelected = calculateNewSources({
-        sources,
-        source: 'merged',
-        selectedSources: 'merged'
-      })
-      expect(JSON.stringify(newSelected)).toBe(
-        JSON.stringify(['telegram', 'reddit'])
-      )
-    })
-
-    it("it should return merged sources if clicked on 'merged' and 'merged' is unactived", () => {
-      const newSelected = calculateNewSources({
-        sources,
-        source: 'merged',
-        selectedSources: ['reddit']
-      })
-      expect(JSON.stringify(newSelected)).toBe(JSON.stringify(['merged']))
-    })
-
-    it('it should return merged sources if clicked on any source and this source is last and single activated', () => {
-      const newSelected = calculateNewSources({
-        sources,
-        source: 'reddit',
-        selectedSources: ['reddit']
-      })
-      expect(JSON.stringify(newSelected)).toBe(JSON.stringify(['merged']))
-    })
-  })
 })

@@ -138,13 +138,14 @@ const mergeTimeseriesByKey = ({ timeseries, key }) => {
 const getTimeFromFromString = (time = '1y') => {
   if (isNaN(new Date(time).getDate())) {
     const timeExpression = time.replace(/\d/g, '')
+    const multiplier = time.replace(/[a-zA-Z]+/g, '') || 1
     let diff = 0
     if (timeExpression === 'all') {
       diff = 2 * 12 * 30 * 24 * 60 * 60 * 1000
     } else if (timeExpression === 'm') {
-      diff = 30 * 24 * 60 * 60 * 1000
+      diff = multiplier * 30 * 24 * 60 * 60 * 1000
     } else if (timeExpression === 'w') {
-      diff = 7 * 24 * 60 * 60 * 1000
+      diff = multiplier * 7 * 24 * 60 * 60 * 1000
     } else {
       diff = ms(time)
     }

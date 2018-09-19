@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
     field(:ticker, :string)
   end
 
-  object :ohlcv do
+  object :ohlc do
     field(:datetime, non_null(:datetime))
     field(:open_price_usd, :float)
     field(:high_price_usd, :float)

@@ -302,7 +302,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       ]
     } = result
 
-    assert message == "Cannot change current user's email to #{new_email}"
+    assert message == "Can't change current user's email to #{new_email}"
   end
 
   test "change username of current user", %{conn: conn} do

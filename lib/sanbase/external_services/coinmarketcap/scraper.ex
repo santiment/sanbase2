@@ -16,16 +16,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper do
 
   def fetch_project_page(coinmarketcap_id) do
     case get("/#{coinmarketcap_id}/") do
-      %Tesla.Env{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
 
-      %Tesla.Env{status: status, body: _body} ->
-        error = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}"
-        Logger.warn(error)
-        {:error, error}
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        error_msg =
+          "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}. Body: #{
+            inspect(body)
+          }"
 
-      %Tesla.Error{message: error_msg} ->
-        Logger.warn(error_msg)
+        Logger.error(error_msg)
+        {:error, error_msg}
+
+      {:error, error} ->
+        error_msg =
+          "Failed fetching project page for #{coinmarketcap_id}. Reason: #{inspect(error)}"
+
+        Logger.error(error_msg)
         {:error, error_msg}
     end
   end

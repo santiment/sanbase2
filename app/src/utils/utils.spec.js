@@ -4,7 +4,8 @@ import {
   findIndexByDatetime,
   calculateBTCVolume,
   sanitizeMediumDraftHtml,
-  filterProjectsByMarketSegment
+  filterProjectsByMarketSegment,
+  mergeTimeseriesByKey
 } from './utils'
 
 const labels = [
@@ -133,5 +134,96 @@ describe('filterProjectsByMarketSegment', () => {
         filterProjectsByMarketSegment(data.projects, data.categories)
       ).toEqual(data.expectation)
     )
+  })
+})
+
+describe('mergeTimeseriesByKey', () => {
+  const ts1 = [
+    {
+      value1: 691,
+      datetime: '2018-06-20T00:00:00Z'
+    },
+    {
+      value1: 692,
+      datetime: '2018-07-20T00:00:00Z'
+    }
+  ]
+
+  const ts2 = [
+    {
+      value2: 1,
+      datetime: '2018-06-20T00:00:00Z'
+    },
+    {
+      value2: 2,
+      datetime: '2018-07-20T00:00:00Z'
+    },
+    {
+      value2: 3,
+      datetime: '2018-08-20T00:00:00Z'
+    }
+  ]
+
+  const ts3 = [
+    {
+      value3: 3,
+      datetime: '2018-06-20T00:00:00Z'
+    },
+    {
+      value3: 3,
+      datetime: '2018-07-20T00:00:00Z'
+    }
+  ]
+
+  it('should merge 2 timeseries properly', () => {
+    const goodMerged = [
+      {
+        value1: 691,
+        value2: 1,
+        datetime: '2018-06-20T00:00:00Z'
+      },
+      {
+        value1: 692,
+        value2: 2,
+        datetime: '2018-07-20T00:00:00Z'
+      },
+      {
+        value2: 3,
+        datetime: '2018-08-20T00:00:00Z'
+      }
+    ]
+
+    const expected = mergeTimeseriesByKey({
+      timeseries: [ts1, ts2],
+      key: 'datetime'
+    })
+    expect(expected).toEqual(goodMerged)
+  })
+
+  it('should merge timeseries properly', () => {
+    const goodMerged = [
+      {
+        value1: 691,
+        value2: 1,
+        value3: 3,
+        datetime: '2018-06-20T00:00:00Z'
+      },
+      {
+        value1: 692,
+        value2: 2,
+        value3: 3,
+        datetime: '2018-07-20T00:00:00Z'
+      },
+      {
+        value2: 3,
+        datetime: '2018-08-20T00:00:00Z'
+      }
+    ]
+
+    const expected = mergeTimeseriesByKey({
+      timeseries: [ts1, ts2, ts3],
+      key: 'datetime'
+    })
+    expect(expected).toEqual(goodMerged)
   })
 })

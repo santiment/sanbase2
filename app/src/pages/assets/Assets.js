@@ -52,10 +52,6 @@ class Assets extends React.Component {
     }
   }
 
-  componentWillUnmount () {
-    this.subscription && this.subscription.unsubscribe()
-  }
-
   render () {
     const { children, render } = this.props
     const type = this.getType()

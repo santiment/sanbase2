@@ -25,13 +25,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     all_time_total_market_price_points()
     |> List.first()
     |> case do
-      nil ->
-        Logger.warn("[CMC] Cannot fetch first datetime from coinmarketcap for TOTAL_MARKET")
-        nil
-
       %PricePoint{datetime: datetime} ->
         Logger.info("[CMC] Fetched first datetime for TOTAL_MARKET: " <> inspect(datetime))
         datetime
+
+      _ ->
+        Logger.warn("[CMC] Cannot fetch first datetime from coinmarketcap for TOTAL_MARKET")
+        nil
     end
   end
 
@@ -39,16 +39,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     all_time_project_price_points(coinmarketcap_id)
     |> List.first()
     |> case do
-      nil ->
+      %PricePoint{datetime: datetime} ->
+        Logger.info("[CMC] Fetched first datetime for #{coinmarketcap_id}: " <> inspect(datetime))
+        datetime
+
+      _ ->
         Logger.warn(
           "[CMC] Cannot fetch first datetime from coinmarketcap for #{coinmarketcap_id}"
         )
 
         nil
-
-      %PricePoint{datetime: datetime} ->
-        Logger.info("[CMC] Fetched first datetime for #{coinmarketcap_id}: " <> inspect(datetime))
-        datetime
     end
   end
 
@@ -184,8 +184,24 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     all_time_project_url(coinmarketcap_id)
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
+
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        Logger.error(
+          "[CMC] Error fetching prices for #{coinmarketcap_id}. Status code: #{status}, body: #{
+            inspect(body)
+          }"
+        )
+
+        nil
+
+      {:error, error} ->
+        Logger.error(
+          "[CMC] Error fetching prices for #{coinmarketcap_id}. Reason: #{inspect(error)}"
+        )
+
+        nil
     end
   end
 
@@ -193,8 +209,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     all_time_total_market_url()
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
+
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        Logger.error(
+          "[CMC] Error fetching prices for TOTAL_MARKET. Status code: #{status}, body: #{
+            inspect(body)
+          }"
+        )
+
+        nil
+
+      {:error, error} ->
+        Logger.error("[CMC] Error fetching prices for TOTAL_MARKET. Reason: #{inspect(error)}")
+
+        nil
     end
   end
 
@@ -236,12 +266,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     total_market_interval_url(start_interval_sec * 1000, end_interval_sec * 1000)
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
-      _ ->
+      {:ok, %Tesla.Env{status: status, body: body}} ->
         Logger.error(
-          "[CMC] Failed to fetch graph data for total marketcap for the selected interval"
+          "[CMC] Error fetching graph data for TOTAL_MARKET. Status code: #{status}, body: #{
+            inspect(body)
+          }"
+        )
+
+        []
+
+      {:error, error} ->
+        Logger.error(
+          "[CMC] Error fetching graph data for TOTAL_MARKET. Reason: #{inspect(error)}"
         )
 
         []
@@ -263,12 +302,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     )
     |> get()
     |> case do
-      %{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
-      _ ->
+      {:ok, %Tesla.Env{status: status, body: body}} ->
         Logger.error(
-          "[CMC] Failed to fetch graph data for #{coinmarketcap_id} for the selected interval"
+          "[CMC] Error fetching graph data for #{coinmarketcap_id}. Status code: #{status}, body: #{
+            inspect(body)
+          }"
+        )
+
+        []
+
+      {:error, error} ->
+        Logger.error(
+          "[CMC] Error fetching graph data for #{coinmarketcap_id}. Reason: #{inspect(error)}"
         )
 
         []

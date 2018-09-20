@@ -6,6 +6,7 @@ defmodule Sanbase.Influxdb.Measurement do
 
   alias __MODULE__
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker2, as: Ticker
+  alias Sanbase.Model.Project
 
   @doc ~s"""
     Converts the measurement to a format that the Influxdb and the Instream library
@@ -55,6 +56,16 @@ defmodule Sanbase.Influxdb.Measurement do
   def name_from(%Ticker{symbol: ticker, id: coinmarketcap_id})
       when nil != ticker and nil != coinmarketcap_id do
     ticker <> "_" <> coinmarketcap_id
+  end
+
+  def name_from_slug(slug) when is_nil(slug), do: nil
+
+  def name_from_slug(slug) do
+    with ticker when not is_nil(ticker) <- Project.ticker_by_slug(slug) do
+      ticker <> "_" <> slug
+    else
+      _ -> nil
+    end
   end
 
   # Private functions

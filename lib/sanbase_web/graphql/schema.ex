@@ -155,6 +155,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&PriceResolver.history_price/3)
     end
 
+    @desc ~s"""
+    Fetch open, high, low close price values for a given slug and every time interval between from-to.
+    """
+
+    field :ohlc, list_of(:ohlc) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime)
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&PriceComplexity.history_price/3)
+      cache_resolve(&PriceResolver.ohlc/3)
+    end
+
     @desc "Returns a list of available github repositories."
     field :github_availables_repos, list_of(:string) do
       cache_resolve(&GithubResolver.available_repos/3)

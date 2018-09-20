@@ -65,7 +65,7 @@ config :hammer,
 
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 
-config :tesla, adapter: :hackney, recv_timeout: 30_000
+config :tesla, adapter: Tesla.Adapter.Hackney, recv_timeout: 30_000
 
 config :sanbase, SanbaseWeb.Guardian,
   issuer: "santiment",

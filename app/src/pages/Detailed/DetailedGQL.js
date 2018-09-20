@@ -35,12 +35,11 @@ export const projectBySlugGQL = gql`
         balance
         address
       }
-      ethTopTransactions(
-        from: $from
-        to: $to
-        limit: 10
-        transactionType: OUT
-      ) {
+
+      tokenTopTransactions(from: $from, to: $to) {
+        datetime
+        trxValue
+        trxHash
         fromAddress {
           address
           isExchange
@@ -49,10 +48,8 @@ export const projectBySlugGQL = gql`
           address
           isExchange
         }
-        trxValue
-        trxHash
-        datetime
       }
+
       ethSpentOverTime(from: $fromOverTime, to: $to, interval: $interval) {
         datetime
         ethSpent

@@ -11,7 +11,7 @@ defmodule Sanbase.InternalServices.Ethauth do
              query: [sign: signature, hash: message_hash],
              opts: [adapter: [recv_timeout: 15_000]]
            ),
-         {:ok, %{"recovered" => recovered}} <- Poison.decode!(body) do
+         {:ok, %{"recovered" => recovered}} <- Jason.decode(body) do
       String.downcase(address) == String.downcase(recovered)
     else
       {:ok, %Tesla.Env{status: status, body: body}} ->

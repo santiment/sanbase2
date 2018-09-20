@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import * as qs from 'query-string'
-import TimeFilter from './../../components/TimeFilter/TimeFilter'
+import Selector from './../../components/Selector/Selector'
 import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
 import GetTrends from './../../components/Trends/GetTrends'
 import GetTimeSeries from './../../components/GetTimeSeries'
@@ -39,13 +39,18 @@ export class TrendsExplorePage extends Component {
         <div className='TrendsExplorePage__content'>
           <TrendsExploreHeader topic={match.params.topic} />
           <div className='TrendsExplorePage__settings'>
-            <TimeFilter
-              timeOptions={['1w', '1m', '3m', '6m']}
+            <Selector
+              options={['1w', '1m', '3m', '6m']}
               onSelectOption={this.handleSelectTimeFilter}
               defaultSelected={timeFilter}
             />
             <span>
               Compared to <strong>BTC/USD</strong>
+              <Selector
+                options={['BTC/USD', 'ETH/USD', 'TOTAL MARKETCAP/USD']}
+                onSelectOption={option => console.log(option)}
+                defaultSelected={'BTC/USD'}
+              />
             </span>
           </div>
           <GetTrends

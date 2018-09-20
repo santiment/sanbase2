@@ -14,6 +14,7 @@ class SmoothDropdownItem extends Component {
     children: PropTypes.oneOfType([PropTypes.element, PropTypes.string])
       .isRequired,
     trigger: PropTypes.element.isRequired,
+    showIf: PropTypes.func,
     id: PropTypes.string
   }
 
@@ -22,7 +23,7 @@ class SmoothDropdownItem extends Component {
   }
 
   render () {
-    const { trigger, children, id, className } = this.props
+    const { trigger, children, id, className, showIf } = this.props
     const {
       triggerRef: { current: ddTrigger },
       dropdownRef: { current: ddDropdown }
@@ -40,8 +41,10 @@ class SmoothDropdownItem extends Component {
         }) => (
           <Fragment>
             <div
-              onMouseEnter={() => {
-                handleMouseEnter(ddTrigger, ddDropdown)
+              onMouseEnter={evt => {
+                if (showIf ? showIf(evt) : true) {
+                  handleMouseEnter(ddTrigger, ddDropdown)
+                }
               }}
               onMouseLeave={handleMouseLeave}
               className='dd__trigger'

@@ -3,22 +3,34 @@ import PanelBlock from './../../components/PanelBlock'
 import moment from 'moment'
 import { formatNumber } from './../../utils/formatting'
 import ReactTable from 'react-table'
+import SmoothDropdown from '../../components/SmoothDropdown/SmoothDropdown'
+import SmoothDropdownItem from '../../components/SmoothDropdown/SmoothDropdownItem'
 
 const DetailedEthTopTransactionsAddressCell = ({ value }) => (
-  <a
-    // href={`https://etherscan.io/address/${value}`}
-    // href={`#`}
-    onMouseEnter={({ currentTarget }) => {
-      if (
-        currentTarget.offsetWidth + 12 <
-        currentTarget.parentNode.offsetWidth
-      ) {
-        console.log(value)
-      }
-    }}
+  <SmoothDropdownItem
+    trigger={
+      <a
+        // href={`https://etherscan.io/address/${value}`}
+        // href={`#`}
+        onMouseEnter={({ currentTarget }) => {
+          // console.log(
+          //   currentTarget.offsetWidth,
+          //   currentTarget.parentNode.parentNode.offsetWidth
+          // )
+          if (
+            currentTarget.offsetWidth + 10 <
+            currentTarget.parentNode.parentNode.offsetWidth
+          ) {
+            // console.log(value)
+          }
+        }}
+      >
+        {value}
+      </a>
+    }
   >
     {value}
-  </a>
+  </SmoothDropdownItem>
 )
 
 const COLUMNS = [
@@ -87,12 +99,14 @@ const DetailedEthTopTransactions = ({ Project }) => {
             </div>
           </div>
         ))} */}
-        <ReactTable
-          data={DATA}
-          columns={COLUMNS}
-          showPagination={false}
-          minRows={2}
-        />
+        <SmoothDropdown verticalMotion>
+          <ReactTable
+            data={DATA}
+            columns={COLUMNS}
+            showPagination={false}
+            minRows={2}
+          />
+        </SmoothDropdown>
       </div>
     </PanelBlock>
   )

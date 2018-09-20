@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TimeFilter component smoke 1`] = `
+exports[`Selector component smoke 1`] = `
 <div
-  className="time-filter"
+  className="selector"
 >
   <Component
     disabled={false}
@@ -41,7 +41,7 @@ exports[`TimeFilter component smoke 1`] = `
   />
   <Component
     disabled={false}
-    isSelected={true}
+    isSelected={false}
     key="all"
     setFilter={[Function]}
     value="all"

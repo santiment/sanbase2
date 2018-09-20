@@ -1,11 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import cx from 'classnames'
-import './TimeFilter.css'
+import './Selector.css'
 
-const timeOptionsDefault = ['1w', '1m', '3m', '6m', '1y', 'all']
-
-export const TimeFilterItem = ({
+export const SelectorItem = ({
   isSelected = false,
   value = 'all',
   setFilter,
@@ -13,9 +11,9 @@ export const TimeFilterItem = ({
 }) => (
   <div
     className={cx({
-      'time-filter-item': true,
-      'time-filter-item--selected': isSelected,
-      'time-filter-item--disabled': disabled
+      'selector-item': true,
+      'selector-item--selected': isSelected,
+      'selector-item--disabled': disabled
     })}
     onClick={() => !disabled && setFilter(value)}
   >
@@ -23,20 +21,20 @@ export const TimeFilterItem = ({
   </div>
 )
 
-class TimeFilter extends Component {
+class Selector extends Component {
   state = {
     selected: this.props.defaultSelected
   }
 
   static defaultProps = {
-    defaultSelected: 'all',
-    timeOptions: timeOptionsDefault,
+    defaultSelected: undefined,
+    options: [],
     disabled: false
   }
 
   static propTypes = {
     defaultSelected: PropTypes.string,
-    timeOptions: PropTypes.array,
+    options: PropTypes.array,
     onSelectOption: PropTypes.func,
     disabled: PropTypes.bool
   }
@@ -49,11 +47,11 @@ class TimeFilter extends Component {
 
   render () {
     const { selected } = this.state
-    const { timeOptions, disabled } = this.props
+    const { options, disabled } = this.props
     return (
-      <div className='time-filter'>
-        {timeOptions.map(option => (
-          <TimeFilterItem
+      <div className='selector'>
+        {options.map(option => (
+          <SelectorItem
             key={option}
             isSelected={selected === option}
             value={option}
@@ -66,4 +64,4 @@ class TimeFilter extends Component {
   }
 }
 
-export default TimeFilter
+export default Selector

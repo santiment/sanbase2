@@ -24,24 +24,23 @@ exports[`TrendsExplorePage smoke 1`] = `
           ]
         }
       />
-      <span>
-        Compared to 
-        <strong>
-          BTC/USD
-        </strong>
-        <Selector
-          defaultSelected="BTC/USD"
-          disabled={false}
-          onSelectOption={[Function]}
-          options={
-            Array [
-              "BTC/USD",
-              "ETH/USD",
-              "TOTAL MARKETCAP/USD",
-            ]
-          }
-        />
-      </span>
+      <Selector
+        defaultSelected="bitcoin"
+        disabled={false}
+        nameOptions={
+          Array [
+            "BTC/USD",
+            "ETH/USD",
+          ]
+        }
+        onSelectOption={[Function]}
+        options={
+          Array [
+            "bitcoin",
+            "ethereum",
+          ]
+        }
+      />
     </div>
     <Apollo(Apollo(Apollo(GetTrends)))
       interval="1d"

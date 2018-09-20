@@ -8,6 +8,7 @@ exports[`Selector component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="1w"
+    name="1w"
     setFilter={[Function]}
     value="1w"
   />
@@ -15,6 +16,7 @@ exports[`Selector component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="1m"
+    name="1m"
     setFilter={[Function]}
     value="1m"
   />
@@ -22,6 +24,7 @@ exports[`Selector component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="3m"
+    name="3m"
     setFilter={[Function]}
     value="3m"
   />
@@ -29,6 +32,7 @@ exports[`Selector component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="6m"
+    name="6m"
     setFilter={[Function]}
     value="6m"
   />
@@ -36,6 +40,7 @@ exports[`Selector component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="1y"
+    name="1y"
     setFilter={[Function]}
     value="1y"
   />
@@ -43,6 +48,7 @@ exports[`Selector component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="all"
+    name="all"
     setFilter={[Function]}
     value="all"
   />

@@ -34,7 +34,10 @@ class SmoothDropdown extends Component {
   }
 
   componentDidMount () {
-    setTimeout(() => this.forceUpdate(), ddAsyncUpdateTimeout) // HACK TO POPULATE PORTAL AND UPDATE REFS
+    this.mountTimer = setTimeout(() => this.forceUpdate(), ddAsyncUpdateTimeout) // HACK TO POPULATE PORTAL AND UPDATE REFS
+  }
+  componentWillUnmount () {
+    clearTimeout(this.mountTimer)
   }
 
   startCloseTimeout = () =>

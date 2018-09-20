@@ -154,6 +154,8 @@ const getTimeFromFromString = (time = '1y') => {
   return time
 }
 
+const capitalizeStr = string => string.charAt(0).toUpperCase() + string.slice(1)
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
@@ -166,5 +168,6 @@ export {
   binarySearchHistoryPriceIndex,
   getStartOfTheDay,
   mergeTimeseriesByKey,
-  getTimeFromFromString
+  getTimeFromFromString,
+  capitalizeStr
 }

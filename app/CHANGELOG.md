@@ -1,6 +1,10 @@
 ## CHANGELOG
 
-- 2018-10-09 | v.0.12.0 'Phobos':
+- 2018-20-09 | v.0.13.0 'Phobos':
+
+  Add cases of assets for comparison in trends
+
+- 2018-19-09 | v.0.12.0 'Phobos':
 
   Trends with new look from scratch
   And it works :)

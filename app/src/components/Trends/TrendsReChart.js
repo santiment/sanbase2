@@ -58,7 +58,7 @@ const displayLoadingState = branch(
 
 const displayEmptyState = branch(props => props.isEmpty, renderComponent(Empty))
 
-const TrendsReChart = ({ chartSummaryData = [], chartData }) => (
+const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
   <div className='TrendsExploreChart'>
     {chartSummaryData.map((entity, key) => (
       <ResponsiveContainer key={key} width='100%' height={300}>
@@ -87,7 +87,7 @@ const TrendsReChart = ({ chartSummaryData = [], chartData }) => (
           <Tooltip
             labelFormatter={date => moment(date).format('dddd, MMM DD YYYY')}
             formatter={(value, name) => {
-              if (name === 'BTC/USD') {
+              if (name === asset) {
                 return formatNumber(value, { currency: 'USD' })
               }
               return value
@@ -96,7 +96,7 @@ const TrendsReChart = ({ chartSummaryData = [], chartData }) => (
           <Line
             type='linear'
             yAxisId='axis-price'
-            name='BTC/USD'
+            name={asset}
             dot={false}
             strokeWidth={2}
             dataKey='priceUsd'

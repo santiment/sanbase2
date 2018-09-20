@@ -14,7 +14,7 @@ import * as actions from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
-export const TAKEN_MSG = 'has already been taken'
+export const TAKEN_MSG = "Can't change current user's email to"
 
 const validateFields = (email, username) => {
   var constraints = {

@@ -1,4 +1,4 @@
-.time-filter {
+.selector {
   display: flex;
   user-select: none;
   cursor: pointer;
@@ -8,29 +8,30 @@
   padding: 10px 25px;
 }
 
-.time-filter-item {
+.selector-item {
   cursor: pointer;
   min-width: 32px;
   text-align: center;
   border-radius: 4px;
+  padding: 0 5px;
 }
 
-.time-filter .time-filter-item--selected {
+.selector .selector-item--selected {
   background: rgba(38, 43, 51, 0.8);
   color: white !important;
 }
 
-.time-filter .time-filter-item--disabled {
+.selector .selector-item--disabled {
   color: #888;
   cursor: not-allowed;
 }
 
-.night-mode .time-filter,
-.night-mode .time-filter-item--selected {
+.night-mode .selector,
+.night-mode .selector-item--selected {
   color: #a0a0a0;
   background-color: #252932;
 }
 
-.night-mode .time-filter-item--disabled {
+.night-mode .selector-item--disabled {
   color: #595959;
 }

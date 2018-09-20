@@ -16,6 +16,7 @@ export const SmoothDropdownContext = React.createContext({
 
 class SmoothDropdown extends Component {
   portalRef = React.createRef()
+  dropdownWrapperRef = React.createRef()
 
   state = {
     currentTrigger: null,
@@ -28,7 +29,8 @@ class SmoothDropdown extends Component {
     children: PropTypes.oneOfType([
       PropTypes.element,
       PropTypes.arrayOf(PropTypes.element)
-    ]).isRequired
+    ]).isRequired,
+    verticalMotion: PropTypes.bool
   }
 
   componentDidMount () {
@@ -40,24 +42,31 @@ class SmoothDropdown extends Component {
 
   stopCloseTimeout = () => clearTimeout(this.dropdownTimer)
 
-  handleMouseEnter = (trigger, dropdown) => {
+  handleMouseEnter = (trigger, dropdownItem) => {
     this.stopCloseTimeout()
-    this.openDropdown(trigger, dropdown)
+    this.openDropdown(trigger, dropdownItem)
   }
 
   handleMouseLeave = () => this.startCloseTimeout()
 
-  openDropdown = (trigger, dropdown) => {
-    if (!dropdown) return
+  openDropdown = (trigger, dropdownItem) => {
+    if (!dropdownItem) return
 
-    const ddContent = dropdown.querySelector('.dd__content')
+    const ddContent = dropdownItem.querySelector('.dd__content')
 
     const leftOffset =
       trigger.offsetLeft - (ddContent.clientWidth - trigger.clientWidth) / 2
 
-    const correction = this.correctViewportOverflow(trigger, ddContent)
+    const topOffset = this.props.verticalMotion
+      ? trigger.offsetTop +
+        trigger.offsetHeight -
+        this.dropdownWrapperRef.current.offsetHeight
+      : 0
+
+    const correction = this.getViewportOverflowCorrection(trigger, ddContent)
 
     const left = leftOffset - correction.left + 'px'
+    const top = `calc(100% + ${10 + topOffset}px)`
     const width = ddContent.clientWidth + 'px'
     const height = ddContent.clientHeight + 'px'
 
@@ -67,6 +76,7 @@ class SmoothDropdown extends Component {
       ddFirstTime: prevState.currentTrigger === null,
       dropdownStyles: {
         left,
+        top,
         width,
         height
       },
@@ -81,7 +91,7 @@ class SmoothDropdown extends Component {
     }))
   }
 
-  correctViewportOverflow (trigger, ddContent) {
+  getViewportOverflowCorrection (trigger, ddContent) {
     const correction = { left: 0 }
     const triggerViewport = trigger.getBoundingClientRect()
 
@@ -113,7 +123,10 @@ class SmoothDropdown extends Component {
       stopCloseTimeout
     } = this
     return (
-      <div className={`dd-wrapper ${className || ''}`}>
+      <div
+        ref={this.dropdownWrapperRef}
+        className={`dd-wrapper ${className || ''}`}
+      >
         <SmoothDropdownContext.Provider
           value={{
             portal: this.portalRef.current || document.createElement('ul'),

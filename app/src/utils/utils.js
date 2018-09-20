@@ -1,5 +1,6 @@
 import sanitizeHtml from 'sanitize-html'
 import moment from 'moment'
+import ms from 'ms'
 
 const findIndexByDatetime = (labels, datetime) => {
   return labels.findIndex(label => {
@@ -109,6 +110,50 @@ const binarySearchHistoryPriceIndex = (history, targetDatetime) => {
   return middle
 }
 
+const getStartOfTheDay = () => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today.toISOString()
+}
+
+const mergeTimeseriesByKey = ({ timeseries, key }) => {
+  const longestTS = timeseries.reduce((acc, val) => {
+    return acc.length > val.length ? acc : val
+  }, [])
+  return longestTS.map(data => {
+    return timeseries.reduce(
+      (acc, val) => {
+        return {
+          ...acc,
+          ...val.find(data2 => data2[key] === data[key])
+        }
+      },
+      {
+        ...data
+      }
+    )
+  })
+}
+
+const getTimeFromFromString = (time = '1y') => {
+  if (isNaN(new Date(time).getDate())) {
+    const timeExpression = time.replace(/\d/g, '')
+    const multiplier = time.replace(/[a-zA-Z]+/g, '') || 1
+    let diff = 0
+    if (timeExpression === 'all') {
+      diff = 2 * 12 * 30 * 24 * 60 * 60 * 1000
+    } else if (timeExpression === 'm') {
+      diff = multiplier * 30 * 24 * 60 * 60 * 1000
+    } else if (timeExpression === 'w') {
+      diff = multiplier * 7 * 24 * 60 * 60 * 1000
+    } else {
+      diff = ms(time)
+    }
+    return new Date(+new Date() - diff).toISOString()
+  }
+  return time
+}
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
@@ -118,5 +163,8 @@ export {
   getConsentUrl,
   sanitizeMediumDraftHtml,
   filterProjectsByMarketSegment,
-  binarySearchHistoryPriceIndex
+  binarySearchHistoryPriceIndex,
+  getStartOfTheDay,
+  mergeTimeseriesByKey,
+  getTimeFromFromString
 }

@@ -6,7 +6,7 @@ import './TrendsForm.css'
 
 export class TrendsForm extends Component {
   state = {
-    topic: ''
+    topic: this.props.defaultTopic || ''
   }
 
   handleSubmit = evt => {
@@ -24,7 +24,7 @@ export class TrendsForm extends Component {
         <form className='TrendsForm__form' onSubmit={this.handleSubmit}>
           <Input
             className='TrendsForm__input'
-            icon='search'
+            icon={this.state.topic.length === 0 && 'search'}
             placeholder='Enter your search query'
             value={this.state.topic}
             onChange={this.handleChange}

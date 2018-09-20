@@ -17,7 +17,7 @@ export const gotoExplore = dispatch => ({
 export const Source = {
   telegram: 'Telegram',
   reddit: 'Reddit',
-  professional_traders_chat: 'Professional Traders Chat',
+  professional_traders_chat: 'Traders Forums',
   merged: 'Merged Sources'
 }
 

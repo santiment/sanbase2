@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { connect } from 'react-redux'
 import 'font-awesome/css/font-awesome.css'
+import { Label } from 'semantic-ui-react'
 import logo from '../assets/logo_sanbase.png'
 import HeaderDropdownMenu from './HeaderDropdownMenu.js'
 import Search from './Search/SearchContainer'
@@ -22,12 +23,18 @@ export const TopMenu = ({ isLoggedin, logout }) => (
         <Search />
       </div>
       <SmoothDropdown className='right'>
-        <ul className='menu-list-top'>
+        <div className='menu-list-top'>
+          <Link className='app-menu__page-link' to='/trends'>
+            Trends{' '}
+            <Label color='green' horizontal>
+              new
+            </Label>
+          </Link>
           <Link className='app-menu__page-link' to='/assets'>
             Assets
           </Link>
           <AnalysisDropdownMenu />
-        </ul>
+        </div>
         <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
       </SmoothDropdown>
     </div>

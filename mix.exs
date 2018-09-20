@@ -53,7 +53,7 @@ defmodule Sanbase.Mixfile do
       {:decimal, "~> 1.0"},
       {:reverse_proxy, git: "https://github.com/slogsdon/elixir-reverse-proxy"},
       {:corsica, "~> 1.0", only: [:dev]},
-      {:tesla, "~> 0.9.0"},
+      {:tesla, "~> 1.0"},
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
       {:hammer, "~> 5.0"},

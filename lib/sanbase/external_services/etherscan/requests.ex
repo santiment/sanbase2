@@ -22,12 +22,17 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
   plug(Tesla.Middleware.Logger)
 
   def get_abi(address) do
-    with %Tesla.Env{status: 200, body: body} <-
-           get("/", query: [module: "contract", action: "getabi", address: address]),
-         %{"result" => abi} <- body do
-      {:ok, abi}
-    else
-      error -> {:error, error}
+    get("/", query: [module: "contract", action: "getabi", address: address])
+    |> case do
+      {:ok, %Tesla.Env{status: 200, body: %{"result" => abi}}} ->
+        {:ok, abi}
+
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        {:error,
+         "Get ABI for address #{address} failed. Status: #{status}. Body: #{inspect(body)}"}
+
+      {:error, error} ->
+        {:error, "Get ABI for address #{address} failed. Reason: #{inspect(error)}"}
     end
   end
 end

@@ -80,3 +80,14 @@
   flex: 1;
   padding-top: 35%;
 }
+
+.mobile-app-menu .navigation-list a {
+  align-items: center;
+  display: flex;
+  text-align: center;
+  justify-content: center;
+}
+
+.mobile-app-menu .navigation-list a .label {
+  margin-left: 1em;
+}

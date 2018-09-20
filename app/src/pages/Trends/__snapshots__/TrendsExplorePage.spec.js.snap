@@ -11,11 +11,11 @@ exports[`TrendsExplorePage smoke 1`] = `
     <div
       className="TrendsExplorePage__settings"
     >
-      <TimeFilter
+      <Selector
         defaultSelected="3m"
         disabled={false}
         onSelectOption={[Function]}
-        timeOptions={
+        options={
           Array [
             "1w",
             "1m",
@@ -24,17 +24,28 @@ exports[`TrendsExplorePage smoke 1`] = `
           ]
         }
       />
-      <span>
-        Compared to 
-        <strong>
-          BTC/USD
-        </strong>
-      </span>
+      <Selector
+        defaultSelected="bitcoin"
+        disabled={false}
+        nameOptions={
+          Array [
+            "BTC/USD",
+            "ETH/USD",
+          ]
+        }
+        onSelectOption={[Function]}
+        options={
+          Array [
+            "bitcoin",
+            "ethereum",
+          ]
+        }
+      />
     </div>
     <Apollo(Apollo(Apollo(GetTrends)))
       interval="1d"
       render={[Function]}
-      timeFilter="3m"
+      timeRange="3m"
     />
   </div>
 </div>

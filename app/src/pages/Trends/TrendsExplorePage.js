@@ -1,11 +1,12 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import * as qs from 'query-string'
-import TimeFilter from './../../components/TimeFilter/TimeFilter'
+import Selector from './../../components/Selector/Selector'
 import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
 import GetTrends from './../../components/Trends/GetTrends'
 import GetTimeSeries from './../../components/GetTimeSeries'
 import TrendsReChart from './../../components/Trends/TrendsReChart'
+import { capitalizeStr } from './../../utils/utils'
 import './TrendsExplorePage.css'
 
 export class TrendsExplorePage extends Component {
@@ -33,35 +34,42 @@ export class TrendsExplorePage extends Component {
 
   render () {
     const { match } = this.props
-    const { timeFilter, assetSlug } = this.state
+    const { timeRange, asset } = this.state
     return (
       <div className='TrendsExplorePage'>
         <div className='TrendsExplorePage__content'>
           <TrendsExploreHeader topic={match.params.topic} />
           <div className='TrendsExplorePage__settings'>
-            <TimeFilter
-              timeOptions={['1w', '1m', '3m', '6m']}
-              onSelectOption={this.handleSelectTimeFilter}
-              defaultSelected={timeFilter}
+            <Selector
+              options={['1w', '1m', '3m', '6m']}
+              onSelectOption={this.handleSelectTimeRange}
+              defaultSelected={timeRange}
             />
-            <span>
-              Compared to <strong>BTC/USD</strong>
-            </span>
+            <Selector
+              options={['bitcoin', 'ethereum']}
+              nameOptions={['BTC/USD', 'ETH/USD']}
+              onSelectOption={this.handleSelectAsset}
+              defaultSelected={asset}
+            />
           </div>
           <GetTrends
             topic={match.params.topic}
-            timeFilter={timeFilter}
+            timeRange={timeRange}
             interval={'1d'}
             render={trends => (
               <GetTimeSeries
                 price={{
-                  timeFilter,
-                  slug: assetSlug,
+                  timeRange,
+                  slug: asset,
                   interval: '1d'
                 }}
                 render={({ timeseries }) => (
                   <div style={{ minHeight: 300 }}>
-                    <TrendsReChart data={timeseries.price} trends={trends} />
+                    <TrendsReChart
+                      asset={capitalizeStr(asset)}
+                      data={timeseries.price}
+                      trends={trends}
+                    />
                   </div>
                 )}
               />
@@ -72,12 +80,16 @@ export class TrendsExplorePage extends Component {
     )
   }
 
-  handleSelectTimeFilter = timeFilter => {
-    this.setState({ timeFilter }, this.updateSearchQuery)
+  handleSelectTimeRange = timeRange => {
+    this.setState({ timeRange }, this.updateSearchQuery)
   }
 
-  mapStateToQS = ({ timeFilter }) =>
-    '?' + qs.stringify({ timeFilter }, { arrayFormat: 'bracket' })
+  handleSelectAsset = asset => {
+    this.setState({ asset }, this.updateSearchQuery)
+  }
+
+  mapStateToQS = ({ timeRange, asset }) =>
+    '?' + qs.stringify({ timeRange, asset }, { arrayFormat: 'bracket' })
 
   updateSearchQuery = () => {
     this.props.history.push({
@@ -87,13 +99,13 @@ export class TrendsExplorePage extends Component {
 }
 
 export const getStateFromQS = ({ location }) => {
-  const { timeFilter } = qs.parse(location.search, {
+  const { timeRange, asset } = qs.parse(location.search, {
     arrayFormat: 'bracket'
   })
 
   return {
-    timeFilter: timeFilter || '3m',
-    assetSlug: 'bitcoin'
+    timeRange: timeRange || '3m',
+    asset: asset || 'bitcoin'
   }
 }
 

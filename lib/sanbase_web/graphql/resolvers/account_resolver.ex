@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
          {:ok, _user} <- User.send_verification_email(user) do
       {:ok, %{email_candidate: user.email_candidate}}
     else
-      _ -> {:error, message: "Cannot change current user's email to #{email_candidate}"}
+      _ -> {:error, message: "Can't change current user's email to #{email_candidate}"}
     end
   end
 

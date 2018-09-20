@@ -6,6 +6,7 @@ import './Selector.css'
 export const SelectorItem = ({
   isSelected = false,
   value = 'all',
+  name = 'all',
   setFilter,
   disabled = false
 }) => (
@@ -17,7 +18,7 @@ export const SelectorItem = ({
     })}
     onClick={() => !disabled && setFilter(value)}
   >
-    {value}
+    {name}
   </div>
 )
 
@@ -57,11 +58,13 @@ export class Selector extends Component {
   render () {
     const { selected } = this.state
     const { options, disabled } = this.props
+    const nameOptions = this.props.nameOptions || options
     return (
       <div className='selector'>
-        {options.map(option => (
+        {options.map((option, index) => (
           <SelectorItem
             key={option}
+            name={nameOptions[index]}
             isSelected={selected === option}
             value={option}
             setFilter={this.onSelectOption}

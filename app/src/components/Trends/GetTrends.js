@@ -27,12 +27,12 @@ const makeAllQueries = () =>
   ['TELEGRAM', 'PROFESSIONAL_TRADERS_CHAT', 'REDDIT'].map(source =>
     graphql(trendsExploreGQL, {
       props: parseTrendsGQLProps(source),
-      options: ({ topic, timeFilter }) => ({
+      options: ({ topic, timeRange }) => ({
         variables: {
           searchText: topic,
           source: source,
           to: getStartOfTheDay(),
-          from: getTimeFromFromString(timeFilter)
+          from: getTimeFromFromString(timeRange)
         }
       })
     })

@@ -46,7 +46,7 @@ exports[`TrendsExplorePage smoke 1`] = `
     <Apollo(Apollo(Apollo(GetTrends)))
       interval="1d"
       render={[Function]}
-      timeFilter="3m"
+      timeRange="3m"
     />
   </div>
 </div>

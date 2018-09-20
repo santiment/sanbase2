@@ -37,7 +37,7 @@ const fetchTimeseries$ = ({ settings, client }) => {
         slug: settings.slug || 'bitcoin',
         interval: settings.interval || '1d',
         to: getStartOfTheDay(),
-        from: getTimeFromFromString(settings.timeFilter)
+        from: getTimeFromFromString(settings.timeRange)
       },
       context: { isRetriable: true }
     })

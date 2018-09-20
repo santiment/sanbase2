@@ -21,7 +21,7 @@ export const SelectorItem = ({
   </div>
 )
 
-class Selector extends Component {
+export class Selector extends Component {
   state = {
     selected: this.props.defaultSelected
   }
@@ -37,6 +37,15 @@ class Selector extends Component {
     options: PropTypes.array,
     onSelectOption: PropTypes.func,
     disabled: PropTypes.bool
+  }
+
+  static getDerivedStateFromProps (nextProps, prevState) {
+    if (nextProps.defaultSelected !== prevState.selected) {
+      return {
+        selected: nextProps.defaultSelected
+      }
+    }
+    return prevState
   }
 
   onSelectOption = newOption => {

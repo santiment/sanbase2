@@ -33,7 +33,7 @@ export class TrendsExplorePage extends Component {
 
   render () {
     const { match } = this.props
-    const { timeFilter, assetSlug } = this.state
+    const { timeRange, assetSlug } = this.state
     return (
       <div className='TrendsExplorePage'>
         <div className='TrendsExplorePage__content'>
@@ -41,8 +41,8 @@ export class TrendsExplorePage extends Component {
           <div className='TrendsExplorePage__settings'>
             <Selector
               options={['1w', '1m', '3m', '6m']}
-              onSelectOption={this.handleSelectTimeFilter}
-              defaultSelected={timeFilter}
+              onSelectOption={this.handleSelectTimeRange}
+              defaultSelected={timeRange}
             />
             <span>
               Compared to <strong>BTC/USD</strong>
@@ -55,12 +55,12 @@ export class TrendsExplorePage extends Component {
           </div>
           <GetTrends
             topic={match.params.topic}
-            timeFilter={timeFilter}
+            timeRange={timeRange}
             interval={'1d'}
             render={trends => (
               <GetTimeSeries
                 price={{
-                  timeFilter,
+                  timeRange,
                   slug: assetSlug,
                   interval: '1d'
                 }}
@@ -77,12 +77,12 @@ export class TrendsExplorePage extends Component {
     )
   }
 
-  handleSelectTimeFilter = timeFilter => {
-    this.setState({ timeFilter }, this.updateSearchQuery)
+  handleSelectTimeRange = timeRange => {
+    this.setState({ timeRange }, this.updateSearchQuery)
   }
 
-  mapStateToQS = ({ timeFilter }) =>
-    '?' + qs.stringify({ timeFilter }, { arrayFormat: 'bracket' })
+  mapStateToQS = ({ timeRange }) =>
+    '?' + qs.stringify({ timeRange }, { arrayFormat: 'bracket' })
 
   updateSearchQuery = () => {
     this.props.history.push({
@@ -92,12 +92,12 @@ export class TrendsExplorePage extends Component {
 }
 
 export const getStateFromQS = ({ location }) => {
-  const { timeFilter } = qs.parse(location.search, {
+  const { timeRange } = qs.parse(location.search, {
     arrayFormat: 'bracket'
   })
 
   return {
-    timeFilter: timeFilter || '3m',
+    timeRange: timeRange || '3m',
     assetSlug: 'bitcoin'
   }
 }

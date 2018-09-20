@@ -1,14 +1,14 @@
 version: '2'
 services:
   db:
-    image: postgres
+    image: timescale/timescaledb:0.10.1-pg10
     ports:
-      - "5432"
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: db
-      POSTGRES_DB: sanbase-db
+      POSTGRES_DB: sanbase_dev
   influxdb:
     image: influxdb
     ports:

@@ -153,6 +153,7 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
   end
 
   test "can update only a single privacy policy", %{conn: conn} do
+    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
     # Accept the privacy policy
     update_mutation1 = """
     mutation {

@@ -271,6 +271,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
   end
 
   test "change email to an existing one gives meaningful error", %{conn: conn} do
+    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
     new_email = "new_test_email@santiment.net"
 
     %User{

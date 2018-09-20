@@ -36,14 +36,14 @@ const COLUMNS = [
   },
   {
     Header: 'Value',
-    accessor: 'trxValue', // Required because our accessor is not a string
+    accessor: 'trxValue',
     sortMethod: (a, b) => {
       return parseFloat(a) > parseFloat(b) ? 1 : -1
     }
   },
   {
     Header: 'From',
-    accessor: 'fromAddress', // String-based value accessors!
+    accessor: 'fromAddress',
     Cell: DetailedEthTopTransactionsAddressCell,
     sortable: false
   },

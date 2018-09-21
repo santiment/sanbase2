@@ -27,7 +27,6 @@ import {
   DailyActiveAddressesGQL
 } from './DetailedGQL'
 import './Detailed.css'
-import DetailedEthTopTransactions from './DetailedEthTopTransactions'
 
 const propTypes = {
   match: PropTypes.object.isRequired

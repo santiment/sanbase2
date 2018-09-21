@@ -18,6 +18,7 @@ import EthSpent from './../../pages/EthSpent'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
 import { millify } from './../../utils/formatting'
+import DetailedEthTopTransactions from './DetailedEthTopTransactions'
 import {
   projectBySlugGQL,
   TwitterDataGQL,
@@ -33,7 +34,6 @@ import {
   AllInsightsByTagGQL
 } from './DetailedGQL'
 import './Detailed.css'
-import DetailedEthTopTransactions from './DetailedEthTopTransactions'
 
 const propTypes = {
   match: PropTypes.object.isRequired

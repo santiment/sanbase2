@@ -49,12 +49,6 @@ const COLUMNS = [
     sortable: false
   },
   {
-    Header: 'Trx Hash',
-    accessor: 'trxHash',
-    Cell: TrxHashAddressCell,
-    sortable: false
-  },
-  {
     Header: 'From',
     accessor: 'fromAddress',
     Cell: TrxAddressCell,
@@ -64,6 +58,12 @@ const COLUMNS = [
     Header: 'To',
     accessor: 'toAddress',
     Cell: TrxAddressCell,
+    sortable: false
+  },
+  {
+    Header: 'TxHash',
+    accessor: 'trxHash',
+    Cell: TrxHashAddressCell,
     sortable: false
   }
 ]

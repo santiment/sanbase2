@@ -8,10 +8,12 @@ import SmoothDropdown from '../../components/SmoothDropdown/SmoothDropdown'
 import SmoothDropdownItem from '../../components/SmoothDropdown/SmoothDropdownItem'
 import './DetailedEthTopTransactions.css'
 
-const getAddressMarkup = ({ address, isExchange }) => (
+const getAddressMarkup = ({ address, isExchange, isTx }) => (
   <Fragment>
     {isExchange ? <Label color='yellow'>exchange</Label> : null}
-    <a href={`https://etherscan.io/address/${address}`}>{address}</a>
+    <a href={`https://etherscan.io/${isTx ? 'tx' : 'address'}/${address}`}>
+      {address}
+    </a>
   </Fragment>
 )
 
@@ -27,7 +29,7 @@ const TrxAddressCell = ({ value }) => (
 )
 
 const TrxHashAddressCell = ({ value }) => {
-  return <TrxAddressCell value={{ address: value }} />
+  return <TrxAddressCell value={{ address: value, isTx: true }} />
 }
 
 const COLUMNS = [
@@ -69,7 +71,7 @@ const COLUMNS = [
 ]
 
 const DetailedEthTopTransactions = ({ Project }) => {
-  const data = Project.project.tokenTopTransactions
+  const data = Project.project.ethTopTransactions
     .slice(0, 10)
     .map(({ trxValue, trxHash, fromAddress, toAddress, datetime }) => ({
       trxHash,

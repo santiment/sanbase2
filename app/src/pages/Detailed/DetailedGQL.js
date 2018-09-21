@@ -49,6 +49,20 @@ export const projectBySlugGQL = gql`
         address
       }
 
+      ethTopTransactions(from: $from, to: $to) {
+        datetime
+        trxValue
+        trxHash
+        fromAddress {
+          address
+          isExchange
+        }
+        toAddress {
+          address
+          isExchange
+        }
+      }
+
       tokenTopTransactions(from: $from, to: $to) {
         datetime
         trxValue

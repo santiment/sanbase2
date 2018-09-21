@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+- 2018-21-09 | v.0.14.0 'Phobos':
+
+  Add Top ETH Transactions table.
+  This table show our prediction about transactions.
+  We show label 'exchange', if a transaction is from exchange.
+
 - 2018-20-09 | v.0.13.0 'Phobos':
 
   Add cases of assets for comparison in trends

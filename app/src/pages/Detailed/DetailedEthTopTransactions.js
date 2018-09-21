@@ -1,9 +1,9 @@
 import React, { Fragment } from 'react'
 import { Label } from 'semantic-ui-react'
-import PanelBlock from './../../components/PanelBlock'
 import moment from 'moment'
-import { formatNumber } from './../../utils/formatting'
 import ReactTable from 'react-table'
+import PanelBlock from './../../components/PanelBlock'
+import { formatNumber } from './../../utils/formatting'
 import SmoothDropdown from '../../components/SmoothDropdown/SmoothDropdown'
 import SmoothDropdownItem from '../../components/SmoothDropdown/SmoothDropdownItem'
 import './DetailedEthTopTransactions.css'
@@ -15,7 +15,7 @@ const getAddressMarkup = ({ address, isExchange }) => (
   </Fragment>
 )
 
-const DetailedEthTopTransactionsAddressCell = ({ value }) => (
+const TrxAddressCell = ({ value }) => (
   <SmoothDropdownItem
     showIf={({ currentTarget: trigger }) =>
       trigger.offsetWidth + 10 >= trigger.parentNode.offsetWidth
@@ -26,10 +26,17 @@ const DetailedEthTopTransactionsAddressCell = ({ value }) => (
   </SmoothDropdownItem>
 )
 
+const TrxHashAddressCell = ({ value }) => {
+  return <TrxAddressCell value={{ address: value }} />
+}
+
 const COLUMNS = [
   {
+    id: 'time',
     Header: 'Time',
     accessor: 'datetime',
+    minWidth: 100,
+    maxWidth: 200,
     sortMethod: (a, b) => {
       return moment(a).isAfter(moment(b)) ? 1 : -1
     }
@@ -37,42 +44,55 @@ const COLUMNS = [
   {
     Header: 'Value',
     accessor: 'trxValue',
-    sortMethod: (a, b) => {
-      return parseFloat(a) > parseFloat(b) ? 1 : -1
-    }
+    minWidth: 100,
+    maxWidth: 150,
+    sortable: false
+  },
+  {
+    Header: 'Trx Hash',
+    accessor: 'trxHash',
+    Cell: TrxHashAddressCell,
+    sortable: false
   },
   {
     Header: 'From',
     accessor: 'fromAddress',
-    Cell: DetailedEthTopTransactionsAddressCell,
+    Cell: TrxAddressCell,
     sortable: false
   },
   {
     Header: 'To',
     accessor: 'toAddress',
-    Cell: DetailedEthTopTransactionsAddressCell,
+    Cell: TrxAddressCell,
     sortable: false
   }
 ]
 
 const DetailedEthTopTransactions = ({ Project }) => {
-  const DATA = Project.project.tokenTopTransactions
+  const data = Project.project.tokenTopTransactions
     .slice(0, 10)
-    .map(({ trxValue, fromAddress, toAddress, datetime }) => ({
+    .map(({ trxValue, trxHash, fromAddress, toAddress, datetime }) => ({
+      trxHash,
+      fromAddress,
+      toAddress,
       trxValue: formatNumber(trxValue),
-      fromAddress: fromAddress,
-      toAddress: toAddress,
       datetime: moment(datetime).format('YYYY-MM-DD HH:mm:ss')
     }))
   return (
     <PanelBlock isLoading={Project.loading} title='Top ETH Transactions'>
       <SmoothDropdown verticalMotion>
         <ReactTable
-          data={DATA}
+          data={data}
           columns={COLUMNS}
           showPagination={false}
           minRows={2}
           className='DetailedEthTopTransactions'
+          defaultSorted={[
+            {
+              id: 'time',
+              desc: false
+            }
+          ]}
         />
       </SmoothDropdown>
     </PanelBlock>

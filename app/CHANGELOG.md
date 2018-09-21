@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-21-09 | v.0.14.1 'Phobos':
+
+  Show trxHash in TopETHTranscations
+  Small fixes
+
 - 2018-21-09 | v.0.14.0 'Phobos':
 
   Add Top ETH Transactions table.

@@ -277,8 +277,8 @@ export const Detailed = ({
       <div className='information'>
         {isDesktop &&
           project.isERC20 &&
-          project.tokenTopTransactions &&
-          project.tokenTopTransactions.length > 0 && (
+          project.ethTopTransactions &&
+          project.ethTopTransactions.length > 0 && (
             <DetailedEthTopTransactions Project={Project} />
           )}
       </div>

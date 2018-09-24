@@ -13,7 +13,7 @@ const HelpPopup = ({ children, content, trigger = <HelpPopupIcon /> }) => {
     <Popup
       content={render}
       trigger={trigger}
-      position='bottom left'
+      position='bottom center'
       on='hover'
       style={style}
     />

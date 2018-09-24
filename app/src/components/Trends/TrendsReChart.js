@@ -10,8 +10,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Pie,
-  PieChart,
   Cell
 } from 'recharts'
 import { formatNumber } from './../../utils/formatting'

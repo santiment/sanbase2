@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
 import Slider from 'react-slick'
+import { graphql } from 'react-apollo'
 import Widget from '../Widget/Widget'
 import InsightsWidgetItem from './InsightsWidgetItem'
+import { insightsWidgetGQL } from './insightsWidgetGQL'
 import './InsightsWidget.css'
 import './SliderWidget.css'
-import { graphql } from 'react-apollo'
-import { insightsWidgetGQL } from './insightsWidgetGQL'
 
 const sliderSettings = {
   dots: true,

@@ -8,51 +8,6 @@
   height: 100%;
 }
 
-.slick-prev,
-.slick-next {
-  font-size: 0;
-  line-height: 0;
-  position: absolute;
-  top: 50%;
-  display: block;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  transform: translate(0, -50%);
-  cursor: pointer;
-  color: transparent;
-  border: none;
-  outline: none;
-  background: rebeccapurple;
-  z-index: 10;
-}
-
-.slick-next::before {
-  content: '>';
-}
-
-.slick-prev::before {
-  content: '<';
-}
-
-.slick-prev::before,
-.slick-next::before {
-  font-size: 20px;
-  line-height: 1;
-  opacity: 0.75;
-  color: white;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.slick-prev {
-  left: 0;
-}
-
-.slick-next {
-  right: 0;
-}
-
 .slick-dots {
   display: block;
   width: 100%;

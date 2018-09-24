@@ -6,14 +6,41 @@
   line-height: 1;
   font-size: 18px;
   margin: 0 0 8px;
+  font-weight: bold;
+}
+
+.InsightsWidgetItem__title > a {
+  border-bottom: 0;
+}
+
+.InsightsWidgetItem__text {
+  line-height: 1.2em;
+  max-height: 4.7em;
+  overflow: hidden;
+}
+
+.InsightsWidgetItem__test {
+  display: flex;
+  justify-content: space-between;
+}
+
+.InsightsWidgetItem__test > a {
+  text-decoration: underline;
+  border: 0;
 }
 
 .InsightsWidgetItem__bottom {
   display: flex;
   justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .InsightsWidgetItem__info {
   font-size: 13px;
   margin: 0;
+  color: #aaa;
+}
+
+.InsightsWidgetItem__info > a {
+  color: #aaa;
 }

@@ -7,6 +7,9 @@ export const insightsWidgetGQL = gql`
       createdAt
       title
       text
+      images {
+        imageUrl
+      }
       user {
         id
         username

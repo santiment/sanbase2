@@ -13,7 +13,7 @@ const sliderSettings = {
   speed: 500,
   slidesToShow: 1,
   slidesToScroll: 1,
-  autoplaySpeed: 5000,
+  autoplaySpeed: 7000,
   autoplay: true,
   arrows: false
 }
@@ -29,22 +29,17 @@ export class InsightsWidget extends Component {
     return (
       <Widget className='InsightsWidget'>
         <Slider {...sliderSettings}>
-          {insights.map(({ id, createdAt, title, user, text }) => (
+          {insights.map(({ id, createdAt, title, user, text, images }) => (
             <InsightsWidgetItem
               key={id}
               id={id}
               title={title}
               user={user}
+              images={images}
               text={text}
               createdAt={createdAt}
             />
           ))}
-
-          {/* <InsightsWidgetItem
-            title='Recent notasd asdfas dfaf genesis activity'
-            author='konduchi'
-            time='Sep 20, 2018'
-          /> */}
         </Slider>
       </Widget>
     )

@@ -1,0 +1,19 @@
+.InsightsWidgetItem {
+  padding: 10px;
+}
+
+.InsightsWidgetItem__title {
+  line-height: 1;
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+
+.InsightsWidgetItem__bottom {
+  display: flex;
+  justify-content: space-between;
+}
+
+.InsightsWidgetItem__info {
+  font-size: 13px;
+  margin: 0;
+}

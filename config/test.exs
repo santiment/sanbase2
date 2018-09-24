@@ -15,7 +15,7 @@ config :logger, :console,
   level: :warn
 
 # Test adapter that allows mocking
-config :tesla, adapter: :mock
+config :tesla, adapter: Tesla.Mock
 
 # Configure postgres database
 config :sanbase, Sanbase.Repo,
@@ -27,13 +27,6 @@ config :sanbase, Sanbase.Repo,
 config :sanbase, Sanbase.TimescaleRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "sanbase_timescale_test",
-  pool_size: 30
-
-# Configure ClickHouseRepo for testing. It will be tested by using Postgres
-config :sanbase, Sanbase.ClickhouseRepo,
-  adapter: Ecto.Adapters.Postgres,
-  pool: Ecto.Adapters.SQL.Sandbox,
-  database: "sanbase_test",
   pool_size: 30
 
 config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil

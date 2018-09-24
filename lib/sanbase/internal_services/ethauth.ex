@@ -1,40 +1,61 @@
 defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
-  plug(Tesla.Middleware.Timeout, timeout: 15_000)
-
   require Sanbase.Utils.Config, as: Config
 
   @san_token_decimals Decimal.new(:math.pow(10, 18))
+  def san_token_decimals(), do: @san_token_decimals
 
   def verify_signature(signature, address, message_hash) do
-    %Tesla.Env{status: 200, body: body} =
-      get(client(), "recover", query: [sign: signature, hash: message_hash])
+    with {:ok, %Tesla.Env{status: 200, body: body}} <-
+           get(client(), "recover",
+             query: [sign: signature, hash: message_hash],
+             opts: [adapter: [recv_timeout: 15_000]]
+           ),
+         {:ok, %{"recovered" => recovered}} <- Jason.decode(body) do
+      String.downcase(address) == String.downcase(recovered)
+    else
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        {:error,
+         "Error veryfing signature for address. #{address}. Status: #{status}. Body: #{
+           inspect(body)
+         }"}
 
-    %{"recovered" => recovered} = Poison.decode!(body)
+      {:error, error} ->
+        {:error, "Error veryfing signature for address. #{address}. Reason: #{inspect(error)}"}
 
-    String.downcase(address) == String.downcase(recovered)
+      error ->
+        {:error, "Error veryfing signature for address. #{address}. Reason: #{inspect(error)}"}
+    end
   end
 
   def san_balance(address) do
-    %Tesla.Env{status: 200, body: body} = get(client(), "san_balance", query: [addr: address])
+    get(client(), "san_balance", query: [addr: address], opts: [adapter: [recv_timeout: 15_000]])
+    |> case do
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        san_balance =
+          body
+          |> Decimal.new()
+          |> Decimal.div(@san_token_decimals)
 
-    body
-    |> Decimal.new()
-    |> Decimal.div(@san_token_decimals)
-  end
+        {:ok, san_balance}
 
-  def san_token_decimals() do
-    @san_token_decimals
+      {:ok, %Tesla.Env{status: status, body: body}} ->
+        {:error,
+         "Error fetching SAN balance for address. #{address}. Status: #{status}. Body: #{
+           inspect(body)
+         }"}
+
+      {:error, error} ->
+        {:error, "Error fetching SAN balance for address. #{address}. Reason: #{inspect(error)}"}
+    end
   end
 
   defp client() do
     ethauth_url = Config.get(:url)
-    basic_auth_username = Config.get(:basic_auth_username)
-    basic_auth_password = Config.get(:basic_auth_password)
 
     Tesla.build_client([
+      Sanbase.ExternalServices.ErrorCatcher.Middleware,
       {Tesla.Middleware.BaseUrl, ethauth_url},
-      {Tesla.Middleware.BasicAuth, username: basic_auth_username, password: basic_auth_password},
       Tesla.Middleware.Logger
     ])
   end

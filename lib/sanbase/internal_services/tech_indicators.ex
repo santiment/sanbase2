@@ -27,7 +27,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
 
         macd_result(result)
 
@@ -61,7 +61,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
 
         rsi_result(result)
 
@@ -99,7 +99,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
 
         price_volume_diff_ma_result(result)
 
@@ -133,7 +133,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
         twitter_mention_count_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
@@ -164,7 +164,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
         emojis_sentiment_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
@@ -185,7 +185,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
         erc20_exchange_funds_flow_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
@@ -214,7 +214,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
         social_volume_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
@@ -231,7 +231,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     social_volume_projects_request()
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
         social_volume_projects_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
@@ -260,7 +260,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Poison.decode(body)
+        {:ok, result} = Jason.decode(body)
         topic_search_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->

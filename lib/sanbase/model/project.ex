@@ -96,6 +96,14 @@ defmodule Sanbase.Model.Project do
     |> unique_constraint(:coinmarketcap_id)
   end
 
+  def describe(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
+    "project with coinmarketap_id #{cmc_id}"
+  end
+
+  def describe(%Project{id: id}) do
+    "project with id #{id}"
+  end
+
   def initial_ico(%Project{id: id}) do
     Ico
     |> where([i], i.project_id == ^id)
@@ -358,17 +366,6 @@ defmodule Sanbase.Model.Project do
     {:error, "Can't find contract address of project #{project.coinmarketcap_id || project.id}"}
   end
 
-  def ticker_by_slug("TOTAL_MARKET"), do: "TOTAL_MARKET"
-
-  def ticker_by_slug(slug) do
-    from(
-      p in Project,
-      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
-      select: p.ticker
-    )
-    |> Sanbase.Repo.one()
-  end
-
   def contract_info_by_slug("ethereum") do
     # Internally when we have a table with blockchain related data
     # contract address is used to identify projects. In case of ethereum
@@ -403,6 +400,8 @@ defmodule Sanbase.Model.Project do
   end
 
   def ticker_by_slug(nil), do: nil
+
+  def ticker_by_slug("TOTAL_MARKET"), do: "TOTAL_MARKET"
 
   def ticker_by_slug(slug) when is_binary(slug) do
     from(

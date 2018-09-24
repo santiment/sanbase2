@@ -28,7 +28,7 @@ defmodule Sanbase.Notifications.Insight do
     New insight published: #{title} [#{link}]
     """
 
-    Poison.encode!(%{content: content, username: insights_discord_publish_user()})
+    Jason.encode!(%{content: content, username: insights_discord_publish_user()})
   end
 
   defp publish(payload) do

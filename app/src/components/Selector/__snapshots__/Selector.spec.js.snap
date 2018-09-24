@@ -1,13 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TimeFilter component smoke 1`] = `
+exports[`Selector component smoke 1`] = `
 <div
-  className="time-filter"
+  className="selector"
 >
   <Component
     disabled={false}
     isSelected={false}
     key="1w"
+    name="1w"
     setFilter={[Function]}
     value="1w"
   />
@@ -15,6 +16,7 @@ exports[`TimeFilter component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="1m"
+    name="1m"
     setFilter={[Function]}
     value="1m"
   />
@@ -22,6 +24,7 @@ exports[`TimeFilter component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="3m"
+    name="3m"
     setFilter={[Function]}
     value="3m"
   />
@@ -29,6 +32,7 @@ exports[`TimeFilter component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="6m"
+    name="6m"
     setFilter={[Function]}
     value="6m"
   />
@@ -36,13 +40,15 @@ exports[`TimeFilter component smoke 1`] = `
     disabled={false}
     isSelected={false}
     key="1y"
+    name="1y"
     setFilter={[Function]}
     value="1y"
   />
   <Component
     disabled={false}
-    isSelected={true}
+    isSelected={false}
     key="all"
+    name="all"
     setFilter={[Function]}
     value="all"
   />

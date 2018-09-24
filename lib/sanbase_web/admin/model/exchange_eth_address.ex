@@ -6,38 +6,29 @@ defmodule Sanbase.ExAdmin.Model.ExchangeEthAddress do
 
   register_resource ExchangeEthAddress do
     form exchange_eth_address do
-      if params[:id] do
-        inputs do
-          input(exchange_eth_address, :address)
-          input(exchange_eth_address, :name)
-          input(exchange_eth_address, :source)
-          input(exchange_eth_address, :comments)
+      inputs do
+        content do
+          """
+          <div>
+          Paste CSV in the following format:
+          <ul>
+            <li>Format: <b>address*</b>,<b>name*</b>,<b>source</b>,<b>comments</b></li>
+            <li>Required: address, name</li>
+            <li>Column titles should be ommited</li>
+            <li>Example:
+              <pre>0x123f35fae36d75b1e72770e244f6595b68501234,Kyber,,\n0x1234465f45eac01389dbb3045206c1d07c123456,Another one,,</pre>
+            </li>
+          </ul>
+          </div>
+          """
         end
-      else
-        inputs do
-          content do
-            """
-            <div>
-            Paste CSV in the following format:
-            <ul>
-              <li>Format: <b>address*</b>,<b>name*</b>,<b>source</b>,<b>comments</b></li>
-              <li>Required: address, name</li>
-              <li>Column titles should be ommited</li>
-              <li>Example:
-                <pre>0x123f35fae36d75b1e72770e244f6595b68501234,Kyber,,\n0x1234465f45eac01389dbb3045206c1d07c123456,Another one,,</pre>
-              </li>
-            </ul>
-            </div>
-            """
-          end
 
-          input(exchange_eth_address, :csv, type: :text, label: "paste CSV")
-        end
+        input(exchange_eth_address, :csv, type: :text, label: "paste CSV")
       end
     end
 
     controller do
-      before_filter(:process_csv, only: [:create])
+      before_filter(:process_csv, only: [:create, :update])
     end
   end
 

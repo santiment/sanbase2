@@ -29,13 +29,12 @@ export class InsightsWidget extends Component {
     return (
       <Widget className='InsightsWidget'>
         <Slider {...sliderSettings}>
-          {insights.map(({ id, createdAt, title, user, text, images }) => (
+          {insights.map(({ id, createdAt, title, user, text }) => (
             <InsightsWidgetItem
               key={id}
               id={id}
               title={title}
               user={user}
-              images={images}
               text={text}
               createdAt={createdAt}
             />

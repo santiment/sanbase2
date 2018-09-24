@@ -1,7 +1,7 @@
 import React from 'react'
 import moment from 'moment'
+import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
-import { Icon } from 'semantic-ui-react'
 import './InsightsWidgetItem.css'
 
 const getTagsStrippedText = text => {
@@ -12,13 +12,23 @@ const getTagsStrippedText = text => {
   return insightText
 }
 
+const propTypes = {
+  id: PropTypes.string.isRequired,
+  createdAt: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  text: PropTypes.string.isRequired,
+  user: PropTypes.shape({
+    username: PropTypes.string.isRequired,
+    id: PropTypes.string.isRequired
+  })
+}
+
 const InsightsWidgetItem = ({
   id,
   createdAt,
   title,
   text,
-  user: { username, id: userId },
-  images
+  user: { username, id: userId }
 }) => {
   const insightText = getTagsStrippedText(text)
   return (
@@ -38,5 +48,7 @@ const InsightsWidgetItem = ({
     </div>
   )
 }
+
+InsightsWidgetItem.propTypes = propTypes
 
 export default InsightsWidgetItem

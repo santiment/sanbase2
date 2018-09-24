@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-24-09 | v.0.14.2 'Phobos':
+
+  Add help message in Trends
+
 - 2018-21-09 | v.0.14.1 'Phobos':
 
   Show trxHash in TopETHTranscations

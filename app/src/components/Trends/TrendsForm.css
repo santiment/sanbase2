@@ -1,6 +1,5 @@
 .TrendsForm {
-  display: flex;
-  justify-content: center;
+  width: 95%;
 }
 
 .TrendsForm__form {
@@ -16,7 +15,7 @@
 }
 
 @media (min-width: 768px) {
-  .TrendsForm__form {
+  .TrendsForm {
     width: 50%;
   }
 

@@ -8,8 +8,6 @@ defmodule Sanbase.Model.ProjectEthAddress do
 
   require Logger
 
-  @eth_decimals 1_000_000_000_000_000_000
-
   schema "project_eth_address" do
     field(:address, :string)
     belongs_to(:project, Project)
@@ -29,7 +27,7 @@ defmodule Sanbase.Model.ProjectEthAddress do
   def balance(%ProjectEthAddress{address: address}) do
     case Sanbase.InternalServices.Parity.get_eth_balance(address) do
       {:ok, balance} ->
-        balance / @eth_decimals
+        balance
 
       {:error, error} ->
         Logger.error(

@@ -24,7 +24,7 @@ defmodule Sanbase.Voting.PostTest do
       })
       |> Repo.insert!()
 
-    assert post.state == nil
+    assert post.state == Post.approved_state()
   end
 
   test "changes the owner to the fallback user" do

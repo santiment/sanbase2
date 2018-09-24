@@ -73,7 +73,7 @@ defmodule Sanbase.Oauth2.Hydra do
       "subject" => "user:#{id}:#{username}"
     }
 
-    HTTPoison.patch(consent_url() <> "/#{consent}/accept", Poison.encode!(data), [
+    HTTPoison.patch(consent_url() <> "/#{consent}/accept", Jason.encode!(data), [
       {"Authorization", "Bearer #{access_token}"},
       {"Content-type", "application/json"},
       {"Accept", "application/json"}
@@ -85,7 +85,7 @@ defmodule Sanbase.Oauth2.Hydra do
       "reason" => "#{email || username} doesn't have enough SAN tokens"
     }
 
-    HTTPoison.patch(consent_url() <> "/#{consent}/reject", Poison.encode!(data), [
+    HTTPoison.patch(consent_url() <> "/#{consent}/reject", Jason.encode!(data), [
       {"Authorization", "Bearer #{access_token}"},
       {"Content-type", "application/json"},
       {"Accept", "application/json"}
@@ -93,7 +93,7 @@ defmodule Sanbase.Oauth2.Hydra do
   end
 
   defp extract_field_from_json(json, field) do
-    with {:ok, body} <- Poison.decode(json),
+    with {:ok, body} <- Jason.decode(json),
          {:ok, result} <- Map.fetch(body, field) do
       {:ok, result}
     end
@@ -113,6 +113,6 @@ defmodule Sanbase.Oauth2.Hydra do
 
   defp json_config_value(key) do
     Config.get(key)
-    |> Poison.decode!()
+    |> Jason.decode!()
   end
 end

@@ -1,5 +1,25 @@
 ## CHANGELOG
 
+- 2018-21-09 | v.0.14.1 'Phobos':
+
+  Show trxHash in TopETHTranscations
+  Small fixes
+
+- 2018-21-09 | v.0.14.0 'Phobos':
+
+  Add Top ETH Transactions table.
+  This table show our prediction about transactions.
+  We show label 'exchange', if a transaction is from exchange.
+
+- 2018-20-09 | v.0.13.0 'Phobos':
+
+  Add cases of assets for comparison in trends
+
+- 2018-19-09 | v.0.12.0 'Phobos':
+
+  Trends with new look from scratch
+  And it works :)
+
 - 2018-10-09 | v.0.11.4 'Phobos':
 
   Upgrade Trends page with new API

@@ -17,32 +17,51 @@ import { mergeTimeseriesByKey } from './../../utils/utils'
 
 const chartsMeta = {
   telegram: {
-    index: 0,
-    color: 'rgb(0, 0, 255)'
+    index: 'telegram',
+    name: 'Telegram',
+    color: '#2d79d0',
+    value: 0
   },
   reddit: {
-    index: 1,
-    color: 'rgb(255, 0, 0)'
+    index: 'reddit',
+    name: 'Reddit',
+    color: '#c82f3f',
+    value: 0
   },
   professional_traders_chat: {
-    index: 2,
-    color: 'rgb(20, 200, 20)'
+    index: 'professional_traders_chat',
+    name: 'Professional Traders Chat',
+    color: '#26a987',
+    value: 0
   }
 }
 
+const ASSET_PRICE_COLOR = '#a4acb7'
+
 const Loading = () => <h2 style={{ marginLeft: 30 }}>Loading...</h2>
+
+const Empty = () => (
+  <h2 style={{ marginLeft: 30 }}>
+    We can't find any data{' '}
+    <span aria-label='sadly' role='img'>
+      😞
+    </span>
+  </h2>
+)
 
 const displayLoadingState = branch(
   props => props.isLoading,
   renderComponent(Loading)
 )
 
-const TrendsReChart = ({ chartsMeta = {}, merged }) => (
+const displayEmptyState = branch(props => props.isEmpty, renderComponent(Empty))
+
+const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
   <div className='TrendsExploreChart'>
-    {Object.keys(chartsMeta).map(key => (
+    {chartSummaryData.map((entity, key) => (
       <ResponsiveContainer key={key} width='100%' height={300}>
         <ComposedChart
-          data={merged}
+          data={chartData}
           syncId='trends'
           margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
         >
@@ -66,7 +85,7 @@ const TrendsReChart = ({ chartsMeta = {}, merged }) => (
           <Tooltip
             labelFormatter={date => moment(date).format('dddd, MMM DD YYYY')}
             formatter={(value, name) => {
-              if (name === 'BTC/USD') {
+              if (name === asset) {
                 return formatNumber(value, { currency: 'USD' })
               }
               return value
@@ -75,18 +94,19 @@ const TrendsReChart = ({ chartsMeta = {}, merged }) => (
           <Line
             type='linear'
             yAxisId='axis-price'
-            name='BTC/USD'
+            name={asset}
             dot={false}
             strokeWidth={2}
             dataKey='priceUsd'
-            stroke='gold'
+            stroke={ASSET_PRICE_COLOR}
           />
           <Line
             type='linear'
-            dataKey={key}
+            dataKey={entity.index}
             dot={false}
             strokeWidth={3}
-            stroke={chartsMeta[key].color}
+            name={entity.name}
+            stroke={entity.color}
           />
           <Legend />
         </ComposedChart>
@@ -108,6 +128,39 @@ const getTimeseries = (sourceName, trends) =>
     }
   })
 
+const calcSumOfMentions = data =>
+  data.reduce(
+    (acc, val) => {
+      if (val.telegram) {
+        acc.telegram = {
+          ...acc.telegram,
+          value: val.telegram + acc.telegram.value
+        }
+      }
+      if (val.reddit) {
+        acc.reddit = {
+          ...acc.reddit,
+          value: acc.reddit.value + val.reddit
+        }
+      }
+      if (val.professional_traders_chat) {
+        acc.professional_traders_chat = {
+          ...acc.professional_traders_chat,
+          value:
+            acc.professional_traders_chat.value + val.professional_traders_chat
+        }
+      }
+      return acc
+    },
+    { ...chartsMeta }
+  )
+
+const cleanAllZeroSources = data => data.filter(source => source.value > 0)
+
+const objToArr = data => {
+  return Object.keys(data).map(key => data[key])
+}
+
 export default compose(
   withProps(({ data = {}, trends }) => {
     const { items = [], isLoading = true } = data
@@ -117,21 +170,40 @@ export default compose(
       'professional_traders_chat',
       trends
     )
-    if (!telegram[0] || trends.isLoading || isLoading) {
+
+    if (trends.isLoading || isLoading) {
       return {
         isLoading: true
       }
     }
-    const merged = mergeTimeseriesByKey({
+
+    const chartData = mergeTimeseriesByKey({
       timeseries: [items, telegram, reddit, professional_traders_chat],
       key: 'datetime'
     })
 
+    if (
+      telegram.length === 0 &&
+      reddit.length === 0 &&
+      professional_traders_chat.length === 0
+    ) {
+      return {
+        isEmpty: true
+      }
+    }
+
+    const chartSummaryData = compose(
+      cleanAllZeroSources,
+      objToArr,
+      calcSumOfMentions
+    )(chartData)
+
     return {
-      isLoading: false,
-      merged,
-      chartsMeta
+      chartData,
+      chartSummaryData,
+      isLoading: false
     }
   }),
-  displayLoadingState
+  displayLoadingState,
+  displayEmptyState
 )(TrendsReChart)

@@ -92,7 +92,7 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
     case has_scraped_data?(twitter_name) do
       false ->
         twitter_id_str
-        |> fetch_twittercounter_user_data()
+        |> fetch_twittercounter_user_data(twitter_name)
         |> convert_to_measurement(twitter_name)
         |> store_twittercounter_user_data()
 
@@ -101,35 +101,31 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
     end
   end
 
-  defp fetch_twittercounter_user_data(twitter_id_str) do
+  defp fetch_twittercounter_user_data(twitter_id_str, twitter_name) do
     RateLimiting.Server.wait(@rate_limiter_name)
 
     apikey = Config.get(:apikey)
 
     case get("/?twitter_id=" <> twitter_id_str <> "&apikey=" <> apikey) do
-      %Tesla.Env{status: 200, body: body} ->
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
         body
-        |> Poison.decode!()
+        |> Jason.decode!()
         |> Map.get("followersperdate")
 
-      %Tesla.Env{status: 401} ->
-        Logger.warn("Twittercounter API credentials are missing or incorrect.")
-        %{}
-
-      %Tesla.Env{status: 403} ->
-        Logger.info("Twittercounter API limit has been reached")
-        %{}
-
-      %Tesla.Env{status: status, body: body} ->
+      {:ok, %Tesla.Env{status: status, body: body}} ->
         Logger.warn(
-          "Error status #{status} fetching twittercounter data for twitter id #{twitter_id_str}: #{
+          "Error status #{status} fetching twittercounter data for twitter id #{twitter_name}: #{
             body
           }"
         )
 
         %{}
 
-      _ ->
+      {:error, error} ->
+        Logger.error(
+          "Error fetching twittercounter user data for #{twitter_name}. Reason: #{inspect(error)}"
+        )
+
         %{}
     end
   end

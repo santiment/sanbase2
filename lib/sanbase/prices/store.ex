@@ -30,6 +30,15 @@ defmodule Sanbase.Prices.Store do
   end
 
   @doc ~s"""
+    Fetch open, close, high, low price values for every interval between from-to
+  """
+  def fetch_ohlc(measurement, from, to, interval) do
+    fetch_ohlc_query(measurement, from, to, interval)
+    |> Store.query()
+    |> parse_time_series()
+  end
+
+  @doc ~s"""
     Fetch all price points in the given `from-to` time interval from `measurement`.
   """
   def fetch_price_points!(measurement, from, to) do
@@ -123,6 +132,20 @@ defmodule Sanbase.Prices.Store do
     FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp fetch_ohlc_query(measurement, from, to, interval) do
+    ~s/SELECT 
+     time,
+     first(price_usd) as open,
+     last(price_usd) as close,
+     min(price_usd) as low,
+     max(price_usd) as high
+     FROM "#{measurement}"
+     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+     GROUP BY time(#{interval})
+     FILL(0)/
   end
 
   defp fetch_prices_with_resolution_query(measurement, from, to, resolution) do

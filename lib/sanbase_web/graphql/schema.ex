@@ -155,6 +155,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&PriceResolver.history_price/3)
     end
 
+    @desc ~s"""
+    Fetch open, high, low close price values for a given slug and every time interval between from-to.
+    """
+
+    field :ohlc, list_of(:ohlc) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime)
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&PriceComplexity.history_price/3)
+      cache_resolve(&PriceResolver.ohlc/3)
+    end
+
     @desc "Returns a list of available github repositories."
     field :github_availables_repos, list_of(:string) do
       cache_resolve(&GithubResolver.available_repos/3)
@@ -538,16 +552,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
 
       cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3)
-    end
-
-    field :last_wallet_transfers, list_of(:transaction) do
-      arg(:wallets, non_null(list_of(:string)))
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-      arg(:size, :integer, default_value: 10)
-      arg(:transaction_type, :transaction_type)
-
-      resolve(&ProjectTransactionsResolver.last_wallet_transfers/3)
     end
 
     @desc "Fetch all favourites lists for current_user."

@@ -92,12 +92,16 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch all projects that have price data."
     field :all_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.all_projects/3)
     end
 
     @desc "Fetch all ERC20 projects."
     field :all_erc20_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_erc20_projects/3)
@@ -105,6 +109,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch all currency projects. A currency project is a project that has price data but is not classified as ERC20."
     field :all_currency_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_currency_projects/3)
@@ -113,15 +119,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch all project transparency projects. This query requires basic authentication."
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)
-      resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
+      resolve(&ProjectResolver.all_projects_project_transparency/3)
     end
+
+    @desc "Return the number of projects in each"
 
     @desc "Fetch a project by its ID."
     field :project, :project do
       arg(:id, non_null(:id))
-      # this is to filter the wallets
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
@@ -129,8 +134,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch a project by a unique identifier."
     field :project_by_slug, :project do
       arg(:slug, non_null(:string))
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.project_by_slug/3)
     end

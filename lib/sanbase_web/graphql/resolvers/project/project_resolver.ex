@@ -26,18 +26,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.Helpers.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
 
-  def all_projects(_parent, args, _resolution, only_project_transparency \\ nil) do
-    only_project_transparency =
-      case only_project_transparency do
-        nil -> Map.get(args, :only_project_transparency, false)
-        value -> value
-      end
+  def all_projects_project_transparency(_parent, _args, _resolution) do
+    query = from(p in Project, where: p.project_transparency, order_by: p.name)
+
+    projects =
+      query
+      |> Repo.all()
+      |> Repo.preload([
+        :latest_coinmarketcap_data,
+        icos: [ico_currencies: [:currency]]
+      ])
+
+    {:ok, projects}
+  end
+
+  def all_projects(_parent, args, _resolution) do
+    page = Map.get(args, :page, nil)
+    page_size = Map.get(args, :page_size, nil)
 
     query =
-      if only_project_transparency do
-        from(p in Project, where: p.project_transparency, order_by: p.name)
-      else
+      if page == nil || page_size == nil do
         from(p in Project, where: not is_nil(p.coinmarketcap_id), order_by: p.name)
+      else
+        from(p in Project,
+          join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+          where: not is_nil(p.coinmarketcap_id),
+          order_by: latest_cmc.rank,
+          limit: ^page_size,
+          offset: ^((page - 1) * page_size),
+          preload: [latest_coinmarketcap_data: latest_cmc]
+        )
       end
 
     projects =
@@ -51,9 +69,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, projects}
   end
 
-  def all_erc20_projects(_root, _args, _resolution) do
+  def all_erc20_projects(_root, args, _resolution) do
+    page = Map.get(args, :page, nil)
+    page_size = Map.get(args, :page_size, nil)
+
     erc20_projects =
-      Project.erc20_projects()
+      if page == nil || page_size == nil do
+        Project.erc20_projects()
+      else
+        Project.erc20_projects_page(page, page_size)
+      end
+
+    erc20_projects =
+      erc20_projects
       |> Repo.preload([
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]
@@ -63,9 +91,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     {:ok, erc20_projects}
   end
 
-  def all_currency_projects(_root, _args, _resolution) do
+  def all_currency_projects(_root, args, _resolution) do
+    page = Map.get(args, :page, nil)
+    page_size = Map.get(args, :page_size, nil)
+
     currency_projects =
-      Project.currency_projects()
+      if page == nil || page_size == nil do
+        Project.currency_projects()
+      else
+        Project.currency_projects_page(page, page_size)
+      end
+
+    currency_projects =
+      currency_projects
       |> Repo.preload([
         :latest_coinmarketcap_data,
         icos: [ico_currencies: [:currency]]

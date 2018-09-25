@@ -137,7 +137,7 @@ export const App = ({
           path='/projects'
           render={props => {
             if (isDesktop) {
-              return <Redirect to='/assets/erc20' />
+              return <Redirect to='/assets/all' />
             }
             return <CashflowMobile {...props} />
           }}

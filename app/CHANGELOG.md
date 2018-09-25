@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-25-09 | v.0.15.0 'Phobos':
+
+  Add pagination for all tables
+
 - 2018-24-09 | v.0.14.2 'Phobos':
 
   Add help message in Trends

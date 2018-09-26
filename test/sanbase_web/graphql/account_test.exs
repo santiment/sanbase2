@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
   import Mockery
   import SanbaseWeb.Graphql.TestHelpers
+  import ExUnit.CaptureLog
 
   setup do
     user =
@@ -76,21 +77,23 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     }
     """
 
-    result =
-      conn
-      |> post("/graphql", mutation_skeleton(query))
-      |> json_response(200)
+    capture_log(fn ->
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(query))
+        |> json_response(200)
 
-    %{
-      "data" => %{"changeEmail" => nil},
-      "errors" => [
-        %{
-          "message" => message
-        }
-      ]
-    } = result
+      %{
+        "data" => %{"changeEmail" => nil},
+        "errors" => [
+          %{
+            "message" => message
+          }
+        ]
+      } = result
 
-    assert message == "Can't change current user's email to #{new_email}"
+      assert message == "Can't change current user's email to #{new_email}"
+    end)
   end
 
   test "change username of current user", %{conn: conn} do
@@ -122,7 +125,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     query = """
     mutation {
-      emailLoginVerify(email: "#{user.email}", token: "invalid_token") {
+      verifyEmail(email: "#{user.email}", token: "invalid_token") {
         user {
           email
         },
@@ -151,7 +154,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     query = """
     mutation {
-      emailLoginVerify(email: "#{user.email_candidate}", token: "#{user.email_token}") {
+      verifyEmail(email: "#{user.email_candidate}", token: "#{user.email_token}") {
         user {
           email
         },
@@ -164,7 +167,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    loginData = json_response(result, 200)["data"]["emailLoginVerify"]
+    loginData = json_response(result, 200)["data"]["verifyEmail"]
 
     {:ok, user} = User.find_or_insert_by_email(user.email_candidate)
 
@@ -197,7 +200,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     query = """
     mutation {
-      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
+      verifyEmail(email: "#{user.email}", token: "#{user.email_token}") {
         user {
           email
         }
@@ -234,7 +237,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     query = """
     mutation {
-      emailLoginVerify(email: "#{user.email_candidate}", token: "#{user.email_token}") {
+      verifyEmail(email: "#{user.email_candidate}", token: "#{user.email_token}") {
         user {
           email
         }
@@ -247,7 +250,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    loginData = json_response(result, 200)["data"]["emailLoginVerify"]
+    loginData = json_response(result, 200)["data"]["verifyEmail"]
 
     assert loginData["token"] != nil
     assert loginData["user"]["email"] == user.email_candidate
@@ -275,7 +278,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
     query = """
     mutation {
-      emailLoginVerify(email: "#{user.email}", token: "#{user.email_token}") {
+      verifyEmail(email: "#{user.email}", token: "#{user.email_token}") {
         user {
           email
         }

@@ -385,7 +385,8 @@ defmodule Sanbase.Auth.UserTest do
   end
 
   test "find_by_email_candidate when the user does not exist" do
-    {:error, "Can't find user"} = User.find_by_email_candidate("test@example.com", "some_token")
+    {:error, "Can't find user with email candidate test@example.com"} =
+      User.find_by_email_candidate("test@example.com", "some_token")
   end
 
   test "find_by_email_candidate when the user exists" do
@@ -503,5 +504,23 @@ defmodule Sanbase.Auth.UserTest do
       |> Repo.update()
 
     assert user.username == "portokala"
+  end
+
+  test "validates email_candidate against email" do
+    email = "test@example.com"
+
+    %User{
+      email: email,
+      salt: User.generate_salt()
+    }
+    |> Repo.insert!()
+
+    user = insert(:user)
+
+    {:error, changeset} =
+      User.changeset(user, %{email_candidate: email})
+      |> Repo.update()
+
+    assert changeset.errors == [email: {"Email has already been taken", []}]
   end
 end

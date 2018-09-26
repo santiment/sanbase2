@@ -79,4 +79,8 @@ defmodule SanbaseWeb.Endpoint do
   def login_url(token, email) do
     frontend_url() <> "/email_login?" <> URI.encode_query(token: token, email: email)
   end
+
+  def verify_url(token, email) do
+    frontend_url() <> "/verify_email?" <> URI.encode_query(token: token, email: email)
+  end
 end

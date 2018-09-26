@@ -14,7 +14,8 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.UserLists.UserList
   alias Sanbase.Repo
 
-  @verification_email_template "login"
+  @login_email_template "login"
+  @verification_email_template "verify email"
 
   # The Login links will be valid 1 hour
   @login_email_valid_minutes 60
@@ -182,7 +183,7 @@ defmodule Sanbase.Auth.User do
   def find_by_email_candidate(email_candidate, email_token) do
     case Repo.get_by(User, email_candidate: email_candidate, email_token: email_token) do
       nil ->
-        {:error, "Can't find user"}
+        {:error, "Can't find user with email candidate #{email_candidate}"}
 
       user ->
         {:ok, user}
@@ -237,9 +238,15 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def send_login_email(user) do
+    mandrill_api().send(@login_email_template, user.email_candidate, %{
+      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email_candidate)
+    })
+  end
+
   def send_verification_email(user) do
     mandrill_api().send(@verification_email_template, user.email_candidate, %{
-      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email_candidate)
+      VERIFY_LINK: SanbaseWeb.Endpoint.verify_url(user.email_token, user.email_candidate)
     })
   end
 

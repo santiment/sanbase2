@@ -57,14 +57,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   def email_login(%{email: email} = args, _resolution) do
     with {:ok, user} <- User.find_or_insert_by_email(email, args[:username]),
          {:ok, user} <- User.update_email_token(user, args[:consent]),
-         {:ok, _user} <- User.send_verification_email(user) do
+         {:ok, _response} <- User.send_login_email(user) do
       {:ok, %{success: true}}
     else
       _ -> {:error, message: "Can't login"}
     end
   end
 
-  def email_login_verify(%{token: token, email: email_candidate}, _resolution) do
+  def verify_email(%{token: token, email: email_candidate}, _resolution) do
     with {:ok, user} <- User.find_by_email_candidate(email_candidate, token),
          true <- User.email_token_valid?(user, token),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
@@ -83,7 +83,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
          {:ok, _response} <- User.send_verification_email(user) do
       {:ok, %{email_candidate: user.email_candidate}}
     else
-      _ -> {:error, message: "Can't change current user's email to #{email_candidate}"}
+      {:error, changeset} ->
+        message = "Can't change current user's email to #{email_candidate}"
+        Logger.warn(message)
+
+        {
+          :error,
+          message: message, details: Utils.error_details(changeset)
+        }
     end
   end
 

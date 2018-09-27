@@ -43,7 +43,7 @@ const AccountEmailForm = ({
             setFormStatus('PENDING', false)
             setFormStatus('ERROR', true)
 
-            if (error.graphQLErrors[0].details.email.includes(TAKEN_MSG)) {
+            if (error.graphQLErrors[0].message.includes(TAKEN_MSG)) {
               setFormStatus('TAKEN', true)
             }
 

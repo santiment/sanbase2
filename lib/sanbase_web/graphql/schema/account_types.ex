@@ -11,6 +11,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   object :user do
     field(:id, non_null(:id))
     field(:email, :string)
+    field(:email_candidate, :string)
     field(:username, :string)
     field(:consent_id, :string)
     field(:privacy_policy_accepted, :boolean)

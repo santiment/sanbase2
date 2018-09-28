@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-28-09 | v.0.15.1 'Phobos':
+
+  Update Roadmap
+
 - 2018-25-09 | v.0.15.0 'Phobos':
 
   Add pagination for all tables

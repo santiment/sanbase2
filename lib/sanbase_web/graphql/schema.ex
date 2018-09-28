@@ -587,8 +587,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.email_login/2)
     end
 
-    field :verify_email, :login do
+    field :verify_login_email, :login do
       arg(:email, non_null(:string))
+      arg(:token, non_null(:string))
+
+      resolve(&AccountResolver.verify_login_email/2)
+    end
+
+    field :verify_email, :login do
+      arg(:email_candidate, non_null(:string))
       arg(:token, non_null(:string))
 
       resolve(&AccountResolver.verify_email/2)

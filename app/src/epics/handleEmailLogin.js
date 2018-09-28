@@ -7,9 +7,30 @@ import { showNotification } from './../actions/rootActions'
 import * as actions from './../actions/types'
 import { savePrevAuthProvider } from './../utils/localStorage'
 
+const verifyLoginEmailGQL = gql`
+  mutation verifyLoginEmail($email: String!, $token: String!) {
+    verifyLoginEmail(email: $email, token: $token) {
+      token
+      user {
+        id
+        email
+        username
+        privacyPolicyAccepted
+        marketingAccepted
+        consent_id
+        sanBalance
+        ethAccounts {
+          address
+          sanBalance
+        }
+      }
+    }
+  }
+`
+
 const verifyEmailGQL = gql`
-  mutation verifyEmail($email: String!, $token: String!) {
-    verifyEmail(email: $email, token: $token) {
+  mutation verifyEmail($emailCandidate: String!, $token: String!) {
+    verifyEmail(emailCandidate: $emailCandidate, token: $token) {
       token
       user {
         id
@@ -48,13 +69,16 @@ export const handleLoginSuccess = (action$, store, { client }) =>
 
 const handleEmailLogin = (action$, store, { client }) =>
   action$.ofType(actions.USER_EMAIL_LOGIN).switchMap(action => {
+    const mutationGQL = action.payload.emailCandidate
+      ? verifyEmailGQL
+      : verifyLoginEmailGQL
     const mutation = client.mutate({
-      mutation: verifyEmailGQL,
+      mutation: mutationGQL,
       variables: action.payload
     })
     return Observable.from(mutation)
       .mergeMap(({ data }) => {
-        const { token, user } = data.verifyEmail
+        const { token, user } = data.verifyEmail || data.verifyLoginEmail
         GoogleAnalytics.event({
           category: 'User',
           action: 'Success login with email'

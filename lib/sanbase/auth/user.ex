@@ -16,7 +16,6 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Repo
 
   @login_email_template "login"
-  @verification_email_template "verify email"
 
   # The Login links will be valid 1 hour
   @login_email_valid_minutes 60
@@ -45,7 +44,6 @@ defmodule Sanbase.Auth.User do
 
   schema "users" do
     field(:email, :string)
-    field(:email_candidate, :string)
     field(:username, :string)
     field(:salt, :string)
     field(:san_balance, :decimal)
@@ -103,7 +101,6 @@ defmodule Sanbase.Auth.User do
     |> unique_constraint(:username)
     |> normalize_username(attrs)
     |> validate_change(:username, &validate_username_change/2)
-    |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
   end
@@ -225,8 +222,7 @@ defmodule Sanbase.Auth.User do
 
     case Repo.get_by(User, email: email) do
       nil ->
-        %User{}
-        |> changeset(%{email_candidate: email, username: username, salt: generate_salt()})
+        %User{email: email, username: username, salt: generate_salt()}
         |> Repo.insert()
 
       user ->
@@ -273,7 +269,7 @@ defmodule Sanbase.Auth.User do
 
   def mark_email_token_as_validated(user) do
     user
-    |> changeset(%{email_candidate: email_candidate})
+    |> change(email_token_validated_at: user.email_token_validated_at || Timex.now())
     |> Repo.update()
   end
 

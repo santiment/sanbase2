@@ -54,39 +54,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   def email_login(%{email: email} = args, _resolution) do
     with {:ok, user} <- User.find_or_insert_by_email(email, args[:username]),
          {:ok, user} <- User.update_email_token(user, args[:consent]),
-         {:ok, _response} <- User.send_login_email(user) do
+         {:ok, _user} <- User.send_login_email(user) do
       {:ok, %{success: true}}
     else
       _ -> {:error, message: "Can't login"}
     end
   end
 
-  def verify_email(%{token: token, email: email_candidate}, _resolution) do
-    with {:ok, user} <- User.find_by_email_candidate(email_candidate, token),
+  def email_login_verify(%{token: token, email: email}, _resolution) do
+    with {:ok, user} <- User.find_or_insert_by_email(email),
          true <- User.email_token_valid?(user, token),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
-         {:ok, user} <- User.update_email(user) do
+         {:ok, user} <- User.mark_email_token_as_validated(user) do
       {:ok, %{user: user, token: token}}
     else
       _ -> {:error, message: "Login failed"}
     end
   end
 
-  def change_email(_root, %{email: email_candidate}, %{
+  def change_email(_root, %{email: new_email}, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
-    with {:ok, user} <- User.set_email_candidate(user, email_candidate),
-         {:ok, user} <- User.update_email_token(user),
-         {:ok, _response} <- User.send_verification_email(user) do
-      {:ok, %{email_candidate: user.email_candidate}}
-    else
-      {:error, changeset} ->
-        message = "Can't change current user's email to #{email_candidate}"
-        Logger.warn(message)
+    Repo.get!(User, user.id)
+    |> User.changeset(%{email: new_email})
+    |> Repo.update()
+    |> case do
+      {:ok, user} ->
+        {:ok, user}
 
+      {:error, changeset} ->
         {
           :error,
-          message: message, details: Utils.error_details(changeset)
+          message: "Cannot update current user's email to #{new_email}",
+          details: Utils.error_details(changeset)
         }
     end
   end

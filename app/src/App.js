@@ -221,7 +221,6 @@ export const App = ({
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />
-        <Route path='/verify_email' component={EmailLoginVerification} />
         {['data', 'dashboards'].map(name => (
           <Route
             key={name}

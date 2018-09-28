@@ -1,3 +1,4 @@
+import moment from 'moment'
 import { push } from 'react-router-redux'
 
 export const mergeDataSourcesForChart = sources =>
@@ -27,6 +28,71 @@ export const SourceColor = {
   professionalTradersChat: 'rgb(20, 200, 20)',
   merged: 'rgb(255, 193, 7)'
 }
+
+export const sourcesMeta = {
+  merged: {
+    index: 'merged',
+    name: 'Merged',
+    color: '#ffc107',
+    value: 0
+  },
+  telegram: {
+    index: 'telegram',
+    name: 'Telegram',
+    color: '#2d79d0',
+    value: 0
+  },
+  reddit: {
+    index: 'reddit',
+    name: 'Reddit',
+    color: '#c82f3f',
+    value: 0
+  },
+  professional_traders_chat: {
+    index: 'professional_traders_chat',
+    name: 'Professional Traders Chat',
+    color: '#26a987',
+    value: 0
+  }
+}
+
+const getMergedMentionsDataset = mentionsBySources =>
+  Object.keys(mentionsBySources).reduce((acc, source) => {
+    for (const { datetime, mentionsCount } of mentionsBySources[source]) {
+      if (acc[datetime] !== undefined) {
+        acc[datetime].merged += mentionsCount
+      } else {
+        acc[datetime] = {
+          datetime,
+          merged: mentionsCount
+        }
+      }
+    }
+    return acc
+  }, {})
+
+const getComposedMentionsDataset = (mentionsBySources, selectedSources) => {
+  return selectedSources.reduce((acc, source) => {
+    for (const { datetime, mentionsCount } of mentionsBySources[source]) {
+      if (acc[datetime] !== undefined) {
+        acc[datetime][source] = mentionsCount
+      } else {
+        acc[datetime] = {
+          datetime,
+          [source]: mentionsCount
+        }
+      }
+    }
+    return acc
+  }, {})
+}
+
+export const getMentionsChartData = (mentionsBySources, selectedSources) =>
+  Object.values(
+    selectedSources.includes('merged')
+      ? getMergedMentionsDataset(mentionsBySources)
+      : getComposedMentionsDataset(mentionsBySources, selectedSources)
+  ).sort((a, b) => (moment(a.datetime).isAfter(b.datetime) ? 1 : -1))
 
 const defaultSources = ['merged']
 

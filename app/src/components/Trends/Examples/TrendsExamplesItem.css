@@ -29,6 +29,7 @@
 
 .TrendsExamplesItem__chart {
   max-width: 320px;
+  min-width: 320px;
   border-top: 1px solid #d8d8da;
   border-bottom: 1px solid #d8d8da;
   padding: 10px;

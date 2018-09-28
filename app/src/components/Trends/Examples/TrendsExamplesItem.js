@@ -35,8 +35,11 @@ const TrendsExamplesItem = ({ topic, settings, onClick }) => {
           selectedSources={settings.sources}
           render={props => (
             <TrendsExamplesItemChart
-              {...props}
+              topic={props.topic}
+              sources={props.sources}
               selectedSources={settings.sources}
+              isError={props.isError}
+              isLoading={props.isLoading}
             />
           )}
         />

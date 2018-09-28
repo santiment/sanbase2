@@ -201,6 +201,12 @@ defmodule Sanbase.Auth.User do
     |> Repo.update()
   end
 
+  def mark_email_token_as_validated(user) do
+    user
+    |> changeset(%{email_token_validated_at: user.email_token_validated_at || Timex.now()})
+    |> Repo.update()
+  end
+
   def update_email(user) do
     user
     |> changeset(%{
@@ -239,8 +245,10 @@ defmodule Sanbase.Auth.User do
   end
 
   def send_login_email(user) do
-    mandrill_api().send(@login_email_template, user.email_candidate, %{
-      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, user.email_candidate)
+    email = user.email_candidate || user.email
+
+    mandrill_api().send(@login_email_template, email, %{
+      LOGIN_LINK: SanbaseWeb.Endpoint.login_url(user.email_token, email)
     })
   end
 

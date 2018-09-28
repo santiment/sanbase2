@@ -64,7 +64,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     end
   end
 
-  def verify_email(%{token: token, email: email_candidate}, _resolution) do
+  def verify_login_email(%{token: token, email: email}, _resolution) do
+    with {:ok, user} <- User.find_or_insert_by_email(email),
+         true <- User.email_token_valid?(user, token),
+         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
+         {:ok, user} <- User.mark_email_token_as_validated(user) do
+      {:ok, %{user: user, token: token}}
+    else
+      _ -> {:error, message: "Login failed"}
+    end
+  end
+
+  def verify_email(%{token: token, email_candidate: email_candidate}, _resolution) do
     with {:ok, user} <- User.find_by_email_candidate(email_candidate, token),
          true <- User.email_token_valid?(user, token),
          {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),

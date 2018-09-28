@@ -1,8 +1,5 @@
 import React from 'react'
-// import TrendsChart from '../TrendsChart'
-// import TrendsReChart from '../TrendsReChart'
 import moment from 'moment'
-import { mergeDataSourcesForChart } from '../trendsUtils'
 import { ResponsiveContainer, LineChart, Line, XAxis, Tooltip } from 'recharts'
 
 const chartsMeta = {
@@ -33,35 +30,6 @@ const chartsMeta = {
 }
 
 const Loading = () => <h2 style={{ marginLeft: 30 }}>Loading...</h2>
-
-const Empty = () => (
-  <h2 style={{ marginLeft: 30 }}>
-    We can't find any data{' '}
-    <span aria-label='sadly' role='img'>
-      😞
-    </span>
-  </h2>
-)
-
-/*
-mentionsBySources : {
-  telegram : [
-    {
-      mentionsCount: number,
-      datetime: string
-    },
-    {
-
-    }
-  ],
-  reddit : [
-    {
-      ....
-    }
-  ]
-
-}
-*/
 
 const getMergedMentionsDataset = mentionsBySources =>
   Object.keys(mentionsBySources).reduce((acc, source) => {
@@ -94,11 +62,10 @@ const getComposedMentionsDataset = (mentionsBySources, selectedSources) => {
   }, {})
 }
 
-const TrendsReChart = ({
+const TrendsExamplesItemChart = ({
+  sources: mentionsBySources,
   selectedSources,
-  mentionsBySources,
-  chartData,
-  asset
+  isLoading
 }) => {
   const result = Object.values(
     selectedSources.includes('merged')
@@ -108,53 +75,35 @@ const TrendsReChart = ({
 
   return (
     <div className='TrendsExploreChart'>
-      <ResponsiveContainer width='100%' height={150}>
-        <LineChart
-          data={result}
-          margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-        >
-          <XAxis dataKey='datetime' hide />
-          <Tooltip
-            labelFormatter={date => moment(date).format('dddd, MMM DD YYYY')}
-          />
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <ResponsiveContainer width='100%' height={150}>
+          <LineChart
+            data={result}
+            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+          >
+            <XAxis dataKey='datetime' hide />
+            <Tooltip
+              labelFormatter={date => moment(date).format('dddd, MMM DD YYYY')}
+            />
 
-          {selectedSources.map(source => {
-            const sourceMeta = chartsMeta[source] || {}
-            return (
+            {selectedSources.map(source => (
               <Line
-                key={sourceMeta.index}
-                dataKey={sourceMeta.index}
+                key={chartsMeta[source].index}
+                dataKey={chartsMeta[source].index}
                 type='linear'
                 dot={false}
                 strokeWidth={3}
-                name={sourceMeta.name}
-                stroke={sourceMeta.color}
+                name={chartsMeta[source].name}
+                stroke={chartsMeta[source].color}
               />
-            )
-          })}
-        </LineChart>
-      </ResponsiveContainer>
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   )
-}
-
-const TrendsExamplesItemChart = ({
-  topic,
-  sources,
-  selectedSources,
-  isLoading,
-  isError
-}) => (
-  <TrendsReChart
-    selectedSources={selectedSources}
-    asset={topic}
-    mentionsBySources={sources}
-  />
-)
-
-TrendsReChart.defaultProps = {
-  data: {},
-  isLoading: true
 }
 
 export default TrendsExamplesItemChart

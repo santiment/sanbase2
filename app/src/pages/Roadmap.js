@@ -1,7 +1,25 @@
-import React from 'react'
-import { Helmet } from 'react-helmet'
-import { getOrigin } from './../utils/utils'
-import './Roadmap.css'
+import React from "react"
+import { Helmet } from "react-helmet"
+import { getOrigin } from "./../utils/utils"
+import "./Roadmap.css"
+
+const StatusItemWithProgress = ({
+  text = "",
+  progress = 100,
+  child = false
+}) => (
+  <li style={{ marginLeft: child ? 20 : 0 }}>
+    <div className='status-row embedded' id='crypto-projects-item'>
+      <span className='status-item'>{text}</span>
+      <span className='status'>
+        <div className='status-percent'>{progress}%</div>
+        <div className='status-border'>
+          <div style={{ width: `${progress}%` }} className='status-progress' />
+        </div>
+      </span>
+    </div>
+  </li>
+)
 
 const Roadmap = () => (
   <div className='page roadmap'>
@@ -80,204 +98,141 @@ const Roadmap = () => (
               <p>Slight pivot. Increase focus for on-chain data/analyses</p>
               <ul>
                 <li>Data-feeds for all ERC-20 tokens</li>
-                <li style={{ marginLeft: '20px' }}>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>
-                      Daily Active Addresses (DAA), TokenAging (Burn Rate),
-                      Transaction volume
-                    </span>
-                    <span className='status'>
-                      <div className='status-percent'>100%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '100%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
-                <li style={{ marginLeft: '20px' }}>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>In/Out exchanges</span>
-                    <span className='status'>
-                      <div className='status-percent'>90%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '90%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
-                <li>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>
-                      Gateway to include data from other blockchains
-                    </span>
-                    <span className='status'>
-                      <div className='status-percent'>90%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '90%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
-                <li style={{ marginLeft: '20px' }}>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>EOS</span>
-                    <span className='status'>
-                      <div className='status-percent'>10%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '10%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
-                <li style={{ marginLeft: '20px' }}>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>Bitcoin</span>
-                    <span className='status'>
-                      <div className='status-percent'>70%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '70%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
-                <li>
-                  <p>Different interfaces to work with data</p>
-                  <li style={{ marginLeft: '20px' }}>
-                    <div
-                      className='status-row embedded'
-                      id='crypto-projects-item'
-                    >
-                      <span className='status-item'>API, SQL, Grafana</span>
-                      <span className='status'>
-                        <div className='status-percent'>80%</div>
-                        <div className='status-border'>
-                          <div
-                            style={{ width: '80%' }}
-                            className='status-progress'
-                          />
-                        </div>
-                      </span>
-                    </div>
-                  </li>
-                  <li style={{ marginLeft: '20px' }}>
-                    <div
-                      className='status-row embedded'
-                      id='crypto-projects-item'
-                    >
-                      <span className='status-item'>UI Components</span>
-                      <span className='status'>
-                        <div className='status-percent'>10%</div>
-                        <div className='status-border'>
-                          <div
-                            style={{ width: '10%' }}
-                            className='status-progress'
-                          />
-                        </div>
-                      </span>
-                    </div>
-                  </li>
-                </li>
-                <li>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>
-                      Base NLP models. Allows to build more complicated AI
-                      algorithms for social data
-                    </span>
-                    <span className='status'>
-                      <div className='status-percent'>100%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '100%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
-                <li>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>Advanced AI/ML models</span>
-                    <span className='status'>
-                      <div className='status-percent'>10%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '10%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
-                <li>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>Community “insights”</span>
-                    <span className='status'>
-                      <div className='status-percent'>70%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '70%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
-                <li>
-                  <div
-                    className='status-row embedded'
-                    id='crypto-projects-item'
-                  >
-                    <span className='status-item'>Token economy</span>
-                    <span className='status'>
-                      <div className='status-percent'>50%</div>
-                      <div className='status-border'>
-                        <div
-                          style={{ width: '50%' }}
-                          className='status-progress'
-                        />
-                      </div>
-                    </span>
-                  </div>
-                </li>
+                <StatusItemWithProgress
+                  text={
+                    "Daily Active Addresses (DAA), TokenAging (Burn Rate), Transaction volume"
+                  }
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"In/Out exchanges"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"ETH Genesis Address Activity"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Price-Volume Difference Indicator"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Token Circulation"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Transaction Volume"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Velocity of Token"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Top 100 Transactions"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Network growth"}
+                  progress={100}
+                  child
+                />
+                <li>Data-feeds for all EOS tokens</li>
+                <StatusItemWithProgress
+                  text={"Actions Volume"}
+                  progress={50}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Number of Active Currencies"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Transaction Volume of the Most Active Currencies"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Transaction Volume of EOS"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Daily Active Addresses of EOS"}
+                  progress={100}
+                  child
+                />
+                <StatusItemWithProgress
+                  text={"Gateway to include data from other blockchains"}
+                  progress={90}
+                />
+                <StatusItemWithProgress text={"EOS"} child progress={100} />
+                <StatusItemWithProgress text={"Bitcoin"} child progress={100} />
+                <StatusItemWithProgress text={"XLM"} child progress={10} />
+                <StatusItemWithProgress text={"ADA"} child progress={10} />
+                <StatusItemWithProgress text={"TRON"} child progress={10} />
+                <StatusItemWithProgress text={"VET"} child progress={10} />
+                <StatusItemWithProgress text={"NEO"} child progress={10} />
+                <li>Different interfaces to work with data</li>
+                <StatusItemWithProgress
+                  text={"API, SQL, Grafana"}
+                  child
+                  progress={100}
+                />
+                <StatusItemWithProgress
+                  text={"UI Components"}
+                  child
+                  progress={10}
+                />
+                <li>Social metrics</li>
+                <StatusItemWithProgress
+                  text={"Topic Search"}
+                  child
+                  progress={100}
+                />
+                <StatusItemWithProgress
+                  text={"Relative Social Dominance"}
+                  child
+                  progress={100}
+                />
+                <StatusItemWithProgress
+                  text={"Social Volume"}
+                  child
+                  progress={100}
+                />
+                <StatusItemWithProgress
+                  text={"Social Data feed"}
+                  child
+                  progress={100}
+                />
+                <StatusItemWithProgress
+                  text={"Github Activity"}
+                  progress={100}
+                />
+                <StatusItemWithProgress
+                  text={
+                    "Base NLP models. Allows to build more complicated AI algorithms for social data"
+                  }
+                  progress={100}
+                />
+                <StatusItemWithProgress
+                  text={"Advanced AI/ML models"}
+                  progress={20}
+                />
+                <StatusItemWithProgress
+                  text={"Community “insights”"}
+                  progress={100}
+                />
+                <StatusItemWithProgress text={"Token economy"} progress={60} />
                 <li>Signals - ongoing process</li>
               </ul>
             </div>

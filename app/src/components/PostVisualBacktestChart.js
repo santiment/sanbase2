@@ -1,42 +1,16 @@
 import React from 'react'
-import 'chartjs-plugin-annotation'
-import { Line } from 'react-chartjs-2'
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  ReferenceLine
+} from 'recharts'
 import './PostVisualBacktestChart.css'
 
 const Color = {
   POSITIVE: 'rgb(48, 157, 129)',
   NEGATIVE: 'rgb(200, 47, 63)'
-}
-
-const chartOptions = {
-  animation: false,
-  legend: {
-    display: false
-  },
-  tooltips: {
-    enabled: false
-  },
-  scales: {
-    yAxes: [
-      {
-        display: false
-      }
-    ],
-    xAxes: [
-      {
-        id: 'x-axis-0',
-        display: false
-      }
-    ]
-  }
-}
-
-const datasetOptions = {
-  // borderColor: 'rgba(255, 193, 7, 1)',
-  borderColor: 'rgba(0, 0, 0, 0.9)',
-  borderWidth: 2,
-  pointRadius: 0,
-  fill: false
 }
 
 const PostVisualBacktestChart = ({
@@ -45,37 +19,32 @@ const PostVisualBacktestChart = ({
   changePriceProp,
   change
 }) => {
-  const dataset = {
-    labels: historyPrice.map(data => data.datetime),
-    datasets: [
-      {
-        data: historyPrice.map(data => data[changePriceProp]),
-        ...datasetOptions
-      }
-    ]
-  }
-
+  const dataset = historyPrice.map(data => ({
+    datetime: data.datetime,
+    value: data[changePriceProp]
+  }))
   return (
     <div className='PostVisualBacktestChart'>
-      <Line
-        options={{
-          ...chartOptions,
-          annotation: {
-            annotations: [
-              {
-                drawTime: 'afterDatasetsDraw',
-                type: 'line',
-                mode: 'vertical',
-                scaleID: 'x-axis-0',
-                value: postUpdatedAt,
-                borderColor: change > 0 ? Color.POSITIVE : Color.NEGATIVE,
-                borderWidth: 1
-              }
-            ]
-          }
-        }}
-        data={dataset}
-      />
+      <ResponsiveContainer width='100%'>
+        <LineChart
+          data={dataset}
+          margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+        >
+          <XAxis dataKey='datetime' hide />
+          <ReferenceLine
+            x={postUpdatedAt}
+            stroke={change > 0 ? Color.POSITIVE : Color.NEGATIVE}
+          />
+          <Line
+            dataKey='value'
+            type='linear'
+            dot={false}
+            strokeWidth={2}
+            stroke='#000000'
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }

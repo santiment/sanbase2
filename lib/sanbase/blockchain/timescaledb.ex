@@ -290,10 +290,10 @@ defmodule Sanbase.Timescaledb do
       iex> Sanbase.Timescaledb.timestamp_to_datetime({{2018, 8, 7}, {12, 55, 5, 00}})
       #DateTime<2018-08-07 12:55:05.00Z>
       iex> Sanbase.Timescaledb.timestamp_to_datetime({{2015, 1, 17}, {12, 55, 37, 00005}})
-      #DateTime<2015-01-17 12:55:37.00Z>
+      #DateTime<2015-01-17 12:55:37Z>
   """
   def timestamp_to_datetime({date, {h, m, s, us}}) do
-    NaiveDateTime.from_erl!({date, {h, m, s}}, {us, 2})
+    NaiveDateTime.from_erl!({date, {h, m, s}}, {us, 0})
     |> DateTime.from_naive!("Etc/UTC")
   end
 

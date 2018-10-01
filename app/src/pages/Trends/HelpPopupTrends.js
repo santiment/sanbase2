@@ -13,16 +13,20 @@ const HelpPopupTrends = () => (
         className='HelpPopupProjectsContent__list'
       >
         <li className='HelpPopupProjectsContent__item'>
-          "btc moon" will search for exact phrase
+          <code>btc moon</code> will search for exact phrase
         </li>
         <li className='HelpPopupProjectsContent__item'>
-          btc AND moon will search for btc and moon in the same message
+          <code>btc AND moon</code> will search for btc and moon in the same
+          message
         </li>
         <li className='HelpPopupProjectsContent__item'>
-          btc OR moon will search for either btc or moon
+          <code>btc OR moon</code> will search for either btc or moon
         </li>
         <li className='HelpPopupProjectsContent__item'>
-          btc moon is the same as btc OR moon
+          You can use more complex query:{' '}
+          <pre>
+            <code>(btc OR moon) AND something</code>
+          </pre>
         </li>
       </ul>
     </div>

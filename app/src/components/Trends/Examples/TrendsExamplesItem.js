@@ -20,7 +20,7 @@ const TrendsExamplesItem = ({ topic, settings, onClick }) => {
       data-topic={topic}
       data-settings={queryString.stringify(
         {
-          interval: settings.interval,
+          timeRange: settings.timeRange,
           source: settings.sources
         },
         { arrayFormat: 'bracket' }

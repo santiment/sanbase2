@@ -9,8 +9,7 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
-  Tooltip,
-  Cell
+  Tooltip
 } from 'recharts'
 import { formatNumber } from './../../utils/formatting'
 import { mergeTimeseriesByKey } from './../../utils/utils'

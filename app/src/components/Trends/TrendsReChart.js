@@ -73,7 +73,7 @@ const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
           <Line
             type='linear'
             yAxisId='axis-price'
-            name={asset}
+            name={asset + '/USD'}
             dot={false}
             strokeWidth={2}
             dataKey='priceUsd'

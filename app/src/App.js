@@ -30,7 +30,6 @@ import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/assets/AssetsPage'
 import { getConsentUrl } from './utils/utils'
 import './App.css'
-import InsightsWidget from './components/InsightsWidget/InsightsWidget'
 
 const LoadableDetailedPage = Loadable({
   loader: () => import('./pages/Detailed/Detailed'),
@@ -96,7 +95,6 @@ export const App = ({
   hasUsername
 }) => (
   <div className='App'>
-    <InsightsWidget />
     {isOffline && (
       <FadeInDown
         className='offline-status-message'

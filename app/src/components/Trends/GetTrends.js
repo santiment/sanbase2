@@ -9,7 +9,8 @@ const GetTrends = ({ render, sources = {}, ...props }) =>
 const emptyChartData = []
 
 export const normalizeTopic = topic => {
-  if (topic.split(' ').length > 1 && !/AND|OR|(?<=\().*(?=\))/.test(topic)) {
+  const pattern = /AND|OR/
+  if (topic.split(' ').length > 1 && !pattern.test(topic)) {
     return `"${topic}"`
   }
   return topic

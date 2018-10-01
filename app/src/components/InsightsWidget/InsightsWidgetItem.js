@@ -1,21 +1,40 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import moment from 'moment'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 import './InsightsWidgetItem.css'
 
-const getInsightContonet = htmlContent => {
+const CHARACTERS_AMOUNT_FIT_IN_ONE_LINE = 36
+
+const getInsightContent = htmlContent => {
   let tempHTMLElement = document.createElement('div')
   tempHTMLElement.innerHTML = htmlContent
   const content =
-    tempHTMLElement.textContent || tempHTMLElement.querySelector('img')
+    tempHTMLElement.textContent.length > CHARACTERS_AMOUNT_FIT_IN_ONE_LINE
+      ? tempHTMLElement.textContent
+      : {
+        text: tempHTMLElement.textContent,
+        img: tempHTMLElement.querySelector('img')
+      }
   tempHTMLElement = null
   return content
 }
 
-const createInsightThumbnailImg = htmlImg => (
-  <img src={htmlImg.src} alt={htmlImg.alt || 'Insight thumbnail'} />
-)
+const createInsightThumbnail = thumbnail => {
+  const content = (
+    <Fragment>
+      {thumbnail.text}
+      {thumbnail.img ? (
+        <img
+          src={thumbnail.img.src}
+          alt={thumbnail.img.alt || 'Insight thumbnail'}
+        />
+      ) : null}
+    </Fragment>
+  )
+  thumbnail.img = null
+  return content
+}
 
 const propTypes = {
   id: PropTypes.string.isRequired,
@@ -35,9 +54,9 @@ const InsightsWidgetItem = ({
   text,
   user: { username, id: userId }
 }) => {
-  let insightContent = getInsightContonet(text)
+  let insightContent = getInsightContent(text)
   if (typeof insightContent === 'object') {
-    insightContent = createInsightThumbnailImg(insightContent)
+    insightContent = createInsightThumbnail(insightContent)
   }
   return (
     <div className='InsightsWidgetItem'>

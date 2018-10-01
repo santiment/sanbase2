@@ -5,6 +5,7 @@
   Fix Trends Examples descriptions
   Update the logic of searching trends
   Add tracking for search of social trends
+  Update Asset Label in Trends charts
 
 - 2018-28-09 | v.0.15.1 'Phobos':
 

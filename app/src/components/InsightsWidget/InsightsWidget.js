@@ -18,10 +18,26 @@ const sliderSettings = {
   autoplay: true,
   arrows: false
 }
+const INSIGHTS_VOTES_THRESHOLD = 2
+const MAX_INSIGHTS_AMOUNT = 5
 
-const parseInsightsWidgetGQLProps = ({ data: { allInsights = [] } }) => ({
-  insights: allInsights.slice(0, 5)
-})
+const parseInsightsWidgetGQLProps = ({ data: { allInsights = [] } }) => {
+  const onlyVotedInsights = []
+
+  for (const insight of allInsights) {
+    if (onlyVotedInsights.length >= MAX_INSIGHTS_AMOUNT) {
+      break
+    }
+
+    if (insight.votes.totalVotes >= INSIGHTS_VOTES_THRESHOLD) {
+      onlyVotedInsights.push(insight)
+    }
+  }
+
+  return {
+    insights: onlyVotedInsights
+  }
+}
 
 const propTypes = {
   insights: PropTypes.arrayOf(
@@ -33,6 +49,9 @@ const propTypes = {
       user: PropTypes.shape({
         username: PropTypes.string.isRequired,
         id: PropTypes.string.isRequired
+      }).isRequired,
+      votes: PropTypes.shape({
+        totalVotes: PropTypes.number.isRequired
       })
     })
   ).isRequired

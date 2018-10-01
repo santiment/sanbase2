@@ -4,6 +4,7 @@
 
   Fix Trends Examples descriptions
   Update the logic of searching trends
+  Add tracking for search of social trends
 
 - 2018-28-09 | v.0.15.1 'Phobos':
 

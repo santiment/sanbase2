@@ -7,6 +7,9 @@ export const insightsWidgetGQL = gql`
       createdAt
       title
       text
+      votes {
+        totalVotes
+      }
       user {
         id
         username

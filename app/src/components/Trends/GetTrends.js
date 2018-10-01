@@ -8,6 +8,13 @@ const GetTrends = ({ render, sources = {}, ...props }) =>
 
 const emptyChartData = []
 
+export const normalizeTopic = topic => {
+  if (topic.split(' ').length > 1 && !/AND|OR|(?<=\().*(?=\))/.test(topic)) {
+    return `"${topic}"`
+  }
+  return topic
+}
+
 const parseTrendsGQLProps = sourceType => ({
   data: { loading, error, topicSearch = {} },
   ownProps: { sources = {} }
@@ -29,7 +36,7 @@ const makeAllQueries = () =>
       props: parseTrendsGQLProps(source),
       options: ({ topic, timeRange }) => ({
         variables: {
-          searchText: topic,
+          searchText: normalizeTopic(topic),
           source: source,
           to: getStartOfTheDay(),
           from: getTimeFromFromString(timeRange)

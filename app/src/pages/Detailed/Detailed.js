@@ -17,7 +17,6 @@ import ServerErrorMessage from './../../components/ServerErrorMessage'
 import EthSpent from './../../pages/EthSpent'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
-import { millify } from './../../utils/formatting'
 import DetailedEthTopTransactions from './DetailedEthTopTransactions'
 import {
   projectBySlugGQL,

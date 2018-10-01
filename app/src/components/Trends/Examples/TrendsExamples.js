@@ -8,22 +8,22 @@ const examples = [
   {
     topic: 'stablecoin',
     settings: {
-      interval: '3m',
+      timeRange: '3m',
       sources: ['merged']
     }
   },
   {
-    topic: 'etf',
+    topic: 'ICO',
     settings: {
-      interval: '3m',
-      sources: ['telegram', 'reddit']
+      timeRange: '3m',
+      sources: ['merged']
     }
   },
   {
-    topic: 'ico',
+    topic: '(XRP OR Ripple OR XLM OR ETH) AND top',
     settings: {
-      interval: '3m',
-      sources: ['professional_traders_chat']
+      timeRange: '3m',
+      sources: ['merged']
     }
   }
 ]

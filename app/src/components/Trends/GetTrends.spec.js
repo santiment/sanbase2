@@ -9,7 +9,7 @@ describe('normalizeTopic', () => {
 
   it('should return initial data, if has OR/AND/()', () => {
     const data = '(santa monica)'
-    expect(normalizeTopic(data)).toEqual(data)
+    expect(normalizeTopic(data)).toEqual(`"${data}"`)
   })
 
   it('should return initial data wrapped "", if has non closed brackets', () => {

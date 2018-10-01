@@ -107,10 +107,10 @@ export const validateSearchSources = (sources = defaultSources) => {
   return validSources.length !== 0 ? validSources : defaultSources
 }
 
-export const parseExampleSettings = ({ interval, sources }) => {
+export const parseExampleSettings = ({ timeRange, sources }) => {
   let text = 'For '
 
-  switch (interval) {
+  switch (timeRange) {
     case '6m':
       text += '6 months'
       break
@@ -126,11 +126,6 @@ export const parseExampleSettings = ({ interval, sources }) => {
       break
   }
 
-  for (const source of sources) {
-    text += `, ${Source[source]}`
-  }
-
   text += ' mentions'
   return text
-  // For 7 days, Merged sources
 }

@@ -41,6 +41,13 @@ defmodule Sanbase.Oauth2.Hydra do
       reject_consent(consent, access_token, user)
     else
       accept_consent(consent, access_token, user)
+    else
+      Logger.warn(
+        "#{user.email || user.username} doesn't have enough SAN tokens" <>
+          inspect(user_san_balance)
+      )
+
+      reject_consent(consent, access_token, user)
     end
   end
 
@@ -145,6 +152,14 @@ defmodule Sanbase.Oauth2.Hydra do
   end
 
   defp has_enough_san_tokens?(%User{} = _user, _), do: true
+
+  defp san_balance(user) do
+    User.san_balance!(user)
+  end
+
+  defp required_san_tokens_by_client(client_id) do
+    json_config_value(:clients_that_require_san_tokens)[client_id]
+  end
 
   defp json_config_value(key) do
     Config.get(key)

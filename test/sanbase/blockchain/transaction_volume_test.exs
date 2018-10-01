@@ -58,31 +58,31 @@ defmodule Sanbase.Blockchain.TransactionVolumeTest do
 
     assert result == [
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z"),
                transaction_volume: 500.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00Z"),
                transaction_volume: 1.5e3
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00Z"),
                transaction_volume: 5.0e3
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 12:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 12:00:00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00Z"),
                transaction_volume: 100.0
              }
            ]
@@ -99,23 +99,23 @@ defmodule Sanbase.Blockchain.TransactionVolumeTest do
 
     assert result == [
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 12:00:00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 06:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 06:00:00Z"),
                transaction_volume: 0.0
              },
              %{
-               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.00Z"),
+               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00Z"),
                transaction_volume: 0.0
              }
            ]
@@ -133,7 +133,7 @@ defmodule Sanbase.Blockchain.TransactionVolumeTest do
     assert result == [
              %{
                transaction_volume: 7100.0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z")
              }
            ]
   end

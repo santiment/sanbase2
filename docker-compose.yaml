@@ -12,12 +12,7 @@ services:
   influxdb:
     image: influxdb
     ports:
-      - "8086"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_HOST: db
-      POSTGRES_DB: sanbase-db
+      - "8086:8086"
   faktory:
     image: contribsys/faktory:latest
     ports:

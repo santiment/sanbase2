@@ -59,27 +59,27 @@ defmodule Sanbase.Blockchain.DailyActiveAddressesTest do
     assert result == [
              %{
                active_addresses: 500,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z")
              },
              %{
                active_addresses: 1500,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00Z")
              },
              %{
                active_addresses: 0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00Z")
              },
              %{
                active_addresses: 2500,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-16 00:00:00Z")
              },
              %{
                active_addresses: 0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-17 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-17 00:00:00Z")
              },
              %{
                active_addresses: 100,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-18 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-18 00:00:00Z")
              }
            ]
   end
@@ -96,15 +96,15 @@ defmodule Sanbase.Blockchain.DailyActiveAddressesTest do
     assert result == [
              %{
                active_addresses: 0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z")
              },
              %{
                active_addresses: 0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-15 00:00:00Z")
              },
              %{
                active_addresses: 0,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-17 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-17 00:00:00Z")
              }
            ]
   end
@@ -121,7 +121,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddressesTest do
     assert result == [
              %{
                active_addresses: 1150,
-               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00.00Z")
+               datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z")
              }
            ]
   end

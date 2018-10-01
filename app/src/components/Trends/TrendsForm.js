@@ -1,4 +1,7 @@
 import React, { Component } from 'react'
+import Raven from 'raven-js'
+import axios from 'axios'
+import GoogleAnalytics from 'react-ga'
 import { connect } from 'react-redux'
 import { Input } from 'semantic-ui-react'
 import { gotoExplore } from './trendsUtils'
@@ -11,6 +14,7 @@ export class TrendsForm extends Component {
 
   handleSubmit = evt => {
     evt.preventDefault()
+    trackTopicSearch(this.state.topic)
     this.props.gotoExplore(this.state.topic)
   }
 
@@ -32,6 +36,30 @@ export class TrendsForm extends Component {
         </form>
       </div>
     )
+  }
+}
+
+const trackTopicSearch = topic => {
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      axios({
+        method: 'post',
+        url:
+          'https://us-central1-sanbase-search-ea4dc.cloudfunctions.net/trackTrends',
+        headers: {
+          authorization: ''
+        },
+        data: { topic }
+      })
+    } catch (error) {
+      Raven.captureException(
+        'tracking search trends queries ' + JSON.stringify(error)
+      )
+    }
+    GoogleAnalytics.event({
+      category: 'Trends Search',
+      action: 'Search: ' + topic
+    })
   }
 }
 

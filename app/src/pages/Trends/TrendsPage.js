@@ -1,5 +1,4 @@
 import React from 'react'
-import TrendsForm from '../../components/Trends/TrendsForm'
 import TrendsExamples from '../../components/Trends/Examples/TrendsExamples'
 import TrendsExamplesItemTopic from '../../components/Trends/Examples/TrendsExamplesItemTopic'
 import './TrendsPage.css'

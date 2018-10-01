@@ -4,13 +4,18 @@ import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 import './InsightsWidgetItem.css'
 
-const getTagsStrippedText = text => {
-  let tempHTMLElement = document.createElement('p')
-  tempHTMLElement.innerHTML = text
-  const insightText = tempHTMLElement.textContent
+const getInsightContonet = htmlContent => {
+  let tempHTMLElement = document.createElement('div')
+  tempHTMLElement.innerHTML = htmlContent
+  const content =
+    tempHTMLElement.textContent || tempHTMLElement.querySelector('img')
   tempHTMLElement = null
-  return insightText
+  return content
 }
+
+const createInsightThumbnailImg = htmlImg => (
+  <img src={htmlImg.src} alt={htmlImg.alt || 'Insight thumbnail'} />
+)
 
 const propTypes = {
   id: PropTypes.string.isRequired,
@@ -30,13 +35,16 @@ const InsightsWidgetItem = ({
   text,
   user: { username, id: userId }
 }) => {
-  const insightText = getTagsStrippedText(text)
+  let insightContent = getInsightContonet(text)
+  if (typeof insightContent === 'object') {
+    insightContent = createInsightThumbnailImg(insightContent)
+  }
   return (
     <div className='InsightsWidgetItem'>
       <h2 className='InsightsWidgetItem__title'>
         <Link to={`/insights/${id}`}>{title}</Link>
       </h2>
-      <p className='InsightsWidgetItem__text'>{insightText}</p>
+      <div className='InsightsWidgetItem__content'>{insightContent}</div>
       <div className='InsightsWidgetItem__bottom'>
         <h4 className='InsightsWidgetItem__info InsightsWidgetItem__info_author'>
           by <Link to={`/insights/users/${userId}`}>{username}</Link>

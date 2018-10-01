@@ -97,6 +97,7 @@ export const App = ({
   hasUsername
 }) => (
   <div className='App'>
+    <InsightsWidget />
     {isOffline && (
       <FadeInDown
         className='offline-status-message'

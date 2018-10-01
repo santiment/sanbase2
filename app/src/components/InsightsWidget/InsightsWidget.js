@@ -14,7 +14,7 @@ const sliderSettings = {
   speed: 500,
   slidesToShow: 1,
   slidesToScroll: 1,
-  autoplaySpeed: 70000,
+  autoplaySpeed: 7000,
   autoplay: true,
   arrows: false
 }

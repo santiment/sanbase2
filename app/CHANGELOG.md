@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-01-10 | v.0.15.2 'Phobos':
+
+  Fix Trends Examples descriptions
+  Update the logic of searching trends
+
 - 2018-28-09 | v.0.15.1 'Phobos':
 
   Update Roadmap

@@ -19,7 +19,15 @@ class SmoothDropdownItem extends Component {
   }
 
   componentDidMount () {
-    setTimeout(() => this.forceUpdate(), ddItemAsyncUpdateTimeout) // VERY HACKY - NECESSARY TO UPDATE DROPDOWN IN DOM
+    this.mountTimer = setTimeout(
+      () => this.forceUpdate(),
+      ddItemAsyncUpdateTimeout
+    ) // VERY HACKY - NECESSARY TO UPDATE DROPDOWN IN DOM
+  }
+  componentWillUnmount () {
+    clearTimeout(this.mountTimer)
+    this.dropdownRef = null
+    this.triggerRef = null
   }
 
   render () {

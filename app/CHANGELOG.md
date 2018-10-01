@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+- 2018-01-10 | v.0.15.2 'Phobos':
+
+  Fix Trends Examples descriptions
+  Update the logic of searching trends
+  Add tracking for search of social trends
+  Update Asset Label in Trends charts
+
 - 2018-28-09 | v.0.15.1 'Phobos':
 
   Update Roadmap

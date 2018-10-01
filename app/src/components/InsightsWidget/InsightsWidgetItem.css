@@ -13,20 +13,15 @@
   border-bottom: 0;
 }
 
-.InsightsWidgetItem__text {
+.InsightsWidgetItem__content {
   line-height: 1.2em;
   max-height: 4.7em;
+  margin-bottom: 6px;
   overflow: hidden;
 }
 
-.InsightsWidgetItem__test {
-  display: flex;
-  justify-content: space-between;
-}
-
-.InsightsWidgetItem__test > a {
-  text-decoration: underline;
-  border: 0;
+.InsightsWidgetItem__content img {
+  max-width: 100%;
 }
 
 .InsightsWidgetItem__bottom {
@@ -43,4 +38,12 @@
 
 .InsightsWidgetItem__info > a {
   color: #aaa;
+}
+
+.InsightsWidgetItem__info_author {
+  max-width: 52%;
+  text-overflow: ellipsis;
+  word-break: normal;
+  overflow: hidden;
+  white-space: nowrap;
 }

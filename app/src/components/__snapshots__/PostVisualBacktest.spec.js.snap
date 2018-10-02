@@ -28,12 +28,33 @@ exports[`PostVisualBacktest component SAN icon should render correctly 1`] = `
   <div
     class="PostVisualBacktestChart"
   >
-    <canvas
-      height="150"
-      width="300"
+    <div
+      class="recharts-responsive-container"
+      style="width:100%;height:100%"
     >
-      
-    </canvas>
+      <div
+        style="position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden;z-index:-1;visibility:hidden"
+      >
+        <div
+          style="position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden;z-index:-1;visibility:hidden"
+        >
+          <div
+            style="position:absolute;left:0;top:0;width:0;height:0"
+          >
+            
+          </div>
+        </div>
+        <div
+          style="position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden;z-index:-1;visibility:hidden"
+        >
+          <div
+            style="position:absolute;left:0;top:0;width:200%;height:200%"
+          >
+            
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 `;

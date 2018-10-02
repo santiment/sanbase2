@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.15.2",
+  "version": "0.16.0",
   "private": true,
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -64,6 +64,7 @@
     "react-router-redux": "^5.0.0-alpha.9",
     "react-scripts": "1.1.4",
     "react-select": "^2.0.0-beta.2",
+    "react-share": "^2.3.1",
     "react-sizes": "^0.4.3",
     "react-stickynode": "^1.4.1",
     "react-table": "^6.7.5",

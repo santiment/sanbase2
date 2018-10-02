@@ -139,6 +139,16 @@ hr {
   color: #fff;
 }
 
+.ui.button.link {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.ui.button.link:focus,
+.ui.button.link:hover {
+  transform: none;
+}
+
 .night-mode a.ui.basic.button {
   color: #a0a0a0 !important;
   box-shadow: none !important;

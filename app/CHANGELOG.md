@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-02-10 | v.0.16.0 'Phobos':
+
+  Add share buttons on Trends page
+
 - 2018-01-10 | v.0.15.2 'Phobos':
 
   Fix Trends Examples descriptions

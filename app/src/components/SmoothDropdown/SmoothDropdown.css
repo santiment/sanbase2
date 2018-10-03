@@ -55,7 +55,7 @@
   position: absolute;
   opacity: 0;
   transition: 0.25s ease;
-  padding: 12px;
+  padding: 0;
   white-space: nowrap;
 }
 

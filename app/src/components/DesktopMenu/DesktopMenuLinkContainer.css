@@ -16,10 +16,16 @@ a.link-container {
   transition: 0.05s ease;
 }
 
+.link-container:active {
+  color: #262b33;
+}
+
 .link-container .link-icon {
   margin-top: 18px;
   margin-right: 10px;
   margin-left: 11px;
+  min-width: 44px;
+  min-height: 44px;
   width: 44px;
   height: 44px;
   transition: box-shadow 0.1s;
@@ -27,12 +33,10 @@ a.link-container {
 
 .link-container:hover .link-icon {
   border: 1px solid transparent;
-  border-radius: 2px;
-  box-shadow: 0 7px 9px 0 rgba(76, 95, 114, 0.1);
 }
 
 .link-container .link-title {
-  margin-top: 22px;
+  margin-top: 15px;
   margin-bottom: 6px;
   text-transform: uppercase;
   font-size: 18px;

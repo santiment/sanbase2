@@ -84,8 +84,6 @@ class ExternalRedirect extends React.Component {
   }
 }
 
-const HiddenElements = () => ''
-
 export const App = ({
   isDesktop,
   isLoggedIn,
@@ -115,19 +113,17 @@ export const App = ({
         </Link>
       </div>
     )}
-    <HiddenElements>
-      {isDesktop && (
-        <div className='new-status-message'>
-          <Link to='/ethereum-spent'>
-            <Label color='green' horizontal>
-              NEW
-            </Label>
-            We prepared for you ethereum spent overview{' '}
-            <Icon name='angle right' />
-          </Link>
-        </div>
-      )}
-    </HiddenElements>
+    {isDesktop && (
+      <div className='new-status-message'>
+        <Link to='/trends'>
+          <Label color='green' horizontal>
+            NEW
+          </Label>
+          We prepared for you crypto trends in social media{' '}
+          <Icon name='angle right' />
+        </Link>
+      </div>
+    )}
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>

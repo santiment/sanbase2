@@ -33,8 +33,9 @@
 }
 
 .button:hover {
-  background-color: rgb(0, 121, 211);
-  color: white;
+  background: #d4d9dd5e;
+  color: #262b33;
+  transition: 0.05s ease;
 }
 
 .divider {

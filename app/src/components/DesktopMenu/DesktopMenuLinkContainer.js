@@ -11,7 +11,7 @@ const DesktopMenuLinkContainer = ({ title, description, linkIcon, to }) => {
       <img
         className='link-icon'
         alt={`icon of ${linkIcon}`}
-        src={require(`../assets/top_menu_${linkIcon}.svg`)}
+        src={require(`../../assets/top_menu_${linkIcon}.svg`)}
       />
       <div className='link-text'>
         <h3 className='link-title'>{title}</h3>

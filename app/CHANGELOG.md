@@ -1,6 +1,12 @@
 ## CHANGELOG
 
-- 2018-02-10 | v.0.16.1 'Phobos':
+- 2018-03-10 | v.0.17.0 'Phobos':
+
+  Update the profile menu on the desktop
+  Update Analysis Desktop Menu
+  Add basic Assets dropdown menu
+
+- 2018-03-10 | v.0.16.1 'Phobos':
 
   Switch from CRA v1. to CRA v2.
   Support SASS, CSS MODULES ...

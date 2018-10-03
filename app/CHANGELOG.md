@@ -4,6 +4,7 @@
 
   Update the profile menu on the desktop
   Update Analysis Desktop Menu
+  Add basic Assets dropdown menu
 
 - 2018-03-10 | v.0.16.1 'Phobos':
 

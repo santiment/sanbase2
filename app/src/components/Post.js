@@ -105,35 +105,35 @@ export const Post = ({
         </div>
         {createdAt &&
           tags.length > 0 && (
-            <PostVisualBacktest
-              from={createdAt}
-              ticker={tags[0].name}
-              updatedAt={updatedAt}
-            />
-          )}
+          <PostVisualBacktest
+            from={createdAt}
+            ticker={tags[0].name}
+            updatedAt={updatedAt}
+          />
+        )}
       </div>
       {user &&
         !showStatus && (
-          <Div className='event-post-info'>
-            {discourseTopicUrl && (
-              <a className='discussion-btn' href={discourseTopicUrl}>
+        <Div className='event-post-info'>
+          {discourseTopicUrl && (
+            <a className='discussion-btn' href={discourseTopicUrl}>
                 Comments
-              </a>
-            )}
-            <LikeBtn
-              onLike={() => {
-                if (votedAt) {
-                  unvotePost(id)
-                } else {
-                  votePost(id)
-                }
-              }}
-              balance={balance}
-              liked={!!votedAt}
-              votes={votes}
-            />
-          </Div>
-        )}
+            </a>
+          )}
+          <LikeBtn
+            onLike={() => {
+              if (votedAt) {
+                unvotePost(id)
+              } else {
+                votePost(id)
+              }
+            }}
+            balance={balance}
+            liked={!!votedAt}
+            votes={votes}
+          />
+        </Div>
+      )}
       {showStatus && (
         <Div className='event-post-controls'>
           <Status moderationComment={moderationComment} status={readyState} />

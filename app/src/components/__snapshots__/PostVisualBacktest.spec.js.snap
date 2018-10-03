@@ -19,9 +19,7 @@ exports[`PostVisualBacktest component SAN icon should render correctly 1`] = `
     >
       <i
         class="fa fa-caret-up"
-      >
-        
-      </i>
+      />
        25.00%
     </div>
   </div>
@@ -31,9 +29,7 @@ exports[`PostVisualBacktest component SAN icon should render correctly 1`] = `
     <canvas
       height="150"
       width="300"
-    >
-      
-    </canvas>
+    />
   </div>
 </div>
 `;

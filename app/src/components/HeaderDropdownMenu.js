@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, Divider, Icon } from 'semantic-ui-react'
 import { NavLink, Link } from 'react-router-dom'
-import FeedbackBtn from './FeedbackBtn'
+import FeedbackButton from './FeedbackButton/FeedbackButton'
 import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import './HeaderDropdownMenu.css'
 
@@ -9,7 +9,7 @@ const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
   if (isLoggedin) {
     return (
       <div className='user-auth-control'>
-        <FeedbackBtn />
+        <FeedbackButton />
         <SmoothDropdownItem
           trigger={<Button circular icon='user' />}
           id='profile'
@@ -34,7 +34,7 @@ const HeaderDesktopDropMenu = ({ isLoggedin, logout }) => {
   }
   return (
     <div className='user-auth-control'>
-      <FeedbackBtn />
+      <FeedbackButton />
       <NavLink to='/login'>Login</NavLink>
     </div>
   )

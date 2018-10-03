@@ -79,19 +79,6 @@
   padding: 0;
 }
 
-.feedback-button-wrapper .icon {
-  background: transparent !important;
-  color: white;
-}
-
-.night-mode .feedback-button-wrapper .icon {
-  color: #c0c0c0;
-}
-
-.feedback-button-wrapper button:hover {
-  background: rgba(225, 225, 225, 0.2) !important;
-}
-
 .feedback-body-wrapper div {
   width: 210px !important;
 }
@@ -109,10 +96,4 @@
 .feedback-body-wrapper textarea:focus,
 .feedback-body-wrapper input:focus {
   outline: none;
-}
-
-@media (min-width: 1250px) {
-  .feedback-button-wrapper {
-    display: inline-block;
-  }
 }

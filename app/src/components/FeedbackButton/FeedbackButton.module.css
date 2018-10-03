@@ -9,6 +9,7 @@
 
 .helpMessage {
   user-select: none;
+  padding: 12px;
 }
 
 .night-mode .feedbackButton {

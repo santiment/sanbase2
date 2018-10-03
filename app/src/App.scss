@@ -77,15 +77,24 @@
 }
 
 .App .new-status-message {
-  color: #794b02;
-  background: #fffaf3;
+  color: #000;
+  background: #fff;
   text-align: center;
-  font: 15px/1.6 'Nunito Sans', sans-serif;
-  font-weight: bold;
+  font-weight: normal;
+  padding: 5px;
 }
 
 .App .new-status-message a {
   border-bottom: none;
+}
+
+.App .new-status-message a:hover {
+  color: black;
+}
+
+.App .new-status-message a:focus,
+.App .new-status-message a:active {
+  color: #000;
 }
 
 .App .no-username-status-message {

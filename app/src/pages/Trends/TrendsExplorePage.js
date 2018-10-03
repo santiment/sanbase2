@@ -13,6 +13,17 @@ import ShareOptions from './../../components/ShareOptions/ShareOptions'
 import { capitalizeStr } from './../../utils/utils'
 import './TrendsExplorePage.css'
 
+export const getStateFromQS = ({ location }) => {
+  const { timeRange, asset } = qs.parse(location.search, {
+    arrayFormat: 'bracket'
+  })
+
+  return {
+    timeRange: timeRange || '3m',
+    asset: asset || 'bitcoin'
+  }
+}
+
 export class TrendsExplorePage extends Component {
   state = {
     ...getStateFromQS(this.props)
@@ -111,17 +122,6 @@ export class TrendsExplorePage extends Component {
     this.props.history.push({
       search: this.mapStateToQS(this.state)
     })
-  }
-}
-
-export const getStateFromQS = ({ location }) => {
-  const { timeRange, asset } = qs.parse(location.search, {
-    arrayFormat: 'bracket'
-  })
-
-  return {
-    timeRange: timeRange || '3m',
-    asset: asset || 'bitcoin'
   }
 }
 

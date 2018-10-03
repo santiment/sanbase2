@@ -40,12 +40,12 @@ const DetailedHeader = ({
           &nbsp; &nbsp;
           {isLoggedIn &&
             !loading && (
-              <WatchlistsPopup
-                projectId={project.id}
-                slug={project.slug}
-                isLoggedIn={isLoggedIn}
-              />
-            )}
+            <WatchlistsPopup
+              projectId={project.id}
+              slug={project.slug}
+              isLoggedIn={isLoggedIn}
+            />
+          )}
         </div>
         <DIV className='datailed-project-description'>
           {project.description}

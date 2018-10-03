@@ -1,0 +1,42 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+}
+
+.wrapper h3 {
+  margin-top: 22px;
+  padding-top: 22px;
+  margin-left: 25px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  font: 14px/1.6 'Nunito Sans', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgb(135, 138, 140);
+}
+
+.wrapper a i {
+  padding-top: 5px;
+}
+
+.button {
+  padding: 15px 25px;
+  color: black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: none;
+  font-size: 16px;
+  line-height: 18px;
+}
+
+.button:hover {
+  background-color: rgb(0, 121, 211);
+  color: white;
+}
+
+.divider {
+  margin: 0 !important;
+}

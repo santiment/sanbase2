@@ -1,19 +1,21 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { connect } from 'react-redux'
 import 'font-awesome/css/font-awesome.css'
 import { Label } from 'semantic-ui-react'
 import logo from '../assets/logo_sanbase.png'
-import HeaderDropdownMenu from './HeaderDropdownMenu.js'
+import DesktopRightGroupMenu from './DesktopMenu/DesktopRightGroupMenu.js'
 import Search from './Search/SearchContainer'
-import * as actions from './../actions/types'
 import AnalysisDropdownMenu from './AnalysisDropdownMenu'
 import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
-import { checkIsLoggedIn } from './../pages/UserSelectors'
 import './AppMenu.css'
 import './TopMenu.css'
 
-export const TopMenu = ({ isLoggedin, logout }) => (
+export const TopMenu = ({
+  isLoggedIn,
+  logout,
+  toggleNightMode,
+  isNightModeEnabled
+}) => (
   <div className='app-menu'>
     <div className='container'>
       <div className='left'>
@@ -35,22 +37,10 @@ export const TopMenu = ({ isLoggedin, logout }) => (
           </Link>
           <AnalysisDropdownMenu />
         </div>
-        <HeaderDropdownMenu isLoggedin={isLoggedin} logout={logout} />
+        <DesktopRightGroupMenu />
       </SmoothDropdown>
     </div>
   </div>
 )
 
-const mapStateToProps = state => ({ isLoggedin: checkIsLoggedIn(state) })
-
-const mapDispatchToProps = dispatch => {
-  return {
-    logout: () => {
-      dispatch({
-        type: actions.USER_LOGOUT_SUCCESS
-      })
-    }
-  }
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(TopMenu)
+export default TopMenu

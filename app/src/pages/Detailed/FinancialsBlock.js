@@ -47,73 +47,72 @@ const FinancialsBlock = ({
     <hr />
     {fundsRaisedIcos &&
       fundsRaisedIcos.length !== 0 && (
-        <div className='row-info'>
-          <div>Collected</div>
-          <div className='value'>
-            {fundsRaisedIcos
-              ? fundsRaisedIcos.map((amountIco, index) => {
-                return (
-                  <div key={index}>
-                    {collectedField(amountIco.currencyCode, amountIco.amount)}
-                  </div>
-                )
-              })
-              : '-'}
-          </div>
+      <div className='row-info'>
+        <div>Collected</div>
+        <div className='value'>
+          {fundsRaisedIcos
+            ? fundsRaisedIcos.map((amountIco, index) => {
+              return (
+                <div key={index}>
+                  {collectedField(amountIco.currencyCode, amountIco.amount)}
+                </div>
+              )
+            })
+            : '-'}
         </div>
-      )}
+      </div>
+    )}
     {ethAddresses &&
       ethAddresses.length > 0 && (
-        <Fragment>
-          {ethBalance && (
-            <div
-              className={cx({
-                'row-info wallets': true,
-                'info-disabled': !ethBalance || ethAddresses.length === 0
-              })}
-            >
-              <div>Wallet Balances</div>
-            </div>
-          )}
-          {ethAddresses &&
+      <Fragment>
+        {ethBalance && (
+          <div
+            className={cx({
+              'row-info wallets': true,
+              'info-disabled': !ethBalance || ethAddresses.length === 0
+            })}
+          >
+            <div>Wallet Balances</div>
+          </div>
+        )}
+        {ethAddresses &&
             ethAddresses.length > 0 && (
-              <div className='row-info wallets-balance'>
-                {ethAddresses.map((wallet, index) => (
-                  <div key={index}>
-                    <div className='wallets-addresses'>
-                      <a
-                        href={`https://etherscan.io/address/${wallet.address}`}
-                      >
-                        {wallet.address}
-                      </a>
-                      <span>ETH {millify(wallet.balance, 2)}</span>
-                    </div>
-                  </div>
-                ))}
+          <div className='row-info wallets-balance'>
+            {ethAddresses.map((wallet, index) => (
+              <div key={index}>
+                <div className='wallets-addresses'>
+                  <a
+                    href={`https://etherscan.io/address/${wallet.address}`}
+                  >
+                    {wallet.address}
+                  </a>
+                  <span>ETH {millify(wallet.balance, 2)}</span>
+                </div>
               </div>
-            )}
-          {ethBalance && (
-            <div
-              className={cx({
-                'row-info': true,
-                'info-disabled': ethAddresses.length === 0 && +ethBalance === 0
-              })}
-            >
-              <div>Total Balance</div>
-              {ethBalance ? `ETH ${millify(ethBalance, 2)}` : 0}
-            </div>
-          )}
-          {ethSpent && (
-            <div
-              className={cx({
-                'row-info': true,
-                'info-disabled': !ethBalance
-              })}
-            >
-              <div>ETH Spent 30d</div>
-              <div style={{ textAlign: 'right' }}>
-                {ethSpent ? `ETH ${millify(ethSpent, 2)}` : 0}
-              </div>
+            ))}
+          </div>
+        )}
+        {ethBalance && (
+          <div
+            className={cx({
+              'row-info': true,
+              'info-disabled': ethAddresses.length === 0 && +ethBalance === 0
+            })}
+          >
+            <div>Total Balance</div>
+            {ethBalance ? `ETH ${millify(ethBalance, 2)}` : 0}
+          </div>
+        )}
+        {ethSpent && (
+          <div
+            className={cx({
+              'row-info': true,
+              'info-disabled': !ethBalance
+            })}
+          >
+            <div>ETH Spent 30d</div>
+            <div style={{ textAlign: 'right' }}>
+              {ethSpent ? `ETH ${millify(ethSpent, 2)}` : 0}
             </div>
           )}
         </Fragment>

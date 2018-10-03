@@ -1,3 +1,6 @@
+@import 'variables.scss';
+@import '~nprogress/nprogress';
+
 .App {
   height: 100%;
   display: flex;
@@ -122,19 +125,6 @@
   box-shadow: 0 7px 14px rgba(45, 156, 129, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
-@media (max-width: 767px) {
-  .App .page {
-    padding: 0 15px;
-    overflow-y: auto;
-    overflow: scroll;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .App .page::-webkit-scrollbar {
-    display: none;
-  }
-}
-
 .page-head {
   margin-top: 35px;
   margin-right: 20px;
@@ -154,7 +144,7 @@
 }
 
 .fa-disabled {
-  color: #d3d3d3;
+  color: $disabled;
 }
 
 .ui.modal {
@@ -184,7 +174,26 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (max-width: $breakpoint-tablet) {
+  .App {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .App .page {
+    padding: 0 15px;
+    overflow-y: auto;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .App .page::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (min-width: $breakpoint-desktop) {
   .App .page {
     margin: 0 auto;
   }

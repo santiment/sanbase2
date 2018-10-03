@@ -16,10 +16,16 @@ a.link-container {
   transition: 0.05s ease;
 }
 
+.link-container:active {
+  color: #262b33;
+}
+
 .link-container .link-icon {
   margin-top: 18px;
   margin-right: 10px;
   margin-left: 11px;
+  min-width: 44px;
+  min-height: 44px;
   width: 44px;
   height: 44px;
   transition: box-shadow 0.1s;

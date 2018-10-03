@@ -11,7 +11,7 @@ const handleNightModeToggle = action$ =>
     .exhaustMap(() =>
       Observable.of(document.body.classList.toggle('night-mode'))
     )
-    .debounceTime(1000)
+    .debounceTime(200)
     .map(isNightModeEnabled => {
       saveKeyState('isNightModeEnabled', isNightModeEnabled)
       return Observable.of(isNightModeEnabled)

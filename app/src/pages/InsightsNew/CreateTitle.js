@@ -51,12 +51,12 @@ const CreateTitle = ({ post, changePost }) => {
             Short description (required)
             {formApi.values.title &&
               formApi.values.title.length > TITLE_MAX_LENGTH && (
-                <LimitSizeOfTitle
-                  length={
-                    formApi.values.title ? formApi.values.title.length : 0
-                  }
-                />
-              )}
+              <LimitSizeOfTitle
+                length={
+                  formApi.values.title ? formApi.values.title.length : 0
+                }
+              />
+            )}
           </label>
           <ReactFormInput
             fluid

@@ -14,6 +14,7 @@ export const Balance = ({ user, onlyBalance = false }) => {
                   className='address'
                   href={`https://etherscan.io/address/${account.address}`}
                   target='_blank'
+                  rel='noopener noreferrer'
                 >
                   {account.address}
                 </a>

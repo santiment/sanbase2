@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-02-10 | v.0.16.1 'Phobos':
+
+  Switch from CRA v1. to CRA v2.
+  Support SASS, CSS MODULES ...
+
 - 2018-02-10 | v.0.16.0 'Phobos':
 
   Add share buttons on Trends page

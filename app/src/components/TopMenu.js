@@ -1,7 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import 'font-awesome/css/font-awesome.css'
-import { Label } from 'semantic-ui-react'
 import logo from '../assets/logo_sanbase.png'
 import Search from './Search/SearchContainer'
 import DesktopRightGroupMenu from './DesktopMenu/DesktopRightGroupMenu'

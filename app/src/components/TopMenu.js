@@ -4,9 +4,11 @@ import 'font-awesome/css/font-awesome.css'
 import { Label } from 'semantic-ui-react'
 import logo from '../assets/logo_sanbase.png'
 import Search from './Search/SearchContainer'
-import DesktopRightGroupMenu from './DesktopMenu/DesktopRightGroupMenu.js'
+import DesktopRightGroupMenu from './DesktopMenu/DesktopRightGroupMenu'
 import AnalysisDropdownMenu from './DesktopMenu/AnalysisDropdownMenu'
+import DesktopAssetsMenu from './DesktopMenu/DesktopAssetsMenu'
 import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
+import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -26,15 +28,12 @@ export const TopMenu = ({
       </div>
       <SmoothDropdown className='right'>
         <div className='menu-list-top'>
-          <Link className='app-menu__page-link' to='/trends'>
-            Trends{' '}
-            <Label color='green' horizontal>
-              new
-            </Label>
-          </Link>
-          <Link className='app-menu__page-link' to='/assets'>
-            Assets
-          </Link>
+          <SmoothDropdownItem
+            trigger={<span className='app-menu__page-link'>Assets</span>}
+            id='analysis'
+          >
+            <DesktopAssetsMenu />
+          </SmoothDropdownItem>
           <AnalysisDropdownMenu />
         </div>
         <DesktopRightGroupMenu />

@@ -157,12 +157,10 @@ defmodule Sanbase.Oauth2.Hydra do
     User.san_balance!(user)
   end
 
-  defp required_san_tokens_by_client(client_id) do
-    json_config_value(:clients_that_require_san_tokens)[client_id]
-  end
-
-  defp json_config_value(key) do
+  # json config value example: {"grafana": 200}
+  defp required_san_tokens_by_client(key, client_id) do
     Config.get(key)
     |> Jason.decode!()
+    |> Map.get(client_id, 0)
   end
 end

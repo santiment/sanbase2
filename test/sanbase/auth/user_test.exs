@@ -196,6 +196,132 @@ defmodule Sanbase.Auth.UserTest do
     assert User.email_token_valid?(user, "test_token")
   end
 
+  test "find_by_email_candidate when the user does not exist" do
+    {:error, message} = User.find_by_email_candidate("test@example.com", "some token")
+
+    assert message == "Can't find user with email candidate test@example.com"
+  end
+
+  test "find_by_email_candidate when the user exists" do
+    {:ok, existing_user} =
+      %User{
+        email: "test@example.com",
+        salt: User.generate_salt(),
+        privacy_policy_accepted: true
+      }
+      |> Repo.insert!()
+      |> User.update_email_candidate("test+foo@santiment.net")
+
+    {:ok, user} =
+      User.find_by_email_candidate(
+        existing_user.email_candidate,
+        existing_user.email_candidate_token
+      )
+
+    assert user.id == existing_user.id
+    assert user.email_candidate == existing_user.email_candidate
+  end
+
+  test "find_by_email_candidate when there are two users with the same email_candidate" do
+    %User{
+      email: "test_first@example.com",
+      salt: User.generate_salt(),
+      privacy_policy_accepted: true
+    }
+    |> Repo.insert!()
+    |> User.update_email_candidate("test+foo@santiment.net")
+
+    {:ok, existing_user} =
+      %User{
+        email: "test@example.com",
+        salt: User.generate_salt(),
+        privacy_policy_accepted: true
+      }
+      |> Repo.insert!()
+      |> User.update_email_candidate("test+foo@santiment.net")
+
+    {:ok, user} =
+      User.find_by_email_candidate(
+        existing_user.email_candidate,
+        existing_user.email_candidate_token
+      )
+
+    assert user.id == existing_user.id
+    assert user.email_candidate == existing_user.email_candidate
+  end
+
+  test "update_email_candidate updates the email_candidate, email_candidate_token, email_candidate_token_generated_at and email_candidate_token_validated_at" do
+    user =
+      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
+      |> Repo.insert!()
+
+    email_candidate = "test+foo@santiment.net"
+    {:ok, user} = User.update_email_candidate(user, email_candidate)
+
+    assert user.email_candidate == email_candidate
+    assert user.email_candidate_token != nil
+    assert user.email_candidate_token_validated_at == nil
+
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             user.email_candidate_token_generated_at,
+             2,
+             :seconds
+           )
+  end
+
+  test "update_email_from_email_candidate updates the email with the email_candidate" do
+    email_candidate = "test+foo@santiment.net"
+
+    {:ok, user} =
+      %User{
+        email: "test@example.com",
+        salt: User.generate_salt(),
+        privacy_policy_accepted: true
+      }
+      |> Repo.insert!()
+      |> User.update_email_candidate(email_candidate)
+
+    {:ok, user} = User.update_email_from_email_candidate(user)
+
+    assert user.email == email_candidate
+    assert user.email_candidate == nil
+
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             user.email_candidate_token_validated_at,
+             2,
+             :seconds
+           )
+  end
+
+  test "email_candidate_token_valid? validates the email_candidate_token properly" do
+    user = %User{email_candidate_token: "test_token"}
+    refute User.email_candidate_token_valid?(user, "wrong_token")
+
+    user = %User{
+      email_candidate_token: "test_token",
+      email_candidate_token_generated_at: Timex.shift(Timex.now(), days: -2)
+    }
+
+    refute User.email_candidate_token_valid?(user, "test_token")
+
+    user = %User{
+      email_candidate_token: "test_token",
+      email_candidate_token_generated_at: Timex.now(),
+      email_candidate_token_validated_at: Timex.shift(Timex.now(), minutes: -20)
+    }
+
+    refute User.email_candidate_token_valid?(user, "test_token")
+
+    user = %User{
+      email_candidate_token: "test_token",
+      email_candidate_token_generated_at: Timex.now()
+    }
+
+    assert User.email_candidate_token_valid?(user, "test_token")
+  end
+
   test "return error on insert/update username with non ascii" do
     user = insert(:user)
 
@@ -217,5 +343,36 @@ defmodule Sanbase.Auth.UserTest do
       |> Repo.update()
 
     assert user.username == "portokala"
+  end
+
+  test "converts email and email_candidate to lower case" do
+    user = insert(:user)
+
+    {:ok, user} =
+      User.changeset(user, %{
+        email: "tesT+eMAil@saNTIment.nEt",
+        email_candidate: "TEst+eMAil_cANDIdate@sanTIMent.NEt"
+      })
+      |> Repo.update()
+
+    assert user.email == "test+email@santiment.net"
+    assert user.email_candidate == "test+email_candidate@santiment.net"
+  end
+
+  test "return error on insert/update email_candidate with an email of another user" do
+    user1 = insert(:user)
+    user2 = insert(:user)
+    email = "test@santiment.net"
+
+    User.changeset(user1, %{email: email})
+    |> Repo.update()
+
+    {:error, changeset} =
+      User.changeset(user2, %{email_candidate: email})
+      |> Repo.update()
+
+    refute changeset.valid?
+
+    assert errors_on(changeset)[:email] |> Enum.at(0) == "Email has already been taken"
   end
 end

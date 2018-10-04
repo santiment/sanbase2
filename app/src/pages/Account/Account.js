@@ -14,7 +14,7 @@ import * as actions from '../../actions/types'
 import './Account.css'
 const validate = require('validate.js')
 
-export const TAKEN_MSG = 'has already been taken'
+export const TAKEN_MSG = 'Email has already been taken'
 
 const validateFields = (email, username) => {
   var constraints = {
@@ -121,7 +121,7 @@ class Account extends Component {
           <Message
             className='account-message account-message__email_success'
             positive
-            content={`Email was changed to "${user.email || ''}"!`}
+            content={`Verification email was sent to "${user.email || ''}"!`}
           />
         )}
         {emailForm.ERROR && (

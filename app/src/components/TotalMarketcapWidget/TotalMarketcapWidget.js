@@ -1,48 +1,10 @@
 import React from 'react'
 import moment from 'moment'
 import { graphql } from 'react-apollo'
-import { Line } from 'react-chartjs-2'
+import { ResponsiveContainer, AreaChart, Area, XAxis } from 'recharts'
 import { totalMarketcapGQL } from './TotalMarketcapGQL'
 import { formatNumber } from '../../utils/formatting'
-import './TotalMarketcapWidget.css'
-
-const chartOptions = {
-  pointRadius: 0,
-  animation: false,
-  legend: {
-    display: false
-  },
-  elements: {
-    point: {
-      hitRadius: 1,
-      hoverRadius: 1,
-      radius: 0
-    }
-  },
-  tooltips: {
-    enabled: false
-  },
-  scales: {
-    yAxes: [
-      {
-        display: false
-      }
-    ],
-    xAxes: [
-      {
-        display: false
-      }
-    ]
-  }
-}
-
-const options = {
-  borderColor: 'rgba(45, 94, 57, 1)',
-  borderWidth: 1,
-  lineTension: 0.1,
-  pointBorderWidth: 1,
-  backgroundColor: 'rgba(214, 235, 219, .8)'
-}
+import './TotalMarketcapWidget.scss'
 
 const currencyFormatOptions = {
   currency: 'USD',
@@ -55,16 +17,10 @@ const generateWidgetData = historyPrice => {
 
   const historyPriceLastIndex = historyPrice.length - 1
 
-  const marketcapDataset = {
-    labels: historyPrice.map(data => data.datetime),
-    datasets: [
-      {
-        data: historyPrice.map(data => data.marketcap),
-        label: 'Marketcap',
-        ...options
-      }
-    ]
-  }
+  const marketcapDataset = historyPrice.map(data => ({
+    datetime: data.datetime,
+    marketcap: data.marketcap
+  }))
 
   const volumeAmplitude =
     historyPrice[historyPriceLastIndex].volume -
@@ -91,7 +47,7 @@ const TotalMarketcapWidget = ({ data: { historyPrice } }) => {
   const {
     totalmarketCapPrice = '.',
     volumeAmplitudePrice = '.',
-    marketcapDataset = {}
+    marketcapDataset = []
   } = generateWidgetData(historyPrice)
 
   const valueClassNames = `TotalMarketcapWidget__value ${
@@ -110,11 +66,22 @@ const TotalMarketcapWidget = ({ data: { historyPrice } }) => {
           <h4 className={valueClassNames}>{volumeAmplitudePrice}</h4>
         </div>
       </div>
-      <Line
-        data={marketcapDataset}
-        options={chartOptions}
-        className='TotalMarketcapWidget__chart'
-      />
+      <ResponsiveContainer width='100%' className='TotalMarketcapWidget__chart'>
+        <AreaChart
+          data={marketcapDataset}
+          margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+        >
+          <XAxis dataKey='datetime' hide />
+          <Area
+            dataKey='marketcap'
+            type='monotone'
+            strokeWidth={1}
+            stroke='#2d5e39'
+            fill='rgba(214, 235, 219, .8)'
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   )
 }

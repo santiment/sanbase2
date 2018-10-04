@@ -1,0 +1,47 @@
+$theme-colors: (
+  'primary-background': (
+    'day': #fff,
+    'night': #1a1b1e
+  ),
+  'primary-text': (
+    'day': #3d4450,
+    'night': #727272
+  ),
+  'accent-text': (
+    'day': #000,
+    'night': #a0a0a0
+  ),
+  'faded-text': (
+    'day': #878a8c,
+    'night': #5f5f5f
+  )
+);
+
+@function themed($key) {
+  @return map-get($theme-map, $key);
+}
+
+@mixin themify($themes: ('day', 'night')) {
+  @each $theme in $themes {
+    $themeSelector: '';
+
+    @if $theme == 'night' {
+      $themeSelector: '.night-mode';
+    }
+
+    #{$themeSelector} & {
+      $theme-map: () !global; // to use it inside @themed@ function
+
+      @each $themeKey, $themeValues in $theme-colors {
+        $value: map-get($themeValues, $theme);
+        $theme-map: map-merge($theme-map, ($themeKey: $value)) !global;
+      }
+
+      @content;
+
+      $theme-map: null !global;
+    }
+  }
+}
+
+

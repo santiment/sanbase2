@@ -3,6 +3,18 @@ $theme-colors: (
     'day': #fff,
     'night': #1a1b1e
   ),
+  'border-bottom': (
+    'day': #b1b7c1,
+    'night': #3d4450
+  ),
+  'primary-link:hover': (
+    'day': #26a987,
+    'night': #1d8166
+  ),
+  'primary-link': (
+    'day': #3d4450,
+    'night': #a0a0a0
+  ),
   'primary-text': (
     'day': #3d4450,
     'night': #727272
@@ -38,7 +50,6 @@ $theme-colors: (
       }
 
       @content;
-
       $theme-map: null !global;
     }
   }

@@ -28,7 +28,7 @@ import authLink from './apollo/auth-link'
 import retryLink from './apollo/retry-link'
 import { unregister } from './serviceWorker'
 import 'semantic-ui-css/semantic.min.css'
-import './index.css'
+import './index.scss'
 
 const main = () => {
   const httpLink = createHttpLink({ uri: `${getAPIUrl()}/graphql` })

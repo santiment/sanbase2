@@ -1,6 +1,7 @@
 .PostVisualBacktestChart {
   width: 60%;
-  max-height: 75px;
+  min-height: 75px;
+  min-width: 150px;
 }
 
 .night-mode .PostVisualBacktestChart {

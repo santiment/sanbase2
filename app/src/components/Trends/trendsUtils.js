@@ -32,8 +32,8 @@ export const SourceColor = {
 export const sourcesMeta = {
   merged: {
     index: 'merged',
-    name: 'Merged',
-    color: '#ffc107',
+    name: 'Total Mentions',
+    color: 'rgb(156, 39, 176)',
     value: 0
   },
   telegram: {

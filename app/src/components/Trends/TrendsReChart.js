@@ -64,7 +64,7 @@ const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
           <Tooltip
             labelFormatter={date => moment(date).format('dddd, MMM DD YYYY')}
             formatter={(value, name) => {
-              if (name === asset) {
+              if (name === `${asset}/USD`) {
                 return formatNumber(value, { currency: 'USD' })
               }
               return value

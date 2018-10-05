@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-05-10 | v.0.17.1 'Phobos':
+
+  Update Error Boundary styles
+  Add the descriptop for "Trends"
+
 - 2018-03-10 | v.0.17.0 'Phobos':
 
   Update the profile menu on the desktop

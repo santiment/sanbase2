@@ -5,9 +5,8 @@ import './PricingHelpMessage.css'
 const PricingHelpMessage = () => (
   <div className='pricing-details'>
     <label className='pricing-details__label'>Limited data.</label>
-    &nbsp;Unlock the full app. &nbsp;<HelpPopup
-      trigger={<span>Learn more</span>}
-    >
+    &nbsp;Unlock the full app. &nbsp;
+    <HelpPopup trigger={<span>Learn more</span>}>
       <div>
         <p>
           <strong>We are free now for general usage.</strong>

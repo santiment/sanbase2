@@ -7,7 +7,6 @@ import withSizes from 'react-sizes'
 import { connect } from 'react-redux'
 import { compose } from 'recompose'
 import nprogress from 'nprogress'
-import 'nprogress/nprogress.css'
 import Notification from './components/Notification'
 import LoginPage from './pages/Login/LoginPage'
 import CashflowMobile from './pages/CashflowMobile'
@@ -29,7 +28,7 @@ import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/assets/AssetsPage'
 import { getConsentUrl } from './utils/utils'
-import './App.css'
+import './App.scss'
 
 const LoadableDetailedPage = Loadable({
   loader: () => import('./pages/Detailed/Detailed'),
@@ -85,8 +84,6 @@ class ExternalRedirect extends React.Component {
   }
 }
 
-const HiddenElements = () => ''
-
 export const App = ({
   isDesktop,
   isLoggedIn,
@@ -107,28 +104,26 @@ export const App = ({
     )}
     {isLoggedIn &&
       !hasUsername && (
-        <div className='no-username-status-message'>
-          <Link to='/account'>
-            <i className='exclamation triangle icon' />
+      <div className='no-username-status-message'>
+        <Link to='/account'>
+          <i className='exclamation triangle icon' />
             Without a username, some functionality will be restricted. Please,
             click on the notification to proceed to the account settings.{' '}
-            <i className='exclamation triangle icon' />
-          </Link>
-        </div>
-      )}
-    <HiddenElements>
-      {isDesktop && (
-        <div className='new-status-message'>
-          <Link to='/ethereum-spent'>
-            <Label color='green' horizontal>
-              NEW
-            </Label>
-            We prepared for you ethereum spent overview{' '}
-            <Icon name='angle right' />
-          </Link>
-        </div>
-      )}
-    </HiddenElements>
+          <i className='exclamation triangle icon' />
+        </Link>
+      </div>
+    )}
+    {isDesktop && (
+      <div className='new-status-message'>
+        <Link to='/trends'>
+          <Label color='green' horizontal>
+            NEW
+          </Label>
+          We prepared for you crypto trends in social media{' '}
+          <Icon name='angle right' />
+        </Link>
+      </div>
+    )}
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>

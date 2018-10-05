@@ -40,12 +40,12 @@ const DetailedHeader = ({
           &nbsp; &nbsp;
           {isLoggedIn &&
             !loading && (
-              <WatchlistsPopup
-                projectId={project.id}
-                slug={project.slug}
-                isLoggedIn={isLoggedIn}
-              />
-            )}
+            <WatchlistsPopup
+              projectId={project.id}
+              slug={project.slug}
+              isLoggedIn={isLoggedIn}
+            />
+          )}
         </div>
         <DIV className='datailed-project-description'>
           {project.description}
@@ -56,7 +56,8 @@ const DetailedHeader = ({
         <div className='detailed-price-description'>Today's changes</div>
         <div className='detailed-price-usd'>
           {project.priceUsd &&
-            formatNumber(project.priceUsd, { currency: 'USD' })}&nbsp;
+            formatNumber(project.priceUsd, { currency: 'USD' })}
+          &nbsp;
           {!loading &&
             project && <PercentChanges changes={project.percentChange24h} />}
         </div>

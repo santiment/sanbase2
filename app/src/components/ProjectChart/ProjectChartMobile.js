@@ -125,28 +125,28 @@ const ProjectChartMobile = ({
       )}
       {isERC20 &&
         settings.showed['burnRate'] && (
-          <Fragment>
-            <h2>BLOCKCHAIN</h2>
-            {settings.showed['burnRate'] && (
-              <Analytics
-                data={burnRate}
-                label='burnRate'
-                formatData={burnRate => {
-                  return `${millify(burnRate)} (tokens × blocks)`
-                }}
-                chart={{
-                  type: 'bar',
-                  color: 'rgba(252, 138, 23, 0.7)',
-                  fill: false,
-                  borderWidth: 1,
-                  pointBorderWidth: 2
-                }}
-                show='Burnrate'
-                showInfo={false}
-              />
-            )}
-          </Fragment>
-        )}
+        <Fragment>
+          <h2>BLOCKCHAIN</h2>
+          {settings.showed['burnRate'] && (
+            <Analytics
+              data={burnRate}
+              label='burnRate'
+              formatData={burnRate => {
+                return `${millify(burnRate)} (tokens × blocks)`
+              }}
+              chart={{
+                type: 'bar',
+                color: 'rgba(252, 138, 23, 0.7)',
+                fill: false,
+                borderWidth: 1,
+                pointBorderWidth: 2
+              }}
+              show='Burnrate'
+              showInfo={false}
+            />
+          )}
+        </Fragment>
+      )}
       {settings.showed['followersCount'] && <h2>SOCIAL</h2>}
       {settings.showed['followersCount'] && (
         <Analytics
@@ -201,6 +201,9 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  ProjectChartMobile
-)
+export default compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(ProjectChartMobile)

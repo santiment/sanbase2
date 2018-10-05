@@ -228,4 +228,7 @@ const mapDispatchToProps = dispatch => ({
 })
 
 export const UnwrappedAccount = Account // For tests
-export default connect(mapStateToProps, mapDispatchToProps)(Account)
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Account)

@@ -16,8 +16,22 @@
   align-items: center;
 }
 
+.TrendsExplorePage__settings__right {
+  display: flex;
+  align-items: center;
+}
+
+.TrendsExplorePage__settings__right button {
+  font-size: 1.3em;
+}
+
 .TrendsExplorePage__settings span {
   margin-right: 1em;
+}
+
+.TrendsExplorePage .recharts-responsive-container {
+  margin-bottom: 24px;
+  background-color: #fcfdfe;
 }
 
 @media (min-width: 768px) {

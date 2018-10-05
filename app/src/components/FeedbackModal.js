@@ -121,7 +121,10 @@ const enhance = compose(
   withState('message', 'onChange', ''),
   withState('isSuccess', 'onSuccess', false),
   withState('isError', 'onError', false),
-  connect(mapStateToProps, mapDispatchToProps)
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
 )
 
 export default enhance(FeedbackModal)

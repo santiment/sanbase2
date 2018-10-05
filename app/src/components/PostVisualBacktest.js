@@ -10,7 +10,7 @@ import { binarySearchHistoryPriceIndex } from '../utils/utils'
 import './PostVisualBacktest.css'
 
 const getChanges = (start, last, prop = 'priceUsd') =>
-  (last[`${prop}`] - start[`${prop}`]) / start[`${prop}`] * 100
+  ((last[`${prop}`] - start[`${prop}`]) / start[`${prop}`]) * 100
 
 const isTotalMarket = ticker => ticker === 'Crypto Market'
 

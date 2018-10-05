@@ -17,7 +17,6 @@ import ServerErrorMessage from './../../components/ServerErrorMessage'
 import EthSpent from './../../pages/EthSpent'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
-import { millify } from './../../utils/formatting'
 import DetailedEthTopTransactions from './DetailedEthTopTransactions'
 import {
   projectBySlugGQL,
@@ -265,22 +264,22 @@ export const Detailed = ({
       <div className='information'>
         {!exchangeFundFlow.loading &&
           exchangeFundFlow.items && (
-            <PanelBlock isLoading={false} title='Exchange Fund Flows'>
-              <div>
-                {exchangeFundFlow.items.map((item, index) => (
-                  <div key={index}>{item}</div>
-                ))}
-              </div>
-            </PanelBlock>
-          )}
+          <PanelBlock isLoading={false} title='Exchange Fund Flows'>
+            <div>
+              {exchangeFundFlow.items.map((item, index) => (
+                <div key={index}>{item}</div>
+              ))}
+            </div>
+          </PanelBlock>
+        )}
       </div>
       <div className='information'>
         {isDesktop &&
           project.isERC20 &&
           project.ethTopTransactions &&
           project.ethTopTransactions.length > 0 && (
-            <DetailedEthTopTransactions Project={Project} />
-          )}
+          <DetailedEthTopTransactions Project={Project} />
+        )}
       </div>
     </div>
   )

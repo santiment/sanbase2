@@ -79,6 +79,12 @@ const mapDispatchToProps = dispatch => ({
   }
 })
 
-const enhance = compose(connect(mapStateToProps, mapDispatchToProps), pure)
+const enhance = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  ),
+  pure
+)
 
 export default enhance(Assets)

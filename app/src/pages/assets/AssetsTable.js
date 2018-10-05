@@ -35,6 +35,7 @@ const AssetsTable = ({
     error: undefined,
     type: 'all'
   },
+  showAll = false,
   goto,
   preload
 }) => {
@@ -47,10 +48,12 @@ const AssetsTable = ({
     <Panel className='assets-table-panel'>
       <ReactTable
         loading={isLoading}
-        showPagination={false}
+        showPagination={!showAll}
         showPaginationTop={false}
-        showPaginationBottom={false}
-        pageSize={items && items.length}
+        showPaginationBottom={true}
+        defaultPageSize={20}
+        pageSizeOptions={[5, 10, 20, 25, 50, 100]}
+        pageSize={showAll ? items && items.length : undefined}
         sortable={false}
         resizable
         defaultSorted={[
@@ -62,14 +65,7 @@ const AssetsTable = ({
         className='-highlight'
         data={items}
         columns={filterColumnsByTableSection(type, columns(preload))}
-        LoadingComponent={({ className, loading, loadingText, ...rest }) => (
-          <div
-            className={cx('-loading', { '-active': loading }, className)}
-            {...rest}
-          >
-            <div className='-loading-inner'>Loading...</div>
-          </div>
-        )}
+        loadingText='Loading...'
         TheadComponent={CustomHeadComponent}
         getTdProps={(state, rowInfo, column, instance) => {
           return {

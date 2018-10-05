@@ -28,7 +28,8 @@ const isError = formApi =>
 
 const LimitSizeOfTitle = ({ length }) => (
   <small>
-    &nbsp;{TITLE_MAX_LENGTH - length} | Max length is {TITLE_MAX_LENGTH}
+    &nbsp;
+    {TITLE_MAX_LENGTH - length} | Max length is {TITLE_MAX_LENGTH}
   </small>
 )
 
@@ -51,12 +52,12 @@ const CreateTitle = ({ post, changePost }) => {
             Short description (required)
             {formApi.values.title &&
               formApi.values.title.length > TITLE_MAX_LENGTH && (
-                <LimitSizeOfTitle
-                  length={
-                    formApi.values.title ? formApi.values.title.length : 0
-                  }
-                />
-              )}
+              <LimitSizeOfTitle
+                length={
+                  formApi.values.title ? formApi.values.title.length : 0
+                }
+              />
+            )}
           </label>
           <ReactFormInput
             fluid

@@ -322,7 +322,10 @@ const mapDispatchToProps = dispatch => {
 }
 
 const enhance = compose(
-  connect(mapStateToProps, mapDispatchToProps),
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  ),
   withState('isToggledMarketCap', 'toggleMarketcap', false),
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),

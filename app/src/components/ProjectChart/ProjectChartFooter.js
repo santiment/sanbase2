@@ -29,26 +29,26 @@ export const ToggleBtn = ({
     {!loading &&
       disabled &&
       !error && (
-        <Popup
-          trigger={<div>{children}</div>}
-          content={
-            premium && !hasPremium
-              ? 'You need to have more than 1000 tokens to see that data.'
-              : "We don't have the data for this project."
-          }
-          inverted
-          position='bottom left'
-        />
-      )}
+      <Popup
+        trigger={<div>{children}</div>}
+        content={
+          premium && !hasPremium
+            ? 'You need to have more than 1000 tokens to see that data.'
+            : "We don't have the data for this project."
+        }
+        inverted
+        position='bottom left'
+      />
+    )}
     {!loading &&
       !!error && (
-        <Popup
-          trigger={<div>{children}</div>}
-          inverted
-          content='There was a problem fetching the data. Please, try again or come back later...'
-          position='bottom left'
-        />
-      )}
+      <Popup
+        trigger={<div>{children}</div>}
+        inverted
+        content='There was a problem fetching the data. Please, try again or come back later...'
+        position='bottom left'
+      />
+    )}
     {!loading && !disabled && !error && children}
     {loading && <div className='toggleBtn--loading'>{children}</div>}
     {loading && (
@@ -62,7 +62,8 @@ export const ToggleBtn = ({
 const FilterCategory = ({ children, name, className = '', settings }) => (
   <div className={'filter-category ' + className}>
     <h5 className='filter-category-title'>
-      {name.toUpperCase()}&nbsp;
+      {name.toUpperCase()}
+      &nbsp;
       {settings && settings()}
     </h5>
     <div className='filter-category-body'>{children}</div>
@@ -99,14 +100,14 @@ const ProjectChartFooter = ({
         </ToggleBtn>
         {!props.isToggledBTC &&
           (props.project.icoPrice || undefined) && (
-            <ToggleBtn
-              isToggled={props.isToggledICOPrice}
-              toggle={props.toggleICOPrice}
-            >
-              <Label circular className='icoPriceLabel' empty />
+          <ToggleBtn
+            isToggled={props.isToggledICOPrice}
+            toggle={props.toggleICOPrice}
+          >
+            <Label circular className='icoPriceLabel' empty />
               ICO Price (USD)
-            </ToggleBtn>
-          )}
+          </ToggleBtn>
+        )}
       </FilterCategory>
       <FilterCategory name='Development'>
         <ToggleBtn
@@ -229,19 +230,19 @@ const ProjectChartFooter = ({
         </ToggleBtn>
         {!Insights.loading &&
           Insights.items.length > 0 && (
-            <Message info floating size='tiny'>
-              <Message.Header>Community Insights</Message.Header>
-              <p style={{ lineHeight: '1.25' }}>
+          <Message info floating size='tiny'>
+            <Message.Header>Community Insights</Message.Header>
+            <p style={{ lineHeight: '1.25' }}>
                 Our community made Insights about this project.
-              </p>
-              <p>You can learn something new.</p>
-              <Link to={`/insights/tags/${props.project.ticker}`}>
-                {Insights.items.length}&nbsp; Insight{Insights.items.length >
-                  1 && 's'}{' '}
-                about {props.project.ticker}
-              </Link>
-            </Message>
-          )}
+            </p>
+            <p>You can learn something new.</p>
+            <Link to={`/insights/tags/${props.project.ticker}`}>
+              {Insights.items.length}
+                &nbsp; Insight
+              {Insights.items.length > 1 && 's'} about {props.project.ticker}
+            </Link>
+          </Message>
+        )}
       </FilterCategory>
       {(props.isERC20 || props.ticker === 'ETH') && (
         <FilterCategory name='Ethereum'>

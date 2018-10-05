@@ -21,6 +21,7 @@ const EthSpentTable = ({
   isLoading = true,
   error = 'undefined',
   type = 'all',
+  showAll = false,
   history
 }) => {
   const loading = isLoading
@@ -146,10 +147,10 @@ const EthSpentTable = ({
       <ReactTable
         loading={loading}
         multiSort
-        showPagination={false}
+        showPagination={!showAll}
         showPaginationTop={false}
-        showPaginationBottom={false}
-        pageSize={items && items.length}
+        showPaginationBottom={true}
+        pageSize={showAll ? items && items.length : undefined}
         sortable
         resizable
         defaultSorted={[

@@ -1,55 +1,16 @@
+@import 'variables.scss';
+@import '~nprogress/nprogress';
+
 .App {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-@media (max-width: 768px) {
-  .App {
-    flex-direction: column;
-  }
-}
-
-.side-menu {
-  height: 100vh;
-  min-height: 100%;
-  width: 15%;
-  max-width: 15%;
-  font-size: 13px;
-  background-color: #262b33;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
-  .side-menu {
-    min-width: 20%;
-  }
-}
-
-.side-menu .brand {
-  padding-top: 22px;
-  padding-bottom: 14px;
-  background-color: #3d4450;
-  text-align: center;
-  color: white;
-  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.08);
-}
-
-.side-menu ul li {
-  line-height: 1.8em;
-  margin-left: 0;
-  cursor: pointer;
-}
-
-.side-menu .selected {
-  color: white;
-  font-size: bold;
-}
-
 .App .page {
   flex: 1;
   padding: 0 15px;
-  max-width: 1024px;
+  max-width: $max-width;
 }
 
 .App .offline-status-message {
@@ -61,15 +22,24 @@
 }
 
 .App .new-status-message {
-  color: #794b02;
-  background: #fffaf3;
+  color: #000;
+  background: #fff;
   text-align: center;
-  font: 15px/1.6 'Nunito Sans', sans-serif;
-  font-weight: bold;
+  font-weight: normal;
+  padding: 5px;
 }
 
 .App .new-status-message a {
   border-bottom: none;
+}
+
+.App .new-status-message a:hover {
+  color: black;
+}
+
+.App .new-status-message a:focus,
+.App .new-status-message a:active {
+  color: #000;
 }
 
 .App .no-username-status-message {
@@ -109,19 +79,6 @@
   box-shadow: 0 7px 14px rgba(45, 156, 129, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
-@media (max-width: 767px) {
-  .App .page {
-    padding: 0 15px;
-    overflow-y: auto;
-    overflow: scroll;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .App .page::-webkit-scrollbar {
-    display: none;
-  }
-}
-
 .page-head {
   margin-top: 35px;
   margin-right: 20px;
@@ -141,7 +98,7 @@
 }
 
 .fa-disabled {
-  color: #d3d3d3;
+  color: $disabled;
 }
 
 .ui.modal {
@@ -172,7 +129,26 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (max-width: $breakpoint-tablet) {
+  .App {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
+  .App .page {
+    padding: 0 15px;
+    overflow-y: auto;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .App .page::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (min-width: $breakpoint-desktop) {
   .App .page {
     margin: 0 auto;
   }

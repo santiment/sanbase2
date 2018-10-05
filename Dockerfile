@@ -1,4 +1,4 @@
-FROM node:8.7.0-alpine as react_builder
+FROM node:8.12.0-alpine as react_builder
 
 ARG GIT_HEAD
 RUN GIT_HEAD=$GIT_HEAD

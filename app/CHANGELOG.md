@@ -1,5 +1,32 @@
 ## CHANGELOG
 
+- 2018-05-10 | v.0.17.1 'Phobos':
+
+  Update Error Boundary styles
+  Add the descriptop for "Trends"
+
+- 2018-03-10 | v.0.17.0 'Phobos':
+
+  Update the profile menu on the desktop
+  Update Analysis Desktop Menu
+  Add basic Assets dropdown menu
+
+- 2018-03-10 | v.0.16.1 'Phobos':
+
+  Switch from CRA v1. to CRA v2.
+  Support SASS, CSS MODULES ...
+
+- 2018-02-10 | v.0.16.0 'Phobos':
+
+  Add share buttons on Trends page
+
+- 2018-01-10 | v.0.15.2 'Phobos':
+
+  Fix Trends Examples descriptions
+  Update the logic of searching trends
+  Add tracking for search of social trends
+  Update Asset Label in Trends charts
+
 - 2018-28-09 | v.0.15.1 'Phobos':
 
   Update Roadmap

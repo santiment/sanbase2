@@ -15,7 +15,7 @@ export const initialState = {
   loginError: false,
   loginErrorMessage: '',
   isGDPRModalOpened: false,
-  isNightModeEnabled: false,
+  isNightModeEnabled: isNightModeEnabled,
   isSearchInputFocused: false
 }
 

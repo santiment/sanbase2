@@ -9,11 +9,11 @@ const findIndexByDatetime = (labels, datetime) => {
 }
 
 const calculateBTCVolume = ({ volume, priceUsd, priceBtc }) => {
-  return parseFloat(volume) / parseFloat(priceUsd) * parseFloat(priceBtc)
+  return (parseFloat(volume) / parseFloat(priceUsd)) * parseFloat(priceBtc)
 }
 
 const calculateBTCMarketcap = ({ marketcap, priceUsd, priceBtc }) => {
-  return parseFloat(marketcap) / parseFloat(priceUsd) * parseFloat(priceBtc)
+  return (parseFloat(marketcap) / parseFloat(priceUsd)) * parseFloat(priceBtc)
 }
 
 const getOrigin = () => {

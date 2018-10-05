@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.15.1",
+  "version": "0.17.1",
   "private": true,
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -11,7 +11,7 @@
     "storybook": "start-storybook -p 9001 -c .storybook",
     "build": "REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) react-scripts build",
     "test:lint:css": "stylelint \"**/*.css\"",
-    "test:js": "react-scripts test --env=jsdom",
+    "test:js": "react-scripts test",
     "test": "npm run test:lint:css && CI=true npm run test:js",
     "eject": "react-scripts eject"
   },
@@ -62,9 +62,11 @@
     "react-redux": "^5.0.6",
     "react-router-dom": "^4.2.2",
     "react-router-redux": "^5.0.0-alpha.9",
-    "react-scripts": "1.1.4",
+    "react-scripts": "2.0.3",
     "react-select": "^2.0.0-beta.2",
+    "react-share": "^2.3.1",
     "react-sizes": "^0.4.3",
+    "react-slick": "^0.23.1",
     "react-stickynode": "^1.4.1",
     "react-table": "^6.7.5",
     "react-virtualized": "^9.18.5",
@@ -88,8 +90,9 @@
     "enzyme-adapter-react-16": "^1.1.0",
     "enzyme-to-json": "^3.2.2",
     "exit_on_eof": "^1.0.4",
-    "husky": "^0.14.3",
-    "lint-staged": "^7.2.0",
+    "husky": "^1.1.0",
+    "lint-staged": "^7.3.0",
+    "node-sass": "^4.9.3",
     "prettier-standard": "^8.0.1",
     "puppeteer": "^1.1.1",
     "redux-axios-middleware": "^4.0.0",
@@ -109,11 +112,24 @@
   },
   "lint-staged": {
     "linters": {
-      "src/**/*.{js,css}": [
-        "yarn test",
-        "prettier-standard",
+      "src/**/*.js": [
+        "yarn format",
         "git add"
+      ],
+      "src/**/*.css": [
+        "yarn test:lint:css"
       ]
     }
-  }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn precommit"
+    }
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }

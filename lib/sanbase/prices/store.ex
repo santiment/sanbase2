@@ -138,9 +138,9 @@ defmodule Sanbase.Prices.Store do
     ~s/SELECT 
      time,
      first(price_usd) as open,
-     last(price_usd) as close,
+     max(price_usd) as high,
      min(price_usd) as low,
-     max(price_usd) as high
+     last(price_usd) as close
      FROM "#{measurement}"
      WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
      AND time <= #{DateTime.to_unix(to, :nanoseconds)}

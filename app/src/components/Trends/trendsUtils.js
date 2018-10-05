@@ -1,3 +1,4 @@
+import moment from 'moment'
 import { push } from 'react-router-redux'
 
 export const mergeDataSourcesForChart = sources =>
@@ -28,6 +29,71 @@ export const SourceColor = {
   merged: 'rgb(255, 193, 7)'
 }
 
+export const sourcesMeta = {
+  merged: {
+    index: 'merged',
+    name: 'Total Mentions',
+    color: 'rgb(156, 39, 176)',
+    value: 0
+  },
+  telegram: {
+    index: 'telegram',
+    name: 'Telegram',
+    color: '#2d79d0',
+    value: 0
+  },
+  reddit: {
+    index: 'reddit',
+    name: 'Reddit',
+    color: '#c82f3f',
+    value: 0
+  },
+  professional_traders_chat: {
+    index: 'professional_traders_chat',
+    name: 'Professional Traders Chat',
+    color: '#26a987',
+    value: 0
+  }
+}
+
+const getMergedMentionsDataset = mentionsBySources =>
+  Object.keys(mentionsBySources).reduce((acc, source) => {
+    for (const { datetime, mentionsCount } of mentionsBySources[source]) {
+      if (acc[datetime] !== undefined) {
+        acc[datetime].merged += mentionsCount
+      } else {
+        acc[datetime] = {
+          datetime,
+          merged: mentionsCount
+        }
+      }
+    }
+    return acc
+  }, {})
+
+const getComposedMentionsDataset = (mentionsBySources, selectedSources) => {
+  return selectedSources.reduce((acc, source) => {
+    for (const { datetime, mentionsCount } of mentionsBySources[source]) {
+      if (acc[datetime] !== undefined) {
+        acc[datetime][source] = mentionsCount
+      } else {
+        acc[datetime] = {
+          datetime,
+          [source]: mentionsCount
+        }
+      }
+    }
+    return acc
+  }, {})
+}
+
+export const getMentionsChartData = (mentionsBySources, selectedSources) =>
+  Object.values(
+    selectedSources.includes('merged')
+      ? getMergedMentionsDataset(mentionsBySources)
+      : getComposedMentionsDataset(mentionsBySources, selectedSources)
+  ).sort((a, b) => (moment(a.datetime).isAfter(b.datetime) ? 1 : -1))
+
 const defaultSources = ['merged']
 
 export const validateSearchSources = (sources = defaultSources) => {
@@ -41,10 +107,10 @@ export const validateSearchSources = (sources = defaultSources) => {
   return validSources.length !== 0 ? validSources : defaultSources
 }
 
-export const parseExampleSettings = ({ interval, sources }) => {
+export const parseExampleSettings = ({ timeRange, sources }) => {
   let text = 'For '
 
-  switch (interval) {
+  switch (timeRange) {
     case '6m':
       text += '6 months'
       break
@@ -60,11 +126,6 @@ export const parseExampleSettings = ({ interval, sources }) => {
       break
   }
 
-  for (const source of sources) {
-    text += `, ${Source[source]}`
-  }
-
   text += ' mentions'
   return text
-  // For 7 days, Merged sources
 }

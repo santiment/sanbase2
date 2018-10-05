@@ -1,10 +1,10 @@
-import React from "react"
-import { Helmet } from "react-helmet"
-import { getOrigin } from "./../utils/utils"
-import "./Roadmap.css"
+import React from 'react'
+import { Helmet } from 'react-helmet'
+import { getOrigin } from './../utils/utils'
+import './Roadmap.css'
 
 const StatusItemWithProgress = ({
-  text = "",
+  text = '',
   progress = 100,
   child = false
 }) => (
@@ -63,8 +63,10 @@ const Roadmap = () => (
               <p>Q3-Q4, 2017</p>
               <hr />
               <p>
-                Transparency<br />
-                Product<br />
+                Transparency
+                <br />
+                Product
+                <br />
                 Community
               </p>
             </div>
@@ -100,139 +102,139 @@ const Roadmap = () => (
                 <li>Data-feeds for all ERC-20 tokens</li>
                 <StatusItemWithProgress
                   text={
-                    "Daily Active Addresses (DAA), TokenAging (Burn Rate), Transaction volume"
+                    'Daily Active Addresses (DAA), TokenAging (Burn Rate), Transaction volume'
                   }
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"In/Out exchanges"}
+                  text={'In/Out exchanges'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"ETH Genesis Address Activity"}
+                  text={'ETH Genesis Address Activity'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Price-Volume Difference Indicator"}
+                  text={'Price-Volume Difference Indicator'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Token Circulation"}
+                  text={'Token Circulation'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Transaction Volume"}
+                  text={'Transaction Volume'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Velocity of Token"}
+                  text={'Velocity of Token'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Top 100 Transactions"}
+                  text={'Top 100 Transactions'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Network growth"}
+                  text={'Network growth'}
                   progress={100}
                   child
                 />
                 <li>Data-feeds for all EOS tokens</li>
                 <StatusItemWithProgress
-                  text={"Actions Volume"}
+                  text={'Actions Volume'}
                   progress={50}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Number of Active Currencies"}
+                  text={'Number of Active Currencies'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Transaction Volume of the Most Active Currencies"}
+                  text={'Transaction Volume of the Most Active Currencies'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Transaction Volume of EOS"}
+                  text={'Transaction Volume of EOS'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Daily Active Addresses of EOS"}
+                  text={'Daily Active Addresses of EOS'}
                   progress={100}
                   child
                 />
                 <StatusItemWithProgress
-                  text={"Gateway to include data from other blockchains"}
+                  text={'Gateway to include data from other blockchains'}
                   progress={90}
                 />
-                <StatusItemWithProgress text={"EOS"} child progress={100} />
-                <StatusItemWithProgress text={"Bitcoin"} child progress={100} />
-                <StatusItemWithProgress text={"XLM"} child progress={10} />
-                <StatusItemWithProgress text={"ADA"} child progress={10} />
-                <StatusItemWithProgress text={"TRON"} child progress={10} />
-                <StatusItemWithProgress text={"VET"} child progress={10} />
-                <StatusItemWithProgress text={"NEO"} child progress={10} />
+                <StatusItemWithProgress text={'EOS'} child progress={100} />
+                <StatusItemWithProgress text={'Bitcoin'} child progress={100} />
+                <StatusItemWithProgress text={'XLM'} child progress={10} />
+                <StatusItemWithProgress text={'ADA'} child progress={10} />
+                <StatusItemWithProgress text={'TRON'} child progress={10} />
+                <StatusItemWithProgress text={'VET'} child progress={10} />
+                <StatusItemWithProgress text={'NEO'} child progress={10} />
                 <li>Different interfaces to work with data</li>
                 <StatusItemWithProgress
-                  text={"API, SQL, Grafana"}
+                  text={'API, SQL, Grafana'}
                   child
                   progress={100}
                 />
                 <StatusItemWithProgress
-                  text={"UI Components"}
+                  text={'UI Components'}
                   child
                   progress={10}
                 />
                 <li>Social metrics</li>
                 <StatusItemWithProgress
-                  text={"Topic Search"}
+                  text={'Topic Search'}
                   child
                   progress={100}
                 />
                 <StatusItemWithProgress
-                  text={"Relative Social Dominance"}
+                  text={'Relative Social Dominance'}
                   child
                   progress={100}
                 />
                 <StatusItemWithProgress
-                  text={"Social Volume"}
+                  text={'Social Volume'}
                   child
                   progress={100}
                 />
                 <StatusItemWithProgress
-                  text={"Social Data feed"}
+                  text={'Social Data feed'}
                   child
                   progress={100}
                 />
                 <StatusItemWithProgress
-                  text={"Github Activity"}
+                  text={'Github Activity'}
                   progress={100}
                 />
                 <StatusItemWithProgress
                   text={
-                    "Base NLP models. Allows to build more complicated AI algorithms for social data"
+                    'Base NLP models. Allows to build more complicated AI algorithms for social data'
                   }
                   progress={100}
                 />
                 <StatusItemWithProgress
-                  text={"Advanced AI/ML models"}
+                  text={'Advanced AI/ML models'}
                   progress={20}
                 />
                 <StatusItemWithProgress
-                  text={"Community “insights”"}
+                  text={'Community “insights”'}
                   progress={100}
                 />
-                <StatusItemWithProgress text={"Token economy"} progress={60} />
+                <StatusItemWithProgress text={'Token economy'} progress={60} />
                 <li>Signals - ongoing process</li>
               </ul>
             </div>

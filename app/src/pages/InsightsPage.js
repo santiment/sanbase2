@@ -328,7 +328,10 @@ const mapDataToProps = props => {
     return reduceAllKeys(posts)(sortByPopular)
   }
 
-  const visiblePosts = compose(applyFilter, applySort)(postsByDay)
+  const visiblePosts = compose(
+    applyFilter,
+    applySort
+  )(postsByDay)
 
   return {
     Posts: {
@@ -367,7 +370,10 @@ const mapDispatchToProps = dispatch => {
 }
 
 const enhance = compose(
-  connect(mapStateToProps, mapDispatchToProps),
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  ),
   withState('isToggledDeletePostRequest', 'toggleDeletePostRequest', false),
   withState('isToggledPublishPostRequest', 'togglePublishPostRequest', false),
   withState('deletePostId', 'setDeletePostId', undefined),

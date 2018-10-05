@@ -56,7 +56,8 @@ const DetailedHeader = ({
         <div className='detailed-price-description'>Today's changes</div>
         <div className='detailed-price-usd'>
           {project.priceUsd &&
-            formatNumber(project.priceUsd, { currency: 'USD' })}&nbsp;
+            formatNumber(project.priceUsd, { currency: 'USD' })}
+          &nbsp;
           {!loading &&
             project && <PercentChanges changes={project.percentChange24h} />}
         </div>

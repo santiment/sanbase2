@@ -62,7 +62,8 @@ export const ToggleBtn = ({
 const FilterCategory = ({ children, name, className = '', settings }) => (
   <div className={'filter-category ' + className}>
     <h5 className='filter-category-title'>
-      {name.toUpperCase()}&nbsp;
+      {name.toUpperCase()}
+      &nbsp;
       {settings && settings()}
     </h5>
     <div className='filter-category-body'>{children}</div>
@@ -236,9 +237,9 @@ const ProjectChartFooter = ({
             </p>
             <p>You can learn something new.</p>
             <Link to={`/insights/tags/${props.project.ticker}`}>
-              {Insights.items.length}&nbsp; Insight{Insights.items.length >
-                  1 && 's'}{' '}
-                about {props.project.ticker}
+              {Insights.items.length}
+                &nbsp; Insight
+              {Insights.items.length > 1 && 's'} about {props.project.ticker}
             </Link>
           </Message>
         )}

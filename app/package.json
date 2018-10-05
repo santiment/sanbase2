@@ -66,6 +66,7 @@
     "react-select": "^2.0.0-beta.2",
     "react-share": "^2.3.1",
     "react-sizes": "^0.4.3",
+    "react-slick": "^0.23.1",
     "react-stickynode": "^1.4.1",
     "react-table": "^6.7.5",
     "react-virtualized": "^9.18.5",
@@ -111,10 +112,12 @@
   },
   "lint-staged": {
     "linters": {
-      "src/**/*.{js,jsx,json,css}": [
-        "yarn test:lint:css",
+      "src/**/*.js": [
         "yarn format",
         "git add"
+      ],
+      "src/**/*.css": [
+        "yarn test:lint:css"
       ]
     }
   },

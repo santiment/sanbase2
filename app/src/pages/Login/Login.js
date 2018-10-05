@@ -74,7 +74,8 @@ const ChooseAuthProvider = ({
               alt='metamask logo'
               width={28}
               height={28}
-            />&nbsp; Login with Metamask
+            />
+            &nbsp; Login with Metamask
           </Button>
         </AuthProviderButton>
       )}
@@ -83,7 +84,8 @@ const ChooseAuthProvider = ({
         prevAuthProvider={prevAuthProvider}
       >
         <Button onClick={gotoEmail} basic className='sign-in-btn'>
-          <Icon size='large' name='mail outline' />&nbsp;
+          <Icon size='large' name='mail outline' />
+          &nbsp;
           <span>Login with email</span>
         </Button>
       </AuthProviderButton>

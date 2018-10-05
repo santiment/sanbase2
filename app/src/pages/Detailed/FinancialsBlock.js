@@ -41,9 +41,8 @@ const FinancialsBlock = ({
   isERC20
 }) => (
   <div>
-    Project Transparency:&nbsp;{isERC20
-      ? showStatus(projectTransparencyStatus)
-      : 'Not applicable'}
+    Project Transparency:&nbsp;
+    {isERC20 ? showStatus(projectTransparencyStatus) : 'Not applicable'}
     <hr />
     {fundsRaisedIcos &&
       fundsRaisedIcos.length !== 0 && (

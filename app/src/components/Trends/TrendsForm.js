@@ -63,4 +63,7 @@ const trackTopicSearch = topic => {
   }
 }
 
-export default connect(null, gotoExplore)(TrendsForm)
+export default connect(
+  null,
+  gotoExplore
+)(TrendsForm)

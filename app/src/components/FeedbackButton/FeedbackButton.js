@@ -31,6 +31,11 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const enhance = compose(connect(undefined, mapDispatchToProps))
+const enhance = compose(
+  connect(
+    undefined,
+    mapDispatchToProps
+  )
+)
 
 export default enhance(FeedbackButton)

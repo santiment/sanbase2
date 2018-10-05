@@ -1,6 +1,5 @@
 import React from 'react'
 import Raven from 'raven-js'
-import axios from 'axios'
 import { compose, withState } from 'recompose'
 import { connect } from 'react-redux'
 import { Button } from 'semantic-ui-react'
@@ -58,27 +57,6 @@ const createNewPost = ({ createPost, post, user, history }) =>
     }
   })
     .then(data => {
-      if (process.env.NODE_ENV === 'production') {
-        try {
-          axios({
-            method: 'post',
-            url:
-              'https://us-central1-cryptofolio-15d92.cloudfunctions.net/alerts',
-            headers: {
-              authorization: ''
-            },
-            data: {
-              title: post.title,
-              link: post.link,
-              user: user.id
-            }
-          })
-        } catch (error) {
-          Raven.captureException(
-            'Alert about new insight ' + JSON.stringify(error)
-          )
-        }
-      }
       history.push('/insights/my')
     })
     .catch(error => {

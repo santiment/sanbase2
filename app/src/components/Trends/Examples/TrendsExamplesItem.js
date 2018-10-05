@@ -20,7 +20,7 @@ const TrendsExamplesItem = ({ topic, settings, onClick }) => {
       data-topic={topic}
       data-settings={queryString.stringify(
         {
-          interval: settings.interval,
+          timeRange: settings.timeRange,
           source: settings.sources
         },
         { arrayFormat: 'bracket' }
@@ -35,8 +35,11 @@ const TrendsExamplesItem = ({ topic, settings, onClick }) => {
           selectedSources={settings.sources}
           render={props => (
             <TrendsExamplesItemChart
-              {...props}
+              topic={props.topic}
+              sources={props.sources}
               selectedSources={settings.sources}
+              isError={props.isError}
+              isLoading={props.isLoading}
             />
           )}
         />

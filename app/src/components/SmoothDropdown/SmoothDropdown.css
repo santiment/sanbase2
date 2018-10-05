@@ -4,7 +4,7 @@
 
 .dd {
   position: absolute;
-  z-index: 2;
+  z-index: 10;
   width: 100%;
   left: 5px;
   right: 5px;
@@ -55,7 +55,7 @@
   position: absolute;
   opacity: 0;
   transition: 0.25s ease;
-  padding: 12px;
+  padding: 0;
   white-space: nowrap;
 }
 

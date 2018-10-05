@@ -893,11 +893,11 @@ class ProjectChart extends Component {
         )}
         {!isLoading &&
           isEmpty && (
-            <div className='project-chart__isEmpty'>
-              {' '}
+          <div className='project-chart__isEmpty'>
+            {' '}
               We don't have any data{' '}
-            </div>
-          )}
+          </div>
+        )}
         <Bar
           data={chartData}
           options={chartOptions}

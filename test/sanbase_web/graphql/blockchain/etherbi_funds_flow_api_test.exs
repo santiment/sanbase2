@@ -156,20 +156,20 @@ defmodule Sanbase.Etherbi.TransactionsApiTest do
 
     funds_flow_list = json_response(result, 200)["data"]["exchangeFundsFlow"]
 
-    assert %{"datetime" => "2017-05-13T00:00:00.00Z", "inOutDifference" => 2.0e3} in funds_flow_list
+    assert %{"datetime" => "2017-05-13T00:00:00Z", "inOutDifference" => 2.0e3} in funds_flow_list
 
-    assert %{"datetime" => "2017-05-14T00:00:00.00Z", "inOutDifference" => 2.0e3} in funds_flow_list
+    assert %{"datetime" => "2017-05-14T00:00:00Z", "inOutDifference" => 2.0e3} in funds_flow_list
 
-    assert %{"datetime" => "2017-05-15T00:00:00.00Z", "inOutDifference" => 9.0e3} in funds_flow_list
+    assert %{"datetime" => "2017-05-15T00:00:00Z", "inOutDifference" => 9.0e3} in funds_flow_list
 
-    assert %{"datetime" => "2017-05-16T00:00:00.00Z", "inOutDifference" => 1.5e4} in funds_flow_list
+    assert %{"datetime" => "2017-05-16T00:00:00Z", "inOutDifference" => 1.5e4} in funds_flow_list
 
-    assert %{"datetime" => "2017-05-17T00:00:00.00Z", "inOutDifference" => -1.8e4} in funds_flow_list
+    assert %{"datetime" => "2017-05-17T00:00:00Z", "inOutDifference" => -1.8e4} in funds_flow_list
 
-    assert %{"datetime" => "2017-05-18T00:00:00.00Z", "inOutDifference" => 1.0e3} in funds_flow_list
+    assert %{"datetime" => "2017-05-18T00:00:00Z", "inOutDifference" => 1.0e3} in funds_flow_list
 
-    assert %{"datetime" => "2017-05-19T00:00:00.00Z", "inOutDifference" => -8450.0} in funds_flow_list
+    assert %{"datetime" => "2017-05-19T00:00:00Z", "inOutDifference" => -8450.0} in funds_flow_list
 
-    assert %{"datetime" => "2017-05-20T00:00:00.00Z", "inOutDifference" => -5.0e4} in funds_flow_list
+    assert %{"datetime" => "2017-05-20T00:00:00Z", "inOutDifference" => -5.0e4} in funds_flow_list
   end
 end

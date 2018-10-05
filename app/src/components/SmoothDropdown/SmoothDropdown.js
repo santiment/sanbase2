@@ -38,6 +38,8 @@ class SmoothDropdown extends Component {
   }
   componentWillUnmount () {
     clearTimeout(this.mountTimer)
+    this.portalRef = null
+    this.dropdownWrapperRef = null
   }
 
   startCloseTimeout = () =>

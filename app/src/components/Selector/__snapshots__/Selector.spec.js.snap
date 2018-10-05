@@ -4,7 +4,7 @@ exports[`Selector component smoke 1`] = `
 <div
   className="selector"
 >
-  <Component
+  <SelectorItem
     disabled={false}
     isSelected={false}
     key="1w"
@@ -12,7 +12,7 @@ exports[`Selector component smoke 1`] = `
     setFilter={[Function]}
     value="1w"
   />
-  <Component
+  <SelectorItem
     disabled={false}
     isSelected={false}
     key="1m"
@@ -20,7 +20,7 @@ exports[`Selector component smoke 1`] = `
     setFilter={[Function]}
     value="1m"
   />
-  <Component
+  <SelectorItem
     disabled={false}
     isSelected={false}
     key="3m"
@@ -28,7 +28,7 @@ exports[`Selector component smoke 1`] = `
     setFilter={[Function]}
     value="3m"
   />
-  <Component
+  <SelectorItem
     disabled={false}
     isSelected={false}
     key="6m"
@@ -36,7 +36,7 @@ exports[`Selector component smoke 1`] = `
     setFilter={[Function]}
     value="6m"
   />
-  <Component
+  <SelectorItem
     disabled={false}
     isSelected={false}
     key="1y"
@@ -44,7 +44,7 @@ exports[`Selector component smoke 1`] = `
     setFilter={[Function]}
     value="1y"
   />
-  <Component
+  <SelectorItem
     disabled={false}
     isSelected={false}
     key="all"

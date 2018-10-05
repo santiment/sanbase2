@@ -9,34 +9,11 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
-  Tooltip,
-  Pie,
-  PieChart,
-  Cell
+  Tooltip
 } from 'recharts'
 import { formatNumber } from './../../utils/formatting'
 import { mergeTimeseriesByKey } from './../../utils/utils'
-
-const chartsMeta = {
-  telegram: {
-    index: 'telegram',
-    name: 'Telegram',
-    color: '#2d79d0',
-    value: 0
-  },
-  reddit: {
-    index: 'reddit',
-    name: 'Reddit',
-    color: '#c82f3f',
-    value: 0
-  },
-  professional_traders_chat: {
-    index: 'professional_traders_chat',
-    name: 'Professional Traders Chat',
-    color: '#26a987',
-    value: 0
-  }
-}
+import { sourcesMeta as chartsMeta } from './trendsUtils'
 
 const ASSET_PRICE_COLOR = '#a4acb7'
 
@@ -96,7 +73,7 @@ const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
           <Line
             type='linear'
             yAxisId='axis-price'
-            name={asset}
+            name={asset + '/USD'}
             dot={false}
             strokeWidth={2}
             dataKey='priceUsd'
@@ -114,22 +91,6 @@ const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
         </ComposedChart>
       </ResponsiveContainer>
     ))}
-    <br />
-    <ResponsiveContainer width='100%' height={220}>
-      <PieChart>
-        <Pie
-          dataKey='value'
-          label={({ name, value }) => `${name}: ${value}`}
-          data={chartSummaryData}
-          outerRadius={80}
-          fill='#8884d8'
-        >
-          {chartSummaryData.map((entity, index) => (
-            <Cell key={index} fill={entity.color} />
-          ))}
-        </Pie>
-      </PieChart>
-    </ResponsiveContainer>
   </div>
 )
 

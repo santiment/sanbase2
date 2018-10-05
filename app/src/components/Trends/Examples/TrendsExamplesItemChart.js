@@ -35,7 +35,7 @@ const TrendsExamplesItemChart = ({
                 dataKey={sourcesMeta[source].index}
                 type='linear'
                 dot={false}
-                strokeWidth={3}
+                strokeWidth={1}
                 name={sourcesMeta[source].name}
                 stroke={sourcesMeta[source].color}
               />

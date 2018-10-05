@@ -28,7 +28,8 @@ const isError = formApi =>
 
 const LimitSizeOfTitle = ({ length }) => (
   <small>
-    &nbsp;{TITLE_MAX_LENGTH - length} | Max length is {TITLE_MAX_LENGTH}
+    &nbsp;
+    {TITLE_MAX_LENGTH - length} | Max length is {TITLE_MAX_LENGTH}
   </small>
 )
 

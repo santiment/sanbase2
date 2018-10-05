@@ -1,0 +1,49 @@
+.InsightsWidgetItem {
+  padding: 10px;
+}
+
+.InsightsWidgetItem__title {
+  line-height: 1;
+  font-size: 18px;
+  margin: 0 0 8px;
+  font-weight: bold;
+}
+
+.InsightsWidgetItem__title > a {
+  border-bottom: 0;
+}
+
+.InsightsWidgetItem__content {
+  line-height: 1.2em;
+  max-height: 4.7em;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.InsightsWidgetItem__content img {
+  max-width: 100%;
+}
+
+.InsightsWidgetItem__bottom {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.InsightsWidgetItem__info {
+  font-size: 13px;
+  margin: 0;
+  color: #aaa;
+}
+
+.InsightsWidgetItem__info > a {
+  color: #aaa;
+}
+
+.InsightsWidgetItem__info_author {
+  max-width: 52%;
+  text-overflow: ellipsis;
+  word-break: normal;
+  overflow: hidden;
+  white-space: nowrap;
+}

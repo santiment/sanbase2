@@ -3,9 +3,13 @@
   height: 180px;
   min-height: 180px;
   max-height: 180px;
+  min-width: 250px;
+  width: 250px;
+  max-width: 250px;
   margin: 10px;
   border: 1px solid #adadad;
-  border-radius: 3px;
+  /* border-radius: 3px; */
+  overflow: hidden;
 }
 
 .night-mode .Widget {

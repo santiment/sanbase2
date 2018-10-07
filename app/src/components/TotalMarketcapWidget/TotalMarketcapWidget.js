@@ -2,6 +2,7 @@ import React from 'react'
 import moment from 'moment'
 import { graphql } from 'react-apollo'
 import { ResponsiveContainer, AreaChart, Area, XAxis } from 'recharts'
+import Widget from '../Widget/Widget'
 import { totalMarketcapGQL } from './TotalMarketcapGQL'
 import { formatNumber } from '../../utils/formatting'
 import './TotalMarketcapWidget.scss'
@@ -55,7 +56,7 @@ const TotalMarketcapWidget = ({ data: { historyPrice } }) => {
   }`
 
   return (
-    <div className='TotalMarketcapWidget'>
+    <Widget className='TotalMarketcapWidget'>
       <div className='TotalMarketcapWidget__info'>
         <div className='TotalMarketcapWidget__left'>
           <h3 className='TotalMarketcapWidget__label'>Total marketcap</h3>
@@ -82,7 +83,7 @@ const TotalMarketcapWidget = ({ data: { historyPrice } }) => {
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </Widget>
   )
 }
 

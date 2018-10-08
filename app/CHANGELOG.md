@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-08-10 | v.0.17.2 'Phobos':
+
+  Add user's tokens in profile dropdown menu
+  Fix top menu margins
+
 - 2018-05-10 | v.0.17.1 'Phobos':
 
   Update Error Boundary styles

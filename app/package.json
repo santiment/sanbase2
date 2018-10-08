@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.17.1",
+  "version": "0.17.2",
   "private": true,
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -61,6 +61,7 @@
     "react-notification": "^6.8.2",
     "react-redux": "^5.0.6",
     "react-router-dom": "^4.2.2",
+    "react-router-hash-link": "^1.2.0",
     "react-router-redux": "^5.0.0-alpha.9",
     "react-scripts": "2.0.3",
     "react-select": "^2.0.0-beta.2",

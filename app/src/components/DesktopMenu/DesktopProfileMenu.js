@@ -1,10 +1,12 @@
 import React from 'react'
 import { Divider, Icon, Checkbox } from 'semantic-ui-react'
 import cx from 'classnames'
-import { Link } from 'react-router-dom'
+import { HashLink as Link } from 'react-router-hash-link'
 import styles from './DesktopProfileMenu.module.css'
+import logo from './../../assets/logo.png'
 
 const DesktopProfileMenu = ({
+  balance = 0,
   toggleNightMode,
   isNightModeEnabled,
   logout
@@ -29,6 +31,13 @@ const DesktopProfileMenu = ({
       </span>
       <Checkbox toggle checked={isNightModeEnabled} />
     </div>
+    <Link className={styles.button} to='/account#balance'>
+      <span>
+        <img src={logo} alt='SANbase' />
+        <span>Tokens</span>
+      </span>
+      {balance}
+    </Link>
     <Divider className={styles.divider} />
     <div className={styles.button} onClick={logout}>
       Logout

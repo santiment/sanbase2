@@ -88,8 +88,8 @@ defmodule Sanbase.Auth.User do
       :marketing_accepted
     ])
     |> normalize_username(attrs)
-    |> update_change(:email, &(&1 && String.downcase(&1)))
-    |> update_change(:email_candidate, &(&1 && String.downcase(&1)))
+    |> normalize_email(attrs[:email], :email)
+    |> normalize_email(attrs[:email_candidate], :email_candidate)
     |> validate_change(:username, &validate_username_change/2)
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> unique_constraint(:email)
@@ -109,6 +109,17 @@ defmodule Sanbase.Auth.User do
   end
 
   defp normalize_username(changeset, _), do: changeset
+
+  defp normalize_email(changeset, nil, _), do: changeset
+
+  defp normalize_email(changeset, email, field) do
+    email =
+      email
+      |> String.downcase()
+      |> String.trim()
+
+    put_change(changeset, field, email)
+  end
 
   defp validate_username_change(_, username) do
     if ascii_username?(username) do

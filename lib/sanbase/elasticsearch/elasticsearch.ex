@@ -1,12 +1,28 @@
 defmodule Sanbase.Elasticsearch do
+  @moduledoc ~s"""
+  Module providing API to Santiment's managed elasticsearch instance.
+  """
+
+  @type stats :: %{
+          documents_count: non_neg_integer,
+          size_in_megabytes: non_neg_integer,
+          telegram_channels_count: non_neg_integer,
+          subreddits_count: non_neg_integer,
+          average_documents_per_day: non_neg_integer
+        }
+
   require Sanbase.Utils.Config, as: Config
   alias Sanbase.Elasticsearch.Cluster
   alias Sanbase.Utils.Math
-  @bytes_in_megabyte 1024 * 1024
 
+  @bytes_in_megabyte 1024 * 1024
   @indices Config.get(:indices)
 
-  def stats(from, to) do
+  @doc ~s"""
+  Provides statistics for a predefined indices, displayed on sanbase.
+  """
+  @spec stats(%DateTime{}, %DateTime{}) :: stats
+  def stats(%DateTime{} = from, %DateTime{} = to) do
     {:ok, stats} = Elasticsearch.get(Cluster, "/#{@indices}/_stats")
     size_in_bytes = get_in(stats, ["_all", "total", "store", "size_in_bytes"])
     size_in_megabytes = (size_in_bytes / @bytes_in_megabyte) |> Math.to_integer()
@@ -22,8 +38,10 @@ defmodule Sanbase.Elasticsearch do
     }
   end
 
+  # Private functions
+
   defp documents_count(from, to) do
-     {:ok, data} =
+    {:ok, data} =
       Elasticsearch.post(
         Cluster,
         "/#{@indices}/_search",

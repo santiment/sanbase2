@@ -95,4 +95,38 @@ defmodule Sanbase.Elasticsearch.Query do
     }
     """
   end
+
+  def documents_count_in_interval(from, to) do
+    from_unix = DateTime.to_unix(from, :millisecond)
+    to_unix = DateTime.to_unix(to, :millisecond)
+    days_difference = Timex.diff(from, to) |> abs()
+    ~s"""
+    {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "range": {
+                "timestamp": {
+                  "gte": #{from_unix},
+                  "lte": #{to_unix},
+                  "format": "epoch_millis"
+                }
+              }
+            },
+            {
+              "range": {
+                "created_utc": {
+                  "gte": #{from_unix},
+                  "lte": #{to_unix},
+                  "format": "epoch_millis"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    """
+  end
 end

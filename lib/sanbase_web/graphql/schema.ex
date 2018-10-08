@@ -573,6 +573,9 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Returns statistics for the data stored in elasticsearch"
     field :elasticsearch_stats, :elasticsearch_stats do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
       cache_resolve(&ElasticsearchResolver.stats/3)
     end
   end

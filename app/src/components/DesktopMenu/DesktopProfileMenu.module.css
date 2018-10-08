@@ -5,7 +5,6 @@
 }
 
 .wrapper h3 {
-  margin-top: 22px;
   padding-top: 22px;
   margin-left: 25px;
   margin-bottom: 5px;
@@ -16,8 +15,13 @@
   color: rgb(135, 138, 140);
 }
 
-.wrapper a i {
-  padding-top: 5px;
+.wrapper img {
+  display: inline-block;
+  opacity: 1;
+  margin: 0 0.25rem 0 0;
+  height: 1em;
+  text-decoration: inherit;
+  text-align: center;
 }
 
 .button {
@@ -36,6 +40,11 @@
   background: #d4d9dd5e;
   color: #262b33;
   transition: 0.05s ease;
+}
+
+.button span:first-child {
+  display: flex;
+  align-items: center;
 }
 
 .divider {

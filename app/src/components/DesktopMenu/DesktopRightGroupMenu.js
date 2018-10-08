@@ -23,6 +23,7 @@ const displayLoggedIn = branch(
 )
 
 const DesktopRightGroupMenu = ({
+  balance,
   logout,
   toggleNightMode,
   isNightModeEnabled
@@ -31,6 +32,7 @@ const DesktopRightGroupMenu = ({
     <FeedbackButton />
     <SmoothDropdownItem trigger={<Button circular icon='user' />} id='profile'>
       <DesktopProfileMenu
+        balance={balance}
         logout={logout}
         toggleNightMode={toggleNightMode}
         isNightModeEnabled={isNightModeEnabled}
@@ -40,6 +42,7 @@ const DesktopRightGroupMenu = ({
 )
 
 const mapStateToProps = state => ({
+  balance: state.user.data.sanBalance,
   isLoggedIn: checkIsLoggedIn(state),
   isNightModeEnabled: state.rootUi.isNightModeEnabled
 })

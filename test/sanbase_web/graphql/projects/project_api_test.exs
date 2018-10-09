@@ -16,56 +16,6 @@ defmodule Sanbase.Graphql.ProjectApiTest do
   import Plug.Conn
   import SanbaseWeb.Graphql.TestHelpers
 
-  test "fetch wallet balance for project transparency", context do
-    project1 =
-      %Project{}
-      |> Project.changeset(%{name: "Project1", project_transparency: true})
-      |> Repo.insert!()
-
-    %ProjectEthAddress{}
-    |> ProjectEthAddress.changeset(%{
-      project_id: project1.id,
-      address: "abcdefg",
-      project_transparency: true
-    })
-    |> Repo.insert!()
-
-    Tesla.Mock.mock(fn %{method: :post} ->
-      %Tesla.Env{
-        status: 200,
-        body: %{"id" => 1, "jsonrpc" => "2.0", "result" => "0x1B1AE4D6E2EF500000"}
-      }
-    end)
-
-    %ProjectEthAddress{}
-    |> ProjectEthAddress.changeset(%{project_id: project1.id, address: "rrrrr"})
-    |> Repo.insert!()
-
-    query = """
-    {
-      project(id:$id, onlyProjectTransparency:true) {
-        name,
-        btcBalance,
-        ethBalance
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> put_req_header("authorization", get_authorization_header())
-      |> post(
-        "/graphql",
-        query_skeleton(query, "project", "($id:ID!)", "{\"id\": #{project1.id}}")
-      )
-
-    assert json_response(result, 200)["data"]["project"] == %{
-             "name" => "Project1",
-             "btcBalance" => 0,
-             "ethBalance" => 1000
-           }
-  end
-
   test "fetch funds raised from icos", context do
     currency_eth =
       %Currency{}
@@ -129,7 +79,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     query = """
     {
-      project(id:$id, onlyProjectTransparency:true) {
+      project(id:$id) {
         name,
         fundsRaisedIcos {
           amount,

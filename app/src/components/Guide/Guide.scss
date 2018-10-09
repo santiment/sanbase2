@@ -1,6 +1,7 @@
 .Guide {
   display: flex;
-  width: 400px;
+  width: 600px;
+  height: 250px;
   border: 1px solid black;
 
   &__left,
@@ -14,10 +15,15 @@
   }
 
   &__topic {
+    cursor: pointer;
     margin-bottom: 15px;
 
     &:last-child {
       margin-bottom: 0;
+    }
+
+    &_active {
+      color: red;
     }
   }
 

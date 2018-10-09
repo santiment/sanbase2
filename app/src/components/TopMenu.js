@@ -8,6 +8,7 @@ import AnalysisDropdownMenu from './DesktopMenu/AnalysisDropdownMenu'
 import DesktopAssetsMenu from './DesktopMenu/DesktopAssetsMenu'
 import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
 import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
+import Guide from './Guide/Guide'
 import './AppMenu.css'
 import './TopMenu.css'
 
@@ -27,6 +28,12 @@ export const TopMenu = ({
       </div>
       <SmoothDropdown className='right'>
         <div className='menu-list-top'>
+          <SmoothDropdownItem
+            trigger={<span className='app-menu__page-link'>Guide</span>}
+            id='guide'
+          >
+            <Guide />
+          </SmoothDropdownItem>
           <SmoothDropdownItem
             trigger={<span className='app-menu__page-link'>Assets</span>}
             id='analysis'

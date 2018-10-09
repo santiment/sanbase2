@@ -6,7 +6,7 @@ const GuideTopic = ({ topic, isActive, onClick }) => {
       className={`Guide__topic ${isActive ? 'Guide__topic_active' : ''}`}
       onClick={() => onClick(topic)}
     >
-      {topic.title}
+      <button>{topic.title}</button>
     </li>
   )
 }

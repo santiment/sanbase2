@@ -8,7 +8,12 @@ const stories = storiesOf('FeedbackButton', module)
 
 const FeedbackButtonExample = () => (
   <SmoothDropdown>
-    <FeedbackButton />
+    <div style={{
+      background: 'linear-gradient(270deg, #26a987, #2d79d0, #309d81)',
+      padding: 12
+    }}>
+      <FeedbackButton />
+    </div>
   </SmoothDropdown>
 )
 

@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Icon, Input } from 'semantic-ui-react'
+import { Input } from 'semantic-ui-react'
 import GuideTopic from './GuideTopic'
 import GuideDescription from './GuideDescription'
 
@@ -7,13 +7,19 @@ import './Guide.scss'
 
 const topics = [
   {
-    title: 'Token aging'
+    title: 'Token aging',
+    description:
+      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo cupiditate adipisci ex eius facere alias ducimus, veniam reiciendis consectetur laborum.'
   },
   {
-    title: 'Transaction volume'
+    title: 'Transaction volume',
+    description:
+      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo cupiditate adipisci ex eius facere alias ducimus, veniam reiciendis consectetur laborum.'
   },
   {
-    title: 'Development activity'
+    title: 'Development activity',
+    description:
+      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo cupiditate adipisci ex eius facere alias ducimus, veniam reiciendis consectetur laborum.'
   }
 ]
 
@@ -43,7 +49,7 @@ class Guide extends Component {
           {currentTopic ? (
             <GuideDescription topic={currentTopic} />
           ) : (
-            'Choose a topic'
+            <h2>Choose a topic to describe</h2>
           )}
         </div>
         <div className='Guide__right'>
@@ -60,6 +66,7 @@ class Guide extends Component {
               )
               .map(topic => (
                 <GuideTopic
+                  key={topic.title}
                   topic={topic}
                   isActive={currentTopic === topic}
                   onClick={this.handleTopicClick}

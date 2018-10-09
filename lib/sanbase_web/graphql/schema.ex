@@ -16,7 +16,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     PostResolver,
     MarketSegmentResolver,
     ApikeyResolver,
-    UserListResolver
+    UserListResolver,
+    ElasticsearchResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -49,6 +50,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
   import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
+  import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -567,6 +569,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch all public favourites lists"
     field :fetch_all_public_user_lists, list_of(:user_list) do
       resolve(&UserListResolver.fetch_all_public_user_lists/3)
+    end
+
+    @desc "Returns statistics for the data stored in elasticsearch"
+    field :elasticsearch_stats, :elasticsearch_stats do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&ElasticsearchResolver.stats/3)
     end
   end
 

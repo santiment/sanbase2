@@ -67,6 +67,10 @@ config :arc,
   storage: Arc.Storage.Local,
   storage_dir: "/tmp/sanbase/filestore-test/"
 
+config :sanbase, Sanbase.Elasticsearch.Cluster, api: Sanbase.ElasticsearchMock
+
+config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3"
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

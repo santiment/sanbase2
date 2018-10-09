@@ -142,6 +142,7 @@ import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"
 import_config "scrapers_config.exs"
 import_config "notifications_config.exs"
+import_config "elasticsearch_config.exs"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

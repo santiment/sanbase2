@@ -103,6 +103,7 @@ defmodule Sanbase.Elasticsearch.Query do
 
     ~s"""
     {
+      "size": 0,
       "query": {
         "bool": {
           "should": [

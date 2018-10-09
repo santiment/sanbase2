@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Icon, Input } from 'semantic-ui-react'
 import GuideTopic from './GuideTopic'
+import GuideDescription from './GuideDescription'
 
 import './Guide.scss'
 
@@ -39,13 +40,11 @@ class Guide extends Component {
     return (
       <div className='Guide'>
         <div className='Guide__left'>
-          <div className='Guide__description'>
-            {currentTopic ? (
-              <h3 className='Guide__title'>{currentTopic.title}</h3>
-            ) : (
-              'Choose a topic'
-            )}
-          </div>
+          {currentTopic ? (
+            <GuideDescription topic={currentTopic} />
+          ) : (
+            'Choose a topic'
+          )}
         </div>
         <div className='Guide__right'>
           <Input

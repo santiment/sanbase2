@@ -28,6 +28,27 @@ const emailLoginVerifyGQL = gql`
   }
 `
 
+const emailChangeVerifyGQL = gql`
+  mutation emailChangeVerify($emailCandidate: String!, $token: String!) {
+    emailChangeVerify(emailCandidate: $emailCandidate, token: $token) {
+      token
+      user {
+        id
+        email
+        username
+        privacyPolicyAccepted
+        marketingAccepted
+        consent_id
+        sanBalance
+        ethAccounts {
+          address
+          sanBalance
+        }
+      }
+    }
+  }
+`
+
 export const handleLoginSuccess = (action$, store, { client }) =>
   action$
     .ofType(actions.USER_LOGIN_SUCCESS)
@@ -48,13 +69,16 @@ export const handleLoginSuccess = (action$, store, { client }) =>
 
 const handleEmailLogin = (action$, store, { client }) =>
   action$.ofType(actions.USER_EMAIL_LOGIN).switchMap(action => {
+    const mutationGQL = action.payload.email
+      ? emailLoginVerifyGQL
+      : emailChangeVerifyGQL
     const mutation = client.mutate({
-      mutation: emailLoginVerifyGQL,
+      mutation: mutationGQL,
       variables: action.payload
     })
     return Observable.from(mutation)
       .mergeMap(({ data }) => {
-        const { token, user } = data.emailLoginVerify
+        const { token, user } = data.emailLoginVerify || data.emailChangeVerify
         GoogleAnalytics.event({
           category: 'User',
           action: 'Success login with email'

@@ -604,7 +604,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.email_login_verify/2)
     end
 
-    field :change_email, :user do
+    field :email_change_verify, :login do
+      arg(:email_candidate, non_null(:string))
+      arg(:token, non_null(:string))
+
+      resolve(&AccountResolver.email_change_verify/2)
+    end
+
+    field :change_email, :email_login_request do
       arg(:email, non_null(:string))
 
       middleware(JWTAuth)

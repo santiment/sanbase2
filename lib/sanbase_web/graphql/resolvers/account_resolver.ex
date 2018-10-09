@@ -75,22 +75,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     end
   end
 
-  def change_email(_root, %{email: new_email}, %{
+  def change_email(_root, %{email: email_candidate}, %{
         context: %{auth: %{auth_method: :user_token, current_user: user}}
       }) do
-    Repo.get!(User, user.id)
-    |> User.changeset(%{email: new_email})
-    |> Repo.update()
-    |> case do
-      {:ok, user} ->
-        {:ok, user}
-
+    with {:ok, user} <- User.update_email_candidate(user, email_candidate),
+         {:ok, _user} <- User.send_verify_email(user) do
+      {:ok, %{success: true}}
+    else
       {:error, changeset} ->
-        {
-          :error,
-          message: "Cannot update current user's email to #{new_email}",
-          details: Utils.error_details(changeset)
-        }
+        message = "Can't change current user's email to #{email_candidate}"
+        Logger.warn(message)
+        {:error, message: message, details: Utils.error_details(changeset)}
+    end
+  end
+
+  def email_change_verify(
+        %{token: email_candidate_token, email_candidate: email_candidate},
+        _resolution
+      ) do
+    with {:ok, user} <- User.find_by_email_candidate(email_candidate, email_candidate_token),
+         true <- User.email_candidate_token_valid?(user, email_candidate_token),
+         {:ok, token, _claims} <- SanbaseWeb.Guardian.encode_and_sign(user, %{salt: user.salt}),
+         {:ok, user} <- User.update_email_from_email_candidate(user) do
+      {:ok, %{user: user, token: token}}
+    else
+      _ -> {:error, message: "Login failed"}
     end
   end
 

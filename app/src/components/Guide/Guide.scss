@@ -1,3 +1,27 @@
 .Guide {
+  display: flex;
   width: 400px;
+  border: 1px solid black;
+
+  &__left,
+  &__right {
+    flex: 1;
+  }
+
+  &__left {
+    background: #0a4672;
+    color: #fff;
+  }
+
+  &__topic {
+    margin-bottom: 15px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+
+
+
 }

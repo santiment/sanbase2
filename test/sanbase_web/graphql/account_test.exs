@@ -6,20 +6,16 @@ defmodule SanbaseWeb.Graphql.AccountTest do
 
   import Mockery
   import SanbaseWeb.Graphql.TestHelpers
+  import ExUnit.CaptureLog
 
   setup do
     user =
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()
 
-    user2 =
-      %User{salt: User.generate_salt(), privacy_policy_accepted: true}
-      |> Repo.insert!()
-
     conn = setup_jwt_auth(build_conn(), user)
-    conn2 = setup_jwt_auth(build_conn(), user2)
 
-    {:ok, conn: conn, conn2: conn2}
+    {:ok, conn: conn, user: user}
   end
 
   test "the default current user's san_balance is 0.0", %{conn: conn} do
@@ -39,13 +35,15 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     assert json_response(result, 200)["data"]["currentUser"]["sanBalance"] == 0.0
   end
 
-  test "change email of current user", %{conn: conn} do
+  test "change email of current user", %{conn: conn, user: user} do
+    mock(Sanbase.MandrillApi, :send, {:ok, %{}})
+
     new_email = "new_test_email@santiment.net"
 
     query = """
     mutation {
       changeEmail(email: "#{new_email}") {
-        email
+        success
       }
     }
     """
@@ -54,44 +52,217 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    assert json_response(result, 200)["data"]["changeEmail"]["email"] == new_email
+    assert json_response(result, 200)["data"]["changeEmail"]["success"] == true
+    assert Repo.get(User, user.id).email_candidate == new_email
   end
 
-  test "change email to an existing one gives meaningful error", %{conn: conn, conn2: conn2} do
-    # The first user should be able to change the email without troubles
+  test "change email to an existing one gives meaningful error", %{conn: conn} do
     new_email = "new_test_email@santiment.net"
+
+    %User{
+      salt: User.generate_salt(),
+      email: new_email
+    }
+    |> Repo.insert!()
 
     query = """
     mutation {
       changeEmail(email: "#{new_email}") {
-        email
+        success
+      }
+    }
+    """
+
+    capture_log(fn ->
+      result =
+        conn
+        |> post("/graphql", mutation_skeleton(query))
+        |> json_response(200)
+
+      %{
+        "data" => %{"changeEmail" => nil},
+        "errors" => [
+          %{
+            "details" => details
+          }
+        ]
+      } = result
+
+      assert details == %{"email" => ["Email has already been taken"]}
+    end)
+  end
+
+  test "trying to verify email candidate using invalid token for a user", %{conn: conn} do
+    user =
+      %User{
+        salt: User.generate_salt(),
+        email_candidate: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
+      |> Repo.insert!()
+
+    query = """
+    mutation {
+      emailChangeVerify(email_candidate: "#{user.email}", token: "invalid_token") {
+        user {
+          email
+        },
+        token
       }
     }
     """
 
     result =
       conn
-      |> post("/graphql", mutation_skeleton(query))
-      |> json_response(200)
-
-    assert result["data"]["changeEmail"]["email"] == new_email
-
-    # The second user should not be able to add the same email
-    result2 =
-      conn2
       |> post("/graphql", mutation_skeleton(query))
       |> json_response(200)
 
     %{
-      "data" => %{"changeEmail" => nil},
+      "data" => %{"emailChangeVerify" => nil},
       "errors" => [
         %{
-          "details" => details
+          "message" => message
         }
       ]
-    } = result2
+    } = result
 
-    assert details == %{"email" => ["has already been taken"]}
+    assert message == "Login failed"
+  end
+
+  test "trying to verify email_candidate with a valid email_candidate_token", %{conn: conn} do
+    {:ok, user} =
+      %User{
+        salt: User.generate_salt(),
+        email: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
+      |> Repo.insert!()
+      |> User.update_email_candidate("example+foo@santiment.net")
+
+    query = """
+    mutation {
+      emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
+      user.email_candidate_token
+    }") {
+        user {
+          email
+        },
+        token
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
+
+    login_data = result["data"]["emailChangeVerify"]
+
+    user = Repo.get_by(User, email: user.email_candidate)
+
+    assert login_data["token"] != nil
+    assert login_data["user"]["email"] == user.email
+    assert user.email_candidate == nil
+
+    # Assert that now() and validated_at do not differ by more than 2 seconds
+    assert Sanbase.TestUtils.date_close_to(
+             Timex.now(),
+             user.email_candidate_token_validated_at,
+             2,
+             :seconds
+           )
+  end
+
+  test "trying to verify email_candidate with a valid token after more than 1 day", %{conn: conn} do
+    {:ok, user} =
+      %User{
+        salt: User.generate_salt(),
+        email: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
+      |> Repo.insert!()
+      |> User.update_email_candidate("example+foo@santiment.net")
+
+    user =
+      user
+      |> Ecto.Changeset.change(
+        email_candidate_token_generated_at: Timex.shift(Timex.now(), days: -2)
+      )
+      |> Repo.update!()
+
+    query = """
+    mutation {
+      emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
+      user.email_candidate_token
+    }") {
+        user {
+          email
+        }
+        token
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
+
+    %{
+      "data" => %{"emailChangeVerify" => nil},
+      "errors" => [
+        %{
+          "message" => message
+        }
+      ]
+    } = result
+
+    assert message == "Login failed"
+  end
+
+  test "trying to verify email_candidate again with a valid token after one validation", %{
+    conn: conn
+  } do
+    {:ok, user} =
+      %User{
+        salt: User.generate_salt(),
+        email: "example@santiment.net",
+        privacy_policy_accepted: true
+      }
+      |> Repo.insert!()
+      |> User.update_email_candidate("example+foo@santiment.net")
+
+    query = """
+    mutation {
+      emailChangeVerify(email_candidate: "#{user.email_candidate}", token: "#{
+      user.email_candidate_token
+    }") {
+        user {
+          email
+        }
+        token
+      }
+    }
+    """
+
+    post(conn, "/graphql", mutation_skeleton(query))
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(query))
+      |> json_response(200)
+
+    %{
+      "data" => %{"emailChangeVerify" => nil},
+      "errors" => [
+        %{
+          "message" => message
+        }
+      ]
+    } = result
+
+    assert message == "Login failed"
   end
 
   test "change username of current user", %{conn: conn} do
@@ -164,12 +335,12 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    loginData = json_response(result, 200)["data"]["emailLoginVerify"]
+    login_data = json_response(result, 200)["data"]["emailLoginVerify"]
 
     {:ok, user} = User.find_or_insert_by_email(user.email)
 
-    assert loginData["token"] != nil
-    assert loginData["user"]["email"] == user.email
+    assert login_data["token"] != nil
+    assert login_data["user"]["email"] == user.email
 
     # Assert that now() and validated_at do not differ by more than 2 seconds
     assert Sanbase.TestUtils.date_close_to(
@@ -246,10 +417,10 @@ defmodule SanbaseWeb.Graphql.AccountTest do
       conn
       |> post("/graphql", mutation_skeleton(query))
 
-    loginData = json_response(result, 200)["data"]["emailLoginVerify"]
+    login_data = json_response(result, 200)["data"]["emailLoginVerify"]
 
-    assert loginData["token"] != nil
-    assert loginData["user"]["email"] == user.email
+    assert login_data["token"] != nil
+    assert login_data["user"]["email"] == user.email
   end
 
   test "trying to login again with a valid email token after it has been validated 20 min ago", %{

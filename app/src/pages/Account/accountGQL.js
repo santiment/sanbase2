@@ -3,7 +3,7 @@ import gql from 'graphql-tag'
 export const changeEmailGQL = gql`
   mutation changeEmail($email: String!) {
     changeEmail(email: $email) {
-      email
+      success
     }
   }
 `

@@ -6,9 +6,6 @@ defmodule Sanbase.Elasticsearch.Query do
     ~s"""
     {
       "size": 0,
-      "_source": {
-        "excludes": []
-      },
       "aggs": {
         "chat_titles": {
           "terms": {
@@ -17,19 +14,9 @@ defmodule Sanbase.Elasticsearch.Query do
           }
         }
       },
-      "stored_fields": [
-        "chat_title.keyword"
-      ],
-      "script_fields": {},
-      "docvalue_fields": [
-        "timestamp"
-      ],
       "query": {
         "bool": {
           "must": [
-            {
-              "match_all": {}
-            },
             {
               "range": {
                 "timestamp": {
@@ -53,9 +40,6 @@ defmodule Sanbase.Elasticsearch.Query do
     ~s"""
     {
       "size": 0,
-      "_source": {
-        "excludes": []
-      },
       "aggs": {
         "subreddits": {
           "terms": {
@@ -64,19 +48,9 @@ defmodule Sanbase.Elasticsearch.Query do
           }
         }
       },
-      "stored_fields": [
-        "subreddit_name_prefixed.keyword"
-      ],
-      "script_fields": {},
-      "docvalue_fields": [
-        "created_utc"
-      ],
       "query": {
         "bool": {
           "must": [
-            {
-              "match_all": {}
-            },
             {
               "range": {
                 "created_utc": {
@@ -86,10 +60,7 @@ defmodule Sanbase.Elasticsearch.Query do
                 }
               }
             }
-          ],
-          "filter": [],
-          "should": [],
-          "must_not": []
+          ]
         }
       }
     }

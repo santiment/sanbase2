@@ -26,6 +26,7 @@ defmodule Sanbase.Elasticsearch do
     {:ok, stats} = Elasticsearch.get(Cluster, "/#{@indices}/_stats")
     size_in_bytes = get_in(stats, ["_all", "total", "store", "size_in_bytes"])
     size_in_megabytes = (size_in_bytes / @bytes_in_megabyte) |> Math.to_integer()
+
     documents_count = documents_count(from, to)
     days_difference = Timex.diff(from, to, :days) |> abs()
 

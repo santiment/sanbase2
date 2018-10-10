@@ -15,7 +15,8 @@ class SmoothDropdownItem extends Component {
       .isRequired,
     trigger: PropTypes.element.isRequired,
     showIf: PropTypes.func,
-    id: PropTypes.string
+    id: PropTypes.string,
+    offsetX: PropTypes.number
   }
 
   componentDidMount () {
@@ -31,7 +32,7 @@ class SmoothDropdownItem extends Component {
   }
 
   render () {
-    const { trigger, children, id, className, showIf } = this.props
+    const { trigger, children, id, className, showIf, offsetX } = this.props
     const {
       triggerRef: { current: ddTrigger },
       dropdownRef: { current: ddDropdown }
@@ -67,6 +68,7 @@ class SmoothDropdownItem extends Component {
                   dd__item: true,
                   active: ddTrigger === currentTrigger
                 })}
+                data-offset-x={offsetX}
                 ref={this.dropdownRef}
               >
                 <div

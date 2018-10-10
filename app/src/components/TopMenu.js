@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { Icon } from 'semantic-ui-react'
 import 'font-awesome/css/font-awesome.css'
 import logo from '../assets/logo_sanbase.png'
 import Search from './Search/SearchContainer'
@@ -29,8 +30,13 @@ export const TopMenu = ({
       <SmoothDropdown className='right'>
         <div className='menu-list-top'>
           <SmoothDropdownItem
-            trigger={<span className='app-menu__page-link'>Guide</span>}
+            trigger={
+              <span className='app-menu__page-link'>
+                <Icon name='book' />
+              </span>
+            }
             id='guide'
+            offsetX={-27}
           >
             <Guide />
           </SmoothDropdownItem>

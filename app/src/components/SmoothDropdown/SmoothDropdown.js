@@ -69,8 +69,9 @@ class SmoothDropdown extends Component {
       : 0
 
     const correction = this.getViewportOverflowCorrection(trigger, ddContent)
+    const offsetX = +dropdownItem.dataset.offsetX || 0
 
-    const left = leftOffset - correction.left + 'px'
+    const left = leftOffset - correction.left + offsetX + 'px'
     const top = `calc(100% + ${10 + topOffset}px)`
     const width = ddContent.clientWidth + 'px'
     const height = ddContent.clientHeight + 'px'
@@ -85,7 +86,7 @@ class SmoothDropdown extends Component {
         width,
         height
       },
-      arrowCorrectionX: correction.left
+      arrowCorrectionX: correction.left - offsetX
     }))
   }
 

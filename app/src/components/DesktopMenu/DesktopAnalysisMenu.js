@@ -6,7 +6,7 @@ const DesktopAnalysisMenu = () => (
   <div className='analysis-menu'>
     <DesktopMenuLinkContainer
       title='Insights'
-      description='Record your observations, share them with the community if you’d like, and read Insights from others.'
+      description='Record your ideas as a private journal, or share them with the community'
       linkIcon='insights'
       to='/insights'
     />
@@ -18,19 +18,19 @@ const DesktopAnalysisMenu = () => (
     />
     <DesktopMenuLinkContainer
       title='signals'
-      description='Get notifications when metrics for tokens you are tracking cross certain thresholds. Customize to your preferences.'
+      description='Get notifications when metrics cross certain thresholds (SOON)'
       linkIcon='signals'
       to='/signals'
     />
     <DesktopMenuLinkContainer
       title='Research tools'
-      description='Advanced dashboards with experimental visualizations and more robust tools for experienced data scientists.'
+      description='Experimental visualizations and data feeds (BETA)'
       linkIcon='research'
       to='https://data.santiment.net'
     />
     <DesktopMenuLinkContainer
       title='Sanbase api'
-      description='Access our data feeds to perform your own research and analysis, build UI tools... whatever you can imagine.'
+      description='Access our data feeds and code libraries for your own projects'
       linkIcon='api'
       to='https://docs.santiment.net'
     />

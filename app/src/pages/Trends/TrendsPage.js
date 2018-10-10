@@ -27,7 +27,7 @@ const TrendsPageTitleWithPopup = () => (
           <li>Subreddits</li>
           <li>Discord Channels</li>
           <li>BitcoinTalk</li>
-          <li>TradingView</li>
+          <li>Other chats/forums</li>
         </ul>
       </div>
     }

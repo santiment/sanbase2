@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-09-10 | v.0.18.0 'Phobos':
+
+  Add "Trends" Statistic
+
 - 2018-08-10 | v.0.17.2 'Phobos':
 
   Add user's tokens in profile dropdown menu

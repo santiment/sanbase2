@@ -15,7 +15,7 @@ defmodule Sanbase.Application do
     children =
       [
         # Start the Task Supervisor
-        supervisor(Task.Supervisor, [[name: Sanbase.TaskSupervisor]]),
+        {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
         # Start the Postgres Ecto repository
         Sanbase.Repo,
@@ -24,10 +24,13 @@ defmodule Sanbase.Application do
         Sanbase.TimescaleRepo,
 
         # Start the endpoint when the application starts
-        supervisor(SanbaseWeb.Endpoint, []),
+        SanbaseWeb.Endpoint,
 
         # Start the Clickhouse Repo
-        start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
+        start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
+
+        # Start the Elasticsearch Cluster connection
+        Sanbase.Elasticsearch.Cluster,
 
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},

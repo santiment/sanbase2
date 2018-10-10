@@ -10,6 +10,7 @@ import TrendsReChart from './../../components/Trends/TrendsReChart'
 import SmoothDropdown from '../../components/SmoothDropdown/SmoothDropdown'
 import SmoothDropdownItem from '../../components/SmoothDropdown/SmoothDropdownItem'
 import ShareOptions from './../../components/ShareOptions/ShareOptions'
+import GetTrendsStats from './../../components/Trends/GetTrendsStats'
 import { capitalizeStr } from './../../utils/utils'
 import './TrendsExplorePage.css'
 
@@ -23,6 +24,35 @@ export const getStateFromQS = ({ location }) => {
     asset: asset || 'bitcoin'
   }
 }
+
+export const Stats = () => (
+  <div>
+    <GetTrendsStats
+      render={({ stats, isLoading }) => {
+        if (isLoading) {
+          return ''
+        } else {
+          return (
+            <div style={{ background: '#f5f9ff99' }}>
+              <hr />
+              <strong style={{ marginLeft: 40 }}>Our statistic:</strong>
+              <div style={{ display: 'flex', marginTop: 0 }}>
+                <ul>
+                  <li>All messages: {stats.documentsCount}</li>
+                  <li>Messages per day: {stats.averageDocumentsPerDay}</li>
+                </ul>
+                <ul>
+                  <li>Telegram channels: {stats.telegramChannelsCount}</li>
+                  <li>Subreddits: {stats.subredditsCount}</li>
+                </ul>
+              </div>
+            </div>
+          )
+        }
+      }}
+    />
+  </div>
+)
 
 export class TrendsExplorePage extends Component {
   state = {
@@ -102,6 +132,7 @@ export class TrendsExplorePage extends Component {
               />
             )}
           />
+          <Stats />
         </div>
       </div>
     )

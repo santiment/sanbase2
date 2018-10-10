@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "private": true,
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -102,7 +102,11 @@
     "storybook-react-router": "^1.0.1",
     "stylelint": "^9.5.0",
     "stylelint-config-standard": "^18.2.0",
-    "why-did-you-update": "^0.1.1"
+    "why-did-you-update": "^0.1.1",
+    "imports-loader": "^0.7.1",
+    "postcss-cssnext-3": "npm:postcss-cssnext@3",
+    "postcss-import-11": "npm:postcss-import@11",
+    "postcss-loader-2": "npm:postcss-loader@2"
   },
   "standard": {
     "parser": "babel-eslint",

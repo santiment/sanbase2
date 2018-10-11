@@ -4,6 +4,11 @@
 
   Add the knowledge base menu
 
+- 2018-11-10 | v.0.18.1 'Phobos':
+
+  Fix iPad styles of the detailed page
+  Rename Burn Rate to Token Age Consumed
+
 - 2018-09-10 | v.0.18.0 'Phobos':
 
   Add "Trends" Statistic

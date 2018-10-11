@@ -1,12 +1,10 @@
 import React from 'react'
 
-const GuideDescription = ({ topic }) => {
-  return (
-    <div className='Guide__description'>
-      <h3 className='Guide__title'>{topic.title}</h3>
-      <p className='Guide__text'>{topic.description}</p>
-    </div>
-  )
-}
+const GuideDescription = ({ topic: { title, description } }) => (
+  <div className='Guide__description'>
+    <h3 className='Guide__title'>{title}</h3>
+    <p className='Guide__text'>{description}</p>
+  </div>
+)
 
 export default GuideDescription

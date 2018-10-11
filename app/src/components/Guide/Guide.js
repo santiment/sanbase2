@@ -2,26 +2,13 @@ import React, { Component } from 'react'
 import { Input } from 'semantic-ui-react'
 import GuideTopic from './GuideTopic'
 import GuideDescription from './GuideDescription'
+import help from './../../assets/help.json'
 
 import './Guide.scss'
 
-const topics = [
-  {
-    title: 'Token aging',
-    description:
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo cupiditate adipisci ex eius facere alias ducimus, veniam reiciendis consectetur laborum.'
-  },
-  {
-    title: 'Transaction volume',
-    description:
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo cupiditate adipisci ex eius facere alias ducimus, veniam reiciendis consectetur laborum.'
-  },
-  {
-    title: 'Development activity',
-    description:
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo cupiditate adipisci ex eius facere alias ducimus, veniam reiciendis consectetur laborum.'
-  }
-]
+const topics = [...Object.values(help)]
+
+const HiddenElement = () => ''
 
 class Guide extends Component {
   state = {
@@ -53,12 +40,17 @@ class Guide extends Component {
           )}
         </div>
         <div className='Guide__right'>
-          <Input
-            className='Guide__search'
-            icon='search'
-            iconPosition='left'
-            onChange={this.handleSearchTermChange}
-          />
+          <HiddenElement>
+            {
+              // TODO: add ability to choose topics from keyboard
+            }
+            <Input
+              className='Guide__search'
+              icon='search'
+              iconPosition='left'
+              onChange={this.handleSearchTermChange}
+            />
+          </HiddenElement>
           <ol className='Guide__topics'>
             {topics
               .filter(({ title }) =>

@@ -12,7 +12,7 @@ export const FeedbackButton = ({ toggleFeedback, ...props }) => (
         className={styles.feedbackButton}
         onClick={toggleFeedback}
         circular
-        icon='bullhorn'
+        icon='comments'
       />
     }
     id='feedback'

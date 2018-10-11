@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button } from 'semantic-ui-react'
+import { Button, Icon } from 'semantic-ui-react'
 import { connect } from 'react-redux'
 import { branch, renderComponent, compose } from 'recompose'
 import { NavLink } from 'react-router-dom'
@@ -8,6 +8,8 @@ import * as actions from './../../actions/types'
 import FeedbackButton from './../FeedbackButton/FeedbackButton'
 import SmoothDropdownItem from './../SmoothDropdown/SmoothDropdownItem'
 import DesktopProfileMenu from './DesktopProfileMenu'
+import Guide from './../Guide/Guide'
+import styles from './../FeedbackButton/FeedbackButton.module.css'
 import './DesktopRightGroupMenu.css'
 
 const AnonymDesktopRightGroupMenu = () => (
@@ -29,6 +31,15 @@ const DesktopRightGroupMenu = ({
   isNightModeEnabled
 }) => (
   <div className='user-auth-control'>
+    <SmoothDropdownItem
+      trigger={
+        <Button className={styles.feedbackButton} circular icon='book' />
+      }
+      id='guide'
+      offsetX={-27}
+    >
+      <Guide />
+    </SmoothDropdownItem>
     <FeedbackButton />
     <SmoothDropdownItem trigger={<Button circular icon='user' />} id='profile'>
       <DesktopProfileMenu

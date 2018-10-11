@@ -1,0 +1,26 @@
+{
+  "Token Age Consumed": {
+    "title": "Token Age Consumed",
+    "description": "Token Age Consumed shows the amount of movement of tokens between addresses. One use for this metric is to spot large amounts of tokens moving after sitting for long periods of time"
+  },
+  "Transaction Volume": {
+    "title": "Transaction volume",
+    "description": "Total amount of tokens that were transacted on the blockchain"
+  },
+  "ETH Spent Over Time": {
+    "title": "ETH Spent Over Time",
+    "description": "How much ETH has moved out of team wallets over time.  While not tracked all the way to exchanges, this metric may suggest pottential selling activity."
+  },
+  "Development Activity": {
+    "title": "Development activity",
+    "description": "Metric based on number of Github 'events' including issue interactions, pull requests, comments, and wiki edits, plus the number of public repositories a project is maintaining"
+  },
+  "Sentiment": {
+    "title": "Sentiment",
+    "description": "This feed plots an aggregated sentiment metric for the general crypto market against the token's price. The higher the number, the more positive the sentiment. Requires 1000 SAN to access."
+  },
+  "Social Trends": {
+    "title": "Social Trends",
+    "description": "Our Social Trends search is unique in the industry, based on channels, sites and forums.  We focus only on channels where 90% of the discussions about crypto, including 'insider' sites not open to public Google search."
+  }
+}

@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-11-10 | v.0.17.3 'Phobos':
+
+  Fix iPad styles of the detailed page
+  Rename Burn Rate to Token Age Consumed
+
 - 2018-08-10 | v.0.17.2 'Phobos':
 
   Add user's tokens in profile dropdown menu

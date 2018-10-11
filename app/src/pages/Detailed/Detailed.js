@@ -17,7 +17,7 @@ import ServerErrorMessage from './../../components/ServerErrorMessage'
 import EthSpent from './../../pages/EthSpent'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
 import { checkHasPremium, checkIsLoggedIn } from './../UserSelectors'
-import DetailedEthTopTransactions from './DetailedEthTopTransactions'
+import DetailedTransactionsTable from './DetailedTransactionsTable'
 import {
   projectBySlugGQL,
   TwitterDataGQL,
@@ -275,14 +275,29 @@ export const Detailed = ({
           </PanelBlock>
         </div>
       )}
-      <div className='information'>
-        {isDesktop &&
-          project.isERC20 &&
-          project.ethTopTransactions &&
-          project.ethTopTransactions.length > 0 && (
-          <DetailedEthTopTransactions Project={Project} />
-        )}
-      </div>
+      {isDesktop &&
+        project.isERC20 &&
+        project.tokenTopTransactions &&
+        project.tokenTopTransactions.length > 0 && (
+        <div className='information'>
+          <DetailedTransactionsTable
+            Project={Project}
+            title={'Top Token Transactions'}
+            show={'tokenTopTransactions'}
+          />
+        </div>
+      )}
+      {isDesktop &&
+        project.isERC20 &&
+        project.ethTopTransactions &&
+        project.ethTopTransactions.length > 0 && (
+        <div className='information'>
+          <DetailedTransactionsTable
+            Project={Project}
+            show={'ethTopTransactions'}
+          />
+        </div>
+      )}
     </div>
   )
 }

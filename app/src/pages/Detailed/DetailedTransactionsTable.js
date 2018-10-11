@@ -6,7 +6,7 @@ import PanelBlock from './../../components/PanelBlock'
 import { formatNumber } from './../../utils/formatting'
 import SmoothDropdown from '../../components/SmoothDropdown/SmoothDropdown'
 import SmoothDropdownItem from '../../components/SmoothDropdown/SmoothDropdownItem'
-import './DetailedEthTopTransactions.css'
+import './DetailedTransactionsTable.css'
 
 const getAddressMarkup = ({ address, isExchange, isTx }) => (
   <Fragment>
@@ -24,7 +24,7 @@ const TrxAddressCell = ({ value }) => (
     }
     trigger={getAddressMarkup(value)}
   >
-    {value.address}
+    <span style={{ padding: '1em' }}>{value.address}</span>
   </SmoothDropdownItem>
 )
 
@@ -70,18 +70,24 @@ const COLUMNS = [
   }
 ]
 
-const DetailedEthTopTransactions = ({ Project }) => {
-  const data = Project.project.ethTopTransactions
-    .slice(0, 10)
-    .map(({ trxValue, trxHash, fromAddress, toAddress, datetime }) => ({
-      trxHash,
-      fromAddress,
-      toAddress,
-      trxValue: formatNumber(trxValue),
-      datetime: moment(datetime).format('YYYY-MM-DD HH:mm:ss')
-    }))
+const DetailedTopTransactions = ({
+  Project,
+  show = 'ethTopTransactions',
+  title = 'Top ETH Transactions'
+}) => {
+  const data = Project.project[show]
+    ? Project.project[show]
+      .slice(0, 10)
+      .map(({ trxValue, trxHash, fromAddress, toAddress, datetime }) => ({
+        trxHash,
+        fromAddress,
+        toAddress,
+        trxValue: formatNumber(trxValue),
+        datetime: moment(datetime).format('YYYY-MM-DD HH:mm:ss')
+      }))
+    : []
   return (
-    <PanelBlock isLoading={Project.loading} title='Top ETH Transactions'>
+    <PanelBlock isLoading={Project.loading} title={title}>
       <SmoothDropdown verticalMotion>
         <ReactTable
           data={data}
@@ -92,7 +98,7 @@ const DetailedEthTopTransactions = ({ Project }) => {
           defaultSorted={[
             {
               id: 'time',
-              desc: false
+              desc: true
             }
           ]}
         />
@@ -101,4 +107,4 @@ const DetailedEthTopTransactions = ({ Project }) => {
   )
 }
 
-export default DetailedEthTopTransactions
+export default DetailedTopTransactions

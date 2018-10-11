@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-11-10 | v.0.19.0 'Phobos':
+
+  Add the knowledge base menu
+
 - 2018-09-10 | v.0.18.0 'Phobos':
 
   Add "Trends" Statistic

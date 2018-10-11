@@ -1,7 +1,7 @@
 .Guide {
   display: flex;
   width: 600px;
-  height: 250px;
+  height: 100%;
   white-space: initial;
 
   &__left,
@@ -13,10 +13,12 @@
   &__left {
     display: flex;
     align-items: center;
-    background: #1a5f4d;
+    background: linear-gradient(270deg, #df2f2f, #316bae, #309d81);
     color: #fff;
     border-bottom-left-radius: 5px;
     border-top-left-radius: 5px;
+    background-size: 600% 600%;
+    animation: SwitchingColor 60s ease infinite;
   }
 
   &__title,
@@ -58,5 +60,19 @@
 
   &__search {
     width: 100%;
+  }
+
+  @keyframes SwitchingColor {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
   }
 }

@@ -1,0 +1,26 @@
+.eth-spent-table.ReactTable .rt-tbody .rt-td {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.eth-spent-table.ReactTable .rt-tr > div.rt-td:first-child {
+  justify-content: center;
+}
+
+.eth-spent-table.ReactTable .rt-tr > div.rt-td:last-child {
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eth-spent-table.ReactTable .rt-td .overview-name {
+  padding-top: 0;
+}
+
+.eth-spent-table.ReactTable .rt-tbody .rt-tr-group {
+  max-height: none;
+}
+
+.ReactTable .rt-tbody .rt-td:last-child {
+  width: 100%;
+}

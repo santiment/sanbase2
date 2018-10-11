@@ -119,7 +119,6 @@ const EthSpentTable = ({
       Header: 'Wallets',
       id: 'wallets',
       accessor: 'ethAddresses',
-      minWidth: 250,
       Cell: ({ value = {} }) => (
         <Fragment>
           {value.length > 0 ? (

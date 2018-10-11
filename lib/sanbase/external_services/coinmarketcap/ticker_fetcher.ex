@@ -53,37 +53,29 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
     {:noreply, state}
   end
 
-  # Helper functions
-
-  defp get_or_create_latest_coinmarketcap_data(coinmarketcap_id) do
-    case Repo.get_by(LatestCoinmarketcapData, coinmarketcap_id: coinmarketcap_id) do
-      nil ->
-        %LatestCoinmarketcapData{coinmarketcap_id: coinmarketcap_id}
-
-      entry ->
-        entry
+  defp get_or_create_ticker(id) do
+    case Repo.get(LatestCoinmarketcapData, id) do
+      nil  -> %LatestCoinmarketcapData{id: id}
+      entry -> entry
     end
   end
 
   defp store_latest_coinmarketcap_data(ticker) do
     ticker.id
-    |> get_or_create_latest_coinmarketcap_data()
-    |> LatestCoinmarketcapData.changeset(%{
-      market_cap_usd: ticker.market_cap_usd,
-      name: ticker.name,
-      price_usd: ticker.price_usd,
-      price_btc: ticker.price_btc,
-      rank: ticker.rank,
-      volume_usd: ticker."24h_volume_usd",
-      available_supply: ticker.available_supply,
-      total_supply: ticker.total_supply,
-      symbol: ticker.symbol,
-      percent_change_1h: ticker.percent_change_1h,
-      percent_change_24h: ticker.percent_change_24h,
-      percent_change_7d: ticker.percent_change_7d,
-      update_time: DateTime.from_unix!(ticker.last_updated)
-    })
-    |> Repo.insert_or_update!()
+    |> get_or_create_ticker()
+    |> LatestCoinmarketcapData.changeset(
+      %{
+        market_cap_usd: ticker.market_cap_usd,
+	name: ticker.name,
+	price_usd: ticker.price_usd,
+  rank: ticker.rank,
+  volume_usd: ticker.'24h_volume_usd',
+  available_supply: ticker.available_supply,
+  total_supply: ticker.total_supply,
+	symbol: ticker.symbol,
+	update_time: (DateTime.from_unix!(ticker.last_updated) |> DateTime.to_naive())
+      })
+    |> Repo.insert_or_update!
   end
 
   defp insert_or_create_project(%Ticker{id: coinmarketcap_id, name: name, symbol: ticker}) do

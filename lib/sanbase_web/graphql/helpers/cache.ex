@@ -143,6 +143,32 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     middleware_resolver(captured_mfa, fun_name)
   end
 
+  def size(:megabytes) do
+    bytes_size = :ets.info(ConCache.ets(@cache_name), :memory) * :erlang.system_info(:wordsize)
+    (bytes_size / (1024 * 1024)) |> Float.round(2)
+  end
+
+  # Public so it can be used by the resolve macros. You should not use it.
+  def from(captured_mfa) when is_function(captured_mfa) do
+    # Public so it can be used by the resolve macros. You should not use it.
+    fun_name = captured_mfa |> captured_mfa_name()
+
+    resolver(captured_mfa, fun_name)
+  end
+
+  @doc false
+  def from(fun, fun_name) when is_function(fun) do
+    # Public so it can be used by the resolve macros. You should not use it.
+    resolver(fun, fun_name)
+  end
+
+  @doc false
+  def dataloader_from(captured_mfa) when is_function(captured_mfa) do
+    # Public so it can be used by the resolve macros. You should not use it.
+    fun_name = captured_mfa |> captured_mfa_name()
+    middleware_resolver(captured_mfa, fun_name)
+  end
+
   # Private functions
 
   defp resolver(resolver_fn, name) do

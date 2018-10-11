@@ -10,6 +10,11 @@ import './MobileMenu.css'
 import logo from '../assets/logo_sanbase.png'
 import * as actions from './../actions/types'
 
+const hasInsights = location => {
+  const qsData = qs.parse(location.search)
+  return qsData && qsData.insights
+}
+
 const MobileMenu = ({
   isOpened = false,
   toggleMenu,
@@ -92,10 +97,7 @@ const mapDispatchToProps = dispatch => {
 
 const enhance = compose(
   withRouter,
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
+  connect(mapStateToProps, mapDispatchToProps),
   withStateHandlers(
     { isOpened: false },
     {

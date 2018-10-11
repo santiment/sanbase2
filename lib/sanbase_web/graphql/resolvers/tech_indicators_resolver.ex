@@ -2,6 +2,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.InternalServices.TechIndicators
+  alias Sanbase.Utils.Config
+
+  alias Sanbase.InternalServices.TechIndicators
 
   def macd(
         _root,
@@ -140,6 +143,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   end
 
   def topic_search(
+        _root,
+        %{
+          source: source,
+          search_text: search_text,
+          from: from,
+          to: to,
+          interval: interval
+        },
+        _resolution
+      ) do
+    TechIndicators.topic_search(
+      source,
+      search_text,
+      from,
+      to,
+      interval
+    )
+  end
+
+  def topic_search_overview(
         _root,
         %{
           source: source,

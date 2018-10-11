@@ -72,10 +72,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 
 const enhance = compose(
   withState('isGDPRChecked', 'setGDPRChecked', false),
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )
+  connect(mapStateToProps, mapDispatchToProps)
 )
 
 export default enhance(GDPRModal)

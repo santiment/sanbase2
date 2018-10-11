@@ -1,0 +1,146 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Project detail page container it should render correctly 1`] = `
+<div
+  className="page detailed"
+>
+  <HelmetWrapper
+    defer={true}
+    encodeSpecialCharacters={true}
+  >
+    <title>
+      AE project page
+    </title>
+  </HelmetWrapper>
+  <Connect(Apollo(SearchContainer)) />
+  <ExportedComponent
+    project={
+      Object {
+        "id": 12,
+        "name": "Aragorn",
+        "priceUsd": 10,
+        "ticker": "AE",
+      }
+    }
+  />
+  <div>
+    <Connect(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(withState(ProjectChartContainer)))))))))))))
+      TwitterHistoryData={
+        Object {
+          "loading": true,
+        }
+      }
+      burnRate={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": true,
+        }
+      }
+      dailyActiveAddresses={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": true,
+        }
+      }
+      emojisSentiment={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": false,
+        }
+      }
+      ethPrice={
+        Object {
+          "history": Object {
+            "items": Array [],
+            "loading": true,
+          },
+        }
+      }
+      ethSpentOverTime={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": undefined,
+        }
+      }
+      github={
+        Object {
+          "history": Object {
+            "items": Array [],
+            "loading": true,
+          },
+        }
+      }
+      price={
+        Object {
+          "history": Object {
+            "items": Array [],
+            "loading": true,
+          },
+        }
+      }
+      project={
+        Object {
+          "id": 12,
+          "name": "Aragorn",
+          "priceUsd": 10,
+          "ticker": "AE",
+        }
+      }
+      projectId={12}
+      ticker="AE"
+      transactionVolume={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": true,
+        }
+      }
+      twitterData={
+        Object {
+          "error": false,
+          "followersCount": 0,
+          "loading": true,
+        }
+      }
+      twitterHistory={
+        Object {
+          "error": false,
+          "items": Array [],
+          "loading": false,
+        }
+      }
+    />
+  </div>
+  <div
+    className="information"
+  >
+    <PanelBlock
+      title="General Info"
+    >
+      <GeneralInfoBlock
+        id={12}
+        name="Aragorn"
+        priceUsd={10}
+        ticker="AE"
+      />
+    </PanelBlock>
+    <PanelBlock
+      title="Financials"
+    >
+      <FinancialsBlock
+        id={12}
+        name="Aragorn"
+        priceUsd={10}
+        ticker="AE"
+      />
+    </PanelBlock>
+  </div>
+  <div
+    className="information"
+  />
+</div>
+`;

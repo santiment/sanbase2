@@ -208,6 +208,129 @@ defmodule Sanbase.Influxdb.Store do
         {:ok, []}
       end
 
+      def last_datetime(measurement) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1/
+        |> __MODULE__.query()
+        |> parse_measurement_datetime()
+      end
+
+      def last_datetime!(measurement) do
+        case last_datetime(measurement) do
+          {:ok, datetime} -> datetime
+          {:error, error} -> raise(error)
+        end
+      end
+
+      def last_datetime_with_tag(measurement, tag_name, tag_value) when is_binary(tag_value) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1
+        WHERE "#{tag_name}" = '#{tag_value}'/
+        |> __MODULE__.query()
+        |> parse_measurement_datetime()
+      end
+
+      def last_datetime_with_tag(measurement, tag_name, tag_value) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time DESC LIMIT 1
+        WHERE "#{tag_name}" = #{tag_value}/
+        |> __MODULE__.query()
+        |> parse_measurement_datetime()
+      end
+
+      def last_datetime_with_tag!(measurement, tag_name, tag_value) do
+        case last_datetime_with_tag(measurement, tag_name, tag_value) do
+          {:ok, datetime} -> datetime
+          {:error, error} -> raise(error)
+        end
+      end
+
+      def first_datetime(measurement) do
+        ~s/SELECT * FROM "#{measurement}" ORDER BY time ASC LIMIT 1/
+        |> __MODULE__.query()
+        |> parse_measurement_datetime()
+      end
+
+      def first_datetime!(measurement) do
+        case first_datetime(measurement) do
+          {:ok, datetime} -> datetime
+          {:error, error} -> raise(error)
+        end
+      end
+
+      @doc ~s"""
+        Returns a list of measurement names that are used internally and should not be exposed.
+        Should be overridden if the Store module uses internal measurements
+      """
+      def internal_measurements() do
+        {:ok, []}
+      end
+
+      defoverridable internal_measurements: 0
+
+      @doc ~s"""
+        Returns a list of all measurements except the internal ones
+      """
+      def public_measurements() do
+        with {:ok, all_measurements} <- list_measurements(),
+             {:ok, internal_measurements} <- internal_measurements() do
+          {
+            :ok,
+            all_measurements
+            |> Enum.reject(fn x -> Enum.member?(internal_measurements, x) end)
+          }
+        end
+      end
+
+      @doc ~s"""
+        Transforms the `datetime` parammeter to the internally used datetime format
+        which is timestamp in nanoseconds
+      """
+      def influx_time(datetime, from_type \\ nil)
+
+      def influx_time(%DateTime{} = datetime, _from_type) do
+        DateTime.to_unix(datetime, :nanoseconds)
+      end
+
+      def influx_time(datetime, :seconds) when is_integer(datetime) do
+        datetime * 1_000_000_000
+      end
+
+      def influx_time(datetime, :milliseconds) when is_integer(datetime) do
+        datetime * 1_000_000
+      end
+
+      def parse_time_series(%{results: [%{error: error}]}) do
+        {:error, error}
+      end
+
+      @doc ~s"""
+        Parse the values from a time series into a list of list. Each list
+        begins with the datetime, parsed from iso8601 into %DateTime{} format.
+        The rest of the values in the list are not changed.
+      """
+      def parse_time_series(%{
+            results: [
+              %{
+                series: [
+                  %{
+                    values: values
+                  }
+                ]
+              }
+            ]
+          }) do
+        result =
+          values
+          |> Enum.map(fn [iso8601_datetime | rest] ->
+            {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+            [datetime | rest]
+          end)
+
+        {:ok, result}
+      end
+
+      def parse_time_series(_) do
+        {:ok, []}
+      end
+
       # Private functions
 
       defp parse_measurements_list(%{results: [%{error: error}]}), do: {:error, error}

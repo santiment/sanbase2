@@ -36,10 +36,7 @@ const mapDispatchToProps = dispatch => ({
 })
 
 const enhance = compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
+  connect(mapStateToProps, mapDispatchToProps),
   graphql(allProjectsForSearchGQL, {
     name: 'allProjects',
     props: mapDataToProps,

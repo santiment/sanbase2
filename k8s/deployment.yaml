@@ -1,0 +1,71 @@
+apiVersion: apps/v1beta1
+kind: List
+items:
+- apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+    name: sanbase-web
+    labels:
+      app: sanbase-web
+      branch: master
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app: sanbase-web
+        branch: master
+    spec:
+      containers:
+      - name: sanbase-master
+        image: 913750763724.dkr.ecr.eu-central-1.amazonaws.com/sanbase:master
+        env:
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: databaseUrl
+
+          - name: INFLUXDB_HOST
+            value: "influxdb-influxdb"
+
+          - name: PORT
+            value: "4000"
+
+          - name: WEBSITE_URL
+            value: "http://localhost:4000"
+
+          - name: ADMIN_BASIC_AUTH_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: exAdminBasicAuthUsername
+
+          - name: ADMIN_BASIC_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: exAdminBasicAuthPassword
+
+          - name: ETHERSCAN_APIKEY
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: etherscanApikey
+
+          - name: NOTIFICATIONS_WEBHOOK_URL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: notificationsWebhookUrl
+
+          - name: NOTIFICATIONS_CHANNEL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: notificationsChannel
+
+          - name: ETHAUTH_URL
+            valueFrom:
+              secretKeyRef:
+                name: sanbase-env
+                key: ethauthUrl

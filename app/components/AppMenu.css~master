@@ -1,0 +1,86 @@
+.menu-list-top li {
+  display: inline;
+  margin: 0;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+
+.app-menu__page-link {
+  display: inline;
+  font-family: Nunito Sans, sans-serif;
+  margin: 0;
+  padding: 10px 22px;
+  cursor: pointer;
+  border: none;
+  color: hsla(0, 0%, 100%, 0.8);
+  line-height: 1.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.app-menu li:hover {
+  background-color: #4f5b69;
+  transition: all 0.5s ease;
+}
+
+.app-menu .app-menu__page-link.active {
+  border-bottom: 2px solid white;
+}
+
+.menu-list-top {
+  margin-top: 16px;
+  padding: 0;
+  text-align: right;
+  user-select: none;
+}
+
+.app-menu .app-menu__page-link {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.8em;
+  text-transform: uppercase;
+}
+
+.night-mode .app-menu__page-link,
+.night-mode .app-menu__page-link:visited {
+  color: #cacaca !important;
+}
+
+.app-menu-popup .app-menu__page-link:hover,
+.app-menu-popup .app-menu__page-link:focus {
+  color: #26a987;
+}
+
+.menu-list-top .app-menu__page-link:hover {
+  background-color: #4f5b69;
+  color: hsla(0, 0%, 100%, 0.8);
+  transition: all 0.5s ease;
+}
+
+.night-mode .app-menu__page-link:hover,
+.night-mode .app-menu__page-link:hover i {
+  color: #1d8166 !important;
+}
+
+.night-mode .menu-list-top .app-menu__page-link:hover {
+  background-color: #252525;
+}
+
+.night-mode .app-menu .search-panel .results {
+  background-color: #23252a;
+  border-color: #4a4a4a;
+}
+
+.night-mode .app-menu .search-panel .result {
+  color: #a0a0a0 !important;
+}
+
+.night-mode .app-menu .search-panel .result.active,
+.night-mode .app-menu .search-panel .result:hover {
+  background-color: #2e2e2e !important;
+}
+
+.night-mode .app-menu {
+  background: linear-gradient(270deg, #0c362b, #1a2f47, #0d2b22);
+  box-shadow: none;
+  border-color: #2d3239;
+}

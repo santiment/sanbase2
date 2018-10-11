@@ -39,4 +39,17 @@ defmodule Sanbase.Voting.PostTest do
 
     assert updated_post.user_id == insights_user.id
   end
+
+  test "changes the owner to the fallback user" do
+    poll = Poll.find_or_insert_current_poll!()
+    insights_user = insert(:insights_fallback_user)
+    user = insert(:user)
+    post = insert(:post, poll_id: poll.id, user_id: user.id)
+
+    Post.change_owner_to_anonymous(user.id)
+
+    updated_post = Post |> Repo.get(post.id)
+
+    assert updated_post.user_id == insights_user.id
+  end
 end

@@ -23,38 +23,30 @@ const GeneralInfoBlock = ({
 }) => (
   <div>
     <p className='social-icons'>
-      <a href={websiteLink || ''}>
-        <i className={`fa fa-globe ${!websiteLink && 'fa-disabled'}`} />
+      <a href='#'>
+        <i className='fa fa-globe' />
       </a>
-      <a href={slackLink || ''}>
-        <i className={`fa fa-slack ${!slackLink && 'fa-disabled'}`} />
+      <a href='#'>
+        <i className='fa fa-slack' />
       </a>
-      <a href={twitterLink || ''}>
-        <i className={`fa fa-twitter ${!twitterLink && 'fa-disabled'}`} />
+      <a href='#'>
+        <i className='fa fa-twitter' />
       </a>
       <a href={blogLink || ''}>
         <i className={`fa fa-medium ${!blogLink && 'fa-disabled'}`} />
       </a>
-      <a href={githubLink || ''}>
-        <i className={`fa fa-github ${!githubLink && 'fa-disabled'}`} />
-      </a>
-      <a
-        className={`${!whitepaperLink && 'fa-disabled'}`}
-        href={whitepaperLink || ''}
-      >
-        Whitepaper
+      <a href='#'>
+        <i className='fa fa-github' />
       </a>
     </p>
     <hr />
-    <div className={`row-info ${!marketcapUsd && 'info-disabled'}`}>
-      <div>Market Cap</div>
+    <div className={`row-info ${!latestCoinmarketcapData.marketCapUsd && 'info-disabled'}`}>
       <div>
-        {marketcapUsd && formatNumber(marketcapUsd, { currency: 'USD' })}
+        Market Cap
       </div>
-    </div>
-    <div className={`row-info ${!priceUsd && 'info-disabled'}`}>
-      <div>Price</div>
-      <div>{priceUsd && formatNumber(priceUsd, { currency: 'USD' })}</div>
+      <div>
+        ${info.market_cap_usd}
+      </div>
     </div>
     <div className={`row-info ${!volumeUsd && 'info-disabled'}`}>
       <div>Volume</div>

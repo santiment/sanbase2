@@ -72,6 +72,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
     )
     |> Stream.run()
 
+    CheckPrices.exec
+
     Process.send_after(self(), {:"$gen_cast", :sync}, update_interval)
 
     {:noreply, state}

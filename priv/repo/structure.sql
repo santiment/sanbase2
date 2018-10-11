@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.5
--- Dumped by pg_dump version 10.5
+-- Dumped from database version 9.6.9
+-- Dumped by pg_dump version 10.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -63,6 +63,37 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: cryptocompare_prices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE cryptocompare_prices (
+    id bigint NOT NULL,
+    id_from character varying(255) NOT NULL,
+    id_to character varying(255) NOT NULL,
+    price numeric
+);
+
+
+--
+-- Name: cryptocompare_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE cryptocompare_prices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cryptocompare_prices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE cryptocompare_prices_id_seq OWNED BY cryptocompare_prices.id;
+
+
+--
 -- Name: currencies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -89,6 +120,70 @@ CREATE SEQUENCE public.currencies_id_seq
 --
 
 ALTER SEQUENCE public.currencies_id_seq OWNED BY public.currencies.id;
+
+
+--
+-- Name: eth_accounts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eth_accounts (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: eth_accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.eth_accounts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: eth_accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.eth_accounts_id_seq OWNED BY public.eth_accounts.id;
+
+
+--
+-- Name: exchange_eth_addresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.exchange_eth_addresses (
+    id bigint NOT NULL,
+    address character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    comments text,
+    source text
+);
+
+
+--
+-- Name: exchange_eth_addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.exchange_eth_addresses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: exchange_eth_addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.exchange_eth_addresses_id_seq OWNED BY public.exchange_eth_addresses.id;
 
 
 --
@@ -410,7 +505,8 @@ CREATE TABLE public.notification_type (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    data text
 );
 
 
@@ -516,6 +612,169 @@ CREATE TABLE public.posts (
     text text,
     ready_state character varying(255) DEFAULT 'draft'::character varying,
     discourse_topic_url character varying(255)
+);
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.posts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
+
+
+--
+-- Name: posts_projects; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.posts_projects (
+    id bigint NOT NULL,
+    post_id bigint,
+    project_id bigint
+);
+
+
+--
+-- Name: posts_projects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.posts_projects_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_projects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.posts_projects_id_seq OWNED BY public.posts_projects.id;
+
+
+--
+-- Name: posts_tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.posts_tags (
+    id bigint NOT NULL,
+    post_id bigint,
+    tag_id bigint
+);
+
+
+--
+-- Name: posts_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.posts_tags_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.posts_tags_id_seq OWNED BY public.posts_tags.id;
+
+
+--
+-- Name: polls; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.polls (
+    id bigint NOT NULL,
+    start_at timestamp without time zone NOT NULL,
+    end_at timestamp without time zone NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: polls_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.polls_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: polls_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.polls_id_seq OWNED BY public.polls.id;
+
+
+--
+-- Name: post_images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.post_images (
+    id bigint NOT NULL,
+    file_name text,
+    image_url text NOT NULL,
+    content_hash text NOT NULL,
+    hash_algorithm text NOT NULL,
+    post_id bigint
+);
+
+
+--
+-- Name: post_images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.post_images_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: post_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.post_images_id_seq OWNED BY public.post_images.id;
+
+
+--
+-- Name: posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.posts (
+    id bigint NOT NULL,
+    poll_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    title character varying(255) NOT NULL,
+    link text,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    state character varying(255),
+    moderation_comment character varying(255),
+    short_desc text,
+    text text
 );
 
 
@@ -826,7 +1085,13 @@ CREATE TABLE public.user_api_key_tokens (
     user_id bigint,
     token character varying(255) NOT NULL,
     inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    san_tokens integer,
+    san_balance numeric,
+    san_balance_updated_at timestamp without time zone,
+    email_token character varying(255),
+    email_token_generated_at timestamp without time zone,
+    email_token_validated_at timestamp without time zone
 );
 
 
@@ -847,6 +1112,40 @@ CREATE SEQUENCE public.user_api_key_tokens_id_seq
 --
 
 ALTER SEQUENCE public.user_api_key_tokens_id_seq OWNED BY public.user_api_key_tokens.id;
+
+
+--
+-- Name: user_lists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_lists (
+    id bigint NOT NULL,
+    name character varying(255),
+    is_public boolean DEFAULT false,
+    color public.color,
+    user_id bigint,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_lists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_lists_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_lists_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_lists_id_seq OWNED BY public.user_lists.id;
 
 
 --
@@ -963,6 +1262,13 @@ ALTER SEQUENCE public.votes_id_seq OWNED BY public.votes.id;
 
 
 --
+-- Name: cryptocompare_prices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY cryptocompare_prices ALTER COLUMN id SET DEFAULT nextval('cryptocompare_prices_id_seq'::regclass);
+
+
+--
 -- Name: currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1075,6 +1381,41 @@ ALTER TABLE ONLY public.posts_tags ALTER COLUMN id SET DEFAULT nextval('public.p
 
 
 --
+-- Name: polls id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY polls ALTER COLUMN id SET DEFAULT nextval('polls_id_seq'::regclass);
+
+
+--
+-- Name: post_images id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY post_images ALTER COLUMN id SET DEFAULT nextval('post_images_id_seq'::regclass);
+
+
+--
+-- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
+
+
+--
+-- Name: posts_projects id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY posts_projects ALTER COLUMN id SET DEFAULT nextval('posts_projects_id_seq'::regclass);
+
+
+--
+-- Name: posts_tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_tags ALTER COLUMN id SET DEFAULT nextval('public.posts_tags_id_seq'::regclass);
+
+
+--
 -- Name: processed_github_archives id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1131,10 +1472,46 @@ ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.u
 
 
 --
+-- Name: project_transparency_statuses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_transparency_statuses ALTER COLUMN id SET DEFAULT nextval('public.project_transparency_statuses_id_seq'::regclass);
+
+
+--
+-- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tags ALTER COLUMN id SET DEFAULT nextval('tags_id_seq'::regclass);
+
+
+--
+-- Name: user_followed_project id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_followed_project ALTER COLUMN id SET DEFAULT nextval('public.user_followed_project_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: votes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_id_seq'::regclass);
+
+
+--
+-- Name: cryptocompare_prices cryptocompare_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY cryptocompare_prices
+    ADD CONSTRAINT cryptocompare_prices_pkey PRIMARY KEY (id);
 
 
 --
@@ -1206,6 +1583,14 @@ ALTER TABLE ONLY public.latest_btc_wallet_data
 
 ALTER TABLE ONLY public.latest_coinmarketcap_data
     ADD CONSTRAINT latest_coinmarketcap_data_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: list_items list_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.list_items
+    ADD CONSTRAINT list_items_pkey PRIMARY KEY (user_list_id, project_id);
 
 
 --
@@ -1353,6 +1738,14 @@ ALTER TABLE ONLY public.user_lists
 
 
 --
+-- Name: user_lists user_lists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_lists
+    ADD CONSTRAINT user_lists_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1373,6 +1766,20 @@ ALTER TABLE ONLY public.votes
 --
 
 CREATE UNIQUE INDEX currencies_code_index ON public.currencies USING btree (code);
+
+
+--
+-- Name: eth_accounts_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX eth_accounts_address_index ON public.eth_accounts USING btree (address);
+
+
+--
+-- Name: exchange_eth_addresses_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX exchange_eth_addresses_address_index ON public.exchange_eth_addresses USING btree (address);
 
 
 --
@@ -1429,6 +1836,41 @@ CREATE UNIQUE INDEX latest_btc_wallet_data_address_index ON public.latest_btc_wa
 --
 
 CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON public.latest_coinmarketcap_data USING btree (coinmarketcap_id);
+
+
+--
+-- Name: ico_currencies_uk; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ico_currencies_uk ON public.ico_currencies USING btree (ico_id, currency_id);
+
+
+--
+-- Name: infrastructures_code_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX infrastructures_code_index ON public.infrastructures USING btree (code);
+
+
+--
+-- Name: latest_btc_wallet_data_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_btc_wallet_data_address_index ON public.latest_btc_wallet_data USING btree (address);
+
+
+--
+-- Name: latest_coinmarketcap_data_coinmarketcap_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_coinmarketcap_data_coinmarketcap_id_index ON public.latest_coinmarketcap_data USING btree (coinmarketcap_id);
+
+
+--
+-- Name: latest_eth_wallet_data_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX latest_eth_wallet_data_address_index ON public.latest_eth_wallet_data USING btree (address);
 
 
 --
@@ -1495,10 +1937,59 @@ CREATE UNIQUE INDEX project_btc_address_address_index ON public.project_btc_addr
 
 
 --
+-- Name: polls_start_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX polls_start_at_index ON public.polls USING btree (start_at);
+
+
+--
+-- Name: post_images_image_url_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX post_images_image_url_index ON public.post_images USING btree (image_url);
+
+
+--
+-- Name: posts_projects_post_id_project_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX posts_projects_post_id_project_id_index ON public.posts_projects USING btree (post_id, project_id);
+
+
+--
+-- Name: posts_tags_post_id_tag_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX posts_tags_post_id_tag_id_index ON public.posts_tags USING btree (post_id, tag_id);
+
+
+--
+-- Name: processed_github_archives_project_id_archive_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX processed_github_archives_project_id_archive_index ON public.processed_github_archives USING btree (project_id, archive);
+
+
+--
+-- Name: project_btc_address_address_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_btc_address_address_index ON public.project_btc_address USING btree (address);
+
+
+--
 -- Name: project_btc_address_project_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX project_btc_address_project_id_index ON public.project_btc_address USING btree (project_id);
+
+
+--
+-- Name: project_coinmarketcap_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_coinmarketcap_id_index ON public.project USING btree (coinmarketcap_id);
 
 
 --
@@ -1565,6 +2056,41 @@ CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_token
 
 
 --
+-- Name: project_project_transparency_status_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX project_project_transparency_status_id_index ON public.project USING btree (project_transparency_status_id);
+
+
+--
+-- Name: project_transparency_statuses_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX project_transparency_statuses_name_index ON public.project_transparency_statuses USING btree (name);
+
+
+--
+-- Name: projet_user_constraint; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX projet_user_constraint ON public.user_followed_project USING btree (project_id, user_id);
+
+
+--
+-- Name: tags_name_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX tags_name_index ON public.tags USING btree (name);
+
+
+--
+-- Name: user_api_key_tokens_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_tokens USING btree (token);
+
+
+--
 -- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1583,6 +2109,20 @@ CREATE UNIQUE INDEX users_email_token_index ON public.users USING btree (email_t
 --
 
 CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username);
+
+
+--
+-- Name: votes_post_id_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX votes_post_id_user_id_index ON public.votes USING btree (post_id, user_id);
+
+
+--
+-- Name: users_email_token_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_email_token_index ON public.users USING btree (email_token);
 
 
 --
@@ -1729,6 +2269,70 @@ ALTER TABLE ONLY public.processed_github_archives
 
 
 --
+-- Name: post_images post_images_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.post_images
+    ADD CONSTRAINT post_images_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: posts posts_poll_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts
+    ADD CONSTRAINT posts_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES public.polls(id) ON DELETE CASCADE;
+
+
+--
+-- Name: posts_projects posts_projects_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_projects
+    ADD CONSTRAINT posts_projects_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id);
+
+
+--
+-- Name: posts_projects posts_projects_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_projects
+    ADD CONSTRAINT posts_projects_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
+
+
+--
+-- Name: posts_tags posts_tags_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_tags
+    ADD CONSTRAINT posts_tags_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id);
+
+
+--
+-- Name: posts_tags posts_tags_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_tags
+    ADD CONSTRAINT posts_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.tags(id);
+
+
+--
+-- Name: posts posts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts
+    ADD CONSTRAINT posts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: processed_github_archives processed_github_archives_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.processed_github_archives
+    ADD CONSTRAINT processed_github_archives_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_btc_address project_btc_address_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1774,6 +2378,54 @@ ALTER TABLE ONLY public.project
 
 ALTER TABLE ONLY public.user_api_key_tokens
     ADD CONSTRAINT user_api_key_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_lists user_lists_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_lists
+    ADD CONSTRAINT user_lists_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: votes votes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.votes
+    ADD CONSTRAINT votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project project_project_transparency_status_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project
+    ADD CONSTRAINT project_project_transparency_status_id_fkey FOREIGN KEY (project_transparency_status_id) REFERENCES public.project_transparency_statuses(id);
+
+
+--
+-- Name: user_followed_project user_followed_project_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_followed_project
+    ADD CONSTRAINT user_followed_project_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_followed_project user_followed_project_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_followed_project
+    ADD CONSTRAINT user_followed_project_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --

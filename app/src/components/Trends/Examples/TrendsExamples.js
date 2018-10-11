@@ -50,7 +50,4 @@ export class TrendsExamples extends Component {
   }
 }
 
-export default connect(
-  null,
-  gotoExplore
-)(TrendsExamples)
+export default connect(null, gotoExplore)(TrendsExamples)

@@ -1,0 +1,19 @@
+.HelpPopupIcon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: 1rem;
+  margin-bottom: -4px;
+  height: 22px;
+  width: 22px;
+  font-size: 15px;
+  font-weight: bold;
+  border: 1px solid black;
+  border-radius: 50%;
+  user-select: none;
+  cursor: pointer;
+}
+
+.night-mode .HelpPopupIcon {
+  border-color: #a0a0a0;
+}

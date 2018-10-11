@@ -20,7 +20,8 @@ describe('Project detail page container', () => {
             priceUsd: 10
           }
         }}
-        user={{}}
+        user={{
+        }}
         TwitterData={{
           loading: true
         }}

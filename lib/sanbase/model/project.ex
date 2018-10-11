@@ -442,4 +442,170 @@ defmodule Sanbase.Model.Project do
 
     {:ok, addresses}
   end
+
+  def initial_ico(%Project{id: id}) do
+    Ico
+    |> where([i], i.project_id == ^id)
+    |> first(:start_date)
+    |> Repo.one
+  end
+
+  @doc ~S"""
+  ROI = current_price*(ico1_tokens + ico2_tokens + ...)/(ico1_tokens*ico1_initial_price + ico2_tokens*ico2_initial_price + ...)
+  We skip ICOs for which we can't calculate the initial_price or the tokens sold
+  For ICOs that we don't have tokens sold we try to fill it heuristically by evenly distributing the rest of the total available supply
+  """
+  def roi_usd(%Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project) when not is_nil(ticker) and not is_nil(coinmarketcap_id) do
+    with project <- Repo.preload(project, [:latest_coinmarketcap_data, :icos]),
+        true <- !is_nil(project.latest_coinmarketcap_data)
+              and !is_nil(project.latest_coinmarketcap_data.price_usd)
+              and !is_nil(project.latest_coinmarketcap_data.available_supply) do
+
+      zero = Decimal.new(0)
+
+      tokens_and_initial_prices = project
+      |> fill_missing_tokens_sold_at_icos()
+      |> Enum.map(fn(ico) -> {ico.tokens_sold_at_ico, token_usd_ico_price(project, ico)} end)
+      |> Enum.reject(fn({tokens_sold_at_ico, token_usd_ico_price}) -> is_nil(tokens_sold_at_ico) or is_nil(token_usd_ico_price) end)
+
+      total_cost = tokens_and_initial_prices
+      |> Enum.map(fn({tokens_sold_at_ico, token_usd_ico_price}) -> Decimal.mult(tokens_sold_at_ico, token_usd_ico_price) end)
+      |> Enum.reduce(zero, &Decimal.add/2)
+
+      total_gain = tokens_and_initial_prices
+      |> Enum.map(fn({tokens_sold_at_ico, _}) -> tokens_sold_at_ico end)
+      |> Enum.reduce(zero, &Decimal.add/2)
+      |> Decimal.mult(project.latest_coinmarketcap_data.price_usd)
+
+      case total_cost do
+        ^zero -> nil
+        total_cost -> Decimal.div(total_gain, total_cost)
+      end
+    else
+      _ -> nil
+    end
+  end
+  def roi_usd(_), do: nil
+
+  defp roi_usd_accumulator(%Ico{end_date: nil}, {project, count, total_paid}), do: {project, count, total_paid}
+  defp roi_usd_accumulator(%Ico{end_date: end_date}, {project, count, total_paid}) do
+    with :gt <- Ecto.DateTime.compare(project.latest_coinmarketcap_data.update_time, Ecto.DateTime.from_date(end_date)),
+        timestamp <- Sanbase.DateTimeUtils.ecto_date_to_datetime(end_date) do
+
+      Sanbase.Prices.Utils.fetch_last_price_before(project.ticker, "USD", timestamp)
+      |> case do
+        nil -> {project, count, total_paid}
+        0 -> {project, count, total_paid}
+        price_at_ico_end -> {project, count+1, Decimal.add(total_paid, Decimal.new(price_at_ico_end))}
+      end
+    else
+      _ -> nil
+    end
+  end
+
+  def funds_raised_usd_ico_end_price(project) do
+    funds_raised_ico_end_price(project, &Ico.funds_raised_usd_ico_end_price/1)
+  end
+
+  def funds_raised_eth_ico_end_price(project) do
+    funds_raised_ico_end_price(project, &Ico.funds_raised_eth_ico_end_price/1)
+  end
+
+  def funds_raised_btc_ico_end_price(project) do
+    funds_raised_ico_end_price(project, &Ico.funds_raised_btc_ico_end_price/1)
+  end
+
+  defp funds_raised_ico_end_price(project, ico_funds_raised_fun) do
+    Repo.preload(project, :icos).icos
+    |> Enum.map(ico_funds_raised_fun)
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> nil
+      amounts -> Enum.reduce(amounts, Decimal.new(0), &Decimal.add/2)
+    end
+  end
+
+  @doc """
+  For every currency aggregates all amounts for every ICO of the given project
+  """
+  def funds_raised_icos(%Project{id: id}) do
+    query =
+      from(
+        i in Ico,
+        inner_join: ic in IcoCurrencies,
+        on: ic.ico_id == i.id and not is_nil(ic.amount),
+        inner_join: c in Currency,
+        on: c.id == ic.currency_id,
+        where: i.project_id == ^id,
+        group_by: c.code,
+        order_by: fragment("case
+                            			when ? = 'BTC' then '_'
+                            			when ? = 'ETH' then '__'
+                            			when ? = 'USD' then '___'
+                            		  else ?
+                            		end", c.code, c.code, c.code, c.code),
+        select: %{currency_code: c.code, amount: sum(ic.amount)}
+      )
+
+    Repo.all(query)
+  end
+
+  def eth_addresses_by_tickers(tickers) do
+    query =
+      from(
+        p in Project,
+        where: p.ticker in ^tickers and not is_nil(p.coinmarketcap_id),
+        preload: [:eth_addresses]
+      )
+
+    Repo.all(query)
+    |> Stream.map(fn %Project{ticker: ticker, eth_addresses: eth_addresses} ->
+      eth_addresses = eth_addresses |> Enum.map(&Map.get(&1, :address))
+
+      {ticker, eth_addresses}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def ticker_by_slug(nil), do: nil
+
+  def ticker_by_slug(slug) when is_binary(slug) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.coinmarketcap_id == ^slug and not is_nil(p.ticker),
+      select: p.ticker
+    )
+    |> Sanbase.Repo.one()
+  end
+
+  def eth_addresses(%Project{} = project) do
+    project =
+      project
+      |> Repo.preload([:eth_addresses])
+
+    addresses =
+      project.eth_addresses
+      |> Enum.map(fn %{address: address} -> address end)
+
+    {:ok, addresses}
+  end
+
+  def eth_addresses(projects) when is_list(projects) do
+    ids = for %Project{id: id} <- projects, do: id
+
+    addresses =
+      from(
+        p in Project,
+        where: p.id in ^ids,
+        preload: [:eth_addresses]
+      )
+      |> Repo.all()
+      |> Enum.map(fn %Project{eth_addresses: project_eth_addresses} ->
+        project_eth_addresses
+        |> Enum.map(fn %ProjectEthAddress{address: address} -> address end)
+      end)
+      |> Enum.reject(fn x -> x == [] end)
+
+    {:ok, addresses}
+  end
 end

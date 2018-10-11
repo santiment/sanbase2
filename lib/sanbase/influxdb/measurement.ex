@@ -15,6 +15,13 @@ defmodule Sanbase.Influxdb.Measurement do
   """
   def convert_measurement_for_import(nil), do: nil
 
+  @doc ~s"""
+    Converts the measurement to a format that the Influxdb and the Instream library
+    understand.
+    The timestamp should be either a DateTime struct or timestamp in nanoseconds.
+  """
+  def convert_measurement_for_import(nil), do: nil
+
   def convert_measurement_for_import(%Measurement{
         timestamp: timestamp,
         fields: fields,

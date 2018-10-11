@@ -12,7 +12,7 @@ export const FeedbackButton = ({ toggleFeedback, ...props }) => (
         className={styles.feedbackButton}
         onClick={toggleFeedback}
         circular
-        icon='bullhorn'
+        icon='comments'
       />
     }
     id='feedback'
@@ -31,11 +31,6 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const enhance = compose(
-  connect(
-    undefined,
-    mapDispatchToProps
-  )
-)
+const enhance = compose(connect(undefined, mapDispatchToProps))
 
 export default enhance(FeedbackButton)

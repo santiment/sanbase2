@@ -1,0 +1,9 @@
+.ApiKeyList {
+  padding: 0;
+}
+
+.ApiKeyList__item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}

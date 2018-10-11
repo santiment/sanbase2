@@ -1,8 +1,5 @@
 import React, { Component } from 'react'
-import { connect } from 'react-redux'
-import cx from 'classnames'
 import moment from 'moment'
-import { Button } from 'semantic-ui-react'
 import { Chart } from 'react-chartjs-2'
 import * as qs from 'query-string'
 import { compose, withState } from 'recompose'
@@ -102,8 +99,6 @@ class ProjectChartContainer extends Component {
     this.setFilter = this.setFilter.bind(this)
     this.setSelected = this.setSelected.bind(this)
     this.onFocusChange = this.onFocusChange.bind(this)
-    this.toggleBTC = this.toggleBTC.bind(this)
-    this.setFromTo = this.setFromTo.bind(this)
   }
 
   onFocusChange (focusedInput) {
@@ -156,41 +151,16 @@ class ProjectChartContainer extends Component {
     })
   }
 
-  toggleBTC (isToggledBTC) {
-    this.setState({ isToggledBTC })
-  }
-
-  componentWillReceiveProps (nextProps) {
-    if (
-      nextProps.ticker !== this.props.ticker &&
-      typeof this.props.ticker !== 'undefined'
-    ) {
-      this.setFilter('all')
-      this.props.toggleVolume(true)
-      this.props.toggleMarketcap(false)
-      this.props.toggleGithubActivity(false)
-      this.props.toggleTwitter(false)
-      this.props.toggleEmojisSentiment(false)
-      this.props.toggleBurnRate(false)
-      this.props.toggleTransactionVolume(false)
-      this.props.toggleActiveAddresses(false)
-      this.props.toggleEthSpentOverTime(false)
-      this.props.toggleEthPrice(false)
-      this.props.toggleICOPrice(false)
-    }
-  }
-
   componentDidMount () {
-    const { from, to, timeframe } = qs.parse(this.props.location.search)
-    if (timeframe) {
-      this.setFilter(timeframe)
-    }
-    if (from && to && !timeframe) {
-      this.setFromTo(moment(from), moment(to))
-    }
-    if (!from && !to && !timeframe) {
-      this.setFilter('all')
-    }
+    const { client, ticker } = this.props
+    const { interval } = this.state
+    const { from, to, minInterval } = makeItervalBounds(interval)
+    this.setState({
+      interval,
+      startDate: moment(from),
+      endDate: moment(to)
+    })
+    this.props.onDatesChange(from, to, minInterval, ticker)
   }
 
   render () {
@@ -233,99 +203,45 @@ class ProjectChartContainer extends Component {
       })
     }
     return (
-      <div style={{ display: 'flex' }}>
-        {this.props.isToggledInsights && <div>CEHCK</div>}
-        <div
-          className={cx({
-            'project-dp-chart': true
-          })}
-          style={{ flex: 1 }}
-        >
-          {(this.props.isDesktop || this.props.isFullscreenMobile) && (
-            <ProjectChartHeader
-              from={this.props.timeFilter.from}
-              to={this.props.timeFilter.to}
-              setFromTo={this.setFromTo}
-              focusedInput={this.state.focusedInput}
-              onFocusChange={this.onFocusChange}
-              setFilter={this.setFilter}
-              toggleBTC={this.toggleBTC}
-              isToggledBTC={this.state.isToggledBTC}
-              interval={this.props.timeFilter.timeframe}
-              shareableURL={shareableURL}
-              ticker={this.props.ticker}
-              isERC20={this.props.isERC20}
-              isDesktop={this.props.isDesktop}
-              isPremium={this.props.isPremium}
-            />
-          )}
-          {this.props.isDesktop || this.props.isFullscreenMobile ? (
-            <ProjectChart
-              {...this.props}
-              setSelected={this.setSelected}
-              isToggledBTC={this.state.isToggledBTC}
-              history={this.props.price.history.items}
-              burnRate={burnRate}
-              from={this.state.startDate}
-              to={this.state.endDate}
-              transactionVolume={transactionVolume}
-              ethSpentOverTimeByErc20Projects={this.props.ethSpentOverTime}
-              isLoading={this.props.price.history.loading}
-              isERC20={this.props.isERC20}
-              isEmpty={this.props.price.history.items.length === 0}
-            />
-          ) : (
-            <ProjectChartMobile {...this.props} />
-          )}
-          {(this.props.isDesktop || this.props.isFullscreenMobile) && (
-            <ProjectChartFooter
-              {...this.props}
-              isToggledBTC={this.state.isToggledBTC}
-            />
-          )}
-          {this.props.isFullscreenMobile && (
-            <Button onClick={this.props.toggleFullscreen} basic>
-              Back to newest mode
-            </Button>
-          )}
-        </div>
+      <div className='project-dp-chart'>
+        {this.props.isDesktop &&
+        <ProjectChartHeader
+          from={this.props.timeFilter.from}
+          to={this.props.timeFilter.to}
+          setFromTo={this.setFromTo}
+          focusedInput={this.state.focusedInput}
+          onFocusChange={this.onFocusChange}
+          setFilter={this.setFilter}
+          toggleBTC={this.toggleBTC}
+          isToggledBTC={this.state.isToggledBTC}
+          interval={this.props.timeFilter.timeframe}
+          shareableURL={shareableURL}
+          ticker={this.props.ticker}
+          isERC20={this.props.isERC20}
+          isDesktop={this.props.isDesktop}
+        />}
+        {this.props.isDesktop
+          ? <ProjectChart
+            {...this.props}
+            setSelected={this.setSelected}
+            isToggledBTC={this.state.isToggledBTC}
+            interval={this.props.timeFilter.timeframe}
+            shareableURL={shareableURL}
+            ticker={this.props.ticker}
+            isERC20={this.props.isERC20}
+            isEmpty={this.props.price.history.items.length === 0} />
+          : <ProjectChartMobile
+            {...this.props}
+          /> }
+        {this.props.isDesktop &&
+          <ProjectChartFooter
+            {...this.props} /> }
       </div>
     )
   }
 }
 
-const mapStateToProps = state => {
-  return {
-    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
-    timeFilter: state.detailedPageUi.timeFilter,
-    isNightModeEnabled: state.rootUi.isNightModeEnabled
-  }
-}
-
-const mapDispatchToProps = dispatch => {
-  return {
-    toggleFullscreen: () => {
-      dispatch({
-        type: 'TOGGLE_FULLSCREEN_MOBILE'
-      })
-    },
-    changeTimeFilter: ({ timeframe, from, to, interval }) => {
-      dispatch({
-        type: 'CHANGE_TIME_FILTER',
-        timeframe,
-        from,
-        to,
-        interval
-      })
-    }
-  }
-}
-
 const enhance = compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
   withState('isToggledMarketCap', 'toggleMarketcap', false),
   withState('isToggledGithubActivity', 'toggleGithubActivity', false),
   withState('isToggledEthSpentOverTime', 'toggleEthSpentOverTime', false),

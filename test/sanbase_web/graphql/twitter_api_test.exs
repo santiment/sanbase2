@@ -39,6 +39,15 @@ defmodule Sanbase.Github.TwitterApiTest do
     })
     |> Repo.insert!()
 
+    # All tests implicitly test for when more than one record has the same ticker
+    %Project{}
+    |> Project.changeset(%{
+      name: "Santiment2",
+      ticker: "SAN",
+      twitter_link: ""
+    })
+    |> Repo.insert!()
+
     %Project{}
     |> Project.changeset(%{
       name: "TestProj",
@@ -142,7 +151,8 @@ defmodule Sanbase.Github.TwitterApiTest do
       historyTwitterData(
         ticker: "SAN",
         from: "#{context.datetime1}",
-        to: "#{context.datetime3}"){
+        to: "#{context.datetime3}",
+        interval: "6h"){
           followersCount
         }
     }

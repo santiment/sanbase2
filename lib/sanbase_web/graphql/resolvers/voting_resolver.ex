@@ -82,4 +82,49 @@ defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
         {:error, "Can't remove vote"}
     end
   end
+
+  def voted_at(%Post{} = post, _args, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    post
+    |> Repo.preload([:votes])
+    |> Map.get(:votes, [])
+    |> Enum.find(&(&1.user_id == user.id))
+    |> case do
+      nil -> {:ok, nil}
+      vote -> {:ok, vote.inserted_at}
+    end
+  end
+
+  def voted_at(%Post{}, _args, _context), do: {:ok, nil}
+
+  def vote(_root, %{post_id: post_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    %Vote{}
+    |> Vote.changeset(%{post_id: post_id, user_id: user.id})
+    |> Repo.insert()
+    |> case do
+      {:ok, _vote} ->
+        {:ok, Repo.get(Post, post_id)}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Can't vote for post #{post_id}", details: Helpers.error_details(changeset)
+        }
+    end
+  end
+
+  def unvote(_root, %{post_id: post_id}, %{
+        context: %{auth: %{current_user: user}}
+      }) do
+    with %Vote{} = vote <- Repo.get_by(Vote, post_id: post_id, user_id: user.id),
+         {:ok, _vote} <- Repo.delete(vote) do
+      {:ok, Repo.get(Post, post_id)}
+    else
+      _error ->
+        {:error, "Can't remove vote"}
+    end
+  end
 end

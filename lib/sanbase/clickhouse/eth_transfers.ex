@@ -35,6 +35,9 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
 
+  @table "eth_transfers"
+  @eth_decimals 1_000_000_000_000_000_000
+
   @primary_key false
   @timestamps_opts updated_at: false
   schema @table do
@@ -68,6 +71,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   """
   @spec eth_spent(wallets, %DateTime{}, %DateTime{}) ::
           {:ok, nil} | {:ok, float} | {:error, String.t()}
+  def eth_spent([], _, _), do: {:ok, nil}
+
   def eth_spent([], _, _), do: {:ok, nil}
 
   def eth_spent(wallets, from_datetime, to_datetime) do
@@ -122,6 +127,21 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   """
   @spec combine_eth_spent_by_all_projects(list({:ok, list(spent_over_time_type)})) ::
           list(spent_over_time_type)
+  def combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
+    total_eth_spent_over_time =
+      eth_spent_over_time_list
+      |> Enum.reject(fn
+        {:ok, elem} when elem != [] and elem != nil -> false
+        _ -> true
+      end)
+      |> Enum.map(fn {:ok, data} -> data end)
+      |> Stream.zip()
+      |> Stream.map(&Tuple.to_list/1)
+      |> Enum.map(&reduce_eth_spent/1)
+
+    {:ok, total_eth_spent_over_time}
+  end
+
   def combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
     total_eth_spent_over_time =
       eth_spent_over_time_list

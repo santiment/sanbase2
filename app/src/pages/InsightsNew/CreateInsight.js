@@ -10,15 +10,10 @@ import CustomImageSideButton from './CustomImageSideButton'
 import './CreateInsight.css'
 import 'medium-draft/lib/index.css'
 
-export class CreateInsight extends Component {
-  constructor (props) {
-    super(props)
-
-    this.state = {
-      editorState: createEditorState(
-        convertToRaw(mediumDraftImporter(this.props.initValue))
-      )
-    }
+export class CreateInsight extends React.Component {
+  /* eslint-disable no-undef */
+  state = {
+    editorState: createEditorState()
   }
 
   onChange = editorState => {

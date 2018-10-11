@@ -1,0 +1,209 @@
+.detailed {
+  min-width: 100%;
+}
+
+.panel-chart {
+  padding-top: 0;
+}
+
+.datailed-project-description {
+  font-size: 16px;
+}
+
+.detailed-buttons {
+  width: 50%;
+  height: 100%;
+  position: relative;
+}
+
+.detailed-buttons button.add-to-dashboard {
+  border: none;
+  border-radius: 4px;
+  padding: 8px 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background-color: #009663;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.7;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+.detailed-buttons button.add-to-dashboard:hover {
+  opacity: 1;
+  background-color: #025aa5;
+  border-color: #01549b;
+}
+
+.detailed .nav {
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  padding-left: 0;
+  margin-bottom: 0;
+  list-style: none;
+}
+
+.detailed .nav li {
+  display: list-item;
+  text-align: -webkit-match-parent;
+  margin-bottom: -1px;
+}
+
+.detailed .nav li .nav-link {
+  border: 1px solid;
+  border-color: #ccc rgba(0, 0, 0, 0) #ccc #ccc;
+  background-color: #f2f2f2;
+  color: #3d4051;
+  display: block;
+}
+
+.detailed .main-chart .nav li {
+  width: 50%;
+}
+
+.detailed .activity-panel .nav .nav-link {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #3d4051;
+  padding: 3px 8px;
+}
+
+.detailed .main-chart .nav .nav-link {
+  font-size: 24px;
+  font-weight: 300;
+  color: #171717;
+  padding: 4px 15px;
+}
+
+.detailed .nav li:last-child .nav-link {
+  border-color: #ccc;
+}
+
+.detailed .activity-panel .nav li {
+  width: 20%;
+}
+
+.detailed .nav li.active .nav-link {
+  background-color: #fff;
+  border-color: #ccc rgba(0, 0, 0, 0) #fff #ccc;
+}
+
+.detailed .nav li.active:last-child .nav-link {
+  background-color: #fff;
+  border-color: #ccc #ccc #fff #ccc;
+}
+
+.detailed .analysis {
+  display: flex;
+  margin: 16px;
+  justify-content: space-between;
+}
+
+.detailed .analysis .panel {
+  width: 33%;
+  margin: 0;
+}
+
+.row-info {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 6px 0;
+}
+
+.night-mode .row-info {
+  border-bottom-color: #2d3239;
+}
+
+.row-info .value {
+  text-align: right;
+}
+
+.detailed .information {
+  display: flex;
+  margin: 16px 0;
+  justify-content: space-between;
+  flex-direction: column;
+}
+
+.detailed .information .panel {
+  flex: 1 1 0;
+  margin: 0;
+  margin-top: 16px;
+}
+
+.detailed .information .panel:first-child {
+  margin-left: 0;
+}
+
+.detailed .information .panel:last-child {
+  margin-right: 0;
+}
+
+.detailed .top-eth-transaction {
+  display: flex;
+  justify-content: space-between;
+}
+
+.detailed .top-eth-transaction__hash {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 70%;
+  height: 2em;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .App {
+    background-color: white;
+  }
+
+  .panel {
+    box-shadow: none;
+    padding: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .detailed-head {
+    margin: 0 16px;
+    margin-bottom: 1em;
+    flex-direction: row;
+  }
+
+  .detailed-name h1 {
+    font-size: 1.8em;
+    letter-spacing: 0.5px;
+  }
+
+  .detailed-price {
+    line-height: 1.4;
+    margin-top: auto;
+  }
+
+  .detailed-price-usd {
+    justify-content: flex-start;
+    font-size: 0.8em;
+  }
+
+  .detailed-price-description {
+    text-align: left;
+    font-size: 0.5em;
+    font-weight: 300;
+    margin-bottom: 0;
+  }
+
+  .detailed .information {
+    flex-direction: row;
+    margin: 16px;
+  }
+
+  .detailed .information .panel {
+    margin-top: 0;
+    margin-right: 0;
+    margin-left: 16px;
+  }
+}

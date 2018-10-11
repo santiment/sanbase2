@@ -45,6 +45,11 @@ const LoadableInsight = Loadable({
   loading: () => <PageLoader />
 })
 
+const LoadableInsight = Loadable({
+  loader: () => import('./pages/Insights/Insight'),
+  loading: () => <PageLoader />
+})
+
 const LoadableInsightsNew = Loadable({
   loader: () => import('./pages/InsightsNew/InsightsNew'),
   loading: () => <PageLoader />
@@ -216,7 +221,6 @@ export const App = ({
         <Route exact path='/build' component={BuildChallenge} />
         <Route exact path='/privacy-policy' component={PrivacyPolicyPage} />
         <Route path='/email_login' component={EmailLoginVerification} />
-        <Route path='/verify_email' component={EmailLoginVerification} />
         {['data', 'dashboards'].map(name => (
           <Route
             key={name}
@@ -235,6 +239,14 @@ export const App = ({
             )}
           />
         ))}
+        <Route
+          path='/consent'
+          render={props => (
+            <ExternalRedirect
+              to={`${getConsentUrl()}/consent${props.location.search}`}
+            />
+          )}
+        />
         <Route
           path='/consent'
           render={props => (

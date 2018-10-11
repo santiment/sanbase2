@@ -18,6 +18,20 @@ defmodule Sanbase.Factory do
     }
   end
 
+  def user_factory do
+    %User{
+      salt: User.generate_salt()
+    }
+  end
+
+  def insights_fallback_user_factory do
+    %User{
+      salt: User.generate_salt(),
+      username: User.insights_fallback_username(),
+      email: User.insights_fallback_email()
+    }
+  end
+
   def staked_user_factory do
     %User{
       salt: User.generate_salt(),

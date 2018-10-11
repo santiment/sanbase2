@@ -69,7 +69,6 @@ exports[`TrendsExplorePage smoke 1`] = `
       render={[Function]}
       timeRange="3m"
     />
-    <Stats />
   </div>
 </div>
 `;

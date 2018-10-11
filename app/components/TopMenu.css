@@ -1,0 +1,99 @@
+.app-menu {
+  background: linear-gradient(270deg, #26a987, #2d79d0, #309d81);
+  background-size: 300% 300%;
+  height: 52px;
+}
+
+.app-menu .container {
+  display: flex;
+  font-size: 13px;
+  padding: 0 48px;
+}
+
+.app-menu .left {
+  display: flex;
+}
+
+.app-menu .right {
+  display: flex;
+  justify-content: flex-end;
+  width: 80%;
+}
+
+.app-menu .brand {
+  cursor: pointer;
+  font-size: 18px;
+  padding: 16px 16px 0 0;
+  border: none;
+}
+
+.app-menu ul li {
+  font-family: 'Nunito Sans', sans-serif;
+  letter-spacing: 0.03em;
+  line-height: 1.8em;
+  margin-left: 0;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+}
+
+.app-menu .selected {
+  color: rgba(255, 255, 255, 1);
+}
+
+.app-menu .user-auth-control {
+  display: flex;
+  padding: 8px;
+}
+
+.app-menu .user-auth-control a {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  padding: 8px 24px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.app-menu .user-auth-control a:hover {
+  background-color: #4f5b69;
+  color: hsla(0, 0%, 100%, 0.8);
+}
+
+.app-menu .user-auth-control .address {
+  display: none;
+}
+
+.app-menu .user-auth-control .acct-links {
+  position: absolute;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  right: 0;
+  width: 200px;
+}
+
+.acct-links ul {
+  margin: 0;
+  padding: 0;
+}
+
+.feedback-body-wrapper div {
+  width: 210px !important;
+}
+
+.feedback-body-wrapper div form textarea {
+  border: none !important;
+  padding: 0 !important;
+}
+
+.feedback-body-wrapper .button {
+  margin-top: 1em !important;
+  float: right;
+}
+
+.feedback-body-wrapper textarea:focus,
+.feedback-body-wrapper input:focus {
+  outline: none;
+}

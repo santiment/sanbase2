@@ -177,49 +177,30 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     {:ok, ExchangeEthAddress |> Repo.all()}
   end
 
-  @doc ~S"""
-    Return the average number of daily active addresses for a given slug and period of time
-  """
-  def average_daily_active_addresses(
-        %Project{id: id} = project,
-        %{from: from, to: to} = args,
-        _resolution
-      ) do
-    async(
-      Cache.func(
-        fn -> calculate_average_daily_active_addresses(project, from, to) end,
-        {:average_daily_active_addresses, id},
-        args
-      )
-    )
-  end
-
-  def average_daily_active_addresses(
-        %Project{id: id} = project,
-        _args,
-        _resolution
-      ) do
-    month_ago = Timex.shift(Timex.now(), days: -30)
-
-    async(
-      Cache.func(
-        fn -> calculate_average_daily_active_addresses(project, month_ago, Timex.now()) end,
-        {:average_daily_active_addresses, id}
-      )
-    )
-  end
-
-  def calculate_average_daily_active_addresses(project, from, to) do
-    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project),
-         {:ok, active_addresses} <-
-           Blockchain.DailyActiveAddresses.active_addresses(contract_address, from, to) do
-      {:ok, active_addresses}
+  defp ticker_to_contract_info(ticker) do
+    with project when not is_nil(project) <- get_project_by_ticker(ticker),
+         contract_address when not is_nil(contract_address) <- project.main_contract_address do
+      {:ok, String.downcase(contract_address), project.token_decimals || 0}
     else
-      error ->
-        error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
-
-        {:ok, 0}
+      _ -> {:error, "Can't find contract address of #{project.coinmarketcap_id}"}
     end
   end
+<<<<<<< HEAD
+
+  defp ticker_to_contract_info(ticker) do
+    with project when not is_nil(project) <- get_project_by_ticker(ticker),
+         {:ok, contract_address, token_decimals} <- project_to_contract_info(project) do
+      {:ok, contract_address, token_decimals}
+    else
+      _ -> {:error, "Can't find contract address for #{slug}"}
+    end
+  end
+
+  defp get_project_by_slug(slug) do
+    Project
+    |> where([p], p.coinmarketcap_id == ^slug)
+    |> Repo.one()
+  end
+=======
+>>>>>>> Refactor Graphql Utils module and move the appropriate functions to Project Context module
 end

@@ -1,0 +1,127 @@
+.page.login.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.login-inner {
+  padding: 4em 1em !important;
+  width: 100%;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 1);
+  border-radius: 2px;
+  box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1),
+    0 3px 6px 0 rgba(0, 0, 0, 0.07);
+}
+
+.login-inner .ui.negative.message.content {
+  text-align: left !important;
+}
+
+.login-inner h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 400 !important;
+}
+
+.login-inner p {
+  margin: 0 auto;
+}
+
+.login-actions {
+  width: 300px;
+  margin: 0 auto 2em auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.login-actions button {
+  margin-top: 1em !important;
+}
+
+.auth-goto-back-button {
+  margin-top: 20px !important;
+  box-shadow: none !important;
+}
+
+.sign-in-btn {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.night-mode .sign-in-btn {
+  border: 1px solid #2d3239 !important;
+}
+
+.sign-in-btn i {
+  margin-left: 2px !important;
+  margin-right: 5px !important;
+}
+
+.sign-in-btn span {
+  padding-top: 3px;
+}
+
+.login-inner .content {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.login-inner .help-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auth-provider-button {
+  position: relative;
+}
+
+.last-auth-provider-label {
+  user-select: none;
+  position: absolute;
+  top: 22px;
+  left: -120px;
+}
+
+.auth-provider-button .ui.basic.button {
+  width: 100%;
+}
+
+.ui.basic.button.metamask-btn {
+  color: white !important;
+  background: rgba(235, 133, 37, 1) !important;
+}
+
+.ui.basic.button.metamask-btn:hover {
+  border-color: rgba(235, 133, 37, 1) !important;
+}
+
+.night-mode .ui.basic.button.metamask-btn {
+  background-color: #a6570c !important;
+  color: #e8e8e8 !important;
+}
+
+.night-mode .ui.basic.button.metamask-btn:hover {
+  background-color: #c56d1b !important;
+  color: #e8e8e8 !important;
+}
+
+@media (min-width: 1024px) {
+  .login-inner {
+    max-width: 30%;
+    min-width: 600px;
+  }
+
+  @-moz-document url-prefix() {
+    .login-inner {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  }
+}

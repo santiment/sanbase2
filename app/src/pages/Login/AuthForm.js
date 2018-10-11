@@ -46,8 +46,7 @@ export default ({ account, error = false, pending = false, handleAuth }) => {
           }}
           onClick={handleAuth}
         >
-          <img src={metamaskIcon} alt='metamask logo' width={28} height={28} />
-          &nbsp;
+          <img src={metamaskIcon} alt='metamask logo' width={28} height={28} />&nbsp;
           {pending ? 'Waiting...' : 'Sign in with Metamask'}
         </Button>
       )}

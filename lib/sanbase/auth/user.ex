@@ -3,6 +3,7 @@ defmodule Sanbase.Auth.User do
   use Timex.Ecto.Timestamps
 
   import Ecto.Changeset
+  use Timex.Ecto.Timestamps
 
   alias Sanbase.Auth.{
     User,
@@ -15,7 +16,6 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Repo
 
   @login_email_template "login"
-  @verification_email_template "verify email"
 
   # The Login links will be valid 1 hour
   @login_email_valid_minutes 60
@@ -36,9 +36,14 @@ defmodule Sanbase.Auth.User do
   require Mockery.Macro
   defp mandrill_api, do: Mockery.Macro.mockable(Sanbase.MandrillApi)
 
+  @salt_length 64
+  @email_token_length 64
+
+  # 5 minutes
+  @san_balance_cache_seconds 60 * 5
+
   schema "users" do
     field(:email, :string)
-    field(:email_candidate, :string)
     field(:username, :string)
     field(:salt, :string)
     field(:san_balance, :decimal)
@@ -94,6 +99,32 @@ defmodule Sanbase.Auth.User do
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+    |> normalize_username(attrs)
+    |> validate_change(:username, &validate_username_change/2)
+    |> unique_constraint(:email)
+    |> unique_constraint(:username)
+  end
+
+  def ascii_username?(nil), do: true
+
+  def ascii_username?(username) do
+    username
+    |> String.to_charlist()
+    |> List.ascii_printable?()
+  end
+
+  defp normalize_username(changeset, %{username: username}) when not is_nil(username) do
+    put_change(changeset, :username, String.trim(username))
+  end
+
+  defp normalize_username(changeset, _), do: changeset
+
+  defp validate_username_change(_, username) do
+    if ascii_username?(username) do
+      []
+    else
+      [username: "Username can contain only latin letters and numbers"]
+    end
   end
 
   def ascii_username?(nil), do: true

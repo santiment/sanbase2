@@ -42,11 +42,6 @@ const mapDispatchToProps = dispatch => ({
   }
 })
 
-const enhance = compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )
-)
+const enhance = compose(connect(mapStateToProps, mapDispatchToProps))
 
 export default enhance(GetTimeSeries)

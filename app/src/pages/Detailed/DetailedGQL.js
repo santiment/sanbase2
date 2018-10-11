@@ -1,49 +1,36 @@
 import gql from 'graphql-tag'
 
 export const projectBySlugGQL = gql`
-  query projectBySlugGQL(
-    $slug: String!
-    $from: DateTime
-    $fromOverTime: DateTime
-    $to: DateTime
-    $interval: String!
-  ) {
-    projectBySlug(slug: $slug) {
-      id
-      name
-      slug
-      ticker
-      description
-      websiteLink
-      email
-      blogLink
-      telegramLink
-      facebookLink
-      githubLink
-      redditLink
-      twitterLink
-      whitepaperLink
-      slackLink
-      infrastructure
-      btcBalance
-      projectTransparency
-      projectTransparencyDescription
-      projectTransparencyStatus
-      tokenAddress
-      fundsRaisedIcos {
-        amount
-        currencyCode
-      }
-      initialIco {
-        id
-        tokenUsdIcoPrice
-      }
-      icoPrice
-      roiUsd
-      priceUsd
-      priceBtc
-      volumeUsd
-      ethBalance
+  query projectBySlugGQL($slug: String!, $from: DateTime, $fromOverTime: DateTime, $to: DateTime, $interval: String!) {
+    projectBySlug(
+      slug: $slug,
+    ){
+      id,
+      name,
+      ticker,
+      description,
+      websiteLink,
+      email,
+      blogLink,
+      telegramLink,
+      facebookLink,
+      githubLink,
+      redditLink,
+      twitterLink,
+      whitepaperLink,
+      slackLink,
+      infrastructure,
+      btcBalance,
+      projectTransparency,
+      projectTransparencyDescription,
+      projectTransparencyStatus,
+      tokenAddress,
+      fundsRaisedIcos { amount, currencyCode },
+      roiUsd,
+      priceUsd,
+      priceBtc,
+      volumeUsd,
+      ethBalance,
       ethAddresses {
         balance
         address

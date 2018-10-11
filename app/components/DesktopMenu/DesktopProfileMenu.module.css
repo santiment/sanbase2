@@ -1,0 +1,52 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+}
+
+.wrapper h3 {
+  padding-top: 22px;
+  margin-left: 25px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  font: 14px/1.6 'Nunito Sans', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgb(135, 138, 140);
+}
+
+.wrapper img {
+  display: inline-block;
+  opacity: 1;
+  margin: 0 0.25rem 0 0;
+  height: 1em;
+  text-decoration: inherit;
+  text-align: center;
+}
+
+.button {
+  padding: 15px 25px;
+  color: black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: none;
+  font-size: 16px;
+  line-height: 18px;
+}
+
+.button:hover {
+  background: #d4d9dd5e;
+  color: #262b33;
+  transition: 0.05s ease;
+}
+
+.button span:first-child {
+  display: flex;
+  align-items: center;
+}
+
+.divider {
+  margin: 0 !important;
+}

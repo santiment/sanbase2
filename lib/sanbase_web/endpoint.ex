@@ -72,6 +72,14 @@ defmodule SanbaseWeb.Endpoint do
     Config.get(:backend_url)
   end
 
+  def frontend_url() do
+    Config.get(:frontend_url)
+  end
+
+  def backend_url() do
+    Config.get(:backend_url)
+  end
+
   def api_url() do
     backend_url() <> "/graphql"
   end

@@ -69,13 +69,50 @@ const mapDispatchToProps = dispatch => {
         hasMetamask
       })
     },
-    requestAuth: (address, consent) => {
-      dispatch({
-        type: actions.USER_ETH_LOGIN,
-        payload: {
-          address,
-          consent
-        }
+    requestAuth: (address, authWithSAN, client, consent) => {
+      signMessage(address).then(({messageHash, signature}) => {
+        dispatch({
+          type: 'PENDING_LOGIN'
+        })
+        authWithSAN({variables: { signature, address, messageHash }})
+        .then(({ data }) => {
+          const { token, user } = data.ethLogin
+          savePrevAuthProvider('metamask')
+          GoogleAnalytics.event({
+            category: 'User',
+            action: 'Success login with metamask'
+          })
+          dispatch({
+            type: 'SUCCESS_LOGIN',
+            token,
+            user,
+            consent
+          })
+          client.resetStore()
+          if (consent) {
+            const consentUrl = `/consent?consent=${consent}&token=${token}`
+            window.location.replace(consentUrl)
+          }
+        }).catch((error) => {
+          dispatch({
+            type: 'FAILED_LOGIN',
+            errorMessage: error
+          })
+          Raven.captureException(error)
+        })
+      }).catch(error => {
+        // TODO: 2017-12-05 16:05 | Yura Zatsepin:
+        // Remove console.error.
+        // Added User denied, Account error messages in UI
+        console.log(error)
+        GoogleAnalytics.event({
+          category: 'User',
+          action: 'User denied login with metamask'
+        })
+        dispatch({
+          type: 'FAILED_LOGIN',
+          errorMessage: error
+        })
       })
     },
     changeAccount: account => {
@@ -88,10 +125,7 @@ const mapDispatchToProps = dispatch => {
 }
 
 export default compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
+  connect(mapStateToProps, mapDispatchToProps),
   withApollo,
   lifecycle({
     componentDidMount () {

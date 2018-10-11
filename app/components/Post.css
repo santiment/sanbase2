@@ -1,0 +1,201 @@
+.event-post {
+  display: flex;
+  border-bottom: 1px solid #e8e8e8;
+  flex-direction: column;
+}
+
+.night-mode .event-post {
+  border-color: #2d3239;
+}
+
+.event-post:hover {
+  background-color: #e8e8e8a3;
+  cursor: pointer;
+}
+
+.event-posts-step-confirm .event-post:hover {
+  background-color: white;
+  cursor: default;
+}
+
+.night-mode .event-post:hover,
+.night-mode .event-posts-step-confirm .event-post:hover {
+  background-color: #252525;
+}
+
+.event-post .event-post-index {
+  margin-right: 0;
+  margin-top: 2px;
+  height: 22px;
+}
+
+.event-post .post-status .label {
+  user-select: none;
+}
+
+.event-post .event-post-body {
+  flex: 1;
+  display: flex;
+  padding: 10px 15px;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.event-post .event-post-body div:first-child {
+  flex: 2;
+}
+
+.event-post .event-post-body div:last-child {
+  flex: 1;
+}
+
+.event-post-body-link {
+  padding: 15px;
+  width: 100%;
+}
+
+.event-post-body-link:hover {
+  background-color: #f9f9f9;
+}
+
+.event-post .event-storylink {
+  color: black;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 32px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.event-post .event-storylink:visited {
+  color: #828282;
+}
+
+.event-post-body .post-date-author {
+  display: flex;
+}
+
+.event-post .event-post-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+}
+
+.event-post .event-post-author {
+  color: #828282;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 160px;
+  white-space: nowrap;
+}
+
+.event-post .event-post-info .account-name {
+  margin: 0;
+}
+
+.event-post-votes {
+  padding: 5px 7px;
+  margin-right: 5px;
+  box-shadow: 0 0 0 0.5px rgba(50, 50, 93, 0.17),
+    0 2px 5px 0 rgba(50, 50, 93, 0.1);
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 16px;
+  color: #000;
+  cursor: pointer;
+}
+
+.event-post .post-status span {
+  font-weight: 600;
+  color: black;
+  text-transform: lowercase;
+}
+
+.event-post-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+}
+
+.event-post .post-status {
+  color: #3e3e3e;
+  padding: 0;
+  margin: 0;
+}
+
+.night-mode .event-post .event-storylink,
+.night-mode .event-post .post-status span {
+  color: #a0a0a0;
+}
+
+.event-post .post-tags {
+  display: flex;
+}
+
+.event-post .post-tag {
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+  padding: 0 6px;
+  margin-left: 5px;
+  font-size: 12px;
+}
+
+.night-mode .event-post .post-tag {
+  border-color: #4a4a4a;
+}
+
+.event-post .post-tag:first-child {
+  margin-left: 0;
+}
+
+.event-post .discussion-btn {
+  text-decoration: none;
+  float: right;
+  border-bottom: 1px dashed #c0c0c0;
+}
+
+.event-post .discussion-btn:hover {
+  color: rgb(45, 156, 129);
+  border-bottom: 1px dashed rgb(45, 156, 129);
+}
+
+@keyframes skeletonAnimation {
+  0% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 0.8;
+  }
+}
+
+.pending {
+  color: #bdc3c7 !important;
+  background-color: #bdc3c7 !important;
+  border-color: #bdc3c7 !important;
+  animation-name: skeletonAnimation;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+.pending-home {
+  color: white;
+  background-color: white;
+  animation-name: skeletonAnimation;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+@media (min-width: 768px) {
+  .event-post .event-post-index {
+    margin-right: 4px;
+  }
+}

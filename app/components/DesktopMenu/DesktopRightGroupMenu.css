@@ -1,0 +1,12 @@
+.user-auth-control {
+  padding: 10px 20px;
+}
+
+.dropdown-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-menu .button:last-child {
+  margin-top: 1em;
+}

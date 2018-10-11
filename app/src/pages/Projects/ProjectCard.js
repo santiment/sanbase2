@@ -82,9 +82,7 @@ const ProjectCard = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                {name}
-                &nbsp;
-                <ProjectIcon name={name} />
+                {name}&nbsp;<ProjectIcon name={name} />
               </div>
               <Popup
                 position='left center'
@@ -94,10 +92,7 @@ const ProjectCard = ({
                 trigger={
                   <div className='project-card-rank-label'>
                     <div>rank by market cap</div>
-                    <div>
-                      &nbsp;
-                      {rank}
-                    </div>
+                    <div>&nbsp;{rank}</div>
                   </div>
                 }
                 on='click'

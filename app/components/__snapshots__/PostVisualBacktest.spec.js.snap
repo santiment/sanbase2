@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PostVisualBacktest component (smoke) it should render correctly 1`] = `null`;
+
+exports[`PostVisualBacktest component SAN icon should render correctly 1`] = `
+<div
+  class="post-visual-backtest"
+>
+  <div
+    class="post-visual-backtest__info"
+  >
+    <div
+      class="post-visual-backtest__changes"
+    >
+      SAN priceUsd since publication
+    </div>
+    <div
+      class="percent-changes percent-changes--positive"
+    >
+      <i
+        class="fa fa-caret-up"
+      />
+       25.00%
+    </div>
+  </div>
+  <div
+    class="PostVisualBacktestChart"
+  >
+    <div
+      class="recharts-responsive-container"
+      style="width:100%;height:100%"
+    >
+      <div
+        style="position:absolute;width:0;height:0;visibility:hidden;display:none"
+      />
+    </div>
+  </div>
+</div>
+`;

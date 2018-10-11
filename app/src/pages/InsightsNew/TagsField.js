@@ -45,7 +45,6 @@ class TagsField extends Component {
           onChange={this.handleOnChange}
           value={this.state.tags}
           className='tags-select'
-          valueKey='value'
         />
         <div className='hint'>Up to 5 tags</div>
       </div>

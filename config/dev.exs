@@ -99,6 +99,26 @@ config :arc,
   storage: Arc.Storage.Local,
   storage_dir: "/tmp/sanbase/filestore/"
 
+config :ex_admin,
+  basic_auth: [
+    username: "admin",
+    password: "admin",
+    realm: "Admin Area"
+  ]
+
+config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
+  scale: 1000,
+  limit: 5,
+  time_between_requests: 250
+
+config :sanbase, SanbaseWeb.Graphql.ContextPlug,
+  basic_auth_username: "user",
+  basic_auth_password: "pass"
+
+config :arc,
+  storage: Arc.Storage.Local,
+  storage_dir: "/tmp/sanbase/filestore/"
+
 if File.exists?("config/dev.secret.exs") do
   import_config "dev.secret.exs"
 end

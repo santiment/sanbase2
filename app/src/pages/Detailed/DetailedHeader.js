@@ -6,12 +6,9 @@ import {
 import { compose } from 'recompose'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
-import WatchlistsPopup from './../../components/WatchlistPopup/WatchlistsPopup'
-import {
-  formatCryptoCurrency,
-  formatBTC,
-  formatNumber
-} from './../../utils/formatting'
+import ListsPopup from './../../components/ListsPopup/ListsPopup'
+import { formatCryptoCurrency, formatBTC, formatNumber } from './../../utils/formatting'
+import { followedProjectsGQL } from './DetailedGQL'
 import './DetailedHeader.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
@@ -39,13 +36,23 @@ const DetailedHeader = ({
           </DIV>
           &nbsp; &nbsp;
           {isLoggedIn &&
-            !loading && (
-            <WatchlistsPopup
-              projectId={project.id}
-              slug={project.slug}
-              isLoggedIn={isLoggedIn}
-            />
-          )}
+            <div className='detailed-favorite'>
+              <Popup
+                trigger={
+                  <i className={`fa fa-2x fa-star${isFollowed ? '' : '-o'}`}
+                    onClick={() => handleFollow({
+                      projectId: project.id,
+                      actionType: isFollowed ? 'unfollowProject' : 'followProject'
+                    })}
+                    aria-hidden='true' />
+                }
+                content={isFollowed ? 'Unfollow this project' : 'Follow this project'}
+                position='bottom center'
+              />
+              &nbsp;
+              <ListsPopup />
+            </div>
+          }
         </div>
         <DIV className='datailed-project-description'>
           {project.description}
@@ -56,8 +63,7 @@ const DetailedHeader = ({
         <div className='detailed-price-description'>Today's changes</div>
         <div className='detailed-price-usd'>
           {project.priceUsd &&
-            formatNumber(project.priceUsd, { currency: 'USD' })}
-          &nbsp;
+            formatNumber(project.priceUsd, { currency: 'USD' })}&nbsp;
           {!loading &&
             project && <PercentChanges changes={project.percentChange24h} />}
         </div>

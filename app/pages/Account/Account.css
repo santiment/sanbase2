@@ -1,0 +1,39 @@
+.account-control {
+  display: flex;
+  justify-content: space-between;
+}
+
+.account-settings-email {
+  width: 100%;
+}
+
+.account-settings-email__button-container {
+  display: flex;
+}
+
+.account-settings-email .button {
+  margin-top: 15px !important;
+}
+
+@media (min-width: 1024px) {
+  .account {
+    width: 720px;
+  }
+
+  .account h3 {
+    margin-top: 15px;
+  }
+
+  .account-control {
+    display: block;
+  }
+
+  .account-message {
+    margin: 16px !important;
+  }
+}
+
+.account-control-appearance {
+  display: flex;
+  max-width: 40%;
+}

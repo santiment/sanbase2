@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 
-  import Mockery
   import SanbaseWeb.Graphql.TestHelpers
 
   setup do
@@ -118,6 +117,81 @@ defmodule SanbaseWeb.Graphql.PrivacyPolicyAccessTest do
       |> post("/graphql", mutation_skeleton(mutation))
 
     assert json_response(result, 200)["data"]["changeEmail"]["success"] == true
+  end
+
+  test "update marketing accepted policy", %{conn: conn} do
+    update_mutation = """
+    mutation {
+      updateTermsAndConditions(
+        marketingAccepted: true){
+          marketingAccepted
+        }
+    }
+    """
+
+    result = conn |> post("/graphql", mutation_skeleton(update_mutation))
+
+    assert json_response(result, 200)["data"]["updateTermsAndConditions"]["marketingAccepted"] ==
+             true
+  end
+
+  test "update private policy accepted", %{conn: conn} do
+    update_mutation = """
+    mutation {
+      updateTermsAndConditions(
+        privacyPolicyAccepted: true){
+          privacyPolicyAccepted
+        }
+    }
+    """
+
+    result = conn |> post("/graphql", mutation_skeleton(update_mutation))
+
+    assert json_response(result, 200)["data"]["updateTermsAndConditions"]["privacyPolicyAccepted"] ==
+             true
+  end
+
+  test "can update only a single privacy policy", %{conn: conn} do
+    # Accept the privacy policy
+    update_mutation1 = """
+    mutation {
+      updateTermsAndConditions(
+        privacyPolicyAccepted: true){
+          id
+        }
+    }
+    """
+
+    conn |> post("/graphql", mutation_skeleton(update_mutation1))
+
+    # Update the marketing policy, privacy policy will stay `true`
+    update_mutation2 = """
+    mutation {
+      updateTermsAndConditions(
+        marketingAccepted: true){
+          id
+        }
+    }
+    """
+
+    conn |> post("/graphql", mutation_skeleton(update_mutation2))
+
+    # Try to change the email now
+    new_email = "test3@test.test"
+
+    mutation = """
+    mutation {
+      changeEmail(email: "#{new_email}") {
+        email
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", mutation_skeleton(mutation))
+
+    assert json_response(result, 200)["data"]["changeEmail"]["email"] == new_email
   end
 
   test "update marketing accepted policy", %{conn: conn} do

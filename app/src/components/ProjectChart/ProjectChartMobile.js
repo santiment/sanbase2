@@ -1,7 +1,5 @@
 import React, { Fragment } from 'react'
-import { connect } from 'react-redux'
-import { compose } from 'recompose'
-import { Button } from 'semantic-ui-react'
+import { Icon, Button } from 'semantic-ui-react'
 import Analytics from './../Analytics'
 import { formatNumber, millify } from './../../utils/formatting'
 import './ProjectChartMobile.css'
@@ -27,22 +25,16 @@ const ProjectChartMobile = ({
       loading: true
     }
   },
-  project = {
-    fundsRaisedUsdIcoEndPrice: null,
-    icoPrice: null
-  },
   settings = {
     showed: {
-      priceUsd: true,
-      volume: true,
-      marketcap: true
+      'priceUsd': true,
+      'volume': true,
+      'marketcap': true
+    },
+    showminimap: {
+      'priceUsd': true
     }
   },
-  routerHistory,
-  isToggledFullscreen,
-  toggleFullscreen,
-  isToggledMinimap,
-  toggleMiniMap,
   isERC20
 }) => {
   const icoPrice = project.icoPrice
@@ -52,11 +44,11 @@ const ProjectChartMobile = ({
   return (
     <Fragment>
       <div className='detailed-page-mobile-settings-bar'>
-        <Button positive={isToggledFullscreen} onClick={toggleFullscreen} basic>
-          Old view (more data)
+        <Button basic >
+          ERC20 Projects
         </Button>
-        <Button positive={isToggledMinimap} onClick={toggleMiniMap} basic>
-          Minimap
+        <Button basic >
+          Settings
         </Button>
       </div>
       {(settings.showed['priceUsd'] ||
@@ -66,35 +58,67 @@ const ProjectChartMobile = ({
         <div className='ico-price-label'>
           {`ICO Price ${icoPriceUSD}`}
           <div className='ico-price-legend' />
-        </div>
-      )}
-      {settings.showed['priceUsd'] && (
-        <Analytics
-          data={price.history}
-          label='priceUsd'
-          show='Price USD'
-          formatData={price => {
-            return formatNumber(price, { currency: 'USD' })
-          }}
-          chart={{
-            type: 'line',
-            color: 'rgb(52, 171, 107)',
-            fill: true,
-            borderWidth: 1,
-            pointBorderWidth: 2,
-            syncId: 'financial',
-            referenceLine: {
-              y: +icoPrice
-            }
-          }}
-        />
-      )}
-      {settings.showed['volume'] && (
-        <Analytics
-          data={price.history}
-          label='volume'
-          formatData={volumeUsd => {
-            return `$${millify(volumeUsd)}`
+        </div>}
+      {settings.showed['priceUsd'] && <Analytics
+        data={price.history}
+        label='priceUsd'
+        show='Price USD'
+        formatData={price => {
+          return formatNumber(price, { currency: 'USD' })
+        }}
+        chart={{
+          type: 'line',
+          color: 'rgb(52, 171, 107)',
+          fill: true,
+          borderWidth: 1,
+          pointBorderWidth: 2,
+          syncId: 'financial',
+          withMiniMap: settings.showminimap['priceUsd'],
+          referenceLine: {
+            y: 2,
+            label: 'ICO price',
+            color: 'rgb(38, 43, 51)'
+          }
+        }}
+      />}
+      {settings.showed['volume'] && <Analytics
+        data={price.history}
+        label='volume'
+        formatData={volumeUsd => {
+          return `$${millify(volumeUsd)}`
+        }}
+        chart={{
+          type: 'bar',
+          color: 'rgb(38, 43, 51)',
+          fill: false,
+          borderWidth: 1,
+          syncId: 'financial',
+          pointBorderWidth: 2,
+          withMiniMap: settings.showminimap['volume']
+        }}
+        show='Volume'
+      />}
+      {settings.showed['marketcap'] && <Analytics
+        data={price.history}
+        label='marketcap'
+        chart={{
+          type: 'line',
+          color: 'rgb(52, 118, 153)',
+          syncId: 'financial'
+        }}
+        formatData={marketcapUsd => {
+          return `$${millify(marketcapUsd)}`
+        }}
+        show='Marketcap'
+      />}
+      {isERC20 && settings.showed['burnRate'] &&
+      <Fragment>
+        <h2>BLOCKCHAIN</h2>
+        {settings.showed['burnRate'] && <Analytics
+          data={burnRate}
+          label='burnRate'
+          formatData={burnRate => {
+            return `${millify(burnRate)} (tokens × blocks)`
           }}
           chart={{
             type: 'bar',
@@ -173,37 +197,4 @@ const ProjectChartMobile = ({
   )
 }
 
-const mapStateToProps = state => {
-  return {
-    isToggledFullscreen: state.detailedPageUi.isToggledFullscreen,
-    isToggledMinimap: state.detailedPageUi.isToggledMinimap,
-    isToggledBurnRate: state.detailedPageUi.isToggledBurnRate
-  }
-}
-
-const mapDispatchToProps = dispatch => {
-  return {
-    toggleFullscreen: () => {
-      dispatch({
-        type: 'TOGGLE_FULLSCREEN_MOBILE'
-      })
-    },
-    toggleMiniMap: () => {
-      dispatch({
-        type: 'TOGGLE_MINIMAP'
-      })
-    },
-    toggleBurnRate: () => {
-      dispatch({
-        type: 'TOGGLE_BURNRATE'
-      })
-    }
-  }
-}
-
-export default compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )
-)(ProjectChartMobile)
+export default ProjectChartMobile

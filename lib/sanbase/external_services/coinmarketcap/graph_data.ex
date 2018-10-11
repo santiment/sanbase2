@@ -161,6 +161,46 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     end)
   end
 
+  defp fetch_all_time_prices(coinmarketcap_id) do
+    graph_data_all_time_url(coinmarketcap_id)
+    |> get()
+    |> case do
+      %{status: 200, body: body} ->
+        body |> json_to_price_points()
+
+      _ ->
+        nil
+    end
+  end
+
+  defp fetch_all_time_marketcap() do
+    graph_data_marketcap_total_all_time_url()
+    |> get()
+    |> case do
+      {:ok, %Tesla.Env{status: 200, body: body}} ->
+        body |> json_to_price_points()
+
+      _ ->
+        nil
+    end
+  end
+
+  defp convert_to_price_points(%{
+         market_cap_by_available_supply: market_cap_by_available_supply,
+         price_usd: nil,
+         volume_usd: volume_usd,
+         price_btc: nil
+       }) do
+    List.zip([market_cap_by_available_supply, volume_usd])
+    |> Enum.map(fn {[dt, marketcap], [dt, volume_usd]} ->
+      %PricePoint{
+        marketcap: marketcap,
+        volume_usd: volume_usd,
+        datetime: DateTime.from_unix!(dt, :millisecond)
+      }
+    end)
+  end
+
   defp convert_to_price_points(%GraphData{
          market_cap_by_available_supply: market_cap_by_available_supply,
          price_usd: price_usd,
@@ -241,6 +281,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   defp graph_data_currencies_interval_url(coinmarketcap_id, from_timestamp, to_timestamp) do
     "/currencies/#{coinmarketcap_id}/#{from_timestamp}/#{to_timestamp}/"
+  end
+
+  defp graph_data_marketcap_total_all_time_url() do
+    "/global/marketcap-total/"
+  end
+
+  defp graph_data_marketcap_total_interval_url(from_timestamp, to_timestamp) do
+    "/global/marketcap-total/#{from_timestamp}/#{to_timestamp}/"
   end
 
   defp graph_data_marketcap_total_all_time_url() do

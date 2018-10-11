@@ -1,0 +1,25 @@
+.email-login-form .input {
+  margin: 10px;
+}
+
+.email-login-form .message {
+  margin: 10px !important;
+  padding: 10px 14px !important;
+  text-align: left;
+}
+
+.email-login-form input {
+  border: 0 !important;
+  box-shadow: 0 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0 !important;
+  background: rgba(0, 0, 0, 0) !important;
+}
+
+.email-input input::placeholder {
+  color: rgba(0, 0, 0, 0.15);
+}
+
+.email-form-control {
+  margin: 15px;
+}

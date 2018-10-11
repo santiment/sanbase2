@@ -40,6 +40,16 @@ defmodule Sanbase.Voting.Post do
       on_delete: :delete_all
     )
 
+    has_many(:images, PostImage, on_delete: :delete_all)
+
+    many_to_many(
+      :tags,
+      Tag,
+      join_through: "posts_tags",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
+
     timestamps()
   end
 
@@ -145,6 +155,44 @@ defmodule Sanbase.Voting.Post do
     from(p in Post, where: p.user_id == ^user_id)
     |> Repo.update_all(set: [user_id: anon_user_id])
   end
+
+  # Helper functions
+  defp tags_cast(changeset, %{tags: tags}) do
+    tags = Tag |> where([t], t.name in ^tags) |> Repo.all()
+
+    changeset
+    |> put_assoc(:tags, tags)
+  end
+
+  defp tags_cast(changeset, _), do: changeset
+
+  defp images_cast(changeset, %{image_urls: image_urls}) do
+    images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()
+
+    if Enum.any?(images, fn %{post_id: post_id} -> not is_nil(post_id) end) do
+      changeset
+      |> Ecto.Changeset.add_error(
+        :images,
+        "The images you are trying to use are already used in another post"
+      )
+    else
+      changeset
+      |> put_assoc(:images, images)
+    end
+  end
+
+  defp images_cast(changeset, _), do: changeset
+
+  defp get_only_published_or_own_posts(posts, user_id) do
+    posts
+    |> Enum.filter(fn post ->
+      post.user_id == user_id || post.ready_state == published()
+    end)
+  end
+
+  def approved_state(), do: @approved
+
+  def declined_state(), do: @declined
 
   # Helper functions
   defp tags_cast(changeset, %{tags: tags}) do

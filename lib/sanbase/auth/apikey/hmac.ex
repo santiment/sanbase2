@@ -72,6 +72,11 @@ defmodule Sanbase.Auth.Hmac do
     end
   end
 
+  def split_apikey(token_apikey) do
+    [token, apikey] = String.split(token_apikey, "_", parts: 2)
+    {:ok, {token, apikey}}
+  end
+
   # Private functions
 
   defp secret_key(), do: Config.get(:secret_key)

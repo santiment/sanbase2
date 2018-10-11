@@ -19,8 +19,7 @@ const NewInsightBtn = ({ history, disabled }) => (
     color='green'
     onClick={() => history.push('/insights/new')}
   >
-    <Icon name='plus' />
-    New insight
+    <Icon name='plus' />New insight
   </Button>
 )
 
@@ -94,9 +93,6 @@ const mapDispatchToProps = dispatch => {
 }
 
 export default compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
+  connect(mapStateToProps, mapDispatchToProps),
   withRouter
 )(InsightsLayout)

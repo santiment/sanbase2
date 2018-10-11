@@ -25,6 +25,10 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field :apikeys, list_of(:string) do
       resolve(&ApikeyResolver.apikeys_list/3)
     end
+
+    field :apikeys, list_of(:string) do
+      resolve(&ApikeyResolver.apikeys_list/3)
+    end
   end
 
   @desc ~s"""

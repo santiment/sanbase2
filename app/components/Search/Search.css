@@ -1,0 +1,47 @@
+.search-panel {
+  margin-top: 10px;
+  width: 250px;
+}
+
+.search-panel .ui .input {
+  min-width: 100%;
+}
+
+.search-panel .results {
+  min-width: 250px;
+}
+
+.search-panel .results .result {
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+}
+
+.search-panel .results .result img {
+  margin-right: 5px;
+}
+
+.search-panel input {
+  border-radius: 4px !important;
+  border: none !important;
+}
+
+.search-panel .ui.input > input {
+  background: #ffffff1f;
+}
+
+.search-panel .search .icon {
+  color: white;
+}
+
+.search-panel .focus .ui.icon.input > i {
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.search-panel .ui.input > input::placeholder {
+  color: white;
+}
+
+.search-panel .ui.search > .results {
+  margin-top: 2px;
+}

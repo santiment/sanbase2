@@ -17,8 +17,8 @@ export const EmailLoginVerification = ({ isSuccess, isError }) => {
   }
   if (isSuccess) {
     return (
-      <div style={{ margin: '1em' }}>
-        <h2>Email address confirmed</h2>
+      <div>
+        <h2>You do not have access.</h2>
       </div>
     )
   }
@@ -38,20 +38,46 @@ const mapStateToProps = ({ rootUi }) => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    emailLogin: payload => {
-      dispatch({
-        type: actions.USER_EMAIL_LOGIN,
-        payload
-      })
+    authWithEmail: (qsData, props) => {
+      props.verify(qsData)
+        .then(({data}) => {
+          const { token, user } = data.emailLoginVerify
+          GoogleAnalytics.event({
+            category: 'User',
+            action: 'Success login with email'
+          })
+          savePrevAuthProvider('email')
+          dispatch({
+            type: 'SUCCESS_LOGIN',
+            token,
+            user,
+            consent: user.consent_id
+          })
+          props.changeVerificationStatus('verified')
+
+          if (user.consent_id) {
+            window.location.replace(`/consent?consent=${user.consent_id}&token=${token}`)
+          } else {
+            props.history.push('/')
+          }
+        })
+        .catch(error => {
+          GoogleAnalytics.event({
+            category: 'User',
+            action: 'Failed login with email'
+          })
+          dispatch({
+            type: 'FAILED_LOGIN',
+            errorMessage: error
+          })
+          props.changeVerificationStatus('failed')
+        })
     }
   }
 }
 
 const enhance = compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  ),
+  connect(mapStateToProps, mapDispatchToProps),
   lifecycle({
     componentDidMount () {
       const payload = qs.parse(this.props.location.search)

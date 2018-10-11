@@ -7,17 +7,72 @@
   flex-direction: column;
 }
 
-.App .page {
+@media (max-width: 768px) {
+  .App {
+    flex-direction: column;
+  }
+}
+
+.side-menu {
+  height: 100vh;
+  min-height: 100%;
+  width: 15%;
+  max-width: 15%;
+  font-size: 13px;
+  background-color: #262b33;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+  .side-menu {
+    min-width: 20%;
+  }
+}
+
+.side-menu .brand {
+  padding-top: 22px;
+  padding-bottom: 14px;
+  background-color: #3d4450;
+  text-align: center;
+  color: white;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.08);
+}
+
+.side-menu ul li {
+  line-height: 1.8em;
+  margin-left: 0;
+  cursor: pointer;
+}
+
+.side-menu .selected {
+  color: white;
+  font-size: bold;
+}
+
+/* FIXME: 2017-12-06 14:54 Zatsepin | This is from the old styles hack. */
+.toggle-btn {
+  display: none;
+}
+
+.page {
   flex: 1;
-  padding: 0 15px;
-  max-width: $max-width;
+  padding: 0 36px;
+
+  /* height: 100vh; hiding for non-fixed top menu - kc */
+  overflow-y: auto;
+  overflow: scroll;
+  -webkit-overflow-scrolling: touch;
+}
+
+.App .page::-webkit-scrollbar {
+  display: none;
 }
 
 .App .offline-status-message {
   color: #794b02;
   background: #fffaf3;
   text-align: center;
-  font: 15px/1.6 'Nunito Sans', sans-serif;
+  font: 15px/1.6 "Nunito Sans", sans-serif;
   font-weight: bold;
 }
 
@@ -119,8 +174,7 @@
   }
 
   #nprogress .peg {
-    box-shadow: 0 0 10px var(--progress-bg-color),
-      0 0 5px var(--progress-bg-color);
+    box-shadow: 0 0 10px var(--progress-bg-color), 0 0 5px var(--progress-bg-color);
   }
 
   #nprogress .spinner-icon {
@@ -151,15 +205,5 @@
 @media (min-width: $breakpoint-desktop) {
   .App .page {
     margin: 0 auto;
-  }
-
-  .page-head {
-    margin-top: 25px;
-    margin-right: 20px;
-  }
-
-  .page-head p {
-    margin-left: 16px;
-    margin-bottom: 30px;
   }
 }

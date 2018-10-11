@@ -1,0 +1,48 @@
+.TrendsExplorePage {
+  margin: 0;
+}
+
+.TrendsExplorePage__content {
+  background-color: #fff;
+}
+
+.TrendsExplorePage ul {
+  list-style: none;
+}
+
+.TrendsExplorePage__settings {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.TrendsExplorePage__settings__right {
+  display: flex;
+  align-items: center;
+}
+
+.TrendsExplorePage__settings__right button {
+  font-size: 1.3em;
+}
+
+.TrendsExplorePage__settings span {
+  margin-right: 1em;
+}
+
+.TrendsExplorePage .recharts-responsive-container {
+  margin-bottom: 24px;
+  background-color: #fcfdfe;
+}
+
+@media (min-width: 768px) {
+  .TrendsExplorePage {
+    margin: 30px 10%;
+  }
+
+  .TrendsExplorePage__content {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 7px 14px 0 rgba(60, 60, 90, 0.1),
+      0 3px 6px 0 rgba(0, 0, 0, 0.07);
+  }
+}

@@ -110,8 +110,5 @@ export default compose(
       }
     }
   }),
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )
+  connect(mapStateToProps, mapDispatchToProps)
 )(WatchlistPopup)

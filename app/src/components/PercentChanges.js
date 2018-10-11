@@ -21,12 +21,10 @@ export const PercentChanges = ({ changes }) => {
           'fa-caret-up': changes >= 0,
           'fa-caret-down': changes < 0
         })}
-      />
-      &nbsp;
+      />&nbsp;
       {normalizedChanges < 0
         ? normalizedChanges.toString().split('-')[1]
-        : normalizedChanges}
-      %
+        : normalizedChanges}%
     </div>
   )
 }

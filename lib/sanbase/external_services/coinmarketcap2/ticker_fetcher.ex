@@ -70,6 +70,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
 
   # Helper functions
 
+    Logger.info(
+      "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
+    )
+  end
+
+  # Helper functions
+
   def handle_info(:sync, %{update_interval: update_interval} = state) do
     work()
     Process.send_after(self(), :sync, update_interval)

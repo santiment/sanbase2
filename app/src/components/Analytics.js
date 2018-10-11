@@ -23,30 +23,90 @@ const getChartDataFromHistory = (data, label, chart = {}) => {
   const borderColor = (data.dataset || {}).borderColor || COLOR
   return {
     labels: items ? items.map(data => moment(data.datetime).utc()) : [],
-    datasets: [
-      {
-        label,
-        type: chart.type || 'LineWithLine',
-        fill: chart.fill || true,
-        borderColor: borderColor,
-        borderWidth: chart.borderWidth || 0.5,
-        yAxisID: makeAxisName(label),
-        backgroundColor: borderColor,
-        pointBorderWidth: chart.pointBorderWidth || 0.2,
-        pointRadius: 0.1,
-        data: items
-          ? items.map(data => ({
-            x: data.datetime,
-            [`${label}`]: +data[`${label}`]
-          }))
-          : [],
-        datalabels: {
-          display: false
-        }
+    datasets: [{
+      label,
+      type: chart.type || 'LineWithLine',
+      fill: chart.fill || true,
+      borderColor: borderColor,
+      borderWidth: chart.borderWidth || 0.5,
+      yAxisID: makeAxisName(label),
+      backgroundColor: borderColor,
+      pointBorderWidth: chart.pointBorderWidth || 0.2,
+      pointRadius: 0.1,
+      data: items ? items.map(data => ({
+        x: data.datetime,
+        y: +data[`${label}`]
+      })) : [],
+      datalabels: {
+        display: false
       }
     ]
   }
 }
+
+const getChartOptions = (label) => ({
+  responsive: true,
+  showTooltips: false,
+  pointDot: false,
+  scaleShowLabels: true,
+  datasetFill: false,
+  scaleFontSize: 0,
+  animation: false,
+  maintainAspectRatio: false,
+  hover: {
+    mode: 'x',
+    intersect: false
+  },
+  tooltips: {
+    mode: 'x',
+    intersect: false,
+    titleMarginBottom: 16,
+    titleFontSize: 14,
+    titleFontColor: '#3d4450',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    cornerRadius: 3,
+    borderColor: 'rgba(38, 43, 51, 0.7)',
+    borderWidth: 1,
+    bodyFontSize: 14,
+    bodySpacing: 8,
+    bodyFontColor: '#3d4450',
+    displayColors: true,
+    callbacks: {
+      title: (item, data) => {
+        return moment(data.datasets[0].data[item[0].index].x).format('MMM DD YYYY')
+      },
+      label: (tooltipItem, data) => {
+        const label = data.datasets[tooltipItem.datasetIndex].label.toString()
+        return `${label}: ${formatNumber(tooltipItem.yLabel, { currency: 'USD' })}`
+      }
+    }
+  },
+  legend: {
+    display: false
+  },
+  scales: {
+    yAxes: [{
+      id: makeAxisName(label),
+      ticks: {
+        display: false,
+        beginAtZero: false
+      },
+      gridLines: {
+        drawBorder: false,
+        display: true
+      }
+    }],
+    xAxes: [{
+      gridLines: {
+        drawBorder: false,
+        display: false
+      },
+      ticks: {
+        display: false
+      }
+    }]
+  }
+})
 
 const renderData = (data, label, formatData = null) => {
   if (data.loading) {
@@ -92,17 +152,7 @@ const Analytics = ({
 }) => {
   const chartData = getChartDataFromHistory(data, label, chart)
   const borderColor = (data.dataset || {}).borderColor || chart.color || COLOR
-  const { referenceLine, withMiniMap, syncId = undefined } = chart
-  const tooltip = (
-    <Tooltip
-      formatter={formatData}
-      labelFormatter={index => {
-        const datetime = chartData.datasets[0].data[index].x
-        return moment(datetime).format('DD.MM.YYYY')
-      }}
-      label={'asdf'}
-    />
-  )
+  const {referenceLine, withMiniMap, syncId = undefined} = chart
   return (
     <div className='analytics'>
       <div className='analytics-trend-row'>
@@ -126,33 +176,30 @@ const Analytics = ({
         <div className='analytics-trend-chart'>
           {chart.type === 'bar' && (
             <ResponsiveContainer>
-              <BarChart syncId={syncId} data={chartData.datasets[0].data}>
-                {tooltip}
-                <Bar dataKey={label} stroke={borderColor} fill={borderColor} />
-                {withMiniMap && (
-                  <Brush
-                    travellerWidth={20}
-                    data={chartData.datasets[0].data}
-                    tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
-                    dataKey='x'
-                    height={50}
-                  />
-                )}
+              <BarChart
+                syncId={syncId}
+                data={chartData.datasets[0].data} >
+                <Tooltip />
+                <Bar dataKey='y' stroke={borderColor} fill={borderColor} />
+                {withMiniMap &&
+                <Brush
+                  travellerWidth={20}
+                  data={chartData.datasets[0].data}
+                  tickFormatter={tick => moment(tick).format('MM.DD.YYYY')}
+                  dataKey='x' height={50} />}
               </BarChart>
             </ResponsiveContainer>
           )}
           {chart.type === 'line' && (
             <ResponsiveContainer>
               <LineChart
-                syncId={syncId}
+                syncId='anyId'
                 dot={false}
-                data={chartData.datasets[0].data}
-              >
-                {tooltip}
+                data={chartData.datasets[0].data} >
                 <Line
                   type='monotone'
                   dot={false}
-                  dataKey={label}
+                  dataKey='y'
                   stroke={borderColor}
                   onClick={(data, e) => {
                     console.log(data)

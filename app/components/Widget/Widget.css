@@ -1,0 +1,13 @@
+.Widget {
+  max-width: 250px;
+  height: 180px;
+  min-height: 180px;
+  max-height: 180px;
+  margin: 10px;
+  border: 1px solid #adadad;
+  border-radius: 3px;
+}
+
+.night-mode .Widget {
+  border-color: #4a4a4a;
+}

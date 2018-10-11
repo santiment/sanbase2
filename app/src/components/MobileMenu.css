@@ -91,3 +91,33 @@
 .mobile-app-menu .navigation-list a .label {
   margin-left: 1em;
 }
+
+.mobile-app-menu a {
+  text-decoration: none;
+  text-align: center;
+  padding: 10px 22px;
+  color: rgba(255, 255, 255, 0.9);
+  display: list-item;
+  list-style-type: none;
+  font-size: 24px;
+  font-weight: 600;
+  border-bottom: none;
+}
+
+.mobile-app-menu a:hover {
+  background-color: #4f5b69;
+  transition: all 1s ease;
+}
+
+.mobile-app-menu a.active {
+  color: rgb(24, 186, 55);
+}
+
+.mobile-app-menu .button {
+  margin: 0 22px !important;
+}
+
+.mobile-app-menu .navigation-list {
+  flex: 1;
+  padding-top: 35%;
+}

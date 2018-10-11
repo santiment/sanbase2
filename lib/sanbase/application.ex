@@ -4,12 +4,17 @@ defmodule Sanbase.Application do
   import Supervisor.Spec
   import Sanbase.ApplicationUtils
 
+  import Supervisor.Spec
+  import Sanbase.ApplicationUtils
+
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
     if Code.ensure_loaded?(Envy) do
       Envy.auto_load()
     end
+
+    Faktory.Configuration.init
 
     # Define workers and child supervisors to be supervised
     children =
@@ -31,6 +36,21 @@ defmodule Sanbase.Application do
 
         # Start the Elasticsearch Cluster connection
         Sanbase.Elasticsearch.Cluster,
+
+        # Start a Registry
+        {Registry, keys: :unique, name: Sanbase.Registry},
+
+        # Start the graphQL in-memory cache
+        {ConCache,
+         [
+           name: :graphql_cache,
+           ttl_check_interval: :timer.minutes(1),
+           global_ttl: :timer.minutes(5),
+           acquire_lock_timeout: 30_000
+         ]},
+
+        # Start the Clickhouse Repo
+        start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 
         # Start a Registry
         {Registry, keys: :unique, name: Sanbase.Registry},

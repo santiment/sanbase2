@@ -54,6 +54,17 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
+  defp check_volume(project, currency, from_datetime, to_datetime) do
+    pair = "#{project.ticker}_#{currency}"
+
+    with {:ok, [[_dt, volume]]} <-
+           Sanbase.Prices.Store.fetch_mean_volume(measurement, from_datetime, to_datetime) do
+      volume >= notification_volume_threshold()
+    else
+      _ -> false
+    end
+  end
+
   defp get_indicator(ticker, currency, from_datetime, to_datetime) do
     indicator =
       TechIndicators.price_volume_diff_ma(

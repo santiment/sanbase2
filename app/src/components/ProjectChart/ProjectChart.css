@@ -8,19 +8,6 @@
   flex: 1;
 }
 
-@media all and (orientation: portrait) {
-  .project-dp-chart-mobile-fullscreen {
-    transform: rotate(-90deg);
-    transform-origin: left top;
-    width: 100vh;
-    overflow-x: hidden;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: white;
-  }
-}
-
 .project-chart-loader {
   padding-top: 10px;
 }
@@ -28,8 +15,8 @@
 .project-chart-body {
   background: rgba(245, 249, 255, 0.6);
   position: relative;
-  padding: 0 20px;
-  padding-top: 10px;
+  padding: 10px 20px;
+  background-color: rgba(250, 251, 255, 0.8);
 }
 
 .project-chart__isLoading,
@@ -110,7 +97,7 @@
 .time-filter .activated,
 .currency-filter .activated,
 .chart-footer-filters .activated {
-  background: rgba(38, 43, 51, 0.8);
+  background: rgb(71, 72, 76);
   color: white;
 }
 
@@ -120,23 +107,6 @@
   color: #888;
 }
 
-.night-mode .time-filter,
-.night-mode .currency-filter,
-.night-mode .chart-footer-filters,
-.night-mode .time-filter .activated,
-.night-mode .currency-filter .activated,
-.night-mode .chart-footer-filters .activated {
-  color: #a0a0a0;
-}
-
-.night-mode .time-filter .activated,
-.night-mode .currency-filter .activated,
-.night-mode .chart-footer-filters .activated {
-  background-color: #252932;
-}
-
-.night-mode .time-filter .disabled,
-.night-mode .currency-filter .disabled,
-.night-mode .chart-footer-filters .disabled {
-  color: #595959;
+.chart-footer-filters div {
+  margin-right: 2px;
 }

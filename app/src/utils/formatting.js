@@ -26,6 +26,10 @@ const formatNumber = (amount, options = {}) => {
   if (isNaN(Number(amount))) throw new Error(`Unsupported type: "${amount}"`)
   const maximumFractionDigits = Math.abs(amount) >= 1 ? 2 : 6
 
+  return value % 1 === 0 ? `${value}.000` : `${value}`
+}
+
+const formatNumber = (amount, options = {}) => {
   let value = new Intl.NumberFormat('en', {
     style: options.currency ? 'currency' : 'decimal',
     maximumFractionDigits,

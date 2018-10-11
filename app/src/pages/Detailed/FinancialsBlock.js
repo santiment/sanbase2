@@ -41,8 +41,9 @@ const FinancialsBlock = ({
   isERC20
 }) => (
   <div>
-    Project Transparency:&nbsp;
-    {isERC20 ? showStatus(projectTransparencyStatus) : 'Not applicable'}
+    Project Transparency:&nbsp;{isERC20
+      ? showStatus(projectTransparencyStatus)
+      : 'Not applicable'}
     <hr />
     {fundsRaisedIcos &&
       fundsRaisedIcos.length !== 0 && (
@@ -113,9 +114,30 @@ const FinancialsBlock = ({
             <div style={{ textAlign: 'right' }}>
               {ethSpent ? `ETH ${millify(ethSpent, 2)}` : 0}
             </div>
+          )}
+        </Fragment>
+      )}
+    {ethBalance && (
+      <div
+        className={cx({
+          'row-info': true,
+          'info-disabled': ethAddresses.length === 0 && +ethBalance === 0
+        })}
+      >
+        <div>Total Balance</div>
+        {ethBalance ? `ETH ${millify(ethBalance, 2)}` : 0}
+      </div>
+    </div>}
+    {isERC20 &&
+    <div className='row-info wallets-balance'>
+      {ethAddresses.map((wallet, index) => (
+        <div key={index}>
+          <div className='wallets-addresses'>
+            <a href={`https://etherscan.io/address/${wallet.address}`}>{wallet.address}</a>
+            <span>ETH {millify(parseFloat(parseFloat(wallet.balance).toFixed(2)))}</span>
           </div>
-        )}
-      </Fragment>
+        </div>
+      </div>
     )}
   </div>
 )

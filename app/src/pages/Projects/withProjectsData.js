@@ -104,10 +104,7 @@ const pickProjectsType = type => {
 
 const enhance = (type = 'all') =>
   compose(
-    connect(
-      mapStateToProps,
-      mapDispatchToProps
-    ),
+    connect(mapStateToProps, mapDispatchToProps),
     withRouter,
     graphql(pickProjectsType(type).projectsGQL, {
       name: 'Projects',

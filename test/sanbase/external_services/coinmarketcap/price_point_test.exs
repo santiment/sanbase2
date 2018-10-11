@@ -41,6 +41,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
       expectation: expectation,
       project: project
     }
+
+    %{
+      price_point: price_point,
+      expectation: expectation,
+      project: project
+    }
   end
 
   test "converting price point to measurement with BTC price", %{
@@ -73,6 +79,64 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
 
     assert PricePoint.convert_to_measurement(price_point, Measurement.name_from(project)) ==
              expectation
+  end
+
+  test "price_points_to_measurements called with one price point", %{
+    price_point: price_point,
+    expectation: expectation
+  } do
+    expectation = Map.replace!(expectation, :name, @total_market_measurement)
+
+    assert PricePoint.price_points_to_measurements(price_point, @total_market_measurement) == [
+             expectation
+           ]
+  end
+
+  test "price_points_to_measurements called with array of price point", %{
+    price_point: price_point,
+    expectation: expectation
+  } do
+    price_point_new =
+      Map.replace!(
+        price_point,
+        :datetime,
+        DateTime.from_unix!(1_367_174_821_000_000_000, :nanosecond)
+      )
+
+    expectation = Map.replace!(expectation, :name, @total_market_measurement)
+
+    expectation_new =
+      expectation
+      |> Map.replace!(:timestamp, 1_367_174_821_000_000_000)
+      |> Map.replace!(:name, @total_market_measurement)
+
+    assert PricePoint.price_points_to_measurements(
+             [price_point, price_point_new],
+             @total_market_measurement
+           ) == [
+             expectation,
+             expectation_new
+           ]
+  end
+
+  test "price_points_to_measurements called with array of price point and project", %{
+    price_point: price_point,
+    expectation: expectation,
+    project: project
+  } do
+    price_point_new =
+      Map.replace!(
+        price_point,
+        :datetime,
+        DateTime.from_unix!(1_367_174_821_000_000_000, :nanosecond)
+      )
+
+    expectation_new =
+      expectation
+      |> Map.replace!(:timestamp, 1_367_174_821_000_000_000)
+
+    assert PricePoint.price_points_to_measurements([price_point, price_point_new], project) ==
+             [expectation, expectation_new]
   end
 
   test "price_points_to_measurements called with one price point", %{

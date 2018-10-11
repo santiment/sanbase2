@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import Raven from 'raven-js'
 import gql from 'graphql-tag'
 import GoogleAnalytics from 'react-ga'
@@ -180,6 +180,14 @@ const EmailLogin = ({
     </div>
   )
 }
+
+const emailLoginGQL = gql`
+  mutation emailLogin($email: String!, $username: String!, $consent: String!) {
+    emailLogin(email: $email, username: $username, consent: $consent) {
+      success
+    }
+  }
+`
 
 export default compose(
   withState('isPending', 'onPending', false),

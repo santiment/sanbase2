@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import cx from 'classnames'
 import { Popup, Icon, Label, Loader, Message } from 'semantic-ui-react'
 import AlertMessage from './../../components/AlertMessage'
+import help from './../../assets/help.json'
 import './ProjectChartFooter.css'
 
 export const ToggleBtn = ({
@@ -62,8 +63,7 @@ export const ToggleBtn = ({
 const FilterCategory = ({ children, name, className = '', settings }) => (
   <div className={'filter-category ' + className}>
     <h5 className='filter-category-title'>
-      {name.toUpperCase()}
-      &nbsp;
+      {name.toUpperCase()}&nbsp;
       {settings && settings()}
     </h5>
     <div className='filter-category-body'>{children}</div>
@@ -71,9 +71,8 @@ const FilterCategory = ({ children, name, className = '', settings }) => (
 )
 //
 const ProjectChartFooter = ({
-  Insights = {
+  historyTwitterData = {
     loading: false,
-    error: false,
     items: []
   },
   ...props
@@ -124,10 +123,7 @@ const ProjectChartFooter = ({
           <Popup
             trigger={<Icon name='info circle' />}
             inverted
-            content="Metric based on number of Github 'events' including
-              issue interactions, pull requests, comments,
-              and wiki edits, plus the number of public
-              repositories a project is maintaining"
+            content={help['Development Activity'].description}
             position='top left'
           />
         </ToggleBtn>
@@ -151,9 +147,7 @@ const ProjectChartFooter = ({
             <Popup
               trigger={<Icon name='info circle' />}
               inverted
-              content='Token Age Consumed shows the amount of movement
-            of tokens between addresses. One use for this metric is
-            to spot large amounts of tokens moving after sitting for long periods of time'
+              content={help['Transaction Volume'].description}
               position='top left'
             />
           </ToggleBtn>
@@ -175,7 +169,7 @@ const ProjectChartFooter = ({
             <Popup
               trigger={<Icon name='info circle' />}
               inverted
-              content='Total amount of tokens that were transacted on the blockchain'
+              content={help['Transaction Volume'].description}
               position='top left'
             />
           </ToggleBtn>
@@ -195,18 +189,13 @@ const ProjectChartFooter = ({
       )}
       <FilterCategory name='Social'>
         <ToggleBtn
-          loading={props.twitterHistory.loading}
-          disabled={props.twitterHistory.items.length === 0}
-          isToggled={
-            props.isToggledTwitter && props.twitterHistory.items.length !== 0
-          }
-          toggle={props.toggleTwitter}
-        >
+          loading={historyTwitterData.loading}
+          disabled={historyTwitterData.items.length === 0}
+          isToggled={props.isToggledTwitter &&
+            historyTwitterData.items.length !== 0}
+          toggle={props.toggleTwitter}>
           <Label circular className='twitterLabel' empty />
-          Twitter{' '}
-          {!props.twitterData.loading &&
-            !props.twitterData.error &&
-            `| ${props.twitterData.followersCount}`}
+          Twitter
         </ToggleBtn>
         <ToggleBtn
           loading={props.emojisSentiment.loading}
@@ -224,7 +213,7 @@ const ProjectChartFooter = ({
           <Popup
             trigger={<Icon name='info circle' />}
             inverted
-            content="This feed plots an aggregated sentiment metric for the general crypto market against the token's price. The higher the number, the more positive the sentiment. Requires 1000 SAN to access."
+            content={help['Sentiment'].description}
             position='top left'
           />
         </ToggleBtn>
@@ -237,9 +226,9 @@ const ProjectChartFooter = ({
             </p>
             <p>You can learn something new.</p>
             <Link to={`/insights/tags/${props.project.ticker}`}>
-              {Insights.items.length}
-                &nbsp; Insight
-              {Insights.items.length > 1 && 's'} about {props.project.ticker}
+              {Insights.items.length}&nbsp; Insight{Insights.items.length >
+                  1 && 's'}{' '}
+                about {props.project.ticker}
             </Link>
           </Message>
         )}
@@ -260,9 +249,7 @@ const ProjectChartFooter = ({
             <Popup
               trigger={<Icon name='info circle' />}
               inverted
-              content='How much ETH has moved out of team wallets over time.
-            While not tracked all the way to exchanges, this metric may suggest pottential
-            selling activity.'
+              content={help['ETH Spent Over Time'].description}
               position='top left'
             />
           </ToggleBtn>

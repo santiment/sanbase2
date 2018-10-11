@@ -132,8 +132,7 @@ export default class ProjectsMobile extends Component {
                 className='cashflow-mobile-search__filter'
               >
                 Filter
-              </Button>
-              
+              </Button>
             </div>
           </SlideDown>
         )}

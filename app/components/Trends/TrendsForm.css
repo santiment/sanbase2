@@ -1,0 +1,25 @@
+.TrendsForm {
+  width: 95%;
+}
+
+.TrendsForm__form {
+  width: 100%;
+}
+
+.TrendsForm__input {
+  width: 100%;
+}
+
+.TrendsForm__input input {
+  background-color: #ffffff94 !important;
+}
+
+@media (min-width: 768px) {
+  .TrendsForm {
+    width: 50%;
+  }
+
+  .TrendsForm__input input {
+    background-color: white !important;
+  }
+}

@@ -7,6 +7,10 @@ import LikeBtn from './../pages/InsightsNew/LikeBtn'
 import PostVisualBacktest from './PostVisualBacktest'
 import './Post.css'
 
+export const getSourceLink = (link = '') => {
+  return link.split('/')[2] || 'sanbase.net'
+}
+
 const A = createSkeletonElement('a', 'pending-home')
 const Span = createSkeletonElement('span', 'pending-home')
 const Div = createSkeletonElement('div', 'pending-home')

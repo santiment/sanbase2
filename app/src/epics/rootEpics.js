@@ -7,16 +7,8 @@ import handleEmailLogin, { handleLoginSuccess } from './handleEmailLogin'
 import handleEthLogin from './handleEthLogin'
 import handleGDPR from './handleGDPR'
 import handleRouter from './handleRouter'
-import apikeyGenerateEpic from './apikeyGenerateEpic'
-import apikeyRevokeEpic from './apikeyRevokeEpic'
-import createWatchlistEpic, {
-  createWatchlistSuccessEpic
-} from './createWatchlistEpic'
-import addAssetToWatchlistEpic from './addAssetToWatchlistEpic'
-import removeWatchlistEpic from './removeWatchlistEpic'
-import removeAssetFromWatchlistEpic from './removeAssetFromWatchlistEpic'
-import { fetchAssetsEpic, fetchAssetsFromListEpic } from './fetchAssetsEpic'
-import fetchTimeseriesEpic from './fetchTimeseriesEpic'
+import handleApikeyGenerate from './handleApikeyGenerate'
+import handleApikeyRevoke from './handleApikeyRevoke'
 import handleNightModeToggle from './handleNightModeToggle'
 import keyboardEpic from './keyboardEpic'
 
@@ -29,19 +21,8 @@ export default combineEpics(
   handleEthLogin,
   handleGDPR,
   handleRouter,
-  apikeyGenerateEpic,
-  apikeyRevokeEpic,
+  handleApikeyGenerate,
+  handleApikeyRevoke,
   handleNightModeToggle,
-  keyboardEpic,
-  // user's assets lists
-  createWatchlistEpic,
-  createWatchlistSuccessEpic,
-  removeWatchlistEpic,
-  addAssetToWatchlistEpic,
-  removeAssetFromWatchlistEpic,
-  // assets
-  fetchAssetsEpic,
-  fetchAssetsFromListEpic,
-  // timeseries
-  fetchTimeseriesEpic
+  keyboardEpic
 )

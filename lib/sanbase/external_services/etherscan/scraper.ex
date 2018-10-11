@@ -162,4 +162,56 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> List.first()
     |> D.new()
   end
+
+  defp total_supply(html) do
+    Floki.find(html, ~s/td:fl-contains('Total Supply') + td/)
+    |> List.first()
+    |> case do
+      nil ->
+        nil
+
+      match ->
+        Floki.text(match)
+        |> parse_total_supply
+        |> D.mult(D.new(:math.pow(10, token_decimals(html))))
+        |> D.to_integer()
+    end
+  end
+
+  defp main_contract_address(html) do
+    Floki.find(html, ~s/td:fl-contains('Contract') + td/)
+    |> List.first()
+    |> case do
+      nil -> nil
+      match -> Floki.text(match)
+    end
+  end
+
+  defp token_decimals(html) do
+    Floki.find(html, ~s/td:fl-contains('Token Decimals') + td/)
+    |> List.first()
+    |> case do
+      nil -> nil
+      match -> Floki.text(match) |> parse_token_decimals
+    end
+  end
+
+  defp parse_token_decimals(nil), do: 0
+
+  defp parse_token_decimals(token_decimals) do
+    token_decimals
+    |> String.trim()
+    |> String.to_integer()
+  end
+
+  defp parse_total_supply(nil), do: D.new(0)
+
+  defp parse_total_supply(total_supply) do
+    total_supply
+    |> String.trim()
+    |> String.replace(",", "")
+    |> String.split()
+    |> List.first()
+    |> D.new()
+  end
 end

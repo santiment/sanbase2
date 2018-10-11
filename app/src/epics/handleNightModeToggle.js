@@ -16,7 +16,7 @@ const handleNightModeToggle = action$ =>
       saveKeyState('isNightModeEnabled', isNightModeEnabled)
       return Observable.of(isNightModeEnabled)
     })
-    .mergeMap(({ value }) =>
+    .mergeMap(({value}) =>
       Observable.of({
         type: APP_USER_NIGHT_MODE_SAVE,
         payload: value

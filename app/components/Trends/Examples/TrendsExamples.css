@@ -1,0 +1,13 @@
+.TrendsExamples {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  padding: 0;
+  margin: 30px 0 20px;
+}
+
+@media (min-width: 768px) {
+  .TrendsExamples {
+    flex-direction: row;
+  }
+}

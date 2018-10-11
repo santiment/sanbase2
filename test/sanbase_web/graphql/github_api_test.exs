@@ -9,6 +9,8 @@ defmodule Sanbase.Github.GithubApiTest do
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
+  import SanbaseWeb.Graphql.TestHelpers
+
   setup do
     Github.Store.create_db()
 
@@ -32,6 +34,9 @@ defmodule Sanbase.Github.GithubApiTest do
     datetime5 = DateTime.from_naive!(~N[2017-05-13 19:00:00], "Etc/UTC")
     datetime6 = DateTime.from_naive!(~N[2017-05-13 20:00:00], "Etc/UTC")
     dates_interval = "1d"
+    datetime_no_activity1 = DateTime.from_naive!(~N[2010-05-13 21:45:00], "Etc/UTC")
+    datetime_no_activity2 = DateTime.from_naive!(~N[2010-05-15 21:45:00], "Etc/UTC")
+
     datetime_no_activity1 = DateTime.from_naive!(~N[2010-05-13 21:45:00], "Etc/UTC")
     datetime_no_activity2 = DateTime.from_naive!(~N[2010-05-15 21:45:00], "Etc/UTC")
 

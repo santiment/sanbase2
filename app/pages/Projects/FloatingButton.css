@@ -1,0 +1,61 @@
+.floating-btn {
+  outline: none;
+  user-select: none;
+  width: 47px;
+  height: 47px;
+  position: fixed;
+  bottom: 35px;
+  right: 30px;
+  line-height: 44px;
+  vertical-align: middle;
+  color: white;
+  padding-left: 2px;
+  background: rgb(0, 150, 99);
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.2s;
+  animation: fromBottom 1.6s 1;
+}
+
+.floating-btn:hover,
+.floating-btn:focus {
+  outline: none;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.36);
+}
+
+.floating-btn--rotation i {
+  animation: rotate 0.6s 1;
+}
+
+.floating-btn-items {
+  position: fixed;
+  bottom: calc(35px + 45px + 35px);
+  right: 30px;
+}
+
+.mfb-component--br {
+  animation: fromBottom 1.6s 1;
+}
+
+@keyframes fromBottom {
+  0% {
+    transform: translateY(250px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}

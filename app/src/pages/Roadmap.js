@@ -63,10 +63,8 @@ const Roadmap = () => (
               <p>Q3-Q4, 2017</p>
               <hr />
               <p>
-                Transparency
-                <br />
-                Product
-                <br />
+                Transparency<br />
+                Product<br />
                 Community
               </p>
             </div>

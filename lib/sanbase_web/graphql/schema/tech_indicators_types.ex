@@ -70,6 +70,11 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     field(:chart_data, list_of(:chart_data))
   end
 
+  object :topic_search_overview do
+    field(:messages, list_of(:topic_search_messages))
+    field(:chart_data, list_of(:topic_search_chart_data))
+  end
+
   object :messages do
     field(:text, :string)
     field(:datetime, non_null(:datetime))
@@ -78,5 +83,10 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
   object :chart_data do
     field(:mentions_count, :integer)
     field(:datetime, non_null(:datetime))
+  end
+
+  object :twitter_mention_count do
+    field(:datetime, non_null(:datetime))
+    field(:mention_count, :integer)
   end
 end

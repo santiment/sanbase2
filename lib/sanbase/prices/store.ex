@@ -39,6 +39,15 @@ defmodule Sanbase.Prices.Store do
   end
 
   @doc ~s"""
+    Fetch open, close, high, low price values for every interval between from-to
+  """
+  def fetch_ohlc(measurement, from, to, interval) do
+    fetch_ohlc_query(measurement, from, to, interval)
+    |> Store.query()
+    |> parse_time_series()
+  end
+
+  @doc ~s"""
     Fetch all price points in the given `from-to` time interval from `measurement`.
   """
   def fetch_price_points!(measurement, from, to) do
@@ -169,7 +178,25 @@ defmodule Sanbase.Prices.Store do
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp last_history_datetime_cmc_query(ticker_cmc_id) do
+  defp parse_record(%{results: [%{error: error}]}), do: {:error, error}
+
+  defp parse_record(%{
+         results: [
+           %{
+             series: [
+               %{
+                 values: [[iso8601_datetime, price_usd, price_btc, marketcap_usd, volume_usd]]
+               }
+             ]
+           }
+         ]
+       }) do
+    {:ok, datetime, _} = DateTime.from_iso8601(iso8601_datetime)
+
+    {:ok, {datetime, price_usd, price_btc, marketcap_usd, volume_usd}}
+  end
+
+  defp last_history_datetime_cmc_query(ticker) do
     ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
     WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
   end

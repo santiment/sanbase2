@@ -1,0 +1,75 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TrendsExplorePage smoke 1`] = `
+<div
+  className="TrendsExplorePage"
+>
+  <div
+    className="TrendsExplorePage__content"
+  >
+    <TrendsExploreHeader />
+    <div
+      className="TrendsExplorePage__settings"
+    >
+      <Selector
+        defaultSelected="3m"
+        disabled={false}
+        onSelectOption={[Function]}
+        options={
+          Array [
+            "1w",
+            "1m",
+            "3m",
+            "6m",
+          ]
+        }
+      />
+      <div
+        className="TrendsExplorePage__settings__right"
+      >
+        <Selector
+          defaultSelected="bitcoin"
+          disabled={false}
+          nameOptions={
+            Array [
+              "BTC/USD",
+              "ETH/USD",
+            ]
+          }
+          onSelectOption={[Function]}
+          options={
+            Array [
+              "bitcoin",
+              "ethereum",
+            ]
+          }
+        />
+        <SmoothDropdown>
+          <SmoothDropdownItem
+            trigger={
+              <Button
+                as="button"
+                basic={true}
+                className="link"
+                icon="share alternate"
+                role="button"
+              />
+            }
+          >
+            <ShareOptions
+              title="Crypto Social Trends for \\"undefined\\""
+              url="http://localhost/"
+            />
+          </SmoothDropdownItem>
+        </SmoothDropdown>
+      </div>
+    </div>
+    <Apollo(Apollo(Apollo(GetTrends)))
+      interval="1d"
+      render={[Function]}
+      timeRange="3m"
+    />
+    <Stats />
+  </div>
+</div>
+`;

@@ -36,6 +36,15 @@ defmodule Sanbase.Github.Scheduler do
     projects
   end
 
+  defp log_scheduler_info(projects) do
+    project_names = projects
+    |> Enum.map(&(&1.name))
+
+    Logger.info("Scheduling github activity scraping for projects #{inspect(project_names)}")
+
+    projects
+  end
+
   defp reduce_initial_scrape_datetime([]), do: nil
 
   defp reduce_initial_scrape_datetime(list), do: Enum.min_by(list, &DateTime.to_unix/1)

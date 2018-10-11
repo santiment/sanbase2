@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Login container it should render loader while not loaded 1`] = `
+<ChooseAuthProvider
+  gotoEmail={[Function]}
+  gotoMetamask={[Function]}
+/>
+`;

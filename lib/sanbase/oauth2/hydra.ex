@@ -39,6 +39,15 @@ defmodule Sanbase.Oauth2.Hydra do
       )
 
       reject_consent(consent, access_token, user)
+    else
+      accept_consent(consent, access_token, user)
+    else
+      Logger.warn(
+        "#{user.email || user.username} doesn't have enough SAN tokens" <>
+          inspect(user_san_balance)
+      )
+
+      reject_consent(consent, access_token, user)
     end
   end
 
@@ -99,6 +108,18 @@ defmodule Sanbase.Oauth2.Hydra do
     ])
   end
 
+  defp do_reject_consent(consent, access_token, %User{username: username, email: email}) do
+    data = %{
+      "reason" => "#{email || username} doesn't have enough SAN tokens"
+    }
+
+    HTTPoison.patch(consent_url() <> "/#{consent}/reject", Jason.encode!(data), [
+      {"Authorization", "Bearer #{access_token}"},
+      {"Content-type", "application/json"},
+      {"Accept", "application/json"}
+    ])
+  end
+
   defp extract_field_from_json(json, field) do
     with {:ok, body} <- Jason.decode(json),
          {:ok, result} <- Map.fetch(body, field) do
@@ -120,6 +141,19 @@ defmodule Sanbase.Oauth2.Hydra do
   defp has_enough_san_tokens?(%User{} = _user, _), do: true
 
   defp san_balance!(user) do
+    User.san_balance!(user)
+  end
+
+  # json config value example: {"grafana": 200}
+  defp required_san_tokens_by_client(key, client_id) do
+    Config.get(key)
+    |> Jason.decode!()
+    |> Map.get(client_id, 0)
+  end
+
+  defp has_enough_san_tokens?(%User{} = _user, _), do: true
+
+  defp san_balance(user) do
     User.san_balance!(user)
   end
 

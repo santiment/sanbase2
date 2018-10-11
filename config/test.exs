@@ -33,6 +33,10 @@ config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
+config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
+
+config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
+
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
@@ -47,6 +51,10 @@ config :faktory_worker_ex,
     pool: 0
   ],
   start_workers: false
+
+config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
+  webhook_url: "http://example.com/webhook_url",
+  notifications_enabled: true
 
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: "http://example.com/webhook_url",
@@ -70,6 +78,37 @@ config :arc,
 config :sanbase, Sanbase.Elasticsearch.Cluster, api: Sanbase.ElasticsearchMock
 
 config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3"
+
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false
+
+config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
+  scale: 1000,
+  limit: 5,
+  time_between_requests: 1000
+
+config :sanbase, Sanbase.ExternalServices.Etherscan.Requests, apikey: "myapikey"
+
+
+config :faktory_worker_ex,
+  client: [
+    pool: 0
+  ],
+  start_workers: false
+
+config :sanbase, Sanbase.Notifications.CheckPrices,
+  webhook_url: "http://example.com/webhook_url",
+  slack_notifications_enabled: true
+
+config :sanbase, Sanbase.Github.Store, database: "github_activity_test"
+
+config :sanbase, Sanbase.Prices.Store,
+  database: "prices_test"
+
+config :sanbase, Sanbase.Prices.Store, database: "prices_test"
+
+config :arc,
+  storage: Arc.Storage.Local,
+  storage_dir: "/tmp/sanbase/filestore-test/"
 
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"

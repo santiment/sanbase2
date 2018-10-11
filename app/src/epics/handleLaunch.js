@@ -1,7 +1,7 @@
 import Raven from 'raven-js'
 import { ofType } from 'redux-observable'
 import { Observable } from 'rxjs'
-import { mergeMap } from 'rxjs/operators'
+import { switchMap } from 'rxjs/operators'
 import gql from 'graphql-tag'
 import { hasMetamask } from './../web3Helpers'
 import * as actions from './../actions/types'
@@ -27,7 +27,7 @@ export const userGQL = gql`
 const handleLaunch = (action$, store, { client }) =>
   action$.pipe(
     ofType(actions.APP_LAUNCHED),
-    mergeMap(() => {
+    switchMap(() => {
       const queryPromise = client.query({
         options: { fetchPolicy: 'network-only' },
         query: userGQL
@@ -61,7 +61,6 @@ const handleLaunch = (action$, store, { client }) =>
             type: '_'
           })
         })
-        .takeUntil(action$.ofType(actions.USER_LOGIN_SUCCESS))
     })
   )
 

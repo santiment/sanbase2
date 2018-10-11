@@ -52,31 +52,26 @@ const FeedbackModal = ({ isFeedbackModalOpened, toggleFeedback, ...props }) => {
     >
       <Modal.Content>
         <FadeIn duration='0.5s' timingFunction='ease-out' as='div'>
-          {props.isSuccess ? (
-            'Thank you!'
-          ) : (
-            <Form
-              className='attached fluid'
-              onSubmit={() => handleSendFeedback(props)}
-            >
-              <TextArea
-                value={props.message}
-                onChange={e => {
-                  const message = e.target.value
-                  if (message.length < MAX_FEEDBACK_MESSAGE_LENGTH) {
-                    props.onChange(e.target.value)
-                  }
-                }}
-                autoHeight
-                placeholder='Start typing...'
-              />
-              {props.message.length >= MAX_FEEDBACK_MESSAGE_LENGTH - 1 && (
-                <Message attached='bottom' warning>
-                  Maximum length of feedback message.
-                </Message>
-              )}
-            </Form>
-          )}
+          {props.isSuccess
+          ? 'Thank you!'
+          : <Form
+            className='attached fluid'
+            onSubmit={() => handleSendFeedback(props)}>
+            <TextArea
+              value={props.message}
+              style={{background: 'none'}}
+              onChange={e => {
+                const message = e.target.value
+                if (message.length < MAX_FEEDBACK_MESSAGE_LENGTH) {
+                  props.onChange(e.target.value)
+                }
+              }}
+              autoHeight placeholder='Start typing...' />
+            {props.message.length >= MAX_FEEDBACK_MESSAGE_LENGTH - 1 &&
+            <Message attached='bottom' warning>
+              Maximum length of feedback message.
+            </Message>}
+          </Form>}
         </FadeIn>
       </Modal.Content>
       <Modal.Actions>
@@ -121,10 +116,7 @@ const enhance = compose(
   withState('message', 'onChange', ''),
   withState('isSuccess', 'onSuccess', false),
   withState('isError', 'onError', false),
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )
+  connect(mapStateToProps, mapDispatchToProps)
 )
 
 export default enhance(FeedbackModal)

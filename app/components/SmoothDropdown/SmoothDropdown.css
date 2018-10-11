@@ -1,0 +1,80 @@
+.dd-wrapper {
+  position: relative;
+}
+
+.dd {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  left: 5px;
+  right: 5px;
+  top: calc(100% + 6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.25s ease;
+}
+
+.dd.dd-first-time {
+  transition: opacity 0.25s ease;
+}
+
+.dd__bg,
+.dd__arrow {
+  position: absolute;
+}
+
+.dd__bg {
+  background-color: #fff;
+  transition: 0.25s ease;
+  border-radius: 5px;
+  overflow: hidden;
+  z-index: -1;
+  box-shadow: 0 50px 100px rgba(50, 50, 92, 0.1),
+    0 15px 35px rgba(50, 50, 92, 0.15), 0 5px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  height: 100%;
+}
+
+.dd__arrow {
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  pointer-events: none;
+  transform: translate3d(-50%, -50%, 0) rotate(45deg);
+  box-shadow: -3px -3px 5px rgba(82, 90, 125, 0.04);
+}
+
+.dd__list {
+  overflow: hidden;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.dd__content {
+  position: absolute;
+  opacity: 0;
+  transition: 0.25s ease;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.dd__trigger {
+  display: inline-block;
+}
+
+.dd.has-dropdown-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dd__item.active .dd__content {
+  opacity: 1;
+  z-index: 2;
+}
+
+.night-mode .dd__bg,
+.night-mode .dd__arrow {
+  background-color: #23252a;
+  border-color: #4a4a4a;
+}

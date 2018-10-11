@@ -2,38 +2,12 @@ defmodule SanbaseWeb.Graphql.Schema do
   use Absinthe.Schema
   use Absinthe.Ecto, repo: Sanbase.Repo
 
-  alias SanbaseWeb.Graphql.Resolvers.{
-    AccountResolver,
-    PriceResolver,
-    ProjectResolver,
-    ProjectTransactionsResolver,
-    GithubResolver,
-    TwitterResolver,
-    EtherbiResolver,
-    VotingResolver,
-    TechIndicatorsResolver,
-    FileResolver,
-    PostResolver,
-    MarketSegmentResolver,
-    ApikeyResolver,
-    UserListResolver,
-    ElasticsearchResolver
-  }
-
-  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
-
-  alias SanbaseWeb.Graphql.Complexity.PriceComplexity
-  alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
-
-  alias SanbaseWeb.Graphql.Middlewares.{
-    MultipleAuth,
-    BasicAuth,
-    JWTAuth,
-    ApikeyAuth,
-    ProjectPermissions,
-    PostPermissions,
-    ApiTimeframeRestriction
-  }
+  alias Sanbase.Auth.{User, EthAccount}
+  alias SanbaseWeb.Graphql.Resolvers.AccountResolver
+  alias SanbaseWeb.Graphql.Resolvers.ProjectResolver
+  alias SanbaseWeb.Graphql.Middlewares.{MultipleAuth, BasicAuth, JWTAuth}
+  alias SanbaseWeb.Graphql.SanbaseRepo
+  alias SanbaseWeb.Graphql.PriceStore
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
@@ -50,7 +24,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
   import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
-  import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -300,7 +273,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch a list of all posts/insights. The user must be logged in to access all fields for the post/insight."
     field :all_insights, list_of(:post) do
       middleware(PostPermissions)
-      resolve(&PostResolver.all_insights/3)
+
+      cache_resolve(&PostResolver.posts/3)
     end
 
     @desc "Fetch a list of all posts for given user ID."
@@ -308,7 +282,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:user_id, non_null(:integer))
 
       middleware(PostPermissions)
-      resolve(&PostResolver.all_insights_for_user/3)
+
+      cache_resolve(&PostResolver.posts_by_user/3)
     end
 
     @desc "Fetch a list of all posts for which a user has voted."
@@ -316,7 +291,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:user_id, non_null(:integer))
 
       middleware(PostPermissions)
-      resolve(&PostResolver.all_insights_user_voted_for/3)
+
+      cache_resolve(&PostResolver.posts_user_voted_for/3)
     end
 
     @desc ~s"""
@@ -332,7 +308,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch a list of all tags used for posts/insights. This query also returns tags that are not yet in use."
     field :all_tags, list_of(:tag) do
-      cache_resolve(&PostResolver.all_tags/3)
+      Cache.from(&PostResolver.all_tags/3)
+      |> resolve()
     end
 
     @desc ~s"""
@@ -556,6 +533,22 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3)
     end
 
+    field :last_wallet_transfers, list_of(:transaction) do
+      arg(:wallets, non_null(list_of(:string)))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:limit, :integer, default_value: 10)
+      arg(:transaction_type, :transaction_type)
+
+      resolve(&ProjectTransactionsResolver.last_wallet_transfers/3)
+    end
+
+    @desc "Fetch a list of followed projects for the user currently logged in."
+    field :followed_projects, list_of(:project) do
+
+      resolve(&AccountResolver.followed_projects/3)
+    end
+
     @desc "Fetch all favourites lists for current_user."
     field :fetch_user_lists, list_of(:user_list) do
       resolve(&UserListResolver.fetch_user_lists/3)
@@ -569,14 +562,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch all public favourites lists"
     field :fetch_all_public_user_lists, list_of(:user_list) do
       resolve(&UserListResolver.fetch_all_public_user_lists/3)
-    end
-
-    @desc "Returns statistics for the data stored in elasticsearch"
-    field :elasticsearch_stats, :elasticsearch_stats do
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-
-      cache_resolve(&ElasticsearchResolver.stats/3)
     end
   end
 
@@ -604,14 +589,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.email_login_verify/2)
     end
 
-    field :email_change_verify, :login do
-      arg(:email_candidate, non_null(:string))
-      arg(:token, non_null(:string))
-
-      resolve(&AccountResolver.email_change_verify/2)
-    end
-
-    field :change_email, :email_login_request do
+    field :change_email, :user do
       arg(:email, non_null(:string))
 
       middleware(JWTAuth)

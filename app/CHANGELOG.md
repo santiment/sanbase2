@@ -1,7 +1,7 @@
 ## CHANGELOG
 
 - 2018-11-10 | v.0.19.0 'Phobos':
-
+  Add the knowledge base menu
   Add Top Transactions Table
 
 - 2018-11-10 | v.0.18.1 'Phobos':

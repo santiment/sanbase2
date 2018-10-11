@@ -1,0 +1,78 @@
+.Guide {
+  display: flex;
+  width: 600px;
+  height: 100%;
+  white-space: initial;
+
+  &__left,
+  &__right {
+    flex: 1;
+    padding: 20px;
+  }
+
+  &__left {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(270deg, #df2f2f, #316bae, #309d81);
+    color: #fff;
+    border-bottom-left-radius: 5px;
+    border-top-left-radius: 5px;
+    background-size: 600% 600%;
+    animation: SwitchingColor 60s ease infinite;
+  }
+
+  &__title,
+  h2 {
+    color: #fff;
+  }
+
+  &__topics {
+    margin: 0;
+    padding: 15px;
+  }
+
+  &__topic {
+    margin-bottom: 15px;
+    background: transparent !important;
+
+    button {
+      cursor: pointer;
+      border: 0;
+      outline: 0;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    &_active {
+      color: #26a987;
+
+      button {
+        color: #26a987;
+      }
+    }
+  }
+
+  &__title {
+    text-align: center;
+  }
+
+  &__search {
+    width: 100%;
+  }
+
+  @keyframes SwitchingColor {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}

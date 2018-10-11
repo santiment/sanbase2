@@ -8,6 +8,8 @@ import * as actions from './../../actions/types'
 import FeedbackButton from './../FeedbackButton/FeedbackButton'
 import SmoothDropdownItem from './../SmoothDropdown/SmoothDropdownItem'
 import DesktopProfileMenu from './DesktopProfileMenu'
+import Guide from './../Guide/Guide'
+import styles from './../FeedbackButton/FeedbackButton.module.css'
 import './DesktopRightGroupMenu.css'
 
 const AnonymDesktopRightGroupMenu = () => (
@@ -29,6 +31,14 @@ const DesktopRightGroupMenu = ({
   isNightModeEnabled
 }) => (
   <div className='user-auth-control'>
+    <SmoothDropdownItem
+      trigger={
+        <Button className={styles.feedbackButton} circular icon='book' />
+      }
+      id='guide'
+    >
+      <Guide />
+    </SmoothDropdownItem>
     <FeedbackButton />
     <SmoothDropdownItem trigger={<Button circular icon='user' />} id='profile'>
       <DesktopProfileMenu

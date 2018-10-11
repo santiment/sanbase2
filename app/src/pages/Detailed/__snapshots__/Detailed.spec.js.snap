@@ -139,8 +139,5 @@ exports[`Project detail page container it should render correctly 1`] = `
       />
     </PanelBlock>
   </div>
-  <div
-    className="information"
-  />
 </div>
 `;

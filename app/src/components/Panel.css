@@ -27,8 +27,8 @@
   border-top-right-radius: 6px;
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 1024px) {
   .panel {
-    margin: 0;
+    margin: 16px 0;
   }
 }

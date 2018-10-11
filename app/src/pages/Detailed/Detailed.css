@@ -124,8 +124,7 @@
 
 .detailed .information {
   display: flex;
-  margin: 0;
-  margin-bottom: 16px;
+  margin: 16px 0;
   justify-content: space-between;
   flex-direction: column;
 }
@@ -134,6 +133,14 @@
   flex: 1 1 0;
   margin: 0;
   margin-top: 16px;
+}
+
+.detailed .information .panel:first-child {
+  margin-left: 0;
+}
+
+.detailed .information .panel:last-child {
+  margin-right: 0;
 }
 
 .detailed .top-eth-transaction {
@@ -191,7 +198,7 @@
 
   .detailed .information {
     flex-direction: row;
-    margin-right: 16px;
+    margin: 16px;
   }
 
   .detailed .information .panel {

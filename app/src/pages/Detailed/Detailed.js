@@ -248,7 +248,9 @@ export const Detailed = ({
       {!isDesktop && <Search />}
       <DetailedHeader {...Project} isLoggedIn={isLoggedIn} />
       {isDesktop ? (
-        <Panel zero>{projectContainerChart}</Panel>
+        <div className='information'>
+          <Panel zero>{projectContainerChart}</Panel>
+        </div>
       ) : (
         <div>{projectContainerChart}</div>
       )}
@@ -261,9 +263,9 @@ export const Detailed = ({
           <FinancialsBlock {...Project.project} />
         </PanelBlock>
       </div>
-      <div className='information'>
-        {!exchangeFundFlow.loading &&
-          exchangeFundFlow.items && (
+      {!exchangeFundFlow.loading &&
+        exchangeFundFlow.items && (
+        <div className='information'>
           <PanelBlock isLoading={false} title='Exchange Fund Flows'>
             <div>
               {exchangeFundFlow.items.map((item, index) => (
@@ -271,8 +273,8 @@ export const Detailed = ({
               ))}
             </div>
           </PanelBlock>
-        )}
-      </div>
+        </div>
+      )}
       <div className='information'>
         {isDesktop &&
           project.isERC20 &&

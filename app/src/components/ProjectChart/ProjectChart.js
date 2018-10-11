@@ -184,7 +184,7 @@ const makeChartDataFromHistory = (
   const burnrateDataset = !isToggledBurnRate
     ? null
     : {
-      label: 'Burn Rate',
+      label: 'Token Age Consumed',
       type: 'bar',
       fill: false,
       yAxisID: 'y-axis-6',
@@ -460,7 +460,7 @@ const makeOptionsFromProps = (props, COLORS) => {
           if (label === 'Github Activity') {
             return `${label}: ${millify(tooltipItem.yLabel)}`
           }
-          if (label === 'Burn Rate') {
+          if (label === 'Token Age Consumed') {
             return `${label}: ${millify(tooltipItem.yLabel)} (tokens × blocks)`
           }
           if (label === 'Transaction Volume') {
@@ -638,7 +638,7 @@ const makeOptionsFromProps = (props, COLORS) => {
           },
           scaleLabel: {
             display: true,
-            labelString: 'Burn Rate',
+            labelString: 'Token Age Consumed',
             fontColor: '#3d4450'
           },
           afterTickToLabelConversion: scaleInstance => {

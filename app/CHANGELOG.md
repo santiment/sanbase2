@@ -1,6 +1,11 @@
 ## CHANGELOG
 
+- 2018-12-10 | v.0.19.1 'Phobos':
+
+  Fix Trends Stats
+
 - 2018-11-10 | v.0.19.0 'Phobos':
+
   Add the knowledge base menu
   Add Top Transactions Table
 

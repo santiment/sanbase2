@@ -23,7 +23,7 @@ const TrendsPageTitleWithPopup = () => (
         </p>
         <h4>Combined results include:</h4>
         <ul>
-          <li>20 Telegram channels</li>
+          <li>Telegram channels</li>
           <li>Subreddits</li>
           <li>Discord Channels</li>
           <li>BitcoinTalk</li>

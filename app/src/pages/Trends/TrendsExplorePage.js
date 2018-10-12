@@ -25,9 +25,10 @@ export const getStateFromQS = ({ location }) => {
   }
 }
 
-export const Stats = () => (
+export const Stats = ({ timeRange }) => (
   <div>
     <GetTrendsStats
+      timeRange={timeRange}
       render={({ stats, isLoading }) => {
         if (isLoading) {
           return ''
@@ -35,15 +36,19 @@ export const Stats = () => (
           return (
             <div style={{ background: '#f5f9ff99' }}>
               <hr />
-              <strong style={{ marginLeft: 40 }}>Our statistic:</strong>
+              <strong style={{ marginLeft: 40 }}>
+                These stats were compiled searching:
+              </strong>
               <div style={{ display: 'flex', marginTop: 0 }}>
                 <ul>
-                  <li>All messages: {stats.documentsCount}</li>
-                  <li>Messages per day: {stats.averageDocumentsPerDay}</li>
+                  <li>{stats.documentsCount} messages </li>
+                  <li>
+                    {stats.averageDocumentsPerDay} average messages per day
+                  </li>
                 </ul>
                 <ul>
-                  <li>Telegram channels: {stats.telegramChannelsCount}</li>
-                  <li>Subreddits: {stats.subredditsCount}</li>
+                  <li>{stats.telegramChannelsCount} telegram channels</li>
+                  <li>{stats.subredditsCount} subreddits</li>
                 </ul>
               </div>
             </div>
@@ -133,7 +138,7 @@ export class TrendsExplorePage extends Component {
               />
             )}
           />
-          <Stats />
+          <Stats timeRange={timeRange} />
         </div>
       </div>
     )

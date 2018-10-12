@@ -63,6 +63,7 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     value(:telegram)
     value(:professional_traders_chat)
     value(:reddit)
+    value(:discord)
   end
 
   object :topic_search do

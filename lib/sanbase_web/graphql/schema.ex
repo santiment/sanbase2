@@ -510,6 +510,7 @@ defmodule SanbaseWeb.Graphql.Schema do
         1. TELEGRAM
         2. PROFESSIONAL_TRADERS_CHAT
         3. REDDIT
+        4. DISCORD
       * searchText - a string containing the key words for which the sources should be searched.
       * interval - an integer followed by one of: `m`, `h`, `d`, `w`
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"

@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
 
-  alias SanbaseWeb.Graphql.Complexity.PriceComplexity
+  alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
@@ -146,14 +146,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch price history for a given slug and time interval."
     field :history_price, list_of(:price_point) do
-      # TODO: Make non null after ticker is no longer used
       arg(:slug, :string)
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "")
 
-      complexity(&PriceComplexity.history_price/3)
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&PriceResolver.history_price/3)
     end
 
@@ -167,7 +166,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime)
       arg(:interval, :string, default_value: "1d")
 
-      complexity(&PriceComplexity.history_price/3)
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&PriceResolver.ohlc/3)
     end
 
@@ -236,7 +235,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "")
 
       middleware(ApiTimeframeRestriction)
-
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&EtherbiResolver.burn_rate/3)
     end
 
@@ -255,7 +254,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "")
 
       middleware(ApiTimeframeRestriction)
-
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
 
@@ -277,7 +276,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "")
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
-
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
 

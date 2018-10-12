@@ -11,6 +11,7 @@ const MAX_FEEDBACK_MESSAGE_LENGTH = 320
 
 const handleSendFeedback = ({
   message = '',
+  userId,
   onPending,
   onSuccess,
   onError
@@ -22,8 +23,27 @@ const handleSendFeedback = ({
     onPending(true)
     axios({
       method: 'post',
-      url: 'https://us-central1-cryptofolio-15d92.cloudfunctions.net/feedback',
-      data: { message }
+      url:
+        'https://discordapp.com/api/webhooks/500278578852659201/kbHKT4xlR7bBUPA7sij7aDNgGMt4WiCMIYYRQBlJFUryhsg3UypuKJvSgsKb_4iI58vo',
+      data: {
+        content: message,
+        embeds: [
+          {
+            fields: [
+              {
+                name: 'user id',
+                value: userId || 'anonymous',
+                inline: true
+              },
+              {
+                name: 'page',
+                value: window.location.pathname,
+                inline: true
+              }
+            ]
+          }
+        ]
+      }
     }).then(res => {
       onPending(false)
       onSuccess(true)
@@ -102,7 +122,8 @@ const FeedbackModal = ({ isFeedbackModalOpened, toggleFeedback, ...props }) => {
 
 const mapStateToProps = state => {
   return {
-    isFeedbackModalOpened: state.rootUi.isFeedbackModalOpened
+    isFeedbackModalOpened: state.rootUi.isFeedbackModalOpened,
+    userId: state.user.data.id
   }
 }
 

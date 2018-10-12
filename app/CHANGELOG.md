@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-12-10 | v.0.19.2 'Phobos':
+
+  Feedback form send feedbacks to our private Discord channel
+
 - 2018-12-10 | v.0.19.1 'Phobos':
 
   Fix Trends Stats

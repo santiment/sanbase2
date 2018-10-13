@@ -51,7 +51,7 @@ export class TrendsExplorePage extends Component {
   render () {
     const { match } = this.props
     const { timeRange, asset } = this.state
-    const title = `Crypto Social Trends for "${match.params.topic}"`
+    // const title = `Crypto Social Trends for "${match.params.topic}"`
     return (
       <div className='TrendsExplorePage'>
         <div className='TrendsExplorePage__content'>
@@ -70,7 +70,7 @@ export class TrendsExplorePage extends Component {
                 onSelectOption={this.handleSelectAsset}
                 defaultSelected={asset}
               />
-              <SmoothDropdown>
+              {/* <SmoothDropdown>
                 <SmoothDropdownItem
                   trigger={
                     <Button basic className='link' icon='share alternate' />
@@ -78,7 +78,7 @@ export class TrendsExplorePage extends Component {
                 >
                   <ShareOptions title={title} url={window.location.href} />
                 </SmoothDropdownItem>
-              </SmoothDropdown>
+              </SmoothDropdown> */}
             </div>
           </div>
           <GetTrends

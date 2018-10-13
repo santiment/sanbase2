@@ -15,7 +15,7 @@ import { formatNumber } from './../../utils/formatting'
 import { mergeTimeseriesByKey } from './../../utils/utils'
 import { sourcesMeta as chartsMeta } from './trendsUtils'
 
-const ASSET_PRICE_COLOR = '#a4acb7'
+const ASSET_PRICE_COLOR = '#A4ACB7'
 
 const Loading = () => <h2 style={{ marginLeft: 30 }}>Loading...</h2>
 
@@ -75,15 +75,16 @@ const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
             yAxisId='axis-price'
             name={asset + '/USD'}
             dot={false}
-            strokeWidth={2}
+            strokeWidth={1.5}
             dataKey='priceUsd'
             stroke={ASSET_PRICE_COLOR}
           />
+          {console.log(entity.name)}
           <Line
             type='linear'
             dataKey={entity.index}
             dot={false}
-            strokeWidth={3}
+            strokeWidth={entity.name === 'merged' ? 1.5 : 3}
             name={entity.name}
             stroke={entity.color}
           />

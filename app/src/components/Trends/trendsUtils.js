@@ -33,25 +33,25 @@ export const sourcesMeta = {
   merged: {
     index: 'merged',
     name: 'Total Mentions',
-    color: 'rgb(156, 39, 176)',
+    color: '#AC74D9',
     value: 0
   },
   telegram: {
     index: 'telegram',
     name: 'Telegram',
-    color: '#2d79d0',
+    color: '#55ABF8',
     value: 0
   },
   reddit: {
     index: 'reddit',
     name: 'Reddit',
-    color: '#c82f3f',
+    color: '#F17682',
     value: 0
   },
   professional_traders_chat: {
     index: 'professional_traders_chat',
     name: 'Professional Traders Chat',
-    color: '#26a987',
+    color: '#44C7A5',
     value: 0
   }
 }

@@ -42,7 +42,7 @@ const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
         <ComposedChart
           data={chartData}
           syncId='trends'
-          margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+          margin={{ top: 5, right: 36, left: 0, bottom: 5 }}
         >
           <XAxis
             dataKey='datetime'
@@ -79,12 +79,11 @@ const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
             dataKey='priceUsd'
             stroke={ASSET_PRICE_COLOR}
           />
-          {console.log(entity.name)}
           <Line
             type='linear'
             dataKey={entity.index}
             dot={false}
-            strokeWidth={entity.name === 'merged' ? 1.5 : 3}
+            strokeWidth={entity.index === 'merged' ? 1.5 : 3}
             name={entity.name}
             stroke={entity.color}
           />

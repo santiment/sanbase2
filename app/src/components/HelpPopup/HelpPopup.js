@@ -7,7 +7,12 @@ export const style = {
   padding: '2rem 1.8rem'
 }
 
-const HelpPopup = ({ children, content, trigger = <HelpPopupIcon /> }) => {
+const HelpPopup = ({
+  children,
+  content,
+  className,
+  trigger = <HelpPopupIcon className={className} />
+}) => {
   const render = content || children
   return (
     <Popup

@@ -107,8 +107,8 @@ export const validateSearchSources = (sources = defaultSources) => {
   return validSources.length !== 0 ? validSources : defaultSources
 }
 
-export const parseExampleSettings = ({ timeRange, sources }) => {
-  let text = 'For '
+const getTimeRangeText = timeRange => {
+  let text = 'last '
 
   switch (timeRange) {
     case '6m':
@@ -126,6 +126,18 @@ export const parseExampleSettings = ({ timeRange, sources }) => {
       break
   }
 
-  text += ' mentions'
   return text
+}
+const getSourcesText = sources => {
+  console.log(sources)
+  let text = 'mentions'
+
+  if (sources.includes('merged')) {
+    return `Total ${text}`
+  }
+}
+
+export const parseExampleSettings = ({ timeRange, sources }) => {
+  let text = getSourcesText(sources)
+  return text + ', ' + getTimeRangeText(timeRange)
 }

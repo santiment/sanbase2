@@ -6,7 +6,8 @@ import './TrendsExamplesItemTopic.css'
 const TrendsExamplesItemTopic = ({ topic, fontSize = '1em' }) => {
   return (
     <div className='TrendsExamplesItemTopic' style={{ fontSize }}>
-      <TrendsForm defaultTopic={topic} /> <HelpPopupTrends />
+      <TrendsForm defaultTopic={topic} />
+      <HelpPopupTrends className='TrendsExamplesItemTopic__help' />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 .TrendsForm {
   width: 95%;
+  margin-left: 25px;
 }
 
 .TrendsForm__form {
@@ -16,7 +17,7 @@
 
 @media (min-width: 768px) {
   .TrendsForm {
-    width: 50%;
+    width: 85%;
   }
 
   .TrendsForm__input input {

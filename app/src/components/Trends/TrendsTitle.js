@@ -19,14 +19,11 @@ const TrendsPageTitleWithPopup = () => (
           We focus only on channels where 90% of the discussions about crypto,
           including "insider" sites not open to public Google search.
         </p>
-        <h4>Combined results include:</h4>
-        <ul>
-          <li>Telegram channels</li>
-          <li>Subreddits</li>
-          <li>Discord Channels</li>
-          <li>BitcoinTalk</li>
-          <li>Other chats/forums</li>
-        </ul>
+        <p>
+          Results include mentions from 20+ Telegram channels, numerous
+          Subreddits and Discord channels, plus mentions on BitcoinTalk and
+          TradingView forums.{' '}
+        </p>
       </div>
     }
   />

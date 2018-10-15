@@ -37,7 +37,6 @@ services:
       - influxdb
 
     environment:
-      PORT: 4000
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/santiment
       TIMESCALE_DATABASE_URL: postgres://postgres:postgres@postgres:5432/santiment
       ADMIN_BASIC_AUTH_USERNAME: admin

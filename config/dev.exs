@@ -10,6 +10,7 @@ config :sanbase, Sanbase, url: {:system, "SANBASE_URL", "https://sanbase-low-sta
 
 config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4000],
+  url: [host: "0.0.0.0"],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,

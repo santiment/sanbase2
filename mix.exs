@@ -128,11 +128,10 @@ defmodule Sanbase.Mixfile do
       # and run all tests
       "ecto.setup_all": [
         "load_dotenv",
-        "ecto.create",
+        "ecto.create --quiet",
         "ecto.load",
-        "run priv/repo/seeds.exs",
-        "run priv/timescale_repo/seeds.exs"
-      ],
+
+        ],
       "ecto.reset_all": [
         "load_dotenv",
         "ecto.drop",

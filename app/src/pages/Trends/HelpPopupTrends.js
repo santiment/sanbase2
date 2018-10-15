@@ -8,12 +8,13 @@ const HelpPopupTrends = ({ className }) => (
       <p>Enter a single word, or a phrase in these formats:</p>
       <ul
         style={{
-          listStyleType: 'disc'
+          listStyleType: 'disc',
+          marginLeft: '17px'
         }}
         className='HelpPopupProjectsContent__list'
       >
         <li className='HelpPopupProjectsContent__item'>
-          <code>btc moon</code> will search for exact phrase
+          <code>btc moon</code> will search for the exact phrase
         </li>
         <li className='HelpPopupProjectsContent__item'>
           <code>btc AND moon</code> will search for btc and moon in the same
@@ -23,7 +24,7 @@ const HelpPopupTrends = ({ className }) => (
           <code>btc OR moon</code> will search for either btc or moon
         </li>
         <li className='HelpPopupProjectsContent__item'>
-          You can use more complex query:{' '}
+          You can use a more complex query:{' '}
           <pre>
             <code>(btc OR moon) AND something</code>
           </pre>

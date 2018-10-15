@@ -2,8 +2,8 @@ import React from 'react'
 import HelpPopup from './../../components/HelpPopup/HelpPopup'
 import './../../components/HelpPopup/HelpPopupProjectsContent.css'
 
-const HelpPopupTrends = () => (
-  <HelpPopup>
+const HelpPopupTrends = ({ className }) => (
+  <HelpPopup className={className}>
     <div className='HelpPopupProjectsContent'>
       <p>Enter a single word, or a phrase in these formats:</p>
       <ul

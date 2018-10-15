@@ -5,6 +5,15 @@ exports[`TrendsExplorePage smoke 1`] = `
   className="TrendsExplorePage"
 >
   <div
+    style={
+      Object {
+        "textAlign": "center",
+      }
+    }
+  >
+    <TrendsPageTitleWithPopup />
+  </div>
+  <div
     className="TrendsExplorePage__content"
   >
     <TrendsExploreHeader />
@@ -44,24 +53,6 @@ exports[`TrendsExplorePage smoke 1`] = `
             ]
           }
         />
-        <SmoothDropdown>
-          <SmoothDropdownItem
-            trigger={
-              <Button
-                as="button"
-                basic={true}
-                className="link"
-                icon="share alternate"
-                role="button"
-              />
-            }
-          >
-            <ShareOptions
-              title="Crypto Social Trends for \\"undefined\\""
-              url="http://localhost/"
-            />
-          </SmoothDropdownItem>
-        </SmoothDropdown>
       </div>
     </div>
     <Apollo(Apollo(Apollo(GetTrends)))

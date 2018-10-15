@@ -1,5 +1,5 @@
 import React from 'react'
-import Assets from './../pages/assets/Assets'
+import Assets from './../pages/Assets/Assets'
 import EthSpentTable from './../components/EthSpentTable'
 
 const EthSpent = () => (

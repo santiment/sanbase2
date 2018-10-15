@@ -3,7 +3,7 @@ import { Popup } from 'semantic-ui-react'
 import HelpPopupIcon from './HelpPopupIcon'
 
 export const style = {
-  maxWidth: 417,
+  maxWidth: 465,
   padding: '2rem 1.8rem'
 }
 

@@ -57,10 +57,15 @@ export class Selector extends Component {
 
   render () {
     const { selected } = this.state
-    const { options, disabled } = this.props
+    const { options, disabled, className } = this.props
     const nameOptions = this.props.nameOptions || options
     return (
-      <div className='selector'>
+      <div
+        className={cx({
+          selector: true,
+          [className]: className
+        })}
+      >
         {options.map((option, index) => (
           <SelectorItem
             key={option}

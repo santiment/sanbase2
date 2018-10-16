@@ -1,0 +1,9 @@
+.AssetsChart {
+  background: rgba(245, 249, 255, 0.6);
+  position: relative;
+  padding: 0;
+}
+
+.AssetsChartPanel {
+  padding: 0;
+}

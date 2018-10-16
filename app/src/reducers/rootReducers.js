@@ -16,6 +16,9 @@ import notification, {
 import watchlistUi, {
   initialState as initialWatchlistUiState
 } from './watchlist-ui'
+import assetsChart, {
+  initialState as initialAssetsChart
+} from './../components/AssetsChart/AssetsChart.reducers'
 
 export const intitialState = {
   user: userState,
@@ -26,7 +29,8 @@ export const intitialState = {
   watchlistUi: initialWatchlistUiState,
   rootUi: rootUiState,
   notification: initialNotificationState,
-  router: routerReducer
+  router: routerReducer,
+  assetsChart: initialAssetsChart
 }
 
 export default combineReducers({
@@ -37,5 +41,6 @@ export default combineReducers({
   detailedPageUi,
   insightsPageUi,
   watchlistUi,
-  notification
+  notification,
+  assetsChart
 })

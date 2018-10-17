@@ -33,7 +33,7 @@ const mapStateToProps = ({ assetsChart }) => ({
 })
 
 const mapDispatchToProps = dispatch => ({
-  handleSelectTimeRange: timeRange => dispatch(selectTimeRange(timeRange)),
+  handleSelectTimeRange: timeRange => dispatch(selectTimeRange({ timeRange })),
   handleSelectCurrency: currency => dispatch(selectCurrency(currency))
 })
 

@@ -3,6 +3,7 @@ import moment from 'moment'
 // Actions
 export const ASSETS_CHART_SELECT_TIMERANGE = '[assets-chart] SELECT_TIMERANGE'
 export const ASSETS_CHART_SELECT_CURRENCY = '[assets-chart] SELECT_CURRENCY'
+export const ASSETS_CHART_TOGGLE_VOLUME = '[assets-chart] TOGGLE_VOLUME'
 
 export const selectTimeRange = ({ timeRange }) => {
   const { from, to, minInterval } = makeIntervalBounds(timeRange)
@@ -31,7 +32,8 @@ export const selectCurrency = currency => ({
 
 export const initialState = {
   timeRange: 'all',
-  currency: 'USD'
+  currency: 'USD',
+  isToggledVolume: true
 }
 
 export default (state = initialState, action) => {
@@ -48,6 +50,11 @@ export default (state = initialState, action) => {
       return {
         ...state,
         currency: action.currency
+      }
+    case ASSETS_CHART_TOGGLE_VOLUME:
+      return {
+        ...state,
+        isToggledVolume: !state.isToggledVolume
       }
     default:
       return state

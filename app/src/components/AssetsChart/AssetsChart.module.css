@@ -5,5 +5,12 @@
 }
 
 .AssetsChartPanel {
-  padding: 0;
+  padding: 0 !important;
+}
+
+@media (max-width: 1024px) {
+  .AssetsChartPanel {
+    border-radius: 0;
+    box-shadow: none;
+  }
 }

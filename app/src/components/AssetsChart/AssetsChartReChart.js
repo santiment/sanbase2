@@ -4,13 +4,19 @@ import { compose, branch, renderComponent } from 'recompose'
 import {
   ResponsiveContainer,
   ComposedChart,
+  BarChart,
+  Bar,
   Line,
+  Area,
   CartesianGrid,
   XAxis,
-  YAxis,
-  Tooltip
+  YAxis
 } from 'recharts'
 import { formatterCurrency } from './../../utils/formatting'
+import volumeChart from './VolumeChart'
+import datetimeXAxis from './DatetimeXAxis'
+import priceChart from './PriceChart'
+import tooltip from './Tooltip'
 
 const ASSET_PRICE_COLOR = '#a4acb7'
 
@@ -35,47 +41,31 @@ const displayEmptyState = branch(
   renderComponent(Empty)
 )
 
-const xAxisTickFormatter = timeStr => moment(timeStr).format('DD MMM YY')
 const yAxisTickFormatter = selectedCurrency => price =>
   formatterCurrency(price, selectedCurrency)
 const TooltipFormatter = date => moment(date).format('dddd, MMM DD YYYY')
 
-const priceLine = ({ selectedCurrency }) => (
-  <Line
-    type='linear'
-    yAxisId='axis-price'
-    name={selectedCurrency}
-    dot={false}
-    strokeWidth={2}
-    dataKey={selectedCurrency === 'USD' ? 'priceUsd' : 'priceBtc'}
-    stroke={ASSET_PRICE_COLOR}
-  />
-)
-
 const AssetsChartReChart = ({
   History,
   selectedCurrency,
-  isDesktop = false
+  isDesktop = false,
+  settings = {}
 }) => (
   <div className='TrendsExploreChart'>
     <ResponsiveContainer width='100%' height={300}>
       <ComposedChart
+        syncId={'assets-chart'}
         data={History.items}
         margin={{
           top: 5,
           right: 10,
           left: isDesktop ? 30 : 5,
-          bottom: 5
+          bottom: 0
         }}
       >
-        <CartesianGrid strokeDasharray='3 3' />
-        <XAxis
-          dataKey='datetime'
-          tickLine={false}
-          tickMargin={5}
-          minTickGap={100}
-          tickFormatter={xAxisTickFormatter}
-        />
+        <CartesianGrid strokeDasharray='9 9' />
+        {datetimeXAxis({ hide: true })}
+        <XAxis hide />
         <YAxis
           yAxisId='axis-price'
           type='number'
@@ -84,13 +74,12 @@ const AssetsChartReChart = ({
           tickFormatter={yAxisTickFormatter(selectedCurrency)}
           domain={['dataMin', 'dataMax']}
         />
-        <Tooltip
-          labelFormatter={TooltipFormatter}
-          formatter={formatterCurrency}
-        />
-        {priceLine({ selectedCurrency })}
+        {tooltip()}
+        {priceChart({ selectedCurrency })}
       </ComposedChart>
     </ResponsiveContainer>
+    {settings.isToggledVolume &&
+      volumeChart({ selectedCurrency, isDesktop, data: History.items })}
   </div>
 )
 

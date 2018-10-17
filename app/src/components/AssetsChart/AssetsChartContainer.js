@@ -21,10 +21,11 @@ class AssetsChartContainer extends React.Component {
         isLoading: false,
         isEmpty: true
       },
-      currency
+      currency,
+      ...rest
     } = this.props
 
-    return render({ Project, History, currency })
+    return render({ Project, History, currency, ...rest })
   }
 }
 
@@ -33,7 +34,10 @@ const mapStateToProps = ({ assetsChart }) => ({
   from: assetsChart.from,
   to: assetsChart.to,
   interval: assetsChart.interval,
-  currency: assetsChart.currency
+  currency: assetsChart.currency,
+  settings: {
+    isToggledVolume: assetsChart.isToggledVolume
+  }
 })
 
 const mapDispatchToProps = dispatch => ({

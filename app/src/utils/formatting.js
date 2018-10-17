@@ -9,6 +9,17 @@ const getSymbolByCurrency = currency => {
   return '$'
 }
 
+const formatterCurrency = (value, name) => {
+  switch (name) {
+    case 'BTC':
+      return formatBTC(value)
+    case 'USD':
+      return formatNumber(value, { currency: 'USD' })
+    default:
+      return value
+  }
+}
+
 const formatBTC = price => {
   price = parseFloat(price)
   const precision = price >= 1 ? 2 : 8
@@ -65,5 +76,6 @@ export {
   formatSAN,
   formatNumber,
   millify,
-  getSymbolByCurrency
+  getSymbolByCurrency,
+  formatterCurrency
 }

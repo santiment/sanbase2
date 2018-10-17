@@ -28,7 +28,7 @@ import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/Assets/AssetsPage'
 import AssetsChart from './components/AssetsChart/AssetsChart'
-import { getConsentUrl } from './utils/utils'
+import { getConsentUrl, mapSizesToProps } from './utils/utils'
 import './App.scss'
 
 const LoadableDetailedPage = Loadable({
@@ -260,17 +260,11 @@ export const App = ({
   </div>
 )
 
-const mapStateToProps = state => {
-  return {
-    isLoggedIn: !!state.user.token,
-    isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
-    isOffline: !state.rootUi.isOnline,
-    hasUsername: !!state.user.data.username
-  }
-}
-
-export const mapSizesToProps = ({ width }) => ({
-  isDesktop: width > 768
+const mapStateToProps = state => ({
+  isLoggedIn: !!state.user.token,
+  isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
+  isOffline: !state.rootUi.isOnline,
+  hasUsername: !!state.user.data.username
 })
 
 const enchance = compose(

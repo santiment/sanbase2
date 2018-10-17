@@ -156,6 +156,10 @@ const getTimeFromFromString = (time = '1y') => {
 
 const capitalizeStr = string => string.charAt(0).toUpperCase() + string.slice(1)
 
+const mapSizesToProps = ({ width }) => ({
+  isDesktop: width > 768
+})
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
@@ -169,5 +173,6 @@ export {
   getStartOfTheDay,
   mergeTimeseriesByKey,
   getTimeFromFromString,
-  capitalizeStr
+  capitalizeStr,
+  mapSizesToProps
 }

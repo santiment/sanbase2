@@ -20,10 +20,11 @@ class AssetsChartContainer extends React.Component {
         items: [],
         isLoading: false,
         isEmpty: true
-      }
+      },
+      currency
     } = this.props
 
-    return render({ Project, History })
+    return render({ Project, History, currency })
   }
 }
 

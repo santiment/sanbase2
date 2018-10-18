@@ -4,10 +4,6 @@
   width: 250px;
 }
 
-.wrapper h3:first-child {
-  padding-top: 22px;
-}
-
 .wrapper h3 {
   margin-left: 25px;
   margin-bottom: 5px;
@@ -16,6 +12,10 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   color: rgb(135, 138, 140);
+}
+
+.wrapper h3:first-child {
+  padding-top: 22px;
 }
 
 .wrapper img {

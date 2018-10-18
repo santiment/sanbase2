@@ -39,13 +39,11 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => {
         >
           ETH Spent
         </Link>
-        {isLoggedIn && (
-          <WatchlistsPopup
-            isNavigation
-            isLoggedIn={isLoggedIn}
-            trigger={MyListBtn}
-          />
-        )}
+        <WatchlistsPopup
+          isNavigation
+          isLoggedIn={isLoggedIn}
+          trigger={MyListBtn}
+        />
       </div>
     </div>
   )

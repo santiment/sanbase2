@@ -4,8 +4,11 @@
   width: 250px;
 }
 
-.wrapper h3 {
+.wrapper h3:first-child {
   padding-top: 22px;
+}
+
+.wrapper h3 {
   margin-left: 25px;
   margin-bottom: 5px;
   text-transform: uppercase;
@@ -45,6 +48,11 @@
 .button span:first-child {
   display: flex;
   align-items: center;
+}
+
+.amount {
+  float: right;
+  font-size: 13px;
 }
 
 .divider {

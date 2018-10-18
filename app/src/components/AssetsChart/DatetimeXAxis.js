@@ -6,7 +6,10 @@ const xAxisTickFormatter = timeStr => moment(timeStr).format('DD MMM YY')
 
 const datetimeXAxis = (props = { hide: false }) => (
   <XAxis
+    xAxisId='axis-datetime'
     dataKey='datetime'
+    allowDataOverflow
+    // scale={'utcTime'}
     hide={props.hide}
     tickLine={false}
     tickMargin={5}

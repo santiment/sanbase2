@@ -15,11 +15,13 @@ const volumeChart = ({ data, isDesktop, selectedCurrency }) => (
       }}
       data={data}
     >
-      <YAxis />
+      <YAxis yAxisId={'axis-volume'} domain={['dataMin', 'dataMax']} />
       {tooltip()}
       {datetimeXAxis()}
       <Bar
         fill='#a4acb7'
+        xAxisId='axis-datetime'
+        yAxisId='axis-volume'
         dataKey={selectedCurrency === 'USD' ? 'volume' : 'volumeBTC'}
       />
     </BarChart>

@@ -175,6 +175,13 @@ describe('mergeTimeseriesByKey', () => {
     }
   ]
 
+  const ts4 = [
+    {
+      value3: 3,
+      datetime: '2018-02-20T00:00:00Z'
+    }
+  ]
+
   it('should merge 2 timeseries properly', () => {
     const goodMerged = [
       {
@@ -222,6 +229,29 @@ describe('mergeTimeseriesByKey', () => {
 
     const expected = mergeTimeseriesByKey({
       timeseries: [ts1, ts2, ts3],
+      key: 'datetime'
+    })
+    expect(expected).toEqual(goodMerged)
+  })
+
+  it('should merge timeseries properly', () => {
+    const goodMerged = [
+      {
+        value3: 3,
+        datetime: '2018-02-20T00:00:00Z'
+      },
+      {
+        value3: 3,
+        datetime: '2018-06-20T00:00:00Z'
+      },
+      {
+        value3: 3,
+        datetime: '2018-07-20T00:00:00Z'
+      }
+    ]
+
+    const expected = mergeTimeseriesByKey({
+      timeseries: [ts3, ts4],
       key: 'datetime'
     })
     expect(expected).toEqual(goodMerged)

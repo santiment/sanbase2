@@ -5,7 +5,7 @@ import { connect } from 'react-redux'
 import { compose } from 'recompose'
 import { selectTimeRange } from './AssetsChart.reducers.js'
 import { calculateBTCVolume, calculateBTCMarketcap } from './../../utils/utils'
-import { projectBySlugGQL, historyPriceGQL } from './gql'
+import { projectBySlugGQL, historyPriceGQL, tokenAgeGQL } from './gql'
 
 class AssetsChartContainer extends React.Component {
   componentDidMount () {
@@ -25,7 +25,7 @@ class AssetsChartContainer extends React.Component {
       ...rest
     } = this.props
 
-    return render({ Project, History, currency, ...rest })
+    return render({ Project, History, selectedCurrency: currency, ...rest })
   }
 }
 
@@ -66,6 +66,7 @@ const mapHistoryPriceDataToProps = ({ HistoryPrice }) => {
       const marketcapBTC = calculateBTCMarketcap(item)
       return {
         ...item,
+        datetime: moment.utc(item.datetime).valueOf(),
         volumeBTC,
         marketcapBTC,
         volume,
@@ -81,6 +82,29 @@ const mapHistoryPriceDataToProps = ({ HistoryPrice }) => {
     }
   }
 }
+
+const mapTokenAgeDataToProps = ({ TokenAge }) => {
+  const items = TokenAge.burnRate
+    ? TokenAge.burnRate.filter(item => item.burnRate > 0).map(item => ({
+      ...item,
+      datetime: moment.utc(item.datetime).valueOf()
+    }))
+    : []
+  return {
+    TokenAge: {
+      items,
+      isLoading: TokenAge.loading,
+      isEmpty: items.length === 0
+    }
+  }
+}
+
+const skip = ({ from, slug }) => !from || !slug
+
+const defaultOptions = ({ from, to, slug }) => ({
+  errorPolicy: 'all',
+  variables: { from, to, slug }
+})
 
 const enhance = compose(
   connect(
@@ -118,15 +142,14 @@ const enhance = compose(
   graphql(historyPriceGQL, {
     name: 'HistoryPrice',
     props: mapHistoryPriceDataToProps,
-    skip: ({ from, slug }) => !from || !slug,
-    options: ({ from, to, slug }) => ({
-      errorPolicy: 'all',
-      variables: {
-        from,
-        to,
-        slug
-      }
-    })
+    skip,
+    options: defaultOptions
+  }),
+  graphql(tokenAgeGQL, {
+    name: 'TokenAge',
+    props: mapTokenAgeDataToProps,
+    skip,
+    options: defaultOptions
   })
 )
 

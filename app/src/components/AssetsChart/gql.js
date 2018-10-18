@@ -107,3 +107,18 @@ export const historyPriceGQL = gql`
     }
   }
 `
+
+export const tokenAgeGQL = gql`
+  query tokenAgeGQL(
+    $slug: String
+    $from: DateTime
+    $to: DateTime
+    $interval: String
+  ) {
+    burnRate(slug: $slug, from: $from, to: $to, interval: $interval) {
+      datetime
+      burnRate
+      __typename
+    }
+  }
+`

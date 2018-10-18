@@ -117,22 +117,53 @@ const getStartOfTheDay = () => {
 }
 
 const mergeTimeseriesByKey = ({ timeseries, key }) => {
-  const longestTS = timeseries.reduce((acc, val) => {
-    return acc.length > val.length ? acc : val
+  let merged = timeseries.reduce((acc, val) => {
+    return (acc = [...acc, ...val])
   }, [])
-  return longestTS.map(data => {
-    return timeseries.reduce(
-      (acc, val) => {
-        return {
-          ...acc,
-          ...val.find(data2 => data2[key] === data[key])
-        }
-      },
-      {
-        ...data
-      }
-    )
+  merged.sort((a, b) => {
+    if (a[key] > b[key]) {
+      return 1
+    }
+    if (a[key] < b[key]) {
+      return -1
+    }
+    return 0
   })
+  const result = merged.reduce((acc, val, index, arr) => {
+    const cursor = val[key]
+    if (acc.length > 0 && acc[acc.length - 1][key] === cursor) {
+      return acc
+    }
+    let mergedValue = { ...val }
+    for (let i = index + 1; i < arr.length; i++) {
+      if (arr[i][key] === cursor) {
+        mergedValue = { ...arr[i], ...mergedValue }
+      } else {
+        break
+      }
+    }
+    acc.push(mergedValue)
+    return acc
+  }, [])
+
+  return result
+
+  // const longestTS = timeseries.reduce((acc, val) => {
+  // return acc.length > val.length ? acc : val
+  // }, [])
+  // return longestTS.map(data => {
+  // return timeseries.reduce(
+  // (acc, val) => {
+  // return {
+  // ...acc,
+  // ...val.find(data2 => data2[key] === data[key])
+  // }
+  // },
+  // {
+  // ...data
+  // }
+  // )
+  // })
 }
 
 const getTimeFromFromString = (time = '1y') => {

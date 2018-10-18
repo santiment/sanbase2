@@ -14,13 +14,8 @@ const AssetsChart = ({ slug = 'santiment', isDesktop }) => (
       <AssetsChartHeader />
       <AssetsChartContainer
         slug={slug}
-        render={({ Project, History, currency, settings }) => (
-          <AssetsChartReChart
-            isDesktop={isDesktop}
-            History={History}
-            selectedCurrency={currency}
-            settings={settings}
-          />
+        render={props => (
+          <AssetsChartReChart isDesktop={isDesktop} {...props} />
         )}
       />
       <AssetsChartFooter />

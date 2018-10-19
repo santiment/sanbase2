@@ -89,7 +89,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
-  def combined_volume_mcap(_root, %{slugs: slugs} = args, _context) do
+  def projects_group_stats(_root, %{slugs: slugs} = args, _context) do
     with {:ok, measurement_str} <- Measurement.measurement_str_from_slugs(slugs),
          {:ok, combined_volume, combined_mcap} <-
            Sanbase.Prices.Store.fetch_combined_vol_mcap(

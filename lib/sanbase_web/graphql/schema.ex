@@ -170,12 +170,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&PriceResolver.ohlc/3)
     end
 
-    field :combined_volume_mcap, list_of(:volume_mcap) do
+    field :projects_group_stats, list_of(:group_stats) do
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&PriceResolver.combined_volume_mcap/3)
+      cache_resolve(&PriceResolver.projects_group_stats/3)
     end
 
     @desc "Returns a list of available github repositories."

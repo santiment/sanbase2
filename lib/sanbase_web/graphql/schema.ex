@@ -170,6 +170,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&PriceResolver.ohlc/3)
     end
 
+    @desc ~s"""
+    Fetch combined stats for a given list of project's slugs
+    """
     field :projects_group_stats, list_of(:group_stats) do
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))

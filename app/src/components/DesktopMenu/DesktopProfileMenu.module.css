@@ -50,8 +50,20 @@
   align-items: center;
 }
 
+.item {
+  display: flex;
+  justify-content: space-between;
+}
+
+.name {
+  display: inline-block !important;
+  max-width: 90%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
 .amount {
-  float: right;
   font-size: 13px;
 }
 

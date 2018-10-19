@@ -1,15 +1,15 @@
 import React, { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { graphql } from 'react-apollo'
+import { connect } from 'react-redux'
+import { compose } from 'recompose'
 import { WatchlistGQL } from '../WatchlistPopup/WatchlistGQL'
 
 import styles from './DesktopProfileMenu.module.css'
 
-DesktopWatchlistSubmenu.defaultProps = {
-  watchlists: []
-}
+const MAX_ITEMS_NUMBER = 3
 
-function DesktopWatchlistSubmenu ({ watchlists }) {
+const DesktopWatchlistSubmenu = ({ watchlists }) => {
   if (watchlists.length === 0) {
     return null
   }
@@ -25,10 +25,10 @@ function DesktopWatchlistSubmenu ({ watchlists }) {
       {watchlists.map(({ name, id, listItems }) => (
         <Link
           key={id}
-          className={styles.button}
+          className={`${styles.button} ${styles.item}`}
           to={`/assets/list?name=${name}@${id}`}
         >
-          {name}
+          <span className={styles.name}>{name}</span>
           <span className={styles.amount}>{listItems.length}</span>
         </Link>
       ))}
@@ -36,15 +36,28 @@ function DesktopWatchlistSubmenu ({ watchlists }) {
   )
 }
 
-export default graphql(WatchlistGQL, {
-  name: 'Watchlists',
-  options: ({ isLoggedIn }) => ({
-    skip: !isLoggedIn
-  }),
-  props: ({ Watchlists }) => {
-    const { fetchUserLists = [] } = Watchlists
-    return {
-      watchlists: fetchUserLists.slice(0, 3)
-    }
+DesktopWatchlistSubmenu.defaultProps = {
+  watchlists: []
+}
+
+const mapStateToProps = state => {
+  return {
+    isLoggedIn: !!state.user.token
   }
-})(DesktopWatchlistSubmenu)
+}
+
+const enhance = compose(
+  connect(mapStateToProps),
+  graphql(WatchlistGQL, {
+    name: 'Watchlists',
+    skip: ({ isLoggedIn }) => !isLoggedIn,
+    props: ({ Watchlists }) => {
+      const { fetchUserLists = [] } = Watchlists
+      return {
+        watchlists: fetchUserLists.slice(0, MAX_ITEMS_NUMBER)
+      }
+    }
+  })
+)
+
+export default enhance(DesktopWatchlistSubmenu)

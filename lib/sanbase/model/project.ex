@@ -499,6 +499,9 @@ defmodule Sanbase.Model.Project do
       )
       |> Repo.one()
 
+    # nil will break the regex
+    github_link = github_link || ""
+
     case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
       [_, github_path] ->
         org =

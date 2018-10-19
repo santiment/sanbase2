@@ -17,4 +17,9 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
     field(:low_price_usd, :float)
     field(:close_price_usd, :float)
   end
+
+  object :volume_mcap do
+    field(:volume, :float)
+    field(:marketcap, :float)
+  end
 end

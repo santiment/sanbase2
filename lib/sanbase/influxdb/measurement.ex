@@ -68,6 +68,19 @@ defmodule Sanbase.Influxdb.Measurement do
     end
   end
 
+  def measurement_str_from_slugs(slugs) do
+    measurements_list =
+      slugs
+      |> Enum.map(&Measurement.name_from_slug/1)
+      |> Enum.reject(&is_nil/1)
+
+    if Enum.count(measurements_list) > 0 do
+      {:ok, measurements_list |> Enum.join(", ")}
+    else
+      nil
+    end
+  end
+
   # Private functions
 
   defp format_timestamp(%DateTime{} = datetime) do

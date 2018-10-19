@@ -89,6 +89,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
+  def combined_volume_mcap(_root, %{slugs: slugs} = args, _context) do
+    with {:ok, measurement_str} <- Measurement.measurement_str_from_slugs(slugs),
+         {:ok, combined_volume, combined_mcap} <-
+           Sanbase.Prices.Store.fetch_combined_vol_mcap(
+             measurement_str,
+             args.from,
+             args.to
+           ) do
+      {:ok,
+       %{
+         volume: combined_volume,
+         marketcap: combined_mcap
+       }}
+    else
+      _ ->
+        {:error, "Can't fetch combined volume and marketcap for slugs: #{slugs}"}
+    end
+  end
+
   # Private functions
 
   defp total_market_history_price_on_load(loader, args) do

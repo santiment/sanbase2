@@ -175,7 +175,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      resolve(&PriceResolver.combined_volume_mcap/3)
+      cache_resolve(&PriceResolver.combined_volume_mcap/3)
     end
 
     @desc "Returns a list of available github repositories."

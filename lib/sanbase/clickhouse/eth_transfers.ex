@@ -24,12 +24,9 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   use Ecto.Schema
 
   require Logger
-  require Sanbase.ClickhouseRepo
-
-  import Ecto.Query
+  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   alias __MODULE__
-  alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
 
   @table "eth_transfers"
@@ -305,16 +302,4 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     %{datetime: datetime, eth_spent: total_eth_spent}
   end
-
-  defp divide_by_eth_decimals({:ok, transfers} = tuple) do
-    transfers =
-      transfers
-      |> Enum.map(fn %EthTransfers{trx_value: trx_value} = eth_transfer ->
-        %EthTransfers{eth_transfer | trx_value: trx_value / @eth_decimals}
-      end)
-
-    {:ok, transfers}
-  end
-
-  defp divide_by_eth_decimals(data), do: data
 end

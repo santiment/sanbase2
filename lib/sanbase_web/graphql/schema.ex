@@ -229,6 +229,22 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&GithubResolver.activity/3)
     end
 
+    @desc ~s"""
+    test
+    """
+    field :github_activity2, list_of(:activity_point) do
+      arg(:slug, :string)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string)
+      arg(:transform, :string, default_value: "None")
+      arg(:moving_average_interval_base, :string, default_value: "1w")
+
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
+
+      cache_resolve(&GithubResolver.activity2/3)
+    end
+
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
     field :twitter_data, :twitter_data do
       arg(:ticker, non_null(:string))

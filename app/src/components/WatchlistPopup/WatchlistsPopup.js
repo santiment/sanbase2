@@ -6,6 +6,7 @@ import moment from 'moment'
 import { Popup, Button } from 'semantic-ui-react'
 import { WatchlistGQL } from './WatchlistGQL'
 import Watchlists, { hasAssetById } from './Watchlists'
+import WatchlistsAnon from './WatchlistsAnon'
 import * as actions from './../../actions/types'
 import './WatchlistsPopup.css'
 
@@ -34,17 +35,21 @@ const WatchlistPopup = ({
     <Popup
       className='watchlists-popup'
       content={
-        <Watchlists
-          isNavigation={isNavigation}
-          isLoading={isLoading}
-          projectId={projectId}
-          createWatchlist={createWatchlist}
-          removeAssetList={removeAssetList}
-          toggleAssetInList={toggleAssetInList}
-          watchlistUi={watchlistUi}
-          slug={slug}
-          lists={lists}
-        />
+        isLoggedIn ? (
+          <Watchlists
+            isNavigation={isNavigation}
+            isLoading={isLoading}
+            projectId={projectId}
+            createWatchlist={createWatchlist}
+            removeAssetList={removeAssetList}
+            toggleAssetInList={toggleAssetInList}
+            watchlistUi={watchlistUi}
+            slug={slug}
+            lists={lists}
+          />
+        ) : (
+          <WatchlistsAnon />
+        )
       }
       trigger={trigger}
       position='bottom center'

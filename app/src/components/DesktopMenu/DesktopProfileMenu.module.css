@@ -5,7 +5,6 @@
 }
 
 .wrapper h3 {
-  padding-top: 22px;
   margin-left: 25px;
   margin-bottom: 5px;
   text-transform: uppercase;
@@ -13,6 +12,10 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   color: rgb(135, 138, 140);
+}
+
+.wrapper h3:first-child {
+  padding-top: 22px;
 }
 
 .wrapper img {
@@ -45,6 +48,23 @@
 .button span:first-child {
   display: flex;
   align-items: center;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+}
+
+.name {
+  display: inline-block !important;
+  max-width: 90%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.amount {
+  font-size: 13px;
 }
 
 .divider {

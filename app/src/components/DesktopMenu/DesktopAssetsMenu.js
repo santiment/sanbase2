@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import styles from './DesktopProfileMenu.module.css'
+import DesktopWatchlistSubmenu from './DesktopWatchlistSubmenu'
 
 export const DesktopAssetsMenu = () => (
   <div className={styles.wrapper}>
@@ -14,6 +15,8 @@ export const DesktopAssetsMenu = () => (
     <Link className={styles.button} to='/projects/ethereum'>
       ETH Spent
     </Link>
+
+    <DesktopWatchlistSubmenu />
   </div>
 )
 

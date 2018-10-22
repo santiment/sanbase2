@@ -86,26 +86,26 @@ const AssetsChartReChart = ({
         />
         {tooltip()}
         {priceChart({ selectedCurrency, data: chartData })}
-        <Line
-          xAxisId='axis-datetime'
-          connectNulls={true}
-          animationBegin={200}
-          strokeDasharray='2 3 4'
-          yAxisId='axis-burnRate'
-          dot={true}
-          stroke='rgba(252, 138, 23, 0.7)'
-          dataKey={'burnRate'}
-        />
         {
-          // <Bar
+          // <Line
           // xAxisId='axis-datetime'
+          // connectNulls={true}
           // yAxisId='axis-burnRate'
-          /// /dot={false}
-          // fill='rgba(252, 138, 23, 0.7)'
-          /// /minPointSize={5}
-          // barSize={10}
-          /// /background={{ fill: '#eee' }}
+          // dot={true}
+          // stroke='rgba(252, 138, 23, 0.7)'
           // dataKey={'burnRate'} />
+        }
+        {
+          <Bar
+            xAxisId='axis-datetime'
+            yAxisId='axis-burnRate'
+            // dot={false}
+            fill='rgba(252, 138, 23, 0.7)'
+            // minPointSize={5}
+            barSize={10}
+            // background={{ fill: '#eee' }}
+            dataKey={'burnRate'}
+          />
         }
       </ComposedChart>
     </ResponsiveContainer>
@@ -120,12 +120,9 @@ export default compose(
       return { chartData: [] }
     }
     const tokenAge = TokenAge.items || []
-    const normalizeTokenAge = tokenAge.filter((val, i, arr) => {
-      const result = outliers('burnRate')(val, i, arr)
-      console.log(result)
-      return result
-    })
-    console.log(tokenAge, normalizeTokenAge)
+    const normalizeTokenAge = tokenAge.filter((val, i, arr) =>
+      outliers('burnRate')(val, i, arr)
+    )
     const history = History.items || []
     const chartData = mergeTimeseriesByKey({
       timeseries: [normalizeTokenAge, history],

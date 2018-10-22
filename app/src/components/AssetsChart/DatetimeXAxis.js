@@ -9,7 +9,6 @@ const datetimeXAxis = (props = { hide: false }) => (
     xAxisId='axis-datetime'
     dataKey='datetime'
     allowDataOverflow
-    // scale={'utcTime'}
     hide={props.hide}
     tickLine={false}
     tickMargin={5}

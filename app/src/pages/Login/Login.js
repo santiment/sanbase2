@@ -37,7 +37,7 @@ const AuthProvider = ({ children, gotoBack }) => {
       <h2>Authenticate</h2>
       {children}
       <Button className='auth-goto-back-button' onClick={gotoBack} basic>
-        <Icon name='long arrow left' /> All login options
+        <Icon name='long arrow alternate left' /> All login options
       </Button>
     </Fragment>
   )
@@ -84,7 +84,7 @@ const ChooseAuthProvider = ({
         prevAuthProvider={prevAuthProvider}
       >
         <Button onClick={gotoEmail} basic className='sign-in-btn'>
-          <Icon size='large' name='mail outline' />
+          <Icon size='large' name='mail' />
           &nbsp;
           <span>Login with email</span>
         </Button>
@@ -96,8 +96,8 @@ const ChooseAuthProvider = ({
       <Icon name='signal' style={{ color: '#bbb' }} /> See more crypto data and
       insights.
       <br />
-      <Icon name='heart empty' style={{ color: '#bbb' }} /> Vote on all your
-      favorite insights and more.
+      <Icon name='heart' style={{ color: '#bbb' }} /> Vote on all your favorite
+      insights and more.
     </p>
   </Fragment>
 )

@@ -71,14 +71,14 @@ defmodule Sanbase.Influxdb.Measurement do
   @doc ~s"""
     convert a list of slugs to comma separated measurements string 
   """
-  def measurement_str_from_slugs(slugs) do
-    measurements_list =
-      slugs
-      |> Enum.map(&Measurement.name_from_slug/1)
-      |> Enum.reject(&is_nil/1)
+  def measurement_slug_map_from(slugs) do
+    measurement_slug_map =
+      Project.tickers_by_slug_list(slugs)
+      |> Enum.map(fn [ticker, slug] -> [ticker <> "_" <> slug, slug] end)
+      |> Enum.reduce(%{}, fn [measurement, slug], acc -> Map.put(acc, measurement, slug) end)
 
-    if Enum.count(measurements_list) > 0 do
-      {:ok, measurements_list |> Enum.join(", ")}
+    if Enum.count(Map.keys(measurement_slug_map)) > 0 do
+      {:ok, measurement_slug_map}
     else
       nil
     end

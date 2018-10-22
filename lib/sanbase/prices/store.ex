@@ -192,6 +192,11 @@ defmodule Sanbase.Prices.Store do
     values = series |> Enum.map(& &1.values)
     combined_volume = values |> Enum.reduce(0, fn [[_, vol, _]], acc -> acc + vol end)
     combined_mcap = values |> Enum.reduce(0, fn [[_, _, mcap]], acc -> acc + mcap end)
-    {:ok, combined_volume, combined_mcap}
+    marketcap_values = values |> Enum.map(fn [[_, _, mcap]] -> mcap end)
+
+    marketcap_percent =
+      marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 2) end)
+
+    {:ok, combined_volume, combined_mcap, marketcap_percent}
   end
 end

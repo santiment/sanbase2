@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   def projects_group_stats(_root, %{slugs: slugs} = args, _context) do
     with {:ok, measurement_str} <- Measurement.measurement_str_from_slugs(slugs),
-         {:ok, combined_volume, combined_mcap} <-
+         {:ok, combined_volume, combined_mcap, marketcap_percent} <-
            Sanbase.Prices.Store.fetch_combined_vol_mcap(
              measurement_str,
              args.from,
@@ -100,7 +100,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       {:ok,
        %{
          volume: combined_volume,
-         marketcap: combined_mcap
+         marketcap: combined_mcap,
+         marketcap_percent: marketcap_percent
        }}
     else
       _ ->

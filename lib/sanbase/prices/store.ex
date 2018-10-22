@@ -124,6 +124,12 @@ defmodule Sanbase.Prices.Store do
     |> combine_results_multiple_measurements(measurement_slug_map)
   end
 
+  def volume_over_threshold(measurements, from, to, threshold) do
+    mean_volume_for_period_query(measurements, from, to)
+    |> Store.query()
+    |> filter_volume_over_threshold(threshold)
+  end
+
   def all_with_data_after_datetime(datetime) do
     datetime_unix_ns = DateTime.to_unix(datetime, :nanoseconds)
 
@@ -134,6 +140,26 @@ defmodule Sanbase.Prices.Store do
   end
 
   # Helper functions
+
+  defp filter_volume_over_threshold(
+         %{
+           results: [
+             %{
+               series: [_ | _] = series
+             }
+           ]
+         },
+         threshold
+       ) do
+    series
+    |> Enum.map(fn %{name: name, values: [[_datetime, volume]]} ->
+      {name, volume}
+    end)
+    |> Enum.reject(fn {_, volume} -> volume < threshold end)
+    |> Enum.map(fn {name, _} -> name end)
+  end
+
+  defp filter_volume_over_threshold(_, _), do: []
 
   defp fetch_query(measurement, from, to) do
     ~s/SELECT time, price_usd, price_btc, marketcap_usd, volume_usd
@@ -212,4 +238,11 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp combine_results_multiple_measurements(_, _), do: {:error, nil}
+
+  defp mean_volume_for_period_query(measurements, from, to) do
+    ~s/SELECT MEAN(volume_usd) as volume
+    FROM #{measurements}
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
 end

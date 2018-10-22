@@ -19,6 +19,7 @@ defmodule Sanbase.Application do
 
         # Start the Postgres Ecto repository
         Sanbase.Repo,
+        Sanbase.Scheduler,
 
         # Start the TimescaleDB Ecto repository
         Sanbase.TimescaleRepo,

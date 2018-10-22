@@ -50,7 +50,8 @@ config :logger, :console,
   format: {Sanbase.Utils.JsonLogger, :format},
   metadata: [:request_id],
   handle_otp_reports: true,
-  handle_sasl_reports: true
+  handle_sasl_reports: true,
+  level: :debug
 
 # Error tracking
 config :sentry,
@@ -136,6 +137,15 @@ config :sanbase, Sanbase.Discourse,
   url: {:system, "DISCOURSE_URL", "https://discourse.stage.internal.santiment.net/"},
   api_key: {:system, "DISCOURSE_API_KEY"},
   insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "sanbaseinsights"}
+
+config :sanbase, Sanbase.Scheduler,
+  global: true,
+  jobs: [
+    daa_signal: [
+      schedule: "35 10 * * *",
+      task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
+    ]
+  ]
 
 # Import configs
 import_config "ex_admin_config.exs"

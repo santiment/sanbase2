@@ -116,6 +116,12 @@ defmodule Sanbase.Prices.Store do
     |> parse_time_series()
   end
 
+  def fetch_combined_vol_mcap(measurements_str, from, to) do
+    fetch_combined_vol_mcap_query(measurements_str, from, to)
+    |> Store.query()
+    |> combine_results_multiple_measurements()
+  end
+
   def all_with_data_after_datetime(datetime) do
     datetime_unix_ns = DateTime.to_unix(datetime, :nanoseconds)
 
@@ -172,5 +178,20 @@ defmodule Sanbase.Prices.Store do
   defp last_history_datetime_cmc_query(ticker_cmc_id) do
     ~s/SELECT * FROM "#{@last_history_price_cmc_measurement}"
     WHERE ticker_cmc_id = '#{ticker_cmc_id}'/
+  end
+
+  defp fetch_combined_vol_mcap_query(measurements_str, from, to) do
+    ~s/
+      SELECT SUM(volume_usd) as volume_sum, SUM(marketcap_usd) as marketcap_sum
+      FROM #{measurements_str}
+      WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+      AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp combine_results_multiple_measurements(%{results: [%{series: series}]}) do
+    values = series |> Enum.map(& &1.values)
+    combined_volume = values |> Enum.reduce(0, fn [[_, vol, _]], acc -> acc + vol end)
+    combined_mcap = values |> Enum.reduce(0, fn [[_, _, mcap]], acc -> acc + mcap end)
+    {:ok, combined_volume, combined_mcap}
   end
 end

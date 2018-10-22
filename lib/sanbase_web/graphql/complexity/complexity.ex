@@ -14,9 +14,12 @@ defmodule SanbaseWeb.Graphql.Complexity do
   If the logged in user has no SAN tokens or they cannot be fetched, fallback
   to the default complexity calculation
   """
-  def from_to_interval(%{} = args, child_complexity, %Absinthe.Complexity{context: %{auth: %{current_user: user}}}) do
+  def from_to_interval(%{} = args, child_complexity, %Absinthe.Complexity{
+        context: %{auth: %{current_user: user}}
+      }) do
     with {:ok, san_balance} when not is_nil(san_balance) <- Sanbase.Auth.User.san_balance(user) do
       san_balance = Decimal.to_float(san_balance)
+
       if san_balance >= 1000 do
         0
       else

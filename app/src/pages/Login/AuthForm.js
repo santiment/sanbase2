@@ -29,7 +29,7 @@ export default ({ account, error = false, pending = false, handleAuth }) => {
           className='help-arrow-extension'
           size='massive'
           color='orange'
-          name='long arrow up'
+          name='long arrow alternate up'
         />
       )}
       {account && (

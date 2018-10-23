@@ -416,7 +416,7 @@ defmodule Sanbase.Model.Project do
     from(
       p in Sanbase.Model.Project,
       where: p.coinmarketcap_id in ^slugs_list and not is_nil(p.ticker),
-      select: [p.ticker, p.coinmarketcap_id]
+      select: {p.ticker, p.coinmarketcap_id}
     )
     |> Sanbase.Repo.all()
   end

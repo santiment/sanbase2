@@ -139,6 +139,7 @@ config :sanbase, Sanbase.Discourse,
 
 config :sanbase, Sanbase.Scheduler,
   global: true,
+  timeout: 30_000,
   jobs: [
     daa_signal: [
       schedule: "00 12 * * *",

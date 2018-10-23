@@ -8,9 +8,22 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   alias Sanbase.Blockchain.DailyActiveAddresses
 
   def run() do
-    create_daa_signal_payload()
-    |> publish_in_discord()
-    |> case do
+    payload = create_daa_signal_payload()
+
+    if payload do
+      Logger.info("DaaSignal check finished. Content to publish: #{payload}")
+
+      payload
+      |> publish_in_discord()
+      |> check_discord_response()
+    else
+      Logger.info("DaaSignal finished with nothing to publish")
+      :ok
+    end
+  end
+
+  defp check_discord_response(response) do
+    case response do
       {:ok, %HTTPoison.Response{status_code: 204}} ->
         :ok
 
@@ -24,25 +37,30 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     end
   end
 
-  def create_daa_signal_payload() do
-    content =
+  defp create_daa_signal_payload() do
+    projects_to_signal =
       all_projects()
       |> Enum.map(&check_for_project/1)
       |> Enum.reject(&is_nil/1)
-      |> Enum.map(&create_notification_content/1)
-      |> Enum.join("\n")
 
-    Jason.encode!(%{content: content, username: daa_signal_discord_publish_user()})
+    if Enum.count(projects_to_signal) > 0 do
+      content =
+        projects_to_signal
+        |> Enum.map(&create_notification_content/1)
+        |> Enum.join("\n")
+
+      Jason.encode!(%{content: content, username: config_publish_user()})
+    else
+      nil
+    end
   end
 
-  def create_notification_content({project_name, project_slug, base_daa, new_daa}) do
+  defp create_notification_content({project_name, project_slug, base_daa, new_daa}) do
     """
     #{project_name}: Daily Active Addresses has gone up by #{percent_change(new_daa, base_daa)}% : #{
       notification_emoji_up()
     }.
-    DAA for yesterday: #{new_daa}, Average DAA for last #{daa_signal_timeframe_from()} days: #{
-      base_daa
-    }.
+    DAA for yesterday: #{new_daa}, Average DAA for last #{timeframe_from()} days: #{base_daa}.
     More info here: #{project_page(project_slug)}
     """
   end
@@ -58,25 +76,25 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
     Logger.info(
       "DAA signal check: #{project.coinmarketcap_id}, #{base_daa}, #{new_daa}, #{
-        new_daa > daa_signal_change() * base_daa
+        new_daa > config_change() * base_daa
       }"
     )
 
-    if new_daa > daa_signal_change() * base_daa do
+    if new_daa > config_change() * base_daa do
       {project.name, project.coinmarketcap_id, base_daa, new_daa}
     else
       nil
     end
   end
 
-  def all_projects() do
+  defp all_projects() do
     Project
     |> Repo.all()
     |> Enum.filter(fn p -> p.main_contract_address && p.coinmarketcap_id end)
   end
 
   defp publish_in_discord(payload) do
-    http_client().post(discord_webhook_url(), payload, [{"Content-Type", "application/json"}])
+    http_client().post(config_webhook_url(), payload, [{"Content-Type", "application/json"}])
   end
 
   defp notification_emoji_up() do
@@ -91,33 +109,33 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     "https://app.santiment.net" <> "/projects/" <> coinmarketcap_id
   end
 
-  defp discord_webhook_url() do
+  defp config_webhook_url() do
     Config.get(:webhook_url)
   end
 
-  defp daa_signal_discord_publish_user() do
-    Config.get(:daa_signal_discord_publish_user)
+  defp config_publish_user() do
+    Config.get(:publish_user)
   end
 
-  defp daa_signal_timeframe_from() do
-    Config.get(:daa_signal_timeframe_from) |> String.to_integer()
+  defp config_timeframe_from() do
+    Config.get(:timeframe_from) |> String.to_integer()
   end
 
-  defp daa_signal_timeframe_to() do
-    Config.get(:daa_signal_timeframe_to) |> String.to_integer()
+  defp config_timeframe_to() do
+    Config.get(:timeframe_to) |> String.to_integer()
   end
 
-  defp daa_signal_change() do
-    Config.get(:daa_signal_change) |> String.to_integer()
+  defp config_change() do
+    Config.get(:change) |> String.to_integer()
   end
 
-  defp daa_signal_threshold() do
-    Config.get(:daa_signal_threshold) |> String.to_integer()
+  defp config_threshold() do
+    Config.get(:threshold) |> String.to_integer()
   end
 
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
   def one_day_ago(), do: Timex.shift(Timex.now(), days: -1)
   def two_days_ago(), do: Timex.shift(Timex.now(), days: -2)
-  def timeframe_from(), do: Timex.shift(Timex.now(), days: -1 * daa_signal_timeframe_from())
-  def timeframe_to(), do: Timex.shift(Timex.now(), days: -1 * daa_signal_timeframe_to())
+  def timeframe_from(), do: Timex.shift(Timex.now(), days: -1 * config_timeframe_from())
+  def timeframe_to(), do: Timex.shift(Timex.now(), days: -1 * config_timeframe_to())
 end

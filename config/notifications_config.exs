@@ -23,8 +23,8 @@ config :sanbase, Sanbase.Notifications.Insight,
 
 config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
   webhook_url: {:system, "DAA_SIGNAL_DISCORD_WEBHOOK_URL"},
-  daa_signal_discord_publish_user: {:system, "DAA_SIGNAL_DISCORD_PUBLISH_USER", "DAA GOING UP"},
-  daa_signal_threshold: {:system, "DAA_SIGNAL_THRESHOLD", "100"},
-  daa_signal_timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "30"},
-  daa_signal_timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "2"},
-  daa_signal_change: {:system, "DAA_SIGNAL_CHANGE", "3"}
+  publish_user: {:system, "DAA_SIGNAL_DISCORD_PUBLISH_USER", "DAA GOING UP"},
+  threshold: {:system, "DAA_SIGNAL_THRESHOLD", "100"},
+  timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "30"},
+  timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "2"},
+  change: {:system, "DAA_SIGNAL_CHANGE", "3"}

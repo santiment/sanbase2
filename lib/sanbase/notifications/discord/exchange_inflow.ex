@@ -1,10 +1,19 @@
 defmodule Sanbase.Notifications.Discord.ExchangeInflow do
+  @moduledoc ~s"""
+  Send a notification when a given % of the total supply of tokens gets
+  deposited into an exchange.
+  """
   @behaviour Sanbase.Notifications.Behaviour
+
+  require Logger
+  require Sanbase.Utils.Config, as: Config
+
+  import Ecto.Query
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  import Ecto.Query
 
+  @impl true
   def run(opts \\ []) do
     projects =
       projects()
@@ -13,7 +22,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     projects
     |> Enum.map(fn %Project{main_contract_address: contract} -> contract end)
     |> Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
-      Timex.shift(Timex.now(), days: -1),
+      Timex.shift(Timex.now(), days: -interval_days()),
       Timex.now()
     )
     |> case do
@@ -21,12 +30,17 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
         publish("discord", build_payload(projects, list))
 
       {:error, error} ->
-        nil
+        Logger.error("Error getting exchange inflowfrom TimescaleDB. Reason: #{inspect(error)}")
+        {:error, "Error getting exchange inflowfrom TimescaleDB."}
     end
   end
 
+  @impl true
   def publish("discord", payload) do
+    IO.inspect(payload)
   end
+
+  # Private functions
 
   defp projects() do
     from(
@@ -56,7 +70,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
         volume_over_threshold_projects =
           Sanbase.Prices.Store.volume_over_threshold(
             measurements_str,
-            Timex.shift(Timex.now(), days: -1),
+            Timex.shift(Timex.now(), days: -interval_days()),
             Timex.now(),
             volume_threshold
           )
@@ -69,9 +83,34 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp build_payload(projects, list) do
-    projects
-    |> Enum.map(%Project{} = project ->
+    contract_inflow_map =
+      Enum.map(list, fn %{contract: contract, inflow: inflow} -> {contract, inflow} end)
+      |> Map.new()
 
-    )
+    projects
+    |> Enum.map(fn %Project{} = project ->
+      inflow = Map.get(contract_inflow_map, project.main_contract_address)
+
+      if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
+        """
+        Project #{project.coinmarketcap_id} (contract address #{project.main_contract_address} has more
+        than 1% of its total supply deposited into an exchange in the past #{interval_days()} day(s)
+        """
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
   end
+
+  defp percent_of_total_supply(
+         %Project{total_supply: total_supply, token_decimals: token_decimals},
+         inflow
+       ) do
+    inflow = inflow / :math.pow(10, token_decimals)
+    inflow / total_supply * 100
+  end
+
+  defp signal_trigger_percent(),
+    do: Config.get(:signal_trigger_percent) |> String.to_integer()
+
+  defp interval_days(), do: Config.get(:interval_days) |> String.to_integer()
 end

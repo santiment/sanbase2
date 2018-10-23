@@ -50,8 +50,7 @@ config :logger, :console,
   format: {Sanbase.Utils.JsonLogger, :format},
   metadata: [:request_id],
   handle_otp_reports: true,
-  handle_sasl_reports: true,
-  level: :debug
+  handle_sasl_reports: true
 
 # Error tracking
 config :sentry,
@@ -142,7 +141,7 @@ config :sanbase, Sanbase.Scheduler,
   global: true,
   jobs: [
     daa_signal: [
-      schedule: "35 10 * * *",
+      schedule: "00 12 * * *",
       task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
     ]
   ]

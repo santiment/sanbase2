@@ -16,9 +16,11 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
         Logger.error("Cannot publish DAA signal in discord: code[#{status_code}]")
+        {:error, "Cannot publish DAA signal in discord"}
 
       {:error, error} ->
         Logger.error("Cannot publish DAA signal in discord " <> inspect(error))
+        {:error, "Cannot publish DAA signal in discord"}
     end
   end
 
@@ -37,7 +39,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     """
     #{project_name}: Daily Active Addresses has gone up by #{percent_change(new_daa, base_daa)}% : #{
       notification_emoji_up()
-    }. 
+    }.
     DAA for yesterday: #{new_daa}, Average DAA for last #{daa_signal_timeframe_from()} days: #{
       base_daa
     }.

@@ -69,7 +69,7 @@ defmodule Sanbase.Influxdb.Measurement do
   end
 
   @doc ~s"""
-    convert a list of slugs to comma separated measurements string
+    convert a list of slugs to measurement-slug map
   """
   def measurement_slug_map_from(slugs) do
     measurement_slug_map =

@@ -116,10 +116,12 @@ defmodule Sanbase.Prices.Store do
     |> parse_time_series()
   end
 
-  def fetch_combined_vol_mcap(measurements_str, from, to) do
+  def fetch_combined_vol_mcap(measurement_slug_map, from, to) do
+    measurements_str = measurement_slug_map |> Map.keys() |> Enum.join(", ")
+
     fetch_combined_vol_mcap_query(measurements_str, from, to)
     |> Store.query()
-    |> combine_results_multiple_measurements()
+    |> combine_results_multiple_measurements(measurement_slug_map)
   end
 
   def all_with_data_after_datetime(datetime) do
@@ -141,7 +143,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp fetch_ohlc_query(measurement, from, to, interval) do
-    ~s/SELECT 
+    ~s/SELECT
      time,
      first(price_usd) as open,
      max(price_usd) as high,
@@ -182,16 +184,32 @@ defmodule Sanbase.Prices.Store do
 
   defp fetch_combined_vol_mcap_query(measurements_str, from, to) do
     ~s/
-      SELECT SUM(volume_usd) as volume_sum, SUM(marketcap_usd) as marketcap_sum
+      SELECT LAST(volume_usd), LAST(marketcap_usd)
       FROM #{measurements_str}
       WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
       AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
-  defp combine_results_multiple_measurements(%{results: [%{series: series}]}) do
+  defp combine_results_multiple_measurements(%{results: [%{error: error}]}, _),
+    do: {:error, error}
+
+  defp combine_results_multiple_measurements(
+         %{results: [%{series: series}]} = results,
+         measurement_slug_map
+       ) do
+    slugs = series |> Enum.map(fn s -> measurement_slug_map[s.name] end)
     values = series |> Enum.map(& &1.values)
     combined_volume = values |> Enum.reduce(0, fn [[_, vol, _]], acc -> acc + vol end)
     combined_mcap = values |> Enum.reduce(0, fn [[_, _, mcap]], acc -> acc + mcap end)
-    {:ok, combined_volume, combined_mcap}
+    marketcap_values = values |> Enum.map(fn [[_, _, mcap]] -> mcap end)
+
+    marketcap_percent =
+      marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 5) end)
+
+    slug_marketcap_percent_map = Enum.zip(slugs, marketcap_percent) |> Enum.into(%{})
+
+    {:ok, combined_volume, combined_mcap, slug_marketcap_percent_map}
   end
+
+  defp combine_results_multiple_measurements(_, _), do: {:error, nil}
 end

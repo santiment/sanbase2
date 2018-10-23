@@ -412,6 +412,15 @@ defmodule Sanbase.Model.Project do
     |> Sanbase.Repo.one()
   end
 
+  def tickers_by_slug_list(slugs_list) when is_list(slugs_list) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.coinmarketcap_id in ^slugs_list and not is_nil(p.ticker),
+      select: {p.ticker, p.coinmarketcap_id}
+    )
+    |> Sanbase.Repo.all()
+  end
+
   def eth_addresses(%Project{} = project) do
     project =
       project

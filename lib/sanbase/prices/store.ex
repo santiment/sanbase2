@@ -190,6 +190,9 @@ defmodule Sanbase.Prices.Store do
       AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
+  defp combine_results_multiple_measurements(%{results: [%{error: error}]}, _),
+    do: {:error, error}
+
   defp combine_results_multiple_measurements(
          %{results: [%{series: series}]} = results,
          measurement_slug_map
@@ -207,4 +210,6 @@ defmodule Sanbase.Prices.Store do
 
     {:ok, combined_volume, combined_mcap, slug_marketcap_percent_map}
   end
+
+  defp combine_results_multiple_measurements(_, _), do: {:error, nil}
 end

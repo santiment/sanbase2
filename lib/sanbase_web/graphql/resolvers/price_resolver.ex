@@ -106,7 +106,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
        }}
     else
       _ ->
-        {:error, "Can't fetch combined volume and marketcap for slugs: #{slugs}"}
+        {:error, "Can't fetch combined volume and marketcap for slugs"}
     end
   end
 

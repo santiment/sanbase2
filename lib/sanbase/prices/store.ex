@@ -143,7 +143,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   defp fetch_ohlc_query(measurement, from, to, interval) do
-    ~s/SELECT 
+    ~s/SELECT
      time,
      first(price_usd) as open,
      max(price_usd) as high,
@@ -204,7 +204,7 @@ defmodule Sanbase.Prices.Store do
     marketcap_values = values |> Enum.map(fn [[_, _, mcap]] -> mcap end)
 
     marketcap_percent =
-      marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 2) end)
+      marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 5) end)
 
     slug_marketcap_percent_map = Enum.zip(slugs, marketcap_percent) |> Enum.into(%{})
 

@@ -12,7 +12,7 @@ import {
   formatBTC,
   formatNumber
 } from './../../utils/formatting'
-import './DetailedHeader.css'
+import styles from './DetailedHeader.module.css'
 
 const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
 const DIV = createSkeletonElement('div', 'pending-header pending-div')
@@ -26,49 +26,50 @@ const DetailedHeader = ({
   },
   loading,
   empty,
-  isLoggedIn
-}) => {
-  return (
-    <div className='detailed-head'>
-      <div className='detailed-project-about'>
-        <div className='detailed-name'>
-          <H1>{project.name}</H1>
-          <ProjectIcon name={project.name || ''} size={22} />
-          <DIV className='detailed-ticker-name'>
-            {(project.ticker || '').toUpperCase()}
-          </DIV>
-          &nbsp; &nbsp;
-          {isLoggedIn &&
-            !loading && (
-            <WatchlistsPopup
-              projectId={project.id}
-              slug={project.slug}
-              isLoggedIn={isLoggedIn}
-            />
-          )}
-        </div>
-        <DIV className='datailed-project-description'>
-          {project.description}
-        </DIV>
-      </div>
-
-      <div className='detailed-price'>
-        <div className='detailed-price-description'>Today's changes</div>
-        <div className='detailed-price-usd'>
-          {project.priceUsd &&
-            formatNumber(project.priceUsd, { currency: 'USD' })}
-          &nbsp;
-          {!loading &&
-            project && <PercentChanges changes={project.percentChange24h} />}
-        </div>
-        <div className='detailed-price-btc'>
-          {project.priceBtc &&
-            formatCryptoCurrency('BTC', formatBTC(project.priceBtc))}
+  isLoggedIn,
+  isDesktop
+}) => (
+  <div className={styles.wrapper}>
+    <div className={styles.left}>
+      <div className={styles.logo}>
+        <ProjectIcon
+          name={project.name || ''}
+          ticker={project.ticker}
+          size={22}
+        />
+        <div className='detailed-ticker-name'>
+          {(project.ticker || '').toUpperCase()}
         </div>
       </div>
+      <div className={styles.name}>
+        <H1>{project.name}</H1>
+        <DIV className={styles.description}>{project.description}</DIV>
+      </div>
+      {isLoggedIn &&
+        isDesktop &&
+        !loading && (
+        <WatchlistsPopup
+          projectId={project.id}
+          slug={project.slug}
+          isLoggedIn={isLoggedIn}
+        />
+      )}
     </div>
-  )
-}
+    <div className={styles.price}>
+      <div className={styles.priceUsd}>
+        {project.priceUsd &&
+          formatNumber(project.priceUsd, { currency: 'USD' })}
+      </div>
+      {!loading &&
+        project && (
+        <PercentChanges
+          className={styles.percentChanges}
+          changes={project.percentChange24h}
+        />
+      )}
+    </div>
+  </div>
+)
 
 export default compose(
   createSkeletonProvider(

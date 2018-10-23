@@ -13,8 +13,8 @@ import './WatchlistsPopup.css'
 const POLLING_INTERVAL = 2000
 
 const AddToListBtn = (
-  <Button basic color='purple'>
-    add to list
+  <Button basic className='watchlists-button'>
+    WATCHLISTS
   </Button>
 )
 

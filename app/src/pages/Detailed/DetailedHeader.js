@@ -4,9 +4,11 @@ import {
   createSkeletonElement
 } from '@trainline/react-skeletor'
 import { compose } from 'recompose'
+import { Icon } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import WatchlistsPopup from './../../components/WatchlistPopup/WatchlistsPopup'
+import ChooseWatchlists from './../../components/WatchlistPopup/ChooseWatchlists'
 import {
   formatCryptoCurrency,
   formatBTC,
@@ -52,7 +54,9 @@ const DetailedHeader = ({
           projectId={project.id}
           slug={project.slug}
           isLoggedIn={isLoggedIn}
-        />
+        >
+          <ChooseWatchlists />
+        </WatchlistsPopup>
       )}
     </div>
     <div className={styles.price}>

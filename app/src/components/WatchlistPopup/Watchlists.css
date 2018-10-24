@@ -43,7 +43,7 @@
 }
 
 .watchlists__list .watchlists__item__link:hover {
-  background-color: #e8e8e8;
+  background: #d4d9dd5e;
 }
 
 .watchlists__list .watchlists__item__link:first-child {

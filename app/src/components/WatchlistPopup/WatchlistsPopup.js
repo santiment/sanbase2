@@ -14,7 +14,7 @@ const POLLING_INTERVAL = 2000
 
 const AddToListBtn = (
   <Button basic className='watchlists-button'>
-    WATCHLISTS
+    ADD TO WATCHLISTS
   </Button>
 )
 
@@ -29,24 +29,38 @@ const WatchlistPopup = ({
   watchlistUi,
   createWatchlist,
   removeAssetList,
-  toggleAssetInList
+  toggleAssetInList,
+  children
 }) => {
   return (
     <Popup
       className='watchlists-popup'
       content={
         isLoggedIn ? (
-          <Watchlists
-            isNavigation={isNavigation}
-            isLoading={isLoading}
-            projectId={projectId}
-            createWatchlist={createWatchlist}
-            removeAssetList={removeAssetList}
-            toggleAssetInList={toggleAssetInList}
-            watchlistUi={watchlistUi}
-            slug={slug}
-            lists={lists}
-          />
+          children ? (
+            React.cloneElement(children, {
+              isLoading,
+              projectId,
+              createWatchlist,
+              removeAssetList,
+              toggleAssetInList,
+              watchlistUi,
+              slug,
+              lists
+            })
+          ) : (
+            <Watchlists
+              isNavigation={isNavigation}
+              isLoading={isLoading}
+              projectId={projectId}
+              createWatchlist={createWatchlist}
+              removeAssetList={removeAssetList}
+              toggleAssetInList={toggleAssetInList}
+              watchlistUi={watchlistUi}
+              slug={slug}
+              lists={lists}
+            />
+          )
         ) : (
           <WatchlistsAnon />
         )

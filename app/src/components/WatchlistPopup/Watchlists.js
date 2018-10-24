@@ -102,7 +102,7 @@ const Watchlists = ({
                   inverted
                   trigger={
                     <Icon
-                      size='big'
+                      size='large'
                       className='watchlists__tools__move-to-trash'
                       onClick={removeAssetList.bind(this, id)}
                       name='trash'

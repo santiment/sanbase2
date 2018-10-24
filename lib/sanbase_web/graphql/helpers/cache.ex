@@ -95,12 +95,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   """
   def func(cached_func, name, args \\ %{}) do
     fn ->
-      {:ok, value} =
-        ConCache.get_or_store(@cache_name, cache_key(name, args), fn ->
-          {:ok, cached_func.()}
-        end)
-
-      value
+      get_or_store_if_ok(cache_key(name, args), cached_func)
     end
   end
 
@@ -209,12 +204,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   # Calculate the cache key from a given name and arguments.
 
   defp get_or_store(cache_key, resolver_fn) do
-    {:ok, value} =
-      ConCache.get_or_store(@cache_name, cache_key, fn ->
-        {:ok, resolver_fn.()}
-      end)
-
-    value
+    get_or_store_if_ok(cache_key, resolver_fn)
   end
 
   defp get_or_store_middleware(cache_key, resolver_fn) do
@@ -242,7 +232,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
        ) do
     caching_fun = fn ->
       value = fun.()
-      ConCache.put(@cache_name, cache_key, {:ok, value})
+
+      # Do not cache the {:error, error} tuples returned from resolvers
+      if {:ok, _} = value do
+        ConCache.put(@cache_name, cache_key, {:ok, value})
+      end
 
       value
     end
@@ -256,7 +250,11 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
        ) do
     caching_callback = fn loader_arg ->
       value = callback.(loader_arg)
-      ConCache.put(@cache_name, cache_key, {:ok, value})
+
+      # Do not cache the {:error, error} tuples returned from resolvers
+      if {:ok, _} = value do
+        ConCache.put(@cache_name, cache_key, {:ok, value})
+      end
 
       value
     end
@@ -297,5 +295,35 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     captured_mfa
     |> :erlang.fun_info()
     |> Keyword.get(:name)
+  end
+
+  defp get_or_store_if_ok(cache_key, func) do
+    result =
+      if (value = ConCache.get(@cache_name, cache_key)) != nil do
+        value
+      else
+        ConCache.isolated(@cache_name, cache_key, fn ->
+          if (value = ConCache.get(@cache_name, cache_key)) != nil do
+            value
+          else
+            case func.() do
+              {:error, _} ->
+                nil
+
+              {:ok, _value} = tuple ->
+                ConCache.put(@cache_name, cache_key, tuple)
+                tuple
+            end
+          end
+        end)
+      end
+
+    # Result is `nil` if the returned :error tuple. In that case re-evaulate
+    # the function and return it as a result
+    if result == nil do
+      func.()
+    else
+      result
+    end
   end
 end

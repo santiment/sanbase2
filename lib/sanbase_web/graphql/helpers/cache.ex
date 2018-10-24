@@ -313,6 +313,9 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
               {:ok, _value} = tuple ->
                 ConCache.put(@cache_name, cache_key, tuple)
                 tuple
+
+              {:middleware, _, _} = tuple ->
+                cache_modify_middleware(cache_key, tuple)
             end
           end
         end)

@@ -1,7 +1,10 @@
 import Raven from 'raven-js'
 import { Observable } from 'rxjs'
 import { projectBySlugGQL } from './../pages/Projects/allProjectsGQL'
-import { WatchlistGQL } from './../components/WatchlistPopup/WatchlistGQL.js'
+import {
+  WatchlistGQL,
+  publicWatchlistGQL
+} from './../components/WatchlistPopup/WatchlistGQL.js'
 import {
   allProjectsGQL,
   allErc20ProjectsGQL,
@@ -67,7 +70,7 @@ export const fetchAssetsEpic = (action$, store, { client }) =>
   action$
     .ofType(actions.ASSETS_FETCH)
     .filter(({ payload }) => {
-      return payload.type !== 'list'
+      return payload.type !== 'list' && payload.type !== 'list#shared'
     })
     .mergeMap(action => {
       const { type } = action.payload
@@ -100,6 +103,66 @@ export const fetchAssetsFromListEpic = (action$, store, { client }) =>
         const { fetchUserLists } = data
         const { listItems = [] } =
           fetchUserLists.find(item => item.id === payload.list.id) || {}
+        const queries = listItems
+          .map(asset => {
+            return asset.project.slug
+          })
+          .map(slug => {
+            return client.query({
+              query: projectBySlugGQL,
+              variables: { slug },
+              context: { isRetriable: true }
+            })
+          })
+
+        if (listItems.length === 0) {
+          return Observable.of({
+            type: actions.ASSETS_FETCH_SUCCESS,
+            payload: {
+              items: [],
+              isLoading: false,
+              error: false
+            }
+          })
+        }
+
+        return Observable.forkJoin(queries)
+          .delayWhen(() => Observable.timer(500 + startTime - Date.now()))
+          .mergeMap(data => {
+            const items =
+              data.map(project => {
+                return project.data.projectBySlug
+              }) || []
+            return Observable.of({
+              type: actions.ASSETS_FETCH_SUCCESS,
+              payload: {
+                items,
+                isLoading: false,
+                error: false
+              }
+            })
+          })
+          .catch(handleError)
+      })
+    })
+
+export const fetchAssetsFromSharedListEpic = (action$, store, { client }) =>
+  action$
+    .ofType(actions.ASSETS_FETCH)
+    .filter(({ payload }) => {
+      return payload.type === 'list#shared'
+    })
+    .mergeMap(({ payload }) => {
+      return Observable.from(
+        client.query({
+          query: publicWatchlistGQL
+        })
+      ).concatMap(({ data = {} }) => {
+        const startTime = Date.now()
+        const { fetchAllPublicUserLists } = data
+        const { listItems = [] } =
+          fetchAllPublicUserLists.find(item => item.id === payload.list.id) ||
+          {}
         const queries = listItems
           .map(asset => {
             return asset.project.slug

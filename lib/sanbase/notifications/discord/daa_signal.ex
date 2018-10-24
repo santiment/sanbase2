@@ -65,7 +65,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     """
   end
 
-  def check_for_project(project) do
+  defp check_for_project(project) do
     {:ok, base_daa} =
       project.main_contract_address
       |> DailyActiveAddresses.active_addresses(timeframe_from(), timeframe_to())

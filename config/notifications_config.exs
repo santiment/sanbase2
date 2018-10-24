@@ -28,3 +28,9 @@ config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
   timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "30"},
   timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "2"},
   change: {:system, "DAA_SIGNAL_CHANGE", "3"}
+
+config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
+  webhook_url: {:system, "EXCHANGE_INFLOW_DISCORD_WEBHOOK_URL"},
+  publish_user: {:system, "DAA_SIGNAL_DISCORD_PUBLISH_USER", "DAA GOING UP"},
+  signal_trigger_percent: {:system, "EXCHANGE_INFLOW_TRIGER_PERCEN", "1"},
+  interval_days: {:system, "EXCHANGE_INFLOW_INTERVAL_DAYS", "1"}

@@ -7,6 +7,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   require Logger
   require Sanbase.Utils.Config, as: Config
+  require Mockery.Macro
 
   import Ecto.Query
 
@@ -31,13 +32,22 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
       {:error, error} ->
         Logger.error("Error getting exchange inflowfrom TimescaleDB. Reason: #{inspect(error)}")
-        {:error, "Error getting exchange inflowfrom TimescaleDB."}
-    end
+        з{:error, "Error getting exchange inflowfrom TimescaleDB."}
+      end
   end
 
   @impl true
   def publish("discord", payload) do
-    IO.inspect(payload)
+    case http_client().post(webhook_url(), payload, [{"Content-Type", "application/json"}]) do
+      {:ok, %HTTPoison.Response{status_code: 204}} ->
+        :ok
+
+      {:ok, %HTTPoison.Response{status_code: status_code}} ->
+        Logger.error("Cannot publish DAA signal in discord: code[#{status_code}]")
+
+      {:error, error} ->
+        Logger.error("Cannot publish DAA signal in discord " <> inspect(error))
+    end
   end
 
   # Private functions
@@ -113,4 +123,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     do: Config.get(:signal_trigger_percent) |> String.to_integer()
 
   defp interval_days(), do: Config.get(:interval_days) |> String.to_integer()
+
+  defp webhook_url(), do: Config.get(:webhook_url)
+
+  defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 end

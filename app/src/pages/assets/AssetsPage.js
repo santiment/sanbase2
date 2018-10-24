@@ -18,7 +18,8 @@ const AssetsPage = props => (
       <div className='page-head-projects__left'>
         <h1>Assets</h1>
         <HelpPopupAssets />
-        {props.type === 'list' ? <WatchlistShare /> : null}
+        {props.type === 'list' &&
+          props.location.hash !== '#shared' && <WatchlistShare />}
       </div>
       <AssetsPageNavigation isLoggedIn={props.isLoggedIn} />
     </div>

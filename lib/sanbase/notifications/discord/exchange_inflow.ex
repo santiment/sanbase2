@@ -13,6 +13,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
+  alias Sanbase.Notifications.Discord
 
   @impl true
   def run(opts \\ []) do
@@ -31,22 +32,26 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
         publish("discord", build_payload(projects, list))
 
       {:error, error} ->
-        Logger.error("Error getting exchange inflowfrom TimescaleDB. Reason: #{inspect(error)}")
-        з{:error, "Error getting exchange inflowfrom TimescaleDB."}
-      end
+        Logger.error("Error getting Exchange Inflow from TimescaleDB. Reason: #{inspect(error)}")
+        {:error, "Error getting Exchange Inflow from TimescaleDB."}
+    end
   end
 
   @impl true
   def publish("discord", payload) do
-    case http_client().post(webhook_url(), payload, [{"Content-Type", "application/json"}]) do
-      {:ok, %HTTPoison.Response{status_code: 204}} ->
-        :ok
-
-      {:ok, %HTTPoison.Response{status_code: status_code}} ->
-        Logger.error("Cannot publish DAA signal in discord: code[#{status_code}]")
+    case payload do
+      {:ok, result} when result == "null" or result == "[]" ->
+        Logger.info(
+          "There are no signals for tokens moved into an exchange. Won't send anything to Discord."
+        )
 
       {:error, error} ->
-        Logger.error("Cannot publish DAA signal in discord " <> inspect(error))
+        Logger.error(
+          "Error building payload for tokens moved into an exchange. Reason: #{inspect(error)}"
+        )
+
+      {:ok, json_signal} ->
+        Discord.send_notification(webhook_url(), "Exchange Inflow", json_signal)
     end
   end
 
@@ -109,6 +114,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       end
     end)
     |> Enum.reject(&is_nil/1)
+    |> Discord.encode(publish_user())
   end
 
   defp percent_of_total_supply(
@@ -126,5 +132,5 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   defp webhook_url(), do: Config.get(:webhook_url)
 
-  defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
+  defp publish_user(), do: Config.get(:publish_user)
 end

@@ -1,4 +1,5 @@
-defmodule Sanbase.Prices.Store do
+&%{content: &1, username: defmodule Sanbase.Prices.Store do
+&%{content: &1, username: defmodule Sanbase.Prices.Store do
   @moduledoc ~s"""
     A module for storing and fetching pricing data from a time series data store
     Currently using InfluxDB for the time series data.

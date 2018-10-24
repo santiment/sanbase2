@@ -10,7 +10,7 @@ import { updateUserListGQL, fetchUserListsGQL } from './watchlistShareGQL'
 import styles from './WatchlistShare.module.css'
 
 const copyUrl = () => {
-  copy(window.location.href)
+  copy(window.location.href + '#shared')
 }
 
 const WatchlistShare = ({

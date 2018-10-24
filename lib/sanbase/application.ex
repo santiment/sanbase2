@@ -19,6 +19,8 @@ defmodule Sanbase.Application do
 
         # Start the Postgres Ecto repository
         Sanbase.Repo,
+
+        # Start Quantum scheduler
         Sanbase.Scheduler,
 
         # Start the TimescaleDB Ecto repository

@@ -123,7 +123,14 @@ defmodule Sanbase.Application do
 
         # Transform a list of transactions into a list of transactions
         # where addresses are marked whether or not they are an exchange address
-        Sanbase.Clickhouse.MarkExchanges.child_spec(%{})
+        Sanbase.Clickhouse.MarkExchanges.child_spec(%{}),
+
+        # Start libcluster
+        {Cluster.Supervisor,
+         [
+           Application.get_env(:libcluster, :topologies),
+           [name: Sanbase.ClusterSupervisor]
+         ]}
       ] ++
         faktory_supervisor() ++
         [

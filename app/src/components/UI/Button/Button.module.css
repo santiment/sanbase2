@@ -1,0 +1,13 @@
+.btn {
+  border: none;
+  outline: none;
+}
+
+.red {
+  background-color: #db2828;
+  color: #fff;
+}
+
+.green {
+  background-color: green;
+}

@@ -142,7 +142,7 @@ config :libcluster,
     k8s: [
       strategy: Elixir.Cluster.Strategy.Kubernetes,
       config: [
-        mode: :ip,
+        mode: :dns,
         kubernetes_node_basename: "sanbase",
         kubernetes_selector: "app=sanbase",
         polling_interval: 10_000

@@ -23,8 +23,10 @@ defmodule Sanbase.Application.WorkersSupervisor do
 
   defp faktory_supervisor do
     if System.get_env("FAKTORY_HOST") do
+      import Supervisor.Spec
+
       Faktory.Configuration.init()
-      [{Faktory.Supervisor, []}]
+      [supervisor(Faktory.Supervisor, [])]
     else
       []
     end

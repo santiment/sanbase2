@@ -28,6 +28,13 @@ defmodule Sanbase.Application.WebSupervisor do
          acquire_lock_timeout: 30_000
        ]},
 
+      # Rate limit API calls
+      {PlugAttack.Storage.Ets,
+       [
+         name: SanbaseWeb.Graphql.PlugAttack.Storage,
+         clean_period: 60_000
+       ]},
+
       # Time series Prices DB connection
       Sanbase.Prices.Store.child_spec(),
 

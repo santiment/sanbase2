@@ -67,6 +67,40 @@ defmodule Sanbase.Elasticsearch.Query do
     """
   end
 
+  def discord_channels_count(from, to) do
+    from_unix = DateTime.to_unix(from, :millisecond)
+    to_unix = DateTime.to_unix(to, :millisecond)
+
+    ~s"""
+    {
+      "size": 0,
+      "aggs": {
+        "channel_names": {
+          "terms": {
+            "field": "channel_name.keyword",
+            "size": 999999
+          }
+        }
+      },
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "timestamp": {
+                  "gte": #{from_unix},
+                  "lte": #{to_unix},
+                  "format": "epoch_millis"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    """
+  end
+
   def documents_count_in_interval(from, to) do
     from_unix = DateTime.to_unix(from, :millisecond)
     to_unix = DateTime.to_unix(to, :millisecond)

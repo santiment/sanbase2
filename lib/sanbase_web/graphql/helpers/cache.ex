@@ -297,6 +297,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     |> Keyword.get(:name)
   end
 
+  # Implements missing functionality in ConCache - conditionally choose wheter or not
+  # to cache the result from `get_or_store`.
   defp get_or_store_if_ok(cache_key, func) do
     result =
       if (value = ConCache.get(@cache_name, cache_key)) != nil do
@@ -315,6 +317,7 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
                 tuple
 
               {:middleware, _, _} = tuple ->
+                # Decides on its behalf whether or not to put the value in the cache
                 cache_modify_middleware(cache_key, tuple)
             end
           end

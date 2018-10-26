@@ -93,12 +93,16 @@ class SearchPanel extends Component {
       <div className='search-panel'>
         <Ref innerRef={this.handleSearchRef}>
           <Search
-            className={this.props.loading ? '' : 'search-data-loaded'}
+            className={
+              this.props.loading
+                ? ''
+                : `search-data-loaded ${this.props.className || ''}`
+            }
             loading={this.state.isLoading || this.props.loading}
             onResultSelect={this.handleResultSelect}
             onSearchChange={this.handleSearchChange}
             results={this.state.results}
-            value={this.state.value}
+            value={this.state.value || this.props.value}
             resultRenderer={resultRenderer}
             selectFirstResult
             input={CustomInput}

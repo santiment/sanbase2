@@ -68,6 +68,22 @@ defmodule Sanbase.Influxdb.Measurement do
     end
   end
 
+  @doc ~s"""
+    convert a list of slugs to measurement-slug map
+  """
+  def measurement_slug_map_from(slugs) do
+    measurement_slug_map =
+      Project.tickers_by_slug_list(slugs)
+      |> Enum.map(fn {ticker, slug} -> {ticker <> "_" <> slug, slug} end)
+      |> Map.new()
+
+    if Enum.count(Map.keys(measurement_slug_map)) > 0 do
+      {:ok, measurement_slug_map}
+    else
+      nil
+    end
+  end
+
   # Private functions
 
   defp format_timestamp(%DateTime{} = datetime) do

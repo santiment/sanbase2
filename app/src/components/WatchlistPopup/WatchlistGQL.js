@@ -18,3 +18,22 @@ export const WatchlistGQL = gql`
     }
   }
 `
+
+export const publicWatchlistGQL = gql`
+  query fetchAllPublicUserLists {
+    fetchAllPublicUserLists {
+      id
+      color
+      isPublic
+      name
+      listItems {
+        project {
+          id
+          slug
+        }
+      }
+      insertedAt
+      updatedAt
+    }
+  }
+`

@@ -21,6 +21,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         %{ticker: ticker, from: from, to: to, interval: interval, transform: "None"},
         _resolution
       ) do
+    ticker = correct_ticker(ticker)
+
     {:ok, from, to, interval} =
       Utils.calibrate_interval(Store, ticker, from, to, interval, 24 * 60 * 60)
 
@@ -43,6 +45,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         },
         _resolution
       ) do
+    ticker = correct_ticker(ticker)
+
     {:ok, from, to, interval, ma_interval} =
       Utils.calibrate_interval_with_ma_interval(
         Store,
@@ -66,4 +70,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     # returns {:ok, result} | {:error, error}
     Store.list_measurements()
   end
+
+  defp correct_ticker("MKR"), do: "DAI"
+  defp correct_ticker("DGX"), do: "DGD"
+  defp correct_ticker(ticker), do: ticker
 end

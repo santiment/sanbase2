@@ -170,6 +170,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&PriceResolver.ohlc/3)
     end
 
+    @desc ~s"""
+    Fetch combined stats for a given list of project's slugs
+    """
+    field :projects_group_stats, list_of(:group_stats) do
+      arg(:slugs, non_null(list_of(:string)))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&PriceResolver.projects_group_stats/3)
+    end
+
     @desc "Returns a list of available github repositories."
     field :github_availables_repos, list_of(:string) do
       cache_resolve(&GithubResolver.available_repos/3)

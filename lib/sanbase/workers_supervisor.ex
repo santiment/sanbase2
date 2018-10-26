@@ -2,6 +2,9 @@ defmodule Sanbase.Application.WorkersSupervisor do
   def children do
     children =
       [
+        # Start the Postgres Ecto repository
+        Sanbase.Repo,
+
         # Start the endpoint when the application starts. Used for healtchecks
         SanbaseWeb.Endpoint,
 

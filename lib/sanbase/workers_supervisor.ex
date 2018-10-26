@@ -13,7 +13,7 @@ defmodule Sanbase.Application.WorkersSupervisor do
 
         # Time series Github DB connection
         Sanbase.Github.Store.child_spec()
-      ] ++ faktory_supervisor()
+      ] ++ Sanbase.Application.faktory_supervisor()
 
     opts = [
       strategy: :one_for_one,
@@ -23,16 +23,5 @@ defmodule Sanbase.Application.WorkersSupervisor do
     ]
 
     {children, opts}
-  end
-
-  defp faktory_supervisor do
-    if System.get_env("FAKTORY_HOST") do
-      import Supervisor.Spec
-
-      Faktory.Configuration.init()
-      [supervisor(Faktory.Supervisor, [])]
-    else
-      []
-    end
   end
 end

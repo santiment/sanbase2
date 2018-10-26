@@ -52,4 +52,15 @@ defmodule Sanbase.Application do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
+  def faktory_supervisor() do
+    if System.get_env("FAKTORY_HOST") && :ets.whereis(Faktory.Configuration) == :undefined do
+      import Supervisor.Spec
+
+      Faktory.Configuration.init()
+      [supervisor(Faktory.Supervisor, [])]
+    else
+      []
+    end
+  end
 end

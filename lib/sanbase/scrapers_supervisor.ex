@@ -89,7 +89,7 @@ defmodule Sanbase.Application.ScrapersSupervisor do
         # Twitter account historical data
         Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{})
       ] ++
-        faktory_supervisor() ++
+        Sanbase.Application.faktory_supervisor() ++
         [
           # Github activity scraping scheduler
           Sanbase.ExternalServices.Github.child_spec(%{})
@@ -105,16 +105,5 @@ defmodule Sanbase.Application.ScrapersSupervisor do
     ]
 
     {children, opts}
-  end
-
-  defp faktory_supervisor do
-    if System.get_env("FAKTORY_HOST") do
-      import Supervisor.Spec
-
-      Faktory.Configuration.init()
-      [supervisor(Faktory.Supervisor, [])]
-    else
-      []
-    end
   end
 end

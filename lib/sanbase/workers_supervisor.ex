@@ -13,12 +13,7 @@ defmodule Sanbase.Application.WorkersSupervisor do
 
         # Time series Github DB connection
         Sanbase.Github.Store.child_spec()
-      ] ++
-        faktory_supervisor() ++
-        [
-          # Github activity scraping scheduler
-          Sanbase.ExternalServices.Github.child_spec(%{})
-        ]
+      ] ++ faktory_supervisor()
 
     opts = [
       strategy: :one_for_one,

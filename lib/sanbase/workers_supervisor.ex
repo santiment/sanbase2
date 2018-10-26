@@ -2,6 +2,9 @@ defmodule Sanbase.Application.WorkersSupervisor do
   def children do
     children =
       [
+        # Start the endpoint when the application starts. Used for healtchecks
+        SanbaseWeb.Endpoint,
+
         # Time series Github DB connection
         Sanbase.Github.Store.child_spec()
       ] ++

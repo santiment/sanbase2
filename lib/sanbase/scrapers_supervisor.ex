@@ -3,6 +3,9 @@ defmodule Sanbase.Application.ScrapersSupervisor do
 
   def children() do
     children = [
+      # Start the endpoint when the application starts. Used for healtchecks
+      SanbaseWeb.Endpoint,
+
       # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 

@@ -49,8 +49,6 @@ defmodule Sanbase.Application.WebSupervisor do
       Sanbase.Clickhouse.MarkExchanges.child_spec(%{})
     ]
 
-    children = children |> normalize_children()
-
     opts = [strategy: :one_for_one, name: Sanbase.WebSupervisor, max_restarts: 5, max_seconds: 1]
 
     {children, opts}

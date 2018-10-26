@@ -5,6 +5,9 @@ defmodule Sanbase.Application.WorkersSupervisor do
         # Start the endpoint when the application starts. Used for healtchecks
         SanbaseWeb.Endpoint,
 
+        # Time series Prices DB connection
+        Sanbase.Prices.Store.child_spec(),
+
         # Time series Github DB connection
         Sanbase.Github.Store.child_spec()
       ] ++

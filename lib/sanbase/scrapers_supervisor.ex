@@ -89,6 +89,7 @@ defmodule Sanbase.Application.ScrapersSupervisor do
         # Twitter account historical data
         Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{})
       ] ++
+        sanbase_scheduler() ++
         Sanbase.Application.faktory_supervisor() ++
         [
           # Github activity scraping scheduler
@@ -105,5 +106,13 @@ defmodule Sanbase.Application.ScrapersSupervisor do
     ]
 
     {children, opts}
+  end
+
+  defp sanbase_scheduler() do
+    if System.get_env("QUANTUM_SCHEDULER_ENABLED") do
+      [Sanbase.Scheduler]
+    else
+      []
+    end
   end
 end

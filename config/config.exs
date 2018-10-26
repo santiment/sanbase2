@@ -138,6 +138,7 @@ config :sanbase, Sanbase.Discourse,
   insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "sanbaseinsights"}
 
 config :sanbase, Sanbase.Scheduler,
+  scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   global: true,
   timeout: 30_000,
   jobs: [

@@ -6,7 +6,7 @@ import Widget from '../Widget/Widget'
 import { totalMarketcapGQL } from './TotalMarketcapGQL'
 import { formatNumber } from '../../utils/formatting'
 import './TotalMarketcapWidget.scss'
-
+import GetTotalMarketcap from './GetTotalMarketcap'
 const currencyFormatOptions = {
   currency: 'USD',
   minimumFractionDigits: 0,
@@ -99,4 +99,4 @@ ApolloTotalMarketcapWidget.defaultProps = {
   slug: 'TOTAL_MARKET'
 }
 
-export default ApolloTotalMarketcapWidget
+export default TotalMarketcapWidget

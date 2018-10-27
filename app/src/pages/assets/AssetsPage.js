@@ -6,6 +6,7 @@ import AssetsTable from './AssetsTable'
 import HelpPopupAssets from './HelpPopupAssets'
 import AssetsPageNavigation from './AssetsPageNavigation'
 import WatchlistShare from '../../components/WatchlistShare/WatchlistShare'
+import WidgetList from '../../components/Widget/WidgetList'
 import './Assets.css'
 
 const AssetsPage = props => (
@@ -14,6 +15,7 @@ const AssetsPage = props => (
       <title>Assets</title>
       <link rel='canonical' href={`${getOrigin()}/assets`} />
     </Helmet>
+    <WidgetList />
     <div className='page-head page-head-projects'>
       <div className='page-head-projects__left'>
         <h1>Assets</h1>

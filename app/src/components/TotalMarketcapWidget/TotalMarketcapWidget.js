@@ -18,7 +18,7 @@ const combineHistoryPrices = historyPrices => {
 
   const prices = Object.keys(historyPrices)
 
-  if (prices.length > 10) return undefined // OTHERWISE: It's computing hell. Almost 1000 of arrays with 500+ elements.
+  if (prices.length > 10) return undefined // OTHERWISE: It's computing hell. Almost 1000 of arrays with 100+ elements.
 
   return prices.reduce((acc, slug) => {
     if (historyPrices[slug] === undefined) return []

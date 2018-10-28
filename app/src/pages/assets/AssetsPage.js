@@ -15,7 +15,7 @@ const AssetsPage = props => (
       <title>Assets</title>
       <link rel='canonical' href={`${getOrigin()}/assets`} />
     </Helmet>
-    <WidgetList />
+    <WidgetList type={props.type} />
     <div className='page-head page-head-projects'>
       <div className='page-head-projects__left'>
         <h1>Assets</h1>

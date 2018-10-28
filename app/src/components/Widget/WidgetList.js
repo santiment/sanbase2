@@ -2,10 +2,10 @@ import React from 'react'
 import GetTotalMarketcap from '../TotalMarketcapWidget/GetTotalMarketcap'
 import InsightsWidget from '../InsightsWidget/InsightsWidget'
 import './WidgetList.scss'
-const WidgetList = () => {
+const WidgetList = ({ type }) => {
   return (
     <div className='WidgetList'>
-      <GetTotalMarketcap type='all' />
+      <GetTotalMarketcap type={type} />
       <InsightsWidget />
     </div>
   )

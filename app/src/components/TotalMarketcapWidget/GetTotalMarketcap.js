@@ -1,65 +1,59 @@
 import React from 'react'
-import { graphql } from 'react-apollo'
+import { graphql, compose } from 'react-apollo'
 import { connect } from 'react-redux'
-import { totalMarketcapGQL, projectsGroupStats } from './TotalMarketcapGQL'
+import { totalMarketcapGQL } from './TotalMarketcapGQL'
 import TotalMarketcapWidget from './TotalMarketcapWidget'
 import moment from 'moment'
 
+const composeHistoryPriceProps = slug => ({
+  data: { historyPrice = [] },
+  ownProps: { historyPrices: ownHistoryPrices = {} }
+}) => ({
+  historyPrices: {
+    ...ownHistoryPrices,
+    [slug]: historyPrice
+  }
+})
+
 const getMarketcapQuery = (type, projects) => {
-  if (type === 'all') {
+  const from = moment()
+    .subtract(3, 'months')
+    .utc()
+    .format()
+  console.log('TCL: getMarketcapQuery -> from', from)
+
+  if (type !== 'list') {
     return graphql(totalMarketcapGQL, {
+      props: composeHistoryPriceProps('TOTAL_MARKET'),
       options: () => ({
         variables: {
-          from: moment()
-            .subtract(3, 'months')
-            .utc()
-            .format()
+          from,
+          slug: 'TOTAL_MARKET'
         }
       })
     })
   }
 
-  return graphql(projectsGroupStats, {
-    options: () => ({
-      variables: {
-        from: moment()
-          .subtract(3, 'months')
-          .utc()
-          .format(),
-        to: moment()
-          .utc()
-          .format(),
-        slugs: projects.map(({ slug }) => slug)
-      }
+  const slugsQuery = projects.slice(0, 10).map(({ slug }) =>
+    graphql(totalMarketcapGQL, {
+      props: composeHistoryPriceProps(slug),
+      options: () => ({
+        variables: {
+          from,
+          slug
+        }
+      })
     })
-  })
-  // TODO:  all other cases to fetch project slugs from redux store '/projects/items'
+  )
+
+  return compose(...slugsQuery)
 }
 
 const GetTotalMarketcap = ({ type, from, projects, ...rest }) => {
   const resultQuery = getMarketcapQuery(type, projects)
-
-  console.log(
-    moment()
-      .utc()
-      .format()
-  )
-  // store.getState().projects.items.map(({slug}) => slug)
-
-  const Test = resultQuery(TotalMarketcapWidget)
-  // return <Test {...rest} />
-  return <Test test={123} />
+  const HistoryQuery = resultQuery(TotalMarketcapWidget)
+  return <HistoryQuery />
 }
-
-// graphql(totalMarketcapGQL)(
-//   TotalMarketcapWidget
-// )
-
-// GetTotalMarketcap.defaultProps = {
-//   from: moment().subtract(3, 'months').utc().format(),
-//   to: moment().utc().format(),
-//   slug: 'TOTAL_MARKET'
-// }
 
 const mapStateToProps = state => ({
   projects: state.projects.items

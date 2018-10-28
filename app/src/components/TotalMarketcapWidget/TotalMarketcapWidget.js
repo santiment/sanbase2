@@ -6,15 +6,36 @@ import Widget from '../Widget/Widget'
 import { totalMarketcapGQL } from './TotalMarketcapGQL'
 import { formatNumber } from '../../utils/formatting'
 import './TotalMarketcapWidget.scss'
-import GetTotalMarketcap from './GetTotalMarketcap'
+
 const currencyFormatOptions = {
   currency: 'USD',
   minimumFractionDigits: 0,
   maximumFractionDigits: 0
 }
 
+const combineHistoryPrices = historyPrices => {
+  if (!historyPrices) return undefined
+
+  const prices = Object.keys(historyPrices)
+
+  if (prices.length > 10) return undefined // OTHERWISE: It's computing hell. Almost 1000 of arrays with 500+ elements.
+
+  return prices.reduce((acc, slug) => {
+    return historyPrices[slug].map((pricePoint, index) => {
+      let doesAccumulatorExist = acc[index] !== undefined
+      let accVolume = doesAccumulatorExist ? acc[index].volume : 0
+      let accMarketcap = doesAccumulatorExist ? acc[index].marketcap : 0
+
+      return {
+        volume: pricePoint.volume + accVolume,
+        marketcap: pricePoint.marketcap + accMarketcap
+      }
+    })
+  }, [])
+}
+
 const generateWidgetData = historyPrice => {
-  if (!historyPrice) return {}
+  if (!historyPrice || historyPrice.length === 0) return {}
 
   const historyPriceLastIndex = historyPrice.length - 1
 
@@ -44,12 +65,12 @@ const generateWidgetData = historyPrice => {
   }
 }
 
-const TotalMarketcapWidget = ({ data: { historyPrice } }) => {
+const TotalMarketcapWidget = ({ historyPrices }) => {
   const {
     totalmarketCapPrice = '.',
     volumeAmplitudePrice = '.',
     marketcapDataset = []
-  } = generateWidgetData(historyPrice)
+  } = generateWidgetData(combineHistoryPrices(historyPrices))
 
   const valueClassNames = `TotalMarketcapWidget__value ${
     totalmarketCapPrice === '.' ? 'TotalMarketcapWidget__value_loading' : ''
@@ -85,18 +106,6 @@ const TotalMarketcapWidget = ({ data: { historyPrice } }) => {
       </ResponsiveContainer>
     </Widget>
   )
-}
-
-const ApolloTotalMarketcapWidget = graphql(totalMarketcapGQL)(
-  TotalMarketcapWidget
-)
-
-ApolloTotalMarketcapWidget.defaultProps = {
-  from: moment()
-    .subtract(3, 'months')
-    .utc()
-    .format(),
-  slug: 'TOTAL_MARKET'
 }
 
 export default TotalMarketcapWidget

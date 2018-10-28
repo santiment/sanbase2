@@ -1,7 +1,10 @@
 import React from 'react'
 import { graphql, compose } from 'react-apollo'
 import { connect } from 'react-redux'
-import { totalMarketcapGQL } from './TotalMarketcapGQL'
+import {
+  totalMarketcapGQL,
+  constructTotalMarketcapGQL
+} from './TotalMarketcapGQL'
 import TotalMarketcapWidget from './TotalMarketcapWidget'
 import moment from 'moment'
 
@@ -11,7 +14,7 @@ const composeHistoryPriceProps = slug => ({
 }) => ({
   historyPrices: {
     ...ownHistoryPrices,
-    [slug]: historyPrice
+    [slug]: historyPrice[slug]
   }
 })
 
@@ -20,11 +23,15 @@ const getMarketcapQuery = (type, projects) => {
     .subtract(3, 'months')
     .utc()
     .format()
-  console.log('TCL: getMarketcapQuery -> from', from)
 
   if (type !== 'list') {
     return graphql(totalMarketcapGQL, {
-      props: composeHistoryPriceProps('TOTAL_MARKET'),
+      // props: composeHistoryPriceProps('TOTAL_MARKET'),
+      props: ({ data: { historyPrice = [] } }) => ({
+        historyPrices: {
+          TOTAL_MARKET: historyPrice
+        }
+      }),
       options: () => ({
         variables: {
           from,
@@ -34,19 +41,23 @@ const getMarketcapQuery = (type, projects) => {
     })
   }
 
-  const slugsQuery = projects.slice(0, 10).map(({ slug }) =>
-    graphql(totalMarketcapGQL, {
-      props: composeHistoryPriceProps(slug),
-      options: () => ({
-        variables: {
-          from,
-          slug
-        }
-      })
-    })
-  )
+  const slugs = projects.slice(0, 10).map(({ slug }) => slug)
 
-  return compose(...slugsQuery)
+  const slugsQuery = graphql(constructTotalMarketcapGQL(slugs, from), {
+    props: ({ data: historyPrice = {} }) => {
+      return slugs.reduce(
+        (acc, slug) => {
+          acc.historyPrices[slug] = historyPrice['_' + slug.replace(/-/g, '')]
+          return acc
+        },
+        {
+          historyPrices: {}
+        }
+      )
+    }
+  })
+
+  return slugsQuery
 }
 
 const GetTotalMarketcap = ({ type, from, projects, ...rest }) => {

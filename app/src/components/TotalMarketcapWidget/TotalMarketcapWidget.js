@@ -21,6 +21,7 @@ const combineHistoryPrices = historyPrices => {
   if (prices.length > 10) return undefined // OTHERWISE: It's computing hell. Almost 1000 of arrays with 500+ elements.
 
   return prices.reduce((acc, slug) => {
+    if (historyPrices[slug] === undefined) return []
     return historyPrices[slug].map((pricePoint, index) => {
       let doesAccumulatorExist = acc[index] !== undefined
       let accVolume = doesAccumulatorExist ? acc[index].volume : 0

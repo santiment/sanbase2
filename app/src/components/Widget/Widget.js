@@ -2,8 +2,27 @@ import React from 'react'
 
 import './Widget.css'
 
-const Widget = ({ children, className }) => {
-  return <div className={'Widget ' + className || ''}>{children}</div>
+/*
+
+padding: 5px;
+    font-size: 15px;
+    margin: 0;
+    text-align: center;
+
+    display: block;
+    content: '';
+    width: 100%;
+    height: 1px;
+    background: #cacaca;
+*/
+
+const Widget = ({ children, title, className = '' }) => {
+  return (
+    <div className={'Widget ' + className}>
+      {title && <h2 className='Widget__title'>{title}</h2>}
+      {children}
+    </div>
+  )
 }
 
 export default Widget

@@ -6,6 +6,8 @@
   margin: 10px;
   border: 1px solid #adadad;
   border-radius: 3px;
+  display: flex;
+  flex-direction: column;
 }
 
 .Widget__title {
@@ -13,6 +15,15 @@
   font-size: 13px;
   margin: 0;
   text-align: center;
+}
+
+.Widget__content {
+  max-height: 100%;
+  flex: 1;
+}
+
+.Widget__title + .Widget__content {
+  max-height: calc(100% - 30px);
 }
 
 .Widget__title::after {

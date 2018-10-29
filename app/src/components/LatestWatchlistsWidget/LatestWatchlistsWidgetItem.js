@@ -2,7 +2,7 @@ import React, { Fragment } from 'react'
 import moment from 'moment'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
-// import './InsightsWidgetItem.css'
+import styles from './LatestWatchlists.module.css'
 
 // const CHARACTERS_AMOUNT_FIT_IN_ONE_LINE = 36
 
@@ -31,6 +31,8 @@ import { Link } from 'react-router-dom'
 //   })
 // }
 
+const MAX_LIST_ITEMS = 2
+
 const InsightsWidgetItem = ({
   id,
   name,
@@ -38,31 +40,35 @@ const InsightsWidgetItem = ({
   listItems,
   user: { username, id: userId }
 }) => {
-  // let insightContent = getInsightContent(text)
-  // if (typeof insightContent === 'object') {
-  //   insightContent = createInsightThumbnail(insightContent)
-  // }
+  const remainingItemsCount = listItems.length - MAX_LIST_ITEMS
+  console.log('TCL: remainingItemsCount', remainingItemsCount)
+  const isLongList = remainingItemsCount > 0
+  console.log('TCL: isLongList', isLongList)
+
   return (
-    <div className='InsightsWidgetItem'>
-      <h3 className='InsightsWidgetItem__title'>
+    <div className={styles.wrapper}>
+      <h3 className={styles.title}>
         <Link to={`/assets/list?name=${name}@${id}`}>{name}</Link>
       </h3>
-      <div className='InsightsWidgetItem__content'>
-        This watchlist contains {listItems.length} items.
-        <Link to={`/assets/list?name=${name}@${id}`}>And others...</Link>
+      <div className={styles.content}>
+        This watchlist includes:
+        <ul className={styles.list}>
+          {listItems.slice(0, MAX_LIST_ITEMS).map(({ project: { name } }) => (
+            <li>{name}</li>
+          ))}
+          {isLongList && <li>And {remainingItemsCount} more projects...</li>}
+        </ul>
       </div>
-      <div className='InsightsWidgetItem__bottom'>
-        <h4 className='InsightsWidgetItem__info InsightsWidgetItem__info_author'>
+      <div className={styles.bottom}>
+        <h4 className={styles.info + ' ' + styles.info_author}>
           by {username}
         </h4>
-        <h4 className='InsightsWidgetItem__info InsightsWidgetItem__info_time'>
+        <h4 className={styles.info + ' ' + styles.info_time}>
           {moment(createdAt).format('MMM DD, YYYY')}
         </h4>
       </div>
     </div>
   )
 }
-
-// InsightsWidgetItem.propTypes = propTypes
 
 export default InsightsWidgetItem

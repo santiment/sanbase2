@@ -20,7 +20,7 @@ const Widget = ({ children, title, className = '' }) => {
   return (
     <div className={'Widget ' + className}>
       {title && <h2 className='Widget__title'>{title}</h2>}
-      {children}
+      <div className='Widget__content'>{children}</div>
     </div>
   )
 }

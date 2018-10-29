@@ -1,9 +1,10 @@
 import React from 'react'
+import { graphql } from 'react-apollo'
+import Slider from 'react-slick'
 import Widget from '../Widget/Widget'
 import LatestWatchlistsWidgetItem from './LatestWatchlistsWidgetItem'
-import { graphql } from 'react-apollo'
 import { latsetWatchlistsGQL } from './latsetWatchlistsGQL'
-import Slider from 'react-slick'
+import styles from './LatestWatchlists.module.css'
 
 const sliderSettings = {
   dots: true,
@@ -18,7 +19,7 @@ const sliderSettings = {
 
 const LatestWatchlistsWidget = ({ data: { fetchAllPublicUserLists = [] } }) => {
   return (
-    <Widget title={'Latest public Watchlists'}>
+    <Widget className={styles.widget} title={'Latest public Watchlists'}>
       <Slider {...sliderSettings}>
         {fetchAllPublicUserLists.map(
           ({ id, name, listItems, isertedAt, user }) => (

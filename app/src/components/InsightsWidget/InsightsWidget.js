@@ -8,7 +8,7 @@ import { insightsWidgetGQL } from './insightsWidgetGQL'
 import './InsightsWidget.css'
 import './SliderWidget.css'
 
-const sliderSettings = {
+export const sliderSettings = {
   dots: true,
   infinite: true,
   speed: 500,

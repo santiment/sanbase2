@@ -27,8 +27,6 @@ import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/assets/AssetsPage'
-import LatestWatchlistsWidget from './components/LatestWatchlistsWidget/LatestWatchlistsWidget'
-import InsightsWidget from './components/InsightsWidget/InsightsWidget'
 import { getConsentUrl } from './utils/utils'
 import './App.scss'
 
@@ -94,8 +92,6 @@ export const App = ({
   hasUsername
 }) => (
   <div className='App'>
-    <LatestWatchlistsWidget />
-    <InsightsWidget />
     {isOffline && (
       <FadeInDown
         className='offline-status-message'

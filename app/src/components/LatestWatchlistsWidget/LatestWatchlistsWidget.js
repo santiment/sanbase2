@@ -4,18 +4,8 @@ import Slider from 'react-slick'
 import Widget from '../Widget/Widget'
 import LatestWatchlistsWidgetItem from './LatestWatchlistsWidgetItem'
 import { latsetWatchlistsGQL } from './latsetWatchlistsGQL'
+import { sliderSettings } from '../InsightsWidget/InsightsWidget'
 import styles from './LatestWatchlists.module.css'
-
-const sliderSettings = {
-  dots: true,
-  infinite: true,
-  speed: 500,
-  slidesToShow: 1,
-  slidesToScroll: 1,
-  autoplaySpeed: 7000,
-  autoplay: true,
-  arrows: false
-}
 
 const LatestWatchlistsWidget = ({ data: { fetchAllPublicUserLists = [] } }) => {
   return (

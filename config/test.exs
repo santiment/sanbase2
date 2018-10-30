@@ -33,7 +33,7 @@ config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 
 config :sanbase, Sanbase.Auth.Hmac, secret_key: "Non_empty_key_used_in_tests_only"
 
-config :sanbase, Sanbase.ExternalServices.Coinmarketcap, sync_enabled: false
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap2, sync_enabled: false
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   scale: 1000,

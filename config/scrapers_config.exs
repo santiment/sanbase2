@@ -5,12 +5,6 @@
 # is restricted to this project.
 use Mix.Config
 
-config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  # 5 minutes
-  update_interval: 5 * 1000 * 60,
-  sync_enabled: {:system, "COINMARKETCAP_PRICES_ENABLED", false}
-
-# TODO: Change after switching over to only this cmc
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap2,
   # 5 minutes
   update_interval: 5 * 1000 * 60,

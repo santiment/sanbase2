@@ -308,6 +308,50 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     assert all_public_lists_cnt == 2
   end
 
+  describe "fetch_public_user_lists_by_id" do
+    test "returns user list when public", %{user: user, conn: conn} do
+      project =
+        Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+
+      {:ok, user_list} = UserList.create_user_list(user, %{name: "My Test List", is_public: true})
+
+      {:ok, user_list} =
+        UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+
+      query = query("fetchPublicUserListsById(userListId: #{user_list.id})")
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "fetchPublicUserListsById"))
+
+      user_list_result = json_response(result, 200)["data"]["fetchPublicUserListsById"]
+
+      assert user_list_result == %{
+               "color" => "NONE",
+               "id" => "#{user_list.id}",
+               "is_public" => true,
+               "list_items" => [%{"project" => %{"id" => "#{project.id}"}}],
+               "name" => "My Test List",
+               "user" => %{"id" => "#{user.id}"}
+             }
+    end
+
+    test "returns null when no public list is available", %{user: user, conn: conn} do
+      {:ok, user_list} =
+        UserList.create_user_list(user, %{name: "My Test List", is_public: false})
+
+      query = query("fetchPublicUserListsById(userListId: #{user_list.id})")
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "fetchPublicUserListsById"))
+
+      user_list_result = json_response(result, 200)["data"]["fetchPublicUserListsById"]
+
+      assert user_list_result == nil
+    end
+  end
+
   defp query(query) do
     """
     {

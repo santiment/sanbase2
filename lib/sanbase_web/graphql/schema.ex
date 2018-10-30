@@ -582,6 +582,16 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&UserListResolver.fetch_all_public_user_lists/3)
     end
 
+    @desc ~s"""
+    Fetch public favourites lists by list id.
+    This query returns either a single user list item or null.
+    """
+    field :fetch_public_user_lists_by_id, :user_list do
+      arg(:user_list_id, non_null(:id))
+
+      resolve(&UserListResolver.fetch_public_user_lists_by_id/3)
+    end
+
     @desc "Returns statistics for the data stored in elasticsearch"
     field :elasticsearch_stats, :elasticsearch_stats do
       arg(:from, non_null(:datetime))

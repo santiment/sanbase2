@@ -86,6 +86,18 @@ defmodule Sanbase.UserLists.UserList do
     {:ok, Repo.all(query) |> Repo.preload(:list_items)}
   end
 
+  def fetch_public_user_lists_by_id(user_list_id) do
+    result =
+      from(
+        ul in UserList,
+        where: ul.is_public == true,
+        preload: [:list_items]
+      )
+      |> Repo.get(user_list_id)
+
+    {:ok, result}
+  end
+
   defp update_list_items_params(params, id) do
     list_items = Map.get(params, :list_items)
 

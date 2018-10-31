@@ -10,38 +10,16 @@ import {
   YAxis,
   Tooltip
 } from 'recharts'
-import { formatNumber } from './../../utils/formatting'
-
-const Amount = {
-  BILLION: 1000000000,
-  MILLION: 1000000
-}
-
-const getPriceMoneyAbr = value => {
-  if (value >= Amount.MILLION && value < Amount.BILLION) {
-    return `${+(value / Amount.MILLION).toFixed(2)} Mil`
-  }
-  if (value >= Amount.BILLION) {
-    return `${+(value / Amount.BILLION).toFixed(2)} Bil`
-  }
-  if (value >= 1000) {
-    return `${+(value / 1000).toFixed(2)} K`
-  }
-  return value
-}
+import { formatNumber, millify } from './../../utils/formatting'
 
 const SignalsChart = ({ chartData = [] }) => {
   return (
     <div className='TrendsExploreChart'>
       <ResponsiveContainer width='100%' height={300}>
-        <ComposedChart
-          data={chartData}
-          // margin={{ top: 5, right: 36, left: 0, bottom: 5 }}
-        >
+        <ComposedChart data={chartData}>
           <XAxis
             dataKey='datetime'
             tickLine={false}
-            // tickMargin={5}
             minTickGap={100}
             tickFormatter={timeStr => moment(timeStr).format('DD MMM YY')}
           />
@@ -57,7 +35,7 @@ const SignalsChart = ({ chartData = [] }) => {
             yAxisId='axis-volume'
             orientation='right'
             domain={['auto', 'auto']}
-            tickFormatter={getPriceMoneyAbr}
+            tickFormatter={millify}
             tickLine={false}
             axisLine={false}
           />

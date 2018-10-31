@@ -206,9 +206,9 @@ defmodule Sanbase.Prices.Store do
     marketcap_percent =
       marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 5) end)
 
-    slug_marketcap_percent_map = Enum.zip(slugs, marketcap_percent) |> Enum.into(%{})
+    slug_marketcap_percent = Enum.zip([slugs, marketcap_values, marketcap_percent])
 
-    {:ok, combined_volume, combined_mcap, slug_marketcap_percent_map}
+    {:ok, combined_volume, slug_marketcap_percent}
   end
 
   defp combine_results_multiple_measurements(_, _), do: {:error, nil}

@@ -337,11 +337,18 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     assert [
              %{
-               "marketcap" => 1300,
                "volume" => 305,
-               "marketcapPercent" => [
-                 %{"percent" => Float.round(800 / 1300, 5), "slug" => context.slug1},
-                 %{"percent" => Float.round(500 / 1300, 5), "slug" => context.slug2}
+               "marketcap" => [
+                 %{
+                   "marketcap" => 800,
+                   "percent" => Float.round(800 / 1300, 5),
+                   "slug" => context.slug1
+                 },
+                 %{
+                   "marketcap" => 500,
+                   "percent" => Float.round(500 / 1300, 5),
+                   "slug" => context.slug2
+                 }
                ]
              }
            ] == result
@@ -365,10 +372,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     assert [
              %{
-               "marketcap" => 800,
                "volume" => 300,
-               "marketcapPercent" => [
-                 %{"percent" => 1.0000, "slug" => context.slug1}
+               "marketcap" => [
+                 %{"marketcap" => 800, "percent" => 1.0000, "slug" => context.slug1}
                ]
              }
            ] == result
@@ -393,8 +399,8 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
         to: "#{to}"
       ) {
         volume,
-        marketcap,
-        marketcapPercent {
+        marketcap {
+          marketcap,
           slug,
           percent
         }

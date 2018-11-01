@@ -6,7 +6,7 @@ import Selector from '../../components/Selector/Selector'
 import Panel from '../../components/Panel'
 import styles from './SignalsPriceVolume.module.css'
 
-console.log()
+
 class SignalsPriceVolume extends Component {
   state = {
     timeRange: '6m'
@@ -43,7 +43,6 @@ class SignalsPriceVolume extends Component {
               interval: '1d'
             }}
             render={({ timeseries: { price } }) => {
-              console.log(price)
               return <SignalsChart chartData={price ? price.items : null} />
             }}
           />

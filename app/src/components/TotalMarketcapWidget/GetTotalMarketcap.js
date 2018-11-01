@@ -26,7 +26,6 @@ const getMarketcapQuery = (type, projects) => {
 
   if (type !== 'list') {
     return graphql(totalMarketcapGQL, {
-      // props: composeHistoryPriceProps('TOTAL_MARKET'),
       props: ({ data: { historyPrice = [] } }) => ({
         historyPrices: {
           TOTAL_MARKET: historyPrice

@@ -102,7 +102,11 @@ class SearchPanel extends Component {
             onResultSelect={this.handleResultSelect}
             onSearchChange={this.handleSearchChange}
             results={this.state.results}
-            value={this.state.value || this.props.value}
+            value={
+              this.state.value === undefined
+                ? this.props.value
+                : this.state.value
+            }
             resultRenderer={resultRenderer}
             selectFirstResult
             input={CustomInput}

@@ -173,12 +173,12 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc ~s"""
     Fetch combined stats for a given list of project's slugs
     """
-    field :projects_group_stats, list_of(:group_stats) do
+    field :projects_list_stats, list_of(:project_stats) do
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&PriceResolver.projects_group_stats/3)
+      cache_resolve(&PriceResolver.projects_list_stats/3)
     end
 
     @desc "Returns a list of available github repositories."

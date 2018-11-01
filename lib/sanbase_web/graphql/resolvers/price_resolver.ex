@@ -89,23 +89,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
-  def projects_group_stats(_root, %{slugs: slugs} = args, _context) do
+  def projects_list_stats(_root, %{slugs: slugs} = args, _context) do
     with {:ok, measurement_slug_map} <- Measurement.measurement_slug_map_from(slugs),
-         {:ok, combined_volume, slug_marketcap_percent} <-
+         {:ok, values} <-
            Sanbase.Prices.Store.fetch_combined_vol_mcap(
              measurement_slug_map,
              args.from,
              args.to
            ) do
       {:ok,
-       %{
-         volume: combined_volume,
-         marketcap:
-           slug_marketcap_percent
-           |> Enum.map(fn
-             {slug, mcap, percent} -> %{slug: slug, marketcap: mcap, percent: percent}
-           end)
-       }}
+       values
+       |> Enum.map(fn
+         {slug, volume, mcap, percent} ->
+           %{slug: slug, volume: volume, marketcap: mcap, marketcap_percent: percent}
+       end)}
     else
       _ ->
         {:error, "Can't fetch combined volume and marketcap for slugs"}

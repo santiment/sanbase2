@@ -1,21 +1,20 @@
 import React, { Component } from 'react'
 import SignalsChart from '../../components/Signals/SignalsChart'
 import SignalsSearch from '../../components/Signals/SignalsSearch'
-import GetHistoryPrice from './GetHistoryPrice'
+import GetTimeSeries from '../../components/GetTimeSeries'
 import Selector from '../../components/Selector/Selector'
 import Panel from '../../components/Panel'
-import { getTimeFromFromString } from '../../utils/utils'
 import styles from './SignalsPriceVolume.module.css'
 
 console.log()
 class SignalsPriceVolume extends Component {
   state = {
-    from: '6m'
+    timeRange: '6m'
   }
 
-  setFromValue = from => {
+  setTimeRangeValue = timeRange => {
     this.setState({
-      from
+      timeRange
     })
   }
 
@@ -25,7 +24,7 @@ class SignalsPriceVolume extends Component {
         params: { slug }
       }
     } = this.props
-    const { from } = this.state
+    const { timeRange } = this.state
     return (
       <div className={styles.wrapper}>
         <Panel>
@@ -33,15 +32,21 @@ class SignalsPriceVolume extends Component {
           <div className={styles.header}>
             <Selector
               options={['1w', '1m', '3m', '6m']}
-              onSelectOption={this.setFromValue}
-              defaultSelected={from}
+              onSelectOption={this.setTimeRangeValue}
+              defaultSelected={timeRange}
             />
           </div>
-          <GetHistoryPrice slug={slug} from={getTimeFromFromString(from)}>
-            {data => (
-              <SignalsChart chartData={data ? data.historyPrice : null} />
-            )}
-          </GetHistoryPrice>
+          <GetTimeSeries
+            price={{
+              timeRange,
+              slug,
+              interval: '1d'
+            }}
+            render={({ timeseries: { price } }) => {
+              console.log(price)
+              return <SignalsChart chartData={price ? price.items : null} />
+            }}
+          />
         </Panel>
       </div>
     )

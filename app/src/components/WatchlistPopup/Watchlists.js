@@ -47,7 +47,6 @@ const Watchlists = ({
             <div key={id} className='watchlists__item'>
               <Link
                 className='watchlists__item__link'
-                // to={`/assets/list?name=${name}@${id}`}
                 to={{
                   pathname: '/assets/list',
                   search: qs.stringify(updateSearchQuery(search, name, id))

@@ -29,7 +29,8 @@ const WatchlistPopup = ({
   watchlistUi,
   createWatchlist,
   removeAssetList,
-  toggleAssetInList
+  toggleAssetInList,
+  searchParams
 }) => {
   return (
     <Popup
@@ -46,6 +47,7 @@ const WatchlistPopup = ({
             watchlistUi={watchlistUi}
             slug={slug}
             lists={lists}
+            searchParams={searchParams}
           />
         ) : (
           <WatchlistsAnon />

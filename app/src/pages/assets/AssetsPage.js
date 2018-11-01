@@ -7,6 +7,7 @@ import HelpPopupAssets from './HelpPopupAssets'
 import AssetsPageNavigation from './AssetsPageNavigation'
 import WatchlistShare from '../../components/WatchlistShare/WatchlistShare'
 import WidgetList from '../../components/Widget/WidgetList'
+import qs from 'query-string'
 import './Assets.css'
 
 const AssetsPage = props => (
@@ -15,7 +16,9 @@ const AssetsPage = props => (
       <title>Assets</title>
       <link rel='canonical' href={`${getOrigin()}/assets`} />
     </Helmet>
-    {props.isLoggedIn && <WidgetList type={props.type} />}
+    {qs.parse(props.location.search).poc === 'widgets' && (
+      <WidgetList type={props.type} isLoggedIn={props.isLoggedIn} />
+    )}
     <div className='page-head page-head-projects'>
       <div className='page-head-projects__left'>
         <h1>Assets</h1>
@@ -23,7 +26,10 @@ const AssetsPage = props => (
         {props.type === 'list' &&
           props.location.hash !== '#shared' && <WatchlistShare />}
       </div>
-      <AssetsPageNavigation isLoggedIn={props.isLoggedIn} />
+      <AssetsPageNavigation
+        isLoggedIn={props.isLoggedIn}
+        location={props.location}
+      />
     </div>
     <Assets
       {...props}

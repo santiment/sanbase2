@@ -42,7 +42,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
 
   def handle_continue(:set_state, _) do
     exchanges =
-      Sanbase.Model.ExchangeEthAddress.list_all()
+      Sanbase.Model.ExchangeAddress.list_all()
       |> MapSet.new()
 
     new_state = Map.put(%{}, :exchange_wallets_set, exchanges)

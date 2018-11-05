@@ -96,7 +96,7 @@ defmodule Sanbase.Application.ScrapersSupervisor do
       # Github activity scraping scheduler
       Sanbase.ExternalServices.Github.child_spec(%{}),
 
-      # Quantim Scheduler
+      # Quantum Scheduler
       start_if(
         fn -> {Sanbase.Scheduler, []} end,
         fn -> System.get_env("QUANTUM_SCHEDULER_ENABLED") end

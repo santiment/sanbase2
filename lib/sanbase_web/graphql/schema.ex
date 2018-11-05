@@ -584,12 +584,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Fetch public favourites list by list id.
+    If the list is owned by the current user then the list can be private as well.
     This query returns either a single user list item or null.
     """
-    field :public_user_list, :user_list do
+    field :user_list, :user_list do
       arg(:user_list_id, non_null(:id))
 
-      resolve(&UserListResolver.public_user_list/3)
+      resolve(&UserListResolver.user_list/3)
     end
 
     @desc "Returns statistics for the data stored in elasticsearch"

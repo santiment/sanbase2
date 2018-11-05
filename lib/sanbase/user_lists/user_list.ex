@@ -86,14 +86,23 @@ defmodule Sanbase.UserLists.UserList do
     {:ok, Repo.all(query) |> Repo.preload(:list_items)}
   end
 
-  def public_user_list(user_list_id) do
-    result =
-      from(
-        ul in UserList,
-        where: ul.is_public == true,
-        preload: [:list_items]
-      )
-      |> Repo.get(user_list_id)
+  def user_list(user_list_id, %User{id: id}) do
+    query =
+      case id do
+        nil ->
+          from(ul in UserList,
+            where: ul.is_public == true,
+            preload: [:list_items]
+          )
+
+        _ ->
+          from(ul in UserList,
+            where: ul.is_public == true or ul.user_id == ^id,
+            preload: [:list_items]
+          )
+      end
+
+    result = Repo.get(query, user_list_id)
 
     {:ok, result}
   end

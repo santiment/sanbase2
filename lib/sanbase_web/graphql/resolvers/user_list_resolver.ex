@@ -104,8 +104,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def public_user_list(_root, %{user_list_id: user_list_id}, _resolution) do
-    UserList.public_user_list(user_list_id)
+  def user_list(_root, %{user_list_id: user_list_id}, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserList.user_list(user_list_id, current_user)
+  end
+
+  def user_list(_root, %{user_list_id: user_list_id}, _resolution) do
+    UserList.user_list(user_list_id, %User{id: nil})
   end
 
   def project_by_list_item(%ListItem{project_id: project_id}, _, _resolution) do

@@ -22,6 +22,7 @@ config :sanbase, Sanbase.Repo,
 
 config :sanbase, Sanbase.TimescaleRepo,
   adapter: Ecto.Adapters.Postgres,
+  timeout: 30_000,
   pool_size: {:system, "TIMESCALE_POOL_SIZE", "30"},
   # because of pgbouncer
   prepare: :unnamed

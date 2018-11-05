@@ -330,6 +330,79 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
              }
   end
 
+  test "project group stats with existing slugs returns correct stats", context do
+    slugs = [context.slug1, context.slug2]
+    query = project_group_stats_query(slugs, context.datetime1, context.datetime3)
+    result = execute_query(context.conn, query, "projectsGroupStats")
+
+    assert [
+             %{
+               "marketcap" => 1300,
+               "volume" => 305,
+               "marketcapPercent" => [
+                 %{"percent" => Float.round(800 / 1300, 5), "slug" => context.slug1},
+                 %{"percent" => Float.round(500 / 1300, 5), "slug" => context.slug2}
+               ]
+             }
+           ] == result
+  end
+
+  test "project group stats with non existing slugs return no data", context do
+    query = project_group_stats_query(["non-existing"], context.datetime1, context.datetime3)
+    result = execute_query(context.conn, query, "projectsGroupStats")
+    assert result == nil
+  end
+
+  test "project group stats with existing and non existing slugs ignores latter", context do
+    query =
+      project_group_stats_query(
+        [context.slug1, "non-existing"],
+        context.datetime1,
+        context.datetime3
+      )
+
+    result = execute_query(context.conn, query, "projectsGroupStats")
+
+    assert [
+             %{
+               "marketcap" => 800,
+               "volume" => 300,
+               "marketcapPercent" => [
+                 %{"percent" => 1.0000, "slug" => context.slug1}
+               ]
+             }
+           ] == result
+  end
+
+  defp execute_query(conn, query, query_name) do
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, query_name))
+
+    json_response(result, 200)["data"][query_name]
+  end
+
+  defp project_group_stats_query(slugs, from, to) do
+    slugs_str = slugs |> Enum.map(fn slug -> ~s|"#{slug}"| end) |> Enum.join(",")
+
+    """
+    {
+      projectsGroupStats(
+        slugs: [#{slugs_str}],
+        from: "#{from}",
+        to: "#{to}"
+      ) {
+        volume,
+        marketcap,
+        marketcapPercent {
+          slug,
+          percent
+        }
+      }
+    }
+    """
+  end
+
   defp basic_auth() do
     username =
       Application.fetch_env!(:sanbase, SanbaseWeb.Graphql.ContextPlug)

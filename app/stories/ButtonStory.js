@@ -3,10 +3,25 @@ import { storiesOf } from '@storybook/react'
 import Button from './../src/components/UI/Button/Button'
 
 storiesOf('Button', module)
-  .add('', () => <Button>Test text</Button>)
-  .add('Filled buttons', () => (
+  .add('Filled', () => (
     <div>
-      <Button fill='red'>Test</Button>
-      <Button fill='green'>Test</Button>
+      <div>
+        <Button fill='negative'>Negative fill</Button>
+      </div>
+      <br />
+      <div>
+        <Button fill='positive'>Positive fill</Button>
+      </div>
+    </div>
+  ))
+  .add('Bordered', () => (
+    <div>
+      <div>
+        <Button border='negative'>Negative border</Button>
+      </div>
+      <br />
+      <div>
+        <Button border='positive'>Positive border</Button>
+      </div>
     </div>
   ))

@@ -9,17 +9,22 @@ require('imports-loader')
 module.exports = (baseConfig, env, defaultConfig) => {
   defaultConfig.module.rules.push({
     test: /\.scss$/,
-    loaders: ['style-loader', 'css-loader', 'sass-loader'],
+    loaders: [
+      'style-loader',
+      'css-loader?modules&namedExport&sass&localIdentName=[name]-[local]_[hash:base64:5]',
+      'sass-loader'
+    ],
     include: path.resolve(__dirname, '../src/')
   })
 
   // Find Storybook's default CSS processing rule
   const cssLoaderIndex = defaultConfig.module.rules.findIndex(
     rule => rule.test.source === `\\.css$`
-  );
+  )
 
-  if (!Number.isInteger(cssLoaderIndex))
+  if (!Number.isInteger(cssLoaderIndex)) {
     throw new Error("Could not find Storybook's CSS loader")
+  }
 
   // Exclude CSS Modules from Storybook's standard CSS processing
   defaultConfig.module.rules[cssLoaderIndex].exclude = /\.module\.css$/
@@ -38,7 +43,7 @@ module.exports = (baseConfig, env, defaultConfig) => {
       }
     ],
     include: path.resolve(__dirname, '../src')
-  });
+  })
 
   return defaultConfig
 }

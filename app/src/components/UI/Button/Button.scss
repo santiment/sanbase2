@@ -1,0 +1,37 @@
+$button-positive-day: #26a987;
+$button-negative-day: #d22f2f;
+
+.btn {
+  border: none;
+  outline: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.fill {
+  &.negative,
+  &.positive {
+    color: #fff;
+  }
+
+  &.negative {
+    background-color: $button-negative-day;
+  }
+
+  &.positive {
+    background-color: $button-positive-day;
+  }
+}
+
+.border {
+  &.negative {
+    color: $button-negative-day;
+    border: 1px solid $button-negative-day;
+  }
+
+  &.positive {
+    color: $button-positive-day;
+    border: 1px solid $button-positive-day;
+  }
+}

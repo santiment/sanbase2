@@ -104,8 +104,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     end
   end
 
-  def fetch_public_user_lists_by_id(_root, %{user_list_id: user_list_id}, _resolution) do
-    UserList.fetch_public_user_lists_by_id(user_list_id)
+  def public_user_list(_root, %{user_list_id: user_list_id}, _resolution) do
+    UserList.public_user_list(user_list_id)
   end
 
   def project_by_list_item(%ListItem{project_id: project_id}, _, _resolution) do

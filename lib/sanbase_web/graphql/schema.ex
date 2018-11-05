@@ -583,13 +583,13 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Fetch public favourites lists by list id.
+    Fetch public favourites list by list id.
     This query returns either a single user list item or null.
     """
-    field :fetch_public_user_lists_by_id, :user_list do
+    field :public_user_list, :user_list do
       arg(:user_list_id, non_null(:id))
 
-      resolve(&UserListResolver.fetch_public_user_lists_by_id/3)
+      resolve(&UserListResolver.public_user_list/3)
     end
 
     @desc "Returns statistics for the data stored in elasticsearch"

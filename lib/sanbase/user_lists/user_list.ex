@@ -86,7 +86,7 @@ defmodule Sanbase.UserLists.UserList do
     {:ok, Repo.all(query) |> Repo.preload(:list_items)}
   end
 
-  def fetch_public_user_lists_by_id(user_list_id) do
+  def public_user_list(user_list_id) do
     result =
       from(
         ul in UserList,

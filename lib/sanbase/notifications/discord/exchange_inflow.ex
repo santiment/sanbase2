@@ -39,6 +39,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   @impl true
   def publish("discord", payload) do
+    Logger.info("Sending Discord notification for ExchangeInflow...")
+
     case payload do
       {:ok, result} when result == "null" or result == "[]" ->
         Logger.info(
@@ -111,7 +113,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
         """
         Project #{project.name} (contract address #{project.main_contract_address} has more
-        than 1% of its total supply deposited into an exchange in the past #{interval_days()} day(s)
+        than #{signal_trigger_percent()}% of its total supply deposited into an exchange in the past #{
+          interval_days()
+        } day(s).
+        #{Project.sanbase_link(project)}s
         """
       end
     end)

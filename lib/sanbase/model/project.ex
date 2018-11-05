@@ -1,3 +1,4 @@
+      and not is_nil(p.total_supply) and not is_nil(p.name)
 defmodule Sanbase.Model.Project do
   use Ecto.Schema
   import Ecto.Changeset
@@ -102,6 +103,10 @@ defmodule Sanbase.Model.Project do
 
   def describe(%Project{id: id}) do
     "project with id #{id}"
+  end
+
+  def sanbase_link(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{cmc_id}"
   end
 
   def initial_ico(%Project{id: id}) do

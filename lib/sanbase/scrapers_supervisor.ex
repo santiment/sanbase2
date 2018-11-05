@@ -94,7 +94,13 @@ defmodule Sanbase.Application.ScrapersSupervisor do
         &Sanbase.Application.start_faktory?/0
       ),
       # Github activity scraping scheduler
-      Sanbase.ExternalServices.Github.child_spec(%{})
+      Sanbase.ExternalServices.Github.child_spec(%{}),
+
+      # Quantum Scheduler
+      start_if(
+        fn -> {Sanbase.Scheduler, []} end,
+        fn -> System.get_env("QUANTUM_SCHEDULER_ENABLED") end
+      )
     ]
 
     opts = [

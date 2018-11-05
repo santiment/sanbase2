@@ -138,6 +138,17 @@ config :sanbase, Sanbase.Discourse,
   api_key: {:system, "DISCOURSE_API_KEY"},
   insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "sanbaseinsights"}
 
+config :sanbase, Sanbase.Scheduler,
+  scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
+  global: true,
+  timeout: 30_000,
+  jobs: [
+    daa_signal: [
+      schedule: "00 12 * * *",
+      task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
+    ]
+  ]
+
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"

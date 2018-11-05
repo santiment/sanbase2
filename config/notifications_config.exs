@@ -20,3 +20,11 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
 config :sanbase, Sanbase.Notifications.Insight,
   webhook_url: {:system, "INSIGHTS_DISCORD_WEBHOOK_URL"},
   insights_discord_publish_user: {:system, "INSIGHTS_DISCORD_PUBLISH_USER", "New Insight"}
+
+config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
+  webhook_url: {:system, "DAA_SIGNAL_DISCORD_WEBHOOK_URL"},
+  publish_user: {:system, "DAA_SIGNAL_DISCORD_PUBLISH_USER", "Daily Active Addresses Going Up"},
+  threshold: {:system, "DAA_SIGNAL_THRESHOLD", "100"},
+  timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "30"},
+  timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "2"},
+  change: {:system, "DAA_SIGNAL_CHANGE", "3"}

@@ -1,3 +1,5 @@
+import Ecto.Query, only: [from: 2]
+
 alias Sanbase.Model.{
   Infrastructure,
   MarketSegment,
@@ -106,7 +108,6 @@ alias Sanbase.Notifications.Insight, as: NotificationsInsight
 alias Sanbase.Notifications.PriceVolumeDiff, as: PriceVolumeDiff
 alias Sanbase.Notifications.Type, as: NotificationsType
 alias Sanbase.Notifications.Utils, as: NotificationsUtils
-alias Sanbase.Notifications.Discord.DaaSignal
 
 alias Sanbase.Utils.{
   JsonLogger,
@@ -137,10 +138,18 @@ alias SanbaseWeb.Graphql.Resolvers.{
   VotingResolver
 }
 
-alias SanbaseWeb.Graphql.Helpers.{
-  Async,
-  Cache
-}
+alias SanbaseWeb.Graphql.Helpers.Cache
 alias SanbaseWeb.Graphql.Helpers.Utils, as: GraphUtils
 alias Sanbase.Prices.Store, as: PricesStore
 alias Sanbase.Prices.Utils, as: PricesUtils
+
+now = fn -> Timex.now() end
+days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end
+
+project_slugs =
+  from(p in Project, where: not is_nil(p.coinmarketcap_id), select: p.coinmarketcap_id)
+  |> Repo.all
+
+project_contracts =
+  from(p in Project, where: not is_nil(p.main_contract_address), select: p.main_contract_address)
+  |> Repo.all

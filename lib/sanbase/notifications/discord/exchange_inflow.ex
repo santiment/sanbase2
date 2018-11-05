@@ -21,12 +21,12 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       projects()
       |> filter_projects(opts)
 
+    from = Timex.shift(Timex.now(), days: -interval_days())
+    to = Timex.now()
+
     projects
-    |> Enum.map(fn %Project{main_contract_address: contract} -> contract end)
-    |> Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
-      Timex.shift(Timex.now(), days: -interval_days()),
-      Timex.now()
-    )
+    |> Enum.map(& &1.main_contract_address)
+    |> Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(from, to)
     |> case do
       {:ok, list} ->
         publish("discord", build_payload(projects, list))
@@ -57,16 +57,18 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   # Private functions
 
+  # Return all projects where the fields that will be used in the signal are not nil
   defp projects() do
     from(
       p in Project,
       where:
         not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
-          not is_nil(p.token_decimals) and not is_nil(p.total_supply)
+          not is_nil(p.token_decimals) and not is_nil(p.total_supply) and not is_nil(p.name)
     )
     |> Repo.all()
   end
 
+  # Return all projects from the list which trading volume is over a given threshold
   defp filter_projects(projects, opts) do
     volume_threshold = Keyword.get(opts, :volume_threshold, 1_000_000)
 
@@ -108,7 +110,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
       if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
         """
-        Project #{project.coinmarketcap_id} (contract address #{project.main_contract_address} has more
+        Project #{project.name} (contract address #{project.main_contract_address} has more
         than 1% of its total supply deposited into an exchange in the past #{interval_days()} day(s)
         """
       end

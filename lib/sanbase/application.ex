@@ -42,6 +42,8 @@ defmodule Sanbase.Application do
           {children, opts}
       end
 
+    children = children |> Sanbase.ApplicationUtils.normalize_children()
+
     # Add error tracking through sentry
     :ok = :error_logger.add_report_handler(Sentry.Logger)
 
@@ -53,14 +55,14 @@ defmodule Sanbase.Application do
     :ok
   end
 
-  def faktory_supervisor() do
-    if System.get_env("FAKTORY_HOST") && :ets.whereis(Faktory.Configuration) == :undefined do
-      import Supervisor.Spec
+  def start_faktory?() do
+    System.get_env("FAKTORY_HOST") && :ets.whereis(Faktory.Configuration) == :undefined
+  end
 
-      Faktory.Configuration.init()
-      [supervisor(Faktory.Supervisor, [])]
-    else
-      []
-    end
+  def faktory() do
+    import Supervisor.Spec
+
+    Faktory.Configuration.init()
+    supervisor(Faktory.Supervisor, [])
   end
 end

@@ -12,6 +12,9 @@ defmodule Sanbase.Application.ScrapersSupervisor do
       # Start the Postgres Ecto repository
       Sanbase.Repo,
 
+      # Start the TimescaleDB Ecto repository
+      Sanbase.TimescaleRepo,
+
       # Start a Registry
       {Registry, keys: :unique, name: Sanbase.Registry},
 

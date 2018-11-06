@@ -1,4 +1,3 @@
-      and not is_nil(p.total_supply) and not is_nil(p.name)
 defmodule Sanbase.Model.Project do
   use Ecto.Schema
   import Ecto.Changeset

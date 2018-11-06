@@ -33,9 +33,15 @@ defmodule Sanbase.Notifications.Discord do
   Encode the payload and the username that will be used as the author of the Disord message.
   The result is ready to be passed to `send_notification/3`
   """
-  @spec encode([String.t()], String.t()) :: {:ok, String.t()} | {:error, any()}
-  def encode(payload, publish_user) do
-    Jason.encode(%{content: payload, username: publish_user})
+  @spec encode!([String.t()], String.t()) :: String.t() | no_return
+  def encode!([], _), do: nil
+
+  def encode!(payload, publish_user) do
+    payload =
+      payload
+      |> Enum.join("\n")
+
+    Jason.encode!(%{content: payload, username: publish_user})
   end
 
   # Private functions

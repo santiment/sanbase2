@@ -42,17 +42,12 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     Logger.info("Sending Discord notification for ExchangeInflow...")
 
     case payload do
-      {:ok, result} when result == "null" or result == "[]" ->
+      nil ->
         Logger.info(
           "There are no signals for tokens moved into an exchange. Won't send anything to Discord."
         )
 
-      {:error, error} ->
-        Logger.error(
-          "Error building payload for tokens moved into an exchange. Reason: #{inspect(error)}"
-        )
-
-      {:ok, json_signal} ->
+      json_signal ->
         Discord.send_notification(webhook_url(), "Exchange Inflow", json_signal)
     end
   end
@@ -110,18 +105,17 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> Enum.map(fn %Project{} = project ->
       inflow = Map.get(contract_inflow_map, project.main_contract_address)
 
-      if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
+      if inflow && percent_of_total_supply(project, inflow) > signal_trigger_percent() do
         """
-        Project #{project.name} (contract address #{project.main_contract_address} has more
-        than #{signal_trigger_percent()}% of its total supply deposited into an exchange in the past #{
+        Project #{project.name} has more than #{signal_trigger_percent()}% of its total supply deposited into an exchange in the past #{
           interval_days()
         } day(s).
-        #{Project.sanbase_link(project)}s
+        #{Project.sanbase_link(project)}
         """
       end
     end)
     |> Enum.reject(&is_nil/1)
-    |> Discord.encode(publish_user())
+    |> Discord.encode!(publish_user())
   end
 
   defp percent_of_total_supply(

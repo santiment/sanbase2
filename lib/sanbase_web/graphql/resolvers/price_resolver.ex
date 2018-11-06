@@ -89,10 +89,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     end
   end
 
-  def projects_list_stats(_root, %{slugs: slugs} = args, _context) do
-    with {:ok, measurement_slug_map} <- Measurement.measurement_slug_map_from(slugs),
+  def multiple_projects_stats(_root, %{slugs: slugs} = args, _context) do
+    with {:ok, measurement_slug_map} <- Measurement.names_from_slugs(slugs),
          {:ok, values} <-
-           Sanbase.Prices.Store.fetch_combined_vol_mcap(
+           Sanbase.Prices.Store.fetch_volume_mcap_multiple_measurements(
              measurement_slug_map,
              args.from,
              args.to

@@ -71,7 +71,7 @@ defmodule Sanbase.Influxdb.Measurement do
   @doc ~s"""
     convert a list of slugs to measurement-slug map
   """
-  def measurement_slug_map_from(slugs) do
+  def names_from_slugs(slugs) when is_list(slugs) do
     measurement_slug_map =
       Project.tickers_by_slug_list(slugs)
       |> Enum.map(fn {ticker, slug} -> {ticker <> "_" <> slug, slug} end)

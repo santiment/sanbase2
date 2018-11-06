@@ -124,6 +124,12 @@ defmodule Sanbase.Prices.Store do
     |> combine_results_multiple_measurements(measurement_slug_map)
   end
 
+  def volume_over_threshold(measurements, from, to, threshold) do
+    mean_volume_for_period_query(measurements, from, to)
+    |> Store.query()
+    |> filter_volume_over_threshold(threshold)
+  end
+
   def all_with_data_after_datetime(datetime) do
     datetime_unix_ns = DateTime.to_unix(datetime, :nanoseconds)
 
@@ -134,6 +140,26 @@ defmodule Sanbase.Prices.Store do
   end
 
   # Helper functions
+
+  defp filter_volume_over_threshold(
+         %{
+           results: [
+             %{
+               series: [_ | _] = series
+             }
+           ]
+         },
+         threshold
+       ) do
+    series
+    |> Enum.map(fn %{name: name, values: [[_datetime, volume]]} ->
+      {name, volume}
+    end)
+    |> Enum.reject(fn {_, volume} -> volume < threshold end)
+    |> Enum.map(fn {name, _} -> name end)
+  end
+
+  defp filter_volume_over_threshold(_, _), do: []
 
   defp fetch_query(measurement, from, to) do
     ~s/SELECT time, price_usd, price_btc, marketcap_usd, volume_usd
@@ -188,6 +214,44 @@ defmodule Sanbase.Prices.Store do
       FROM #{measurements_str}
       WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
       AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp combine_results_multiple_measurements(%{results: [%{error: error}]}, _),
+    do: {:error, error}
+
+  defp combine_results_multiple_measurements(
+         %{results: [%{series: series}]},
+         measurement_slug_map
+       ) do
+    slugs = series |> Enum.map(fn s -> measurement_slug_map[s.name] end)
+    values = series |> Enum.map(& &1.values)
+    volume_values = values |> Enum.map(fn [[_, vol, _]] -> vol end)
+    combined_mcap = values |> Enum.reduce(0, fn [[_, _, mcap]], acc -> acc + mcap end)
+    marketcap_values = values |> Enum.map(fn [[_, _, mcap]] -> mcap end)
+
+    marketcap_percent =
+      marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 5) end)
+
+    result = Enum.zip([slugs, volume_values, marketcap_values, marketcap_percent])
+
+    {:ok, result}
+  end
+
+  defp combine_results_multiple_measurements(_, _), do: {:error, nil}
+
+  defp mean_volume_for_period_query(measurements, from, to) do
+    ~s/SELECT MEAN(volume_usd) as volume
+    FROM #{measurements}
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp fetch_combined_vol_mcap_query(measurements_str, from, to) do
+    ~s/
+       SELECT LAST(volume_usd), LAST(marketcap_usd)
+       FROM #{measurements_str}
+       WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+       AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   defp combine_results_multiple_measurements(%{results: [%{error: error}]}, _),

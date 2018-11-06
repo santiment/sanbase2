@@ -16,10 +16,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   alias Sanbase.Notifications.Discord
 
   @impl true
-  def run(opts \\ []) do
+  def run() do
     projects =
       projects()
-      |> filter_projects(opts)
+      |> filter_projects()
 
     from = Timex.shift(Timex.now(), days: -interval_days())
     to = Timex.now()
@@ -66,8 +66,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   # Return all projects from the list which trading volume is over a given threshold
-  defp filter_projects(projects, opts) do
-    volume_threshold = Keyword.get(opts, :volume_threshold, 1_000_000)
+  defp filter_projects(projects) do
+    volume_threshold = Config.get(:trading_volume_threshold) |> String.to_integer()
 
     measurements_list =
       projects

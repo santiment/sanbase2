@@ -31,6 +31,7 @@ config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
 
 config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
   webhook_url: {:system, "EXCHANGE_INFLOW_DISCORD_WEBHOOK_URL"},
+  trading_volume_threshold: {:system, "EXCHANGE_INFLOW_TRADING_VOLUME_THRESHOLD", "1000000"},
   publish_user:
     {:system, "EXCHANGE_INFLOW_DISCORD_PUBLISH_USER", "Tokens Moved Into An Exchange"},
   signal_trigger_percent: {:system, "EXCHANGE_INFLOW_TRIGER_PERCENT", "1"},

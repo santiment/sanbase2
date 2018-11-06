@@ -263,16 +263,16 @@ defmodule Sanbase.Prices.Store do
        ) do
     slugs = series |> Enum.map(fn s -> measurement_slug_map[s.name] end)
     values = series |> Enum.map(& &1.values)
-    combined_volume = values |> Enum.reduce(0, fn [[_, vol, _]], acc -> acc + vol end)
+    volume_values = values |> Enum.map(fn [[_, vol, _]] -> vol end)
     combined_mcap = values |> Enum.reduce(0, fn [[_, _, mcap]], acc -> acc + mcap end)
     marketcap_values = values |> Enum.map(fn [[_, _, mcap]] -> mcap end)
 
     marketcap_percent =
       marketcap_values |> Enum.map(fn mcap -> Float.round(mcap / combined_mcap, 5) end)
 
-    slug_marketcap_percent_map = Enum.zip(slugs, marketcap_percent) |> Enum.into(%{})
+    result = Enum.zip([slugs, volume_values, marketcap_values, marketcap_percent])
 
-    {:ok, combined_volume, combined_mcap, slug_marketcap_percent_map}
+    {:ok, result}
   end
 
   defp combine_results_multiple_measurements(_, _), do: {:error, nil}

@@ -79,7 +79,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
         []
 
       [_ | _] ->
-        measurements_str = Enum.join(measurements_list, ", ")
+        measurements_str =
+          measurements_list
+          |> Enum.map(fn x -> "\"#{x}\"" end)
+          |> Enum.join(", ")
 
         volume_over_threshold_projects =
           Sanbase.Prices.Store.volume_over_threshold(
@@ -122,6 +125,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
          %Project{total_supply: total_supply, token_decimals: token_decimals},
          inflow
        ) do
+    total_supply = Decimal.to_integer(total_supply)
     inflow = inflow / :math.pow(10, token_decimals)
     inflow / total_supply * 100
   end

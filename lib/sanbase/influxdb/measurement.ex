@@ -1,4 +1,4 @@
-lib/sanbase/prices/store.exdefmodule Sanbase.Influxdb.Measurement do
+defmodule Sanbase.Influxdb.Measurement do
   @moduledoc ~S"""
     Module, defining the structure and common parts of a influxdb measurement
   """

@@ -1,7 +1,7 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   @projects_number 10_000
   @moduledoc ~s"""
-    Fetches the ticker data from coinmarketcap API `https://api.coinmarketcap.com/v1/ticker`
+    Fetches the ticker data from coinmarketcap API `https://api.coinmarketcap.com/v2/ticker`
 
     A single request fetchest all top #{@projects_number} tickers information. The coinmarketcap API
     has somewhat misleading name for this api - `ticker` is _NOT_ unique - there
@@ -31,13 +31,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
 
   require Logger
 
+  import Sanbase.Utils.Math, only: [to_integer: 1, to_float: 1]
   alias Sanbase.ExternalServices.RateLimiting
   # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
   alias Sanbase.Influxdb.Measurement
 
   plug(RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
-  plug(Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v1/ticker")
+  plug(Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v2/ticker")
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
@@ -46,7 +47,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   def fetch_data() do
     Logger.info("[CMC] Fetching the realtime data for top #{@projects_number} projects")
 
-    "/?limit=#{@projects_number}"
+    "/?convert=BTC&limit=#{@projects_number}"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -58,7 +59,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
 
       {:ok, %Tesla.Env{status: status, body: body}} ->
         error =
-          "Failed fetching top #{@projects_number} projects' information from /v1/ticker. Status: #{
+          "Failed fetching top #{@projects_number} projects' information from /v2/ticker. Status: #{
             status
           }. Body: #{inspect(body)}"
 
@@ -67,7 +68,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
 
       {:error, error} ->
         error_msg =
-          "Error fetching top #{@projects_number} projects' information from /v1/ticker. Error message #{
+          "Error fetching top #{@projects_number} projects' information from /v2/ticker. Error message #{
             inspect(error)
           }"
 
@@ -78,8 +79,58 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   end
 
   def parse_json(json) do
-    json
-    |> Poison.decode!(as: [%Ticker{}])
+    %{"data" => data} =
+      json
+      |> Poison.decode!()
+
+    data
+    |> Enum.map(fn {_, project_data} ->
+      %{
+        "name" => name,
+        "symbol" => symbol,
+        "website_slug" => website_slug,
+        "rank" => rank,
+        "circulating_supply" => circulating_supply,
+        "total_supply" => total_supply,
+        "max_supply" => max_supply,
+        "last_updated" => last_updated,
+        "quotes" => %{
+          "USD" => %{
+            "price" => price_usd,
+            "volume_24h" => volume_24h_usd,
+            "market_cap" => mcap_usd,
+            "percent_change_1h" => percent_change_1h_usd,
+            "percent_change_24h" => percent_change_24h_usd,
+            "percent_change_7d" => percent_change_7d_usd
+          },
+          "BTC" => %{
+            "price" => price_btc,
+            "volume_24h" => _volume_btc,
+            "market_cap" => _mcap_btc,
+            "percent_change_1h" => _percent_change_1h_btc,
+            "percent_change_24h" => _percent_change_24h_btc,
+            "percent_change_7d" => _percent_change_7d_btc
+          }
+        }
+      } = project_data
+
+      %Ticker{
+        id: website_slug,
+        name: name,
+        symbol: symbol,
+        price_usd: price_usd,
+        price_btc: price_btc,
+        rank: rank,
+        "24h_volume_usd": volume_24h_usd,
+        market_cap_usd: mcap_usd,
+        last_updated: last_updated,
+        available_supply: circulating_supply,
+        total_supply: total_supply,
+        percent_change_1h: percent_change_1h_usd,
+        percent_change_24h: percent_change_24h_usd,
+        percent_change_7d: percent_change_24h_usd
+      }
+    end)
     |> Stream.filter(fn %Ticker{last_updated: last_updated} -> last_updated end)
     |> Enum.map(&make_timestamp_integer/1)
   end
@@ -107,23 +158,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   # Helper functions
 
   defp make_timestamp_integer(%Ticker{last_updated: last_updated} = ticker) do
-    {ts, ""} = Integer.parse(last_updated)
-    %{ticker | last_updated: ts}
-  end
-
-  defp to_float(nil), do: nil
-  defp to_float(fl) when is_float(fl), do: fl
-
-  defp to_float(str) when is_binary(str) do
-    {num, _} = str |> Float.parse()
-    num
-  end
-
-  defp to_integer(nil), do: nil
-  defp to_integer(int) when is_integer(int), do: int
-
-  defp to_integer(str) when is_binary(str) do
-    {num, _} = str |> Integer.parse()
-    num
+    %{ticker | last_updated: last_updated}
   end
 end

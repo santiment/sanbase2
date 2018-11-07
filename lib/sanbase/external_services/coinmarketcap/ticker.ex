@@ -23,7 +23,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
 
   plug(RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
-  plug(Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v1/ticker")
+  plug(Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v2/ticker")
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 

@@ -276,7 +276,7 @@ defmodule Sanbase.Prices.Store do
     {:ok, result}
   end
 
-  defp combine_results_mcap_volume(_), do: {:error, nil}
+  defp combine_results_mcap_volume(_), do: {:ok, []}
 
   defp mean_volume_for_period_query(measurements, from, to) do
     ~s/SELECT MEAN(volume_usd) as volume

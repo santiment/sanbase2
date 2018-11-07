@@ -1,4 +1,4 @@
-defmodule Sanbase.Influxdb.Measurement do
+lib/sanbase/prices/store.exdefmodule Sanbase.Influxdb.Measurement do
   @moduledoc ~S"""
     Module, defining the structure and common parts of a influxdb measurement
   """
@@ -77,11 +77,7 @@ defmodule Sanbase.Influxdb.Measurement do
       |> Enum.map(fn {ticker, slug} -> {ticker <> "_" <> slug, slug} end)
       |> Map.new()
 
-    if Enum.count(Map.keys(measurement_slug_map)) > 0 do
-      {:ok, measurement_slug_map}
-    else
-      nil
-    end
+    {:ok, measurement_slug_map}
   end
 
   # Private functions

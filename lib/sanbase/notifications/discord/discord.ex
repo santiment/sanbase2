@@ -5,6 +5,8 @@ defmodule Sanbase.Notifications.Discord do
   require Mockery.Macro
   require Logger
 
+  @discord_message_size_limit 1900
+
   @type json :: String.t()
 
   @doc ~s"""
@@ -44,8 +46,36 @@ defmodule Sanbase.Notifications.Discord do
     Jason.encode!(%{content: payload, username: publish_user})
   end
 
+  @doc ~s"""
+  Discord currently has limit of 2000 chars.
+  Groups a list of messages into groups which combined doesn't exceed `message_size_limit`
+  """
+  @spec group_messages([any()]) :: [any()]
+  def group_messages(messages) do
+    {groups, last} =
+      messages
+      |> Enum.reduce({[], []}, fn el, {acc, tmp_acc} ->
+        if messages_len(el) + messages_len(tmp_acc) > @discord_message_size_limit do
+          {acc ++ [tmp_acc], [el]}
+        else
+          {acc, tmp_acc ++ [el]}
+        end
+      end)
+
+    groups ++ [last]
+  end
+
   # Private functions
   defp http_client() do
     Mockery.Macro.mockable(HTTPoison)
+  end
+
+  defp messages_len([]), do: 0
+  defp messages_len(str) when is_binary(str), do: String.length(str)
+
+  defp messages_len(list) when is_list(list) do
+    list
+    |> Enum.map(&String.length/1)
+    |> Enum.sum()
   end
 end

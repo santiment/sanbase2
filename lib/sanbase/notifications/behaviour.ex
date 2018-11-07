@@ -8,5 +8,5 @@ defmodule Sanbase.Notifications.Behaviour do
   @type payload :: any
 
   @callback run :: :ok | {:error, String.t()}
-  @callback publish(publish_place, payload) :: :ok | {:error, String.t()}
+  @callback publish(payload, publish_place) :: :ok | {:error, String.t()}
 end

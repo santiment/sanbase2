@@ -108,6 +108,9 @@ alias Sanbase.Notifications.Insight, as: NotificationsInsight
 alias Sanbase.Notifications.PriceVolumeDiff, as: PriceVolumeDiff
 alias Sanbase.Notifications.Type, as: NotificationsType
 alias Sanbase.Notifications.Utils, as: NotificationsUtils
+alias Sanbase.Notifications.Discord.DaaSignal
+alias Sanbase.Notifications.Discord.ExchangeInflow
+alias Sanbase.Notifications.Discord
 
 alias Sanbase.Utils.{
   JsonLogger,

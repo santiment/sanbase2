@@ -11,7 +11,7 @@ module.exports = (baseConfig, env, defaultConfig) => {
     test: /\.scss$/,
     loaders: [
       'style-loader',
-      'css-loader?modules&namedExport&sass&localIdentName=[name]-[local]_[hash:base64:5]',
+      'css-loader?modules&namedExport&sass&localIdentName=[path]-[local]-[hash:base64:5]',
       'sass-loader'
     ],
     include: path.resolve(__dirname, '../src/')

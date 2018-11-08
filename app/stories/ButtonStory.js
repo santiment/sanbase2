@@ -1,27 +1,25 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 import Button from './../src/components/UI/Button/Button'
+import ColorModeComparison from './ColorModeComparison'
 
 storiesOf('Button', module)
   .add('Filled', () => (
     <div>
-      <div>
+      <ColorModeComparison>
+        <Button fill='grey'>Grey fill</Button>
         <Button fill='negative'>Negative fill</Button>
-      </div>
-      <br />
-      <div>
         <Button fill='positive'>Positive fill</Button>
-      </div>
+        <Button fill='purple'>Purple fill</Button>
+      </ColorModeComparison>
     </div>
   ))
   .add('Bordered', () => (
     <div>
-      <div>
+      <ColorModeComparison>
         <Button border='negative'>Negative border</Button>
-      </div>
-      <br />
-      <div>
         <Button border='positive'>Positive border</Button>
-      </div>
+        <Button border='purple'>Purple border</Button>
+      </ColorModeComparison>
     </div>
   ))

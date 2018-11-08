@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import styles from './Button.scss'
-// styles['night-mode'] = 'night-mode'
 
 const getBorderedStyles = border => `${styles['border']} ${styles[border]}`
 const getFillStyles = fill => `${styles['fill']} ${styles[fill]}`

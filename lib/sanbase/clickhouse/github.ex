@@ -1,6 +1,8 @@
 defmodule Sanbase.Clickhouse.Github do
   @moduledoc ~s"""
   Uses ClickHouse to work with ETH transfers.
+  Allows to filter on particular events in the queries. Development activity can
+  be more clearly calculated by excluding events releated to commenting, issues, forks, stars, etc.
   """
 
   @type t :: %__MODULE__{
@@ -16,12 +18,19 @@ defmodule Sanbase.Clickhouse.Github do
   require Logger
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @ignored_events [
+  alias __MODULE__
+
+  @non_dev_events [
     "IssueCommentEvent",
     "IssuesEvent",
-    "PullRequestReviewCommentEvent",
-    "ForkEvent"
+    "ForkEvent",
+    "CommitCommentEvent",
+    "FollowEvent",
+    "ForkEvent",
+    "DownloadEvent",
+    "WatchEvent"
   ]
+
   @table "github"
 
   @primary_key false
@@ -34,6 +43,7 @@ defmodule Sanbase.Clickhouse.Github do
     field(:actor, :string)
   end
 
+  @spec changeset(any(), any()) :: no_return
   def changeset(_, _attrs \\ %{}) do
     raise "Cannot change github ClickHouse table!"
   end
@@ -41,13 +51,13 @@ defmodule Sanbase.Clickhouse.Github do
   @doc ~s"""
 
   """
-  @spec activity(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
+  @spec dev_activity(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def activity(nil, _, _, _), do: []
+  def dev_activity(nil, _, _, _), do: []
 
-  def activity(organization, from, to, interval) do
+  def dev_activity(organization, from, to, interval) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
-    {query, args} = activity_query(organization, from, to, interval_sec)
+    {query, args} = dev_activity_query(organization, from, to, interval_sec)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
       %{
@@ -57,7 +67,7 @@ defmodule Sanbase.Clickhouse.Github do
     end)
   end
 
-  defp activity_query(organization, from_datetime, to_datetime, interval) do
+  defp dev_activity_query(organization, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
     span = div(to_datetime_unix - from_datetime_unix, interval)
@@ -73,9 +83,9 @@ defmodule Sanbase.Clickhouse.Github do
 
         UNION ALL
 
-        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, count(e) as event
+        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, count(events) as event
           FROM (
-            SELECT any(event) as e, dt
+            SELECT any(event) as events, dt
             FROM #{@table}
             PREWHERE owner = ?3
             AND dt >= toDateTime(?4)
@@ -89,7 +99,14 @@ defmodule Sanbase.Clickhouse.Github do
       ORDER BY time
     """
 
-    args = [interval, span, organization, from_datetime_unix, to_datetime_unix, @ignored_events]
+    args = [
+      interval,
+      span,
+      organization,
+      from_datetime_unix,
+      to_datetime_unix,
+      @non_dev_events
+    ]
 
     {query, args}
   end

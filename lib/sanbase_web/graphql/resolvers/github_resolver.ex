@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   alias Sanbase.Model.Project
   alias Sanbase.Github.Store
 
-  def activity2(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
+  def dev_activity(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     github_organization = Project.github_organization(slug)
 
     with {:ok, result} <-

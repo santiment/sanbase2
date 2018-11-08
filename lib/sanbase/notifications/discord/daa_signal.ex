@@ -28,10 +28,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     if Enum.count(projects_to_signal) > 0 do
       projects_to_signal
       |> Enum.map(&create_notification_content/1)
-      |> Discord.group_messages()
-      |> Enum.each(fn payload ->
+      |> Enum.each(fn {payload, embeded_image} ->
         payload
-        |> Discord.encode!(config_publish_user())
+        |> encode!(config_publish_user(), embeded_image)
         |> publish("discord")
       end)
     else
@@ -48,11 +47,21 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   # Private functions
 
+  defp encode!(payload, publish_user, embeds) do
+    Jason.encode!(%{content: payload, username: publish_user, embeds: embeds})
+  end
+
+  def build_embeded_url(slug, from, to) do
+    url = Discord.build_candlestick_image_url(slug, from, to)
+    [%{image: %{url: url}}]
+  end
+
   defp all_projects() do
     from(
       p in Project,
       where: not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address)
     )
+    # (from p in Project, where: p.coinmarketcap_id == "apis")
     |> Repo.all()
   end
 
@@ -79,7 +88,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp create_notification_content({project_name, project_slug, base_daa, new_daa}) do
-    """
+    content = """
     #{project_name}: Daily Active Addresses has gone up by #{percent_change(new_daa, base_daa)}% : #{
       notification_emoji_up()
     }.
@@ -88,6 +97,10 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     }.
     More info here: #{project_page(project_slug)}
     """
+
+    url = build_embeded_url(project_slug, timeframe_from(), timeframe_to())
+
+    {content, url}
   end
 
   defp notification_emoji_up() do

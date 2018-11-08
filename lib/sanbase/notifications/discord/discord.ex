@@ -5,6 +5,9 @@ defmodule Sanbase.Notifications.Discord do
   require Mockery.Macro
   require Logger
 
+  alias Sanbase.Prices.Store, as: PricesStore
+  alias Sanbase.Influxdb.Measurement
+
   @discord_message_size_limit 1900
 
   @type json :: String.t()
@@ -17,6 +20,16 @@ defmodule Sanbase.Notifications.Discord do
     case http_client().post(webhook, payload, [{"Content-Type", "application/json"}]) do
       {:ok, %HTTPoison.Response{status_code: code}} when code in 200..299 ->
         :ok
+
+      {:ok, %HTTPoison.Response{status_code: 429, body: body} = resp} ->
+        body = body |> Jason.decode!()
+
+        Logger.warn(
+          "Cannot publish #{signal_name} signal in Discord: HTTP Response: #{inspect(resp)}"
+        )
+
+        Process.sleep(body["retry_after"] + 1000)
+        send_notification(webhook, signal_name, payload)
 
       {:ok, %HTTPoison.Response{} = resp} ->
         Logger.error(
@@ -38,7 +51,7 @@ defmodule Sanbase.Notifications.Discord do
   @spec encode!([String.t()], String.t()) :: String.t() | no_return
   def encode!([], _), do: nil
 
-  def encode!(payload, publish_user) do
+  def encode!(payload, publish_user, embeds) do
     payload =
       payload
       |> Enum.join("\n")
@@ -63,6 +76,47 @@ defmodule Sanbase.Notifications.Discord do
       end)
 
     groups ++ [last]
+  end
+
+  @doc ~s"""
+  Build candlestick image url using google charts api
+  """
+  def build_candlestick_image_url(slug, from, to) do
+    {:ok, ohlc} = PricesStore.fetch_ohlc(Measurement.name_from_slug(slug), from, to, "1d")
+
+    ohlc =
+      ohlc
+      |> Enum.zip()
+      |> Enum.map(&Tuple.to_list/1)
+
+    [datetimes | prices] = ohlc
+
+    [_, high_values, low_values, _] = prices
+    min = Enum.min(low_values) |> Float.floor(2)
+    max = Enum.max(high_values) |> Float.ceil(2)
+
+    [open, high, low, close] =
+      prices
+      |> Enum.map(fn list -> Enum.join(list, ",") end)
+
+    days_str =
+      datetimes
+      |> Enum.map(fn datetime -> datetime |> DateTime.to_date() |> Map.get(:day) end)
+      |> Enum.join("|")
+
+    size = datetimes |> Enum.count()
+
+    url = ~s(
+      https://chart.googleapis.com/chart?
+      cht=lc&
+      chs=800x200&
+      chxt=x,y&
+      chxr=1,#{min},#{max}&
+      chxl=0:|#{days_str}&
+      chd=t1:#{low}|#{low}|#{open}|#{close}|#{high}&
+      chds=#{min},#{max}&
+      chm=F,,1,1:#{size},20
+    ) |> String.replace(~r/[\n\s+]+/, "")
   end
 
   # Private functions

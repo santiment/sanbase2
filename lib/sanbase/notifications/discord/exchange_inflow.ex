@@ -17,12 +17,11 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   @impl true
   def run() do
+    volume_threshold = Config.get(:trading_volume_threshold) |> String.to_integer()
+
     projects =
       projects()
-      |> Project.projects_over_volume_threshold(
-        Config.get(:trading_volume_threshold)
-        |> String.to_integer()
-      )
+      |> Project.projects_over_volume_threshold(volume_threshold)
 
     from = Timex.shift(Timex.now(), days: -interval_days())
     to = Timex.now()

@@ -83,7 +83,7 @@ defmodule Sanbase.Clickhouse.Github do
 
         UNION ALL
 
-        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, count(events) as event
+        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, count(events) as events
           FROM (
             SELECT any(event) as events, dt
             FROM #{@table}

@@ -510,10 +510,10 @@ defmodule Sanbase.Model.Project do
           |> String.split("/")
           |> hd
 
-        org
+        {:ok, org}
 
       nil ->
-        nil
+        {:error, {:github_link_error, "Invalid or missing github link for #{slug}"}}
     end
   end
 end

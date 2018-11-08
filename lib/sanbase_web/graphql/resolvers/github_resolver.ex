@@ -6,12 +6,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   alias Sanbase.Github.Store
 
   def dev_activity(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
-    github_organization = Project.github_organization(slug)
-
-    with {:ok, result} <-
-           Sanbase.Clickhouse.Github.activity(github_organization, from, to, interval) do
+    with {:ok, github_organization} <- Project.github_organization(slug),
+         {:ok, result} <-
+           Sanbase.Clickhouse.Github.dev_activity(github_organization, from, to, interval) do
       {:ok, result}
     else
+      {:error, {:github_link_error, error}} ->
+        Logger.info(error)
+        {:ok, []}
+
       error ->
         Logger.error("Cannot fetch github activity for #{slug}. Reason: #{inspect(error)}")
         {:error, "Cannot fetch github activity for #{slug}"}

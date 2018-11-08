@@ -171,14 +171,27 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Fetch combined stats for a given list of project's slugs
+    Fetch data for each of the projects in the slugs lists
     """
     field :projects_list_stats, list_of(:project_stats) do
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&PriceResolver.projects_list_stats/3)
+      cache_resolve(&PriceResolver.multiple_projects_stats/3)
+    end
+
+    @desc ~s"""
+    Fetch data bucketed by interval. The returned marketcap and volume are the sum
+    of the marketcaps and volumes of all projects for that given time interval
+    """
+    field :projects_list_history_stats, list_of(:combined_projects_stats) do
+      arg(:slugs, non_null(list_of(:string)))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string))
+
+      cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
 
     @desc "Returns a list of available github repositories."

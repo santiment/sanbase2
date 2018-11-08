@@ -61,7 +61,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       p in Project,
       where: not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address)
     )
-    # (from p in Project, where: p.coinmarketcap_id == "apis")
     |> Repo.all()
   end
 

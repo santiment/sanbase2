@@ -1,13 +1,13 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   @projects_number 10_000
   @moduledoc ~s"""
-    Fetches the ticker data from coinmarketcap API `https://api.coinmarketcap.com/v2/ticker`
+  Fetches the ticker data from coinmarketcap API `https://api.coinmarketcap.com/v2/ticker`
 
-    A single request fetchest all top #{@projects_number} tickers information. The coinmarketcap API
-    has somewhat misleading name for this api - `ticker` is _NOT_ unique - there
-    duplicated tickers. The `id` field (called coinmarketcap_id everywhere in sanbase)
-    is unique. Sanbase uses names in the format `TICKER_coinmarketcap_id` to construct
-    informative and unique names.
+  A single request fetchest all top #{@projects_number} tickers information. The coinmarketcap API
+  has somewhat misleading name for this api - `ticker` is _NOT_ unique - there
+  duplicated tickers. The `id` field (called coinmarketcap_id everywhere in sanbase)
+  is unique. Sanbase uses names in the format `TICKER_coinmarketcap_id` to construct
+  informative and unique names.
   """
 
   defstruct [
@@ -32,18 +32,22 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   require Logger
 
   import Sanbase.Utils.Math, only: [to_integer: 1, to_float: 1]
-  alias Sanbase.ExternalServices.RateLimiting
   # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
   alias Sanbase.Influxdb.Measurement
 
-  plug(RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
+  plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
   plug(Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v2/ticker")
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
   alias __MODULE__, as: Ticker
 
+  @doc ~s"""
+  Fetch the current data for all top #{@projects_number} projects.
+  Parse the binary received from the CMC response to a list of tickers
+  """
+  @spec fetch_data() :: {:error, String.t()} | {:ok, [%Ticker{}]}
   def fetch_data() do
     Logger.info("[CMC] Fetching the realtime data for top #{@projects_number} projects")
 
@@ -78,7 +82,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
     end
   end
 
-  def parse_json(json) do
+  @spec parse_json(String.t()) :: [%Ticker{}] | no_return
+  defp parse_json(json) do
     %{"data" => data} =
       json
       |> Poison.decode!()
@@ -92,7 +97,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
         "rank" => rank,
         "circulating_supply" => circulating_supply,
         "total_supply" => total_supply,
-        "max_supply" => max_supply,
+        "max_supply" => _max_supply,
         "last_updated" => last_updated,
         "quotes" => %{
           "USD" => %{
@@ -101,7 +106,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
             "market_cap" => mcap_usd,
             "percent_change_1h" => percent_change_1h_usd,
             "percent_change_24h" => percent_change_24h_usd,
-            "percent_change_7d" => percent_change_7d_usd
+            "percent_change_7d" => _percent_change_7d_usd
           },
           "BTC" => %{
             "price" => price_btc,
@@ -131,10 +136,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
         percent_change_7d: percent_change_24h_usd
       }
     end)
-    |> Stream.filter(fn %Ticker{last_updated: last_updated} -> last_updated end)
-    |> Enum.map(&make_timestamp_integer/1)
+    |> Enum.filter(fn %Ticker{last_updated: last_updated} -> last_updated end)
   end
 
+  @spec convert_for_importing(%Ticker{}) :: %Measurement{}
   def convert_for_importing(
         %Ticker{
           last_updated: last_updated,
@@ -153,11 +158,5 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
     }
 
     PricePoint.convert_to_measurement(price_point, Measurement.name_from(ticker))
-  end
-
-  # Helper functions
-
-  defp make_timestamp_integer(%Ticker{last_updated: last_updated} = ticker) do
-    %{ticker | last_updated: last_updated}
   end
 end

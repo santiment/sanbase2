@@ -1,16 +1,20 @@
 defmodule Sanbase.Model.Infrastructure do
   use Ecto.Schema
   import Ecto.Changeset
-
   import Ecto.Query, warn: false
+
   alias Sanbase.Repo
 
-  alias Sanbase.Model.Infrastructure
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{
+    Infrastructure,
+    Project,
+    ExchangeEthAddress
+  }
 
   schema "infrastructures" do
     field(:code, :string)
     has_many(:projects, Project)
+    has_many(:exchange_eth_addresses, ExchangeEthAddress)
   end
 
   @doc false

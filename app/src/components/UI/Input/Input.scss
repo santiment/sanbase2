@@ -1,3 +1,5 @@
+@import '../../../mixins.scss';
+
 $input-border-day: #dededf;
 $input-border-night: #2d3239;
 
@@ -9,11 +11,9 @@ $input-color-night: #a0a0a0;
 $input-placeholder-color-day: #999;
 $input-placeholder-color-night: #4b4b4b;
 
-// background-color: #17181b!important;
-//     border-color: #2d3239!important;
-//     color: #a0a0a0!important;
-
 .input {
+  @include border-box;
+  width: 100%;
   outline: none;
   border: 1px solid $input-border-day;
   padding: 10px 15px;

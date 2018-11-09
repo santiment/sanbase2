@@ -6,7 +6,6 @@ import Selector from '../../components/Selector/Selector'
 import Panel from '../../components/Panel'
 import styles from './SignalsPriceVolume.module.css'
 
-
 class SignalsPriceVolume extends Component {
   state = {
     timeRange: '6m'

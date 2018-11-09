@@ -9,6 +9,7 @@ storiesOf('Input', module).add('Simple', () => (
       <Input defaultValue={'Built-in value'} />
       <Input placeholder={'Placeholder'} />
       <Input defaultValue={'inplace username'} inplace />
+      <Input type='password' defaultValue={'inplace username'} readOnly />
     </ColorModeComparison>
   </div>
 ))

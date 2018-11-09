@@ -102,50 +102,58 @@ defmodule Sanbase.Notifications.Discord do
   """
   @spec build_embeds(String.t(), any(), any()) :: [any()]
   def build_embeds(slug, from, to) do
-    url = build_candlestick_image_url(slug, from, to)
-    [%{image: %{url: url}}]
+    case build_candlestick_image_url(slug, from, to) do
+      {:ok, url} -> [%{image: %{url: url}}]
+      {:error, _} -> []
+    end
   end
 
   @doc ~s"""
   Build candlestick image url using google charts api
   """
   def build_candlestick_image_url(slug, from, to) do
-    {:ok, ohlc} = PricesStore.fetch_ohlc(Measurement.name_from_slug(slug), from, to, "1d")
+    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
+         {:ok, ohlc} when is_list(ohlc) <- PricesStore.fetch_ohlc(measurement, from, to, "1d"),
+         6 <- hd(ohlc) |> length() do
+      ohlc =
+        ohlc
+        |> Enum.zip()
+        |> Enum.map(&Tuple.to_list/1)
 
-    ohlc =
-      ohlc
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
+      [datetimes | prices] = ohlc
 
-    [datetimes | prices] = ohlc
+      [_, high_values, low_values, _, _] = prices
+      min = Enum.min(low_values) |> Float.floor(2)
+      max = Enum.max(high_values) |> Float.ceil(2)
 
-    [_, high_values, low_values, _, _] = prices
-    min = Enum.min(low_values) |> Float.floor(2)
-    max = Enum.max(high_values) |> Float.ceil(2)
+      [open, high, low, close, avg] =
+        prices
+        |> Enum.map(fn list -> list |> Enum.map(&Float.round(&1, 6)) end)
+        |> Enum.map(fn list -> Enum.join(list, ",") end)
 
-    [open, high, low, close, avg] =
-      prices
-      |> Enum.map(fn list -> list |> Enum.map(&Float.round(&1, 6)) end)
-      |> Enum.map(fn list -> Enum.join(list, ",") end)
+      days_str =
+        datetimes
+        |> Enum.map(fn datetime -> datetime |> DateTime.to_date() |> Map.get(:day) end)
+        |> Enum.join("|")
 
-    days_str =
-      datetimes
-      |> Enum.map(fn datetime -> datetime |> DateTime.to_date() |> Map.get(:day) end)
-      |> Enum.join("|")
+      size = datetimes |> Enum.count()
 
-    size = datetimes |> Enum.count()
-
-    ~s(
-      https://chart.googleapis.com/chart?
-      cht=lc&
-      chs=800x200&
-      chxt=x,y&
-      chxr=1,#{min},#{max}&
-      chxl=0:|#{days_str}&
-      chd=t1:#{avg}|#{low}|#{open}|#{close}|#{high}&
-      chds=#{min},#{max}&
-      chm=F,,1,1:#{size},20
-    ) |> String.replace(~r/[\n\s+]+/, "")
+      {:ok, ~s(
+        https://chart.googleapis.com/chart?
+        cht=lc&
+        chs=800x200&
+        chxt=x,y&
+        chxr=1,#{min},#{max}&
+        chxl=0:|#{days_str}&
+        chd=t1:#{avg}|#{low}|#{open}|#{close}|#{high}&
+        chds=#{min},#{max}&
+        chm=F,,1,1:#{size},20
+      ) |> String.replace(~r/[\n\s+]+/, "")}
+    else
+      error ->
+        Logger.error("Error building image for slug: #{slug}: #{inspect(error)}")
+        {:error, "Error building image for slug: #{slug}"}
+    end
   end
 
   # Private functions

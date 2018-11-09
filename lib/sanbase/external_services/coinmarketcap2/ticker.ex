@@ -86,7 +86,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   defp parse_json(json) do
     %{"data" => data} =
       json
-      |> Poison.decode!()
+      |> Jason.decode!()
 
     data
     |> Enum.map(fn {_, project_data} ->

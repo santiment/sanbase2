@@ -1666,14 +1666,6 @@ ALTER TABLE ONLY public.exchange_addresses
 
 
 --
--- Name: exchange_eth_addresses exchange_eth_addresses_infrastructure_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.exchange_eth_addresses
-    ADD CONSTRAINT exchange_eth_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
-
-
---
 -- Name: ico_currencies ico_currencies_currency_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

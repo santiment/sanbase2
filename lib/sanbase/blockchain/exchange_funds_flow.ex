@@ -28,6 +28,25 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
     |> validate_length(:contract_address, min: 1)
   end
 
+  def transactions_in(contracts, from, to) do
+    args = [from, to, contracts]
+
+    query = """
+    SELECT contract_address, coalesce(sum(incoming_exchange_funds),0) as value
+    FROM #{@table}
+    WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = ANY($3)
+    GROUP BY contract_address
+    """
+
+    {query, args}
+    |> Timescaledb.timescaledb_execute(fn [contract, inflow] ->
+      %{
+        contract: contract,
+        inflow: inflow
+      }
+    end)
+  end
+
   def transactions_in_out_difference(contract, from, to, interval, token_decimals \\ 0) do
     args = [from, to, contract]
 

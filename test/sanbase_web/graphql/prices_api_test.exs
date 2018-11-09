@@ -333,23 +333,27 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
   test "project group stats with existing slugs returns correct stats", context do
     slugs = [context.slug1, context.slug2]
     query = project_group_stats_query(slugs, context.datetime1, context.datetime3)
-    result = execute_query(context.conn, query, "projectsGroupStats")
+    result = execute_query(context.conn, query, "projectsListStats")
 
     assert [
              %{
-               "marketcap" => 1300,
-               "volume" => 305,
-               "marketcapPercent" => [
-                 %{"percent" => Float.round(800 / 1300, 5), "slug" => context.slug1},
-                 %{"percent" => Float.round(500 / 1300, 5), "slug" => context.slug2}
-               ]
+               "volume" => 300,
+               "marketcap" => 800,
+               "marketcapPercent" => Float.round(800 / 1300, 5),
+               "slug" => context.slug1
+             },
+             %{
+               "volume" => 5,
+               "marketcap" => 500,
+               "marketcapPercent" => Float.round(500 / 1300, 5),
+               "slug" => context.slug2
              }
            ] == result
   end
 
   test "project group stats with non existing slugs return no data", context do
     query = project_group_stats_query(["non-existing"], context.datetime1, context.datetime3)
-    result = execute_query(context.conn, query, "projectsGroupStats")
+    result = execute_query(context.conn, query, "projectsListStats")
     assert result == nil
   end
 
@@ -361,15 +365,14 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
         context.datetime3
       )
 
-    result = execute_query(context.conn, query, "projectsGroupStats")
+    result = execute_query(context.conn, query, "projectsListStats")
 
     assert [
              %{
-               "marketcap" => 800,
                "volume" => 300,
-               "marketcapPercent" => [
-                 %{"percent" => 1.0000, "slug" => context.slug1}
-               ]
+               "marketcap" => 800,
+               "marketcapPercent" => 1.0000,
+               "slug" => context.slug1
              }
            ] == result
   end
@@ -387,17 +390,15 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     """
     {
-      projectsGroupStats(
+      projectsListStats(
         slugs: [#{slugs_str}],
         from: "#{from}",
         to: "#{to}"
       ) {
         volume,
         marketcap,
-        marketcapPercent {
-          slug,
-          percent
-        }
+        slug,
+        marketcapPercent
       }
     }
     """

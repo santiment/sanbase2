@@ -104,6 +104,10 @@ defmodule Sanbase.Model.Project do
     "project with id #{id}"
   end
 
+  def sanbase_link(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{cmc_id}"
+  end
+
   def initial_ico(%Project{id: id}) do
     Ico
     |> where([i], i.project_id == ^id)

@@ -17,6 +17,7 @@ config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
 config :sanbase, Sanbase.Repo,
   adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
+  max_overflow: 5,
   # because of pgbouncer
   prepare: :unnamed
 
@@ -24,6 +25,7 @@ config :sanbase, Sanbase.TimescaleRepo,
   adapter: Ecto.Adapters.Postgres,
   timeout: 30_000,
   pool_size: {:system, "TIMESCALE_POOL_SIZE", "30"},
+  max_overflow: 5,
   # because of pgbouncer
   prepare: :unnamed
 
@@ -137,6 +139,21 @@ config :sanbase, Sanbase.Discourse,
   url: {:system, "DISCOURSE_URL", "https://discourse.stage.internal.santiment.net/"},
   api_key: {:system, "DISCOURSE_API_KEY"},
   insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "sanbaseinsights"}
+
+config :sanbase, Sanbase.Scheduler,
+  scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
+  global: true,
+  timeout: 30_000,
+  jobs: [
+    daa_signal: [
+      schedule: "00 12 * * *",
+      task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
+    ],
+    exchange_inflow_signal: [
+      schedule: "@daily",
+      task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
+    ]
+  ]
 
 # Import configs
 import_config "ex_admin_config.exs"

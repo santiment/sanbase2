@@ -24,6 +24,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       |> Project.projects_over_volume_threshold(config_threshold())
       |> Enum.map(&check_for_project/1)
       |> Enum.reject(&is_nil/1)
+      |> Enum.sort_by(fn {_, _, _, _, change} -> change end, &>=/2)
 
     if Enum.count(projects_to_signal) > 0 do
       projects_to_signal
@@ -71,15 +72,18 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     )
 
     if new_daa > config_change() * base_daa do
-      {project.name, project.coinmarketcap_id, base_daa, new_daa}
+      {project.name, project.coinmarketcap_id, base_daa, new_daa,
+       percent_change(new_daa, base_daa)}
     else
       nil
     end
   end
 
-  defp create_notification_content({project_name, project_slug, base_daa, new_daa}) do
+  defp create_notification_content(
+         {project_name, project_slug, base_daa, new_daa, percent_change}
+       ) do
     content = """
-    #{project_name}: Daily Active Addresses has gone up by #{percent_change(new_daa, base_daa)}% : #{
+    #{project_name}: Daily Active Addresses has gone up by #{percent_change}% : #{
       notification_emoji_up()
     }.
     DAA for yesterday: #{new_daa}, Average DAA for last #{config_timeframe_from()} days: #{

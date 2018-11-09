@@ -8,14 +8,14 @@ import styles from './Search.scss'
 const Search = ({ iconPosition = 'left', className = '', ...props }) => {
   return (
     <div className={styles.wrapper}>
+      <Input
+        className={`${styles.input} ${styles[iconPosition]}`}
+        placeholder='Search...'
+        {...props}
+      />
       <FontAwesomeIcon
         icon={faSearch}
         className={`${styles.icon} ${styles[iconPosition]}`}
-      />
-      <Input
-        className={styles[iconPosition + '-input']}
-        placeholder='Search...'
-        {...props}
       />
     </div>
   )

@@ -28,16 +28,18 @@ defmodule Sanbase.Notifications.Discord do
       {:ok, %HTTPoison.Response{status_code: 429, body: body} = resp} ->
         body = body |> Jason.decode!()
 
-        Logger.warn(
+        Logger.info(
           "Cannot publish #{signal_name} signal in Discord: HTTP Response: #{inspect(resp)}"
         )
 
         Process.sleep(body["retry_after"] + 1000)
 
-        send_notification(webhook, signal_name, payload, %{
-          opts
-          | retry_count: Map.get(opts, :retry_count, 0) + 1
-        })
+        send_notification(
+          webhook,
+          signal_name,
+          payload,
+          Map.update(opts, :retry_count, 0, &(&1 + 1))
+        )
 
       {:ok, %HTTPoison.Response{} = resp} ->
         Logger.error(
@@ -59,12 +61,21 @@ defmodule Sanbase.Notifications.Discord do
   @spec encode!([String.t()], String.t()) :: String.t() | no_return
   def encode!([], _), do: nil
 
-  def encode!(payload, publish_user, embeds) do
+  def encode!(payload, publish_user) do
     payload =
       payload
       |> Enum.join("\n")
 
     Jason.encode!(%{content: payload, username: publish_user})
+  end
+
+  @doc ~s"""
+  Encode the string payload, username and list of embeds.
+  The result is ready to be passed to `send_notification/3`
+  """
+  @spec encode!(String.t(), String.t(), [any()]) :: String.t()
+  def encode!(payload, publish_user, embeds) do
+    Jason.encode!(%{content: payload, username: publish_user, embeds: embeds})
   end
 
   @doc ~s"""
@@ -84,6 +95,15 @@ defmodule Sanbase.Notifications.Discord do
       end)
 
     groups ++ [last]
+  end
+
+  @doc ~s"""
+  Builds discord embeds object for a given project slug and time interval
+  """
+  @spec build_embeds(String.t(), any(), any()) :: [any()]
+  def build_embeds(slug, from, to) do
+    url = build_candlestick_image_url(slug, from, to)
+    [%{image: %{url: url}}]
   end
 
   @doc ~s"""
@@ -115,7 +135,7 @@ defmodule Sanbase.Notifications.Discord do
 
     size = datetimes |> Enum.count()
 
-    url = ~s(
+    ~s(
       https://chart.googleapis.com/chart?
       cht=lc&
       chs=800x200&

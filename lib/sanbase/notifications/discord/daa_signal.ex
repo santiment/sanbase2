@@ -28,9 +28,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     if Enum.count(projects_to_signal) > 0 do
       projects_to_signal
       |> Enum.map(&create_notification_content/1)
-      |> Enum.each(fn {payload, embeded_image} ->
+      |> Enum.each(fn {payload, embeds} ->
         payload
-        |> encode!(config_publish_user(), embeded_image)
+        |> Discord.encode!(config_publish_user(), embeds)
         |> publish("discord")
       end)
     else
@@ -46,15 +46,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   # Private functions
-
-  defp encode!(payload, publish_user, embeds) do
-    Jason.encode!(%{content: payload, username: publish_user, embeds: embeds})
-  end
-
-  def build_embeded_url(slug, from, to) do
-    url = Discord.build_candlestick_image_url(slug, from, to)
-    [%{image: %{url: url}}]
-  end
 
   defp all_projects() do
     from(
@@ -97,9 +88,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     More info here: #{project_page(project_slug)}
     """
 
-    url = build_embeded_url(project_slug, timeframe_from(), timeframe_to())
+    embeds = Discord.build_embeds(project_slug, timeframe_from(), timeframe_to())
 
-    {content, url}
+    {content, embeds}
   end
 
   defp notification_emoji_up() do

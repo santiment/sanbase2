@@ -14,7 +14,7 @@ defmodule Sanbase.Repo.Migrations.CreateExchangeAddresses do
     )
 
     execute(
-      "ALTER TABLE exchange_addresses ADD CONSTRAINT exchange_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures (id) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION"
+      "ALTER TABLE exchange_addresses ADD CONSTRAINT exchange_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES infrastructures (id) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION"
     )
 
     execute("INSERT INTO exchange_addresses SELECT * FROM exchange_eth_addresses")

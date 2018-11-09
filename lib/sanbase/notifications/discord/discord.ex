@@ -114,7 +114,7 @@ defmodule Sanbase.Notifications.Discord do
   def build_candlestick_image_url(slug, from, to) do
     with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
          {:ok, ohlc} when is_list(ohlc) <- PricesStore.fetch_ohlc(measurement, from, to, "1d"),
-         6 <- hd(ohlc) |> length() do
+         number when number != 0 <- length(ohlc) do
       ohlc =
         ohlc
         |> Enum.zip()

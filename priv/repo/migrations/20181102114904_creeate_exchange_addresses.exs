@@ -13,6 +13,10 @@ defmodule Sanbase.Repo.Migrations.CreateExchangeAddresses do
       "ALTER TABLE exchange_addresses ALTER id SET DEFAULT nextval('exchange_addresses_id_seq'::regclass)"
     )
 
+    execute(
+      "ALTER TABLE exchange_addresses ADD CONSTRAINT exchange_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures (id) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION"
+    )
+
     execute("INSERT INTO exchange_addresses SELECT * FROM exchange_eth_addresses")
   end
 

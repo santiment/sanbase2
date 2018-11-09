@@ -5,7 +5,7 @@ defmodule Sanbase.ExAdmin.Model.ExchangeAddress do
   alias Sanbase.Model.ExchangeAddress
 
   register_resource ExchangeAddress do
-    form exchange_eth_address do
+    form exchange_address do
       inputs do
         content do
           """
@@ -23,7 +23,7 @@ defmodule Sanbase.ExAdmin.Model.ExchangeAddress do
           """
         end
 
-        input(exchange_eth_address, :csv, type: :text, label: "paste CSV")
+        input(exchange_address, :csv, type: :text, label: "paste CSV")
       end
     end
 
@@ -32,7 +32,7 @@ defmodule Sanbase.ExAdmin.Model.ExchangeAddress do
     end
   end
 
-  def process_csv(conn, %{exchange_eth_address: %{csv: csv}} = params) when not is_nil(csv) do
+  def process_csv(conn, %{exchange_address: %{csv: csv}} = params) when not is_nil(csv) do
     csv
     |> String.replace("\r", "")
     |> CSVLixir.Reader.read()
@@ -40,7 +40,7 @@ defmodule Sanbase.ExAdmin.Model.ExchangeAddress do
     |> Enum.map(&update_or_create_eth_address/1)
     |> Enum.each(&Repo.insert_or_update!/1)
 
-    {conn, %{exchange_eth_address: %{}}}
+    {conn, %{exchange_address: %{}}}
   end
 
   def process_csv(conn, params), do: {conn, params}

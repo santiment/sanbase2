@@ -8,13 +8,13 @@ defmodule Sanbase.Model.Infrastructure do
   alias Sanbase.Model.{
     Infrastructure,
     Project,
-    ExchangeEthAddress
+    ExchangeAddress
   }
 
   schema "infrastructures" do
     field(:code, :string)
     has_many(:projects, Project)
-    has_many(:exchange_eth_addresses, ExchangeEthAddress)
+    has_many(:exchange_addresses, ExchangeAddress)
   end
 
   @doc false

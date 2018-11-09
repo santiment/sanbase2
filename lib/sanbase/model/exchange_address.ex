@@ -19,8 +19,8 @@ defmodule Sanbase.Model.ExchangeAddress do
   end
 
   @doc false
-  def changeset(%ExchangeAddress{} = exchange_eth_address, attrs \\ %{}) do
-    exchange_eth_address
+  def changeset(%ExchangeAddress{} = exchange_address, attrs \\ %{}) do
+    exchange_address
     |> cast(attrs, [:address, :name, :source, :comments, :is_dex, :infrastructure_id])
     |> validate_required([:address, :name])
     |> unique_constraint(:address)

@@ -1,11 +1,8 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
+import { Link } from 'react-router-dom'
 import Search from '../Search'
-
-/*
-    background-color: #23252a;
-    border-color: #4a4a4a;
-*/
+import styles from './WithSuggestions.scss'
 
 class SearchWithSuggestions extends PureComponent {
   static propTypes = {
@@ -20,7 +17,7 @@ class SearchWithSuggestions extends PureComponent {
   state = {
     suggestions: [],
     searchTerm: '',
-    isFocused: false
+    isFocused: true
   }
 
   handleInputChange = ({ currentTarget }) => {
@@ -53,7 +50,7 @@ class SearchWithSuggestions extends PureComponent {
     const { suggestions, searchTerm, isFocused } = this.state
     const { maxSuggestions } = this.props
     return (
-      <div>
+      <div className={styles.wrapper}>
         <Search
           onFocus={this.toggleFocusState}
           onBlur={this.toggleFocusState}
@@ -62,13 +59,17 @@ class SearchWithSuggestions extends PureComponent {
         />
         {isFocused &&
           searchTerm !== '' && (
-          <div className='suggestions'>
+          <ul className={styles.suggestions}>
             {suggestions.length !== 0
-              ? suggestions
-                .slice(0, maxSuggestions)
-                .map(suggestion => <div className='sug'>{suggestion}</div>)
+              ? suggestions.slice(0, maxSuggestions).map(suggestion => (
+                <li>
+                  <Link className={styles.suggestion} to='#'>
+                    {suggestion}
+                  </Link>
+                </li>
+              ))
               : 'No results found.'}
-          </div>
+          </ul>
         )}
       </div>
     )

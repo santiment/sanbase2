@@ -1,0 +1,27 @@
+@import '../../../../mixins.scss';
+
+/*
+    background-color: #23252a;
+    border-color: #4a4a4a;
+*/
+.wrapper {
+  position: relative;
+}
+
+.suggestions {
+  @include border-box;
+
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid #d4d4d5;
+  border-radius: 4px;
+}
+
+.suggestion {
+  padding: 12px;
+  display: inline-block;
+}

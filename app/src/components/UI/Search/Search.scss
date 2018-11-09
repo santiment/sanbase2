@@ -1,0 +1,21 @@
+.wrapper {
+  position: relative;
+}
+
+.icon {
+  position: absolute;
+  padding: 0 10px;
+  height: 100%;
+
+  &.right {
+    right: 0;
+  }
+}
+
+.left-input {
+  padding-left: 35px;
+}
+
+.right-input {
+  padding-right: 35px;
+}

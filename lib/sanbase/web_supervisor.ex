@@ -1,17 +1,16 @@
 defmodule Sanbase.Application.WebSupervisor do
   import Sanbase.ApplicationUtils
 
+  @doc ~s"""
+  Return the children and options that will be started in the web container.
+  Along with these children all children from `Sanbase.Application.common_children/0`
+  will be started, too.
+  """
   def children() do
     # Define workers and child supervisors to be supervised
     children = [
-      # Start the Postgres Ecto repository
-      Sanbase.Repo,
-
       # Start the TimescaleDB Ecto repository
       Sanbase.TimescaleRepo,
-
-      # Start the endpoint when the application starts
-      SanbaseWeb.Endpoint,
 
       # Start the Clickhouse Repo
       start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
@@ -34,9 +33,6 @@ defmodule Sanbase.Application.WebSupervisor do
          name: SanbaseWeb.Graphql.PlugAttack.Storage,
          clean_period: 60_000
        ]},
-
-      # Time series Prices DB connection
-      Sanbase.Prices.Store.child_spec(),
 
       # Time sereies TwitterData DB connection
       Sanbase.ExternalServices.TwitterData.Store.child_spec(),

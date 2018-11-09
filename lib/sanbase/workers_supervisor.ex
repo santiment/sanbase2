@@ -1,17 +1,13 @@
 defmodule Sanbase.Application.WorkersSupervisor do
   import Sanbase.ApplicationUtils
 
+  @doc ~s"""
+  Return the children and options that will be started in the workers container.
+  Along with these children all children from `Sanbase.Application.common_children/0`
+  will be started, too.
+  """
   def children do
     children = [
-      # Start the Postgres Ecto repository
-      Sanbase.Repo,
-
-      # Start the endpoint when the application starts. Used for healtchecks
-      SanbaseWeb.Endpoint,
-
-      # Time series Prices DB connection
-      Sanbase.Prices.Store.child_spec(),
-
       # Time series Github DB connection
       Sanbase.Github.Store.child_spec(),
 

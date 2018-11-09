@@ -174,7 +174,8 @@ defmodule Sanbase.Prices.Store do
      first(price_usd) as open,
      max(price_usd) as high,
      min(price_usd) as low,
-     last(price_usd) as close
+     last(price_usd) as close,
+     mean(price_usd) as avg
      FROM "#{measurement}"
      WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
      AND time <= #{DateTime.to_unix(to, :nanoseconds)}

@@ -15,8 +15,12 @@ defmodule Sanbase.Notifications.Discord do
   @doc ~s"""
   Send the payload to Discord. Handle the response and log accordingly
   """
-  @spec send_notification(String.t(), String.t(), json) :: :ok | {:error, String.t()}
-  def send_notification(webhook, signal_name, payload) do
+  @spec send_notification(String.t(), String.t(), json, map()) :: :ok | {:error, String.t()}
+  def send_notification(_, _, _, opts \\ %{})
+
+  def send_notification(_, _, _, %{retry_count: 5}), do: {:error, "Max retries reached"}
+
+  def send_notification(webhook, signal_name, payload, opts) do
     case http_client().post(webhook, payload, [{"Content-Type", "application/json"}]) do
       {:ok, %HTTPoison.Response{status_code: code}} when code in 200..299 ->
         :ok
@@ -29,7 +33,11 @@ defmodule Sanbase.Notifications.Discord do
         )
 
         Process.sleep(body["retry_after"] + 1000)
-        send_notification(webhook, signal_name, payload)
+
+        send_notification(webhook, signal_name, payload, %{
+          opts
+          | retry_count: Map.get(opts, :retry_count, 0) + 1
+        })
 
       {:ok, %HTTPoison.Response{} = resp} ->
         Logger.error(
@@ -91,12 +99,13 @@ defmodule Sanbase.Notifications.Discord do
 
     [datetimes | prices] = ohlc
 
-    [_, high_values, low_values, _] = prices
+    [_, high_values, low_values, _, _] = prices
     min = Enum.min(low_values) |> Float.floor(2)
     max = Enum.max(high_values) |> Float.ceil(2)
 
-    [open, high, low, close] =
+    [open, high, low, close, avg] =
       prices
+      |> Enum.map(fn list -> list |> Enum.map(&Float.round(&1, 6)) end)
       |> Enum.map(fn list -> Enum.join(list, ",") end)
 
     days_str =
@@ -113,7 +122,7 @@ defmodule Sanbase.Notifications.Discord do
       chxt=x,y&
       chxr=1,#{min},#{max}&
       chxl=0:|#{days_str}&
-      chd=t1:#{low}|#{low}|#{open}|#{close}|#{high}&
+      chd=t1:#{avg}|#{low}|#{open}|#{close}|#{high}&
       chds=#{min},#{max}&
       chm=F,,1,1:#{size},20
     ) |> String.replace(~r/[\n\s+]+/, "")

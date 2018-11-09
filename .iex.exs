@@ -8,7 +8,7 @@ alias Sanbase.Model.{
   ModelUtils,
   ProjectBtcAddress,
   Currency,
-  ExchangeEthAddress,
+  ExchangeAddress,
   Ico,
   IcoCurrencies,
   ProjectEthAddress,
@@ -148,8 +148,8 @@ days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end
 
 project_slugs =
   from(p in Project, where: not is_nil(p.coinmarketcap_id), select: p.coinmarketcap_id)
-  |> Repo.all
+  |> Repo.all()
 
 project_contracts =
   from(p in Project, where: not is_nil(p.main_contract_address), select: p.main_contract_address)
-  |> Repo.all
+  |> Repo.all()

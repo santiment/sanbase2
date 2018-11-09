@@ -1,4 +1,4 @@
-defmodule Sanbase.Model.ExchangeEthAddress do
+defmodule Sanbase.Model.ExchangeAddress do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
@@ -7,7 +7,7 @@ defmodule Sanbase.Model.ExchangeEthAddress do
   alias Sanbase.Repo
   alias Sanbase.Model.Infrastructure
 
-  schema "exchange_eth_addresses" do
+  schema "exchange_addresses" do
     field(:address, :string)
     field(:name, :string)
     field(:source, :string)
@@ -19,8 +19,8 @@ defmodule Sanbase.Model.ExchangeEthAddress do
   end
 
   @doc false
-  def changeset(%ExchangeEthAddress{} = exchange_eth_address, attrs \\ %{}) do
-    exchange_eth_address
+  def changeset(%ExchangeAddress{} = exchange_address, attrs \\ %{}) do
+    exchange_address
     |> cast(attrs, [:address, :name, :source, :comments, :is_dex, :infrastructure_id])
     |> validate_required([:address, :name])
     |> unique_constraint(:address)

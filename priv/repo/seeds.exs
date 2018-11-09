@@ -229,8 +229,8 @@ SeedsGithubActivityImporter.import_gh_activity(DateTime.utc_now(), 50, "SAN", []
 #########
 # Exchange addresses
 #########
-defmodule InsertExchangeEthAddresses do
-  alias Sanbase.Model.ExchangeEthAddress
+defmodule InsertExchangeAddresses do
+  alias Sanbase.Model.ExchangeAddress
 
   def run do
     address_data()
@@ -239,11 +239,11 @@ defmodule InsertExchangeEthAddresses do
   end
 
   defp update_or_create_eth_address({name, address, comments, infrastructure_id}) do
-    Repo.get_by(ExchangeEthAddress, address: address)
+    Repo.get_by(ExchangeAddress, address: address)
     |> case do
       nil ->
-        %ExchangeEthAddress{}
-        |> ExchangeEthAddress.changeset(%{
+        %ExchangeAddress{}
+        |> ExchangeAddress.changeset(%{
           address: address,
           name: name,
           comments: comments,
@@ -252,7 +252,7 @@ defmodule InsertExchangeEthAddresses do
 
       exch_address ->
         exch_address
-        |> ExchangeEthAddress.changeset(%{
+        |> ExchangeAddress.changeset(%{
           name: name,
           comments: comments,
           infrastructure_id: infrastructure_id
@@ -309,4 +309,4 @@ defmodule InsertExchangeEthAddresses do
   end
 end
 
-InsertExchangeEthAddresses.run()
+InsertExchangeAddresses.run()

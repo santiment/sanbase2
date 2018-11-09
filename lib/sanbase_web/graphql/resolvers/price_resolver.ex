@@ -72,7 +72,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
            ) do
       result =
         prices
-        |> Enum.map(fn [dt, open, high, low, close] ->
+        |> Enum.map(fn [dt, open, high, low, close, _] ->
           %{
             datetime: dt,
             open_price_usd: open,

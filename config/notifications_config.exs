@@ -24,7 +24,7 @@ config :sanbase, Sanbase.Notifications.Insight,
 config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
   webhook_url: {:system, "DAA_SIGNAL_DISCORD_WEBHOOK_URL"},
   publish_user: {:system, "DAA_SIGNAL_DISCORD_PUBLISH_USER", "Daily Active Addresses Going Up"},
-  threshold: {:system, "DAA_SIGNAL_THRESHOLD", "100"},
+  trading_volume_threshold: {:system, "DAA_SIGNAL_TRADING_VOLUME_THRESHOLD", "1000000"},
   timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "30"},
   timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "2"},
   change: {:system, "DAA_SIGNAL_CHANGE", "3"}

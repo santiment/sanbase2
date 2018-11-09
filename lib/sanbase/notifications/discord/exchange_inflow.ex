@@ -17,9 +17,11 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   @impl true
   def run() do
+    volume_threshold = Config.get(:trading_volume_threshold) |> String.to_integer()
+
     projects =
       projects()
-      |> filter_projects()
+      |> Project.projects_over_volume_threshold(volume_threshold)
 
     from = Timex.shift(Timex.now(), days: -interval_days())
     to = Timex.now()
@@ -29,7 +31,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(from, to)
     |> case do
       {:ok, list} ->
-        publish("discord", build_payload(projects, list))
+        publish(build_payload(projects, list), "discord")
 
       {:error, error} ->
         Logger.error("Error getting Exchange Inflow from TimescaleDB. Reason: #{inspect(error)}")
@@ -63,40 +65,6 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
           not is_nil(p.token_decimals) and not is_nil(p.total_supply) and not is_nil(p.name)
     )
     |> Repo.all()
-  end
-
-  # Return all projects from the list which trading volume is over a given threshold
-  defp filter_projects(projects) do
-    volume_threshold = Config.get(:trading_volume_threshold) |> String.to_integer()
-
-    measurements_list =
-      projects
-      |> Enum.map(fn %Project{} = project -> Sanbase.Influxdb.Measurement.name_from(project) end)
-      |> Enum.reject(&is_nil/1)
-
-    case measurements_list do
-      [] ->
-        []
-
-      [_ | _] ->
-        measurements_str =
-          measurements_list
-          |> Enum.map(fn x -> "\"#{x}\"" end)
-          |> Enum.join(", ")
-
-        volume_over_threshold_projects =
-          Sanbase.Prices.Store.volume_over_threshold(
-            measurements_str,
-            Timex.shift(Timex.now(), days: -interval_days()),
-            Timex.now(),
-            volume_threshold
-          )
-
-        projects
-        |> Enum.filter(fn %Project{} = project ->
-          Sanbase.Influxdb.Measurement.name_from(project) in volume_over_threshold_projects
-        end)
-    end
   end
 
   defp build_payload(projects, list) do

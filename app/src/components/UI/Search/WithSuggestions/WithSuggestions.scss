@@ -1,9 +1,7 @@
 @import '../../../../mixins.scss';
 
-/*
-    background-color: #23252a;
-    border-color: #4a4a4a;
-*/
+$border-color-night: #4a4a4a;
+
 .wrapper {
   position: relative;
 }
@@ -24,7 +22,7 @@
   :global(.night-mode) & {
     background-color: #232529;
     color: #a0a0a0;
-    border-color: #4a4a4a;
+    border-color: $border-color-night;
   }
 }
 
@@ -36,7 +34,7 @@
   }
 
   :global(.night-mode) & {
-    border-color: #4a4a4a;
+    border-color: $border-color-night;
   }
 }
 

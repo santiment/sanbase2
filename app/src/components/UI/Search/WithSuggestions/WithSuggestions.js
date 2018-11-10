@@ -6,6 +6,8 @@ import styles from './WithSuggestions.scss'
 class SearchWithSuggestions extends PureComponent {
   static propTypes = {
     data: PropTypes.array.isRequired,
+    suggestionContent: PropTypes.func.isRequired,
+    predicate: PropTypes.func.isRequired,
     maxSuggestions: PropTypes.number
   }
 
@@ -30,11 +32,10 @@ class SearchWithSuggestions extends PureComponent {
   }
 
   filterData () {
+    const { data, predicate } = this.props
     this.setState(prevState => ({
       ...prevState,
-      suggestions: this.props.data.filter(item => {
-        return item.toUpperCase().includes(prevState.searchTerm.toUpperCase())
-      })
+      suggestions: data.filter(predicate(prevState.searchTerm))
     }))
   }
 
@@ -47,13 +48,13 @@ class SearchWithSuggestions extends PureComponent {
 
   render () {
     const { suggestions, searchTerm, isFocused } = this.state
-    const { maxSuggestions } = this.props
+    const { maxSuggestions, suggestionContent } = this.props
     return (
       <div className={styles.wrapper}>
         <Search
+          value={searchTerm}
           onFocus={this.toggleFocusState}
           onBlur={this.toggleFocusState}
-          value={searchTerm}
           onChange={this.handleInputChange}
         />
         {isFocused &&
@@ -62,7 +63,9 @@ class SearchWithSuggestions extends PureComponent {
             {suggestions.length !== 0 ? (
               suggestions.slice(0, maxSuggestions).map(suggestion => (
                 <li className={styles.suggestions__item}>
-                  <div className={styles.suggestion}>{suggestion}</div>
+                  <div className={styles.suggestion}>
+                    {suggestionContent(suggestion)}
+                  </div>
                 </li>
               ))
             ) : (

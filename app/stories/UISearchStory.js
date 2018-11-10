@@ -32,6 +32,9 @@ storiesOf('Search', module)
             'BitBay',
             'bitcoin'
           ]}
+          suggestionContent={suggestion => suggestion}
+          predicate={searchTerm => item =>
+            item.toUpperCase().includes(searchTerm.toUpperCase())}
           maxSuggestions={5}
         />
       </ColorModeComparison>

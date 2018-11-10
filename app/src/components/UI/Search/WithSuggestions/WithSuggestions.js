@@ -1,6 +1,5 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
-import { Link } from 'react-router-dom'
 import Search from '../Search'
 import styles from './WithSuggestions.scss'
 
@@ -17,7 +16,7 @@ class SearchWithSuggestions extends PureComponent {
   state = {
     suggestions: [],
     searchTerm: '',
-    isFocused: true
+    isFocused: false
   }
 
   handleInputChange = ({ currentTarget }) => {
@@ -60,15 +59,17 @@ class SearchWithSuggestions extends PureComponent {
         {isFocused &&
           searchTerm !== '' && (
           <ul className={styles.suggestions}>
-            {suggestions.length !== 0
-              ? suggestions.slice(0, maxSuggestions).map(suggestion => (
-                <li>
-                  <Link className={styles.suggestion} to='#'>
-                    {suggestion}
-                  </Link>
+            {suggestions.length !== 0 ? (
+              suggestions.slice(0, maxSuggestions).map(suggestion => (
+                <li className={styles.suggestions__item}>
+                  <div className={styles.suggestion}>{suggestion}</div>
                 </li>
               ))
-              : 'No results found.'}
+            ) : (
+              <div className={styles.suggestion + ' ' + styles.noresults}>
+                  No results found.
+              </div>
+            )}
           </ul>
         )}
       </div>

@@ -101,7 +101,8 @@ defmodule Sanbase.Mixfile do
       {:plug_cowboy, "~> 1.0"},
       {:prometheus_ex, "~> 3.0"},
       {:prometheus_ecto, "~> 1.3"},
-      {:prometheus_plugs, "~> 1.0"}
+      {:prometheus_plugs, "~> 1.0"},
+      {:prometheus_process_collector, "~> 1.4"}
     ]
   end
 

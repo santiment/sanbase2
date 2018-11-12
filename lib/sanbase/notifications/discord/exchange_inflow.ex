@@ -40,7 +40,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   @impl true
-  def publish("discord", payload) do
+  def publish(payload, "discord") do
     Logger.info("Sending Discord notification for ExchangeInflow...")
 
     case payload do
@@ -60,11 +60,15 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp projects() do
     from(
       p in Project,
+      preload: [:latest_coinmarketcap_data],
       where:
         not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
-          not is_nil(p.token_decimals) and not is_nil(p.total_supply) and not is_nil(p.name)
+          not is_nil(p.token_decimals) and not is_nil(p.name)
     )
     |> Repo.all()
+    |> Enum.reject(fn %Project{latest_coinmarketcap_data: lcd} ->
+      lcd.available_supply == nil and lcd.total_supply == nil
+    end)
   end
 
   defp build_payload(projects, list) do
@@ -78,7 +82,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
       if inflow && percent_of_total_supply(project, inflow) > signal_trigger_percent() do
         """
-        Project #{project.name} has more than #{signal_trigger_percent()}% of its total supply deposited into an exchange in the past #{
+        Project #{project.name} has more than #{signal_trigger_percent()}% of its circulating supply deposited into an exchange in the past #{
           interval_days()
         } day(s).
         #{Project.sanbase_link(project)}
@@ -90,12 +94,13 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp percent_of_total_supply(
-         %Project{total_supply: total_supply, token_decimals: token_decimals},
+         %Project{latest_coinmarketcap_data: lcd, token_decimals: token_decimals},
          inflow
        ) do
-    total_supply = Decimal.to_integer(total_supply)
+    tokens_amount = lcd.available_supply || lcd.total_supply
+    tokens_amount = Decimal.to_float(tokens_amount)
     inflow = inflow / :math.pow(10, token_decimals)
-    inflow / total_supply * 100
+    inflow / tokens_amount * 100
   end
 
   defp signal_trigger_percent(),

@@ -51,7 +51,6 @@ config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
 config :sanbase, Sanbase.Repo,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   username: "postgres",
   password: "postgres",
   database: "sanbase_dev",
@@ -59,7 +58,6 @@ config :sanbase, Sanbase.Repo,
 
 # Configure your database
 config :sanbase, Sanbase.TimescaleRepo,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   username: "postgres",
   password: "postgres",
   database: "sanbase_timescale_dev",

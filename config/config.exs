@@ -15,6 +15,7 @@ config :sanbase, Sanbase, environment: "#{Mix.env()}"
 config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
 
 config :sanbase, Sanbase.Repo,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
   max_overflow: 5,
@@ -22,6 +23,7 @@ config :sanbase, Sanbase.Repo,
   prepare: :unnamed
 
 config :sanbase, Sanbase.TimescaleRepo,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   adapter: Ecto.Adapters.Postgres,
   timeout: 30_000,
   pool_size: {:system, "TIMESCALE_POOL_SIZE", "30"},

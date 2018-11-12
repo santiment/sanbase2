@@ -51,6 +51,7 @@ config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
 config :sanbase, Sanbase.Repo,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   username: "postgres",
   password: "postgres",
   database: "sanbase_dev",
@@ -58,6 +59,7 @@ config :sanbase, Sanbase.Repo,
 
 # Configure your database
 config :sanbase, Sanbase.TimescaleRepo,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   username: "postgres",
   password: "postgres",
   database: "sanbase_timescale_dev",
@@ -68,7 +70,7 @@ config :sanbase, Sanbase.TimescaleRepo,
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,
   adapter: ClickhouseEcto,
-  loggers: [Ecto.LogEntry],
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
   port: 8123,
   database: "default",

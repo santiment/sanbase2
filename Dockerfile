@@ -48,9 +48,9 @@ RUN mix phx.digest
 RUN mix release
 
 # Release image
-FROM elixir:1.7.4-alpine
+FROM elixir:1.7.4
 
-RUN apk add --update bash
+RUN apt-get install -y --only-upgrade bash
 
 WORKDIR /app
 

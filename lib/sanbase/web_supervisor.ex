@@ -1,6 +1,11 @@
 defmodule Sanbase.Application.WebSupervisor do
   import Sanbase.ApplicationUtils
 
+  def init() do
+    # API metrics
+    SanbaseWeb.Graphql.Prometheus.Instrumenter.install(SanbaseWeb.Graphql.Schema)
+  end
+
   @doc ~s"""
   Return the children and options that will be started in the web container.
   Along with these children all children from `Sanbase.Application.common_children/0`

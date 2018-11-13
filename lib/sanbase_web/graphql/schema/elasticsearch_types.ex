@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.ElasticsearchTypes do
     field(:size_in_megabytes, non_null(:integer))
     field(:telegram_channels_count, non_null(:integer))
     field(:subreddits_count, non_null(:integer))
+    field(:discord_channels_count, non_null(:integer))
     field(:average_documents_per_day, non_null(:integer))
   end
 end

@@ -1,0 +1,186 @@
+$button-positive-day: #26a987;
+$button-negative-day: #d22f2f;
+$button-purple-day: #9627ba;
+$button-grey-day: #c7c7c7;
+
+$button-negative-night: #943030;
+$button-positive-night: #1c5e4e;
+$button-purple-night: #872ea5;
+$button-grey-night: #4a4a4a;
+
+$color-night: #ccc;
+
+.btn {
+  border: none;
+  outline: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.fill {
+  &.negative,
+  &.positive,
+  &.purple {
+    color: #fff;
+
+    :global(.night-mode) & {
+      color: $color-night;
+    }
+  }
+
+  &.grey {
+    background-color: $button-grey-day;
+    color: #000;
+
+    &:hover {
+      background-color: lighten($button-grey-day, 5%);
+    }
+    &:active {
+      background-color: darken($button-grey-day, 5%);
+    }
+
+    :global(.night-mode) & {
+      background-color: $button-grey-night;
+      color: $color-night;
+
+      &:hover {
+        background-color: lighten($button-grey-night, 3%);
+      }
+      &:active {
+        background-color: darken($button-grey-night, 5%);
+      }
+    }
+  }
+
+  &.negative {
+    background-color: $button-negative-day;
+    &:hover {
+      background-color: lighten($button-negative-day, 5%);
+    }
+    &:active {
+      background-color: darken($button-negative-day, 5%);
+    }
+    :global(.night-mode) & {
+      background-color: $button-negative-night;
+      &:hover {
+        background-color: lighten($button-negative-night, 2%);
+      }
+      &:active {
+        background-color: darken($button-negative-night, 5%);
+      }
+    }
+  }
+
+  &.positive {
+    background-color: $button-positive-day;
+    &:hover {
+      background-color: lighten($button-positive-day, 2%);
+    }
+    &:active {
+      background-color: darken($button-positive-day, 3%);
+    }
+
+    :global(.night-mode) & {
+      background-color: $button-positive-night;
+      &:hover {
+        background-color: lighten($button-positive-night, 2%);
+      }
+      &:active {
+        background-color: darken($button-positive-night, 3%);
+      }
+    }
+  }
+
+  &.purple {
+    background-color: $button-purple-day;
+    &:hover {
+      background-color: lighten($button-purple-day, 4%);
+    }
+    &:active {
+      background-color: darken($button-purple-day, 3%);
+    }
+
+    :global(.night-mode) & {
+      background-color: $button-purple-night;
+      &:hover {
+        background-color: lighten($button-purple-night, 2%);
+      }
+      &:active {
+        background-color: darken($button-purple-night, 3%);
+      }
+    }
+  }
+}
+
+.border {
+  background-color: transparent;
+
+  &.negative {
+    color: $button-negative-day;
+    border: 1px solid $button-negative-day;
+
+    &:hover {
+      background-color: lighten($button-negative-day, 48%);
+    }
+    &:active {
+      background-color: lighten($button-negative-day, 45%);
+    }
+
+    :global(.night-mode) & {
+      border-color: $button-negative-night;
+
+      &:hover {
+        background-color: darken($button-negative-night, 25%);
+      }
+      &:active {
+        background-color: darken($button-negative-night, 28%);
+      }
+    }
+  }
+
+  &.positive {
+    color: $button-positive-day;
+    border: 1px solid $button-positive-day;
+
+    &:hover {
+      background-color: lighten($button-positive-day, 56%);
+    }
+    &:active {
+      background-color: lighten($button-positive-day, 53%);
+    }
+
+    :global(.night-mode) & {
+      border-color: $button-positive-night;
+
+      &:hover {
+        background-color: darken($button-positive-night, 14%);
+      }
+      &:active {
+        background-color: darken($button-positive-night, 16%);
+      }
+    }
+  }
+
+  &.purple {
+    color: $button-purple-day;
+    border: 1px solid $button-purple-day;
+
+    &:hover {
+      background-color: lighten($button-purple-day, 54%);
+    }
+    &:active {
+      background-color: lighten($button-purple-day, 51%);
+    }
+
+    :global(.night-mode) & {
+      border-color: $button-purple-night;
+      &:hover {
+        background-color: darken($button-purple-night, 29%);
+      }
+      &:active {
+        background-color: darken($button-purple-night, 31%);
+      }
+    }
+  }
+}

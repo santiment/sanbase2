@@ -1,4 +1,6 @@
-import 'semantic-ui-css/semantic.min.css'
+// Should be commented out because it breaks our UI Framework styles.
+// import 'semantic-ui-css/semantic.min.css'
+
 import 'font-awesome/css/font-awesome.css'
 import './Welcome.js'
 import './ProjectChartStory.js'
@@ -13,3 +15,6 @@ import './MenuStory.js'
 import './SelectorStory.js'
 import './ShareOptionsStory.js'
 import './FeedbackButtonStory.js'
+import './ButtonStory.js'
+import './InputStory.js'
+import './UISearchStory.js'

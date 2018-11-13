@@ -308,6 +308,105 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     assert all_public_lists_cnt == 2
   end
 
+  describe "user_list" do
+    test "returns public lists for anonymous users", %{user2: user2} do
+      project =
+        Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+
+      {:ok, user_list} =
+        UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
+
+      {:ok, user_list} =
+        UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+
+      query = query("userList(userListId: #{user_list.id})")
+
+      result = post(build_conn(), "/graphql", query_skeleton(query, "userList"))
+
+      user_list_result = json_response(result, 200)["data"]["userList"]
+
+      assert user_list_result == %{
+               "color" => "NONE",
+               "id" => "#{user_list.id}",
+               "is_public" => true,
+               "list_items" => [%{"project" => %{"id" => "#{project.id}"}}],
+               "name" => "My Test List",
+               "user" => %{"id" => "#{user2.id}"}
+             }
+    end
+
+    test "returns user list when public", %{user2: user2, conn: conn} do
+      project =
+        Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+
+      {:ok, user_list} =
+        UserList.create_user_list(user2, %{name: "My Test List", is_public: true})
+
+      {:ok, user_list} =
+        UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+
+      query = query("userList(userListId: #{user_list.id})")
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "userList"))
+
+      user_list_result = json_response(result, 200)["data"]["userList"]
+
+      assert user_list_result == %{
+               "color" => "NONE",
+               "id" => "#{user_list.id}",
+               "is_public" => true,
+               "list_items" => [%{"project" => %{"id" => "#{project.id}"}}],
+               "name" => "My Test List",
+               "user" => %{"id" => "#{user2.id}"}
+             }
+    end
+
+    test "returns current user's private list", %{user: user, conn: conn} do
+      project =
+        Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
+
+      {:ok, user_list} =
+        UserList.create_user_list(user, %{name: "My Test List", is_public: false})
+
+      {:ok, user_list} =
+        UserList.update_user_list(%{id: user_list.id, list_items: [%{project_id: project.id}]})
+
+      query = query("userList(userListId: #{user_list.id})")
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "userList"))
+
+      user_list_result = json_response(result, 200)["data"]["userList"]
+
+      assert user_list_result == %{
+               "color" => "NONE",
+               "id" => "#{user_list.id}",
+               "is_public" => false,
+               "list_items" => [%{"project" => %{"id" => "#{project.id}"}}],
+               "name" => "My Test List",
+               "user" => %{"id" => "#{user.id}"}
+             }
+    end
+
+    test "returns null when no public list is available", %{user2: user2, conn: conn} do
+      {:ok, user_list} =
+        UserList.create_user_list(user2, %{name: "My Test List", is_public: false})
+
+      query = query("userList(userListId: #{user_list.id})")
+
+      result =
+        conn
+        |> post("/graphql", query_skeleton(query, "userList"))
+
+      user_list_result = json_response(result, 200)["data"]["userList"]
+
+      assert user_list_result == nil
+    end
+  end
+
   defp query(query) do
     """
     {

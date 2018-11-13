@@ -15,6 +15,14 @@
   margin-bottom: 1rem;
 }
 
+.HelpPopupProjectsContent__item:last-child {
+  margin-bottom: 0;
+}
+
+.HelpPopupProjectsContent__item pre {
+  margin: 4px 0 0;
+}
+
 .HelpPopupProjectsContent__item h4,
 .HelpPopupProjectsContent__item p {
   line-height: 1.3;

@@ -9,6 +9,7 @@ defmodule Sanbase.ApplicationUtils do
 
   INPORTANT NOTE: If you use it, you must use `normalize_children` on the children list.
   """
+  @spec start_in(any(), list[atom()]) :: nil | any
   def start_in(expr, environments) do
     env =
       Config.module_get(Sanbase, :environment)
@@ -16,6 +17,19 @@ defmodule Sanbase.ApplicationUtils do
 
     if env in environments do
       expr
+    end
+  end
+
+  @doc ~s"""
+  Start a worker/supervisor only if the condition is satisfied.
+  The first argument is a function with arity 0 so it is lazily evaluated
+  Example: Start a worker only if an ENV var is present
+    start_if(fn -> {MySupervisor, []} end, fn -> System.get_env("ENV_VAR") end)
+  """
+  @spec start_if((() -> any), (() -> boolean)) :: nil | any
+  def start_if(expr, condition) when is_function(condition, 0) do
+    if condition.() do
+      expr.()
     end
   end
 

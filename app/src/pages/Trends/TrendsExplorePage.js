@@ -1,16 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import * as qs from 'query-string'
-import { Button } from 'semantic-ui-react'
 import Selector from './../../components/Selector/Selector'
 import GetTimeSeries from './../../components/GetTimeSeries'
 import TrendsExploreHeader from '../../components/Trends/Explore/TrendsExploreHeader'
 import GetTrends from './../../components/Trends/GetTrends'
 import TrendsReChart from './../../components/Trends/TrendsReChart'
 import TrendsStats from './../../components/Trends/TrendsStats'
-import SmoothDropdown from '../../components/SmoothDropdown/SmoothDropdown'
-import SmoothDropdownItem from '../../components/SmoothDropdown/SmoothDropdownItem'
-import ShareOptions from './../../components/ShareOptions/ShareOptions'
+import TrendsTitle from '../../components/Trends/TrendsTitle'
 import { capitalizeStr } from './../../utils/utils'
 import './TrendsExplorePage.css'
 
@@ -51,9 +48,11 @@ export class TrendsExplorePage extends Component {
   render () {
     const { match } = this.props
     const { timeRange, asset } = this.state
-    const title = `Crypto Social Trends for "${match.params.topic}"`
     return (
       <div className='TrendsExplorePage'>
+        <div style={{ textAlign: 'center' }}>
+          <TrendsTitle />
+        </div>
         <div className='TrendsExplorePage__content'>
           <TrendsExploreHeader topic={match.params.topic} />
 
@@ -70,15 +69,6 @@ export class TrendsExplorePage extends Component {
                 onSelectOption={this.handleSelectAsset}
                 defaultSelected={asset}
               />
-              <SmoothDropdown>
-                <SmoothDropdownItem
-                  trigger={
-                    <Button basic className='link' icon='share alternate' />
-                  }
-                >
-                  <ShareOptions title={title} url={window.location.href} />
-                </SmoothDropdownItem>
-              </SmoothDropdown>
             </div>
           </div>
           <GetTrends

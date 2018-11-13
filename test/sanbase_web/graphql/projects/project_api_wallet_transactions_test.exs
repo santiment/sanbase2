@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
   alias Sanbase.Model.{
     Project,
     ProjectEthAddress,
-    ExchangeEthAddress
+    ExchangeAddress
   }
 
   alias Sanbase.Repo
@@ -42,8 +42,8 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     })
     |> Repo.insert!()
 
-    %ExchangeEthAddress{}
-    |> ExchangeEthAddress.changeset(%{
+    %ExchangeAddress{}
+    |> ExchangeAddress.changeset(%{
       address: @exchange_wallet,
       name: "Test exchange wallet"
     })

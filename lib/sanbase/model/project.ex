@@ -104,6 +104,10 @@ defmodule Sanbase.Model.Project do
     "project with id #{id}"
   end
 
+  def sanbase_link(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{cmc_id}"
+  end
+
   def initial_ico(%Project{id: id}) do
     Ico
     |> where([i], i.project_id == ^id)
@@ -412,6 +416,15 @@ defmodule Sanbase.Model.Project do
     |> Sanbase.Repo.one()
   end
 
+  def tickers_by_slug_list(slugs_list) when is_list(slugs_list) do
+    from(
+      p in Sanbase.Model.Project,
+      where: p.coinmarketcap_id in ^slugs_list and not is_nil(p.ticker),
+      select: {p.ticker, p.coinmarketcap_id}
+    )
+    |> Sanbase.Repo.all()
+  end
+
   def eth_addresses(%Project{} = project) do
     project =
       project
@@ -441,5 +454,39 @@ defmodule Sanbase.Model.Project do
       |> Enum.reject(fn x -> x == [] end)
 
     {:ok, addresses}
+  end
+
+  @doc """
+  Return all projects from the list which trading volume is over a given threshold
+  """
+  def projects_over_volume_threshold(projects, volume_threshold) do
+    measurements_list =
+      projects
+      |> Enum.map(fn %Project{} = project -> Sanbase.Influxdb.Measurement.name_from(project) end)
+      |> Enum.reject(&is_nil/1)
+
+    case measurements_list do
+      [] ->
+        []
+
+      [_ | _] ->
+        measurements_str =
+          measurements_list
+          |> Enum.map(fn x -> "\"#{x}\"" end)
+          |> Enum.join(", ")
+
+        volume_over_threshold_projects =
+          Sanbase.Prices.Store.volume_over_threshold(
+            measurements_str,
+            Timex.shift(Timex.now(), days: -1),
+            Timex.now(),
+            volume_threshold
+          )
+
+        projects
+        |> Enum.filter(fn %Project{} = project ->
+          Sanbase.Influxdb.Measurement.name_from(project) in volume_over_threshold_projects
+        end)
+    end
   end
 end

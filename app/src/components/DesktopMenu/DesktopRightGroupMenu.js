@@ -12,6 +12,8 @@ import Guide from './../Guide/Guide'
 import styles from './../FeedbackButton/FeedbackButton.module.css'
 import './DesktopRightGroupMenu.css'
 
+const HiddenElement = () => ''
+
 const AnonymDesktopRightGroupMenu = () => (
   <div className='user-auth-control'>
     <FeedbackButton />
@@ -31,14 +33,16 @@ const DesktopRightGroupMenu = ({
   isNightModeEnabled
 }) => (
   <div className='user-auth-control'>
-    <SmoothDropdownItem
-      trigger={
-        <Button className={styles.feedbackButton} circular icon='book' />
-      }
-      id='guide'
-    >
-      <Guide />
-    </SmoothDropdownItem>
+    <HiddenElement>
+      <SmoothDropdownItem
+        trigger={
+          <Button className={styles.feedbackButton} circular icon='book' />
+        }
+        id='guide'
+      >
+        <Guide />
+      </SmoothDropdownItem>
+    </HiddenElement>
     <FeedbackButton />
     <SmoothDropdownItem trigger={<Button circular icon='user' />} id='profile'>
       <DesktopProfileMenu

@@ -9,13 +9,6 @@
   justify-content: center;
 }
 
-.TrendsPage__header h1 {
-  margin: 12px;
-  text-align: center;
-  border-bottom: 2px dashed #000;
-  cursor: pointer;
-}
-
 @media (min-width: $breakpoint-tablet) {
   .TrendsPage__header {
     margin: 20px 0 25px;

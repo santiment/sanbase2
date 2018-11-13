@@ -3,6 +3,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Post, Poll}
+  alias Sanbase.Model.Project
 
   def user_factory do
     %User{
@@ -33,6 +34,18 @@ defmodule Sanbase.Factory do
       link: "http://example.com",
       text: "Text of the post",
       state: Post.approved_state()
+    }
+  end
+
+  def project_factory() do
+    %Project{
+      name: "Santiment",
+      ticker: "SAN",
+      coinmarketcap_id: "santiment",
+      token_decimals: 18,
+      total_supply: 83_000_000,
+      github_link: "https://github.com/santiment",
+      infrastructure: nil
     }
   end
 end

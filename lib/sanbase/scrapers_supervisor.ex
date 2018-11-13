@@ -1,6 +1,8 @@
 defmodule Sanbase.Application.ScrapersSupervisor do
   import Sanbase.ApplicationUtils
 
+  def init(), do: :ok
+
   @doc ~s"""
   Return the children and options that will be started in the scrapers container.
   Along with these children all children from `Sanbase.Application.common_children/0`

@@ -71,6 +71,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     ]
   end
 
+  def middleware(middlewares, field, object) do
+    SanbaseWeb.Graphql.Prometheus.Instrumenter.instrument(middlewares, field, object)
+  end
+
   query do
     @desc "Returns the user currently logged in."
     field :current_user, :user do

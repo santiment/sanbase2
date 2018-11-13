@@ -9,13 +9,14 @@ defmodule Sanbase.Application do
       Envy.auto_load()
     end
 
-    common_init()
-    common_children = common_children()
+    container_type = System.get_env("CONTAINER_TYPE") || "all"
+
+    init(container_type)
 
     {children, opts} =
-      case System.get_env("CONTAINER_TYPE") || "all" do
+      case container_type do
         "web" ->
-          Logger.info("Starting WEB Sanbase.")
+          Logger.info("Starting Web Sanbase.")
           Sanbase.Application.WebSupervisor.children()
 
         "scrapers" ->
@@ -45,7 +46,7 @@ defmodule Sanbase.Application do
           {children, opts}
       end
 
-    children = (common_children ++ children) |> Sanbase.ApplicationUtils.normalize_children()
+    children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
 
     # Add error tracking through sentry
     :ok = :error_logger.add_report_handler(Sentry.Logger)
@@ -53,13 +54,32 @@ defmodule Sanbase.Application do
     Supervisor.start_link(children, opts)
   end
 
-  def common_init() do
+  def init(container_type) do
+    # Common inits
+
     # Prometheus related
     Sanbase.Prometheus.EctoInstrumenter.setup()
 
     Sanbase.Prometheus.PipelineInstrumenter.setup()
 
     Sanbase.Prometheus.Exporter.setup()
+
+    # Container specific init
+    case container_type do
+      "all" ->
+        Sanbase.Application.WebSupervisor.init()
+        Sanbase.Application.ScrapersSupervisor.init()
+        Sanbase.Application.WorkersSupervisor.init()
+
+      "web" ->
+        Sanbase.Application.WebSupervisor.init()
+
+      "scrapers" ->
+        Sanbase.Application.ScrapersSupervisor.init()
+
+      "workers" ->
+        Sanbase.Application.WorkersSupervisor.init()
+    end
   end
 
   @doc ~s"""

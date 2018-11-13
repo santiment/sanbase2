@@ -99,10 +99,11 @@ defmodule Sanbase.Mixfile do
       {:elasticsearch, "~> 0.5"},
       {:quantum, "~> 2.3"},
       {:plug_cowboy, "~> 1.0"},
-      {:prometheus_ex, "~> 3.0"},
+      {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_plugs, "~> 1.0"},
-      {:prometheus_process_collector, "~> 1.4"}
+      {:prometheus_process_collector, "~> 1.4"},
+      {:absinthe_metrics, "~> 0.9"}
     ]
   end
 

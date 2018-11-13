@@ -1,7 +1,7 @@
 import React from 'react'
 import moment from 'moment'
 import { graphql } from 'react-apollo'
-import { ResponsiveContainer, AreaChart, Area, XAxis } from 'recharts'
+import { ResponsiveContainer, AreaChart, Area, XAxis, Legend } from 'recharts'
 import Widget from '../Widget/Widget'
 import { totalMarketcapGQL } from './TotalMarketcapGQL'
 import { formatNumber } from '../../utils/formatting'
@@ -66,12 +66,66 @@ const generateWidgetData = historyPrice => {
   }
 }
 
-const TotalMarketcapWidget = ({ historyPrices }) => {
+const constructProjectMarketcapKey = projectName => `${projectName}-marketcap`
+
+const mergeProjectWithTotal = (total, lastIndex, project, projectName) => {
+  const project_LAST_INDEX = project.length - 1
+  for (let i = project_LAST_INDEX; i > -1; i--) {
+    total[lastIndex][constructProjectMarketcapKey(projectName)] =
+      project[i].marketcap
+    lastIndex--
+  }
+}
+
+const combineDataset = (totalMarketHistory, restProjects) => {
+  const LAST_INDEX = totalMarketHistory.length - 1
+  if (LAST_INDEX < 0) {
+    return
+  }
+
+  for (const key of Object.keys(restProjects)) {
+    mergeProjectWithTotal(
+      totalMarketHistory,
+      LAST_INDEX,
+      restProjects[key],
+      key
+    )
+  }
+  console.log(totalMarketHistory)
+}
+
+const COLORS = ['#ffa000', '#1111bb', '#ab47bc']
+
+const getTop3Area = restProjects => {
+  return Object.keys(restProjects).map((key, i) => (
+    <Area
+      key={key}
+      dataKey={constructProjectMarketcapKey(key)}
+      type='monotone'
+      strokeWidth={1}
+      stroke={COLORS[i]}
+      fill={COLORS[i] + '44'}
+      isAnimationActive={false}
+    />
+  ))
+}
+
+const TotalMarketcapWidget = ({
+  historyPrices: { TOTAL_MARKET, ...restProjects },
+  loading
+}) => {
   const {
     totalmarketCapPrice = '.',
     volumeAmplitudePrice = '.',
     marketcapDataset = []
-  } = generateWidgetData(combineHistoryPrices(historyPrices))
+  } = generateWidgetData(TOTAL_MARKET)
+
+  let restAreas = null
+
+  if (!loading) {
+    combineDataset(marketcapDataset, restProjects)
+    restAreas = getTop3Area(restProjects)
+  }
 
   const valueClassNames = `TotalMarketcapWidget__value ${
     totalmarketCapPrice === '.' ? 'TotalMarketcapWidget__value_loading' : ''
@@ -103,6 +157,8 @@ const TotalMarketcapWidget = ({ historyPrices }) => {
             fill='rgba(214, 235, 219, .8)'
             isAnimationActive={false}
           />
+          {restAreas}
+          {/* <Legend verticalAlign='top' height={5} /> */}
         </AreaChart>
       </ResponsiveContainer>
     </Widget>

@@ -44,19 +44,6 @@ const getMarketcapQuery = (type, projects) => {
   // const slugs = projects.slice(0, 10).map(({ slug }) => slug)
   const slugs = projects.map(({ slug }) => slug)
 
-  // const slugsQuery = graphql(constructTotalMarketcapGQL(slugs, from), {
-  //   props: ({ data: historyPrice = {} }) => {
-  //     return slugs.reduce(
-  //       (acc, slug) => {
-  //         acc.historyPrices[slug] = historyPrice['_' + slug.replace(/-/g, '')]
-  //         return acc
-  //       },
-  //       {
-  //         historyPrices: {}
-  //       }
-  //     )
-  //   }
-  // })
   const slugsQuery = graphql(projectsListHistoryStatsGQL, {
     props: ({ data: { projectsListHistoryStats = [] } }) => ({
       historyPrices: {
@@ -73,6 +60,32 @@ const getMarketcapQuery = (type, projects) => {
       }
     })
   })
+
+  if (projects.length > 1) {
+    const slugsQuery2 = graphql(
+      constructTotalMarketcapGQL(slugs.slice(0, 3), from),
+      {
+        props: ({ data: historyPrice = {}, ownProps: { historyPrices } }) => {
+          return slugs.reduce(
+            (acc, slug) => {
+              acc.historyPrices[slug] =
+                historyPrice['_' + slug.replace(/-/g, '')]
+              return acc
+            },
+            {
+              historyPrices,
+              loading: historyPrice.loading
+            }
+          )
+        }
+      }
+    )
+
+    return compose(
+      slugsQuery,
+      slugsQuery2
+    )
+  }
 
   return slugsQuery
 }

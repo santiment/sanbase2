@@ -11,11 +11,6 @@ defmodule Sanbase.TimescaleRepo do
   def init(_, opts) do
     pool_size = Config.get(:pool_size) |> Sanbase.Utils.Math.to_integer()
 
-    System.put_env(
-      "TIMESCALE_DATABASE_URL",
-      "ecto://postgres:postgres@timescaledb-postgresql.default.svc.cluster.local:5432/etherbi"
-    )
-
     opts =
       opts
       |> Keyword.put(:pool_size, pool_size)

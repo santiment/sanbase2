@@ -493,7 +493,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       ])
 
       complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
-      resolve(&TechIndicatorsResolver.emojis_sentiment/3)
+      cache_resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end
 
     @desc ~s"""

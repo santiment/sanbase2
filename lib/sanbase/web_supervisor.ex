@@ -3,7 +3,8 @@ defmodule Sanbase.Application.WebSupervisor do
 
   def init() do
     # API metrics
-    SanbaseWeb.Graphql.Prometheus.Instrumenter.install(SanbaseWeb.Graphql.Schema)
+    SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.install(SanbaseWeb.Graphql.Schema)
+    SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.install(SanbaseWeb.Graphql.Schema)
   end
 
   @doc ~s"""

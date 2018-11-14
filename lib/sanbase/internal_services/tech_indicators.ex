@@ -1,4 +1,6 @@
 defmodule Sanbase.InternalServices.TechIndicators do
+  import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
+
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -626,12 +628,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
         String.to_atom(key) => Map.get(result, key)
       }
     end)
-  end
-
-  defp error_result(message) do
-    log_id = Ecto.UUID.generate()
-    Logger.error("[#{log_id}] #{message}")
-    {:error, "[#{log_id}] Error executing query. See logs for details."}
   end
 
   defp tech_indicators_url() do

@@ -25,7 +25,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
-  alias SanbaseWeb.Graphql.Complexity.SocialDataComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
     MultipleAuth,
@@ -601,7 +600,6 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
 
-      complexity(&SocialDataComplexity.trending_words/3)
       cache_resolve(&SocialDataResolver.trending_words/3)
     end
 

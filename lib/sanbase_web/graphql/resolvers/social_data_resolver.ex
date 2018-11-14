@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         },
         _resolution
       ) do
+    size = Enum.min([size, 100])
     SocialData.trending_words(source, size, hour, from, to)
   end
 end

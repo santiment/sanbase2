@@ -72,7 +72,7 @@ defmodule Sanbase.SocialData.SocialData do
       result
       |> Enum.map(fn %{"timestamp" => timestamp, "top_words" => top_words} ->
         %{datetime: DateTime.from_unix!(timestamp),
-          words: top_words |> Enum.map(fn ({k, v}) ->
+          word_score: top_words |> Enum.map(fn ({k, v}) ->
             %{word: k,
               score: v}
           end)}

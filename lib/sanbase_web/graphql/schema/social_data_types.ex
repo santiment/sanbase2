@@ -3,11 +3,18 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   object :trending_words do
     field(:datetime, non_null(:datetime))
-    field(:top_words, list_of(:words))
+    field(:top_words, list_of(:word_score))
   end
 
-  object :words do
+  object :word_score do
     field(:word, :string)
     field(:score, :float)
+  end
+
+  enum :trending_words_sources do
+    value(:telegram)
+    value(:professional_traders_chat)
+    value(:reddit)
+    value(:all)
   end
 end

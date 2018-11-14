@@ -583,20 +583,20 @@ defmodule SanbaseWeb.Graphql.Schema do
     Arguments description:
       * source - one of the following:
         1. telegram
-        2. traders
+        2. professional_traders_chat
         3. reddit
         4. all
-      * n - an integer showing how many words should be included in the top list.
+      * size - an integer showing how many words should be included in the top list (max 100)
       * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
-    field :trending_words, :words do
-      arg(:source, non_null(:string))
+    field :trending_words, :word_score do
+      arg(:source, non_null(:trending_words_sources))
       arg(:size, non_null(:integer))
       arg(:hour, non_null(:integer))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime)
+      arg(:to, non_null(:datetime))
 
       middleware(ApiTimeframeRestriction)
 

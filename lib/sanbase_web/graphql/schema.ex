@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     EtherbiResolver,
     VotingResolver,
     TechIndicatorsResolver,
+    SocialDataResolver,
     FileResolver,
     PostResolver,
     MarketSegmentResolver,
@@ -24,6 +25,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
+  alias SanbaseWeb.Graphql.Complexity.SocialDataComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
     MultipleAuth,
@@ -46,6 +48,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.VotingTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
+  import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
@@ -573,6 +576,33 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&TechIndicatorsComplexity.topic_search/3)
       resolve(&TechIndicatorsResolver.topic_search/3)
+    end
+
+    @desc ~s"""
+    Returns lists with trending words and their corresponding trend score.
+
+    Arguments description:
+      * source - one of the following:
+        1. telegram
+        2. traders
+        3. reddit
+        4. all
+      * n - an integer showing how many words should be included in the top list.
+      * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :trending_words, :words do
+      arg(:source, non_null(:string))
+      arg(:size, non_null(:integer))
+      arg(:hour, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, :datetime)
+
+      middleware(ApiTimeframeRestriction)
+
+      complexity(&SocialDataComplexity.trending_words/3)
+      cache_resolve(&SocialDataResolver.trending_words/3)
     end
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."

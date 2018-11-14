@@ -72,6 +72,7 @@ defmodule Sanbase.Clickhouse.Github do
     to_datetime_unix = DateTime.to_unix(to_datetime)
     span = div(to_datetime_unix - from_datetime_unix, interval)
     span = Enum.max([span, 1])
+    organization = String.downcase(organization)
 
     query = """
     SELECT time, SUM(events) as events_count

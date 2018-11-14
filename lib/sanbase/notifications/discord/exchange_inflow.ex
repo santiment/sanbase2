@@ -66,9 +66,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
           not is_nil(p.token_decimals) and not is_nil(p.name)
     )
     |> Repo.all()
-    |> Enum.reject(fn %Project{latest_coinmarketcap_data: lcd} ->
-      lcd.available_supply == nil and lcd.total_supply == nil
-    end)
+    |> Enum.reject(fn %Project{} = project -> !supply(project) end)
   end
 
   defp build_payload(projects, list) do
@@ -94,11 +92,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp percent_of_total_supply(
-         %Project{latest_coinmarketcap_data: lcd, token_decimals: token_decimals},
+         %Project{token_decimals: token_decimals} = project,
          inflow
        ) do
-    tokens_amount = lcd.available_supply || lcd.total_supply
-    tokens_amount = Decimal.to_float(tokens_amount)
+    tokens_amount = supply(project) |> Decimal.to_float()
     inflow = inflow / :math.pow(10, token_decimals)
     inflow / tokens_amount * 100
   end
@@ -111,4 +108,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp webhook_url(), do: Config.get(:webhook_url)
 
   defp publish_user(), do: Config.get(:publish_user)
+
+  defp supply(%Project{total_supply: ts, latest_coinmarketcap_data: nil}), do: ts
+
+  defp supply(%Project{total_supply: ts, latest_coinmarketcap_data: lcd}) do
+    lcd.available_supply || lcd.total_supply || ts
+  end
 end

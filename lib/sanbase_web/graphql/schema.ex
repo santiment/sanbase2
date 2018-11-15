@@ -72,7 +72,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   def middleware(middlewares, field, object) do
-    SanbaseWeb.Graphql.Prometheus.Instrumenter.instrument(middlewares, field, object)
+    SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
+    |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
   end
 
   query do

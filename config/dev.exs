@@ -42,6 +42,7 @@ config :sanbase, SanbaseWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+config :logger, level: :debug
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 

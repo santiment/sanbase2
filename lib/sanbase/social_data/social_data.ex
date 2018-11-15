@@ -32,11 +32,15 @@ defmodule Sanbase.SocialData.SocialData do
         trending_words_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching trending words for source: #{source}: #{body}")
+        error_result(
+          "Error status #{status} fetching trending words for source: #{source}: #{body}"
+        )
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch trending words data for source #{source}: #{HTTPoison.Error.message(error)}"
+          "Cannot fetch trending words data for source #{source}: #{
+            HTTPoison.Error.message(error)
+          }"
         )
     end
   end
@@ -56,7 +60,7 @@ defmodule Sanbase.SocialData.SocialData do
     options = [
       recv_timeout: @recv_timeout,
       params: [
-        {"source", source},
+        {"source", source |> Atom.to_string()},
         {"n", size},
         {"hour", hour},
         {"from_timestamp", from_unix},
@@ -71,11 +75,14 @@ defmodule Sanbase.SocialData.SocialData do
     result =
       result
       |> Enum.map(fn %{"timestamp" => timestamp, "top_words" => top_words} ->
-        %{datetime: DateTime.from_unix!(timestamp),
-          word_score: top_words |> Enum.map(fn ({k, v}) ->
-            %{word: k,
-              score: v}
-          end)}
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          top_words:
+            top_words
+            |> Enum.map(fn {k, v} ->
+              %{word: k, score: v}
+            end)
+        }
       end)
 
     {:ok, result}

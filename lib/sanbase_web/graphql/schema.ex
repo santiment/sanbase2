@@ -591,7 +591,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     """
-    field :trending_words, :word_score do
+    field :trending_words, list_of(:trending_words) do
       arg(:source, non_null(:trending_words_sources))
       arg(:size, non_null(:integer))
       arg(:hour, non_null(:integer))

@@ -254,6 +254,69 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
+  def historical_balance(address, from_datetime, to_datetime, interval) do
+    from_datetime_unix = DateTime.to_unix(from_datetime)
+    to_datetime_unix = DateTime.to_unix(to_datetime)
+    span = div(to_datetime_unix - from_datetime_unix, interval)
+
+    time_interval =
+      if interval < 86400 do
+        "toStartOfHour(dt)"
+      else
+        "toStartOfDay(dt)"
+      end
+
+    query = """
+    SELECT dt, runningAccumulate(state) AS total_balance FROM (
+      SELECT dt, sumState(value) AS state FROM (
+        SELECT
+          toUnixTimestamp(#{time_interval}) as dt, "from" AS address, sum(-value / pow(10, 18)) AS value
+        FROM eth_transfers
+        PREWHERE "from" = '#{address}'
+        GROUP BY dt, address
+
+        UNION ALL
+
+        SELECT
+          toUnixTimestamp(#{time_interval}) AS dt, "to" AS address, sum(value / pow(10, 18)) AS value
+        FROM eth_transfers
+        PREWHERE "to" = '#{address}'
+        GROUP BY dt, address
+      )
+      GROUP BY dt
+      ORDER BY dt
+    )
+    ORDER BY dt
+    """
+
+    {:ok, result}
+      = ClickhouseRepo.query_transform(query, [], fn [dt, value] -> {dt, value} end)
+
+    intervals =
+      Stream.iterate(from_datetime_unix, fn dt_unix -> dt_unix + interval end)
+      |> Enum.take(span)
+
+    for int <- intervals,
+        {dt, value} <- result do
+
+      if int >= dt do
+        {int, value}
+      else
+        {int, nil}
+      end
+    end
+    |> IO.inspect()
+    |> Enum.filter(fn {_, v} -> v != nil end)
+    |> IO.inspect()
+    |> Enum.into(%{})
+    |> Enum.sort_by(fn {k, _} -> k end)
+    |> IO.inspect()
+    |> Enum.map(fn {dt, value} -> %{
+      datetime: DateTime.from_unix!(dt),
+      balance: value
+    }end)
+  end
+
   defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)

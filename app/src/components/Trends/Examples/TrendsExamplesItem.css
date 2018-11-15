@@ -1,5 +1,4 @@
 .TrendsExamplesItem {
-  max-width: 350px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -41,6 +40,7 @@
   .TrendsExamplesItem {
     margin-right: 1em;
     margin-bottom: 0;
+    width: 350px;
   }
 
   .TrendsExamplesItem:last-child {

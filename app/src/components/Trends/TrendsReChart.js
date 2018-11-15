@@ -40,7 +40,7 @@ const displayLoadingState = branch(
   1(true): desktop
   */
 const chartMargins = [
-  { left: -30, right: 15 },
+  { left: -20, right: 30 },
   { top: 5, right: 36, left: 0, bottom: 5 }
 ]
 

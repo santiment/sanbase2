@@ -26,11 +26,10 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   require Logger
   require Sanbase.ClickhouseRepo
 
-  import Ecto.Query
-
   alias __MODULE__
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
+  alias Sanbase.DateTimeUtils
 
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
@@ -135,6 +134,20 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       |> Enum.map(&reduce_eth_spent/1)
 
     {:ok, total_eth_spent_over_time}
+  end
+
+  @doc ~s"""
+  Returns the historical balances of given etherium address in all intervals between two datetimes.
+  """
+  def historical_balance(address, from_datetime, to_datetime, interval) do
+    {query, args} = historical_balance_query(address, interval)
+
+    balances =
+      query
+      |> ClickhouseRepo.query_transform(args, fn [dt, value] -> {dt, value} end)
+      |> convert_historical_balance_result(from_datetime, to_datetime, interval)
+
+    {:ok, balances}
   end
 
   # Private functions
@@ -254,69 +267,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
-  def historical_balance(address, from_datetime, to_datetime, interval) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
-    span = div(to_datetime_unix - from_datetime_unix, interval)
-
-    time_interval =
-      if interval < 86400 do
-        "toStartOfHour(dt)"
-      else
-        "toStartOfDay(dt)"
-      end
-
-    query = """
-    SELECT dt, runningAccumulate(state) AS total_balance FROM (
-      SELECT dt, sumState(value) AS state FROM (
-        SELECT
-          toUnixTimestamp(#{time_interval}) as dt, "from" AS address, sum(-value / pow(10, 18)) AS value
-        FROM eth_transfers
-        PREWHERE "from" = '#{address}'
-        GROUP BY dt, address
-
-        UNION ALL
-
-        SELECT
-          toUnixTimestamp(#{time_interval}) AS dt, "to" AS address, sum(value / pow(10, 18)) AS value
-        FROM eth_transfers
-        PREWHERE "to" = '#{address}'
-        GROUP BY dt, address
-      )
-      GROUP BY dt
-      ORDER BY dt
-    )
-    ORDER BY dt
-    """
-
-    {:ok, result} = ClickhouseRepo.query_transform(query, [], fn [dt, value] -> {dt, value} end)
-
-    intervals =
-      Stream.iterate(from_datetime_unix, fn dt_unix -> dt_unix + interval end)
-      |> Enum.take(span)
-
-    for int <- intervals,
-        {dt, value} <- result do
-      if int >= dt do
-        {int, value}
-      else
-        {int, nil}
-      end
-    end
-    |> IO.inspect()
-    |> Enum.filter(fn {_, v} -> v != nil end)
-    |> IO.inspect()
-    |> Enum.into(%{})
-    |> Enum.sort_by(fn {k, _} -> k end)
-    |> IO.inspect()
-    |> Enum.map(fn {dt, value} ->
-      %{
-        datetime: DateTime.from_unix!(dt),
-        balance: value
-      }
-    end)
-  end
-
   defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
@@ -359,6 +309,90 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
+  defp historical_balance_query(address, interval) do
+    args = [address]
+
+    dt_round = datetime_rounding_for_interval(interval)
+
+    query = """
+    SELECT dt, runningAccumulate(state) AS total_balance FROM (
+      SELECT dt, sumState(value) AS state FROM (
+        SELECT
+          toUnixTimestamp(#{dt_round}) as dt, "from" AS address, sum(-value / #{@eth_decimals}) AS value
+        FROM #{@table}
+        PREWHERE "from" = ?1
+        GROUP BY dt, address
+
+        UNION ALL
+
+        SELECT
+          toUnixTimestamp(#{dt_round}) AS dt, "to" AS address, sum(value / #{@eth_decimals}) AS value
+        FROM #{@table}
+        PREWHERE "to" = ?1
+        GROUP BY dt, address
+      )
+      GROUP BY dt
+      ORDER BY dt
+    )
+    ORDER BY dt
+    """
+
+    {query, args}
+  end
+
+  defp convert_historical_balance_result({:ok, []}, _, _, _), do: []
+
+  defp convert_historical_balance_result({:ok, result}, from_datetime, to_datetime, interval) do
+    from_datetime_unix = DateTime.to_unix(from_datetime)
+    to_datetime_unix = DateTime.to_unix(to_datetime)
+    interval_points = div(to_datetime_unix - from_datetime_unix, interval) + 1
+
+    intervals =
+      from_datetime_unix
+      |> Stream.iterate(fn dt_unix -> dt_unix + interval end)
+      |> Enum.take(interval_points)
+
+    initial_intervals = intervals |> Enum.map(fn int -> {int, 0} end) |> Enum.into(%{})
+    filled_intervals = fill_intervals_with_balance(intervals, result)
+
+    calculate_balances_for_intervals(initial_intervals, filled_intervals)
+  end
+
+  defp convert_historical_balance_result(_, _, _, _), do: []
+
+  defp calculate_balances_for_intervals(initial_intervals, filled_intervals) do
+    initial_intervals
+    |> Map.merge(filled_intervals)
+    |> Enum.sort_by(fn {k, _} -> k end)
+    |> Enum.map(fn {dt, value} ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        balance: value
+      }
+    end)
+  end
+
+  defp datetime_rounding_for_interval(interval) do
+    if interval < DateTimeUtils.compound_duration_to_seconds("1d") do
+      "toStartOfHour(dt)"
+    else
+      "toStartOfDay(dt)"
+    end
+  end
+
+  defp fill_intervals_with_balance(intervals, balances) do
+    for int <- intervals,
+        {dt, balance} <- balances do
+      if int >= dt do
+        {int, balance}
+      else
+        {int, nil}
+      end
+    end
+    |> Enum.filter(fn {_, v} -> v != nil end)
+    |> Enum.into(%{})
+  end
+
   defp reduce_eth_spent([%{datetime: datetime} | _] = values) do
     total_eth_spent =
       values
@@ -368,16 +402,4 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     %{datetime: datetime, eth_spent: total_eth_spent}
   end
-
-  defp divide_by_eth_decimals({:ok, transfers} = tuple) do
-    transfers =
-      transfers
-      |> Enum.map(fn %EthTransfers{trx_value: trx_value} = eth_transfer ->
-        %EthTransfers{eth_transfer | trx_value: trx_value / @eth_decimals}
-      end)
-
-    {:ok, transfers}
-  end
-
-  defp divide_by_eth_decimals(data), do: data
 end

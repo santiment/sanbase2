@@ -1,5 +1,6 @@
 import React from 'react'
 import moment from 'moment'
+import withSizes from 'react-sizes'
 import { compose, withProps, branch, renderComponent } from 'recompose'
 import {
   ResponsiveContainer,
@@ -14,6 +15,7 @@ import {
 import { formatNumber } from './../../utils/formatting'
 import { mergeTimeseriesByKey } from './../../utils/utils'
 import { sourcesMeta as chartsMeta } from './trendsUtils'
+import { mapSizesToProps } from '../../App'
 
 const ASSET_PRICE_COLOR = '#A4ACB7'
 
@@ -33,16 +35,34 @@ const displayLoadingState = branch(
   renderComponent(Loading)
 )
 
+/*
+  0(false): mobile
+  1(true): desktop
+  */
+const chartMargins = [
+  { left: -30, right: 15 },
+  { top: 5, right: 36, left: 0, bottom: 5 }
+]
+
 const displayEmptyState = branch(props => props.isEmpty, renderComponent(Empty))
 
-const TrendsReChart = ({ chartSummaryData = [], chartData, asset }) => (
+const TrendsReChart = ({
+  chartSummaryData = [],
+  chartData,
+  asset,
+  isDesktop
+}) => (
   <div className='TrendsExploreChart'>
     {chartSummaryData.map((entity, key) => (
-      <ResponsiveContainer key={key} width='100%' height={300}>
+      <ResponsiveContainer
+        key={key}
+        width='100%'
+        height={isDesktop ? 300 : 250}
+      >
         <ComposedChart
           data={chartData}
           syncId='trends'
-          margin={{ top: 5, right: 36, left: 0, bottom: 5 }}
+          margin={chartMargins[+isDesktop]}
         >
           <XAxis
             dataKey='datetime'
@@ -183,6 +203,7 @@ export default compose(
       isLoading: false
     }
   }),
+  withSizes(mapSizesToProps),
   displayLoadingState,
   displayEmptyState
 )(TrendsReChart)

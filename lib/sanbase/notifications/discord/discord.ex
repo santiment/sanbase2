@@ -126,28 +126,21 @@ defmodule Sanbase.Notifications.Discord do
       min = Enum.min(low_values) |> Float.floor(2)
       max = Enum.max(high_values) |> Float.ceil(2)
 
-      [open, high, low, close, avg] =
+      [open, high, low, close, _] =
         prices
         |> Enum.map(fn list -> list |> Enum.map(&Float.round(&1, 6)) end)
         |> Enum.map(fn list -> Enum.join(list, ",") end)
 
-      days_str =
-        datetimes
-        |> Enum.map(fn datetime -> datetime |> DateTime.to_date() |> Map.get(:day) end)
-        |> Enum.join("|")
-
       size = datetimes |> Enum.count()
-
       {:ok, ~s(
         https://chart.googleapis.com/chart?
         cht=lc&
         chs=800x200&
-        chxt=x,y&
-        chxr=1,#{min},#{max}&
-        chxl=0:|#{days_str}&
-        chd=t1:#{avg}|#{low}|#{open}|#{close}|#{high}&
+        chxt=y&
+        chxr=0,#{min},#{max}&
+        chd=t0:1|#{low}|#{open}|#{close}|#{high}&
         chds=#{min},#{max}&
-        chm=F,,1,1:#{size},20
+        chm=F,,1,1:#{size},6
       ) |> String.replace(~r/[\n\s+]+/, "")}
     else
       error ->

@@ -612,7 +612,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:address, non_null(:string))
       arg(:interval, non_null(:string), default_value: "1d")
 
-      resolve(&ClickhouseResolver.historical_balance/3)
+      cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
   end
 

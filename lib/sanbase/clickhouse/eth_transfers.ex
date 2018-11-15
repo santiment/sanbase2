@@ -318,17 +318,17 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     SELECT dt, runningAccumulate(state) AS total_balance FROM (
       SELECT dt, sumState(value) AS state FROM (
         SELECT
-          toUnixTimestamp(#{dt_round}) as dt, "from" AS address, sum(-value / #{@eth_decimals}) AS value
+          toUnixTimestamp(#{dt_round}) as dt, from AS address, sum(-value / #{@eth_decimals}) AS value
         FROM #{@table}
-        PREWHERE "from" = ?1
+        PREWHERE from = ?1
         GROUP BY dt, address
 
         UNION ALL
 
         SELECT
-          toUnixTimestamp(#{dt_round}) AS dt, "to" AS address, sum(value / #{@eth_decimals}) AS value
+          toUnixTimestamp(#{dt_round}) AS dt, to AS address, sum(value / #{@eth_decimals}) AS value
         FROM #{@table}
-        PREWHERE "to" = ?1
+        PREWHERE to = ?1
         GROUP BY dt, address
       )
       GROUP BY dt

@@ -289,8 +289,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     ORDER BY dt
     """
 
-    {:ok, result}
-      = ClickhouseRepo.query_transform(query, [], fn [dt, value] -> {dt, value} end)
+    {:ok, result} = ClickhouseRepo.query_transform(query, [], fn [dt, value] -> {dt, value} end)
 
     intervals =
       Stream.iterate(from_datetime_unix, fn dt_unix -> dt_unix + interval end)
@@ -298,7 +297,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     for int <- intervals,
         {dt, value} <- result do
-
       if int >= dt do
         {int, value}
       else
@@ -311,10 +309,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     |> Enum.into(%{})
     |> Enum.sort_by(fn {k, _} -> k end)
     |> IO.inspect()
-    |> Enum.map(fn {dt, value} -> %{
-      datetime: DateTime.from_unix!(dt),
-      balance: value
-    }end)
+    |> Enum.map(fn {dt, value} ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        balance: value
+      }
+    end)
   end
 
   defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do

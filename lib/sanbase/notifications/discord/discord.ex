@@ -124,15 +124,29 @@ defmodule Sanbase.Notifications.Discord do
       [datetimes | prices] = ohlc
 
       [_, high_values, low_values, _, _] = prices
-      min = low_values |> Enum.map(&(&1 * 1.0)) |> Enum.min() |> Float.floor(2)
-      max = high_values |> Enum.map(&(&1 * 1.0)) |> Enum.max() |> Float.ceil(2)
+
+      min =
+        low_values
+        |> Enum.filter(fn el -> el != 0 end)
+        |> Enum.map(&(&1 * 1.0))
+        |> Enum.min()
+        |> Float.floor(2)
+
+      max =
+        high_values
+        |> Enum.filter(fn el -> el != 0 end)
+        |> Enum.map(&(&1 * 1.0))
+        |> Enum.max()
+        |> Float.ceil(2)
 
       [open, high, low, close, _] =
         prices
+        |> Enum.map(fn list -> list |> Enum.filter(fn el -> el != 0 end) end)
         |> Enum.map(fn list -> list |> Enum.map(&(&1 * 1.0)) |> Enum.map(&Float.round(&1, 6)) end)
         |> Enum.map(fn list -> Enum.join(list, ",") end)
 
-      size = datetimes |> Enum.count()
+      size = open |> String.split(",") |> Enum.count()
+      bar_size = 6 * round(90 / size)
       {:ok, ~s(
         https://chart.googleapis.com/chart?
         cht=lc&
@@ -141,7 +155,8 @@ defmodule Sanbase.Notifications.Discord do
         chxr=0,#{min},#{max}&
         chd=t0:1|#{low}|#{open}|#{close}|#{high}&
         chds=#{min},#{max}&
-        chm=F,,1,1:#{size},6
+        chm=F,,1,1:#{size},#{bar_size}&
+        chma=10,10,20,10
       ) |> String.replace(~r/[\n\s+]+/, "")}
     else
       error ->

@@ -490,6 +490,8 @@ defmodule Sanbase.Model.Project do
     end
   end
 
+  def github_organization(%Project{coinmarketcap_id: slug}), do: github_organization(slug)
+
   def github_organization(slug) do
     github_link =
       from(

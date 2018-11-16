@@ -48,8 +48,16 @@ defmodule Sanbase.Clickhouse.Github do
     raise "Cannot change github ClickHouse table!"
   end
 
-  @doc ~s"""
+  def total_dev_activity(organization, from, to) do
+    {query, args} = total_dev_activity_query(organization, from, to)
 
+    {:ok, [result]} = ClickhouseRepo.query_transform(query, args, fn [elem] -> elem end)
+    {:ok, result |> String.to_integer()}
+  end
+
+  @doc ~s"""
+  Get a timeseries with the pure development activity for a project.
+  Pure development activity is all events excluding comments, issues, forks, stars, etc.
   """
   @spec dev_activity(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
@@ -88,7 +96,6 @@ defmodule Sanbase.Clickhouse.Github do
     to_datetime_unix = DateTime.to_unix(to_datetime)
     span = div(to_datetime_unix - from_datetime_unix, interval)
     span = Enum.max([span, 1])
-    organization = String.downcase(organization)
 
     query = """
     SELECT time, SUM(events) as events_count
@@ -123,6 +130,24 @@ defmodule Sanbase.Clickhouse.Github do
       from_datetime_unix,
       to_datetime_unix,
       @non_dev_events
+    ]
+
+    {query, args}
+  end
+
+  defp total_dev_activity_query(owner, from, to) do
+    query = """
+    SELECT COUNT(*)
+    FROM #{@table}
+    PREWHERE owner = ?1
+    AND dt >= toDateTime(?2)
+    AND dt <= toDateTime(?3)
+    """
+
+    args = [
+      owner,
+      DateTime.to_unix(from),
+      DateTime.to_unix(to)
     ]
 
     {query, args}

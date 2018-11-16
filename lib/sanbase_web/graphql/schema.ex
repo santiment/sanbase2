@@ -237,9 +237,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string)
+      arg(:interval, non_null(:string))
       arg(:transform, :string, default_value: "None")
-      arg(:moving_average_interval_base, :string, default_value: "1w")
+      arg(:moving_average_interval_base, :integer, default_value: 7)
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 

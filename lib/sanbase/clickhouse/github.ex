@@ -55,16 +55,32 @@ defmodule Sanbase.Clickhouse.Github do
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def dev_activity(nil, _, _, _), do: []
 
-  def dev_activity(organization, from, to, interval) do
+  def dev_activity(organization, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
     {query, args} = dev_activity_query(organization, from, to, interval_sec)
 
     ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
       %{
         datetime: datetime |> Sanbase.DateTimeUtils.from_erl!(),
-        activity: events_count
+        activity: events_count |> String.to_integer()
       }
     end)
+  end
+
+  def dev_activity(organization, from, to, interval, "movingAverage", ma_base) do
+    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    from = Timex.shift(from, seconds: -(ma_base * interval_sec))
+    {query, args} = dev_activity_query(organization, from, to, interval_sec)
+
+    {:ok, result} =
+      ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
+        %{
+          datetime: datetime |> Sanbase.DateTimeUtils.from_erl!(),
+          activity: events_count |> String.to_integer()
+        }
+      end)
+
+    sma(result, ma_base)
   end
 
   defp dev_activity_query(organization, from_datetime, to_datetime, interval) do
@@ -110,5 +126,33 @@ defmodule Sanbase.Clickhouse.Github do
     ]
 
     {query, args}
+  end
+
+  # Helper functions
+
+  def sma(list, period) when is_list(list) and is_integer(period) and period > 0 do
+    result =
+      list
+      |> Enum.chunk_every(period, 1, :discard)
+      |> Enum.map(fn elems ->
+        {datetime, activity} = average(elems)
+
+        %{
+          datetime: datetime,
+          activity: Float.round(activity, 3)
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  defp average([]), do: nil
+
+  defp average(l) when is_list(l) do
+    values = Enum.map(l, fn %{activity: da} -> da end)
+    %{datetime: datetime} = List.last(l)
+    activity = Enum.sum(values) / length(values)
+
+    {datetime, activity}
   end
 end

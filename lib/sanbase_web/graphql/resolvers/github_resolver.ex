@@ -5,10 +5,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   alias Sanbase.Model.Project
   alias Sanbase.Github.Store
 
-  def dev_activity(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
+  def dev_activity(
+        _root,
+        %{
+          slug: slug,
+          from: from,
+          to: to,
+          interval: interval,
+          transform: transform,
+          moving_average_interval_base: moving_average_interval_base
+        },
+        _resolution
+      ) do
     with {:ok, github_organization} <- Project.github_organization(slug),
          {:ok, result} <-
-           Sanbase.Clickhouse.Github.dev_activity(github_organization, from, to, interval) do
+           Sanbase.Clickhouse.Github.dev_activity(
+             github_organization,
+             from,
+             to,
+             interval,
+             transform,
+             moving_average_interval_base
+           ) do
       {:ok, result}
     else
       {:error, {:github_link_error, error}} ->

@@ -92,7 +92,12 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     More info here: #{project_page(project_slug)}
     """
 
-    embeds = Discord.build_embeds(project_slug, timeframe_from(), timeframe_to())
+    embeds =
+      Discord.build_embeds(
+        project_slug,
+        Timex.shift(Timex.now(), days: -90),
+        Timex.shift(Timex.now(), days: -1)
+      )
 
     {content, embeds}
   end

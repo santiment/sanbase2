@@ -7,6 +7,7 @@ defmodule Sanbase.Notifications.Discord do
 
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.UrlShortener
 
   @discord_message_size_limit 1900
 
@@ -103,7 +104,7 @@ defmodule Sanbase.Notifications.Discord do
   @spec build_embeds(String.t(), any(), any()) :: [any()]
   def build_embeds(slug, from, to) do
     case build_candlestick_image_url(slug, from, to) do
-      {:ok, url} -> [%{image: %{url: url}}]
+      {:ok, url} -> [%{image: %{url: UrlShortener.short_url(url)}}]
       {:error, _} -> []
     end
   end
@@ -123,12 +124,12 @@ defmodule Sanbase.Notifications.Discord do
       [datetimes | prices] = ohlc
 
       [_, high_values, low_values, _, _] = prices
-      min = Enum.min(low_values) |> Float.floor(2)
-      max = Enum.max(high_values) |> Float.ceil(2)
+      min = low_values |> Enum.map(&(&1 * 1.0)) |> Enum.min() |> Float.floor(2)
+      max = high_values |> Enum.map(&(&1 * 1.0)) |> Enum.max() |> Float.ceil(2)
 
       [open, high, low, close, _] =
         prices
-        |> Enum.map(fn list -> list |> Enum.map(&Float.round(&1, 6)) end)
+        |> Enum.map(fn list -> list |> Enum.map(&(&1 * 1.0)) |> Enum.map(&Float.round(&1, 6)) end)
         |> Enum.map(fn list -> Enum.join(list, ",") end)
 
       size = datetimes |> Enum.count()

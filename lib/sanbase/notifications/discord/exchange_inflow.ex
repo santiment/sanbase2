@@ -17,6 +17,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   @impl true
   def run() do
+    Logger.info("Running ExchangeInflow signal")
     volume_threshold = Config.get(:trading_volume_threshold) |> String.to_integer()
 
     projects =
@@ -31,7 +32,13 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(from, to)
     |> case do
       {:ok, list} ->
-        publish(build_payload(projects, list), "discord")
+        build_payload(projects, list)
+        |> Discord.group_messages()
+        |> Enum.each(fn payload ->
+          payload
+          |> Discord.encode!(publish_user())
+          |> publish("discord")
+        end)
 
       {:error, error} ->
         Logger.error("Error getting Exchange Inflow from TimescaleDB. Reason: #{inspect(error)}")
@@ -88,7 +95,6 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       end
     end)
     |> Enum.reject(&is_nil/1)
-    |> Discord.encode!(publish_user())
   end
 
   defp percent_of_total_supply(

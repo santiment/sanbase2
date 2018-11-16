@@ -69,7 +69,7 @@ defmodule Sanbase.Clickhouse.Github do
 
   def dev_activity(organization, from, to, interval, "movingAverage", ma_base) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
-    from = Timex.shift(from, seconds: -(ma_base * interval_sec))
+    from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
     {query, args} = dev_activity_query(organization, from, to, interval_sec)
 
     {:ok, result} =

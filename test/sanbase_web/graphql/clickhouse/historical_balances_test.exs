@@ -101,7 +101,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     end
   end
 
-  test "historical balances when query returns not rows", context do
+  test "historical balances when query returns no rows", context do
     with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
       query = hist_balances_query(context.address, context.from, context.to, context.interval)
 
@@ -139,8 +139,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
           assert hist_balance == []
         end)
 
-      assert log =~
-               ~s([error] Exception raised while calculating historical balances for 0x321321321. Reason: %RuntimeError{message: "clickhouse error"})
+      assert log =~ "clickhouse error"
     end
   end
 

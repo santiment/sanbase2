@@ -57,30 +57,30 @@ defmodule Sanbase.Clickhouse.Github do
 
   def dev_activity(organization, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
-    {query, args} = dev_activity_query(organization, from, to, interval_sec)
 
+    {:ok, result} =
+      dev_activity_query(organization, from, to, interval_sec)
+      |> datetime_activity_execute()
+  end
+
+  def dev_activity(organization, from, to, interval, "movingAverage", ma_base) do
+    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
+
+    {:ok, result} =
+      dev_activity_query(organization, from, to, interval_sec)
+      |> datetime_activity_execute()
+
+    sma(result, ma_base)
+  end
+
+  defp datetime_activity_execute({query, args}) do
     ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
       %{
         datetime: datetime |> Sanbase.DateTimeUtils.from_erl!(),
         activity: events_count |> String.to_integer()
       }
     end)
-  end
-
-  def dev_activity(organization, from, to, interval, "movingAverage", ma_base) do
-    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
-    from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
-    {query, args} = dev_activity_query(organization, from, to, interval_sec)
-
-    {:ok, result} =
-      ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
-        %{
-          datetime: datetime |> Sanbase.DateTimeUtils.from_erl!(),
-          activity: events_count |> String.to_integer()
-        }
-      end)
-
-    sma(result, ma_base)
   end
 
   defp dev_activity_query(organization, from_datetime, to_datetime, interval) do
@@ -130,7 +130,9 @@ defmodule Sanbase.Clickhouse.Github do
 
   # Helper functions
 
-  def sma(list, period) when is_list(list) and is_integer(period) and period > 0 do
+  # Simple moving average of the github activity datapoints. Used to smooth the
+  # noise created by the less amount of events created during the night and weekends
+  defp sma(list, period) when is_list(list) and is_integer(period) and period > 0 do
     result =
       list
       |> Enum.chunk_every(period, 1, :discard)

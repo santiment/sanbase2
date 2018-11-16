@@ -582,10 +582,10 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     Arguments description:
       * source - one of the following:
-        1. telegram
-        2. professional_traders_chat
-        3. reddit
-        4. all
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
       * size - an integer showing how many words should be included in the top list (max 100)
       * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"

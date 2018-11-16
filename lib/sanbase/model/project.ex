@@ -513,7 +513,9 @@ defmodule Sanbase.Model.Project do
         {:ok, org}
 
       nil ->
-        {:error, {:github_link_error, "Invalid or missing github link for #{slug}"}}
+        {:error,
+         {:github_link_error,
+          "Invalid or missing github link for #{slug}: #{inspect(github_link)}"}}
     end
   end
 end

@@ -17,6 +17,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   @impl true
   def run() do
+    Logger.info("Running ExchangeInflow signal")
     volume_threshold = Config.get(:trading_volume_threshold) |> String.to_integer()
 
     projects =

@@ -1,5 +1,6 @@
 .detailed {
   min-width: 100%;
+  padding: 0 !important;
 }
 
 .panel-chart {
@@ -161,6 +162,10 @@
     background-color: white;
   }
 
+  .detailed {
+    padding: 16px !important;
+  }
+
   .panel {
     box-shadow: none;
     padding: 0;
@@ -198,7 +203,7 @@
 
   .detailed .information {
     flex-direction: row;
-    margin: 16px;
+    margin: 32px;
   }
 
   .detailed .information .panel {

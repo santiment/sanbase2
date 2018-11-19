@@ -259,20 +259,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def average_dev_activity(%Project{ticker: ticker}, _args, _resolution) do
+  def average_dev_activity(%Project{id: id} = project, _args, _resolution) do
     async(
       Cache.func(
-        fn -> calculate_average_dev_activity(ticker) end,
-        {:average_dev_activity, ticker}
+        fn -> calculate_average_dev_activity(project) end,
+        {:average_dev_activity, id}
       )
     )
   end
 
-  defp calculate_average_dev_activity(ticker) do
+  defp calculate_average_dev_activity(%Project{} = project) do
     month_ago = Timex.shift(Timex.now(), days: -30)
+    {:ok, organization} = Project.github_organization(project)
 
-    case Github.Store.fetch_total_activity(ticker, month_ago, Timex.now()) do
-      {:ok, {_dt, total_activity}} ->
+    case Sanbase.Clickhouse.Github.total_dev_activity(organization, month_ago, Timex.now()) do
+      {:ok, total_activity} ->
         {:ok, total_activity / 30}
 
       _ ->

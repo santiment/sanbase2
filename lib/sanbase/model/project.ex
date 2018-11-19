@@ -489,4 +489,35 @@ defmodule Sanbase.Model.Project do
         end)
     end
   end
+
+  def github_organization(%Project{coinmarketcap_id: slug}), do: github_organization(slug)
+
+  def github_organization(slug) do
+    github_link =
+      from(
+        p in Project,
+        where: p.coinmarketcap_id == ^slug,
+        select: p.github_link
+      )
+      |> Repo.one()
+
+    # nil will break the regex
+    github_link = github_link || ""
+
+    case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
+      [_, github_path] ->
+        org =
+          github_path
+          |> String.downcase()
+          |> String.split("/")
+          |> hd
+
+        {:ok, org}
+
+      nil ->
+        {:error,
+         {:github_link_error,
+          "Invalid or missing github link for #{slug}: #{inspect(github_link)}"}}
+    end
+  end
 end

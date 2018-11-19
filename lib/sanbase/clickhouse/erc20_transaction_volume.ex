@@ -6,11 +6,6 @@ defmodule Sanbase.Clickhouse.Erc20TransactionVolume do
   """
   use Ecto.Schema
 
-  import Ecto.Query
-
-  alias __MODULE__
-  alias Sanbase.ClickhouseRepo
-
   @primary_key false
   @timestamps_opts updated_at: false
   schema "erc20_transaction_volume" do

@@ -17,12 +17,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   use Ecto.Schema
 
-  import Ecto.Query
-
-  require Sanbase.ClickhouseRepo
-
-  alias __MODULE__
-  alias Sanbase.ClickhouseRepo
+  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @table "erc20_transfers"
 
@@ -80,7 +75,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     args = [
       token_decimals,
       contract,
-      from_datetime,
+      from_datetime_unix,
       to_datetime_unix,
       limit
     ]

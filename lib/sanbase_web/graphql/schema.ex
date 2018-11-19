@@ -230,6 +230,23 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&GithubResolver.activity/3)
     end
 
+    @desc ~s"""
+    Gets the pure dev activity of a project. Pure dev activity is the number of all events
+    excluding Comments, Issues and PR Comments
+    """
+    field :dev_activity, list_of(:activity_point) do
+      arg(:slug, :string)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string))
+      arg(:transform, :string, default_value: "None")
+      arg(:moving_average_interval_base, :integer, default_value: 7)
+
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
+
+      cache_resolve(&GithubResolver.dev_activity/3)
+    end
+
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
     field :twitter_data, :twitter_data do
       arg(:ticker, non_null(:string))

@@ -5,10 +5,10 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
   """
 
   @type input_transaction :: %{
-          from_address: string,
-          to_address: string,
+          from_address: String.t(),
+          to_address: String.t(),
           trx_value: float,
-          trx_hash: string,
+          trx_hash: String.t(),
           datetime: Datetime.t()
         }
 
@@ -27,7 +27,6 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
         }
 
   use GenServer
-  require Sanbase.Utils.Config, as: Config
 
   @refresh_interval_min 10
   @name :mark_exchange_wallets_gen_server
@@ -95,12 +94,6 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
   end
 
   @doc false
-  def add_exchange_wallets(wallets) when is_list(wallets) do
-    # Used to add new exchange wallet addresses. Used only from within tests
-    GenServer.call(@name, {:add_exchange_wallets, wallets})
-  end
-
-  @doc false
   def handle_call(
         {:add_exchange_wallets, wallets},
         _from,
@@ -108,5 +101,11 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
       ) do
     new_state = %{state | exchange_wallets_set: MapSet.union(exchanges, MapSet.new(wallets))}
     {:reply, :ok, new_state}
+  end
+
+  @doc false
+  def add_exchange_wallets(wallets) when is_list(wallets) do
+    # Used to add new exchange wallet addresses. Used only from within tests
+    GenServer.call(@name, {:add_exchange_wallets, wallets})
   end
 end

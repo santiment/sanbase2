@@ -77,7 +77,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   password: "",
   pool_timeout: 60_000,
   timeout: 60_000,
-  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"}
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"}
 
 config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 

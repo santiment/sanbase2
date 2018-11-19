@@ -142,6 +142,19 @@ config :sanbase, Sanbase.Discourse,
   api_key: {:system, "DISCOURSE_API_KEY"},
   insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "sanbaseinsights"}
 
+config :libcluster,
+  topologies: [
+    k8s: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "sanbase",
+        kubernetes_selector: "app=sanbase",
+        polling_interval: 10_000
+      ]
+    ]
+  ]
+
 config :sanbase, Sanbase.Scheduler,
   scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
   global: true,

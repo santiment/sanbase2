@@ -174,7 +174,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   def exchange_wallets(_root, _args, _resolution) do
-    {:ok, ExchangeAddress |> Repo.all()}
+    {:ok, ExchangeAddress |> Repo.all() |> Repo.preload(:infrastructure)}
   end
 
   @doc ~S"""

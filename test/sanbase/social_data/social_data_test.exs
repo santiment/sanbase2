@@ -1,5 +1,5 @@
 defmodule Sanbase.SocialDataTest do
-  use Sanbase.DataCase, async: true
+  use Sanbase.DataCase, async: false
 
   import Mockery
   import ExUnit.CaptureLog

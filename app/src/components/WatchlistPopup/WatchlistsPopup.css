@@ -1,5 +1,6 @@
 .watchlists-popup {
   padding: 0 !important;
+  z-index: 999 !important;
 }
 
 .watchlists-button {

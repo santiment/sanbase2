@@ -148,7 +148,7 @@ config :sanbase, Sanbase.Scheduler,
   timeout: 30_000,
   jobs: [
     daa_signal: [
-      schedule: "00 12 * * *",
+      schedule: "00 06 * * *",
       task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
     ],
     exchange_inflow_signal: [

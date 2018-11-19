@@ -7,6 +7,7 @@ defmodule Sanbase.Notifications.Discord do
 
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.UrlShortener
 
   @discord_message_size_limit 1900
 
@@ -98,13 +99,15 @@ defmodule Sanbase.Notifications.Discord do
   end
 
   @doc ~s"""
-  Builds discord embeds object for a given project slug and time interval
+  Builds discord embeds object with chart url for a given project slug and time interval
   """
-  @spec build_embeds(String.t(), any(), any()) :: [any()]
-  def build_embeds(slug, from, to) do
-    case build_candlestick_image_url(slug, from, to) do
-      {:ok, url} -> [%{image: %{url: url}}]
-      {:error, _} -> []
+  @spec build_embedded_chart(String.t(), any(), any()) :: [any()]
+  def build_embedded_chart(slug, from, to) do
+    with {:ok, url} <- build_candlestick_image_url(slug, from, to),
+         {:ok, short_url} <- UrlShortener.short_url(url) do
+      [%{image: %{url: short_url}}]
+    else
+      _ -> []
     end
   end
 
@@ -120,34 +123,34 @@ defmodule Sanbase.Notifications.Discord do
         |> Enum.zip()
         |> Enum.map(&Tuple.to_list/1)
 
-      [datetimes | prices] = ohlc
+      [_ | prices] = ohlc
+
+      prices =
+        prices
+        |> Enum.map(fn list -> list |> Enum.filter(fn el -> el != 0 end) end)
+        |> Enum.map(fn list -> list |> Enum.map(&(&1 * 1.0)) |> Enum.map(&Float.round(&1, 6)) end)
 
       [_, high_values, low_values, _, _] = prices
-      min = Enum.min(low_values) |> Float.floor(2)
-      max = Enum.max(high_values) |> Float.ceil(2)
+      min = low_values |> Enum.min() |> Float.floor(2)
+      max = high_values |> Enum.max() |> Float.ceil(2)
 
-      [open, high, low, close, avg] =
+      [open_str, high_str, low_str, close_str, _] =
         prices
-        |> Enum.map(fn list -> list |> Enum.map(&Float.round(&1, 6)) end)
         |> Enum.map(fn list -> Enum.join(list, ",") end)
 
-      days_str =
-        datetimes
-        |> Enum.map(fn datetime -> datetime |> DateTime.to_date() |> Map.get(:day) end)
-        |> Enum.join("|")
-
-      size = datetimes |> Enum.count()
+      size = low_values |> Enum.count()
+      bar_width = 6 * round(90 / size)
 
       {:ok, ~s(
         https://chart.googleapis.com/chart?
         cht=lc&
         chs=800x200&
-        chxt=x,y&
-        chxr=1,#{min},#{max}&
-        chxl=0:|#{days_str}&
-        chd=t1:#{avg}|#{low}|#{open}|#{close}|#{high}&
+        chxt=y&
+        chxr=0,#{min},#{max}&
+        chd=t0:1|#{low_str}|#{open_str}|#{close_str}|#{high_str}&
         chds=#{min},#{max}&
-        chm=F,,1,1:#{size},20
+        chm=F,,1,1:#{size},#{bar_width}&
+        chma=10,10,20,10
       ) |> String.replace(~r/[\n\s+]+/, "")}
     else
       error ->

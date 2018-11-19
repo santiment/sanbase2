@@ -5,6 +5,13 @@
   Fix polling fetchUserLists for anonymous users
   Show a preventing modal window, when a user is deleting his watchlist
 
+- 2018-22-10 | v.0.19.3 'Phobos':
+
+  Upgrade Metamask
+  Update Assets Menu (Added Watchlists)
+  Show Watchlists for anonymous users
+  Small style updates
+
 - 2018-12-10 | v.0.19.2 'Phobos':
 
   Feedback form send feedbacks to our private Discord channel

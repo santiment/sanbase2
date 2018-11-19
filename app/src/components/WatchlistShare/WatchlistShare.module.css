@@ -1,0 +1,30 @@
+.wrapper {
+  position: relative;
+  margin-left: 15px;
+}
+
+.publicityBtn {
+  position: relative;
+  width: 100px;
+  z-index: 2;
+}
+
+body .linkCopy {
+  position: absolute;
+  z-index: 1;
+  transition: left 400ms !important;
+  left: 1%;
+  box-shadow: none !important;
+  padding-left: 15px !important;
+}
+
+.publicityBtn:focus,
+.publicityBtn:hover,
+.linkCopy:focus,
+.linkCopy:hover {
+  transform: none !important;
+}
+
+.wrapper.public .linkCopy {
+  left: 90%;
+}

@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Graphql.ElasticsearchResolverTest do
                  "documentsCount" => 1_000_000,
                  "sizeInMegabytes" => 5,
                  "subredditsCount" => 10,
+                 "discordChannelsCount" => 6,
                  "telegramChannelsCount" => 5
                }
              }
@@ -31,6 +32,7 @@ defmodule SanbaseWeb.Graphql.ElasticsearchResolverTest do
           averageDocumentsPerDay
           telegramChannelsCount
           subredditsCount
+          discordChannelsCount
           sizeInMegabytes
       }
     }

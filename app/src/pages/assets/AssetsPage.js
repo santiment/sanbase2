@@ -5,6 +5,7 @@ import Assets from './Assets'
 import AssetsTable from './AssetsTable'
 import HelpPopupAssets from './HelpPopupAssets'
 import AssetsPageNavigation from './AssetsPageNavigation'
+import WatchlistShare from '../../components/WatchlistShare/WatchlistShare'
 import './Assets.css'
 
 const AssetsPage = props => (
@@ -17,6 +18,8 @@ const AssetsPage = props => (
       <div className='page-head-projects__left'>
         <h1>Assets</h1>
         <HelpPopupAssets />
+        {props.type === 'list' &&
+          props.location.hash !== '#shared' && <WatchlistShare />}
       </div>
       <AssetsPageNavigation isLoggedIn={props.isLoggedIn} />
     </div>

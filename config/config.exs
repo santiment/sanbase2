@@ -15,14 +15,19 @@ config :sanbase, Sanbase, environment: "#{Mix.env()}"
 config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
 
 config :sanbase, Sanbase.Repo,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   adapter: Ecto.Adapters.Postgres,
   pool_size: {:system, "SANBASE_POOL_SIZE", "20"},
+  max_overflow: 5,
   # because of pgbouncer
   prepare: :unnamed
 
 config :sanbase, Sanbase.TimescaleRepo,
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   adapter: Ecto.Adapters.Postgres,
+  timeout: 30_000,
   pool_size: {:system, "TIMESCALE_POOL_SIZE", "30"},
+  max_overflow: 5,
   # because of pgbouncer
   prepare: :unnamed
 
@@ -137,12 +142,28 @@ config :sanbase, Sanbase.Discourse,
   api_key: {:system, "DISCOURSE_API_KEY"},
   insights_category: {:system, "DISCOURSE_INSIGHTS_CATEGORY", "sanbaseinsights"}
 
+config :sanbase, Sanbase.Scheduler,
+  scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
+  global: true,
+  timeout: 30_000,
+  jobs: [
+    daa_signal: [
+      schedule: "00 06 * * *",
+      task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
+    ],
+    exchange_inflow_signal: [
+      schedule: "@daily",
+      task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
+    ]
+  ]
+
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"
 import_config "scrapers_config.exs"
 import_config "notifications_config.exs"
 import_config "elasticsearch_config.exs"
+import_config "prometheus_config.exs"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

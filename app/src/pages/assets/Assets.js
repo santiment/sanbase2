@@ -14,13 +14,14 @@ class Assets extends React.Component {
   }
 
   getType = () => {
-    const { search } = this.props.location || {}
+    const { search, hash } = this.props.location || {}
     const { listName, listId } = compose(
       this.getNameIdFromListname,
       parsed => parsed.name,
       qs.parse
     )(search)
-    const { type = qs.parse(search) } = this.props
+    const type =
+      hash === '#shared' ? 'list#shared' : this.props.type || qs.parse(search)
     return { type, listName, listId }
   }
 

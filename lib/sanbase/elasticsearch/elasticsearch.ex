@@ -8,6 +8,7 @@ defmodule Sanbase.Elasticsearch do
           size_in_megabytes: non_neg_integer,
           telegram_channels_count: non_neg_integer,
           subreddits_count: non_neg_integer,
+          discord_channels_count: non_neg_integer,
           average_documents_per_day: non_neg_integer
         }
 
@@ -35,6 +36,7 @@ defmodule Sanbase.Elasticsearch do
       size_in_megabytes: size_in_megabytes,
       telegram_channels_count: telegram_channels_count(from, to),
       subreddits_count: subreddits_count(from, to),
+      discord_channels_count: discord_channels_count(from, to),
       average_documents_per_day: (documents_count / days_difference) |> Math.to_integer()
     }
   end
@@ -74,6 +76,18 @@ defmodule Sanbase.Elasticsearch do
       )
 
     %{"aggregations" => %{"subreddits" => %{"buckets" => buckets}}} = data
+    Enum.count(buckets)
+  end
+
+  defp discord_channels_count(from, to) do
+    {:ok, data} =
+      Elasticsearch.post(
+        Cluster,
+        "/discord/_search",
+        Sanbase.Elasticsearch.Query.discord_channels_count(from, to)
+      )
+
+    %{"aggregations" => %{"channel_names" => %{"buckets" => buckets}}} = data
     Enum.count(buckets)
   end
 end

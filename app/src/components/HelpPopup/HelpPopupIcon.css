@@ -4,7 +4,8 @@
   align-items: center;
   margin-left: 1rem;
   height: 22px;
-  width: 22px;
+  min-width: 22px;
+  max-width: 22px;
   font-size: 15px;
   font-weight: bold;
   border: 1px solid black;

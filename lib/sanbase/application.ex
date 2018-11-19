@@ -1,8 +1,6 @@
 defmodule Sanbase.Application do
   use Application
-
-  import Supervisor.Spec
-  import Sanbase.ApplicationUtils
+  require Logger
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -11,131 +9,44 @@ defmodule Sanbase.Application do
       Envy.auto_load()
     end
 
-    # Define workers and child supervisors to be supervised
-    children =
-      [
-        # Start the Task Supervisor
-        {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
+    container_type = System.get_env("CONTAINER_TYPE") || "all"
 
-        # Start the Postgres Ecto repository
-        Sanbase.Repo,
+    init(container_type)
 
-        # Start the TimescaleDB Ecto repository
-        Sanbase.TimescaleRepo,
+    {children, opts} =
+      case container_type do
+        "web" ->
+          Logger.info("Starting Web Sanbase.")
+          Sanbase.Application.WebSupervisor.children()
 
-        # Start the endpoint when the application starts
-        SanbaseWeb.Endpoint,
+        "scrapers" ->
+          Logger.info("Starting Scrapers Sanbase.")
+          Sanbase.Application.ScrapersSupervisor.children()
 
-        # Start the Clickhouse Repo
-        start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
+        "workers" ->
+          Logger.info("Starting Workers Sanbase.")
+          Sanbase.Application.WorkersSupervisor.children()
 
-        # Start the Elasticsearch Cluster connection
-        Sanbase.Elasticsearch.Cluster,
+        "all" ->
+          Logger.info("Start all Sanbase container types.")
+          {web_children, _} = Sanbase.Application.WebSupervisor.children()
+          {scrapers_children, _} = Sanbase.Application.ScrapersSupervisor.children()
+          {workers_children, _} = Sanbase.Application.WorkersSupervisor.children()
 
-        # Start a Registry
-        {Registry, keys: :unique, name: Sanbase.Registry},
+          children = web_children ++ scrapers_children ++ workers_children
+          children = children |> Enum.uniq()
 
-        # Start the graphQL in-memory cache
-        {ConCache,
-         [
-           name: :graphql_cache,
-           ttl_check_interval: :timer.minutes(1),
-           global_ttl: :timer.minutes(5),
-           acquire_lock_timeout: 30_000
-         ]},
+          opts = [
+            strategy: :one_for_one,
+            name: Sanbase.Supervisor,
+            max_restarts: 5,
+            max_seconds: 1
+          ]
 
-        # Time series Prices DB connection
-        Sanbase.Prices.Store.child_spec(),
+          {children, opts}
+      end
 
-        # Time sereies TwitterData DB connection
-        Sanbase.ExternalServices.TwitterData.Store.child_spec(),
-
-        # Time series Github DB connection
-        Sanbase.Github.Store.child_spec(),
-
-        # Etherscan rate limiter
-        Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-          :etherscan_rate_limiter,
-          scale: 1000,
-          limit: 5,
-          time_between_requests: 100
-        ),
-
-        # Coinmarketcap graph data rate limiter
-        Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-          :graph_coinmarketcap_rate_limiter,
-          scale: 60_000,
-          limit: 30,
-          time_between_requests: 1000
-        ),
-
-        # Coinmarketcap api rate limiter
-        Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-          :api_coinmarketcap_rate_limiter,
-          scale: 60_000,
-          limit: 5,
-          time_between_requests: 2000
-        ),
-
-        # Coinmarketcap http rate limiter
-        Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-          :http_coinmarketcap_rate_limiter,
-          scale: 60_000,
-          limit: 30,
-          time_between_requests: 1000
-        ),
-
-        # Twitter API rate limiter
-        Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-          :twitter_api_rate_limiter,
-          scale: 60 * 15 * 1000,
-          limit: 450,
-          time_between_requests: 10
-        ),
-
-        # Twittercounter API rate limiter
-        Sanbase.ExternalServices.RateLimiting.Server.child_spec(
-          :twittercounter_api_rate_limiter,
-          scale: 60 * 60 * 1000,
-          limit: 100,
-          time_between_requests: 100
-        ),
-        worker(PlugAttack.Storage.Ets, [
-          SanbaseWeb.Graphql.PlugAttack.Storage,
-          [clean_period: 60_000]
-        ]),
-
-        # Price fetcher
-        # TODO: Change after switching over to only this cmc
-        Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
-        Sanbase.ExternalServices.Coinmarketcap2.child_spec(%{}),
-
-        # Current marketcap fetcher
-        # TODO: Change after switching over to only this cmc
-        Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
-        Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2.child_spec(%{}),
-
-        # Twitter account data tracking worker
-        Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
-
-        # Twitter account historical data
-        Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
-
-        # Transform a list of transactions into a list of transactions
-        # where addresses are marked whether or not they are an exchange address
-        Sanbase.Clickhouse.MarkExchanges.child_spec(%{})
-      ] ++
-        faktory_supervisor() ++
-        [
-          # Github activity scraping scheduler
-          Sanbase.ExternalServices.Github.child_spec(%{})
-        ]
-
-    children = children |> normalize_children()
-
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: Sanbase.Supervisor, max_restarts: 5, max_seconds: 1]
+    children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
 
     # Add error tracking through sentry
     :ok = :error_logger.add_report_handler(Sentry.Logger)
@@ -143,19 +54,63 @@ defmodule Sanbase.Application do
     Supervisor.start_link(children, opts)
   end
 
-  # Tell Phoenix to update the endpoint configuration
-  # whenever the application is updated.
+  def init(container_type) do
+    # Common inits
+
+    # Prometheus related
+    Sanbase.Prometheus.EctoInstrumenter.setup()
+
+    Sanbase.Prometheus.PipelineInstrumenter.setup()
+
+    Sanbase.Prometheus.Exporter.setup()
+
+    # Container specific init
+    case container_type do
+      "all" ->
+        Sanbase.Application.WebSupervisor.init()
+        Sanbase.Application.ScrapersSupervisor.init()
+        Sanbase.Application.WorkersSupervisor.init()
+
+      "web" ->
+        Sanbase.Application.WebSupervisor.init()
+
+      "scrapers" ->
+        Sanbase.Application.ScrapersSupervisor.init()
+
+      "workers" ->
+        Sanbase.Application.WorkersSupervisor.init()
+    end
+  end
+
+  @doc ~s"""
+  Children common for all types of container types
+  """
+  def common_children() do
+    [
+      # Start the endpoint when the application starts
+      SanbaseWeb.Endpoint,
+
+      # Start the Postgres Ecto repository
+      Sanbase.Repo,
+
+      # Time series Prices DB connection
+      Sanbase.Prices.Store.child_spec()
+    ]
+  end
+
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
   end
 
-  defp faktory_supervisor do
-    if System.get_env("FAKTORY_HOST") do
-      Faktory.Configuration.init()
-      [supervisor(Faktory.Supervisor, [])]
-    else
-      []
-    end
+  def start_faktory?() do
+    System.get_env("FAKTORY_HOST") && :ets.whereis(Faktory.Configuration) == :undefined
+  end
+
+  def faktory() do
+    import Supervisor.Spec
+
+    Faktory.Configuration.init()
+    supervisor(Faktory.Supervisor, [])
   end
 end

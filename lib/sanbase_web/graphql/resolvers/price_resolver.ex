@@ -72,7 +72,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
            ) do
       result =
         prices
-        |> Enum.map(fn [dt, open, high, low, close] ->
+        |> Enum.map(fn [dt, open, high, low, close, _] ->
           %{
             datetime: dt,
             open_price_usd: open,
@@ -86,6 +86,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
     else
       error ->
         {:error, "Cannot fetch ohlc for #{slug}. Reason: #{inspect(error)}"}
+    end
+  end
+
+  def multiple_projects_stats(_root, %{slugs: slugs} = args, _context) do
+    with {:ok, measurement_slug_map} <- Measurement.names_from_slugs(slugs),
+         {:ok, values} <-
+           Sanbase.Prices.Store.fetch_volume_mcap_multiple_measurements(
+             measurement_slug_map,
+             args.from,
+             args.to
+           ) do
+      {:ok,
+       values
+       |> Enum.map(fn
+         {slug, volume, mcap, percent} ->
+           %{slug: slug, volume: volume, marketcap: mcap, marketcap_percent: percent}
+       end)}
+    else
+      _ ->
+        {:error, "Can't fetch combined volume and marketcap for slugs"}
     end
   end
 

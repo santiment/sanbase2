@@ -1,19 +1,23 @@
 defmodule Sanbase.Application.ScrapersSupervisor do
   import Sanbase.ApplicationUtils
 
+  def init(), do: :ok
+
+  @doc ~s"""
+  Return the children and options that will be started in the scrapers container.
+  Along with these children all children from `Sanbase.Application.common_children/0`
+  will be started, too.
+  """
   def children() do
     children = [
       # Start the Task Supervisor
       {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
 
-      # Start the Postgres Ecto repository
-      Sanbase.Repo,
+      # Start the TimescaleDB Ecto repository
+      Sanbase.TimescaleRepo,
 
       # Start a Registry
       {Registry, keys: :unique, name: Sanbase.Registry},
-
-      # Time series Prices DB connection
-      Sanbase.Prices.Store.child_spec(),
 
       # Time sereies TwitterData DB connection
       Sanbase.ExternalServices.TwitterData.Store.child_spec(),
@@ -83,10 +87,22 @@ defmodule Sanbase.Application.ScrapersSupervisor do
       Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
 
       # Twitter account historical data
-      Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{})
-    ]
+      Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
 
-    children = children |> normalize_children()
+      # Start the Faktory Supervisor
+      start_if(
+        &Sanbase.Application.faktory/0,
+        &Sanbase.Application.start_faktory?/0
+      ),
+      # Github activity scraping scheduler
+      Sanbase.ExternalServices.Github.child_spec(%{}),
+
+      # Quantum Scheduler
+      start_if(
+        fn -> {Sanbase.Scheduler, []} end,
+        fn -> System.get_env("QUANTUM_SCHEDULER_ENABLED") end
+      )
+    ]
 
     opts = [
       strategy: :one_for_one,

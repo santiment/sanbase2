@@ -27,6 +27,7 @@ import Footer from './components/Footer'
 import FeedbackModal from './components/FeedbackModal.js'
 import GDPRModal from './components/GDPRModal.js'
 import AssetsPage from './pages/assets/AssetsPage'
+import SignalsPriceVolume from './pages/Signals/SignalsPriceVolume'
 import { getConsentUrl } from './utils/utils'
 import './App.scss'
 
@@ -170,6 +171,7 @@ export const App = ({
         <Redirect from='/assets' to='/assets/all' />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
+        <Route exact path='/signals/:slug' component={SignalsPriceVolume} />
         <Route path='/insights/new' component={LoadableInsightsNew} />
         <Route
           path='/insights/update/:insightId'

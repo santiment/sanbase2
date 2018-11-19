@@ -73,6 +73,11 @@ defmodule SanbaseWeb.Graphql.Schema do
     ]
   end
 
+  def middleware(middlewares, field, object) do
+    SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
+    |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
+  end
+
   query do
     @desc "Returns the user currently logged in."
     field :current_user, :user do
@@ -225,6 +230,23 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 
       cache_resolve(&GithubResolver.activity/3)
+    end
+
+    @desc ~s"""
+    Gets the pure dev activity of a project. Pure dev activity is the number of all events
+    excluding Comments, Issues and PR Comments
+    """
+    field :dev_activity, list_of(:activity_point) do
+      arg(:slug, :string)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string))
+      arg(:transform, :string, default_value: "None")
+      arg(:moving_average_interval_base, :integer, default_value: 7)
+
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
+
+      cache_resolve(&GithubResolver.dev_activity/3)
     end
 
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
@@ -491,7 +513,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       ])
 
       complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
-      resolve(&TechIndicatorsResolver.emojis_sentiment/3)
+      cache_resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end
 
     @desc ~s"""
@@ -595,6 +617,17 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch all public favourites lists"
     field :fetch_all_public_user_lists, list_of(:user_list) do
       resolve(&UserListResolver.fetch_all_public_user_lists/3)
+    end
+
+    @desc ~s"""
+    Fetch public favourites list by list id.
+    If the list is owned by the current user then the list can be private as well.
+    This query returns either a single user list item or null.
+    """
+    field :user_list, :user_list do
+      arg(:user_list_id, non_null(:id))
+
+      resolve(&UserListResolver.user_list/3)
     end
 
     @desc "Returns statistics for the data stored in elasticsearch"

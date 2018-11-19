@@ -259,24 +259,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def average_dev_activity(%Project{ticker: ticker}, _args, _resolution) do
+  def average_dev_activity(%Project{id: id} = project, _args, _resolution) do
     async(
       Cache.func(
-        fn -> calculate_average_dev_activity(ticker) end,
-        {:average_dev_activity, ticker}
+        fn -> calculate_average_dev_activity(project) end,
+        {:average_dev_activity, id}
       )
     )
   end
 
-  defp calculate_average_dev_activity(ticker) do
-    month_ago = Timex.shift(Timex.now(), days: -30)
+  defp calculate_average_dev_activity(%Project{} = project) do
+    with {:ok, organization} <- Project.github_organization(project) do
+      month_ago = Timex.shift(Timex.now(), days: -30)
 
-    case Github.Store.fetch_total_activity(ticker, month_ago, Timex.now()) do
-      {:ok, {_dt, total_activity}} ->
-        {:ok, total_activity / 30}
+      case Sanbase.Clickhouse.Github.total_dev_activity(organization, month_ago, Timex.now()) do
+        {:ok, total_activity} ->
+          {:ok, total_activity / 30}
 
-      _ ->
-        {:ok, 0}
+        _ ->
+          {:ok, 0}
+      end
+    else
+      {:error, {:github_link_error, error}} ->
+        Logger.info(error)
+        {:ok, nil}
+
+      error ->
+        Logger.error(
+          "Cannot fetch github activity for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:error, "Cannot fetch github activity for #{Project.describe(project)}"}
     end
   end
 

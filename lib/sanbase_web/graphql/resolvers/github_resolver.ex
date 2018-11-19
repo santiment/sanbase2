@@ -5,6 +5,40 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   alias Sanbase.Model.Project
   alias Sanbase.Github.Store
 
+  def dev_activity(
+        _root,
+        %{
+          slug: slug,
+          from: from,
+          to: to,
+          interval: interval,
+          transform: transform,
+          moving_average_interval_base: moving_average_interval_base
+        },
+        _resolution
+      ) do
+    with {:ok, github_organization} <- Project.github_organization(slug),
+         {:ok, result} <-
+           Sanbase.Clickhouse.Github.dev_activity(
+             github_organization,
+             from,
+             to,
+             interval,
+             transform,
+             moving_average_interval_base
+           ) do
+      {:ok, result}
+    else
+      {:error, {:github_link_error, error}} ->
+        Logger.info(error)
+        {:ok, []}
+
+      error ->
+        Logger.error("Cannot fetch github activity for #{slug}. Reason: #{inspect(error)}")
+        {:error, "Cannot fetch github activity for #{slug}"}
+    end
+  end
+
   def activity(root, %{slug: slug} = args, resolution) do
     # Temporary solution while all frontend queries migrate to using slug. After that
     # only the slug query will remain

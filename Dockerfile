@@ -18,7 +18,9 @@ FROM elixir:1.7.4 as code_builder
 
 ENV MIX_ENV prod
 
-RUN apt-get update && apt-get install nodejs nodejs-npm bash curl git
+RUN apt-get update \
+  && curl -sL https://deb.nodesource.com/setup_8.x | bash \
+  && apt-get install -y nodejs git
 RUN npm install -g yarn
 
 RUN mix local.hex --force
@@ -46,9 +48,9 @@ RUN mix phx.digest
 RUN mix release
 
 # Release image
-FROM elixir:1.7.4-alpine
+FROM elixir:1.7.4
 
-RUN apk add --update bash
+RUN apt-get install -y --only-upgrade bash
 
 WORKDIR /app
 

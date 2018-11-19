@@ -7,11 +7,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
   use Ecto.Schema
 
-  import Ecto.Query
-
-  alias __MODULE__
-  alias Sanbase.ClickhouseRepo
-
   @primary_key false
   @timestamps_opts updated_at: false
   schema "erc20_daily_active_addresses" do

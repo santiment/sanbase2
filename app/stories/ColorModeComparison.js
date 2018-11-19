@@ -2,9 +2,11 @@ import React from 'react'
 import './ColorModeComparison.css'
 
 const ColorModeComparison = ({ children }) => {
-  const elements = children.reduce((acc, child) => {
-    return [...acc, child, <div className='br' />]
-  }, [])
+  const elements = children.reduce
+    ? children.reduce((acc, child) => {
+      return [...acc, child, <div className='br' />]
+    }, [])
+    : children
 
   return (
     <div className='ColorModeComparison'>

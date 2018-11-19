@@ -10,11 +10,11 @@ import WatchlistsAnon from './WatchlistsAnon'
 import * as actions from './../../actions/types'
 import './WatchlistsPopup.css'
 
-const POLLING_INTERVAL = 2000
+const POLLING_INTERVAL = 4000
 
 const AddToListBtn = (
-  <Button basic color='purple'>
-    add to list
+  <Button basic className='watchlists-button'>
+    ADD TO WATCHLISTS
   </Button>
 )
 
@@ -29,24 +29,41 @@ const WatchlistPopup = ({
   watchlistUi,
   createWatchlist,
   removeAssetList,
-  toggleAssetInList
+  toggleConfirmDeleteAssetList,
+  toggleAssetInList,
+  children
 }) => {
   return (
     <Popup
       className='watchlists-popup'
       content={
         isLoggedIn ? (
-          <Watchlists
-            isNavigation={isNavigation}
-            isLoading={isLoading}
-            projectId={projectId}
-            createWatchlist={createWatchlist}
-            removeAssetList={removeAssetList}
-            toggleAssetInList={toggleAssetInList}
-            watchlistUi={watchlistUi}
-            slug={slug}
-            lists={lists}
-          />
+          children ? (
+            React.cloneElement(children, {
+              isLoading,
+              projectId,
+              createWatchlist,
+              removeAssetList,
+              toggleConfirmDeleteAssetList,
+              toggleAssetInList,
+              watchlistUi,
+              slug,
+              lists
+            })
+          ) : (
+            <Watchlists
+              isNavigation={isNavigation}
+              isLoading={isLoading}
+              projectId={projectId}
+              createWatchlist={createWatchlist}
+              removeAssetList={removeAssetList}
+              toggleConfirmDeleteAssetList={toggleConfirmDeleteAssetList}
+              toggleAssetInList={toggleAssetInList}
+              watchlistUi={watchlistUi}
+              slug={slug}
+              lists={lists}
+            />
+          )
         ) : (
           <WatchlistsAnon />
         )
@@ -96,14 +113,19 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     dispatch({
       type: actions.USER_REMOVE_ASSET_LIST,
       payload: { id }
+    }),
+  toggleConfirmDeleteAssetList: id =>
+    dispatch({
+      type: actions.WATCHLIST_TOGGLE_CONFIRM_DELETE_MODAL,
+      payload: { id }
     })
 })
 
 export default compose(
   graphql(WatchlistGQL, {
     name: 'Watchlists',
-    options: ({ isLoggedIn }) => ({
-      skip: !isLoggedIn,
+    skip: ({ isLoggedIn }) => !isLoggedIn,
+    options: () => ({
       pollInterval: POLLING_INTERVAL,
       context: { isRetriable: true }
     }),

@@ -29,8 +29,8 @@
 }
 
 .TrendsExamplesItem__chart {
-  max-width: 320px;
-  min-width: 320px;
+  min-width: 100%;
+  max-width: 100%;
   border-top: 1px solid #d8d8da;
   border-bottom: 1px solid #d8d8da;
   padding: 10px;
@@ -40,6 +40,7 @@
   .TrendsExamplesItem {
     margin-right: 1em;
     margin-bottom: 0;
+    width: 350px;
   }
 
   .TrendsExamplesItem:last-child {

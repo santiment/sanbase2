@@ -42,6 +42,7 @@ config :sanbase, SanbaseWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+config :logger, level: :debug
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 
@@ -51,7 +52,6 @@ config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
 config :sanbase, Sanbase.Repo,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   username: "postgres",
   password: "postgres",
   database: "sanbase_dev",
@@ -59,7 +59,6 @@ config :sanbase, Sanbase.Repo,
 
 # Configure your database
 config :sanbase, Sanbase.TimescaleRepo,
-  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   username: "postgres",
   password: "postgres",
   database: "sanbase_timescale_dev",
@@ -78,7 +77,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   password: "",
   pool_timeout: 60_000,
   timeout: 60_000,
-  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"}
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"}
 
 config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 

@@ -24,9 +24,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   use Ecto.Schema
 
   require Logger
-  require Sanbase.ClickhouseRepo
+  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 

@@ -13,11 +13,7 @@
 }
 
 .wrapper {
-  display: flex;
-  justify-content: space-between;
   min-height: 84px;
-  align-items: center;
-  flex-direction: column;
   background-color: white;
   margin-top: 1em;
 }
@@ -60,7 +56,7 @@
   width: 100%;
   margin-top: 1em;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .priceUsd {
@@ -93,14 +89,9 @@
   height: 20px;
 }
 
-.datailed-project-description.pending-header.pending-div {
-  margin-top: 5px;
-}
-
 .pending-h1 {
   height: 1em;
   font-size: 28px !important;
-  margin-bottom: 5px;
 }
 
 @media (min-width: 768px) {
@@ -123,6 +114,8 @@
   .wrapper {
     margin-top: 0;
     padding: 16px 16px 1em;
+    display: flex;
+    justify-content: space-between;
     flex-direction: row;
   }
 
@@ -148,7 +141,7 @@
     line-height: 1.1em;
     margin-top: 1rem;
     justify-content: left;
-    margin-right: 6px;
+    margin-right: 20px;
     width: 200px;
   }
 }

@@ -33,7 +33,7 @@ const DetailedHeader = ({
 }) => (
   <div className={styles.wrapper}>
     <div className={styles.left}>
-      <div className={styles.logo}>
+      <DIV className={styles.logo}>
         <ProjectIcon
           name={project.name || ''}
           ticker={project.ticker}
@@ -42,9 +42,9 @@ const DetailedHeader = ({
         <div className='detailed-ticker-name'>
           {(project.ticker || '').toUpperCase()}
         </div>
-      </div>
+      </DIV>
       <div className={styles.name}>
-        <H1>{project.name}</H1>
+        <h1>{project.name}</h1>
         <DIV className={styles.description}>{project.description}</DIV>
       </div>
       {isLoggedIn &&
@@ -79,7 +79,7 @@ export default compose(
   createSkeletonProvider(
     {
       project: {
-        name: '******',
+        name: '',
         description: '______ ___ ______ __ _____ __ ______',
         ticker: '',
         percentChange24h: 0,

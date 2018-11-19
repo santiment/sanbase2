@@ -10,7 +10,7 @@ import WatchlistsAnon from './WatchlistsAnon'
 import * as actions from './../../actions/types'
 import './WatchlistsPopup.css'
 
-const POLLING_INTERVAL = 2000
+const POLLING_INTERVAL = 4000
 
 const AddToListBtn = (
   <Button basic className='watchlists-button'>
@@ -29,6 +29,7 @@ const WatchlistPopup = ({
   watchlistUi,
   createWatchlist,
   removeAssetList,
+  toggleConfirmDeleteAssetList,
   toggleAssetInList,
   children
 }) => {
@@ -43,6 +44,7 @@ const WatchlistPopup = ({
               projectId,
               createWatchlist,
               removeAssetList,
+              toggleConfirmDeleteAssetList,
               toggleAssetInList,
               watchlistUi,
               slug,
@@ -55,6 +57,7 @@ const WatchlistPopup = ({
               projectId={projectId}
               createWatchlist={createWatchlist}
               removeAssetList={removeAssetList}
+              toggleConfirmDeleteAssetList={toggleConfirmDeleteAssetList}
               toggleAssetInList={toggleAssetInList}
               watchlistUi={watchlistUi}
               slug={slug}
@@ -110,14 +113,19 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     dispatch({
       type: actions.USER_REMOVE_ASSET_LIST,
       payload: { id }
+    }),
+  toggleConfirmDeleteAssetList: id =>
+    dispatch({
+      type: actions.WATCHLIST_TOGGLE_CONFIRM_DELETE_MODAL,
+      payload: { id }
     })
 })
 
 export default compose(
   graphql(WatchlistGQL, {
     name: 'Watchlists',
-    options: ({ isLoggedIn }) => ({
-      skip: !isLoggedIn,
+    skip: ({ isLoggedIn }) => !isLoggedIn,
+    options: () => ({
       pollInterval: POLLING_INTERVAL,
       context: { isRetriable: true }
     }),

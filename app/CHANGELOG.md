@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+- 2018-11-19 | v.0.20.0 'Phobos':
+
+  Fix polling fetchUserLists for anonymous users
+  Show a preventing modal window, when a user is deleting his watchlist
+
 - 2018-12-10 | v.0.19.2 'Phobos':
 
   Feedback form send feedbacks to our private Discord channel

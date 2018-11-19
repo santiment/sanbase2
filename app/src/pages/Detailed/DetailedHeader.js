@@ -4,19 +4,13 @@ import {
   createSkeletonElement
 } from '@trainline/react-skeletor'
 import { compose } from 'recompose'
-import { Icon } from 'semantic-ui-react'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import WatchlistsPopup from './../../components/WatchlistPopup/WatchlistsPopup'
 import ChooseWatchlists from './../../components/WatchlistPopup/ChooseWatchlists'
-import {
-  formatCryptoCurrency,
-  formatBTC,
-  formatNumber
-} from './../../utils/formatting'
+import { formatNumber } from './../../utils/formatting'
 import styles from './DetailedHeader.module.css'
 
-const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
 const DIV = createSkeletonElement('div', 'pending-header pending-div')
 
 const DetailedHeader = ({

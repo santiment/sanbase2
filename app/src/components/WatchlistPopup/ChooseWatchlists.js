@@ -4,7 +4,6 @@ import {
   createSkeletonProvider,
   createSkeletonElement
 } from '@trainline/react-skeletor'
-import { Link } from 'react-router-dom'
 import { compose } from 'recompose'
 import { Label, Icon, Popup } from 'semantic-ui-react'
 import CreateWatchlistBtn from './CreateWatchlistBtn'

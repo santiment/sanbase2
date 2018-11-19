@@ -57,3 +57,7 @@ export const ASSETS_FETCH_FAILED = '[assets] ASSETS_FETCH_FAILED'
 export const TIMESERIES_FETCH = '[timeseries] TIMESERIES_FETCH'
 export const TIMESERIES_FETCH_SUCCESS = '[timeseries] TIMESERIES_FETCH_SUCCESS'
 export const TIMESERIES_FETCH_FAILED = '[timeseries] TIMESERIES_FETCH_FAILED'
+
+// watchlists
+export const WATCHLIST_TOGGLE_CONFIRM_DELETE_MODAL =
+  '[watchlists] TOGGLE_CONFIRM_DELETE_MODAL'

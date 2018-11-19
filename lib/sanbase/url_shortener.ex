@@ -5,14 +5,17 @@ defmodule Sanbase.UrlShortener do
     post(url)
     |> case do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
-        body
-        |> Floki.find("div#copyinfo")
-        |> Floki.attribute("data-clipboard-text")
-        |> hd
+        short_url =
+          body
+          |> Floki.find("div#copyinfo")
+          |> Floki.attribute("data-clipboard-text")
+          |> hd
+
+        {:ok, short_url}
 
       error ->
         Logger.error("Cannot shorten url: " <> inspect(error))
-        nil
+        {:error, "Cannot create short url"}
     end
   end
 

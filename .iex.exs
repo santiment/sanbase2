@@ -146,6 +146,8 @@ alias SanbaseWeb.Graphql.Helpers.Utils, as: GraphUtils
 alias Sanbase.Prices.Store, as: PricesStore
 alias Sanbase.Prices.Utils, as: PricesUtils
 
+alias Sanbase.UrlShortener
+
 now = fn -> Timex.now() end
 days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end
 

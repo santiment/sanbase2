@@ -1,4 +1,4 @@
-defmodule Sanbase.SocialData.SocialData do
+defmodule Sanbase.SocialData do
   import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
 
   require Logger

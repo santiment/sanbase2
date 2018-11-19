@@ -1,8 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.SocialData.SocialData
-
   def trending_words(
         _root,
         %{
@@ -15,6 +13,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         _resolution
       ) do
     size = Enum.min([size, 100])
-    SocialData.trending_words(source, size, hour, from, to)
+    Sanbase.SocialData.trending_words(source, size, hour, from, to)
   end
 end

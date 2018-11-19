@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
   import ExUnit.CaptureLog
+  import Sanbase.Factory
 
   require Sanbase.ClickhouseRepo
 
@@ -143,10 +144,99 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     end
   end
 
+  test "historical balances with project with contract", context do
+    project_with_contract = insert(:project, %{main_contract_address: "0x123"})
+
+    with_mock Sanbase.ClickhouseRepo,
+      query: fn _, _ ->
+        {:ok,
+         %{
+           rows: [
+             [from_iso8601_to_unix!("2017-05-13T00:00:00Z"), 2000],
+             [from_iso8601_to_unix!("2017-05-14T00:00:00Z"), 1800],
+             [from_iso8601_to_unix!("2017-05-15T00:00:00Z"), 1800],
+             [from_iso8601_to_unix!("2017-05-16T00:00:00Z"), 1500],
+             [from_iso8601_to_unix!("2017-05-17T00:00:00Z"), 1900],
+             [from_iso8601_to_unix!("2017-05-18T00:00:00Z"), 1000]
+           ]
+         }}
+      end do
+      query =
+        hist_balances_with_slug_query(
+          project_with_contract.coinmarketcap_id,
+          context.address,
+          context.from,
+          context.to,
+          context.interval
+        )
+
+      result =
+        context.conn
+        |> post("/graphql", query_skeleton(query, "historicalBalance"))
+
+      hist_balance = json_response(result, 200)["data"]["historicalBalance"]
+
+      assert hist_balance == [
+               %{"balance" => 0, "datetime" => "2017-05-11T00:00:00Z"},
+               %{"balance" => 0, "datetime" => "2017-05-12T00:00:00Z"},
+               %{"balance" => 2000, "datetime" => "2017-05-13T00:00:00Z"},
+               %{"balance" => 1800, "datetime" => "2017-05-14T00:00:00Z"},
+               %{"balance" => 1800, "datetime" => "2017-05-15T00:00:00Z"},
+               %{"balance" => 1500, "datetime" => "2017-05-16T00:00:00Z"},
+               %{"balance" => 1900, "datetime" => "2017-05-17T00:00:00Z"},
+               %{"balance" => 1000, "datetime" => "2017-05-18T00:00:00Z"},
+               %{"balance" => 1000, "datetime" => "2017-05-19T00:00:00Z"},
+               %{"balance" => 1000, "datetime" => "2017-05-20T00:00:00Z"}
+             ]
+    end
+  end
+
+  test "historical balances with project without contract", context do
+    project_without_contract = insert(:project)
+
+    query =
+      hist_balances_with_slug_query(
+        project_without_contract.coinmarketcap_id,
+        context.address,
+        context.from,
+        context.to,
+        context.interval
+      )
+
+    log =
+      capture_log(fn ->
+        result =
+          context.conn
+          |> post("/graphql", query_skeleton(query, "historicalBalance"))
+
+        hist_balance = json_response(result, 200)["data"]["historicalBalance"]
+        assert hist_balance == []
+      end)
+
+    assert log =~ "Can't find contract address"
+  end
+
   defp hist_balances_query(address, from, to, interval) do
     """
       {
         historicalBalance(
+            address: "#{address}",
+            from: "#{from}",
+            to: "#{to}",
+            interval: "#{interval}"
+        ){
+            datetime,
+            balance
+        }
+      }
+    """
+  end
+
+  defp hist_balances_with_slug_query(slug, address, from, to, interval) do
+    """
+      {
+        historicalBalance(
+            slug: "#{slug}"
             address: "#{address}",
             from: "#{from}",
             to: "#{to}",

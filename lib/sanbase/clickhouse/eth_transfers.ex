@@ -26,10 +26,9 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   require Logger
   require Sanbase.ClickhouseRepo
 
-  alias __MODULE__
   alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
-  alias Sanbase.DateTimeUtils
+  alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
@@ -145,7 +144,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     balances =
       query
       |> ClickhouseRepo.query_transform(args, fn [dt, value] -> {dt, value} end)
-      |> convert_historical_balance_result(from_datetime, to_datetime, interval)
+      |> ClickhouseCommon.convert_historical_balance_result(from_datetime, to_datetime, interval)
 
     {:ok, balances}
   end
@@ -312,7 +311,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   defp historical_balance_query(address, interval) do
     args = [address]
 
-    dt_round = datetime_rounding_for_interval(interval)
+    dt_round = ClickhouseCommon.datetime_rounding_for_interval(interval)
 
     query = """
     SELECT dt, runningAccumulate(state) AS total_balance FROM (
@@ -338,59 +337,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     """
 
     {query, args}
-  end
-
-  defp convert_historical_balance_result({:ok, []}, _, _, _), do: []
-
-  defp convert_historical_balance_result({:ok, result}, from_datetime, to_datetime, interval) do
-    from_datetime_unix = DateTime.to_unix(from_datetime)
-    to_datetime_unix = DateTime.to_unix(to_datetime)
-    interval_points = div(to_datetime_unix - from_datetime_unix, interval) + 1
-
-    intervals =
-      from_datetime_unix
-      |> Stream.iterate(fn dt_unix -> dt_unix + interval end)
-      |> Enum.take(interval_points)
-
-    initial_intervals = intervals |> Enum.map(fn int -> {int, 0} end) |> Enum.into(%{})
-    filled_intervals = fill_intervals_with_balance(intervals, result)
-
-    calculate_balances_for_intervals(initial_intervals, filled_intervals)
-  end
-
-  defp convert_historical_balance_result(_, _, _, _), do: []
-
-  defp calculate_balances_for_intervals(initial_intervals, filled_intervals) do
-    initial_intervals
-    |> Map.merge(filled_intervals)
-    |> Enum.sort_by(fn {k, _} -> k end)
-    |> Enum.map(fn {dt, value} ->
-      %{
-        datetime: DateTime.from_unix!(dt),
-        balance: value
-      }
-    end)
-  end
-
-  defp datetime_rounding_for_interval(interval) do
-    if interval < DateTimeUtils.compound_duration_to_seconds("1d") do
-      "toStartOfHour(dt)"
-    else
-      "toStartOfDay(dt)"
-    end
-  end
-
-  defp fill_intervals_with_balance(intervals, balances) do
-    for int <- intervals,
-        {dt, balance} <- balances do
-      if int >= dt do
-        {int, balance}
-      else
-        {int, nil}
-      end
-    end
-    |> Enum.filter(fn {_, v} -> v != nil end)
-    |> Enum.into(%{})
   end
 
   defp reduce_eth_spent([%{datetime: datetime} | _] = values) do

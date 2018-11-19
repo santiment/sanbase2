@@ -17,12 +17,10 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
 
   use Ecto.Schema
 
-  import Ecto.Query
-
   require Sanbase.ClickhouseRepo
 
-  alias __MODULE__
   alias Sanbase.ClickhouseRepo
+  alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
   @table "erc20_transfers"
 
@@ -60,7 +58,61 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     ClickhouseRepo.query_transform(query, args)
   end
 
+  @doc ~s"""
+  Returns the historical balances of given etherium address in all intervals between two datetimes.
+  """
+  def historical_balance(
+        contract,
+        address,
+        from_datetime,
+        to_datetime,
+        interval,
+        token_decimals \\ 0
+      ) do
+    token_decimals = Sanbase.Utils.Math.ipow(10, token_decimals)
+
+    {query, args} = historical_balance_query(contract, address, interval, token_decimals)
+
+    balances =
+      query
+      |> ClickhouseRepo.query_transform(args, fn [dt, value] -> {dt, value} end)
+      |> ClickhouseCommon.convert_historical_balance_result(from_datetime, to_datetime, interval)
+
+    {:ok, balances}
+  end
+
   # Private functions
+
+  defp historical_balance_query(contract, address, interval, token_decimals) do
+    args = [contract, address]
+
+    dt_round = ClickhouseCommon.datetime_rounding_for_interval(interval)
+
+    query = """
+    SELECT dt, runningAccumulate(state) AS total_balance FROM (
+      SELECT dt, sumState(value) AS state FROM (
+        SELECT
+          toUnixTimestamp(#{dt_round}) as dt, from AS address, sum(-value / #{token_decimals}) AS value
+        FROM #{@table}
+        PREWHERE contract = ?1 AND from = ?2
+        GROUP BY dt, address
+
+        UNION ALL
+
+        SELECT
+          toUnixTimestamp(#{dt_round}) AS dt, to AS address, sum(value / #{token_decimals}) AS value
+        FROM #{@table}
+        PREWHERE contract = ?1 AND to = ?2
+        GROUP BY dt, address
+      )
+      GROUP BY dt
+      ORDER BY dt
+    )
+    ORDER BY dt
+    """
+
+    {query, args}
+  end
 
   defp token_top_transfers_query(contract, from_datetime, to_datetime, limit, token_decimals) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
@@ -80,7 +132,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     args = [
       token_decimals,
       contract,
-      from_datetime,
+      from_datetime_unix,
       to_datetime_unix,
       limit
     ]

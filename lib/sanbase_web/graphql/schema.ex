@@ -607,12 +607,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Historical balance for an address"
     field :historical_balance, list_of(:historical_balance) do
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:address, non_null(:string))
       arg(:interval, non_null(:string), default_value: "1d")
 
-      cache_resolve(&ClickhouseResolver.historical_balance/3)
+      resolve(&ClickhouseResolver.historical_balance/3)
     end
   end
 

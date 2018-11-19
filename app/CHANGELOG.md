@@ -3,7 +3,7 @@
 - 2018-11-19 | v.0.20.1 'Phobos':
 
   Fix crushing, if watchlist is public and a user is removing it
-  Fix css z-index of 2 modals (watchlist popup)
+  Fix css z-index of 2 modals (watchlist poput)
 
 - 2018-11-19 | v.0.20.0 'Phobos':
 

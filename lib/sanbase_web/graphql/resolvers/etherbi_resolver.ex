@@ -10,13 +10,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   require Logger
 
-  @doc ~S"""
-    Return the token burn rate for the given slug and time period.
-    Uses the influxdb cached values instead of issuing a GET request to etherbi
-  """
-  def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
-    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
+  def burn_rate(_root, %{slug: slug} = args, _resolution) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug) do
+      Cache.func(
+        fn -> calculate_burn_rate(contract_address, token_decimals, args) end,
+        {:burn_rate, contract_address},
+        %{from_datetime: args.from, to_datetime: args.to}
+      ).()
+    end
+  end
+
+  defp calculate_burn_rate(contract_address, token_decimals, args) do
+    %{from: from, to: to, interval: interval, slug: slug} = args
+
+    with {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Blockchain.BurnRate,
              contract_address,
@@ -47,17 +54,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
-  @doc ~S"""
-    Return the transaction volume for the given slug and time period.
-    Uses the influxdb cached values instead of issuing a GET request to etherbi
-  """
-  def transaction_volume(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
-        _resolution
-      ) do
-    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
+  def transaction_volume(_root, %{slug: slug} = args, _resolution) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug) do
+      Cache.func(
+        fn -> calculate_transaction_volume(contract_address, token_decimals, args) end,
+        {:transaction_volume, contract_address},
+        %{from_datetime: args.from, to_datetime: args.to}
+      ).()
+    end
+  end
+
+  defp calculate_transaction_volume(contract_address, token_decimals, args) do
+    %{from: from, to: to, interval: interval, slug: slug} = args
+
+    with {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Blockchain.TransactionVolume,
              contract_address,
@@ -83,6 +93,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     else
       error ->
         error_msg = "Can't fetch transaction for #{slug}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  def average_token_age_consumed_in_days(
+        root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        resolution
+      ) do
+    with {:ok, burn_rates} <- burn_rate(root, args, resolution),
+         {:ok, transaction_volumes} <- transaction_volume(root, args, resolution) do
+      result =
+        Enum.zip(burn_rates, transaction_volumes)
+        |> Enum.map(fn {%{datetime: dt, burn_rate: burn_rate},
+                        %{datetime: dt, transaction_volume: transaction_volume}} ->
+          average_token_age =
+            case transaction_volume do
+              0.0 -> 0
+              _ -> burn_rate / transaction_volume * 15 / 86400
+            end
+
+          %{
+            datetime: dt,
+            average_token_age: average_token_age
+          }
+        end)
+
+      {:ok, result}
+    else
+      error ->
+        error_msg = "Can't fetch average token age for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
     end

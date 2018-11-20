@@ -18,9 +18,8 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   use Ecto.Schema
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
-  
-  alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
+  alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
   @table "erc20_transfers"
 
@@ -59,7 +58,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   end
 
   @doc ~s"""
-  Returns the historical balances of given etherium address in all intervals between two datetimes.
+  Returns the historical balances of given address in tokens in all intervals between two datetimes.
   """
   def historical_balance(
         contract,

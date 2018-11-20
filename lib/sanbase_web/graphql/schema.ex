@@ -638,7 +638,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ElasticsearchResolver.stats/3)
     end
 
-    @desc "Historical balance for an address"
+    @desc ~s"""
+    Historical balance for erc20 token or eth address.
+    If slug is provided it will return the number of tokens in the address in all intervals.
+    If slug is not provided it will return the amount of ETH in this address in all intervals.
+    """
     field :historical_balance, list_of(:historical_balance) do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
@@ -646,7 +650,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:address, non_null(:string))
       arg(:interval, non_null(:string), default_value: "1d")
 
-      resolve(&ClickhouseResolver.historical_balance/3)
+      cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
   end
 

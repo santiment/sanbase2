@@ -13,13 +13,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         args,
         _resolution
       ) do
-    calc_historical_balances(args)
-  end
-
-  defp calc_historical_balances(args) do
     with interval_seconds when interval_seconds >= @one_hour_seconds <-
            DateTimeUtils.compound_duration_to_seconds(args.interval),
-         {:ok, result} <- historical_balances_func(args, interval_seconds) do
+         {:ok, result} <- calc_historical_balances(args, interval_seconds) do
       {:ok, result}
     else
       e when is_integer(e) ->
@@ -39,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, []}
   end
 
-  defp historical_balances_func(
+  defp calc_historical_balances(
          %{slug: slug, address: address, from: from, to: to},
          interval_seconds
        ) do
@@ -59,7 +55,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  defp historical_balances_func(%{address: address, from: from, to: to}, interval_seconds) do
+  defp calc_historical_balances(%{address: address, from: from, to: to}, interval_seconds) do
     EthTransfers.historical_balance(address, from, to, interval_seconds)
   end
 end

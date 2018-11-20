@@ -12,6 +12,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     EtherbiResolver,
     VotingResolver,
     TechIndicatorsResolver,
+    SocialDataResolver,
     FileResolver,
     PostResolver,
     MarketSegmentResolver,
@@ -46,6 +47,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.VotingTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
+  import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
@@ -573,6 +575,32 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       complexity(&TechIndicatorsComplexity.topic_search/3)
       resolve(&TechIndicatorsResolver.topic_search/3)
+    end
+
+    @desc ~s"""
+    Returns lists with trending words and their corresponding trend score.
+
+    Arguments description:
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * size - an integer showing how many words should be included in the top list (max 100)
+      * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :trending_words, list_of(:trending_words) do
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:hour, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(ApiTimeframeRestriction)
+
+      cache_resolve(&SocialDataResolver.trending_words/3)
     end
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."

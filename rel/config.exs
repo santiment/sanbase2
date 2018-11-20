@@ -56,6 +56,6 @@ release :sanbase do
   ]
   set pre_start_hooks: "rel/pre_start_hooks"
   set pre_configure_hooks: "rel/pre_configure_hooks"
-  
+
   set vm_args: "vm.args"
 end

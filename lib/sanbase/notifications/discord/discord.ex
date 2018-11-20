@@ -128,7 +128,7 @@ defmodule Sanbase.Notifications.Discord do
       prices =
         prices
         |> Enum.map(fn list -> list |> Enum.filter(fn el -> el != 0 end) end)
-        |> Enum.map(fn list -> list |> Enum.map(&(&1 * 1.0)) |> Enum.map(&Float.round(&1, 6)) end)
+        |> Enum.map(fn list -> list |> Enum.map(&(&1 * 1.0)) |> Enum.map(&Float.round(&1, 4)) end)
 
       [_, high_values, low_values, _, _] = prices
       min = low_values |> Enum.min() |> Float.floor(2)

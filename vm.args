@@ -1,0 +1,1 @@
+-name sanbase@<%= "${POD_A_RECORD}.${NAMESPACE}.pod.cluster.local" %>

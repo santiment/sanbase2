@@ -57,4 +57,6 @@ WORKDIR /app
 COPY --from=code_builder /app/_build/prod/rel/sanbase .
 COPY --from=react_builder /app/build /app/lib/sanbase-0.0.1/priv/static/
 
+ENV REPLACE_OS_VARS=true
+
 CMD bin/sanbase foreground

@@ -88,6 +88,12 @@ defmodule Sanbase.DateTimeUtils do
     datetime
   end
 
+  def from_iso8601_to_unix!(datetime_str) do
+    datetime_str
+    |> from_iso8601!()
+    |> DateTime.to_unix()
+  end
+
   def valid_interval_string?(interval_string) when not is_binary(interval_string) do
     {:error, "The provided string #{interval_string} is not a valid string interval"}
   end

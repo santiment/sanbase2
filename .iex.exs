@@ -138,15 +138,17 @@ alias SanbaseWeb.Graphql.Resolvers.{
   TechIndicatorsResolver,
   TwitterResolver,
   UserListResolver,
-  VotingResolver
+  VotingResolver,
+  ClickhouseResolver
 }
 
 alias SanbaseWeb.Graphql.Helpers.Cache
 alias SanbaseWeb.Graphql.Helpers.Utils, as: GraphUtils
 alias Sanbase.Prices.Store, as: PricesStore
 alias Sanbase.Prices.Utils, as: PricesUtils
-
+alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 alias Sanbase.UrlShortener
+
 
 now = fn -> Timex.now() end
 days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end

@@ -18,7 +18,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     MarketSegmentResolver,
     ApikeyResolver,
     UserListResolver,
-    ElasticsearchResolver
+    ElasticsearchResolver,
+    ClickhouseResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -53,6 +54,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.UserListTypes)
   import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
   import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
+  import_types(SanbaseWeb.Graphql.ClickhouseTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -662,6 +664,21 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       cache_resolve(&ElasticsearchResolver.stats/3)
+    end
+
+    @desc ~s"""
+    Historical balance for erc20 token or eth address.
+    If slug is provided it will return the number of tokens in the address in all intervals.
+    If slug is not provided it will return the amount of ETH in this address in all intervals.
+    """
+    field :historical_balance, list_of(:historical_balance) do
+      arg(:slug, :string)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:address, non_null(:string))
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
   end
 

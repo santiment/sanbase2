@@ -5,7 +5,7 @@ import styles from './LatestWatchlists.module.css'
 
 const MAX_LIST_ITEMS = 2
 
-const InsightsWidgetItem = ({
+const LatestWatchlistsWidgetItem = ({
   id,
   name,
   createdAt,
@@ -18,13 +18,13 @@ const InsightsWidgetItem = ({
   return (
     <div className={styles.wrapper}>
       <h3 className={styles.title}>
-        <Link to={`/assets/list?name=${name}@${id}`}>{name}</Link>
+        <Link to={`/assets/list?name=${name}@${id}#shared`}>{name}</Link>
       </h3>
       <div className={styles.content}>
         This watchlist includes:
         <ul className={styles.list}>
           {listItems.slice(0, MAX_LIST_ITEMS).map(({ project: { name } }) => (
-            <li>{name}</li>
+            <li key={name}>{name}</li>
           ))}
           {isLongList && <li>And {remainingItemsCount} more projects...</li>}
         </ul>
@@ -41,4 +41,4 @@ const InsightsWidgetItem = ({
   )
 }
 
-export default InsightsWidgetItem
+export default LatestWatchlistsWidgetItem

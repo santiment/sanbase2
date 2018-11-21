@@ -68,10 +68,19 @@ const generateWidgetData = historyPrice => {
 
 const constructProjectMarketcapKey = projectName => `${projectName}-marketcap`
 
-const mergeProjectWithTotal = (total, lastIndex, project, projectName) => {
+const mergeProjectWithTotal = (
+  totalMarketHistory,
+  lastIndex,
+  project,
+  projectName
+) => {
+  if (!project) {
+    // console.log({ totalMarketHistory, lastIndex, project, projectName })
+    return
+  }
   const project_LAST_INDEX = project.length - 1
   for (let i = project_LAST_INDEX; i > -1; i--) {
-    total[lastIndex][constructProjectMarketcapKey(projectName)] =
+    totalMarketHistory[lastIndex][constructProjectMarketcapKey(projectName)] =
       project[i].marketcap
     lastIndex--
   }
@@ -91,7 +100,6 @@ const combineDataset = (totalMarketHistory, restProjects) => {
       key
     )
   }
-  console.log(totalMarketHistory)
 }
 
 const COLORS = ['#ffa000', '#1111bb', '#ab47bc']
@@ -123,6 +131,7 @@ const TotalMarketcapWidget = ({
   let restAreas = null
 
   if (!loading && Object.keys(restProjects).length > 0) {
+    console.log({ restProjects })
     combineDataset(marketcapDataset, restProjects)
     restAreas = getTop3Area(restProjects)
   }

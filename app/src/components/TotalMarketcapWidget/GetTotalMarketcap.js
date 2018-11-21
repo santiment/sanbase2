@@ -42,7 +42,25 @@ const getMarketcapQuery = (type, projects) => {
   }
 
   // const slugs = projects.slice(0, 10).map(({ slug }) => slug)
-  const slugs = projects.map(({ slug }) => slug)
+  // console.log(projects)
+  const slugs = projects
+    .slice()
+    .sort(
+      ({ marketcapUsd: a_marketcapUsd }, { marketcapUsd: b_marketcapUsd }) =>
+        a_marketcapUsd < b_marketcapUsd ? 1 : -1
+    )
+    .map(({ slug }) => slug)
+
+  // console.log(
+  //   projects
+  //     .slice()
+  //     .sort(
+  //       ({ marketcapUsd: a_marketcapUsd }, { marketcapUsd: b_marketcapUsd }) =>
+  //         (a_marketcapUsd < b_marketcapUsd ? 1 : -1)
+  //     )
+  //     .slice(0, 3)
+  // )
+  console.log(slugs, from)
 
   const slugsQuery = graphql(projectsListHistoryStatsGQL, {
     props: ({ data: { projectsListHistoryStats = [] } }) => ({
@@ -62,24 +80,21 @@ const getMarketcapQuery = (type, projects) => {
   })
 
   if (projects.length > 1) {
-    const slugsQuery2 = graphql(
-      constructTotalMarketcapGQL(slugs.slice(0, 3), from),
-      {
-        props: ({ data: historyPrice = {}, ownProps: { historyPrices } }) => {
-          return slugs.reduce(
-            (acc, slug) => {
-              acc.historyPrices[slug] =
-                historyPrice['_' + slug.replace(/-/g, '')]
-              return acc
-            },
-            {
-              historyPrices,
-              loading: historyPrice.loading
-            }
-          )
-        }
+    const top3Slugs = slugs.slice(0, 3)
+    const slugsQuery2 = graphql(constructTotalMarketcapGQL(top3Slugs, from), {
+      props: ({ data: historyPrice = {}, ownProps: { historyPrices } }) => {
+        return top3Slugs.reduce(
+          (acc, slug) => {
+            acc.historyPrices[slug] = historyPrice['_' + slug.replace(/-/g, '')]
+            return acc
+          },
+          {
+            historyPrices,
+            loading: historyPrice.loading
+          }
+        )
       }
-    )
+    })
 
     return compose(
       slugsQuery,

@@ -198,7 +198,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string))
+      arg(:interval, non_null(:string), default_value: "1d")
 
       cache_resolve(&ProjectResolver.combined_history_stats/3)
     end

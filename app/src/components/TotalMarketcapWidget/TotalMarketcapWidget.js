@@ -1,9 +1,6 @@
 import React from 'react'
-import moment from 'moment'
-import { graphql } from 'react-apollo'
-import { ResponsiveContainer, AreaChart, Area, XAxis, Legend } from 'recharts'
+import { ResponsiveContainer, AreaChart, Area, XAxis } from 'recharts'
 import Widget from '../Widget/Widget'
-import { totalMarketcapGQL } from './TotalMarketcapGQL'
 import { formatNumber } from '../../utils/formatting'
 import './TotalMarketcapWidget.scss'
 
@@ -11,28 +8,6 @@ const currencyFormatOptions = {
   currency: 'USD',
   minimumFractionDigits: 0,
   maximumFractionDigits: 0
-}
-
-const combineHistoryPrices = historyPrices => {
-  if (!historyPrices) return undefined
-
-  const prices = Object.keys(historyPrices)
-
-  if (prices.length > 10) return undefined // OTHERWISE: It's computing hell. Almost 1000 of arrays with 100+ elements.
-
-  return prices.reduce((acc, slug) => {
-    if (historyPrices[slug] === undefined) return []
-    return historyPrices[slug].map((pricePoint, index) => {
-      let doesAccumulatorExist = acc[index] !== undefined
-      let accVolume = doesAccumulatorExist ? acc[index].volume : 0
-      let accMarketcap = doesAccumulatorExist ? acc[index].marketcap : 0
-
-      return {
-        volume: pricePoint.volume + accVolume,
-        marketcap: pricePoint.marketcap + accMarketcap
-      }
-    })
-  }, [])
 }
 
 const generateWidgetData = historyPrice => {

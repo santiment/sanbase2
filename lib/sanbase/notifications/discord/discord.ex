@@ -8,6 +8,8 @@ defmodule Sanbase.Notifications.Discord do
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.UrlShortener
+  alias Sanbase.Model.Project
+  alias Sanbase.Blockchain.DailyActiveAddresses
 
   @discord_message_size_limit 1900
 
@@ -102,8 +104,8 @@ defmodule Sanbase.Notifications.Discord do
   Builds discord embeds object with chart url for a given project slug and time interval
   """
   @spec build_embedded_chart(String.t(), any(), any()) :: [any()]
-  def build_embedded_chart(slug, from, to) do
-    with {:ok, url} <- build_candlestick_image_url(slug, from, to),
+  def build_embedded_chart(slug, from, to, opts \\ []) do
+    with {:ok, url} <- build_candlestick_image_url(slug, from, to, opts),
          {:ok, short_url} <- UrlShortener.short_url(url) do
       [%{image: %{url: short_url}}]
     else
@@ -114,7 +116,7 @@ defmodule Sanbase.Notifications.Discord do
   @doc ~s"""
   Build candlestick image url using google charts api
   """
-  def build_candlestick_image_url(slug, from, to) do
+  def build_candlestick_image_url(slug, from, to, opts \\ []) do
     with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
          {:ok, ohlc} when is_list(ohlc) <- PricesStore.fetch_ohlc(measurement, from, to, "1d"),
          number when number != 0 <- length(ohlc) do
@@ -128,7 +130,13 @@ defmodule Sanbase.Notifications.Discord do
       prices =
         prices
         |> Enum.map(fn list -> list |> Enum.filter(fn el -> el != 0 end) end)
-        |> Enum.map(fn list -> list |> Enum.map(&(&1 * 1.0)) |> Enum.map(&Float.round(&1, 4)) end)
+        |> Enum.map(fn list ->
+          list
+          |> Enum.map(&(&1 * 1.0))
+          |> Enum.map(fn num ->
+            if num > 100, do: Float.round(num, 2), else: Float.round(num, 4)
+          end)
+        end)
 
       [_, high_values, low_values, _, _] = prices
       min = low_values |> Enum.min() |> Float.floor(2)
@@ -141,16 +149,22 @@ defmodule Sanbase.Notifications.Discord do
       size = low_values |> Enum.count()
       bar_width = 6 * round(90 / size)
 
+      line_chart =
+        if Keyword.get(opts, :daa),
+          do: daa_chart_values(slug, from, to, size),
+          else: empty_values()
+
       {:ok, ~s(
         https://chart.googleapis.com/chart?
         cht=lc&
         chs=800x200&
-        chxt=y&
-        chxr=0,#{min},#{max}&
-        chd=t0:1|#{low_str}|#{open_str}|#{close_str}|#{high_str}&
-        chds=#{min},#{max}&
+        chxt=y#{line_chart.chxt}&
+        chxr=0,#{min},#{max}#{line_chart.chxr}&
+        chds=#{line_chart.chds}#{min},#{max}&
+        chd=#{line_chart.chd}|#{low_str}|#{open_str}|#{close_str}|#{high_str}&
         chm=F,,1,1:#{size},#{bar_width}&
-        chma=10,10,20,10
+        chma=10,10,20,10&
+        &chco=00FF00
       ) |> String.replace(~r/[\n\s+]+/, "")}
     else
       error ->
@@ -160,6 +174,28 @@ defmodule Sanbase.Notifications.Discord do
   end
 
   # Private functions
+  defp daa_chart_values(slug, from, to, size) do
+    from = Timex.shift(to, days: -size + 1)
+
+    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
+         {:ok, daa} <- DailyActiveAddresses.active_addresses(contract, from, to, "1d") do
+      daa_values = daa |> Enum.map(fn %{active_addresses: value} -> value end)
+      max = daa_values |> Enum.max()
+      min = daa_values |> Enum.min()
+
+      daa_values = daa_values |> Enum.join(",")
+      %{chxt: ",r", chxr: "|1,#{min},#{max}", chds: "#{min},#{max},", chd: "t1:#{daa_values}"}
+    else
+      error ->
+        Logger.error("cannot fetch daa for project with slug: #{slug}, error: #{inspect(error)}")
+        empty_values()
+    end
+  end
+
+  defp empty_values() do
+    %{chxt: "", chxr: "", chds: "", chd: "t0:1"}
+  end
+
   defp http_client() do
     Mockery.Macro.mockable(HTTPoison)
   end

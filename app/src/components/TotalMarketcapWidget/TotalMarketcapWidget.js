@@ -75,7 +75,6 @@ const mergeProjectWithTotal = (
   projectName
 ) => {
   if (!project) {
-    // console.log({ totalMarketHistory, lastIndex, project, projectName })
     return
   }
   const project_LAST_INDEX = project.length - 1

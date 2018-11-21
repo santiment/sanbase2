@@ -9,16 +9,6 @@ import {
 import TotalMarketcapWidget from './TotalMarketcapWidget'
 import moment from 'moment'
 
-const composeHistoryPriceProps = slug => ({
-  data: { historyPrice = [] },
-  ownProps: { historyPrices: ownHistoryPrices = {} }
-}) => ({
-  historyPrices: {
-    ...ownHistoryPrices,
-    [slug]: historyPrice[slug]
-  }
-})
-
 const getMarketcapQuery = (type, projects) => {
   const from = moment()
     .subtract(3, 'months')
@@ -41,8 +31,6 @@ const getMarketcapQuery = (type, projects) => {
     })
   }
 
-  // const slugs = projects.slice(0, 10).map(({ slug }) => slug)
-  // console.log(projects)
   const slugs = projects
     .slice()
     .sort(
@@ -50,17 +38,6 @@ const getMarketcapQuery = (type, projects) => {
         a_marketcapUsd < b_marketcapUsd ? 1 : -1
     )
     .map(({ slug }) => slug)
-
-  // console.log(
-  //   projects
-  //     .slice()
-  //     .sort(
-  //       ({ marketcapUsd: a_marketcapUsd }, { marketcapUsd: b_marketcapUsd }) =>
-  //         (a_marketcapUsd < b_marketcapUsd ? 1 : -1)
-  //     )
-  //     .slice(0, 3)
-  // )
-  console.log(slugs, from)
 
   const slugsQuery = graphql(projectsListHistoryStatsGQL, {
     props: ({ data: { projectsListHistoryStats = [] } }) => ({

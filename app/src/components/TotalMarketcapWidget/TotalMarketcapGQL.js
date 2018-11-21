@@ -29,6 +29,7 @@ export const projectsListHistoryStatsGQL = gql`
   }
 `
 
+// TODO(vanguard): Test this function for edge cases
 export const constructTotalMarketcapGQL = (slugs, from) => {
   if (slugs.length === 0) gql``
   return gql`

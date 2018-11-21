@@ -16,7 +16,7 @@ const AssetsPage = props => (
       <title>Assets</title>
       <link rel='canonical' href={`${getOrigin()}/assets`} />
     </Helmet>
-    {qs.parse(props.location.search).poc === 'widgets' && (
+    {qs.parse(props.location.search).feature === 'widgets' && (
       <WidgetList type={props.type} isLoggedIn={props.isLoggedIn} />
     )}
     <div className='page-head page-head-projects'>

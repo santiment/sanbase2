@@ -29,7 +29,6 @@ export const projectsListHistoryStatsGQL = gql`
   }
 `
 
-// Operation historyPrice is too complex: complexity is 273424 and maximum is 5000
 export const constructTotalMarketcapGQL = (slugs, from) => {
   if (slugs.length === 0) gql``
   return gql`

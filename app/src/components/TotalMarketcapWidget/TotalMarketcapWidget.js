@@ -122,7 +122,7 @@ const TotalMarketcapWidget = ({
 
   let restAreas = null
 
-  if (!loading) {
+  if (!loading && Object.keys(restProjects).length > 0) {
     combineDataset(marketcapDataset, restProjects)
     restAreas = getTop3Area(restProjects)
   }
@@ -158,7 +158,6 @@ const TotalMarketcapWidget = ({
             isAnimationActive={false}
           />
           {restAreas}
-          {/* <Legend verticalAlign='top' height={5} /> */}
         </AreaChart>
       </ResponsiveContainer>
     </Widget>

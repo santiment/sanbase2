@@ -103,8 +103,7 @@ defmodule Sanbase.Mixfile do
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_plugs, "~> 1.0"},
       {:prometheus_process_collector, "~> 1.4"},
-      {:absinthe_metrics, "~> 0.9"},
-      {:libcluster, "~> 3.0"}
+      {:absinthe_metrics, "~> 0.9"}
     ]
   end
 

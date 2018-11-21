@@ -157,19 +157,6 @@ config :sanbase, Sanbase.Scheduler,
     ]
   ]
 
-config :libcluster,
-  topologies: [
-    k8s: [
-      strategy: Elixir.Cluster.Strategy.Kubernetes,
-      config: [
-        mode: :dns,
-        kubernetes_node_basename: "sanbase",
-        kubernetes_selector: "app=sanbase",
-        polling_interval: 10_000
-      ]
-    ]
-  ]
-
 # Import configs
 import_config "ex_admin_config.exs"
 import_config "influxdb_config.exs"

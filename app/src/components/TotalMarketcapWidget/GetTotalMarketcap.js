@@ -8,6 +8,7 @@ import {
 } from './TotalMarketcapGQL'
 import TotalMarketcapWidget from './TotalMarketcapWidget'
 import moment from 'moment'
+import { getEscapedGQLFieldAlias } from '../../utils/utils'
 
 const getMarketcapQuery = (type, projects) => {
   const from = moment()
@@ -58,20 +59,28 @@ const getMarketcapQuery = (type, projects) => {
 
   if (projects.length > 1) {
     const top3Slugs = slugs.slice(0, 3)
-    const slugsQuery2 = graphql(constructTotalMarketcapGQL(top3Slugs, from), {
-      props: ({ data: historyPrice = {}, ownProps: { historyPrices } }) => {
-        return top3Slugs.reduce(
-          (acc, slug) => {
-            acc.historyPrices[slug] = historyPrice['_' + slug.replace(/-/g, '')]
-            return acc
-          },
-          {
-            historyPrices,
-            loading: historyPrice.loading
-          }
-        )
+    const top3SlugsAliasesMap = top3Slugs.map(slug => [
+      slug,
+      getEscapedGQLFieldAlias(slug)
+    ])
+
+    const slugsQuery2 = graphql(
+      constructTotalMarketcapGQL(top3SlugsAliasesMap, from),
+      {
+        props: ({ data: historyPrice = {}, ownProps: { historyPrices } }) => {
+          return top3SlugsAliasesMap.reduce(
+            (acc, [slug, escapedAlias]) => {
+              acc.historyPrices[slug] = historyPrice[escapedAlias]
+              return acc
+            },
+            {
+              historyPrices,
+              loading: historyPrice.loading
+            }
+          )
+        }
       }
-    })
+    )
 
     return compose(
       slugsQuery,

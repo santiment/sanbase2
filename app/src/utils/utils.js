@@ -156,6 +156,12 @@ const getTimeFromFromString = (time = '1y') => {
 
 const capitalizeStr = string => string.charAt(0).toUpperCase() + string.slice(1)
 
+/* UTILS METHOD  */
+// Escaping for corrent alias syntax
+// Otherwise: GraphQLError: Syntax Error GraphQL request (16:7) Expected Name, found Int "0" - for 0x
+// bitcoin-cash | ab-chain-rtb = Syntax Error GraphQL request (4:15) Invalid number, expected digit but got: "c"
+const getEscapedGQLFieldAlias = fieldName => '_' + fieldName.replace(/-/g, '')
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
@@ -169,5 +175,6 @@ export {
   getStartOfTheDay,
   mergeTimeseriesByKey,
   getTimeFromFromString,
-  capitalizeStr
+  capitalizeStr,
+  getEscapedGQLFieldAlias
 }

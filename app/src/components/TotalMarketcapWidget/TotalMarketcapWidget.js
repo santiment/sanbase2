@@ -76,21 +76,20 @@ const combineDataset = (totalMarketHistory, restProjects) => {
   //   )
   // }
   // console.timeEnd('mergindTimeseries-MY')
-  const test = Object.keys(restProjects).map(key =>
+  const restProjectTimeseries = Object.keys(restProjects).map(key =>
     restProjects[key].map(({ marketcap, datetime }) => ({
       datetime,
       [constructProjectMarketcapKey(key)]: marketcap
     }))
   )
-  console.log(test)
 
   console.time('mergindTimeseries-UTILS')
   const result = mergeTimeseriesByKey({
-    timeseries: [totalMarketHistory, ...test],
+    timeseries: [totalMarketHistory, ...restProjectTimeseries],
     key: 'datetime'
   })
   console.timeEnd('mergindTimeseries-UTILS')
-  console.log(result)
+
   return result
 }
 

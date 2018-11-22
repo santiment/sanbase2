@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import Panel from '../../Panel/Panel'
 import Search from '../Search'
-import styles from './WithSuggestions.scss'
+import styles from './SearchWithSuggestions.scss'
 
 class SearchWithSuggestions extends PureComponent {
   static propTypes = {

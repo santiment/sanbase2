@@ -76,7 +76,8 @@ const enhance = compose(
       return {
         isPublic:
           watchlists &&
-          watchlists.find(watchlist => watchlist.id === watchlistId).isPublic,
+          (watchlists.find(watchlist => watchlist.id === watchlistId) || {})
+            .isPublic,
         watchlistId
       }
     }

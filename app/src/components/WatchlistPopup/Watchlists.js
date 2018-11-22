@@ -34,98 +34,95 @@ const Watchlists = ({
   slug,
   watchlistUi,
   createWatchlist,
-  removeAssetList,
   toggleAssetInList,
+  toggleConfirmDeleteAssetList,
   searchParams
-}) => {
-  const search = qs.parse(searchParams)
-  return (
-    <div className='watchlists'>
-      <div className='watchlists__list'>
-        {lists.length > 0 ? (
-          lists.map(({ id, name, listItems = [] }) => (
-            <div key={id} className='watchlists__item'>
-              <Link
-                className='watchlists__item__link'
-                to={{
+}) => (
+  <div className='watchlists'>
+    <div className='watchlists__list'>
+      {lists.length > 0 ? (
+        lists.map(({ id, name, listItems = [] }) => (
+          <div key={id} className='watchlists__item'>
+            <Link
+              className='watchlists__item__link'
+              to={{
                   pathname: '/assets/list',
-                  search: qs.stringify(updateSearchQuery(search, name, id))
-                }}
-              >
-                <DIV className='watchlists__item__name'>
-                  <div>{name}</div>
-                </DIV>
-                {!isLoading && (
-                  <div className='watchlists__item__description'>
-                    <Label>
-                      {listItems.length > 0 ? listItems.length : 'empty'}
+                  search: qs.stringify(updateSearchQuery(searchParams, name, id))
+              }}
+            >
+              <DIV className='watchlists__item__name'>
+                <div>{name}</div>
+              </DIV>
+              {!isLoading && (
+                <div className='watchlists__item__description'>
+                  <Label>
+                    {listItems.length > 0 ? listItems.length : 'empty'}
+                  </Label>
+                  {isNewestList(id) && (
+                    <Label color='green' horizontal>
+                      NEW
                     </Label>
-                    {isNewestList(id) && (
-                      <Label color='green' horizontal>
-                        NEW
-                      </Label>
-                    )}
-                  </div>
-                )}
-              </Link>
-              <div className='watchlists__tools'>
-                {!isNavigation && (
-                  <Popup
-                    inverted
-                    trigger={
-                      <Icon
-                        size='big'
-                        className={cx({
-                          'icon-green': hasAssetById({
-                            listItems,
-                            id: projectId
-                          })
-                        })}
-                        onClick={toggleAssetInList.bind(this, {
-                          projectId,
-                          assetsListId: id,
-                          slug,
-                          listItems
-                        })}
-                        name={
-                          hasAssetById({
-                            listItems,
-                            id: projectId
-                          })
-                            ? 'check circle outline'
-                            : 'add'
-                        }
-                      />
-                    }
-                    content={
-                      hasAssetById({
-                        listItems,
-                        id: projectId
-                      })
-                        ? 'remove from list'
-                        : 'add to list'
-                    }
-                    position='right center'
-                    size='mini'
-                  />
-                )}
-                {!isNewestList(id) && (
-                  <Popup
-                    inverted
-                    trigger={
-                      <Icon
-                        size='big'
-                        className='watchlists__tools__move-to-trash'
-                        onClick={removeAssetList.bind(this, id)}
-                        name='trash'
-                      />
-                    }
-                    content='remove this list'
-                    position='right center'
-                    size='mini'
-                  />
-                )}
-              </div>
+                  )}
+                </div>
+              )}
+            </Link>
+            <div className='watchlists__tools'>
+              {!isNavigation && (
+                <Popup
+                  inverted
+                  trigger={
+                    <Icon
+                      size='big'
+                      className={cx({
+                        'icon-green': hasAssetById({
+                          listItems,
+                          id: projectId
+                        })
+                      })}
+                      onClick={toggleAssetInList.bind(this, {
+                        projectId,
+                        assetsListId: id,
+                        slug,
+                        listItems
+                      })}
+                      name={
+                        hasAssetById({
+                          listItems,
+                          id: projectId
+                        })
+                          ? 'check circle outline'
+                          : 'add'
+                      }
+                    />
+                  }
+                  content={
+                    hasAssetById({
+                      listItems,
+                      id: projectId
+                    })
+                      ? 'remove from list'
+                      : 'add to list'
+                  }
+                  position='right center'
+                  size='mini'
+                />
+              )}
+              {!isNewestList(id) && (
+                <Popup
+                  inverted
+                  trigger={
+                    <Icon
+                      size='large'
+                      className='watchlists__tools__move-to-trash'
+                      onClick={() => toggleConfirmDeleteAssetList(id)}
+                      name='trash'
+                    />
+                  }
+                  content='remove this list'
+                  position='right center'
+                  size='mini'
+                />
+              )}
             </div>
           ))
         ) : (

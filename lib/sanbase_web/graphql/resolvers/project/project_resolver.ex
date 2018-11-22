@@ -22,6 +22,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     Github
   }
 
+  alias Sanbase.Influxdb.Measurement
+
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
@@ -241,7 +243,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   defp calculate_volume_change_24h(%Project{} = project) do
-    measurement_name = Sanbase.Influxdb.Measurement.name_from(project)
+    measurement_name = Measurement.name_from(project)
     yesterday = Timex.shift(Timex.now(), days: -1)
     the_other_day = Timex.shift(Timex.now(), days: -2)
 
@@ -257,24 +259,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def average_dev_activity(%Project{ticker: ticker}, _args, _resolution) do
+  def average_dev_activity(%Project{id: id} = project, _args, _resolution) do
     async(
       Cache.func(
-        fn -> calculate_average_dev_activity(ticker) end,
-        {:average_dev_activity, ticker}
+        fn -> calculate_average_dev_activity(project) end,
+        {:average_dev_activity, id}
       )
     )
   end
 
-  defp calculate_average_dev_activity(ticker) do
-    month_ago = Timex.shift(Timex.now(), days: -30)
+  defp calculate_average_dev_activity(%Project{} = project) do
+    with {:ok, organization} <- Project.github_organization(project) do
+      month_ago = Timex.shift(Timex.now(), days: -30)
 
-    case Github.Store.fetch_total_activity(ticker, month_ago, Timex.now()) do
-      {:ok, {_dt, total_activity}} ->
-        {:ok, total_activity / 30}
+      case Sanbase.Clickhouse.Github.total_dev_activity(organization, month_ago, Timex.now()) do
+        {:ok, total_activity} ->
+          {:ok, total_activity / 30}
 
-      _ ->
-        {:ok, 0}
+        _ ->
+          {:ok, 0}
+      end
+    else
+      {:error, {:github_link_error, error}} ->
+        Logger.info(error)
+        {:ok, nil}
+
+      error ->
+        Logger.error(
+          "Cannot fetch github activity for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:error, "Cannot fetch github activity for #{Project.describe(project)}"}
     end
   end
 
@@ -440,6 +457,29 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
           {:ok, []}
       end
     end)
+  end
+
+  @doc ~s"""
+  Returns the combined data for all projects in the slugs list.
+  The result is a list of data points with a datetime. For each datetime the marketcap
+  and volume are the sum of all marketcaps and volumes of the projects for that date
+  """
+  def combined_history_stats(
+        _,
+        %{slugs: slugs, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, measurement_names_map} <- Measurement.names_from_slugs(slugs),
+         measurement_names <- measurement_names_map |> Enum.map(fn {k, _v} -> k end),
+         {:ok, result} <-
+           Prices.Store.fetch_combined_mcap_volume(measurement_names, from, to, interval) do
+      {:ok, result}
+    else
+      error ->
+        error_msg = "Cannot get combined history stats for a list of slugs."
+        Logger.error(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
   end
 
   def related_posts(%Project{ticker: ticker} = _project, _args, _resolution) when is_nil(ticker),

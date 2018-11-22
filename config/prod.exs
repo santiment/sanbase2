@@ -19,7 +19,7 @@ config :sanbase, ecto_repos: [Sanbase.Repo]
 # by defining defining `:url` in the ClickhouseRepo `init` function.
 config :sanbase, Sanbase.ClickhouseRepo,
   adapter: ClickhouseEcto,
-  loggers: [Ecto.LogEntry],
+  loggers: [Ecto.LogEntry, Sanbase.Prometheus.EctoInstrumenter],
   hostname: "clickhouse",
   port: 8123,
   database: "default",
@@ -27,7 +27,8 @@ config :sanbase, Sanbase.ClickhouseRepo,
   password: "",
   pool_timeout: 60_000,
   timeout: 60_000,
-  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"}
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"},
+  max_overflow: 5
 
 # Do not print debug messages in production
 config :logger, level: :info

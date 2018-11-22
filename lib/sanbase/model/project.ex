@@ -104,6 +104,10 @@ defmodule Sanbase.Model.Project do
     "project with id #{id}"
   end
 
+  def sanbase_link(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
+    SanbaseWeb.Endpoint.frontend_url() <> "/projects/#{cmc_id}"
+  end
+
   def initial_ico(%Project{id: id}) do
     Ico
     |> where([i], i.project_id == ^id)
@@ -450,5 +454,70 @@ defmodule Sanbase.Model.Project do
       |> Enum.reject(fn x -> x == [] end)
 
     {:ok, addresses}
+  end
+
+  @doc """
+  Return all projects from the list which trading volume is over a given threshold
+  """
+  def projects_over_volume_threshold(projects, volume_threshold) do
+    measurements_list =
+      projects
+      |> Enum.map(fn %Project{} = project -> Sanbase.Influxdb.Measurement.name_from(project) end)
+      |> Enum.reject(&is_nil/1)
+
+    case measurements_list do
+      [] ->
+        []
+
+      [_ | _] ->
+        measurements_str =
+          measurements_list
+          |> Enum.map(fn x -> "\"#{x}\"" end)
+          |> Enum.join(", ")
+
+        volume_over_threshold_projects =
+          Sanbase.Prices.Store.volume_over_threshold(
+            measurements_str,
+            Timex.shift(Timex.now(), days: -1),
+            Timex.now(),
+            volume_threshold
+          )
+
+        projects
+        |> Enum.filter(fn %Project{} = project ->
+          Sanbase.Influxdb.Measurement.name_from(project) in volume_over_threshold_projects
+        end)
+    end
+  end
+
+  def github_organization(%Project{coinmarketcap_id: slug}), do: github_organization(slug)
+
+  def github_organization(slug) do
+    github_link =
+      from(
+        p in Project,
+        where: p.coinmarketcap_id == ^slug,
+        select: p.github_link
+      )
+      |> Repo.one()
+
+    # nil will break the regex
+    github_link = github_link || ""
+
+    case Regex.run(~r{https://(?:www.)?github.com/(.+)}, github_link) do
+      [_, github_path] ->
+        org =
+          github_path
+          |> String.downcase()
+          |> String.split("/")
+          |> hd
+
+        {:ok, org}
+
+      nil ->
+        {:error,
+         {:github_link_error,
+          "Invalid or missing github link for #{slug}: #{inspect(github_link)}"}}
+    end
   end
 end

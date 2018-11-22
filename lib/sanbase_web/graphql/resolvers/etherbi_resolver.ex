@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   alias Sanbase.Repo
-  alias Sanbase.Model.{Project, ExchangeEthAddress}
+  alias Sanbase.Model.{Project, ExchangeAddress}
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
 
   alias Sanbase.Blockchain
@@ -174,7 +174,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   def exchange_wallets(_root, _args, _resolution) do
-    {:ok, ExchangeEthAddress |> Repo.all()}
+    {:ok, ExchangeAddress |> Repo.all() |> Repo.preload(:infrastructure)}
   end
 
   @doc ~S"""

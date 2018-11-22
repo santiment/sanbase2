@@ -20,3 +20,19 @@ config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
 config :sanbase, Sanbase.Notifications.Insight,
   webhook_url: {:system, "INSIGHTS_DISCORD_WEBHOOK_URL"},
   insights_discord_publish_user: {:system, "INSIGHTS_DISCORD_PUBLISH_USER", "New Insight"}
+
+config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
+  webhook_url: {:system, "DAA_SIGNAL_DISCORD_WEBHOOK_URL"},
+  publish_user: {:system, "DAA_SIGNAL_DISCORD_PUBLISH_USER", "Daily Active Addresses Going Up"},
+  trading_volume_threshold: {:system, "DAA_SIGNAL_TRADING_VOLUME_THRESHOLD", "1000000"},
+  timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "30"},
+  timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "2"},
+  change: {:system, "DAA_SIGNAL_CHANGE", "3"}
+
+config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
+  webhook_url: {:system, "EXCHANGE_INFLOW_DISCORD_WEBHOOK_URL"},
+  trading_volume_threshold: {:system, "EXCHANGE_INFLOW_TRADING_VOLUME_THRESHOLD", "1000000"},
+  publish_user:
+    {:system, "EXCHANGE_INFLOW_DISCORD_PUBLISH_USER", "Tokens Moved Into An Exchange"},
+  signal_trigger_percent: {:system, "EXCHANGE_INFLOW_TRIGER_PERCENT", "1"},
+  interval_days: {:system, "EXCHANGE_INFLOW_INTERVAL_DAYS", "1"}

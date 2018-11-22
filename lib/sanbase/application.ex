@@ -9,10 +9,14 @@ defmodule Sanbase.Application do
       Envy.auto_load()
     end
 
+    container_type = System.get_env("CONTAINER_TYPE") || "all"
+
+    init(container_type)
+
     {children, opts} =
-      case System.get_env("CONTAINER_TYPE") || "all" do
+      case container_type do
         "web" ->
-          Logger.info("Starting WEB Sanbase.")
+          Logger.info("Starting Web Sanbase.")
           Sanbase.Application.WebSupervisor.children()
 
         "scrapers" ->
@@ -42,10 +46,56 @@ defmodule Sanbase.Application do
           {children, opts}
       end
 
+    children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
+
     # Add error tracking through sentry
     :ok = :error_logger.add_report_handler(Sentry.Logger)
 
     Supervisor.start_link(children, opts)
+  end
+
+  def init(container_type) do
+    # Common inits
+
+    # Prometheus related
+    Sanbase.Prometheus.EctoInstrumenter.setup()
+
+    Sanbase.Prometheus.PipelineInstrumenter.setup()
+
+    Sanbase.Prometheus.Exporter.setup()
+
+    # Container specific init
+    case container_type do
+      "all" ->
+        Sanbase.Application.WebSupervisor.init()
+        Sanbase.Application.ScrapersSupervisor.init()
+        Sanbase.Application.WorkersSupervisor.init()
+
+      "web" ->
+        Sanbase.Application.WebSupervisor.init()
+
+      "scrapers" ->
+        Sanbase.Application.ScrapersSupervisor.init()
+
+      "workers" ->
+        Sanbase.Application.WorkersSupervisor.init()
+    end
+  end
+
+  @doc ~s"""
+  Children common for all types of container types
+  """
+  def common_children() do
+    [
+      # Start the endpoint when the application starts
+      SanbaseWeb.Endpoint,
+
+      # Start the Postgres Ecto repository
+      Sanbase.Repo,
+
+      # Time series Prices DB connection
+      Sanbase.Prices.Store.child_spec()
+    ]
   end
 
   def config_change(changed, _new, removed) do
@@ -53,14 +103,14 @@ defmodule Sanbase.Application do
     :ok
   end
 
-  def faktory_supervisor() do
-    if System.get_env("FAKTORY_HOST") && :ets.whereis(Faktory.Configuration) == :undefined do
-      import Supervisor.Spec
+  def start_faktory?() do
+    System.get_env("FAKTORY_HOST") && :ets.whereis(Faktory.Configuration) == :undefined
+  end
 
-      Faktory.Configuration.init()
-      [supervisor(Faktory.Supervisor, [])]
-    else
-      []
-    end
+  def faktory() do
+    import Supervisor.Spec
+
+    Faktory.Configuration.init()
+    supervisor(Faktory.Supervisor, [])
   end
 end

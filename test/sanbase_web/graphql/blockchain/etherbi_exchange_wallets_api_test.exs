@@ -3,7 +3,7 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   @moduletag checkout_repo: [Sanbase.Repo, Sanbase.TimescaleRepo]
   @moduletag timescaledb: true
 
-  alias Sanbase.Model.ExchangeEthAddress
+  alias Sanbase.Model.ExchangeAddress
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -53,10 +53,10 @@ defmodule Sanbase.Etherbi.ExchangeWalletsApiTest do
   end
 
   test "returning a list of wallets from the DB", context do
-    %ExchangeEthAddress{name: "Binance", address: "0x12345"}
+    %ExchangeAddress{name: "Binance", address: "0x12345"}
     |> Repo.insert!()
 
-    %ExchangeEthAddress{name: "Kraken", address: "0x54321"}
+    %ExchangeAddress{name: "Kraken", address: "0x54321"}
     |> Repo.insert!()
 
     query = """

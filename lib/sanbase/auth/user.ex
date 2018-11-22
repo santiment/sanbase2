@@ -145,7 +145,7 @@ defmodule Sanbase.Auth.User do
 
   def update_san_balance_changeset(user) do
     user = Repo.preload(user, :eth_accounts)
-    san_balance = san_balance_for_eth_accounts(user.eth_accounts)
+    san_balance = san_balance_for_eth_accounts(user)
 
     user
     |> change(san_balance: san_balance, san_balance_updated_at: Timex.now())
@@ -179,11 +179,16 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  defp san_balance_for_eth_accounts(eth_accounts) do
-    eth_accounts
-    |> Enum.map(&EthAccount.san_balance/1)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+  defp san_balance_for_eth_accounts(%User{eth_accounts: eth_accounts, san_balance: san_balance}) do
+    eth_accounts_balances =
+      eth_accounts
+      |> Enum.map(&EthAccount.san_balance/1)
+      |> Enum.reject(&is_nil/1)
+
+    case Enum.member?(eth_accounts_balances, :error) do
+      true -> san_balance
+      _ -> Enum.reduce(eth_accounts_balances, Decimal.new(0), &Decimal.add/2)
+    end
   end
 
   def find_or_insert_by_email(email, username \\ nil) do

@@ -246,7 +246,11 @@ export const Detailed = ({
         </title>
       </Helmet>
       {!isDesktop && <Search />}
-      <DetailedHeader {...Project} isLoggedIn={isLoggedIn} />
+      <DetailedHeader
+        isDesktop={isDesktop}
+        {...Project}
+        isLoggedIn={isLoggedIn}
+      />
       {isDesktop ? (
         <div className='information'>
           <Panel zero>{projectContainerChart}</Panel>

@@ -265,7 +265,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&EtherbiResolver.burn_rate/3)
+      # this is cached in the resolver
+      resolve(&EtherbiResolver.burn_rate/3)
     end
 
     @desc ~s"""
@@ -284,7 +285,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&EtherbiResolver.transaction_volume/3)
+      # this is cached in the resolver
+      resolve(&EtherbiResolver.transaction_volume/3)
     end
 
     @desc ~s"""

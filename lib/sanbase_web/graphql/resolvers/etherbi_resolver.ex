@@ -131,23 +131,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   def token_circulation(
-        root,
+        _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
-        resolution
+        _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug) do
-      Cache.func(
-        fn -> calculate_token_circulation(contract_address, token_decimals, args) end,
-        {:token_circulation, contract_address},
-        %{from_datetime: args.from, to_datetime: args.to}
-      ).()
-    end
-  end
-
-  defp calculate_token_circulation(contract_address, token_decimals, args) do
-    %{from: from, to: to, interval: interval, slug: slug} = args
-
-    with {:ok, from, to, interval} <-
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
            Utils.calibrate_interval(
              Blockchain.TokenCirculation,
              contract_address,

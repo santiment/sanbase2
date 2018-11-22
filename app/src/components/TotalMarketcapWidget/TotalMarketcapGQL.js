@@ -16,12 +16,7 @@ export const projectsListHistoryStatsGQL = gql`
     $to: DateTime!
     $slugs: [String]!
   ) {
-    projectsListHistoryStats(
-      from: $from
-      to: $to
-      slugs: $slugs
-      interval: "1d"
-    ) {
+    projectsListHistoryStats(from: $from, to: $to, slugs: $slugs) {
       marketcap
       volume
       datetime

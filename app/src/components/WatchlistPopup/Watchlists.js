@@ -46,8 +46,10 @@ const Watchlists = ({
             <Link
               className='watchlists__item__link'
               to={{
-                  pathname: '/assets/list',
-                  search: qs.stringify(updateSearchQuery(searchParams, name, id))
+                pathname: '/assets/list',
+                search: qs.stringify(
+                  updateSearchQuery(qs.parse(searchParams), name, id)
+                )
               }}
             >
               <DIV className='watchlists__item__name'>
@@ -124,20 +126,20 @@ const Watchlists = ({
                 />
               )}
             </div>
-          ))
-        ) : (
-          <div className='watchlists__empty-list-msg'>
-            You don't have any watchlists yet.
           </div>
-        )}
-      </div>
-      <CreateWatchlistBtn
-        watchlistUi={watchlistUi}
-        createWatchlist={createWatchlist}
-      />
+        ))
+      ) : (
+        <div className='watchlists__empty-list-msg'>
+          You don't have any watchlists yet.
+        </div>
+      )}
     </div>
-  )
-}
+    <CreateWatchlistBtn
+      watchlistUi={watchlistUi}
+      createWatchlist={createWatchlist}
+    />
+  </div>
+)
 
 export default compose(
   createSkeletonProvider(

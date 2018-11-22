@@ -33,18 +33,18 @@ export const projectsListHistoryStatsGQL = gql`
 export const constructTotalMarketcapGQL = (slugs, from) => {
   if (slugs.length === 0) gql``
   return gql`
-query historyPrice {
-  ${slugs.reduce((acc, [slug, escapedAlias]) => {
+  query historyPrice {
+    ${slugs.reduce((acc, [slug, escapedAlias]) => {
     return (
       acc +
-      `
-    ${escapedAlias}: historyPrice(from: "${from}", slug: "${slug}", interval: "1d") {
-      marketcap
-      volume
-      datetime
-    }`
+        `
+      ${escapedAlias}: historyPrice(from: "${from}", slug: "${slug}", interval: "1d") {
+        marketcap
+        volume
+        datetime
+      }`
     )
   }, ``)}
-}
+  }
 `
 }

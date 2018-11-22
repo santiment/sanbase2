@@ -2,6 +2,7 @@ import React from 'react'
 import { ResponsiveContainer, AreaChart, Area, XAxis } from 'recharts'
 import Widget from '../Widget/Widget'
 import { formatNumber } from '../../utils/formatting'
+import { mergeTimeseriesByKey } from '../../utils/utils'
 import './TotalMarketcapWidget.scss'
 
 const currencyFormatOptions = {
@@ -65,15 +66,32 @@ const combineDataset = (totalMarketHistory, restProjects) => {
   if (LAST_INDEX < 0) {
     return
   }
+  // console.time('mergindTimeseries-MY')
+  // for (const key of Object.keys(restProjects)) {
+  //   mergeProjectWithTotal(
+  //     totalMarketHistory,
+  //     LAST_INDEX,
+  //     restProjects[key],
+  //     key
+  //   )
+  // }
+  // console.timeEnd('mergindTimeseries-MY')
+  const test = Object.keys(restProjects).map(key =>
+    restProjects[key].map(({ marketcap, datetime }) => ({
+      datetime,
+      [constructProjectMarketcapKey(key)]: marketcap
+    }))
+  )
+  console.log(test)
 
-  for (const key of Object.keys(restProjects)) {
-    mergeProjectWithTotal(
-      totalMarketHistory,
-      LAST_INDEX,
-      restProjects[key],
-      key
-    )
-  }
+  console.time('mergindTimeseries-UTILS')
+  const result = mergeTimeseriesByKey({
+    timeseries: [totalMarketHistory, ...test],
+    key: 'datetime'
+  })
+  console.timeEnd('mergindTimeseries-UTILS')
+  console.log(result)
+  return result
 }
 
 const COLORS = ['#ffa000', '#1111bb', '#ab47bc']
@@ -96,7 +114,7 @@ const TotalMarketcapWidget = ({
   historyPrices: { TOTAL_MARKET, ...restProjects },
   loading
 }) => {
-  const {
+  let {
     totalmarketCapPrice = '.',
     volumeAmplitudePrice = '.',
     marketcapDataset = []
@@ -106,7 +124,8 @@ const TotalMarketcapWidget = ({
 
   if (!loading && Object.keys(restProjects).length > 0) {
     console.log({ restProjects })
-    combineDataset(marketcapDataset, restProjects)
+    // combineDataset(marketcapDataset, restProjects)
+    marketcapDataset = combineDataset(marketcapDataset, restProjects)
     restAreas = getTop3Area(restProjects)
   }
 

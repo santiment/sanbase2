@@ -116,20 +116,33 @@ const getStartOfTheDay = () => {
   return today.toISOString()
 }
 
+// NOTE(vanguard): There are possibility to optimize this algorithm
+/*
+  O(m * n * m * (n-x))
+  1. m - iterating over 'timeseries' to find longest
+  2. n - mapping over longest
+  3. m - reducing 'timeseries'
+  4. (n-x) - to find same date inside iterated 'timeseries' array
+
+  Merging 4 arrays with length 93 took me ~5.3 ms.
+
+  1. after gettings longestTS, we still iterate over this it in timeseries.reduce
+  2. after finding Data object in the reduced timeseries method it still persist there. So the array length does not decrease after time and every search takes same amount of iterations
+*/
 const mergeTimeseriesByKey = ({ timeseries, key }) => {
   const longestTS = timeseries.reduce((acc, val) => {
     return acc.length > val.length ? acc : val
   }, [])
-  return longestTS.map(data => {
+  return longestTS.map(longestTSData => {
     return timeseries.reduce(
       (acc, val) => {
         return {
           ...acc,
-          ...val.find(data2 => data2[key] === data[key])
+          ...val.find(data2 => data2[key] === longestTSData[key])
         }
       },
       {
-        ...data
+        ...longestTSData
       }
     )
   })

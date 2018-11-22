@@ -122,8 +122,6 @@ const TotalMarketcapWidget = ({
   let restAreas = null
 
   if (!loading && Object.keys(restProjects).length > 0) {
-    console.log({ restProjects })
-    // combineDataset(marketcapDataset, restProjects)
     marketcapDataset = combineDataset(marketcapDataset, restProjects)
     restAreas = getTop3Area(restProjects)
   }

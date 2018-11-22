@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-22-11 | v.0.20.2 'Phobos':
+
+  Add the categories promo in the navigation panel
+
 - 2018-22-10 | v.0.19.3 'Phobos':
 
   Upgrade Metamask

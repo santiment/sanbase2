@@ -130,6 +130,55 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
+  def token_circulation(
+        root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        resolution
+      ) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug) do
+      Cache.func(
+        fn -> calculate_token_circulation(contract_address, token_decimals, args) end,
+        {:token_circulation, contract_address},
+        %{from_datetime: args.from, to_datetime: args.to}
+      ).()
+    end
+  end
+
+  defp calculate_token_circulation(contract_address, token_decimals, args) do
+    %{from: from, to: to, interval: interval, slug: slug} = args
+
+    with {:ok, from, to, interval} <-
+           Utils.calibrate_interval(
+             Blockchain.TokenCirculation,
+             contract_address,
+             from,
+             to,
+             interval,
+             60 * 60,
+             50
+           ),
+         {:ok, token_circulation} <-
+           Blockchain.TokenCirculation.token_circulation(
+             :less_than_a_day,
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
+      result =
+        token_circulation
+        |> Utils.fit_from_datetime(args)
+
+      {:ok, result}
+    else
+      error ->
+        error_msg = "Can't fetch token circulation for #{slug}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
   @doc ~S"""
     Return the number of daily active addresses for a given slug
   """

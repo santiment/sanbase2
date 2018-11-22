@@ -147,7 +147,7 @@ defmodule Sanbase.Notifications.Discord do
         |> Enum.map(fn list -> Enum.join(list, ",") end)
 
       size = low_values |> Enum.count()
-      bar_width = 6 * round(90 / size)
+      bar_width = if size > 20, do: 6 * round(90 / size), else: 23
 
       line_chart =
         if Keyword.get(opts, :daa),
@@ -163,7 +163,7 @@ defmodule Sanbase.Notifications.Discord do
         chds=#{line_chart.chds}#{min},#{max}&
         chd=#{line_chart.chd}|#{low_str}|#{open_str}|#{close_str}|#{high_str}&
         chm=F,,1,1:#{size},#{bar_width}&
-        chma=10,10,20,10&
+        chma=10,20,20,10&
         &chco=00FF00
       ) |> String.replace(~r/[\n\s+]+/, "")}
     else
@@ -174,7 +174,7 @@ defmodule Sanbase.Notifications.Discord do
   end
 
   # Private functions
-  defp daa_chart_values(slug, from, to, size) do
+  defp daa_chart_values(slug, _from, to, size) do
     from = Timex.shift(to, days: -size + 1)
 
     with {:ok, contract, _} <- Project.contract_info_by_slug(slug),

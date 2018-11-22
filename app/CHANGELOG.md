@@ -4,6 +4,16 @@
 
   Add the categories promo in the navigation panel
 
+- 2018-19-11 | v.0.20.1 'Phobos':
+
+  Fix crushing, if watchlist is public and a user is removing it
+  Fix css z-index of 2 modals (watchlist poput)
+
+- 2018-19-11 | v.0.20.0 'Phobos':
+
+  Fix polling fetchUserLists for anonymous users
+  Show a preventing modal window, when a user is deleting his watchlist
+
 - 2018-22-10 | v.0.19.3 'Phobos':
 
   Upgrade Metamask

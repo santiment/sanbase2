@@ -19,7 +19,7 @@ defmodule Sanbase.Application.WebSupervisor do
       Sanbase.TimescaleRepo,
 
       # Start the Clickhouse Repo
-      start_in({Sanbase.ClickhouseRepo, []}, [:prod]),
+      start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 
       # Start the Elasticsearch Cluster connection
       Sanbase.Elasticsearch.Cluster,
@@ -48,7 +48,14 @@ defmodule Sanbase.Application.WebSupervisor do
 
       # Transform a list of transactions into a list of transactions
       # where addresses are marked whether or not they are an exchange address
-      Sanbase.Clickhouse.MarkExchanges.child_spec(%{})
+      Sanbase.Clickhouse.MarkExchanges.child_spec(%{}),
+
+      # Start libcluster
+      {Cluster.Supervisor,
+       [
+         Application.get_env(:libcluster, :topologies),
+         [name: Sanbase.ClusterSupervisor]
+       ]}
     ]
 
     opts = [strategy: :one_for_one, name: Sanbase.WebSupervisor, max_restarts: 5, max_seconds: 1]

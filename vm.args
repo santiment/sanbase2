@@ -1,0 +1,5 @@
+## Node name
+-name sanbase@<%= "${POD_A_RECORD}.${NAMESPACE}.pod.cluster.local" %>
+
+## Node cookie, used for distribution
+-setcookie ${NODE_COOKIE}

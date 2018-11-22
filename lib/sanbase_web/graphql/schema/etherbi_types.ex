@@ -19,5 +19,12 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
   object :wallet do
     field(:name, non_null(:string))
     field(:address, non_null(:string))
+    field(:is_dex, :boolean)
+    field(:infrastructure, :infrastructure)
+  end
+
+  object :infrastructure do
+    field(:id, non_null(:integer))
+    field(:code, non_null(:string))
   end
 end

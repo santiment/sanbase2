@@ -18,14 +18,16 @@ defmodule SanbaseWeb.Graphql.PriceTypes do
     field(:close_price_usd, :float)
   end
 
-  object :group_stats do
+  object :project_stats do
+    field(:slug, :string)
     field(:volume, :float)
     field(:marketcap, :float)
-    field(:marketcap_percent, list_of(:slug_mcap))
+    field(:marketcap_percent, :float)
   end
 
-  object :slug_mcap do
-    field(:slug, :string)
-    field(:percent, :float)
+  object :combined_projects_stats do
+    field(:datetime, non_null(:datetime))
+    field(:volume, :float)
+    field(:marketcap, :float)
   end
 end

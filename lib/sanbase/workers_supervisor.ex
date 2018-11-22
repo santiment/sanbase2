@@ -1,19 +1,24 @@
 defmodule Sanbase.Application.WorkersSupervisor do
+  import Sanbase.ApplicationUtils
+
+  def init(), do: :ok
+
+  @doc ~s"""
+  Return the children and options that will be started in the workers container.
+  Along with these children all children from `Sanbase.Application.common_children/0`
+  will be started, too.
+  """
   def children do
-    children =
-      [
-        # Start the Postgres Ecto repository
-        Sanbase.Repo,
+    children = [
+      # Time series Github DB connection
+      Sanbase.Github.Store.child_spec(),
 
-        # Start the endpoint when the application starts. Used for healtchecks
-        SanbaseWeb.Endpoint,
-
-        # Time series Prices DB connection
-        Sanbase.Prices.Store.child_spec(),
-
-        # Time series Github DB connection
-        Sanbase.Github.Store.child_spec()
-      ] ++ Sanbase.Application.faktory_supervisor()
+      # Start the Faktory Supervisor
+      start_if(
+        &Sanbase.Application.faktory/0,
+        &Sanbase.Application.start_faktory?/0
+      )
+    ]
 
     opts = [
       strategy: :one_for_one,

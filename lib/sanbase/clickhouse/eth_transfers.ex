@@ -24,13 +24,10 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   use Ecto.Schema
 
   require Logger
-  require Sanbase.ClickhouseRepo
+  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  import Ecto.Query
-
-  alias __MODULE__
-  alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
+  alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
@@ -135,6 +132,20 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       |> Enum.map(&reduce_eth_spent/1)
 
     {:ok, total_eth_spent_over_time}
+  end
+
+  @doc ~s"""
+  Returns the historical balances of given etherium address in all intervals between two datetimes.
+  """
+  def historical_balance(address, from_datetime, to_datetime, interval) do
+    {query, args} = historical_balance_query(address, interval)
+
+    balances =
+      query
+      |> ClickhouseRepo.query_transform(args, fn [dt, value] -> {dt, value} end)
+      |> ClickhouseCommon.convert_historical_balance_result(from_datetime, to_datetime, interval)
+
+    {:ok, balances}
   end
 
   # Private functions
@@ -296,6 +307,37 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
+  defp historical_balance_query(address, interval) do
+    args = [address]
+
+    dt_round = ClickhouseCommon.datetime_rounding_for_interval(interval)
+
+    query = """
+    SELECT dt, runningAccumulate(state) AS total_balance FROM (
+      SELECT dt, sumState(value) AS state FROM (
+        SELECT
+          toUnixTimestamp(#{dt_round}) as dt, from AS address, sum(-value / #{@eth_decimals}) AS value
+        FROM #{@table}
+        PREWHERE from = ?1
+        GROUP BY dt, address
+
+        UNION ALL
+
+        SELECT
+          toUnixTimestamp(#{dt_round}) AS dt, to AS address, sum(value / #{@eth_decimals}) AS value
+        FROM #{@table}
+        PREWHERE to = ?1
+        GROUP BY dt, address
+      )
+      GROUP BY dt
+      ORDER BY dt
+    )
+    ORDER BY dt
+    """
+
+    {query, args}
+  end
+
   defp reduce_eth_spent([%{datetime: datetime} | _] = values) do
     total_eth_spent =
       values
@@ -305,16 +347,4 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     %{datetime: datetime, eth_spent: total_eth_spent}
   end
-
-  defp divide_by_eth_decimals({:ok, transfers} = tuple) do
-    transfers =
-      transfers
-      |> Enum.map(fn %EthTransfers{trx_value: trx_value} = eth_transfer ->
-        %EthTransfers{eth_transfer | trx_value: trx_value / @eth_decimals}
-      end)
-
-    {:ok, transfers}
-  end
-
-  defp divide_by_eth_decimals(data), do: data
 end

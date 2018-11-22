@@ -57,6 +57,7 @@ defmodule SanbaseWeb.Graphql.TechIndicatorsTypes do
     value(:professional_traders_chat_overview)
     value(:telegram_chats_overview)
     value(:telegram_discussion_overview)
+    value(:discord_discussion_overview)
   end
 
   enum :topic_search_sources do

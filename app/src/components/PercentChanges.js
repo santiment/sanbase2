@@ -2,7 +2,7 @@ import React from 'react'
 import cx from 'classnames'
 import './PercentChanges.css'
 
-export const PercentChanges = ({ changes }) => {
+export const PercentChanges = ({ changes, className }) => {
   if (!changes) {
     return ''
   }
@@ -10,6 +10,7 @@ export const PercentChanges = ({ changes }) => {
   return (
     <div
       className={cx({
+        [className]: !!className,
         'percent-changes': true,
         'percent-changes--positive': normalizedChanges >= 0,
         'percent-changes--negative': normalizedChanges < 0

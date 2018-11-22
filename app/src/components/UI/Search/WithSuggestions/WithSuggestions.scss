@@ -1,0 +1,66 @@
+@import '../../../../mixins.scss';
+
+$border-color-night: #4a4a4a;
+
+.wrapper {
+  position: relative;
+}
+
+.suggestions {
+  @include border-box;
+
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid #d4d4d5;
+  border-radius: 4px;
+  background-color: #fff;
+
+  :global(.night-mode) & {
+    background-color: #232529;
+    color: #a0a0a0;
+    border-color: $border-color-night;
+  }
+}
+
+.suggestions__item {
+  border-bottom: 1px solid #dededf;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  :global(.night-mode) & {
+    border-color: $border-color-night;
+  }
+}
+
+.suggestion {
+  @include border-box;
+  padding: 12px;
+  display: inline-block;
+  width: 100%;
+  cursor: pointer;
+  font-family: 'Source Sans Pro', sans-serif;
+  font-size: 13px;
+
+  &:hover,
+  &:focus {
+    background-color: #f3f4f5;
+
+    :global(.night-mode) & {
+      background-color: #2e2e2e;
+    }
+  }
+}
+
+.noresults {
+  cursor: initial;
+  &:hover,
+  &:focus {
+    background-color: inherit !important;
+  }
+}

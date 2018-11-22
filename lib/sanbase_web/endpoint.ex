@@ -43,6 +43,12 @@ defmodule SanbaseWeb.Endpoint do
     plug(Corsica, origins: ["http://localhost:3000", "http://0.0.0.0:4000"])
   end
 
+  # makes the /metrics URL happen
+  plug(Sanbase.Prometheus.Exporter)
+
+  # measures pipeline exec times
+  plug(Sanbase.Prometheus.PipelineInstrumenter)
+
   plug(SanbaseWeb.Router)
 
   @doc """

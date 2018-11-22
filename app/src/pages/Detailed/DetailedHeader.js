@@ -7,14 +7,10 @@ import { compose } from 'recompose'
 import ProjectIcon from './../../components/ProjectIcon'
 import PercentChanges from './../../components/PercentChanges'
 import WatchlistsPopup from './../../components/WatchlistPopup/WatchlistsPopup'
-import {
-  formatCryptoCurrency,
-  formatBTC,
-  formatNumber
-} from './../../utils/formatting'
-import './DetailedHeader.css'
+import ChooseWatchlists from './../../components/WatchlistPopup/ChooseWatchlists'
+import { formatNumber } from './../../utils/formatting'
+import styles from './DetailedHeader.module.css'
 
-const H1 = createSkeletonElement('h1', 'pending-header pending-h1')
 const DIV = createSkeletonElement('div', 'pending-header pending-div')
 
 const DetailedHeader = ({
@@ -26,55 +22,58 @@ const DetailedHeader = ({
   },
   loading,
   empty,
-  isLoggedIn
-}) => {
-  return (
-    <div className='detailed-head'>
-      <div className='detailed-project-about'>
-        <div className='detailed-name'>
-          <H1>{project.name}</H1>
-          <ProjectIcon name={project.name || ''} size={22} />
-          <DIV className='detailed-ticker-name'>
-            {(project.ticker || '').toUpperCase()}
-          </DIV>
-          &nbsp; &nbsp;
-          {isLoggedIn &&
-            !loading && (
-            <WatchlistsPopup
-              projectId={project.id}
-              slug={project.slug}
-              isLoggedIn={isLoggedIn}
-            />
-          )}
+  isLoggedIn,
+  isDesktop
+}) => (
+  <div className={styles.wrapper}>
+    <div className={styles.left}>
+      <DIV className={styles.logo}>
+        <ProjectIcon
+          name={project.name || ''}
+          ticker={project.ticker}
+          size={22}
+        />
+        <div className='detailed-ticker-name'>
+          {(project.ticker || '').toUpperCase()}
         </div>
-        <DIV className='datailed-project-description'>
-          {project.description}
-        </DIV>
+      </DIV>
+      <div className={styles.name}>
+        <h1>{project.name}</h1>
+        <DIV className={styles.description}>{project.description}</DIV>
       </div>
-
-      <div className='detailed-price'>
-        <div className='detailed-price-description'>Today's changes</div>
-        <div className='detailed-price-usd'>
-          {project.priceUsd &&
-            formatNumber(project.priceUsd, { currency: 'USD' })}
-          &nbsp;
-          {!loading &&
-            project && <PercentChanges changes={project.percentChange24h} />}
-        </div>
-        <div className='detailed-price-btc'>
-          {project.priceBtc &&
-            formatCryptoCurrency('BTC', formatBTC(project.priceBtc))}
-        </div>
-      </div>
+      {isLoggedIn &&
+        isDesktop &&
+        !loading && (
+        <WatchlistsPopup
+          projectId={project.id}
+          slug={project.slug}
+          isLoggedIn={isLoggedIn}
+        >
+          <ChooseWatchlists />
+        </WatchlistsPopup>
+      )}
     </div>
-  )
-}
+    <div className={styles.price}>
+      <div className={styles.priceUsd}>
+        {project.priceUsd &&
+          formatNumber(project.priceUsd, { currency: 'USD' })}
+      </div>
+      {!loading &&
+        project && (
+        <PercentChanges
+          className={styles.percentChanges}
+          changes={project.percentChange24h}
+        />
+      )}
+    </div>
+  </div>
+)
 
 export default compose(
   createSkeletonProvider(
     {
       project: {
-        name: '******',
+        name: '',
         description: '______ ___ ______ __ _____ __ ______',
         ticker: '',
         percentChange24h: 0,

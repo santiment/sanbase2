@@ -3,6 +3,7 @@ defmodule Sanbase.Auth.UserTest do
 
   import Mockery
   import Sanbase.Factory
+  import ExUnit.CaptureLog
 
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Repo
@@ -53,6 +54,21 @@ defmodule Sanbase.Auth.UserTest do
              2,
              :seconds
            )
+  end
+
+  test "san_balance! returns cached result when EthAccount.san_balance fails" do
+    mock(Sanbase.InternalServices.Ethauth, :san_balance, {:error, "foo"})
+
+    user =
+      insert(:user,
+        san_balance: Decimal.new(100),
+        eth_accounts: [%EthAccount{address: "0x000000000001"}],
+        privacy_policy_accepted: true
+      )
+
+    capture_log(fn ->
+      assert User.san_balance!(user) == Decimal.new(100)
+    end)
   end
 
   test "san_balance! does not update the balance if the balance cache is not stale" do

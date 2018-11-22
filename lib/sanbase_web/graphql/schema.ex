@@ -12,12 +12,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     EtherbiResolver,
     VotingResolver,
     TechIndicatorsResolver,
+    SocialDataResolver,
     FileResolver,
     PostResolver,
     MarketSegmentResolver,
     ApikeyResolver,
     UserListResolver,
-    ElasticsearchResolver
+    ElasticsearchResolver,
+    ClickhouseResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -46,11 +48,13 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.VotingTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
+  import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
   import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
   import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
+  import_types(SanbaseWeb.Graphql.ClickhouseTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -69,6 +73,11 @@ defmodule SanbaseWeb.Graphql.Schema do
     [
       Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()
     ]
+  end
+
+  def middleware(middlewares, field, object) do
+    SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
+    |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
   end
 
   query do
@@ -171,14 +180,27 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Fetch combined stats for a given list of project's slugs
+    Fetch data for each of the projects in the slugs lists
     """
-    field :projects_group_stats, list_of(:group_stats) do
+    field :projects_list_stats, list_of(:project_stats) do
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      cache_resolve(&PriceResolver.projects_group_stats/3)
+      cache_resolve(&PriceResolver.multiple_projects_stats/3)
+    end
+
+    @desc ~s"""
+    Fetch data bucketed by interval. The returned marketcap and volume are the sum
+    of the marketcaps and volumes of all projects for that given time interval
+    """
+    field :projects_list_history_stats, list_of(:combined_projects_stats) do
+      arg(:slugs, non_null(list_of(:string)))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
 
     @desc "Returns a list of available github repositories."
@@ -210,6 +232,23 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 
       cache_resolve(&GithubResolver.activity/3)
+    end
+
+    @desc ~s"""
+    Gets the pure dev activity of a project. Pure dev activity is the number of all events
+    excluding Comments, Issues and PR Comments
+    """
+    field :dev_activity, list_of(:activity_point) do
+      arg(:slug, :string)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string))
+      arg(:transform, :string, default_value: "None")
+      arg(:moving_average_interval_base, :integer, default_value: 7)
+
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
+
+      cache_resolve(&GithubResolver.dev_activity/3)
     end
 
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
@@ -476,7 +515,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       ])
 
       complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
-      resolve(&TechIndicatorsResolver.emojis_sentiment/3)
+      cache_resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end
 
     @desc ~s"""
@@ -487,11 +526,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       * interval - an integer followed by one of: `m`, `h`, `d`, `w`
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-      * socialVolumeType - one of the following:
-        1. PROFESSIONAL_TRADERS_CHAT_OVERVIEW
-        2. TELEGRAM_CHATS_OVERVIEW
-        3. TELEGRAM_DISCUSSION_OVERVIEW
-        It is used to select the source of the mentions count.
+      * socialVolumeType - the source of mention counts, one of the following:
+        1. "PROFESSIONAL_TRADERS_CHAT_OVERVIEW" - shows how many times the given project has been mentioned in the professional traders chat
+        2. "TELEGRAM_CHATS_OVERVIEW" - shows how many times the given project has been mentioned across all telegram chats, except the project's own community chat (if there is one)
+        3. "TELEGRAM_DISCUSSION_OVERVIEW" - the general volume of messages in the project's community chat (if there is one)
+        4. "DISCORD_DISCUSSION_OVERVIEW" - shows how many times the given project has been mentioned in the discord channels
     """
     field :social_volume, list_of(:social_volume) do
       arg(:slug, non_null(:string))
@@ -540,6 +579,32 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TechIndicatorsResolver.topic_search/3)
     end
 
+    @desc ~s"""
+    Returns lists with trending words and their corresponding trend score.
+
+    Arguments description:
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * size - an integer showing how many words should be included in the top list (max 100)
+      * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :trending_words, list_of(:trending_words) do
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:hour, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(ApiTimeframeRestriction)
+
+      cache_resolve(&SocialDataResolver.trending_words/3)
+    end
+
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
     field :exchange_wallets, list_of(:wallet) do
       middleware(BasicAuth)
@@ -582,12 +647,38 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&UserListResolver.fetch_all_public_user_lists/3)
     end
 
+    @desc ~s"""
+    Fetch public favourites list by list id.
+    If the list is owned by the current user then the list can be private as well.
+    This query returns either a single user list item or null.
+    """
+    field :user_list, :user_list do
+      arg(:user_list_id, non_null(:id))
+
+      resolve(&UserListResolver.user_list/3)
+    end
+
     @desc "Returns statistics for the data stored in elasticsearch"
     field :elasticsearch_stats, :elasticsearch_stats do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
       cache_resolve(&ElasticsearchResolver.stats/3)
+    end
+
+    @desc ~s"""
+    Historical balance for erc20 token or eth address.
+    If slug is provided it will return the number of tokens in the address in all intervals.
+    If slug is not provided it will return the amount of ETH in this address in all intervals.
+    """
+    field :historical_balance, list_of(:historical_balance) do
+      arg(:slug, :string)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:address, non_null(:string))
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
   end
 

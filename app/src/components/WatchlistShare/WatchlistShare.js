@@ -70,7 +70,7 @@ const enhance = compose(
       const parsedQS = qs.parse(search)
 
       if (!watchlists || !parsedQS.name) {
-        return
+        return {}
       }
       const [, watchlistId] = parsedQS.name.split('@')
       const foundUserWatchlist = watchlists.find(
@@ -78,7 +78,7 @@ const enhance = compose(
       )
 
       if (!foundUserWatchlist) {
-        return
+        return {}
       }
 
       return {

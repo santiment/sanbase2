@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- Utils.project_to_contract_info(project) do
-      limit = Enum.max([limit, 100])
+      limit = Enum.min([limit, 100])
 
       async(
         Cache.func(
@@ -189,6 +189,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
          transaction_type: trx_type,
          limit: limit
        }) do
+    limit = Enum.min([limit, 100])
+
     with trx_type <- trx_type,
          {:ok, project_addresses} <- Project.eth_addresses(project),
          {:ok, eth_transactions} <-

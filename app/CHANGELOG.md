@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-23-11 | v.0.21.0 'Phobos':
+
+  Add widgets for asset lists
+
 - 2018-22-11 | v.0.20.2 'Phobos':
 
   Add the categories promo in the navigation panel

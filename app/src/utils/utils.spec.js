@@ -141,55 +141,66 @@ describe('filterProjectsByMarketSegment', () => {
 describe('mergeTimeseriesByKey', () => {
   const ts1 = [
     {
-      value1: 691,
+      value1: 11,
       datetime: '2018-06-20T00:00:00Z'
     },
     {
-      value1: 692,
+      value1: 12,
       datetime: '2018-07-20T00:00:00Z'
     }
   ]
 
   const ts2 = [
     {
-      value2: 1,
+      value2: 21,
       datetime: '2018-06-20T00:00:00Z'
     },
     {
-      value2: 2,
+      value2: 22,
       datetime: '2018-07-20T00:00:00Z'
     },
     {
-      value2: 3,
+      value2: 23,
       datetime: '2018-08-20T00:00:00Z'
     }
   ]
 
   const ts3 = [
     {
-      value3: 3,
+      value3: 31,
       datetime: '2018-06-20T00:00:00Z'
     },
     {
-      value3: 3,
+      value3: 32,
       datetime: '2018-07-20T00:00:00Z'
+    }
+  ]
+
+  const ts4 = [
+    {
+      value5: 51,
+      datetime: '2018-05-20T00:00:00Z'
+    },
+    {
+      value5: 52,
+      datetime: '2018-06-20T00:00:00Z'
     }
   ]
 
   it('should merge 2 timeseries properly', () => {
     const goodMerged = [
       {
-        value1: 691,
-        value2: 1,
+        value1: 11,
+        value2: 21,
         datetime: '2018-06-20T00:00:00Z'
       },
       {
-        value1: 692,
-        value2: 2,
+        value1: 12,
+        value2: 22,
         datetime: '2018-07-20T00:00:00Z'
       },
       {
-        value2: 3,
+        value2: 23,
         datetime: '2018-08-20T00:00:00Z'
       }
     ]
@@ -204,19 +215,19 @@ describe('mergeTimeseriesByKey', () => {
   it('should merge timeseries properly', () => {
     const goodMerged = [
       {
-        value1: 691,
-        value2: 1,
-        value3: 3,
+        value1: 11,
+        value2: 21,
+        value3: 31,
         datetime: '2018-06-20T00:00:00Z'
       },
       {
-        value1: 692,
-        value2: 2,
-        value3: 3,
+        value1: 12,
+        value2: 22,
+        value3: 32,
         datetime: '2018-07-20T00:00:00Z'
       },
       {
-        value2: 3,
+        value2: 23,
         datetime: '2018-08-20T00:00:00Z'
       }
     ]
@@ -225,6 +236,31 @@ describe('mergeTimeseriesByKey', () => {
       timeseries: [ts1, ts2, ts3],
       key: 'datetime'
     })
+    expect(expected).toEqual(goodMerged)
+  })
+
+  it('should merge 2 timeseries leaving the unfound datetime', () => {
+    const goodMerged = [
+      {
+        value2: 21,
+        value5: 52,
+        datetime: '2018-06-20T00:00:00Z'
+      },
+      {
+        value2: 22,
+        datetime: '2018-07-20T00:00:00Z'
+      },
+      {
+        value2: 23,
+        datetime: '2018-08-20T00:00:00Z'
+      }
+    ]
+
+    const expected = mergeTimeseriesByKey({
+      timeseries: [ts2, ts4],
+      key: 'datetime'
+    })
+
     expect(expected).toEqual(goodMerged)
   })
 })

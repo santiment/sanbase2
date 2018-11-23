@@ -116,36 +116,47 @@ const getStartOfTheDay = () => {
   return today.toISOString()
 }
 
-// NOTE(vanguard): There are possibility to optimize this algorithm
-/*
-  O(m * n * m * (n-x))
-  1. m - iterating over 'timeseries' to find longest
-  2. n - mapping over longest
-  3. m - reducing 'timeseries'
-  4. (n-x) - to find same date inside iterated 'timeseries' array
 
-  Merging 4 arrays with length 93 took me ~5.3 ms.
+const mergeTimeseriesByKey = ({ timeseries, key: mergeKey }) => {
+  const longestTS = timeseries
+    .reduce((acc, val) => {
+      return acc.length > val.length ? acc : val
+    }, [])
+    .slice()
+  const longestTSLastIndex = longestTS.length - 1
 
-  1. after gettings longestTS, we still iterate over this it in timeseries.reduce
-  2. after finding Data object in the reduced timeseries method it still persist there. So the array length does not decrease after time and every search takes same amount of iterations
-*/
-const mergeTimeseriesByKey = ({ timeseries, key }) => {
-  const longestTS = timeseries.reduce((acc, val) => {
-    return acc.length > val.length ? acc : val
-  }, [])
-  return longestTS.map(longestTSData => {
-    return timeseries.reduce(
-      (acc, val) => {
-        return {
-          ...acc,
-          ...val.find(data2 => data2[key] === longestTSData[key])
+  for (const timeserie of timeseries) {
+    if (timeserie === longestTS) {
+      continue
+    }
+
+    let longestTSRightIndexBoundary = longestTSLastIndex
+
+    for (
+      let timeserieRightIndex = timeserie.length - 1;
+      timeserieRightIndex > -1;
+      timeserieRightIndex--
+    ) {
+      while (longestTSRightIndexBoundary > -1) {
+        const longestTSData = longestTS[longestTSRightIndexBoundary]
+        const timeserieData = timeserie[timeserieRightIndex]
+        if (longestTSData[mergeKey] === timeserieData[mergeKey]) {
+          longestTS[longestTSRightIndexBoundary] = Object.assign(
+            {},
+            longestTSData,
+            timeserieData
+          )
+          break
         }
-      },
-      {
-        ...longestTSData
+        longestTSRightIndexBoundary--
       }
-    )
-  })
+      if (longestTSRightIndexBoundary === -1) {
+        break
+      }
+    }
+  }
+
+  return longestTS
 }
 
 const getTimeFromFromString = (time = '1y') => {

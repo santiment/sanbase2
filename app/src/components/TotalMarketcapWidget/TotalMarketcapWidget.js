@@ -44,38 +44,12 @@ const generateWidgetData = historyPrice => {
 
 const constructProjectMarketcapKey = projectName => `${projectName}-marketcap`
 
-// const mergeProjectWithTotal = (
-//   totalMarketHistory,
-//   lastIndex,
-//   project,
-//   projectName
-// ) => {
-//   if (!project) {
-//     return
-//   }
-//   const project_LAST_INDEX = project.length - 1
-//   for (let i = project_LAST_INDEX; i > -1; i--) {
-//     totalMarketHistory[lastIndex][constructProjectMarketcapKey(projectName)] =
-//       project[i].marketcap
-//     lastIndex--
-//   }
-// }
-
 const combineDataset = (totalMarketHistory, restProjects) => {
   const LAST_INDEX = totalMarketHistory.length - 1
   if (LAST_INDEX < 0) {
     return
   }
-  // console.time('mergindTimeseries-MY')
-  // for (const key of Object.keys(restProjects)) {
-  //   mergeProjectWithTotal(
-  //     totalMarketHistory,
-  //     LAST_INDEX,
-  //     restProjects[key],
-  //     key
-  //   )
-  // }
-  // console.timeEnd('mergindTimeseries-MY')
+  
   const restProjectTimeseries = Object.keys(restProjects).map(key =>
     restProjects[key].map(({ marketcap, datetime }) => ({
       datetime,
@@ -83,12 +57,12 @@ const combineDataset = (totalMarketHistory, restProjects) => {
     }))
   )
 
-  console.time('mergindTimeseries-UTILS')
+  
   const result = mergeTimeseriesByKey({
     timeseries: [totalMarketHistory, ...restProjectTimeseries],
     key: 'datetime'
   })
-  console.timeEnd('mergindTimeseries-UTILS')
+
 
   return result
 }

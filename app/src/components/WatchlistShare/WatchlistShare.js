@@ -62,18 +62,31 @@ const enhance = compose(
   }),
   graphql(fetchUserListsGQL, {
     name: 'fetchUserLists',
+    skip: ({ location: search }) => {
+      const queryParams = qs.parse(search)
+      return !(queryParams.name && queryParams.name.includes('@'))
+    },
     props: ({ fetchUserLists, ownProps }) => {
       const { fetchUserLists: watchlists } = fetchUserLists
       const {
         location: { search }
       } = ownProps
-      const [, watchlistId] = qs.parse(search).name.split('@')
+      const parsedQS = qs.parse(search)
+
+      if (!watchlists || !parsedQS.name) {
+        return {}
+      }
+      const [, watchlistId] = parsedQS.name.split('@')
+      const foundUserWatchlist = watchlists.find(
+        watchlist => watchlist.id === watchlistId
+      )
+
+      if (!foundUserWatchlist) {
+        return {}
+      }
 
       return {
-        isPublic:
-          watchlists &&
-          (watchlists.find(watchlist => watchlist.id === watchlistId) || {})
-            .isPublic,
+        isPublic: foundUserWatchlist.isPublic,
         watchlistId
       }
     }

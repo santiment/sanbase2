@@ -5,7 +5,8 @@ import {
   calculateBTCVolume,
   sanitizeMediumDraftHtml,
   filterProjectsByMarketSegment,
-  mergeTimeseriesByKey
+  mergeTimeseriesByKey,
+  getEscapedGQLFieldAlias
 } from './utils'
 
 const labels = [
@@ -261,5 +262,14 @@ describe('mergeTimeseriesByKey', () => {
     })
 
     expect(expected).toEqual(goodMerged)
+  })
+})
+
+describe('getEscapedGQLFieldAlias', () => {
+  const SLUGS = ['bitcoin', 'bitcoin-cash', 'ab-chain-rtb', '0x']
+  const ESCAPED_SLUGS = ['_bitcoin', '_bitcoincash', '_abchainrtb', '_0x']
+  it('should correctly escape slugs', () => {
+    const escapedSlugs = SLUGS.map(getEscapedGQLFieldAlias)
+    expect(escapedSlugs).toEqual(ESCAPED_SLUGS)
   })
 })

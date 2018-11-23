@@ -9,6 +9,7 @@ const MyListBtn = (
   <div className='projects-navigation-list__page-link'>Watchlists</div>
 )
 
+
 const EthereumBtn = (
   <div className='projects-navigation-list__page-link'>Ethereum</div>
 )
@@ -17,20 +18,20 @@ const CategoriesBtn = (
   <div className='projects-navigation-list__page-link'>Categories</div>
 )
 
-const AssetsPageNavigation = ({ isLoggedIn = false }) => (
+const AssetsPageNavigation = ({ isLoggedIn = false, location: { search }  }) => (
   <div className='projects-navigation'>
     <div className='projects-navigation-list'>
       <Link
         activeClassName='projects-navigation-list__page-link--active'
         className='projects-navigation-list__page-link'
-        to={'/assets/all'}
+        to={{ pathname: '/assets/all', search }}
       >
         All Assets
       </Link>
       <Link
         activeClassName='projects-navigation-list__page-link--active'
         className='projects-navigation-list__page-link'
-        to={'/assets/currencies'}
+        to={{ pathname: '/assets/currencies', search }}
       >
         Currencies
       </Link>
@@ -85,6 +86,7 @@ const AssetsPageNavigation = ({ isLoggedIn = false }) => (
         isNavigation
         isLoggedIn={isLoggedIn}
         trigger={MyListBtn}
+        searchParams={search}
       />
     </div>
   </div>

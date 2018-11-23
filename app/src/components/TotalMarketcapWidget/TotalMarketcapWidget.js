@@ -1,48 +1,9 @@
 import React from 'react'
-import moment from 'moment'
-import { graphql } from 'react-apollo'
-import { Line } from 'react-chartjs-2'
-import { totalMarketcapGQL } from './TotalMarketcapGQL'
+import { ResponsiveContainer, AreaChart, Area, XAxis } from 'recharts'
+import Widget from '../Widget/Widget'
 import { formatNumber } from '../../utils/formatting'
-import './TotalMarketcapWidget.css'
-
-const chartOptions = {
-  pointRadius: 0,
-  animation: false,
-  legend: {
-    display: false
-  },
-  elements: {
-    point: {
-      hitRadius: 1,
-      hoverRadius: 1,
-      radius: 0
-    }
-  },
-  tooltips: {
-    enabled: false
-  },
-  scales: {
-    yAxes: [
-      {
-        display: false
-      }
-    ],
-    xAxes: [
-      {
-        display: false
-      }
-    ]
-  }
-}
-
-const options = {
-  borderColor: 'rgba(45, 94, 57, 1)',
-  borderWidth: 1,
-  lineTension: 0.1,
-  pointBorderWidth: 1,
-  backgroundColor: 'rgba(214, 235, 219, .8)'
-}
+import { mergeTimeseriesByKey } from '../../utils/utils'
+import './TotalMarketcapWidget.scss'
 
 const currencyFormatOptions = {
   currency: 'USD',
@@ -51,20 +12,14 @@ const currencyFormatOptions = {
 }
 
 const generateWidgetData = historyPrice => {
-  if (!historyPrice) return {}
+  if (!historyPrice || historyPrice.length === 0) return {}
 
   const historyPriceLastIndex = historyPrice.length - 1
 
-  const marketcapDataset = {
-    labels: historyPrice.map(data => data.datetime),
-    datasets: [
-      {
-        data: historyPrice.map(data => data.marketcap),
-        label: 'Marketcap',
-        ...options
-      }
-    ]
-  }
+  const marketcapDataset = historyPrice.map(data => ({
+    datetime: data.datetime,
+    marketcap: data.marketcap
+  }))
 
   const volumeAmplitude =
     historyPrice[historyPriceLastIndex].volume -
@@ -87,19 +42,70 @@ const generateWidgetData = historyPrice => {
   }
 }
 
-const TotalMarketcapWidget = ({ data: { historyPrice } }) => {
-  const {
+const constructProjectMarketcapKey = projectName => `${projectName}-marketcap`
+
+const combineDataset = (totalMarketHistory, restProjects) => {
+  const LAST_INDEX = totalMarketHistory.length - 1
+  if (LAST_INDEX < 0) {
+    return
+  }
+  
+  const restProjectTimeseries = Object.keys(restProjects).map(key =>
+    restProjects[key].map(({ marketcap, datetime }) => ({
+      datetime,
+      [constructProjectMarketcapKey(key)]: marketcap
+    }))
+  )
+
+  
+  const result = mergeTimeseriesByKey({
+    timeseries: [totalMarketHistory, ...restProjectTimeseries],
+    key: 'datetime'
+  })
+
+
+  return result
+}
+
+const COLORS = ['#ffa000', '#1111bb', '#ab47bc']
+
+const getTop3Area = restProjects => {
+  return Object.keys(restProjects).map((key, i) => (
+    <Area
+      key={key}
+      dataKey={constructProjectMarketcapKey(key)}
+      type='monotone'
+      strokeWidth={1}
+      stroke={COLORS[i]}
+      fill={COLORS[i] + '44'}
+      isAnimationActive={false}
+    />
+  ))
+}
+
+const TotalMarketcapWidget = ({
+  historyPrices: { TOTAL_MARKET, ...restProjects },
+  loading
+}) => {
+  let {
     totalmarketCapPrice = '.',
     volumeAmplitudePrice = '.',
-    marketcapDataset = {}
-  } = generateWidgetData(historyPrice)
+    marketcapDataset = []
+  } = generateWidgetData(TOTAL_MARKET)
+
+  let restAreas = null
+
+  if (!loading && Object.keys(restProjects).length > 0) {
+    marketcapDataset = combineDataset(marketcapDataset, restProjects)
+    restAreas = getTop3Area(restProjects)
+  }
 
   const valueClassNames = `TotalMarketcapWidget__value ${
     totalmarketCapPrice === '.' ? 'TotalMarketcapWidget__value_loading' : ''
   }`
 
   return (
-    <div className='TotalMarketcapWidget'>
+    <Widget className='TotalMarketcapWidget'>
       <div className='TotalMarketcapWidget__info'>
         <div className='TotalMarketcapWidget__left'>
           <h3 className='TotalMarketcapWidget__label'>Total marketcap</h3>
@@ -110,25 +116,25 @@ const TotalMarketcapWidget = ({ data: { historyPrice } }) => {
           <h4 className={valueClassNames}>{volumeAmplitudePrice}</h4>
         </div>
       </div>
-      <Line
-        data={marketcapDataset}
-        options={chartOptions}
-        className='TotalMarketcapWidget__chart'
-      />
-    </div>
+      <ResponsiveContainer width='100%' className='TotalMarketcapWidget__chart'>
+        <AreaChart
+          data={marketcapDataset}
+          margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+        >
+          <XAxis dataKey='datetime' hide />
+          <Area
+            dataKey='marketcap'
+            type='monotone'
+            strokeWidth={1}
+            stroke='#2d5e39'
+            fill='rgba(214, 235, 219, .8)'
+            isAnimationActive={false}
+          />
+          {restAreas}
+        </AreaChart>
+      </ResponsiveContainer>
+    </Widget>
   )
 }
 
-const ApolloTotalMarketcapWidget = graphql(totalMarketcapGQL)(
-  TotalMarketcapWidget
-)
-
-ApolloTotalMarketcapWidget.defaultProps = {
-  from: moment()
-    .subtract(3, 'months')
-    .utc()
-    .format(),
-  slug: 'TOTAL_MARKET'
-}
-
-export default ApolloTotalMarketcapWidget
+export default TotalMarketcapWidget

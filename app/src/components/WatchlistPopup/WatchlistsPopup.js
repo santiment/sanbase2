@@ -31,6 +31,7 @@ const WatchlistPopup = ({
   removeAssetList,
   toggleConfirmDeleteAssetList,
   toggleAssetInList,
+  searchParams,
   children
 }) => {
   return (
@@ -62,6 +63,7 @@ const WatchlistPopup = ({
               watchlistUi={watchlistUi}
               slug={slug}
               lists={lists}
+              searchParams={searchParams}
             />
           )
         ) : (

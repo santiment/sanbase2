@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Total market cap widget queries should correctly construct alias query 1`] = `
+"
+  query historyPrice {
+    
+      _bitcoin: historyPrice(from: \\"2018-08-22T10:53:13Z\\", slug: \\"bitcoin\\", interval: \\"1d\\") {
+        marketcap
+        volume
+        datetime
+      }
+      _bitcoincash: historyPrice(from: \\"2018-08-22T10:53:13Z\\", slug: \\"bitcoin-cash\\", interval: \\"1d\\") {
+        marketcap
+        volume
+        datetime
+      }
+      _abchainrtb: historyPrice(from: \\"2018-08-22T10:53:13Z\\", slug: \\"ab-chain-rtb\\", interval: \\"1d\\") {
+        marketcap
+        volume
+        datetime
+      }
+      _0x: historyPrice(from: \\"2018-08-22T10:53:13Z\\", slug: \\"0x\\", interval: \\"1d\\") {
+        marketcap
+        volume
+        datetime
+      }
+  }
+"
+`;

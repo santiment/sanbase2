@@ -14,8 +14,6 @@ export const sliderSettings = {
   speed: 500,
   slidesToShow: 1,
   slidesToScroll: 1,
-  autoplaySpeed: 7000,
-  autoplay: true,
   arrows: false
 }
 const INSIGHTS_VOTES_THRESHOLD = 2

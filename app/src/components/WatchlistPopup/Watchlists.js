@@ -7,6 +7,7 @@ import {
 import { Link } from 'react-router-dom'
 import { compose } from 'recompose'
 import { Label, Icon, Popup } from 'semantic-ui-react'
+import qs from 'query-string'
 import CreateWatchlistBtn from './CreateWatchlistBtn'
 import './Watchlists.css'
 
@@ -20,6 +21,11 @@ export const hasAssetById = ({ id, listItems }) => {
   return listItems.some(item => item.project.id === id)
 }
 
+const updateSearchQuery = (searchParams, name, id) => {
+  searchParams.name = `${name}@${id}`
+  return searchParams
+}
+
 const Watchlists = ({
   lists = [],
   isNavigation = false,
@@ -29,7 +35,8 @@ const Watchlists = ({
   watchlistUi,
   createWatchlist,
   toggleAssetInList,
-  toggleConfirmDeleteAssetList
+  toggleConfirmDeleteAssetList,
+  searchParams
 }) => (
   <div className='watchlists'>
     <div className='watchlists__list'>
@@ -38,7 +45,12 @@ const Watchlists = ({
           <div key={id} className='watchlists__item'>
             <Link
               className='watchlists__item__link'
-              to={`/assets/list?name=${name}@${id}`}
+              to={{
+                pathname: '/assets/list',
+                search: qs.stringify(
+                  updateSearchQuery(qs.parse(searchParams), name, id)
+                )
+              }}
             >
               <DIV className='watchlists__item__name'>
                 <div>{name}</div>

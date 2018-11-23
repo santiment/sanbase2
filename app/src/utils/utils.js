@@ -116,20 +116,33 @@ const getStartOfTheDay = () => {
   return today.toISOString()
 }
 
+// NOTE(vanguard): There are possibility to optimize this algorithm
+/*
+  O(m * n * m * (n-x))
+  1. m - iterating over 'timeseries' to find longest
+  2. n - mapping over longest
+  3. m - reducing 'timeseries'
+  4. (n-x) - to find same date inside iterated 'timeseries' array
+
+  Merging 4 arrays with length 93 took me ~5.3 ms.
+
+  1. after gettings longestTS, we still iterate over this it in timeseries.reduce
+  2. after finding Data object in the reduced timeseries method it still persist there. So the array length does not decrease after time and every search takes same amount of iterations
+*/
 const mergeTimeseriesByKey = ({ timeseries, key }) => {
   const longestTS = timeseries.reduce((acc, val) => {
     return acc.length > val.length ? acc : val
   }, [])
-  return longestTS.map(data => {
+  return longestTS.map(longestTSData => {
     return timeseries.reduce(
       (acc, val) => {
         return {
           ...acc,
-          ...val.find(data2 => data2[key] === data[key])
+          ...val.find(data2 => data2[key] === longestTSData[key])
         }
       },
       {
-        ...data
+        ...longestTSData
       }
     )
   })
@@ -156,6 +169,12 @@ const getTimeFromFromString = (time = '1y') => {
 
 const capitalizeStr = string => string.charAt(0).toUpperCase() + string.slice(1)
 
+/* UTILS METHOD  */
+// Escaping for corrent alias syntax
+// Otherwise: GraphQLError: Syntax Error GraphQL request (16:7) Expected Name, found Int "0" - for 0x
+// bitcoin-cash | ab-chain-rtb = Syntax Error GraphQL request (4:15) Invalid number, expected digit but got: "c"
+const getEscapedGQLFieldAlias = fieldName => '_' + fieldName.replace(/-/g, '')
+
 export {
   findIndexByDatetime,
   calculateBTCVolume,
@@ -169,5 +188,6 @@ export {
   getStartOfTheDay,
   mergeTimeseriesByKey,
   getTimeFromFromString,
-  capitalizeStr
+  capitalizeStr,
+  getEscapedGQLFieldAlias
 }

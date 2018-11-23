@@ -1,0 +1,65 @@
+.TotalMarketcapWidget {
+  max-width: 250px;
+  border: 1px solid #adadad;
+  &.night-mode {
+    border-color: #4a4a4a;
+  }
+  &__right {
+    text-align: right;
+  }
+  &__info {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 5px;
+  }
+  &__label {
+    color: #555;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  &__value {
+    color: #000;
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: bold;
+    position: relative;
+    &_loading {
+      background: #ddd;
+      overflow: hidden;
+      color: #ddd;
+      &::before {
+        display: block;
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        animation: loading 1.3s linear infinite;
+        background: linear-gradient(
+            to right,
+            transparent 50%,
+            rgba(#fff, 0.35) 60%,
+            transparent 50%
+          )
+          50% 50%;
+      }
+    }
+  }
+  &__chart {
+    margin-top: 20px;
+    min-height: 125px;
+    max-height: 125px;
+  }
+}
+@keyframes loading {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  80% {
+    transform: translate3d(200%, 0, 0);
+  }
+  100% {
+    transform: translate3d(200%, 0, 0);
+  }
+}

@@ -62,6 +62,10 @@ const enhance = compose(
   }),
   graphql(fetchUserListsGQL, {
     name: 'fetchUserLists',
+    skip: ({ location: search }) => {
+      const queryParams = qs.parse(search)
+      return !(queryParams.name && queryParams.name.includes('@'))
+    },
     props: ({ fetchUserLists, ownProps }) => {
       const { fetchUserLists: watchlists } = fetchUserLists
       const {

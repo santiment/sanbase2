@@ -74,7 +74,7 @@ export const Detailed = ({
     errorMessage: ''
   },
   ExchangeFundFlow = {
-    transactionVolume: [],
+    exchangeFundsFlow: [],
     error: false,
     loading: true
   },
@@ -162,7 +162,7 @@ export const Detailed = ({
   const exchangeFundFlow = {
     loading: ExchangeFundFlow.loading,
     error: ExchangeFundFlow.error,
-    items: ExchangeFundFlow.transactionVolume
+    items: ExchangeFundFlow.exchangeFundsFlow || []
   }
 
   const dailyActiveAddresses = {
@@ -225,6 +225,7 @@ export const Detailed = ({
       transactionVolume={transactionVolume}
       ethSpentOverTime={_ethSpentOverTime}
       dailyActiveAddresses={dailyActiveAddresses}
+      exchangeFundFlow={exchangeFundFlow}
       emojisSentiment={emojisSentiment}
       twitterHistory={twitterHistory}
       twitterData={twitterData}
@@ -267,18 +268,6 @@ export const Detailed = ({
           <FinancialsBlock {...Project.project} />
         </PanelBlock>
       </div>
-      {!exchangeFundFlow.loading &&
-        exchangeFundFlow.items && (
-        <div className='information'>
-          <PanelBlock isLoading={false} title='Exchange Fund Flows'>
-            <div>
-              {exchangeFundFlow.items.map((item, index) => (
-                <div key={index}>{item}</div>
-              ))}
-            </div>
-          </PanelBlock>
-        </div>
-      )}
       {isDesktop &&
         project.isERC20 &&
         project.tokenTopTransactions &&
@@ -286,7 +275,7 @@ export const Detailed = ({
         <div className='information'>
           <DetailedTransactionsTable
             Project={Project}
-            title={'Top Token Transactions'}
+            title={'Top Token Transactions 30D'}
             show={'tokenTopTransactions'}
           />
         </div>
@@ -500,7 +489,7 @@ const enhance = compose(
     skip: ({ timeFilter, match, Project }) => {
       const { from } = timeFilter
       const slug = match.params.slug
-      return !from || !slug || (Project && !Project.isERC20)
+      return !from || !slug || (Project && Project.isERC20)
     },
     options: ({ timeFilter, match }) => {
       const { from, to } = timeFilter
@@ -510,7 +499,8 @@ const enhance = compose(
         variables: {
           from,
           to,
-          slug
+          slug,
+          interval: ''
         }
       }
     }
@@ -536,9 +526,10 @@ const enhance = compose(
   }),
   graphql(EmojisSentimentGQL, {
     name: 'EmojisSentiment',
-    skip: ({ timeFilter, hasPremium }) => {
+    skip: ({ timeFilter, hasPremium, match }) => {
       const { from } = timeFilter
-      return !from || !hasPremium
+      const slug = match.params.slug
+      return !from || !hasPremium || slug !== 'bitcoin' || slug !== 'ethereum'
     },
     options: ({ timeFilter }) => {
       const { from, to } = timeFilter

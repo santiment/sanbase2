@@ -212,7 +212,7 @@ export const ExchangeFundFlowGQL = gql`
   query exchangeFundsFlowGQL($slug: String, $from: DateTime, $to: DateTime) {
     exchangeFundsFlow(slug: $slug, from: $from, to: $to) {
       datetime
-      fundsFlow
+      inOutDifference
       __typename
     }
   }

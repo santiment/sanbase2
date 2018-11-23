@@ -116,7 +116,6 @@ const getStartOfTheDay = () => {
   return today.toISOString()
 }
 
-
 const mergeTimeseriesByKey = ({ timeseries, key: mergeKey }) => {
   const longestTS = timeseries
     .reduce((acc, val) => {

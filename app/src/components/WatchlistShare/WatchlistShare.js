@@ -71,13 +71,22 @@ const enhance = compose(
       const {
         location: { search }
       } = ownProps
-      const [, watchlistId] = qs.parse(search).name.split('@')
+      const parsedQS = qs.parse(search)
+
+      if (!watchlists || !parsedQS.name) {
+        return {}
+      }
+      const [, watchlistId] = parsedQS.name.split('@')
+      const foundUserWatchlist = watchlists.find(
+        watchlist => watchlist.id === watchlistId
+      )
+
+      if (!foundUserWatchlist) {
+        return {}
+      }
 
       return {
-        isPublic:
-          watchlists &&
-          (watchlists.find(watchlist => watchlist.id === watchlistId) || {})
-            .isPublic,
+        isPublic: foundUserWatchlist.isPublic,
         watchlistId
       }
     }

@@ -94,6 +94,7 @@ class ProjectChartContainer extends Component {
       this.props.toggleBurnRate(shareableState.tbr)
       this.props.toggleTransactionVolume(shareableState.tv)
       this.props.toggleActiveAddresses(shareableState.daa)
+      this.props.toggleExchangeFundFlow(shareableState.eff)
       this.props.toggleEthSpentOverTime(shareableState.ethSpent)
       this.props.toggleEthPrice(shareableState.ethPrice)
       this.props.toggleICOPrice(shareableState.icoPrice)
@@ -174,6 +175,7 @@ class ProjectChartContainer extends Component {
       this.props.toggleBurnRate(false)
       this.props.toggleTransactionVolume(false)
       this.props.toggleActiveAddresses(false)
+      this.props.toggleExchangeFundFlow(false)
       this.props.toggleEthSpentOverTime(false)
       this.props.toggleEthPrice(false)
       this.props.toggleICOPrice(false)
@@ -203,6 +205,7 @@ class ProjectChartContainer extends Component {
       tbr: this.props.isToggledBurnRate || undefined,
       tv: this.props.isToggledTransactionVolume || undefined,
       daa: this.props.isToggledDailyActiveAddresses || undefined,
+      eff: this.props.isToggledExchangeFundFlow || undefined,
       ethSpent: this.props.isToggledEthSpentOverTime || undefined,
       ethPrice: this.props.isToggledEthPrice || undefined,
       currency: this.state.isToggledBTC ? 'BTC' : 'USD',
@@ -336,6 +339,7 @@ const enhance = compose(
   withState('isToggledEthPrice', 'toggleEthPrice', false),
   withState('isToggledEmojisSentiment', 'toggleEmojisSentiment', false),
   withState('isToggledDailyActiveAddresses', 'toggleActiveAddresses', false),
+  withState('isToggledExchangeFundFlow', 'toggleExchangeFundFlow', false),
   withState('isToggledICOPrice', 'toggleICOPrice', false),
   withState('blockchainFilter', 'setBlockchainFilter', 'all')
 )

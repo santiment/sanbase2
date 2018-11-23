@@ -7,9 +7,9 @@ defmodule Sanbase.Notifications.Discord do
 
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.UrlShortener
   alias Sanbase.Model.Project
   alias Sanbase.Blockchain.DailyActiveAddresses
+  alias Sanbase.FileStore
 
   @discord_message_size_limit 1900
 
@@ -106,8 +106,11 @@ defmodule Sanbase.Notifications.Discord do
   @spec build_embedded_chart(String.t(), any(), any()) :: [any()]
   def build_embedded_chart(slug, from, to, opts \\ []) do
     with {:ok, url} <- build_candlestick_image_url(slug, from, to, opts),
-         {:ok, short_url} <- UrlShortener.short_url(url) do
-      [%{image: %{url: short_url}}]
+         {:ok, resp} <- http_client().get(url),
+         {:ok, filename} <-
+           FileStore.store(%{filename: rand_image_filename(slug), binary: resp.body}),
+         url <- FileStore.url(filename) do
+      [%{image: %{url: url}}]
     else
       _ -> []
     end
@@ -147,7 +150,7 @@ defmodule Sanbase.Notifications.Discord do
         |> Enum.map(fn list -> Enum.join(list, ",") end)
 
       size = low_values |> Enum.count()
-      bar_width = 6 * round(90 / size)
+      bar_width = if size > 20, do: 6 * round(90 / size), else: 23
 
       line_chart =
         if Keyword.get(opts, :daa),
@@ -163,7 +166,7 @@ defmodule Sanbase.Notifications.Discord do
         chds=#{line_chart.chds}#{min},#{max}&
         chd=#{line_chart.chd}|#{low_str}|#{open_str}|#{close_str}|#{high_str}&
         chm=F,,1,1:#{size},#{bar_width}&
-        chma=10,10,20,10&
+        chma=10,20,20,10&
         &chco=00FF00
       ) |> String.replace(~r/[\n\s+]+/, "")}
     else
@@ -174,7 +177,7 @@ defmodule Sanbase.Notifications.Discord do
   end
 
   # Private functions
-  defp daa_chart_values(slug, from, to, size) do
+  defp daa_chart_values(slug, _from, to, size) do
     from = Timex.shift(to, days: -size + 1)
 
     with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
@@ -207,5 +210,10 @@ defmodule Sanbase.Notifications.Discord do
     list
     |> Enum.map(&String.length/1)
     |> Enum.sum()
+  end
+
+  defp rand_image_filename(slug) do
+    random_string = :crypto.strong_rand_bytes(20) |> Base.encode32()
+    slug <> random_string <> ".png"
   end
 end

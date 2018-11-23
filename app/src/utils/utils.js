@@ -116,16 +116,6 @@ const getStartOfTheDay = () => {
   return today.toISOString()
 }
 
-// Core i5 2.9GHz
-// 4 arrays with 90 elements
-// No-throttle: mergeTimeseriesByKey-old: ~4.4ms
-// No-throttle: mergeTimeseriesByKey-new: ~0.3ms
-
-// x4 throttle: mergeTimeseriesByKey-old: ~13.2ms
-// x4 throttle: mergeTimeseriesByKey-new: ~1.3ms
-
-// x6 throttle: mergeTimeseriesByKey-old: ~19.7
-// x6 throttle: mergeTimeseriesByKey-new: ~2.1ms
 
 const mergeTimeseriesByKey = ({ timeseries, key: mergeKey }) => {
   const timeseriesLength = timeseries.length

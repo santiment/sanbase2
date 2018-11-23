@@ -7,9 +7,9 @@ defmodule Sanbase.Notifications.Discord do
 
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.Influxdb.Measurement
-  alias Sanbase.UrlShortener
   alias Sanbase.Model.Project
   alias Sanbase.Blockchain.DailyActiveAddresses
+  alias Sanbase.FileStore
 
   @discord_message_size_limit 1900
 
@@ -106,8 +106,11 @@ defmodule Sanbase.Notifications.Discord do
   @spec build_embedded_chart(String.t(), any(), any()) :: [any()]
   def build_embedded_chart(slug, from, to, opts \\ []) do
     with {:ok, url} <- build_candlestick_image_url(slug, from, to, opts),
-         {:ok, short_url} <- UrlShortener.short_url(url) do
-      [%{image: %{url: short_url}}]
+         {:ok, resp} <- http_client().get(url),
+         {:ok, filename} <-
+           FileStore.store(%{filename: rand_image_filename(slug), binary: resp.body}),
+         url <- FileStore.url(filename) do
+      [%{image: %{url: url}}]
     else
       _ -> []
     end
@@ -207,5 +210,10 @@ defmodule Sanbase.Notifications.Discord do
     list
     |> Enum.map(&String.length/1)
     |> Enum.sum()
+  end
+
+  defp rand_image_filename(slug) do
+    random_string = :crypto.strong_rand_bytes(20) |> Base.encode32()
+    slug <> random_string <> ".png"
   end
 end

@@ -57,7 +57,7 @@ const propTypes = {
 
 const InsightsWidget = ({ insights }) => {
   return (
-    <Widget className='InsightsWidget'>
+    <Widget className='InsightsWidget' title={'Latest Insights'}>
       <Slider {...sliderSettings}>
         {insights.map(({ id, createdAt, title, user, text }) => (
           <InsightsWidgetItem

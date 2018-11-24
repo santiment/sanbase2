@@ -18,16 +18,20 @@ const LatestWatchlistsWidgetItem = ({
   return (
     <div className={styles.wrapper}>
       <h3 className={styles.title}>
-        <Link to={`/assets/list?name=${name}@${id}#shared`}>{name}</Link>
+        <Link to={`/assets/list?feature=widgets&name=${name}@${id}#shared`}>
+          {name}
+        </Link>
       </h3>
-      <div className={styles.content}>
-        This watchlist includes:
-        <ul className={styles.list}>
-          {listItems.slice(0, MAX_LIST_ITEMS).map(({ project: { name } }) => (
-            <li key={name}>{name}</li>
-          ))}
-          {isLongList && <li>And {remainingItemsCount} more projects...</li>}
-        </ul>
+      <div className={styles.articleContent}>
+        <div className={styles.content}>
+          This watchlist includes:
+          <ul className={styles.list}>
+            {listItems.slice(0, MAX_LIST_ITEMS).map(({ project: { name } }) => (
+              <li key={name}>{name}</li>
+            ))}
+            {isLongList && <li>And {remainingItemsCount} more projects...</li>}
+          </ul>
+        </div>
       </div>
       <div className={styles.bottom}>
         <h4 className={styles.info + ' ' + styles.info_author}>

@@ -49,7 +49,7 @@ const combineDataset = (totalMarketHistory, restProjects) => {
   if (LAST_INDEX < 0) {
     return
   }
-  
+
   const restProjectTimeseries = Object.keys(restProjects).map(key =>
     restProjects[key].map(({ marketcap, datetime }) => ({
       datetime,
@@ -57,30 +57,50 @@ const combineDataset = (totalMarketHistory, restProjects) => {
     }))
   )
 
-  
   const result = mergeTimeseriesByKey({
     timeseries: [totalMarketHistory, ...restProjectTimeseries],
     key: 'datetime'
   })
 
-
   return result
 }
 
-const COLORS = ['#ffa000', '#1111bb', '#ab47bc']
+const COLORS = ['#dda000', '#1111bb', '#ab47bc']
+
+const COLORS_TEXT = ['#aa7000', '#111199', '#8a43ac']
 
 const getTop3Area = restProjects => {
-  return Object.keys(restProjects).map((key, i) => (
-    <Area
-      key={key}
-      dataKey={constructProjectMarketcapKey(key)}
-      type='monotone'
-      strokeWidth={1}
-      stroke={COLORS[i]}
-      fill={COLORS[i] + '44'}
-      isAnimationActive={false}
-    />
-  ))
+  return Object.keys(restProjects).map((key, i) => {
+    const rightMarginByIndex = (i + 1) * 16
+    return (
+      <Area
+        key={key}
+        dataKey={constructProjectMarketcapKey(key)}
+        type='monotone'
+        strokeWidth={1}
+        stroke={COLORS[i]}
+        label={({ x, y, index }) => {
+          if (index === rightMarginByIndex) {
+            return (
+              <text
+                x={x}
+                y={y}
+                dy={-8}
+                fill={COLORS_TEXT[i]}
+                fontSize={12}
+                textAnchor='middle'
+              >
+                {key}
+              </text>
+            )
+          }
+          return ''
+        }}
+        fill={COLORS[i] + '2c'}
+        isAnimationActive={false}
+      />
+    )
+  })
 }
 
 const TotalMarketcapWidget = ({

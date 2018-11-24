@@ -1,6 +1,5 @@
 import React from 'react'
 import { Route as BasicRoute, Switch, Redirect, Link } from 'react-router-dom'
-import { Label, Icon } from 'semantic-ui-react'
 import { FadeInDown } from 'animate-components'
 import Loadable from 'react-loadable'
 import withSizes from 'react-sizes'
@@ -30,6 +29,8 @@ import ConfirmDeleteWatchlistModal from './components/WatchlistPopup/ConfirmDele
 import AssetsPage from './pages/assets/AssetsPage'
 import SignalsPriceVolume from './pages/Signals/SignalsPriceVolume'
 import { getConsentUrl } from './utils/utils'
+import { loadKeyState } from './utils/localStorage'
+import HeaderMsg from './HeaderMsg'
 import './App.scss'
 
 const LoadableDetailedPage = Loadable({
@@ -115,17 +116,7 @@ export const App = ({
         </Link>
       </div>
     )}
-    {isDesktop && (
-      <div className='new-status-message'>
-        <Link to='/trends'>
-          <Label color='green' horizontal>
-            NEW
-          </Label>
-          We prepared for you crypto trends in social media{' '}
-          <Icon name='angle right' />
-        </Link>
-      </div>
-    )}
+    {isDesktop && !loadKeyState('trendsMsg') && <HeaderMsg />}
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>

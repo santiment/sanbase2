@@ -63,7 +63,9 @@ const InsightsWidgetItem = ({
       <h2 className='InsightsWidgetItem__title'>
         <Link to={`/insights/${id}`}>{title}</Link>
       </h2>
-      <div className='InsightsWidgetItem__content'>{insightContent}</div>
+      <div className='InsightsWidgetItem__article-content'>
+        <div className='InsightsWidgetItem__text'>{insightContent}</div>
+      </div>
       <div className='InsightsWidgetItem__bottom'>
         <h4 className='InsightsWidgetItem__info InsightsWidgetItem__info_author'>
           by <Link to={`/insights/users/${userId}`}>{username}</Link>

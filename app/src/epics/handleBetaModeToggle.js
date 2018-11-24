@@ -5,7 +5,7 @@ import {
 } from './../actions/types'
 import { saveKeyState } from '../utils/localStorage'
 
-const handleNightModeToggle = (action$, store) =>
+const handleBetaModeToggle = (action$, store) =>
   action$
     .ofType(USER_TOGGLE_BETA_MODE)
     .debounceTime(200)
@@ -21,4 +21,4 @@ const handleNightModeToggle = (action$, store) =>
       })
     )
 
-export default handleNightModeToggle
+export default handleBetaModeToggle

@@ -34,7 +34,25 @@ const WatchlistPopup = ({
   searchParams,
   children
 }) => {
-  return (
+  return isNavigation ? ( // NOTE(vanguard): i know this is ugly as hell, but we should refactor Watchlist + WatchlistPopup component logic first to make it better.
+    isLoggedIn ? (
+      <Watchlists
+        isNavigation={isNavigation}
+        isLoading={isLoading}
+        projectId={projectId}
+        createWatchlist={createWatchlist}
+        removeAssetList={removeAssetList}
+        toggleConfirmDeleteAssetList={toggleConfirmDeleteAssetList}
+        toggleAssetInList={toggleAssetInList}
+        watchlistUi={watchlistUi}
+        slug={slug}
+        lists={lists}
+        searchParams={searchParams}
+      />
+    ) : (
+      <WatchlistsAnon />
+    )
+  ) : (
     <Popup
       className='watchlists-popup'
       content={

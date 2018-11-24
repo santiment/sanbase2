@@ -3,6 +3,7 @@ import { NavLink as Link } from 'react-router-dom'
 import SmoothDropdownItem from './../../components/SmoothDropdown/SmoothDropdownItem'
 import SmoothDropdown from './../../components/SmoothDropdown/SmoothDropdown'
 import WatchlistsPopup from './../../components/WatchlistPopup/WatchlistsPopup'
+
 import './AssetsPageNavigation.css'
 
 const MyListBtn = (
@@ -80,13 +81,14 @@ const AssetsPageNavigation = ({ isLoggedIn = false, location: { search } }) => (
             Decentralized Exchanges Tokens (DEXs)
           </Link>
         </SmoothDropdownItem>
+        <SmoothDropdownItem trigger={MyListBtn}>
+          <WatchlistsPopup
+            isNavigation
+            searchParams={search}
+            isLoggedIn={isLoggedIn}
+          />
+        </SmoothDropdownItem>
       </SmoothDropdown>
-      <WatchlistsPopup
-        isNavigation
-        isLoggedIn={isLoggedIn}
-        trigger={MyListBtn}
-        searchParams={search}
-      />
     </div>
   </div>
 )

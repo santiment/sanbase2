@@ -10,6 +10,21 @@ import WidgetList from '../../components/Widget/WidgetList'
 import qs from 'query-string'
 import './Assets.css'
 
+const getHeadTitle = (type, searchParams) => {
+  switch (type) {
+    case 'all':
+      return 'All Assets'
+    case 'currencies':
+      return 'Currencies'
+    case 'erc20':
+      return 'ERC20 Assets'
+    case 'list':
+      return (qs.parse(searchParams).name || '').split('@')[0].toUpperCase()
+    default:
+      return 'Assets'
+  }
+}
+
 const AssetsPage = props => (
   <div className='page projects-table'>
     <Helmet>
@@ -21,7 +36,9 @@ const AssetsPage = props => (
     )}
     <div className='page-head page-head-projects'>
       <div className='page-head-projects__left'>
-        <h1>Assets</h1>
+        {console.log(props) || null}
+        {/* <h1>Assets</h1> */}
+        <h1>{getHeadTitle(props.type, props.location.search)}</h1>
         <HelpPopupAssets />
         {props.type === 'list' &&
           props.location.hash !== '#shared' && <WatchlistShare />}

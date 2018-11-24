@@ -29,7 +29,6 @@ import ConfirmDeleteWatchlistModal from './components/WatchlistPopup/ConfirmDele
 import AssetsPage from './pages/assets/AssetsPage'
 import SignalsPriceVolume from './pages/Signals/SignalsPriceVolume'
 import { getConsentUrl } from './utils/utils'
-import { loadKeyState } from './utils/localStorage'
 import HeaderMsg from './HeaderMsg'
 import './App.scss'
 
@@ -116,7 +115,7 @@ export const App = ({
         </Link>
       </div>
     )}
-    {isDesktop && !loadKeyState('trendsMsg') && <HeaderMsg />}
+    {isDesktop && <HeaderMsg />}
     {isFullscreenMobile ? undefined : isDesktop ? <Menu /> : <MobileMenu />}
     <ErrorBoundary>
       <Switch>

@@ -11,6 +11,9 @@ const currencyFormatOptions = {
   maximumFractionDigits: 0
 }
 
+const COLORS = ['#dda000', '#1111bb', '#ab47bc']
+const COLORS_TEXT = ['#aa7000', '#111199', '#8a43ac']
+
 const generateWidgetData = historyPrice => {
   if (!historyPrice || historyPrice.length === 0) return {}
 
@@ -51,7 +54,7 @@ const combineDataset = (totalMarketHistory, restProjects) => {
   }
 
   const restProjectTimeseries = Object.keys(restProjects).map(key =>
-    restProjects[key].map(({ marketcap, datetime }) => ({
+    (restProjects[key] || []).map(({ marketcap, datetime }) => ({
       datetime,
       [constructProjectMarketcapKey(key)]: marketcap
     }))
@@ -64,10 +67,6 @@ const combineDataset = (totalMarketHistory, restProjects) => {
 
   return result
 }
-
-const COLORS = ['#dda000', '#1111bb', '#ab47bc']
-
-const COLORS_TEXT = ['#aa7000', '#111199', '#8a43ac']
 
 const getTop3Area = restProjects => {
   return Object.keys(restProjects).map((key, i) => {

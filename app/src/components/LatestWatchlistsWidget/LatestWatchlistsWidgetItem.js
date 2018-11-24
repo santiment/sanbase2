@@ -18,7 +18,9 @@ const LatestWatchlistsWidgetItem = ({
   return (
     <div className={styles.wrapper}>
       <h3 className={styles.title}>
-        <Link to={`/assets/list?name=${name}@${id}#shared`}>{name}</Link>
+        <Link to={`/assets/list?feature=widgets&name=${name}@${id}#shared`}>
+          {name}
+        </Link>
       </h3>
       <div className={styles.articleContent}>
         <div className={styles.content}>

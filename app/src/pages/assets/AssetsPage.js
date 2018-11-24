@@ -36,8 +36,6 @@ const AssetsPage = props => (
     )}
     <div className='page-head page-head-projects'>
       <div className='page-head-projects__left'>
-        {console.log(props) || null}
-        {/* <h1>Assets</h1> */}
         <h1>{getHeadTitle(props.type, props.location.search)}</h1>
         <HelpPopupAssets />
         {props.type === 'list' &&

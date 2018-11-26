@@ -4,6 +4,8 @@ defmodule Sanbase.ExAdmin.UserLists.UserList do
   alias Sanbase.UserLists.UserList
 
   register_resource Sanbase.UserLists.UserList do
+    action_items(only: [:show, :edit, :delete])
+
     form user do
       inputs do
         input(user, :name)

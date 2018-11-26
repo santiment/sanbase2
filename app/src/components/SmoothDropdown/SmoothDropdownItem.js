@@ -36,7 +36,9 @@ class SmoothDropdownItem extends Component {
       triggerRef: { current: ddTrigger },
       dropdownRef: { current: ddDropdown }
     } = this
-
+    if (!trigger) {
+      return null
+    }
     return (
       <SmoothDropdownContext.Consumer>
         {({

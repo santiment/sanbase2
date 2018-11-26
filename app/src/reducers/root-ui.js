@@ -2,6 +2,7 @@ import * as actions from './../actions/types'
 import { loadKeyState } from '../utils/localStorage'
 
 const isNightModeEnabled = loadKeyState('isNightModeEnabled') || false
+const isBetaModeEnabled = loadKeyState('isBetaModeEnabled') || false
 
 if (isNightModeEnabled) {
   document.body.classList.add('night-mode')
@@ -16,6 +17,7 @@ export const initialState = {
   loginErrorMessage: '',
   isGDPRModalOpened: false,
   isNightModeEnabled: isNightModeEnabled,
+  isBetaModeEnabled: isBetaModeEnabled,
   isSearchInputFocused: false
 }
 
@@ -75,6 +77,11 @@ export default (state = initialState, action) => {
       return {
         ...state,
         isNightModeEnabled: action.payload
+      }
+    case actions.APP_USER_BETA_MODE_SAVE:
+      return {
+        ...state,
+        isBetaModeEnabled: action.payload
       }
     case actions.APP_TOGGLE_SEARCH_FOCUS:
       return {

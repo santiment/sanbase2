@@ -18,6 +18,7 @@ const COLORS_DAY = {
   githubActivity: 'rgba(96, 76, 141, 0.7)', // Ultra Violet color #604c8d'
   twitter: 'rgba(16, 195, 245, 0.7)',
   burnRate: 'rgba(252, 138, 23, 0.7)',
+  exchangeFundFlow: 'rgba(252, 138, 23, 0.7)',
   transactionVolume: 'rgba(39, 166, 153, 0.7)',
   ethSpentOverTime: '#c82f3f',
   ethPrice: '#3c3c3d',
@@ -56,6 +57,7 @@ const makeChartDataFromHistory = (
     isToggledEthSpentOverTime,
     isToggledEthPrice = false,
     isToggledDailyActiveAddresses = false,
+    isToggledExchangeFundFlow = false,
     isToggledEmojisSentiment,
     ...props
   },
@@ -65,6 +67,7 @@ const makeChartDataFromHistory = (
   const burnRate = props.burnRate.items || []
   const transactionVolume = props.transactionVolume.items || []
   const dailyActiveAddresses = props.dailyActiveAddresses.items || []
+  const exchangeFundFlow = props.exchangeFundFlow.items || []
   const labels = history ? history.map(data => moment(data.datetime).utc()) : []
   const eventIndex = findIndexByDatetime(labels, '2018-01-13T18:00:00Z')
   const priceDataset = {
@@ -323,6 +326,29 @@ const makeChartDataFromHistory = (
       })
     }
 
+  const exchangeFundFlowDataset = !isToggledExchangeFundFlow
+    ? null
+    : {
+      label: 'In Out Difference',
+      type: 'line',
+      fill: false,
+      yAxisID: 'y-axis-exchangeFundFlow',
+      datalabels: {
+        display: false
+      },
+      borderColor: COLORS.burnRate,
+      backgroundColor: COLORS.burnRate,
+      borderWidth: 1,
+      pointBorderWidth: 2,
+      pointRadius: 2,
+      data: exchangeFundFlow.map(data => {
+        return {
+          x: data.datetime,
+          y: data.inOutDifference
+        }
+      })
+    }
+
   return {
     labels,
     datasets: [
@@ -336,6 +362,7 @@ const makeChartDataFromHistory = (
       ethSpentOverTimeByErc20ProjectsDataset,
       ethPriceDataset,
       dailyActiveAddressesDataset,
+      exchangeFundFlowDataset,
       sentimentEmojisDataset
     ].reduce((acc, curr) => {
       if (curr) acc.push(curr)
@@ -384,10 +411,6 @@ const getICOPriceAnnotation = props => {
             enabled: true,
             position: 'left',
             yAdjust: -10
-          },
-          onHover: function (e) {
-            // The annotation is is bound to the `this` variable
-            console.log('Annotation', e.type, this)
           }
         }
       ]
@@ -813,6 +836,25 @@ const makeOptionsFromProps = (props, COLORS) => {
             display: false
           },
           display: props.isToggledDailyActiveAddresses
+        },
+        {
+          id: 'y-axis-exchangeFundFlow',
+          position: 'right',
+          scaleLabel: {
+            display: false,
+            labelString: `Exchange Fund Flow`,
+            fontColor: '#3d4450'
+          },
+          ticks: {
+            display: false,
+            beginAtZero: false,
+            callback: renderTicks(props)
+          },
+          gridLines: {
+            drawBorder: false,
+            display: false
+          },
+          display: props.isToggledExchangeFundFlow
         }
       ],
       xAxes: [

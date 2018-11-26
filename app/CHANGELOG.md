@@ -4,6 +4,10 @@
 
   Stop fetching unused data
 
+- 2018-23-11 | v.0.21.1 'Phobos':
+
+  Hide Sentiment, Small fixes, Add Exchange Fund Flow
+
 - 2018-23-11 | v.0.21.0 'Phobos':
 
   Add widgets for asset lists

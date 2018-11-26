@@ -8,7 +8,6 @@ import {
 } from './TotalMarketcapGQL'
 import TotalMarketcapWidget from './TotalMarketcapWidget'
 import moment from 'moment'
-import { getEscapedGQLFieldAlias } from '../../utils/utils'
 
 const getMarketcapQuery = (type, projects) => {
   const from = moment()
@@ -32,13 +31,14 @@ const getMarketcapQuery = (type, projects) => {
     })
   }
 
-  const slugs = projects
+  const sortedProjects = projects
     .slice()
     .sort(
       ({ marketcapUsd: a_marketcapUsd }, { marketcapUsd: b_marketcapUsd }) =>
         a_marketcapUsd < b_marketcapUsd ? 1 : -1
     )
-    .map(({ slug }) => slug)
+
+  const slugs = sortedProjects.map(({ slug }) => slug)
 
   const slugsQuery = graphql(projectsListHistoryStatsGQL, {
     props: ({ data: { projectsListHistoryStats = [] } }) => ({
@@ -59,18 +59,20 @@ const getMarketcapQuery = (type, projects) => {
 
   if (projects.length > 1) {
     const top3Slugs = slugs.slice(0, 3)
-    const top3SlugsAliasesMap = top3Slugs.map(slug => [
+    const top3Tickers = sortedProjects.slice(0, 3).map(({ ticker }) => ticker)
+
+    const top3SlugsAliasesMap = top3Slugs.map((slug, i) => [
       slug,
-      getEscapedGQLFieldAlias(slug)
+      top3Tickers[i]
     ])
 
     const slugsQuery2 = graphql(
       constructTotalMarketcapGQL(top3SlugsAliasesMap, from),
       {
         props: ({ data: historyPrice = {}, ownProps: { historyPrices } }) => {
-          return top3SlugsAliasesMap.reduce(
-            (acc, [slug, escapedAlias]) => {
-              acc.historyPrices[slug] = historyPrice[escapedAlias]
+          return top3Tickers.reduce(
+            (acc, ticker) => {
+              acc.historyPrices[ticker] = historyPrice[ticker]
               return acc
             },
             {

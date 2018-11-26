@@ -14,8 +14,6 @@ export const sliderSettings = {
   speed: 500,
   slidesToShow: 1,
   slidesToScroll: 1,
-  autoplaySpeed: 7000,
-  autoplay: true,
   arrows: false
 }
 const INSIGHTS_VOTES_THRESHOLD = 2
@@ -59,7 +57,7 @@ const propTypes = {
 
 const InsightsWidget = ({ insights }) => {
   return (
-    <Widget className='InsightsWidget'>
+    <Widget className='InsightsWidget' title={'Latest Insights'}>
       <Slider {...sliderSettings}>
         {insights.map(({ id, createdAt, title, user, text }) => (
           <InsightsWidgetItem

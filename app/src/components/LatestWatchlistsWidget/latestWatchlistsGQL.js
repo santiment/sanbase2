@@ -1,6 +1,6 @@
 import gql from 'graphql-tag'
 
-export const latsetWatchlistsGQL = gql`
+export const latestWatchlistsGQL = gql`
   query fetchAllPublicUserLists {
     fetchAllPublicUserLists {
       id
@@ -8,6 +8,7 @@ export const latsetWatchlistsGQL = gql`
       insertedAt
       listItems {
         project {
+          id
           name
         }
       }

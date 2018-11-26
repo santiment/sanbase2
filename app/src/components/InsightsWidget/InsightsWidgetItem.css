@@ -1,13 +1,15 @@
 .InsightsWidgetItem {
   padding: 10px;
+  display: flex;
+  flex-direction: column;
 }
 
 .InsightsWidgetItem__title {
-  line-height: 1;
-  font-size: 18px;
-  margin: 0 0 8px;
+  line-height: 1.12;
+  font-size: 17px;
+  margin: 0 0 6px;
   font-weight: bold;
-  max-height: 2em;
+  max-height: 2.4em;
   overflow: hidden;
 }
 
@@ -15,11 +17,18 @@
   border-bottom: 0;
 }
 
-.InsightsWidgetItem__content {
+.InsightsWidgetItem__text {
   line-height: 1.2em;
   max-height: 4.7em;
-  margin-bottom: 6px;
   overflow: hidden;
+}
+
+.InsightsWidgetItem__article-content {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 5px;
 }
 
 .InsightsWidgetItem__content img {
@@ -29,7 +38,6 @@
 .InsightsWidgetItem__bottom {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
 }
 
 .InsightsWidgetItem__info {

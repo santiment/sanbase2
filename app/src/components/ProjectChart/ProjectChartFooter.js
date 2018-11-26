@@ -204,26 +204,29 @@ const ProjectChartFooter = ({
             !props.twitterData.error &&
             `| ${props.twitterData.followersCount}`}
         </ToggleBtn>
-        <ToggleBtn
-          loading={props.emojisSentiment.loading}
-          premium
-          hasPremium={props.isPremium}
-          disabled={props.emojisSentiment.items.length === 0}
-          isToggled={
-            props.isToggledEmojisSentiment &&
-            props.emojisSentiment.items.length !== 0
-          }
-          toggle={props.toggleEmojisSentiment}
-        >
-          <Label circular className='sentimentLabel' empty />
-          Sentiment
-          <Popup
-            trigger={<Icon name='info circle' />}
-            inverted
-            content={help['Sentiment'].description}
-            position='top left'
-          />
-        </ToggleBtn>
+        {(props.project.slug === 'bitcoin' ||
+          props.project.slug === 'ethereum') && (
+          <ToggleBtn
+            loading={props.emojisSentiment.loading}
+            premium
+            hasPremium={props.isPremium}
+            disabled={props.emojisSentiment.items.length === 0}
+            isToggled={
+              props.isToggledEmojisSentiment &&
+              props.emojisSentiment.items.length !== 0
+            }
+            toggle={props.toggleEmojisSentiment}
+          >
+            <Label circular className='sentimentLabel' empty />
+            Sentiment
+            <Popup
+              trigger={<Icon name='info circle' />}
+              inverted
+              content={help['Sentiment'].description}
+              position='top left'
+            />
+          </ToggleBtn>
+        )}
         {!Insights.loading &&
           Insights.items.length > 0 && (
           <Message info floating size='tiny'>

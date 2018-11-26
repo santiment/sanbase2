@@ -22,6 +22,7 @@ import {
 } from './fetchAssetsEpic'
 import fetchTimeseriesEpic from './fetchTimeseriesEpic'
 import handleNightModeToggle from './handleNightModeToggle'
+import handleBetaModeToggle from './handleBetaModeToggle'
 import keyboardEpic from './keyboardEpic'
 
 export default combineEpics(
@@ -36,6 +37,7 @@ export default combineEpics(
   apikeyGenerateEpic,
   apikeyRevokeEpic,
   handleNightModeToggle,
+  handleBetaModeToggle,
   keyboardEpic,
   // user's assets lists
   createWatchlistEpic,

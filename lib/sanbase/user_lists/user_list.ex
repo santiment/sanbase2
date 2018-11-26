@@ -19,6 +19,11 @@ defmodule Sanbase.UserLists.UserList do
     timestamps()
   end
 
+  # ex_admin needs changeset function
+  def changeset(user_list, attrs \\ %{}) do
+    update_changeset(user_list, attrs)
+  end
+
   def create_changeset(%UserList{} = user_list, attrs \\ %{}) do
     user_list
     |> cast(attrs, [:user_id, :name, :is_public, :color])

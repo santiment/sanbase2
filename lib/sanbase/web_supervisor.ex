@@ -51,11 +51,14 @@ defmodule Sanbase.Application.WebSupervisor do
       Sanbase.Clickhouse.MarkExchanges.child_spec(%{}),
 
       # Start libcluster
-      {Cluster.Supervisor,
-       [
-         Application.get_env(:libcluster, :topologies),
-         [name: Sanbase.ClusterSupervisor]
-       ]}
+      start_in(
+        {Cluster.Supervisor,
+         [
+           Application.get_env(:libcluster, :topologies),
+           [name: Sanbase.ClusterSupervisor]
+         ]},
+        [:prod]
+      )
     ]
 
     opts = [strategy: :one_for_one, name: Sanbase.WebSupervisor, max_restarts: 5, max_seconds: 1]

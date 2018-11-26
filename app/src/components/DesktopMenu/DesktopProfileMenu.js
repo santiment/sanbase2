@@ -8,7 +8,9 @@ import logo from './../../assets/logo.png'
 const DesktopProfileMenu = ({
   balance = 0,
   toggleNightMode,
+  toggleBetaMode,
   isNightModeEnabled,
+  isBetaModeEnabled,
   logout
 }) => (
   <div className={styles.wrapper}>
@@ -30,6 +32,13 @@ const DesktopProfileMenu = ({
         Night Mode
       </span>
       <Checkbox toggle checked={isNightModeEnabled} />
+    </div>
+    <div className={styles.button} onClick={toggleBetaMode}>
+      <span>
+        <Icon name='flask' />
+        Beta Mode
+      </span>
+      <Checkbox toggle checked={isBetaModeEnabled} />
     </div>
     <Link className={styles.button} to='/account#balance'>
       <span>

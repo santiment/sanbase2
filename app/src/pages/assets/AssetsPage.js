@@ -31,7 +31,7 @@ const AssetsPage = props => (
       <title>Assets</title>
       <link rel='canonical' href={`${getOrigin()}/assets`} />
     </Helmet>
-    {qs.parse(props.location.search).feature === 'widgets' && (
+    {props.isBetaModeEnabled && (
       <WidgetList type={props.type} isLoggedIn={props.isLoggedIn} />
     )}
     <div className='page-head page-head-projects'>

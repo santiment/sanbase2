@@ -91,7 +91,8 @@ export const App = ({
   isLoggedIn,
   isFullscreenMobile,
   isOffline,
-  hasUsername
+  hasUsername,
+  isBetaModeEnabled
 }) => (
   <div className='App'>
     {isOffline && (
@@ -150,6 +151,7 @@ export const App = ({
                   <AssetsPage
                     type={name}
                     isLoggedIn={isLoggedIn}
+                    isBetaModeEnabled={isBetaModeEnabled}
                     preload={() => LoadableDetailedPage.preload()}
                     {...props}
                   />
@@ -257,6 +259,7 @@ const mapStateToProps = state => {
     isLoggedIn: !!state.user.token,
     isFullscreenMobile: state.detailedPageUi.isFullscreenMobile,
     isOffline: !state.rootUi.isOnline,
+    isBetaModeEnabled: state.rootUi.isBetaModeEnabled,
     hasUsername: !!state.user.data.username
   }
 }

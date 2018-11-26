@@ -30,7 +30,9 @@ const DesktopRightGroupMenu = ({
   balance,
   logout,
   toggleNightMode,
-  isNightModeEnabled
+  toggleBetaMode,
+  isNightModeEnabled,
+  isBetaModeEnabled
 }) => (
   <div className='user-auth-control'>
     <HiddenElement>
@@ -49,7 +51,9 @@ const DesktopRightGroupMenu = ({
         balance={balance}
         logout={logout}
         toggleNightMode={toggleNightMode}
+        toggleBetaMode={toggleBetaMode}
         isNightModeEnabled={isNightModeEnabled}
+        isBetaModeEnabled={isBetaModeEnabled}
       />
     </SmoothDropdownItem>
   </div>
@@ -58,7 +62,8 @@ const DesktopRightGroupMenu = ({
 const mapStateToProps = state => ({
   balance: state.user.data.sanBalance,
   isLoggedIn: checkIsLoggedIn(state),
-  isNightModeEnabled: state.rootUi.isNightModeEnabled
+  isNightModeEnabled: state.rootUi.isNightModeEnabled,
+  isBetaModeEnabled: state.rootUi.isBetaModeEnabled
 })
 
 const mapDispatchToProps = dispatch => ({
@@ -70,6 +75,11 @@ const mapDispatchToProps = dispatch => ({
   toggleNightMode: () => {
     dispatch({
       type: actions.USER_TOGGLE_NIGHT_MODE
+    })
+  },
+  toggleBetaMode: () => {
+    dispatch({
+      type: actions.USER_TOGGLE_BETA_MODE
     })
   }
 })

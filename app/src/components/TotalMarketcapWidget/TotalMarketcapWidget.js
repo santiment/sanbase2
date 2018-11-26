@@ -49,7 +49,7 @@ const combineDataset = (totalMarketHistory, restProjects) => {
   if (LAST_INDEX < 0) {
     return
   }
-  
+
   const restProjectTimeseries = Object.keys(restProjects).map(key =>
     restProjects[key].map(({ marketcap, datetime }) => ({
       datetime,
@@ -57,12 +57,10 @@ const combineDataset = (totalMarketHistory, restProjects) => {
     }))
   )
 
-  
   const result = mergeTimeseriesByKey({
     timeseries: [totalMarketHistory, ...restProjectTimeseries],
     key: 'datetime'
   })
-
 
   return result
 }

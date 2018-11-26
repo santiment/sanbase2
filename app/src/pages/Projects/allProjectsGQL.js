@@ -30,15 +30,8 @@ const project = gql`
     ethSpent
     averageDevActivity
     averageDailyActiveAddresses
-    fundsRaisedUsdIcoEndPrice
     marketcapUsd
     ethBalance
-    btcBalance
-    usdBalance
-    priceToBookRatio
-    twitterData {
-      followersCount
-    }
     signals {
       name
       description
@@ -82,12 +75,10 @@ export const allErc20ProjectsGQL = gql`
     allErc20Projects {
       ...generalData
       ...project
-      ...ethereumData
     }
   }
   ${generalData}
   ${project}
-  ${ethereumData}
 `
 
 export const currenciesGQL = gql`
@@ -105,7 +96,6 @@ export const allErc20ShortProjectsGQL = gql`
   query allErc20Projects {
     allErc20Projects {
       ...generalData
-      ...ethereumData
       rank
       ethSpent
       coinmarketcapId
@@ -117,7 +107,6 @@ export const allErc20ShortProjectsGQL = gql`
     }
   }
   ${generalData}
-  ${ethereumData}
 `
 
 export const allShortProjectsGQL = gql`

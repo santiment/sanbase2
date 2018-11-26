@@ -9,7 +9,6 @@ const MyListBtn = (
   <div className='projects-navigation-list__page-link'>Watchlists</div>
 )
 
-
 const EthereumBtn = (
   <div className='projects-navigation-list__page-link'>Ethereum</div>
 )
@@ -18,7 +17,7 @@ const CategoriesBtn = (
   <div className='projects-navigation-list__page-link'>Categories</div>
 )
 
-const AssetsPageNavigation = ({ isLoggedIn = false, location: { search }  }) => (
+const AssetsPageNavigation = ({ isLoggedIn = false, location: { search } }) => (
   <div className='projects-navigation'>
     <div className='projects-navigation-list'>
       <Link

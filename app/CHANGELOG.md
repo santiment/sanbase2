@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-26-11 | v.0.21.2 'Phobos':
+
+  Stop fetching unused data
+
 - 2018-23-11 | v.0.21.1 'Phobos':
 
   Hide Sentiment, Small fixes, Add Exchange Fund Flow

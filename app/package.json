@@ -1,6 +1,6 @@
 {
   "name": "SANbase",
-  "version": "0.21.3",
+  "version": "0.21.5",
   "private": true,
   "scripts": {
     "start": "BROWSER=none REACT_APP_VERSION=$(node -pe 'require(\"./package.json\").version')-$(echo $GIT_HEAD) node node_modules/exit_on_eof/index.js 'react-scripts start'",
@@ -32,6 +32,7 @@
     "chart.js": "^2.7.1",
     "chartjs-plugin-annotation": "^0.5.7",
     "chartjs-plugin-datalabels": "^0.2.0",
+    "chartjs-plugin-watermark": "^1.0.3",
     "classnames": "^2.2.5",
     "copy-to-clipboard": "^3",
     "draft-convert": "^2.0.1",

@@ -1,8 +1,16 @@
 ## CHANGELOG
 
-- 2018-27-11 | v.0.21.3 'Phobos':
+- 2018-27-11 | v.0.21.5 'Phobos':
 
   Add Intercom
+
+- 2018-27-11 | v.0.21.4 'Phobos':
+
+  Add a watermark
+
+- 2018-27-11 | v.0.21.3 'Phobos':
+
+  Fix eth spent table
 
 - 2018-26-11 | v.0.21.2 'Phobos':
 

@@ -6,8 +6,9 @@
 use Mix.Config
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  # 5 minutes
   update_interval: 5 * 1000 * 60,
+  api_key: {:system, "COINMARKETCAP_API_KEY", ""},
+  api_url: "https://sandbox-api.coinmarketcap.com/",
   sync_enabled: {:system, "COINMARKETCAP_PRICES_ENABLED", false}
 
 # TODO: Change after switching over to only this cmc

@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
-  @projects_number 10_000
+  @projects_number 5_000
   @moduledoc ~s"""
   NOTE: Old module that will be deprecated when all places where the data from it is used is removed.
 
@@ -31,19 +31,31 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   use Tesla
 
+  require Sanbase.Utils.Config, as: Config
+
   import Sanbase.Utils.Math, only: [to_integer: 1, to_float: 1]
 
+  alias Sanbase.DateTimeUtils
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
-  plug(Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v2/ticker")
+
+  plug(Tesla.Middleware.Headers, [
+    {"X-CMC_PRO_API_KEY", Config.module_get(Coinmarketcap, :api_key)}
+  ])
+
+  plug(
+    Tesla.Middleware.BaseUrl,
+    Config.module_get(Coinmarketcap, :api_url)
+  )
+
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
   alias __MODULE__
 
   def fetch_data() do
-    "/?limit=#{@projects_number}"
+    "v1/cryptocurrency/listings/latest?start=1&sort=market_cap&limit=#{@projects_number}&cryptocurrency_type=all&convert=USD,BTC"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -60,17 +72,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
       |> Jason.decode!()
 
     data
-    |> Enum.map(fn {_, project_data} ->
+    |> Enum.map(fn project_data ->
       %{
         "name" => name,
         "symbol" => symbol,
-        "website_slug" => website_slug,
-        "rank" => rank,
+        "slug" => slug,
+        "cmc_rank" => rank,
         "circulating_supply" => circulating_supply,
         "total_supply" => total_supply,
         "max_supply" => _max_supply,
         "last_updated" => last_updated,
-        "quotes" => %{
+        "quote" => %{
           "USD" => %{
             "price" => price_usd,
             "volume_24h" => volume_24h_usd,
@@ -91,7 +103,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
       } = project_data
 
       %Ticker{
-        id: website_slug,
+        id: slug,
         name: name,
         symbol: symbol,
         price_usd: price_usd,
@@ -119,11 +131,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
         market_cap_usd: marketcap_usd
       }) do
     price_point = %PricePoint{
-      marketcap: marketcap_usd |> to_integer(),
-      volume_usd: volume_usd |> to_integer(),
-      price_btc: price_btc |> to_float(),
-      price_usd: price_usd |> to_float(),
-      datetime: DateTime.from_unix!(last_updated)
+      marketcap: (marketcap_usd || 0) |> to_integer(),
+      volume_usd: (volume_usd || 0) |> to_integer(),
+      price_btc: (price_btc || 0) |> to_float(),
+      price_usd: (price_usd || 0) |> to_float(),
+      datetime: DateTimeUtils.from_iso8601!(last_updated)
     }
 
     [

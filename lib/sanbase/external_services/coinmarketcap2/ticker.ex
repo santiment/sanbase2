@@ -1,5 +1,5 @@
 defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
-  @projects_number 10_000
+  @projects_number 5_000
   @moduledoc ~s"""
   Fetches the ticker data from coinmarketcap API `https://api.coinmarketcap.com/v2/ticker`
 
@@ -30,14 +30,27 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   use Tesla
 
   require Logger
+  require Sanbase.Utils.Config, as: Config
 
   import Sanbase.Utils.Math, only: [to_integer: 1, to_float: 1]
+
+  alias Sanbase.DateTimeUtils
   # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.ExternalServices.Coinmarketcap
 
   plug(Sanbase.ExternalServices.RateLimiting.Middleware, name: :api_coinmarketcap_rate_limiter)
-  plug(Tesla.Middleware.BaseUrl, "https://api.coinmarketcap.com/v2/ticker")
+
+  plug(Tesla.Middleware.Headers, [
+    {"X-CMC_PRO_API_KEY", Config.module_get(Coinmarketcap, :api_key)}
+  ])
+
+  plug(
+    Tesla.Middleware.BaseUrl,
+    Config.module_get(Coinmarketcap, :api_url)
+  )
+
   plug(Tesla.Middleware.Compression)
   plug(Tesla.Middleware.Logger)
 
@@ -51,7 +64,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   def fetch_data() do
     Logger.info("[CMC] Fetching the realtime data for top #{@projects_number} projects")
 
-    "/?convert=BTC&limit=#{@projects_number}"
+    "v1/cryptocurrency/listings/latest?start=1&sort=market_cap&limit=#{@projects_number}&cryptocurrency_type=all&convert=USD,BTC"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
@@ -63,16 +76,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
 
       {:ok, %Tesla.Env{status: status, body: body}} ->
         error =
-          "Failed fetching top #{@projects_number} projects' information from /v2/ticker. Status: #{
-            status
-          }. Body: #{inspect(body)}"
+          "Failed fetching top #{@projects_number} projects' information. Status: #{status}. Body: #{
+            inspect(body)
+          }"
 
         Logger.warn(error)
         {:error, error}
 
       {:error, error} ->
         error_msg =
-          "Error fetching top #{@projects_number} projects' information from /v2/ticker. Error message #{
+          "Error fetching top #{@projects_number} projects' information. Error message #{
             inspect(error)
           }"
 
@@ -89,17 +102,17 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
       |> Jason.decode!()
 
     data
-    |> Enum.map(fn {_, project_data} ->
+    |> Enum.map(fn project_data ->
       %{
         "name" => name,
         "symbol" => symbol,
-        "website_slug" => website_slug,
-        "rank" => rank,
+        "slug" => slug,
+        "cmc_rank" => rank,
         "circulating_supply" => circulating_supply,
         "total_supply" => total_supply,
         "max_supply" => _max_supply,
         "last_updated" => last_updated,
-        "quotes" => %{
+        "quote" => %{
           "USD" => %{
             "price" => price_usd,
             "volume_24h" => volume_24h_usd,
@@ -120,7 +133,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
       } = project_data
 
       %Ticker{
-        id: website_slug,
+        id: slug,
         name: name,
         symbol: symbol,
         price_usd: price_usd,
@@ -150,11 +163,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
         } = ticker
       ) do
     price_point = %PricePoint{
-      marketcap_usd: marketcap_usd |> to_integer(),
-      volume_usd: volume_usd |> to_integer(),
-      price_btc: price_btc |> to_float(),
-      price_usd: price_usd |> to_float(),
-      datetime: DateTime.from_unix!(last_updated)
+      marketcap_usd: (marketcap_usd || 0) |> to_integer(),
+      volume_usd: (volume_usd || 0) |> to_integer(),
+      price_btc: (price_btc || 0) |> to_float(),
+      price_usd: (price_usd || 0) |> to_float(),
+      datetime: DateTimeUtils.from_iso8601!(last_updated)
     }
 
     PricePoint.convert_to_measurement(price_point, Measurement.name_from(ticker))

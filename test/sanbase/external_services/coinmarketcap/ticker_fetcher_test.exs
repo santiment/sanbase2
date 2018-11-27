@@ -16,7 +16,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
     Store.create_db()
 
     Tesla.Mock.mock(fn %{method: :get} ->
-      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "v2_ticker_5.json"))}
+      %Tesla.Env{status: 200, body: File.read!(Path.join(__DIR__, "pro_cmc_api_2.json"))}
     end)
 
     Store.drop_measurement(@btc_measurement)
@@ -27,61 +27,28 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcherTest do
 
     TickerFetcher.work()
 
-    from = DateTime.from_naive!(~N[2018-11-08 10:35:00], "Etc/UTC")
-    to = DateTime.from_naive!(~N[2018-11-08 10:40:00], "Etc/UTC")
+    from = DateTime.from_naive!(~N[2018-08-17 08:35:00], "Etc/UTC")
+    to = DateTime.from_naive!(~N[2018-08-17 10:40:00], "Etc/UTC")
 
     # Test bitcoin is in influx
     assert Store.fetch_price_points!(@btc_measurement, from, to) == [
              [
-               DateTime.from_naive!(~N[2018-11-08 10:38:15], "Etc/UTC"),
-               6481.63850144,
+               DateTime.from_naive!(~N[2018-08-17 08:55:37], "Etc/UTC"),
+               6493.02288075,
                1,
-               112_558_027_683,
-               4_545_288_572
+               111_774_707_274,
+               4_858_871_494
              ]
            ]
 
     # Test Ethereum is in influx
     assert Store.fetch_price_points!(@eth_measurement, from, to) == [
              [
-               DateTime.from_naive!(~N[2018-11-08 10:38:44], "Etc/UTC"),
-               214.428922185,
-               0.033082518,
-               22_101_582_138,
-               1_642_522_945
-             ]
-           ]
-
-    # Test Ripple is in influx
-    assert Store.fetch_price_points!(@xrp_measurement, from, to) == [
-             [
-               DateTime.from_naive!(~N[2018-11-08 10:38:06], "Etc/UTC"),
-               0.5086152806,
-               7.84702e-5,
-               20_449_136_107,
-               643_178_477
-             ]
-           ]
-
-    # Test Bitcoin Cash is in influx
-    assert Store.fetch_price_points!(@bch_measurement, from, to) == [
-             [
-               DateTime.from_naive!(~N[2018-11-08 10:38:39], "Etc/UTC"),
-               596.873154491,
-               0.0920867701,
-               10_413_526_552,
-               924_146_674
-             ]
-           ]
-
-    # Test EOS is in influx
-    assert Store.fetch_price_points!(@eos_measurement, from, to) == [
-             [
-               DateTime.from_naive!(~N[2018-11-08 10:38:32], "Etc/UTC"),
-               5.554970117,
-               8.570318e-4,
-               5_034_164_547,
-               698_336_214
+               DateTime.from_naive!(~N[2018-08-17 08:54:55], "Etc/UTC"),
+               300.96820061,
+               0.04633099381624731,
+               30_511_368_440,
+               1_689_698_769
              ]
            ]
   end

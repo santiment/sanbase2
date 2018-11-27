@@ -11,6 +11,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
+  alias Sanbase.DateTimeUtils
   alias Sanbase.Model.{LatestCoinmarketcapData, Project}
   alias Sanbase.Repo
   # TODO: Change after switching over to only this cmc
@@ -103,7 +104,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
       percent_change_1h: ticker.percent_change_1h,
       percent_change_24h: ticker.percent_change_24h,
       percent_change_7d: ticker.percent_change_7d,
-      update_time: DateTime.from_unix!(ticker.last_updated)
+      update_time: DateTimeUtils.from_iso8601!(ticker.last_updated)
     })
     |> Repo.insert_or_update!()
   end

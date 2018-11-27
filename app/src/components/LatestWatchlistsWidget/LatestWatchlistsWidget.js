@@ -6,6 +6,7 @@ import LatestWatchlistsWidgetItem from './LatestWatchlistsWidgetItem'
 import { latestWatchlistsGQL } from './latestWatchlistsGQL'
 import { sliderSettings } from '../InsightsWidget/InsightsWidget'
 import styles from './LatestWatchlists.module.css'
+import moment from 'moment'
 
 const MAX_WATCHLISTS_COUNT = 5
 
@@ -14,6 +15,11 @@ const LatestWatchlistsWidget = ({ data: { fetchAllPublicUserLists = [] } }) => {
     <Widget className={styles.widget} title={'Latest Watchlists'}>
       <Slider {...sliderSettings}>
         {fetchAllPublicUserLists
+          .filter(({ listItems }) => listItems.length > 1)
+          .sort(
+            ({ insertedAt: AInsertedAt }, { insertedAt: BInsertedAt }) =>
+              moment(AInsertedAt).isBefore(moment(BInsertedAt)) ? 1 : -1
+          )
           .slice(0, MAX_WATCHLISTS_COUNT)
           .map(({ id, name, listItems = [], insertedAt, user = {} }) => (
             <LatestWatchlistsWidgetItem

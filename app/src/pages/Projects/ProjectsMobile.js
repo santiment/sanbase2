@@ -133,7 +133,6 @@ export default class ProjectsMobile extends Component {
               >
                 Filter
               </Button>
-              
             </div>
           </SlideDown>
         )}

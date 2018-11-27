@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-27-11 | v.0.21.5 'Phobos':
+
+  Add Intercom
+
 - 2018-27-11 | v.0.21.4 'Phobos':
 
   Add a watermark

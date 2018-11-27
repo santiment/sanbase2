@@ -18,7 +18,9 @@ const TrendsPage = () => (
       </div>
     </div>
     <TrendsExamplesItemTopic />
+    {/*
     <TrendsExamples />
+    */}
   </div>
 )
 

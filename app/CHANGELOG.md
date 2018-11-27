@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-27-11 | v.0.21.4 'Phobos':
+
+  Add a watermark
+
 - 2018-27-11 | v.0.21.3 'Phobos':
 
   Fix eth spent table

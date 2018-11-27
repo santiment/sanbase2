@@ -6,8 +6,10 @@ import 'react-dates/initialize'
 import 'react-dates/lib/css/_datepicker.css'
 import 'chartjs-plugin-datalabels'
 import annotation from 'chartjs-plugin-annotation'
+import watermark from 'chartjs-plugin-watermark'
 import { formatNumber, formatBTC, millify } from './../../utils/formatting'
 import { findIndexByDatetime } from './../../utils/utils'
+import logo from './../../assets/logo_sanbase.png'
 import './ProjectChart.css'
 import './react-dates-override.css'
 
@@ -433,6 +435,18 @@ const makeOptionsFromProps = (props, COLORS) => {
     animation: false,
     pointRadius: 0,
     maintainAspectRatio: true,
+    watermark: {
+      image: logo,
+      x: 0,
+      y: 0,
+      width: 230,
+      height: 45,
+      opacity: 1,
+      alignX: 'right',
+      alignY: 'top',
+      alignToChartArea: true,
+      position: 'back'
+    },
     plugins: {
       datalabels: {
         display: false,
@@ -903,6 +917,7 @@ const makeOptionsFromProps = (props, COLORS) => {
 class ProjectChart extends Component {
   componentWillMount () {
     Chart.plugins.register(annotation)
+    Chart.plugins.register(watermark)
   }
 
   render () {

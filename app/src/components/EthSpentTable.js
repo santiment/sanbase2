@@ -78,12 +78,15 @@ const EthSpentTable = ({
       id: 'collected-usd',
       maxWidth: 210,
       accessor: 'fundsRaisedUsdIcoEndPrice',
-      Cell: ({ value }) => (
-        <div className='ethereum-table-cell-eth-spent'>{`$${millify(
-          value,
-          2
-        )}`}</div>
-      ),
+      Cell: ({ value }) =>
+        value ? (
+          <div className='ethereum-table-cell-eth-spent'>{`$${millify(
+            value,
+            2
+          )}`}</div>
+        ) : (
+          <div>No data</div>
+        ),
       sortable: true,
       sortMethod: (a, b) => simpleSort(+a, +b)
     },

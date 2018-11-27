@@ -13,6 +13,7 @@ const generalData = gql`
 
 const ethereumData = gql`
   fragment ethereumData on Project {
+    fundsRaisedUsdIcoEndPrice
     ethAddresses {
       address
     }
@@ -75,10 +76,12 @@ export const allErc20ProjectsGQL = gql`
     allErc20Projects {
       ...generalData
       ...project
+      ...ethereumData
     }
   }
   ${generalData}
   ${project}
+  ${ethereumData}
 `
 
 export const currenciesGQL = gql`

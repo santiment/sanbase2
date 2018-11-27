@@ -15,7 +15,6 @@ const withIntercom = (WrappedComponent, options = {}) => {
     if (process.env.NODE_ENV === 'production') {
       window.Intercom('update')
     }
-    console.log('update')
   }
 
   const HOC = class extends Component {

@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-27-11 | v.0.21.3 'Phobos':
+
+  Add Intercom
+
 - 2018-26-11 | v.0.21.2 'Phobos':
 
   Stop fetching unused data

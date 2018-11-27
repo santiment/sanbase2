@@ -19,6 +19,7 @@ import EmailLoginVerification from './pages/EmailLoginVerification'
 import Menu from './components/TopMenu'
 import MobileMenu from './components/MobileMenu'
 import withTracker from './withTracker'
+import withIntercom from './withIntercom'
 import ErrorBoundary from './ErrorBoundary'
 import PageLoader from './components/PageLoader'
 import Status from './pages/Status'
@@ -271,7 +272,8 @@ export const mapSizesToProps = ({ width }) => ({
 const enchance = compose(
   connect(mapStateToProps),
   withSizes(mapSizesToProps),
-  withTracker
+  withTracker,
+  withIntercom
 )
 
 export default enchance(App)

@@ -98,7 +98,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
-  def average_token_age_consumed_in_days(
+  def token_age_consumed_in_days(
         root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
         resolution
@@ -109,7 +109,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         Enum.zip(burn_rates, transaction_volumes)
         |> Enum.map(fn {%{datetime: dt, burn_rate: burn_rate},
                         %{datetime: dt, transaction_volume: transaction_volume}} ->
-          average_token_age =
+          token_age =
             case transaction_volume do
               0.0 -> 0
               _ -> burn_rate / transaction_volume * 15 / 86400
@@ -117,14 +117,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
           %{
             datetime: dt,
-            average_token_age: average_token_age
+            token_age: token_age
           }
         end)
 
       {:ok, result}
     else
       error ->
-        error_msg = "Can't fetch average token age for #{slug}"
+        error_msg = "Can't fetch token age for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
     end

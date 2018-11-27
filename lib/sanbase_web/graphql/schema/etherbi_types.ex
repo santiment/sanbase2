@@ -11,9 +11,9 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
     field(:transaction_volume, :float)
   end
 
-  object :average_token_age_data do
+  object :token_age_data do
     field(:datetime, non_null(:datetime))
-    field(:average_token_age, :float)
+    field(:token_age, :float)
   end
 
   object :active_addresses do

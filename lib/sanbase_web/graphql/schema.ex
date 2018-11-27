@@ -290,12 +290,12 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Fetch average token age consumed in days for a project, grouped by interval.
+    Fetch token age consumed in days for a project, grouped by interval.
     Projects are referred to by a unique identifier (slug).
 
     This metric includes only on-chain transaction volume, not volume in exchanges.
     """
-    field :average_token_age_consumed_in_days, list_of(:average_token_age_data) do
+    field :token_age_consumed_in_days, list_of(:token_age_data) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -303,7 +303,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&EtherbiResolver.average_token_age_consumed_in_days/3)
+      cache_resolve(&EtherbiResolver.token_age_consumed_in_days/3)
     end
 
     @desc ~s"""
@@ -314,6 +314,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
+      @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
       arg(:interval, :string, default_value: "1d")
 
       middleware(ApiTimeframeRestriction)

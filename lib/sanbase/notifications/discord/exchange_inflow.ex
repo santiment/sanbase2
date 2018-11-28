@@ -84,11 +84,9 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> Enum.map(fn %Project{} = project ->
       inflow = Map.get(contract_inflow_map, project.main_contract_address)
 
-      percent_of_total_supply = percent_of_total_supply(project, inflow) |> Float.round(3)
-
-      if inflow && percent_of_total_supply > signal_trigger_percent() do
+      if inflow && percent_of_total_supply(project, inflow) > signal_trigger_percent() do
         content = """
-        Project #{project.name} has #{percent_of_total_supply}% of its circulating supply deposited into an exchange in the past #{
+        Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply deposited into an exchange in the past #{
           interval_days()
         } day(s).
         In total #{
@@ -119,7 +117,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
        ) do
     tokens_amount = supply(project) |> Decimal.to_float()
     inflow = inflow / :math.pow(10, token_decimals)
-    inflow / tokens_amount * 100
+    percent = inflow / tokens_amount * 100
+    percent |> Float.round(3)
   end
 
   defp signal_trigger_percent(),

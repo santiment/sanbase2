@@ -152,7 +152,7 @@ config :sanbase, Sanbase.Scheduler,
       task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
     ],
     exchange_inflow_signal: [
-      schedule: "@daily",
+      schedule: "*/5 * * * *",
       task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
     ]
   ]

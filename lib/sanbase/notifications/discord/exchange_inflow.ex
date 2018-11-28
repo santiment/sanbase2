@@ -14,6 +14,9 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Notifications.Discord
+  alias Sanbase.Notifications.Cooldown
+
+  @signal_name "exchange_inflow"
 
   @impl true
   def run() do
@@ -33,10 +36,12 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> case do
       {:ok, list} ->
         build_payload(projects, list)
-        |> Enum.each(fn {payload, embeds} ->
+        |> Enum.each(fn {project, payload, embeds} ->
           payload
           |> Discord.encode!(publish_user(), embeds)
           |> publish("discord")
+
+          Cooldown.set_triggered(@signal_name, project.coinmarketcap_id)
         end)
 
       {:error, error} ->
@@ -84,7 +89,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> Enum.map(fn %Project{} = project ->
       inflow = Map.get(contract_inflow_map, project.main_contract_address)
 
-      if inflow && percent_of_total_supply(project, inflow) > signal_trigger_percent() do
+      if inflow && percent_of_total_supply(project, inflow) > signal_trigger_percent() &&
+           not Cooldown.has_cooldown?(@signal_name, project.coinmarketcap_id, 86400) do
         content = """
         Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply deposited into an exchange in the past #{
           interval_days()
@@ -105,7 +111,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
             chart_type: :exchange_inflow
           )
 
-        {content, embeds}
+        {project, content, embeds}
       end
     end)
     |> Enum.reject(&is_nil/1)

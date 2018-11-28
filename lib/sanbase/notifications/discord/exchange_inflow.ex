@@ -84,11 +84,17 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> Enum.map(fn %Project{} = project ->
       inflow = Map.get(contract_inflow_map, project.main_contract_address)
 
-      if inflow && percent_of_total_supply(project, inflow) > signal_trigger_percent() do
+      percent_of_total_supply = percent_of_total_supply(project, inflow) |> Float.round(3)
+
+      if inflow && percent_of_total_supply > signal_trigger_percent() do
         content = """
-        Project #{project.name} has more than #{signal_trigger_percent()}% of its circulating supply deposited into an exchange in the past #{
+        Project #{project.name} has #{percent_of_total_supply}% of its circulating supply deposited into an exchange in the past #{
           interval_days()
         } day(s).
+        In total #{
+          (inflow / :math.pow(10, project.token_decimals))
+          |> Number.Delimit.number_to_delimited(precision: 0)
+        } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens were moved into exchanges.
         #{Project.sanbase_link(project)}
         """
 

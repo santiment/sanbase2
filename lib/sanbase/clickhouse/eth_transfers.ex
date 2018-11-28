@@ -148,6 +148,29 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {:ok, balances}
   end
 
+  @doc ~s"""
+  Returns the inflow and outflow volume for a list of exchange_addresses between two datetimes
+  """
+  def exchange_volume(exchange_addresses, from_datetime, to_datetime) do
+    {query, args} = exchange_volume_query(exchange_addresses, from_datetime, to_datetime)
+
+    query
+    |> ClickhouseRepo.query_transform(args, fn [dt, inflow, outflow] ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        exchange_inflow: inflow,
+        exchange_outflow: outflow
+      }
+    end)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   # Private functions
 
   defp wallet_transfers([], _, _, _, _), do: []
@@ -334,6 +357,63 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     )
     ORDER BY dt
     """
+
+    {query, args}
+  end
+
+  def exchange_volume_query(exchange_addresses, from_datetime, to_datetime) do
+    query = """
+    SELECT
+      toUnixTimestamp(dt) as datetime,
+     (inflow * price_usd) as exchange_inflow,
+     (outflow * price_usd) as exchange_outflow
+    FROM 
+    (
+     SELECT dt, inflow, outflow
+      FROM 
+      (
+      SELECT 
+    	  toStartOfDay(dt) as dt,
+    	  sum(value) / #{@eth_decimals} as inflow
+      FROM #{@table}
+      PREWHERE
+          to IN (?1) AND NOT from IN (?1)
+          AND dt >= toDateTime(?2)
+          AND dt <= toDateTime(?3)
+      GROUP BY dt
+     ) 
+     ALL INNER JOIN
+     (
+      SELECT 
+    	  toStartOfDay(dt) as dt,
+    	  sum(value) / #{@eth_decimals} as outflow
+      FROM #{@table}
+        PREWHERE 
+          from IN (?1) AND NOT to IN (?1)
+          AND dt >= toDateTime(?2)
+          AND dt <= toDateTime(?3)
+      GROUP BY dt
+     ) USING dt
+    )
+    ALL INNER JOIN
+    (
+     SELECT 
+      toStartOfDay(dt) as dt, AVG(price_usd) as "price_usd"
+     FROM prices
+      PREWHERE 
+        name = 'ETH_ethereum'
+        AND dt >= toDateTime(?2)
+        AND dt <= toDateTime(?3)
+     GROUP BY dt
+    ) USING dt
+    ORDER BY dt
+    """
+
+    args = [
+      exchange_addresses,
+      from_datetime,
+      to_datetime
+    ]
 
     {query, args}
   end

@@ -30,4 +30,24 @@ defmodule Sanbase.Model.ExchangeAddress do
     Repo.all(__MODULE__)
     |> Enum.map(fn %__MODULE__{address: address} -> address end)
   end
+
+  def list_all_exchanges() do
+    from(e in __MODULE__,
+      select: e.name,
+      distinct: true
+    )
+    |> Repo.all()
+  end
+
+  def addresses_for_exchange(exchange) do
+    from(e in __MODULE__,
+      where: e.name == ^exchange,
+      select: e.address
+    )
+    |> Repo.all()
+    |> case do
+      [] -> {:error, "No addresses found for exchange"}
+      result -> {:ok, result}
+    end
+  end
 end

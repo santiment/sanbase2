@@ -33,10 +33,9 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> case do
       {:ok, list} ->
         build_payload(projects, list)
-        |> Discord.group_messages()
-        |> Enum.each(fn payload ->
+        |> Enum.each(fn {payload, embeds} ->
           payload
-          |> Discord.encode!(publish_user())
+          |> Discord.encode!(publish_user(), embeds)
           |> publish("discord")
         end)
 
@@ -86,12 +85,23 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       inflow = Map.get(contract_inflow_map, project.main_contract_address)
 
       if inflow && percent_of_total_supply(project, inflow) > signal_trigger_percent() do
-        """
+        content = """
         Project #{project.name} has more than #{signal_trigger_percent()}% of its circulating supply deposited into an exchange in the past #{
           interval_days()
         } day(s).
         #{Project.sanbase_link(project)}
         """
+
+        embeds =
+          embeds =
+          Discord.build_embedded_chart(
+            project.coinmarketcap_id,
+            Timex.shift(Timex.now(), days: -90),
+            Timex.shift(Timex.now(), days: -1),
+            chart_type: :exchange_inflow
+          )
+
+        {content, embeds}
       end
     end)
     |> Enum.reject(&is_nil/1)

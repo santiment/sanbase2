@@ -97,7 +97,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
         project_slug,
         Timex.shift(Timex.now(), days: -90),
         Timex.shift(Timex.now(), days: -1),
-        daa: true
+        chart_type: :daily_active_addresses
       )
 
     {content, embeds}

@@ -8,8 +8,9 @@ defmodule Sanbase.Notifications.Discord do
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
-  alias Sanbase.Blockchain.DailyActiveAddresses
+  alias Sanbase.Blockchain.{DailyActiveAddresses, ExchangeFundsFlow}
   alias Sanbase.FileStore
+  alias Sanbase.Utils.Math
 
   @discord_message_size_limit 1900
 
@@ -82,28 +83,11 @@ defmodule Sanbase.Notifications.Discord do
   end
 
   @doc ~s"""
-  Discord currently has limit of 2000 chars.
-  Groups a list of messages into groups which combined doesn't exceed `message_size_limit`
+  Builds discord embeds object with chart URL for a given project slug and time interval
   """
-  @spec group_messages([any()]) :: [any()]
-  def group_messages(messages) do
-    {groups, last} =
-      messages
-      |> Enum.reduce({[], []}, fn el, {acc, tmp_acc} ->
-        if messages_len(el) + messages_len(tmp_acc) > @discord_message_size_limit do
-          {acc ++ [tmp_acc], [el]}
-        else
-          {acc, tmp_acc ++ [el]}
-        end
-      end)
-
-    groups ++ [last]
-  end
-
-  @doc ~s"""
-  Builds discord embeds object with chart url for a given project slug and time interval
-  """
-  @spec build_embedded_chart(String.t(), any(), any()) :: [any()]
+  @spec build_embedded_chart(String.t(), %DateTime{}, %DateTime{}, list()) :: [
+          %{image: %{url: String.t()}}
+        ]
   def build_embedded_chart(slug, from, to, opts \\ []) do
     with {:ok, url} <- build_candlestick_image_url(slug, from, to, opts),
          {:ok, resp} <- http_client().get(url),
@@ -117,47 +101,43 @@ defmodule Sanbase.Notifications.Discord do
   end
 
   @doc ~s"""
-  Build candlestick image url using google charts api
+  Build candlestick image url using google charts API. Inspect the `:chart_type`
+  value from `opts` and add an overlaying chart that represents a specific metric.
+  Currently supported such metrics are `:daily_active_addresses` and `:exchange_inflow`
   """
+  @spec build_candlestick_image_url(String.t(), %DateTime{}, %DateTime{}, list()) ::
+          {:ok, String.t()} | {:error, String.t()}
   def build_candlestick_image_url(slug, from, to, opts \\ []) do
     with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
          {:ok, ohlc} when is_list(ohlc) <- PricesStore.fetch_ohlc(measurement, from, to, "1d"),
-         number when number != 0 <- length(ohlc) do
-      ohlc =
-        ohlc
-        |> Enum.zip()
-        |> Enum.map(&Tuple.to_list/1)
+         number when number != 0 <- length(ohlc),
+         {:ok, prices} <- candlestick_prices(ohlc),
+         {:ok, image} <- generate_image_url(prices, slug, from, to, opts) do
+      {:ok, image}
+    else
+      error ->
+        Logger.error("Error building image for slug: #{slug}. Reason: #{inspect(error)}")
+        {:error, "Error building image for slug: #{slug}"}
+    end
+  end
 
-      [_ | prices] = ohlc
+  # Private functions
 
-      prices =
-        prices
-        |> Enum.map(fn list -> list |> Enum.filter(fn el -> el != 0 end) end)
-        |> Enum.map(fn list ->
-          list
-          |> Enum.map(&(&1 * 1.0))
-          |> Enum.map(fn num ->
-            if num > 100, do: Float.round(num, 2), else: Float.round(num, 4)
-          end)
-        end)
+  defp generate_image_url(prices, slug, from, to, opts) do
+    [_open, high_values, low_values, _close, _avg] = prices
+    min = low_values |> Enum.min() |> Float.floor(2)
+    max = high_values |> Enum.max() |> Float.ceil(2)
 
-      [_, high_values, low_values, _, _] = prices
-      min = low_values |> Enum.min() |> Float.floor(2)
-      max = high_values |> Enum.max() |> Float.ceil(2)
+    [open_str, high_str, low_str, close_str, _average_str] =
+      prices |> Enum.map(&Enum.join(&1, ","))
 
-      [open_str, high_str, low_str, close_str, _] =
-        prices
-        |> Enum.map(fn list -> Enum.join(list, ",") end)
+    size = Enum.count(low_values)
 
-      size = low_values |> Enum.count()
-      bar_width = if size > 20, do: 6 * round(90 / size), else: 23
+    line_chart = build_line_chart(slug, from, to, size, opts)
 
-      line_chart =
-        if Keyword.get(opts, :daa),
-          do: daa_chart_values(slug, from, to, size),
-          else: empty_values()
+    bar_width = if size > 20, do: 6 * round(90 / size), else: 23
 
-      {:ok, ~s(
+    {:ok, ~s(
         https://chart.googleapis.com/chart?
         cht=lc&
         chs=800x200&
@@ -169,14 +149,45 @@ defmodule Sanbase.Notifications.Discord do
         chma=10,20,20,10&
         &chco=00FF00
       ) |> String.replace(~r/[\n\s+]+/, "")}
-    else
-      error ->
-        Logger.error("Error building image for slug: #{slug}: #{inspect(error)}")
-        {:error, "Error building image for slug: #{slug}"}
+  end
+
+  defp candlestick_prices(ohlc) do
+    [_ | prices] =
+      ohlc
+      |> Enum.zip()
+      |> Enum.map(&Tuple.to_list/1)
+
+    prices =
+      prices
+      |> Enum.map(fn list -> list |> Enum.filter(&(&1 != 0)) end)
+      |> Enum.map(fn list ->
+        list
+        |> Enum.map(&Math.to_float/1)
+        |> Enum.map(fn num ->
+          if num > 1 do
+            Float.round(num, 2)
+          else
+            Float.round(num, 6)
+          end
+        end)
+      end)
+
+    {:ok, prices}
+  end
+
+  defp build_line_chart(slug, from, to, size, opts) do
+    case Keyword.get(opts, :chart_type) do
+      :daily_active_addresses ->
+        daa_chart_values(slug, from, to, size)
+
+      :exchange_inflow ->
+        exchange_inflow_chart_values(slug, from, to, size)
+
+      _ ->
+        empty_values()
     end
   end
 
-  # Private functions
   defp daa_chart_values(slug, _from, to, size) do
     from = Timex.shift(to, days: -size + 1)
 
@@ -190,7 +201,41 @@ defmodule Sanbase.Notifications.Discord do
       %{chxt: ",r", chxr: "|1,#{min},#{max}", chds: "#{min},#{max},", chd: "t1:#{daa_values}"}
     else
       error ->
-        Logger.error("cannot fetch daa for project with slug: #{slug}, error: #{inspect(error)}")
+        Logger.error(
+          "Cannot fetch Daily Active Addresses for project with slug: #{slug}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        empty_values()
+    end
+  end
+
+  defp exchange_inflow_chart_values(slug, _from, to, size) do
+    from = Timex.shift(to, days: -size + 1)
+
+    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, exchange_inflow} <-
+           ExchangeFundsFlow.transactions_in_over_time(contract, from, to, "1d", token_decimals) do
+      exchange_inflow_values = exchange_inflow |> Enum.map(fn %{inflow: value} -> value end)
+
+      max = exchange_inflow_values |> Enum.max()
+      min = exchange_inflow_values |> Enum.min()
+
+      exchange_inflow_values = exchange_inflow_values |> Enum.join(",")
+
+      %{
+        chxt: ",r",
+        chxr: "|1,#{min},#{max}",
+        chds: "#{min},#{max},",
+        chd: "t1:#{exchange_inflow_values}"
+      }
+    else
+      error ->
+        Logger.error(
+          "Cannot fetch Exchange Inflow for project with slug: #{slug}. Reason: #{inspect(error)}"
+        )
+
         empty_values()
     end
   end

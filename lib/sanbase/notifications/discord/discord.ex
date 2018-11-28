@@ -125,8 +125,8 @@ defmodule Sanbase.Notifications.Discord do
 
   defp generate_image_url(prices, slug, from, to, opts) do
     [_open, high_values, low_values, _close, _avg] = prices
-    min = low_values |> Enum.min()
-    max = high_values |> Enum.max()
+    min = low_values |> Enum.min() |> Float.floor(2)
+    max = high_values |> Enum.max() |> Float.ceil(2)
 
     [open_str, high_str, low_str, close_str, _average_str] =
       prices |> Enum.map(&Enum.join(&1, ","))

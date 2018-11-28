@@ -2,7 +2,8 @@ import React, { Component } from 'react'
 import { loadState } from './utils/localStorage'
 
 if (process.env.NODE_ENV === 'production') {
-  const user = loadState().data || {}
+  const loadedState = loadState()
+  const user = loadedState ? loadedState.data : {}
   window.Intercom('boot', {
     app_id: 'cyjjko9u',
     email: user.email,

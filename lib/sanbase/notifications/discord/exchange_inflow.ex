@@ -23,12 +23,12 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     Logger.info("Running ExchangeInflow signal")
     volume_threshold = Config.get(:trading_volume_threshold) |> String.to_integer()
 
+    from = Timex.shift(Timex.now(), days: -interval_days())
+    to = Timex.now()
+
     projects =
       projects()
       |> Project.projects_over_volume_threshold(volume_threshold)
-
-    from = Timex.shift(Timex.now(), days: -interval_days())
-    to = Timex.now()
 
     projects
     |> Enum.map(& &1.main_contract_address)
@@ -89,30 +89,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> Enum.map(fn %Project{} = project ->
       inflow = Map.get(contract_inflow_map, project.main_contract_address)
 
-      if inflow && percent_of_total_supply(project, inflow) > signal_trigger_percent() &&
-           not Cooldown.has_cooldown?(@signal_name, project.coinmarketcap_id, 86400) do
-        content = """
-        Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply deposited into an exchange in the past #{
-          interval_days()
-        } day(s).
-        In total #{
-          (inflow / :math.pow(10, project.token_decimals))
-          |> Number.Delimit.number_to_delimited(precision: 0)
-        } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens were moved into exchanges.
-        #{Project.sanbase_link(project)}
-        """
-
-        embeds =
-          embeds =
-          Discord.build_embedded_chart(
-            project.coinmarketcap_id,
-            Timex.shift(Timex.now(), days: -90),
-            Timex.shift(Timex.now(), days: -1),
-            chart_type: :exchange_inflow
-          )
-
-        {project, content, embeds}
-      end
+      build_project_payload(project, inflow)
     end)
     |> Enum.reject(&is_nil/1)
   end
@@ -140,5 +117,54 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   defp supply(%Project{total_supply: ts, latest_coinmarketcap_data: lcd}) do
     lcd.available_supply || lcd.total_supply || ts
+  end
+
+  defp build_project_payload(_, nil), do: nil
+
+  defp build_project_payload(%Project{} = project, inflow) do
+    if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
+      # If there was a signal less than interval_days() ago then recalculate the exchange inflow
+      # since the last signal trigger time
+      case Cooldown.get_cooldown(@signal_name, project.coinmarketcap_id, interval_days() * 86_400) do
+        {true, %DateTime{} = cooldown} ->
+          [%{inflow: new_inflow}] =
+            Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
+              [project.main_contract_address],
+              cooldown,
+              Timex.now()
+            )
+
+          if new_inflow && percent_of_total_supply(project, new_inflow) > signal_trigger_percent() do
+            message_embeds(project, new_inflow)
+          end
+
+        {false, _} ->
+          message_embeds(project, inflow)
+      end
+    end
+  end
+
+  defp message_embeds(project, inflow) do
+    content = """
+    Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply deposited into an exchange in the past #{
+      interval_days()
+    } day(s).
+    In total #{
+      (inflow / :math.pow(10, project.token_decimals))
+      |> Number.Delimit.number_to_delimited(precision: 0)
+    } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens were moved into exchanges.
+    #{Project.sanbase_link(project)}
+    """
+
+    embeds =
+      embeds =
+      Discord.build_embedded_chart(
+        project.coinmarketcap_id,
+        Timex.shift(Timex.now(), days: -90),
+        Timex.shift(Timex.now(), days: -1),
+        chart_type: :exchange_inflow
+      )
+
+    {project, content, embeds}
   end
 end

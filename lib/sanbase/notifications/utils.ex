@@ -1,6 +1,6 @@
 defmodule Sanbase.Notifications.Utils do
   @moduledoc ~s"""
-    A module with helper functions for working with Notifications
+  A module with helper functions for working with Notifications
   """
 
   alias Sanbase.Repo

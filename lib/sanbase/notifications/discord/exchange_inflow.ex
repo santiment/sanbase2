@@ -123,55 +123,62 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp build_project_payload(_, _, nil), do: nil
 
   defp build_project_payload(%Project{} = project, notification_type, inflow) do
-    signal_type =
-      if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
-        # If there was a signal less than interval_days() ago then recalculate the exchange inflow
-        # since the last signal trigger time
-        case Notification.get_cooldown(
-               project,
-               notification_type,
-               interval_days() * 86_400
-             ) do
-          {true, %DateTime{} = cooldown} ->
-            [%{inflow: new_inflow}] =
-              Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
-                [project.main_contract_address],
-                cooldown,
-                Timex.now()
+    if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
+      # If there was a signal less than interval_days() ago then recalculate the exchange inflow
+      # since the last signal trigger time
+      case Notification.get_cooldown(
+             project,
+             notification_type,
+             interval_days() * 86_400
+           ) do
+        {true, %DateTime{} = cooldown} ->
+          [%{inflow: new_inflow}] =
+            Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
+              [project.main_contract_address],
+              cooldown,
+              Timex.now()
+            )
+
+          if new_inflow && percent_of_total_supply(project, new_inflow) > signal_trigger_percent() do
+            content =
+              notification_message(
+                project,
+                inflow,
+                Timex.diff(cooldown, Timex.now(), :hours),
+                :hours
               )
 
-            if new_inflow &&
-                 percent_of_total_supply(project, new_inflow) > signal_trigger_percent() do
-              message_embeds(project, new_inflow)
-            end
+            embeds = notification_embeds(project)
+            {project, content, embeds}
+          end
 
-          {false, _} ->
-            message_embeds(project, inflow)
-        end
+        {false, _} ->
+          content = notification_message(project, inflow, interval_days(), :days)
+          embeds = notification_embeds(project)
+          {project, content, embeds}
       end
+    end
   end
 
-  defp message_embeds(project, inflow) do
-    content = """
+  defp notification_message(project, inflow, timespan, timespan_format) do
+    """
     Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply deposited into an exchange in the past #{
-      interval_days()
-    } day(s).
+      timespan
+    } #{timespan_format}(s).
     In total #{
       (inflow / :math.pow(10, project.token_decimals))
       |> Number.Delimit.number_to_delimited(precision: 0)
     } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens were moved into exchanges.
     #{Project.sanbase_link(project)}
     """
+  end
 
-    embeds =
-      embeds =
-      Discord.build_embedded_chart(
-        project.coinmarketcap_id,
-        Timex.shift(Timex.now(), days: -90),
-        Timex.shift(Timex.now(), days: -1),
-        chart_type: :exchange_inflow
-      )
-
-    {project, content, embeds}
+  defp notification_embeds(project) do
+    Discord.build_embedded_chart(
+      project.coinmarketcap_id,
+      Timex.shift(Timex.now(), days: -90),
+      Timex.shift(Timex.now(), days: -1),
+      chart_type: :exchange_inflow
+    )
   end
 end

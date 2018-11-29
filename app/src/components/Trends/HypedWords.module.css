@@ -1,0 +1,31 @@
+.HypedWords {
+  min-width: 360px;
+  min-height: 200px;
+  margin-top: 70px;
+}
+
+.HypedWords h4 {
+  line-height: 21px;
+  font-size: 14px;
+  color: #82869d;
+  margin-bottom: 17px;
+}
+
+.HypedWordsBlock {
+  background: #f7f8fb;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.HypedWords:first-child {
+  margin-right: 24px;
+}
+
+.HypedWords:last-child {
+  margin-left: 24px;
+  margin-right: 0;
+}
+
+.latest {
+  background: #13c298;
+}

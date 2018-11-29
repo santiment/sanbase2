@@ -116,6 +116,12 @@ const getStartOfTheDay = () => {
   return today.toISOString()
 }
 
+const getYesterday = () => {
+  const yesterday = new Date(Date.now() - 86400000)
+  yesterday.setHours(0, 0, 0, 0)
+  return yesterday.toISOString()
+}
+
 const mergeTimeseriesByKey = ({ timeseries, key: mergeKey }) => {
   const longestTS = timeseries
     .reduce((acc, val) => {
@@ -196,6 +202,7 @@ export {
   filterProjectsByMarketSegment,
   binarySearchHistoryPriceIndex,
   getStartOfTheDay,
+  getYesterday,
   mergeTimeseriesByKey,
   getTimeFromFromString,
   capitalizeStr,

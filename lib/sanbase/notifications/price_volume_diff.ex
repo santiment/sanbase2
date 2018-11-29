@@ -4,7 +4,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   alias Sanbase.Model.Project
   alias Sanbase.InternalServices.TechIndicators
-  alias Sanbase.Notifications.Utils
+  alias Sanbase.Notifications
 
   import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
 
@@ -20,7 +20,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     currency = String.upcase(currency)
 
     if Config.get(:notifications_enabled) &&
-         not Utils.recent_notification?(
+         not Notifications.recent_notification?(
            project,
            seconds_ago(notifications_cooldown()),
            notification_type_name(currency)
@@ -139,7 +139,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         ]
       )
 
-    Utils.insert_notification(project, notification_type_name(currency), notification_data)
+    Notifications.insert_notification(project, notification_type_name(currency), notification_data)
   end
 
   defp notification_payload(

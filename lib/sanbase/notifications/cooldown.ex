@@ -1,8 +1,4 @@
 defmodule Sanbase.Notifications.Cooldown do
-  @moduledoc ~s"""
-  Handle cooldowns.
-  """
-
   use Ecto.Schema
 
   import Ecto.Query
@@ -25,15 +21,25 @@ defmodule Sanbase.Notifications.Cooldown do
     |> validate_required([:signal, :who_triggered])
   end
 
+  @doc ~s"""
+  Return whether a given notification type has been sent for a project
+  in the past `duration` seconds
+  """
   @spec has_cooldown?(String.t(), String.t(), non_neg_integer(), Atom.t()) :: boolean()
-  def has_cooldown?(signal, who, duration, duration_format \\ :seconds) do
+  def has_cooldown?(signal, who, duration) do
     {has_cooldown?, _} = get_cooldown(signal, who, duration, duration_format)
     has_cooldown?
   end
 
+  @doc ~s"""
+  Return a tuple where the first argument shows whether a given notification type
+  has been sent for a project in the past `duration` seconds.
+  If there is a notification sent in the past `duration` seconds, the second argument
+  is the datetime that it was sent.
+  """
   @spec get_cooldown(String.t(), String.t(), non_neg_integer(), Atom.t()) ::
           {false, nil} | {true, %DateTime{}}
-  def get_cooldown(signal, who, duration, duration_format \\ :seconds) do
+  def get_cooldown(signal, who, duration) do
     from(
       cd in Cooldown,
       where: cd.signal == ^signal and cd.who_triggered == ^who,
@@ -46,11 +52,14 @@ defmodule Sanbase.Notifications.Cooldown do
 
       naive_datetime ->
         cd_datetime = naive_datetime |> DateTime.from_naive!("Etc/UTC")
-        has_cooldown? = Timex.diff(Timex.now(), cd_datetime, duration_format) < duration
+        has_cooldown? = Timex.diff(Timex.now(), cd_datetime, :seconds) < duration
         {has_cooldown?, cd_datetime}
     end
   end
 
+  @doc ~s"""
+  Mark that at the current time a notification type has been sent for a project
+  """
   @spec set_triggered(String.t(), String.t(), %DateTime{}) ::
           {:ok, %Cooldown{}} | {:error, Ecto.Changeset.t()}
   def set_triggered(signal, who, datetime \\ Timex.now()) do

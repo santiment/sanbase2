@@ -13,10 +13,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  alias Sanbase.Notifications.Discord
-  alias Sanbase.Notifications.Cooldown
-
-  @signal_name "exchange_inflow"
+  alias Sanbase.Notifications.{Discord, Notification, Type}
 
   @impl true
   def run() do
@@ -35,13 +32,15 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     |> Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(from, to)
     |> case do
       {:ok, list} ->
+        notification_type = Type.get_or_create("exchange_inflow")
+
         build_payload(projects, list)
         |> Enum.each(fn {project, payload, embeds} ->
           payload
           |> Discord.encode!(publish_user(), embeds)
           |> publish("discord")
 
-          Cooldown.set_triggered(@signal_name, project.coinmarketcap_id)
+          Notification.set_triggered(project, notification_type)
         end)
 
       {:error, error} ->
@@ -85,11 +84,13 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       Enum.map(list, fn %{contract: contract, inflow: inflow} -> {contract, inflow} end)
       |> Map.new()
 
+    notification_type = Type.get_or_create("exchange_inflow")
+
     projects
     |> Enum.map(fn %Project{} = project ->
       inflow = Map.get(contract_inflow_map, project.main_contract_address)
 
-      build_project_payload(project, inflow)
+      build_project_payload(project, notification_type, inflow)
     end)
     |> Enum.reject(&is_nil/1)
   end
@@ -119,29 +120,35 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     lcd.available_supply || lcd.total_supply || ts
   end
 
-  defp build_project_payload(_, nil), do: nil
+  defp build_project_payload(_, _, nil), do: nil
 
-  defp build_project_payload(%Project{} = project, inflow) do
-    if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
-      # If there was a signal less than interval_days() ago then recalculate the exchange inflow
-      # since the last signal trigger time
-      case Cooldown.get_cooldown(@signal_name, project.coinmarketcap_id, interval_days() * 86_400) do
-        {true, %DateTime{} = cooldown} ->
-          [%{inflow: new_inflow}] =
-            Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
-              [project.main_contract_address],
-              cooldown,
-              Timex.now()
-            )
+  defp build_project_payload(%Project{} = project, notification_type, inflow) do
+    signal_type =
+      if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
+        # If there was a signal less than interval_days() ago then recalculate the exchange inflow
+        # since the last signal trigger time
+        case Notification.get_cooldown(
+               project,
+               notification_type,
+               interval_days() * 86_400
+             ) do
+          {true, %DateTime{} = cooldown} ->
+            [%{inflow: new_inflow}] =
+              Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
+                [project.main_contract_address],
+                cooldown,
+                Timex.now()
+              )
 
-          if new_inflow && percent_of_total_supply(project, new_inflow) > signal_trigger_percent() do
-            message_embeds(project, new_inflow)
-          end
+            if new_inflow &&
+                 percent_of_total_supply(project, new_inflow) > signal_trigger_percent() do
+              message_embeds(project, new_inflow)
+            end
 
-        {false, _} ->
-          message_embeds(project, inflow)
+          {false, _} ->
+            message_embeds(project, inflow)
+        end
       end
-    end
   end
 
   defp message_embeds(project, inflow) do

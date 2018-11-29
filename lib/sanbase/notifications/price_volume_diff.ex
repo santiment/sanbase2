@@ -4,33 +4,31 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   alias Sanbase.Model.Project
   alias Sanbase.InternalServices.TechIndicators
-  alias Sanbase.Notifications
-
-  import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
+  alias Sanbase.Notifications.{Notification, Type}
 
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 
-  @notification_type_name "price_volume_diff"
-
   @doc ~s"""
-    A notification is triggered when a price is increasing and the volume is decreasing.
-    Currently we have only `USD` volume so we support only `USD` notification
+  A notification is triggered when a price is increasing and the volume is decreasing.
+  Currently we have only `USD` volume so we support only `USD` notification
   """
   def exec(project, "USD" = currency) do
     currency = String.upcase(currency)
 
+    notification_type = Type.get_or_create("price_volume_diff")
+
     if Config.get(:notifications_enabled) &&
-         not Notifications.recent_notification?(
+         not Notification.has_cooldown?(
            project,
-           seconds_ago(notifications_cooldown()),
-           notification_type_name(currency)
+           notification_type,
+           notifications_cooldown()
          ) do
       with {from_datetime, to_datetime} <- get_calculation_interval(),
            true <- volume_over_threshold?(project, currency, from_datetime, to_datetime),
            {indicator, notification_log} <-
              get_indicator(project.ticker, currency, from_datetime, to_datetime),
            true <- check_notification(indicator) do
-        send_notification(project, currency, indicator, notification_log)
+        send_notification(project, notification_type, currency, indicator, notification_log)
       end
     end
   end
@@ -113,8 +111,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     price_volume_diff >= notification_threshold()
   end
 
-  defp notification_type_name(currency), do: @notification_type_name <> "_" <> currency
-
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
 
@@ -126,9 +122,10 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp send_notification(
          project,
+         notification_type,
          currency,
          indicator,
-         {notification_data, debug_info}
+         {_notification_data, debug_info}
        ) do
     {:ok, %HTTPoison.Response{status_code: 204}} =
       http_client().post(
@@ -139,7 +136,10 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         ]
       )
 
-    Notifications.insert_notification(project, notification_type_name(currency), notification_data)
+    Notification.set_triggered(
+      project,
+      notification_type
+    )
   end
 
   defp notification_payload(

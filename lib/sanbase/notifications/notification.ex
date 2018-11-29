@@ -41,12 +41,11 @@ defmodule Sanbase.Notifications.Notification do
     has_cooldown?
   end
 
-
   @spec set_triggered(%Project{}, %Type{}, %DateTime{}) ::
           {:ok, %Notification{}} | {:error, Ecto.Changeset.t()}
-  def set_triggered(%Project{id: project_id}, %Type{id: type_id}, datetime \\ %DateTime.utc_now()) do
+  def set_triggered(%Project{id: project_id}, %Type{id: type_id}, datetime \\ DateTime.utc_now()) do
     (Repo.get_by(Notification, project_id: project_id, type_id: type_id) || %Notification{})
-    |> changeset(%{data: data, project_id: project_id, type_id: type_id, updated_at: datetime})
+    |> changeset(%{project_id: project_id, type_id: type_id, updated_at: datetime})
     |> Repo.insert_or_update()
   end
 
@@ -57,7 +56,7 @@ defmodule Sanbase.Notifications.Notification do
   is the datetime that it was sent.
   """
   @spec get_cooldown(String.t(), String.t(), non_neg_integer(), Atom.t()) ::
-          {false, nil} | {false, %DateTime{}@ | {true, %DateTime{}}
+          {false, nil} | {false, %DateTime{}} | {true, %DateTime{}}
   def get_cooldown(
         %Project{id: project_id},
         %Type{id: type_id},

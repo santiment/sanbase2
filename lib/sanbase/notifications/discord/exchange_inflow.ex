@@ -108,21 +108,6 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     percent |> Float.round(3)
   end
 
-  defp signal_trigger_percent(),
-    do: Config.get(:signal_trigger_percent) |> String.to_integer()
-
-  defp interval_days(), do: Config.get(:interval_days) |> String.to_integer()
-
-  defp webhook_url(), do: Config.get(:webhook_url)
-
-  defp publish_user(), do: Config.get(:publish_user)
-
-  defp supply(%Project{total_supply: ts, latest_coinmarketcap_data: nil}), do: ts
-
-  defp supply(%Project{total_supply: ts, latest_coinmarketcap_data: lcd}) do
-    lcd.available_supply || lcd.total_supply || ts
-  end
-
   defp build_project_payload(_, _, nil), do: nil
 
   defp build_project_payload(%Project{} = project, notification_type, inflow) do
@@ -143,17 +128,20 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
                    cooldown,
                    Timex.now()
                  ) do
-            if new_inflow && percent_of_total_supply > signal_trigger_percent() do
+            new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
+
+            if new_inflow && new_percent_of_total_supply do
               content =
                 notification_message(
                   project,
-                  inflow,
                   Timex.diff(cooldown, Timex.now(), :hours),
-                  :hours
+                  :hours,
+                  inflow,
+                  new_inflow
                 )
 
               embeds = notification_embeds(project)
-              {project, content, embeds, percent_of_total_supply}
+              {project, content, embeds, new_percent_of_total_supply}
             end
           else
             _ ->
@@ -161,14 +149,14 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
           end
 
         {false, _} ->
-          content = notification_message(project, inflow, interval_days(), :days)
+          content = notification_message(project, interval_days(), :days, inflow)
           embeds = notification_embeds(project)
           {project, content, embeds, percent_of_total_supply}
       end
     end
   end
 
-  defp notification_message(project, inflow, timespan, timespan_format) do
+  defp notification_message(project, timespan, timespan_format, inflow) do
     {:ok, {avg_price_usd, _avg_price_btc}} =
       Sanbase.Prices.Store.fetch_average_price(
         Sanbase.Influxdb.Measurement.name_from(project),
@@ -179,12 +167,11 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     normalized_inflow = inflow / :math.pow(10, project.token_decimals)
 
     """
-    Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply deposited into an exchange in the past #{
+    Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply (#{
+      normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)
+    } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens) deposited into an exchange in the past #{
       timespan
     } #{timespan_format}(s).
-    In total #{normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)} out of #{
-      supply(project) |> Number.Delimit.number_to_delimited(precision: 0)
-    } tokens were moved into exchanges.
     The approximate USD value of the moved tokens is $#{
       Number.Delimit.number_to_delimited(normalized_inflow * avg_price_usd)
     }
@@ -192,12 +179,55 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     """
   end
 
+  defp notification_message(project, timespan, timespan_format, inflow, cooldown_inflow) do
+    {:ok, {avg_price_usd, _avg_price_btc}} =
+      Sanbase.Prices.Store.fetch_average_price(
+        Sanbase.Influxdb.Measurement.name_from(project),
+        Timex.shift(Timex.now(), days: -interval_days()),
+        Timex.now()
+      )
+
+    normalized_inflow = inflow / :math.pow(10, project.token_decimals)
+    normalized_cooldown_inflow = cooldown_inflow / :math.pow(10, project.token_decimals)
+
+    """
+    Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply (#{
+      normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)
+    } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens) deposited into an exchange in the past #{
+      timespan
+    } #{timespan_format}(s).
+    The approximate USD value of the moved tokens is $#{
+      Number.Delimit.number_to_delimited(normalized_inflow * avg_price_usd)
+    }
+
+    In total #{normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)} token were deposited into an exchange in the past #{
+      interval_days()
+    } day(s)
+    #{Project.sanbase_link(project)}
+    """
+  end
+
   defp notification_embeds(project) do
     Discord.build_embedded_chart(
       project.coinmarketcap_id,
-      Timex.shift(Timex.now(), days: -30),
+      Timex.shift(Timex.now(), days: -90),
       Timex.shift(Timex.now(), days: -1),
       chart_type: :exchange_inflow
     )
+  end
+
+  defp signal_trigger_percent(),
+    do: Config.get(:signal_trigger_percent) |> String.to_integer()
+
+  defp interval_days(), do: Config.get(:interval_days) |> String.to_integer()
+
+  defp webhook_url(), do: Config.get(:webhook_url)
+
+  defp publish_user(), do: Config.get(:publish_user)
+
+  defp supply(%Project{total_supply: ts, latest_coinmarketcap_data: nil}), do: ts
+
+  defp supply(%Project{total_supply: ts, latest_coinmarketcap_data: lcd}) do
+    lcd.available_supply || lcd.total_supply || ts
   end
 end

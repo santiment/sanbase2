@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-30-11 | v.0.22.0 'Phobos':
+
+  Add Trends 2.0 draft ver.
+
 - 2018-27-11 | v.0.21.5 'Phobos':
 
   Add Intercom

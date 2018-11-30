@@ -1,0 +1,43 @@
+@import 'variables.scss';
+
+.TrendsPage {
+  background: white;
+}
+
+.header {
+  margin-top: 10px;
+}
+
+.header h1 {
+  width: 100%;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 28px !important;
+  font-size: 24px !important;
+  color: #252830 !important;
+  margin-left: 0;
+}
+
+.header div {
+  display: flex;
+  justify-content: left;
+}
+
+@media (min-width: $breakpoint-tablet) {
+  .TrendsPage {
+    margin-bottom: 2em !important;
+    width: 1024px;
+  }
+
+  .header {
+    margin-top: 50px;
+    margin-bottom: 0;
+  }
+
+  .header h1 {
+    width: 392px;
+    font-weight: 600 !important;
+    line-height: 37px !important;
+    font-size: 32px !important;
+  }
+}

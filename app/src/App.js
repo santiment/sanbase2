@@ -193,7 +193,13 @@ export const App = ({
             <LoadableDetailedPage isDesktop={isDesktop} {...props} />
           )}
         />
-        <Route exact path='/trends' component={LoadableTrendsPage} />
+        <Route
+          exact
+          path='/trends'
+          render={props => (
+            <LoadableTrendsPage isDesktop={isDesktop} {...props} />
+          )}
+        />
         <Route
           exact
           path='/trends/explore'

@@ -129,8 +129,7 @@ const getTimeRangeText = timeRange => {
   return text
 }
 const getSourcesText = sources => {
-  console.log(sources)
-  let text = 'mentions'
+  const text = 'mentions'
 
   if (sources.includes('merged')) {
     return `Total ${text}`

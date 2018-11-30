@@ -1,0 +1,4 @@
+// trends
+export const TRENDS_HYPED_FETCH = '[trends] TRENDS_HYPED_FETCH'
+export const TRENDS_HYPED_FETCH_SUCCESS = '[trends] TRENDS_HYPED_FETCH_SUCCESS'
+export const TRENDS_HYPED_FETCH_FAILED = '[trends] TRENDS_HYPED_FETCH_FAILED'

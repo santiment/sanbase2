@@ -23,6 +23,7 @@ import {
 import fetchTimeseriesEpic from './fetchTimeseriesEpic'
 import handleNightModeToggle from './handleNightModeToggle'
 import handleBetaModeToggle from './handleBetaModeToggle'
+import { fetchHypedTrends } from './../components/Trends/fetchHypedTrends'
 import keyboardEpic from './keyboardEpic'
 
 export default combineEpics(
@@ -50,5 +51,7 @@ export default combineEpics(
   fetchAssetsFromListEpic,
   fetchAssetsFromSharedListEpic,
   // timeseries
-  fetchTimeseriesEpic
+  fetchTimeseriesEpic,
+  // trends
+  fetchHypedTrends
 )

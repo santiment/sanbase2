@@ -1,26 +1,31 @@
 import React from 'react'
-import TrendsExamples from '../../components/Trends/Examples/TrendsExamples'
-import TrendsExamplesItemTopic from '../../components/Trends/Examples/TrendsExamplesItemTopic'
-import './TrendsPage.scss'
-import TrendsTitle from '../../components/Trends/TrendsTitle'
+import { Helmet } from 'react-helmet'
+import TrendsSearch from '../../components/Trends/TrendsSearch'
+import GetHypedTrends from './../../components/Trends/GetHypedTrends'
+import HypedBlocks from './../../components/Trends/HypedBlocks'
+import styles from './TrendsPage.module.scss'
 
-const TrendsPage = () => (
-  <div className='TrendsPage page'>
-    <div className='TrendsPage__header'>
-      <div>
-        <TrendsTitle />
-      </div>
-      <div>
-        <p>
-          See how often a word or phrase is used in crypto social media, plotted
-          against BTC or ETH price
-        </p>
-      </div>
+const TrendsPage = ({ isDesktop = true }) => (
+  <div className={styles.TrendsPage + ' page'}>
+    <Helmet>
+      <style>{'body { background-color: white; }'}</style>
+    </Helmet>
+    <div className={styles.header}>
+      <h1>
+        Explore frequently-used <br />
+        words in crypto social media
+      </h1>
+      <TrendsSearch />
     </div>
-    <TrendsExamplesItemTopic />
-    {/*
-    <TrendsExamples />
-    */}
+    <GetHypedTrends
+      render={({ isLoading, items }) => (
+        <HypedBlocks
+          items={items}
+          isLoading={isLoading}
+          isDesktop={isDesktop}
+        />
+      )}
+    />
   </div>
 )
 

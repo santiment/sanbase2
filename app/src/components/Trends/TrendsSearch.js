@@ -20,8 +20,8 @@ const TrendsSearch = ({ topic, fontSize = '1em' }) => (
       <span>Try to select</span>
       {['stablecoin', 'ICO', '(XRP OR Ripple OR XLM OR ETH) AND top'].map(
         (keyword, index, arr) => (
-          <Fragment>
-            <TrendsExampleLink keyword={keyword} key={keyword} />
+          <Fragment key={keyword}>
+            <TrendsExampleLink keyword={keyword} />
             {index !== arr.length - 1 && ','}
           </Fragment>
         )

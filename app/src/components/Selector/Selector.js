@@ -30,14 +30,16 @@ export class Selector extends Component {
   static defaultProps = {
     defaultSelected: undefined,
     options: [],
-    disabled: false
+    disabled: false,
+    className: ''
   }
 
   static propTypes = {
     defaultSelected: PropTypes.string,
     options: PropTypes.array,
     onSelectOption: PropTypes.func,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
+    className: PropTypes.string
   }
 
   static getDerivedStateFromProps (nextProps, prevState) {
@@ -57,10 +59,10 @@ export class Selector extends Component {
 
   render () {
     const { selected } = this.state
-    const { options, disabled } = this.props
+    const { options, disabled, className } = this.props
     const nameOptions = this.props.nameOptions || options
     return (
-      <div className='selector'>
+      <div className={`selector ${className}`}>
         {options.map((option, index) => (
           <SelectorItem
             key={option}

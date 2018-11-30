@@ -2,7 +2,7 @@ import React from 'react'
 import cx from 'classnames'
 import moment from 'moment'
 import HypedWord from './HypedWord'
-import styles from './HypedWords.module.css'
+import styles from './HypedWords.module.scss'
 
 const compare = (a, b) => a.score - b.score
 

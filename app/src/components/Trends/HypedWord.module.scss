@@ -1,7 +1,8 @@
+@import 'variables.scss';
+
 .HypedWords {
-  min-width: 300px;
-  min-height: 200px;
-  margin-top: 60px;
+  min-width: 100%;
+  margin-top: 1em;
 }
 
 .HypedWords h4 {
@@ -28,4 +29,12 @@
 
 .latest {
   background: #13c298;
+}
+
+@media (min-width: $breakpoint-tablet) {
+ .HypedWords {
+    min-width: 300px;
+    min-height: 200px;
+    margin-top: 60px;
+  }
 }

@@ -2,10 +2,10 @@ import React from 'react'
 import { Helmet } from 'react-helmet'
 import TrendsSearch from '../../components/Trends/TrendsSearch'
 import GetHypedTrends from './../../components/Trends/GetHypedTrends'
-import HypedWordsBlock from './../../components/Trends/HypedWordsBlock'
+import HypedBlocks from './../../components/Trends/HypedBlocks'
 import styles from './TrendsPage.module.scss'
 
-const TrendsPage = () => (
+const TrendsPage = ({ isDesktop = true }) => (
   <div className={styles.TrendsPage + ' page'}>
     <Helmet>
       <style>{'body { background-color: white; }'}</style>
@@ -18,23 +18,13 @@ const TrendsPage = () => (
       <TrendsSearch />
     </div>
     <GetHypedTrends
-      render={({ isLoading, items }) => {
-        if (isLoading) {
-          return 'Loading...'
-        }
-        return (
-          <div className={styles.HypedBlocks}>
-            {items.map((hypedTrend, index) => (
-              <HypedWordsBlock
-                key={index}
-                latest={index === items.length - 1}
-                compiled={hypedTrend.datetime}
-                trends={hypedTrend.topWords}
-              />
-            ))}
-          </div>
-        )
-      }}
+      render={({ isLoading, items }) => (
+        <HypedBlocks
+          items={items}
+          isLoading={isLoading}
+          isDesktop={isDesktop}
+        />
+      )}
     />
   </div>
 )

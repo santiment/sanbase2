@@ -1,0 +1,36 @@
+@import 'variables.scss';
+
+.TrendsPage {
+  background: white;
+  margin-bottom: 2em !important;
+}
+
+.header {
+  margin-top: 10px;
+}
+
+.header h1 {
+  width: 392px;
+  font-style: normal;
+  font-weight: 600 !important;
+  line-height: 37px !important;
+  color: #252830 !important;
+  margin-left: 0;
+}
+
+.header div {
+  display: flex;
+  justify-content: left;
+}
+
+@media (min-width: $breakpoint-tablet) {
+  .header {
+    margin-top: 50px;
+    margin-bottom: 0;
+  }
+}
+
+.HypedBlocks {
+  display: flex;
+  justify-content: space-evenly;
+}

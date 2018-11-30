@@ -1,16 +1,21 @@
 import React from 'react'
-import TrendsExamplesItemTopic from '../../components/Trends/Examples/TrendsExamplesItemTopic'
-import TrendsTitle from '../../components/Trends/TrendsTitle'
+import { Helmet } from 'react-helmet'
+import TrendsSearch from '../../components/Trends/TrendsSearch'
 import GetHypedTrends from './../../components/Trends/GetHypedTrends'
 import HypedWordsBlock from './../../components/Trends/HypedWordsBlock'
-import styles from './TrendsPage.module.css'
-import './TrendsPage.scss'
+import styles from './TrendsPage.module.scss'
 
 const TrendsPage = () => (
-  <div className='TrendsPage page'>
-    <div className='TrendsPage__header'>
-      <h1>Explore frequently-used words in crypto social media</h1>
-      <TrendsExamplesItemTopic />
+  <div className={styles.TrendsPage + ' page'}>
+    <Helmet>
+      <style>{'body { background-color: white; }'}</style>
+    </Helmet>
+    <div className={styles.header}>
+      <h1>
+        Explore frequently-used <br />
+        words in crypto social media
+      </h1>
+      <TrendsSearch />
     </div>
     <GetHypedTrends
       render={({ isLoading, items }) => {

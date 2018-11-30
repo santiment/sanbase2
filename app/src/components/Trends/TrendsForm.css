@@ -1,6 +1,6 @@
 .TrendsForm {
   width: 95%;
-  margin-left: 25px;
+  margin-left: 0;
 }
 
 .TrendsForm__form {
@@ -13,14 +13,19 @@
 
 .TrendsForm__input input {
   background-color: #ffffff94 !important;
+  border-color: #dee2ee !important;
+}
+
+.TrendsForm__input input::placeholder {
+  font-style: normal;
+  font-weight: normal;
+  line-height: 20px;
+  font-size: 14px !important;
+  color: #adb6cd !important;
 }
 
 @media (min-width: 768px) {
   .TrendsForm {
-    width: 85%;
-  }
-
-  .TrendsForm__input input {
-    background-color: white !important;
+    width: 340px;
   }
 }

@@ -16,6 +16,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   alias Sanbase.Repo
   # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker2, as: Ticker
+  alias Sanbase.ExternalServices.Coinmarketcap.Ticker, as: TickerOld
   alias Sanbase.Prices.Store
 
   # 5 minutes
@@ -62,6 +63,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     # Store the data in Influxdb
     tickers
     |> Enum.map(&Ticker.convert_for_importing/1)
+    |> Store.import()
+
+    tickers
+    |> Enum.flat_map(&TickerOld.convert_for_importing/1)
     |> Store.import()
 
     Logger.info(

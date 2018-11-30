@@ -122,7 +122,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
     |> Enum.filter(fn %Ticker{last_updated: last_updated} -> last_updated end)
   end
 
-  def convert_for_importing(%Ticker{
+  def convert_for_importing(%{
         symbol: ticker,
         last_updated: last_updated,
         price_btc: price_btc,

@@ -80,7 +80,6 @@ defmodule Sanbase.Application.ScrapersSupervisor do
 
       # Current marketcap fetcher
       # TODO: Change after switching over to only this cmc
-      Sanbase.ExternalServices.Coinmarketcap.TickerFetcher.child_spec(%{}),
       Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2.child_spec(%{}),
 
       # Twitter account data tracking worker

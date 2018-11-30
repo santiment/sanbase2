@@ -20,8 +20,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     Logger.info("Running ExchangeInflow signal")
     volume_threshold = Config.get(:trading_volume_threshold) |> String.to_integer()
 
-    from = Timex.shift(Timex.now(), days: -interval_days())
-    to = Timex.now()
+    to = DateTime.utc_now()
+    from = Timex.shift(to, days: -interval_days())
 
     projects =
       projects()
@@ -34,18 +34,22 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       {:ok, list} ->
         notification_type = Type.get_or_create("exchange_inflow")
 
-        build_payload(projects, list)
-        |> Enum.each(fn {project, payload, embeds, _percent_change} ->
-          payload
-          |> Discord.encode!(publish_user(), embeds)
-          |> publish("discord")
+        case build_payload(projects, list) do
+          [] ->
+            Logger.info(
+              "There are no signals for tokens moved into an exchange. Won't send anything to Discord."
+            )
 
-          Notification.set_triggered(project, notification_type)
-        end)
+          payloads ->
+            payloads
+            |> Enum.each(fn {project, payload, embeds, _percent_change} ->
+              payload
+              |> Discord.encode!(publish_user(), embeds)
+              |> publish("discord")
 
-      {:error, error} ->
-        Logger.error("Error getting Exchange Inflow from TimescaleDB. Reason: #{inspect(error)}")
-        {:error, "Error getting Exchange Inflow from TimescaleDB."}
+              Notification.set_triggered(project, notification_type)
+            end)
+        end
     end
   end
 
@@ -53,14 +57,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   def publish(payload, "discord") do
     Logger.info("Sending Discord notification for ExchangeInflow...")
 
-    case payload do
-      nil ->
-        Logger.info(
-          "There are no signals for tokens moved into an exchange. Won't send anything to Discord."
-        )
-
-      json_signal ->
-        Discord.send_notification(webhook_url(), "Exchange Inflow", json_signal)
+    if payload do
+      Discord.send_notification(webhook_url(), "Exchange Inflow", payload)
     end
   end
 
@@ -130,7 +128,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
                  ) do
             new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
 
-            if new_inflow && new_percent_of_total_supply do
+            if new_inflow && new_percent_of_total_supply > signal_trigger_percent() do
               content =
                 notification_message(
                   project,
@@ -191,8 +189,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     normalized_cooldown_inflow = cooldown_inflow / :math.pow(10, project.token_decimals)
 
     """
-    Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply (#{
-      normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)
+    Project #{project.name} has #{percent_of_total_supply(project, cooldown_inflow)}% of its circulating supply (#{
+      normalized_cooldown_inflow |> Number.Delimit.number_to_delimited(precision: 0)
     } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens) deposited into an exchange in the past #{
       timespan
     } #{timespan_format}(s).

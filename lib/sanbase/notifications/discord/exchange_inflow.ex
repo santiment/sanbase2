@@ -93,7 +93,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       build_project_payload(project, notification_type, inflow)
     end)
     |> Enum.reject(&is_nil/1)
-    |> Enum.sort_by(fn {_, _, _, percent_change} -> percent_change end)
+    |> Enum.sort_by(fn {_, _, _, percent_change} -> percent_change end, &Kernel.>=/2)
   end
 
   defp percent_of_total_supply(_, nil), do: nil
@@ -137,26 +137,27 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
              interval_days() * 86_400
            ) do
         {true, %DateTime{} = cooldown} ->
-          [%{inflow: new_inflow}] =
-            Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
-              [project.main_contract_address],
-              cooldown,
-              Timex.now()
-            )
+          with {:ok, [%{inflow: new_inflow}]} <-
+                 Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
+                   [project.main_contract_address],
+                   cooldown,
+                   Timex.now()
+                 ) do
+            if new_inflow && percent_of_total_supply > signal_trigger_percent() do
+              content =
+                notification_message(
+                  project,
+                  inflow,
+                  Timex.diff(cooldown, Timex.now(), :hours),
+                  :hours
+                )
 
-          percent_of_total_supply = percent_of_total_supply(project, new_inflow)
-
-          if new_inflow && percent_of_total_supply > signal_trigger_percent() do
-            content =
-              notification_message(
-                project,
-                inflow,
-                Timex.diff(cooldown, Timex.now(), :hours),
-                :hours
-              )
-
-            embeds = notification_embeds(project)
-            {project, content, embeds, percent_of_total_supply}
+              embeds = notification_embeds(project)
+              {project, content, embeds, percent_of_total_supply}
+            end
+          else
+            _ ->
+              nil
           end
 
         {false, _} ->
@@ -168,14 +169,25 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp notification_message(project, inflow, timespan, timespan_format) do
+    {:ok, {avg_price_usd, _avg_price_btc}} =
+      Sanbase.Prices.Store.fetch_average_price(
+        Sanbase.Influxdb.Measurement.name_from(project),
+        Timex.shift(Timex.now(), days: -interval_days()),
+        Timex.now()
+      )
+
+    normalized_inflow = inflow / :math.pow(10, project.token_decimals)
+
     """
     Project #{project.name} has #{percent_of_total_supply(project, inflow)}% of its circulating supply deposited into an exchange in the past #{
       timespan
     } #{timespan_format}(s).
-    In total #{
-      (inflow / :math.pow(10, project.token_decimals))
-      |> Number.Delimit.number_to_delimited(precision: 0)
-    } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens were moved into exchanges.
+    In total #{normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)} out of #{
+      supply(project) |> Number.Delimit.number_to_delimited(precision: 0)
+    } tokens were moved into exchanges.
+    The approximate USD value of the moved tokens is $#{
+      Number.Delimit.number_to_delimited(normalized_inflow * avg_price_usd)
+    }
     #{Project.sanbase_link(project)}
     """
   end
@@ -183,7 +195,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp notification_embeds(project) do
     Discord.build_embedded_chart(
       project.coinmarketcap_id,
-      Timex.shift(Timex.now(), days: -90),
+      Timex.shift(Timex.now(), days: -30),
       Timex.shift(Timex.now(), days: -1),
       chart_type: :exchange_inflow
     )

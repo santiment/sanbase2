@@ -2,7 +2,6 @@
 
 .TrendsPage {
   background: white;
-  width: 1024px;
 }
 
 .header {
@@ -27,6 +26,7 @@
 @media (min-width: $breakpoint-tablet) {
   .TrendsPage {
     margin-bottom: 2em !important;
+    width: 1024px;
   }
 
   .header {

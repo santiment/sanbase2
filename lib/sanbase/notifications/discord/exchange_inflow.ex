@@ -35,7 +35,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
         notification_type = Type.get_or_create("exchange_inflow")
 
         build_payload(projects, list)
-        |> Enum.each(fn {project, payload, embeds} ->
+        |> Enum.each(fn {project, payload, embeds, _percent_change} ->
           payload
           |> Discord.encode!(publish_user(), embeds)
           |> publish("discord")
@@ -93,7 +93,10 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       build_project_payload(project, notification_type, inflow)
     end)
     |> Enum.reject(&is_nil/1)
+    |> Enum.sort_by(fn {_, _, _, percent_change} -> percent_change end)
   end
+
+  defp percent_of_total_supply(_, nil), do: nil
 
   defp percent_of_total_supply(
          %Project{token_decimals: token_decimals} = project,
@@ -123,7 +126,9 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp build_project_payload(_, _, nil), do: nil
 
   defp build_project_payload(%Project{} = project, notification_type, inflow) do
-    if percent_of_total_supply(project, inflow) > signal_trigger_percent() do
+    percent_of_total_supply = percent_of_total_supply(project, inflow)
+
+    if percent_of_total_supply > signal_trigger_percent() do
       # If there was a signal less than interval_days() ago then recalculate the exchange inflow
       # since the last signal trigger time
       case Notification.get_cooldown(
@@ -139,7 +144,9 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
               Timex.now()
             )
 
-          if new_inflow && percent_of_total_supply(project, new_inflow) > signal_trigger_percent() do
+          percent_of_total_supply = percent_of_total_supply(project, new_inflow)
+
+          if new_inflow && percent_of_total_supply > signal_trigger_percent() do
             content =
               notification_message(
                 project,
@@ -149,13 +156,13 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
               )
 
             embeds = notification_embeds(project)
-            {project, content, embeds}
+            {project, content, embeds, percent_of_total_supply}
           end
 
         {false, _} ->
           content = notification_message(project, inflow, interval_days(), :days)
           embeds = notification_embeds(project)
-          {project, content, embeds}
+          {project, content, embeds, percent_of_total_supply}
       end
     end
   end

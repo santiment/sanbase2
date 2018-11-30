@@ -2,7 +2,7 @@
 
 exports[`Selector component smoke 1`] = `
 <div
-  className="selector"
+  className="selector "
 >
   <SelectorItem
     disabled={false}

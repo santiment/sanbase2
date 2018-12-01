@@ -12,7 +12,6 @@ const KnowledgeBaseBuyStakeSAN = ({ id }) => {
       lastUpdated='11-17-18'
     >
       <div className={styles.content}>
-        {/* <div className={styles.left}>a</div> */}
         <KnowledgeBaseBuyStakeSANLeft />
         <KnowledgeBaseBuyStakeSANRight />
       </div>

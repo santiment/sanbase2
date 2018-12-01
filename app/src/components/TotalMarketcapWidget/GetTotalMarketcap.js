@@ -15,20 +15,22 @@ const getMarketcapQuery = (type, projects) => {
     .utc()
     .format()
 
-  if (type !== 'list') {
-    return graphql(totalMarketcapGQL, {
-      props: ({ data: { historyPrice = [] } }) => ({
-        historyPrices: {
-          TOTAL_MARKET: historyPrice
-        }
-      }),
-      options: () => ({
-        variables: {
-          from,
-          slug: 'TOTAL_MARKET'
-        }
-      })
+  const slugsQueryTotal = graphql(totalMarketcapGQL, {
+    props: ({ data: { historyPrice = [] } }) => ({
+      historyPrices: {
+        TOTAL_MARKET: historyPrice
+      }
+    }),
+    options: () => ({
+      variables: {
+        from,
+        slug: 'TOTAL_MARKET'
+      }
     })
+  })
+
+  if (type !== 'list') {
+    return slugsQueryTotal
   }
 
   const sortedProjects = projects
@@ -41,9 +43,13 @@ const getMarketcapQuery = (type, projects) => {
   const slugs = sortedProjects.map(({ slug }) => slug)
 
   const slugsQuery = graphql(projectsListHistoryStatsGQL, {
-    props: ({ data: { projectsListHistoryStats = [] } }) => ({
+    props: ({
+      data: { projectsListHistoryStats = [] },
+      ownProps: { historyPrices }
+    }) => ({
       historyPrices: {
-        TOTAL_MARKET: projectsListHistoryStats
+        ...historyPrices,
+        TOTAL_LIST_MARKET: projectsListHistoryStats
       }
     }),
     options: () => ({
@@ -85,6 +91,7 @@ const getMarketcapQuery = (type, projects) => {
     )
 
     return compose(
+      slugsQueryTotal,
       slugsQuery,
       slugsQuery2
     )
@@ -96,7 +103,7 @@ const getMarketcapQuery = (type, projects) => {
 const GetTotalMarketcap = ({ type, from, projects, ...rest }) => {
   const resultQuery = getMarketcapQuery(type, projects)
   const HistoryQuery = resultQuery(TotalMarketcapWidget)
-  return <HistoryQuery />
+  return <HistoryQuery {...rest} />
 }
 
 const mapStateToProps = state => ({

@@ -78,6 +78,10 @@
       text-decoration: underline;
     }
   }
+
+  & svg:not(:root) {
+    overflow: visible;
+  }
 }
 @keyframes loading {
   0% {

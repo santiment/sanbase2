@@ -132,7 +132,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
               content =
                 notification_message(
                   project,
-                  Timex.diff(cooldown, Timex.now(), :hours),
+                  Timex.diff(cooldown, Timex.now(), :hours) |> abs(),
                   :hours,
                   inflow,
                   new_inflow

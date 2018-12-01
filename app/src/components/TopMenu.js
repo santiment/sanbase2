@@ -9,9 +9,10 @@ import DesktopKnowledgeBaseMenu from './DesktopMenu/DesktopKnowledgeBaseMenu'
 import DesktopAssetsMenu from './DesktopMenu/DesktopAssetsMenu'
 import SmoothDropdown from './SmoothDropdown/SmoothDropdown'
 import SmoothDropdownItem from './SmoothDropdown/SmoothDropdownItem'
+import HelpPopupIcon from './HelpPopup/HelpPopupIcon'
 import './AppMenu.css'
 import './TopMenu.css'
-import HelpPopupIcon from './HelpPopup/HelpPopupIcon'
+
 export const TopMenu = ({
   isLoggedIn,
   logout,

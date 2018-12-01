@@ -32,13 +32,13 @@ const KnowledgeBaseGetStarted = ({ id }) => {
             <a href='#staking'>Staking</a>
           </li>
         </ol>
-        <hr className={styles.divider} />
+        <hr />
         <KnowledgeBaseGetStartedParts />
-        <hr className={styles.divider} />
+        <hr />
         <KnowledgeBaseGetStartedMetrics />
-        <hr className={styles.divider} />
+        <hr />
         <KnowledgeBaseGetStartedExplore />
-        <hr className={styles.divider} />
+        <hr />
         <KnowledgeBaseGetStartedLogin />
       </div>
     </KnowledgeBaseSection>

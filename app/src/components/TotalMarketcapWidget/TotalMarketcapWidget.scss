@@ -82,6 +82,11 @@
   & svg:not(:root) {
     overflow: visible;
   }
+
+  &__change {
+    display: inline-block;
+    font-size: 13px;
+  }
 }
 @keyframes loading {
   0% {

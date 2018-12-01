@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import cx from 'classnames'
 import { ResponsiveContainer, AreaChart, Area, XAxis } from 'recharts'
+import PercentChanges from '../PercentChanges'
 import Widget from '../Widget/Widget'
 import {
   getTop3Area,
@@ -56,6 +57,7 @@ class TotalMarketcapWidget extends Component {
     let {
       totalmarketCapPrice = '.',
       volumeAmplitudePrice = '.',
+      volume24PercentChange,
       marketcapDataset = []
     } = generateWidgetData(
       TOTAL_LIST_MARKET && isListView ? TOTAL_LIST_MARKET : TOTAL_MARKET
@@ -95,7 +97,14 @@ class TotalMarketcapWidget extends Component {
             <h4 className={valueClassNames}>{totalmarketCapPrice}</h4>
           </div>
           <div className='TotalMarketcapWidget__right'>
-            <h3 className='TotalMarketcapWidget__label'>Vol 24 hr</h3>
+            <h3 className='TotalMarketcapWidget__label'>
+              Vol 24 hr (
+              <PercentChanges
+                changes={volume24PercentChange}
+                className='TotalMarketcapWidget__change'
+              />
+              )
+            </h3>
             <h4 className={valueClassNames}>{volumeAmplitudePrice}</h4>
           </div>
         </div>

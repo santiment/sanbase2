@@ -1,8 +1,8 @@
 import React from 'react'
+import { Area } from 'recharts'
 
 import { formatNumber } from '../../utils/formatting'
 import { mergeTimeseriesByKey } from '../../utils/utils'
-import { Area } from 'recharts'
 
 const COLORS = ['#dda000', '#1111bb', '#ab47bc']
 const COLORS_TEXT = ['#aa7000', '#111199', '#8a43ac']
@@ -27,6 +27,12 @@ export const generateWidgetData = historyPrice => {
     historyPrice[historyPriceLastIndex].volume -
     historyPrice[historyPriceLastIndex - 1].volume
 
+  const volume24PercentChange =
+    (1 -
+      historyPrice[historyPriceLastIndex].volume /
+        historyPrice[historyPriceLastIndex - 1].volume) *
+    -100
+
   const volumeAmplitudePrice = formatNumber(
     volumeAmplitude,
     currencyFormatOptions
@@ -40,6 +46,7 @@ export const generateWidgetData = historyPrice => {
   return {
     totalmarketCapPrice,
     volumeAmplitudePrice,
+    volume24PercentChange,
     marketcapDataset
   }
 }
@@ -99,9 +106,4 @@ export const getTop3Area = restProjects => {
       />
     )
   })
-}
-
-export const WidgetMarketView = {
-  LIST: 'List',
-  TOTAL: 'Total'
 }

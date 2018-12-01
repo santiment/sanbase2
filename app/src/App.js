@@ -32,6 +32,7 @@ import SignalsPriceVolume from './pages/Signals/SignalsPriceVolume'
 import { getConsentUrl } from './utils/utils'
 import HeaderMsg from './HeaderMsg'
 import './App.scss'
+import KnowledgeBase from './pages/KnowledgeBase/KnowledgeBase'
 
 const LoadableDetailedPage = Loadable({
   loader: () => import('./pages/Detailed/Detailed'),
@@ -163,6 +164,7 @@ export const App = ({
           />
         ))}
         <Redirect from='/assets' to='/assets/all' />
+        <Route exact path='/guide' component={KnowledgeBase} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route exact path='/signals/:slug' component={SignalsPriceVolume} />

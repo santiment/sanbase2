@@ -7,21 +7,21 @@ export const DesktopKnowledgeBaseMenu = () => (
     <Link className={styles.button} to='/guide#get-started'>
       Get Started
     </Link>
-    <Link className={styles.button} to='/guide#metrics'>
+    {/* <Link className={styles.button} to='/guide#metrics'>
       Metrics We Offer
-    </Link>
+    </Link> */}
     <Link className={styles.button} to='/guide#buy-stake-san'>
       Buy &amp; Stake SAN
     </Link>
-    <Link className={styles.button} to='/guide#price-list'>
+    {/* <Link className={styles.button} to='/guide#price-list'>
       Price List
-    </Link>
+    </Link> */}
     <Link className={styles.button} to='/roadmap'>
       Roadmap
     </Link>
-    <Link className={styles.button} to='/guide#support'>
+    {/* <Link className={styles.button} to='/guide#support'>
       Support
-    </Link>
+    </Link> */}
   </div>
 )
 

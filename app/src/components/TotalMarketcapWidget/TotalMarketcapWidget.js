@@ -2,110 +2,16 @@ import React, { Component } from 'react'
 import cx from 'classnames'
 import { ResponsiveContainer, AreaChart, Area, XAxis } from 'recharts'
 import Widget from '../Widget/Widget'
-import { formatNumber } from '../../utils/formatting'
-import { mergeTimeseriesByKey } from '../../utils/utils'
+import {
+  getTop3Area,
+  combineDataset,
+  generateWidgetData
+} from './totalMarketcapWidgetUtils'
 import './TotalMarketcapWidget.scss'
 
-const currencyFormatOptions = {
-  currency: 'USD',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0
-}
-
-const COLORS = ['#dda000', '#1111bb', '#ab47bc']
-const COLORS_TEXT = ['#aa7000', '#111199', '#8a43ac']
-
-const generateWidgetData = historyPrice => {
-  if (!historyPrice || historyPrice.length === 0) return {}
-
-  const historyPriceLastIndex = historyPrice.length - 1
-
-  const marketcapDataset = historyPrice.map(data => ({
-    datetime: data.datetime,
-    marketcap: data.marketcap
-  }))
-
-  const volumeAmplitude =
-    historyPrice[historyPriceLastIndex].volume -
-    historyPrice[historyPriceLastIndex - 1].volume
-
-  const volumeAmplitudePrice = formatNumber(
-    volumeAmplitude,
-    currencyFormatOptions
-  )
-
-  const totalmarketCapPrice = formatNumber(
-    historyPrice[historyPriceLastIndex].marketcap,
-    currencyFormatOptions
-  )
-
-  return {
-    totalmarketCapPrice,
-    volumeAmplitudePrice,
-    marketcapDataset
-  }
-}
-
-const constructProjectMarketcapKey = projectName => `${projectName}-marketcap`
-
-const combineDataset = (totalMarketHistory, restProjects) => {
-  const LAST_INDEX = totalMarketHistory.length - 1
-  if (LAST_INDEX < 0) {
-    return
-  }
-
-  const restProjectTimeseries = Object.keys(restProjects).map(key =>
-    (restProjects[key] || []).map(({ marketcap, datetime }) => ({
-      datetime,
-      [constructProjectMarketcapKey(key)]: marketcap
-    }))
-  )
-
-  const result = mergeTimeseriesByKey({
-    timeseries: [totalMarketHistory, ...restProjectTimeseries],
-    key: 'datetime'
-  })
-
-  return result
-}
-
-const getTop3Area = restProjects => {
-  return Object.keys(restProjects).map((key, i) => {
-    const rightMarginByIndex = (i + 1) * 16
-    return (
-      <Area
-        key={key}
-        dataKey={constructProjectMarketcapKey(key)}
-        type='monotone'
-        strokeWidth={1}
-        stroke={COLORS[i]}
-        label={({ x, y, index }) => {
-          if (index === rightMarginByIndex) {
-            return (
-              <text
-                x={x}
-                y={y}
-                dy={-8}
-                fill={COLORS_TEXT[i]}
-                fontSize={12}
-                textAnchor='middle'
-              >
-                {key}
-              </text>
-            )
-          }
-          return ''
-        }}
-        fill={COLORS[i] + '2c'}
-        isAnimationActive={false}
-      />
-    )
-  })
-}
-
 const WidgetMarketView = {
-  DETAILED: 'Detailed',
-  GLOBAL: 'Global'
+  LIST: 'List',
+  TOTAL: 'Total'
 }
 
 const MarketView = ({ currentView, handleViewSelect }) => (
@@ -128,7 +34,7 @@ const MarketView = ({ currentView, handleViewSelect }) => (
 
 class TotalMarketcapWidget extends Component {
   state = {
-    view: WidgetMarketView.DETAILED
+    view: WidgetMarketView.LIST
   }
 
   handleViewSelect = view => {
@@ -145,24 +51,22 @@ class TotalMarketcapWidget extends Component {
     } = this.props
 
     const { view } = this.state
+    const isListView = view === WidgetMarketView.LIST
 
     let {
       totalmarketCapPrice = '.',
       volumeAmplitudePrice = '.',
       marketcapDataset = []
     } = generateWidgetData(
-      TOTAL_LIST_MARKET && view === WidgetMarketView.DETAILED
-        ? TOTAL_LIST_MARKET
-        : TOTAL_MARKET
+      TOTAL_LIST_MARKET && isListView ? TOTAL_LIST_MARKET : TOTAL_MARKET
     )
 
     let restAreas = null
 
     if (!loading && Object.keys(restProjects).length > 0) {
-      const target =
-        view === WidgetMarketView.DETAILED
-          ? restProjects
-          : { [listName]: TOTAL_LIST_MARKET }
+      const target = isListView
+        ? restProjects
+        : { [listName]: TOTAL_LIST_MARKET }
       marketcapDataset = combineDataset(marketcapDataset, target)
       restAreas = getTop3Area(target)
     }
@@ -186,9 +90,7 @@ class TotalMarketcapWidget extends Component {
         <div className='TotalMarketcapWidget__info'>
           <div className='TotalMarketcapWidget__left'>
             <h3 className='TotalMarketcapWidget__label'>{`${
-              TOTAL_LIST_MARKET && view === WidgetMarketView.DETAILED
-                ? 'List'
-                : 'Total'
+              TOTAL_LIST_MARKET && isListView ? 'List' : 'Total'
             } marketcap`}</h3>
             <h4 className={valueClassNames}>{totalmarketCapPrice}</h4>
           </div>

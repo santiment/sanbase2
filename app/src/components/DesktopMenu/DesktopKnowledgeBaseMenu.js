@@ -1,6 +1,6 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import styles from './DesktopProfileMenu.module.css'
+import { HashLink as Link } from 'react-router-hash-link'
 
 export const DesktopKnowledgeBaseMenu = () => (
   <div className={styles.wrapper}>

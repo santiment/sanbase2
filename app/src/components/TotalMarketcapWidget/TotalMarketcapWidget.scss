@@ -48,20 +48,9 @@
   }
   &__chart {
     margin-top: 20px;
-    // min-height: 125px;
     max-height: 125px;
-    // position: relative;
 
-    // &::after {
-    //   content: '';
-    //   display: block;
-    //   position: absolute;
-    //   top: 0;
-    //   left: 0;
-    //   height: 100%;
-    //   width: 100%;
-    //   background: linear-gradient(rgba(255, 255, 255, 0) 90%, #fff);
-    // }
+
     &.list {
       max-height: 91px;
     }

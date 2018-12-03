@@ -19,6 +19,20 @@ defmodule Sanbase.Blockchain.TokenCirculation do
     more_than_five_years: "5y-_"
   }
 
+  @primary_key false
+  schema @table do
+    field(:timestamp, :naive_datetime, primary_key: true)
+    field(:contract_address, :string, primary_key: true)
+    field(:less_than_a_day, :float, source: :"_-1d")
+  end
+
+  def changeset(%__MODULE__{} = token_circulation, attrs \\ %{}) do
+    token_circulation
+    |> cast(attrs, [:timestamp, :contract_address, :less_than_a_day])
+    |> validate_number(:less_than_a_day, greater_than_or_equal_to: 0.0)
+    |> validate_length(:contract_address, min: 1)
+  end
+
   def token_circulation(tc_interval, contract, from, to, interval, token_decimals \\ 0) do
     interval_in_secs = Timescaledb.transform_interval(interval).secs
 

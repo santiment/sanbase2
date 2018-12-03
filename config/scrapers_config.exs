@@ -25,6 +25,7 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 # TODO: Change after switching over to only this cmc
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2,
   update_interval: {:system, "COINMARKETCAP_API_CALL_INTERVAL", "300"},
+  projects_number: {:system, "COINMARKETCAP_API_PROJECTS_NUMBER", "2500"},
   sync_enabled: {:system, "COINMARKETCAP_TICKER_FETCHER_ENABLED", false},
   top_projects_to_follow: {:system, "TOP_PROJECTS_TO_FOLLOW", "25"}
 

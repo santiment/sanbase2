@@ -37,6 +37,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   alias Sanbase.DateTimeUtils
   # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint2, as: PricePoint
+  alias Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2, as: TickerFetcher
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.ExternalServices.Coinmarketcap
 
@@ -57,26 +58,28 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   alias __MODULE__, as: Ticker
 
   @doc ~s"""
-  Fetch the current data for all top #{@projects_number} projects.
+  Fetch the current data for all top N projects.
   Parse the binary received from the CMC response to a list of tickers
   """
   @spec fetch_data() :: {:error, String.t()} | {:ok, [%Ticker{}]}
   def fetch_data() do
-    Logger.info("[CMC] Fetching the realtime data for top #{@projects_number} projects")
+    projects_number = Config.module_get(TickerFetcher, :projects_number) |> String.to_integer()
 
-    "v1/cryptocurrency/listings/latest?start=1&sort=market_cap&limit=#{@projects_number}&cryptocurrency_type=all&convert=USD,BTC"
+    Logger.info("[CMC] Fetching the realtime data for top #{projects_number} projects")
+
+    "v1/cryptocurrency/listings/latest?start=1&sort=market_cap&limit=#{projects_number}&cryptocurrency_type=all&convert=USD,BTC"
     |> get()
     |> case do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         Logger.info(
-          "[CMC] Successfully fetched the realtime data for top #{@projects_number} projects"
+          "[CMC] Successfully fetched the realtime data for top #{projects_number} projects"
         )
 
         {:ok, parse_json(body)}
 
       {:ok, %Tesla.Env{status: status, body: body}} ->
         error =
-          "Failed fetching top #{@projects_number} projects' information. Status: #{status}. Body: #{
+          "Failed fetching top #{projects_number} projects' information. Status: #{status}. Body: #{
             inspect(body)
           }"
 
@@ -85,7 +88,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
 
       {:error, error} ->
         error_msg =
-          "Error fetching top #{@projects_number} projects' information. Error message #{
+          "Error fetching top #{projects_number} projects' information. Error message #{
             inspect(error)
           }"
 

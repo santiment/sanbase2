@@ -1,0 +1,77 @@
+{
+  "status": {
+    "timestamp": "2018-11-27T09:43:26.242Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 10,
+    "credit_count": 2
+  },
+  "data": [
+    {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "circulating_supply": 17214587,
+      "total_supply": 17214587,
+      "max_supply": 21000000,
+      "date_added": "2013-04-28T00:00:00.000Z",
+      "num_market_pairs": 5718,
+      "cmc_rank": 1,
+      "last_updated": "2018-08-17T08:55:37.000Z",
+      "quote": {
+        "BTC": {
+          "price": 1,
+          "volume_24h": 747973.8547301133,
+          "percent_change_1h": 0,
+          "percent_change_24h": 0,
+          "percent_change_7d": 0,
+          "market_cap": 17206579.50246189,
+          "last_updated": "2018-08-17T08:56:39.000Z"
+        },
+        "USD": {
+          "price": 6493.02288075,
+          "volume_24h": 4858871494.40995,
+          "percent_change_1h": 0.0196847,
+          "percent_change_24h": 1.23932,
+          "percent_change_7d": 0.377056,
+          "market_cap": 111774707273.6615,
+          "last_updated": "2018-08-17T08:55:37.000Z"
+        }
+      }
+    },
+    {
+      "id": 1027,
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "slug": "ethereum",
+      "circulating_supply": 101377382.6553,
+      "total_supply": 101377382.6553,
+      "max_supply": null,
+      "date_added": "2015-08-07T00:00:00.000Z",
+      "num_market_pairs": 3869,
+      "cmc_rank": 2,
+      "last_updated": "2018-08-17T08:54:55.000Z",
+      "quote": {
+        "BTC": {
+          "price": 0.04633099381624731,
+          "volume_24h": 260111.94226267072,
+          "percent_change_1h": -0.2671,
+          "percent_change_24h": 1.8015,
+          "percent_change_7d": -20.7821,
+          "market_cap": 4696914.888910042,
+          "last_updated": "2018-08-17T08:56:39.000Z"
+        },
+        "USD": {
+          "price": 300.96820061,
+          "volume_24h": 1689698769.04551,
+          "percent_change_1h": -0.200328,
+          "percent_change_24h": 3.14457,
+          "percent_change_7d": -16.8554,
+          "market_cap": 30511368440.317066,
+          "last_updated": "2018-08-17T08:54:55.000Z"
+        }
+      }
+    }
+  ]
+}

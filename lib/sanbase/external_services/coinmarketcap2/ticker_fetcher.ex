@@ -19,9 +19,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker, as: TickerOld
   alias Sanbase.Prices.Store
 
-  # 5 minutes
-  @default_update_interval 1000 * 60 * 5
-
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
   end
@@ -32,11 +29,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
 
       Process.send(self(), :sync, [:noconnect])
 
-      update_interval = Config.get(:update_interval, @default_update_interval)
+      update_interval = Config.get(:update_interval) |> String.to_integer()
 
       Logger.info(
         "[CMC] Starting TickerFetcher scraper. It will query coinmarketcap every #{
-          update_interval / 1000
+          update_interval
         } seconds."
       )
 
@@ -78,7 +75,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
 
   def handle_info(:sync, %{update_interval: update_interval} = state) do
     work()
-    Process.send_after(self(), :sync, update_interval)
+    Process.send_after(self(), :sync, update_interval * 1000)
 
     {:noreply, state}
   end

@@ -35,7 +35,7 @@ defmodule SanbaseWeb.Router do
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
-      max_complexity: 5000,
+      max_complexity: 10000,
       log_level: :info
     )
 
@@ -45,7 +45,7 @@ defmodule SanbaseWeb.Router do
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
-      max_complexity: 5000,
+      max_complexity: 10000,
       interface: :simple
     )
   end

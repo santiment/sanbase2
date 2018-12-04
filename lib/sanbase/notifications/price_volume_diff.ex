@@ -4,7 +4,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   alias Sanbase.Model.Project
   alias Sanbase.InternalServices.TechIndicators
-  alias Sanbase.Notifications.{Notification, Type}
+  alias Sanbase.Notifications.{Notification, Type, Discord}
 
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 
@@ -142,12 +142,12 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     )
   end
 
-  defp notification_payload(
-         %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id},
-         currency,
-         %{datetime: datetime, price_change: price_change, volume_change: volume_change},
-         debug_info
-       ) do
+  def notification_payload(
+        %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project,
+        currency,
+        %{datetime: datetime, price_change: price_change, volume_change: volume_change},
+        debug_info
+      ) do
     # Timex.shift(days: 1) is because the returned datetime is the beginning of the day
     {:ok, notification_date_string} =
       datetime
@@ -161,8 +161,17 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         } Volume opposite trends (as of #{notification_date_string} UTC). #{
           project_page(coinmarketcap_id)
         } #{debug_info}",
-      username: "Price-Volume Difference"
+      username: "Price-Volume Difference",
+      embeds: notification_embeds(project)
     })
+  end
+
+  defp notification_embeds(project) do
+    Discord.build_embedded_chart(
+      project.coinmarketcap_id,
+      Timex.shift(Timex.now(), days: -90),
+      Timex.shift(Timex.now(), days: -1)
+    )
   end
 
   defp notification_emoji(value) do

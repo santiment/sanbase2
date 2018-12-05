@@ -1,7 +1,8 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
+import Panel from '../../Panel/Panel'
 import Search from '../Search'
-import styles from './WithSuggestions.scss'
+import styles from './SearchWithSuggestions.scss'
 
 class SearchWithSuggestions extends PureComponent {
   static propTypes = {
@@ -59,21 +60,23 @@ class SearchWithSuggestions extends PureComponent {
         />
         {isFocused &&
           searchTerm !== '' && (
-          <ul className={styles.suggestions}>
-            {suggestions.length !== 0 ? (
-              suggestions.slice(0, maxSuggestions).map(suggestion => (
-                <li className={styles.suggestions__item}>
-                  <div className={styles.suggestion}>
-                    {suggestionContent(suggestion)}
-                  </div>
-                </li>
-              ))
-            ) : (
-              <div className={styles.suggestion + ' ' + styles.noresults}>
-                  No results found.
-              </div>
-            )}
-          </ul>
+          <Panel popup className={styles.suggestions}>
+            <ul className={styles.suggestions__list}>
+              {suggestions.length !== 0 ? (
+                suggestions.slice(0, maxSuggestions).map(suggestion => (
+                  <li className={styles.suggestions__item}>
+                    <div className={styles.suggestion}>
+                      {suggestionContent(suggestion)}
+                    </div>
+                  </li>
+                ))
+              ) : (
+                <div className={styles.suggestion + ' ' + styles.noresults}>
+                    No results found.
+                </div>
+              )}
+            </ul>
+          </Panel>
         )}
       </div>
     )

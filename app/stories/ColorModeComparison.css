@@ -18,8 +18,12 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.ColorModeComparison__column {
+  background-color: #f0f4f8;
+}
+
 .ColorModeComparison__column.night-mode {
-  background-color: #1c1e20;
+  background-color: #1a1b1e;
 }
 
 .night-mode .ColorModeComparison__title {

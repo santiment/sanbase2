@@ -7,23 +7,17 @@ $border-color-night: #4a4a4a;
 }
 
 .suggestions {
-  @include border-box;
-
   position: absolute;
   top: 100%;
   width: 100%;
-  margin: 2px 0 0;
+  margin-top: 2px;
+  padding: 0;
+}
+
+.suggestions__list {
+  margin: 0;
   padding: 0;
   list-style: none;
-  border: 1px solid #d4d4d5;
-  border-radius: 4px;
-  background-color: #fff;
-
-  :global(.night-mode) & {
-    background-color: #232529;
-    color: #a0a0a0;
-    border-color: $border-color-night;
-  }
 }
 
 .suggestions__item {

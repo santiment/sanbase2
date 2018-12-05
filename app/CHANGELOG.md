@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-06-12 | v.0.22.1 'Phobos':
+
+  Fix Sentiment metric
+
 - 2018-30-11 | v.0.22.0 'Phobos':
 
   Add Trends 2.0 draft ver.

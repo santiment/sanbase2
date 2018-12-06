@@ -195,12 +195,15 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       timespan
     } #{timespan_format}(s).
     The approximate USD value of the moved tokens is $#{
-      Number.Delimit.number_to_delimited(normalized_inflow * avg_price_usd)
+      Number.Delimit.number_to_delimited(normalized_cooldown_inflow * avg_price_usd)
     }
 
-    In total #{normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)} token were deposited into an exchange in the past #{
-      interval_days()
-    } day(s)
+    In total #{percent_of_total_supply(project, inflow)}% (#{
+      normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)
+    } tokens) were deposited into an exchange in the past #{interval_days()} day(s).
+    The approximate USD value of total tokens moved is $#{
+      Number.Delimit.number_to_delimited(normalized_inflow * avg_price_usd)
+    }
     #{Project.sanbase_link(project)}
     """
   end
@@ -209,7 +212,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     Discord.build_embedded_chart(
       project.coinmarketcap_id,
       Timex.shift(Timex.now(), days: -90),
-      Timex.shift(Timex.now(), days: -1),
+      Timex.now(),
       chart_type: :exchange_inflow
     )
   end

@@ -1,8 +1,9 @@
 import gql from 'graphql-tag'
 import Raven from 'raven-js'
+import moment from 'moment'
 import { Observable } from 'rxjs'
 import * as actions from './../actions/types'
-import { getStartOfTheDay, getTimeFromFromString } from './../utils/utils'
+import { getTimeFromFromString } from './../utils/utils'
 
 const HistoryPriceGQL = gql`
   query queryHistoryPrice(
@@ -36,7 +37,7 @@ const fetchTimeseries$ = ({ settings, client }) => {
       variables: {
         slug: settings.slug || 'bitcoin',
         interval: settings.interval || '1d',
-        to: getStartOfTheDay(),
+        to: moment().toISOString(),
         from: getTimeFromFromString(settings.timeRange)
       },
       context: { isRetriable: true }

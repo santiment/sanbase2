@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-06-12 | v.0.22.3 'Phobos':
+
+  Fix trends chart
+
 - 2018-06-12 | v.0.22.2 'Phobos':
 
   Fix trends for non premium user

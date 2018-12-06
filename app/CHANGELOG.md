@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+- 2018-06-12 | v.0.22.2 'Phobos':
+
+  Fix trends for non premium user
+
 - 2018-06-12 | v.0.22.1 'Phobos':
 
   Fix Sentiment metric

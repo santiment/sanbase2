@@ -8,7 +8,7 @@ const compare = (a, b) => a.score - b.score
 
 const HypedWords = ({ trends, compiled, latest }) => (
   <div className={styles.HypedWords}>
-    <h4>Compiled {moment(compiled).fromNow()}</h4>
+    <h4>Compiled {moment(compiled).format('YYYY-MM-DD HH:mm')}</h4>
     <div className={cx(styles.HypedWordsBlock, { [styles.latest]: latest })}>
       {trends &&
         trends

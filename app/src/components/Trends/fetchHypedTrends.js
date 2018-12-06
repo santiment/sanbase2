@@ -3,7 +3,6 @@ import { Observable } from 'rxjs'
 import gql from 'graphql-tag'
 import moment from 'moment'
 import * as actions from './actions'
-import { getYesterday } from './../../utils/utils'
 
 const trendingWordsGQL = gql`
   query trendingWords($from: DateTime!, $to: DateTime!, $hour: Int!) {
@@ -36,7 +35,9 @@ export const fetchHypedTrends = (action$, store, { client }) =>
         variables: {
           hour,
           to: new Date().toISOString(),
-          from: getYesterday()
+          from: moment()
+            .subtract(3, 'd')
+            .toISOString()
         },
         context: { isRetriable: true }
       })
@@ -60,7 +61,9 @@ export const fetchHypedTrends = (action$, store, { client }) =>
             return acc
           }, [])
           .sort((a, b) => (moment(a.datetime).isAfter(b.datetime) ? 1 : -1))
+          .reverse()
           .filter((_, index) => index < 3)
+          .reverse()
         return Observable.of({
           type: actions.TRENDS_HYPED_FETCH_SUCCESS,
           payload: {

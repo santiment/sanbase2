@@ -681,9 +681,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ClickhouseResolver.historical_balance/3)
     end
 
-    @desc "Network growth returns the newly created addresses for a given timeframe"
+    @desc "Network growth returns the newly created addresses for a project in a given timeframe"
     field :network_growth, list_of(:network_growth) do
-      arg(:slug, :string)
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")

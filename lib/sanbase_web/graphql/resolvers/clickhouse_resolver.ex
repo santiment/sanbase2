@@ -11,22 +11,23 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   @one_hour_seconds 3600
 
   def network_growth(_root, args, _resolution) do
-    with {:ok, contract, _} <- args.slug |> Project.by_slug() |> Project.contract_info(),
-         interval <- DateTimeUtils.compound_duration_to_seconds(args.interval),
+    interval = DateTimeUtils.compound_duration_to_seconds(args.interval)
+
+    with {:ok, contract, _} <- Project.contract_info_by_slug(args.slug),
          {:ok, network_growth} =
            NetworkGrowth.network_growth(contract, args.from, args.to, interval) do
       {:ok, network_growth}
     else
       error ->
-        Logger.warn("Can't calculate network growth. Reason: #{inspect(error)}")
+        Logger.error("Can't calculate network growth. Reason: #{inspect(error)}")
 
-        {:ok, []}
+        {:error, "Can't calculate network growth"}
     end
   rescue
     e ->
       Logger.error("Exception raised while calculating network growth. Reason: #{inspect(e)}")
 
-      {:ok, []}
+      {:error, "Can't calculate network growth"}
   end
 
   def historical_balance(

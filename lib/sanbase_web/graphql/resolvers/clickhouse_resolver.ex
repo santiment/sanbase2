@@ -6,7 +6,28 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Clickhouse.Erc20Transfers
   alias Sanbase.Model.Project
 
+  alias Sanbase.Clickhouse.NetworkGrowth
+
   @one_hour_seconds 3600
+
+  def network_growth(_root, args, _resolution) do
+    with {:ok, contract, _} <- args.slug |> Project.by_slug() |> Project.contract_info(),
+         interval <- DateTimeUtils.compound_duration_to_seconds(args.interval),
+         {:ok, network_growth} =
+           NetworkGrowth.network_growth(contract, args.from, args.to, interval) do
+      {:ok, network_growth}
+    else
+      error ->
+        Logger.warn("Can't calculate network growth. Reason: #{inspect(error)}")
+
+        {:ok, []}
+    end
+  rescue
+    e ->
+      Logger.error("Exception raised while calculating network growth. Reason: #{inspect(e)}")
+
+      {:ok, []}
+  end
 
   def historical_balance(
         _root,
@@ -22,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:error, "Interval must be bigger than 1 hour"}
 
       error ->
-        Logger.warn("Cannot calculate historical balances. Reason: #{inspect(error)}")
+        Logger.warn("Can't calculate historical balances. Reason: #{inspect(error)}")
 
         {:ok, []}
     end

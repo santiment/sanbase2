@@ -34,7 +34,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ApikeyAuth,
     ProjectPermissions,
     PostPermissions,
-    ApiTimeframeRestriction
+    ApiTimeframeRestriction,
+    ApiUsage
   }
 
   import_types(Absinthe.Plug.Types)
@@ -76,8 +77,17 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   def middleware(middlewares, field, object) do
-    SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
-    |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
+    prometeheus_middlewares =
+      SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
+      |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
+
+    case object.identifier do
+      :query ->
+        [ApiUsage | prometeheus_middlewares]
+
+      _ ->
+        prometeheus_middlewares
+    end
   end
 
   query do

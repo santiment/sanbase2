@@ -16,7 +16,10 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
     conn = setup_jwt_auth(conn, user)
 
     assert conn.private[:absinthe] == %{
-             context: %{auth: %{auth_method: :user_token, current_user: user}}
+             context: %{
+               auth: %{auth_method: :user_token, current_user: user},
+               remote_ip: {127, 0, 0, 1}
+             }
            }
   end
 
@@ -35,7 +38,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
       capture_log(fn ->
         conn = ContextPlug.call(conn, %{})
 
-        assert conn.private[:absinthe] == %{context: %{}}
+        assert conn.private[:absinthe] == %{context: %{remote_ip: {127, 0, 0, 1}}}
       end)
 
     assert logs =~ ~r/Invalid bearer token/

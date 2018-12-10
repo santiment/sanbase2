@@ -133,7 +133,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
                 notification_message(
                   project,
                   Timex.diff(cooldown, Timex.now(), :hours) |> abs(),
-                  :hours,
+                  :hour,
                   inflow,
                   new_inflow
                 )
@@ -147,7 +147,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
           end
 
         {false, _} ->
-          content = notification_message(project, interval_days(), :days, inflow)
+          content = notification_message(project, interval_days(), :day, inflow)
           embeds = notification_embeds(project)
           {project, content, embeds, percent_of_total_supply}
       end
@@ -165,9 +165,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     normalized_inflow = inflow / :math.pow(10, project.token_decimals)
 
     """
-    [#{Timex.now() |> DateTime.truncate(:second)}] Project **#{project.name}** has **#{
-      percent_of_total_supply(project, inflow)
-    }%** of its circulating supply (#{
+    Project **#{project.name}** has **#{percent_of_total_supply(project, inflow)}%** of its circulating supply (#{
       normalized_inflow |> Number.Delimit.number_to_delimited(precision: 0)
     } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens) deposited into exchanges in the past #{
       timespan
@@ -191,9 +189,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     normalized_cooldown_inflow = cooldown_inflow / :math.pow(10, project.token_decimals)
 
     """
-    [#{Timex.now() |> DateTime.truncate(:second)}] Project **#{project.name}** has **#{
-      percent_of_total_supply(project, cooldown_inflow)
-    }%** of its circulating supply (#{
+    Project **#{project.name}** has **#{percent_of_total_supply(project, cooldown_inflow)}%** of its circulating supply (#{
       normalized_cooldown_inflow |> Number.Delimit.number_to_delimited(precision: 0)
     } out of #{supply(project) |> Number.Delimit.number_to_delimited(precision: 0)} tokens) deposited into exchanges in the past #{
       timespan

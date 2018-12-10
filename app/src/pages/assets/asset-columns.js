@@ -154,7 +154,7 @@ const columns = preload => [
     Header: 'Dev activity (30D)',
     id: 'github_activity',
     maxWidth: 110,
-    accessor: d => d.averageDevActivity,
+    accessor: d => d.averageGithubActivity,
     Cell: ({ value }) => (
       <div className='overview-devactivity'>
         {value ? parseFloat(value).toFixed(2) : ''}

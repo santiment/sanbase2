@@ -48,9 +48,24 @@ defmodule Sanbase.Clickhouse.Github do
     raise "Cannot change github ClickHouse table!"
   end
 
+  @doc ~s"""
+  Return the number of all github events for a given organization and time period
+  """
+  @spec total_github_activity(String.t(), %DateTime{}, %DateTime{}) :: {:ok, float()}
+  def total_github_activity(organization, from, to) do
+    {query, args} = total_github_activity_query(organization, from, to)
+    {:ok, [result]} = ClickhouseRepo.query_transform(query, args, fn [elem] -> elem end)
+    {:ok, result |> String.to_integer()}
+  end
+
+  @doc ~s"""
+  Return the number of github events, excluding the non-development related events (#{
+    @non_dev_events
+  }) for a given organization and time period
+  """
+  @spec total_dev_activity(String.t(), %DateTime{}, %DateTime{}) :: {:ok, float()}
   def total_dev_activity(organization, from, to) do
     {query, args} = total_dev_activity_query(organization, from, to)
-
     {:ok, [result]} = ClickhouseRepo.query_transform(query, args, fn [elem] -> elem end)
     {:ok, result |> String.to_integer()}
   end
@@ -135,7 +150,7 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args}
   end
 
-  defp total_dev_activity_query(owner, from, to) do
+  defp total_github_activity_query(owner, from, to) do
     query = """
     SELECT COUNT(*)
     FROM #{@table}
@@ -148,6 +163,26 @@ defmodule Sanbase.Clickhouse.Github do
       owner,
       DateTime.to_unix(from),
       DateTime.to_unix(to)
+    ]
+
+    {query, args}
+  end
+
+  defp total_dev_activity_query(owner, from, to) do
+    query = """
+    SELECT COUNT(*)
+    FROM #{@table}
+    PREWHERE owner = ?1
+    AND dt >= toDateTime(?2)
+    AND dt <= toDateTime(?3)
+    AND event NOT in (?4)
+    """
+
+    args = [
+      owner,
+      DateTime.to_unix(from),
+      DateTime.to_unix(to),
+      @non_dev_events
     ]
 
     {query, args}

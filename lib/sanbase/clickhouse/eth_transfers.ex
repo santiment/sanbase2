@@ -138,6 +138,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   Returns the historical balances of given etherium address in all intervals between two datetimes.
   """
   def historical_balance(address, from_datetime, to_datetime, interval) do
+    address = String.downcase(address)
     {query, args} = historical_balance_query(address, interval)
 
     balances =

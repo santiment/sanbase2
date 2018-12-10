@@ -36,6 +36,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   defp calc_historical_balances(
+         %{slug: "ethereum", address: address, from: from, to: to},
+         interval_seconds
+       ) do
+    EthTransfers.historical_balance(address, from, to, interval_seconds)
+  end
+
+  defp calc_historical_balances(
          %{slug: slug, address: address, from: from, to: to},
          interval_seconds
        ) do
@@ -53,9 +60,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     else
       {:error, error} -> {:error, error}
     end
-  end
-
-  defp calc_historical_balances(%{address: address, from: from, to: to}, interval_seconds) do
-    EthTransfers.historical_balance(address, from, to, interval_seconds)
   end
 end

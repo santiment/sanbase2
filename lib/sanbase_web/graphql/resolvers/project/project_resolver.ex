@@ -292,6 +292,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
         {:error, "Cannot fetch github activity for #{Project.describe(project)}"}
     end
+  rescue
+    e ->
+      Logger.error(
+        "Exception raised while calculating average github activity. Reason: #{inspect(e)}"
+      )
+
+      {:ok, nil}
   end
 
   def average_dev_activity(%Project{id: id} = project, %{days: days} = args, _resolution) do
@@ -327,6 +334,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
         {:error, "Cannot fetch github activity for #{Project.describe(project)}"}
     end
+  rescue
+    e ->
+      Logger.error(
+        "Exception raised while calculating average github activity. Reason: #{inspect(e)}"
+      )
+
+      {:ok, nil}
   end
 
   def marketcap_usd(

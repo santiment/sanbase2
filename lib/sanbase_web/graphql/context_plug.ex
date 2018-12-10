@@ -58,8 +58,9 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
 
   def apikey_authentication(%Plug.Conn{} = conn) do
     with ["Apikey " <> apikey] <- get_req_header(conn, "authorization"),
-         {:ok, current_user} <- apikey_authorize(apikey) do
-      %{auth_method: :apikey, current_user: current_user}
+         {:ok, current_user} <- apikey_authorize(apikey),
+         {:ok, {token, _apikey}} <- Sanbase.Auth.Hmac.split_apikey(apikey) do
+      %{auth_method: :apikey, current_user: current_user, token: token}
     else
       _ -> :skip
     end

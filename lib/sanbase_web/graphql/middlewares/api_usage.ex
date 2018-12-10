@@ -4,7 +4,6 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
   These logs are analyzed with Elasticsearch
   """
   @behaviour Absinthe.Middleware
-  # @behaviour Absinthe.Plugin
 
   alias Absinthe.Resolution
 
@@ -13,21 +12,31 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
   def call(
         %Resolution{
           definition: definition,
-          context: %{auth: %{auth_method: :apikey, api_token: token}}
+          context: %{
+            auth: %{auth_method: :apikey, api_token: token, current_user: user},
+            remote_ip: remote_ip
+          }
         } = resolution,
         config
       ) do
     metadata = Logger.metadata()
+    remote_ip = to_string(:inet_parse.ntoa(remote_ip))
 
     # Token can be safely logged to track apikey usage
     # Logging it is safe as this token cannot be used to generate the apikey
     # without having the secret key which is not logged/revealed anywhere.
-    Logger.metadata(api_token: token, query: definition.name, complexity: definition.complexity)
+    Logger.metadata(
+      remote_ip: remote_ip,
+      api_token: token,
+      user_id: user.id,
+      query: definition.name,
+      complexity: definition.complexity
+    )
 
     Logger.info(
-      "Apikey usage: api token: #{token}, query: #{definition.name}, complexity: #{
-        definition.complexity
-      }"
+      "Apikey usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, API Token: #{token}, Query: #{
+        definition.name
+      }, Complexity: #{definition.complexity}"
     )
 
     Logger.reset_metadata(metadata)
@@ -38,15 +47,22 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
   def call(
         %Resolution{
           definition: definition,
-          context: %{auth: %{auth_method: :user_token, current_user: user}}
+          context: %{auth: %{auth_method: :user_token, current_user: user}, remote_ip: remote_ip}
         } = resolution,
         config
       ) do
     metadata = Logger.metadata()
-    Logger.metadata(user_id: user.id, query: definition.name, complexity: definition.complexity)
+    remote_ip = to_string(:inet_parse.ntoa(remote_ip))
+
+    Logger.metadata(
+      remote_ip: remote_ip,
+      user_id: user.id,
+      query: definition.name,
+      complexity: definition.complexity
+    )
 
     Logger.info(
-      "Apikey usage: user id: #{user.id}, query: #{definition.name}, complexity: #{
+      "Apikey usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, Query: #{definition.name}, Complexity: #{
         definition.complexity
       }"
     )
@@ -67,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     )
 
     Logger.info(
-      "Apikey usage: remote ip: #{remote_ip}, query: #{definition.name}, complexity: #{
+      "Apikey usage: RemoteIP: #{remote_ip}, Query: #{definition.name}, Complexity: #{
         definition.complexity
       }"
     )

@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
         %Resolution{
           definition: definition,
           context: %{
-            auth: %{auth_method: :apikey, api_token: token, current_user: user},
+            auth: %{auth_method: :apikey, token: token, current_user: user},
             remote_ip: remote_ip
           }
         } = resolution,

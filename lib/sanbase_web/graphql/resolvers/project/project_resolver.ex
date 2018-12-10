@@ -281,7 +281,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       end
     else
       {:error, {:github_link_error, error}} ->
-        Logger.info(error)
         {:ok, nil}
 
       error ->
@@ -317,7 +316,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       end
     else
       {:error, {:github_link_error, error}} ->
-        Logger.info(error)
         {:ok, nil}
 
       error ->

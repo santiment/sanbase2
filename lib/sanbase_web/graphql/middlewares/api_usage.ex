@@ -56,10 +56,22 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     resolution
   end
 
-  def call(%{definition: definition} = resolution, _) do
+  def call(%{definition: definition, context: %{remote_ip: remote_ip}} = resolution, _) do
     metadata = Logger.metadata()
-    Logger.metadata(user_id: nil, query: definition.name, complexity: definition.complexity)
-    Logger.info("Apikey usage: query: #{definition.name}, complexity: #{definition.complexity}")
+    remote_ip = to_string(:inet_parse.ntoa(remote_ip))
+
+    Logger.metadata(
+      remote_ip: remote_ip,
+      query: definition.name,
+      complexity: definition.complexity
+    )
+
+    Logger.info(
+      "Apikey usage: remote ip: #{remote_ip}, query: #{definition.name}, complexity: #{
+        definition.complexity
+      }"
+    )
+
     Logger.reset_metadata(metadata)
     resolution
   end

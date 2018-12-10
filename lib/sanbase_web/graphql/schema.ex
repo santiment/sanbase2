@@ -668,11 +668,10 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Historical balance for erc20 token or eth address.
-    If slug is provided it will return the number of tokens in the address in all intervals.
-    If slug is not provided it will return the amount of ETH in this address in all intervals.
+    It will return the number of tokens/amount of ETH in the address in all intervals.
     """
     field :historical_balance, list_of(:historical_balance) do
-      arg(:slug, :string)
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:address, non_null(:string))

@@ -259,22 +259,58 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def average_dev_activity(%Project{id: id} = project, _args, _resolution) do
+  def average_github_activity(%Project{id: id} = project, %{days: days} = args, _resolution) do
     async(
       Cache.func(
-        fn -> calculate_average_dev_activity(project) end,
-        {:average_dev_activity, id}
+        fn -> calculate_average_github_activity(project, args) end,
+        {:average_github_activity, id, days}
       )
     )
   end
 
-  defp calculate_average_dev_activity(%Project{} = project) do
+  defp calculate_average_github_activity(%Project{} = project, %{days: days}) do
     with {:ok, organization} <- Project.github_organization(project) do
-      month_ago = Timex.shift(Timex.now(), days: -30)
+      month_ago = Timex.shift(Timex.now(), days: -days)
+
+      case Sanbase.Clickhouse.Github.total_github_activity(organization, month_ago, Timex.now()) do
+        {:ok, total_activity} ->
+          {:ok, total_activity / days}
+
+        _ ->
+          {:ok, 0}
+      end
+    else
+      {:error, {:github_link_error, error}} ->
+        Logger.info(error)
+        {:ok, nil}
+
+      error ->
+        Logger.error(
+          "Cannot fetch github activity for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:error, "Cannot fetch github activity for #{Project.describe(project)}"}
+    end
+  end
+
+  def average_dev_activity(%Project{id: id} = project, %{days: days} = args, _resolution) do
+    async(
+      Cache.func(
+        fn -> calculate_average_dev_activity(project, args) end,
+        {:average_dev_activity, id, days}
+      )
+    )
+  end
+
+  defp calculate_average_dev_activity(%Project{} = project, %{days: days}) do
+    with {:ok, organization} <- Project.github_organization(project) do
+      month_ago = Timex.shift(Timex.now(), days: -days)
 
       case Sanbase.Clickhouse.Github.total_dev_activity(organization, month_ago, Timex.now()) do
         {:ok, total_activity} ->
-          {:ok, total_activity / 30}
+          {:ok, total_activity / days}
 
         _ ->
           {:ok, 0}

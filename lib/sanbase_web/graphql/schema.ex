@@ -668,7 +668,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Historical balance for erc20 token or eth address.
-    It will return the number of tokens/amount of ETH in the address in all intervals.
+    Returns the historical balance for a given address in the given interval.
     """
     field :historical_balance, list_of(:historical_balance) do
       arg(:slug, non_null(:string))

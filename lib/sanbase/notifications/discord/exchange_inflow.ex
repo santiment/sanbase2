@@ -25,7 +25,6 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
     projects =
       projects()
-      |> IO.inspect()
       |> Project.projects_over_volume_threshold(volume_threshold)
 
     projects
@@ -120,8 +119,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       case Notification.get_cooldown(
              project,
              notification_type,
-             0
-             #  interval_days() * 86_400
+             interval_days() * 86_400
            ) do
         {true, %DateTime{} = cooldown} ->
           with {:ok, [%{inflow: new_inflow}]} <-
@@ -215,7 +213,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp notification_embeds(project) do
     Discord.build_embedded_chart(
       project,
-      Timex.shift(Timex.now(), days: -30),
+      Timex.shift(Timex.now(), days: -90),
       Timex.now(),
       chart_type: :exchange_inflow
     )

@@ -34,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     )
 
     Logger.info(
-      "Apikey usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, API Token: #{token}, Query: #{
+      "GraphQL API Usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, API Token: #{token}, Query: #{
         definition.name
       }, Complexity: #{definition.complexity}"
     )
@@ -62,7 +62,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     )
 
     Logger.info(
-      "Apikey usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, Query: #{definition.name}, Complexity: #{
+      "GraphQL API Usage: RemoteIP: #{remote_ip}, UserID: #{user.id}, Query: #{definition.name}, Complexity: #{
         definition.complexity
       }"
     )
@@ -83,7 +83,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
     )
 
     Logger.info(
-      "Apikey usage: RemoteIP: #{remote_ip}, Query: #{definition.name}, Complexity: #{
+      "GraphQL API Usage: RemoteIP: #{remote_ip}, Query: #{definition.name}, Complexity: #{
         definition.complexity
       }"
     )

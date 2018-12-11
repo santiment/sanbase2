@@ -88,8 +88,8 @@ defmodule Sanbase.Notifications.Discord do
   @spec build_embedded_chart(String.t(), %DateTime{}, %DateTime{}, list()) :: [
           %{image: %{url: String.t()}}
         ]
-  def build_embedded_chart(slug, from, to, opts \\ []) do
-    with {:ok, url} <- build_candlestick_image_url(slug, from, to, opts),
+  def build_embedded_chart(%Project{coinmarketcap_id: slug} = project, from, to, opts \\ []) do
+    with {:ok, url} <- build_candlestick_image_url(project, from, to, opts),
          {:ok, resp} <- http_client().get(url),
          {:ok, filename} <-
            FileStore.store(%{filename: rand_image_filename(slug), binary: resp.body}),
@@ -107,23 +107,31 @@ defmodule Sanbase.Notifications.Discord do
   """
   @spec build_candlestick_image_url(String.t(), %DateTime{}, %DateTime{}, list()) ::
           {:ok, String.t()} | {:error, String.t()}
-  def build_candlestick_image_url(slug, from, to, opts \\ []) do
+  defp build_candlestick_image_url(
+         %Project{coinmarketcap_id: slug} = project,
+         from,
+         to,
+         opts \\ []
+       ) do
     with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
          {:ok, ohlc} when is_list(ohlc) <- PricesStore.fetch_ohlc(measurement, from, to, "1d"),
          number when number != 0 <- length(ohlc),
          {:ok, prices} <- candlestick_prices(ohlc),
-         {:ok, image} <- generate_image_url(prices, slug, from, to, opts) do
+         {:ok, image} <- generate_image_url(project, prices, from, to, opts) do
       {:ok, image}
     else
       error ->
-        Logger.error("Error building image for slug: #{slug}. Reason: #{inspect(error)}")
-        {:error, "Error building image for slug: #{slug}"}
+        Logger.error(
+          "Error building image for #{Project.describe(project)}. Reason: #{inspect(error)}"
+        )
+
+        {:error, "Error building image for #{Project.describe(project)}"}
     end
   end
 
   # Private functions
 
-  defp generate_image_url(prices, slug, from, to, opts) do
+  defp generate_image_url(project, prices, from, to, opts) do
     [_open, high_values, low_values, _close, _avg] = prices
     min = low_values |> Enum.min() |> Float.floor(2)
     max = high_values |> Enum.max() |> Float.ceil(2)
@@ -133,7 +141,7 @@ defmodule Sanbase.Notifications.Discord do
 
     size = Enum.count(low_values)
 
-    line_chart = build_line_chart(slug, from, to, size, opts)
+    line_chart = build_line_chart(project, from, to, size, opts)
 
     bar_width = if size > 20, do: 6 * round(90 / size), else: 23
 
@@ -144,6 +152,7 @@ defmodule Sanbase.Notifications.Discord do
         chxt=y#{line_chart.chxt}&
         chxr=0,#{min},#{max}#{line_chart.chxr}&
         chds=#{line_chart.chds}#{min},#{max}&
+        chxs=#{line_chart.chxs}&
         chd=#{line_chart.chd}|#{low_str}|#{open_str}|#{close_str}|#{high_str}&
         chm=F,,1,1:#{size},#{bar_width}&
         chma=10,20,20,10&
@@ -175,34 +184,41 @@ defmodule Sanbase.Notifications.Discord do
     {:ok, prices}
   end
 
-  defp build_line_chart(slug, from, to, size, opts) do
+  defp build_line_chart(project, from, to, size, opts) do
     case Keyword.get(opts, :chart_type) do
       :daily_active_addresses ->
-        daa_chart_values(slug, from, to, size)
+        daa_chart_values(project, from, to, size)
 
       :exchange_inflow ->
-        exchange_inflow_chart_values(slug, from, to, size)
+        exchange_inflow_chart_values(project, from, to, size)
 
       _ ->
         empty_values()
     end
   end
 
-  defp daa_chart_values(slug, _from, to, size) do
+  defp daa_chart_values(%Project{} = project, _from, to, size) do
     from = Timex.shift(to, days: -size + 1)
 
-    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
+    with {:ok, contract, _} <- Project.contract_info(project),
          {:ok, daa} <- DailyActiveAddresses.active_addresses(contract, from, to, "1d") do
       daa_values = daa |> Enum.map(fn %{active_addresses: value} -> value end)
       max = daa_values |> Enum.max()
       min = daa_values |> Enum.min()
 
       daa_values = daa_values |> Enum.join(",")
-      %{chxt: ",r", chxr: "|1,#{min},#{max}", chds: "#{min},#{max},", chd: "t1:#{daa_values}"}
+
+      %{
+        chxt: ",r",
+        chxr: "|1,#{min},#{max}",
+        chds: "#{min},#{max},",
+        chd: "t1:#{daa_values}",
+        chxs: ""
+      }
     else
       error ->
         Logger.error(
-          "Cannot fetch Daily Active Addresses for project with slug: #{slug}. Reason: #{
+          "Cannot fetch Daily Active Addresses for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
         )
@@ -211,13 +227,15 @@ defmodule Sanbase.Notifications.Discord do
     end
   end
 
-  defp exchange_inflow_chart_values(slug, _from, to, size) do
+  defp exchange_inflow_chart_values(%Project{} = project, _from, to, size) do
     from = Timex.shift(to, days: -size + 1)
 
-    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
+    with {:ok, contract, token_decimals} <- Project.contract_info(project),
          {:ok, exchange_inflow} <-
-           ExchangeFundsFlow.transactions_in_over_time(contract, from, to, "1d", token_decimals) do
-      exchange_inflow_values = exchange_inflow |> Enum.map(fn %{inflow: value} -> value end)
+           ExchangeFundsFlow.transactions_in_over_time(contract, from, to, "1d", token_decimals),
+         supply when not is_nil(supply) <- Project.supply(project) do
+      exchange_inflow_values =
+        exchange_inflow |> Enum.map(fn %{inflow: value} -> value / supply end)
 
       max = exchange_inflow_values |> Enum.max()
       min = exchange_inflow_values |> Enum.min()
@@ -227,13 +245,16 @@ defmodule Sanbase.Notifications.Discord do
       %{
         chxt: ",r",
         chxr: "|1,#{min},#{max}",
+        chxs: "1N*p2*",
         chds: "#{min},#{max},",
         chd: "t1:#{exchange_inflow_values}"
       }
     else
       error ->
         Logger.error(
-          "Cannot fetch Exchange Inflow for project with slug: #{slug}. Reason: #{inspect(error)}"
+          "Cannot fetch Exchange Inflow for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
         )
 
         empty_values()

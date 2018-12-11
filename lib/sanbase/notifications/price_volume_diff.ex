@@ -168,7 +168,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp notification_embeds(project) do
     Discord.build_embedded_chart(
-      project.coinmarketcap_id,
+      project,
       Timex.shift(Timex.now(), days: -90),
       Timex.shift(Timex.now(), days: -1)
     )

@@ -195,7 +195,7 @@ defmodule Sanbase.Notifications.Discord do
         exchange_inflow_chart_values(project, from, to, size)
 
       _ ->
-        empty_values()
+        empty_values(from, to)
     end
   end
 
@@ -227,7 +227,7 @@ defmodule Sanbase.Notifications.Discord do
           }"
         )
 
-        empty_values()
+        empty_values(from, to)
     end
   end
 
@@ -263,7 +263,7 @@ defmodule Sanbase.Notifications.Discord do
           }"
         )
 
-        empty_values()
+        empty_values(from, to)
     end
   end
 
@@ -271,6 +271,8 @@ defmodule Sanbase.Notifications.Discord do
   # Return a list of 10 datetimes in the format `Oct 15`. The last datetime is manually added
   # so it coincides with the `to` parameter. That is because if the difference `to-from` is
   # not evenly divisible by 10 then the last datetime will be different
+  defp datetime_values(from, to) when is_nil(from) or is_nil(to), do: ""
+
   defp datetime_values(from, to) do
     diff = Timex.diff(from, to, :days) |> abs()
     interval = div(diff, 10)
@@ -284,8 +286,16 @@ defmodule Sanbase.Notifications.Discord do
     |> Enum.join("|")
   end
 
-  defp empty_values() do
-    %{chxt: "", chxr: "", chds: "", chd: "t0:1", chxs: "", chtt: "", chxl: ""}
+  defp empty_values(from \\ nil, to \\ nil) do
+    %{
+      chxt: ",x",
+      chxr: "",
+      chds: "",
+      chd: "t0:1",
+      chxs: "",
+      chtt: "",
+      chxl: "1:|#{datetime_values(from, to)}"
+    }
   end
 
   defp http_client() do

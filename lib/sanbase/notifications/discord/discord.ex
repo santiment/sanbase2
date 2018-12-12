@@ -149,7 +149,9 @@ defmodule Sanbase.Notifications.Discord do
         https://chart.googleapis.com/chart?
         cht=lc&
         chs=800x200&
+        chtt=#{line_chart.chtt}&
         chxt=y#{line_chart.chxt}&
+        chxl=#{line_chart.chxl}&
         chxr=0,#{min},#{max}#{line_chart.chxr}&
         chds=#{line_chart.chds}#{min},#{max}&
         chxs=#{line_chart.chxs}&
@@ -209,8 +211,10 @@ defmodule Sanbase.Notifications.Discord do
       daa_values = daa_values |> Enum.join(",")
 
       %{
-        chxt: ",r",
-        chxr: "|1,#{min},#{max}",
+        chtt: "#{project.name} - Daily Active Addresses and OHCL Price" |> URI.encode(),
+        chxt: ",x,r",
+        chxl: "1:|#{datetime_values(from, to)}",
+        chxr: "|2,#{min},#{max}",
         chds: "#{min},#{max},",
         chd: "t1:#{daa_values}",
         chxs: ""
@@ -243,9 +247,11 @@ defmodule Sanbase.Notifications.Discord do
       exchange_inflow_values = exchange_inflow_values |> Enum.join(",")
 
       %{
-        chxt: ",r",
-        chxr: "|1,#{min},#{max}",
-        chxs: "1N*p2*",
+        chtt: "#{project.name} - Exchange Inflow and OHCL Price" |> URI.encode(),
+        chxt: ",x,r",
+        chxl: "1:|#{datetime_values(from, to)}",
+        chxr: "|2,#{min},#{max}",
+        chxs: "2N*p2*",
         chds: "#{min},#{max},",
         chd: "t1:#{exchange_inflow_values}"
       }
@@ -261,8 +267,25 @@ defmodule Sanbase.Notifications.Discord do
     end
   end
 
+  # Generate a list of `|` separated values, used as the value for `chxl` in the chart
+  # Return a list of 10 datetimes in the format `Oct 15`. The last datetime is manually added
+  # so it coincides with the `to` parameter. That is because if the difference `to-from` is
+  # not evenly divisible by 10 then the last datetime will be different
+  defp datetime_values(from, to) do
+    diff = Timex.diff(from, to, :days) |> abs()
+    interval = div(diff, 10)
+
+    datetimes =
+      for i <- 1..9 do
+        Timex.format!(Timex.shift(from, days: interval * i), "%b %d", :strftime)
+      end
+
+    (datetimes ++ [Timex.format!(to, "%b %d", :strftime)])
+    |> Enum.join("|")
+  end
+
   defp empty_values() do
-    %{chxt: "", chxr: "", chds: "", chd: "t0:1", chxs: ""}
+    %{chxt: "", chxr: "", chds: "", chd: "t0:1", chxs: "", chtt: "", chxl: ""}
   end
 
   defp http_client() do

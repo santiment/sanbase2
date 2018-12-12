@@ -262,7 +262,7 @@ defmodule Sanbase.Notifications.Discord do
   end
 
   defp empty_values() do
-    %{chxt: "", chxr: "", chds: "", chd: "t0:1"}
+    %{chxt: "", chxr: "", chds: "", chd: "t0:1", chxs: ""}
   end
 
   defp http_client() do

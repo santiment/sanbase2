@@ -1,4 +1,4 @@
-defmodule Sanbase.Application.ScrapersSupervisor do
+defmodule Sanbase.Application.Scrapers do
   import Sanbase.ApplicationUtils
 
   def init(), do: :ok

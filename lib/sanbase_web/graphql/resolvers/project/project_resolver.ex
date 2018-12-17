@@ -375,7 +375,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, total_supply || cmc_total_supply}
+    {:ok, cmc_total_supply || total_supply}
   end
 
   def total_supply(_parent, _args, _resolution), do: {:ok, nil}

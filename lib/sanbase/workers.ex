@@ -1,4 +1,4 @@
-defmodule Sanbase.Application.WorkersSupervisor do
+defmodule Sanbase.Application.Workers do
   import Sanbase.ApplicationUtils
 
   def init(), do: :ok

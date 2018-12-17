@@ -74,9 +74,13 @@ defmodule Sanbase.Application do
         Sanbase.Application.Web.init()
         Sanbase.Application.Scrapers.init()
         Sanbase.Application.Workers.init()
+        Sanbase.Application.Signals.init()
 
       "web" ->
         Sanbase.Application.Web.init()
+
+      "signals" ->
+        Sanbase.Application.Signals.init()
 
       "scrapers" ->
         Sanbase.Application.Scrapers.init()

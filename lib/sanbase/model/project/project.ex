@@ -372,7 +372,6 @@ defmodule Sanbase.Model.Project do
   end
 
   def ticker_by_slug(nil), do: nil
-
   def ticker_by_slug("TOTAL_MARKET"), do: "TOTAL_MARKET"
 
   def ticker_by_slug(slug) when is_binary(slug) do
@@ -382,6 +381,19 @@ defmodule Sanbase.Model.Project do
       select: p.ticker
     )
     |> Sanbase.Repo.one()
+  end
+
+  def slug_by_ticker(nil), do: nil
+  def slug_by_ticker("TOTAL_MARKET"), do: "TOTAL_MARKET"
+
+  def slug_by_ticker(ticker) do
+    from(
+      p in Project,
+      where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
+      select: p.coinmarketcap_id
+    )
+    |> Repo.all()
+    |> List.first()
   end
 
   def tickers_by_slug_list(slugs_list) when is_list(slugs_list) do

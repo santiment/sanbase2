@@ -56,6 +56,7 @@ defmodule Sanbase.DateTimeUtils do
   end
 
   def compound_duration_to_seconds(interval) do
+    IO.inspect(interval, label: "IASNASLDNALSDHJLASJHDLASJLSJALJA")
     {int_interval, duration_index} = Integer.parse(interval)
 
     case duration_index do

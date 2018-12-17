@@ -102,6 +102,50 @@ defmodule Sanbase.Clickhouse.Github do
     sma(result, ma_base)
   end
 
+  @doc ~s"""
+  Get a timeseries with the pure development activity for a project.
+  Pure development activity is all events excluding comments, issues, forks, stars, etc.
+  """
+  @spec github_activity(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
+          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+  def github_activity(nil, _, _, _), do: []
+
+  def github_activity(organization, from, to, interval, "None", _) do
+    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+
+    {:ok, result} =
+      github_activity_query(organization, from, to, interval_sec)
+      |> datetime_activity_execute()
+  end
+
+  def github_activity(organization, from, to, interval, "movingAverage", ma_base) do
+    interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
+    from = Timex.shift(from, seconds: -((ma_base - 1) * interval_sec))
+
+    {:ok, result} =
+      github_activity_query(organization, from, to, interval_sec)
+      |> datetime_activity_execute()
+
+    sma(result, ma_base)
+  end
+
+  def first_datetime(slug) do
+    query = """
+    SELECT min(dt) FROM #{@table} WHERE owner = ?1
+    """
+
+    args = [slug]
+
+    {:ok, [first_datetime]} =
+      ClickhouseRepo.query_transform(query, args, fn [datetime] ->
+        datetime |> Sanbase.DateTimeUtils.from_erl!()
+      end)
+
+    {:ok, first_datetime}
+  end
+
+  # Private functions
+
   defp datetime_activity_execute({query, args}) do
     ClickhouseRepo.query_transform(query, args, fn [datetime, events_count] ->
       %{
@@ -155,6 +199,48 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args}
   end
 
+  defp github_activity_query(organization, from_datetime, to_datetime, interval) do
+    from_datetime_unix = DateTime.to_unix(from_datetime)
+    to_datetime_unix = DateTime.to_unix(to_datetime)
+    span = div(to_datetime_unix - from_datetime_unix, interval)
+    span = Enum.max([span, 1])
+
+    query = """
+    SELECT time, SUM(events) as events_count
+      FROM (
+        SELECT
+          toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
+          0 AS events
+        FROM numbers(?2)
+
+        UNION ALL
+
+        SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, count(events) as events
+          FROM (
+            SELECT any(event) as events, dt
+            FROM #{@table}
+            PREWHERE owner = ?3
+            AND dt >= toDateTime(?4)
+            AND dt <= toDateTime(?5)
+            GROUP BY owner, dt
+          )
+          GROUP BY time
+      )
+      GROUP BY time
+      ORDER BY time
+    """
+
+    args = [
+      interval,
+      span,
+      organization,
+      from_datetime_unix,
+      to_datetime_unix
+    ]
+
+    {query, args}
+  end
+
   defp total_github_activity_query(owner, from, to) do
     query = """
     SELECT COUNT(*)
@@ -193,8 +279,6 @@ defmodule Sanbase.Clickhouse.Github do
 
     {query, args}
   end
-
-  # Helper functions
 
   # Simple moving average of the github activity datapoints. Used to smooth the
   # noise created by the less amount of events created during the night and weekends

@@ -38,6 +38,54 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
     end
   end
 
+  def github_activity(root, %{ticker: ticker} = args, resolution) do
+    %Project{coinmarketcap_id: slug} = Project.slug_by_ticker(ticker)
+    args = args |> Map.delete(:ticker) |> Map.put(:slug, slug)
+    github_activity(root, args, resolution)
+  end
+
+  def github_activity(
+        _root,
+        %{
+          slug: slug,
+          from: from,
+          to: to,
+          interval: interval,
+          transform: transform,
+          moving_average_interval_base: moving_average_interval_base
+        },
+        _resolution
+      ) do
+    with {:ok, github_organization} <- Project.github_organization(slug),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(
+             Sanbase.Clickhouse.Github,
+             github_organization,
+             from,
+             to,
+             interval,
+             24 * 60 * 60
+           ),
+         {:ok, result} <-
+           Sanbase.Clickhouse.Github.github_activity(
+             github_organization,
+             from,
+             to,
+             interval,
+             transform,
+             moving_average_interval_base
+           ) do
+      {:ok, result}
+    else
+      {:error, {:github_link_error, error}} ->
+        {:ok, []}
+
+      error ->
+        Logger.error("Cannot fetch github activity for #{slug}. Reason: #{inspect(error)}")
+        {:error, "Cannot fetch github activity for #{slug}"}
+    end
+  end
+
   def activity(root, %{slug: slug} = args, resolution) do
     # Temporary solution while all frontend queries migrate to using slug. After that
     # only the slug query will remain

@@ -249,7 +249,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "")
       arg(:transform, :string, default_value: "None")
-      arg(:moving_average_interval_base, :string, default_value: "1w")
+      arg(:moving_average_interval_base, :integer, default_value: 7)
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 

@@ -16,6 +16,11 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
     field(:active_addresses, non_null(:integer))
   end
 
+  object :token_age do
+    field(:datetime, non_null(:datetime))
+    field(:token_age_in_days, non_null(:float))
+  end
+
   object :wallet do
     field(:name, non_null(:string))
     field(:address, non_null(:string))

@@ -68,6 +68,12 @@ defmodule Sanbase.Timescaledb do
     %Postgrex.Interval{secs: seconds}
   end
 
+  def time_range(%DateTime{} = from, %DateTime{} = to, datetime_column_name \\ "timestamp") do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    "EXTRACT(epoch from #{datetime_column_name}) BETWEEN #{from_unix} AND #{to_unix}"
+  end
+
   @doc ~s"""
   Executes the given query and args with the TimescaleRepo.
   Transforms the result by applying `transform_fn` to it. To easily handle the datetimes

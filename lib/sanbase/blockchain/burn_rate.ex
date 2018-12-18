@@ -45,6 +45,32 @@ defmodule Sanbase.Blockchain.BurnRate do
     end
   end
 
+  def average_token_age_consumed_in_days(contract, from, to, interval, token_decimals \\ 0) do
+    with {:ok, token_age_consumed} <- burn_rate(contract, from, to, interval, token_decimals),
+         {:ok, transaction_volume} <-
+           Sanbase.Blockchain.TransactionVolume.transaction_volume(
+             contract,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
+      average_token_age_consumed_in_days =
+        Enum.zip(token_age_consumed, transaction_volume)
+        |> Enum.map(fn {%{burn_rate: br, datetime: dt}, %{transaction_volume: tv}} ->
+          value = %{
+            datetime: dt,
+            token_age_in_days: if(tv >= 0.1, do: br / tv, else: 0) * 15 / 86400
+          }
+        end)
+
+      {:ok, average_token_age_consumed_in_days}
+    else
+      {:error, error} -> {:error, error}
+      error -> {:error, inspect(error)}
+    end
+  end
+
   def first_datetime(contract) do
     "FROM #{@table} WHERE contract_address = $1"
     |> Timescaledb.first_datetime([contract])

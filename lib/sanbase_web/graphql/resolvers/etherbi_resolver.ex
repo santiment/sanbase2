@@ -11,8 +11,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   require Logger
 
   @doc ~S"""
-    Return the token burn rate for the given slug and time period.
-    Uses the influxdb cached values instead of issuing a GET request to etherbi
+  Return the token age consumed for the given slug and time period.
   """
   def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
@@ -48,8 +47,43 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-    Return the transaction volume for the given slug and time period.
-    Uses the influxdb cached values instead of issuing a GET request to etherbi
+  Return the average age of the tokens that wer transaction for the given slug and time period.
+  """
+  def average_token_age_consumed_in_days(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(
+             Blockchain.BurnRate,
+             contract_address,
+             from,
+             to,
+             interval,
+             60 * 60,
+             50
+           ),
+         {:ok, token_age} <-
+           Blockchain.BurnRate.average_token_age_consumed_in_days(
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
+      {:ok, token_age |> Utils.fit_from_datetime(args)}
+    else
+      error ->
+        error_msg = "Can't fetch average token age consumed in days for #{slug}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  @doc ~S"""
+  Return the transaction volume for the given slug and time period.
   """
   def transaction_volume(
         _root,
@@ -89,7 +123,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-    Return the number of daily active addresses for a given slug
+  Return the number of daily active addresses for a given slug.
   """
   def daily_active_addresses(
         _root,
@@ -128,9 +162,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-    Return the transactions that happend in or out of an exchange wallet for a given slug
-    and time period.
-    Uses the influxdb cached values instead of issuing a GET request to etherbi
+  Return the amount of tokens that were transacted in or out of an exchange wallet for a given slug
+  and time period.
   """
   def exchange_funds_flow(
         _root,
@@ -178,7 +211,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-    Return the average number of daily active addresses for a given slug and period of time
+  Return the average number of daily active addresses for a given slug and period of time
   """
   def average_daily_active_addresses(
         %Project{id: id} = project,

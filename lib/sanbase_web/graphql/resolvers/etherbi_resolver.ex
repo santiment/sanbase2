@@ -210,6 +210,44 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
+  def token_circulation(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(
+             Blockchain.TokenCirculation,
+             contract_address,
+             from,
+             to,
+             interval,
+             60 * 60,
+             50
+           ),
+         {:ok, token_circulation} <-
+           Blockchain.TokenCirculation.token_circulation(
+             :less_than_a_day,
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
+      result =
+        token_circulation
+        |> Utils.fit_from_datetime(args)
+
+      {:ok, result}
+    else
+      error ->
+        error_msg = "Can't fetch token circulation for #{slug}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
   def exchange_wallets(_root, _args, _resolution) do
     {:ok, ExchangeAddress |> Repo.all() |> Repo.preload(:infrastructure)}
   end

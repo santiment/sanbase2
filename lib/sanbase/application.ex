@@ -48,6 +48,14 @@ defmodule Sanbase.Application do
           ]
 
           {children, opts}
+
+        unknown_type ->
+          Logger.warn(
+            "Unkwnown container type provided - #{inspect(unknown_type)}. Will start a default web container."
+          )
+
+          Logger.info("Starting Web Sanbase.")
+          Sanbase.Application.Web.children()
       end
 
     children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
@@ -87,6 +95,9 @@ defmodule Sanbase.Application do
 
       "workers" ->
         Sanbase.Application.Workers.init()
+
+      _ ->
+        Sanbase.Application.Web.init()
     end
   end
 

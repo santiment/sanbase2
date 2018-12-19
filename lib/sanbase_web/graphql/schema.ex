@@ -692,7 +692,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Calculates the exchange inflow and outflow volume in usd for a given exchange in a time interval.
     """
     field :exchange_volume, list_of(:exchange_volume) do
-      arg(:exchange, :string)
+      arg(:exchange, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 

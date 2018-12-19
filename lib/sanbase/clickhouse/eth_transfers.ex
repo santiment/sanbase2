@@ -152,6 +152,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   Returns the inflow and outflow volume for a list of exchange_addresses between two datetimes
   """
   def exchange_volume(exchange_addresses, from_datetime, to_datetime) do
+    exchange_addresses = exchange_addresses |> Enum.map(&String.downcase/1)
     {query, args} = exchange_volume_query(exchange_addresses, from_datetime, to_datetime)
 
     query

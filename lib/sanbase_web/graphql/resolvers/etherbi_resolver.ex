@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-  Return the average age of the tokens that wer transaction for the given slug and time period.
+  Return the average age of the tokens that were transacted for the given slug and time period.
   """
   def average_token_age_consumed_in_days(
         _root,

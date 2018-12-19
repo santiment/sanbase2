@@ -57,10 +57,11 @@ defmodule Sanbase.Blockchain.BurnRate do
            ) do
       average_token_age_consumed_in_days =
         Enum.zip(token_age_consumed, transaction_volume)
-        |> Enum.map(fn {%{burn_rate: br, datetime: dt}, %{transaction_volume: tv}} ->
+        |> Enum.map(fn {%{burn_rate: burn_rate, datetime: datetime},
+                        %{transaction_volume: trx_volume}} ->
           value = %{
-            datetime: dt,
-            token_age_in_days: if(tv >= 0.1, do: br / tv, else: 0) * 15 / 86400
+            datetime: datetime,
+            token_age_in_days: token_age_in_days(burn_rate, trx_volume)
           }
         end)
 
@@ -75,4 +76,11 @@ defmodule Sanbase.Blockchain.BurnRate do
     "FROM #{@table} WHERE contract_address = $1"
     |> Timescaledb.first_datetime([contract])
   end
+
+  # Private functions
+
+  # `burn_rate` is calculated by multiplying by the number of blocks, not real timestamp
+  # apply approximation that a block is produced on average each 15 seconds
+  defp token_age_in_days(_, 0), do: 0
+  defp token_age_in_days(burn_rate, trx_volume), do: burn_rate / trx_volume * 15 / 86400
 end

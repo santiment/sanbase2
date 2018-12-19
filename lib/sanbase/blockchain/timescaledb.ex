@@ -22,8 +22,8 @@ defmodule Sanbase.Timescaledb do
           args = [from, to, contract]
 
           query =
-           "SELECT sum(burn_rate) AS value
-            FROM eth_burn_rate
+           "SELECT sum(token_age_consumed) AS value
+            FROM eth_token_age_consumed
             WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3"
 
           {query, args} = bucket_by_interval(query, args, interval)
@@ -82,12 +82,12 @@ defmodule Sanbase.Timescaledb do
 
   Example:
    You are bucketing by interval and doing a single SUM aggregation over a field.
-   In that case the result will contain two parameters in a list - `[datetime, burn_rate]`.
+   In that case the result will contain two parameters in a list - `[datetime, token_age_consumed]`.
    In that case your transform_fn could look like this:
-     fn [datetime, burn_rate] ->
+     fn [datetime, token_age_consumed] ->
        %{
          datetime: timestamp_to_datetime(datetime),
-         burn_rate: burn_rate
+         token_age_consumed: token_age_consumed
        }
   """
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do

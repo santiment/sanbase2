@@ -13,11 +13,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   @doc ~S"""
   Return the token age consumed for the given slug and time period.
   """
-  def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
+  def token_age_consumed(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             Blockchain.BurnRate,
+             Blockchain.TokenAgeConsumed,
              contract_address,
              from,
              to,
@@ -25,8 +29,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              60 * 60,
              50
            ),
-         {:ok, burn_rates} <-
-           Blockchain.BurnRate.burn_rate(
+         {:ok, token_age_consumed} <-
+           Blockchain.TokenAgeConsumed.token_age_consumed(
              contract_address,
              from,
              to,
@@ -34,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              token_decimals
            ) do
       result =
-        burn_rates
+        token_age_consumed
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}
@@ -57,7 +61,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             Blockchain.BurnRate,
+             Blockchain.TokenAgeConsumed,
              contract_address,
              from,
              to,
@@ -66,7 +70,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              50
            ),
          {:ok, token_age} <-
-           Blockchain.BurnRate.average_token_age_consumed_in_days(
+           Blockchain.TokenAgeConsumed.average_token_age_consumed_in_days(
              contract_address,
              from,
              to,

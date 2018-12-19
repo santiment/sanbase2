@@ -288,7 +288,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     Grouping by interval works by summing all burn rate records in the interval.
     """
-    field :burn_rate, list_of(:burn_rate_data) do
+    field :burn_rate, list_of(:token_age_consumed_data) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
@@ -296,7 +296,18 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&EtherbiResolver.burn_rate/3)
+      cache_resolve(&EtherbiResolver.token_age_consumed/3)
+    end
+
+    field :token_age_consumed, list_of(:token_age_consumed_data) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+      cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
     @desc ~s"""

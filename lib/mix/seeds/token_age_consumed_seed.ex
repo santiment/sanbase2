@@ -1,4 +1,4 @@
-defmodule Sanbase.Seeds.BurnRateSeed do
+defmodule Sanbase.Seeds.TokenAgeConsumedSeed do
   import Sanbase.Seeds.Helpers
 
   def populate() do
@@ -25,14 +25,14 @@ defmodule Sanbase.Seeds.BurnRateSeed do
     Enum.map(changesets, &Sanbase.TimescaleRepo.insert/1)
   end
 
-  defp make_changeset(contract, timestamp, burn_rate) do
-    alias Sanbase.Blockchain.BurnRate
+  defp make_changeset(contract, timestamp, token_age_consumed) do
+    alias Sanbase.Blockchain.TokenAgeConsumed
 
-    %BurnRate{}
-    |> BurnRate.changeset(%{
+    %TokenAgeConsumed{}
+    |> TokenAgeConsumed.changeset(%{
       contract_address: contract,
       timestamp: timestamp,
-      burn_rate: burn_rate
+      token_age_consumed: token_age_consumed
     })
   end
 end

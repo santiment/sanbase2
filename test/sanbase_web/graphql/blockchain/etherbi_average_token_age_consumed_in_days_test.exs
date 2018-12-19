@@ -32,28 +32,28 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
     datetime3 = DateTime.from_naive!(~N[2017-05-14 22:05:00], "Etc/UTC")
     datetime4 = DateTime.from_naive!(~N[2017-05-14 22:15:00], "Etc/UTC")
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime1,
-      burn_rate: 5_000_000
+      token_age_consumed: 5_000_000
     })
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime2,
-      burn_rate: 3_640_000
+      token_age_consumed: 3_640_000
     })
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime3,
-      burn_rate: 10_000
+      token_age_consumed: 10_000
     })
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime4,
-      burn_rate: 7_280
+      token_age_consumed: 7_280
     })
 
     insert(:transaction_volume, %{

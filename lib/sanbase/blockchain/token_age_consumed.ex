@@ -1,4 +1,4 @@
-defmodule Sanbase.Blockchain.BurnRate do
+defmodule Sanbase.Blockchain.TokenAgeConsumed do
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -10,18 +10,18 @@ defmodule Sanbase.Blockchain.BurnRate do
   schema @table do
     field(:timestamp, :naive_datetime, primary_key: true)
     field(:contract_address, :string, primary_key: true)
-    field(:burn_rate, :float)
+    field(:token_age_consumed, :float, source: :burn_rate)
   end
 
   @doc false
-  def changeset(%__MODULE__{} = burn_rate, attrs \\ %{}) do
-    burn_rate
-    |> cast(attrs, [:timestamp, :contract_address, :burn_rate])
-    |> validate_number(:burn_rate, greater_than_or_equal_to: 0.0)
+  def changeset(%__MODULE__{} = token_age_consumed, attrs \\ %{}) do
+    token_age_consumed
+    |> cast(attrs, [:timestamp, :contract_address, :token_age_consumed])
+    |> validate_number(:token_age_consumed, greater_than_or_equal_to: 0.0)
     |> validate_length(:contract_address, min: 1)
   end
 
-  def burn_rate(contract, from, to, interval, token_decimals \\ 0) do
+  def token_age_consumed(contract, from, to, interval, token_decimals \\ 0) do
     args = [from, to, contract]
 
     """
@@ -30,23 +30,27 @@ defmodule Sanbase.Blockchain.BurnRate do
     WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
     """
     |> Timescaledb.bucket_by_interval(args, interval)
-    |> Timescaledb.timescaledb_execute(fn [datetime, burn_rate] ->
+    |> Timescaledb.timescaledb_execute(fn [datetime, token_age_consumed] ->
+      token_age_consumed = token_age_consumed / :math.pow(10, token_decimals)
+
       %{
         datetime: Timescaledb.timestamp_to_datetime(datetime),
-        burn_rate: burn_rate / :math.pow(10, token_decimals)
+        burn_rate: token_age_consumed,
+        token_age_consumed: token_age_consumed
       }
     end)
   end
 
-  def burn_rate!(contract, from, to, interval, token_decimals \\ 0) do
-    case burn_rate(contract, from, to, interval, token_decimals) do
+  def token_age_consumed!(contract, from, to, interval, token_decimals \\ 0) do
+    case token_age_consumed(contract, from, to, interval, token_decimals) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end
   end
 
   def average_token_age_consumed_in_days(contract, from, to, interval, token_decimals \\ 0) do
-    with {:ok, token_age_consumed} <- burn_rate(contract, from, to, interval, token_decimals),
+    with {:ok, token_age_consumed} <-
+           token_age_consumed(contract, from, to, interval, token_decimals),
          {:ok, transaction_volume} <-
            Sanbase.Blockchain.TransactionVolume.transaction_volume(
              contract,
@@ -57,11 +61,11 @@ defmodule Sanbase.Blockchain.BurnRate do
            ) do
       average_token_age_consumed_in_days =
         Enum.zip(token_age_consumed, transaction_volume)
-        |> Enum.map(fn {%{burn_rate: burn_rate, datetime: datetime},
+        |> Enum.map(fn {%{token_age_consumed: token_age_consumed, datetime: datetime},
                         %{transaction_volume: trx_volume}} ->
           value = %{
             datetime: datetime,
-            token_age_in_days: token_age_in_days(burn_rate, trx_volume)
+            token_age_in_days: token_age_in_days(token_age_consumed, trx_volume)
           }
         end)
 
@@ -79,8 +83,10 @@ defmodule Sanbase.Blockchain.BurnRate do
 
   # Private functions
 
-  # `burn_rate` is calculated by multiplying by the number of blocks, not real timestamp
+  # `token_age_consumed` is calculated by multiplying by the number of blocks, not real timestamp
   # apply approximation that a block is produced on average each 15 seconds
   defp token_age_in_days(_, 0), do: 0
-  defp token_age_in_days(burn_rate, trx_volume), do: burn_rate / trx_volume * 15 / 86400
+
+  defp token_age_in_days(token_age_consumed, trx_volume),
+    do: token_age_consumed / trx_volume * 15 / 86400
 end

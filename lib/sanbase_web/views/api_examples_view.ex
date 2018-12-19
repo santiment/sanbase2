@@ -16,10 +16,10 @@ defmodule SanbaseWeb.ApiExamplesView do
         variables: "{}",
         docs: docs(:daily_active_addresses)
       },
-      burn_rate: %{
-        query: burn_rate(),
+      token_age_consumed: %{
+        query: token_age_consumed(),
         variables: "{}",
-        docs: docs(:burn_rate)
+        docs: docs(:token_age_consumed)
       },
       tv: %{
         query: tv(),
@@ -85,7 +85,7 @@ defmodule SanbaseWeb.ApiExamplesView do
     """
   end
 
-  defp burn_rate do
+  defp token_age_consumed do
     """
     query {
       burnRate(

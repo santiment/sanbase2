@@ -16,14 +16,14 @@ defmodule Sanbase.Timescaledb do
     3. The interval MUST be a string that the `transform_interval/1` function understands
 
     Example usage:
-      You want to calculate the sum of all burn rates in a given time period,
+      You want to calculate the sum of all transaction volumes in a given time period,
       bucketed by an interval. Then your code should look like this:
 
           args = [from, to, contract]
 
           query =
-           "SELECT sum(token_age_consumed) AS value
-            FROM eth_token_age_consumed
+           "SELECT sum(transaction_volume) AS value
+            FROM eth_transaction_volume
             WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3"
 
           {query, args} = bucket_by_interval(query, args, interval)
@@ -82,12 +82,12 @@ defmodule Sanbase.Timescaledb do
 
   Example:
    You are bucketing by interval and doing a single SUM aggregation over a field.
-   In that case the result will contain two parameters in a list - `[datetime, token_age_consumed]`.
+   In that case the result will contain two parameters in a list - `[datetime, transaction_volume]`.
    In that case your transform_fn could look like this:
-     fn [datetime, token_age_consumed] ->
+     fn [datetime, transaction_volume] ->
        %{
          datetime: timestamp_to_datetime(datetime),
-         token_age_consumed: token_age_consumed
+         transaction_volume: transaction_volume
        }
   """
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do

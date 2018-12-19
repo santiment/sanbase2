@@ -1,4 +1,37 @@
 defmodule Sanbase.Blockchain.TokenAgeConsumed do
+  @moduledoc ~s"""
+  Token Age Consumed (also known as Days Destroyed) is calculated by taking the
+  number of ethers/tokens in a transaction and multiplying it by the number of blocks
+  it has been since those ether/tokens were last moved.
+  """
+
+  @type t :: %__MODULE__{
+          timestamp: %DateTime{},
+          contract_address: String.t(),
+          token_age_consuemd: float()
+        }
+
+  @typedoc ~s"""
+  Returned by the `token_age_consumed/5` and `token_age_consumed!/5` functions
+  TODO: Once the `burn_rate` GQL query is deprecated in favour of `token_age_consumed`
+  remove the `burn_rate` field
+  """
+  @type token_age_consumed_map :: %{
+          datetime: %DateTime{},
+          burn_rate: float(),
+          token_age_consumed: float()
+        }
+
+  @typedoc ~s"""
+  Returned by the `average_token_age_consumed_in_days/5` function.
+  It is calculated by dividing the token age consumed by the transaction volume
+  to get actual average age of the tokens/ether
+  """
+  @type token_age_consumed_in_days_map :: %{
+          datetime: %DateTime{},
+          token_age_in_days: float()
+        }
+
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -21,6 +54,16 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
     |> validate_length(:contract_address, min: 1)
   end
 
+  @doc ~s"""
+  Returns the token age consumed for a given contract and time period
+  """
+  @spec token_age_consumed(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          non_neg_integer()
+        ) :: {:ok, list(token_age_consumed_map)} | {:error, String.t()}
   def token_age_consumed(contract, from, to, interval, token_decimals \\ 0) do
     args = [from, to, contract]
 
@@ -41,6 +84,16 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
     end)
   end
 
+  @doc ~s"""
+  Returns the token age consumed for a given contract and time period
+  """
+  @spec token_age_consumed!(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          non_neg_integer()
+        ) :: list(token_age_consumed_map) | no_return
   def token_age_consumed!(contract, from, to, interval, token_decimals \\ 0) do
     case token_age_consumed(contract, from, to, interval, token_decimals) do
       {:ok, result} -> result
@@ -48,6 +101,18 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
     end
   end
 
+  @doc ~s"""
+  Returns the average token age in days of the transferred tokens/ether for a given
+  contract and time period.
+  To get the data for Ethereum pass "ETH" as contract
+  """
+  @spec token_age_consumed(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          non_neg_integer()
+        ) :: {:ok, list(token_age_consumed_map)} | {:error, String.t()}
   def average_token_age_consumed_in_days(contract, from, to, interval, token_decimals \\ 0) do
     with {:ok, token_age_consumed} <-
            token_age_consumed(contract, from, to, interval, token_decimals),

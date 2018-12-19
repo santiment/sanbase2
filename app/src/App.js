@@ -33,6 +33,11 @@ import { getConsentUrl } from './utils/utils'
 import HeaderMsg from './HeaderMsg'
 import './App.scss'
 
+const LoadableKnowledgeBase = Loadable({
+  loader: () => import('./pages/KnowledgeBase/KnowledgeBase'),
+  loading: () => <PageLoader />
+})
+
 const LoadableDetailedPage = Loadable({
   loader: () => import('./pages/Detailed/Detailed'),
   loading: () => <PageLoader />
@@ -163,6 +168,7 @@ export const App = ({
           />
         ))}
         <Redirect from='/assets' to='/assets/all' />
+        <Route exact path='/guide' component={LoadableKnowledgeBase} />
         <Route exact path='/roadmap' component={Roadmap} />
         <Route exact path='/signals' component={Signals} />
         <Route exact path='/signals/:slug' component={SignalsPriceVolume} />
@@ -193,7 +199,13 @@ export const App = ({
             <LoadableDetailedPage isDesktop={isDesktop} {...props} />
           )}
         />
-        <Route exact path='/trends' component={LoadableTrendsPage} />
+        <Route
+          exact
+          path='/trends'
+          render={props => (
+            <LoadableTrendsPage isDesktop={isDesktop} {...props} />
+          )}
+        />
         <Route
           exact
           path='/trends/explore'

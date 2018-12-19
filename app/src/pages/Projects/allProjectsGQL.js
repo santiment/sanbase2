@@ -29,7 +29,7 @@ const project = gql`
     volumeUsd
     volumeChange24h
     ethSpent
-    averageDevActivity
+    averageGithubActivity
     averageDailyActiveAddresses
     marketcapUsd
     ethBalance

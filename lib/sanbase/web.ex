@@ -1,4 +1,4 @@
-defmodule Sanbase.Application.WebSupervisor do
+defmodule Sanbase.Application.Web do
   import Sanbase.ApplicationUtils
 
   def init() do

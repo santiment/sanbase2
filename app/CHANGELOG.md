@@ -1,5 +1,21 @@
 ## CHANGELOG
 
+- 2018-06-12 | v.0.22.3 'Phobos':
+
+  Fix trends chart
+
+- 2018-06-12 | v.0.22.2 'Phobos':
+
+  Fix trends for non premium user
+
+- 2018-06-12 | v.0.22.1 'Phobos':
+
+  Fix Sentiment metric
+
+- 2018-30-11 | v.0.22.0 'Phobos':
+
+  Add Trends 2.0 draft ver.
+
 - 2018-27-11 | v.0.21.5 'Phobos':
 
   Add Intercom

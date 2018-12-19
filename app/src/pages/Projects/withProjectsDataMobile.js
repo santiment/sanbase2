@@ -17,7 +17,7 @@ const mapDataToProps = type => ({ Projects, ownProps }) => {
   let filteredProjects = [...projects]
     .sort((a, b) => {
       if (ownProps.sortBy === 'github_activity') {
-        return simpleSort(+a.averageDevActivity, +b.averageDevActivity)
+        return simpleSort(+a.averageGithubActivity, +b.averageGithubActivity)
       }
       return simpleSort(+a.marketcapUsd, +b.marketcapUsd)
     })

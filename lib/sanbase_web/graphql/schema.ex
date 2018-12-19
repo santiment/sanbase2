@@ -35,7 +35,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ApikeyAuth,
     ProjectPermissions,
     PostPermissions,
-    ApiTimeframeRestriction
+    ApiTimeframeRestriction,
+    ApiUsage
   }
 
   import_types(Absinthe.Plug.Types)
@@ -78,8 +79,17 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   def middleware(middlewares, field, object) do
-    SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
-    |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
+    prometeheus_middlewares =
+      SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
+      |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
+
+    case object.identifier do
+      :query ->
+        [ApiUsage | prometeheus_middlewares]
+
+      _ ->
+        prometeheus_middlewares
+    end
   end
 
   query do
@@ -670,11 +680,10 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc ~s"""
     Historical balance for erc20 token or eth address.
-    If slug is provided it will return the number of tokens in the address in all intervals.
-    If slug is not provided it will return the amount of ETH in this address in all intervals.
+    Returns the historical balance for a given address in the given interval.
     """
     field :historical_balance, list_of(:historical_balance) do
-      arg(:slug, :string)
+      arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:address, non_null(:string))
@@ -697,6 +706,18 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       cache_resolve(&ExchangeResolver.exchange_volume/3)
+    end
+
+    @desc "Network growth returns the newly created addresses for a project in a given timeframe"
+    field :network_growth, list_of(:network_growth) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+
+      cache_resolve(&ClickhouseResolver.network_growth/3)
     end
   end
 

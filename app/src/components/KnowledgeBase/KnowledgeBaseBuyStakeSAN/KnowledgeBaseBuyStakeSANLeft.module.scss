@@ -1,0 +1,32 @@
+.content {
+  background-color: #fff;
+  padding-left: 100px !important;
+}
+.step {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.text {
+  font-size: 13px;
+}
+
+.img {
+  max-width: 80%;
+  margin: 5px 0;
+}
+
+.number {
+  position: absolute;
+  top: 0;
+  left: -50px;
+  font-size: 48px;
+  line-height: 1;
+  background: linear-gradient(
+    104.74deg,
+    rgb(38, 169, 135) 11.08%,
+    rgb(45, 121, 208) 92.94%
+  );
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

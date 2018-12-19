@@ -223,7 +223,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
             address: "#{address}",
             from: "#{from}",
             to: "#{to}",
-            interval: "#{interval}"
+            interval: "#{interval}",
+            slug: "ethereum"
         ){
             datetime,
             balance

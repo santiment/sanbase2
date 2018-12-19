@@ -1,7 +1,8 @@
 import { graphql } from 'react-apollo'
 import { compose } from 'recompose'
+import moment from 'moment'
 import { trendsExploreGQL } from '../../components/Trends/trendsExploreGQL'
-import { getStartOfTheDay, getTimeFromFromString } from './../../utils/utils'
+import { getTimeFromFromString } from './../../utils/utils'
 
 const GetTrends = ({ render, sources = {}, ...props }) =>
   render({ sources, ...props })
@@ -39,7 +40,7 @@ const makeAllQueries = () =>
         variables: {
           searchText: normalizeTopic(topic),
           source: source,
-          to: getStartOfTheDay(),
+          to: moment().toISOString(),
           from: getTimeFromFromString(timeRange)
         }
       })

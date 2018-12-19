@@ -70,6 +70,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
       ) do
     token_decimals = Sanbase.Utils.Math.ipow(10, token_decimals)
 
+    address = String.downcase(address)
     {query, args} = historical_balance_query(contract, address, interval, token_decimals)
 
     balances =

@@ -529,7 +529,7 @@ const enhance = compose(
     skip: ({ timeFilter, hasPremium, match }) => {
       const { from } = timeFilter
       const slug = match.params.slug
-      return !from || !hasPremium || slug !== 'bitcoin' || slug !== 'ethereum'
+      return !from || !hasPremium || (slug !== 'bitcoin' && slug !== 'ethereum')
     },
     options: ({ timeFilter }) => {
       const { from, to } = timeFilter

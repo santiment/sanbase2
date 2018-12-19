@@ -17,21 +17,25 @@ defmodule Sanbase.Application do
       case container_type do
         "web" ->
           Logger.info("Starting Web Sanbase.")
-          Sanbase.Application.WebSupervisor.children()
+          Sanbase.Application.Web.children()
 
         "scrapers" ->
           Logger.info("Starting Scrapers Sanbase.")
-          Sanbase.Application.ScrapersSupervisor.children()
+          Sanbase.Application.Scrapers.children()
 
         "workers" ->
           Logger.info("Starting Workers Sanbase.")
-          Sanbase.Application.WorkersSupervisor.children()
+          Sanbase.Application.Workers.children()
+
+        "signals" ->
+          Logger.info("Starting Signals Sanbase.")
+          Sanbase.Application.Signals.children()
 
         "all" ->
           Logger.info("Start all Sanbase container types.")
-          {web_children, _} = Sanbase.Application.WebSupervisor.children()
-          {scrapers_children, _} = Sanbase.Application.ScrapersSupervisor.children()
-          {workers_children, _} = Sanbase.Application.WorkersSupervisor.children()
+          {web_children, _} = Sanbase.Application.Web.children()
+          {scrapers_children, _} = Sanbase.Application.Scrapers.children()
+          {workers_children, _} = Sanbase.Application.Workers.children()
 
           children = web_children ++ scrapers_children ++ workers_children
           children = children |> Enum.uniq()
@@ -44,6 +48,14 @@ defmodule Sanbase.Application do
           ]
 
           {children, opts}
+
+        unknown_type ->
+          Logger.warn(
+            "Unkwnown container type provided - #{inspect(unknown_type)}. Will start a default web container."
+          )
+
+          Logger.info("Starting Web Sanbase.")
+          Sanbase.Application.Web.children()
       end
 
     children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
@@ -67,18 +79,25 @@ defmodule Sanbase.Application do
     # Container specific init
     case container_type do
       "all" ->
-        Sanbase.Application.WebSupervisor.init()
-        Sanbase.Application.ScrapersSupervisor.init()
-        Sanbase.Application.WorkersSupervisor.init()
+        Sanbase.Application.Web.init()
+        Sanbase.Application.Scrapers.init()
+        Sanbase.Application.Workers.init()
+        Sanbase.Application.Signals.init()
 
       "web" ->
-        Sanbase.Application.WebSupervisor.init()
+        Sanbase.Application.Web.init()
+
+      "signals" ->
+        Sanbase.Application.Signals.init()
 
       "scrapers" ->
-        Sanbase.Application.ScrapersSupervisor.init()
+        Sanbase.Application.Scrapers.init()
 
       "workers" ->
-        Sanbase.Application.WorkersSupervisor.init()
+        Sanbase.Application.Workers.init()
+
+      _ ->
+        Sanbase.Application.Web.init()
     end
   end
 

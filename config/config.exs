@@ -53,7 +53,7 @@ config :sasl, sasl_error_logger: false
 # Configures Elixir's Logger
 config :logger, :console,
   format: {Sanbase.Utils.JsonLogger, :format},
-  metadata: [:request_id],
+  metadata: [:request_id, :api_token, :user_id, :remote_ip, :complexity, :query],
   handle_otp_reports: true,
   handle_sasl_reports: true
 
@@ -152,7 +152,7 @@ config :sanbase, Sanbase.Scheduler,
       task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
     ],
     exchange_inflow_signal: [
-      schedule: "@daily",
+      schedule: "*/5 * * * *",
       task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
     ]
   ]

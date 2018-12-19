@@ -11,14 +11,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
+  alias Sanbase.DateTimeUtils
   alias Sanbase.Model.{LatestCoinmarketcapData, Project}
   alias Sanbase.Repo
   # TODO: Change after switching over to only this cmc
   alias Sanbase.ExternalServices.Coinmarketcap.Ticker2, as: Ticker
+  alias Sanbase.ExternalServices.Coinmarketcap.Ticker, as: TickerOld
   alias Sanbase.Prices.Store
-
-  # 5 minutes
-  @default_update_interval 1000 * 60 * 5
 
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
@@ -30,11 +29,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
 
       Process.send(self(), :sync, [:noconnect])
 
-      update_interval = Config.get(:update_interval, @default_update_interval)
+      update_interval = Config.get(:update_interval) |> String.to_integer()
 
       Logger.info(
         "[CMC] Starting TickerFetcher scraper. It will query coinmarketcap every #{
-          update_interval / 1000
+          update_interval
         } seconds."
       )
 
@@ -63,6 +62,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
     |> Enum.map(&Ticker.convert_for_importing/1)
     |> Store.import()
 
+    tickers
+    |> Enum.flat_map(&TickerOld.convert_for_importing/1)
+    |> Store.import()
+
     Logger.info(
       "[CMC] Fetching realtime data from coinmarketcap done. The data is imported in the database."
     )
@@ -72,7 +75,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
 
   def handle_info(:sync, %{update_interval: update_interval} = state) do
     work()
-    Process.send_after(self(), :sync, update_interval)
+    Process.send_after(self(), :sync, update_interval * 1000)
 
     {:noreply, state}
   end
@@ -103,7 +106,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2 do
       percent_change_1h: ticker.percent_change_1h,
       percent_change_24h: ticker.percent_change_24h,
       percent_change_7d: ticker.percent_change_7d,
-      update_time: DateTime.from_unix!(ticker.last_updated)
+      update_time: DateTimeUtils.from_iso8601!(ticker.last_updated)
     })
     |> Repo.insert_or_update!()
   end

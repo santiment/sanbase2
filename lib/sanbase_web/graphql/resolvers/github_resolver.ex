@@ -30,7 +30,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
       {:ok, result}
     else
       {:error, {:github_link_error, error}} ->
-        Logger.info(error)
         {:ok, []}
 
       error ->

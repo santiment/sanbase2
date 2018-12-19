@@ -830,7 +830,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     mock(
       Sanbase.Discourse.Api,
       :publish,
-      @discourse_response_file |> File.read!() |> Poison.decode()
+      @discourse_response_file |> File.read!() |> Jason.decode()
     )
 
     mock(Sanbase.Notifications.Insight, :publish_in_discord, :ok)

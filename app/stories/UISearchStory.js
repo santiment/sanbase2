@@ -2,7 +2,7 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 import Search from './../src/components/UI/Search/Search'
 import SearchWithSuggestions
-  from './../src/components/UI/Search/WithSuggestions/WithSuggestions'
+  from './../src/components/UI/Search/SearchWithSuggestions/SearchWithSuggestions'
 import ColorModeComparison from './ColorModeComparison'
 
 storiesOf('Search', module)

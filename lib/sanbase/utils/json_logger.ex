@@ -6,6 +6,7 @@ defmodule Sanbase.Utils.JsonLogger do
         level: level,
         message: "#{message}"
       }
+      |> Map.merge(Map.new(metadata))
       |> Jason.encode_to_iodata!()
       | "\n"
     ]

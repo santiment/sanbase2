@@ -1,0 +1,59 @@
+.HypedWord {
+  border-radius: 4px;
+  text-align: left;
+  padding: 9px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.08s ease;
+  border-bottom: none;
+}
+
+.HypedWord:hover {
+  background: #fff;
+}
+
+.word {
+  color: #252830;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: normal;
+}
+
+.latest .word {
+  color: #fff;
+  font-weight: 600;
+}
+
+.HypedWord:hover .word {
+  color: #14c393;
+}
+
+.score {
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: normal;
+  color: #808ba1;
+}
+
+.latest .score {
+  color: #bef7e9;
+}
+
+.HypedWord:hover .score {
+  color: #808ba1;
+}
+
+.arrow path {
+  fill: #adb6cd;
+}
+
+.latest .arrow path {
+  fill: #80f7db;
+}
+
+.HypedWord:hover .arrow path {
+  fill: #14c393;
+}

@@ -116,46 +116,29 @@ const getStartOfTheDay = () => {
   return today.toISOString()
 }
 
-const mergeTimeseriesByKey = ({ timeseries, key: mergeKey }) => {
-  const longestTS = timeseries
-    .reduce((acc, val) => {
-      return acc.length > val.length ? acc : val
-    }, [])
-    .slice()
-  const longestTSLastIndex = longestTS.length - 1
+const getYesterday = () => {
+  const yesterday = new Date(Date.now() - 86400000)
+  yesterday.setHours(0, 0, 0, 0)
+  return yesterday.toISOString()
+}
 
-  for (const timeserie of timeseries) {
-    if (timeserie === longestTS) {
-      continue
-    }
-
-    let longestTSRightIndexBoundary = longestTSLastIndex
-
-    for (
-      let timeserieRightIndex = timeserie.length - 1;
-      timeserieRightIndex > -1;
-      timeserieRightIndex--
-    ) {
-      while (longestTSRightIndexBoundary > -1) {
-        const longestTSData = longestTS[longestTSRightIndexBoundary]
-        const timeserieData = timeserie[timeserieRightIndex]
-        if (longestTSData[mergeKey] === timeserieData[mergeKey]) {
-          longestTS[longestTSRightIndexBoundary] = Object.assign(
-            {},
-            longestTSData,
-            timeserieData
-          )
-          break
+const mergeTimeseriesByKey = ({ timeseries, key }) => {
+  const longestTS = timeseries.reduce((acc, val) => {
+    return acc.length > val.length ? acc : val
+  }, [])
+  return longestTS.map(data => {
+    return timeseries.reduce(
+      (acc, val) => {
+        return {
+          ...acc,
+          ...val.find(data2 => data2[key] === data[key])
         }
-        longestTSRightIndexBoundary--
+      },
+      {
+        ...data
       }
-      if (longestTSRightIndexBoundary === -1) {
-        break
-      }
-    }
-  }
-
-  return longestTS
+    )
+  })
 }
 
 const getTimeFromFromString = (time = '1y') => {
@@ -196,6 +179,7 @@ export {
   filterProjectsByMarketSegment,
   binarySearchHistoryPriceIndex,
   getStartOfTheDay,
+  getYesterday,
   mergeTimeseriesByKey,
   getTimeFromFromString,
   capitalizeStr,

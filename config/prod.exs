@@ -38,6 +38,9 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
   limit: 5,
   time_between_requests: 250
 
+config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
+  api_url: "https://pro-api.coinmarketcap.com/"
+
 if File.exists?("config/prod.secret.exs") do
   import_config "prod.secret.exs"
 end

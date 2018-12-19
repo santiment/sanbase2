@@ -59,4 +59,13 @@ defmodule Sanbase.Utils.Math do
       :error -> nil
     end
   end
+
+  def to_float(nil), do: nil
+  def to_float(fl) when is_float(fl), do: fl
+  def to_float(int) when is_integer(int), do: int * 1.0
+
+  def to_float(str) when is_binary(str) do
+    {num, _} = str |> Float.parse()
+    num
+  end
 end

@@ -344,7 +344,24 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+
       cache_resolve(&EtherbiResolver.average_token_age_consumed_in_days/3)
+    end
+
+    @desc ~s"""
+    Fetch token circulation for a project, grouped by interval.
+    Projects are referred to by a unique identifier (slug).
+    """
+    field :token_circulation, list_of(:token_circulation) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
+      arg(:interval, :string, default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+      cache_resolve(&EtherbiResolver.token_circulation/3)
     end
 
     @desc ~s"""

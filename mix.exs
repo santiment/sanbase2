@@ -135,6 +135,12 @@ defmodule Sanbase.Mixfile do
 
       # Append `_all` so the Ecto commands apply to all repos.
       # and run all tests
+      "ecto.load_all": [
+        "load_dotenv",
+        "ecto.drop",
+        "ecto.create",
+        "ecto.load"
+      ],
       "ecto.setup_all": [
         "load_dotenv",
         "ecto.create",

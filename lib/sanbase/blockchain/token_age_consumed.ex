@@ -106,7 +106,7 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
   contract and time period.
   To get the data for Ethereum pass "ETH" as contract
   """
-  @spec token_age_consumed(
+  @spec average_token_age_consumed_in_days(
           String.t(),
           %DateTime{},
           %DateTime{},
@@ -128,7 +128,7 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
         Enum.zip(token_age_consumed, transaction_volume)
         |> Enum.map(fn {%{token_age_consumed: token_age_consumed, datetime: datetime},
                         %{transaction_volume: trx_volume}} ->
-          value = %{
+          %{
             datetime: datetime,
             token_age: token_age_in_days(token_age_consumed, trx_volume)
           }

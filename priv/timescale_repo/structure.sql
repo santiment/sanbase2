@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.9
--- Dumped by pg_dump version 10.4 (Ubuntu 10.4-2.pgdg16.04+1)
+-- Dumped from database version 10.5
+-- Dumped by pg_dump version 10.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -55,6 +55,17 @@ CREATE TABLE public.eth_burn_rate (
     "timestamp" timestamp without time zone NOT NULL,
     contract_address character varying(255) NOT NULL,
     burn_rate double precision
+);
+
+
+--
+-- Name: eth_coin_circulation; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eth_coin_circulation (
+    "timestamp" timestamp without time zone NOT NULL,
+    contract_address character varying(255) NOT NULL,
+    "_-1d" double precision
 );
 
 
@@ -111,6 +122,14 @@ ALTER TABLE ONLY public.eth_burn_rate
 
 
 --
+-- Name: eth_coin_circulation eth_coin_circulation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eth_coin_circulation
+    ADD CONSTRAINT eth_coin_circulation_pkey PRIMARY KEY ("timestamp", contract_address);
+
+
+--
 -- Name: eth_daily_active_addresses eth_daily_active_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -146,5 +165,5 @@ ALTER TABLE ONLY public.schema_migrations
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO public."schema_migrations" (version) VALUES (20180731110511), (20180802132742), (20180802142827), (20180803131502);
+INSERT INTO public."schema_migrations" (version) VALUES (20180731110511), (20180802132742), (20180802142827), (20180803131502), (20181218142658);
 

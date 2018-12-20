@@ -11,6 +11,8 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
+  @table "erc20_daily_active_addresses"
+
   @primary_key false
   @timestamps_opts updated_at: false
   schema "erc20_daily_active_addresses" do
@@ -28,8 +30,8 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     to_datetime_unix = DateTime.to_unix(to)
 
     query = """
-    SELECT toUnixTimestamp(toStartOfDay(dt)), sum(total_addresses) as active_addresses
-    FROM erc20_daily_active_addresses
+    SELECT sum(total_addresses) as active_addresses
+    FROM #{@table}
     PREWHERE contract = ?1 and
     dt >= toDateTime(?2) and
     dt <= toDateTime(?3)
@@ -39,9 +41,13 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
     args = [contract, from_datetime_unix, to_datetime_unix]
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, active_addresses] ->
-      [DateTime.from_unix!(dt), active_addresses |> String.to_integer()]
+    ClickhouseRepo.query_transform(query, args, fn [active_addresses] ->
+      [active_addresses |> String.to_integer()]
     end)
+    |> case do
+      {:ok, []} -> {:ok, 0}
+      {:ok, active_addresses} -> {:ok, active_addresses |> List.first()}
+    end
   end
 
   def active_addresses(contract, from, to, interval) do
@@ -74,13 +80,16 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     args = [interval, span, contract, from_datetime_unix, to_datetime_unix]
 
     ClickhouseRepo.query_transform(query, args, fn [dt, active_addresses] ->
-      [DateTime.from_unix!(dt), active_addresses |> String.to_integer()]
+      %{
+        datetime: DateTime.from_unix!(dt),
+        active_addresses: active_addresses |> String.to_integer()
+      }
     end)
   end
 
   def realtime_active_addresses(contract) do
     query = """
-    SELECT toUnixTimestamp(dt), UNIQ(address) as total_addresses
+    SELECT toUnixTimestamp(dt), uniq(address) as total_addresses
     FROM erc20_daily_active_addresses_list
     WHERE contract = ?1 AND
     dt >= toDateTime(today())
@@ -90,20 +99,10 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     args = [contract]
 
     ClickhouseRepo.query_transform(query, args, fn [dt, active_addresses] ->
-      [DateTime.from_unix!(dt), active_addresses |> String.to_integer()]
-    end)
-  end
-
-  def realtime_ethereum_active_addresses() do
-    query = """
-    SELECT toUnixTimestamp(dt), UNIQ(address) as total_addresses
-    FROM eth_daily_active_addresses_list
-    WHERE dt >= toDateTime(today())
-    GROUP BY dt
-    """
-
-    ClickhouseRepo.query_transform(query, [], fn [dt, active_addresses] ->
-      [DateTime.from_unix!(dt), active_addresses |> String.to_integer()]
+      %{
+        datetime: DateTime.from_unix!(dt),
+        active_addresses: active_addresses |> String.to_integer()
+      }
     end)
   end
 end

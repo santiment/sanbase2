@@ -26,11 +26,15 @@ defmodule Sanbase.Model.ExchangeAddress do
     |> unique_constraint(:address)
   end
 
+  @doc ~s"List all exchange addresses"
+  @spec list_all() :: list(String.t())
   def list_all() do
     Repo.all(__MODULE__)
     |> Enum.map(fn %__MODULE__{address: address} -> address end)
   end
 
+  @doc ~s"List all exchange names"
+  @spec list_all_exchanges() :: list(String.t())
   def list_all_exchanges() do
     from(e in __MODULE__,
       select: e.name,
@@ -39,6 +43,8 @@ defmodule Sanbase.Model.ExchangeAddress do
     |> Repo.all()
   end
 
+  @doc ~s"List all addresses that belong to certain exchange"
+  @spec addresses_for_exchange(String.t()) :: {:ok, [String.t()]} | {:error, String.t()}
   def addresses_for_exchange(exchange) do
     from(e in __MODULE__,
       where: e.name == ^exchange,

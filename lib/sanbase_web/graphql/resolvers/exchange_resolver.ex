@@ -4,10 +4,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
   alias Sanbase.Model.ExchangeAddress
   alias Sanbase.Clickhouse.EthTransfers
 
+  @doc ~s"List all exchanges"
   def all_exchanges(_root, _args, _resolution) do
     {:ok, ExchangeAddress.list_all_exchanges()}
   end
 
+  @doc ~s"""
+  Return the accumulated volume of all the exchange addresses belonging to a certain exchange
+  """
   def exchange_volume(_root, %{exchange: exchange, from: from, to: to}, _resolution) do
     with {:ok, addresses} <- ExchangeAddress.addresses_for_exchange(exchange),
          {:ok, exchange_volume} = EthTransfers.exchange_volume(addresses, from, to) do

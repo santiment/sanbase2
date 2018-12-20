@@ -21,6 +21,17 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
   @type wallets :: list(String.t())
 
+  @type historical_balance :: %{
+          datetime: non_neg_integer(),
+          balance: float
+        }
+
+  @type exchange_volume :: %{
+          datetime: non_neg_integer(),
+          exchange_inflow: float,
+          exchange_outflow: float
+        }
+
   use Ecto.Schema
 
   require Logger
@@ -135,8 +146,14 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   end
 
   @doc ~s"""
-  Returns the historical balances of given etherium address in all intervals between two datetimes.
+  Returns the historical balances of given ethereum address in all intervals between two datetimes.
   """
+  @spec historical_balance(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          non_neg_integer()
+        ) :: {:ok, list(historical_balance)} | {:ok, []}
   def historical_balance(address, from_datetime, to_datetime, interval) do
     address = String.downcase(address)
     {query, args} = historical_balance_query(address, interval)
@@ -152,6 +169,11 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   @doc ~s"""
   Returns the inflow and outflow volume for a list of exchange_addresses between two datetimes
   """
+  @spec exchange_volume(
+          list(String.t()),
+          %DateTime{},
+          %DateTime{}
+        ) :: {:ok, list(exchange_volume)} | {:error, String.t()}
   def exchange_volume(exchange_addresses, from_datetime, to_datetime) do
     exchange_addresses = exchange_addresses |> Enum.map(&String.downcase/1)
     {query, args} = exchange_volume_query(exchange_addresses, from_datetime, to_datetime)
@@ -363,7 +385,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
-  def exchange_volume_query(exchange_addresses, from_datetime, to_datetime) do
+  defp exchange_volume_query(exchange_addresses, from_datetime, to_datetime) do
     query = """
     SELECT
       toUnixTimestamp(dt) as datetime,

@@ -8,7 +8,7 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
   @type t :: %__MODULE__{
           timestamp: %DateTime{},
           contract_address: String.t(),
-          token_age_consuemd: float()
+          token_age_consumed: float()
         }
 
   @typedoc ~s"""

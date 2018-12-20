@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ExchangeResolver do
 
   @doc ~s"List all exchanges"
   def all_exchanges(_root, _args, _resolution) do
-    {:ok, ExchangeAddress.list_all_exchanges()}
+    {:ok, ExchangeAddress.exchange_names()}
   end
 
   @doc ~s"""

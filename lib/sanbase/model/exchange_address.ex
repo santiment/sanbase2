@@ -27,15 +27,14 @@ defmodule Sanbase.Model.ExchangeAddress do
   end
 
   @doc ~s"List all exchange addresses"
-  @spec list_all() :: list(String.t())
+  @spec list_all() :: list(%__MODULE__{})
   def list_all() do
     Repo.all(__MODULE__)
-    |> Enum.map(fn %__MODULE__{address: address} -> address end)
   end
 
   @doc ~s"List all exchange names"
-  @spec list_all_exchanges() :: list(String.t())
-  def list_all_exchanges() do
+  @spec exchange_names() :: list(String.t())
+  def exchange_names() do
     from(e in __MODULE__,
       select: e.name,
       distinct: true

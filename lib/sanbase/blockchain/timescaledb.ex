@@ -5,6 +5,10 @@ defmodule Sanbase.Timescaledb do
   notably bucketing by time and filling the gaps with zeroes.
   """
 
+  @type argument :: any()
+  @type query :: iolist() | String.t()
+  @type interval :: String.t() | nil
+
   @doc ~s"""
   Temporary helper function that rewrites the query so it fills empty time buckets with 0.
   Will be rewritten once TimescaleDB introduces a way to fill the gaps with a first-class functions.
@@ -28,6 +32,7 @@ defmodule Sanbase.Timescaledb do
 
           {query, args} = bucket_by_interval(query, args, interval)
   """
+  @spec bucket_by_interval(query, list(argument), interval) :: {query, list(argument)}
   def bucket_by_interval(query, args, nil), do: {query, args}
 
   def bucket_by_interval("SELECT " <> rest_query, args, interval)
@@ -63,11 +68,13 @@ defmodule Sanbase.Timescaledb do
    > `3d` - interval that represents 3 days
    > `1w` - interval that represents 1 week
   """
+  @spec transform_interval(interval) :: %Postgrex.Interval{}
   def transform_interval(interval) when is_binary(interval) do
     seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
     %Postgrex.Interval{secs: seconds}
   end
 
+  @spec time_range(DateTime.t(), DateTime.t(), any()) :: String.t()
   def time_range(%DateTime{} = from, %DateTime{} = to, datetime_column_name \\ "timestamp") do
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
@@ -90,6 +97,8 @@ defmodule Sanbase.Timescaledb do
          transaction_volume: transaction_volume
        }
   """
+  @spec timescaledb_execute({iolist() | String.t(), list(argument)}, (any() -> any())) ::
+          {:ok, list(any())} | {:error, String.t()}
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do
     Sanbase.TimescaleRepo.query(query, args)
     |> case do
@@ -118,11 +127,14 @@ defmodule Sanbase.Timescaledb do
       iex> Sanbase.Timescaledb.timestamp_to_datetime({{2015, 1, 17}, {12, 55, 37, 00005}})
       #DateTime<2015-01-17 12:55:37Z>
   """
+  @spec timestamp_to_datetime({{integer, integer, integer}, {integer, integer, integer, integer}}) ::
+          DateTime.t() | no_return
   def timestamp_to_datetime({date, {h, m, s, us}}) do
     NaiveDateTime.from_erl!({date, {h, m, s}}, {us, 0})
     |> DateTime.from_naive!("Etc/UTC")
   end
 
+  @spec first_datetime(String.t(), list(argument)) :: nil | DateTime.t() | no_return()
   def first_datetime(from_where, args) do
     query = [
       "SELECT timestamp ",
@@ -141,6 +153,7 @@ defmodule Sanbase.Timescaledb do
     end
   end
 
+  @spec table_name(String.t() | atom(), String.t() | nil) :: String.t()
   def table_name(table, schema \\ nil) do
     require Sanbase.Utils.Config
     schema = schema || Sanbase.Utils.Config.get(:blockchain_schema)

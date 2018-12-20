@@ -3,7 +3,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Auth.User
   alias Sanbase.Voting.{Post, Poll}
-  alias Sanbase.Model.Project
+  alias Sanbase.Model.{Project, ExchangeAddress}
 
   def user_factory do
     %User{
@@ -46,6 +46,13 @@ defmodule Sanbase.Factory do
       total_supply: 83_000_000,
       github_link: "https://github.com/santiment",
       infrastructure: nil
+    }
+  end
+
+  def exchange_address_factory() do
+    %ExchangeAddress{
+      address: "0x123",
+      name: "Binance"
     }
   end
 end

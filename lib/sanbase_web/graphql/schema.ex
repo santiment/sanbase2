@@ -19,7 +19,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ApikeyResolver,
     UserListResolver,
     ElasticsearchResolver,
-    ClickhouseResolver
+    ClickhouseResolver,
+    ExchangeResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -56,6 +57,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
   import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
   import_types(SanbaseWeb.Graphql.ClickhouseTypes)
+  import_types(SanbaseWeb.Graphql.ExchangeTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -734,6 +736,22 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, non_null(:string), default_value: "1d")
 
       cache_resolve(&ClickhouseResolver.historical_balance/3)
+    end
+
+    @desc "List all exchanges"
+    field :all_exchanges, list_of(:string) do
+      cache_resolve(&ExchangeResolver.all_exchanges/3)
+    end
+
+    @desc ~s"""
+    Calculates the exchange inflow and outflow volume in usd for a given exchange in a time interval.
+    """
+    field :exchange_volume, list_of(:exchange_volume) do
+      arg(:exchange, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&ExchangeResolver.exchange_volume/3)
     end
 
     @desc "Network growth returns the newly created addresses for a project in a given timeframe"

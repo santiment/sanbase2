@@ -1,5 +1,6 @@
 defmodule Sanbase.Seeds.TokenCirculationSeed do
   import Sanbase.Seeds.Helpers
+  alias Sanbase.Blockchain.TokenCirculation
 
   def populate() do
     changesets = [
@@ -26,8 +27,6 @@ defmodule Sanbase.Seeds.TokenCirculationSeed do
   end
 
   defp make_changeset(contract, timestamp, token_circulation) do
-    alias Sanbase.Blockchain.TokenCirculation
-
     %TokenCirculation{}
     |> TokenCirculation.changeset(%{
       contract_address: contract,

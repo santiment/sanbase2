@@ -127,7 +127,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-  Return the number of daily active addresses for a given slug.
+  Return the number of daily active addresses for a given slug
   """
   def daily_active_addresses(
         _root,
@@ -167,7 +167,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   @doc ~S"""
   Return the amount of tokens that were transacted in or out of an exchange wallet for a given slug
-  and time period.
+  and time period
   """
   def exchange_funds_flow(
         _root,
@@ -210,6 +210,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     end
   end
 
+  @doc ~s"""
+  Returns the token circulation for less than a day for a given slug and time period.
+  """
   def token_circulation(
         _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
@@ -242,8 +245,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       {:ok, result}
     else
       error ->
-        error_msg = "Can't fetch token circulation for #{slug}"
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        error_msg = "Can't fetch token circulation for #{slug}."
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}
     end
   end

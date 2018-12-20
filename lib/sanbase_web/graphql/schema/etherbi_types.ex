@@ -23,7 +23,7 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
 
   object :token_age do
     field(:datetime, non_null(:datetime))
-    field(:token_age_in_days, non_null(:float))
+    field(:token_age, non_null(:float))
   end
 
   object :wallet do

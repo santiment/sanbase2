@@ -99,7 +99,7 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
         to: "#{context.datetime4}",
         interval: "1d") {
           datetime
-          tokenAgeInDays
+          tokenAge
       }
     }
     """
@@ -113,12 +113,12 @@ defmodule Sanbase.Etherbi.AverageTokenAgeConsumedInDaysApiTest do
 
     assert %{
              "datetime" => "2017-05-13T21:45:00Z",
-             "tokenAgeInDays" => 75.0
+             "tokenAge" => 75.0
            } in token_age_consumed_in_days
 
     assert %{
              "datetime" => "2017-05-14T00:00:00Z",
-             "tokenAgeInDays" => 0.1
+             "tokenAge" => 0.1
            } in token_age_consumed_in_days
   end
 end

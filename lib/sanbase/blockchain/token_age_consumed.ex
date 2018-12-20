@@ -29,7 +29,7 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
   """
   @type token_age_consumed_in_days_map :: %{
           datetime: %DateTime{},
-          token_age_in_days: float()
+          token_age: float()
         }
 
   use Ecto.Schema
@@ -130,7 +130,7 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
                         %{transaction_volume: trx_volume}} ->
           value = %{
             datetime: datetime,
-            token_age_in_days: token_age_in_days(token_age_consumed, trx_volume)
+            token_age: token_age_in_days(token_age_consumed, trx_volume)
           }
         end)
 
@@ -150,8 +150,12 @@ defmodule Sanbase.Blockchain.TokenAgeConsumed do
 
   # `token_age_consumed` is calculated by multiplying by the number of blocks, not real timestamp
   # apply approximation that a block is produced on average each 15 seconds
-  defp token_age_in_days(_, 0), do: 0
+  defp token_age_in_days(token_age_consumed, trx_volume)
+       when token_age_consumed <= 0.1 or trx_volume <= 0.1 do
+    0
+  end
 
-  defp token_age_in_days(token_age_consumed, trx_volume),
-    do: token_age_consumed / trx_volume * 15 / 86400
+  defp token_age_in_days(token_age_consumed, trx_volume) do
+    token_age_consumed / trx_volume * 15 / 86400
+  end
 end

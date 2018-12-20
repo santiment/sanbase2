@@ -288,7 +288,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     Grouping by interval works by summing all burn rate records in the interval.
     """
-    field :burn_rate, list_of(:token_age_consumed_data) do
+    field :burn_rate, list_of(:burn_rate_data) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))

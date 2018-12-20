@@ -153,7 +153,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
           %DateTime{},
           %DateTime{},
           non_neg_integer()
-        ) :: {:ok, list(historical_balance)} | {:ok, []}
+        ) :: {:ok, list(historical_balance)}
   def historical_balance(address, from_datetime, to_datetime, interval) do
     address = String.downcase(address)
     {query, args} = historical_balance_query(address, interval)

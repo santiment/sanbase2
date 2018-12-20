@@ -492,39 +492,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
     end
 
-    @desc "Fetch the MACD technical indicator for a given ticker, display currency and time period."
-    field :macd, list_of(:macd) do
-      arg(:ticker, non_null(:string))
-      @desc "Currently supported currencies: USD, BTC"
-      arg(:currency, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1d")
-      arg(:result_size_tail, :integer, default_value: 0)
-
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.macd/3)
-      cache_resolve(&TechIndicatorsResolver.macd/3)
-    end
-
-    @desc "Fetch the RSI technical indicator for a given ticker, display currency and time period."
-    field :rsi, list_of(:rsi) do
-      arg(:ticker, non_null(:string))
-      @desc "Currently supported: USD, BTC"
-      arg(:currency, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1d")
-      arg(:rsi_interval, non_null(:integer))
-      arg(:result_size_tail, :integer, default_value: 0)
-
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.rsi/3)
-      cache_resolve(&TechIndicatorsResolver.rsi/3)
-    end
-
     @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
     This indicator measures the difference in trend between price and volume,

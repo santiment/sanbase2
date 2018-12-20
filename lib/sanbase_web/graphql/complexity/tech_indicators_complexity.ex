@@ -5,33 +5,6 @@ defmodule SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity do
   Internal services use basic authentication. Return complexity = 0 to allow them
   to access everything without limits.
   """
-  def macd(_, _, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}) do
-    0
-  end
-
-  def macd(%{from: from, to: to, interval: interval}, _child_complexity, _) do
-    get_complexity(from, to, interval)
-  end
-
-  @doc ~S"""
-  Internal services use basic authentication. Return complexity = 0 to allow them
-  to access everything without limits.
-  """
-  def rsi(_, _, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}) do
-    0
-  end
-
-  @doc ~S"""
-  For max complexity 5000 we allow 1000 values
-  """
-  def rsi(%{from: from, to: to, interval: interval}, _child_complexity, _) do
-    get_complexity(from, to, interval)
-  end
-
-  @doc ~S"""
-  Internal services use basic authentication. Return complexity = 0 to allow them
-  to access everything without limits.
-  """
   def price_volume_diff(_, _, %Absinthe.Complexity{context: %{auth: %{auth_method: :basic}}}) do
     0
   end

@@ -390,8 +390,12 @@ defmodule Sanbase.Model.Project do
     {:ok, String.downcase(main_contract_address), token_decimals || 0}
   end
 
-  def contract_info(project) do
+  def contract_info(%Project{} = project) do
     {:error, "Can't find contract address of #{describe(project)}"}
+  end
+
+  def contract_info(data) do
+    {:error, "Not valid project type provided to contract_info - #{inspect(data)}"}
   end
 
   def eth_addresses_by_tickers(tickers) do

@@ -10,7 +10,6 @@ podTemplate(label: 'sanbase-builder', containers: [
         def gitHead = scmVars.GIT_COMMIT.substring(0,7)
 
         sh "docker build -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} -f Dockerfile-test ."
-        sh "docker build -t sanbase-frontend-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} -f app/Dockerfile-test app"
         sh "docker run --rm --name test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} -d timescale/timescaledb:0.10.1-pg10"
         sh "docker run --rm --name test-influxdb-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} -d influxdb:1.4-alpine"
         try {
@@ -23,7 +22,6 @@ podTemplate(label: 'sanbase-builder', containers: [
             --env INFLUXDB_HOST=test-influxdb \
             --env ETHERBI_INFLUXDB_HOST=test-influxdb \
             -t sanbase-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"
-          sh "docker run --rm -t sanbase-frontend-test:${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID} yarn test --ci"
         } finally {
           sh "docker kill test-influxdb-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"
           sh "docker kill test-postgres-${scmVars.GIT_COMMIT}-${env.BUILD_ID}-${env.CHANGE_ID}"

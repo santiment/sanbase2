@@ -52,13 +52,13 @@ curl \
 
 ### Token aging (burn rate)
 
-<%= @burn_rate[:docs] %>
+<%= @token_age_consumed[:docs] %>
 
 
-<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@burn_rate[:variables])}&query=#{URI.encode(@burn_rate[:query])}"| %>" target='_blank'>Run in explorer</a>
+<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@token_age_consumed[:variables])}&query=#{URI.encode(@token_age_consumed[:query])}"| %>" target='_blank'>Run in explorer</a>
 
 ```graphql
-<%= @burn_rate[:query] %>
+<%= @token_age_consumed[:query] %>
 ```
 Run in terminal
 
@@ -66,7 +66,7 @@ Run in terminal
 curl \
   -X POST \
   -H "Content-Type: application/json" \
-  --data '{ "query": <%= Jason.encode!(@burn_rate[:query]) %> }' \
+  --data '{ "query": <%= Jason.encode!(@token_age_consumed[:query]) %> }' \
     <%= "  #{ @api_url }" %>
 
 ```

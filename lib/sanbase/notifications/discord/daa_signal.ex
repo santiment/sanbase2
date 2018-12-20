@@ -88,7 +88,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     #{project_name}: Daily Active Addresses has gone up by #{percent_change}% : #{
       notification_emoji_up()
     }.
-    DAA for yesterday: #{new_daa}, Average DAA for last #{timeframe_from()} days: #{base_daa}.
+    DAA for yesterday: #{new_daa}, Average DAA for last #{config_timeframe_from()} days: #{
+      base_daa
+    }.
     More info here: #{Project.sanbase_link(project)}
     """
 

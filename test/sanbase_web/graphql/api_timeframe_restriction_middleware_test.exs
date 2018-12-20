@@ -36,22 +36,22 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     }
     |> Repo.insert!()
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: hour_ago(),
-      burn_rate: 5000
+      token_age_consumed: 5000
     })
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: week_ago(),
-      burn_rate: 6000
+      token_age_consumed: 6000
     })
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: restricted_from(),
-      burn_rate: 7000
+      token_age_consumed: 7000
     })
 
     insert(:daily_active_addresses, %{
@@ -97,13 +97,16 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   test "does not show real time data and data before certain period to anon users", context do
     result =
       build_conn()
-      |> post("/graphql", query_skeleton(burnRateQuery(context.not_santiment_slug), "burnRate"))
+      |> post(
+        "/graphql",
+        query_skeleton(tokenAgeConsumedQuery(context.not_santiment_slug), "tokenAgeConsumed")
+      )
 
-    burn_rates = json_response(result, 200)["data"]["burnRate"]
+    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
 
-    refute %{"burnRate" => 5000.0} in burn_rates
-    assert %{"burnRate" => 6000.0} in burn_rates
-    refute %{"burnRate" => 7000.0} in burn_rates
+    refute %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
+    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
+    refute %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
   end
 
   # The Santiment project treatment is special. It serves the purpose of showing how
@@ -112,13 +115,16 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
        context do
     result =
       build_conn()
-      |> post("/graphql", query_skeleton(burnRateQuery(context.santiment_slug), "burnRate"))
+      |> post(
+        "/graphql",
+        query_skeleton(tokenAgeConsumedQuery(context.santiment_slug), "tokenAgeConsumed")
+      )
 
-    burn_rates = json_response(result, 200)["data"]["burnRate"]
+    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
 
-    assert %{"burnRate" => 5000.0} in burn_rates
-    assert %{"burnRate" => 6000.0} in burn_rates
-    assert %{"burnRate" => 7000.0} in burn_rates
+    assert %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
+    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
+    assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
   end
 
   test "does not show real for user without SAN stake", context do
@@ -126,13 +132,16 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
 
     result =
       conn
-      |> post("/graphql", query_skeleton(burnRateQuery(context.not_santiment_slug), "burnRate"))
+      |> post(
+        "/graphql",
+        query_skeleton(tokenAgeConsumedQuery(context.not_santiment_slug), "tokenAgeConsumed")
+      )
 
-    burn_rates = json_response(result, 200)["data"]["burnRate"]
+    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
 
-    refute %{"burnRate" => 5000.0} in burn_rates
-    assert %{"burnRate" => 6000.0} in burn_rates
-    refute %{"burnRate" => 7000.0} in burn_rates
+    refute %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
+    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
+    refute %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
   end
 
   test "shows real for user without SAN stake for Santiment project", context do
@@ -140,13 +149,16 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
 
     result =
       conn
-      |> post("/graphql", query_skeleton(burnRateQuery(context.santiment_slug), "burnRate"))
+      |> post(
+        "/graphql",
+        query_skeleton(tokenAgeConsumedQuery(context.santiment_slug), "tokenAgeConsumed")
+      )
 
-    burn_rates = json_response(result, 200)["data"]["burnRate"]
+    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
 
-    assert %{"burnRate" => 5000.0} in burn_rates
-    assert %{"burnRate" => 6000.0} in burn_rates
-    assert %{"burnRate" => 7000.0} in burn_rates
+    assert %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
+    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
+    assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
   end
 
   test "shows realtime data if user has SAN stake", context do
@@ -154,13 +166,16 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
 
     result =
       conn
-      |> post("/graphql", query_skeleton(burnRateQuery(context.not_santiment_slug), "burnRate"))
+      |> post(
+        "/graphql",
+        query_skeleton(tokenAgeConsumedQuery(context.not_santiment_slug), "tokenAgeConsumed")
+      )
 
-    burn_rates = json_response(result, 200)["data"]["burnRate"]
+    token_age_consumed = json_response(result, 200)["data"]["tokenAgeConsumed"]
 
-    assert %{"burnRate" => 5000.0} in burn_rates
-    assert %{"burnRate" => 6000.0} in burn_rates
-    assert %{"burnRate" => 7000.0} in burn_rates
+    assert %{"tokenAgeConsumed" => 5000.0} in token_age_consumed
+    assert %{"tokenAgeConsumed" => 6000.0} in token_age_consumed
+    assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
   end
 
   test "shows historical data but not realtime for DAA", context do
@@ -181,15 +196,15 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     assert %{"activeAddresses" => 300} in daas
   end
 
-  defp burnRateQuery(slug) do
+  defp tokenAgeConsumedQuery(slug) do
     """
     {
-      burnRate(
+      tokenAgeConsumed(
         slug: "#{slug}",
         from: "#{before_restricted_from()}",
         to: "#{now()}"
         interval: "30m") {
-          burnRate
+          tokenAgeConsumed
       }
     }
     """

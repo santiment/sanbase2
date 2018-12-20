@@ -19,7 +19,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ApikeyResolver,
     UserListResolver,
     ElasticsearchResolver,
-    ClickhouseResolver
+    ClickhouseResolver,
+    ExchangeResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -56,6 +57,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
   import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
   import_types(SanbaseWeb.Graphql.ClickhouseTypes)
+  import_types(SanbaseWeb.Graphql.ExchangeTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.SanbaseRepo
@@ -296,7 +298,18 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&EtherbiResolver.burn_rate/3)
+      cache_resolve(&EtherbiResolver.token_age_consumed/3)
+    end
+
+    field :token_age_consumed, list_of(:token_age_consumed_data) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+      cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
     @desc ~s"""
@@ -316,6 +329,41 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
       cache_resolve(&EtherbiResolver.transaction_volume/3)
+    end
+
+    @desc ~s"""
+    Fetch token age consumed in days for a project, grouped by interval.
+    Projects are referred to by a unique identifier (slug). The token age consumed
+    in days shows the average age of the tokens that were transacted for a given time period.
+
+    This metric includes only on-chain transaction volume, not volume in exchanges.
+    """
+    field :average_token_age_consumed_in_days, list_of(:token_age) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+
+      cache_resolve(&EtherbiResolver.average_token_age_consumed_in_days/3)
+    end
+
+    @desc ~s"""
+    Fetch token circulation for a project, grouped by interval.
+    Projects are referred to by a unique identifier (slug).
+    """
+    field :token_circulation, list_of(:token_circulation) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
+      arg(:interval, :string, default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+      cache_resolve(&EtherbiResolver.token_circulation/3)
     end
 
     @desc ~s"""
@@ -688,6 +736,22 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, non_null(:string), default_value: "1d")
 
       cache_resolve(&ClickhouseResolver.historical_balance/3)
+    end
+
+    @desc "List all exchanges"
+    field :all_exchanges, list_of(:string) do
+      cache_resolve(&ExchangeResolver.all_exchanges/3)
+    end
+
+    @desc ~s"""
+    Calculates the exchange inflow and outflow volume in usd for a given exchange in a time interval.
+    """
+    field :exchange_volume, list_of(:exchange_volume) do
+      arg(:exchange, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&ExchangeResolver.exchange_volume/3)
     end
 
     @desc "Network growth returns the newly created addresses for a project in a given timeframe"

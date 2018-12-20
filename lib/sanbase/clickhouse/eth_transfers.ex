@@ -21,6 +21,17 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
   @type wallets :: list(String.t())
 
+  @type historical_balance :: %{
+          datetime: non_neg_integer(),
+          balance: float
+        }
+
+  @type exchange_volume :: %{
+          datetime: non_neg_integer(),
+          exchange_inflow: float,
+          exchange_outflow: float
+        }
+
   use Ecto.Schema
 
   require Logger
@@ -135,8 +146,14 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   end
 
   @doc ~s"""
-  Returns the historical balances of given etherium address in all intervals between two datetimes.
+  Returns the historical balances of given ethereum address in all intervals between two datetimes.
   """
+  @spec historical_balance(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          non_neg_integer()
+        ) :: {:ok, list(historical_balance)}
   def historical_balance(address, from_datetime, to_datetime, interval) do
     address = String.downcase(address)
     {query, args} = historical_balance_query(address, interval)
@@ -147,6 +164,35 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       |> ClickhouseCommon.convert_historical_balance_result(from_datetime, to_datetime, interval)
 
     {:ok, balances}
+  end
+
+  @doc ~s"""
+  Returns the inflow and outflow volume for a list of exchange_addresses between two datetimes
+  """
+  @spec exchange_volume(
+          list(String.t()),
+          %DateTime{},
+          %DateTime{}
+        ) :: {:ok, list(exchange_volume)} | {:error, String.t()}
+  def exchange_volume(exchange_addresses, from_datetime, to_datetime) do
+    exchange_addresses = exchange_addresses |> Enum.map(&String.downcase/1)
+    {query, args} = exchange_volume_query(exchange_addresses, from_datetime, to_datetime)
+
+    query
+    |> ClickhouseRepo.query_transform(args, fn [dt, inflow, outflow] ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        exchange_inflow: inflow,
+        exchange_outflow: outflow
+      }
+    end)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   # Private functions
@@ -335,6 +381,63 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     )
     ORDER BY dt
     """
+
+    {query, args}
+  end
+
+  defp exchange_volume_query(exchange_addresses, from_datetime, to_datetime) do
+    query = """
+    SELECT
+      toUnixTimestamp(dt) as datetime,
+     (inflow * price_usd) as exchange_inflow,
+     (outflow * price_usd) as exchange_outflow
+    FROM 
+    (
+     SELECT dt, inflow, outflow
+      FROM 
+      (
+      SELECT 
+    	  toStartOfDay(dt) as dt,
+    	  sum(value) / #{@eth_decimals} as inflow
+      FROM #{@table}
+      PREWHERE
+          to IN (?1) AND NOT from IN (?1)
+          AND dt >= toDateTime(?2)
+          AND dt <= toDateTime(?3)
+      GROUP BY dt
+     ) 
+     ALL INNER JOIN
+     (
+      SELECT 
+    	  toStartOfDay(dt) as dt,
+    	  sum(value) / #{@eth_decimals} as outflow
+      FROM #{@table}
+        PREWHERE 
+          from IN (?1) AND NOT to IN (?1)
+          AND dt >= toDateTime(?2)
+          AND dt <= toDateTime(?3)
+      GROUP BY dt
+     ) USING dt
+    )
+    ALL INNER JOIN
+    (
+     SELECT 
+      toStartOfDay(dt) as dt, AVG(price_usd) as "price_usd"
+     FROM prices
+      PREWHERE 
+        name = 'ETH_ethereum'
+        AND dt >= toDateTime(?2)
+        AND dt <= toDateTime(?3)
+     GROUP BY dt
+    ) USING dt
+    ORDER BY dt
+    """
+
+    args = [
+      exchange_addresses,
+      from_datetime,
+      to_datetime
+    ]
 
     {query, args}
   end

@@ -63,7 +63,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
   end
 
   defp ticker(html) do
-    Floki.find(html, "h1 > .text-bold.h3.text-gray.hidden-xs")
+    Floki.find(html, "h1 > .text-bold.h3.text-gray.text-large")
     |> hd
     |> Floki.text()
     |> String.replace(~r/[\(\)]/, "")
@@ -75,8 +75,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
   end
 
   defp github_link(html) do
-    Floki.attribute(html, "a:fl-contains('Source Code')", "href")
-    |> List.first()
+    github_link =
+      Floki.attribute(html, "a:fl-contains('Source Code')", "href")
+      |> List.first()
+
+    if github_link && String.contains?(github_link, "https://github.com/") do
+      github_link
+    end
   end
 
   defp etherscan_token_name(html) do

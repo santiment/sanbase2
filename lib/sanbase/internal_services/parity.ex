@@ -41,7 +41,10 @@ defmodule Sanbase.InternalServices.Parity do
 
   def get_eth_balance(address) do
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
-           post(client(), "/", json_rpc_call("eth_getBalance", [address]),
+           post(
+             client(),
+             "/",
+             json_rpc_call("eth_getBalance", [address]),
              opts: [adapter: [recv_timeout: 15_000]]
            ),
          "0x" <> number <- body["result"],

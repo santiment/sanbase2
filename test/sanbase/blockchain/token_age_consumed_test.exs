@@ -1,11 +1,11 @@
-defmodule Sanbase.Blockchain.BurnRateTest do
+defmodule Sanbase.Blockchain.TokenAgeConsumedTest do
   use Sanbase.DataCase, async: true
   @moduletag checkout_repo: Sanbase.TimescaleRepo
   @moduletag timescaledb: true
 
   import Sanbase.TimescaleFactory
 
-  alias Sanbase.Blockchain.BurnRate
+  alias Sanbase.Blockchain.TokenAgeConsumed
   alias Sanbase.DateTimeUtils
 
   setup do
@@ -14,8 +14,17 @@ defmodule Sanbase.Blockchain.BurnRateTest do
     datetime1 = DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC")
     datetime2 = DateTime.from_naive!(~N[2017-05-14 00:00:00], "Etc/UTC")
 
-    insert(:burn_rate, %{contract_address: contract, timestamp: datetime1, burn_rate: 500.0})
-    insert(:burn_rate, %{contract_address: contract, timestamp: datetime2, burn_rate: 1500.0})
+    insert(:token_age_consumed, %{
+      contract_address: contract,
+      timestamp: datetime1,
+      token_age_consumed: 500.0
+    })
+
+    insert(:token_age_consumed, %{
+      contract_address: contract,
+      timestamp: datetime2,
+      token_age_consumed: 1500.0
+    })
 
     %{
       contract: contract,
@@ -26,32 +35,35 @@ defmodule Sanbase.Blockchain.BurnRateTest do
 
   test "transaction volume fill gaps", context do
     assert {:ok, result} =
-             BurnRate.burn_rate(
+             TokenAgeConsumed.token_age_consumed(
                context.contract,
                context.datetime_from,
                context.datetime_to,
                "6h"
              )
 
+    # TODO: Remove after the `burn_rate` api is deprecated
+    result = result |> Enum.map(&Map.delete(&1, :burn_rate))
+
     assert result == [
              %{
-               burn_rate: 500.0,
+               token_age_consumed: 500.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z")
              },
              %{
-               burn_rate: 0.0,
+               token_age_consumed: 0.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 06:00:00Z")
              },
              %{
-               burn_rate: 0.0,
+               token_age_consumed: 0.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00Z")
              },
              %{
-               burn_rate: 0.0,
+               token_age_consumed: 0.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 18:00:00Z")
              },
              %{
-               burn_rate: 1.5e3,
+               token_age_consumed: 1.5e3,
                datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00Z")
              }
            ]
@@ -59,24 +71,27 @@ defmodule Sanbase.Blockchain.BurnRateTest do
 
   test "transaction volume for contract with no data return zeroes", context do
     assert {:ok, result} =
-             BurnRate.burn_rate(
+             TokenAgeConsumed.token_age_consumed(
                "non_existing_contract",
                context.datetime_from,
                context.datetime_to,
                "12h"
              )
 
+    # TODO: Remove after the `burn_rate` api is deprecated
+    result = result |> Enum.map(&Map.delete(&1, :burn_rate))
+
     assert result == [
              %{
-               burn_rate: 0.0,
+               token_age_consumed: 0.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z")
              },
              %{
-               burn_rate: 0.0,
+               token_age_consumed: 0.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 12:00:00Z")
              },
              %{
-               burn_rate: 0.0,
+               token_age_consumed: 0.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-14 00:00:00Z")
              }
            ]
@@ -84,16 +99,19 @@ defmodule Sanbase.Blockchain.BurnRateTest do
 
   test "transaction volume sum in interval", context do
     assert {:ok, result} =
-             BurnRate.burn_rate(
+             TokenAgeConsumed.token_age_consumed(
                context.contract,
                context.datetime_from,
                context.datetime_to,
                "2d"
              )
 
+    # TODO: Remove after the `burn_rate` api is deprecated
+    result = result |> Enum.map(&Map.delete(&1, :burn_rate))
+
     assert result == [
              %{
-               burn_rate: 2000.0,
+               token_age_consumed: 2000.0,
                datetime: DateTimeUtils.from_iso8601!("2017-05-13 00:00:00Z")
              }
            ]
@@ -101,7 +119,7 @@ defmodule Sanbase.Blockchain.BurnRateTest do
 
   test "transaction volume wrong dates", context do
     assert {:ok, result} =
-             BurnRate.burn_rate(
+             TokenAgeConsumed.token_age_consumed(
                context.contract,
                context.datetime_to,
                context.datetime_from,

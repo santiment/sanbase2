@@ -1,6 +1,11 @@
 defmodule SanbaseWeb.Graphql.EtherbiTypes do
   use Absinthe.Schema.Notation
 
+  object :token_age_consumed_data do
+    field(:datetime, non_null(:datetime))
+    field(:token_age_consumed, :float)
+  end
+
   object :burn_rate_data do
     field(:datetime, non_null(:datetime))
     field(:burn_rate, :float)
@@ -14,6 +19,11 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
   object :active_addresses do
     field(:datetime, non_null(:datetime))
     field(:active_addresses, non_null(:integer))
+  end
+
+  object :token_age do
+    field(:datetime, non_null(:datetime))
+    field(:token_age_in_days, non_null(:float))
   end
 
   object :wallet do

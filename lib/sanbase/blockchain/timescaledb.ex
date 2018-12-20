@@ -16,14 +16,14 @@ defmodule Sanbase.Timescaledb do
     3. The interval MUST be a string that the `transform_interval/1` function understands
 
     Example usage:
-      You want to calculate the sum of all burn rates in a given time period,
+      You want to calculate the sum of all transaction volumes in a given time period,
       bucketed by an interval. Then your code should look like this:
 
           args = [from, to, contract]
 
           query =
-           "SELECT sum(burn_rate) AS value
-            FROM eth_burn_rate
+           "SELECT sum(transaction_volume) AS value
+            FROM eth_transaction_volume
             WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3"
 
           {query, args} = bucket_by_interval(query, args, interval)
@@ -68,6 +68,12 @@ defmodule Sanbase.Timescaledb do
     %Postgrex.Interval{secs: seconds}
   end
 
+  def time_range(%DateTime{} = from, %DateTime{} = to, datetime_column_name \\ "timestamp") do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    "EXTRACT(epoch from #{datetime_column_name}) BETWEEN #{from_unix} AND #{to_unix}"
+  end
+
   @doc ~s"""
   Executes the given query and args with the TimescaleRepo.
   Transforms the result by applying `transform_fn` to it. To easily handle the datetimes
@@ -76,12 +82,12 @@ defmodule Sanbase.Timescaledb do
 
   Example:
    You are bucketing by interval and doing a single SUM aggregation over a field.
-   In that case the result will contain two parameters in a list - `[datetime, burn_rate]`.
+   In that case the result will contain two parameters in a list - `[datetime, transaction_volume]`.
    In that case your transform_fn could look like this:
-     fn [datetime, burn_rate] ->
+     fn [datetime, transaction_volume] ->
        %{
          datetime: timestamp_to_datetime(datetime),
-         burn_rate: burn_rate
+         transaction_volume: transaction_volume
        }
   """
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do

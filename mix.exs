@@ -105,7 +105,8 @@ defmodule Sanbase.Mixfile do
       {:prometheus_process_collector, "~> 1.4"},
       {:absinthe_metrics, "~> 0.9"},
       {:libcluster, "~> 3.0"},
-      {:number, "~> 0.5.7"}
+      {:number, "~> 0.5.7"},
+      {:remote_ip, "~> 0.1"}
     ]
   end
 

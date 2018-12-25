@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         )
       )
     else
-      error ->
+      {:error, error} ->
         Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
 
         {:ok, []}

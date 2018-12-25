@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch burn rate for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
            ) do
       {:ok, token_age |> Utils.fit_from_datetime(args)}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch average token age consumed in days for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -119,7 +119,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch transaction for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -158,7 +158,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch daily active addresses for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -203,7 +203,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch the exchange fund flow for #{slug}."
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -244,7 +244,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch token circulation for #{slug}."
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -293,7 +293,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
            Blockchain.DailyActiveAddresses.active_addresses(contract_address, from, to) do
       {:ok, active_addresses}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
 

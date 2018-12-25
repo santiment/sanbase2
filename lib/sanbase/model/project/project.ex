@@ -294,6 +294,19 @@ defmodule Sanbase.Model.Project do
     lcd.available_supply || lcd.total_supply || ts
   end
 
+  @doc ~s"""
+  Return a project with a matching ticker. `Repo.one` fails if there are more
+  than one project with the same ticker.
+  """
+  @spec by_currency(%Currency{}) :: %Project{} | no_return()
+  def by_currency(%Currency{code: code}) do
+    from(
+      p in Project,
+      where: p.ticker == ^code and not is_nil(p.coinmarketcap_id)
+    )
+    |> Repo.one()
+  end
+
   def by_slug(slug) when is_binary(slug) do
     Project
     |> where([p], p.coinmarketcap_id == ^slug)

@@ -113,14 +113,23 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&MarketSegmentResolver.currencies_market_segments/3)
     end
 
+    @desc "Returns the number of erc20 projects, currency projects and all projects"
+    field :projects_count, :projects_count do
+      cache_resolve(&ProjectResolver.projects_count/3)
+    end
+
     @desc "Fetch all projects that have price data."
     field :all_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.all_projects/3)
     end
 
     @desc "Fetch all ERC20 projects."
     field :all_erc20_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_erc20_projects/3)
@@ -128,6 +137,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch all currency projects. A currency project is a project that has price data but is not classified as ERC20."
     field :all_currency_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_currency_projects/3)
@@ -136,15 +147,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch all project transparency projects. This query requires basic authentication."
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)
-      resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
+      resolve(&ProjectResolver.all_projects_project_transparency/3)
     end
+
+    @desc "Return the number of projects in each"
 
     @desc "Fetch a project by its ID."
     field :project, :project do
       arg(:id, non_null(:id))
-      # this is to filter the wallets
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
@@ -152,17 +162,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch a project by a unique identifier."
     field :project_by_slug, :project do
       arg(:slug, non_null(:string))
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.project_by_slug/3)
-    end
-
-    @desc "Fetch all projects that have ETH contract information."
-    field :all_projects_with_eth_contract_info, list_of(:project) do
-      middleware(BasicAuth)
-
-      cache_resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
     end
 
     @desc "Fetch price history for a given slug and time interval."

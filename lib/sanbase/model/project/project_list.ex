@@ -32,7 +32,8 @@ defmodule Sanbase.Model.Project.List do
       on: p.infrastructure_id == infr.id,
       where:
         not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
-          infr.code == "ETH"
+          infr.code == "ETH",
+      preload: ^@preloads
     )
   end
 
@@ -78,7 +79,8 @@ defmodule Sanbase.Model.Project.List do
       inner_join: infr in Infrastructure,
       on: p.infrastructure_id == infr.id,
       where:
-        not is_nil(p.coinmarketcap_id) and (is_nil(p.main_contract_address) or infr.code != "ETH")
+        not is_nil(p.coinmarketcap_id) and (is_nil(p.main_contract_address) or infr.code != "ETH"),
+      preload: ^@preloads
     )
   end
 

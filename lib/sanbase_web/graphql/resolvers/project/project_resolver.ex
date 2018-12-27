@@ -43,7 +43,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     page_size = Map.get(args, :page_size, nil)
 
     projects =
-      if page == nil || page_size == nil do
+      if not page_arguments_valid?(page, page_size) do
         Project.List.projects()
       else
         Project.List.projects_page(page, page_size)
@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     page_size = Map.get(args, :page_size, nil)
 
     erc20_projects =
-      if page == nil || page_size == nil do
+      if not page_arguments_valid?(page, page_size) do
         Project.List.erc20_projects()
       else
         Project.List.erc20_projects_page(page, page_size)
@@ -71,7 +71,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     page_size = Map.get(args, :page_size, nil)
 
     currency_projects =
-      if page == nil || page_size == nil do
+      if not page_arguments_valid?(page, page_size) do
         Project.List.currency_projects()
       else
         Project.List.currency_projects_page(page, page_size)
@@ -547,4 +547,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   # Calling Decimal.to_float/1 with `nil` crashes the process
   defp float_or_nil(nil), do: nil
   defp float_or_nil(num), do: Decimal.to_float(num)
+
+  defp page_arguments_valid?(page, page_size) when is_integer(page) and is_integer(page_size) do
+    if page > 0 and page_size > 0 do
+      true
+    else
+      false
+    end
+  end
+
+  defp page_arguments_valid?(_, _), do: false
 end

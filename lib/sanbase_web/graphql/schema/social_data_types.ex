@@ -20,6 +20,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   object :word_context do
     field(:word, non_null(:string))
-    field(:size, non_null(:float))
+    field(:score, non_null(:float))
   end
 end

@@ -144,8 +144,8 @@ defmodule Sanbase.SocialData do
   defp word_context_result(result) do
     result =
       result
-      |> Enum.map(fn {k, v} -> %{word: k, size: v["size"]} end)
-      |> Enum.sort(&(&1.size >= &2.size))
+      |> Enum.map(fn {k, v} -> %{word: k, score: v["score"]} end)
+      |> Enum.sort(&(&1.score >= &2.score))
 
     {:ok, result}
   end

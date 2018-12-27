@@ -107,9 +107,9 @@ defmodule Sanbase.SocialDataTest do
   test "successfully fetch word context", _context do
     body =
       %{
-        "christ" => %{"size" => 0.7688603531300161},
-        "christmas" => %{"size" => 0.7592295345104334},
-        "mas" => %{"size" => 1.0}
+        "christ" => %{"score" => 0.7688603531300161},
+        "christmas" => %{"score" => 0.7592295345104334},
+        "mas" => %{"score" => 1.0}
       }
       |> Jason.encode!()
 
@@ -136,9 +136,9 @@ defmodule Sanbase.SocialDataTest do
     assert result ==
              {:ok,
               [
-                %{size: 1.0, word: "mas"},
-                %{size: 0.7688603531300161, word: "christ"},
-                %{size: 0.7592295345104334, word: "christmas"}
+                %{score: 1.0, word: "mas"},
+                %{score: 0.7688603531300161, word: "christ"},
+                %{score: 0.7592295345104334, word: "christmas"}
               ]}
   end
 end

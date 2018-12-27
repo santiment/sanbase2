@@ -17,4 +17,9 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:reddit)
     value(:all)
   end
+
+  object :word_context do
+    field(:word, non_null(:string))
+    field(:size, non_null(:float))
+  end
 end

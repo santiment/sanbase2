@@ -132,4 +132,54 @@ defmodule Sanbase.SocialDataApiTest do
     assert capture_log(result_fn) =~
              "Error status 500 fetching trending words for source: telegram: Internal Server Error"
   end
+
+  test "successfully fetch word context", %{conn: conn} do
+    body =
+      %{
+        "christ" => %{"size" => 0.7688603531300161},
+        "christmas" => %{"size" => 0.7592295345104334},
+        "mas" => %{"size" => 1.0}
+      }
+      |> Jason.encode!()
+
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: body,
+         status_code: 200
+       }}
+    )
+
+    query = """
+    {
+      wordContext(
+        word: "merry", 
+        source: TELEGRAM,
+        size: 3,
+        from: "2018-12-22T00:00:00Z",
+        to:"2018-12-27T00:00:00Z"
+      ) {
+        word
+        size
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "wordContext"))
+      |> json_response(200)
+
+    assert result == %{
+             "data" => %{
+               "wordContext" => [
+                 %{"size" => 1.0, "word" => "mas"},
+                 %{"size" => 0.7688603531300161, "word" => "christ"},
+                 %{"size" => 0.7592295345104334, "word" => "christmas"}
+               ]
+             }
+           }
+  end
 end

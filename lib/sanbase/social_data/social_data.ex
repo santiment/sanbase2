@@ -45,6 +45,33 @@ defmodule Sanbase.SocialData do
     end
   end
 
+  def word_context(
+        word,
+        source,
+        size,
+        from_datetime,
+        to_datetime
+      ) do
+    word_context_request(
+      word,
+      source,
+      size,
+      from_datetime,
+      to_datetime
+    )
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Jason.decode(body)
+        word_context_result(result)
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        error_result("Error status #{status} fetching context for word #{word}: #{body}")
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result("Cannot fetch context for word #{word}: #{HTTPoison.Error.message(error)}")
+    end
+  end
+
   defp trending_words_request(
          source,
          size,
@@ -84,6 +111,41 @@ defmodule Sanbase.SocialData do
             end)
         }
       end)
+
+    {:ok, result}
+  end
+
+  defp word_context_request(
+         word,
+         source,
+         size,
+         from_datetime,
+         to_datetime
+       ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/word_context"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"word", word},
+        {"size", size},
+        {"source", source |> Atom.to_string()},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
+  defp word_context_result(result) do
+    result =
+      result
+      |> Enum.map(fn {k, v} -> %{word: k, size: v["size"]} end)
+      |> Enum.sort(&(&1.size >= &2.size))
 
     {:ok, result}
   end

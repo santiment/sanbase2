@@ -630,6 +630,32 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&SocialDataResolver.trending_words/3)
     end
 
+    @desc ~s"""
+    Returns context for a trending word and the corresponding context score.
+
+    Arguments description:
+      * word - the word the context is requested for
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * size - an integer showing how many words should be included in the top list (max 100)
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :word_context, list_of(:word_context) do
+      arg(:word, non_null(:string))
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(ApiTimeframeRestriction)
+
+      cache_resolve(&SocialDataResolver.word_context/3)
+    end
+
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
     field :exchange_wallets, list_of(:wallet) do
       middleware(BasicAuth)

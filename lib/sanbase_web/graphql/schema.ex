@@ -60,16 +60,17 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.ExchangeTypes)
 
   def dataloader() do
-    alias SanbaseWeb.Graphql.SanbaseRepo
-    alias SanbaseWeb.Graphql.PriceStore
+    alias SanbaseWeb.Graphql.{SanbaseRepo, PriceStore, ParityDataloader}
 
     Dataloader.new()
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(PriceStore, PriceStore.data())
+    |> Dataloader.add_source(ParityDataloader, ParityDataloader.data())
   end
 
   def context(ctx) do
-    Map.put(ctx, :loader, dataloader())
+    ctx
+    |> Map.put(:loader, dataloader())
   end
 
   def plugins do

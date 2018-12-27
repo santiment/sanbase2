@@ -15,6 +15,8 @@ defmodule SanbaseWeb.Graphql.PriceStore do
     |> Map.new()
   end
 
+  def query(queryable, _), do: queryable
+
   # Helper functions
 
   # TODO: not covered in tests

@@ -39,6 +39,27 @@ defmodule Sanbase.InternalServices.Parity do
     end
   end
 
+  def get_eth_balance(addresses) when is_list(addresses) do
+    addresses = Enum.zip(Stream.iterate(1, &(&1 + 1)), addresses)
+
+    batch =
+      for {id, address} <- addresses do
+        json_rpc_call("eth_getBalance", [address], id)
+      end
+
+    {:ok, %Tesla.Env{status: 200, body: body}} =
+      post(client(), "/", batch, opts: [adapter: [recv_timeout: 15_000]])
+
+    addresses_map = Map.new(addresses)
+
+    body
+    |> Enum.map(fn %{"id" => id, "result" => "0x" <> result} ->
+      {balance, ""} = Integer.parse(result, 16)
+      {Map.get(addresses_map, id), balance / @eth_decimals}
+    end)
+    |> Map.new()
+  end
+
   def get_eth_balance(address) do
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
            post(client(), "/", json_rpc_call("eth_getBalance", [address]),
@@ -75,11 +96,11 @@ defmodule Sanbase.InternalServices.Parity do
     ])
   end
 
-  defp json_rpc_call(method, params) do
+  defp json_rpc_call(method, params, id \\ 1) do
     %{
       method: method,
       params: params,
-      id: 1,
+      id: id,
       jsonrpc: "2.0"
     }
   end

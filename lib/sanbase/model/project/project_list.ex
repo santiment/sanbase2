@@ -54,10 +54,10 @@ defmodule Sanbase.Model.Project.List do
   end
 
   @doc ~s"""
-  Return all currency projects
+  Return all currency projects.
+  Classify as currency project everything except ERC20.
   """
   def currency_projects() do
-    # The opposite of ERC20. Classify everything except ERC20 as Currency.
     currency_projects =
       currency_projects_query()
       |> order_by([p], p.name)
@@ -80,10 +80,10 @@ defmodule Sanbase.Model.Project.List do
   end
 
   @doc ~s"""
-  Returns `page_size` number of currency projects from the `page` pages
+  Returns `page_size` number of currency projects from the `page` pages.
+  Classify as currency project everything except ERC20.
   """
   def currency_projects_page(page, page_size) do
-    # The opposite of ERC20. Classify everything except ERC20 as Currency.
     from(
       p in Project,
       join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
@@ -106,7 +106,6 @@ defmodule Sanbase.Model.Project.List do
   Return all projects
   """
   def projects() do
-    # The opposite of ERC20. Classify everything except ERC20 as Currency.
     projects =
       projects_query()
       |> order_by([p], p.name)

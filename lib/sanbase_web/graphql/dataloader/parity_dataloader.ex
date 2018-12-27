@@ -5,12 +5,12 @@ defmodule SanbaseWeb.Graphql.ParityDataloader do
   import Ecto.Query
 
   def data() do
-    Dataloader.KV.new(&fetch/2)
+    Dataloader.KV.new(&query/2)
   end
 
-  def fetch(_batch_key, arg_maps) do
+  def query(:eth_balance, projects) do
     addresses =
-      Enum.flat_map(arg_maps, fn project ->
+      Enum.flat_map(projects, fn project ->
         {:ok, eth_addresses} = Project.eth_addresses(project)
         eth_addresses
       end)

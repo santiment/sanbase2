@@ -458,17 +458,21 @@ defmodule Sanbase.Model.Project do
     end
   end
 
-  def github_organization(%Project{coinmarketcap_id: slug}), do: github_organization(slug)
+  def github_organization(slug) when is_binary(slug) do
+    from(
+      p in Project,
+      where: p.coinmarketcap_id == ^slug,
+      select: p.github_link
+    )
+    |> Repo.one()
+    |> parse_github_organization_link(slug)
+  end
 
-  def github_organization(slug) do
-    github_link =
-      from(
-        p in Project,
-        where: p.coinmarketcap_id == ^slug,
-        select: p.github_link
-      )
-      |> Repo.one()
+  def github_organization(%Project{github_link: github_link, coinmarketcap_id: slug}) do
+    parse_github_organization_link(github_link, slug)
+  end
 
+  defp parse_github_organization_link(github_link, slug) do
     # nil will break the regex
     github_link = github_link || ""
 

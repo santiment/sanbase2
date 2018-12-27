@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
-    with projects when is_list(projects) <- Project.erc20_projects() do
+    with projects when is_list(projects) <- Project.List.erc20_projects() do
       total_eth_spent =
         projects
         |> Sanbase.Parallel.pmap(&calculate_eth_spent_cached(&1, from, to).(), timeout: 25_000)
@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    Project.erc20_projects()
+    Project.List.erc20_projects()
     |> Sanbase.Parallel.pmap(&calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
       timeout: 25_000
     )

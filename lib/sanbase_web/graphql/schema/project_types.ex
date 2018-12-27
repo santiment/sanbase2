@@ -299,4 +299,10 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:datetime, non_null(:datetime))
     field(:eth_spent, :float)
   end
+
+  object :projects_count do
+    field(:erc20_projects_count, non_null(:integer))
+    field(:currency_projects_count, non_null(:integer))
+    field(:projects_count, non_null(:integer))
+  end
 end

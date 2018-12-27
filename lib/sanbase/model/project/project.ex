@@ -320,7 +320,7 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
-  def by_id(id) when is_integer(id) do
+  def by_id(id) when is_integer(id) or is_binary(id) do
     Project
     |> where([p], p.id == ^id)
     |> preload(^@preloads)

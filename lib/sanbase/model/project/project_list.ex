@@ -4,6 +4,12 @@ defmodule Sanbase.Model.Project.List do
 
   alias Sanbase.Model.{Project, Infrastructure}
 
+  @preloads [
+    :eth_addresses,
+    :latest_coinmarketcap_data,
+    icos: [ico_currencies: [:currency]]
+  ]
+
   @doc ~s"""
   Return all erc20 projects
   """
@@ -26,7 +32,8 @@ defmodule Sanbase.Model.Project.List do
       on: p.infrastructure_id == infr.id,
       where:
         not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
-          infr.code == "ETH"
+          infr.code == "ETH",
+      preload: ^@preloads
     )
   end
 
@@ -45,10 +52,7 @@ defmodule Sanbase.Model.Project.List do
       order_by: latest_cmc.rank,
       limit: ^page_size,
       offset: ^((page - 1) * page_size),
-      preload: [
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ]
+      preload: ^@preloads
     )
     |> Repo.all()
   end
@@ -75,7 +79,8 @@ defmodule Sanbase.Model.Project.List do
       inner_join: infr in Infrastructure,
       on: p.infrastructure_id == infr.id,
       where:
-        not is_nil(p.coinmarketcap_id) and (is_nil(p.main_contract_address) or infr.code != "ETH")
+        not is_nil(p.coinmarketcap_id) and (is_nil(p.main_contract_address) or infr.code != "ETH"),
+      preload: ^@preloads
     )
   end
 
@@ -94,10 +99,7 @@ defmodule Sanbase.Model.Project.List do
       order_by: latest_cmc.rank,
       limit: ^page_size,
       offset: ^((page - 1) * page_size),
-      preload: [
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ]
+      preload: ^@preloads
     )
     |> Repo.all()
   end
@@ -119,7 +121,7 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp projects_query() do
-    from(p in Project, where: not is_nil(p.coinmarketcap_id))
+    from(p in Project, where: not is_nil(p.coinmarketcap_id), preload: ^@preloads)
   end
 
   @doc ~s"""
@@ -132,10 +134,7 @@ defmodule Sanbase.Model.Project.List do
       order_by: latest_cmc.rank,
       limit: ^page_size,
       offset: ^((page - 1) * page_size),
-      preload: [
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ]
+      preload: ^@preloads
     )
     |> Repo.all()
   end

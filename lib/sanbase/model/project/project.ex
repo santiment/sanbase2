@@ -18,6 +18,12 @@ defmodule Sanbase.Model.Project do
 
   import Ecto.Query
 
+  @preloads [
+    :eth_addresses,
+    :latest_coinmarketcap_data,
+    icos: [ico_currencies: [:currency]]
+  ]
+
   schema "project" do
     field(:name, :string)
     field(:ticker, :string)
@@ -310,6 +316,14 @@ defmodule Sanbase.Model.Project do
   def by_slug(slug) when is_binary(slug) do
     Project
     |> where([p], p.coinmarketcap_id == ^slug)
+    |> preload(^@preloads)
+    |> Repo.one()
+  end
+
+  def by_id(id) when is_integer(id) do
+    Project
+    |> where([p], p.id == ^id)
+    |> preload(^@preloads)
     |> Repo.one()
   end
 

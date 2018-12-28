@@ -301,18 +301,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def average_dev_activity(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
     loader
-    |> averade_dev_activity_loader(%{
+    |> Dataloader.load(ClickhouseDataloader, :average_dev_activity, %{
       project: project,
       from: Timex.shift(Timex.now(), days: -days),
       to: Timex.now(),
       days: days
     })
     |> on_load(&average_dev_activity_from_loader(&1, project))
-  end
-
-  def averade_dev_activity_loader(loader, args) do
-    loader
-    |> Dataloader.load(ClickhouseDataloader, :average_dev_activity, args)
   end
 
   def average_dev_activity_from_loader(loader, project) do

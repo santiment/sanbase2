@@ -60,13 +60,20 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.ExchangeTypes)
 
   def dataloader() do
-    alias SanbaseWeb.Graphql.{SanbaseRepo, PriceStore, ParityDataloader, ClickhouseDataloader}
+    alias SanbaseWeb.Graphql.{
+      SanbaseRepo,
+      PriceStore,
+      ParityDataloader,
+      ClickhouseDataloader,
+      TimescaledbDataloader
+    }
 
     Dataloader.new()
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(PriceStore, PriceStore.data())
     |> Dataloader.add_source(ParityDataloader, ParityDataloader.data())
     |> Dataloader.add_source(ClickhouseDataloader, ClickhouseDataloader.data())
+    |> Dataloader.add_source(TimescaledbDataloader, TimescaledbDataloader.data())
   end
 
   def context(ctx) do

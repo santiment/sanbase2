@@ -347,7 +347,7 @@ defmodule Sanbase.Model.Project do
   end
 
   def contract_info(%Project{} = project) do
-    {:error, "Can't find contract address of #{describe(project)}"}
+    {:error, {:missing_contract, "Can't find contract address of #{describe(project)}"}}
   end
 
   def contract_info(data) do

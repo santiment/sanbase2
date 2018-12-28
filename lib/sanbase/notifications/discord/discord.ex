@@ -203,7 +203,7 @@ defmodule Sanbase.Notifications.Discord do
     from = Timex.shift(to, days: -size + 1)
 
     with {:ok, contract, _} <- Project.contract_info(project),
-         {:ok, daa} <- DailyActiveAddresses.active_addresses(contract, from, to, "1d") do
+         {:ok, daa} <- DailyActiveAddresses.average_active_addresses(contract, from, to, "1d") do
       daa_values = daa |> Enum.map(fn %{active_addresses: value} -> value end)
       max = daa_values |> Enum.max()
       min = daa_values |> Enum.min()

@@ -152,13 +152,13 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
         fun = fn -> resolver_fn.(root, args, resolution) end
 
         cache_key({name, id}, args)
-        |> get_or_store(fun)
+        |> get_or_store_if_ok(fun)
 
       %{}, args, resolution ->
         fun = fn -> resolver_fn.(%{}, args, resolution) end
 
         cache_key(name, args)
-        |> get_or_store(fun)
+        |> get_or_store_if_ok(fun)
     end
   end
 
@@ -218,19 +218,23 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
   end
 
   defp get_or_store_middleware(cache_key, resolver_fn) do
+    IO.inspect("get_or_store_middleware")
+
     case ConCache.get(@cache_name, cache_key) do
       nil ->
         cache_modify_middleware(cache_key, resolver_fn.())
 
       # Wrapped in a tuple to distinguish value = nil from not having a record
       # If we have the result in the cache the middleware tuple is skipped
-      {:ok, value} ->
+      {:ok, value} = tuple ->
+        IO.inspect("GOT FROM THE CACHE3: #{inspect(tuple)}")
         value
     end
   end
 
   # Used because we disable the Async middleware in tests
   defp cache_modify_middleware(cache_key, {:ok, value}) do
+    IO.inspect("cache_modify_middleware normal")
     ConCache.put(@cache_name, cache_key, {:ok, value})
 
     {:ok, value}
@@ -240,6 +244,8 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
          cache_key,
          {:middleware, Absinthe.Middleware.Async = midl, {fun, opts}}
        ) do
+    IO.inspect("cache_modify_middleware async")
+
     caching_fun = fn ->
       value = fun.()
       ConCache.put(@cache_name, cache_key, {:ok, value})
@@ -254,13 +260,22 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
          cache_key,
          {:middleware, Absinthe.Middleware.Dataloader = midl, {loader, callback}}
        ) do
+    IO.inspect("cache_modify_middleware dataloader")
+
     caching_callback = fn loader_arg ->
+      IO.inspect("calling internal dataloader func")
       value = callback.(loader_arg)
-      ConCache.put(@cache_name, cache_key, {:ok, value})
+
+      # Do not cache the {:error, error} tuples returned from resolvers
+      if {:ok, value} do
+        IO.inspect("PUTTING IN THE CACHE3: #{inspect(value)}")
+        ConCache.put(@cache_name, cache_key, value)
+      end
 
       value
     end
 
+    IO.inspect("RETURNING MIDDLEWARE DATALOADRE")
     {:middleware, midl, {loader, caching_callback}}
   end
 
@@ -297,5 +312,44 @@ defmodule SanbaseWeb.Graphql.Helpers.Cache do
     captured_mfa
     |> :erlang.fun_info()
     |> Keyword.get(:name)
+  end
+
+  # Implements missing functionality in ConCache - conditionally choose wheter or not
+  # to cache the result from `get_or_store`.
+  defp get_or_store_if_ok(cache_key, func) do
+    IO.inspect("get_or_store_if_ok")
+
+    result =
+      if (value = ConCache.get(@cache_name, cache_key)) != nil do
+        value |> IO.inspect(label: "GOT FROM THE CACHE1")
+      else
+        ConCache.isolated(@cache_name, cache_key, fn ->
+          if (value = ConCache.get(@cache_name, cache_key)) != nil do
+            value |> IO.inspect(label: "GOT FROM THE CACHE2")
+          else
+            case func.() do
+              {:error, _} ->
+                nil
+
+              {:ok, value} = tuple ->
+                IO.inspect("PUTTING IN THE CACHE2:#{inspect(tuple)}")
+                ConCache.put(@cache_name, cache_key, tuple)
+                tuple
+
+              {:middleware, _, _} = tuple ->
+                # Decides on its behalf whether or not to put the value in the cache
+                cache_modify_middleware(cache_key, tuple)
+            end
+          end
+        end)
+      end
+
+    # Result is `nil` if the returned :error tuple. In that case re-evaulate
+    # the function and return it as a result
+    if result == nil do
+      func.()
+    else
+      result
+    end
   end
 end

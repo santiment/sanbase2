@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     TelegramResolver
   }
 
-  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
+  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1, cache_resolve_dataloader: 1]
 
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
@@ -187,7 +187,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "")
 
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&PriceResolver.history_price/3)
+      cache_resolve_dataloader(&PriceResolver.history_price/3)
     end
 
     @desc ~s"""

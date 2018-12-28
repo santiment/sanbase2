@@ -222,12 +222,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectTransactionsResolver.token_top_transactions/3)
     end
 
-    @desc "Average daily active addresses for a ERC20 project and given time period"
+    @desc "Average daily active addresses for a ERC20 project or Ethereum and given time period"
     field :average_daily_active_addresses, :integer do
       arg(:from, :datetime)
       arg(:to, :datetime)
 
-      cache_resolve_async(&EtherbiResolver.average_daily_active_addresses/3)
+      cache_resolve_dataloader(&EtherbiResolver.average_daily_active_addresses/3)
     end
   end
 

@@ -12,22 +12,23 @@ defmodule SanbaseWeb.Graphql.TimescaledbDataloader do
     args = Enum.to_list(args)
     [%{from: from, to: to} | _] = args
 
-    contract_addresses =
-      Enum.map(args, fn %{project: project} ->
-        case project do
-          %Project{coinmarketcap_id: "ethereum"} -> "ETH"
-          %Project{main_contract_address: contract_address} -> contract_address
-          _ -> nil
-        end
+    Enum.map(args, fn %{project: project} ->
+      case project do
+        %Project{coinmarketcap_id: "ethereum"} -> "ETH"
+        %Project{main_contract_address: contract_address} -> contract_address
+        _ -> nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.chunk_every(200)
+    |> Enum.flat_map(fn contract_addresses ->
+      {:ok, daily_active_addresses} =
+        DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
+
+      daily_active_addresses
+      |> Enum.map(fn {contract_address, addresses} ->
+        {contract_address, addresses}
       end)
-      |> Enum.reject(&is_nil/1)
-
-    {:ok, daily_active_addresses} =
-      DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
-
-    daily_active_addresses
-    |> Enum.map(fn {contract_address, addresses} ->
-      {contract_address, addresses}
     end)
     |> Map.new()
   end

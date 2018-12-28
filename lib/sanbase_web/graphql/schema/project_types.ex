@@ -120,7 +120,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :average_dev_activity, :float do
       description("Average dev activity for the last `days` days")
       arg(:days, :integer, default_value: 30)
-      cache_resolve_async(&ProjectResolver.average_dev_activity/3)
+      cache_resolve_dataloader(&ProjectResolver.average_dev_activity/3)
     end
 
     field :average_github_activity, :float do

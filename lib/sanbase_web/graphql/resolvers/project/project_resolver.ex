@@ -255,6 +255,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       _ ->
         {:ok, nil}
     end
+  rescue
+    _ -> {:ok, nil}
   end
 
   def average_github_activity(%Project{id: id} = project, %{days: days} = args, _resolution) do

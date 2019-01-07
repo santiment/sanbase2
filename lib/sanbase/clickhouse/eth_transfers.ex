@@ -81,10 +81,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   def eth_spent(wallets, from_datetime, to_datetime) do
     {query, args} = eth_spent_query(wallets, from_datetime, to_datetime)
 
-    ClickhouseRepo.query_transform(query, args, fn [value] -> value / @eth_decimals end)
+    ClickhouseRepo.query_transform(query, args, fn [from, value] ->
+      {from, value / @eth_decimals}
+    end)
     |> case do
       {:ok, result} ->
-        {:ok, result |> List.first()}
+        {:ok, result}
 
       {:error, error} ->
         {:error, error}
@@ -289,22 +291,29 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
 
+    prewhere_clause =
+      wallets
+      |> Enum.map(fn list ->
+        list = list |> Enum.map(fn x -> ~s/'#{x}'/ end) |> Enum.join(", ")
+        "(from IN (#{list}) AND NOT to IN (#{list}))"
+      end)
+      |> Enum.join(" OR ")
+
     query = """
-    SELECT SUM(value)
+    SELECT from, SUM(value)
     FROM (
-      SELECT any(value) as value
+      SELECT any(value) as value, from
       FROM #{@table}
-      PREWHERE from IN (?1) AND NOT to IN (?1)
-      AND dt >= toDateTime(?2)
-      AND dt <= toDateTime(?3)
+      PREWHERE (#{prewhere_clause})
+      AND dt >= toDateTime(?1)
+      AND dt <= toDateTime(?2)
       AND type == 'call'
       GROUP BY from, type, to, dt, transactionHash
-      ORDER BY value desc
     )
+    GROUP BY from
     """
 
     args = [
-      wallets,
       from_datetime_unix,
       to_datetime_unix
     ]
@@ -391,12 +400,12 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       toUnixTimestamp(dt) as datetime,
      (inflow * price_usd) as exchange_inflow,
      (outflow * price_usd) as exchange_outflow
-    FROM 
+    FROM
     (
      SELECT dt, inflow, outflow
-      FROM 
+      FROM
       (
-      SELECT 
+      SELECT
     	  toStartOfDay(dt) as dt,
     	  sum(value) / #{@eth_decimals} as inflow
       FROM #{@table}
@@ -405,14 +414,14 @@ defmodule Sanbase.Clickhouse.EthTransfers do
           AND dt >= toDateTime(?2)
           AND dt <= toDateTime(?3)
       GROUP BY dt
-     ) 
+     )
      ALL INNER JOIN
      (
-      SELECT 
+      SELECT
     	  toStartOfDay(dt) as dt,
     	  sum(value) / #{@eth_decimals} as outflow
       FROM #{@table}
-        PREWHERE 
+        PREWHERE
           from IN (?1) AND NOT to IN (?1)
           AND dt >= toDateTime(?2)
           AND dt <= toDateTime(?3)
@@ -421,10 +430,10 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     )
     ALL INNER JOIN
     (
-     SELECT 
+     SELECT
       toStartOfDay(dt) as dt, AVG(price_usd) as "price_usd"
      FROM prices
-      PREWHERE 
+      PREWHERE
         name = 'ETH_ethereum'
         AND dt >= toDateTime(?2)
         AND dt <= toDateTime(?3)

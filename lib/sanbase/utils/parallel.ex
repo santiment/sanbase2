@@ -15,6 +15,7 @@ defmodule Sanbase.Parallel do
     ordered = Keyword.get(opts, :ordered) || true
     timeout = Keyword.get(opts, :timeout) || 5_000
     on_timeout = Keyword.get(opts, :on_timeout) || :exit
+    map_type = Keyword.get(opts, :map_type) || :flat_map
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
@@ -25,6 +26,12 @@ defmodule Sanbase.Parallel do
       timeout: timeout,
       on_timeout: on_timeout
     )
-    |> Enum.map(fn {:ok, elem} -> elem end)
+    |> Enum.flat_map(fn
+      {:ok, elem} ->
+        elem
+
+      data ->
+        data
+    end)
   end
 end

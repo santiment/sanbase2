@@ -14,10 +14,6 @@ config :sanbase, SanbaseWeb.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    yarn: [
-      "start",
-      cd: Path.expand("../app", __DIR__)
-    ],
     node: [
       "node_modules/brunch/bin/brunch",
       "watch",

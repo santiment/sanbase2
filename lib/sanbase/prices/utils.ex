@@ -161,7 +161,7 @@ defmodule Sanbase.Prices.Utils do
     alias Sanbase.Model.{Project, Currency}
 
     %Project{ticker: ticker, coinmarketcap_id: cmc_id} =
-      Currency.to_project(%Currency{code: currency_from})
+      Project.by_currency(%Currency{code: currency_from})
 
     ticker_cmc_id = ticker <> "_" <> cmc_id
 

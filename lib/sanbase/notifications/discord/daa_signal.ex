@@ -57,13 +57,15 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp check_for_project(project) do
-    {:ok, base_daa} =
+    base_daa =
       project.main_contract_address
-      |> DailyActiveAddresses.active_addresses(timeframe_from(), timeframe_to())
+      |> DailyActiveAddresses.average_active_addresses(timeframe_from(), timeframe_to())
+      |> daa_value()
 
-    {:ok, new_daa} =
+    new_daa =
       project.main_contract_address
-      |> DailyActiveAddresses.active_addresses(two_days_ago(), one_day_ago())
+      |> DailyActiveAddresses.average_active_addresses(two_days_ago(), one_day_ago())
+      |> daa_value()
 
     Logger.info(
       "DAA signal check: #{project.coinmarketcap_id}, #{base_daa}, #{new_daa}, #{
@@ -77,6 +79,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       nil
     end
   end
+
+  defp daa_value({:ok, []}), do: 0
+  defp daa_value({:ok, [{_, daa}]}), do: daa
 
   defp create_notification_content({
          %Project{name: project_name, coinmarketcap_id: project_slug} = project,

@@ -120,7 +120,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field :average_dev_activity, :float do
       description("Average dev activity for the last `days` days")
       arg(:days, :integer, default_value: 30)
-      cache_resolve_async(&ProjectResolver.average_dev_activity/3)
+      cache_resolve_dataloader(&ProjectResolver.average_dev_activity/3)
     end
 
     field :average_github_activity, :float do
@@ -222,12 +222,12 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       cache_resolve(&ProjectTransactionsResolver.token_top_transactions/3)
     end
 
-    @desc "Average daily active addresses for a ERC20 project and given time period"
+    @desc "Average daily active addresses for a ERC20 project or Ethereum and given time period"
     field :average_daily_active_addresses, :integer do
       arg(:from, :datetime)
       arg(:to, :datetime)
 
-      cache_resolve_async(&EtherbiResolver.average_daily_active_addresses/3)
+      cache_resolve_dataloader(&EtherbiResolver.average_daily_active_addresses/3)
     end
   end
 
@@ -298,5 +298,11 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   object :eth_spent_data do
     field(:datetime, non_null(:datetime))
     field(:eth_spent, :float)
+  end
+
+  object :projects_count do
+    field(:erc20_projects_count, non_null(:integer))
+    field(:currency_projects_count, non_null(:integer))
+    field(:projects_count, non_null(:integer))
   end
 end

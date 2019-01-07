@@ -60,16 +60,25 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.ExchangeTypes)
 
   def dataloader() do
-    alias SanbaseWeb.Graphql.SanbaseRepo
-    alias SanbaseWeb.Graphql.PriceStore
+    alias SanbaseWeb.Graphql.{
+      SanbaseRepo,
+      PriceStore,
+      ParityDataloader,
+      ClickhouseDataloader,
+      TimescaledbDataloader
+    }
 
     Dataloader.new()
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(PriceStore, PriceStore.data())
+    |> Dataloader.add_source(ParityDataloader, ParityDataloader.data())
+    |> Dataloader.add_source(ClickhouseDataloader, ClickhouseDataloader.data())
+    |> Dataloader.add_source(TimescaledbDataloader, TimescaledbDataloader.data())
   end
 
   def context(ctx) do
-    Map.put(ctx, :loader, dataloader())
+    ctx
+    |> Map.put(:loader, dataloader())
   end
 
   def plugins do
@@ -113,14 +122,23 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&MarketSegmentResolver.currencies_market_segments/3)
     end
 
+    @desc "Returns the number of erc20 projects, currency projects and all projects"
+    field :projects_count, :projects_count do
+      cache_resolve(&ProjectResolver.projects_count/3)
+    end
+
     @desc "Fetch all projects that have price data."
     field :all_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.all_projects/3)
     end
 
     @desc "Fetch all ERC20 projects."
     field :all_erc20_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_erc20_projects/3)
@@ -128,6 +146,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch all currency projects. A currency project is a project that has price data but is not classified as ERC20."
     field :all_currency_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_currency_projects/3)
@@ -136,15 +156,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch all project transparency projects. This query requires basic authentication."
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)
-      resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
+      resolve(&ProjectResolver.all_projects_project_transparency/3)
     end
+
+    @desc "Return the number of projects in each"
 
     @desc "Fetch a project by its ID."
     field :project, :project do
       arg(:id, non_null(:id))
-      # this is to filter the wallets
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
@@ -152,17 +171,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch a project by a unique identifier."
     field :project_by_slug, :project do
       arg(:slug, non_null(:string))
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.project_by_slug/3)
-    end
-
-    @desc "Fetch all projects that have ETH contract information."
-    field :all_projects_with_eth_contract_info, list_of(:project) do
-      middleware(BasicAuth)
-
-      cache_resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
     end
 
     @desc "Fetch price history for a given slug and time interval."
@@ -492,39 +502,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
     end
 
-    @desc "Fetch the MACD technical indicator for a given ticker, display currency and time period."
-    field :macd, list_of(:macd) do
-      arg(:ticker, non_null(:string))
-      @desc "Currently supported currencies: USD, BTC"
-      arg(:currency, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1d")
-      arg(:result_size_tail, :integer, default_value: 0)
-
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.macd/3)
-      cache_resolve(&TechIndicatorsResolver.macd/3)
-    end
-
-    @desc "Fetch the RSI technical indicator for a given ticker, display currency and time period."
-    field :rsi, list_of(:rsi) do
-      arg(:ticker, non_null(:string))
-      @desc "Currently supported: USD, BTC"
-      arg(:currency, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1d")
-      arg(:rsi_interval, non_null(:integer))
-      arg(:result_size_tail, :integer, default_value: 0)
-
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.rsi/3)
-      cache_resolve(&TechIndicatorsResolver.rsi/3)
-    end
-
     @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
     This indicator measures the difference in trend between price and volume,
@@ -661,6 +638,32 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(ApiTimeframeRestriction)
 
       cache_resolve(&SocialDataResolver.trending_words/3)
+    end
+
+    @desc ~s"""
+    Returns context for a trending word and the corresponding context score.
+
+    Arguments description:
+      * word - the word the context is requested for
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * size - an integer showing how many words should be included in the top list (max 100)
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :word_context, list_of(:word_context) do
+      arg(:word, non_null(:string))
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(ApiTimeframeRestriction)
+
+      cache_resolve(&SocialDataResolver.word_context/3)
     end
 
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."

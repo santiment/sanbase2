@@ -18,6 +18,12 @@ defmodule Sanbase.Model.Project do
 
   import Ecto.Query
 
+  @preloads [
+    :eth_addresses,
+    :latest_coinmarketcap_data,
+    icos: [ico_currencies: [:currency]]
+  ]
+
   schema "project" do
     field(:name, :string)
     field(:ticker, :string)
@@ -115,41 +121,6 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
-  def erc20_projects() do
-    query =
-      from(
-        p in Project,
-        inner_join: infr in Infrastructure,
-        on: p.infrastructure_id == infr.id,
-        where:
-          not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
-            infr.code == "ETH",
-        order_by: p.name
-      )
-
-    erc20_projects =
-      query
-      |> Repo.all()
-  end
-
-  def currency_projects() do
-    query =
-      from(
-        p in Project,
-        inner_join: infr in Infrastructure,
-        on: p.infrastructure_id == infr.id,
-        # The opposite of ERC20. Classify everything except ERC20 as Currency.
-        where:
-          not is_nil(p.coinmarketcap_id) and
-            (is_nil(p.main_contract_address) or infr.code != "ETH"),
-        order_by: p.name
-      )
-
-    currency_projects =
-      query
-      |> Repo.all()
-  end
-
   @doc ~S"""
   ROI = current_price*(ico1_tokens + ico2_tokens + ...)/(ico1_tokens*ico1_initial_price + ico2_tokens*ico2_initial_price + ...)
   We skip ICOs for which we can't calculate the initial_price or the tokens sold
@@ -196,42 +167,6 @@ defmodule Sanbase.Model.Project do
   end
 
   def roi_usd(_), do: nil
-
-  @doc ~S"""
-    Returns an Ecto query that selects all projects with eth contract
-  """
-  @spec all_projects_with_eth_contract_query() :: %Ecto.Query{}
-  def all_projects_with_eth_contract_query() do
-    all_icos_query =
-      from(
-        i in Ico,
-        select: %{
-          project_id: i.project_id,
-          contract_block_number: i.contract_block_number,
-          contract_abi: i.contract_abi,
-          rank:
-            fragment(
-              "row_number() over(partition by ? order by ? asc)",
-              i.project_id,
-              i.start_date
-            )
-        }
-      )
-
-    query =
-      from(
-        d in subquery(all_icos_query),
-        inner_join: p in Project,
-        on: p.id == d.project_id,
-        where:
-          not is_nil(p.coinmarketcap_id) and d.rank == 1 and not is_nil(p.main_contract_address) and
-            not is_nil(d.contract_block_number) and not is_nil(d.contract_abi),
-        order_by: p.name,
-        select: p
-      )
-
-    query
-  end
 
   # Private functions
 
@@ -365,9 +300,30 @@ defmodule Sanbase.Model.Project do
     lcd.available_supply || lcd.total_supply || ts
   end
 
+  @doc ~s"""
+  Return a project with a matching ticker. `Repo.one` fails if there are more
+  than one project with the same ticker.
+  """
+  @spec by_currency(%Currency{}) :: %Project{} | no_return()
+  def by_currency(%Currency{code: code}) do
+    from(
+      p in Project,
+      where: p.ticker == ^code and not is_nil(p.coinmarketcap_id)
+    )
+    |> Repo.one()
+  end
+
   def by_slug(slug) when is_binary(slug) do
     Project
     |> where([p], p.coinmarketcap_id == ^slug)
+    |> preload(^@preloads)
+    |> Repo.one()
+  end
+
+  def by_id(id) when is_integer(id) or is_binary(id) do
+    Project
+    |> where([p], p.id == ^id)
+    |> preload(^@preloads)
     |> Repo.one()
   end
 
@@ -391,7 +347,7 @@ defmodule Sanbase.Model.Project do
   end
 
   def contract_info(%Project{} = project) do
-    {:error, "Can't find contract address of #{describe(project)}"}
+    {:error, {:missing_contract, "Can't find contract address of #{describe(project)}"}}
   end
 
   def contract_info(data) do
@@ -502,17 +458,21 @@ defmodule Sanbase.Model.Project do
     end
   end
 
-  def github_organization(%Project{coinmarketcap_id: slug}), do: github_organization(slug)
+  def github_organization(slug) when is_binary(slug) do
+    from(
+      p in Project,
+      where: p.coinmarketcap_id == ^slug,
+      select: p.github_link
+    )
+    |> Repo.one()
+    |> parse_github_organization_link(slug)
+  end
 
-  def github_organization(slug) do
-    github_link =
-      from(
-        p in Project,
-        where: p.coinmarketcap_id == ^slug,
-        select: p.github_link
-      )
-      |> Repo.one()
+  def github_organization(%Project{github_link: github_link, coinmarketcap_id: slug}) do
+    parse_github_organization_link(github_link, slug)
+  end
 
+  defp parse_github_organization_link(github_link, slug) do
     # nil will break the regex
     github_link = github_link || ""
 

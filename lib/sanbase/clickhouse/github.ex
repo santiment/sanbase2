@@ -66,8 +66,13 @@ defmodule Sanbase.Clickhouse.Github do
   @spec total_dev_activity(String.t(), %DateTime{}, %DateTime{}) :: {:ok, float()}
   def total_dev_activity(organization, from, to) do
     {query, args} = total_dev_activity_query(organization, from, to)
-    {:ok, [result]} = ClickhouseRepo.query_transform(query, args, fn [elem] -> elem end)
-    {:ok, result |> String.to_integer()}
+
+    {:ok, result} =
+      ClickhouseRepo.query_transform(query, args, fn [owner, dev_activity] ->
+        {owner, dev_activity |> String.to_integer()}
+      end)
+
+    {:ok, result}
   end
 
   @doc ~s"""
@@ -168,18 +173,19 @@ defmodule Sanbase.Clickhouse.Github do
     {query, args}
   end
 
-  defp total_dev_activity_query(owner, from, to) do
+  defp total_dev_activity_query(owners, from, to) do
     query = """
-    SELECT COUNT(*)
+    SELECT owner, COUNT(*)
     FROM #{@table}
-    PREWHERE owner = ?1
+    PREWHERE owner IN (?1)
     AND dt >= toDateTime(?2)
     AND dt <= toDateTime(?3)
-    AND event NOT in (?4)
+    AND event NOT IN (?4)
+    GROUP BY owner
     """
 
     args = [
-      owner,
+      owners,
       DateTime.to_unix(from),
       DateTime.to_unix(to),
       @non_dev_events

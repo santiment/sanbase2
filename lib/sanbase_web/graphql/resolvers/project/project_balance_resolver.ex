@@ -8,8 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     ProjectEthAddress
   }
 
-  alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.PriceStore
+  alias SanbaseWeb.Graphql.{SanbaseRepo, ParityDataloader, PriceStore}
 
   def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
@@ -19,14 +18,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
 
   def eth_balance_loader(loader, project) do
     loader
-    |> Dataloader.load(SanbaseRepo, :eth_addresses, project)
+    |> Dataloader.load(ParityDataloader, :eth_balance, project)
   end
 
   def eth_balance_from_loader(loader, project) do
+    addresses = Enum.map(project.eth_addresses, fn %{address: address} -> address end)
+
     balance =
-      loader
-      |> Dataloader.get(SanbaseRepo, :eth_addresses, project)
-      |> Enum.map(&ProjectEthAddress.balance/1)
+      addresses
+      |> Enum.map(fn address ->
+        loader
+        |> Dataloader.get(ParityDataloader, :eth_balance, address)
+      end)
       |> Enum.reject(&is_nil/1)
       |> Enum.reduce(0, &+/2)
 
@@ -82,7 +85,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
       {:ok, usd_balance_float}
     else
       error ->
-        Logger.warn("Cannot calculate USD balance. Reason: #{inspect(error)}")
+        Logger.warn(
+          "Cannot calculate USD balance for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
         {:ok, nil}
     end
   end

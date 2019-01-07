@@ -21,33 +21,32 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
     |> validate_length(:contract_address, min: 1)
   end
 
-  def active_addresses(contract, from, to) do
-    args = [from, to, contract]
+  def average_active_addresses(contracts, from, to) do
+    contracts = List.wrap(contracts)
+    args = [from, to, contracts]
 
     query = """
-    SELECT avg(active_addresses) AS value
+    SELECT contract_address, coalesce(avg(active_addresses), 0) AS value
     FROM #{@table}
-    WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
+    WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = ANY($3)
+    GROUP BY contract_address
     """
 
     {:ok, result} =
       {query, args}
-      |> Timescaledb.timescaledb_execute(fn [active_addresses] ->
-        case active_addresses do
-          nil ->
-            0
+      |> Timescaledb.timescaledb_execute(fn [contract, avg_active_addresses] ->
+        avg_active_addresses =
+          avg_active_addresses
+          |> Decimal.round()
+          |> Decimal.to_integer()
 
-          %Decimal{} = d ->
-            d
-            |> Decimal.round()
-            |> Decimal.to_integer()
-        end
+        {contract, avg_active_addresses}
       end)
 
-    {:ok, result |> List.first()}
+    {:ok, result}
   end
 
-  def active_addresses(contract, from, to, interval) do
+  def average_active_addresses(contract, from, to, interval) do
     args = [from, to, contract]
 
     """
@@ -67,8 +66,8 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
     end)
   end
 
-  def active_addresses!(contract, from, to, interval) do
-    case active_addresses(contract, from, to, interval) do
+  def average_active_addresses!(contract, from, to, interval) do
+    case average_active_addresses(contract, from, to, interval) do
       {:ok, result} -> result
       {:error, error} -> raise(error)
     end

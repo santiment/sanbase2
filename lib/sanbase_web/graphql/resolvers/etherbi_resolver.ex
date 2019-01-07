@@ -1,14 +1,16 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
+  require Logger
+
+  import Ecto.Query
+  import Absinthe.Resolution.Helpers
+
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, ExchangeAddress}
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
 
   alias Sanbase.Blockchain
 
-  import SanbaseWeb.Graphql.Helpers.Async
-  import Ecto.Query
-
-  require Logger
+  alias SanbaseWeb.Graphql.TimescaledbDataloader
 
   @doc ~S"""
   Return the token age consumed for the given slug and time period.
@@ -43,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch burn rate for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -79,7 +81,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
            ) do
       {:ok, token_age |> Utils.fit_from_datetime(args)}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch average token age consumed in days for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -119,7 +121,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch transaction for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -146,7 +148,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              50
            ),
          {:ok, daily_active_addresses} <-
-           Blockchain.DailyActiveAddresses.active_addresses(
+           Blockchain.DailyActiveAddresses.average_active_addresses(
              contract_address,
              from,
              to,
@@ -158,7 +160,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, {:missing_contract, error_msg}} ->
+        {:error, error_msg}
+
+      {:error, error} ->
         error_msg = "Can't fetch daily active addresses for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -203,7 +208,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch the exchange fund flow for #{slug}."
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -244,7 +249,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch token circulation for #{slug}."
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -259,42 +264,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   Return the average number of daily active addresses for a given slug and period of time
   """
   def average_daily_active_addresses(
-        %Project{id: id} = project,
-        %{from: from, to: to} = args,
-        _resolution
+        %Project{} = project,
+        args,
+        %{context: %{loader: loader}}
       ) do
-    async(
-      Cache.func(
-        fn -> calculate_average_daily_active_addresses(project, from, to) end,
-        {:average_daily_active_addresses, id},
-        args
-      )
-    )
+    to = Map.get(args, :to, Timex.now())
+    from = Map.get(args, :from, Timex.shift(to, days: -30))
+
+    loader
+    |> Dataloader.load(TimescaledbDataloader, :average_daily_active_addresses, %{
+      project: project,
+      from: from,
+      to: to
+    })
+    |> on_load(&average_daily_active_addresses_on_load(&1, project))
   end
 
-  def average_daily_active_addresses(
-        %Project{id: id} = project,
-        _args,
-        _resolution
-      ) do
-    month_ago = Timex.shift(Timex.now(), days: -30)
+  def average_daily_active_addresses_on_load(loader, project) do
+    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project) do
+      average_daily_active_addresses =
+        loader
+        |> Dataloader.get(
+          TimescaledbDataloader,
+          :average_daily_active_addresses,
+          contract_address
+        )
 
-    async(
-      Cache.func(
-        fn -> calculate_average_daily_active_addresses(project, month_ago, Timex.now()) end,
-        {:average_daily_active_addresses, id}
-      )
-    )
-  end
-
-  def calculate_average_daily_active_addresses(project, from, to) do
-    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project),
-         {:ok, active_addresses} <-
-           Blockchain.DailyActiveAddresses.active_addresses(contract_address, from, to) do
-      {:ok, active_addresses}
+      {:ok, average_daily_active_addresses || 0}
     else
-      error ->
-        error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"
+      {:error, {:missing_contract, _}} ->
+        {:ok, 0}
+
+      {:error, error} ->
+        error_msg = "Can't fetch average daily active addresses for #{Project.describe(project)}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
 
         {:ok, 0}

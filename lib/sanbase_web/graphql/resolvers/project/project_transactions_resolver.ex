@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
-  alias SanbaseWeb.Graphql.Helpers.Cache
+  alias SanbaseWeb.Graphql.Cache
 
   def token_top_transactions(
         %Project{id: id} = project,

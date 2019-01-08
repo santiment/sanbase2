@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     TelegramResolver
   }
 
-  import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1, cache_resolve_dataloader: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1, cache_resolve_dataloader: 1]
 
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity

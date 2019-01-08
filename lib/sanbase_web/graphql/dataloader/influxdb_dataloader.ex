@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias Sanbase.Prices
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
+  alias SanbaseWeb.Graphql.Cache
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   def data() do
     Dataloader.KV.new(&query/2)

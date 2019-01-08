@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   import Absinthe.Resolution.Helpers
 
-  import SanbaseWeb.Graphql.Helpers.Cache,
+  import SanbaseWeb.Graphql.Cache,
     only: [cache_resolve: 1, cache_resolve_async: 1, cache_resolve_dataloader: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{

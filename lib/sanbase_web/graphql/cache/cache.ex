@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Helpers.Cache do
+defmodule SanbaseWeb.Graphql.Cache do
   require Logger
 
   @ttl :timer.minutes(5)

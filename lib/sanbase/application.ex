@@ -113,7 +113,10 @@ defmodule Sanbase.Application do
       Sanbase.Repo,
 
       # Time series Prices DB connection
-      Sanbase.Prices.Store.child_spec()
+      Sanbase.Prices.Store.child_spec(),
+
+      # Start the Task Supervisor
+      {Task.Supervisor, [name: Sanbase.TaskSupervisor]}
     ]
   end
 

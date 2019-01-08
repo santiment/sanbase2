@@ -33,11 +33,13 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   end
 
   def query(:eth_spent, args) do
-    args
-    |> Enum.to_list()
-    |> Enum.chunk_every(30)
+    args = Enum.to_list(args)
+    [%{from: from, to: to} | _] = args
+
+    eth_addresses(args)
+    |> Enum.chunk_every(20)
     |> Sanbase.Parallel.pmap_concurrent(
-      &eth_spent/1,
+      &eth_spent(&1, args),
       max_concurrency: 50,
       ordered: false,
       timeout: 60_000,
@@ -46,8 +48,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Map.new()
   end
 
-  defp eth_spent([%{from: from, to: to} | _] = args) do
-    eth_addresses = eth_addresses(args)
+  defp eth_spent(eth_addresses, args) do
+    [%{from: from, to: to} | _] = args
     {:ok, eth_spent} = Clickhouse.EthTransfers.eth_spent(eth_addresses, from, to)
     eth_spent = Map.new(eth_spent)
 

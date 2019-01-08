@@ -40,7 +40,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       &eth_spent/1,
       max_concurrency: 200,
       ordered: false,
-      timeout: 60_000
+      timeout: 60_000,
+      map_type: :flat_map
     )
     |> Map.new()
   end

@@ -2,17 +2,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Async
+  import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
+  alias SanbaseWeb.Graphql.ClickhouseDataloader
 
   def token_top_transactions(
         %Project{id: id} = project,
         %{from: from, to: to, limit: limit} = args,
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- Utils.project_to_contract_info(project) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info(project) do
       limit = Enum.min([limit, 100])
 
       async(
@@ -43,6 +45,31 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
         {:ok, []}
     end
+  end
+
+  def token_top_transactions(
+        %Project{} = project,
+        %{from: from, to: to, limit: limit} = args,
+        _resolution
+      ) do
+  end
+
+  def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(ClickhouseDataloader, :eth_spent, %{
+      project: project,
+      from: Timex.shift(Timex.now(), days: -days),
+      to: Timex.now()
+    })
+    |> on_load(&eth_spent_from_loader(&1, project))
+  end
+
+  def eth_spent_from_loader(loader, %Project{id: id}) do
+    eth_spent =
+      loader
+      |> Dataloader.get(ClickhouseDataloader, :eth_spent, id)
+
+    {:ok, eth_spent}
   end
 
   def eth_spent(%Project{} = project, %{days: days}, _resolution) do

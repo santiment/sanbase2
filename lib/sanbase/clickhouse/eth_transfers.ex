@@ -76,7 +76,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   """
   @spec eth_spent(wallets, %DateTime{}, %DateTime{}) ::
           {:ok, nil} | {:ok, float} | {:error, String.t()}
-  def eth_spent([], _, _), do: {:ok, nil}
+  def eth_spent([], _, _), do: {:ok, []}
 
   def eth_spent(wallets, from_datetime, to_datetime) do
     {query, args} = eth_spent_query(wallets, from_datetime, to_datetime)

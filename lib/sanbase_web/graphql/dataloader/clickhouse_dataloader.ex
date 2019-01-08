@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     |> Enum.chunk_every(30)
     |> Sanbase.Parallel.pmap_concurrent(
       &eth_spent/1,
-      max_concurrency: 200,
+      max_concurrency: 50,
       ordered: false,
       timeout: 60_000,
       map_type: :flat_map

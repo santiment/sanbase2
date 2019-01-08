@@ -10,9 +10,6 @@ defmodule Sanbase.Application.Scrapers do
   """
   def children() do
     children = [
-      # Start the Task Supervisor
-      {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
-
       # Start the TimescaleDB Ecto repository
       Sanbase.TimescaleRepo,
 

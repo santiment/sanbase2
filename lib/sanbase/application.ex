@@ -23,10 +23,6 @@ defmodule Sanbase.Application do
           Logger.info("Starting Scrapers Sanbase.")
           Sanbase.Application.Scrapers.children()
 
-        "workers" ->
-          Logger.info("Starting Workers Sanbase.")
-          Sanbase.Application.Workers.children()
-
         "signals" ->
           Logger.info("Starting Signals Sanbase.")
           Sanbase.Application.Signals.children()
@@ -35,9 +31,9 @@ defmodule Sanbase.Application do
           Logger.info("Start all Sanbase container types.")
           {web_children, _} = Sanbase.Application.Web.children()
           {scrapers_children, _} = Sanbase.Application.Scrapers.children()
-          {workers_children, _} = Sanbase.Application.Workers.children()
+          {signals_children, _} = Sanbase.Application.Signals.children()
 
-          children = web_children ++ scrapers_children ++ workers_children
+          children = web_children ++ scrapers_children ++ signals_children
           children = children |> Enum.uniq()
 
           opts = [
@@ -81,7 +77,6 @@ defmodule Sanbase.Application do
       "all" ->
         Sanbase.Application.Web.init()
         Sanbase.Application.Scrapers.init()
-        Sanbase.Application.Workers.init()
         Sanbase.Application.Signals.init()
 
       "web" ->
@@ -92,9 +87,6 @@ defmodule Sanbase.Application do
 
       "scrapers" ->
         Sanbase.Application.Scrapers.init()
-
-      "workers" ->
-        Sanbase.Application.Workers.init()
 
       _ ->
         Sanbase.Application.Web.init()
@@ -123,16 +115,5 @@ defmodule Sanbase.Application do
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  def start_faktory?() do
-    System.get_env("FAKTORY_HOST") && :ets.whereis(Faktory.Configuration) == :undefined
-  end
-
-  def faktory() do
-    import Supervisor.Spec
-
-    Faktory.Configuration.init()
-    supervisor(Faktory.Supervisor, [])
   end
 end

@@ -187,45 +187,6 @@ user =
 }
 |> Repo.insert!()
 
-### Import random Github activity for SAN ticker
-
-alias Sanbase.Influxdb.Measurement
-alias Sanbase.Github
-
-defmodule SeedsGithubActivityImporter do
-  def previous_hour(datetime) do
-    datetime
-    |> DateTime.to_unix()
-    |> Kernel.-(3600)
-    |> DateTime.from_unix!()
-  end
-
-  def import_gh_activity(_datetime, _activity, _ticker, to_import, 0) do
-    Github.Store.import(to_import)
-    :ok
-  end
-
-  def import_gh_activity(datetime, activity, ticker, to_import, n) do
-    to_import = [
-      %Measurement{
-        timestamp: datetime |> DateTime.to_unix(:nanoseconds),
-        fields: %{activity: activity},
-        name: ticker
-      }
-      | to_import
-    ]
-
-    datetime = previous_hour(datetime)
-    activity = :rand.uniform(100)
-    import_gh_activity(datetime, activity, ticker, to_import, n - 1)
-  end
-end
-
-Github.Store.create_db()
-Github.Store.drop_measurement("SAN")
-
-SeedsGithubActivityImporter.import_gh_activity(DateTime.utc_now(), 50, "SAN", [], 500)
-
 #########
 # Exchange addresses
 #########

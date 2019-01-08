@@ -120,7 +120,8 @@ defmodule SanbaseWeb.ApiExamplesView do
     query {
       githubActivity(
         slug: "santiment",
-        from: "2017-06-13 16:00:00Z",
+        from: "2018-06-13 16:00:00Z",
+        to: "2018-07-13 16:00:00Z"
         interval: "24h") {
           activity
         }

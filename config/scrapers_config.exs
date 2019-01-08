@@ -29,11 +29,6 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2,
   sync_enabled: {:system, "COINMARKETCAP_TICKER_FETCHER_ENABLED", false},
   top_projects_to_follow: {:system, "TOP_PROJECTS_TO_FOLLOW", "25"}
 
-config :sanbase, Sanbase.ExternalServices.Github,
-  # 60 minutes
-  update_interval: 60 * 1000 * 60,
-  sync_enabled: {:system, "GITHUB_SCHEDULER_ENABLED", false}
-
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY", ""}
 

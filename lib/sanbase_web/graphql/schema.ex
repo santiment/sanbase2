@@ -225,7 +225,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
 
-    @desc "Returns a list of available github repositories."
+    @desc "Returns a list of slugs of the projects that have a github link"
     field :github_availables_repos, list_of(:string) do
       cache_resolve(&GithubResolver.available_repos/3)
     end

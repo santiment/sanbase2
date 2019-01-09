@@ -80,8 +80,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   end
 
   def available_repos(_root, _args, _resolution) do
-    # TODO
-    {:ok, []}
+    {:ok, Project.List.project_slugs_with_github_link()}
   end
 
   defp correct_ticker("MKR"), do: "DAI"

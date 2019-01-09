@@ -4,8 +4,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
   import Ecto.Query
 
-  require Logger
-
   def data() do
     Dataloader.KV.new(&query/2)
   end
@@ -36,22 +34,17 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
     args = Enum.to_list(args)
     [%{from: from, to: to} | _] = args
 
-    eth_addresses(args)
-    |> Enum.chunk_every(20)
-    |> Sanbase.Parallel.pmap_concurrent(
-      &eth_spent(&1, args),
-      max_concurrency: 50,
-      ordered: false,
-      timeout: 60_000,
-      map_type: :flat_map
-    )
-    |> Map.new()
-  end
-
-  defp eth_spent(eth_addresses, args) do
-    [%{from: from, to: to} | _] = args
-    {:ok, eth_spent} = Clickhouse.EthTransfers.eth_spent(eth_addresses, from, to)
-    eth_spent = Map.new(eth_spent)
+    eth_spent =
+      eth_addresses(args)
+      |> Enum.chunk_every(20)
+      |> Sanbase.Parallel.pmap_concurrent(
+        &eth_spent(&1, args),
+        max_concurrency: 50,
+        ordered: false,
+        timeout: 60_000,
+        map_type: :flat_map
+      )
+      |> Map.new()
 
     args
     |> Enum.map(fn %{project: project} ->
@@ -66,14 +59,24 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
       {project.id, eth_spent_per_project}
     end)
+    |> Map.new()
+  end
+
+  defp eth_spent(eth_addresses, args) do
+    [%{from: from, to: to} | _] = args
+    {:ok, eth_spent} = Clickhouse.EthTransfers.eth_spent(eth_addresses, from, to)
+    eth_spent
   end
 
   defp eth_addresses(args) do
     args
     |> Enum.map(fn %{project: project} ->
       case Project.eth_addresses(project) do
-        {:ok, addresses} when addresses != [] -> addresses
-        _ -> nil
+        {:ok, addresses} when addresses != [] ->
+          addresses
+
+        data ->
+          nil
       end
     end)
     |> Enum.reject(fn addresses -> addresses == nil or addresses == [] end)

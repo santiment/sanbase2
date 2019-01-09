@@ -13,7 +13,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  alias Sanbase.Blockchain.DailyActiveAddresses
+  alias Sanbase.Clickhouse.Erc20DailyActiveAddresses
 
   alias Sanbase.Notifications.Discord
 
@@ -59,12 +59,12 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp check_for_project(project) do
     base_daa =
       project.main_contract_address
-      |> DailyActiveAddresses.average_active_addresses(timeframe_from(), timeframe_to())
+      |> Erc20DailyActiveAddresses.average_active_addresses(timeframe_from(), timeframe_to())
       |> daa_value()
 
     new_daa =
       project.main_contract_address
-      |> DailyActiveAddresses.average_active_addresses(two_days_ago(), one_day_ago())
+      |> Erc20DailyActiveAddresses.average_active_addresses(two_days_ago(), one_day_ago())
       |> daa_value()
 
     Logger.info(

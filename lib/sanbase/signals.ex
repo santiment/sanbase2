@@ -13,6 +13,9 @@ defmodule Sanbase.Application.Signals do
       # Start the TimescaleDB Ecto repository
       Sanbase.TimescaleRepo,
 
+      # Start the Clickhouse Repo
+      start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
+
       # Quantum Scheduler
       start_if(
         fn -> {Sanbase.Scheduler, []} end,

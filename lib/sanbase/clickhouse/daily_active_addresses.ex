@@ -11,7 +11,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
     contracts = List.wrap(contracts)
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
-    weight = 24 / (DateTime.to_time(Timex.now()).hour + 1)
+    today_coefficient = 24 / (DateTime.to_time(Timex.now()).hour + 1)
 
     args = [from_datetime_unix, to_datetime_unix, contracts |> Enum.reject(&(&1 == "ETH"))]
 
@@ -29,7 +29,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
 
       UNION ALL
 
-      SELECT contract, dt, (toFloat64(uniq(address)) * toFloat64(#{weight})) as total_addresses
+      SELECT contract, dt, (toFloat64(uniq(address)) * toFloat64(#{today_coefficient})) as total_addresses
       FROM erc20_daily_active_addresses_list
       WHERE contract IN (?3) and dt >= toDateTime(today())
       GROUP BY contract, dt
@@ -161,8 +161,8 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   end
 
   def calc_eth_average_active_addresses(from, to) do
-    # multiply last day value by weight because value is not for full day
-    weight = 24 / (DateTime.to_time(Timex.now()).hour + 1)
+    # multiply last day value by today_coefficient because value is not for full day
+    today_coefficient = 24 / (DateTime.to_time(Timex.now()).hour + 1)
 
     query = """
     SELECT AVG(total_addresses) as active_addresses
@@ -176,7 +176,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
       
       UNION ALL
       
-      SELECT dt, (toFloat64(uniq(address)) * toFloat64(#{weight})) as total_addresses
+      SELECT dt, (toFloat64(uniq(address)) * toFloat64(#{today_coefficient})) as total_addresses
       FROM eth_daily_active_addresses_list
       WHERE dt >= toDateTime(today())
       GROUP BY dt

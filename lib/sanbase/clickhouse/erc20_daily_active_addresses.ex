@@ -32,7 +32,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
           %DateTime{},
           %DateTime{}
         ) :: {:ok, list(contract_daa_tupple)} | {:error, String.t()}
-
   def average_active_addresses(contracts, from, to) do
     contracts = List.wrap(contracts)
     from_datetime_unix = DateTime.to_unix(from)
@@ -45,7 +44,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     query = """
     SELECT contract, AVG(total_addresses) as active_addresses
     FROM (
-      SELECT contract, dt, toFloat64(anyLast(total_addresses)) as total_addresses
+      SELECT contract, toStartOfDay(dt) as dt, toFloat64(anyLast(total_addresses)) as total_addresses
       FROM erc20_daily_active_addresses
       WHERE
       contract IN (?3) AND
@@ -56,7 +55,9 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
       UNION ALL
 
-      SELECT contract, dt, (toFloat64(uniq(address)) * toFloat64(#{today_coefficient})) as total_addresses
+      SELECT contract, toStartOfDay(dt) as dt, (toFloat64(uniq(address)) * toFloat64(#{
+      today_coefficient
+    })) as total_addresses
       FROM erc20_daily_active_addresses_list
       WHERE contract IN (?3) and dt >= toDateTime(today()) AND
       dt >= toDateTime(?1) AND
@@ -64,7 +65,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
       GROUP BY contract, dt
     )
     GROUP BY contract
-    ORDER BY contract
     """
 
     ClickhouseRepo.query_transform(query, args, fn [contract, avg_active_addresses] ->
@@ -82,7 +82,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
           %DateTime{},
           String.t()
         ) :: {:ok, list(active_addresses)} | {:error, String.t()}
-
   def average_active_addresses(contract, from, to, interval) do
     interval = DateTimeUtils.compound_duration_to_seconds(interval)
     from_datetime_unix = DateTime.to_unix(from)
@@ -101,7 +100,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
       SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, total_addresses as value
       FROM (
-        SELECT dt, anyLast(total_addresses) as total_addresses
+        SELECT toStartOfDay(dt) as dt, anyLast(total_addresses) as total_addresses
         FROM erc20_daily_active_addresses
         WHERE contract = ?3 AND
         dt < toDateTime(today()) AND
@@ -111,7 +110,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
         
         UNION ALL
         
-        SELECT dt, uniq(address) as total_addresses
+        SELECT toStartOfDay(dt) as dt, uniq(address) as total_addresses
         FROM erc20_daily_active_addresses_list
         WHERE 
         contract = ?3 AND
@@ -141,7 +140,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
           %DateTime{},
           String.t()
         ) :: list(active_addresses)
-
   def average_active_addresses!(contract, from, to, interval) do
     case average_active_addresses(contract, from, to, interval) do
       {:ok, result} -> result

@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   test "project total eth spent whole interval", context do
     with_mock Sanbase.Clickhouse.EthTransfers,
       eth_spent: fn _, _, _ ->
-        {:ok, [{context.project_address, 20_000}]}
+        {:ok, 20_000}
       end do
       query = """
       {
@@ -76,7 +76,7 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
 
     with_mock Sanbase.Clickhouse.EthTransfers,
       eth_spent: fn _, _, _ ->
-        {:ok, [{context.project_address, eth_spent}]}
+        {:ok, eth_spent}
       end do
       query = """
       {

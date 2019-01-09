@@ -47,31 +47,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     end
   end
 
-  def token_top_transactions(
-        %Project{} = project,
-        %{from: from, to: to, limit: limit} = args,
-        _resolution
-      ) do
-  end
-
-  def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
-    loader
-    |> Dataloader.load(ClickhouseDataloader, :eth_spent, %{
-      project: project,
-      from: Timex.shift(Timex.now(), days: -days),
-      to: Timex.now()
-    })
-    |> on_load(&eth_spent_from_loader(&1, project))
-  end
-
-  def eth_spent_from_loader(loader, %Project{id: id}) do
-    eth_spent =
-      loader
-      |> Dataloader.get(ClickhouseDataloader, :eth_spent, id)
-
-    {:ok, eth_spent}
-  end
-
   def eth_spent(%Project{} = project, %{days: days}, _resolution) do
     today = Timex.now()
     days_ago = Timex.shift(today, days: -days)

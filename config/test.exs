@@ -42,17 +42,9 @@ config :sanbase, Sanbase.ExternalServices.Etherscan.RateLimiter,
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher, sync_enabled: false
 
-config :faktory_worker_ex,
-  client: [
-    pool: 0
-  ],
-  start_workers: false
-
 config :sanbase, Sanbase.Notifications.PriceVolumeDiff,
   webhook_url: "http://example.com/webhook_url",
   notifications_enabled: true
-
-config :sanbase, Sanbase.Github.Store, database: "github_activity_test"
 
 config :sanbase, Sanbase.ExternalServices.TwitterData.Store,
   database: "twitter_followers_data_test"

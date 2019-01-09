@@ -19,9 +19,6 @@ defmodule Sanbase.Application.Scrapers do
       # Time sereies TwitterData DB connection
       Sanbase.ExternalServices.TwitterData.Store.child_spec(),
 
-      # Time series Github DB connection
-      Sanbase.Github.Store.child_spec(),
-
       # Etherscan rate limiter
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :etherscan_rate_limiter,
@@ -83,15 +80,7 @@ defmodule Sanbase.Application.Scrapers do
       Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
 
       # Twitter account historical data
-      Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{}),
-
-      # Start the Faktory Supervisor
-      start_if(
-        &Sanbase.Application.faktory/0,
-        &Sanbase.Application.start_faktory?/0
-      ),
-      # Github activity scraping scheduler
-      Sanbase.ExternalServices.Github.child_spec(%{})
+      Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{})
     ]
 
     opts = [

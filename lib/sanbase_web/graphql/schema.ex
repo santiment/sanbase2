@@ -225,7 +225,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
 
-    @desc "Returns a list of available github repositories."
+    @desc "Returns a list of slugs of the projects that have a github link"
     field :github_availables_repos, list_of(:string) do
       cache_resolve(&GithubResolver.available_repos/3)
     end
@@ -244,16 +244,15 @@ defmodule SanbaseWeb.Graphql.Schema do
     """
     field :github_activity, list_of(:activity_point) do
       arg(:slug, :string)
-      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
       arg(:transform, :string, default_value: "None")
-      arg(:moving_average_interval_base, :string, default_value: "1w")
+      arg(:moving_average_interval_base, :integer, default_value: 7)
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 
-      cache_resolve(&GithubResolver.activity/3)
+      cache_resolve(&GithubResolver.github_activity/3)
     end
 
     @desc ~s"""

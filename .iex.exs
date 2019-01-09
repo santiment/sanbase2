@@ -62,8 +62,7 @@ alias Sanbase.{
   DateTimeUtils,
   ApplicationUtils,
   Parallel,
-  MandrillApi,
-  Github
+  MandrillApi
 }
 
 alias Sanbase.InternalServices.{
@@ -98,10 +97,6 @@ alias Sanbase.Influxdb.Store, as: InfluxdbStore
 
 alias Sanbase.Discourse.Api, as: DiscourseApi
 alias Sanbase.Discourse.Config, as: DiscourseConfig
-
-alias Sanbase.Github.Store, as: GithubStore
-alias Sanbase.Github.Scheduler, as: GithubScheduler
-alias Sanbase.Github.ProcessedGithubArchive, as: GithubProcessedGithubArchive
 
 alias Sanbase.Notifications.Notification
 alias Sanbase.Notifications.Insight, as: NotificationsInsight
@@ -149,7 +144,6 @@ alias Sanbase.Prices.Utils, as: PricesUtils
 alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
 alias Sanbase.SocialData
-
 
 now = fn -> Timex.now() end
 days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end

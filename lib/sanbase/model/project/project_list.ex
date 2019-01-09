@@ -145,4 +145,12 @@ defmodule Sanbase.Model.Project.List do
     |> order_by([p], p.name)
     |> Repo.all()
   end
+
+  def project_slugs_with_github_link() do
+    from(p in Project,
+      where: not is_nil(p.coinmarketcap_id) and not is_nil(p.github_link),
+      select: p.coinmarketcap_id
+    )
+    |> Repo.all()
+  end
 end

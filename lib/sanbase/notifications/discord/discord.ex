@@ -8,7 +8,8 @@ defmodule Sanbase.Notifications.Discord do
   alias Sanbase.Prices.Store, as: PricesStore
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Model.Project
-  alias Sanbase.Blockchain.{DailyActiveAddresses, ExchangeFundsFlow}
+  alias Sanbase.Blockchain.ExchangeFundsFlow
+  alias Sanbase.Clickhouse.Erc20DailyActiveAddresses
   alias Sanbase.FileStore
   alias Sanbase.Utils.Math
 
@@ -203,7 +204,8 @@ defmodule Sanbase.Notifications.Discord do
     from = Timex.shift(to, days: -size + 1)
 
     with {:ok, contract, _} <- Project.contract_info(project),
-         {:ok, daa} <- DailyActiveAddresses.average_active_addresses(contract, from, to, "1d") do
+         {:ok, daa} <-
+           Erc20DailyActiveAddresses.average_active_addresses(contract, from, to, "1d") do
       daa_values = daa |> Enum.map(fn %{active_addresses: value} -> value end)
       max = daa_values |> Enum.max()
       min = daa_values |> Enum.min()

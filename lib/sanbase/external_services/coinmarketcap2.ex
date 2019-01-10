@@ -6,8 +6,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   """
   use GenServer, restart: :permanent, shutdown: 5_000
 
-  import Ecto.Query
-
   require Sanbase.Utils.Config, as: Config
   require Logger
 
@@ -16,6 +14,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   # TODO: Change
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData2, as: GraphData
   alias Sanbase.Influxdb.Measurement
+  alias Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice
+  alias Sanbase.ExternalServices.ProjectInfo
 
   # 5 minutes
   @default_update_interval 1000 * 60 * 5
@@ -30,10 +30,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
       # Create an influxdb if it does not exists, no-op if it exists
       Store.create_db()
 
-      # Start scraping immediately
-      Process.send(self(), :fetch_prices, [:noconnect])
+      Process.send(self(), :rescrape_prices, [:noconnect])
       Process.send(self(), :fetch_missing_info, [:noconnect])
-      Process.send(self(), :fetch_total_market, [:noconnect])
+
+      # Give `:rescrape_prices` some time to schedule different `last_updated` times
+      Process.send_after(self(), :fetch_prices, [:noconnect], 30_000)
+      Process.send_after(self(), :fetch_total_market, [:noconnect], 30_000)
 
       update_interval = Config.get(:update_interval, @default_update_interval)
 
@@ -46,6 +48,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
          missing_info_update_interval: update_interval * 10,
          total_market_update_interval: div(update_interval, 5),
          prices_update_interval: div(update_interval, 5),
+         rescrape_prices: update_interval,
          total_market_task_pid: nil
        }}
     else
@@ -58,7 +61,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      projects(),
+      Project.List.projects(),
       &fetch_project_info/1,
       ordered: false,
       max_concurrency: 1,
@@ -104,7 +107,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
     # Otherwise risking to start too many tasks to a service that's rate limited
     Task.Supervisor.async_stream_nolink(
       Sanbase.TaskSupervisor,
-      projects(),
+      Project.List.projects(),
       &fetch_and_process_price_data/1,
       ordered: false,
       max_concurrency: 2,
@@ -116,50 +119,61 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
     {:noreply, state}
   end
 
+  def handle_info(:rescrape_prices, %{rescrape_prices: update_interval} = state) do
+    finish_rescrapes()
+    schedule_rescrapes()
+    Process.send_after(self(), :fetch_prices, update_interval)
+
+    {:noreply, state}
+  end
+
   def handle_info(msg, state) do
     Logger.warn("[CMC] Unknown message received in #{__MODULE__}: #{msg}")
     {:noreply, state}
   end
 
+  defp finish_rescrapes() do
+    rescrapes = ScheduleRescrapePrice.all_in_progress()
+
+    for %ScheduleRescrapePrice{project: project} = srp <- rescrapes do
+      last_updated = Store.last_history_datetime_cmc(Measurement.name_from(project))
+      {srp, last_updated}
+    end
+  end
+
+  # For all rescrapes that are not started the following will be done:
+  # 1. If there is a running task for scraping it, it will be killed
+  # 2. The `last_updated` time will be fetched and recorded in the database so it can be later restored
+  # 3. Set the `last_updated` time to the scheduled `from`
+  defp schedule_rescrapes() do
+    rescrapes = ScheduleRescrapePrice.all_not_started()
+
+    for %ScheduleRescrapePrice{project: project, from: from} = srp <- rescrapes do
+      case Registry.lookup(Sanbase.Registry, fetching_price_registry_key(project)) do
+        [{pid, :running}] ->
+          Process.exit(pid, :kill)
+
+        _ ->
+          :ok
+      end
+
+      Store.update_last_history_datetime_cmc(Measurement.name_from(project), from)
+
+      srp
+      |> ScheduleRescrapePrice.set_original_last_updated()
+      |> ScheduleRescrapePrice.changeset(%{in_progress: true})
+      |> ScheduleRescrapePrice.update()
+    end
+  end
+
   # Private functions
-
-  # List of all projects with coinmarketcap id
-  defp projects() do
-    Project
-    |> where([p], not is_nil(p.coinmarketcap_id))
-    |> Sanbase.Repo.all()
-  end
-
-  defp project_info_missing?(%Project{
-         website_link: website_link,
-         email: email,
-         reddit_link: reddit_link,
-         twitter_link: twitter_link,
-         btt_link: btt_link,
-         blog_link: blog_link,
-         github_link: github_link,
-         telegram_link: telegram_link,
-         slack_link: slack_link,
-         facebook_link: facebook_link,
-         whitepaper_link: whitepaper_link,
-         ticker: ticker,
-         name: name,
-         token_decimals: token_decimals,
-         main_contract_address: main_contract_address
-       }) do
-    !website_link or !email or !reddit_link or !twitter_link or !btt_link or !blog_link or
-      !github_link or !telegram_link or !slack_link or !facebook_link or !whitepaper_link or
-      !ticker or !name or !main_contract_address or !token_decimals
-  end
 
   # Fetch project info from Coinmarketcap and Etherscan. Fill only missing info
   # and does not override existing info.
-  defp fetch_project_info(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
-    alias Sanbase.ExternalServices.ProjectInfo
-
-    if project_info_missing?(project) do
+  defp fetch_project_info(%Project{} = project) do
+    if ProjectInfo.project_info_missing?(project) do
       Logger.info(
-        "[CMC] There is missing info for project with coinmarketcap id #{coinmarketcap_id}. Will try to fetch it."
+        "[CMC] There is missing info for #{Project.describe(project)}. Will try to fetch it."
       )
 
       ProjectInfo.from_project(project)
@@ -177,16 +191,21 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
     end
   end
 
+  defp fetching_price_registry_key(project) do
+    measurement_name = Measurement.name_from(project)
+    {:cmc_fetch_price, measurement_name}
+  end
+
   # Fetch history coinmarketcap data and store it in DB
   defp fetch_and_process_price_data(
          %Project{coinmarketcap_id: coinmarketcap_id, ticker: ticker} = project
        )
        when nil != ticker and nil != coinmarketcap_id do
     measurement_name = Measurement.name_from(project)
-    key = {:cmc_fetch_price, measurement_name}
+    key = fetching_price_registry_key(project)
 
     if Registry.lookup(Sanbase.Registry, key) == [] do
-      Registry.register(Sanbase.Registry, key, :running)
+      Registry.register(Sanbase.Registry, key, {:running, self()})
       Logger.info("Fetch and process prices for #{measurement_name}")
 
       case last_price_datetime(project) do

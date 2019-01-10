@@ -11,7 +11,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
   alias Sanbase.ExternalServices.Coinmarketcap.{GraphData, PricePoint}
   alias Sanbase.Prices.Store
 
-  plug(RateLimiting.Middleware, name: :graph_coinmarketcap_rate_limiter)
+  @rate_limiting_server :graph_coinmarketcap_rate_limiter
+  plug(RateLimiting.Middleware, name: @rate_limiting_server)
   plug(ErrorCatcher.Middleware)
   plug(Tesla.Middleware.BaseUrl, "https://graphs2.coinmarketcap.com")
   plug(Tesla.Middleware.Compression)
@@ -125,6 +126,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     graph_data_currencies_all_time_url(coinmarketcap_id)
     |> get()
     |> case do
+      {:ok, %Tesla.Env{status: 429} = resp} ->
+        wait_rate_limit(resp)
+
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
@@ -137,6 +141,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     graph_data_marketcap_total_all_time_url()
     |> get()
     |> case do
+      {:ok, %Tesla.Env{status: 429} = resp} ->
+        wait_rate_limit(resp)
+
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
@@ -183,6 +190,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     graph_data_marketcap_total_interval_url(start_interval_sec * 1000, end_interval_sec * 1000)
     |> get()
     |> case do
+      {:ok, %Tesla.Env{status: 429} = resp} ->
+        wait_rate_limit(resp)
+
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
@@ -203,6 +213,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     )
     |> get()
     |> case do
+      {:ok, %Tesla.Env{status: 429} = resp} ->
+        wait_rate_limit(resp)
+
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
@@ -249,5 +262,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
 
   defp graph_data_marketcap_total_interval_url(from_timestamp, to_timestamp) do
     "/global/marketcap-total/#{from_timestamp}/#{to_timestamp}/"
+  end
+
+  defp wait_rate_limit(%Tesla.Env{status: 429, headers: headers}) do
+    {_, wait_period} =
+      Enum.find(headers, fn {header, _} ->
+        header == "retry-after"
+      end)
+
+    wait_period = String.to_integer(wait_period)
+    wait_until = Timex.shift(Timex.now(), seconds: wait_period)
+    Sanbase.ExternalServices.RateLimiting.Server.wait_until(@rate_limiting_server, wait_until)
   end
 end

@@ -31,7 +31,7 @@ defmodule Sanbase.Application.Scrapers do
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :graph_coinmarketcap_rate_limiter,
         scale: 60_000,
-        limit: 30,
+        limit: 60,
         time_between_requests: 1000
       ),
 

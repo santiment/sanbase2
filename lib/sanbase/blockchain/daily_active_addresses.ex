@@ -69,6 +69,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddresses do
   def average_active_addresses!(contract, from, to, interval) do
     case average_active_addresses(contract, from, to, interval) do
       {:ok, result} -> result
+      # TODO: This error can never match
       {:error, error} -> raise(error)
     end
   end

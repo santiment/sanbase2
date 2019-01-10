@@ -98,7 +98,7 @@ defmodule Sanbase.Timescaledb do
        }
   """
   @spec timescaledb_execute({iolist() | String.t(), list(argument)}, (any() -> any())) ::
-          {:ok, list(any())} | {:error, String.t()}
+          {:ok, list(any())} | {:error, any()}
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do
     Sanbase.TimescaleRepo.query(query, args)
     |> case do
@@ -134,7 +134,7 @@ defmodule Sanbase.Timescaledb do
     |> DateTime.from_naive!("Etc/UTC")
   end
 
-  @spec first_datetime(String.t(), list(argument)) :: nil | DateTime.t() | no_return()
+  @spec first_datetime(String.t(), list(argument)) :: {:ok, nil} | {:ok, DateTime.t()}
   def first_datetime(from_where, args) do
     query = [
       "SELECT timestamp ",

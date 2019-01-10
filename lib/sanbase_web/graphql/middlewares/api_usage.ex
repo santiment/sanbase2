@@ -17,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
             remote_ip: remote_ip
           }
         } = resolution,
-        config
+        _config
       ) do
     metadata = Logger.metadata()
     remote_ip = to_string(:inet_parse.ntoa(remote_ip))
@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
           definition: definition,
           context: %{auth: %{auth_method: :user_token, current_user: user}, remote_ip: remote_ip}
         } = resolution,
-        config
+        _config
       ) do
     metadata = Logger.metadata()
     remote_ip = to_string(:inet_parse.ntoa(remote_ip))

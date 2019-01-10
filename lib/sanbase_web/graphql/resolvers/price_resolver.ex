@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
   import Absinthe.Resolution.Helpers
-  import Ecto.Query
 
   alias SanbaseWeb.Graphql.PriceStore
   alias Sanbase.Model.Project

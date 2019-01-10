@@ -13,8 +13,6 @@ defmodule Sanbase.Notifications.Discord do
   alias Sanbase.FileStore
   alias Sanbase.Utils.Math
 
-  @discord_message_size_limit 1900
-
   @type json :: String.t()
 
   @doc ~s"""
@@ -86,7 +84,7 @@ defmodule Sanbase.Notifications.Discord do
   @doc ~s"""
   Builds discord embeds object with chart URL for a given project slug and time interval
   """
-  @spec build_embedded_chart(String.t(), %DateTime{}, %DateTime{}, list()) :: [
+  @spec build_embedded_chart(%Project{}, %DateTime{}, %DateTime{}, list()) :: [
           %{image: %{url: String.t()}}
         ]
   def build_embedded_chart(%Project{coinmarketcap_id: slug} = project, from, to, opts \\ []) do
@@ -101,18 +99,14 @@ defmodule Sanbase.Notifications.Discord do
     end
   end
 
-  @doc ~s"""
-  Build candlestick image url using google charts API. Inspect the `:chart_type`
-  value from `opts` and add an overlaying chart that represents a specific metric.
-  Currently supported such metrics are `:daily_active_addresses` and `:exchange_inflow`
-  """
-  @spec build_candlestick_image_url(String.t(), %DateTime{}, %DateTime{}, list()) ::
-          {:ok, String.t()} | {:error, String.t()}
+  # Build candlestick image url using google charts API. Inspect the `:chart_type`
+  # value from `opts` and add an overlaying chart that represents a specific metric.
+  # Currently supported such metrics are `:daily_active_addresses` and `:exchange_inflow`
   defp build_candlestick_image_url(
          %Project{coinmarketcap_id: slug} = project,
          from,
          to,
-         opts \\ []
+         opts
        ) do
     with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
          {:ok, ohlc} when is_list(ohlc) <- PricesStore.fetch_ohlc(measurement, from, to, "1d"),
@@ -288,7 +282,7 @@ defmodule Sanbase.Notifications.Discord do
     |> Enum.join("|")
   end
 
-  defp empty_values(from \\ nil, to \\ nil) do
+  defp empty_values(from, to) do
     %{
       chxt: ",x",
       chxr: "",
@@ -302,15 +296,6 @@ defmodule Sanbase.Notifications.Discord do
 
   defp http_client() do
     Mockery.Macro.mockable(HTTPoison)
-  end
-
-  defp messages_len([]), do: 0
-  defp messages_len(str) when is_binary(str), do: String.length(str)
-
-  defp messages_len(list) when is_list(list) do
-    list
-    |> Enum.map(&String.length/1)
-    |> Enum.sum()
   end
 
   defp rand_image_filename(slug) do

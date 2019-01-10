@@ -62,10 +62,9 @@ defmodule Sanbase.Model.Project.List do
   Classify as currency project everything except ERC20.
   """
   def currency_projects() do
-    currency_projects =
-      currency_projects_query()
-      |> order_by([p], p.name)
-      |> Repo.all()
+    currency_projects_query()
+    |> order_by([p], p.name)
+    |> Repo.all()
   end
 
   def currency_projects_count() do
@@ -108,10 +107,9 @@ defmodule Sanbase.Model.Project.List do
   Return all projects
   """
   def projects() do
-    projects =
-      projects_query()
-      |> order_by([p], p.name)
-      |> Repo.all()
+    projects_query()
+    |> order_by([p], p.name)
+    |> Repo.all()
   end
 
   def projects_count() do

@@ -21,6 +21,8 @@ defmodule Sanbase.Blockchain.TransactionVolume do
     |> validate_length(:contract_address, min: 1)
   end
 
+  @spec transaction_volume(String.t(), DateTime.t(), DateTime.t(), String.t(), non_neg_integer()) ::
+          {:ok, [any()]} | {:error, String.t()}
   def transaction_volume(contract, from, to, interval, token_decimals \\ 0) do
     args = [from, to, contract]
 
@@ -45,6 +47,7 @@ defmodule Sanbase.Blockchain.TransactionVolume do
     end
   end
 
+  @spec first_datetime(String.t()) :: {:ok, DateTime.t()} | {:ok, nil}
   def first_datetime(contract) do
     "FROM #{@table} WHERE contract_address = $1"
     |> Timescaledb.first_datetime([contract])

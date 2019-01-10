@@ -128,8 +128,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   Combines a list of lists of ethereum spent data for many projects to a list of ethereum spent data.
   The entries at the same positions in each list are summed.
   """
-  @spec combine_eth_spent_by_all_projects(list({:ok, list(spent_over_time_type)})) ::
-          list(spent_over_time_type)
+  @spec combine_eth_spent_by_all_projects(list({:ok, spent_over_time_type})) ::
+          {:ok, list(spent_over_time_type)}
   def combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
     total_eth_spent_over_time =
       eth_spent_over_time_list

@@ -5,10 +5,7 @@ defmodule Sanbase.Model.Currency do
   import Ecto.Query, warn: false
   alias Sanbase.Repo
 
-  alias Sanbase.Model.{
-    Currency,
-    Project
-  }
+  alias Sanbase.Model.Currency
 
   schema "currencies" do
     field(:code, :string)

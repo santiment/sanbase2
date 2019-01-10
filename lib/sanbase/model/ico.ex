@@ -2,7 +2,6 @@ defmodule Sanbase.Model.Ico do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Ecto.Query
 
   alias Sanbase.Repo
   alias Sanbase.Model.ModelUtils
@@ -95,7 +94,7 @@ defmodule Sanbase.Model.Ico do
   # Private functions
 
   defp funds_raised_ico_end_price_from_currencies(
-         %Project{ticker: ticker, coinmarketcap_id: cmc_id},
+         _project,
          %Ico{} = ico,
          target_currency,
          date

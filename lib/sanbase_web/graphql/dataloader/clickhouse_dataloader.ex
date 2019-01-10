@@ -2,8 +2,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
   alias Sanbase.Clickhouse
   alias Sanbase.Model.Project
 
-  import Ecto.Query
-
   def data() do
     Dataloader.KV.new(&query/2)
   end
@@ -32,7 +30,6 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
   def query(:eth_spent, args) do
     args = Enum.to_list(args)
-    [%{from: from, to: to} | _] = args
 
     eth_spent =
       eth_addresses(args)
@@ -75,7 +72,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
         {:ok, addresses} when addresses != [] ->
           addresses
 
-        data ->
+        _ ->
           nil
       end
     end)

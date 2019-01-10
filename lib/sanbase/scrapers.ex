@@ -1,6 +1,4 @@
 defmodule Sanbase.Application.Scrapers do
-  import Sanbase.ApplicationUtils
-
   def init(), do: :ok
 
   @doc ~s"""

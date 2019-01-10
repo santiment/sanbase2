@@ -1,8 +1,5 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
   alias Sanbase.DateTimeUtils
-  alias Sanbase.Model.Project
-
-  import Ecto.Query
 
   def calibrate_interval(
         module,

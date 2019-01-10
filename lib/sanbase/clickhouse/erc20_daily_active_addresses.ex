@@ -73,6 +73,34 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
   end
 
   @doc ~s"""
+  Gets the current value for active addresses for today.
+  Returns a list of tupples {contract, active_addresses}
+  """
+
+  @spec realtime_active_addresses(contracts) ::
+          {:ok, list(contract_daa_tupple)} | {:error, String.t()}
+  def realtime_active_addresses(contracts) do
+    contracts = List.wrap(contracts)
+
+    args = [contracts]
+
+    query = """
+    SELECT contract, coalesce(uniq(address), 0) as active_addresses
+    FROM erc20_daily_active_addresses_list
+    WHERE contract IN (?1) and dt >= toDateTime(today())
+    GROUP BY contract, dt
+    """
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [contract, active_addresses] ->
+        {contract, active_addresses |> to_integer()}
+
+      x ->
+        x |> IO.inspect()
+    end)
+  end
+
+  @doc ~s"""
   Returns the active addresses for a contract chunked in intervals between [from, to]
   If last day is included in the [from, to] the value is the realtime value in the current moment
   """

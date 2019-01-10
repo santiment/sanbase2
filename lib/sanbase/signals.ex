@@ -16,6 +16,14 @@ defmodule Sanbase.Application.Signals do
       # Start the Clickhouse Repo
       start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 
+      # Start signals cache
+      {ConCache,
+       [
+         name: :signals_cache,
+         ttl_check_interval: :timer.hours(1),
+         global_ttl: :timer.hours(24)
+       ]},
+
       # Quantum Scheduler
       start_if(
         fn -> {Sanbase.Scheduler, []} end,

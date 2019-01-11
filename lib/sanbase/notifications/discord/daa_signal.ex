@@ -127,13 +127,11 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
          hours
        }) do
     content = """
-    `#{project_name}`: Daily Active Addresses has gone up #{notification_emoji_up()} by `#{
+    **#{project_name}** Daily Active Addresses has gone up #{notification_emoji_up()} by **#{
       percent_change
-    }%` for the last #{hours} hours.
-
-    Daily Active Addresses for last `#{hours} hours` : `#{current_daa}`
-    Average Daily Active Addresses for last `#{config_timeframe_from() - 1} days`: `#{avg_daa}`.
-
+    }%** for the last **#{hours} hour(s)**.
+    Daily Active Addresses for last **#{hours} hour(s)** : **#{current_daa}**
+    Average Daily Active Addresses for last **#{config_timeframe_from() - 1} days**: **#{avg_daa}**.
     More info here: #{Project.sanbase_link(project)}
     """
 

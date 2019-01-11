@@ -27,15 +27,6 @@ defmodule Sanbase.Application.Signals do
         id: :con_cache_signals
       ),
 
-      # {ConCache,
-      #  [
-      #    name: :signals_cache,
-      #    ttl_check_interval: :timer.hours(1),
-      #    global_ttl: :timer.hours(24),
-      #    id: :con_cache_signals
-      #  ]
-      # },
-
       # Quantum Scheduler
       start_if(
         fn -> {Sanbase.Scheduler, []} end,

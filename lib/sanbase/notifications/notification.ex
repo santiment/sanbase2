@@ -49,6 +49,17 @@ defmodule Sanbase.Notifications.Notification do
     |> Repo.insert_or_update()
   end
 
+  def insert_triggered(
+        %Project{id: project_id},
+        %Type{id: type_id},
+        data,
+        datetime \\ DateTime.utc_now()
+      ) do
+    (Repo.get_by(Notification, project_id: project_id, type_id: type_id) || %Notification{})
+    |> changeset(%{project_id: project_id, type_id: type_id, data: data, updated_at: datetime})
+    |> Repo.insert()
+  end
+
   @doc ~s"""
   Return a tuple where the first argument shows whether a given notification type
   has been sent for a project in the past `duration` seconds.

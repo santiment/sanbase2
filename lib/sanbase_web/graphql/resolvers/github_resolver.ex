@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
            ) do
       {:ok, result}
     else
-      {:error, {:github_link_error, error}} ->
+      {:error, {:github_link_error, _error}} ->
         {:ok, []}
 
       error ->
@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
            ) do
       {:ok, result}
     else
-      {:error, {:github_link_error, error}} ->
+      {:error, {:github_link_error, _error}} ->
         {:ok, []}
 
       error ->
@@ -82,8 +82,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
   def available_repos(_root, _args, _resolution) do
     {:ok, Project.List.project_slugs_with_github_link()}
   end
-
-  defp correct_ticker("MKR"), do: "DAI"
-  defp correct_ticker("DGX"), do: "DGD"
-  defp correct_ticker(ticker), do: ticker
 end

@@ -45,6 +45,16 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
     GenServer.call(name, :wait, :infinity)
   end
 
+  @doc ~s"""
+  Wait until `datetime`. Wait until a datetime instead for a given number of seconds
+  because concurrent requests can hit the same rate limit and if they both submit waiting
+  for 1 minute the genserver will incorrectly sleep for a total of 2 minutes.
+  """
+  @spec wait_until(any(), DateTime.t()) :: :ok
+  def wait_until(name, datetime) do
+    GenServer.call(name, {:wait_until, datetime}, :infinity)
+  end
+
   def sleep_algorithm({_bucket, _, _, time_between_requests}, {:allow, count}) do
     Process.sleep(time_between_requests)
     {:ok, count}
@@ -64,5 +74,20 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
   def handle_call(:wait, _, {bucket, scale, limit, _} = state) do
     result = sleep_algorithm(state, Hammer.check_rate(bucket, scale, limit))
     {:reply, result, state}
+  end
+
+  def handle_call({:wait_until, datetime}, _, state) do
+    now = Timex.now()
+
+    case DateTime.compare(now, datetime) do
+      :lt ->
+        wait_period = Timex.diff(datetime, now, :milliseconds) |> abs()
+        Process.sleep(wait_period)
+
+      _ ->
+        :ok
+    end
+
+    {:reply, :ok, state}
   end
 end

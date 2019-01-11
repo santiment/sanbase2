@@ -2,8 +2,6 @@ defmodule SanbaseWeb.Graphql.ParityDataloader do
   alias Sanbase.InternalServices.Parity
   alias Sanbase.Model.Project
 
-  import Ecto.Query
-
   def data() do
     Dataloader.KV.new(&query/2)
   end

@@ -117,7 +117,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
     end
   end
 
-  def run_query_impl(repo, defn, :index, id) do
+  defp run_query_impl(repo, defn, :index, id) do
     query =
       %Sanbase.ExAdmin.Model.Ico{}
       |> Map.get(:resource_model)

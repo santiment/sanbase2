@@ -18,8 +18,6 @@ defmodule Sanbase.Clickhouse.Github do
   require Logger
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  alias __MODULE__
-
   @non_dev_events [
     "IssueCommentEvent",
     "IssuesEvent",
@@ -63,9 +61,10 @@ defmodule Sanbase.Clickhouse.Github do
     @non_dev_events
   }) for a given organization and time period
   """
-  @spec total_dev_activity(String.t(), %DateTime{}, %DateTime{}) :: {:ok, float()}
-  def total_dev_activity(organization, from, to) do
-    {query, args} = total_dev_activity_query(organization, from, to)
+  @spec total_dev_activity(list(String.t()), %DateTime{}, %DateTime{}) ::
+          {:ok, list({String.t(), float()})}
+  def total_dev_activity(owners, from, to) do
+    {query, args} = total_dev_activity_query(owners, from, to)
 
     {:ok, result} =
       ClickhouseRepo.query_transform(query, args, fn [owner, dev_activity] ->
@@ -79,14 +78,20 @@ defmodule Sanbase.Clickhouse.Github do
   Get a timeseries with the pure development activity for a project.
   Pure development activity is all events excluding comments, issues, forks, stars, etc.
   """
-  @spec dev_activity(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
-          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+  @spec dev_activity(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          String.t(),
+          integer() | nil
+        ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def dev_activity(nil, _, _, _), do: []
 
   def dev_activity(organization, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
 
-    {:ok, result} =
+    {:ok, _result} =
       dev_activity_query(organization, from, to, interval_sec)
       |> datetime_activity_execute()
   end
@@ -106,16 +111,21 @@ defmodule Sanbase.Clickhouse.Github do
   Get a timeseries with the pure development activity for a project.
   Pure development activity is all events excluding comments, issues, forks, stars, etc.
   """
-  @spec github_activity(String.t(), %DateTime{}, %DateTime{}, String.t()) ::
-          {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
-  def github_activity(nil, _, _, _), do: []
+  @spec github_activity(
+          String.t() | nil,
+          %DateTime{},
+          %DateTime{},
+          String.t(),
+          String.t(),
+          non_neg_integer()
+        ) :: {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
+  def github_activity(nil, _, _, _), do: {:ok, []}
 
   def github_activity(organization, from, to, interval, "None", _) do
     interval_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
 
-    {:ok, result} =
-      github_activity_query(organization, from, to, interval_sec)
-      |> datetime_activity_execute()
+    github_activity_query(organization, from, to, interval_sec)
+    |> datetime_activity_execute()
   end
 
   def github_activity(organization, from, to, interval, "movingAverage", ma_base) do

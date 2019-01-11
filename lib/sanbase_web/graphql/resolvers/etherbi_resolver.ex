@@ -1,12 +1,11 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   require Logger
 
-  import Ecto.Query
   import Absinthe.Resolution.Helpers
 
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, ExchangeAddress}
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Blockchain
 

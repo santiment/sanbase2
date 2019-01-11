@@ -38,7 +38,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   # Calculate the notification only if the 24h volume is over some threshold ($100,000 by default)
   defp volume_over_threshold?(
          %Project{} = project,
-         currency,
+         _currency,
          from_datetime,
          to_datetime
        ) do
@@ -266,10 +266,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       |> Integer.parse()
 
     res
-  end
-
-  defp notifications_enabled?() do
-    Config.get(:notifications_enabled)
   end
 
   defp project_page(coinmarketcap_id) do

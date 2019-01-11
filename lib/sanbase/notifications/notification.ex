@@ -66,7 +66,7 @@ defmodule Sanbase.Notifications.Notification do
   If there is a notification sent in the past `duration` seconds, the second argument
   is the datetime that it was sent.
   """
-  @spec get_cooldown(String.t(), String.t(), non_neg_integer(), Atom.t()) ::
+  @spec get_cooldown(%Project{}, %Type{}, non_neg_integer(), atom()) ::
           {false, nil} | {false, %DateTime{}} | {true, %DateTime{}}
   def get_cooldown(
         %Project{id: project_id},

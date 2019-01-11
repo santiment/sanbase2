@@ -109,7 +109,7 @@ defmodule Sanbase.Blockchain.TokenCirculation do
   Return the token circulation for a given contract and time restrictions.
   Currently supports only the token circulation for less than a day.
   """
-  @spec token_circulation(
+  @spec token_circulation!(
           :less_than_a_day,
           String.t(),
           %DateTime{},

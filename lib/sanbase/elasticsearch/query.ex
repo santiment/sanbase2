@@ -104,7 +104,6 @@ defmodule Sanbase.Elasticsearch.Query do
   def documents_count_in_interval(from, to) do
     from_unix = DateTime.to_unix(from, :millisecond)
     to_unix = DateTime.to_unix(to, :millisecond)
-    days_difference = Timex.diff(from, to) |> abs()
 
     ~s"""
     {

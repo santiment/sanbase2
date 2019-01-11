@@ -1,12 +1,12 @@
-defmodule Sanbase.ExAdmin.ScheduleRescrapePrices do
+defmodule Sanbase.ExAdmin.ScheduleRescrapePrice do
   use ExAdmin.Register
 
   register_resource Sanbase.ExternalServices.Coinmarketcap.ScheduleRescrapePrice do
     form srp do
       inputs do
-        input(srp, :from)
-        input(srp, :to)
-        input(srp, :logo_url)
+        input(srp, :from, type: NaiveDateTime)
+        input(srp, :to, type: NaiveDateTime)
+        input(srp, :original_last_updated, type: NaiveDateTime)
 
         input(
           srp,

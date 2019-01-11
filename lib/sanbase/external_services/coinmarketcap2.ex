@@ -21,21 +21,32 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   @default_update_interval 1000 * 60 * 5
   @request_timeout 600_000
 
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(_state) do
     GenServer.start_link(__MODULE__, :ok)
   end
 
+  @spec init(any()) ::
+          :ignore
+          | {:ok,
+             %{
+               missing_info_update_interval: number(),
+               prices_update_interval: number(),
+               rescrape_prices: number(),
+               total_market_task_pid: nil,
+               total_market_update_interval: number()
+             }}
   def init(_arg) do
     if Config.get(:sync_enabled, false) do
       # Create an influxdb if it does not exists, no-op if it exists
       Store.create_db()
 
-      Process.send(self(), :rescrape_prices, [:noconnect])
-      Process.send(self(), :fetch_missing_info, [:noconnect])
+      Process.send(self(), :rescrape_prices, [])
+      # Process.send(self(), :fetch_missing_info, [])
 
       # Give `:rescrape_prices` some time to schedule different `last_updated` times
-      Process.send_after(self(), :fetch_prices, [:noconnect], 30_000)
-      Process.send_after(self(), :fetch_total_market, [:noconnect], 30_000)
+      Process.send_after(self(), :fetch_prices, 30_000)
+      Process.send_after(self(), :fetch_total_market, 30_000)
 
       update_interval = Config.get(:update_interval, @default_update_interval)
 
@@ -120,8 +131,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   end
 
   def handle_info(:rescrape_prices, %{rescrape_prices: update_interval} = state) do
-    finish_rescrapes()
     schedule_rescrapes()
+    finish_rescrapes()
     Process.send_after(self(), :fetch_prices, update_interval)
 
     {:noreply, state}
@@ -132,37 +143,64 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
     {:noreply, state}
   end
 
-  defp finish_rescrapes() do
-    rescrapes = ScheduleRescrapePrice.all_in_progress()
-
-    for %ScheduleRescrapePrice{project: project} = srp <- rescrapes do
-      last_updated = Store.last_history_datetime_cmc(Measurement.name_from(project))
-      {srp, last_updated}
-    end
-  end
-
   # For all rescrapes that are not started the following will be done:
-  # 1. If there is a running task for scraping it, it will be killed
+  # 1. If there is a running task for scraping that project it will be killed
   # 2. The `last_updated` time will be fetched and recorded in the database so it can be later restored
   # 3. Set the `last_updated` time to the scheduled `from`
   defp schedule_rescrapes() do
     rescrapes = ScheduleRescrapePrice.all_not_started()
+    Logger.info("[CMC] Check if project price rescraping need to be scheduled.")
+
+    if rescrapes != [] do
+      Logger.info("[CMC] Price rescraping will be scheduled for #{length(rescrapes)} projects.")
+    end
 
     for %ScheduleRescrapePrice{project: project, from: from} = srp <- rescrapes do
-      case Registry.lookup(Sanbase.Registry, fetching_price_registry_key(project)) do
-        [{pid, :running}] ->
-          Process.exit(pid, :kill)
+      influxdb_slug = project |> Measurement.name_from()
 
-        _ ->
-          :ok
-      end
+      {:ok, original_last_updated} = influxdb_slug |> Store.last_history_datetime_cmc()
 
-      Store.update_last_history_datetime_cmc(Measurement.name_from(project), from)
+      original_last_updated =
+        original_last_updated || GraphData.fetch_first_datetime(project.coinmarketcap_id)
+
+      kill_scheduled_scraping(project)
+
+      :ok =
+        Store.update_last_history_datetime_cmc(
+          influxdb_slug,
+          DateTime.from_naive!(from, "Etc/UTC")
+        )
 
       srp
-      |> ScheduleRescrapePrice.set_original_last_updated()
-      |> ScheduleRescrapePrice.changeset(%{in_progress: true})
+      |> ScheduleRescrapePrice.changeset(%{
+        in_progress: true,
+        finished: false,
+        original_last_updated: original_last_updated
+      })
       |> ScheduleRescrapePrice.update()
+    end
+  end
+
+  defp finish_rescrapes() do
+    Logger.info(
+      "[CMC] Check if project price rescraping is done and the original `last_updated` timestamp will be returned."
+    )
+
+    rescrapes = ScheduleRescrapePrice.all_in_progress()
+
+    for %ScheduleRescrapePrice{project: project, to: to} = srp <- rescrapes do
+      influxdb_slug = project |> Measurement.name_from()
+
+      {:ok, to} = DateTime.from_naive(to, "Etc/UTC")
+      {:ok, last_updated} = influxdb_slug |> Store.last_history_datetime_cmc()
+
+      if last_updated && DateTime.compare(last_updated, to) == :gt do
+        kill_scheduled_scraping(project)
+
+        {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
+
+        Store.update_last_history_datetime_cmc(influxdb_slug, original_last_update)
+      end
     end
   end
 
@@ -282,6 +320,16 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
 
       last_price_datetime ->
         GraphData.fetch_and_store_marketcap_total(last_price_datetime)
+        :ok
+    end
+  end
+
+  defp kill_scheduled_scraping(project) do
+    case Registry.lookup(Sanbase.Registry, fetching_price_registry_key(project)) do
+      [{pid, :running}] ->
+        Process.exit(pid, :kill)
+
+      _ ->
         :ok
     end
   end

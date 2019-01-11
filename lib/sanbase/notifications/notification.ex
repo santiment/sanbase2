@@ -55,7 +55,7 @@ defmodule Sanbase.Notifications.Notification do
         data,
         datetime \\ DateTime.utc_now()
       ) do
-    (Repo.get_by(Notification, project_id: project_id, type_id: type_id) || %Notification{})
+    %Notification{}
     |> changeset(%{project_id: project_id, type_id: type_id, data: data, updated_at: datetime})
     |> Repo.insert()
   end
@@ -74,8 +74,12 @@ defmodule Sanbase.Notifications.Notification do
         duration,
         duration_format \\ :seconds
       ) do
-    Notification
-    |> where(project_id: ^project_id, type_id: ^type_id)
+    from(
+      n in Notification,
+      where: n.project_id == ^project_id and n.type_id == ^type_id,
+      order_by: [desc: n.updated_at],
+      limit: 1
+    )
     |> Repo.one()
     |> case do
       nil ->

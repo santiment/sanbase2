@@ -26,7 +26,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
   The last day is included in the AVG multiplied by coefficient (24 / current_hour)
   Returns a list of tuples {contract, active_addresses}
   """
-
   @spec average_active_addresses(
           contracts,
           %DateTime{},
@@ -76,7 +75,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
   Gets the current value for active addresses for today.
   Returns a list of tuples {contract, active_addresses}
   """
-
   @spec realtime_active_addresses(contracts) ::
           {:ok, list(contract_daa_tuple)} | {:error, String.t()}
   def realtime_active_addresses(contracts) do

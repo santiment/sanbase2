@@ -94,9 +94,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     ClickhouseRepo.query_transform(query, args, fn
       [contract, active_addresses] ->
         {contract, active_addresses |> to_integer()}
-
-      x ->
-        x |> IO.inspect()
     end)
   end
 

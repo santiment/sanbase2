@@ -56,7 +56,7 @@ defmodule Sanbase.Notifications.Notification do
         datetime \\ DateTime.utc_now()
       ) do
     (Repo.get_by(Notification, project_id: project_id, type_id: type_id) || %Notification{})
-    |> changeset(%{project_id: project_id, type_id: type_id, updated_at: datetime})
+    |> changeset(%{project_id: project_id, type_id: type_id, data: data, updated_at: datetime})
     |> Repo.insert()
   end
 

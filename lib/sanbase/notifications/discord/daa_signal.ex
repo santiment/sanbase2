@@ -19,12 +19,11 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   @impl true
   def run() do
-    # projects = projects_over_threshold()
-    projects =
-      from(p in Project, where: p.coinmarketcap_id == "santiment") |> Repo.one() |> List.wrap()
+    projects = projects_over_threshold()
 
     avg_daa_for_projects = get_or_store_avg_daa(projects)
     today_daa_for_projects = all_projects_daa_for_today(projects)
+
     notification_type = Type.get_or_create("daa_signal")
 
     projects_to_signal =
@@ -34,12 +33,11 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       )
       |> Enum.reject(&is_nil/1)
       |> Enum.sort_by(fn {_, _, _, change, _} -> change end, &>=/2)
-      |> IO.inspect()
 
     if Enum.count(projects_to_signal) > 0 do
       projects_to_signal
       |> Enum.map(&create_notification_content/1)
-      |> Enum.each(fn {project, payload, embeds, current_daa, hours} ->
+      |> Enum.each(fn {project, payload, embeds, current_daa} ->
         payload
         |> Discord.encode!(publish_user(), embeds)
         |> publish("discord")
@@ -76,45 +74,44 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp check_for_project(project, avg_daa_for_projects, today_daa_for_projects, notification_type) do
     avg_daa = get_daa_contract(project.main_contract_address, avg_daa_for_projects)
     current_daa = get_daa_contract(project.main_contract_address, today_daa_for_projects)
-    {last_daa_triggered, hours} = last_daa_triggered(project, notification_type)
+    {last_triggered_daa, hours} = last_triggered_daa(project, notification_type)
 
     Logger.info(
       "DAA signal check: #{project.coinmarketcap_id}, #{avg_daa}, #{current_daa}, #{
-        last_daa_triggered
-      } #{hours},  #{current_daa - last_daa_triggered > threshold_change() * avg_daa}"
+        last_triggered_daa
+      } #{hours},  #{current_daa - last_triggered_daa > threshold_change() * avg_daa}"
     )
 
-    if current_daa - last_daa_triggered > threshold_change() * avg_daa do
-      {project, avg_daa, current_daa, percent_change(current_daa - last_daa_triggered, avg_daa),
-       hours}
+    if current_daa - last_triggered_daa > threshold_change() * avg_daa do
+      {project, avg_daa, current_daa - last_triggered_daa,
+       percent_change(current_daa - last_triggered_daa, avg_daa), hours}
     else
       nil
     end
   end
 
-  def last_daa_triggered(project, type) do
+  def last_triggered_daa(project, type) do
     now = Timex.now()
-    start_day = Timex.beginning_of_day(now)
-    end_day = Timex.end_of_day(now)
+    start_of_day = Timex.beginning_of_day(now)
+    end_of_day = Timex.end_of_day(now)
 
     from(n in Notification,
       where:
-        n.project_id == ^project.id and n.type_id == ^type.id and n.inserted_at >= ^start_day and
-          n.inserted_at <= ^end_day,
+        n.project_id == ^project.id and n.type_id == ^type.id and n.inserted_at >= ^start_of_day and
+          n.inserted_at <= ^end_of_day,
       order_by: [desc: n.inserted_at],
       limit: 1
     )
     |> Repo.one()
     |> case do
       nil ->
-        {0, Timex.diff(Timex.now(), start_day, :hours) |> abs}
+        {0, diff_in_hours(start_of_day, now)}
 
       %Notification{data: data} when is_nil(data) ->
-        {0, Timex.diff(Timex.now(), start_day, :hours) |> abs}
+        {0, diff_in_hours(start_of_day, now)}
 
       %Notification{data: data, inserted_at: inserted_at} when is_binary(data) ->
-        {String.to_integer(data),
-         Timex.diff(Timex.now(), DateTime.from_naive!(inserted_at, "Etc/UTC"), :hours) |> abs}
+        {String.to_integer(data), diff_in_hours(inserted_at, now)}
     end
   end
 
@@ -128,10 +125,11 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     content = """
     `#{project_name}`: Daily Active Addresses has gone up #{notification_emoji_up()} by `#{
       percent_change
-    }%`
-    for the last #{hours} hours.
-    Daily Active Addresses for last #{hours} hours : `#{current_daa}`
-    Average DAA for last #{config_timeframe_from()} days: #{avg_daa}.
+    }%` for the last #{hours} hours.
+
+    Daily Active Addresses for last `#{hours} hours` : `#{current_daa}`
+    Average Daily Active Addresses for last `#{config_timeframe_from() - 1} days`: `#{avg_daa}`.
+
     More info here: #{Project.sanbase_link(project)}
     """
 
@@ -139,7 +137,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       Discord.build_embedded_chart(
         project,
         Timex.shift(Timex.now(), days: -90),
-        Timex.shift(Timex.now(), days: -1),
+        Timex.now(),
         chart_type: :daily_active_addresses
       )
 
@@ -178,6 +176,16 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       {:ok, today_daa} = Erc20DailyActiveAddresses.realtime_active_addresses(contracts)
       today_daa
     end)
+  end
+
+  defp diff_in_hours(datetime, last_datetime \\ Timex.now())
+
+  defp diff_in_hours(%NaiveDateTime{} = datetime, last_datetime) do
+    Timex.diff(last_datetime, DateTime.from_naive!(datetime, "Etc/UTC"), :hours) |> abs
+  end
+
+  defp diff_in_hours(%DateTime{} = datetime, last_datetime) do
+    Timex.diff(last_datetime, datetime, :hours) |> abs
   end
 
   defp today_str() do

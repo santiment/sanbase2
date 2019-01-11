@@ -17,12 +17,24 @@ defmodule Sanbase.Application.Signals do
       start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 
       # Start signals cache
-      {ConCache,
-       [
-         name: :signals_cache,
-         ttl_check_interval: :timer.hours(1),
-         global_ttl: :timer.hours(24)
-       ]},
+      Supervisor.child_spec(
+        {ConCache,
+         [
+           name: :signals_cache,
+           ttl_check_interval: :timer.hours(1),
+           global_ttl: :timer.hours(24)
+         ]},
+        id: :con_cache_signals
+      ),
+
+      # {ConCache,
+      #  [
+      #    name: :signals_cache,
+      #    ttl_check_interval: :timer.hours(1),
+      #    global_ttl: :timer.hours(24),
+      #    id: :con_cache_signals
+      #  ]
+      # },
 
       # Quantum Scheduler
       start_if(

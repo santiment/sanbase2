@@ -62,6 +62,7 @@ defmodule Sanbase.Application do
     Supervisor.start_link(children, opts)
   end
 
+  @spec init(String.t()) :: :ok | [any()]
   def init(container_type) do
     # Common inits
 
@@ -96,6 +97,7 @@ defmodule Sanbase.Application do
   @doc ~s"""
   Children common for all types of container types
   """
+  @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
     [
       # Start the endpoint when the application starts

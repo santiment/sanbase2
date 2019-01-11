@@ -2,12 +2,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Async
-  import Absinthe.Resolution.Helpers, except: [async: 1]
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
-  alias SanbaseWeb.Graphql.ClickhouseDataloader
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
   def token_top_transactions(
         %Project{id: id} = project,

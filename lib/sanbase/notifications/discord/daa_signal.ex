@@ -84,7 +84,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp daa_value({:ok, [{_, daa}]}), do: daa
 
   defp create_notification_content({
-         %Project{name: project_name, coinmarketcap_id: project_slug} = project,
+         %Project{name: project_name} = project,
          base_daa,
          new_daa,
          percent_change

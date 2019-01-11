@@ -1,10 +1,11 @@
 defmodule SanbaseWeb.Graphql.SanbaseRepo do
   alias Sanbase.Repo
-  alias Sanbase.Model.{ProjectEthAddress, ProjectBtcAddress}
+  alias Sanbase.Model.ProjectBtcAddress
   alias Sanbase.Voting.Post
 
   import Ecto.Query
 
+  @spec data() :: Dataloader.Ecto.t()
   def data() do
     Dataloader.Ecto.new(Repo, query: &query/2)
   end

@@ -4,12 +4,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.InternalServices.Ethauth
-  alias Sanbase.Model.Project
   alias Sanbase.Auth.{User, EthAccount}
   alias Sanbase.Repo
   alias Ecto.Multi
-
-  import Ecto.Query
 
   def san_balance(
         %User{} = user,

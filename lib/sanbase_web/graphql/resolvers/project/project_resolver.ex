@@ -280,7 +280,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
           {:ok, 0}
       end
     else
-      {:error, {:github_link_error, error}} ->
+      {:error, {:github_link_error, _error}} ->
         {:ok, nil}
 
       error ->

@@ -32,7 +32,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
         &check_for_project(&1, avg_daa_for_projects, today_daa_for_projects, notification_type)
       )
       |> Enum.reject(&is_nil/1)
-      |> Enum.sort_by(fn {_, _, _, change, _} -> change end, &>=/2)
+      |> Enum.sort_by(fn {_, _, _, _, change, _} -> change end, &>=/2)
 
     if Enum.count(projects_to_signal) > 0 do
       projects_to_signal
@@ -86,7 +86,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       )
 
       if current_daa - last_triggered_daa > threshold_change() * avg_daa do
-        {project, avg_daa, current_daa - last_triggered_daa,
+        {project, avg_daa, current_daa, last_triggered_daa,
          percent_change(current_daa - last_triggered_daa, avg_daa), hours}
       else
         nil
@@ -94,7 +94,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     end
   end
 
-  defp last_triggered_daa(project, type) do
+  def last_triggered_daa(project, type) do
     now = Timex.now()
     start_of_day = Timex.beginning_of_day(now)
     end_of_day = Timex.end_of_day(now)
@@ -123,6 +123,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
          %Project{name: project_name} = project,
          avg_daa,
          current_daa,
+         last_triggered_daa,
          percent_change,
          hours
        }) do
@@ -130,7 +131,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     **#{project_name}** Daily Active Addresses has gone up #{notification_emoji_up()} by **#{
       percent_change
     }%** for the last **#{hours} hour(s)**.
-    Daily Active Addresses for last **#{hours} hour(s)** : **#{current_daa}**
+    Daily Active Addresses for last **#{hours} hour(s)** : **#{current_daa - last_triggered_daa}**
     Average Daily Active Addresses for last **#{config_timeframe_from() - 1} days**: **#{avg_daa}**.
     More info here: #{Project.sanbase_link(project)}
     """

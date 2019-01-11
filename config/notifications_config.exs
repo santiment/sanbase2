@@ -28,8 +28,8 @@ config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
   timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "31"},
   timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "1"},
   change: {:system, "DAA_SIGNAL_CHANGE", "3"},
-  # cooldown for 12 hours for project
-  project_cooldown: {:system, "DAA_SIGNAL_PROJECT_COOLDOWN", "43200"}
+  # cooldown for 6 hours for project
+  project_cooldown: {:system, "DAA_SIGNAL_PROJECT_COOLDOWN", "21600"}
 
 config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
   webhook_url: {:system, "EXCHANGE_INFLOW_DISCORD_WEBHOOK_URL"},

@@ -10,7 +10,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
   @type contracts :: String.t() | list(String.t())
 
-  @type contract_daa_tupple :: {
+  @type contract_daa_tuple :: {
           String.t(),
           non_neg_integer()
         }
@@ -24,14 +24,14 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
   Returns the average value of the daily active addresses 
   for every contract in a given interval [form, to].
   The last day is included in the AVG multiplied by coefficient (24 / current_hour)
-  Returns a list of tupples {contract, active_addresses}
+  Returns a list of tuples {contract, active_addresses}
   """
 
   @spec average_active_addresses(
           contracts,
           %DateTime{},
           %DateTime{}
-        ) :: {:ok, list(contract_daa_tupple)} | {:error, String.t()}
+        ) :: {:ok, list(contract_daa_tuple)} | {:error, String.t()}
   def average_active_addresses(contracts, from, to) do
     contracts = List.wrap(contracts)
     from_datetime_unix = DateTime.to_unix(from)
@@ -74,11 +74,11 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
   @doc ~s"""
   Gets the current value for active addresses for today.
-  Returns a list of tupples {contract, active_addresses}
+  Returns a list of tuples {contract, active_addresses}
   """
 
   @spec realtime_active_addresses(contracts) ::
-          {:ok, list(contract_daa_tupple)} | {:error, String.t()}
+          {:ok, list(contract_daa_tuple)} | {:error, String.t()}
   def realtime_active_addresses(contracts) do
     contracts = List.wrap(contracts)
 

@@ -30,7 +30,7 @@ defmodule Sanbase.Application.Scrapers do
         :graph_coinmarketcap_rate_limiter,
         scale: 60_000,
         limit: 60,
-        time_between_requests: 1000
+        time_between_requests: 100
       ),
 
       # Coinmarketcap api rate limiter

@@ -27,7 +27,9 @@ config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
   trading_volume_threshold: {:system, "DAA_SIGNAL_TRADING_VOLUME_THRESHOLD", "100000"},
   timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "31"},
   timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "1"},
-  change: {:system, "DAA_SIGNAL_CHANGE", "3"}
+  change: {:system, "DAA_SIGNAL_CHANGE", "3"},
+  # cooldown for 12 hours for project
+  project_cooldown: {:system, "DAA_SIGNAL_PROJECT_COOLDOWN", "43200"}
 
 config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
   webhook_url: {:system, "EXCHANGE_INFLOW_DISCORD_WEBHOOK_URL"},

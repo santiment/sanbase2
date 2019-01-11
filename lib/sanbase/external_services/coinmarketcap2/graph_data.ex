@@ -53,6 +53,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     end
   end
 
+  @spec fetch_and_store_prices(Sanbase.Model.Project.t(), any()) :: :ok
   def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id}, nil) do
     Logger.warn(
       "[CMC] Trying to fetch and store prices for project with coinmarketcap_id #{
@@ -73,7 +74,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     )
 
     fetch_price_stream(coinmarketcap_id, last_fetched_datetime, DateTime.utc_now())
-    |> process_price_stream(project)
+    |> Enum.map(fn {stream, interval} -> {stream |> Enum.map(& &1), interval} end)
+    |> Enum.each(&process_price_list(&1, project))
   end
 
   def fetch_price_stream(coinmarketcap_id, from_datetime, to_datetime) do
@@ -96,7 +98,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     )
 
     fetch_marketcap_total_stream(last_fetched_datetime, DateTime.utc_now())
-    |> process_marketcap_total_stream()
+    |> Enum.map(fn {stream, interval} -> {stream |> Enum.map(& &1), interval} end)
+    |> Enum.each(&process_marketcap_total_list/1)
   end
 
   def fetch_marketcap_total_stream(from_datetime, to_datetime) do
@@ -106,47 +109,62 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
 
   # Helper functions
 
-  defp process_marketcap_total_stream(marketcap_total_stream) do
+  defp process_marketcap_total_list({[], {_, end_datetime_unix}}) do
+    measurement_name = "TOTAL_MARKET_total-market"
+    datetime = DateTime.from_unix!(end_datetime_unix)
+    :ok = Store.update_last_history_datetime_cmc(measurement_name, datetime)
+  end
+
+  defp process_marketcap_total_list({marketcap_total_list, interval}) do
     measurement_name = "TOTAL_MARKET_total-market"
     Logger.info("[CMC] Processing stream for #{measurement_name}.")
 
     # Store each data point and the information when it was last updated
-    marketcap_total_stream
-    |> Stream.each(fn total_marketcap_info ->
-      measurement_points =
-        total_marketcap_info
-        |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, measurement_name))
+    measurement_points =
+      marketcap_total_list
+      |> Enum.map(&PricePoint.price_points_to_measurements(&1, measurement_name))
 
-      measurement_points |> Store.import()
+    measurement_points |> Store.import()
 
-      update_last_cmc_history_datetime(measurement_name, measurement_points)
-    end)
-    |> Stream.run()
+    update_last_cmc_history_datetime(measurement_name, measurement_points, interval)
   end
 
-  defp process_price_stream(price_stream, %Project{coinmarketcap_id: coinmarketcap_id} = project) do
+  defp process_price_list({[], {_, end_datetime_unix}}, %Project{} = project) do
+    measurement_name = Measurement.name_from(project)
+    datetime = DateTime.from_unix!(end_datetime_unix)
+    :ok = Store.update_last_history_datetime_cmc(measurement_name, datetime)
+  end
+
+  defp process_price_list(
+         {price_list, interval},
+         %Project{coinmarketcap_id: coinmarketcap_id} = project
+       ) do
     Logger.info("[CMC] Processing price stream for #{coinmarketcap_id}")
 
     # Store each data point and the information when it was last updated
-    price_stream
-    |> Stream.each(fn prices ->
-      measurement_points =
-        prices
-        |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, project))
 
-      measurement_points |> Store.import()
+    measurement_points =
+      price_list
+      |> Enum.map(&PricePoint.price_points_to_measurements(&1, project))
 
-      update_last_cmc_history_datetime(Measurement.name_from(project), measurement_points)
-    end)
-    |> Stream.run()
+    measurement_points |> Store.import()
+
+    update_last_cmc_history_datetime(
+      Measurement.name_from(project),
+      measurement_points,
+      interval
+    )
   end
 
-  def update_last_cmc_history_datetime(%Project{coinmarketcap_id: coinmarketcap_id}, []) do
-    Logger.info(
-      "[CMC] Cannot update last cmc history datetime for #{coinmarketcap_id}. Reason: No price points fetched"
-    )
-
-    :ok
+  @spec update_last_cmc_history_datetime(String.t(), [], {integer(), integer()}) ::
+          :ok | no_return()
+  def update_last_cmc_history_datetime(
+        measurement_name,
+        [],
+        {_, end_unix_datetime}
+      ) do
+    end_datetime = DateTime.from_unix!(end_unix_datetime)
+    :ok = Store.update_last_history_datetime_cmc(measurement_name, end_datetime)
   end
 
   def update_last_cmc_history_datetime(measurement_name, points) do
@@ -181,6 +199,15 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> convert_to_price_points()
   end
 
+  defp json_to_price_points(json, interval) do
+    result =
+      json
+      |> Poison.decode!(as: %GraphData{})
+      |> convert_to_price_points()
+
+    {result, interval}
+  end
+
   defp all_time_project_price_points(coinmarketcap_id) do
     all_time_project_url(coinmarketcap_id)
     |> get()
@@ -198,14 +225,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
           }"
         )
 
-        nil
+        Process.exit(self(), :normal)
 
       {:error, error} ->
         Logger.error(
           "[CMC] Error fetching prices for #{coinmarketcap_id}. Reason: #{inspect(error)}"
         )
 
-        nil
+        Process.exit(self(), :normal)
     end
   end
 
@@ -226,12 +253,12 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
           }"
         )
 
-        nil
+        Process.exit(self(), :normal)
 
       {:error, error} ->
         Logger.error("[CMC] Error fetching prices for TOTAL_MARKET. Reason: #{inspect(error)}")
 
-        nil
+        Process.exit(self(), :normal)
     end
   end
 
@@ -269,7 +296,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     end)
   end
 
-  defp extract_price_points_for_interval("TOTAL_MARKET", {start_interval_sec, end_interval_sec}) do
+  defp extract_price_points_for_interval(
+         "TOTAL_MARKET",
+         {start_interval_sec, end_interval_sec} = interval
+       ) do
     total_market_interval_url(start_interval_sec * 1000, end_interval_sec * 1000)
     |> get()
     |> case do
@@ -277,23 +307,23 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
         wait_rate_limit(resp)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        body |> json_to_price_points()
+        body |> json_to_price_points(interval)
 
       {:ok, %Tesla.Env{status: status, body: body}} ->
         Logger.error(
-          "[CMC] Error fetching graph data for TOTAL_MARKET. Status code: #{status}, body: #{
+          "[CMC] Error fetching graph data for TOTAL_M ARKET. Status code: #{status}, body: #{
             inspect(body)
           }"
         )
 
-        []
+        Process.exit(self(), :normal)
 
       {:error, error} ->
         Logger.error(
           "[CMC] Error fetching graph data for TOTAL_MARKET. Reason: #{inspect(error)}"
         )
 
-        []
+        Process.exit(self(), :normal)
     end
   end
 
@@ -316,7 +346,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
         wait_rate_limit(resp)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
-        body |> json_to_price_points()
+        body |> json_to_price_points(interval)
 
       {:ok, %Tesla.Env{status: status, body: body}} ->
         Logger.error(
@@ -325,14 +355,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
           }"
         )
 
-        []
+        Process.exit(self(), :normal)
 
       {:error, error} ->
         Logger.error(
           "[CMC] Error fetching graph data for #{coinmarketcap_id}. Reason: #{inspect(error)}"
         )
 
-        []
+        Process.exit(self(), :normal)
     end
   end
 

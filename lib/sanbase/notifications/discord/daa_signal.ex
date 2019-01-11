@@ -72,25 +72,29 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp check_for_project(project, avg_daa_for_projects, today_daa_for_projects, notification_type) do
-    avg_daa = get_daa_contract(project.main_contract_address, avg_daa_for_projects)
-    current_daa = get_daa_contract(project.main_contract_address, today_daa_for_projects)
-    {last_triggered_daa, hours} = last_triggered_daa(project, notification_type)
-
-    Logger.info(
-      "DAA signal check: #{project.coinmarketcap_id}, #{avg_daa}, #{current_daa}, #{
-        last_triggered_daa
-      } #{hours},  #{current_daa - last_triggered_daa > threshold_change() * avg_daa}"
-    )
-
-    if current_daa - last_triggered_daa > threshold_change() * avg_daa do
-      {project, avg_daa, current_daa - last_triggered_daa,
-       percent_change(current_daa - last_triggered_daa, avg_daa), hours}
-    else
+    if Notification.has_cooldown?(project, notification_type, project_cooldown()) do
       nil
+    else
+      avg_daa = get_daa_contract(project.main_contract_address, avg_daa_for_projects)
+      current_daa = get_daa_contract(project.main_contract_address, today_daa_for_projects)
+      {last_triggered_daa, hours} = last_triggered_daa(project, notification_type)
+
+      Logger.info(
+        "DAA signal check: #{project.coinmarketcap_id}, #{avg_daa}, #{current_daa}, #{
+          last_triggered_daa
+        } #{hours},  #{current_daa - last_triggered_daa > threshold_change() * avg_daa}"
+      )
+
+      if current_daa - last_triggered_daa > threshold_change() * avg_daa do
+        {project, avg_daa, current_daa - last_triggered_daa,
+         percent_change(current_daa - last_triggered_daa, avg_daa), hours}
+      else
+        nil
+      end
     end
   end
 
-  def last_triggered_daa(project, type) do
+  defp last_triggered_daa(project, type) do
     now = Timex.now()
     start_of_day = Timex.beginning_of_day(now)
     end_of_day = Timex.end_of_day(now)
@@ -123,13 +127,11 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
          hours
        }) do
     content = """
-    `#{project_name}`: Daily Active Addresses has gone up #{notification_emoji_up()} by `#{
+    **#{project_name}** Daily Active Addresses has gone up #{notification_emoji_up()} by **#{
       percent_change
-    }%` for the last #{hours} hours.
-
-    Daily Active Addresses for last `#{hours} hours` : `#{current_daa}`
-    Average Daily Active Addresses for last `#{config_timeframe_from() - 1} days`: `#{avg_daa}`.
-
+    }%** for the last **#{hours} hour(s)**.
+    Daily Active Addresses for last **#{hours} hour(s)** : **#{current_daa}**
+    Average Daily Active Addresses for last **#{config_timeframe_from() - 1} days**: **#{avg_daa}**.
     More info here: #{Project.sanbase_link(project)}
     """
 
@@ -214,6 +216,11 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   defp threshold() do
     Config.get(:trading_volume_threshold) |> String.to_integer()
+  end
+
+  # cooldown for project in seconds
+  defp project_cooldown() do
+    Config.get(:project_cooldown) |> String.to_integer()
   end
 
   defp timeframe_from(), do: Timex.shift(Timex.now(), days: -1 * config_timeframe_from())

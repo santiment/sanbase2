@@ -23,6 +23,7 @@ defmodule Sanbase.Model.ExchangeAddress do
     exchange_address
     |> cast(attrs, [:address, :name, :source, :comments, :is_dex, :infrastructure_id])
     |> validate_required([:address, :name])
+    |> update_change(:address, &String.downcase/1)
     |> unique_constraint(:address)
   end
 

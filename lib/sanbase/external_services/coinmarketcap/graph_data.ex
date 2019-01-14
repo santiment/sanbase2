@@ -128,6 +128,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
+        Process.exit(self(), :normal)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
@@ -143,6 +144,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
+        Process.exit(self(), :normal)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
@@ -192,6 +194,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
+        Process.exit(self(), :normal)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
@@ -264,6 +267,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     "/global/marketcap-total/#{from_timestamp}/#{to_timestamp}/"
   end
 
+  # After invocation of this function the process should execute `Process.exit(self(), :normal)`
+  # There is no meaningful result to be returned here. If it does not exit
+  # this case should return a special case and it should be handeled so the
+  # `last_updated` is not updated when no points are written
   defp wait_rate_limit(%Tesla.Env{status: 429, headers: headers}) do
     {_, wait_period} =
       Enum.find(headers, fn {header, _} ->

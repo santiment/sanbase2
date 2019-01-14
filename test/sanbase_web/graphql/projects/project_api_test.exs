@@ -3,13 +3,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
   require Sanbase.Utils.Config, as: Config
 
-  alias Sanbase.Model.{
-    Project,
-    Ico,
-    Currency,
-    IcoCurrencies,
-    ProjectEthAddress
-  }
+  alias Sanbase.Model.{Project, Ico, Currency, IcoCurrencies}
 
   alias Sanbase.Repo
 

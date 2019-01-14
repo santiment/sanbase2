@@ -219,11 +219,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
+      {:ok, %Tesla.Env{status: status}} ->
         Logger.error(
-          "[CMC] Error fetching prices for #{coinmarketcap_id}. Status code: #{status}, body: #{
-            inspect(body)
-          }"
+          "[CMC] Error fetching prices for #{coinmarketcap_id}. Status code: #{status}"
         )
 
         Process.exit(self(), :normal)
@@ -248,12 +246,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        Logger.error(
-          "[CMC] Error fetching prices for TOTAL_MARKET. Status code: #{status}, body: #{
-            inspect(body)
-          }"
-        )
+      {:ok, %Tesla.Env{status: status}} ->
+        Logger.error("[CMC] Error fetching prices for TOTAL_MARKET. Status code: #{status}")
 
         Process.exit(self(), :normal)
 
@@ -312,12 +306,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points(interval)
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        Logger.error(
-          "[CMC] Error fetching graph data for TOTAL_MARKET. Status code: #{status}, body: #{
-            inspect(body)
-          }"
-        )
+      {:ok, %Tesla.Env{status: status}} ->
+        Logger.error("[CMC] Error fetching graph data for TOTAL_MARKET. Status code: #{status}")
 
         Process.exit(self(), :normal)
 
@@ -352,11 +342,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points(interval)
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
+      {:ok, %Tesla.Env{status: status}} ->
         Logger.error(
-          "[CMC] Error fetching graph data for #{coinmarketcap_id}. Status code: #{status}, body: #{
-            inspect(body)
-          }"
+          "[CMC] Error fetching graph data for #{coinmarketcap_id}. Status code: #{status}"
         )
 
         Process.exit(self(), :normal)

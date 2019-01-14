@@ -112,11 +112,9 @@ defmodule Sanbase.ExternalServices.TwitterData.HistoricalData do
         |> Jason.decode!()
         |> Map.get("followersperdate")
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
+      {:ok, %Tesla.Env{status: status}} ->
         Logger.warn(
-          "Error status #{status} fetching twittercounter data for twitter id #{twitter_name}: #{
-            body
-          }"
+          "Error status #{status} fetching twittercounter data for twitter id #{twitter_name}"
         )
 
         %{}

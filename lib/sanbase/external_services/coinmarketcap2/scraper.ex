@@ -23,11 +23,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        error_msg =
-          "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}. Body: #{
-            inspect(body)
-          }"
+      {:ok, %Tesla.Env{status: status}} ->
+        error_msg = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}."
 
         Logger.error(error_msg)
         {:error, error_msg}

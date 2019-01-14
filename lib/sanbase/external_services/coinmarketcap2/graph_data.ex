@@ -122,7 +122,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     # Store each data point and the information when it was last updated
     measurement_points =
       marketcap_total_list
-      |> Enum.map(&PricePoint.price_points_to_measurements(&1, measurement_name))
+      |> Enum.flat_map(&PricePoint.price_points_to_measurements(&1, measurement_name))
 
     measurement_points |> Store.import()
 
@@ -167,7 +167,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     :ok = Store.update_last_history_datetime_cmc(measurement_name, end_datetime)
   end
 
-  def update_last_cmc_history_datetime(measurement_name, points) do
+  def update_last_cmc_history_datetime(measurement_name, points, _interval) do
     case points do
       [] ->
         Logger.info(

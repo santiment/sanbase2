@@ -33,7 +33,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       GenServer.cast(self(), :sync)
 
       update_interval = Config.get(:update_interval, @default_update_interval)
-      {:ok, %{update_interval: update_interval}}
+      {:ok, %{update_interval: update_interval * 2}}
     else
       :ignore
     end
@@ -56,7 +56,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       projects,
       &fetch_project_info/1,
       ordered: false,
-      max_concurrency: 5,
+      max_concurrency: 1,
       timeout: 60_000
     )
     |> Stream.run()
@@ -66,7 +66,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       projects,
       &fetch_and_process_price_data/1,
       ordered: false,
-      max_concurrency: 5,
+      max_concurrency: 1,
       timeout: :infinity
     )
     |> Stream.run()

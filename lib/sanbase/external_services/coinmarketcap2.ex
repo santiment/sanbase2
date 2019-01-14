@@ -61,7 +61,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
       projects(),
       &fetch_project_info/1,
       ordered: false,
-      max_concurrency: 5,
+      max_concurrency: 1,
       timeout: @request_timeout
     )
     |> Stream.run()
@@ -107,7 +107,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
       projects(),
       &fetch_and_process_price_data/1,
       ordered: false,
-      max_concurrency: 5,
+      max_concurrency: 2,
       timeout: @request_timeout
     )
     |> Stream.run()

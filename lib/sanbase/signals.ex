@@ -21,8 +21,8 @@ defmodule Sanbase.Application.Signals do
         {ConCache,
          [
            name: :signals_cache,
-           ttl_check_interval: :timer.hours(1),
-           global_ttl: :timer.hours(24)
+           ttl_check_interval: :timer.minutes(10),
+           global_ttl: :timer.hours(1)
          ]},
         id: :con_cache_signals
       ),

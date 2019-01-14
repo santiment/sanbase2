@@ -79,15 +79,16 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
       current_daa = get_daa_contract(project.main_contract_address, today_daa_for_projects)
       {last_triggered_daa, hours} = last_triggered_daa(project, notification_type)
 
+      percent_change = percent_change(current_daa - last_triggered_daa, avg_daa)
+
       Logger.info(
         "DAA signal check: #{project.coinmarketcap_id}, #{avg_daa}, #{current_daa}, #{
           last_triggered_daa
-        } #{hours},  #{current_daa - last_triggered_daa > threshold_change() * avg_daa}"
+        }, #{percent_change}%, #{hours}, #{percent_change > threshold_change() * 100}"
       )
 
-      if current_daa - last_triggered_daa > threshold_change() * avg_daa do
-        {project, avg_daa, current_daa, last_triggered_daa,
-         percent_change(current_daa - last_triggered_daa, avg_daa), hours}
+      if percent_change > threshold_change() * 100 do
+        {project, avg_daa, current_daa, last_triggered_daa, percent_change, hours}
       else
         nil
       end
@@ -198,6 +199,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp notification_emoji_up() do
     ":small_red_triangle:"
   end
+
+  defp percent_change(_current_daa, 0), do: 0
+  defp percent_change(_current_daa, nil), do: 0
 
   defp percent_change(current_daa, avg_daa) do
     Float.round(current_daa / avg_daa * 100)

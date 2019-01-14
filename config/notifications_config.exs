@@ -37,4 +37,5 @@ config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
   publish_user:
     {:system, "EXCHANGE_INFLOW_DISCORD_PUBLISH_USER", "Tokens Moved Into An Exchange"},
   signal_trigger_percent: {:system, "EXCHANGE_INFLOW_TRIGER_PERCENT", "1"},
+  ethereum_signal_trigger_percent: {:system, "EXCHANGE_INFLOW_ETHEREUMTRIGER_PERCENT", "0.4"},
   interval_days: {:system, "EXCHANGE_INFLOW_INTERVAL_DAYS", "1"}

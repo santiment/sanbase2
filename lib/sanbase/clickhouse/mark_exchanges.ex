@@ -44,7 +44,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
   def handle_continue(:set_state, _) do
     exchanges =
       ExchangeAddress.list_all()
-      |> Enum.map(fn %ExchangeAddress{address: address} -> address end)
+      |> Enum.map(fn %ExchangeAddress{address: address} -> address |> String.downcase() end)
       |> MapSet.new()
 
     new_state = Map.put(%{}, :exchange_wallets_set, exchanges)

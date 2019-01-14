@@ -27,9 +27,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Requests do
       {:ok, %Tesla.Env{status: 200, body: %{"result" => abi}}} ->
         {:ok, abi}
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error,
-         "Get ABI for address #{address} failed. Status: #{status}. Body: #{inspect(body)}"}
+      {:ok, %Tesla.Env{status: status}} ->
+        {:error, "Get ABI for address #{address} failed. Status: #{status}."}
 
       {:error, error} ->
         {:error, "Get ABI for address #{address} failed. Reason: #{inspect(error)}"}

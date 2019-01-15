@@ -133,7 +133,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
   def handle_info(:rescrape_prices, %{rescrape_prices: update_interval} = state) do
     schedule_rescrapes()
     finish_rescrapes()
-    Process.send_after(self(), :fetch_prices, update_interval)
+    Process.send_after(self(), :rescrape_prices, update_interval)
 
     {:noreply, state}
   end

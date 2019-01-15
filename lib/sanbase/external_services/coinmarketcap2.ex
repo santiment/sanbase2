@@ -200,6 +200,10 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
         {:ok, original_last_update} = srp.original_last_updated |> DateTime.from_naive("Etc/UTC")
 
         Store.update_last_history_datetime_cmc(influxdb_slug, original_last_update)
+
+        srp
+        |> ScheduleRescrapePrice.changeset(%{finished: true, in_progres: false})
+        |> ScheduleRescrapePrice.update()
       end
     end
   end

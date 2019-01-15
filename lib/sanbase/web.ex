@@ -41,7 +41,7 @@ defmodule Sanbase.Application.Web do
        ]},
 
       # Time sereies TwitterData DB connection
-      Sanbase.ExternalServices.TwitterData.Store,
+      Sanbase.ExternalServices.TwitterData.Store.child_spec(),
 
       # Transform a list of transactions into a list of transactions
       # where addresses are marked whether or not they are an exchange address

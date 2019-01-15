@@ -6,7 +6,6 @@ defmodule Sanbase.ExAdmin.ScheduleRescrapePrice do
       inputs do
         input(srp, :from, type: NaiveDateTime)
         input(srp, :to, type: NaiveDateTime)
-        input(srp, :original_last_updated, type: NaiveDateTime)
 
         input(
           srp,

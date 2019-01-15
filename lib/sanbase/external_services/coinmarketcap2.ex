@@ -42,11 +42,11 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
       Store.create_db()
 
       Process.send(self(), :rescrape_prices, [])
-      # Process.send(self(), :fetch_missing_info, [])
 
       # Give `:rescrape_prices` some time to schedule different `last_updated` times
-      Process.send_after(self(), :fetch_prices, 30_000)
-      Process.send_after(self(), :fetch_total_market, 30_000)
+      Process.send_after(self(), :fetch_prices, 15_000)
+      Process.send_after(self(), :fetch_total_market, 15_000)
+      Process.send_after(self(), :fetch_missing_info, 15_000)
 
       update_interval = Config.get(:update_interval, @default_update_interval)
 
@@ -243,7 +243,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
     key = fetching_price_registry_key(project)
 
     if Registry.lookup(Sanbase.Registry, key) == [] do
-      Registry.register(Sanbase.Registry, key, {:running, self()})
+      Registry.register(Sanbase.Registry, key, :running)
       Logger.info("Fetch and process prices for #{measurement_name}")
 
       case last_price_datetime(project) do

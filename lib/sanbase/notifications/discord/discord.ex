@@ -209,7 +209,7 @@ defmodule Sanbase.Notifications.Discord do
       %{
         chtt: "#{project.name} - Daily Active Addresses and OHCL Price" |> URI.encode(),
         chxt: ",x,r",
-        chxl: "1:|#{datetime_values(from, to)}",
+        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
         chxr: "|2,#{min},#{max}",
         chds: "#{min},#{max},",
         chd: "t1:#{daa_values}",
@@ -245,7 +245,7 @@ defmodule Sanbase.Notifications.Discord do
       %{
         chtt: "#{project.name} - Exchange Inflow and OHCL Price" |> URI.encode(),
         chxt: ",x,r",
-        chxl: "1:|#{datetime_values(from, to)}",
+        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
         chxr: "|2,#{min},#{max}",
         chxs: "2N*p2*",
         chds: "#{min},#{max},",
@@ -290,7 +290,7 @@ defmodule Sanbase.Notifications.Discord do
       chd: "t0:1",
       chxs: "",
       chtt: "",
-      chxl: "1:|#{datetime_values(from, to)}"
+      chxl: "1:|#{datetime_values(from, to)}" |> URI.encode()
     }
   end
 

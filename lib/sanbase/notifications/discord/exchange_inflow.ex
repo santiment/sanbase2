@@ -26,6 +26,13 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     projects =
       projects()
       |> Project.projects_over_volume_threshold(volume_threshold)
+      |> Enum.map(fn
+        %Project{coinmarketcap_id: "ethereum"} = project ->
+          %Project{project | main_contract_address: "ETH"}
+
+        data ->
+          data
+      end)
 
     projects
     |> Enum.map(& &1.main_contract_address)
@@ -65,12 +72,16 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   # Private functions
 
   # Return all projects where the fields that will be used in the signal are not nil
+  # In the case of ethereum do not check for main_contract_address. The caller will
+  # rewrite it so it uses "ETH" as a contract address. It is used in TimescaleDB to
+  # fill the `contract` column for ethereum
   defp projects() do
     from(
       p in Project,
       preload: [:latest_coinmarketcap_data],
       where:
-        not is_nil(p.coinmarketcap_id) and not is_nil(p.main_contract_address) and
+        not is_nil(p.coinmarketcap_id) and
+          (p.coinmarketcap_id == "ethereum" or not is_nil(p.main_contract_address)) and
           not is_nil(p.token_decimals) and not is_nil(p.name)
     )
     |> Repo.all()
@@ -113,13 +124,13 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   defp build_project_payload(%Project{} = project, notification_type, inflow) do
     percent_of_total_supply = percent_of_total_supply(project, inflow)
 
-    if percent_of_total_supply > signal_trigger_percent() do
+    if percent_of_total_supply > signal_trigger_percent(project) do
       # If there was a signal less than interval_days() ago then recalculate the exchange inflow
       # since the last signal trigger time
       case Notification.get_cooldown(
              project,
              notification_type,
-             interval_days() * 86_400
+             cooldown_days() * 86_400
            ) do
         {true, %DateTime{} = cooldown} ->
           with {:ok, [%{inflow: new_inflow}]} <-
@@ -130,7 +141,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
                  ) do
             new_percent_of_total_supply = percent_of_total_supply(project, new_inflow)
 
-            if new_inflow && new_percent_of_total_supply > signal_trigger_percent() do
+            if new_inflow && new_percent_of_total_supply > signal_trigger_percent(project) do
               content =
                 notification_message(
                   project,
@@ -219,10 +230,19 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     )
   end
 
-  defp signal_trigger_percent(),
-    do: Config.get(:signal_trigger_percent) |> String.to_integer()
+  defp signal_trigger_percent(%Project{coinmarketcap_id: "ethereum"}) do
+    {trigger, ""} = Config.get(:ethereum_signal_trigger_percent) |> Float.parse()
+    trigger
+  end
+
+  defp signal_trigger_percent(_) do
+    {trigger, ""} = Config.get(:signal_trigger_percent) |> Float.parse()
+    trigger
+  end
 
   defp interval_days(), do: Config.get(:interval_days) |> String.to_integer()
+
+  defp cooldown_days(), do: Config.get(:cooldown_days) |> String.to_integer()
 
   defp webhook_url(), do: Config.get(:webhook_url)
 

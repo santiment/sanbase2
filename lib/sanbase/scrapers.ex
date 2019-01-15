@@ -30,7 +30,7 @@ defmodule Sanbase.Application.Scrapers do
         :graph_coinmarketcap_rate_limiter,
         scale: 60_000,
         limit: 60,
-        time_between_requests: 1000
+        time_between_requests: 100
       ),
 
       # Coinmarketcap api rate limiter
@@ -67,18 +67,18 @@ defmodule Sanbase.Application.Scrapers do
 
       # Price fetcher
       # TODO: Change after switching over to only this cmc
-      Sanbase.ExternalServices.Coinmarketcap.child_spec(%{}),
-      Sanbase.ExternalServices.Coinmarketcap2.child_spec(%{}),
+      Sanbase.ExternalServices.Coinmarketcap,
+      Sanbase.ExternalServices.Coinmarketcap2,
 
       # Current marketcap fetcher
       # TODO: Change after switching over to only this cmc
-      Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2.child_spec(%{}),
+      Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2,
 
       # Twitter account data tracking worker
-      Sanbase.ExternalServices.TwitterData.Worker.child_spec(%{}),
+      Sanbase.ExternalServices.TwitterData.Worker,
 
       # Twitter account historical data
-      Sanbase.ExternalServices.TwitterData.HistoricalData.child_spec(%{})
+      Sanbase.ExternalServices.TwitterData.HistoricalData
     ]
 
     opts = [

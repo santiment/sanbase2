@@ -45,7 +45,7 @@ defmodule Sanbase.Application.Web do
 
       # Transform a list of transactions into a list of transactions
       # where addresses are marked whether or not they are an exchange address
-      Sanbase.Clickhouse.MarkExchanges.child_spec(%{}),
+      Sanbase.Clickhouse.MarkExchanges,
 
       # Start libcluster
       start_in(

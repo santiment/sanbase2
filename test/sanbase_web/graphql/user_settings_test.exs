@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
   import Sanbase.Factory
 
   setup do
-    user = insert(:user)
+    user = insert(:user, email: "test@example.com")
     conn = setup_jwt_auth(build_conn(), user)
 
     {:ok, conn: conn, user: user}
@@ -97,6 +97,9 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     mutation {
       settingsGenerateTelegramUrl {
         telegramUrl
+        user {
+          email
+        }
       }
     }
     """
@@ -104,7 +107,8 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> post("/graphql", mutation_skeleton(query))
 
     assert json_response(result, 200)["data"]["settingsGenerateTelegramUrl"] == %{
-             "telegramUrl" => test_url
+             "telegramUrl" => test_url,
+             "user" => %{"email" => user.email}
            }
 
     assert UserSettings.settings_for(user) |> Map.get(:telegram_url) == test_url
@@ -161,7 +165,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
            }
   end
 
-  test "returns empty settings if user hasn't any", %{user: user, conn: conn} do
+  test "returns empty settings if user hasn't any", %{conn: conn} do
     query = """
     {
       currentUser {

@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
     UserSettings.generate_telegram_url(current_user)
     |> case do
       {:ok, %UserSettings{telegram_url: telegram_url} = us} ->
-        {:ok, us}
+        {:ok, us |> Repo.preload(:user)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error,
@@ -46,7 +46,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
   defp handle_toggle_result(result) do
     case result do
       {:ok, us} ->
-        {:ok, us}
+        {:ok, us |> Repo.preload(:user)}
 
       {:error, changeset} ->
         {

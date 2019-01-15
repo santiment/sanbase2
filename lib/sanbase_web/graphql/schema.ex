@@ -20,7 +20,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     UserListResolver,
     ElasticsearchResolver,
     ClickhouseResolver,
-    ExchangeResolver
+    ExchangeResolver,
+    UserSettingsResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -952,6 +953,21 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&UserListResolver.remove_user_list/3)
+    end
+
+    field :settings_toggle_telegram_channel, :boolean do
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.settings_toggle_telegram_channel/3)
+    end
+
+    field :settings_toggle_email_channel, :boolean do
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.settings_toggle_email_channel/3)
+    end
+
+    field :settings_generate_telegram_url, :string do
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.settings_generate_telegram_url/3)
     end
   end
 end

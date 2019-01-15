@@ -1,13 +1,14 @@
 defmodule Sanbase.Factory do
   use ExMachina.Ecto, repo: Sanbase.Repo
 
-  alias Sanbase.Auth.User
+  alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.Voting.{Post, Poll}
   alias Sanbase.Model.{Project, ExchangeAddress}
 
   def user_factory do
     %User{
-      salt: User.generate_salt()
+      salt: User.generate_salt(),
+      privacy_policy_accepted: true
     }
   end
 
@@ -53,6 +54,13 @@ defmodule Sanbase.Factory do
     %ExchangeAddress{
       address: "0x123",
       name: "Binance"
+    }
+  end
+
+  def user_settings_factory() do
+    %UserSettings{
+      signal_notify_telegram: false,
+      signal_notify_email: false
     }
   end
 end

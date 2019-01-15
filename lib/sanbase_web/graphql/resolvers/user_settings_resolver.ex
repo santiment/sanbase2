@@ -5,6 +5,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Repo
 
+  def settings(%User{} = user, _args, _resolution) do
+    settings =
+      user
+      |> Repo.preload(:user_settings)
+      |> Map.get(:user_settings)
+      |> case do
+        nil ->
+          {:ok, nil}
+
+        %UserSettings{} = us ->
+          {:ok, us}
+      end
+  end
+
   def settings_toggle_channel(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

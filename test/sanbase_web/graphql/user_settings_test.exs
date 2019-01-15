@@ -129,25 +129,56 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert UserSettings.settings_for(user) |> Map.get(:telegram_url) == nil
   end
 
-  # test "fetches settings for current user", %{user: user, conn: conn} do
-  #   insert(:user_settings, user: user, signal_notify_telegram: true, signal_notify_email: false, telegram_url: "test")
-  #   query = """
-  #   {
-  #     currentUser {
-  #       id,
-  #       settings {
-  #         signalNotifyEmail
-  #         signalNotifyTelegram
-  #         telegramUrl
-  #       }
-  #     }
-  #   }
-  #   """
+  test "fetches settings for current user", %{user: user, conn: conn} do
+    insert(:user_settings,
+      user: user,
+      signal_notify_telegram: true,
+      signal_notify_email: false,
+      telegram_url: "test"
+    )
 
-  #   result =
-  #     conn
-  #     |> post("/graphql", query_skeleton(query, "currentUser"))
+    query = """
+    {
+      currentUser {
+        id,
+        settings {
+          signalNotifyEmail
+          signalNotifyTelegram
+          telegramUrl
+        }
+      }
+    }
+    """
 
-  #   assert json_response(result, 200)["data"]["currentUser"]["telegramUrl"] == "test"
-  # end
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+
+    assert json_response(result, 200)["data"]["currentUser"]["settings"] == %{
+             "signalNotifyEmail" => false,
+             "signalNotifyTelegram" => true,
+             "telegramUrl" => "test"
+           }
+  end
+
+  test "returns empty settings if user hasn't any", %{user: user, conn: conn} do
+    query = """
+    {
+      currentUser {
+        id,
+        settings {
+          signalNotifyEmail
+          signalNotifyTelegram
+          telegramUrl
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+
+    assert json_response(result, 200)["data"]["currentUser"]["settings"] == nil
+  end
 end

@@ -5,7 +5,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
   alias SanbaseWeb.Graphql.Resolvers.{
     ApikeyResolver,
     AccountResolver,
-    EthAccountResolver
+    EthAccountResolver,
+    UserSettingsResolver
   }
 
   object :user do
@@ -26,14 +27,9 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
       resolve(&ApikeyResolver.apikeys_list/3)
     end
 
-    # field :settings, :user_settings do
-    #   resolve(&test/3)
-    # end
-  end
-
-  defp test(%User{} = user, _args, _resolution) do
-    user
-    |> Sanbase.Repo.preload(:user_settings)
+    field :settings, :user_settings do
+      resolve(&UserSettingsResolver.settings/3)
+    end
   end
 
   @desc ~s"""

@@ -130,7 +130,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
       case Notification.get_cooldown(
              project,
              notification_type,
-             interval_days() * 86_400
+             cooldown_days() * 86_400
            ) do
         {true, %DateTime{} = cooldown} ->
           with {:ok, [%{inflow: new_inflow}]} <-
@@ -241,6 +241,8 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp interval_days(), do: Config.get(:interval_days) |> String.to_integer()
+
+  defp cooldown_days(), do: Config.get(:cooldown_days) |> String.to_integer()
 
   defp webhook_url(), do: Config.get(:webhook_url)
 

@@ -59,6 +59,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
   import_types(SanbaseWeb.Graphql.ClickhouseTypes)
   import_types(SanbaseWeb.Graphql.ExchangeTypes)
+  import_types(SanbaseWeb.Graphql.UserSettingsTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -955,17 +956,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&UserListResolver.remove_user_list/3)
     end
 
-    field :settings_toggle_telegram_channel, :boolean do
+    field :settings_toggle_channel, :user_settings do
+      arg(:signal_notify_telegram, :boolean)
+      arg(:signal_notify_email, :boolean)
       middleware(JWTAuth)
-      resolve(&UserSettingsResolver.settings_toggle_telegram_channel/3)
+      resolve(&UserSettingsResolver.settings_toggle_channel/3)
     end
 
-    field :settings_toggle_email_channel, :boolean do
-      middleware(JWTAuth)
-      resolve(&UserSettingsResolver.settings_toggle_email_channel/3)
-    end
-
-    field :settings_generate_telegram_url, :string do
+    field :settings_generate_telegram_url, :user_settings do
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.settings_generate_telegram_url/3)
     end

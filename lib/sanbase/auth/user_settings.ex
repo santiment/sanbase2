@@ -28,14 +28,14 @@ defmodule Sanbase.Auth.UserSettings do
     Repo.get_by(UserSettings, user_id: user_id)
   end
 
-  def toggle_notification_channel(%User{id: user_id}, channel) do
+  def toggle_notification_channel(%User{id: user_id}, args) do
     Repo.get_by(UserSettings, user_id: user_id)
     |> case do
       %UserSettings{} = us ->
-        changeset(us, %{channel => !(us |> Map.get(channel))})
+        changeset(us, args)
 
       nil ->
-        changeset(%UserSettings{}, %{channel => true, user_id: user_id})
+        changeset(%UserSettings{}, Map.merge(args, %{user_id: user_id}))
     end
     |> Repo.insert_or_update()
   end

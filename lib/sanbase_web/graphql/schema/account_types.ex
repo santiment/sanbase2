@@ -25,6 +25,15 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field :apikeys, list_of(:string) do
       resolve(&ApikeyResolver.apikeys_list/3)
     end
+
+    # field :settings, :user_settings do
+    #   resolve(&test/3)
+    # end
+  end
+
+  defp test(%User{} = user, _args, _resolution) do
+    user
+    |> Sanbase.Repo.preload(:user_settings)
   end
 
   @desc ~s"""

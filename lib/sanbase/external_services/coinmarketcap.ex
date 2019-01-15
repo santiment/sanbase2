@@ -33,7 +33,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       GenServer.cast(self(), :sync)
 
       update_interval = Config.get(:update_interval, @default_update_interval)
-      {:ok, %{update_interval: update_interval * 2}}
+      {:ok, %{update_interval: update_interval * 3}}
     else
       :ignore
     end

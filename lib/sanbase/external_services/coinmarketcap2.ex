@@ -44,8 +44,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap2 do
       {:ok,
        %{
          missing_info_update_interval: update_interval * 10,
-         total_market_update_interval: update_interval / 5,
-         prices_update_interval: update_interval / 5,
+         total_market_update_interval: div(update_interval, 5),
+         prices_update_interval: div(update_interval, 5),
          total_market_task_pid: nil
        }}
     else

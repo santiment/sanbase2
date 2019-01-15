@@ -97,9 +97,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     mutation {
       settingsGenerateTelegramUrl {
         telegramUrl
-        user {
-          email
-        }
       }
     }
     """
@@ -107,8 +104,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> post("/graphql", mutation_skeleton(query))
 
     assert json_response(result, 200)["data"]["settingsGenerateTelegramUrl"] == %{
-             "telegramUrl" => test_url,
-             "user" => %{"email" => user.email}
+             "telegramUrl" => test_url
            }
 
     assert UserSettings.settings_for(user) |> Map.get(:telegram_url) == test_url

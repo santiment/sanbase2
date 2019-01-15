@@ -13,7 +13,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
   register_resource Sanbase.Model.Project do
     show project do
-      attributes_table
+      attributes_table()
 
       panel "ICO Events" do
         markup_contents do

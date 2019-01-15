@@ -6,17 +6,16 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
   alias Sanbase.Repo
 
   def settings(%User{} = user, _args, _resolution) do
-    settings =
-      user
-      |> Repo.preload(:user_settings)
-      |> Map.get(:user_settings)
-      |> case do
-        nil ->
-          {:ok, nil}
+    user
+    |> Repo.preload(:user_settings)
+    |> Map.get(:user_settings)
+    |> case do
+      nil ->
+        {:ok, nil}
 
-        %UserSettings{} = us ->
-          {:ok, us}
-      end
+      %UserSettings{} = us ->
+        {:ok, us}
+    end
   end
 
   def settings_toggle_channel(_root, args, %{
@@ -26,13 +25,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
     |> handle_toggle_result()
   end
 
-  def settings_generate_telegram_url(_root, args, %{
+  def settings_generate_telegram_url(_root, _args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
     UserSettings.generate_telegram_url(current_user)
     |> case do
-      {:ok, %UserSettings{telegram_url: telegram_url} = us} ->
-        {:ok, us |> Repo.preload(:user)}
+      {:ok, %UserSettings{telegram_url: _telegram_url} = us} ->
+        {:ok, us}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error,
@@ -46,7 +45,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
   defp handle_toggle_result(result) do
     case result do
       {:ok, us} ->
-        {:ok, us |> Repo.preload(:user)}
+        {:ok, us}
 
       {:error, changeset} ->
         {

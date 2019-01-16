@@ -33,14 +33,22 @@ defmodule Sanbase.Auth.UserSettings do
     end
   end
 
-  def toggle_notification_channel(%User{id: user_id}, args) do
+  def toggle_notification_channel(%User{id: user_id}, params) do
+    settings_update(user_id, params)
+  end
+
+  def set_telegram_chat_id(user_id, chat_id) do
+    settings_update(user_id, %{telegram_chat_id: chat_id})
+  end
+
+  defp settings_update(user_id, params) do
     Repo.get_by(UserSettings, user_id: user_id)
     |> case do
-      %UserSettings{} = us ->
-        changeset(us, %{settings: args})
-
       nil ->
-        changeset(%UserSettings{}, %{user_id: user_id, settings: args})
+        changeset(%UserSettings{}, %{user_id: user_id, settings: params})
+
+      %UserSettings{} = us ->
+        changeset(us, %{settings: params})
     end
     |> Repo.insert_or_update()
   end

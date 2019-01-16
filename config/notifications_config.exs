@@ -40,3 +40,7 @@ config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
   ethereum_signal_trigger_percent: {:system, "EXCHANGE_INFLOW_ETHEREUMTRIGER_PERCENT", "0.4"},
   interval_days: {:system, "EXCHANGE_INFLOW_INTERVAL_DAYS", "1"},
   cooldown_days: {:system, "EXCHANGE_INFLOW_COOLDOWN_DAYS", "1"}
+
+config :sanbase, Sanbase.Telegram,
+  username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", ""},
+  token: {:system, "TELEGRAM_NOTIFICATIONS_TOKEN", ""}

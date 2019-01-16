@@ -769,6 +769,12 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       cache_resolve(&ClickhouseResolver.network_growth/3)
     end
+
+    @desc "Get a URL for deep-linking sanbase and telegram accounts"
+    field :telegram_deep_link, :string do
+      # middleware(JWTAuth)
+      resolve(&AccountResolver.telegram_deep_link/3)
+    end
   end
 
   mutation do

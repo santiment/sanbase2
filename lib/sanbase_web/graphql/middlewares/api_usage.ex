@@ -30,7 +30,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
       api_token: token,
       user_id: user.id,
       query: definition.name,
-      complexity: definition.complexity
+      complexity: definition.complexity,
+      san_balance: Sanbase.Auth.User.san_balance!(user)
     )
 
     Logger.info(
@@ -58,7 +59,8 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
       remote_ip: remote_ip,
       user_id: user.id,
       query: definition.name,
-      complexity: definition.complexity
+      complexity: definition.complexity,
+      san_balance: Sanbase.Auth.User.san_balance!(user)
     )
 
     Logger.info(

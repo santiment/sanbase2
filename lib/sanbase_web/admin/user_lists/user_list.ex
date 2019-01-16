@@ -14,7 +14,7 @@ defmodule Sanbase.ExAdmin.UserLists.UserList do
     end
 
     show user_list do
-      attributes_table
+      attributes_table()
 
       panel "List items" do
         table_for Sanbase.Repo.preload(user_list.list_items, [:project]) do

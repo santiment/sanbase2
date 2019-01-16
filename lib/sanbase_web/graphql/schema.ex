@@ -20,7 +20,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     UserListResolver,
     ElasticsearchResolver,
     ClickhouseResolver,
-    ExchangeResolver
+    ExchangeResolver,
+    UserSettingsResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -58,6 +59,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
   import_types(SanbaseWeb.Graphql.ClickhouseTypes)
   import_types(SanbaseWeb.Graphql.ExchangeTypes)
+  import_types(SanbaseWeb.Graphql.UserSettingsTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -952,6 +954,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&UserListResolver.remove_user_list/3)
+    end
+
+    field :settings_toggle_channel, :user_settings do
+      arg(:signal_notify_telegram, :boolean)
+      arg(:signal_notify_email, :boolean)
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.settings_toggle_channel/3)
     end
   end
 end

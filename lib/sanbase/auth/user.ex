@@ -7,7 +7,8 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Auth.{
     User,
     EthAccount,
-    UserApikeyToken
+    UserApikeyToken,
+    UserSettings
   }
 
   alias Sanbase.Voting.{Vote, Post}
@@ -61,6 +62,8 @@ defmodule Sanbase.Auth.User do
     has_many(:apikey_tokens, UserApikeyToken, on_delete: :delete_all)
     has_many(:user_lists, UserList, on_delete: :delete_all)
     has_many(:posts, Post, on_delete: :delete_all)
+
+    has_one(:user_settings, UserSettings, on_delete: :delete_all)
 
     timestamps()
   end

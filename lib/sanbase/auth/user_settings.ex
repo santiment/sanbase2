@@ -4,59 +4,44 @@ defmodule Sanbase.Auth.UserSettings do
   import Ecto.Query
 
   alias __MODULE__
-  alias Sanbase.Auth.User
+  alias Sanbase.Auth.{User, Settings}
   alias Sanbase.Repo
 
   schema "user_settings" do
-    field(:signal_notify_email, :boolean, dafault: false)
-    field(:signal_notify_telegram, :boolean, dafault: false)
-    field(:telegram_url, :string)
-
     belongs_to(:user, User)
+    embeds_one(:settings, Settings, on_replace: :update)
 
     timestamps()
   end
 
   def changeset(%UserSettings{} = user_settings, attrs \\ %{}) do
     user_settings
-    |> cast(attrs, [:signal_notify_email, :signal_notify_telegram, :telegram_url, :user_id])
+    |> cast(attrs, [:user_id])
+    |> cast_embed(:settings, required: true, with: &Settings.changeset/2)
     |> validate_required([:user_id])
     |> unique_constraint(:user_id)
   end
 
   def settings_for(%User{id: user_id}) do
     Repo.get_by(UserSettings, user_id: user_id)
+    |> case do
+      nil ->
+        nil
+
+      %UserSettings{} = us ->
+        us.settings
+    end
   end
 
   def toggle_notification_channel(%User{id: user_id}, args) do
     Repo.get_by(UserSettings, user_id: user_id)
     |> case do
       %UserSettings{} = us ->
-        changeset(us, args)
+        changeset(us, %{settings: args})
 
       nil ->
-        changeset(%UserSettings{}, Map.merge(args, %{user_id: user_id}))
+        changeset(%UserSettings{}, %{user_id: user_id, settings: args})
     end
     |> Repo.insert_or_update()
-  end
-
-  def generate_telegram_url(%User{id: user_id} = user) do
-    with %UserSettings{} = us <-
-           Repo.get_by(UserSettings, user_id: user_id, signal_notify_telegram: true),
-         {:ok, telegram_url} <- generate_telegram_url_int(user) do
-      changeset(us, %{telegram_url: telegram_url})
-      |> Repo.update()
-    else
-      nil ->
-        {:error, "Telegram channel is not active!"}
-
-      {:error, error} ->
-        {:error, "Cannot generate telegram url!"}
-    end
-  end
-
-  defp generate_telegram_url_int(%User{id: user_id} = user) do
-    # for testing
-    {:ok, "https://example.com"}
   end
 end

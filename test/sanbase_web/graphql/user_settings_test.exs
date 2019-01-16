@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
   end
 
   test "toggle on existing record", %{user: user, conn: conn} do
-    insert(:user_settings, user: user, signal_notify_telegram: false)
+    insert(:user_settings, user: user, settings: %{signal_notify_telegram: false})
 
     query = """
     mutation {
@@ -89,52 +89,13 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert UserSettings.settings_for(user) |> Map.get(:signal_notify_telegram) == true
   end
 
-  test "generate telegram url when telegram active", %{user: user, conn: conn} do
-    test_url = "https://example.com"
-    insert(:user_settings, user: user, signal_notify_telegram: true)
-
-    query = """
-    mutation {
-      settingsGenerateTelegramUrl {
-        telegramUrl
-      }
-    }
-    """
-
-    result = conn |> post("/graphql", mutation_skeleton(query))
-
-    assert json_response(result, 200)["data"]["settingsGenerateTelegramUrl"] == %{
-             "telegramUrl" => test_url
-           }
-
-    assert UserSettings.settings_for(user) |> Map.get(:telegram_url) == test_url
-  end
-
-  test "generate telegram url when telegram not active", %{user: user, conn: conn} do
-    insert(:user_settings, user: user, signal_notify_telegram: false)
-
-    query = """
-    mutation {
-      settingsGenerateTelegramUrl {
-        telegramUrl
-      }
-    }
-    """
-
-    result = conn |> post("/graphql", mutation_skeleton(query))
-    [error] = json_response(result, 200)["errors"]
-
-    assert json_response(result, 200)["data"]["settingsGenerateTelegramUrl"] == nil
-    assert String.contains?(error["message"], "Telegram channel is not active!")
-    assert UserSettings.settings_for(user) |> Map.get(:telegram_url) == nil
-  end
-
   test "fetches settings for current user", %{user: user, conn: conn} do
     insert(:user_settings,
       user: user,
-      signal_notify_telegram: true,
-      signal_notify_email: false,
-      telegram_url: "test"
+      settings: %{
+        signal_notify_telegram: true,
+        signal_notify_email: false
+      }
     )
 
     query = """
@@ -144,7 +105,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
         settings {
           signalNotifyEmail
           signalNotifyTelegram
-          telegramUrl
         }
       }
     }
@@ -156,8 +116,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
 
     assert json_response(result, 200)["data"]["currentUser"]["settings"] == %{
              "signalNotifyEmail" => false,
-             "signalNotifyTelegram" => true,
-             "telegramUrl" => "test"
+             "signalNotifyTelegram" => true
            }
   end
 
@@ -169,7 +128,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
         settings {
           signalNotifyEmail
           signalNotifyTelegram
-          telegramUrl
         }
       }
     }

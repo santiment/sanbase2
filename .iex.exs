@@ -21,7 +21,9 @@ alias Sanbase.Auth.{
   EthAccount,
   Apikey,
   Hmac,
-  UserApikeyToken
+  UserApikeyToken,
+  UserSettings,
+  Settings
 }
 
 alias Sanbase.Voting.{

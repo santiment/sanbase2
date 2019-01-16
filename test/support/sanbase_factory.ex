@@ -59,8 +59,10 @@ defmodule Sanbase.Factory do
 
   def user_settings_factory() do
     %UserSettings{
-      signal_notify_telegram: false,
-      signal_notify_email: false
+      settings: %{
+        signal_notify_telegram: false,
+        signal_notify_email: false
+      }
     }
   end
 end

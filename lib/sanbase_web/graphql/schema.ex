@@ -962,10 +962,5 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.settings_toggle_channel/3)
     end
-
-    field :settings_generate_telegram_url, :user_settings do
-      middleware(JWTAuth)
-      resolve(&UserSettingsResolver.settings_generate_telegram_url/3)
-    end
   end
 end

@@ -4,9 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreateUserSettingsTable do
   def change do
     create table("user_settings") do
       add(:user_id, references("users"), null: false)
-      add(:signal_notify_email, :boolean, default: false)
-      add(:signal_notify_telegram, :boolean, default: false)
-      add(:telegram_url, :string)
+      add(:settings, :jsonb)
 
       timestamps()
     end

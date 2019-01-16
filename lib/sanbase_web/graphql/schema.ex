@@ -21,7 +21,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ElasticsearchResolver,
     ClickhouseResolver,
     ExchangeResolver,
-    UserSettingsResolver
+    UserSettingsResolver,
+    TelegramResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -770,10 +771,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ClickhouseResolver.network_growth/3)
     end
 
-    @desc "Get a URL for deep-linking sanbase and telegram accounts"
-    field :telegram_deep_link, :string do
-      # middleware(JWTAuth)
-      resolve(&AccountResolver.telegram_deep_link/3)
+    @desc """
+    Get a URL for deep-linking sanbase and telegram accounts. It carries a unique
+    random token that is associated with the user. The link leads to a telegram chat
+    with Santiment's notification bot. When the `Start` button is pressed, telegram
+    and sanbase accounts are linked and the user can receive sanbase signals in telegram.
+    """
+    field :get_telegram_deep_link, :string do
+      middleware(JWTAuth)
+      resolve(&TelegramResolver.get_telegram_deep_link/3)
     end
   end
 
@@ -836,7 +842,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&VotingResolver.unvote/3)
     end
 
-    @desc "Create a post."
+    @desc """
+    Create a post. After creation the post is not visible to anyone but the author.
+    To be visible to anyone, the post must be published. By publishing it also becomes
+    immutable and can no longer be updated.
+    """
     field :create_post, :post do
       arg(:title, non_null(:string))
       arg(:short_desc, :string)
@@ -849,7 +859,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PostResolver.create_post/3)
     end
 
-    @desc "Update a post."
+    @desc """
+    Update a post if and only if the currently logged in user is the creator of the post
+    A post can be updated if it is not yet published.
+    """
     field :update_post, :post do
       arg(:id, non_null(:id))
       arg(:title, :string)
@@ -879,7 +892,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&FileResolver.upload_image/3)
     end
 
-    @desc "Publish insight."
+    @desc """
+    Publish insight. The `id` argument must be an id of an already existing insight.
+    Once published, the insight is visible to anyone and can no longer be edited.
+    """
     field :publish_insight, :post do
       arg(:id, non_null(:id))
 
@@ -926,7 +942,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc """
     Create user favourites list.
     """
-
     field :create_user_list, :user_list do
       arg(:name, non_null(:string))
       arg(:is_public, :boolean)
@@ -939,7 +954,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc """
     Update user favourites list.
     """
-
     field :update_user_list, :user_list do
       arg(:id, non_null(:integer))
       arg(:name, :string)
@@ -951,10 +965,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&UserListResolver.update_user_list/3)
     end
 
-    @desc """
-    Remove user favourites list.
-    """
-
+    @desc "Remove user favourites list."
     field :remove_user_list, :user_list do
       arg(:id, non_null(:integer))
 
@@ -967,6 +978,16 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:signal_notify_email, :boolean)
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.settings_toggle_channel/3)
+    end
+
+    @desc """
+    Revoke the telegram deep link for the currently logged in user if present.
+    The link will continue to work and following it will send a request to sanbase,
+    but the used token will no longer be paired with the user.
+    """
+    field :revoke_telegram_deep_link, :boolean do
+      middleware(JWTAuth)
+      resolve(&TelegramResolver.revoke_telegram_deep_link/3)
     end
   end
 end

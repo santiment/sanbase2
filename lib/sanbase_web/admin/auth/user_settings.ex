@@ -1,25 +1,26 @@
 defmodule Sanbase.ExAdmin.Auth.UserSettings do
   use ExAdmin.Register
 
-  alias Sanbase.Auth.{User, UserSettings}
+  alias Sanbase.Auth.{User, UserSettings, Settings}
 
   register_resource Sanbase.Auth.UserSettings do
-    form user_settings do
-      inputs do
-        input(
-          user_settings,
-          :user,
-          collection: from(u in User, order_by: u.username) |> Sanbase.Repo.all()
-        )
+    action_items(only: [:show])
 
-        input(user_settings, :signal_notify_email)
-        input(user_settings, :signal_notify_telegram)
-        input(user_settings, :telegram_url)
-      end
+    index do
+      column(:user)
+      column(:settings, fn us -> Poison.encode!(us.settings) end)
     end
 
     show user_settings do
-      attributes_table(all: true)
+      attributes_table do
+        row(:user)
+      end
+
+      panel "Settings" do
+        table_for([user_settings]) do
+          column("Settings", &Poison.encode!(&1.settings))
+        end
+      end
     end
   end
 end

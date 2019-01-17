@@ -31,17 +31,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
 
   def current_user(_root, _args, _context), do: {:ok, nil}
 
-  def telegram_deep_link(_root, _args, %{context: %{auth: %{current_user: user}}}) do
-    link = Sanbase.Telegram.get_or_create_start_link(user.id)
-    {:ok, link}
-  end
-
-  def telegram_deep_link(_root, _args, _resolution) do
-    # {:error, "Only logged in users can call this method"}
-    link = Sanbase.Telegram.get_or_create_start_link(1)
-    {:ok, link}
-  end
-
   def eth_login(
         %{signature: signature, address: address, message_hash: message_hash} = args,
         _resolution

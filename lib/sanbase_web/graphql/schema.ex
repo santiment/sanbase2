@@ -778,7 +778,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     and sanbase accounts are linked and the user can receive sanbase signals in telegram.
     """
     field :get_telegram_deep_link, :string do
-      middleware(JWTAuth)
+      # middleware(JWTAuth)
       resolve(&TelegramResolver.get_telegram_deep_link/3)
     end
   end

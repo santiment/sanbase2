@@ -166,12 +166,12 @@ defmodule Sanbase.Influxdb.Store do
         datetime * 1_000_000_000
       end
 
-      def influx_time(datetime, :milliseconds) when is_integer(datetime) do
+      def influx_time(datetime, :millisecond) when is_integer(datetime) do
         datetime * 1_000_000
       end
 
       def influx_time(%DateTime{} = datetime, _from_type) do
-        DateTime.to_unix(datetime, :nanoseconds)
+        DateTime.to_unix(datetime, :nanosecond)
       end
 
       def parse_time_series(%{results: [%{error: error}]}) do

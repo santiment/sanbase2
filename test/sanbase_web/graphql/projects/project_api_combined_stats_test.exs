@@ -21,32 +21,32 @@ defmodule SanbaseWeb.Graphql.ProjectApiCombinedStatsTest do
 
     Store.import([
       %Measurement{
-        timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime1 |> DateTime.to_unix(:nanosecond),
         fields: %{price_usd: 25, price_btc: 1, volume_usd: 220, marketcap_usd: 545},
         name: measurement1
       },
       %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
         fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
         name: measurement1
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{price_usd: 22, price_btc: 1200, volume_usd: 300, marketcap_usd: 800},
         name: measurement1
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{price_usd: 20, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
         name: measurement2
       },
       %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
         fields: %{volume_usd: 1200, marketcap_usd: 1500},
         name: measurement2
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{volume_usd: 1300, marketcap_usd: 1800},
         name: measurement2
       }

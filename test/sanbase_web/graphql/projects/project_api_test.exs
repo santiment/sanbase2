@@ -176,14 +176,14 @@ defmodule Sanbase.Graphql.ProjectApiTest do
     %Ico{}
     |> Ico.changeset(%{
       project_id: project.id,
-      token_usd_ico_price: Decimal.new(0.1)
+      token_usd_ico_price: Decimal.from_float(0.1)
     })
     |> Repo.insert!()
 
     %Ico{}
     |> Ico.changeset(%{
       project_id: project.id,
-      token_usd_ico_price: Decimal.new(0.2)
+      token_usd_ico_price: Decimal.from_float(0.2)
     })
     |> Repo.insert!()
 
@@ -196,7 +196,7 @@ defmodule Sanbase.Graphql.ProjectApiTest do
 
     response = query_ico_price(context, cmc_id)
 
-    assert response["icoPrice"] == Decimal.new(0.2) |> Decimal.to_float()
+    assert response["icoPrice"] == 0.2
   end
 
   test "fetch project ico_price when it is nil", context do

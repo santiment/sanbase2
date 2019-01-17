@@ -91,7 +91,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
 
   defp milliseconds_str() do
     DateTime.utc_now()
-    |> DateTime.to_unix(:milliseconds)
+    |> DateTime.to_unix(:millisecond)
     |> Integer.to_string()
   end
 end

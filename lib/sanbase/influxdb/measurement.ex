@@ -35,7 +35,7 @@ defmodule Sanbase.Influxdb.Measurement do
   end
 
   def get_timestamp(%Measurement{timestamp: %DateTime{} = datetime}) do
-    DateTime.to_unix(datetime, :nanoseconds)
+    DateTime.to_unix(datetime, :nanosecond)
   end
 
   def get_timestamp(%Measurement{timestamp: ts}), do: ts
@@ -45,7 +45,7 @@ defmodule Sanbase.Influxdb.Measurement do
   end
 
   def get_datetime(%Measurement{timestamp: ts}) do
-    DateTime.from_unix!(ts, :nanoseconds)
+    DateTime.from_unix!(ts, :nanosecond)
   end
 
   def name_from(%Sanbase.Model.Project{ticker: ticker, coinmarketcap_id: coinmarketcap_id})
@@ -83,7 +83,7 @@ defmodule Sanbase.Influxdb.Measurement do
   # Private functions
 
   defp format_timestamp(%DateTime{} = datetime) do
-    DateTime.to_unix(datetime, :nanoseconds)
+    DateTime.to_unix(datetime, :nanosecond)
   end
 
   defp format_timestamp(ts) when is_integer(ts), do: ts

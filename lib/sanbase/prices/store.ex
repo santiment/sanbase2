@@ -98,7 +98,7 @@ defmodule Sanbase.Prices.Store do
   def update_last_history_datetime_cmc(slug, last_updated_datetime) do
     %Measurement{
       timestamp: 0,
-      fields: %{last_updated: last_updated_datetime |> DateTime.to_unix(:nanoseconds)},
+      fields: %{last_updated: last_updated_datetime |> DateTime.to_unix(:nanosecond)},
       tags: [ticker_cmc_id: slug],
       name: @last_history_price_cmc_measurement
     }
@@ -111,7 +111,7 @@ defmodule Sanbase.Prices.Store do
     |> parse_time_series()
     |> case do
       {:ok, [[_, iso8601_datetime | _rest]]} ->
-        {:ok, datetime} = DateTime.from_unix(iso8601_datetime, :nanoseconds)
+        {:ok, datetime} = DateTime.from_unix(iso8601_datetime, :nanosecond)
         {:ok, datetime}
 
       {:ok, []} ->
@@ -159,7 +159,7 @@ defmodule Sanbase.Prices.Store do
   end
 
   def all_with_data_after_datetime(datetime) do
-    datetime_unix_ns = DateTime.to_unix(datetime, :nanoseconds)
+    datetime_unix_ns = DateTime.to_unix(datetime, :nanosecond)
 
     ~s/SELECT last_updated, ticker_cmc_id FROM "#{@last_history_price_cmc_measurement}"
     WHERE ticker_cmc_id != "" AND last_updated >= #{datetime_unix_ns}/
@@ -192,8 +192,8 @@ defmodule Sanbase.Prices.Store do
   defp fetch_query(measurement, from, to) do
     ~s/SELECT time, price_usd, price_btc, marketcap_usd, volume_usd
     FROM "#{measurement}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+    AND time <= #{DateTime.to_unix(to, :nanosecond)}/
   end
 
   defp fetch_ohlc_query(measurement, from, to, interval) do
@@ -205,8 +205,8 @@ defmodule Sanbase.Prices.Store do
      last(price_usd) as close,
      mean(price_usd) as avg
      FROM "#{measurement}"
-     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-     AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+     WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+     AND time <= #{DateTime.to_unix(to, :nanosecond)}
      GROUP BY time(#{interval})
      FILL(0)/
   end
@@ -214,15 +214,15 @@ defmodule Sanbase.Prices.Store do
   defp fetch_prices_with_resolution_query(measurement, from, to, resolution) do
     ~s/SELECT MEAN(price_usd), MEAN(price_btc), MEAN(marketcap_usd), LAST(volume_usd)
     FROM "#{measurement}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+    AND time <= #{DateTime.to_unix(to, :nanosecond)}
     GROUP BY time(#{resolution}) fill(none)/
   end
 
   defp fetch_last_price_point_before_query(measurement, timestamp) do
     ~s/SELECT LAST(price_usd), price_btc, marketcap_usd, volume_usd
     FROM "#{measurement}"
-    WHERE time <= #{DateTime.to_unix(timestamp, :nanoseconds)}/
+    WHERE time <= #{DateTime.to_unix(timestamp, :nanosecond)}/
   end
 
   defp fetch_mean_volume_query(measurements, from, to) when is_list(measurements) do
@@ -237,15 +237,15 @@ defmodule Sanbase.Prices.Store do
   defp fetch_mean_volume_query(measurement, from, to) do
     ~s/SELECT MEAN(volume_usd)
     FROM "#{measurement}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+    AND time <= #{DateTime.to_unix(to, :nanosecond)}/
   end
 
   defp fetch_average_price_query(measurement, from, to) do
     ~s/SELECT MEAN(price_usd), MEAN(price_btc)
     FROM "#{measurement}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+    AND time <= #{DateTime.to_unix(to, :nanosecond)}/
   end
 
   defp last_history_datetime_cmc_query(ticker_cmc_id) do
@@ -256,15 +256,15 @@ defmodule Sanbase.Prices.Store do
   defp fetch_volume_mcap_multiple_measurements_query(measurements_str, from, to) do
     ~s/SELECT LAST(volume_usd), LAST(marketcap_usd)
       FROM #{measurements_str}
-      WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-      AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+      WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+      AND time <= #{DateTime.to_unix(to, :nanosecond)}/
   end
 
   defp fetch_combined_mcap_volume_query(measurements_str, from, to, resolution) do
     ~s/SELECT MEAN(volume_usd), MEAN(marketcap_usd)
        FROM #{measurements_str}
-       WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-       AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+       WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+       AND time <= #{DateTime.to_unix(to, :nanosecond)}
        GROUP BY time(#{resolution}) fill(0)/
   end
 
@@ -317,7 +317,7 @@ defmodule Sanbase.Prices.Store do
   defp mean_volume_for_period_query(measurements, from, to) do
     ~s/SELECT MEAN(volume_usd) as volume
     FROM #{measurements}
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+    AND time <= #{DateTime.to_unix(to, :nanosecond)}/
   end
 end

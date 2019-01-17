@@ -15,6 +15,7 @@ defmodule SanbaseWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug(RemoteIp)
     plug(SanbaseWeb.Graphql.PlugAttack)
     plug(SanbaseWeb.Graphql.ContextPlug)
   end
@@ -35,7 +36,7 @@ defmodule SanbaseWeb.Router do
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
-      max_complexity: 5000,
+      max_complexity: 10000,
       log_level: :info
     )
 
@@ -45,7 +46,7 @@ defmodule SanbaseWeb.Router do
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
-      max_complexity: 5000,
+      max_complexity: 10000,
       interface: :simple
     )
   end

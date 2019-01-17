@@ -124,6 +124,17 @@ ALTER SEQUENCE public.eth_accounts_id_seq OWNED BY public.eth_accounts.id;
 
 
 --
+-- Name: eth_coin_circulation; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.eth_coin_circulation (
+    "timestamp" timestamp without time zone NOT NULL,
+    contract_address character varying(255) NOT NULL,
+    "_-1d" double precision
+);
+
+
+--
 -- Name: exchange_addresses; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -155,40 +166,6 @@ CREATE SEQUENCE public.exchange_addresses_id_seq
 --
 
 ALTER SEQUENCE public.exchange_addresses_id_seq OWNED BY public.exchange_addresses.id;
-
-
---
--- Name: exchange_eth_addresses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.exchange_eth_addresses (
-    id bigint NOT NULL,
-    address character varying(255) NOT NULL,
-    name character varying(255) NOT NULL,
-    comments text,
-    source text,
-    is_dex boolean,
-    infrastructure_id bigint
-);
-
-
---
--- Name: exchange_eth_addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.exchange_eth_addresses_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: exchange_eth_addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.exchange_eth_addresses_id_seq OWNED BY public.exchange_eth_addresses.id;
 
 
 --
@@ -467,6 +444,39 @@ CREATE SEQUENCE public.notification_type_id_seq
 --
 
 ALTER SEQUENCE public.notification_type_id_seq OWNED BY public.notification_type.id;
+
+
+--
+-- Name: notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notifications (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    type_id bigint NOT NULL,
+    data character varying(255),
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 
 --
@@ -815,6 +825,42 @@ ALTER SEQUENCE public.project_transparency_statuses_id_seq OWNED BY public.proje
 
 
 --
+-- Name: schedule_rescrape_prices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schedule_rescrape_prices (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    "from" timestamp without time zone NOT NULL,
+    "to" timestamp without time zone NOT NULL,
+    original_last_updated timestamp without time zone,
+    in_progress boolean NOT NULL,
+    finished boolean NOT NULL,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: schedule_rescrape_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.schedule_rescrape_prices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: schedule_rescrape_prices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.schedule_rescrape_prices_id_seq OWNED BY public.schedule_rescrape_prices.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -920,6 +966,38 @@ ALTER SEQUENCE public.user_lists_id_seq OWNED BY public.user_lists.id;
 
 
 --
+-- Name: user_settings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_settings (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    settings jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: user_settings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_settings_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_settings_id_seq OWNED BY public.user_settings.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1020,13 +1098,6 @@ ALTER TABLE ONLY public.exchange_addresses ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- Name: exchange_eth_addresses id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.exchange_eth_addresses ALTER COLUMN id SET DEFAULT nextval('public.exchange_eth_addresses_id_seq'::regclass);
-
-
---
 -- Name: ico_currencies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1080,6 +1151,13 @@ ALTER TABLE ONLY public.notification ALTER COLUMN id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.notification_type ALTER COLUMN id SET DEFAULT nextval('public.notification_type_id_seq'::regclass);
+
+
+--
+-- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
 
 
 --
@@ -1153,6 +1231,13 @@ ALTER TABLE ONLY public.project_transparency_statuses ALTER COLUMN id SET DEFAUL
 
 
 --
+-- Name: schedule_rescrape_prices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nextval('public.schedule_rescrape_prices_id_seq'::regclass);
+
+
+--
 -- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1171,6 +1256,13 @@ ALTER TABLE ONLY public.user_api_key_tokens ALTER COLUMN id SET DEFAULT nextval(
 --
 
 ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.user_lists_id_seq'::regclass);
+
+
+--
+-- Name: user_settings id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_settings ALTER COLUMN id SET DEFAULT nextval('public.user_settings_id_seq'::regclass);
 
 
 --
@@ -1204,19 +1296,19 @@ ALTER TABLE ONLY public.eth_accounts
 
 
 --
+-- Name: eth_coin_circulation eth_coin_circulation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eth_coin_circulation
+    ADD CONSTRAINT eth_coin_circulation_pkey PRIMARY KEY ("timestamp", contract_address);
+
+
+--
 -- Name: exchange_addresses exchange_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.exchange_addresses
     ADD CONSTRAINT exchange_addresses_pkey PRIMARY KEY (id);
-
-
---
--- Name: exchange_eth_addresses exchange_eth_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.exchange_eth_addresses
-    ADD CONSTRAINT exchange_eth_addresses_pkey PRIMARY KEY (id);
 
 
 --
@@ -1289,6 +1381,14 @@ ALTER TABLE ONLY public.notification
 
 ALTER TABLE ONLY public.notification_type
     ADD CONSTRAINT notification_type_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
 
 
 --
@@ -1372,6 +1472,14 @@ ALTER TABLE ONLY public.project_transparency_statuses
 
 
 --
+-- Name: schedule_rescrape_prices schedule_rescrape_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schedule_rescrape_prices
+    ADD CONSTRAINT schedule_rescrape_prices_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1401,6 +1509,14 @@ ALTER TABLE ONLY public.user_api_key_tokens
 
 ALTER TABLE ONLY public.user_lists
     ADD CONSTRAINT user_lists_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_settings user_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_settings
+    ADD CONSTRAINT user_settings_pkey PRIMARY KEY (id);
 
 
 --
@@ -1438,13 +1554,6 @@ CREATE UNIQUE INDEX eth_accounts_address_index ON public.eth_accounts USING btre
 --
 
 CREATE UNIQUE INDEX exchange_addresses_address_idx ON public.exchange_addresses USING btree (address);
-
-
---
--- Name: exchange_eth_addresses_address_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX exchange_eth_addresses_address_index ON public.exchange_eth_addresses USING btree (address);
 
 
 --
@@ -1508,6 +1617,13 @@ CREATE INDEX notification_project_id_type_id_index ON public.notification USING 
 --
 
 CREATE UNIQUE INDEX notification_type_name_index ON public.notification_type USING btree (name);
+
+
+--
+-- Name: notifications_project_id_type_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_project_id_type_id_index ON public.notifications USING btree (project_id, type_id);
 
 
 --
@@ -1609,6 +1725,13 @@ CREATE UNIQUE INDEX project_transparency_statuses_name_index ON public.project_t
 
 
 --
+-- Name: schedule_rescrape_prices_project_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescrape_prices USING btree (project_id);
+
+
+--
 -- Name: tags_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1620,6 +1743,13 @@ CREATE UNIQUE INDEX tags_name_index ON public.tags USING btree (name);
 --
 
 CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_tokens USING btree (token);
+
+
+--
+-- Name: user_settings_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_settings_user_id_index ON public.user_settings USING btree (user_id);
 
 
 --
@@ -1664,14 +1794,6 @@ ALTER TABLE ONLY public.eth_accounts
 
 ALTER TABLE ONLY public.exchange_addresses
     ADD CONSTRAINT exchange_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
-
-
---
--- Name: exchange_eth_addresses exchange_eth_addresses_infrastructure_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.exchange_eth_addresses
-    ADD CONSTRAINT exchange_eth_addresses_infrastructure_id_fkey FOREIGN KEY (infrastructure_id) REFERENCES public.infrastructures(id);
 
 
 --
@@ -1736,6 +1858,22 @@ ALTER TABLE ONLY public.notification
 
 ALTER TABLE ONLY public.notification
     ADD CONSTRAINT notification_type_id_fkey FOREIGN KEY (type_id) REFERENCES public.notification_type(id);
+
+
+--
+-- Name: notifications notifications_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
+
+
+--
+-- Name: notifications notifications_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_type_id_fkey FOREIGN KEY (type_id) REFERENCES public.notification_type(id);
 
 
 --
@@ -1843,6 +1981,14 @@ ALTER TABLE ONLY public.project
 
 
 --
+-- Name: schedule_rescrape_prices schedule_rescrape_prices_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schedule_rescrape_prices
+    ADD CONSTRAINT schedule_rescrape_prices_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(id);
+
+
+--
 -- Name: user_api_key_tokens user_api_key_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1856,6 +2002,14 @@ ALTER TABLE ONLY public.user_api_key_tokens
 
 ALTER TABLE ONLY public.user_lists
     ADD CONSTRAINT user_lists_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_settings user_settings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_settings
+    ADD CONSTRAINT user_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -1878,5 +2032,5 @@ ALTER TABLE ONLY public.votes
 -- PostgreSQL database dump complete
 --
 
-INSERT INTO public."schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180105091551), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910), (20180114095310), (20180115141540), (20180122122441), (20180126093200), (20180129165526), (20180131140259), (20180202131721), (20180205101949), (20180209121215), (20180211202224), (20180215105804), (20180216182032), (20180219102602), (20180219133328), (20180222135838), (20180223114151), (20180227090003), (20180319041803), (20180322143849), (20180323111505), (20180330045410), (20180411112814), (20180411112855), (20180411113727), (20180411120339), (20180412083038), (20180418141807), (20180423115739), (20180423130032), (20180424122421), (20180424135326), (20180425145127), (20180430093358), (20180503110930), (20180504071348), (20180526114244), (20180601085613), (20180620114029), (20180625122114), (20180628092208), (20180704075131), (20180704075135), (20180708110131), (20180708114337), (20180829153735), (20180830080945), (20180831074008), (20180831094245), (20180903115442), (20180912124703), (20180914114619), (20181002095110), (20181029104029), (20181102114904);
+INSERT INTO public."schema_migrations" (version) VALUES (20171008200815), (20171008203355), (20171008204451), (20171008204756), (20171008205435), (20171008205503), (20171008205547), (20171008210439), (20171017104338), (20171017104607), (20171017104817), (20171017111725), (20171017125741), (20171017132729), (20171018120438), (20171025082707), (20171106052403), (20171114151430), (20171122153530), (20171128130151), (20171128183758), (20171128183804), (20171128222957), (20171129022700), (20171130144543), (20171205103038), (20171212105707), (20171213093912), (20171213104154), (20171213115525), (20171213120408), (20171213121433), (20171213180753), (20171215133550), (20171218112921), (20171219162029), (20171224113921), (20171224114352), (20171225093503), (20171226143530), (20171228163415), (20180102111752), (20180103102329), (20180105091551), (20180108100755), (20180108110118), (20180108140221), (20180112084549), (20180112215750), (20180114093910), (20180114095310), (20180115141540), (20180122122441), (20180126093200), (20180129165526), (20180131140259), (20180202131721), (20180205101949), (20180209121215), (20180211202224), (20180215105804), (20180216182032), (20180219102602), (20180219133328), (20180222135838), (20180223114151), (20180227090003), (20180319041803), (20180322143849), (20180323111505), (20180330045410), (20180411112814), (20180411112855), (20180411113727), (20180411120339), (20180412083038), (20180418141807), (20180423115739), (20180423130032), (20180424122421), (20180424135326), (20180425145127), (20180430093358), (20180503110930), (20180504071348), (20180526114244), (20180601085613), (20180620114029), (20180625122114), (20180628092208), (20180704075131), (20180704075135), (20180708110131), (20180708114337), (20180829153735), (20180830080945), (20180831074008), (20180831094245), (20180903115442), (20180912124703), (20180914114619), (20181002095110), (20181029104029), (20181102114904), (20181107134850), (20181129132524), (20190110101520), (20190114144216);
 

@@ -47,6 +47,23 @@ defmodule Sanbase.Blockchain.ExchangeFundsFlow do
     end)
   end
 
+  def transactions_in_over_time(contract, from, to, interval, token_decimals \\ 0) do
+    args = [from, to, contract]
+
+    """
+    SELECT (coalesce(sum(incoming_exchange_funds),0)) AS value
+    FROM #{@table}
+    WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3
+    """
+    |> Timescaledb.bucket_by_interval(args, interval)
+    |> Timescaledb.timescaledb_execute(fn [datetime, inflow] ->
+      %{
+        datetime: Timescaledb.timestamp_to_datetime(datetime),
+        inflow: inflow / :math.pow(10, token_decimals)
+      }
+    end)
+  end
+
   def transactions_in_out_difference(contract, from, to, interval, token_decimals \\ 0) do
     args = [from, to, contract]
 

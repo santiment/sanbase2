@@ -86,7 +86,7 @@ defmodule Sanbase.Mixfile do
       {:arc, git: "https://github.com/marinho10/arc"},
       {:uuid, "~> 1.1"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
-      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:con_cache, "~> 0.13"},
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
       {:observer_cli, "~> 1.3"},
@@ -103,7 +103,10 @@ defmodule Sanbase.Mixfile do
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_plugs, "~> 1.0"},
       {:prometheus_process_collector, "~> 1.4"},
-      {:absinthe_metrics, "~> 0.9"}
+      {:absinthe_metrics, "~> 0.9"},
+      {:libcluster, "~> 3.0"},
+      {:number, "~> 0.5.7"},
+      {:remote_ip, "~> 0.1"}
     ]
   end
 
@@ -133,6 +136,12 @@ defmodule Sanbase.Mixfile do
 
       # Append `_all` so the Ecto commands apply to all repos.
       # and run all tests
+      "ecto.load_all": [
+        "load_dotenv",
+        "ecto.drop",
+        "ecto.create",
+        "ecto.load"
+      ],
       "ecto.setup_all": [
         "load_dotenv",
         "ecto.create --quiet",

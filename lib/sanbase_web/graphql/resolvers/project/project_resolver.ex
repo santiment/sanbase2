@@ -11,16 +11,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     MarketSegment,
     Infrastructure,
     ProjectTransparencyStatus,
-    Ico,
-    Infrastructure
+    Ico
   }
 
   alias Sanbase.Voting.{Post, Tag}
 
-  alias Sanbase.{
-    Prices,
-    Github
-  }
+  alias Sanbase.Prices
 
   alias Sanbase.Influxdb.Measurement
 
@@ -28,71 +24,68 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.Helpers.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
 
-  def all_projects(_parent, args, _resolution, only_project_transparency \\ nil) do
-    only_project_transparency =
-      case only_project_transparency do
-        nil -> Map.get(args, :only_project_transparency, false)
-        value -> value
-      end
+  alias SanbaseWeb.Graphql.ClickhouseDataloader
 
-    query =
-      if only_project_transparency do
-        from(p in Project, where: p.project_transparency, order_by: p.name)
-      else
-        from(p in Project, where: not is_nil(p.coinmarketcap_id), order_by: p.name)
-      end
+  def projects_count(_root, _args, _resolution) do
+    {:ok,
+     %{
+       erc20_projects_count: Project.List.erc20_projects_count(),
+       currency_projects_count: Project.List.currency_projects_count(),
+       projects_count: Project.List.projects_count()
+     }}
+  end
+
+  def all_projects_project_transparency(_parent, _args, _resolution) do
+    projects = Project.List.projects_transparency()
+    {:ok, projects}
+  end
+
+  def all_projects(_parent, args, _resolution) do
+    page = Map.get(args, :page, nil)
+    page_size = Map.get(args, :page_size, nil)
 
     projects =
-      query
-      |> Repo.all()
-      |> Repo.preload([
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ])
+      if not page_arguments_valid?(page, page_size) do
+        Project.List.projects()
+      else
+        Project.List.projects_page(page, page_size)
+      end
 
     {:ok, projects}
   end
 
-  def all_erc20_projects(_root, _args, _resolution) do
+  def all_erc20_projects(_root, args, _resolution) do
+    page = Map.get(args, :page, nil)
+    page_size = Map.get(args, :page_size, nil)
+
     erc20_projects =
-      Project.erc20_projects()
-      |> Repo.preload([
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ])
-      |> Enum.dedup()
+      if not page_arguments_valid?(page, page_size) do
+        Project.List.erc20_projects()
+      else
+        Project.List.erc20_projects_page(page, page_size)
+      end
 
     {:ok, erc20_projects}
   end
 
-  def all_currency_projects(_root, _args, _resolution) do
+  def all_currency_projects(_root, args, _resolution) do
+    page = Map.get(args, :page, nil)
+    page_size = Map.get(args, :page_size, nil)
+
     currency_projects =
-      Project.currency_projects()
-      |> Repo.preload([
-        :latest_coinmarketcap_data,
-        icos: [ico_currencies: [:currency]]
-      ])
+      if not page_arguments_valid?(page, page_size) do
+        Project.List.currency_projects()
+      else
+        Project.List.currency_projects_page(page, page_size)
+      end
 
     {:ok, currency_projects}
   end
 
   def project(_parent, %{id: id}, _resolution) do
-    project =
-      Project
-      |> Repo.get(id)
-      |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
-
-    {:ok, project}
-  end
-
-  def slug(%Project{coinmarketcap_id: coinmarketcap_id}, _, _), do: {:ok, coinmarketcap_id}
-
-  def project_by_slug(_parent, %{slug: slug}, _resolution) do
-    Project
-    |> Repo.get_by(coinmarketcap_id: slug)
-    |> case do
+    case Project.by_id(id) do
       nil ->
-        {:error, "Project with slug '#{slug}' not found."}
+        {:error, "Project with id '#{id}' not found."}
 
       project ->
         project =
@@ -103,15 +96,20 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     end
   end
 
-  def all_projects_with_eth_contract_info(_parent, _args, _resolution) do
-    query = Project.all_projects_with_eth_contract_query()
+  def slug(%Project{coinmarketcap_id: coinmarketcap_id}, _, _), do: {:ok, coinmarketcap_id}
 
-    projects =
-      query
-      |> Repo.all()
-      |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+  def project_by_slug(_parent, %{slug: slug}, _resolution) do
+    case Project.by_slug(slug) do
+      nil ->
+        {:error, "Project with slug '#{slug}' not found."}
 
-    {:ok, projects}
+      project ->
+        project =
+          project
+          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
+
+        {:ok, project}
+    end
   end
 
   def funds_raised_icos(%Project{} = project, _args, _resolution) do
@@ -257,26 +255,72 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       _ ->
         {:ok, nil}
     end
+  rescue
+    _ -> {:ok, nil}
   end
 
-  def average_dev_activity(%Project{ticker: ticker}, _args, _resolution) do
+  def average_github_activity(%Project{id: id} = project, %{days: days} = args, _resolution) do
     async(
       Cache.func(
-        fn -> calculate_average_dev_activity(ticker) end,
-        {:average_dev_activity, ticker}
+        fn -> calculate_average_github_activity(project, args) end,
+        {:average_github_activity, id, days}
       )
     )
   end
 
-  defp calculate_average_dev_activity(ticker) do
-    month_ago = Timex.shift(Timex.now(), days: -30)
+  defp calculate_average_github_activity(%Project{} = project, %{days: days}) do
+    with {:ok, organization} <- Project.github_organization(project) do
+      month_ago = Timex.shift(Timex.now(), days: -days)
 
-    case Github.Store.fetch_total_activity(ticker, month_ago, Timex.now()) do
-      {:ok, {_dt, total_activity}} ->
-        {:ok, total_activity / 30}
+      case Sanbase.Clickhouse.Github.total_github_activity(organization, month_ago, Timex.now()) do
+        {:ok, total_activity} ->
+          {:ok, total_activity / days}
 
-      _ ->
-        {:ok, 0}
+        _ ->
+          {:ok, 0}
+      end
+    else
+      {:error, {:github_link_error, _error}} ->
+        {:ok, nil}
+
+      error ->
+        Logger.error(
+          "Cannot fetch github activity for #{Project.describe(project)}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:error, "Cannot fetch github activity for #{Project.describe(project)}"}
+    end
+  rescue
+    e ->
+      Logger.error(
+        "Exception raised while calculating average github activity. Reason: #{inspect(e)}"
+      )
+
+      {:ok, nil}
+  end
+
+  def average_dev_activity(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(ClickhouseDataloader, :average_dev_activity, %{
+      project: project,
+      from: Timex.shift(Timex.now(), days: -days),
+      to: Timex.now(),
+      days: days
+    })
+    |> on_load(&average_dev_activity_from_loader(&1, project))
+  end
+
+  def average_dev_activity_from_loader(loader, project) do
+    with {:ok, organization} <- Project.github_organization(project) do
+      average_dev_activity =
+        loader
+        |> Dataloader.get(ClickhouseDataloader, :average_dev_activity, organization)
+
+      {:ok, average_dev_activity}
+    else
+      _ -> {:ok, nil}
     end
   end
 
@@ -312,7 +356,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         _args,
         _resolution
       ) do
-    {:ok, total_supply || cmc_total_supply}
+    {:ok, cmc_total_supply || total_supply}
   end
 
   def total_supply(_parent, _args, _resolution), do: {:ok, nil}
@@ -491,4 +535,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   # Calling Decimal.to_float/1 with `nil` crashes the process
   defp float_or_nil(nil), do: nil
   defp float_or_nil(num), do: Decimal.to_float(num)
+
+  defp page_arguments_valid?(page, page_size) when is_integer(page) and is_integer(page_size) do
+    if page > 0 and page_size > 0 do
+      true
+    else
+      false
+    end
+  end
+
+  defp page_arguments_valid?(_, _), do: false
 end

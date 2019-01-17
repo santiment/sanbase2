@@ -4,33 +4,31 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   alias Sanbase.Model.Project
   alias Sanbase.InternalServices.TechIndicators
-  alias Sanbase.Notifications.Utils
-
-  import Sanbase.DateTimeUtils, only: [seconds_ago: 1]
+  alias Sanbase.Notifications.{Notification, Type, Discord}
 
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 
-  @notification_type_name "price_volume_diff"
-
   @doc ~s"""
-    A notification is triggered when a price is increasing and the volume is decreasing.
-    Currently we have only `USD` volume so we support only `USD` notification
+  A notification is triggered when a price is increasing and the volume is decreasing.
+  Currently we have only `USD` volume so we support only `USD` notification
   """
   def exec(project, "USD" = currency) do
     currency = String.upcase(currency)
 
+    notification_type = Type.get_or_create("price_volume_diff")
+
     if Config.get(:notifications_enabled) &&
-         not Utils.recent_notification?(
+         not Notification.has_cooldown?(
            project,
-           seconds_ago(notifications_cooldown()),
-           notification_type_name(currency)
+           notification_type,
+           notifications_cooldown()
          ) do
       with {from_datetime, to_datetime} <- get_calculation_interval(),
            true <- volume_over_threshold?(project, currency, from_datetime, to_datetime),
            {indicator, notification_log} <-
              get_indicator(project.ticker, currency, from_datetime, to_datetime),
            true <- check_notification(indicator) do
-        send_notification(project, currency, indicator, notification_log)
+        send_notification(project, notification_type, currency, indicator, notification_log)
       end
     end
   end
@@ -40,7 +38,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   # Calculate the notification only if the 24h volume is over some threshold ($100,000 by default)
   defp volume_over_threshold?(
          %Project{} = project,
-         currency,
+         _currency,
          from_datetime,
          to_datetime
        ) do
@@ -113,8 +111,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     price_volume_diff >= notification_threshold()
   end
 
-  defp notification_type_name(currency), do: @notification_type_name <> "_" <> currency
-
   defp get_calculation_interval() do
     to_datetime = DateTime.utc_now()
 
@@ -126,9 +122,10 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
   defp send_notification(
          project,
+         notification_type,
          currency,
          indicator,
-         {notification_data, debug_info}
+         {_notification_data, debug_info}
        ) do
     {:ok, %HTTPoison.Response{status_code: 204}} =
       http_client().post(
@@ -139,15 +136,18 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         ]
       )
 
-    Utils.insert_notification(project, notification_type_name(currency), notification_data)
+    Notification.set_triggered(
+      project,
+      notification_type
+    )
   end
 
-  defp notification_payload(
-         %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id},
-         currency,
-         %{datetime: datetime, price_change: price_change, volume_change: volume_change},
-         debug_info
-       ) do
+  def notification_payload(
+        %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project,
+        currency,
+        %{datetime: datetime, price_change: price_change, volume_change: volume_change},
+        debug_info
+      ) do
     # Timex.shift(days: 1) is because the returned datetime is the beginning of the day
     {:ok, notification_date_string} =
       datetime
@@ -161,8 +161,17 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         } Volume opposite trends (as of #{notification_date_string} UTC). #{
           project_page(coinmarketcap_id)
         } #{debug_info}",
-      username: "Price-Volume Difference"
+      username: "Price-Volume Difference",
+      embeds: notification_embeds(project)
     })
+  end
+
+  defp notification_embeds(project) do
+    Discord.build_embedded_chart(
+      project,
+      Timex.shift(Timex.now(), days: -90),
+      Timex.shift(Timex.now(), days: -1)
+    )
   end
 
   defp notification_emoji(value) do
@@ -257,10 +266,6 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       |> Integer.parse()
 
     res
-  end
-
-  defp notifications_enabled?() do
-    Config.get(:notifications_enabled)
   end
 
   defp project_page(coinmarketcap_id) do

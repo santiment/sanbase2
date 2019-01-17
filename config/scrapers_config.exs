@@ -6,8 +6,9 @@
 use Mix.Config
 
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap,
-  # 5 minutes
   update_interval: 5 * 1000 * 60,
+  api_key: {:system, "COINMARKETCAP_API_KEY", ""},
+  api_url: "https://sandbox-api.coinmarketcap.com/",
   sync_enabled: {:system, "COINMARKETCAP_PRICES_ENABLED", false}
 
 # TODO: Change after switching over to only this cmc
@@ -23,14 +24,10 @@ config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher,
 
 # TODO: Change after switching over to only this cmc
 config :sanbase, Sanbase.ExternalServices.Coinmarketcap.TickerFetcher2,
-  update_interval: 5 * 1000 * 60,
+  update_interval: {:system, "COINMARKETCAP_API_CALL_INTERVAL", "300"},
+  projects_number: {:system, "COINMARKETCAP_API_PROJECTS_NUMBER", "2500"},
   sync_enabled: {:system, "COINMARKETCAP_TICKER_FETCHER_ENABLED", false},
   top_projects_to_follow: {:system, "TOP_PROJECTS_TO_FOLLOW", "25"}
-
-config :sanbase, Sanbase.ExternalServices.Github,
-  # 60 minutes
-  update_interval: 60 * 1000 * 60,
-  sync_enabled: {:system, "GITHUB_SCHEDULER_ENABLED", false}
 
 config :sanbase, Sanbase.ExternalServices.Etherscan.Requests,
   apikey: {:system, "ETHERSCAN_APIKEY", ""}

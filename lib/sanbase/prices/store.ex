@@ -73,11 +73,24 @@ defmodule Sanbase.Prices.Store do
     |> parse_time_series()
   end
 
-  def update_last_history_datetime_cmc(ticker_cmc_id, last_updated_datetime) do
+  def fetch_average_price(measurement, from, to) do
+    fetch_average_price_query(measurement, from, to)
+    |> Store.query()
+    |> parse_time_series()
+    |> case do
+      {:ok, [[_datetime, avg_price_usd, avg_price_btc]]} ->
+        {:ok, {avg_price_usd, avg_price_btc}}
+
+      _ ->
+        {:error, "Cannot fetch average prices for #{measurement}"}
+    end
+  end
+
+  def update_last_history_datetime_cmc(slug, last_updated_datetime) do
     %Measurement{
       timestamp: 0,
       fields: %{last_updated: last_updated_datetime |> DateTime.to_unix(:nanoseconds)},
-      tags: [ticker_cmc_id: ticker_cmc_id],
+      tags: [ticker_cmc_id: slug],
       name: @last_history_price_cmc_measurement
     }
     |> Store.import()
@@ -91,9 +104,6 @@ defmodule Sanbase.Prices.Store do
       {:ok, [[_, iso8601_datetime | _rest]]} ->
         {:ok, datetime} = DateTime.from_unix(iso8601_datetime, :nanoseconds)
         {:ok, datetime}
-
-      {:ok, nil} ->
-        {:ok, nil}
 
       {:ok, []} ->
         {:ok, nil}
@@ -208,6 +218,13 @@ defmodule Sanbase.Prices.Store do
 
   defp fetch_mean_volume_query(measurement, from, to) do
     ~s/SELECT MEAN(volume_usd)
+    FROM "#{measurement}"
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+  end
+
+  defp fetch_average_price_query(measurement, from, to) do
+    ~s/SELECT MEAN(price_usd), MEAN(price_btc)
     FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
     AND time <= #{DateTime.to_unix(to, :nanoseconds)}/

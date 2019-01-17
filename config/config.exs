@@ -53,7 +53,7 @@ config :sasl, sasl_error_logger: false
 # Configures Elixir's Logger
 config :logger, :console,
   format: {Sanbase.Utils.JsonLogger, :format},
-  metadata: [:request_id],
+  metadata: [:request_id, :api_token, :user_id, :remote_ip, :complexity, :query, :san_balance],
   handle_otp_reports: true,
   handle_sasl_reports: true
 
@@ -61,9 +61,6 @@ config :logger, :console,
 config :sentry,
   included_environments: [:prod],
   environment_name: Mix.env()
-
-config :sanbase, SanbaseWorkers.ImportGithubActivity,
-  s3_bucket: {:system, "GITHUB_ARCHIVE_BUCKET", "santiment-github-archive"}
 
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
@@ -85,18 +82,6 @@ config :sanbase, Sanbase.InternalServices.Parity,
   url: {:system, "PARITY_URL"},
   basic_auth_username: {:system, "PARITY_BASIC_AUTH_USERNAME"},
   basic_auth_password: {:system, "PARITY_BASIC_AUTH_PASSWORD"}
-
-config :faktory_worker_ex,
-  host: {:system, "FAKTORY_HOST", "localhost"},
-  port: {:system, "FAKTORY_PORT", 7419},
-  client: [
-    pool: 1
-  ],
-  worker: [
-    concurrency: 1,
-    queues: ["default", "data_migrations"]
-  ],
-  start_workers: {:system, "FAKTORY_WORKERS_ENABLED", false}
 
 config :sanbase, SanbaseWeb.Graphql.ContextPlug,
   basic_auth_username: {:system, "GRAPHQL_BASIC_AUTH_USERNAME"},
@@ -148,12 +133,25 @@ config :sanbase, Sanbase.Scheduler,
   timeout: 30_000,
   jobs: [
     daa_signal: [
-      schedule: "00 12 * * *",
+      schedule: "*/5 * * * *",
       task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
     ],
     exchange_inflow_signal: [
-      schedule: "@daily",
+      schedule: "*/5 * * * *",
       task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
+    ]
+  ]
+
+config :libcluster,
+  topologies: [
+    k8s: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "sanbase",
+        kubernetes_selector: "app=sanbase",
+        polling_interval: 10_000
+      ]
     ]
   ]
 

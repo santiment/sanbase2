@@ -17,23 +17,23 @@ defmodule Sanbase.Application do
       case container_type do
         "web" ->
           Logger.info("Starting Web Sanbase.")
-          Sanbase.Application.WebSupervisor.children()
+          Sanbase.Application.Web.children()
 
         "scrapers" ->
           Logger.info("Starting Scrapers Sanbase.")
-          Sanbase.Application.ScrapersSupervisor.children()
+          Sanbase.Application.Scrapers.children()
 
-        "workers" ->
-          Logger.info("Starting Workers Sanbase.")
-          Sanbase.Application.WorkersSupervisor.children()
+        "signals" ->
+          Logger.info("Starting Signals Sanbase.")
+          Sanbase.Application.Signals.children()
 
         "all" ->
           Logger.info("Start all Sanbase container types.")
-          {web_children, _} = Sanbase.Application.WebSupervisor.children()
-          {scrapers_children, _} = Sanbase.Application.ScrapersSupervisor.children()
-          {workers_children, _} = Sanbase.Application.WorkersSupervisor.children()
+          {web_children, _} = Sanbase.Application.Web.children()
+          {scrapers_children, _} = Sanbase.Application.Scrapers.children()
+          {signals_children, _} = Sanbase.Application.Signals.children()
 
-          children = web_children ++ scrapers_children ++ workers_children
+          children = web_children ++ scrapers_children ++ signals_children
           children = children |> Enum.uniq()
 
           opts = [
@@ -44,6 +44,14 @@ defmodule Sanbase.Application do
           ]
 
           {children, opts}
+
+        unknown_type ->
+          Logger.warn(
+            "Unkwnown container type provided - #{inspect(unknown_type)}. Will start a default web container."
+          )
+
+          Logger.info("Starting Web Sanbase.")
+          Sanbase.Application.Web.children()
       end
 
     children = (common_children() ++ children) |> Sanbase.ApplicationUtils.normalize_children()
@@ -54,6 +62,7 @@ defmodule Sanbase.Application do
     Supervisor.start_link(children, opts)
   end
 
+  @spec init(String.t()) :: :ok | [any()]
   def init(container_type) do
     # Common inits
 
@@ -67,24 +76,28 @@ defmodule Sanbase.Application do
     # Container specific init
     case container_type do
       "all" ->
-        Sanbase.Application.WebSupervisor.init()
-        Sanbase.Application.ScrapersSupervisor.init()
-        Sanbase.Application.WorkersSupervisor.init()
+        Sanbase.Application.Web.init()
+        Sanbase.Application.Scrapers.init()
+        Sanbase.Application.Signals.init()
 
       "web" ->
-        Sanbase.Application.WebSupervisor.init()
+        Sanbase.Application.Web.init()
+
+      "signals" ->
+        Sanbase.Application.Signals.init()
 
       "scrapers" ->
-        Sanbase.Application.ScrapersSupervisor.init()
+        Sanbase.Application.Scrapers.init()
 
-      "workers" ->
-        Sanbase.Application.WorkersSupervisor.init()
+      _ ->
+        Sanbase.Application.Web.init()
     end
   end
 
   @doc ~s"""
   Children common for all types of container types
   """
+  @spec common_children() :: [:supervisor.child_spec() | {module(), term()} | module()]
   def common_children() do
     [
       # Start the endpoint when the application starts
@@ -94,23 +107,15 @@ defmodule Sanbase.Application do
       Sanbase.Repo,
 
       # Time series Prices DB connection
-      Sanbase.Prices.Store.child_spec()
+      Sanbase.Prices.Store.child_spec(),
+
+      # Start the Task Supervisor
+      {Task.Supervisor, [name: Sanbase.TaskSupervisor]}
     ]
   end
 
   def config_change(changed, _new, removed) do
     SanbaseWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  def start_faktory?() do
-    System.get_env("FAKTORY_HOST") && :ets.whereis(Faktory.Configuration) == :undefined
-  end
-
-  def faktory() do
-    import Supervisor.Spec
-
-    Faktory.Configuration.init()
-    supervisor(Faktory.Supervisor, [])
   end
 end

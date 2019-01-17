@@ -23,11 +23,8 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         {:ok, body}
 
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        error_msg =
-          "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}. Body: #{
-            inspect(body)
-          }"
+      {:ok, %Tesla.Env{status: status}} ->
+        error_msg = "Failed fetching project page for #{coinmarketcap_id}. Status: #{status}."
 
         Logger.error(error_msg)
         {:error, error_msg}
@@ -63,7 +60,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
   end
 
   defp ticker(html) do
-    Floki.find(html, "h1 > .text-bold.h3.text-gray.hidden-xs")
+    Floki.find(html, "h1 > .text-bold.h3.text-gray.text-large")
     |> hd
     |> Floki.text()
     |> String.replace(~r/[\(\)]/, "")
@@ -75,8 +72,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Scraper2 do
   end
 
   defp github_link(html) do
-    Floki.attribute(html, "a:fl-contains('Source Code')", "href")
-    |> List.first()
+    github_link =
+      Floki.attribute(html, "a:fl-contains('Source Code')", "href")
+      |> List.first()
+
+    if github_link && String.contains?(github_link, "https://github.com/") do
+      github_link
+    end
   end
 
   defp etherscan_token_name(html) do

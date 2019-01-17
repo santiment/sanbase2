@@ -32,7 +32,7 @@ defmodule Sanbase.ExAdmin.Model.ExchangeAddress do
     end
   end
 
-  def process_csv(conn, %{exchange_address: %{csv: csv}} = params) when not is_nil(csv) do
+  def process_csv(conn, %{exchange_address: %{csv: csv}}) when not is_nil(csv) do
     csv
     |> String.replace("\r", "")
     |> CSVLixir.Reader.read()

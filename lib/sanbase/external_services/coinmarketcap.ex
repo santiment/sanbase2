@@ -18,7 +18,6 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
   alias Sanbase.Prices.Store
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.ExternalServices.Coinmarketcap.GraphData
-  alias Sanbase.Notifications.PriceVolumeDiff
 
   # 5 minutes
   @default_update_interval 1000 * 60 * 5
@@ -34,7 +33,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       GenServer.cast(self(), :sync)
 
       update_interval = Config.get(:update_interval, @default_update_interval)
-      {:ok, %{update_interval: update_interval}}
+      {:ok, %{update_interval: update_interval * 3}}
     else
       :ignore
     end
@@ -57,7 +56,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       projects,
       &fetch_project_info/1,
       ordered: false,
-      max_concurrency: 5,
+      max_concurrency: 1,
       timeout: 60_000
     )
     |> Stream.run()
@@ -67,7 +66,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap do
       projects,
       &fetch_and_process_price_data/1,
       ordered: false,
-      max_concurrency: 5,
+      max_concurrency: 1,
       timeout: :infinity
     )
     |> Stream.run()

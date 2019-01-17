@@ -10,7 +10,7 @@ defmodule Sanbase.FileStore do
     Whitelist file extensions. Now allowing only images.
   """
   def validate({file, _}) do
-    allowed_extenstion?(file) && allowed_size?(file)
+    allowed_extenstion?(file) && (in_memory_file?(file) || allowed_size?(file))
   end
 
   @doc ~s"""
@@ -38,5 +38,9 @@ defmodule Sanbase.FileStore do
       _ ->
         false
     end
+  end
+
+  defp in_memory_file?(file) do
+    !file.path
   end
 end

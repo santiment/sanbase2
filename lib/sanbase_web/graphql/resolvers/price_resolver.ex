@@ -2,7 +2,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   require Logger
 
   import Absinthe.Resolution.Helpers
-  import Ecto.Query
 
   alias SanbaseWeb.Graphql.PriceStore
   alias Sanbase.Model.Project
@@ -35,7 +34,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   @deprecated "Use history price by slug"
   def history_price(_root, %{ticker: ticker} = args, %{context: %{loader: loader}}) do
-    with slug when not is_nil(slug) <- slug_by_ticker(ticker) do
+    with slug when not is_nil(slug) <- Project.slug_by_ticker(ticker) do
       ticker_cmc_id = ticker <> "_" <> slug
 
       loader
@@ -149,15 +148,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       _ ->
         {:error, "Can't fetch prices for #{ticker_cmc_id}"}
     end
-  end
-
-  @deprecated "This should no longer be used after price by ticker is removed"
-  def slug_by_ticker(ticker) do
-    from(
-      p in Project,
-      where: p.ticker == ^ticker and not is_nil(p.coinmarketcap_id),
-      select: p.coinmarketcap_id
-    )
-    |> Sanbase.Repo.one()
   end
 end

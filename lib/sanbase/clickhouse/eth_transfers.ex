@@ -21,16 +21,24 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
   @type wallets :: list(String.t())
 
+  @type historical_balance :: %{
+          datetime: non_neg_integer(),
+          balance: float
+        }
+
+  @type exchange_volume :: %{
+          datetime: non_neg_integer(),
+          exchange_inflow: float,
+          exchange_outflow: float
+        }
+
   use Ecto.Schema
 
   require Logger
-  require Sanbase.ClickhouseRepo
+  require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  import Ecto.Query
-
-  alias __MODULE__
-  alias Sanbase.ClickhouseRepo
   alias Sanbase.Model.Project
+  alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000
@@ -68,7 +76,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   """
   @spec eth_spent(wallets, %DateTime{}, %DateTime{}) ::
           {:ok, nil} | {:ok, float} | {:error, String.t()}
-  def eth_spent([], _, _), do: {:ok, nil}
+  def eth_spent([], _, _), do: {:ok, []}
 
   def eth_spent(wallets, from_datetime, to_datetime) do
     {query, args} = eth_spent_query(wallets, from_datetime, to_datetime)
@@ -120,8 +128,8 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   Combines a list of lists of ethereum spent data for many projects to a list of ethereum spent data.
   The entries at the same positions in each list are summed.
   """
-  @spec combine_eth_spent_by_all_projects(list({:ok, list(spent_over_time_type)})) ::
-          list(spent_over_time_type)
+  @spec combine_eth_spent_by_all_projects(list({:ok, spent_over_time_type})) ::
+          {:ok, list(spent_over_time_type)}
   def combine_eth_spent_by_all_projects(eth_spent_over_time_list) do
     total_eth_spent_over_time =
       eth_spent_over_time_list
@@ -135,6 +143,56 @@ defmodule Sanbase.Clickhouse.EthTransfers do
       |> Enum.map(&reduce_eth_spent/1)
 
     {:ok, total_eth_spent_over_time}
+  end
+
+  @doc ~s"""
+  Returns the historical balances of given ethereum address in all intervals between two datetimes.
+  """
+  @spec historical_balance(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          non_neg_integer()
+        ) :: {:ok, list(historical_balance)}
+  def historical_balance(address, from_datetime, to_datetime, interval) do
+    address = String.downcase(address)
+    {query, args} = historical_balance_query(address, interval)
+
+    balances =
+      query
+      |> ClickhouseRepo.query_transform(args, fn [dt, value] -> {dt, value} end)
+      |> ClickhouseCommon.convert_historical_balance_result(from_datetime, to_datetime, interval)
+
+    {:ok, balances}
+  end
+
+  @doc ~s"""
+  Returns the inflow and outflow volume for a list of exchange_addresses between two datetimes
+  """
+  @spec exchange_volume(
+          list(String.t()),
+          %DateTime{},
+          %DateTime{}
+        ) :: {:ok, list(exchange_volume)} | {:error, String.t()}
+  def exchange_volume(exchange_addresses, from_datetime, to_datetime) do
+    exchange_addresses = exchange_addresses |> Enum.map(&String.downcase/1)
+    {query, args} = exchange_volume_query(exchange_addresses, from_datetime, to_datetime)
+
+    query
+    |> ClickhouseRepo.query_transform(args, fn [dt, inflow, outflow] ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        exchange_inflow: inflow,
+        exchange_outflow: outflow
+      }
+    end)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   # Private functions
@@ -234,14 +292,13 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     query = """
     SELECT SUM(value)
     FROM (
-      SELECT any(value) as value
+      SELECT any(value) as value, from
       FROM #{@table}
       PREWHERE from IN (?1) AND NOT to IN (?1)
       AND dt >= toDateTime(?2)
       AND dt <= toDateTime(?3)
       AND type == 'call'
       GROUP BY from, type, to, dt, transactionHash
-      ORDER BY value desc
     )
     """
 
@@ -296,6 +353,94 @@ defmodule Sanbase.Clickhouse.EthTransfers do
     {query, args}
   end
 
+  defp historical_balance_query(address, interval) do
+    args = [address]
+
+    dt_round = ClickhouseCommon.datetime_rounding_for_interval(interval)
+
+    query = """
+    SELECT dt, runningAccumulate(state) AS total_balance FROM (
+      SELECT dt, sumState(value) AS state FROM (
+        SELECT
+          toUnixTimestamp(#{dt_round}) as dt, from AS address, sum(-value / #{@eth_decimals}) AS value
+        FROM #{@table}
+        PREWHERE from = ?1
+        GROUP BY dt, address
+
+        UNION ALL
+
+        SELECT
+          toUnixTimestamp(#{dt_round}) AS dt, to AS address, sum(value / #{@eth_decimals}) AS value
+        FROM #{@table}
+        PREWHERE to = ?1
+        GROUP BY dt, address
+      )
+      GROUP BY dt
+      ORDER BY dt
+    )
+    ORDER BY dt
+    """
+
+    {query, args}
+  end
+
+  defp exchange_volume_query(exchange_addresses, from_datetime, to_datetime) do
+    query = """
+    SELECT
+      toUnixTimestamp(dt) as datetime,
+     (inflow * price_usd) as exchange_inflow,
+     (outflow * price_usd) as exchange_outflow
+    FROM
+    (
+     SELECT dt, inflow, outflow
+      FROM
+      (
+      SELECT
+    	  toStartOfDay(dt) as dt,
+    	  sum(value) / #{@eth_decimals} as inflow
+      FROM #{@table}
+      PREWHERE
+          to IN (?1) AND NOT from IN (?1)
+          AND dt >= toDateTime(?2)
+          AND dt <= toDateTime(?3)
+      GROUP BY dt
+     )
+     ALL INNER JOIN
+     (
+      SELECT
+    	  toStartOfDay(dt) as dt,
+    	  sum(value) / #{@eth_decimals} as outflow
+      FROM #{@table}
+        PREWHERE
+          from IN (?1) AND NOT to IN (?1)
+          AND dt >= toDateTime(?2)
+          AND dt <= toDateTime(?3)
+      GROUP BY dt
+     ) USING dt
+    )
+    ALL INNER JOIN
+    (
+     SELECT
+      toStartOfDay(dt) as dt, AVG(price_usd) as "price_usd"
+     FROM prices
+      PREWHERE
+        name = 'ETH_ethereum'
+        AND dt >= toDateTime(?2)
+        AND dt <= toDateTime(?3)
+     GROUP BY dt
+    ) USING dt
+    ORDER BY dt
+    """
+
+    args = [
+      exchange_addresses,
+      from_datetime,
+      to_datetime
+    ]
+
+    {query, args}
+  end
+
   defp reduce_eth_spent([%{datetime: datetime} | _] = values) do
     total_eth_spent =
       values
@@ -305,16 +450,4 @@ defmodule Sanbase.Clickhouse.EthTransfers do
 
     %{datetime: datetime, eth_spent: total_eth_spent}
   end
-
-  defp divide_by_eth_decimals({:ok, transfers} = tuple) do
-    transfers =
-      transfers
-      |> Enum.map(fn %EthTransfers{trx_value: trx_value} = eth_transfer ->
-        %EthTransfers{eth_transfer | trx_value: trx_value / @eth_decimals}
-      end)
-
-    {:ok, transfers}
-  end
-
-  defp divide_by_eth_decimals(data), do: data
 end

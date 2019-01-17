@@ -12,12 +12,16 @@ defmodule SanbaseWeb.Graphql.Schema do
     EtherbiResolver,
     VotingResolver,
     TechIndicatorsResolver,
+    SocialDataResolver,
     FileResolver,
     PostResolver,
     MarketSegmentResolver,
     ApikeyResolver,
     UserListResolver,
-    ElasticsearchResolver
+    ElasticsearchResolver,
+    ClickhouseResolver,
+    ExchangeResolver,
+    UserSettingsResolver
   }
 
   import SanbaseWeb.Graphql.Helpers.Cache, only: [cache_resolve: 1]
@@ -32,7 +36,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ApikeyAuth,
     ProjectPermissions,
     PostPermissions,
-    ApiTimeframeRestriction
+    ApiTimeframeRestriction,
+    ApiUsage
   }
 
   import_types(Absinthe.Plug.Types)
@@ -46,23 +51,36 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.VotingTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
+  import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
   import_types(SanbaseWeb.Graphql.MarketSegmentTypes)
   import_types(SanbaseWeb.Graphql.ElasticsearchTypes)
+  import_types(SanbaseWeb.Graphql.ClickhouseTypes)
+  import_types(SanbaseWeb.Graphql.ExchangeTypes)
+  import_types(SanbaseWeb.Graphql.UserSettingsTypes)
 
   def dataloader() do
-    alias SanbaseWeb.Graphql.SanbaseRepo
-    alias SanbaseWeb.Graphql.PriceStore
+    alias SanbaseWeb.Graphql.{
+      SanbaseRepo,
+      PriceStore,
+      ParityDataloader,
+      ClickhouseDataloader,
+      TimescaledbDataloader
+    }
 
     Dataloader.new()
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
     |> Dataloader.add_source(PriceStore, PriceStore.data())
+    |> Dataloader.add_source(ParityDataloader, ParityDataloader.data())
+    |> Dataloader.add_source(ClickhouseDataloader, ClickhouseDataloader.data())
+    |> Dataloader.add_source(TimescaledbDataloader, TimescaledbDataloader.data())
   end
 
   def context(ctx) do
-    Map.put(ctx, :loader, dataloader())
+    ctx
+    |> Map.put(:loader, dataloader())
   end
 
   def plugins do
@@ -72,7 +90,17 @@ defmodule SanbaseWeb.Graphql.Schema do
   end
 
   def middleware(middlewares, field, object) do
-    SanbaseWeb.Graphql.Prometheus.Instrumenter.instrument(middlewares, field, object)
+    prometeheus_middlewares =
+      SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter.instrument(middlewares, field, object)
+      |> SanbaseWeb.Graphql.Prometheus.CounterInstrumenter.instrument(field, object)
+
+    case object.identifier do
+      :query ->
+        [ApiUsage | prometeheus_middlewares]
+
+      _ ->
+        prometeheus_middlewares
+    end
   end
 
   query do
@@ -96,14 +124,23 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&MarketSegmentResolver.currencies_market_segments/3)
     end
 
+    @desc "Returns the number of erc20 projects, currency projects and all projects"
+    field :projects_count, :projects_count do
+      cache_resolve(&ProjectResolver.projects_count/3)
+    end
+
     @desc "Fetch all projects that have price data."
     field :all_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.all_projects/3)
     end
 
     @desc "Fetch all ERC20 projects."
     field :all_erc20_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_erc20_projects/3)
@@ -111,6 +148,8 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch all currency projects. A currency project is a project that has price data but is not classified as ERC20."
     field :all_currency_projects, list_of(:project) do
+      arg(:page, :integer)
+      arg(:page_size, :integer)
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_currency_projects/3)
@@ -119,15 +158,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch all project transparency projects. This query requires basic authentication."
     field :all_projects_project_transparency, list_of(:project) do
       middleware(BasicAuth)
-      resolve(&ProjectResolver.all_projects(&1, &2, &3, true))
+      resolve(&ProjectResolver.all_projects_project_transparency/3)
     end
+
+    @desc "Return the number of projects in each"
 
     @desc "Fetch a project by its ID."
     field :project, :project do
       arg(:id, non_null(:id))
-      # this is to filter the wallets
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
@@ -135,17 +173,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch a project by a unique identifier."
     field :project_by_slug, :project do
       arg(:slug, non_null(:string))
-      arg(:only_project_transparency, :boolean, default_value: false)
-
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.project_by_slug/3)
-    end
-
-    @desc "Fetch all projects that have ETH contract information."
-    field :all_projects_with_eth_contract_info, list_of(:project) do
-      middleware(BasicAuth)
-
-      cache_resolve(&ProjectResolver.all_projects_with_eth_contract_info/3)
     end
 
     @desc "Fetch price history for a given slug and time interval."
@@ -193,12 +222,12 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slugs, non_null(list_of(:string)))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, non_null(:string))
+      arg(:interval, non_null(:string), default_value: "1d")
 
       cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
 
-    @desc "Returns a list of available github repositories."
+    @desc "Returns a list of slugs of the projects that have a github link"
     field :github_availables_repos, list_of(:string) do
       cache_resolve(&GithubResolver.available_repos/3)
     end
@@ -217,16 +246,32 @@ defmodule SanbaseWeb.Graphql.Schema do
     """
     field :github_activity, list_of(:activity_point) do
       arg(:slug, :string)
-      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
       arg(:transform, :string, default_value: "None")
-      arg(:moving_average_interval_base, :string, default_value: "1w")
+      arg(:moving_average_interval_base, :integer, default_value: 7)
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
 
-      cache_resolve(&GithubResolver.activity/3)
+      cache_resolve(&GithubResolver.github_activity/3)
+    end
+
+    @desc ~s"""
+    Gets the pure dev activity of a project. Pure dev activity is the number of all events
+    excluding Comments, Issues and PR Comments
+    """
+    field :dev_activity, list_of(:activity_point) do
+      arg(:slug, :string)
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string))
+      arg(:transform, :string, default_value: "None")
+      arg(:moving_average_interval_base, :integer, default_value: 7)
+
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
+
+      cache_resolve(&GithubResolver.dev_activity/3)
     end
 
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
@@ -264,7 +309,18 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-      cache_resolve(&EtherbiResolver.burn_rate/3)
+      cache_resolve(&EtherbiResolver.token_age_consumed/3)
+    end
+
+    field :token_age_consumed, list_of(:token_age_consumed_data) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+      cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
     @desc ~s"""
@@ -284,6 +340,41 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
       cache_resolve(&EtherbiResolver.transaction_volume/3)
+    end
+
+    @desc ~s"""
+    Fetch token age consumed in days for a project, grouped by interval.
+    Projects are referred to by a unique identifier (slug). The token age consumed
+    in days shows the average age of the tokens that were transacted for a given time period.
+
+    This metric includes only on-chain transaction volume, not volume in exchanges.
+    """
+    field :average_token_age_consumed_in_days, list_of(:token_age) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+
+      cache_resolve(&EtherbiResolver.average_token_age_consumed_in_days/3)
+    end
+
+    @desc ~s"""
+    Fetch token circulation for a project, grouped by interval.
+    Projects are referred to by a unique identifier (slug).
+    """
+    field :token_circulation, list_of(:token_circulation) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
+      arg(:interval, :string, default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+      cache_resolve(&EtherbiResolver.token_circulation/3)
     end
 
     @desc ~s"""
@@ -412,39 +503,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
     end
 
-    @desc "Fetch the MACD technical indicator for a given ticker, display currency and time period."
-    field :macd, list_of(:macd) do
-      arg(:ticker, non_null(:string))
-      @desc "Currently supported currencies: USD, BTC"
-      arg(:currency, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1d")
-      arg(:result_size_tail, :integer, default_value: 0)
-
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.macd/3)
-      cache_resolve(&TechIndicatorsResolver.macd/3)
-    end
-
-    @desc "Fetch the RSI technical indicator for a given ticker, display currency and time period."
-    field :rsi, list_of(:rsi) do
-      arg(:ticker, non_null(:string))
-      @desc "Currently supported: USD, BTC"
-      arg(:currency, non_null(:string))
-      arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
-      arg(:interval, :string, default_value: "1d")
-      arg(:rsi_interval, non_null(:integer))
-      arg(:result_size_tail, :integer, default_value: 0)
-
-      middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.rsi/3)
-      cache_resolve(&TechIndicatorsResolver.rsi/3)
-    end
-
     @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
     This indicator measures the difference in trend between price and volume,
@@ -493,7 +551,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       ])
 
       complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
-      resolve(&TechIndicatorsResolver.emojis_sentiment/3)
+      cache_resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end
 
     @desc ~s"""
@@ -557,6 +615,58 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TechIndicatorsResolver.topic_search/3)
     end
 
+    @desc ~s"""
+    Returns lists with trending words and their corresponding trend score.
+
+    Arguments description:
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * size - an integer showing how many words should be included in the top list (max 100)
+      * hour - an integer from 0 to 23 showing the hour of the day when the calculation was executed
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :trending_words, list_of(:trending_words) do
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:hour, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(ApiTimeframeRestriction)
+
+      cache_resolve(&SocialDataResolver.trending_words/3)
+    end
+
+    @desc ~s"""
+    Returns context for a trending word and the corresponding context score.
+
+    Arguments description:
+      * word - the word the context is requested for
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * size - an integer showing how many words should be included in the top list (max 100)
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :word_context, list_of(:word_context) do
+      arg(:word, non_null(:string))
+      arg(:source, non_null(:trending_words_sources))
+      arg(:size, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(ApiTimeframeRestriction)
+
+      cache_resolve(&SocialDataResolver.word_context/3)
+    end
+
     @desc "Fetch a list of all exchange wallets. This query requires basic authentication."
     field :exchange_wallets, list_of(:wallet) do
       middleware(BasicAuth)
@@ -616,6 +726,48 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       cache_resolve(&ElasticsearchResolver.stats/3)
+    end
+
+    @desc ~s"""
+    Historical balance for erc20 token or eth address.
+    Returns the historical balance for a given address in the given interval.
+    """
+    field :historical_balance, list_of(:historical_balance) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:address, non_null(:string))
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      cache_resolve(&ClickhouseResolver.historical_balance/3)
+    end
+
+    @desc "List all exchanges"
+    field :all_exchanges, list_of(:string) do
+      cache_resolve(&ExchangeResolver.all_exchanges/3)
+    end
+
+    @desc ~s"""
+    Calculates the exchange inflow and outflow volume in usd for a given exchange in a time interval.
+    """
+    field :exchange_volume, list_of(:exchange_volume) do
+      arg(:exchange, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      cache_resolve(&ExchangeResolver.exchange_volume/3)
+    end
+
+    @desc "Network growth returns the newly created addresses for a project in a given timeframe"
+    field :network_growth, list_of(:network_growth) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, non_null(:string), default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+
+      cache_resolve(&ClickhouseResolver.network_growth/3)
     end
   end
 
@@ -802,6 +954,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(JWTAuth)
       resolve(&UserListResolver.remove_user_list/3)
+    end
+
+    field :settings_toggle_channel, :user_settings do
+      arg(:signal_notify_telegram, :boolean)
+      arg(:signal_notify_email, :boolean)
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.settings_toggle_channel/3)
     end
   end
 end

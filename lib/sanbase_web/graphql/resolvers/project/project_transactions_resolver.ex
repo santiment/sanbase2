@@ -5,15 +5,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
+  alias SanbaseWeb.Graphql.Helpers.Cache
 
   def token_top_transactions(
         %Project{id: id} = project,
         %{from: from, to: to, limit: limit} = args,
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- Utils.project_to_contract_info(project) do
-      limit = Enum.max([limit, 100])
+    with {:ok, contract_address, token_decimals} <- Project.contract_info(project) do
+      limit = Enum.min([limit, 100])
 
       async(
         Cache.func(
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         )
       )
     else
-      error ->
+      {:error, error} ->
         Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
 
         {:ok, []}
@@ -64,7 +64,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   Returns the accumulated ETH spent by all ERC20 projects for a given time period.
   """
   def eth_spent_by_erc20_projects(_, %{from: from, to: to}, _resolution) do
-    with projects when is_list(projects) <- Project.erc20_projects() do
+    with projects when is_list(projects) <- Project.List.erc20_projects() do
       total_eth_spent =
         projects
         |> Sanbase.Parallel.pmap(&calculate_eth_spent_cached(&1, from, to).(), timeout: 25_000)
@@ -87,7 +87,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         %{from: from, to: to, interval: interval},
         _resolution
       ) do
-    Project.erc20_projects()
+    Project.List.erc20_projects()
     |> Sanbase.Parallel.pmap(&calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
       timeout: 25_000
     )
@@ -189,6 +189,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
          transaction_type: trx_type,
          limit: limit
        }) do
+    limit = Enum.min([limit, 100])
+
     with trx_type <- trx_type,
          {:ok, project_addresses} <- Project.eth_addresses(project),
          {:ok, eth_transactions} <-

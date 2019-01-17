@@ -28,9 +28,9 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     to_datetime = DateTime.from_unix!(1_508_078_065_000, :millisecond)
 
     GraphData.fetch_price_stream("santiment", from_datetime, to_datetime)
-    |> Stream.flat_map(fn x -> x end)
-    |> Stream.take(1)
-    |> Enum.map(fn %PricePoint{datetime: datetime, price_usd: price_usd} ->
+    |> Enum.map(fn {stream, interval} -> {stream |> Enum.map(& &1), interval} end)
+    |> Enum.take(1)
+    |> Enum.map(fn {[%PricePoint{datetime: datetime, price_usd: price_usd} | _], _interval} ->
       assert datetime == from_datetime
       assert price_usd == 5704.29
     end)
@@ -63,15 +63,18 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphDataTest do
     to_datetime = DateTime.from_unix!(1_386_355_620_000, :millisecond)
 
     GraphData.fetch_marketcap_total_stream(from_datetime, to_datetime)
-    |> Stream.flat_map(fn x -> x end)
-    |> Stream.take(1)
-    |> Enum.map(fn %PricePoint{
-                     datetime: datetime,
-                     marketcap_usd: marketcap,
-                     volume_usd: volume_usd
-                   } ->
+    |> Enum.map(fn {stream, interval} -> {stream |> Enum.map(& &1), interval} end)
+    |> Enum.take(1)
+    |> Enum.map(fn {[
+                      %PricePoint{
+                        datetime: datetime,
+                        marketcap_usd: marketcap_usd,
+                        volume_usd: volume_usd
+                      }
+                      | _
+                    ], _interval} ->
       assert datetime == from_datetime
-      assert marketcap == 1_599_410_000
+      assert marketcap_usd == 1_599_410_000
       assert volume_usd == 0
     end)
   end

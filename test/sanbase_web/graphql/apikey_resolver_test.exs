@@ -259,20 +259,20 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
     conn_apikey = setup_apikey_auth(build_conn(), apikey)
 
-    query = burn_rate_query(slug, datetime1, datetime2)
+    query = token_age_consumed_query(slug, datetime1, datetime2)
 
     result =
       conn_apikey
-      |> post("/graphql", query_skeleton(query, "burnRate"))
+      |> post("/graphql", query_skeleton(query, "tokenAgeConsumed"))
       |> json_response(200)
 
     %{
       "data" => %{
-        "burnRate" => burn_rates
+        "tokenAgeConsumed" => token_age_consumed
       }
     } = result
 
-    assert length(burn_rates) > 0
+    assert length(token_age_consumed) > 0
   end
 
   # Private functions
@@ -356,16 +356,16 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
 
     contract_address = "0" <> Sanbase.TestUtils.random_string()
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime1,
-      burn_rate: 5000
+      token_age_consumed: 5000
     })
 
-    insert(:burn_rate, %{
+    insert(:token_age_consumed, %{
       contract_address: contract_address,
       timestamp: datetime2,
-      burn_rate: 1000
+      token_age_consumed: 1000
     })
 
     %Sanbase.Model.Project{
@@ -377,15 +377,15 @@ defmodule SanbaseWeb.Graphql.ApikeyResolverTest do
     |> Repo.insert!()
   end
 
-  defp burn_rate_query(slug, datetime1, datetime2) do
+  defp token_age_consumed_query(slug, datetime1, datetime2) do
     """
     {
-      burnRate(
+      tokenAgeConsumed(
         slug: "#{slug}",
         from: "#{datetime1}",
         to: "#{datetime2}",
         interval: "30m") {
-          burnRate
+          tokenAgeConsumed
           datetime
       }
     }

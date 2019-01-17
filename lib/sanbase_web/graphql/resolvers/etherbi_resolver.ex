@@ -1,24 +1,28 @@
 defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
+  require Logger
+
+  import Absinthe.Resolution.Helpers
+
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, ExchangeAddress}
-  alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Blockchain
 
-  import SanbaseWeb.Graphql.Helpers.Async
-  import Ecto.Query
-
-  require Logger
+  alias SanbaseWeb.Graphql.TimescaledbDataloader
 
   @doc ~S"""
-    Return the token burn rate for the given slug and time period.
-    Uses the influxdb cached values instead of issuing a GET request to etherbi
+  Return the token age consumed for the given slug and time period.
   """
-  def burn_rate(_root, %{slug: slug, from: from, to: to, interval: interval} = args, _resolution) do
+  def token_age_consumed(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(
-             Blockchain.BurnRate,
+             Blockchain.TokenAgeConsumed,
              contract_address,
              from,
              to,
@@ -26,8 +30,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              60 * 60,
              50
            ),
-         {:ok, burn_rates} <-
-           Blockchain.BurnRate.burn_rate(
+         {:ok, token_age_consumed} <-
+           Blockchain.TokenAgeConsumed.token_age_consumed(
              contract_address,
              from,
              to,
@@ -35,12 +39,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              token_decimals
            ) do
       result =
-        burn_rates
+        token_age_consumed
         |> Utils.fit_from_datetime(args)
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch burn rate for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -48,8 +52,43 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-    Return the transaction volume for the given slug and time period.
-    Uses the influxdb cached values instead of issuing a GET request to etherbi
+  Return the average age of the tokens that were transacted for the given slug and time period.
+  """
+  def average_token_age_consumed_in_days(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(
+             Blockchain.TokenAgeConsumed,
+             contract_address,
+             from,
+             to,
+             interval,
+             60 * 60,
+             50
+           ),
+         {:ok, token_age} <-
+           Blockchain.TokenAgeConsumed.average_token_age_consumed_in_days(
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
+      {:ok, token_age |> Utils.fit_from_datetime(args)}
+    else
+      {:error, error} ->
+        error_msg = "Can't fetch average token age consumed in days for #{slug}"
+        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  @doc ~S"""
+  Return the transaction volume for the given slug and time period.
   """
   def transaction_volume(
         _root,
@@ -81,7 +120,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch transaction for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -89,7 +128,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-    Return the number of daily active addresses for a given slug
+  Return the number of daily active addresses for a given slug
   """
   def daily_active_addresses(
         _root,
@@ -108,7 +147,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              50
            ),
          {:ok, daily_active_addresses} <-
-           Blockchain.DailyActiveAddresses.active_addresses(
+           Blockchain.DailyActiveAddresses.average_active_addresses(
              contract_address,
              from,
              to,
@@ -120,7 +159,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, {:missing_contract, error_msg}} ->
+        {:error, error_msg}
+
+      {:error, error} ->
         error_msg = "Can't fetch daily active addresses for #{slug}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
@@ -128,9 +170,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-    Return the transactions that happend in or out of an exchange wallet for a given slug
-    and time period.
-    Uses the influxdb cached values instead of issuing a GET request to etherbi
+  Return the amount of tokens that were transacted in or out of an exchange wallet for a given slug
+  and time period
   """
   def exchange_funds_flow(
         _root,
@@ -166,57 +207,95 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
       {:ok, result}
     else
-      error ->
+      {:error, error} ->
         error_msg = "Can't fetch the exchange fund flow for #{slug}."
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
         {:error, error_msg}
     end
   end
 
+  @doc ~s"""
+  Returns the token circulation for less than a day for a given slug and time period.
+  """
+  def token_circulation(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(
+             Blockchain.TokenCirculation,
+             contract_address,
+             from,
+             to,
+             interval,
+             60 * 60,
+             50
+           ),
+         {:ok, token_circulation} <-
+           Blockchain.TokenCirculation.token_circulation(
+             :less_than_a_day,
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
+      result =
+        token_circulation
+        |> Utils.fit_from_datetime(args)
+
+      {:ok, result}
+    else
+      {:error, error} ->
+        error_msg = "Can't fetch token circulation for #{slug}."
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
   def exchange_wallets(_root, _args, _resolution) do
-    {:ok, ExchangeAddress |> Repo.all()}
+    {:ok, ExchangeAddress |> Repo.all() |> Repo.preload(:infrastructure)}
   end
 
   @doc ~S"""
-    Return the average number of daily active addresses for a given slug and period of time
+  Return the average number of daily active addresses for a given slug and period of time
   """
   def average_daily_active_addresses(
-        %Project{id: id} = project,
-        %{from: from, to: to} = args,
-        _resolution
+        %Project{} = project,
+        args,
+        %{context: %{loader: loader}}
       ) do
-    async(
-      Cache.func(
-        fn -> calculate_average_daily_active_addresses(project, from, to) end,
-        {:average_daily_active_addresses, id},
-        args
-      )
-    )
+    to = Map.get(args, :to, Timex.now())
+    from = Map.get(args, :from, Timex.shift(to, days: -30))
+
+    loader
+    |> Dataloader.load(TimescaledbDataloader, :average_daily_active_addresses, %{
+      project: project,
+      from: from,
+      to: to
+    })
+    |> on_load(&average_daily_active_addresses_on_load(&1, project))
   end
 
-  def average_daily_active_addresses(
-        %Project{id: id} = project,
-        _args,
-        _resolution
-      ) do
-    month_ago = Timex.shift(Timex.now(), days: -30)
+  def average_daily_active_addresses_on_load(loader, project) do
+    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project) do
+      average_daily_active_addresses =
+        loader
+        |> Dataloader.get(
+          TimescaledbDataloader,
+          :average_daily_active_addresses,
+          contract_address
+        )
 
-    async(
-      Cache.func(
-        fn -> calculate_average_daily_active_addresses(project, month_ago, Timex.now()) end,
-        {:average_daily_active_addresses, id}
-      )
-    )
-  end
-
-  def calculate_average_daily_active_addresses(project, from, to) do
-    with {:ok, contract_address, _token_decimals} <- Project.contract_info(project),
-         {:ok, active_addresses} <-
-           Blockchain.DailyActiveAddresses.active_addresses(contract_address, from, to) do
-      {:ok, active_addresses}
+      {:ok, average_daily_active_addresses || 0}
     else
-      error ->
-        error_msg = "Can't fetch daily active addresses for #{project.coinmarketcap_id}"
+      {:error, {:missing_contract, _}} ->
+        {:ok, 0}
+
+      {:error, error} ->
+        error_msg = "Can't fetch average daily active addresses for #{Project.describe(project)}"
         Logger.warn(error_msg <> "Reason: #{inspect(error)}")
 
         {:ok, 0}

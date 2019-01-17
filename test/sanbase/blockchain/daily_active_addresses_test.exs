@@ -49,7 +49,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddressesTest do
 
   test "daily active addresses fill gaps", context do
     assert {:ok, result} =
-             DailyActiveAddresses.active_addresses(
+             DailyActiveAddresses.average_active_addresses(
                context.contract,
                context.datetime_from,
                context.datetime_to,
@@ -86,7 +86,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddressesTest do
 
   test "daily active addresses for contract with no data return zeroes", context do
     assert {:ok, result} =
-             DailyActiveAddresses.active_addresses(
+             DailyActiveAddresses.average_active_addresses(
                "non_existing_contract",
                context.datetime_from,
                context.datetime_to,
@@ -111,7 +111,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddressesTest do
 
   test "daily active addresses average in interval", context do
     assert {:ok, result} =
-             DailyActiveAddresses.active_addresses(
+             DailyActiveAddresses.average_active_addresses(
                context.contract,
                context.datetime_from,
                context.datetime_to,
@@ -128,7 +128,7 @@ defmodule Sanbase.Blockchain.DailyActiveAddressesTest do
 
   test "daily active addresses wrong dates", context do
     assert {:ok, result} =
-             DailyActiveAddresses.active_addresses(
+             DailyActiveAddresses.average_active_addresses(
                context.contract,
                context.datetime_to,
                context.datetime_from,

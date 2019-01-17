@@ -5,6 +5,10 @@ defmodule Sanbase.Timescaledb do
   notably bucketing by time and filling the gaps with zeroes.
   """
 
+  @type argument :: any()
+  @type query :: iolist() | String.t()
+  @type interval :: String.t() | nil
+
   @doc ~s"""
   Temporary helper function that rewrites the query so it fills empty time buckets with 0.
   Will be rewritten once TimescaleDB introduces a way to fill the gaps with a first-class functions.
@@ -16,18 +20,19 @@ defmodule Sanbase.Timescaledb do
     3. The interval MUST be a string that the `transform_interval/1` function understands
 
     Example usage:
-      You want to calculate the sum of all burn rates in a given time period,
+      You want to calculate the sum of all transaction volumes in a given time period,
       bucketed by an interval. Then your code should look like this:
 
           args = [from, to, contract]
 
           query =
-           "SELECT sum(burn_rate) AS value
-            FROM eth_burn_rate
+           "SELECT sum(transaction_volume) AS value
+            FROM eth_transaction_volume
             WHERE timestamp >= $1 AND timestamp <= $2 AND contract_address = $3"
 
           {query, args} = bucket_by_interval(query, args, interval)
   """
+  @spec bucket_by_interval(query, list(argument), interval) :: {query, list(argument)}
   def bucket_by_interval(query, args, nil), do: {query, args}
 
   def bucket_by_interval("SELECT " <> rest_query, args, interval)
@@ -63,9 +68,17 @@ defmodule Sanbase.Timescaledb do
    > `3d` - interval that represents 3 days
    > `1w` - interval that represents 1 week
   """
+  @spec transform_interval(interval) :: %Postgrex.Interval{}
   def transform_interval(interval) when is_binary(interval) do
     seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
     %Postgrex.Interval{secs: seconds}
+  end
+
+  @spec time_range(DateTime.t(), DateTime.t(), any()) :: String.t()
+  def time_range(%DateTime{} = from, %DateTime{} = to, datetime_column_name \\ "timestamp") do
+    from_unix = DateTime.to_unix(from)
+    to_unix = DateTime.to_unix(to)
+    "EXTRACT(epoch from #{datetime_column_name}) BETWEEN #{from_unix} AND #{to_unix}"
   end
 
   @doc ~s"""
@@ -76,14 +89,16 @@ defmodule Sanbase.Timescaledb do
 
   Example:
    You are bucketing by interval and doing a single SUM aggregation over a field.
-   In that case the result will contain two parameters in a list - `[datetime, burn_rate]`.
+   In that case the result will contain two parameters in a list - `[datetime, transaction_volume]`.
    In that case your transform_fn could look like this:
-     fn [datetime, burn_rate] ->
+     fn [datetime, transaction_volume] ->
        %{
          datetime: timestamp_to_datetime(datetime),
-         burn_rate: burn_rate
+         transaction_volume: transaction_volume
        }
   """
+  @spec timescaledb_execute({iolist() | String.t(), list(argument)}, (any() -> any())) ::
+          {:ok, list(any())} | {:error, any()}
   def timescaledb_execute({query, args}, transform_fn) when is_function(transform_fn, 1) do
     Sanbase.TimescaleRepo.query(query, args)
     |> case do
@@ -112,11 +127,14 @@ defmodule Sanbase.Timescaledb do
       iex> Sanbase.Timescaledb.timestamp_to_datetime({{2015, 1, 17}, {12, 55, 37, 00005}})
       #DateTime<2015-01-17 12:55:37Z>
   """
+  @spec timestamp_to_datetime({{integer, integer, integer}, {integer, integer, integer, integer}}) ::
+          DateTime.t() | no_return
   def timestamp_to_datetime({date, {h, m, s, us}}) do
     NaiveDateTime.from_erl!({date, {h, m, s}}, {us, 0})
     |> DateTime.from_naive!("Etc/UTC")
   end
 
+  @spec first_datetime(String.t(), list(argument)) :: {:ok, nil} | {:ok, DateTime.t()}
   def first_datetime(from_where, args) do
     query = [
       "SELECT timestamp ",
@@ -135,6 +153,7 @@ defmodule Sanbase.Timescaledb do
     end
   end
 
+  @spec table_name(String.t() | atom(), String.t() | nil) :: String.t()
   def table_name(table, schema \\ nil) do
     require Sanbase.Utils.Config
     schema = schema || Sanbase.Utils.Config.get(:blockchain_schema)

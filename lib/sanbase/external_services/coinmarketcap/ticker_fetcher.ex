@@ -92,7 +92,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.TickerFetcher do
   end
 
   defp find_or_init_project(%Project{coinmarketcap_id: coinmarketcap_id} = project) do
-    case Repo.get_by(Project, coinmarketcap_id: coinmarketcap_id) do
+    case Project.by_slug(coinmarketcap_id) do
       nil ->
         Project.changeset(project)
 

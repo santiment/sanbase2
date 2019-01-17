@@ -28,7 +28,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
     end
 
     show ico do
-      attributes_table
+      attributes_table()
 
       panel "Currency used and collected amount" do
         table_for ico.ico_currencies do
@@ -117,7 +117,7 @@ defmodule Sanbase.ExAdmin.Model.Ico do
     end
   end
 
-  def run_query_impl(repo, defn, :index, id) do
+  defp run_query_impl(repo, defn, :index, id) do
     query =
       %Sanbase.ExAdmin.Model.Ico{}
       |> Map.get(:resource_model)

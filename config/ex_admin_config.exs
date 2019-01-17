@@ -27,7 +27,10 @@ config :ex_admin,
     Sanbase.ExAdmin.Auth.User,
     Sanbase.ExAdmin.Auth.EthAccount,
     Sanbase.ExAdmin.Voting.Poll,
-    Sanbase.ExAdmin.Voting.Post
+    Sanbase.ExAdmin.Voting.Post,
+    Sanbase.ExAdmin.UserLists.UserList,
+    Sanbase.ExAdmin.Auth.UserSettings,
+    Sanbase.ExAdmin.ScheduleRescrapePrice
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

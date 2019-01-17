@@ -15,10 +15,6 @@ config :sanbase, SanbaseWeb.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    yarn: [
-      "start",
-      cd: Path.expand("../app", __DIR__)
-    ],
     node: [
       "node_modules/brunch/bin/brunch",
       "watch",
@@ -43,8 +39,9 @@ config :sanbase, SanbaseWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+config :logger, level: :debug
 # Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+config :logger, :console, format: "[$time][$level][$metadata] $message\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
@@ -77,7 +74,7 @@ config :sanbase, Sanbase.ClickhouseRepo,
   password: "",
   pool_timeout: 60_000,
   timeout: 60_000,
-  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "30"}
+  pool_size: {:system, "CLICKHOUSE_POOL_SIZE", "3"}
 
 config :sanbase, Sanbase.Timescaledb, blockchain_schema: nil
 

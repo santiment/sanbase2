@@ -31,7 +31,7 @@ defmodule Sanbase.Auth.EthAccount do
       {:error, error} ->
         Logger.error(error)
 
-        nil
+        :error
     end
   end
 end

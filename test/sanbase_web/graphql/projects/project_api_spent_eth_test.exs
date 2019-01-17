@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Model.{Project, Infrastructure}
+  alias Sanbase.Model.{Project, Infrastructure, ProjectEthAddress}
   alias Sanbase.Repo
 
   import SanbaseWeb.Graphql.TestHelpers
@@ -27,8 +27,18 @@ defmodule SanbaseWeb.Graphql.ProjecApiEthSpentTest do
       })
       |> Repo.insert!()
 
+    project_address = "0x12345"
+
+    %ProjectEthAddress{}
+    |> ProjectEthAddress.changeset(%{
+      project_id: p.id,
+      address: project_address
+    })
+    |> Repo.insert_or_update()
+
     [
       project: p,
+      project_address: project_address,
       dates_day_diff1: Timex.diff(datetime1, datetime3, :days) + 1,
       expected_sum1: 20000,
       dates_day_diff2: Timex.diff(datetime1, datetime2, :days) + 1,

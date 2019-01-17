@@ -1,6 +1,10 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
+  alias Absinthe.Resolution
+
+  @context_words_default_size 10
+
   def trending_words(
-        _root,
+        root,
         %{
           source: source,
           size: size,
@@ -27,5 +31,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
       ) do
     size = Enum.min([size, 100])
     Sanbase.SocialData.word_context(word, source, size, from, to)
+  end
+
+  def word_context(
+        %{word: word} = root,
+        _args,
+        %Resolution{
+          context: %{
+            arguments: %{
+              source: source,
+              from: from,
+              to: to
+            }
+          }
+        } = resolution
+      ) do
+    Sanbase.SocialData.word_context(word, source, @context_words_default_size, from, to)
   end
 end

@@ -36,7 +36,7 @@ This setup is going to start 2 processes:
 If you have docker you can run the app simply by running:
 
 ```bash
-$ docker-compose up --build sanbase
+$ bin/start.sh
 ```
 
 This is going to run the app on port 4000, so [`localhost:4000`](http://localhost:4000) should be accessible.
@@ -44,7 +44,13 @@ This is going to run the app on port 4000, so [`localhost:4000`](http://localhos
 There will no data in the database, so run this command to fill some information in the database:
 
 ```bash
-$ docker-compose exec sanbase mix run priv/repo/seeds.exs
+$ bin/setup.sh
+```
+
+If you want to access an IEX console attached to the running server, run:
+
+```bash
+$ bin/console.sh
 ```
 
 ## Structure of the app

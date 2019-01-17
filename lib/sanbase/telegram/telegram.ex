@@ -15,6 +15,14 @@ defmodule Sanbase.Telegram do
   @authorization_token Config.get(:token)
   @bot_username Config.get(:username)
 
+  use Tesla
+  @rate_limiting_server :telegram_bot_rate_limiting_server
+  alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
+  plug(ErrorCatcher.Middleware)
+  plug(RateLimiting.Middleware, name: @rate_limiting_server)
+  plug(Tesla.Middleware.BaseUrl, "https://api.telegram.org/bot#{@authorization_token}/")
+  plug(Tesla.Middleware.Headers, [{"Content-Type", "application/json"}])
+
   @doc ~s"""
   Get the already existing deeplink or creates a new one if there is none.
   A telegram bot and a user can have at most 1 chat channel, so we can have at most
@@ -71,18 +79,17 @@ defmodule Sanbase.Telegram do
   """
   @spec send_message_to_chat_id(non_neg_integer(), message) :: :ok | {:error, String.t()}
   def send_message_to_chat_id(chat_id, text) do
-    HTTPoison.post(
-      "https://api.telegram.org/bot#{@authorization_token}/sendMessage",
+    post(
+      "sendMessage",
       %{
         parse_mode: "markdown",
         chat_id: chat_id,
         text: text
       }
-      |> Jason.encode!(),
-      [{"Content-Type", "application/json"}]
+      |> Jason.encode!()
     )
     |> case do
-      {:ok, %HTTPoison.Response{status_code: 200}} -> :ok
+      {:ok, %Tesla.Env{status: 200}} -> :ok
       _ -> {:error, "Telegram message not sent."}
     end
   end

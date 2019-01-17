@@ -145,9 +145,8 @@ defmodule Sanbase.Mixfile do
       "ecto.setup_all": [
         "load_dotenv",
         "ecto.create --quiet",
-        "ecto.load",
-
-        ],
+        "ecto.load"
+      ],
       "ecto.reset_all": [
         "load_dotenv",
         "ecto.drop",

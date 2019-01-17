@@ -13,7 +13,7 @@ defmodule Sanbase.Telegram do
 
   @type message :: String.t() | iolist()
   @authorization_token Config.get(:token)
-  @bot_username Config.get(:username)
+  @bot_username Config.get(:bot_username)
 
   use Tesla
   @rate_limiting_server :telegram_bot_rate_limiting_server

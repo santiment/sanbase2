@@ -37,8 +37,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     ProjectPermissions,
     PostPermissions,
     ApiTimeframeRestriction,
-    ApiUsage,
-    RememberArgs
+    ApiUsage
   }
 
   import_types(Absinthe.Plug.Types)
@@ -638,7 +637,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       middleware(ApiTimeframeRestriction)
-      middleware(RememberArgs)
 
       cache_resolve(&SocialDataResolver.trending_words/3)
     end

@@ -97,6 +97,17 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
 
   def fit_from_datetime(enum, _args), do: enum
 
+  @doc ~s"""
+  Extract the arguments passed to the root query from subfield resolution
+  """
+  def extract_root_query_args(resolution, root_query_name) do
+    root_query_camelized = Absinthe.Utils.camelize(root_query_name, lower: true)
+
+    resolution.path
+    |> Enum.find(fn x -> is_map(x) && x.name == root_query_camelized end)
+    |> Map.get(:argument_data)
+  end
+
   # Private functions
 
   @spec format_error(Ecto.Changeset.error()) :: String.t()

@@ -3,6 +3,7 @@ defmodule Sanbase.Auth.User do
   use Timex.Ecto.Timestamps
 
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Auth.{
     User,
@@ -327,10 +328,21 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  def add_eth_account(%User{} = user, address) do
-    eth_account =
-      EthAccount.changeset(%EthAccount{}, %{user_id: id, address: address})
-      |> Repo.insert()
+  def add_eth_account(%User{id: user_id}, address) do
+    EthAccount.changeset(%EthAccount{}, %{user_id: user_id, address: address})
+    |> Repo.insert()
+  end
+
+  def remove_eth_account(%User{id: user_id}, address) do
+    from(
+      ea in EthAccount,
+      where: ea.user_id == ^user_id and ea.address == ^address
+    )
+    |> Repo.delete_all()
+    |> case do
+      {1, _} -> true
+      {0, _} -> {:error, "Address #{address} does not exist or is not owned by user #{user_id}"}
+    end
   end
 
   def insights_fallback_username, do: @insights_fallback_username

@@ -858,13 +858,23 @@ defmodule SanbaseWeb.Graphql.Schema do
     the Ethereum address. If it is the same as the passed in the argument then the
     user has access to this address and has indeed signed the message
     """
-    field :add_user_eth_account, :user do
+    field :add_user_eth_address, :user do
       arg(:signature, non_null(:string))
       arg(:address, non_null(:string))
       arg(:message_hash, non_null(:string))
 
       middleware(JWTAuth)
-      resolve(&AccountResolver.add_user_eth_account/3)
+      resolve(&AccountResolver.add_user_eth_address/3)
+    end
+
+    @desc ~s"""
+    Add the given `address` for the currently logged in user.
+    """
+    field :remove_user_eth_address, :user do
+      arg(:address, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&AccountResolver.remove_user_eth_address/3)
     end
 
     field :vote, :post do

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.TelegramController do
 
   alias Sanbase.Telegram
 
-  def start(conn, %{"message" => %{"text" => "/start " <> user_token}} = params) do
+  def index(conn, %{"message" => %{"text" => "/start " <> user_token}} = params) do
     %{"message" => %{"chat" => %{"id" => chat_id}}} = params
     Telegram.store_chat_id(user_token, chat_id)
 
@@ -12,7 +12,7 @@ defmodule SanbaseWeb.TelegramController do
     |> send_resp()
   end
 
-  def start(conn, _params) do
+  def index(conn, _params) do
     conn
     |> resp(200, "ok")
     |> send_resp()

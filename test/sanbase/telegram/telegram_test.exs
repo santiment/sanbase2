@@ -136,7 +136,7 @@ defmodule Sanbase.TelegramTest do
     }
 
     context.conn
-    |> post("/telegram/start/#{@telegram_endpoint}", response)
+    |> post("/telegram/#{@telegram_endpoint}", response)
   end
 
   defp gql_user_settings(context) do

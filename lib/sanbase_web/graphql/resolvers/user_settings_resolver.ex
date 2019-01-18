@@ -1,9 +1,8 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
   require Logger
 
-  alias Sanbase.Auth.{User, UserSettings}
+  alias Sanbase.Auth.{User, Settings, UserSettings}
   alias SanbaseWeb.Graphql.Helpers.Utils
-  alias Sanbase.Repo
 
   def settings(%User{} = user, _args, _resolution) do
     {:ok, UserSettings.settings_for(user)}

@@ -26,6 +26,12 @@ defmodule Sanbase.Application.Signals do
          ]},
         id: :con_cache_signals
       ),
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :telegram_bot_rate_limiting_server,
+        scale: 1000,
+        limit: 30,
+        time_between_requests: 10
+      ),
 
       # Quantum Scheduler
       start_if(

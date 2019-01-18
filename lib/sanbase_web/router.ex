@@ -54,6 +54,14 @@ defmodule SanbaseWeb.Router do
   scope "/", SanbaseWeb do
     pipe_through(:browser)
 
+    # Only us and telegram know the token. This makes sure that no malicious party
+    # could counterfeit a request
+    post(
+      "/telegram/#{System.get_env("TELEGRAM_ENDPOINT_RANDOM_STRING")}",
+      TelegramController,
+      :index
+    )
+
     get("/consent", RootController, :consent)
     get("/apiexamples", ApiExamplesController, :api_examples)
   end

@@ -63,6 +63,14 @@ config :sanbase, Sanbase.Elasticsearch.Cluster, api: Sanbase.ElasticsearchMock
 
 config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3,index4"
 
+# So the router can read it compile time
+System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")
+
+config :sanbase, Sanbase.Telegram,
+  bot_username: "SantimentSignalsBotTest",
+  telegram_endpoint: "random_string",
+  token: "token"
+
 if File.exists?("config/test.secret.exs") do
   import_config "test.secret.exs"
 end

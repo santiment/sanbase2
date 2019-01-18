@@ -43,4 +43,4 @@ config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
 
 config :sanbase, Sanbase.Telegram,
   bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", ""},
-  token: "${TELEGRAM_NOTIFICATIONS_TOKEN}"
+  token: "${TELEGRAM_SIGNALS_BOT_TOKEN}"

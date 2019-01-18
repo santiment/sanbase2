@@ -57,7 +57,7 @@ defmodule SanbaseWeb.Router do
     # Only us and telegram know the token. This makes sure that no malicious party
     # could counterfeit a request
     post(
-      "/telegram/start/#{System.get_env("TELEGRAM_SIGNALS_BOT_TOKEN")}",
+      "/telegram/start/#{System.get_env("TELEGRAM_ENDPOINT_RANDOM_STRING")}",
       TelegramController,
       :start
     )

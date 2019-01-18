@@ -10,7 +10,9 @@ defmodule Sanbase.TelegramTest do
   alias Sanbase.Telegram
   @bot_username Config.module_get(Sanbase.Telegram, :bot_username)
   @token Config.module_get(Sanbase.Telegram, :token)
+  @telegram_endpoint Config.module_get(Sanbase.Telegram, :telegram_endpoint)
   @telegram_chat_id 12315
+
   setup do
     user =
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}
@@ -134,7 +136,7 @@ defmodule Sanbase.TelegramTest do
     }
 
     context.conn
-    |> post("/telegram/start/#{@token}", response)
+    |> post("/telegram/start/#{@telegram_endpoint}", response)
   end
 
   defp gql_user_settings(context) do

@@ -852,6 +852,21 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&AccountResolver.change_username/3)
     end
 
+    @desc ~s"""
+    Add the given `address` for the currently logged in user. The `signature` and
+    `message_hash` are passed to the `web3.eth.accounts.recover` function to recover
+    the Ethereum address. If it is the same as the passed in the argument then the
+    user has access to this address and has indeed signed the message
+    """
+    field :add_user_eth_account, :user do
+      arg(:signature, non_null(:string))
+      arg(:address, non_null(:string))
+      arg(:message_hash, non_null(:string))
+
+      middleware(JWTAuth)
+      resolve(&AccountResolver.add_user_eth_account/3)
+    end
+
     field :vote, :post do
       arg(:post_id, non_null(:integer))
 

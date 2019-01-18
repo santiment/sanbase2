@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   alias Sanbase.Repo
   alias Ecto.Multi
 
+  @spec san_balance(Sanbase.Auth.User.t(), map(), Absinthe.Resolution.t()) :: {:ok, float()}
   def san_balance(
         %User{} = user,
         _args,
@@ -116,6 +117,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
           message: "Cannot update current user's username to #{new_username}",
           details: Utils.error_details(changeset)
         }
+    end
+  end
+
+  def add_user_eth_account(
+        _root,
+        %{signature: signature, address: address, message_hash: message_hash} = args,
+        %{context: %{auth: %{auth_method: :user_token, current_user: user}}}
+      ) do
+    with true <- Ethauth.verify_signature(signature, address, message_hash),
+         {:ok, _} <- User.add_eth_account(user, address) do
+      {:ok, user}
+    else
+      {:error, reason} ->
+        Logger.warn(
+          "Could not add an eth account for user #{user.id}. Reason: #{inspect(reason)}"
+        )
+
+        {:error, "Could not add an eth account."}
     end
   end
 

@@ -327,6 +327,12 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def add_eth_account(%User{} = user, address) do
+    eth_account =
+      EthAccount.changeset(%EthAccount{}, %{user_id: id, address: address})
+      |> Repo.insert()
+  end
+
   def insights_fallback_username, do: @insights_fallback_username
   def insights_fallback_email, do: @insights_fallback_email
 end

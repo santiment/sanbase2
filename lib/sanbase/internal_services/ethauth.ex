@@ -5,6 +5,10 @@ defmodule Sanbase.InternalServices.Ethauth do
   @san_token_decimals Decimal.from_float(:math.pow(10, 18))
   def san_token_decimals(), do: @san_token_decimals
 
+  @doc ~s"""
+  Verify that a user that claims to own a given Ethereum address acttually owns it.
+  """
+  @spec verify_signature(any(), any(), any()) :: boolean() | {:error, String.t()}
   def verify_signature(signature, address, message_hash) do
     with {:ok, %Tesla.Env{status: 200, body: body}} <-
            get(client(), "recover",
@@ -14,11 +18,8 @@ defmodule Sanbase.InternalServices.Ethauth do
          {:ok, %{"recovered" => recovered}} <- Jason.decode(body) do
       String.downcase(address) == String.downcase(recovered)
     else
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error,
-         "Error veryfing signature for address. #{address}. Status: #{status}. Body: #{
-           inspect(body)
-         }"}
+      {:ok, %Tesla.Env{status: status}} ->
+        {:error, "Error veryfing signature for address. #{address}. Status: #{status}"}
 
       {:error, error} ->
         {:error, "Error veryfing signature for address. #{address}. Reason: #{inspect(error)}"}

@@ -29,7 +29,7 @@ defmodule Sanbase.Auth.UserSettings do
         nil
 
       %UserSettings{} = us ->
-        us.settings
+        %{us.settings | has_telegram_connected: us.settings.telegram_chat_id != nil}
     end
   end
 

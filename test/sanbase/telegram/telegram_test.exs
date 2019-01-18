@@ -66,6 +66,17 @@ defmodule Sanbase.TelegramTest do
     assert nil == UserSettings.settings_for(context.user)
   end
 
+  test "following the telegram deep link sets the `hasTelegramConnected` setting", context do
+    get_telegram_deep_link(context)
+    %Telegram.UserToken{token: user_token} = Telegram.UserToken.by_user_id(context.user.id)
+    simulate_telegram_deep_link_follow(context, user_token)
+
+    %{"settings" => %{"hasTelegramConnected" => hasTelegramConnected}} =
+      gql_user_settings(context)
+
+    assert hasTelegramConnected == true
+  end
+
   # Private functions
 
   defp get_telegram_deep_link(context) do
@@ -124,5 +135,23 @@ defmodule Sanbase.TelegramTest do
 
     context.conn
     |> post("/telegram/start/#{@token}", response)
+  end
+
+  defp gql_user_settings(context) do
+    query = """
+    {
+      currentUser{
+        settings{
+          hasTelegramConnected
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+
+    json_response(result, 200)["data"]["currentUser"]
   end
 end

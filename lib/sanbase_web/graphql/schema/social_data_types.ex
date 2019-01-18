@@ -8,11 +8,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:top_words, list_of(:word_with_context))
   end
 
-  object :word_score do
-    field(:word, :string)
-    field(:score, :float)
-  end
-
   object :word_with_context do
     field :context, list_of(:word_context) do
       resolve(&SocialDataResolver.word_context/3)

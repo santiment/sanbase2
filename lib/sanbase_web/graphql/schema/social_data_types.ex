@@ -18,6 +18,13 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:all)
   end
 
+  object :word_trend_score do
+    field(:datetime, non_null(:datetime))
+    field(:score, non_null(:float))
+    field(:hour, non_null(:float))
+    field(:source, :string)
+  end
+
   object :word_context do
     field(:word, non_null(:string))
     field(:score, non_null(:float))

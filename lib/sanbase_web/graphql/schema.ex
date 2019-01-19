@@ -643,6 +643,30 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
+    Returns the historical score for a given word within a time interval
+
+    Arguments description:
+      * word - the word the historical score is requested for
+      * source - one of the following:
+        1. TELEGRAM
+        2. PROFESSIONAL_TRADERS_CHAT
+        3. REDDIT
+        4. ALL
+      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :word_trend_score, list_of(:word_trend_score) do
+      arg(:word, non_null(:string))
+      arg(:source, non_null(:trending_words_sources))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      middleware(ApiTimeframeRestriction)
+
+      resolve(&SocialDataResolver.word_trend_score/3)
+    end
+
+    @desc ~s"""
     Returns context for a trending word and the corresponding context score.
 
     Arguments description:

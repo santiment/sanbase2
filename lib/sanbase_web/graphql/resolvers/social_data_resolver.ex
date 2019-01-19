@@ -28,4 +28,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     size = Enum.min([size, 100])
     Sanbase.SocialData.word_context(word, source, size, from, to)
   end
+
+  def word_trend_score(
+        _root,
+        %{
+          word: word,
+          source: source,
+          from: from,
+          to: to
+        },
+        _resolution
+      ) do
+    Sanbase.SocialData.word_trend_score(word, source, from, to)
+  end
 end

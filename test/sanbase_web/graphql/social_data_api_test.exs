@@ -232,7 +232,7 @@ defmodule Sanbase.SocialDataApiTest do
                  %{
                    "hour" => 8.0,
                    "score" => 3725.6617392595313,
-                   "source" => :telegram,
+                   "source" => "TELEGRAM",
                    "datetime" => "2019-01-10T00:00:00Z"
                  }
                ]

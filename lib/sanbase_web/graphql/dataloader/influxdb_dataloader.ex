@@ -17,10 +17,14 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     |> Enum.chunk_every(200)
     |> Sanbase.Parallel.pmap(fn measurements ->
       volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
-      volumes_previous_24h = Prices.Store.fetch_mean_volume(measurements, two_days_ago, yesterday)
 
-      Enum.zip(volumes_last_24h, volumes_previous_24h)
-      |> Enum.map(fn {{name, today_vol}, {name, yesterday_vol}} ->
+      volumes_previous_24h_map =
+        Prices.Store.fetch_mean_volume(measurements, two_days_ago, yesterday) |> Map.new()
+
+      volumes_last_24h
+      |> Enum.map(fn {name, today_vol} ->
+        yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
+
         if yesterday_vol > 1 do
           {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
         end

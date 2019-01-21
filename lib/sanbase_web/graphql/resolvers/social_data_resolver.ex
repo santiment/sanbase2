@@ -1,6 +1,11 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
+  alias Absinthe.Resolution
+  alias SanbaseWeb.Graphql.Helpers.Utils
+
+  @context_words_default_size 10
+
   def trending_words(
-        _root,
+        root,
         %{
           source: source,
           size: size,
@@ -40,5 +45,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
         _resolution
       ) do
     Sanbase.SocialData.word_trend_score(word, source, from, to)
+  end
+
+  def word_context(
+        %{word: word} = root,
+        _args,
+        resolution
+      ) do
+    %{
+      source: source,
+      from: from,
+      to: to
+    } = Utils.extract_root_query_args(resolution, "trending_words")
+
+    Sanbase.SocialData.word_context(word, source, @context_words_default_size, from, to)
   end
 end

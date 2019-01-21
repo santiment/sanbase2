@@ -67,6 +67,15 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  def fetch_mean_volume(measurements, from, to) when is_list(measurements) do
+    %{results: [%{series: series}]} =
+      fetch_mean_volume_query(measurements, from, to)
+      |> Store.query()
+
+    series
+    |> Enum.map(fn %{name: name, values: [[_, value]]} -> {name, value} end)
+  end
+
   def fetch_mean_volume(measurement, from, to) do
     fetch_mean_volume_query(measurement, from, to)
     |> Store.query()
@@ -214,6 +223,15 @@ defmodule Sanbase.Prices.Store do
     ~s/SELECT LAST(price_usd), price_btc, marketcap_usd, volume_usd
     FROM "#{measurement}"
     WHERE time <= #{DateTime.to_unix(timestamp, :nanoseconds)}/
+  end
+
+  defp fetch_mean_volume_query(measurements, from, to) when is_list(measurements) do
+    measurements_str = measurements |> Enum.map(fn x -> ~s/"#{x}"/ end) |> Enum.join(", ")
+
+    ~s/SELECT MEAN(volume_usd)
+    FROM #{measurements_str}
+    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
+    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
   end
 
   defp fetch_mean_volume_query(measurement, from, to) do

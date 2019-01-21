@@ -5,6 +5,7 @@ defmodule SanbaseWeb.Graphql.Cache do
   @cache_name :graphql_cache
 
   alias __MODULE__, as: CacheMod
+  # alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
 
   @doc ~s"""

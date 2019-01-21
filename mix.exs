@@ -106,7 +106,8 @@ defmodule Sanbase.Mixfile do
       {:absinthe_metrics, "~> 0.9"},
       {:libcluster, "~> 3.0"},
       {:number, "~> 0.5.7"},
-      {:remote_ip, "~> 0.1"}
+      {:remote_ip, "~> 0.1"},
+      {:cachex, "~> 3.1"}
     ]
   end
 

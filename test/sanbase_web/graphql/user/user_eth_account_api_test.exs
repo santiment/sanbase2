@@ -81,6 +81,18 @@ defmodule SanbaseWeb.Graphql.UserEthAccountApiTest do
            }
   end
 
+  test "cannot have duplicated eth addresses", context do
+    add_eth_address(context.conn, @address)
+
+    assert capture_log(fn ->
+             result = add_eth_address(context.conn, @address)
+             %{"errors" => [error]} = result
+             assert error["message"] == "Could not add an ethereum address."
+           end) =~ ~s/[address: {"has already been taken", []}]/
+  end
+
+  # Helper functions
+
   defp add_eth_address(conn, address) do
     mock(fn %{method: :get} ->
       {:ok, %Tesla.Env{status: 200, body: %{"recovered" => address} |> Jason.encode!()}}

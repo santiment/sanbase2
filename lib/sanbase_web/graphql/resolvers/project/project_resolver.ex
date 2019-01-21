@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.Helpers.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
 
-  alias SanbaseWeb.Graphql.ClickhouseDataloader
+  alias SanbaseWeb.Graphql.{ClickhouseDataloader, InfluxdbDataloader}
 
   def projects_count(_root, _args, _resolution) do
     {:ok,
@@ -236,8 +236,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def volume_change_24h(%Project{id: id} = project, _args, _resolution) do
-    async(Cache.func(fn -> calculate_volume_change_24h(project) end, {:volume_change_24h, id}))
+  def volume_change_24h(%Project{id: id} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(InfluxdbDataloader, :volume_change_24h, project)
+    |> on_load(&volume_change_24h_from_loader(&1, project))
+  end
+
+  defp volume_change_24h_from_loader(loader, project) do
+    volume_change_24h =
+      loader
+      |> Dataloader.get(InfluxdbDataloader, :volume_change_24h, Measurement.name_from(project))
+
+    {:ok, volume_change_24h}
   end
 
   defp calculate_volume_change_24h(%Project{} = project) do

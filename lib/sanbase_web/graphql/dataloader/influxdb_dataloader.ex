@@ -1,9 +1,34 @@
-defmodule SanbaseWeb.Graphql.PriceStore do
+defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias Sanbase.Prices
   alias SanbaseWeb.Graphql.Helpers.{Cache, Utils}
 
   def data() do
     Dataloader.KV.new(&query/2)
+  end
+
+  def query(:volume_change_24h, args) do
+    measurements = args |> Enum.map(&Sanbase.Influxdb.Measurement.name_from/1)
+
+    now = Timex.now()
+    yesterday = Timex.shift(now, days: -1)
+    two_days_ago = Timex.shift(now, days: -2)
+
+    measurements
+    |> Enum.chunk_every(200)
+    |> Sanbase.Parallel.pmap(fn measurements ->
+      volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
+      volumes_previous_24h = Prices.Store.fetch_mean_volume(measurements, two_days_ago, yesterday)
+
+      Enum.zip(volumes_last_24h, volumes_previous_24h)
+      |> Enum.map(fn {{name, today_vol}, {name, yesterday_vol}} ->
+        if yesterday_vol > 1 do
+          {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+    end)
+    |> Enum.flat_map(& &1)
+    |> Map.new()
   end
 
   def query(measurement, ids) do

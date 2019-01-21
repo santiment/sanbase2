@@ -868,7 +868,9 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Add the given `address` for the currently logged in user.
+    Remove the given `address` for the currently logged in user. This can only be done
+    if this `address` is not the only mean for the user to log in. It can be removed
+    only if there is an email set or there is another ethereum address added.
     """
     field :remove_user_eth_address, :user do
       arg(:address, non_null(:string))

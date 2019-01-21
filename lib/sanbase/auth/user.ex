@@ -328,8 +328,8 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  @spec add_eth_account(User.t(), String.t()) ::
-          {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  @spec add_eth_account(%User{}, String.t()) ::
+          {:ok, %User{}} | {:error, Ecto.Changeset.t()}
   def add_eth_account(%User{id: user_id}, address) do
     EthAccount.changeset(%EthAccount{}, %{user_id: user_id, address: address})
     |> Repo.insert()
@@ -341,7 +341,7 @@ defmodule Sanbase.Auth.User do
   address and there is no email, the user account will be lost as there won't be
   any way to log in
   """
-  @spec remove_eth_account(User.t(), String.t()) :: true | {:error, String.t()}
+  @spec remove_eth_account(%User{}, String.t()) :: true | {:error, String.t()}
   def remove_eth_account(%User{id: user_id} = user, address) do
     if can_remove_eth_account?(user, address) do
       from(

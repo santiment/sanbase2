@@ -214,7 +214,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        Process.exit(self(), :normal)
+        all_time_project_price_points(coinmarketcap_id)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
@@ -241,7 +241,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        Process.exit(self(), :normal)
+        all_time_total_market_price_points()
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
@@ -293,7 +293,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
   end
 
   defp extract_price_points_for_interval(
-         "TOTAL_MARKET",
+         "TOTAL_MARKET" = total_market,
          {start_interval_sec, end_interval_sec} = interval
        ) do
     total_market_interval_url(start_interval_sec * 1000, end_interval_sec * 1000)
@@ -301,7 +301,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        Process.exit(self(), :normal)
+        extract_price_points_for_interval(total_market, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points(interval)
@@ -337,7 +337,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        Process.exit(self(), :normal)
+        extract_price_points_for_interval(coinmarketcap_id, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points(interval)

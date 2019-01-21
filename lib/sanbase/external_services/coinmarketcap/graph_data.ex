@@ -128,13 +128,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        Process.exit(self(), :normal)
+        fetch_all_time_prices(coinmarketcap_id)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
       _ ->
-        nil
+        Process.exit(self(), :normal)
     end
   end
 
@@ -144,13 +144,13 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        Process.exit(self(), :normal)
+        fetch_all_time_marketcap()
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
       _ ->
-        nil
+        Process.exit(self(), :normal)
     end
   end
 
@@ -194,14 +194,14 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
-        Process.exit(self(), :normal)
+        extract_price_points_for_interval({start_interval_sec, end_interval_sec})
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
 
       _ ->
         Logger.error("Failed to fetch graph data for total marketcap for the selected interval")
-        []
+        Process.exit(self(), :normal)
     end
   end
 
@@ -218,6 +218,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
     |> case do
       {:ok, %Tesla.Env{status: 429} = resp} ->
         wait_rate_limit(resp)
+        extract_price_points_for_interval(coinmarketcap_id, interval)
 
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         body |> json_to_price_points()
@@ -229,7 +230,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData do
           }"
         )
 
-        []
+        Process.exit(self(), :normal)
     end
   end
 

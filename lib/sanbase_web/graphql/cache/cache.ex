@@ -61,15 +61,12 @@ defmodule SanbaseWeb.Graphql.Cache do
   """
   def func(cached_func, name, args \\ %{}) do
     fn ->
-      {:ok, value} =
-        CacheProvider.get_or_store(
-          @cache_name,
-          cache_key(name, args),
-          cached_func,
-          &cache_modify_middleware/3
-        )
-
-      {:ok, value}
+      CacheProvider.get_or_store(
+        @cache_name,
+        cache_key(name, args),
+        cached_func,
+        &cache_modify_middleware/3
+      )
     end
   end
 

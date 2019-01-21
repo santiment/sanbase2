@@ -42,4 +42,9 @@ defmodule SanbaseWeb.Graphql.EtherbiTypes do
     field(:datetime, non_null(:datetime))
     field(:token_circulation, :float)
   end
+
+  object :token_velocity do
+    field(:datetime, non_null(:datetime))
+    field(:token_velocity, :float)
+  end
 end

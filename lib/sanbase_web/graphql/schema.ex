@@ -379,6 +379,22 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
+    Fetch token velocity for a project, grouped by interval.
+    Projects are referred to by a unique identifier (slug).
+    """
+    field :token_velocity, list_of(:token_velocity) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
+      arg(:interval, :string, default_value: "1d")
+
+      middleware(ApiTimeframeRestriction)
+      complexity(&Complexity.from_to_interval/3)
+      cache_resolve(&EtherbiResolver.token_velocity/3)
+    end
+
+    @desc ~s"""
     Fetch daily active addresses for a project within a given time period.
     Projects are referred to by a unique identifier (slug).
 

@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:datetime, non_null(:datetime))
     field(:score, non_null(:float))
     field(:hour, non_null(:float))
-    field(:source, :string)
+    field(:source, :trending_words_sources)
   end
 
   object :word_context do

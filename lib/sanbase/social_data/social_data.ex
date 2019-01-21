@@ -212,7 +212,7 @@ defmodule Sanbase.SocialData do
           datetime: DateTime.from_unix!(timestamp),
           score: score,
           hour: hour,
-          source: source
+          source: String.to_existing_atom(source)
         }
       end)
       |> Enum.sort(&(&1.score >= &2.score))

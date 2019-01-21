@@ -182,4 +182,61 @@ defmodule Sanbase.SocialDataApiTest do
              }
            }
   end
+
+  test "successfully fetch word trend score", %{conn: conn} do
+    body =
+      [
+        %{
+          "hour" => 8.0,
+          "score" => 3725.6617392595313,
+          "source" => "telegram",
+          "timestamp" => 1_547_078_400
+        }
+      ]
+      |> Jason.encode!()
+
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: body,
+         status_code: 200
+       }}
+    )
+
+    query = """
+    {
+      wordTrendScore(
+        word: "merry", 
+        source: TELEGRAM,
+        from: "2018-01-09T00:00:00Z",
+        to:"2018-01-10T00:00:00Z"
+      ) {
+        datetime,
+        score,
+        source
+        hour
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "wordTrendScore"))
+      |> json_response(200)
+
+    assert result == %{
+             "data" => %{
+               "wordTrendScore" => [
+                 %{
+                   "hour" => 8.0,
+                   "score" => 3725.6617392595313,
+                   "source" => :telegram,
+                   "datetime" => "2019-01-10T00:00:00Z"
+                 }
+               ]
+             }
+           }
+  end
 end

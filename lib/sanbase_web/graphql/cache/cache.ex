@@ -5,17 +5,16 @@ defmodule SanbaseWeb.Graphql.Cache do
   @cache_name :graphql_cache
 
   alias __MODULE__, as: CacheMod
+  alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
 
   @doc ~s"""
-    Macro that's used instead of Absinthe's `resolve`. The value of the resolver is
-    1. get from a cache if it exists there
-    2. calculated and stored in the cache if it does not exist
+  Macro that's used instead of Absinthe's `resolve`. The value of the resolver is
+  1. Get from a cache if it exists there
+  2. Calculated and stored in the cache if it does not exist
+  3. Handle middleware results
 
-    The value of `captured_mfa_ast` when executed MUST be a concrete value but not
-    a new middleware.
-
-    The function MUST be a captured named function because its name is extracted
-    and used in the cache key.
+  The function MUST be a captured named function because its name is extracted
+  and used in the cache key.
   """
   defmacro cache_resolve(captured_mfa_ast) do
     quote do
@@ -27,14 +26,13 @@ defmodule SanbaseWeb.Graphql.Cache do
   end
 
   @doc ~s"""
-    Macro that's used instead of Absinthe's `resolve`. The value of the resolver is
-    1. Get from a cache if it exists there
-    2. Calculated and stored in the cache if it does not exist
+  Macro that's used instead of Absinthe's `resolve`. The value of the resolver is
+  1. Get from a cache if it exists there
+  2. Calculated and stored in the cache if it does not exist
+  3. Handle middleware results
 
-    The value of `captured_mfa_ast` when executed MUST be a concrete value but not
-    a new middleware.
 
-    The function's name is not used but instead `fun_name` is used in the cache key
+  The function's name is not used but instead `fun_name` is used in the cache key
   """
   defmacro cache_resolve(captured_mfa_ast, fun_name) do
     quote do
@@ -45,81 +43,48 @@ defmodule SanbaseWeb.Graphql.Cache do
     end
   end
 
-  defmacro cache_resolve_async(captured_mfa_ast) do
-    quote do
-      middleware(
-        Absinthe.Resolution,
-        CacheMod.middleware_from(unquote(captured_mfa_ast))
-      )
-    end
-  end
-
   @doc ~s"""
-    Macro that's used instead of Absinthe's `resolve`. The value of the resolver is
-    1. Get from a cache if it exists there
-    2. Calculated at a later point in time (when the middleware is executed)
-    and stored in the cache if it does not exist
+  Exposed as sometimes it can be useful to use it outside the macros.
 
-    The value of `captured_mfa_ast` MUST be a dataloader middleware tuple with three elements
-    `{:middleware, Absinthe.Middleware.Dataloder, callback}` where `callback` is a
-    function with arity 1 that accepts `loader` as a single parameter.
+  Gets a function, name and arguments and returns a new function that:
+  1. On execution checks if the value is present in the cache and returns it
+  2. If it's not in the cache it gets executed and the value is stored in the cache.
 
-    The function MUST be a captured named function because its name is extracted
-    and used in the cache key.
-  """
-  defmacro cache_resolve_dataloader(captured_mfa_ast) do
-    quote do
-      middleware(
-        Absinthe.Resolution,
-        CacheMod.middleware_from(unquote(captured_mfa_ast))
-      )
-    end
-  end
-
-  @doc ~s"""
-    Exposed as
-    sometimes it can be useful to use it outside the macros.
-
-    Gets a function, name and arguments and returns a new function that:
-    1. On execution checks if the value is present in the cache and returns it
-    2. If it's not in the cache it gets executed and the value is stored in the cache.
-
-    NOTE: `cached_func` is a function with arity 0. That means if you want to use it
-    in your code and you want some arguments you should use it like this:
-      > Cache.func(
-      >   fn ->
-      >     fetch_last_price_record(pair)
-      >   end,
-      >   :fetch_price_last_record, %{pair: pair}
-      > ).()
+  NOTE: `cached_func` is a function with arity 0. That means if you want to use it
+  in your code and you want some arguments you should use it like this:
+    > Cache.func(
+    >   fn ->
+    >     fetch_last_price_record(pair)
+    >   end,
+    >   :fetch_price_last_record, %{pair: pair}
+    > ).()
   """
   def func(cached_func, name, args \\ %{}) do
     fn ->
       {:ok, value} =
-        ConCache.get_or_store(@cache_name, cache_key(name, args), fn ->
-          {:ok, cached_func.()}
-        end)
+        CacheProvider.get_or_store(
+          @cache_name,
+          cache_key(name, args),
+          cached_func,
+          &cache_modify_middleware/3
+        )
 
-      value
+      {:ok, value}
     end
   end
 
   @doc ~s"""
-    Clears the whole cache. Slow.
+  Clears the whole cache. Slow.
   """
   def clear_all() do
-    @cache_name
-    |> ConCache.ets()
-    |> :ets.tab2list()
-    |> Enum.each(fn {key, _} -> ConCache.delete(@cache_name, key) end)
+    CacheProvider.clear_all(@cache_name)
   end
 
   @doc ~s"""
-    The size of the cache in megabytes
+  The size of the cache in megabytes
   """
-  def size(:megabytes) do
-    bytes_size = :ets.info(ConCache.ets(@cache_name), :memory) * :erlang.system_info(:wordsize)
-    (bytes_size / (1024 * 1024)) |> Float.round(2)
+  def size() do
+    CacheProvider.size(@cache_name, :megabytes)
   end
 
   @doc false
@@ -136,148 +101,81 @@ defmodule SanbaseWeb.Graphql.Cache do
     resolver(fun, fun_name)
   end
 
-  @doc false
-  def middleware_from(captured_mfa) when is_function(captured_mfa) do
-    # Public so it can be used by the resolve macros. You should not use it.
-    fun_name = captured_mfa |> captured_mfa_name()
-    middleware_resolver(captured_mfa, fun_name)
-  end
-
   # Private functions
 
   defp resolver(resolver_fn, name) do
-    # Works only for top-level resolvers and fields with root object Project
+    # Works only for top-level resolvers and fields with root object that has `id` field
     fn
       %{id: id} = root, args, resolution ->
         fun = fn -> resolver_fn.(root, args, resolution) end
 
         cache_key({name, id}, args)
-        |> get_or_store_if_ok(fun)
+        |> get_or_store(fun)
 
       %{}, args, resolution ->
         fun = fn -> resolver_fn.(%{}, args, resolution) end
 
         cache_key(name, args)
-        |> get_or_store_if_ok(fun)
-    end
-  end
-
-  # ==== ASYNC ====
-  # The actual work for the async cache resolver is done here.
-  #
-  # The most important part is how the cache is actually populated. The resolver
-  # returns a `{:middleware, Absinthe.Middleware.Async, {fun, opts}}` tuple.
-  # This is NOT the final result so it cannot be used. Instead, `fun` is replaced
-  # by a function that does the caching.
-  # That works because `fun` is always a function with zero arguments, which
-  # when executed (async) returns the actual result.
-  #
-  # ==== DATALOADER ====
-  # The actual work for the dataloader cache resolver is done here.
-  #
-  # The most important part is how the cache is actually populated. The resolver
-  # returns a `{:middleware, Absinthe.Middleware.Dataloader, {loader, callback}}` tuple.
-  # This is NOT the final result so it cannot be used. Instead, `callback` is replaced
-  # by a function that does the caching.
-  # That works because `callback` is always a function with one argument `loader`, which
-  # when executed (after `Dataloader.run` is called from the middleware) returns the
-  # actual result.
-  #
-  # The modified callback internally calls the original callback, passing it the argument,
-  # stores the value in the cache and returns the value. From the outside it works the same
-  # as the original callback
-  #
-  # Because Elixir's lambdas are correctly implemented, we can fetch what's needed
-  # from the context to use it for `cache_key`
-  defp middleware_resolver(resolver_fn, name) do
-    # Works only for top-level resolvers and fields with root object that has `id` attribute
-    fn
-      %{id: id} = root, args, resolution ->
-        fun = fn -> resolver_fn.(root, args, resolution) end
-
-        cache_key({name, id}, args)
-        |> get_or_store_middleware(fun)
-
-      %{}, args, resolution ->
-        fun = fn -> resolver_fn.(%{}, args, resolution) end
-
-        cache_key(name, args)
-        |> get_or_store_middleware(fun)
+        |> get_or_store(fun)
     end
   end
 
   # Calculate the cache key from a given name and arguments.
 
-  defp get_or_store(cache_key, resolver_fn) do
-    {:ok, value} =
-      ConCache.get_or_store(@cache_name, cache_key, fn ->
-        {:ok, resolver_fn.()}
-      end)
-
-    value
+  defp get_or_store(cache_name \\ @cache_name, cache_key, resolver_fn) do
+    CacheProvider.get_or_store(
+      cache_name,
+      cache_key,
+      resolver_fn,
+      &cache_modify_middleware/3
+    )
   end
 
-  defp get_or_store_middleware(cache_key, resolver_fn) do
-    IO.inspect("get_or_store_middleware")
-
-    case ConCache.get(@cache_name, cache_key) do
-      nil ->
-        cache_modify_middleware(cache_key, resolver_fn.())
-
-      # Wrapped in a tuple to distinguish value = nil from not having a record
-      # If we have the result in the cache the middleware tuple is skipped
-      {:ok, value} = tuple ->
-        IO.inspect("GOT FROM THE CACHE3: #{inspect(tuple)}")
-        value
-    end
-  end
-
-  # Used because we disable the Async middleware in tests
-  defp cache_modify_middleware(cache_key, {:ok, value}) do
-    IO.inspect("cache_modify_middleware normal")
-    ConCache.put(@cache_name, cache_key, {:ok, value})
+  defp cache_modify_middleware(cache_name, cache_key, {:ok, value} = result) do
+    CacheProvider.store(cache_name, cache_key, result)
 
     {:ok, value}
   end
 
   defp cache_modify_middleware(
+         cache_name,
          cache_key,
          {:middleware, Absinthe.Middleware.Async = midl, {fun, opts}}
        ) do
-    IO.inspect("cache_modify_middleware async")
-
     caching_fun = fn ->
-      value = fun.()
-      ConCache.put(@cache_name, cache_key, {:ok, value})
+      case fun.() do
+        {:ok, _value} = result ->
+          CacheProvider.store(cache_name, cache_key, result)
+          result
 
-      value
+        error ->
+          error
+      end
     end
 
     {:middleware, midl, {caching_fun, opts}}
   end
 
   defp cache_modify_middleware(
+         cache_name,
          cache_key,
          {:middleware, Absinthe.Middleware.Dataloader = midl, {loader, callback}}
        ) do
-    IO.inspect("cache_modify_middleware dataloader")
-
     caching_callback = fn loader_arg ->
-      IO.inspect("calling internal dataloader func")
-      value = callback.(loader_arg)
+      case callback.(loader_arg) do
+        {:ok, _value} = result ->
+          CacheProvider.store(cache_name, cache_key, result)
+          result
 
-      # Do not cache the {:error, error} tuples returned from resolvers
-      if {:ok, value} do
-        IO.inspect("PUTTING IN THE CACHE3: #{inspect(value)}")
-        ConCache.put(@cache_name, cache_key, value)
+        error ->
+          error
       end
-
-      value
     end
 
-    IO.inspect("RETURNING MIDDLEWARE DATALOADRE")
     {:middleware, midl, {loader, caching_callback}}
   end
+
+  # Helper functions
 
   defp cache_key(name, args) do
     args_hash =
@@ -312,44 +210,5 @@ defmodule SanbaseWeb.Graphql.Cache do
     captured_mfa
     |> :erlang.fun_info()
     |> Keyword.get(:name)
-  end
-
-  # Implements missing functionality in ConCache - conditionally choose wheter or not
-  # to cache the result from `get_or_store`.
-  defp get_or_store_if_ok(cache_key, func) do
-    IO.inspect("get_or_store_if_ok")
-
-    result =
-      if (value = ConCache.get(@cache_name, cache_key)) != nil do
-        value |> IO.inspect(label: "GOT FROM THE CACHE1")
-      else
-        ConCache.isolated(@cache_name, cache_key, fn ->
-          if (value = ConCache.get(@cache_name, cache_key)) != nil do
-            value |> IO.inspect(label: "GOT FROM THE CACHE2")
-          else
-            case func.() do
-              {:error, _} ->
-                nil
-
-              {:ok, value} = tuple ->
-                IO.inspect("PUTTING IN THE CACHE2:#{inspect(tuple)}")
-                ConCache.put(@cache_name, cache_key, tuple)
-                tuple
-
-              {:middleware, _, _} = tuple ->
-                # Decides on its behalf whether or not to put the value in the cache
-                cache_modify_middleware(cache_key, tuple)
-            end
-          end
-        end)
-      end
-
-    # Result is `nil` if the returned :error tuple. In that case re-evaulate
-    # the function and return it as a result
-    if result == nil do
-      func.()
-    else
-      result
-    end
   end
 end

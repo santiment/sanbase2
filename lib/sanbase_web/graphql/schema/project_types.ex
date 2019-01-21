@@ -4,8 +4,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
 
   import Absinthe.Resolution.Helpers
 
-  import SanbaseWeb.Graphql.Cache,
-    only: [cache_resolve: 1, cache_resolve_async: 1, cache_resolve_dataloader: 1]
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{
     ProjectResolver,
@@ -72,15 +71,15 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     field(:project_transparency_description, :string)
 
     field :eth_balance, :float do
-      cache_resolve_dataloader(&ProjectBalanceResolver.eth_balance/3)
+      cache_resolve(&ProjectBalanceResolver.eth_balance/3)
     end
 
     field :btc_balance, :float do
-      cache_resolve_dataloader(&ProjectBalanceResolver.btc_balance/3)
+      cache_resolve(&ProjectBalanceResolver.btc_balance/3)
     end
 
     field :usd_balance, :float do
-      cache_resolve_dataloader(&ProjectBalanceResolver.usd_balance/3)
+      cache_resolve(&ProjectBalanceResolver.usd_balance/3)
     end
 
     field :funds_raised_icos, list_of(:currency_amount) do
@@ -114,23 +113,23 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :volume_change_24h, :float, name: "volume_change24h" do
-      cache_resolve_async(&ProjectResolver.volume_change_24h/3)
+      cache_resolve(&ProjectResolver.volume_change_24h/3)
     end
 
     field :average_dev_activity, :float do
       description("Average dev activity for the last `days` days")
       arg(:days, :integer, default_value: 30)
-      cache_resolve_dataloader(&ProjectResolver.average_dev_activity/3)
+      cache_resolve(&ProjectResolver.average_dev_activity/3)
     end
 
     field :average_github_activity, :float do
       description("Average github activity for the last `days` days")
       arg(:days, :integer, default_value: 30)
-      cache_resolve_async(&ProjectResolver.average_github_activity/3)
+      cache_resolve(&ProjectResolver.average_github_activity/3)
     end
 
     field :twitter_data, :twitter_data do
-      cache_resolve_async(&TwitterResolver.twitter_data/3)
+      cache_resolve(&TwitterResolver.twitter_data/3)
     end
 
     field :marketcap_usd, :float do
@@ -180,18 +179,18 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :signals, list_of(:signal) do
-      cache_resolve_dataloader(&ProjectResolver.signals/3)
+      cache_resolve(&ProjectResolver.signals/3)
     end
 
     field :price_to_book_ratio, :float do
-      cache_resolve_dataloader(&ProjectResolver.price_to_book_ratio/3)
+      cache_resolve(&ProjectResolver.price_to_book_ratio/3)
     end
 
     @desc "Total ETH spent from the project's team wallets for the last `days`"
     field :eth_spent, :float do
       arg(:days, :integer, default_value: 30)
 
-      cache_resolve_async(&ProjectTransactionsResolver.eth_spent/3)
+      cache_resolve(&ProjectTransactionsResolver.eth_spent/3)
     end
 
     @desc "ETH spent for each `interval` from the project's team wallet and time period"
@@ -200,7 +199,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      cache_resolve_async(&ProjectTransactionsResolver.eth_spent_over_time/3)
+      cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time/3)
     end
 
     @desc "Top ETH transactions for project's team wallets"
@@ -210,7 +209,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:transaction_type, :transaction_type, default_value: :all)
       arg(:limit, :integer, default_value: 10)
 
-      cache_resolve_async(&ProjectTransactionsResolver.eth_top_transactions/3)
+      cache_resolve(&ProjectTransactionsResolver.eth_top_transactions/3)
     end
 
     @desc "Top transactions for the token of a given project"
@@ -227,7 +226,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:from, :datetime)
       arg(:to, :datetime)
 
-      cache_resolve_dataloader(&EtherbiResolver.average_daily_active_addresses/3)
+      cache_resolve(&EtherbiResolver.average_daily_active_addresses/3)
     end
   end
 

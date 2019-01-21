@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   @type error :: String.t()
   @type stored_value :: any()
   @type cache :: atom()
+  @type size_type :: :megabytes
   @doc ~s"""
   Get the value for the given key from the cache
   """
@@ -27,4 +28,8 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   """
   @callback get_or_store(cache, key, fun, fun) ::
               {:ok, stored_value} | {:error, error}
+
+  @callback size(cache, size_type) :: float()
+
+  @callback clear_all(cache) :: :ok
 end

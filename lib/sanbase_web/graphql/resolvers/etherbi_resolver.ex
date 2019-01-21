@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, ExchangeAddress}
-  alias SanbaseWeb.Graphql.Cache
+  alias SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Blockchain
 

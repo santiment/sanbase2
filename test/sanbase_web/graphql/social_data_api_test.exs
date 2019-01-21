@@ -216,7 +216,6 @@ defmodule Sanbase.SocialDataApiTest do
         datetime,
         score,
         source
-        hour
       }
     }
     """
@@ -230,10 +229,9 @@ defmodule Sanbase.SocialDataApiTest do
              "data" => %{
                "wordTrendScore" => [
                  %{
-                   "hour" => 8.0,
                    "score" => 3725.6617392595313,
                    "source" => "TELEGRAM",
-                   "datetime" => "2019-01-10T00:00:00Z"
+                   "datetime" => "2019-01-10T08:00:00Z"
                  }
                ]
              }

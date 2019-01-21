@@ -209,9 +209,8 @@ defmodule Sanbase.SocialData do
                        "source" => source
                      } ->
         %{
-          datetime: DateTime.from_unix!(timestamp),
+          datetime: combine_unix_dt_and_hour(timestamp, hour),
           score: score,
-          hour: hour,
           source: String.to_existing_atom(source)
         }
       end)
@@ -222,5 +221,12 @@ defmodule Sanbase.SocialData do
 
   defp tech_indicators_url() do
     Config.module_get(Sanbase.TechIndicators, :url)
+  end
+
+  def combine_unix_dt_and_hour(unix_dt, hour) do
+    unix_dt
+    |> DateTime.from_unix!()
+    |> Timex.beginning_of_day()
+    |> Timex.shift(hours: Sanbase.Utils.Math.to_integer(hour))
   end
 end

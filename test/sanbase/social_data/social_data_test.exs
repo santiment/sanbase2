@@ -177,10 +177,9 @@ defmodule Sanbase.SocialDataTest do
              {:ok,
               [
                 %{
-                  hour: 8.0,
                   score: 3725.6617392595313,
                   source: :telegram,
-                  datetime: DateTime.from_unix!(1_547_078_400)
+                  datetime: Sanbase.DateTimeUtils.from_iso8601!("2019-01-10T08:00:00Z")
                 }
               ]}
   end

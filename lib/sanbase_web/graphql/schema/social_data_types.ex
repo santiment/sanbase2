@@ -27,7 +27,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   object :word_trend_score do
     field(:datetime, non_null(:datetime))
     field(:score, non_null(:float))
-    field(:hour, non_null(:float))
     field(:source, :trending_words_sources)
   end
 

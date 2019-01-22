@@ -230,8 +230,8 @@ defmodule Sanbase.Prices.Store do
 
     ~s/SELECT MEAN(volume_usd)
     FROM #{measurements_str}
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}/
+    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+    AND time <= #{DateTime.to_unix(to, :nanosecond)}/
   end
 
   defp fetch_mean_volume_query(measurement, from, to) do

@@ -22,7 +22,7 @@ defmodule Sanbase.Repo.Migrations.RescrapePricesSinceBeginningOfAugust do
     for ticker_cmc_id <- ticker_cmc_ids do
       %Sanbase.Influxdb.Measurement{
         timestamp: 0,
-        fields: %{last_updated: second_august |> DateTime.to_unix(:nanoseconds)},
+        fields: %{last_updated: second_august |> DateTime.to_unix(:nanosecond)},
         tags: [ticker_cmc_id: ticker_cmc_id],
         name: Store.last_history_price_cmc_measurement()
       }

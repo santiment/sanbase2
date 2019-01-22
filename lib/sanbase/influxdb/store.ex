@@ -162,7 +162,7 @@ defmodule Sanbase.Influxdb.Store do
       """
       def influx_time(datetime, from_type \\ nil)
 
-      def influx_time(datetime, :seconds) when is_integer(datetime) do
+      def influx_time(datetime, :second) when is_integer(datetime) do
         datetime * 1_000_000_000
       end
 

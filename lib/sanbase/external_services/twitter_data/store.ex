@@ -30,8 +30,8 @@ defmodule Sanbase.ExternalServices.TwitterData.Store do
   defp select_from_to_query(measurement_name, from, to, interval) do
     ~s/SELECT time, LAST(followers_count)
     FROM "#{measurement_name}"
-    WHERE time >= #{DateTime.to_unix(from, :nanoseconds)}
-    AND time <= #{DateTime.to_unix(to, :nanoseconds)}
+    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+    AND time <= #{DateTime.to_unix(to, :nanosecond)}
     GROUP BY time(#{interval}) fill(none)/
   end
 

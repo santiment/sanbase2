@@ -2,7 +2,7 @@ defmodule Sanbase.InternalServices.Ethauth do
   use Tesla
   require Sanbase.Utils.Config, as: Config
 
-  @san_token_decimals Decimal.new(:math.pow(10, 18))
+  @san_token_decimals Decimal.from_float(:math.pow(10, 18))
   def san_token_decimals(), do: @san_token_decimals
 
   def verify_signature(signature, address, message_hash) do
@@ -53,7 +53,7 @@ defmodule Sanbase.InternalServices.Ethauth do
   defp client() do
     ethauth_url = Config.get(:url)
 
-    Tesla.build_client([
+    Tesla.client([
       Sanbase.ExternalServices.ErrorCatcher.Middleware,
       {Tesla.Middleware.BaseUrl, ethauth_url},
       Tesla.Middleware.Logger

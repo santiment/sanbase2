@@ -40,27 +40,27 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
 
     Store.import([
       %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
         fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
         name: ticker_cmc_id1
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{price_usd: 22, price_btc: 1200, volume_usd: 300, marketcap_usd: 800},
         name: ticker_cmc_id1
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{price_usd: 20, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
         name: ticker_cmc_id2
       },
       %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
         fields: %{volume_usd: 1200, marketcap_usd: 1500},
         name: total_market_ticker_cmc_id
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{volume_usd: 1300, marketcap_usd: 1800},
         name: total_market_ticker_cmc_id
       }

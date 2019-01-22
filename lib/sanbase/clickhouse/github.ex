@@ -52,8 +52,14 @@ defmodule Sanbase.Clickhouse.Github do
   @spec total_github_activity(String.t(), %DateTime{}, %DateTime{}) :: {:ok, float()}
   def total_github_activity(organization, from, to) do
     {query, args} = total_github_activity_query(organization, from, to)
-    {:ok, [result]} = ClickhouseRepo.query_transform(query, args, fn [elem] -> elem end)
-    {:ok, result |> String.to_integer()}
+
+    case ClickhouseRepo.query_transform(query, args, fn [elem] -> elem end) do
+      {:ok, [result]} ->
+        {:ok, result |> String.to_integer()}
+
+      error ->
+        error
+    end
   end
 
   @doc ~s"""

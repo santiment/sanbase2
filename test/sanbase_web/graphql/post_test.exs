@@ -825,7 +825,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
              [%{"name" => tag1.name}, %{"name" => tag2.name}]
   end
 
-  @discourse_response_file "#{System.cwd()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
+  @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
   test "publish post", %{user: user, conn: conn} do
     mock(
       Sanbase.Discourse.Api,
@@ -905,7 +905,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
   # Helper functions
 
-  @test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image.png"
+  @test_file_path "#{File.cwd!()}/test/sanbase_web/graphql/assets/image.png"
   defp upload_image(conn) do
     mutation = """
       mutation {

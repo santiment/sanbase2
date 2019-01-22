@@ -1,7 +1,7 @@
 defmodule Sanbase.ExAdmin.Auth.UserSettings do
   use ExAdmin.Register
 
-  alias Sanbase.Auth.{User, UserSettings, Settings}
+  alias Sanbase.Auth.UserSettings
 
   register_resource Sanbase.Auth.UserSettings do
     action_items(only: [:show])

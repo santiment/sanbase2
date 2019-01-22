@@ -182,8 +182,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     end)
   end
 
-  defp diff_in_hours(datetime, last_datetime \\ Timex.now())
-
   defp diff_in_hours(%NaiveDateTime{} = datetime, last_datetime) do
     Timex.diff(last_datetime, DateTime.from_naive!(datetime, "Etc/UTC"), :hours) |> abs
   end

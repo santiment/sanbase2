@@ -9,7 +9,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.PricePointTest do
   setup do
     ts =
       DateTime.from_naive!(~N[2018-05-13 21:45:00], "Etc/UTC")
-      |> DateTime.to_unix(:nanoseconds)
+      |> DateTime.to_unix(:nanosecond)
 
     price_point = %PricePoint{
       price_btc: nil,

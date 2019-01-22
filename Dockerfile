@@ -1,5 +1,5 @@
 # Elixir and phoenix assets build image
-FROM elixir:1.7.4 as code_builder
+FROM elixir:1.8.0 as code_builder
 
 ENV MIX_ENV prod
 
@@ -33,7 +33,7 @@ RUN mix phx.digest
 RUN mix release
 
 # Release image
-FROM elixir:1.7.4
+FROM elixir:1.8.0
 
 RUN apt-get install -y --only-upgrade bash
 

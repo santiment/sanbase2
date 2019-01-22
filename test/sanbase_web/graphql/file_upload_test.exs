@@ -24,11 +24,11 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
     {:ok, conn: conn, user: user}
   end
 
-  @test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image.png"
+  @test_file_path "#{File.cwd!()}/test/sanbase_web/graphql/assets/image.png"
   @test_file_name "image.png"
   @test_file_hash "15e9f3c52e8c7f2444c5074f3db2049707d4c9ff927a00ddb8609bfae5925399"
   @test_file_hash_algorithm "sha256"
-  @invalid_test_file_path "#{System.cwd()}/test/sanbase_web/graphql/assets/image_not_supported_extension.vxml"
+  @invalid_test_file_path "#{File.cwd!()}/test/sanbase_web/graphql/assets/image_not_supported_extension.vxml"
   @invalid_test_file_name "image_not_supported_extension.vxml"
 
   test "upload an image", %{conn: conn} do

@@ -59,27 +59,27 @@ defmodule Sanbase.Github.TwitterApiTest do
 
     Store.import([
       %Measurement{
-        timestamp: datetime1 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime1 |> DateTime.to_unix(:nanosecond),
         fields: %{followers_count: 500},
         name: "santimentfeed"
       },
       %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
         fields: %{followers_count: 1000},
         name: "santimentfeed"
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{followers_count: 1500},
         name: "santimentfeed"
       },
       %Measurement{
-        timestamp: datetime2 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime2 |> DateTime.to_unix(:nanosecond),
         fields: %{followers_count: 5},
         name: "some_test_acc"
       },
       %Measurement{
-        timestamp: datetime3 |> DateTime.to_unix(:nanoseconds),
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{followers_count: 10},
         name: "some_test_acc"
       }

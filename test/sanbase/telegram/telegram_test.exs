@@ -1,7 +1,6 @@
 defmodule Sanbase.TelegramTest do
   use SanbaseWeb.ConnCase, async: false
 
-  import Mockery
   import SanbaseWeb.Graphql.TestHelpers
   require Sanbase.Utils.Config, as: Config
 

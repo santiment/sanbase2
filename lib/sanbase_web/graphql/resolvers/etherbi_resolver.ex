@@ -230,8 +230,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              from,
              to,
              interval,
-             60 * 60,
-             50
+             60 * 60 * 24,
+             90
            ),
          {:ok, token_circulation} <-
            Blockchain.TokenCirculation.token_circulation(
@@ -271,8 +271,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              from,
              to,
              interval,
-             60 * 60,
-             50
+             60 * 60 * 24,
+             90
            ),
          {:ok, token_velocity} <-
            Blockchain.TokenVelocity.token_velocity(

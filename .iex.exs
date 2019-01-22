@@ -43,7 +43,10 @@ alias Sanbase.Blockchain.{
   BurnRate,
   DailyActiveAddresses,
   ExchangeFundsFlow,
-  TransactionVolume
+  TransactionVolume,
+  TokenAgeConsumed,
+  TokenCirculation,
+  TokenVelocity
 }
 
 alias Sanbase.Clickhouse.{

@@ -12,6 +12,9 @@ defmodule Sanbase.Blockchain.TokenVelocity do
 
   @doc ~s"""
   Return the token velocity for a given contract and time restrictions.
+  Token velocity for a given interval is calculatied by taking the SUM of the transaction volume 
+  for this interval and the sum of the token circulation for :less_than_a_day (number of active tokens each day)
+  for this interval and divide trx_volume on the active_tokens
   """
   @spec token_velocity(
           String.t(),
@@ -75,7 +78,7 @@ defmodule Sanbase.Blockchain.TokenVelocity do
 
   def calc_token_velocity(active_tokens, transaction_volume) do
     if active_tokens > 0 do
-      transaction_volume / active_tokens
+      Float.round(transaction_volume / active_tokens, 2)
     else
       0.0
     end

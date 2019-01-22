@@ -139,7 +139,7 @@ alias SanbaseWeb.Graphql.Resolvers.{
   ClickhouseResolver
 }
 
-alias SanbaseWeb.Graphql.Helpers.Cache
+alias SanbaseWeb.Graphql.Cache
 alias SanbaseWeb.Graphql.Helpers.Utils, as: GraphUtils
 alias Sanbase.Prices.Store, as: PricesStore
 alias Sanbase.Prices.Utils, as: PricesUtils

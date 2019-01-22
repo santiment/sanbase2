@@ -1,11 +1,15 @@
 defmodule SanbaseWeb.Graphql.Cache do
+  @moduledoc ~s"""
+  Provides the macro `cache_resolve` that replaces the Absinthe's `resolve` and
+  caches the result of the resolver for a some time instead of precalculating itt
+  each time.
+  """
   require Logger
 
   @ttl :timer.minutes(5)
   @cache_name :graphql_cache
 
   alias __MODULE__, as: CacheMod
-  # alias SanbaseWeb.Graphql.CachexProvider, as: CacheProvider
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
 
   @doc ~s"""
@@ -118,8 +122,6 @@ defmodule SanbaseWeb.Graphql.Cache do
     end
   end
 
-  # Calculate the cache key from a given name and arguments.
-
   defp get_or_store(cache_name \\ @cache_name, cache_key, resolver_fn) do
     CacheProvider.get_or_store(
       cache_name,
@@ -129,6 +131,10 @@ defmodule SanbaseWeb.Graphql.Cache do
     )
   end
 
+  # `cache_modify_middleware` is called only from withing `get_or_store` that
+  # guarantees that it will be executed only once if it is accessed concurently.
+  # This is way it is safe to use `store` explicitly without worrying about race
+  # conditions
   defp cache_modify_middleware(cache_name, cache_key, {:ok, value} = result) do
     CacheProvider.store(cache_name, cache_key, result)
 

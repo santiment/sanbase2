@@ -34,6 +34,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
     Sanbase.SocialData.word_context(word, source, size, from, to)
   end
 
+  def word_trend_score(
+        _root,
+        %{
+          word: word,
+          source: source,
+          from: from,
+          to: to
+        },
+        _resolution
+      ) do
+    Sanbase.SocialData.word_trend_score(word, source, from, to)
+  end
+
   def word_context(
         %{word: word} = root,
         _args,

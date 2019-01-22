@@ -182,4 +182,131 @@ defmodule Sanbase.SocialDataApiTest do
              }
            }
   end
+
+  test "error 500 when fetch word context from tech-indicators", %{conn: conn} do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: "Internal Server Error",
+         status_code: 500
+       }}
+    )
+
+    query = """
+    {
+      wordContext(
+        word: "merry", 
+        source: TELEGRAM,
+        size: 3,
+        from: "2018-12-22T00:00:00Z",
+        to:"2018-12-27T00:00:00Z"
+      ) {
+        word
+        score
+      }
+    }
+    """
+
+    result_fn = fn ->
+      conn
+      |> post("/graphql", query_skeleton(query, "wordTrendScore"))
+      |> json_response(200)
+    end
+
+    assert capture_log(result_fn) =~
+             "Error status 500 fetching context for word merry: Internal Server Error"
+  end
+
+  test "successfully fetch word trend score", %{conn: conn} do
+    body =
+      [
+        %{
+          "hour" => 8.0,
+          "score" => 3725.6617392595313,
+          "source" => "telegram",
+          "timestamp" => 1_547_078_400
+        }
+      ]
+      |> Jason.encode!()
+
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: body,
+         status_code: 200
+       }}
+    )
+
+    query = """
+    {
+      wordTrendScore(
+        word: "merry", 
+        source: TELEGRAM,
+        from: "2018-01-09T00:00:00Z",
+        to:"2018-01-10T00:00:00Z"
+      ) {
+        datetime,
+        score,
+        source
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "wordTrendScore"))
+      |> json_response(200)
+
+    assert result == %{
+             "data" => %{
+               "wordTrendScore" => [
+                 %{
+                   "score" => 3725.6617392595313,
+                   "source" => "TELEGRAM",
+                   "datetime" => "2019-01-10T08:00:00Z"
+                 }
+               ]
+             }
+           }
+  end
+
+  test "error 500 when fetch word trend score from tech-indicators", %{conn: conn} do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: "Internal Server Error",
+         status_code: 500
+       }}
+    )
+
+    query = """
+    {
+      wordTrendScore(
+        word: "merry", 
+        source: TELEGRAM,
+        from: "2018-01-09T00:00:00Z",
+        to:"2018-01-10T00:00:00Z"
+      ) {
+        datetime,
+        score,
+        source
+      }
+    }
+    """
+
+    result_fn = fn ->
+      conn
+      |> post("/graphql", query_skeleton(query, "wordTrendScore"))
+      |> json_response(200)
+    end
+
+    assert capture_log(result_fn) =~
+             "Error status 500 fetching word_trend_score for word merry: Internal Server Error"
+  end
 end

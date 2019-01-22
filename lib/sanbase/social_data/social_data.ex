@@ -70,6 +70,33 @@ defmodule Sanbase.SocialData do
     end
   end
 
+  def word_trend_score(
+        word,
+        source,
+        from_datetime,
+        to_datetime
+      ) do
+    word_trend_score_request(
+      word,
+      source,
+      from_datetime,
+      to_datetime
+    )
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Jason.decode(body)
+        word_trend_score_result(result)
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        error_result("Error status #{status} fetching word_trend_score for word #{word}: #{body}")
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result(
+          "Cannot fetch word_trend_score for word #{word}: #{HTTPoison.Error.message(error)}"
+        )
+    end
+  end
+
   defp trending_words_request(
          source,
          size,
@@ -139,6 +166,30 @@ defmodule Sanbase.SocialData do
     http_client().get(url, [], options)
   end
 
+  defp word_trend_score_request(
+         word,
+         source,
+         from_datetime,
+         to_datetime
+       ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/word_trend_score"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"word", word},
+        {"source", source |> Atom.to_string()},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
   defp word_context_result(result) do
     result =
       result
@@ -148,7 +199,34 @@ defmodule Sanbase.SocialData do
     {:ok, result}
   end
 
+  defp word_trend_score_result(result) do
+    result =
+      result
+      |> Enum.map(fn %{
+                       "timestamp" => timestamp,
+                       "score" => score,
+                       "hour" => hour,
+                       "source" => source
+                     } ->
+        %{
+          datetime: combine_unix_dt_and_hour(timestamp, hour),
+          score: score,
+          source: String.to_existing_atom(source)
+        }
+      end)
+      |> Enum.sort(&(&1.score >= &2.score))
+
+    {:ok, result}
+  end
+
   defp tech_indicators_url() do
     Config.module_get(Sanbase.TechIndicators, :url)
+  end
+
+  def combine_unix_dt_and_hour(unix_dt, hour) do
+    unix_dt
+    |> DateTime.from_unix!()
+    |> Timex.beginning_of_day()
+    |> Timex.shift(hours: Sanbase.Utils.Math.to_integer(hour))
   end
 end

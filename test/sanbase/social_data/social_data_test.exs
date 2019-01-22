@@ -141,4 +141,46 @@ defmodule Sanbase.SocialDataTest do
                 %{score: 0.7592295345104334, word: "christmas"}
               ]}
   end
+
+  test "successfully fetch word trend score", _context do
+    body =
+      [
+        %{
+          "hour" => 8.0,
+          "score" => 3725.6617392595313,
+          "source" => "telegram",
+          "timestamp" => 1_547_078_400
+        }
+      ]
+      |> Jason.encode!()
+
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: body,
+         status_code: 200
+       }}
+    )
+
+    # As the HTTP call is mocked these arguemnts do no have much effect, though you should try to put the real ones that are used
+    result =
+      SocialData.word_trend_score(
+        "trx",
+        :telegram,
+        DateTime.from_unix!(1_547_046_000),
+        DateTime.from_unix!(1_547_111_478)
+      )
+
+    assert result ==
+             {:ok,
+              [
+                %{
+                  score: 3725.6617392595313,
+                  source: :telegram,
+                  datetime: Sanbase.DateTimeUtils.from_iso8601!("2019-01-10T08:00:00Z")
+                }
+              ]}
+  end
 end

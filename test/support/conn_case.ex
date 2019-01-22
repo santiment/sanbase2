@@ -29,7 +29,7 @@ defmodule SanbaseWeb.ConnCase do
   setup tags do
     require Sanbase.CaseHelpers
 
-    SanbaseWeb.Graphql.Helpers.Cache.clear_all()
+    SanbaseWeb.Graphql.Cache.clear_all()
 
     Sanbase.CaseHelpers.checkout_shared(tags)
 

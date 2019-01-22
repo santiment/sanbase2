@@ -21,7 +21,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Influxdb.Measurement
 
   alias Sanbase.Repo
-  alias SanbaseWeb.Graphql.Helpers.Cache
+  alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
 
   alias SanbaseWeb.Graphql.{ClickhouseDataloader, InfluxdbDataloader}

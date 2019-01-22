@@ -29,14 +29,14 @@ defmodule SanbaseWeb.Graphql.CachexProvider do
         key,
         fn ->
           case func.() do
-            {:ok, value} = result ->
-              {:commit, result}
-
             {:middleware, _, _} = middleware ->
               {:ignore, cache_modify_middleware.(cache, key, middleware)}
 
-            error ->
+            {:error, _} = error ->
               {:ignore, error}
+
+            value ->
+              {:commit, value}
           end
         end,
         ttl: @ttl

@@ -21,6 +21,7 @@ defmodule Sanbase.Auth.EthAccount do
       :address,
       :user_id
     ])
+    |> unique_constraint(:address)
   end
 
   def san_balance(%EthAccount{address: address}) do

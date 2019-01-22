@@ -3,6 +3,7 @@ defmodule Sanbase.Auth.User do
   use Timex.Ecto.Timestamps
 
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Sanbase.Auth.{
     User,
@@ -325,6 +326,47 @@ defmodule Sanbase.Auth.User do
       user ->
         {:ok, user}
     end
+  end
+
+  @spec add_eth_account(%User{}, String.t()) ::
+          {:ok, %User{}} | {:error, Ecto.Changeset.t()}
+  def add_eth_account(%User{id: user_id}, address) do
+    EthAccount.changeset(%EthAccount{}, %{user_id: user_id, address: address})
+    |> Repo.insert()
+  end
+
+  @doc ~s"""
+  An EthAccount can be removed only if there is another mean to login - an email address
+  or another ethereum address set. If the address that is being removed is the only
+  address and there is no email, the user account will be lost as there won't be
+  any way to log in
+  """
+  @spec remove_eth_account(%User{}, String.t()) :: true | {:error, String.t()}
+  def remove_eth_account(%User{id: user_id} = user, address) do
+    if can_remove_eth_account?(user, address) do
+      from(
+        ea in EthAccount,
+        where: ea.user_id == ^user_id and ea.address == ^address
+      )
+      |> Repo.delete_all()
+      |> case do
+        {1, _} -> true
+        {0, _} -> {:error, "Address #{address} does not exist or is not owned by user #{user_id}"}
+      end
+    else
+      {:error,
+       "Cannot remove ethereum address #{address}. There must be an email or other ethereum address set."}
+    end
+  end
+
+  defp can_remove_eth_account?(%User{id: user_id, email: email}, address) do
+    count_other_accounts =
+      from(ea in EthAccount,
+        where: ea.user_id == ^user_id and ea.address != ^address
+      )
+      |> Repo.aggregate(:count, :id)
+
+    count_other_accounts > 0 or not is_nil(email)
   end
 
   def insights_fallback_username, do: @insights_fallback_username

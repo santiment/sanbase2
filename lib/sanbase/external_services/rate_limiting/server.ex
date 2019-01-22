@@ -82,7 +82,7 @@ defmodule Sanbase.ExternalServices.RateLimiting.Server do
 
     case DateTime.compare(now, datetime) do
       :lt ->
-        wait_period = Timex.diff(datetime, now, :millisecond) |> abs()
+        wait_period = Timex.diff(datetime, now, :milliseconds) |> abs()
 
         Logger.info(
           "Rate limit exceeded. The retry-after header of the 429 response has value of #{

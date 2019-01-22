@@ -1,7 +1,6 @@
 defmodule Sanbase.Auth.UserSettings do
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query
 
   alias __MODULE__
   alias Sanbase.Auth.{User, Settings}

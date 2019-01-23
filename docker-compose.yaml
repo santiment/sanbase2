@@ -3,7 +3,7 @@ services:
   postgres:
     image: timescale/timescaledb:0.10.1-pg10
     ports:
-      - "5432:5432"
+      - "5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -12,7 +12,7 @@ services:
   influxdb:
     image: influxdb
     ports:
-      - "8086:8086"
+      - "8086"
   sanbase:
     build:
       context: .
@@ -29,7 +29,6 @@ services:
       - 4000
     ports:
       - "4000:4000"
-      - "3000:3000"
 
     depends_on:
       - postgres

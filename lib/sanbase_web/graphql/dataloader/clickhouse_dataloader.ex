@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       end
     end)
     |> Enum.reject(&is_nil/1)
-    |> Enum.chunk_every(100)
+    |> Enum.chunk_every(200)
     |> Sanbase.Parallel.pmap_concurrent(
       fn organizations ->
         {:ok, dev_activity} = Clickhouse.Github.total_dev_activity(organizations, from, to)
@@ -26,7 +26,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
         dev_activity
         |> Enum.map(fn {organization, dev_activity} -> {organization, dev_activity / days} end)
       end,
-      max_concurrency: 2,
+      max_concurrency: 5,
       ordered: false,
       timeout: 60_000,
       map_type: :flat_map

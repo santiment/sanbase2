@@ -65,19 +65,11 @@ defmodule SanbaseWeb.Graphql.Schema do
   def dataloader() do
     alias SanbaseWeb.Graphql.{
       SanbaseRepo,
-      InfluxdbDataloader,
-      ParityDataloader,
-      ClickhouseDataloader,
-      TimescaledbDataloader,
       SanbaseDataloader
     }
 
     Dataloader.new()
     |> Dataloader.add_source(SanbaseRepo, SanbaseRepo.data())
-    |> Dataloader.add_source(InfluxdbDataloader, InfluxdbDataloader.data())
-    |> Dataloader.add_source(ParityDataloader, ParityDataloader.data())
-    |> Dataloader.add_source(ClickhouseDataloader, ClickhouseDataloader.data())
-    |> Dataloader.add_source(TimescaledbDataloader, TimescaledbDataloader.data())
     |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
   end
 

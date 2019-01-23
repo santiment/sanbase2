@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.ClickhouseDataloader
-  alias SanbaseWeb.Graphql.TimescaledbDataloader
   alias SanbaseWeb.Graphql.InfluxdbDataloader
+  alias SanbaseWeb.Graphql.TimescaledbDataloader
   alias SanbaseWeb.Graphql.ParityDataloader
 
   @spec data() :: Dataloader.KV.t()

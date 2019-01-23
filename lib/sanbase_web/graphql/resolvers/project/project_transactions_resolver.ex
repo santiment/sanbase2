@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
   alias SanbaseWeb.Graphql.Cache
-  alias SanbaseWeb.Graphql.ClickhouseDataloader
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def token_top_transactions(
         %Project{id: id} = project,
@@ -48,7 +48,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(ClickhouseDataloader, :eth_spent, %{
+    |> Dataloader.load(SanbaseDataloader, :eth_spent, %{
       project: project,
       from: Timex.shift(Timex.now(), days: -days),
       to: Timex.now()
@@ -59,7 +59,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   def eth_spent_from_loader(loader, %Project{id: id}) do
     eth_spent =
       loader
-      |> Dataloader.get(ClickhouseDataloader, :eth_spent, id)
+      |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
 
     {:ok, eth_spent}
   end

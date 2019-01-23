@@ -24,7 +24,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver
 
-  alias SanbaseWeb.Graphql.{ClickhouseDataloader, InfluxdbDataloader}
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def projects_count(_root, _args, _resolution) do
     {:ok,
@@ -236,39 +236,39 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def volume_usd(_parent, _args, _resolution), do: {:ok, nil}
 
-  def volume_change_24h(%Project{id: id} = project, _args, _resolution) do
-    async(Cache.func(fn -> calculate_volume_change_24h(project) end, {:volume_change_24h, id}))
-  end
+  # def volume_change_24h(%Project{id: id} = project, _args, _resolution) do
+  #   async(Cache.func(fn -> calculate_volume_change_24h(project) end, {:volume_change_24h, id}))
+  # end
 
-  defp calculate_volume_change_24h(%Project{} = project) do
-    measurement_name = Measurement.name_from(project)
-    yesterday = Timex.shift(Timex.now(), days: -1)
-    the_other_day = Timex.shift(Timex.now(), days: -2)
+  # defp calculate_volume_change_24h(%Project{} = project) do
+  #   measurement_name = Measurement.name_from(project)
+  #   yesterday = Timex.shift(Timex.now(), days: -1)
+  #   the_other_day = Timex.shift(Timex.now(), days: -2)
 
-    with {:ok, [[_dt, today_vol]]} <-
-           Prices.Store.fetch_mean_volume(measurement_name, yesterday, Timex.now()),
-         {:ok, [[_dt, yesterday_vol]]} <-
-           Prices.Store.fetch_mean_volume(measurement_name, the_other_day, yesterday),
-         true <- yesterday_vol > 0 do
-      {:ok, (today_vol - yesterday_vol) * 100 / yesterday_vol}
-    else
-      _ ->
-        {:ok, nil}
-    end
-  rescue
-    _ -> {:ok, nil}
-  end
+  #   with {:ok, [[_dt, today_vol]]} <-
+  #          Prices.Store.fetch_mean_volume(measurement_name, yesterday, Timex.now()),
+  #        {:ok, [[_dt, yesterday_vol]]} <-
+  #          Prices.Store.fetch_mean_volume(measurement_name, the_other_day, yesterday),
+  #        true <- yesterday_vol > 0 do
+  #     {:ok, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+  #   else
+  #     _ ->
+  #       {:ok, nil}
+  #   end
+  # rescue
+  #   _ -> {:ok, nil}
+  # end
 
   def volume_change_24h(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(InfluxdbDataloader, :volume_change_24h, project)
+    |> Dataloader.load(SanbaseDataloader, :volume_change_24h, project)
     |> on_load(&volume_change_24h_from_loader(&1, project))
   end
 
   defp volume_change_24h_from_loader(loader, project) do
     volume_change_24h =
       loader
-      |> Dataloader.get(InfluxdbDataloader, :volume_change_24h, Measurement.name_from(project))
+      |> Dataloader.get(SanbaseDataloader, :volume_change_24h, Measurement.name_from(project))
 
     {:ok, volume_change_24h}
   end
@@ -317,7 +317,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def average_dev_activity(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(ClickhouseDataloader, :average_dev_activity, %{
+    |> Dataloader.load(SanbaseDataloader, :average_dev_activity, %{
       project: project,
       from: Timex.shift(Timex.now(), days: -days),
       to: Timex.now(),
@@ -330,7 +330,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     with {:ok, organization} <- Project.github_organization(project) do
       average_dev_activity =
         loader
-        |> Dataloader.get(ClickhouseDataloader, :average_dev_activity, organization)
+        |> Dataloader.get(SanbaseDataloader, :average_dev_activity, organization)
 
       {:ok, average_dev_activity}
     else

@@ -64,13 +64,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     {:ok, eth_spent}
   end
 
-  # def eth_spent(%Project{} = project, %{days: days}, _resolution) do
-  #   today = Timex.now()
-  #   days_ago = Timex.shift(today, days: -days)
-
-  #   async(calculate_eth_spent_cached(project, days_ago, today))
-  # end
-
   def eth_spent_over_time(
         %Project{} = project,
         %{from: from, to: to, interval: interval},

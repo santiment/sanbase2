@@ -32,13 +32,10 @@ endpoints from the [Phoenix docs](https://hexdocs.pm/phoenix/overview.html).
 
 ## Running the backend tests
 
-Make sure you have a test DB: `createdb sanbase_test`. This is needed by the tests to validate logic, which relies on the DB.
-
-In order to run the backend tests you need to run `mix test`. The default DB config is in [`config/test.exs`](config/test.exs). If you need to change the default config you can create a file `.env.test` and specify the DB URL there like this:
-
+You can easily run the tests using docker with the command:
 
 ```bash
-DATABASE_URL=postgres://custom_username:custom_password@localhost:5432/sanbase_test
+$ ./bin/test.sh
 ```
 
 ## Setting up Hydra Oauth2 server locally

@@ -230,8 +230,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
              from,
              to,
              interval,
-             60 * 60,
-             50
+             60 * 60 * 24,
+             90
            ),
          {:ok, token_circulation} <-
            Blockchain.TokenCirculation.token_circulation(
@@ -250,6 +250,42 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     else
       {:error, error} ->
         error_msg = "Can't fetch token circulation for #{slug}."
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  @doc ~s"""
+  Returns the token velocity for a given slug and time period.
+  """
+  def token_velocity(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval} = args,
+        _resolution
+      ) do
+    with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(
+             Blockchain.TokenVelocity,
+             contract_address,
+             from,
+             to,
+             interval,
+             60 * 60 * 24,
+             90
+           ),
+         {:ok, token_velocity} <-
+           Blockchain.TokenVelocity.token_velocity(
+             contract_address,
+             from,
+             to,
+             interval,
+             token_decimals
+           ) do
+      {:ok, token_velocity |> Utils.fit_from_datetime(args)}
+    else
+      {:error, error} ->
+        error_msg = "Can't fetch token velocity for #{slug}."
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}
     end

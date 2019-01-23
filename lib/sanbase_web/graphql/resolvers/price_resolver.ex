@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   @deprecated "Use history price by slug instead of ticker"
   def history_price(_root, %{ticker: @total_market} = args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(InfluxdbDataloader, @total_market_measurement, args)
+    |> Dataloader.load(InfluxdbDataloader, {:price, @total_market_measurement}, args)
     |> on_load(&total_market_history_price_on_load(&1, args))
   end
 
@@ -28,7 +28,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   """
   def history_price(_root, %{slug: @total_market} = args, %{context: %{loader: loader}}) do
     loader
-    |> Dataloader.load(InfluxdbDataloader, @total_market_measurement, args)
+    |> Dataloader.load(InfluxdbDataloader, {:price, @total_market_measurement}, args)
     |> on_load(&total_market_history_price_on_load(&1, args))
   end
 
@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       ticker_cmc_id = ticker <> "_" <> slug
 
       loader
-      |> Dataloader.load(InfluxdbDataloader, ticker_cmc_id, args)
+      |> Dataloader.load(InfluxdbDataloader, {:price, ticker_cmc_id}, args)
       |> on_load(&history_price_on_load(&1, ticker_cmc_id, args))
     else
       error ->
@@ -51,7 +51,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
       ticker_cmc_id = ticker <> "_" <> slug
 
       loader
-      |> Dataloader.load(InfluxdbDataloader, ticker_cmc_id, args)
+      |> Dataloader.load(InfluxdbDataloader, {:price, ticker_cmc_id}, args)
       |> on_load(&history_price_on_load(&1, ticker_cmc_id, args))
     else
       error ->
@@ -112,7 +112,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
 
   defp total_market_history_price_on_load(loader, args) do
     with {:ok, usd_prices} <-
-           Dataloader.get(loader, InfluxdbDataloader, @total_market_measurement, args) do
+           Dataloader.get(loader, InfluxdbDataloader, {:price, @total_market_measurement}, args) do
       result =
         usd_prices
         |> Enum.map(fn [dt, _, _, marketcap_usd, volume_usd] ->
@@ -131,7 +131,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   end
 
   defp history_price_on_load(loader, ticker_cmc_id, args) do
-    with {:ok, prices} <- Dataloader.get(loader, InfluxdbDataloader, ticker_cmc_id, args) do
+    with {:ok, prices} <-
+           Dataloader.get(loader, InfluxdbDataloader, {:price, ticker_cmc_id}, args) do
       result =
         prices
         |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->

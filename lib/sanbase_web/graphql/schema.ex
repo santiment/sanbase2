@@ -68,7 +68,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       InfluxdbDataloader,
       ParityDataloader,
       ClickhouseDataloader,
-      TimescaledbDataloader
+      TimescaledbDataloader,
+      SanbaseDataloader
     }
 
     Dataloader.new()
@@ -77,6 +78,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     |> Dataloader.add_source(ParityDataloader, ParityDataloader.data())
     |> Dataloader.add_source(ClickhouseDataloader, ClickhouseDataloader.data())
     |> Dataloader.add_source(TimescaledbDataloader, TimescaledbDataloader.data())
+    |> Dataloader.add_source(SanbaseDataloader, SanbaseDataloader.data())
   end
 
   def context(ctx) do

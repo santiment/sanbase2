@@ -259,19 +259,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
     _ -> {:ok, nil}
   end
 
-  # def volume_change_24h(%Project{} = project, _args, %{context: %{loader: loader}}) do
-  #   loader
-  #   |> Dataloader.load(InfluxdbDataloader, :volume_change_24h, project)
-  #   |> on_load(&volume_change_24h_from_loader(&1, project))
-  # end
+  def volume_change_24h(%Project{} = project, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(InfluxdbDataloader, :volume_change_24h, project)
+    |> on_load(&volume_change_24h_from_loader(&1, project))
+  end
 
-  # defp volume_change_24h_from_loader(loader, project) do
-  #   volume_change_24h =
-  #     loader
-  #     |> Dataloader.get(InfluxdbDataloader, :volume_change_24h, Measurement.name_from(project))
+  defp volume_change_24h_from_loader(loader, project) do
+    volume_change_24h =
+      loader
+      |> Dataloader.get(InfluxdbDataloader, :volume_change_24h, Measurement.name_from(project))
 
-  #   {:ok, volume_change_24h}
-  # end
+    {:ok, volume_change_24h}
+  end
 
   def average_github_activity(%Project{id: id} = project, %{days: days} = args, _resolution) do
     async(

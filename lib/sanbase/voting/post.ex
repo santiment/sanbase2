@@ -148,7 +148,15 @@ defmodule Sanbase.Voting.Post do
 
   # Helper functions
   defp tags_cast(changeset, %{tags: tags}) do
-    tags = Tag |> where([t], t.name in ^tags) |> Repo.all()
+    params =
+      tags
+      |> Enum.map(fn tag -> %{name: tag} end)
+
+    Repo.insert_all(Tag, params, on_conflict: :nothing)
+
+    tags =
+      from(t in Tag, where: t.name in ^tags)
+      |> Repo.all()
 
     changeset
     |> put_assoc(:tags, tags)

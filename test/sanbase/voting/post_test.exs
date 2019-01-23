@@ -39,4 +39,19 @@ defmodule Sanbase.Voting.PostTest do
 
     assert updated_post.user_id == insights_user.id
   end
+
+  test "create custom tags when creating post" do
+    poll = Poll.find_or_insert_current_poll!()
+    insert(:tag, %{name: "SAN"})
+    user = insert(:user)
+
+    tags = ["SAN", "test1", "test2"]
+
+    post =
+      %Post{user_id: user.id, poll_id: poll.id}
+      |> Post.create_changeset(%{title: "test title", tags: tags})
+      |> Repo.insert!()
+
+    assert Enum.map(post.tags, & &1.name) == tags
+  end
 end

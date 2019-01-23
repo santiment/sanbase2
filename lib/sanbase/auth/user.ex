@@ -328,8 +328,7 @@ defmodule Sanbase.Auth.User do
     end
   end
 
-  @spec add_eth_account(%User{}, String.t()) ::
-          {:ok, %User{}} | {:error, Ecto.Changeset.t()}
+  @spec add_eth_account(%User{}, String.t()) :: {:ok, %User{}} | {:error, Ecto.Changeset.t()}
   def add_eth_account(%User{id: user_id}, address) do
     EthAccount.changeset(%EthAccount{}, %{user_id: user_id, address: address})
     |> Repo.insert()

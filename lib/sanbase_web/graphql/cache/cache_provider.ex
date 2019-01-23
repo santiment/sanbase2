@@ -26,8 +26,7 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   must be executed only once and the rest of the queries will wait until the result
   is ready.
   """
-  @callback get_or_store(cache, key, fun, fun) ::
-              {:ok, stored_value} | {:error, error}
+  @callback get_or_store(cache, key, fun, fun) :: {:ok, stored_value} | {:error, error}
 
   @callback size(cache, size_type) :: float()
 

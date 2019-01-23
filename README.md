@@ -12,7 +12,7 @@ $ bin/server.sh
 
 This is going to run the app on port 4000, so [`localhost:4000`](http://localhost:4000) should be accessible.
 
-There will no data in the database, so run this command to fill some information in the database:
+There will be no data in the database, so run this command to fill some information in the database:
 
 ```bash
 $ bin/setup.sh

@@ -2,10 +2,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   require Logger
 
   import SanbaseWeb.Graphql.Helpers.Async
-
+  import Absinthe.Resolution.Helpers, except: [async: 1]
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse
   alias SanbaseWeb.Graphql.Cache
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   def token_top_transactions(
         %Project{id: id} = project,
@@ -45,11 +46,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     end
   end
 
-  def eth_spent(%Project{} = project, %{days: days}, _resolution) do
-    today = Timex.now()
-    days_ago = Timex.shift(today, days: -days)
+  def eth_spent(%Project{} = project, %{days: days}, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :eth_spent, %{
+      project: project,
+      from: Timex.shift(Timex.now(), days: -days),
+      to: Timex.now()
+    })
+    |> on_load(&eth_spent_from_loader(&1, project))
+  end
 
-    async(calculate_eth_spent_cached(project, days_ago, today))
+  def eth_spent_from_loader(loader, %Project{id: id}) do
+    eth_spent =
+      loader
+      |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
+
+    {:ok, eth_spent}
   end
 
   def eth_spent_over_time(

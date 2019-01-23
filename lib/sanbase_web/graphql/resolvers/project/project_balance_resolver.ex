@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     ProjectEthAddress
   }
 
-  alias SanbaseWeb.Graphql.{SanbaseRepo, ParityDataloader, InfluxdbDataloader}
+  alias SanbaseWeb.Graphql.{SanbaseRepo, SanbaseDataloader}
 
   def eth_balance(%Project{} = project, _args, %{context: %{loader: loader}}) do
     loader
@@ -18,9 +18,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
 
   def eth_balance_loader(loader, project) do
     loader
-    |> Dataloader.load(ParityDataloader, :eth_balance, project)
+    |> Dataloader.load(SanbaseDataloader, :eth_balance, project)
   end
 
+  @spec eth_balance_from_loader(any(), atom() | %{eth_addresses: any()}) :: {:ok, any()}
   def eth_balance_from_loader(loader, project) do
     addresses = Enum.map(project.eth_addresses, fn %{address: address} -> address end)
 
@@ -28,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
       addresses
       |> Enum.map(fn address ->
         loader
-        |> Dataloader.get(ParityDataloader, :eth_balance, address)
+        |> Dataloader.get(SanbaseDataloader, :eth_balance, address)
       end)
       |> Enum.reject(&is_nil/1)
       |> Enum.reduce(0, &+/2)
@@ -69,17 +70,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectBalanceResolver do
     loader
     |> eth_balance_loader(project)
     |> btc_balance_loader(project)
-    |> Dataloader.load(InfluxdbDataloader, "ETH_ethereum", :last)
-    |> Dataloader.load(InfluxdbDataloader, "BTC_bitcoin", :last)
+    |> Dataloader.load(SanbaseDataloader, {:price, "ETH_ethereum"}, :last)
+    |> Dataloader.load(SanbaseDataloader, {:price, "BTC_bitcoin"}, :last)
   end
 
   def usd_balance_from_loader(loader, project) do
     with {:ok, eth_balance} <- eth_balance_from_loader(loader, project),
          {:ok, btc_balance} <- btc_balance_from_loader(loader, project),
          {eth_price_usd, _eth_price_btc} when not is_nil(eth_price_usd) <-
-           Dataloader.get(loader, InfluxdbDataloader, "ETH_ethereum", :last),
+           Dataloader.get(loader, SanbaseDataloader, {:price, "ETH_ethereum"}, :last),
          {btc_price_usd, _btc_price_btc} when not is_nil(btc_price_usd) <-
-           Dataloader.get(loader, InfluxdbDataloader, "BTC_bitcoin", :last) do
+           Dataloader.get(loader, SanbaseDataloader, {:price, "BTC_bitcoin"}, :last) do
       usd_balance_float = eth_balance * eth_price_usd + btc_balance * btc_price_usd
 
       {:ok, usd_balance_float}

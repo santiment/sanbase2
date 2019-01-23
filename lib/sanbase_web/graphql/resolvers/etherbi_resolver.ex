@@ -9,7 +9,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   alias Sanbase.Blockchain
 
-  alias SanbaseWeb.Graphql.TimescaledbDataloader
+  alias SanbaseWeb.Graphql.SanbaseDataloader
 
   @doc ~S"""
   Return the token age consumed for the given slug and time period.
@@ -307,7 +307,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
     from = Map.get(args, :from, Timex.shift(to, days: -30))
 
     loader
-    |> Dataloader.load(TimescaledbDataloader, :average_daily_active_addresses, %{
+    |> Dataloader.load(SanbaseDataloader, :average_daily_active_addresses, %{
       project: project,
       from: from,
       to: to
@@ -320,7 +320,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
       average_daily_active_addresses =
         loader
         |> Dataloader.get(
-          TimescaledbDataloader,
+          SanbaseDataloader,
           :average_daily_active_addresses,
           contract_address
         )

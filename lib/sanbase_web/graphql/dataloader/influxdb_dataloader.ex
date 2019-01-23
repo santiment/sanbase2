@@ -36,7 +36,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     |> Map.new()
   end
 
-  def query(measurement, ids) do
+  def query({:price, measurement}, ids) do
     ids
     |> Enum.uniq()
     |> Enum.map(fn id ->

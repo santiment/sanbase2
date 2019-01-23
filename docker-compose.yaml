@@ -25,7 +25,6 @@ services:
 
     command: sh -c "elixir --sname sanbase --cookie sanbase -S mix phx.server"
     expose:
-      - 3000
       - 4000
     ports:
       - "4000:4000"

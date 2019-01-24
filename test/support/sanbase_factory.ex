@@ -2,7 +2,7 @@ defmodule Sanbase.Factory do
   use ExMachina.Ecto, repo: Sanbase.Repo
 
   alias Sanbase.Auth.{User, UserSettings}
-  alias Sanbase.Voting.{Post, Poll}
+  alias Sanbase.Voting.{Post, Poll, Tag}
   alias Sanbase.Model.{Project, ExchangeAddress}
 
   def user_factory do
@@ -35,6 +35,12 @@ defmodule Sanbase.Factory do
       link: "http://example.com",
       text: "Text of the post",
       state: Post.approved_state()
+    }
+  end
+
+  def tag_factory do
+    %Tag{
+      name: "SAN"
     }
   end
 

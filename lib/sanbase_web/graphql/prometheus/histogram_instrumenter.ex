@@ -1,4 +1,11 @@
 defmodule SanbaseWeb.Graphql.Prometheus.HistogramInstrumenter do
+  @moduledoc ~s"""
+  Stores data about the queries that is used to build prometheus histograms
+  https://prometheus.io/docs/practices/histograms/
+
+  Each bucket's number represents milliseconds. A query with a runtime of X seconds
+  falls in the last bucket with value Y where X < Y
+  """
   use AbsintheMetrics,
     adapter: AbsintheMetrics.Backend.PrometheusHistogram,
     arguments: [

@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
     two_days_ago = Timex.shift(now, days: -2)
 
     measurements
-    |> Enum.chunk_every(200)
+    |> Enum.chunk_every(100)
     |> Sanbase.Parallel.pmap(fn measurements ->
       volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
 

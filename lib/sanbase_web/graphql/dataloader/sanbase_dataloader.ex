@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.InfluxdbDataloader
   alias SanbaseWeb.Graphql.TimescaledbDataloader
   alias SanbaseWeb.Graphql.ParityDataloader
+  alias SanbaseWeb.Graphql.PostgresDataloader
 
   @spec data() :: Dataloader.KV.t()
   def data() do
@@ -15,7 +16,10 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
           | :eth_balance
           | :eth_spent
           | :volume_change_24h
-          | {:price, any()},
+          | {:price, any()}
+          | :market_segment
+          | :infrastructure
+          | :project_transparency_status,
           any()
         ) :: {:error, <<_::64, _::_*8>>} | {:ok, float()} | map()
   def query(queryable, args) do
@@ -34,6 +38,9 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
       :eth_balance ->
         ParityDataloader.query(queryable, args)
+
+      x when x in [:infrastructure, :market_segment, :project_transparency_status] ->
+        PostgresDataloader.query(queryable, args)
     end
   end
 end

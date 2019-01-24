@@ -119,34 +119,36 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def market_segment(%Project{market_segment_id: nil}, _args, _resolution), do: {:ok, nil}
 
-  def market_segment(%Project{market_segment_id: market_segment_id}, _args, _resolution) do
-    batch({__MODULE__, :market_segments_by_id}, market_segment_id, fn batch_results ->
-      {:ok, Map.get(batch_results, market_segment_id)}
-    end)
+  def market_segment(%Project{market_segment_id: msi}, _args, %{context: %{loader: loader}}) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :market_segment, msi)
+    |> on_load(&market_segment_from_loader(&1, msi))
   end
 
-  def market_segments_by_id(_, market_segment_ids) do
-    market_segments =
-      from(i in MarketSegment, where: i.id in ^market_segment_ids)
-      |> Repo.all()
+  defp market_segment_from_loader(loader, msi) do
+    market_segment =
+      loader
+      |> Dataloader.get(SanbaseDataloader, :market_segment, msi)
 
-    Map.new(market_segments, fn market_segment -> {market_segment.id, market_segment.name} end)
+    {:ok, market_segment}
   end
 
   def infrastructure(%Project{infrastructure_id: nil}, _args, _resolution), do: {:ok, nil}
 
-  def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, _resolution) do
-    batch({__MODULE__, :infrastructures_by_id}, infrastructure_id, fn batch_results ->
-      {:ok, Map.get(batch_results, infrastructure_id)}
-    end)
+  def infrastructure(%Project{infrastructure_id: infrastructure_id}, _args, %{
+        context: %{loader: loader}
+      }) do
+    loader
+    |> Dataloader.load(SanbaseDataloader, :infrastructure, infrastructure_id)
+    |> on_load(&infrastructure_from_loader(&1, infrastructure_id))
   end
 
-  def infrastructures_by_id(_, infrastructure_ids) do
-    infrastructures =
-      from(i in Infrastructure, where: i.id in ^infrastructure_ids)
-      |> Repo.all()
+  defp infrastructure_from_loader(loader, infrastructure_id) do
+    infrastructure =
+      loader
+      |> Dataloader.get(SanbaseDataloader, :infrastructure, infrastructure_id)
 
-    Map.new(infrastructures, fn infrastructure -> {infrastructure.id, infrastructure.code} end)
+    {:ok, infrastructure}
   end
 
   def project_transparency_status(
@@ -157,27 +159,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       do: {:ok, nil}
 
   def project_transparency_status(
-        %Project{project_transparency_status_id: project_transparency_status_id},
+        %Project{project_transparency_status_id: ptsi} = project,
         _args,
-        _resolution
+        %{context: %{loader: loader}}
       ) do
-    batch(
-      {__MODULE__, :project_transparency_statuses_by_id},
-      project_transparency_status_id,
-      fn batch_results ->
-        {:ok, Map.get(batch_results, project_transparency_status_id)}
-      end
-    )
+    loader
+    |> Dataloader.load(SanbaseDataloader, :project_transparency_status, ptsi)
+    |> on_load(&project_transparency_status_from_loader(&1, ptsi))
   end
 
-  def project_transparency_statuses_by_id(_, project_transparency_status_ids) do
-    project_transparency_statuses =
-      from(i in ProjectTransparencyStatus, where: i.id in ^project_transparency_status_ids)
-      |> Repo.all()
+  defp project_transparency_status_from_loader(loader, project_transparency_status_id) do
+    status =
+      loader
+      |> Dataloader.get(
+        SanbaseDataloader,
+        :project_transparency_status,
+        project_transparency_status_id
+      )
 
-    Map.new(project_transparency_statuses, fn project_transparency_status ->
-      {project_transparency_status.id, project_transparency_status.name}
-    end)
+    {:ok, status}
   end
 
   def roi_usd(%Project{} = project, _args, _resolution) do

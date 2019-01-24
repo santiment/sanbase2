@@ -55,17 +55,17 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
     end
 
     field :market_segment, :string do
-      resolve(&ProjectResolver.market_segment/3)
+      cache_resolve(&ProjectResolver.market_segment/3)
     end
 
     field :infrastructure, :string do
-      resolve(&ProjectResolver.infrastructure/3)
+      cache_resolve(&ProjectResolver.infrastructure/3)
     end
 
     field(:project_transparency, :boolean)
 
     field :project_transparency_status, :string do
-      resolve(&ProjectResolver.project_transparency_status/3)
+      cache_resolve(&ProjectResolver.project_transparency_status/3)
     end
 
     field(:project_transparency_description, :string)

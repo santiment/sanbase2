@@ -146,14 +146,24 @@ defmodule Sanbase.Signals.UserTriggers do
   defp load_in_struct(trigger) when is_map(trigger) do
     trigger =
       for {key, val} <- trigger, into: %{} do
-        {String.to_existing_atom(key), val}
+        if is_atom(key) do
+          {key, val}
+        else
+          {String.to_existing_atom(key), val}
+        end
       end
 
-    {:ok, struct_from_map!(trigger)}
+    struct_from_map(trigger)
+  rescue
+    e in ArgumentError ->
+      {:error, "Trigger structure is invalid"}
   end
 
-  defp struct_from_map!(%{type: "daa"} = trigger), do: struct!(DaaTrigger, trigger)
-  defp struct_from_map!(%{type: "price"} = trigger), do: struct!(PriceTrigger, trigger)
+  defp load_in_struct(_), do: :error
+
+  defp struct_from_map(%{type: "daa"} = trigger), do: {:ok, struct!(DaaTrigger, trigger)}
+  defp struct_from_map(%{type: "price"} = trigger), do: {:ok, struct!(PriceTrigger, trigger)}
+  defp struct_from_map(_), do: :error
 
   defp map_from_struct(%DaaTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}
   defp map_from_struct(%PriceTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}

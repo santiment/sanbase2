@@ -131,8 +131,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PriceResolver do
   end
 
   defp history_price_on_load(loader, ticker_cmc_id, args) do
-    with {:ok, prices} <-
-           Dataloader.get(loader, SanbaseDataloader, {:price, ticker_cmc_id}, args) do
+    with {:ok, prices} <- Dataloader.get(loader, SanbaseDataloader, {:price, ticker_cmc_id}, args) do
       result =
         prices
         |> Enum.map(fn [dt, usd_price, btc_price, marketcap_usd, volume_usd] ->

@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
       end
     end)
     |> Enum.reject(&is_nil/1)
-    |> Enum.chunk_every(200)
+    |> Enum.chunk_every(100)
     |> Sanbase.Parallel.flat_pmap(fn organizations ->
       {:ok, dev_activity} = Clickhouse.Github.total_dev_activity(organizations, from, to)
 
@@ -33,14 +33,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseDataloader do
 
     eth_spent =
       eth_addresses(args)
-      |> Enum.chunk_every(20)
-      |> Sanbase.Parallel.pmap_concurrent(
-        &eth_spent(&1, args),
-        max_concurrency: 25,
-        ordered: false,
-        timeout: 60_000,
-        map_type: :flat_map
-      )
+      |> Enum.chunk_every(10)
+      |> Sanbase.Parallel.flat_pmap(&eth_spent(&1, args))
       |> Map.new()
 
     args

@@ -6,7 +6,7 @@ defmodule Sanbase.Signals.UserTriggers do
   alias Sanbase.Auth.User
   alias Sanbase.Signals.Trigger
   alias Sanbase.Repo
-  alias Sanbase.Signals.Triggers.{Daa, Price}
+  alias Sanbase.Signals.Trigger.{DaaTrigger, PriceTrigger}
 
   schema "user_triggers" do
     belongs_to(:user, User)
@@ -152,10 +152,10 @@ defmodule Sanbase.Signals.UserTriggers do
     {:ok, struct_from_map!(trigger)}
   end
 
-  defp struct_from_map!(%{type: "daa"} = trigger), do: struct!(Daa, trigger)
-  defp struct_from_map!(%{type: "price"} = trigger), do: struct!(Price, trigger)
+  defp struct_from_map!(%{type: "daa"} = trigger), do: struct!(DaaTrigger, trigger)
+  defp struct_from_map!(%{type: "price"} = trigger), do: struct!(PriceTrigger, trigger)
 
-  defp map_from_struct(%Daa{} = trigger), do: {:ok, Map.from_struct(trigger)}
-  defp map_from_struct(%Price{} = trigger), do: {:ok, Map.from_struct(trigger)}
+  defp map_from_struct(%DaaTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}
+  defp map_from_struct(%PriceTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}
   defp map_from_struct(_), do: :error
 end

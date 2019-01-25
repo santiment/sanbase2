@@ -4,10 +4,12 @@ defmodule Sanbase.Signals.Trigger do
 
   embedded_schema do
     field(:trigger, :map)
+    field(:is_public, :boolean, default: false)
   end
 
   def changeset(schema, params) do
     schema
-    |> cast(params, [:id, :trigger])
+    |> cast(params, [:trigger])
+    |> validate_required([:trigger])
   end
 end

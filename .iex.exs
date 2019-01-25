@@ -150,6 +150,9 @@ alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
 alias Sanbase.SocialData
 
+alias Sanbase.Signals.{UserTriggers, Trigger}
+alias Sanbase.Signals.Trigger.{DaaTrigger, PriceTrigger}
+
 now = fn -> Timex.now() end
 days_ago = fn days -> Timex.shift(Timex.now(), days: -days) end
 

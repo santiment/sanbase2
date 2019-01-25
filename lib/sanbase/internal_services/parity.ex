@@ -88,7 +88,7 @@ defmodule Sanbase.InternalServices.Parity do
   defp client() do
     parity_url = Config.get(:url)
 
-    Tesla.client([
+    Tesla.build_client([
       Sanbase.ExternalServices.ErrorCatcher.Middleware,
       {Tesla.Middleware.BaseUrl, parity_url},
       Tesla.Middleware.JSON,

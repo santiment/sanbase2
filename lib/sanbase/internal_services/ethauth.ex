@@ -54,7 +54,7 @@ defmodule Sanbase.InternalServices.Ethauth do
   defp client() do
     ethauth_url = Config.get(:url)
 
-    Tesla.client([
+    Tesla.build_client([
       Sanbase.ExternalServices.ErrorCatcher.Middleware,
       {Tesla.Middleware.BaseUrl, ethauth_url},
       Tesla.Middleware.Logger

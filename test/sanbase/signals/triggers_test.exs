@@ -158,7 +158,7 @@ defmodule Sanbase.Signals.TriggersTest do
     assert user_triggers |> hd |> Map.get(:trigger) |> Map.get(:repeating) == true
   end
 
-  test "update only common is_public field" do
+  test "update only common fields" do
     user = insert(:user)
 
     trigger1 = %{
@@ -175,9 +175,11 @@ defmodule Sanbase.Signals.TriggersTest do
     ut = UserTrigger.triggers_for(user)
     trigger_id = ut |> hd |> Map.get(:id)
 
-    UserTrigger.update_trigger(user, %{id: trigger_id, is_public: true})
+    UserTrigger.update_trigger(user, %{id: trigger_id, is_public: true, cooldown: 3600})
     user_triggers = UserTrigger.triggers_for(user)
 
-    assert user_triggers |> hd |> Map.get(:is_public) == true
+    trigger = user_triggers |> hd()
+    assert trigger.is_public == true
+    assert trigger.cooldown == 3600
   end
 end

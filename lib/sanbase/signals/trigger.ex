@@ -9,7 +9,7 @@ defmodule Sanbase.Signals.Trigger do
 
   def changeset(schema, params) do
     schema
-    |> cast(params, [:trigger])
+    |> cast(params, [:trigger, :is_public])
     |> validate_required([:trigger])
   end
 end

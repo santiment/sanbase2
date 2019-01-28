@@ -8,6 +8,9 @@ defmodule Sanbase.Signals.UserTriggers do
   alias Sanbase.Repo
   alias Sanbase.Signals.Trigger.{DaaTrigger, PriceTrigger}
 
+  @type trigger_struct :: %Trigger{}
+  @type trigger_data_strct :: %DaaTrigger{} | %PriceTrigger{}
+
   schema "user_triggers" do
     belongs_to(:user, User)
     embeds_many(:triggers, Trigger)
@@ -23,6 +26,7 @@ defmodule Sanbase.Signals.UserTriggers do
     |> unique_constraint(:user_id)
   end
 
+  @spec triggers_for(%User{}) :: list(trigger_struct)
   def triggers_for(%User{id: user_id}) do
     Repo.get_by(UserTriggers, user_id: user_id)
     |> case do
@@ -34,16 +38,18 @@ defmodule Sanbase.Signals.UserTriggers do
     end
   end
 
-  def get_trigger(%User{id: user_id} = user, trigger_id) do
+  @spec get_trigger(%User{}, String.t()) :: map()
+  def get_trigger(%User{id: _user_id} = user, trigger_id) do
     triggers_for(user)
     |> find_trigger_by_id(trigger_id)
   end
 
-  def create_trigger(%User{id: user_id} = user, trigger) do
-    if is_valid?(trigger) do
+  @spec create_trigger(%User{}, map()) :: {:ok, list(trigger_struct)} | {:error, String.t()}
+  def create_trigger(%User{id: user_id} = user, %{trigger: trigger_data} = params) do
+    if is_valid?(trigger_data) do
       triggers = triggers_map_for(user)
 
-      triggers_update(user_id, triggers ++ [%{trigger: trigger}])
+      triggers_update(user_id, triggers ++ [params])
       |> case do
         {:ok, ut} ->
           {:ok, triggers_in_struct(ut)}
@@ -58,12 +64,15 @@ defmodule Sanbase.Signals.UserTriggers do
 
   def create_trigger(_, _), do: {:error, "Trigger structure is invalid"}
 
-  def update_trigger(%User{id: user_id} = user, %{id: id, trigger: trigger}) do
-    if is_valid?(trigger) do
+  @spec update_trigger(%User{}, map()) :: {:ok, list(trigger_struct)} | {:error, String.t()}
+  def update_trigger(%User{id: user_id} = user, %{id: id} = params) do
+    trigger_data = Map.get(params, :trigger)
+
+    if is_nil(trigger_data) || is_valid?(trigger_data) do
       triggers =
         user
         |> triggers_map_for()
-        |> find_and_update_trigger(id, trigger)
+        |> find_and_update_trigger(id, clean_params(params))
 
       triggers_update(user_id, triggers)
       |> case do
@@ -114,7 +123,7 @@ defmodule Sanbase.Signals.UserTriggers do
     triggers
     |> Enum.map(fn existing_trigger ->
       if existing_trigger.id == new_trigger_id do
-        Map.put(existing_trigger, :trigger, new_trigger)
+        Map.merge(existing_trigger, new_trigger)
       else
         existing_trigger
       end
@@ -135,10 +144,10 @@ defmodule Sanbase.Signals.UserTriggers do
 
   defp is_valid?(trigger) do
     with {:ok, trigger_struct} <- load_in_struct(trigger),
-         {:ok, trigger_map} <- map_from_struct(trigger_struct) do
+         {:ok, _trigger_map} <- map_from_struct(trigger_struct) do
       true
     else
-      error ->
+      _error ->
         false
     end
   end
@@ -155,7 +164,7 @@ defmodule Sanbase.Signals.UserTriggers do
 
     struct_from_map(trigger)
   rescue
-    e in ArgumentError ->
+    _error in ArgumentError ->
       {:error, "Trigger structure is invalid"}
   end
 
@@ -168,4 +177,11 @@ defmodule Sanbase.Signals.UserTriggers do
   defp map_from_struct(%DaaTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}
   defp map_from_struct(%PriceTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}
   defp map_from_struct(_), do: :error
+
+  defp clean_params(params) do
+    params
+    |> Map.drop([:id])
+    |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+    |> Enum.into(%{})
+  end
 end

@@ -3,7 +3,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
   import Sanbase.Factory
 
-  alias Sanbase.Signals.UserTriggers
+  alias Sanbase.Signals.UserTrigger
 
   test "create and get user trigger" do
     user = insert(:user)
@@ -17,14 +17,14 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    {:ok, triggers} = UserTriggers.create_trigger(user, %{is_public: true, trigger: trigger})
+    {:ok, triggers} = UserTrigger.create_trigger(user, %{is_public: true, trigger: trigger})
 
     assert triggers |> hd |> Map.get(:trigger) |> Map.from_struct() == trigger
 
     trigger_id = triggers |> hd |> Map.get(:id)
 
     created_trigger =
-      UserTriggers.get_trigger(user, trigger_id)
+      UserTrigger.get_trigger(user, trigger_id)
       |> Map.get(:trigger)
       |> Map.from_struct()
 
@@ -43,7 +43,7 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    {:error, message} = UserTriggers.create_trigger(user, %{is_public: true, trigger: trigger})
+    {:error, message} = UserTrigger.create_trigger(user, %{is_public: true, trigger: trigger})
     assert message == "Trigger structure is invalid"
   end
 
@@ -58,7 +58,7 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    {:error, message} = UserTriggers.create_trigger(user, %{is_public: true, trigger: trigger})
+    {:error, message} = UserTrigger.create_trigger(user, %{is_public: true, trigger: trigger})
     assert message == "Trigger structure is invalid"
   end
 
@@ -73,7 +73,7 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    {:ok, triggers} = UserTriggers.create_trigger(user, %{is_public: true, trigger: trigger})
+    {:ok, triggers} = UserTrigger.create_trigger(user, %{is_public: true, trigger: trigger})
 
     assert trigger.target ==
              triggers |> hd |> Map.get(:trigger) |> Map.from_struct() |> Map.get(:target)
@@ -92,7 +92,7 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     insert(:user_triggers, user: user, triggers: [%{is_public: true, trigger: trigger1}])
-    assert length(UserTriggers.triggers_for(user)) == 1
+    assert length(UserTrigger.triggers_for(user)) == 1
 
     trigger2 = %{
       type: "price",
@@ -103,8 +103,8 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    UserTriggers.create_trigger(user, %{is_public: true, trigger: trigger2})
-    assert length(UserTriggers.triggers_for(user)) == 2
+    UserTrigger.create_trigger(user, %{is_public: true, trigger: trigger2})
+    assert length(UserTrigger.triggers_for(user)) == 2
   end
 
   test "update trigger" do
@@ -133,7 +133,7 @@ defmodule Sanbase.Signals.TriggersTest do
       triggers: [%{is_public: true, trigger: trigger1}, %{is_public: true, trigger: trigger2}]
     )
 
-    ut = UserTriggers.triggers_for(user)
+    ut = UserTrigger.triggers_for(user)
 
     trigger_id = ut |> hd |> Map.get(:id)
 
@@ -146,13 +146,13 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: true
     }
 
-    UserTriggers.update_trigger(user, %{
+    UserTrigger.update_trigger(user, %{
       id: trigger_id,
       trigger: updated_trigger,
       is_public: false
     })
 
-    user_triggers = UserTriggers.triggers_for(user)
+    user_triggers = UserTrigger.triggers_for(user)
 
     assert length(user_triggers) == 2
     assert user_triggers |> hd |> Map.get(:trigger) |> Map.get(:repeating) == true
@@ -172,11 +172,11 @@ defmodule Sanbase.Signals.TriggersTest do
 
     insert(:user_triggers, user: user, triggers: [%{is_public: false, trigger: trigger1}])
 
-    ut = UserTriggers.triggers_for(user)
+    ut = UserTrigger.triggers_for(user)
     trigger_id = ut |> hd |> Map.get(:id)
 
-    UserTriggers.update_trigger(user, %{id: trigger_id, is_public: true})
-    user_triggers = UserTriggers.triggers_for(user)
+    UserTrigger.update_trigger(user, %{id: trigger_id, is_public: true})
+    user_triggers = UserTrigger.triggers_for(user)
 
     assert user_triggers |> hd |> Map.get(:is_public) == true
   end

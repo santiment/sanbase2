@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Trigger.DaaTrigger do
+defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTrigger do
   @enforce_keys [:type, :channel, :time_window, :percent_threshold]
   defstruct type: "daa",
             target: nil,

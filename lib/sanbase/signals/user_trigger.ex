@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.UserTriggers do
+defmodule Sanbase.Signals.UserTrigger do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -6,10 +6,10 @@ defmodule Sanbase.Signals.UserTriggers do
   alias Sanbase.Auth.User
   alias Sanbase.Signals.Trigger
   alias Sanbase.Repo
-  alias Sanbase.Signals.Trigger.{DaaTrigger, PriceTrigger}
+  alias Sanbase.Signals.Trigger.{DailyActiveAddressesTrigger, PriceTrigger}
 
   @type trigger_struct :: %Trigger{}
-  @type trigger_data_strct :: %DaaTrigger{} | %PriceTrigger{}
+  @type trigger_data_strct :: %DailyActiveAddressesTrigger{} | %PriceTrigger{}
 
   schema "user_triggers" do
     belongs_to(:user, User)
@@ -18,7 +18,7 @@ defmodule Sanbase.Signals.UserTriggers do
     timestamps()
   end
 
-  def changeset(%UserTriggers{} = user_triggers, attrs \\ %{}) do
+  def changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
     |> cast(attrs, [:user_id])
     |> cast_embed(:triggers, required: true, with: &Trigger.changeset/2)
@@ -28,12 +28,12 @@ defmodule Sanbase.Signals.UserTriggers do
 
   @spec triggers_for(%User{}) :: list(trigger_struct)
   def triggers_for(%User{id: user_id}) do
-    Repo.get_by(UserTriggers, user_id: user_id)
+    Repo.get_by(UserTrigger, user_id: user_id)
     |> case do
       nil ->
         []
 
-      %UserTriggers{} = ut ->
+      %UserTrigger{} = ut ->
         triggers_in_struct(ut)
     end
   end
@@ -100,12 +100,12 @@ defmodule Sanbase.Signals.UserTriggers do
   end
 
   defp triggers_map_for(%User{id: user_id}) do
-    Repo.get_by(UserTriggers, user_id: user_id)
+    Repo.get_by(UserTrigger, user_id: user_id)
     |> case do
       nil ->
         []
 
-      %UserTriggers{} = ut ->
+      %UserTrigger{} = ut ->
         ut.triggers
         |> Enum.map(fn trigger ->
           trigger
@@ -131,12 +131,12 @@ defmodule Sanbase.Signals.UserTriggers do
   end
 
   defp triggers_update(user_id, triggers) do
-    Repo.get_by(UserTriggers, user_id: user_id)
+    Repo.get_by(UserTrigger, user_id: user_id)
     |> case do
       nil ->
-        changeset(%UserTriggers{}, %{user_id: user_id, triggers: triggers})
+        changeset(%UserTrigger{}, %{user_id: user_id, triggers: triggers})
 
-      %UserTriggers{} = ut ->
+      %UserTrigger{} = ut ->
         changeset(ut, %{triggers: triggers})
     end
     |> Repo.insert_or_update()
@@ -170,11 +170,15 @@ defmodule Sanbase.Signals.UserTriggers do
 
   defp load_in_struct(_), do: :error
 
-  defp struct_from_map(%{type: "daa"} = trigger), do: {:ok, struct!(DaaTrigger, trigger)}
+  defp struct_from_map(%{type: "daa"} = trigger),
+    do: {:ok, struct!(DailyActiveAddressesTrigger, trigger)}
+
   defp struct_from_map(%{type: "price"} = trigger), do: {:ok, struct!(PriceTrigger, trigger)}
   defp struct_from_map(_), do: :error
 
-  defp map_from_struct(%DaaTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}
+  defp map_from_struct(%DailyActiveAddressesTrigger{} = trigger),
+    do: {:ok, Map.from_struct(trigger)}
+
   defp map_from_struct(%PriceTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}
   defp map_from_struct(_), do: :error
 

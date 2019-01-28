@@ -9,7 +9,7 @@ defmodule Sanbase.Signals.TriggersTest do
     user = insert(:user)
 
     trigger = %{
-      type: "daa",
+      type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
@@ -51,7 +51,7 @@ defmodule Sanbase.Signals.TriggersTest do
     user = insert(:user)
 
     trigger = %{
-      type: "daa",
+      type: "daily_active_addresses",
       target: "santiment",
       time_window: "1d",
       percent_threshold: 300.0,
@@ -83,7 +83,7 @@ defmodule Sanbase.Signals.TriggersTest do
     user = insert(:user)
 
     trigger1 = %{
-      type: "daa",
+      type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
@@ -111,7 +111,7 @@ defmodule Sanbase.Signals.TriggersTest do
     user = insert(:user)
 
     trigger1 = %{
-      type: "daa",
+      type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
@@ -138,7 +138,7 @@ defmodule Sanbase.Signals.TriggersTest do
     trigger_id = ut |> hd |> Map.get(:id)
 
     updated_trigger = %{
-      type: "daa",
+      type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
@@ -162,7 +162,7 @@ defmodule Sanbase.Signals.TriggersTest do
     user = insert(:user)
 
     trigger1 = %{
-      type: "daa",
+      type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
       time_window: "1d",

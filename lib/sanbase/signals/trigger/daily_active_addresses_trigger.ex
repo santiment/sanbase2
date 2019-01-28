@@ -1,6 +1,6 @@
 defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTrigger do
   @enforce_keys [:type, :channel, :time_window, :percent_threshold]
-  defstruct type: "daa",
+  defstruct type: "daily_active_addresses",
             target: nil,
             channel: nil,
             time_window: nil,

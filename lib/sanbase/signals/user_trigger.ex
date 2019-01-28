@@ -170,7 +170,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
   defp load_in_struct(_), do: :error
 
-  defp struct_from_map(%{type: "daa"} = trigger),
+  defp struct_from_map(%{type: "daily_active_addresses"} = trigger),
     do: {:ok, struct!(DailyActiveAddressesTrigger, trigger)}
 
   defp struct_from_map(%{type: "price"} = trigger), do: {:ok, struct!(PriceTrigger, trigger)}

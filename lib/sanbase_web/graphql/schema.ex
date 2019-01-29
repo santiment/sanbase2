@@ -22,7 +22,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ClickhouseResolver,
     ExchangeResolver,
     UserSettingsResolver,
-    TelegramResolver
+    TelegramResolver,
+    UserTriggerResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
@@ -61,6 +62,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.ClickhouseTypes)
   import_types(SanbaseWeb.Graphql.ExchangeTypes)
   import_types(SanbaseWeb.Graphql.UserSettingsTypes)
+  import_types(SanbaseWeb.Graphql.UserTriggerTypes)
+  import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -815,6 +818,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
       resolve(&TelegramResolver.get_telegram_deep_link/3)
     end
+
+    @desc "Get signal trigger by its id"
+    field :get_trigger_by_id, :user_trigger do
+      arg(:id, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&UserTriggerResolver.get_trigger_by_id/3)
+    end
   end
 
   mutation do
@@ -1049,6 +1061,35 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :revoke_telegram_deep_link, :boolean do
       middleware(JWTAuth)
       resolve(&TelegramResolver.revoke_telegram_deep_link/3)
+    end
+
+    @desc """
+    Create signal trigger described by `trigger` json field.
+    Returns a list of all signal triggers for the current user.
+    """
+    field :create_trigger, list_of(:user_trigger) do
+      arg(:trigger, :json)
+      arg(:is_public, :boolean)
+      arg(:cooldown, :integer)
+
+      middleware(JWTAuth)
+
+      resolve(&UserTriggerResolver.create_trigger/3)
+    end
+
+    @desc """
+    Update signal trigger by its id.
+    Returns a list of all signal triggers for the current user.
+    """
+    field :update_trigger, list_of(:user_trigger) do
+      arg(:id, non_null(:string))
+      arg(:trigger, :json)
+      arg(:is_public, :boolean)
+      arg(:cooldown, :integer)
+
+      middleware(JWTAuth)
+
+      resolve(&UserTriggerResolver.update_trigger/3)
     end
   end
 end

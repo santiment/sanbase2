@@ -12,17 +12,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   def create_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    {:ok, triggers} = UserTrigger.create_trigger(current_user, args)
-
-    {:ok, triggers}
+    UserTrigger.create_user_trigger(current_user, args)
+    |> handle_result("create")
   end
 
   def update_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    {:ok, triggers} = UserTrigger.update_trigger(current_user, args)
-
-    {:ok, triggers}
+    UserTrigger.update_user_trigger(current_user, args)
+    |> handle_result("update")
   end
 
   def get_trigger_by_id(_root, args, %{
@@ -31,5 +29,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     trigger = UserTrigger.get_trigger_by_id(current_user, args.id)
 
     {:ok, trigger}
+  end
+
+  defp handle_result(result, operation) do
+    case result do
+      {:ok, ut} ->
+        {:ok, ut.trigger}
+
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Cannot #{operation} trigger!", details: Utils.error_details(changeset)
+        }
+    end
   end
 end

@@ -43,8 +43,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       conn
       |> post("/graphql", %{"query" => query})
 
-    result = json_response(result, 200)["data"]["createTrigger"]
-    created_trigger = result |> hd()
+    created_trigger = json_response(result, 200)["data"]["createTrigger"]
 
     assert created_trigger |> Map.get("trigger") == trigger
     assert created_trigger |> Map.get("id") != nil
@@ -60,7 +59,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "repeating" => false
     }
 
-    insert(:user_triggers, user: user, triggers: [%{is_public: false, trigger: trigger}])
+    insert(:user_triggers, user: user, trigger: %{is_public: false, trigger: trigger})
 
     updated_trigger = trigger |> Map.put("percent_threshold", 400.0)
     trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
@@ -86,7 +85,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> post("/graphql", %{"query" => query})
 
     result = json_response(result, 200)["data"]["updateTrigger"]
-    result = result |> hd()
 
     assert result |> Map.get("trigger") == updated_trigger
     assert result |> Map.get("id") == trigger_id
@@ -102,7 +100,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "repeating" => false
     }
 
-    insert(:user_triggers, user: user, triggers: [%{is_public: false, trigger: trigger}])
+    insert(:user_triggers, user: user, trigger: %{is_public: false, trigger: trigger})
 
     trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
 
@@ -137,7 +135,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "repeating" => false
     }
 
-    insert(:user_triggers, user: user, triggers: [%{is_public: false, trigger: trigger}])
+    insert(:user_triggers, user: user, trigger: %{is_public: false, trigger: trigger})
 
     query = """
     {

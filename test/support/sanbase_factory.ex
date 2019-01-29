@@ -75,7 +75,7 @@ defmodule Sanbase.Factory do
 
   def user_triggers_factory() do
     %UserTrigger{
-      triggers: []
+      trigger: %{}
     }
   end
 end

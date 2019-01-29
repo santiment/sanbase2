@@ -1016,7 +1016,7 @@ ALTER SEQUENCE public.user_settings_id_seq OWNED BY public.user_settings.id;
 CREATE TABLE public.user_triggers (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    triggers jsonb DEFAULT '[]'::jsonb,
+    trigger jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
@@ -1837,7 +1837,7 @@ CREATE UNIQUE INDEX user_settings_user_id_index ON public.user_settings USING bt
 -- Name: user_triggers_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX user_triggers_user_id_index ON public.user_triggers USING btree (user_id);
+CREATE INDEX user_triggers_user_id_index ON public.user_triggers USING btree (user_id);
 
 
 --

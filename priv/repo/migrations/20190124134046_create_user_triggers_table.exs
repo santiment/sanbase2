@@ -4,11 +4,11 @@ defmodule Sanbase.Repo.Migrations.CreateUserTriggersTable do
   def change do
     create table("user_triggers") do
       add(:user_id, references("users"), null: false)
-      add(:triggers, :jsonb, default: "[]")
+      add(:trigger, :jsonb)
 
       timestamps()
     end
 
-    create(unique_index("user_triggers", [:user_id]))
+    create(index("user_triggers", [:user_id]))
   end
 end

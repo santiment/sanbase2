@@ -1,6 +1,7 @@
 defmodule Sanbase.Signals.UserTrigger do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   alias __MODULE__
   alias Sanbase.Auth.User
@@ -13,7 +14,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
   schema "user_triggers" do
     belongs_to(:user, User)
-    embeds_many(:triggers, Trigger)
+    embeds_one(:trigger, Trigger, on_replace: :update)
 
     timestamps()
   end
@@ -21,125 +22,68 @@ defmodule Sanbase.Signals.UserTrigger do
   def changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
     |> cast(attrs, [:user_id])
-    |> cast_embed(:triggers, required: true, with: &Trigger.changeset/2)
+    |> cast_embed(:trigger, required: true, with: &Trigger.changeset/2)
     |> validate_required([:user_id])
-    |> unique_constraint(:user_id)
   end
 
   @spec triggers_for(%User{}) :: list(trigger_struct)
   def triggers_for(%User{id: user_id}) do
-    Repo.get_by(UserTrigger, user_id: user_id)
-    |> case do
-      nil ->
-        []
-
-      %UserTrigger{} = ut ->
-        triggers_in_struct(ut)
-    end
+    user_id
+    |> user_triggers_for()
+    |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
   end
 
-  @spec get_trigger(%User{}, String.t()) :: map()
-  def get_trigger(%User{id: _user_id} = user, trigger_id) do
-    triggers_for(user)
-    |> find_trigger_by_id(trigger_id)
+  def get_trigger_by_id(%User{id: user_id} = _user, trigger_id) do
+    user_triggers_for(user_id)
+    |> find_user_trigger_by_trigger_id(trigger_id)
+    |> Map.get(:trigger)
+    |> trigger_in_struct()
   end
 
-  @spec create_trigger(%User{}, map()) :: {:ok, list(trigger_struct)} | {:error, String.t()}
-  def create_trigger(%User{id: user_id} = user, %{trigger: trigger_data} = params) do
+  @spec create_user_trigger(%User{}, map()) :: {:ok, list(trigger_struct)} | {:error, String.t()}
+  def create_user_trigger(%User{id: user_id} = _user, %{trigger: trigger_data} = params) do
     if is_valid?(trigger_data) do
-      triggers = triggers_map_for(user)
-
-      triggers_update(user_id, triggers ++ [params])
-      |> case do
-        {:ok, ut} ->
-          {:ok, triggers_in_struct(ut)}
-
-        {:error, changeset} ->
-          {:error, changeset}
-      end
+      %UserTrigger{}
+      |> changeset(%{user_id: user_id, trigger: params})
+      |> Repo.insert()
     else
       {:error, "Trigger structure is invalid"}
     end
   end
 
-  def create_trigger(_, _), do: {:error, "Trigger structure is invalid"}
+  def create_user_trigger(_, _), do: {:error, "Trigger structure is invalid"}
 
-  @spec update_trigger(%User{}, map()) :: {:ok, list(trigger_struct)} | {:error, String.t()}
-  def update_trigger(%User{id: user_id} = user, %{id: id} = params) do
-    trigger_data = Map.get(params, :trigger)
+  def update_user_trigger(%User{id: user_id} = _user, %{id: id} = params) do
+    trigger_data = Map.get(params, :trigger_data)
 
-    if is_nil(trigger_data) || is_valid?(trigger_data) do
-      triggers =
-        user
-        |> triggers_map_for()
-        |> find_and_update_trigger(id, clean_params(params))
-
-      triggers_update(user_id, triggers)
-      |> case do
-        {:ok, ut} ->
-          {:ok, triggers_in_struct(ut)}
-
-        {:error, changeset} ->
-          {:error, changeset}
-      end
+    if is_nil(trigger_data) or is_valid?(trigger_data) do
+      user_id
+      |> user_triggers_for()
+      |> find_user_trigger_by_trigger_id(id)
+      |> changeset(%{trigger: clean_params(params)})
+      |> Repo.update()
     else
       {:error, "Trigger structure is invalid"}
     end
   end
 
-  def update_trigger(_, _), do: {:error, "Trigger structure is invalid"}
+  def update_user_trigger(_, _), do: {:error, "Trigger structure is invalid"}
 
   # Private functions
 
-  defp triggers_in_struct(user_triggers) do
-    user_triggers.triggers
-    |> Enum.map(fn t ->
-      {:ok, trigger} = load_in_struct(t.trigger)
-      Map.put(t, :trigger, trigger)
-    end)
+  defp user_triggers_for(user_id) do
+    from(ut in UserTrigger, where: ut.user_id == ^user_id)
+    |> Repo.all()
   end
 
-  defp triggers_map_for(%User{id: user_id}) do
-    Repo.get_by(UserTrigger, user_id: user_id)
-    |> case do
-      nil ->
-        []
-
-      %UserTrigger{} = ut ->
-        ut.triggers
-        |> Enum.map(fn trigger ->
-          trigger
-          |> Map.from_struct()
-        end)
-    end
+  defp trigger_in_struct(trigger) do
+    {:ok, trigger_data} = load_in_struct(trigger.trigger)
+    %{trigger | trigger: trigger_data}
   end
 
-  defp find_trigger_by_id(triggers, trigger_id) do
-    triggers
-    |> Enum.find(fn t -> t.id == trigger_id end)
-  end
-
-  defp find_and_update_trigger(triggers, new_trigger_id, new_trigger) do
-    triggers
-    |> Enum.map(fn existing_trigger ->
-      if existing_trigger.id == new_trigger_id do
-        Map.merge(existing_trigger, new_trigger)
-      else
-        existing_trigger
-      end
-    end)
-  end
-
-  defp triggers_update(user_id, triggers) do
-    Repo.get_by(UserTrigger, user_id: user_id)
-    |> case do
-      nil ->
-        changeset(%UserTrigger{}, %{user_id: user_id, triggers: triggers})
-
-      %UserTrigger{} = ut ->
-        changeset(ut, %{triggers: triggers})
-    end
-    |> Repo.insert_or_update()
+  defp find_user_trigger_by_trigger_id(user_triggers, trigger_id) do
+    user_triggers
+    |> Enum.find(fn ut -> ut.trigger.id == trigger_id end)
   end
 
   defp is_valid?(trigger) do

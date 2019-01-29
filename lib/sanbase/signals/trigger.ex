@@ -33,10 +33,10 @@ defmodule Sanbase.Signals.Trigger do
     Sanbase.Signals.Triggerable.cache_key(trigger)
   end
 
-  defp has_cooldown?(%{last_triggered: nil}), do: false
-  defp has_cooldown?(%{cooldown: nil}), do: false
+  def has_cooldown?(%{last_triggered: nil}), do: false
+  def has_cooldown?(%{cooldown: nil}), do: false
 
-  defp has_cooldown?(%{cooldown: cd, last_triggered: %DateTime{} = lt}) do
+  def has_cooldown?(%{cooldown: cd, last_triggered: %DateTime{} = lt}) do
     Timex.compare(
       Timex.shift(lt, minutes: cd),
       Timex.now()

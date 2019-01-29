@@ -3,7 +3,6 @@ defmodule Sanbase.Signals.Evaluator do
   A module that takes a list of triggers and returns the ones that must be triggered
   """
 
-  alias Sanbase.Repo
   alias Sanbase.Signals.Evaluator.Cache
   alias Sanbase.Signals.Trigger
 
@@ -20,19 +19,13 @@ defmodule Sanbase.Signals.Evaluator do
       max_concurrency: 50,
       timeout: 30_000
     )
-    |> mark_as_triggered()
   end
 
   defp remove_triggers_on_cooldown(triggers) do
     triggers |> Enum.reject(&Trigger.has_cooldown?/1)
   end
 
-  defp mark_as_triggered(triggers) do
-    triggers
-    |> Repo.update_all(set: [last_triggered: Timex.now()])
-  end
-
-  defp triggered?(trigger) do
+  defp triggered?(%Trigger{trigger: trigger}) do
     Cache.get_or_store(
       Trigger.cache_key(trigger),
       fn -> Trigger.triggered?(trigger) end

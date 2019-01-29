@@ -15,8 +15,8 @@ defmodule Sanbase.Signals.EvaluatorTest do
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 300.0,
-      repeating: false,
-      cooldown: 5
+      repeating: false
+      # cooldown: 5
     }
 
     trigger2 = %{
@@ -25,8 +25,8 @@ defmodule Sanbase.Signals.EvaluatorTest do
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 250.0,
-      repeating: false,
-      cooldown: 5
+      repeating: false
+      # cooldown: 5
     }
 
     {:ok, _} = UserTrigger.create_trigger(user, %{is_public: true, trigger: trigger1})
@@ -41,7 +41,6 @@ defmodule Sanbase.Signals.EvaluatorTest do
   test "evaluate triggers", context do
     Evaluator.run(context.triggers)
     IO.inspect(Sanbase.Signals.UserTrigger.triggers_for(context.user))
-    Sanbase.Repo.get(User)
     assert 1 == 2
   end
 end

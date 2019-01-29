@@ -2,19 +2,24 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
   @derive Jason.Encoder
   @trigger_type "price"
   @enforce_keys [:type, :target, :channel, :time_window]
-  defstruct type: "price",
+  defstruct type: "price_percent_change",
             target: nil,
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            absolute_threshold: nil,
             repeating: false
+
+  import Sanbase.Signals.Utils
 
   alias __MODULE__
 
   defimpl Sanbase.Signals.Triggerable, for: PriceTrigger do
-    def triggered?(%PriceTrigger{} = _trigger) do
+    def triggered?(%PriceTrigger{}) do
       true
+    end
+
+    def get_data(_trigger) do
+      []
     end
 
     @doc ~s"""
@@ -22,7 +27,6 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
     Parameters like `repeating` and `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
-    @spec cache_key(%PriceTrigger{}) :: String.t()
     def cache_key(%PriceTrigger{} = trigger) do
       data = [
         trigger.type,

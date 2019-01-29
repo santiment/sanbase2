@@ -9,22 +9,26 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
             percent_threshold: nil,
             repeating: false
 
-  def triggered?(%__MODULE__{} = trigger) do
-    []
+  alias __MODULE__
+
+  defimpl Sanbase.Signals.Triggerable, for: DailyActiveAddressesTrigger do
+    def triggered?(%DailyActiveAddressesTrigger{} = _trigger) do
+      true
+    end
+
+    def cache_key(%DailyActiveAddressesTrigger{} = trigger) do
+      data =
+        [trigger.type, trigger.target, trigger.time_window, trigger.percent_threshold]
+        |> Jason.encode!()
+
+      :crypto.hash(:sha256, data)
+      |> Base.encode16()
+    end
   end
 
-  def cache_key(%__MODULE__{} = trigger) do
-    data =
-      [trigger.type, trigger.target, trigger.time_window, trigger.percent_threshold]
-      |> Jason.encode!()
-
-    :crypto.hash(:sha256, data)
-    |> Base.encode16()
-  end
-end
-
-defimpl String.Chars, for: Sanbase.Signals.Trigger.DailyActiveAddressesTrigger do
-  def to_string(%{} = trigger) do
-    "example payload for #{trigger.type}"
+  defimpl String.Chars, for: DailyActiveAddressesTrigger do
+    def to_string(%{} = trigger) do
+      "example payload for #{trigger.type}"
+    end
   end
 end

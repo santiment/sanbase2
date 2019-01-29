@@ -10,26 +10,31 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
             absolute_threshold: nil,
             repeating: false
 
-  def triggered?(%__MODULE__{} = trigger) do
-  end
+  alias __MODULE__
 
-  @doc ~s"""
-  Construct a cache key only out of the parameters that determine the outcome.
-  Parameters like `repeating` and `channel` are discarded. The `type` is included
-  so different triggers with the same parameter names can be distinguished
-  """
-  @spec cache_key(%__MODULE__{}) :: String.t()
-  def cache_key(%__MODULE__{} = trigger) do
-    data = [
-      trigger.type,
-      trigger.target,
-      trigger.time_window,
-      trigger.percent_threshold,
-      trigger.absolute_threshold
-    ]
+  defimpl Sanbase.Signals.Triggerable, for: PriceTrigger do
+    def triggered?(%PriceTrigger{} = _trigger) do
+      true
+    end
 
-    :crypto.hash(:sha256, data)
-    |> Base.encode16()
+    @doc ~s"""
+    Construct a cache key only out of the parameters that determine the outcome.
+    Parameters like `repeating` and `channel` are discarded. The `type` is included
+    so different triggers with the same parameter names can be distinguished
+    """
+    @spec cache_key(%PriceTrigger{}) :: String.t()
+    def cache_key(%PriceTrigger{} = trigger) do
+      data = [
+        trigger.type,
+        trigger.target,
+        trigger.time_window,
+        trigger.percent_threshold,
+        trigger.absolute_threshold
+      ]
+
+      :crypto.hash(:sha256, data)
+      |> Base.encode16()
+    end
   end
 end
 

@@ -1,4 +1,4 @@
-defmodule Sanbase.Signal.Evaluator.Cache do
+defmodule Sanbase.Signals.Evaluator.Cache do
   @cache_name :signals_evaluator_cache
 
   def get_or_store(cache_key, fun) when is_function(fun, 0) do

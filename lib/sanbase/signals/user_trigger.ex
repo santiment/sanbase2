@@ -40,7 +40,7 @@ defmodule Sanbase.Signals.UserTrigger do
     |> trigger_in_struct()
   end
 
-  @spec create_user_trigger(%User{}, map()) :: {:ok, list(trigger_struct)} | {:error, String.t()}
+  @spec create_user_trigger(%User{}, map()) :: {:ok, list(%UserTigger{})} | {:error, String.t()}
   def create_user_trigger(%User{id: user_id} = _user, %{trigger: trigger_data} = params) do
     if is_valid?(trigger_data) do
       %UserTrigger{}
@@ -53,6 +53,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
   def create_user_trigger(_, _), do: {:error, "Trigger structure is invalid"}
 
+  @spec update_user_trigger(%User{}, map()) :: {:ok, list(%UserTigger{})} | {:error, String.t()}
   def update_user_trigger(%User{id: user_id} = _user, %{id: id} = params) do
     trigger_data = Map.get(params, :trigger_data)
 

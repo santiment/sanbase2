@@ -30,18 +30,25 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
         {:stored, value} = result
         {value, nil}
       else
-        case func.() do
-          {:error, _} = error ->
-            {nil, error}
-
-          {:middleware, _, _} = tuple ->
-            # Decides on its behalf whether or not to put the value in the cache
-            {cache_modify_middleware.(cache, key, tuple), nil}
-
-          value ->
-            ConCache.put(cache, key, {:stored, value})
+        ConCache.isolated(cache, key, fn ->
+          if (result = ConCache.get(cache, key)) != nil do
+            {:stored, value} = result
             {value, nil}
-        end
+          else
+            case func.() do
+              {:error, _} = error ->
+                {nil, error}
+
+              {:middleware, _, _} = tuple ->
+                # Decides on its behalf whether or not to put the value in the cache
+                {cache_modify_middleware.(cache, key, tuple), nil}
+
+              value ->
+                ConCache.put(cache, key, {:stored, value})
+                {value, nil}
+            end
+          end
+        end)
       end
 
     if error_if_any != nil do

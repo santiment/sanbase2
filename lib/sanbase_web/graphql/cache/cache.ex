@@ -147,14 +147,7 @@ defmodule SanbaseWeb.Graphql.Cache do
          {:middleware, Absinthe.Middleware.Async = midl, {fun, opts}}
        ) do
     caching_fun = fn ->
-      case fun.() do
-        {:ok, _value} = result ->
-          CacheProvider.store(cache_name, cache_key, result)
-          result
-
-        error ->
-          error
-      end
+      CacheProvider.get_or_store(cache_name, cache_key, fun, &cache_modify_middleware/3)
     end
 
     {:middleware, midl, {caching_fun, opts}}
@@ -166,14 +159,12 @@ defmodule SanbaseWeb.Graphql.Cache do
          {:middleware, Absinthe.Middleware.Dataloader = midl, {loader, callback}}
        ) do
     caching_callback = fn loader_arg ->
-      case callback.(loader_arg) do
-        {:ok, _value} = result ->
-          CacheProvider.store(cache_name, cache_key, result)
-          result
-
-        error ->
-          error
-      end
+      CacheProvider.get_or_store(
+        cache_name,
+        cache_key,
+        fn -> callback.(loader_arg) end,
+        &cache_modify_middleware/3
+      )
     end
 
     {:middleware, midl, {loader, caching_callback}}

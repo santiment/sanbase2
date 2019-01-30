@@ -1834,6 +1834,13 @@ CREATE UNIQUE INDEX user_settings_user_id_index ON public.user_settings USING bt
 
 
 --
+-- Name: user_triggers_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX user_triggers_user_id_index ON public.user_triggers USING btree (user_id);
+
+
+--
 -- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -9,17 +9,33 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
             percent_threshold: nil,
             repeating: false
 
-  import Sanbase.Signals.Utils
-
   alias __MODULE__
+  alias Sanbase.Signals.Evaluator.Cache
 
   defimpl Sanbase.Signals.Triggerable, for: PriceTrigger do
-    def triggered?(%PriceTrigger{}) do
-      true
+    def triggered?(%PriceTrigger{} = trigger) do
+      get_data(trigger) >= trigger.percent_threshold
     end
 
-    def get_data(_trigger) do
-      []
+    def get_data(trigger) do
+      price_change_map =
+        Cache.get_or_store(
+          "price_change_map",
+          &Sanbase.Model.Project.List.slug_price_change_map/0
+        )
+
+      target_data = Map.get(price_change_map, trigger.target)
+
+      case trigger.time_window do
+        "1h" ->
+          target_data.percent_change_1h
+
+        "24h" ->
+          target_data.percent_change_24h
+
+        _ ->
+          -1
+      end
     end
 
     @doc ~s"""

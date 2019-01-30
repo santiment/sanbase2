@@ -29,8 +29,8 @@ defmodule Sanbase.Signals.EvaluatorTest do
       # cooldown: 5
     }
 
-    {:ok, _} = UserTrigger.create_trigger(user, %{is_public: true, trigger: trigger1})
-    {:ok, triggers} = UserTrigger.create_trigger(user, %{is_public: true, trigger: trigger2})
+    {:ok, _} = UserTrigger.create_user_trigger(user, %{is_public: true, trigger: trigger1})
+    {:ok, triggers} = UserTrigger.create_useR_trigger(user, %{is_public: true, trigger: trigger2})
 
     [
       triggers: triggers,

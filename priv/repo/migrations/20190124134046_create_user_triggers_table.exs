@@ -8,5 +8,7 @@ defmodule Sanbase.Repo.Migrations.CreateUserTriggersTable do
 
       timestamps()
     end
+
+    create(index("user_triggers", [:user_id]))
   end
 end

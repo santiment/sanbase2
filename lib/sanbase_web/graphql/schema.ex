@@ -820,12 +820,24 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Get signal trigger by its id"
-    field :get_trigger_by_id, :user_trigger do
+    field :get_trigger_by_id, :trigger do
       arg(:id, non_null(:string))
 
       middleware(JWTAuth)
 
       resolve(&UserTriggerResolver.get_trigger_by_id/3)
+    end
+
+    @desc "Get public signal triggers by user_id"
+    field :public_triggers_for_user, list_of(:trigger) do
+      arg(:user_id, non_null(:integer))
+
+      resolve(&UserTriggerResolver.public_triggers_for_user/3)
+    end
+
+    @desc "Get all public signal triggers"
+    field :all_public_triggers, list_of(:user_trigger) do
+      resolve(&UserTriggerResolver.all_public_triggers/3)
     end
   end
 
@@ -1067,7 +1079,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Create signal trigger described by `trigger` json field.
     Returns a list of all signal triggers for the current user.
     """
-    field :create_trigger, :user_trigger do
+    field :create_trigger, :trigger do
       arg(:settings, :json)
       arg(:is_public, :boolean)
       arg(:cooldown, :integer)
@@ -1081,7 +1093,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Update signal trigger by its id.
     Returns a list of all signal triggers for the current user.
     """
-    field :update_trigger, :user_trigger do
+    field :update_trigger, :trigger do
       arg(:id, non_null(:string))
       arg(:settings, :json)
       arg(:is_public, :boolean)

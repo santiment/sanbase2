@@ -193,6 +193,77 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert result |> Map.get("id") != nil
   end
 
+  test "fetches all public triggers", %{user: user, conn: conn} do
+    trigger_settings = %{
+      "type" => "daily_active_addresses",
+      "target" => "santiment",
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "percent_threshold" => 300.0,
+      "repeating" => false
+    }
+
+    trigger_settings2 = Map.put(trigger_settings, "percent_threshold", 400.0)
+
+    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings})
+    insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings2})
+
+    query = """
+    {
+      allPublicTriggers {
+        user_id
+        trigger {
+          id,
+          settings
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "allPublicTriggers"))
+
+    result = json_response(result, 200)["data"]["allPublicTriggers"]
+    assert length(result) == 1
+    assert result |> hd() |> Map.get("trigger") |> Map.get("settings") == trigger_settings
+  end
+
+  test "fetches public user triggers", %{conn: conn} do
+    user = insert(:user, email: "alabala@example.com")
+
+    trigger_settings = %{
+      "type" => "daily_active_addresses",
+      "target" => "santiment",
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "percent_threshold" => 300.0,
+      "repeating" => false
+    }
+
+    trigger_settings2 = Map.put(trigger_settings, "percent_threshold", 400.0)
+
+    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings})
+    insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings2})
+
+    query = """
+    {
+      publicTriggersForUser(user_id: #{user.id}) {
+        id,
+        settings
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "publicTriggersForUser"))
+
+    result = json_response(result, 200)["data"]["publicTriggersForUser"]
+    assert length(result) == 1
+    assert result |> hd() |> Map.get("settings") == trigger_settings
+  end
+
   defp format_interpolated_json(string) do
     string
     |> String.replace(~r|\"|, ~S|\\"|)

@@ -31,6 +31,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     {:ok, trigger}
   end
 
+  def public_triggers_for_user(_root, args, _resolution) do
+    {:ok, UserTrigger.public_triggers_for(args.user_id)}
+  end
+
+  def all_public_triggers(_root, _args, _resolution) do
+    {:ok, UserTrigger.all_public_triggers()}
+  end
+
   defp handle_result(result, operation) do
     case result do
       {:ok, ut} ->

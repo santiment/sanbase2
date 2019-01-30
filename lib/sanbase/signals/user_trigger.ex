@@ -11,6 +11,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
   @type trigger_struct :: %Trigger{}
 
+  @derive Jason.Encoder
   schema "user_triggers" do
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)
@@ -30,6 +31,20 @@ defmodule Sanbase.Signals.UserTrigger do
     user_id
     |> user_triggers_for()
     |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
+  end
+
+  @spec public_triggers_for(non_neg_integer()) :: list(trigger_struct)
+  def public_triggers_for(user_id) do
+    user_id
+    |> user_triggers_for()
+    |> Enum.filter(fn ut -> ut.trigger.is_public end)
+    |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
+  end
+
+  @spec all_public_triggers() :: list(trigger_struct)
+  def all_public_triggers() do
+    from(ut in UserTrigger, where: fragment("trigger->> 'is_public' = 'true'"))
+    |> Repo.all()
   end
 
   @spec get_trigger_by_id(%User{}, String.t()) :: trigger_struct

@@ -32,7 +32,7 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
       resolve(&UserSettingsResolver.settings/3)
     end
 
-    field :triggers, list_of(:user_trigger) do
+    field :triggers, list_of(:trigger) do
       resolve(&UserTriggerResolver.triggers/3)
     end
   end

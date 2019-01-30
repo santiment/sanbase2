@@ -10,7 +10,6 @@ defmodule Sanbase.Signals.UserTrigger do
   alias Sanbase.Signals.Trigger.{DailyActiveAddressesTrigger, PriceTrigger}
 
   @type trigger_struct :: %Trigger{}
-  @type trigger_data_strct :: %DailyActiveAddressesTrigger{} | %PriceTrigger{}
 
   schema "user_triggers" do
     belongs_to(:user, User)
@@ -33,6 +32,7 @@ defmodule Sanbase.Signals.UserTrigger do
     |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
   end
 
+  @spec get_trigger_by_id(%User{}, String.t()) :: trigger_struct
   def get_trigger_by_id(%User{id: user_id} = _user, trigger_id) do
     user_triggers_for(user_id)
     |> find_user_trigger_by_trigger_id(trigger_id)
@@ -40,7 +40,8 @@ defmodule Sanbase.Signals.UserTrigger do
     |> trigger_in_struct()
   end
 
-  @spec create_user_trigger(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
+  @spec create_user_trigger(%User{}, map()) ::
+          {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}
   def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
     if is_valid?(settings) do
       %UserTrigger{}
@@ -53,7 +54,8 @@ defmodule Sanbase.Signals.UserTrigger do
 
   def create_user_trigger(_, _), do: {:error, "Trigger structure is invalid"}
 
-  @spec update_user_trigger(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
+  @spec update_user_trigger(%User{}, map()) ::
+          {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}
   def update_user_trigger(%User{id: user_id} = _user, %{id: id} = params) do
     settings = Map.get(params, :settings)
 

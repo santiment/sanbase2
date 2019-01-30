@@ -41,7 +41,7 @@ defmodule Sanbase.Signals.UserTrigger do
     |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
   end
 
-  @spec all_public_triggers() :: list(trigger_struct)
+  @spec all_public_triggers() :: list(%__MODULE__{})
   def all_public_triggers() do
     from(ut in UserTrigger, where: fragment("trigger->> 'is_public' = 'true'"))
     |> Repo.all()

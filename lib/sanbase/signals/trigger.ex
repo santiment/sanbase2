@@ -3,7 +3,7 @@ defmodule Sanbase.Signals.Trigger do
   import Ecto.Changeset
 
   embedded_schema do
-    field(:trigger, :map)
+    field(:settings, :map)
     field(:is_public, :boolean, default: false)
     field(:last_triggered, :naive_datetime)
     # cooldown in seconds
@@ -12,7 +12,6 @@ defmodule Sanbase.Signals.Trigger do
 
   def changeset(schema, params) do
     schema
-    |> cast(params, [:trigger, :is_public, :cooldown, :last_triggered])
-    |> validate_required([:trigger])
+    |> cast(params, [:settings, :is_public, :cooldown, :last_triggered])
   end
 end

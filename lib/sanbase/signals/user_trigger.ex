@@ -41,8 +41,8 @@ defmodule Sanbase.Signals.UserTrigger do
   end
 
   @spec create_user_trigger(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
-  def create_user_trigger(%User{id: user_id} = _user, %{trigger: trigger_data} = params) do
-    if is_valid?(trigger_data) do
+  def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
+    if is_valid?(settings) do
       %UserTrigger{}
       |> changeset(%{user_id: user_id, trigger: params})
       |> Repo.insert()
@@ -55,9 +55,9 @@ defmodule Sanbase.Signals.UserTrigger do
 
   @spec update_user_trigger(%User{}, map()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
   def update_user_trigger(%User{id: user_id} = _user, %{id: id} = params) do
-    trigger_data = Map.get(params, :trigger_data)
+    settings = Map.get(params, :settings)
 
-    if is_nil(trigger_data) or is_valid?(trigger_data) do
+    if is_nil(settings) or is_valid?(settings) do
       user_id
       |> user_triggers_for()
       |> find_user_trigger_by_trigger_id(id)
@@ -78,8 +78,8 @@ defmodule Sanbase.Signals.UserTrigger do
   end
 
   defp trigger_in_struct(trigger) do
-    {:ok, trigger_data} = load_in_struct(trigger.trigger)
-    %{trigger | trigger: trigger_data}
+    {:ok, settings} = load_in_struct(trigger.settings)
+    %{trigger | settings: settings}
   end
 
   defp find_user_trigger_by_trigger_id(user_triggers, trigger_id) do
@@ -97,9 +97,9 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
-  defp load_in_struct(trigger) when is_map(trigger) do
-    trigger =
-      for {key, val} <- trigger, into: %{} do
+  defp load_in_struct(trigger_settings) when is_map(trigger_settings) do
+    trigger_settings =
+      for {key, val} <- trigger_settings, into: %{} do
         if is_atom(key) do
           {key, val}
         else
@@ -107,7 +107,7 @@ defmodule Sanbase.Signals.UserTrigger do
         end
       end
 
-    struct_from_map(trigger)
+    struct_from_map(trigger_settings)
   rescue
     _error in ArgumentError ->
       {:error, "Trigger structure is invalid"}
@@ -115,16 +115,20 @@ defmodule Sanbase.Signals.UserTrigger do
 
   defp load_in_struct(_), do: :error
 
-  defp struct_from_map(%{type: "daily_active_addresses"} = trigger),
-    do: {:ok, struct!(DailyActiveAddressesTrigger, trigger)}
+  defp struct_from_map(%{type: "daily_active_addresses"} = trigger_settings),
+    do: {:ok, struct!(DailyActiveAddressesTrigger, trigger_settings)}
 
-  defp struct_from_map(%{type: "price"} = trigger), do: {:ok, struct!(PriceTrigger, trigger)}
+  defp struct_from_map(%{type: "price"} = trigger_settings),
+    do: {:ok, struct!(PriceTrigger, trigger_settings)}
+
   defp struct_from_map(_), do: :error
 
-  defp map_from_struct(%DailyActiveAddressesTrigger{} = trigger),
-    do: {:ok, Map.from_struct(trigger)}
+  defp map_from_struct(%DailyActiveAddressesTrigger{} = trigger_settings),
+    do: {:ok, Map.from_struct(trigger_settings)}
 
-  defp map_from_struct(%PriceTrigger{} = trigger), do: {:ok, Map.from_struct(trigger)}
+  defp map_from_struct(%PriceTrigger{} = trigger_settings),
+    do: {:ok, Map.from_struct(trigger_settings)}
+
   defp map_from_struct(_), do: :error
 
   defp clean_params(params) do

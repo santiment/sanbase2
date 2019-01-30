@@ -8,7 +8,7 @@ defmodule Sanbase.Signals.TriggersTest do
   test "create and get user trigger" do
     user = insert(:user)
 
-    trigger = %{
+    trigger_settings = %{
       type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
@@ -18,15 +18,15 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:ok, created_trigger} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, trigger: trigger})
+      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
 
-    assert created_trigger.trigger.trigger == trigger
+    assert created_trigger.trigger.settings == trigger_settings
 
     trigger_id = created_trigger.trigger.id
 
     got_trigger = UserTrigger.get_trigger_by_id(user, trigger_id)
 
-    assert got_trigger.trigger |> Map.from_struct() == trigger
+    assert got_trigger.settings |> Map.from_struct() == trigger_settings
   end
 
   test "try creating user trigger with unknown type" do
@@ -67,7 +67,7 @@ defmodule Sanbase.Signals.TriggersTest do
   test "create user trigger with optional field missing" do
     user = insert(:user)
 
-    trigger = %{
+    trigger_settings = %{
       type: "price",
       target: "santiment",
       channel: "telegram",
@@ -76,15 +76,15 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:ok, created_trigger} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, trigger: trigger})
+      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
 
-    assert trigger.target == created_trigger.trigger.trigger |> Map.get(:target)
+    assert trigger_settings.target == created_trigger.trigger.settings |> Map.get(:target)
   end
 
   test "create trigger when there is existing one" do
     user = insert(:user)
 
-    trigger1 = %{
+    trigger_settings1 = %{
       type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
@@ -93,10 +93,10 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: true, trigger: trigger1})
+    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings1})
     assert length(UserTrigger.triggers_for(user)) == 1
 
-    trigger2 = %{
+    trigger_settings2 = %{
       type: "price",
       target: "santiment",
       channel: "email",
@@ -105,14 +105,14 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    UserTrigger.create_user_trigger(user, %{is_public: true, trigger: trigger2})
+    UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings2})
     assert length(UserTrigger.triggers_for(user)) == 2
   end
 
   test "update trigger" do
     user = insert(:user)
 
-    trigger1 = %{
+    trigger_settings1 = %{
       type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
@@ -121,7 +121,7 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    trigger2 = %{
+    trigger_settings2 = %{
       type: "price",
       target: "santiment",
       channel: "email",
@@ -130,8 +130,8 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: true, trigger: trigger1})
-    insert(:user_triggers, user: user, trigger: %{is_public: true, trigger: trigger2})
+    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings1})
+    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings2})
 
     trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
 
@@ -146,20 +146,20 @@ defmodule Sanbase.Signals.TriggersTest do
 
     UserTrigger.update_user_trigger(user, %{
       id: trigger_id,
-      trigger: updated_trigger,
+      settings: updated_trigger,
       is_public: false
     })
 
     triggers = UserTrigger.triggers_for(user)
 
     assert length(triggers) == 2
-    assert triggers |> hd |> Map.get(:trigger) |> Map.get(:repeating) == true
+    assert triggers |> hd |> Map.get(:settings) |> Map.get(:repeating) == true
   end
 
   test "update only common fields" do
     user = insert(:user)
 
-    trigger1 = %{
+    trigger_settings = %{
       type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
@@ -168,7 +168,7 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: false, trigger: trigger1})
+    insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
     ut = UserTrigger.triggers_for(user)
     trigger_id = ut |> hd |> Map.get(:id)

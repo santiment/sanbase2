@@ -36,7 +36,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
       {:ok, ut} ->
         {:ok, ut.trigger}
 
-      {:error, changeset} ->
+      {:error, error_msg} when is_binary(error_msg) ->
+        {:error, error_msg}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
         {
           :error,
           message: "Cannot #{operation} trigger!", details: Utils.error_details(changeset)

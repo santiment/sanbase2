@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
 
   object :user_trigger do
     field(:id, :string)
-    field(:trigger, :json)
+    field(:settings, :json)
     field(:is_public, :boolean)
     field(:cooldown, :integer)
   end

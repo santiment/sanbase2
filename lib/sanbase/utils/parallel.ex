@@ -2,6 +2,25 @@ defmodule Sanbase.Parallel do
   @doc ~s"""
 
   """
+
+  def preject(collection, func, opts) when is_function(func, 1) do
+    timeout = Keyword.get(opts, :timeout) || 15_000
+
+    collection
+    |> Enum.map(&Task.async(fn -> func.(&1) end))
+    |> Enum.map(&Task.await(&1, timeout))
+
+    collection
+    |> Stream.map(&Task.async(fn -> {func.(&1), &1} end))
+    |> Stream.map(&Task.await(&1, timeout))
+    |> Stream.reject(fn {bool, _item} -> bool === true end)
+    |> Enum.map(fn {_bool, item} -> item end)
+  end
+
+  def pfilter(collection, func, opts) when is_function(func, 1) do
+    preject(collection, &(not func.(&1)), opts)
+  end
+
   def pmap(collection, func, opts \\ []) when is_function(func, 1) do
     timeout = Keyword.get(opts, :timeout) || 15_000
 
@@ -57,5 +76,18 @@ defmodule Sanbase.Parallel do
             data
         end)
     end
+  end
+
+  def pfilter_concurrent(collection, func, opts \\ []) when is_function(func, 1) do
+    filter_func = fn x -> {func.(x), x} end
+
+    pmap_concurrent(collection, filter_func, opts)
+    |> Enum.filter(fn {bool, _item} -> bool === true end)
+    |> Enum.map(fn {_bool, item} -> item end)
+  end
+
+  def preject_concurrent(collection, func, opts \\ []) when is_function(func, 1) do
+    reject_func = fn x -> not func.(x) end
+    pfilter_concurrent(collection, reject_func, opts)
   end
 end

@@ -16,6 +16,18 @@ defmodule Sanbase.Application.Signals do
       # Start the Clickhouse Repo
       start_in({Sanbase.ClickhouseRepo, []}, [:dev, :prod]),
 
+      # Start the signal evaluator cache
+      Supervisor.child_spec(
+        {ConCache,
+         [
+           name: :signals_evaluator_cache,
+           ttl_check_interval: :timer.minutes(1),
+           global_ttl: :timer.minutes(5),
+           acquire_lock_timeout: 30_000
+         ]},
+        id: :signals_evaluator_cache
+      ),
+
       # Start signals cache
       Supervisor.child_spec(
         {ConCache,
@@ -24,7 +36,7 @@ defmodule Sanbase.Application.Signals do
            ttl_check_interval: :timer.minutes(10),
            global_ttl: :timer.hours(1)
          ]},
-        id: :con_cache_signals
+        id: :signals_cache
       ),
       Sanbase.ExternalServices.RateLimiting.Server.child_spec(
         :telegram_bot_rate_limiting_server,

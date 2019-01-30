@@ -6,7 +6,6 @@ defmodule Sanbase.Signals.Trigger do
     field(:settings, :map)
     field(:is_public, :boolean, default: false)
     field(:last_triggered, :naive_datetime)
-    # cooldown in seconds
     field(:cooldown, :integer)
   end
 

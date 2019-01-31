@@ -4,14 +4,14 @@ defmodule Sanbase.Signals.Evaluator do
   """
 
   alias Sanbase.Signals.Evaluator.Cache
-  alias Sanbase.Signals.Trigger
+  alias Sanbase.Signals.{UserTrigger, Trigger}
 
   @doc ~s"""
   Takes a list of triggers and returns its subset that evaluate to true at the given moment.
   """
   @spec run(list()) :: list()
-  def run(triggers) do
-    triggers
+  def run(user_triggers) do
+    user_triggers
     |> remove_triggers_on_cooldown()
     |> Sanbase.Parallel.pfilter_concurrent(
       &triggered?/1,
@@ -22,13 +22,16 @@ defmodule Sanbase.Signals.Evaluator do
   end
 
   defp remove_triggers_on_cooldown(triggers) do
-    triggers |> Enum.reject(&Trigger.has_cooldown?/1)
+    triggers
+    |> Enum.reject(fn %{trigger: trigger} ->
+      Trigger.has_cooldown?(trigger)
+    end)
   end
 
-  defp triggered?(%Trigger{trigger: trigger}) do
+  defp triggered?(%UserTrigger{trigger: %Trigger{settings: trigger_settings}}) do
     Cache.get_or_store(
-      Trigger.cache_key(trigger),
-      fn -> Trigger.triggered?(trigger) end
+      Trigger.cache_key(trigger_settings),
+      fn -> Trigger.triggered?(trigger_settings) end
     )
   end
 end

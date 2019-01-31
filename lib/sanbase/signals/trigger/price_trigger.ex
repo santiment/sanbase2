@@ -1,8 +1,8 @@
 defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
   @derive Jason.Encoder
-  @trigger_type "price"
+  @trigger_type "price_percent_change"
   @enforce_keys [:type, :target, :channel, :time_window]
-  defstruct type: "price_percent_change",
+  defstruct type: @trigger_type,
             target: nil,
             channel: nil,
             time_window: nil,
@@ -12,8 +12,10 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
   alias __MODULE__
   alias Sanbase.Signals.Evaluator.Cache
 
-  defimpl Sanbase.Signals.Triggerable, for: PriceTrigger do
-    def triggered?(%PriceTrigger{} = trigger) do
+  def type(), do: @trigger_type
+
+  defimpl Sanbase.Signals.Triggerable, for: PriceTriggerSettings do
+    def triggered?(%PriceTriggerSettings{} = trigger) do
       get_data(trigger) >= trigger.percent_threshold
     end
 
@@ -43,7 +45,7 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
     Parameters like `repeating` and `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
-    def cache_key(%PriceTrigger{} = trigger) do
+    def cache_key(%PriceTriggerSettings{} = trigger) do
       data = [
         trigger.type,
         trigger.target,
@@ -58,7 +60,7 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
   end
 end
 
-defimpl String.Chars, for: Sanbase.Signals.Trigger.PriceTrigger do
+defimpl String.Chars, for: Sanbase.Signals.Trigger.PriceTriggerSettings do
   def to_string(%{} = trigger) do
     "example payload for #{trigger.type}, [](s3_path)"
   end

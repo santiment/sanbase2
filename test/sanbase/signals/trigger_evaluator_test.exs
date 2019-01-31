@@ -2,9 +2,11 @@ defmodule Sanbase.Signals.EvaluatorTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
+  import Mock
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
+  alias Sanbase.Signals.DailyActiveAddressesTriggerSettings
 
   setup do
     user = insert(:user)
@@ -16,7 +18,6 @@ defmodule Sanbase.Signals.EvaluatorTest do
       time_window: "1d",
       percent_threshold: 300.0,
       repeating: false
-      # cooldown: 5
     }
 
     trigger2 = %{
@@ -26,21 +27,29 @@ defmodule Sanbase.Signals.EvaluatorTest do
       time_window: "1d",
       percent_threshold: 250.0,
       repeating: false
-      # cooldown: 5
     }
 
-    {:ok, _} = UserTrigger.create_user_trigger(user, %{is_public: true, trigger: trigger1})
-    {:ok, triggers} = UserTrigger.create_useR_trigger(user, %{is_public: true, trigger: trigger2})
+    {:ok, _} =
+      UserTrigger.create_user_trigger(user, %{is_public: true, cooldown: "1h", trigger: trigger1})
+
+    {:ok, _} =
+      UserTrigger.create_user_trigger(user, %{is_public: true, cooldown: "1h", trigger: trigger2})
 
     [
-      triggers: triggers,
       user: user
     ]
   end
 
   test "evaluate triggers", context do
-    Evaluator.run(context.triggers)
-    IO.inspect(Sanbase.Signals.UserTrigger.triggers_for(context.user))
-    assert 1 == 2
+    with_mock DailyActiveAddressesTriggerSettings, :get_data, fn _, _ ->
+      {100, 20}
+    end do
+      DailyActiveAddressesTriggerSettings.type()
+      |> UserTrigger.triggers_by_type()
+      |> Evaluator.run(context.triggers)
+      |> IO.inspect()
+
+      assert 1 == 2
+    end
   end
 end

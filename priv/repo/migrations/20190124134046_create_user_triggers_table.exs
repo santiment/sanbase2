@@ -4,7 +4,7 @@ defmodule Sanbase.Repo.Migrations.CreateUserTriggersTable do
   def change do
     create table("user_triggers") do
       add(:user_id, references("users"), null: false)
-      add(:trigger, :jsonb, null: false)
+      add(:trigger, :jsonb)
 
       timestamps()
     end

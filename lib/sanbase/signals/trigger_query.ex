@@ -1,4 +1,15 @@
 defmodule Sanbase.Signals.TriggerQuery do
+  defmacro trigger_type_is(type) do
+    quote do
+      fragment(
+        """
+        trigger->'settings'->'type' = ?
+        """,
+        ^unquote(type)
+      )
+    end
+  end
+
   defmacro trigger_by_id(id) do
     quote do
       fragment(

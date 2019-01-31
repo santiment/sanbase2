@@ -2,7 +2,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
   @derive [Jason.Encoder]
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :time_window, :percent_threshold]
-  defstruct type: "daily_active_addresses",
+  defstruct type: @trigger_type,
             target: nil,
             channel: nil,
             time_window: nil,
@@ -16,11 +16,13 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
   alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
   alias Sanbase.Signals.Evaluator.Cache
 
-  defimpl Sanbase.Signals.Triggerable, for: DailyActiveAddressesTrigger do
-    def triggered?(%DailyActiveAddressesTrigger{} = trigger) do
+  def type(), do: @trigger_type
+
+  defimpl Sanbase.Signals.Triggerable, for: DailyActiveAddressesTriggerSettings do
+    def triggered?(%DailyActiveAddressesTriggerSettings{} = trigger) do
       {current_daa, average_daa} = get_data(trigger)
 
-      percent_change(current_daa, average_daa) >= trigger.percent_threshold
+      percent_change(average_daa, current_daa) >= trigger.percent_threshold
     end
 
     defp get_data(trigger) do
@@ -53,13 +55,15 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
     end
 
     defp average_daily_active_addresses(contract, from, to) do
-      {:ok, [{_, result}]} =
-        Erc20DailyActiveAddresses.average_active_addresses(contract, from, to)
+      {:ok, result} = Erc20DailyActiveAddresses.average_active_addresses(contract, from, to)
 
-      result
+      case result do
+        [{_, value}] -> value
+        _ -> 0
+      end
     end
 
-    def cache_key(%DailyActiveAddressesTrigger{} = trigger) do
+    def cache_key(%DailyActiveAddressesTriggerSettings{} = trigger) do
       data =
         [trigger.type, trigger.target, trigger.time_window, trigger.percent_threshold]
         |> Jason.encode!()
@@ -69,7 +73,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
     end
   end
 
-  defimpl String.Chars, for: DailyActiveAddressesTrigger do
+  defimpl String.Chars, for: DailyActiveAddressesTriggerSettings do
     def to_string(%{} = trigger) do
       "example payload for #{trigger.type}"
     end

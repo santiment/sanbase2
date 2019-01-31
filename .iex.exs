@@ -151,6 +151,7 @@ alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 alias Sanbase.SocialData
 
 alias Sanbase.Signals.{UserTrigger, Trigger}
+
 alias Sanbase.Signals.Trigger.{
   DailyActiveAddressesTriggerSettings,
   PriceTriggerSettings,

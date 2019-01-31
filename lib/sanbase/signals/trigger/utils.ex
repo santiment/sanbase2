@@ -1,8 +1,8 @@
 defmodule Sanbase.Signals.Utils do
-  def percent_change(_current_daa, 0), do: 0
-  def percent_change(_current_daa, nil), do: 0
+  def percent_change(0, _current_daa), do: 0
+  def percent_change(nil, _current_daa), do: 0
 
-  def percent_change(current_daa, avg_daa) do
-    Float.round(current_daa / avg_daa * 100)
+  def percent_change(previous, current) do
+    Float.round((current - previous) / previous * 100)
   end
 end

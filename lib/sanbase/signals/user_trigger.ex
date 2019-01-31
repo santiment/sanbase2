@@ -1,7 +1,10 @@
 defmodule Sanbase.Signals.UserTrigger do
+  @derive [Sanbase.Signal]
+
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  import Sanbase.Signals.TriggerQuery
 
   alias __MODULE__
   alias Sanbase.Auth.User
@@ -59,6 +62,17 @@ defmodule Sanbase.Signals.UserTrigger do
     |> find_user_trigger_by_trigger_id(trigger_id)
     |> Map.get(:trigger)
     |> trigger_in_struct()
+  end
+
+  @spec get_triggers_by_type(String.t()) :: list(%__MODULE__{})
+  def get_triggers_by_type(type) do
+    from(
+      ut in UserTrigger,
+      where: trigger_type_is(type),
+      preload: [{:user, :user_settings}]
+    )
+    |> Repo.all()
+    |> Enum.map(fn ut -> %{ut | trigger: trigger_in_struct(ut.trigger)} end)
   end
 
   @spec create_user_trigger(%User{}, map()) ::

@@ -10,17 +10,10 @@ config :sanbase, Sanbase, url: {:system, "SANBASE_URL", "https://sanbase-low-sta
 
 config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4000],
+  url: [host: "0.0.0.0"],
   debug_errors: true,
   code_reloader: true,
-  check_origin: false,
-  watchers: [
-    node: [
-      "node_modules/brunch/bin/brunch",
-      "watch",
-      "--stdin",
-      cd: Path.expand("../assets", __DIR__)
-    ]
-  ]
+  check_origin: false
 
 # ## SSL Support
 #

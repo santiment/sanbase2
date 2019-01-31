@@ -145,10 +145,8 @@ defmodule Sanbase.Mixfile do
       ],
       "ecto.setup_all": [
         "load_dotenv",
-        "ecto.create",
-        "ecto.load",
-        "run priv/repo/seeds.exs",
-        "run priv/timescale_repo/seeds.exs"
+        "ecto.create --quiet",
+        "ecto.load"
       ],
       "ecto.reset_all": [
         "load_dotenv",

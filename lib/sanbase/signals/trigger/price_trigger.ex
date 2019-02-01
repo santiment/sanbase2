@@ -12,6 +12,9 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
   alias __MODULE__
   alias Sanbase.Signals.Evaluator.Cache
 
+  @seconds_in_hour 3600
+  @seconds_in_day 3600 * 24
+  @seconds_in_week 3600 * 24 * 7
   def type(), do: @trigger_type
 
   defimpl Sanbase.Signals.Triggerable, for: PriceTriggerSettings do
@@ -28,15 +31,20 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
 
       target_data = Map.get(price_change_map, trigger.target)
 
-      case trigger.time_window do
-        "1h" ->
-          target_data.percent_change_1h
+      time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(trigger.time_window)
 
-        "24h" ->
-          target_data.percent_change_24h
+      case time_window_sec do
+        @seconds_in_hour ->
+          target_data.percent_change_1h || 0
+
+        @seconds_in_day ->
+          target_data.percent_change_24h || 0
+
+        @seconds_in_week ->
+          target_data.percent_change_7d || 0
 
         _ ->
-          -1
+          0
       end
     end
 
@@ -62,6 +70,8 @@ end
 
 defimpl String.Chars, for: Sanbase.Signals.Trigger.PriceTriggerSettings do
   def to_string(%{} = trigger) do
-    "example payload for #{trigger.type}, [](s3_path)"
+    "The price of #{trigger.target} has increased by more than #{trigger.percent_threshold} for the past #{
+      trigger.time_window
+    }"
   end
 end

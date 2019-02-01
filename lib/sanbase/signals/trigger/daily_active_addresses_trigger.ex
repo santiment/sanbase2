@@ -75,7 +75,9 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
 
   defimpl String.Chars, for: DailyActiveAddressesTriggerSettings do
     def to_string(%{} = trigger) do
-      "example payload for #{trigger.type}"
+      "The number of daily active addresses of #{trigger.target} has increased by more than #{
+        trigger.percent_threshold
+      } for the past #{trigger.time_window}"
     end
   end
 end

@@ -42,6 +42,6 @@ config :sanbase, Sanbase.Notifications.Discord.ExchangeInflow,
   cooldown_days: {:system, "EXCHANGE_INFLOW_COOLDOWN_DAYS", "1"}
 
 config :sanbase, Sanbase.Telegram,
-  bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", ""},
-  telegram_endpoint: "${TELEGRAM_ENDPOINT_RANDOM_STRING}",
-  token: "${TELEGRAM_SIGNALS_BOT_TOKEN}"
+  bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", "SanbaseSignalsStageBot"},
+  telegram_endpoint: {:system, "TELEGRAM_ENDPOINT_RANDOM_STRING", "some_random_string"},
+  token: {:system, "TELEGRAM_SIGNALS_BOT_TOKEN"}

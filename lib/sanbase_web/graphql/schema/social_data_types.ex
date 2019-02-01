@@ -2,6 +2,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   use Absinthe.Schema.Notation
 
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
+  import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   object :trending_words do
     field(:datetime, non_null(:datetime))
@@ -10,7 +11,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
 
   object :word_with_context do
     field :context, list_of(:word_context) do
-      resolve(&SocialDataResolver.word_context/3)
+      cache_resolve(&SocialDataResolver.word_context/3)
     end
 
     field(:score, :float)

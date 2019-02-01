@@ -20,6 +20,10 @@ defmodule SanbaseWeb.Router do
     plug(SanbaseWeb.Graphql.ContextPlug)
   end
 
+  pipeline :telegram do
+    plug(SanbaseWeb.Plug.TelegramMatchPlug)
+  end
+
   use ExAdmin.Router
 
   scope "/admin", ExAdmin do
@@ -52,15 +56,17 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
-    pipe_through(:browser)
+    pipe_through([:browser, :telegram])
 
-    # Only us and telegram know the token. This makes sure that no malicious party
-    # could counterfeit a request
     post(
-      "/telegram/#{System.get_env("TELEGRAM_ENDPOINT_RANDOM_STRING")}",
+      "/telegram/:path",
       TelegramController,
       :index
     )
+  end
+
+  scope "/", SanbaseWeb do
+    pipe_through(:browser)
 
     get("/consent", RootController, :consent)
     get("/apiexamples", ApiExamplesController, :api_examples)

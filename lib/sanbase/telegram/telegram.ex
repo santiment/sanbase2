@@ -12,15 +12,13 @@ defmodule Sanbase.Telegram do
   alias Sanbase.Telegram.UserToken
 
   @type message :: String.t() | iolist()
-  @authorization_token Config.get(:token)
-  @bot_username Config.get(:bot_username)
 
   use Tesla
   @rate_limiting_server :telegram_bot_rate_limiting_server
   alias Sanbase.ExternalServices.{RateLimiting, ErrorCatcher}
   plug(ErrorCatcher.Middleware)
   plug(RateLimiting.Middleware, name: @rate_limiting_server)
-  plug(Tesla.Middleware.BaseUrl, "https://api.telegram.org/bot#{@authorization_token}/")
+  plug(Tesla.Middleware.BaseUrl, "https://api.telegram.org/bot#{Config.get(:token)}/")
   plug(Tesla.Middleware.Headers, [{"Content-Type", "application/json"}])
 
   @doc ~s"""
@@ -128,6 +126,6 @@ defmodule Sanbase.Telegram do
   # Private functions
 
   defp generate_link(user_token) do
-    "https://telegram.me/#{@bot_username}?start=#{user_token}"
+    "https://telegram.me/#{Config.get(:bot_username)}?start=#{user_token}"
   end
 end

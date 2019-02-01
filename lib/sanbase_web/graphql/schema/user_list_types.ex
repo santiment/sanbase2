@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
 
   import Absinthe.Resolution.Helpers
   alias SanbaseWeb.Graphql.SanbaseRepo
-  alias SanbaseWeb.Graphql.Resolvers.UserListResolver
 
   enum(:color_enum, values: [:none, :blue, :red, :green, :yellow, :grey, :black])
 
@@ -12,9 +11,7 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   end
 
   object :list_item do
-    field :project, :project do
-      resolve(&UserListResolver.project_by_list_item/3)
-    end
+    field(:project, :project, resolve: dataloader(SanbaseRepo))
   end
 
   object :user_list do

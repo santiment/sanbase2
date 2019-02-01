@@ -7,7 +7,13 @@ defmodule Sanbase.Signals.UserTrigger do
   alias Sanbase.Auth.User
   alias Sanbase.Signals.Trigger
   alias Sanbase.Repo
-  alias Sanbase.Signals.Trigger.{DailyActiveAddressesTrigger, PriceTrigger}
+
+  alias Sanbase.Signals.Trigger.{
+    DailyActiveAddressesTriggerSettings,
+    PriceTriggerSettings,
+    PriceVolumeTriggerSettings,
+    TrendingWordsTriggerSettings
+  }
 
   @type trigger_struct :: %Trigger{}
 
@@ -133,17 +139,23 @@ defmodule Sanbase.Signals.UserTrigger do
   defp load_in_struct(_), do: :error
 
   defp struct_from_map(%{type: "daily_active_addresses"} = trigger_settings),
-    do: {:ok, struct!(DailyActiveAddressesTrigger, trigger_settings)}
+    do: {:ok, struct!(DailyActiveAddressesTriggerSettings, trigger_settings)}
 
   defp struct_from_map(%{type: "price"} = trigger_settings),
-    do: {:ok, struct!(PriceTrigger, trigger_settings)}
+    do: {:ok, struct!(PriceTriggerSettings, trigger_settings)}
 
   defp struct_from_map(_), do: :error
 
-  defp map_from_struct(%DailyActiveAddressesTrigger{} = trigger_settings),
+  defp map_from_struct(%DailyActiveAddressesTriggerSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
-  defp map_from_struct(%PriceTrigger{} = trigger_settings),
+  defp map_from_struct(%PriceTriggerSettings{} = trigger_settings),
+    do: {:ok, Map.from_struct(trigger_settings)}
+
+  defp map_from_struct(%PriceVolumeTriggerSettings{} = trigger_settings),
+    do: {:ok, Map.from_struct(trigger_settings)}
+
+  defp map_from_struct(%TrendingWordsTriggerSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
   defp map_from_struct(_), do: :error

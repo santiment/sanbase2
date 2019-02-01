@@ -1,7 +1,8 @@
-defmodule Sanbase.Signals.Trigger.PriceTrigger do
+defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
   @derive Jason.Encoder
-  @enforce_keys [:type, :channel, :time_window]
-  defstruct type: "price",
+  @trigger_type "price"
+  @enforce_keys [:type, :target, :channel, :time_window]
+  defstruct type: @trigger_type,
             target: nil,
             channel: nil,
             time_window: nil,

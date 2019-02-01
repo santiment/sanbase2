@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Router do
   end
 
   scope "/", SanbaseWeb do
-    pipe_through([:browser, :telegram])
+    pipe_through([:telegram])
 
     post(
       "/telegram/:path",

@@ -114,22 +114,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
     UserList.user_list(user_list_id, %User{id: nil})
   end
 
-  def project_by_list_item(%ListItem{project_id: project_id}, _, _resolution) do
-    Project
-    |> Repo.get(project_id)
-    |> case do
-      nil ->
-        {:error, "Project with id '#{project_id}' not found."}
-
-      project ->
-        project =
-          project
-          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
-
-        {:ok, project}
-    end
-  end
-
   defp has_permissions?(id, %User{id: user_id}) do
     UserList.by_id(id).user_id == user_id
   end

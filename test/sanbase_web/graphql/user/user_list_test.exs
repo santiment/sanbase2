@@ -70,7 +70,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       Repo.insert!(%Project{name: "Santiment", ticker: "SAN", coinmarketcap_id: "santiment"})
 
     Repo.insert!(%LatestCoinmarketcapData{
-      price_usd: 0.5,
+      price_usd: Decimal.from_float(0.5),
       coinmarketcap_id: project.coinmarketcap_id,
       update_time: Ecto.DateTime.utc()
     })

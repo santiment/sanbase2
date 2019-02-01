@@ -12,9 +12,14 @@ defmodule SanbaseWeb.Graphql.UserListTypes do
   end
 
   object :list_item do
-    field :project, :project do
-      resolve(&UserListResolver.project_by_list_item/3)
-    end
+    field(:project, :project,
+      resolve:
+        dataloader(SanbaseRepo, :project,
+          args: %{
+            preload: [:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]]
+          }
+        )
+    )
   end
 
   object :user_list do

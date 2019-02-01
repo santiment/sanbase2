@@ -484,6 +484,8 @@ defmodule Sanbase.Model.Project do
     parse_github_organization_link(github_link, slug)
   end
 
+  def preloads(), do: @preloads
+
   defp parse_github_organization_link(github_link, slug) do
     # nil will break the regex
     github_link = github_link || ""

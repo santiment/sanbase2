@@ -16,14 +16,8 @@ defmodule SanbaseWeb.Graphql.SanbaseRepo do
   end
 
   def query(Project, args) do
-    preload = Map.get(args, :preload)
-
-    if preload do
-      Project
-      |> preload(^preload)
-    else
-      Project
-    end
+    Project
+    |> preload(^Project.preloads())
   end
 
   def query(Post, _args) do

@@ -7,10 +7,17 @@ defmodule Sanbase.Signals.UserTrigger do
   alias Sanbase.Auth.User
   alias Sanbase.Signals.Trigger
   alias Sanbase.Repo
-  alias Sanbase.Signals.Trigger.{DailyActiveAddressesTrigger, PriceTrigger}
+
+  alias Sanbase.Signals.Trigger.{
+    DailyActiveAddressesTriggerSettings,
+    PriceTriggerSettings,
+    PriceVolumeTriggerSettings,
+    TrendingWordsTriggerSettings
+  }
 
   @type trigger_struct :: %Trigger{}
 
+  @derive Jason.Encoder
   schema "user_triggers" do
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)
@@ -30,6 +37,20 @@ defmodule Sanbase.Signals.UserTrigger do
     user_id
     |> user_triggers_for()
     |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
+  end
+
+  @spec public_triggers_for(non_neg_integer()) :: list(trigger_struct)
+  def public_triggers_for(user_id) do
+    user_id
+    |> user_triggers_for()
+    |> Enum.filter(fn ut -> ut.trigger.is_public end)
+    |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
+  end
+
+  @spec all_public_triggers() :: list(%__MODULE__{})
+  def all_public_triggers() do
+    from(ut in UserTrigger, where: fragment("trigger->> 'is_public' = 'true'"))
+    |> Repo.all()
   end
 
   @spec get_trigger_by_id(%User{}, String.t()) :: trigger_struct
@@ -118,17 +139,23 @@ defmodule Sanbase.Signals.UserTrigger do
   defp load_in_struct(_), do: :error
 
   defp struct_from_map(%{type: "daily_active_addresses"} = trigger_settings),
-    do: {:ok, struct!(DailyActiveAddressesTrigger, trigger_settings)}
+    do: {:ok, struct!(DailyActiveAddressesTriggerSettings, trigger_settings)}
 
   defp struct_from_map(%{type: "price"} = trigger_settings),
-    do: {:ok, struct!(PriceTrigger, trigger_settings)}
+    do: {:ok, struct!(PriceTriggerSettings, trigger_settings)}
 
   defp struct_from_map(_), do: :error
 
-  defp map_from_struct(%DailyActiveAddressesTrigger{} = trigger_settings),
+  defp map_from_struct(%DailyActiveAddressesTriggerSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
-  defp map_from_struct(%PriceTrigger{} = trigger_settings),
+  defp map_from_struct(%PriceTriggerSettings{} = trigger_settings),
+    do: {:ok, Map.from_struct(trigger_settings)}
+
+  defp map_from_struct(%PriceVolumeTriggerSettings{} = trigger_settings),
+    do: {:ok, Map.from_struct(trigger_settings)}
+
+  defp map_from_struct(%TrendingWordsTriggerSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
   defp map_from_struct(_), do: :error

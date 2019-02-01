@@ -69,6 +69,13 @@ defmodule Sanbase.DateTimeUtils do
     end
   end
 
+  def valid_compound_duration?(value) do
+    case Integer.parse(value) do
+      {int, string} when is_integer(int) and string in ["ns", "s", "m", "h", "d", "w"] -> true
+      _ -> false
+    end
+  end
+
   def from_erl(erl_datetime) do
     with {:ok, naive_dt} <- NaiveDateTime.from_erl(erl_datetime),
          {:ok, datetime} <- DateTime.from_naive(naive_dt, "Etc/UTC") do

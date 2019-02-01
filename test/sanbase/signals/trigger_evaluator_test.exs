@@ -11,7 +11,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
   setup do
     user = insert(:user)
 
-    trigger1 = %{
+    trigger_settings1 = %{
       type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
@@ -20,7 +20,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       repeating: false
     }
 
-    trigger2 = %{
+    trigger_settings2 = %{
       type: "daily_active_addresses",
       target: "santiment",
       channel: "telegram",
@@ -30,10 +30,18 @@ defmodule Sanbase.Signals.EvaluatorTest do
     }
 
     {:ok, _} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, cooldown: "1h", trigger: trigger1})
+      UserTrigger.create_user_trigger(user, %{
+        is_public: true,
+        cooldown: 60,
+        settings: trigger_settings1
+      })
 
     {:ok, _} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, cooldown: "1h", trigger: trigger2})
+      UserTrigger.create_user_trigger(user, %{
+        is_public: true,
+        cooldown: 60,
+        trigger: trigger_settings2
+      })
 
     [
       user: user
@@ -47,9 +55,6 @@ defmodule Sanbase.Signals.EvaluatorTest do
       DailyActiveAddressesTriggerSettings.type()
       |> UserTrigger.triggers_by_type()
       |> Evaluator.run(context.triggers)
-      |> IO.inspect()
-
-      assert 1 == 2
     end
   end
 end

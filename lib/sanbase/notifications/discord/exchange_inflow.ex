@@ -222,7 +222,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
   end
 
   defp notification_embeds(project) do
-    Discord.build_embedded_chart(
+    Sanbase.Chart.build_embedded_chart(
       project,
       Timex.shift(Timex.now(), days: -90),
       Timex.now(),

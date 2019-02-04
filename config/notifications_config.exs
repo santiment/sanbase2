@@ -45,3 +45,26 @@ config :sanbase, Sanbase.Telegram,
   bot_username: {:system, "TELEGRAM_NOTIFICATAIONS_BOT_USERNAME", "SanbaseSignalsStageBot"},
   telegram_endpoint: {:system, "TELEGRAM_ENDPOINT_RANDOM_STRING", "some_random_string"},
   token: {:system, "TELEGRAM_SIGNALS_BOT_TOKEN"}
+
+config :sanbase, Sanbase.Scheduler,
+  scheduler_enabled: {:system, "QUANTUM_SCHEDULER_ENABLED", false},
+  global: true,
+  timeout: 30_000,
+  jobs: [
+    daa_discord_signal: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
+    ],
+    exchange_inflow_discord_signal: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
+    ],
+    daa_sonar_signal: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Signals.Scheduler, :run_daa_signals, []}
+    ],
+    price_sonar_singal: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Signals.Scheduler, :run_price_signals, []}
+    ]
+  ]

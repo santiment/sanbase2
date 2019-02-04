@@ -12,12 +12,13 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
   alias __MODULE__
   alias Sanbase.Signals.Evaluator.Cache
 
-  @seconds_in_hour 3600
-  @seconds_in_day 3600 * 24
-  @seconds_in_week 3600 * 24 * 7
   def type(), do: @trigger_type
 
   defimpl Sanbase.Signals.Triggerable, for: PriceTriggerSettings do
+    @seconds_in_hour 3600
+    @seconds_in_day 3600 * 24
+    @seconds_in_week 3600 * 24 * 7
+
     def triggered?(%PriceTriggerSettings{} = trigger) do
       get_data(trigger) >= trigger.percent_threshold
     end

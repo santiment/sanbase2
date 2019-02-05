@@ -7,7 +7,9 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            repeating: false
+            repeating: false,
+            triggered?: false,
+            payload: nil
 
   alias __MODULE__
   alias Sanbase.Signals.Evaluator.Cache
@@ -19,8 +21,22 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
     @seconds_in_day 3600 * 24
     @seconds_in_week 3600 * 24 * 7
 
-    def triggered?(%PriceTriggerSettings{} = trigger) do
-      get_data(trigger) >= trigger.percent_threshold
+    def triggered?(%PriceTriggerSettings{triggered?: triggered}), do: triggered
+
+    def evaluate(%PriceTriggerSettings{} = trigger) do
+      percent_change = get_data(trigger)
+
+      case percent_change >= trigger.percent_threshold do
+        true ->
+          %PriceTriggerSettings{
+            trigger
+            | triggered?: true,
+              payload: trigger_payload(trigger, percent_change)
+          }
+
+        _ ->
+          %PriceTriggerSettings{trigger | triggered?: false}
+      end
     end
 
     def get_data(trigger) do
@@ -66,13 +82,9 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
       :crypto.hash(:sha256, data)
       |> Base.encode16()
     end
-  end
-end
 
-defimpl String.Chars, for: Sanbase.Signals.Trigger.PriceTriggerSettings do
-  def to_string(%{} = trigger) do
-    "The price of #{trigger.target} has increased by more than #{trigger.percent_threshold} for the past #{
-      trigger.time_window
-    }"
+    defp trigger_payload(trigger, percent_change) do
+      "some text"
+    end
   end
 end

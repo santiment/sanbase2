@@ -87,7 +87,7 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
-  def create_user_trigger(_, params), do: {:error, "Trigger structure is invalid"}
+  def create_user_trigger(_, _), do: {:error, "Trigger structure is invalid"}
 
   @spec update_user_trigger(%User{}, map()) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}

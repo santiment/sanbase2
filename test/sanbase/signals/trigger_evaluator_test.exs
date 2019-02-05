@@ -1,16 +1,26 @@
 defmodule Sanbase.Signals.EvaluatorTest do
   use Sanbase.DataCase, async: false
 
-  import Sanbase.Factory
   import Mock
+  import Sanbase.Factory
+  import Sanbase.TestHelpers
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings
 
   setup do
+    # Suppress the error logs for chart generation due to missing prices
+    supress_test_console_logging()
     Sanbase.Signals.Evaluator.Cache.clear()
     user = insert(:user)
+
+    Sanbase.Factory.insert(:project, %{
+      name: "Santiment",
+      ticker: "SAN",
+      coinmarketcap_id: "santiment",
+      main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
+    })
 
     trigger_settings1 = %{
       type: "daily_active_addresses",

@@ -7,7 +7,9 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            repeating: false
+            repeating: false,
+            triggered?: false,
+            payload: nil
 
   import Sanbase.Signals.Utils
 
@@ -16,6 +18,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
   alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
   alias Sanbase.Signals.Evaluator.Cache
 
+  @spec type() :: String.t()
   def type(), do: @trigger_type
 
   def get_data(trigger) do
@@ -31,7 +34,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
       end)
 
     average_daa =
-      Cache.get_or_store("daa_#{contract}_prev_#{to_string(trigger.time_window)}", fn ->
+      Cache.get_or_store("daa_#{contract}_prev_#{trigger.time_window}", fn ->
         average_daily_active_addresses(
           contract,
           Timex.shift(Timex.now(), days: -trigger.time_window),
@@ -57,10 +60,22 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
   end
 
   defimpl Sanbase.Signals.Triggerable, for: DailyActiveAddressesTriggerSettings do
-    def triggered?(%DailyActiveAddressesTriggerSettings{} = trigger) do
+    def triggered?(%DailyActiveAddressesTriggerSettings{triggered?: triggered}), do: triggered
+
+    def evaluate(%DailyActiveAddressesTriggerSettings{} = trigger) do
       {current_daa, average_daa} = DailyActiveAddressesTriggerSettings.get_data(trigger)
 
-      percent_change(average_daa, current_daa) >= trigger.percent_threshold
+      case percent_change(average_daa, current_daa) >= trigger.percent_threshold do
+        true ->
+          %DailyActiveAddressesTriggerSettings{
+            trigger
+            | triggered?: true,
+              payload: trigger_payload(trigger, current_daa, average_daa)
+          }
+
+        _ ->
+          %DailyActiveAddressesTriggerSettings{trigger | triggered?: false}
+      end
     end
 
     def cache_key(%DailyActiveAddressesTriggerSettings{} = trigger) do
@@ -71,13 +86,31 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
       :crypto.hash(:sha256, data)
       |> Base.encode16()
     end
-  end
 
-  defimpl String.Chars, for: DailyActiveAddressesTriggerSettings do
-    def to_string(%{} = trigger) do
-      "The number of daily active addresses of #{trigger.target} has increased by more than #{
-        trigger.percent_threshold
-      } for the past #{trigger.time_window}"
+    defp trigger_payload(trigger, current_daa, average_daa) do
+      project = Project.by_slug(trigger.target)
+
+      payload = """
+      **#{project.name}** Daily Active Addresses has gone up by **#{
+        percent_change(average_daa, current_daa)
+      }%** for the last #{Sanbase.DateTimeUtils.compound_duration_to_text(trigger.time_window)}.
+      Average Daily Active Addresses for last **#{
+        Sanbase.DateTimeUtils.compound_duration_to_text(trigger.time_window)
+      }**: **#{average_daa}**.
+      More info here: #{Project.sanbase_link(project)}
+      """
+
+      seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(trigger.time_window)
+
+      embeds =
+        Sanbase.Chart.build_embedded_chart(
+          project,
+          Timex.shift(Timex.now(), seconds: -seconds),
+          Timex.now(),
+          chart_type: :daily_active_addresses
+        )
+
+      {payload, embeds}
     end
   end
 end

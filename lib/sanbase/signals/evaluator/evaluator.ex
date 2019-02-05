@@ -13,12 +13,13 @@ defmodule Sanbase.Signals.Evaluator do
   def run(user_triggers) do
     user_triggers
     |> remove_triggers_on_cooldown()
-    |> Sanbase.Parallel.pfilter_concurrent(
-      &triggered?/1,
+    |> Sanbase.Parallel.pmap_concurrent(
+      &evaluate/1,
       ordered: false,
       max_concurrency: 50,
       timeout: 30_000
     )
+    |> Enum.filter(&triggered?/1)
   end
 
   defp remove_triggers_on_cooldown(triggers) do
@@ -28,10 +29,14 @@ defmodule Sanbase.Signals.Evaluator do
     end)
   end
 
-  defp triggered?(%UserTrigger{trigger: %Trigger{settings: trigger_settings}}) do
+  defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
     Cache.get_or_store(
-      Trigger.cache_key(trigger_settings),
-      fn -> Trigger.triggered?(trigger_settings) end
+      Trigger.cache_key(trigger),
+      fn -> %UserTrigger{user_trigger | trigger: Trigger.evaluate(trigger)} end
     )
+  end
+
+  defp triggered?(%UserTrigger{trigger: trigger}) do
+    Trigger.triggered?(trigger)
   end
 end

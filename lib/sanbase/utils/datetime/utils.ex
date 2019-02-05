@@ -55,17 +55,50 @@ defmodule Sanbase.DateTimeUtils do
     datetime
   end
 
+  def compund_duration_to_tuple(interval) do
+    {int_interval, duration_index} = Integer.parse(interval)
+
+    duration_type =
+      case duration_index do
+        "ns" -> :nanoseconds
+        "ms" -> :milliseconds
+        "s" -> :seconds
+        "m" -> :minutes
+        "h" -> :hours
+        "d" -> :days
+        "w" -> :weeks
+        _ -> nil
+      end
+
+    {int_interval, duration_type}
+  end
+
   def compound_duration_to_seconds(interval) do
     {int_interval, duration_index} = Integer.parse(interval)
 
     case duration_index do
       "ns" -> div(int_interval, 1_000_000_000)
+      "ms" -> div(int_interval, 1_000_000)
       "s" -> int_interval
       "m" -> int_interval * 60
       "h" -> int_interval * 60 * 60
       "d" -> int_interval * 24 * 60 * 60
       "w" -> int_interval * 7 * 24 * 60 * 60
       _ -> int_interval
+    end
+  end
+
+  def compound_duration_to_text(interval) do
+    {int_interval, duration_index} = Integer.parse(interval)
+
+    case duration_index do
+      "ns" -> "#{int_interval} nanosecond(s)"
+      "ms" -> "#{int_interval} millisecond(s)"
+      "s" -> "#{int_interval} second(s)"
+      "m" -> "#{int_interval} minute(s)"
+      "h" -> "#{int_interval} hour(s)"
+      "d" -> "#{int_interval} day(s)"
+      "w" -> "#{int_interval} week(s)"
     end
   end
 

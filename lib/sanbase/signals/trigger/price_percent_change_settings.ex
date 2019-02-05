@@ -84,22 +84,27 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       |> Base.encode16()
     end
 
-    def payload(settings, percent_change) do
-      project = Sanbase.Model.Project.by_slug(settings.target)
+    defp chart_url(project) do
+      Sanbase.Chart.build_embedded_chart(
+        project,
+        Timex.shift(Timex.now(), days: -90),
+        Timex.now()
+      )
+      |> case do
+        [%{image: %{url: chart_url}}] -> chart_url
+        _ -> nil
+      end
+    end
 
-      [%{image: %{url: chart_url}}] =
-        Sanbase.Chart.build_embedded_chart(
-          project,
-          Timex.shift(Timex.now(), days: -90),
-          Timex.now()
-        )
+    defp payload(settings, percent_change) do
+      project = Sanbase.Model.Project.by_slug(settings.target)
 
       """
       The price of **#{project.name}** has changed by **#{percent_change}%** for the last #{
         Sanbase.DateTimeUtils.compound_duration_to_text(settings.time_window)
       }.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
-      ![Price chart over the past 90 days](#{chart_url})
+      ![Price chart over the past 90 days](#{chart_url(project)})
       """
     end
   end

@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Trigger.PercentPriceSettings do
+defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   @derive Jason.Encoder
   @trigger_type "price_percent_change"
   @enforce_keys [:type, :target, :channel, :time_window]
@@ -12,30 +12,31 @@ defmodule Sanbase.Signals.Trigger.PercentPriceSettings do
             payload: nil
 
   alias __MODULE__
+  alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
 
   def type(), do: @trigger_type
 
-  defimpl Sanbase.Signals.Settings, for: PercentPriceSettings do
+  defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
     @seconds_in_hour 3600
     @seconds_in_day 3600 * 24
     @seconds_in_week 3600 * 24 * 7
 
-    def triggered?(%PercentPriceSettings{triggered?: triggered}), do: triggered
+    def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PercentPriceSettings{} = settings) do
+    def evaluate(%PricePercentChangeSettings{} = settings) do
       percent_change = get_data(settings)
 
       case percent_change >= settings.percent_threshold do
         true ->
-          %PercentPriceSettings{
+          %PricePercentChangeSettings{
             settings
             | triggered?: true,
               payload: payload(settings, percent_change)
           }
 
         _ ->
-          %PercentPriceSettings{settings | triggered?: false}
+          %PricePercentChangeSettings{settings | triggered?: false}
       end
     end
 
@@ -70,7 +71,7 @@ defmodule Sanbase.Signals.Trigger.PercentPriceSettings do
     Parameters like `repeating` and `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
-    def cache_key(%PercentPriceSettings{} = trigger) do
+    def cache_key(%PricePercentChangeSettings{} = trigger) do
       data = [
         trigger.type,
         trigger.target,
@@ -83,8 +84,23 @@ defmodule Sanbase.Signals.Trigger.PercentPriceSettings do
       |> Base.encode16()
     end
 
-    defp payload(settings, percent_change) do
-      "some text"
+    def payload(settings, percent_change) do
+      project = Sanbase.Model.Project.by_slug(settings.target)
+
+      [%{image: %{url: chart_url}}] =
+        Sanbase.Chart.build_embedded_chart(
+          project,
+          Timex.shift(Timex.now(), days: -90),
+          Timex.now()
+        )
+
+      """
+      The price of **#{project.name}** has changed by **#{percent_change}%** for the last #{
+        Sanbase.DateTimeUtils.compound_duration_to_text(settings.time_window)
+      }.
+      More info here: #{Sanbase.Model.Project.sanbase_link(project)}
+      ![Price chart over the past 90 days](#{chart_url})
+      """
     end
   end
 end

@@ -92,7 +92,15 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
     defp payload(settings, current_daa, average_daa) do
       project = Project.by_slug(settings.target)
 
-      payload = """
+      [%{image: %{url: chart_url}}] =
+        Sanbase.Chart.build_embedded_chart(
+          project,
+          Timex.shift(Timex.now(), days: -90),
+          Timex.now(),
+          chart_type: :daily_active_addresses
+        )
+
+      """
       **#{project.name}** Daily Active Addresses has gone up by **#{
         percent_change(average_daa, current_daa)
       }%** for the last 1 day.
@@ -100,19 +108,9 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
         Sanbase.DateTimeUtils.compound_duration_to_text(settings.time_window)
       }**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
+
+      ![Daily Active Addresses chart and OHCL price chart for the past 90 days](#{chart_url})
       """
-
-      seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-
-      embeds =
-        Sanbase.Chart.build_embedded_chart(
-          project,
-          Timex.shift(Timex.now(), seconds: -seconds),
-          Timex.now(),
-          chart_type: :daily_active_addresses
-        )
-
-      {payload, embeds}
     end
   end
 end

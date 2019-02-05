@@ -70,7 +70,7 @@ defmodule Sanbase.Signals.TriggersTest do
     user = insert(:user)
 
     trigger_settings = %{
-      type: "price",
+      type: "price_percent_change",
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
@@ -99,7 +99,7 @@ defmodule Sanbase.Signals.TriggersTest do
     assert length(UserTrigger.triggers_for(user)) == 1
 
     trigger_settings2 = %{
-      type: "price",
+      type: "price_percent_change",
       target: "santiment",
       channel: "email",
       time_window: "1d",
@@ -107,7 +107,9 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings2})
+    {:ok, _} =
+      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings2})
+
     assert length(UserTrigger.triggers_for(user)) == 2
   end
 
@@ -124,7 +126,7 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     trigger_settings2 = %{
-      type: "price",
+      type: "price_percent_change",
       target: "santiment",
       channel: "email",
       time_window: "1d",
@@ -146,11 +148,12 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: true
     }
 
-    UserTrigger.update_user_trigger(user, %{
-      id: trigger_id,
-      settings: updated_trigger,
-      is_public: false
-    })
+    {:ok, _} =
+      UserTrigger.update_user_trigger(user, %{
+        id: trigger_id,
+        settings: updated_trigger,
+        is_public: false
+      })
 
     triggers = UserTrigger.triggers_for(user)
 

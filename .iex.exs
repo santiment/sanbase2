@@ -153,8 +153,8 @@ alias Sanbase.SocialData
 alias Sanbase.Signals.{UserTrigger, Trigger}
 
 alias Sanbase.Signals.Trigger.{
-  DailyActiveAddressesTriggerSettings,
-  PriceTriggerSettings,
+  DailyActiveAddressesSettings,
+  PercentPriceSettings,
   PriceVolumeTriggerSettings,
   TrendingWordsTriggerSettings
 }

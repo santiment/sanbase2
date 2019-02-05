@@ -7,7 +7,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
-  alias Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings
+  alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
 
   setup do
     # Suppress the error logs for chart generation due to missing prices
@@ -62,12 +62,12 @@ defmodule Sanbase.Signals.EvaluatorTest do
   end
 
   test "evaluate triggers all criteria match", context do
-    with_mock DailyActiveAddressesTriggerSettings, [:passthrough],
+    with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 20}
       end do
       [triggered1, triggered2 | rest] =
-        DailyActiveAddressesTriggerSettings.type()
+        DailyActiveAddressesSettings.type()
         |> UserTrigger.get_triggers_by_type()
         |> Evaluator.run()
 
@@ -79,12 +79,12 @@ defmodule Sanbase.Signals.EvaluatorTest do
   end
 
   test "evaluate triggers some criteria match", context do
-    with_mock DailyActiveAddressesTriggerSettings, [:passthrough],
+    with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 30}
       end do
       [triggered | rest] =
-        DailyActiveAddressesTriggerSettings.type()
+        DailyActiveAddressesSettings.type()
         |> UserTrigger.get_triggers_by_type()
         |> Evaluator.run()
 
@@ -95,12 +95,12 @@ defmodule Sanbase.Signals.EvaluatorTest do
   end
 
   test "evaluate triggers no criteria match", _context do
-    with_mock DailyActiveAddressesTriggerSettings, [:passthrough],
+    with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 100}
       end do
       triggered =
-        DailyActiveAddressesTriggerSettings.type()
+        DailyActiveAddressesSettings.type()
         |> UserTrigger.get_triggers_by_type()
         |> Evaluator.run()
 

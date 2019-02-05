@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
+defmodule Sanbase.Signals.Trigger.PercentPriceSettings do
   @derive Jason.Encoder
   @trigger_type "price_percent_change"
   @enforce_keys [:type, :target, :channel, :time_window]
@@ -16,39 +16,39 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
 
   def type(), do: @trigger_type
 
-  defimpl Sanbase.Signals.Triggerable, for: PriceTriggerSettings do
+  defimpl Sanbase.Signals.Settings, for: PercentPriceSettings do
     @seconds_in_hour 3600
     @seconds_in_day 3600 * 24
     @seconds_in_week 3600 * 24 * 7
 
-    def triggered?(%PriceTriggerSettings{triggered?: triggered}), do: triggered
+    def triggered?(%PercentPriceSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PriceTriggerSettings{} = trigger) do
-      percent_change = get_data(trigger)
+    def evaluate(%PercentPriceSettings{} = settings) do
+      percent_change = get_data(settings)
 
-      case percent_change >= trigger.percent_threshold do
+      case percent_change >= settings.percent_threshold do
         true ->
-          %PriceTriggerSettings{
-            trigger
+          %PercentPriceSettings{
+            settings
             | triggered?: true,
-              payload: trigger_payload(trigger, percent_change)
+              payload: payload(settings, percent_change)
           }
 
         _ ->
-          %PriceTriggerSettings{trigger | triggered?: false}
+          %PercentPriceSettings{settings | triggered?: false}
       end
     end
 
-    def get_data(trigger) do
+    def get_data(settings) do
       price_change_map =
         Cache.get_or_store(
           "price_change_map",
           &Sanbase.Model.Project.List.slug_price_change_map/0
         )
 
-      target_data = Map.get(price_change_map, trigger.target)
+      target_data = Map.get(price_change_map, settings.target)
 
-      time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(trigger.time_window)
+      time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
 
       case time_window_sec do
         @seconds_in_hour ->
@@ -70,7 +70,7 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
     Parameters like `repeating` and `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
-    def cache_key(%PriceTriggerSettings{} = trigger) do
+    def cache_key(%PercentPriceSettings{} = trigger) do
       data = [
         trigger.type,
         trigger.target,
@@ -83,7 +83,7 @@ defmodule Sanbase.Signals.Trigger.PriceTriggerSettings do
       |> Base.encode16()
     end
 
-    defp trigger_payload(trigger, percent_change) do
+    defp payload(settings, percent_change) do
       "some text"
     end
   end

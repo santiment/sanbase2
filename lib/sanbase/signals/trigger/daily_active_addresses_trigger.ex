@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
+defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   @derive [Jason.Encoder]
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :time_window, :percent_threshold]
@@ -21,8 +21,8 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
   @spec type() :: String.t()
   def type(), do: @trigger_type
 
-  def get_data(trigger) do
-    {:ok, contract, _token_decimals} = Project.contract_info_by_slug(trigger.target)
+  def get_data(settings) do
+    {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target)
 
     current_daa =
       Cache.get_or_store("daa_#{contract}_current", fn ->
@@ -33,11 +33,13 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
         )
       end)
 
+    time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+
     average_daa =
-      Cache.get_or_store("daa_#{contract}_prev_#{trigger.time_window}", fn ->
+      Cache.get_or_store("daa_#{contract}_prev_#{settings.time_window}", fn ->
         average_daily_active_addresses(
           contract,
-          Timex.shift(Timex.now(), days: -trigger.time_window),
+          Timex.shift(Timex.now(), seconds: -time_window_sec),
           Timex.shift(Timex.now(), days: -1)
         )
       end)
@@ -59,48 +61,48 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesTriggerSettings do
     end
   end
 
-  defimpl Sanbase.Signals.Triggerable, for: DailyActiveAddressesTriggerSettings do
-    def triggered?(%DailyActiveAddressesTriggerSettings{triggered?: triggered}), do: triggered
+  defimpl Sanbase.Signals.Settings, for: DailyActiveAddressesSettings do
+    def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%DailyActiveAddressesTriggerSettings{} = trigger) do
-      {current_daa, average_daa} = DailyActiveAddressesTriggerSettings.get_data(trigger)
+    def evaluate(%DailyActiveAddressesSettings{} = settings) do
+      {current_daa, average_daa} = DailyActiveAddressesSettings.get_data(settings)
 
-      case percent_change(average_daa, current_daa) >= trigger.percent_threshold do
+      case percent_change(average_daa, current_daa) >= settings.percent_threshold do
         true ->
-          %DailyActiveAddressesTriggerSettings{
-            trigger
+          %DailyActiveAddressesSettings{
+            settings
             | triggered?: true,
-              payload: trigger_payload(trigger, current_daa, average_daa)
+              payload: payload(settings, current_daa, average_daa)
           }
 
         _ ->
-          %DailyActiveAddressesTriggerSettings{trigger | triggered?: false}
+          %DailyActiveAddressesSettings{settings | triggered?: false}
       end
     end
 
-    def cache_key(%DailyActiveAddressesTriggerSettings{} = trigger) do
+    def cache_key(%DailyActiveAddressesSettings{} = settings) do
       data =
-        [trigger.type, trigger.target, trigger.time_window, trigger.percent_threshold]
+        [settings.type, settings.target, settings.time_window, settings.percent_threshold]
         |> Jason.encode!()
 
       :crypto.hash(:sha256, data)
       |> Base.encode16()
     end
 
-    defp trigger_payload(trigger, current_daa, average_daa) do
-      project = Project.by_slug(trigger.target)
+    defp payload(settings, current_daa, average_daa) do
+      project = Project.by_slug(settings.target)
 
       payload = """
       **#{project.name}** Daily Active Addresses has gone up by **#{
         percent_change(average_daa, current_daa)
-      }%** for the last #{Sanbase.DateTimeUtils.compound_duration_to_text(trigger.time_window)}.
+      }%** for the last 1 day.
       Average Daily Active Addresses for last **#{
-        Sanbase.DateTimeUtils.compound_duration_to_text(trigger.time_window)
+        Sanbase.DateTimeUtils.compound_duration_to_text(settings.time_window)
       }**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
       """
 
-      seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(trigger.time_window)
+      seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
 
       embeds =
         Sanbase.Chart.build_embedded_chart(

@@ -138,7 +138,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     """
 
     embeds =
-      Discord.build_embedded_chart(
+      Sanbase.Chart.build_embedded_chart(
         project,
         Timex.shift(Timex.now(), days: -90),
         Timex.now(),

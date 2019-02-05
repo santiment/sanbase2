@@ -56,15 +56,15 @@ config :sanbase, Sanbase.Scheduler,
       task: {Sanbase.Notifications.Discord.DaaSignal, :run, []}
     ],
     exchange_inflow_discord_signal: [
-      schedule: "*/5 * * * *",
+      schedule: "1-59/5 * * * *",
       task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
     ],
     daa_sonar_signal: [
-      schedule: "*/5 * * * *",
+      schedule: "2-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_daa_signals, []}
     ],
     price_sonar_singal: [
-      schedule: "*/5 * * * *",
+      schedule: "3-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_price_signals, []}
     ]
   ]

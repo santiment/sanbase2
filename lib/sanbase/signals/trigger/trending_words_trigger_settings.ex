@@ -15,7 +15,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   def type(), do: @trigger_type
 
-  defimpl Sanbase.Signals.Triggerable, for: TrendingWordsTriggerSettings do
+  defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
     @trending_words_size 10
     @trending_words_hours [1, 8, 14]
 

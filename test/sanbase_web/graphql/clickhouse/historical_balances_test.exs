@@ -56,7 +56,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
     end
   end
 
-  test "historical balances when interval is inner to the balances values", context do
+  test "historical balances when last interval is not full", context do
     with_mock Sanbase.ClickhouseRepo,
       query: fn _, _ ->
         {:ok,
@@ -67,13 +67,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
              [from_iso8601_to_unix!("2017-05-15T00:00:00Z"), 1800],
              [from_iso8601_to_unix!("2017-05-16T00:00:00Z"), 1500],
              [from_iso8601_to_unix!("2017-05-17T00:00:00Z"), 1900],
-             [from_iso8601_to_unix!("2017-05-18T00:00:00Z"), 1000]
+             [from_iso8601_to_unix!("2017-05-18T00:00:00Z"), 1400]
            ]
          }}
       end do
-      from = from_iso8601!("2017-05-15T00:00:00Z")
-      to = from_iso8601!("2017-05-17T00:00:00Z")
-      query = hist_balances_query(context.address, from, to, context.interval)
+      from = from_iso8601!("2017-05-13T00:00:00Z")
+      to = from_iso8601!("2017-05-18T00:00:00Z")
+      query = hist_balances_query(context.address, from, to, "2d")
 
       result =
         context.conn
@@ -82,9 +82,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
       hist_balance = json_response(result, 200)["data"]["historicalBalance"]
 
       assert hist_balance == [
+               %{"balance" => 2000, "datetime" => "2017-05-13T00:00:00Z"},
                %{"balance" => 1800, "datetime" => "2017-05-15T00:00:00Z"},
-               %{"balance" => 1500, "datetime" => "2017-05-16T00:00:00Z"},
-               %{"balance" => 1900, "datetime" => "2017-05-17T00:00:00Z"}
+               %{"balance" => 1400, "datetime" => "2017-05-17T00:00:00Z"}
              ]
     end
   end

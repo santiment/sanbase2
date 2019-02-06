@@ -1,23 +1,26 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
-  alias Sanbase.Repo
   alias Sanbase.Model.Project
   alias Sanbase.ExternalServices.TwitterData.Store
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  import Ecto.Query
   import SanbaseWeb.Graphql.Helpers.Async
 
+  def twitter_data(_root, %{slug: slug}, _resolution) do
+    calculate_twitter_data(slug)
+  end
+
   def twitter_data(_root, %{ticker: ticker}, _resolution) do
-    Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}).()
+    slug = Project.slug_by_ticker(ticker)
+    calculate_twitter_data(slug)
   end
 
-  def twitter_data(%Project{ticker: ticker}, _args, _resolution) do
-    async(Cache.func(fn -> calculate_twitter_data(ticker) end, {:twitter_data, ticker}))
+  def twitter_data(%Project{coinmarketcap_id: slug}, _args, _resolution) do
+    async(fn -> calculate_twitter_data(slug) end)
   end
 
-  defp calculate_twitter_data(ticker) do
-    with {:ok, twitter_link} <- get_twitter_link(ticker),
+  defp calculate_twitter_data(slug) do
+    with %Project{twitter_link: twitter_link, ticker: ticker} <- Project.by_slug(slug),
          {:ok, twitter_name} <- extract_twitter_name(twitter_link),
          {datetime, followers_count} <- Store.last_record_for_measurement(twitter_name) do
       {:ok,
@@ -34,11 +37,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   end
 
   def history_twitter_data(
+        root,
+        %{ticker: ticker} = args,
+        resolution
+      ) do
+    slug = Project.slug_by_ticker(ticker)
+    args = args |> Map.delete(:ticker) |> Map.put(:slug, slug)
+    history_twitter_data(root, args, resolution)
+  end
+
+  def history_twitter_data(
         _root,
-        %{ticker: ticker, from: from, to: to, interval: interval},
+        %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, twitter_link} <- get_twitter_link(ticker),
+    with %Project{twitter_link: twitter_link} <- Project.by_slug(slug),
          {:ok, twitter_name} <- extract_twitter_name(twitter_link),
          {:ok, from, to, interval} <-
            Utils.calibrate_interval(Store, twitter_name, from, to, interval, 60 * 60),
@@ -53,10 +66,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
       {:ok, result}
     else
       {:error, reason} ->
-        {:error, "Cannot fetch twitter history data for ticker #{ticker}: #{reason}"}
+        {:error, "Cannot fetch twitter history data for slug #{slug}: #{reason}"}
 
       error ->
-        {:error, "Cannot fetch twitter history data for ticker #{ticker}: #{inspect(error)}"}
+        {:error, "Cannot fetch twitter history data for slug #{slug}: #{inspect(error)}"}
     end
   end
 
@@ -72,21 +85,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   end
 
   defp extract_twitter_name(_), do: {:error, "Can't parse twitter link"}
-
-  defp get_twitter_link(nil), do: nil
-
-  defp get_twitter_link(ticker) do
-    query =
-      from(
-        p in Project,
-        where:
-          p.ticker == ^ticker and not is_nil(p.twitter_link) and not is_nil(p.coinmarketcap_id),
-        select: p.twitter_link
-      )
-
-    case Repo.all(query) do
-      [] -> {:error, "There is no project with ticker #{ticker}"}
-      [twitter_link | _] -> {:ok, twitter_link}
-    end
-  end
 end

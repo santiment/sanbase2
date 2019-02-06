@@ -41,6 +41,15 @@ defmodule Sanbase.Github.TwitterApiTest do
 
     %Project{}
     |> Project.changeset(%{
+      name: "TestProj3",
+      ticker: "SAN",
+      twitter_link: "https://m.twitter.com/some_test_acc3",
+      coinmarketcap_id: "test3"
+    })
+    |> Repo.insert!()
+
+    %Project{}
+    |> Project.changeset(%{
       name: "TestProj",
       ticker: "TEST1",
       twitter_link: "https://twitter.com/some_test_acc",
@@ -82,6 +91,16 @@ defmodule Sanbase.Github.TwitterApiTest do
         timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
         fields: %{followers_count: 10},
         name: "some_test_acc"
+      },
+      %Measurement{
+        timestamp: datetime3 |> DateTime.to_unix(:nanosecond),
+        fields: %{followers_count: 509},
+        name: "some_test_acc3"
+      },
+      %Measurement{
+        timestamp: datetime1 |> DateTime.to_unix(:nanosecond),
+        fields: %{followers_count: 454},
+        name: "some_test_acc3"
       }
     ])
 
@@ -98,7 +117,7 @@ defmodule Sanbase.Github.TwitterApiTest do
     query = """
     {
       twitterData(
-        ticker: "SAN") {
+        slug: "santiment") {
           twitterName
           followersCount
         }
@@ -115,11 +134,11 @@ defmodule Sanbase.Github.TwitterApiTest do
     assert twitter_data["twitterName"] == "santimentfeed"
   end
 
-  test "fetching last twitter data for a ticker with invalid twitter link", context do
+  test "fetching last twitter data for a project with invalid twitter link", context do
     query = """
     {
       twitterData(
-        ticker: "TEST2") {
+        slug: "test2") {
           twitterName
           followersCount
         }
@@ -140,7 +159,7 @@ defmodule Sanbase.Github.TwitterApiTest do
     query = """
     {
       historyTwitterData(
-        ticker: "SAN",
+        slug: "santiment",
         from: "#{context.datetime1}",
         to: "#{context.datetime3}"){
           followersCount
@@ -163,7 +182,7 @@ defmodule Sanbase.Github.TwitterApiTest do
     query = """
     {
       historyTwitterData(
-        ticker: "SAN",
+        slug: "santiment",
         from: "#{context.datetime1}",
         to: "#{context.datetime3}",
         interval: "6h"){

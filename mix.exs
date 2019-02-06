@@ -116,7 +116,8 @@ defmodule Sanbase.Mixfile do
       "ecto.setup": [
         "load_dotenv",
         "ecto.drop -r Sanbase.Repo",
-        "ecto.setup -r Sanbase.Repo"
+        "ecto.create -r Sanbase.Repo",
+        "ecto.load -r Sanbase.Repo"
       ],
       "ecto.migrate": [
         "load_dotenv",

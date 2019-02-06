@@ -15,7 +15,7 @@ defmodule SanbaseWeb.Graphql.SanbaseRepo do
     |> preload([:latest_btc_wallet_data])
   end
 
-  def query(Project, args) do
+  def query(Project, _args) do
     Project
     |> preload(^Project.preloads())
   end

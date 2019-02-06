@@ -1,7 +1,16 @@
 defmodule Sanbase.Signals.UserTrigger do
+  @moduledoc ~s"""
+  Module that implements the connectionb between a user and a trigger.
+  It provides functionsn for creating and updating such user triggerrs. Also
+  this is the struct that is used in the `Sanbase.Signals.Evaluator` because it
+  needs to know the user to whom the signal needs to be sent.
+  """
+  @derive [Sanbase.Signal]
+
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  import Sanbase.Signals.TriggerQuery
 
   alias __MODULE__
   alias Sanbase.Auth.User
@@ -9,8 +18,8 @@ defmodule Sanbase.Signals.UserTrigger do
   alias Sanbase.Repo
 
   alias Sanbase.Signals.Trigger.{
-    DailyActiveAddressesTriggerSettings,
-    PriceTriggerSettings,
+    DailyActiveAddressesSettings,
+    PricePercentChangeSettings,
     PriceVolumeTriggerSettings,
     TrendingWordsTriggerSettings
   }
@@ -59,6 +68,17 @@ defmodule Sanbase.Signals.UserTrigger do
     |> find_user_trigger_by_trigger_id(trigger_id)
     |> Map.get(:trigger)
     |> trigger_in_struct()
+  end
+
+  @spec get_triggers_by_type(String.t()) :: list(%__MODULE__{})
+  def get_triggers_by_type(type) do
+    from(
+      ut in UserTrigger,
+      where: trigger_type_is(type),
+      preload: [{:user, :user_settings}]
+    )
+    |> Repo.all()
+    |> Enum.map(fn ut -> %{ut | trigger: trigger_in_struct(ut.trigger)} end)
   end
 
   @spec create_user_trigger(%User{}, map()) ::
@@ -139,17 +159,17 @@ defmodule Sanbase.Signals.UserTrigger do
   defp load_in_struct(_), do: :error
 
   defp struct_from_map(%{type: "daily_active_addresses"} = trigger_settings),
-    do: {:ok, struct!(DailyActiveAddressesTriggerSettings, trigger_settings)}
+    do: {:ok, struct!(DailyActiveAddressesSettings, trigger_settings)}
 
-  defp struct_from_map(%{type: "price"} = trigger_settings),
-    do: {:ok, struct!(PriceTriggerSettings, trigger_settings)}
+  defp struct_from_map(%{type: "price_percent_change"} = trigger_settings),
+    do: {:ok, struct!(PricePercentChangeSettings, trigger_settings)}
 
   defp struct_from_map(_), do: :error
 
-  defp map_from_struct(%DailyActiveAddressesTriggerSettings{} = trigger_settings),
+  defp map_from_struct(%DailyActiveAddressesSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
-  defp map_from_struct(%PriceTriggerSettings{} = trigger_settings),
+  defp map_from_struct(%PricePercentChangeSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
   defp map_from_struct(%PriceVolumeTriggerSettings{} = trigger_settings),

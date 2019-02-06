@@ -21,7 +21,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
     }
 
     trigger_settings_json = trigger_settings |> Jason.encode!()
@@ -56,7 +58,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
     }
 
     trigger_settings_json = trigger_settings |> Jason.encode!()
@@ -90,7 +94,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
     }
 
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
@@ -131,7 +137,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
     }
 
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
@@ -166,7 +174,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
     }
 
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
@@ -200,7 +210,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
     }
 
     trigger_settings2 = Map.put(trigger_settings, "percent_threshold", 400.0)
@@ -238,7 +250,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
     }
 
     trigger_settings2 = Map.put(trigger_settings, "percent_threshold", 400.0)

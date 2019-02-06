@@ -6,8 +6,9 @@ defmodule Sanbase.Telegram do
   2. Sending messages.
   """
 
-  require Sanbase.Utils.Config, as: Config
   require Logger
+  require Sanbase.Utils.Config, as: Config
+
   alias Sanbase.Auth.{User, Settings, UserSettings}
   alias Sanbase.Telegram.UserToken
 
@@ -87,8 +88,12 @@ defmodule Sanbase.Telegram do
       |> Jason.encode!()
     )
     |> case do
-      {:ok, %Tesla.Env{status: 200}} -> :ok
-      _ -> {:error, "Telegram message not sent."}
+      {:ok, %Tesla.Env{status: 200}} ->
+        :ok
+
+      error ->
+        Logger.warn("Telegram message not sent. Reason: #{inspect(error)}")
+        {:error, "Telegram message not sent."}
     end
   end
 

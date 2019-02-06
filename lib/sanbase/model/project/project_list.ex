@@ -112,6 +112,17 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.all()
   end
 
+  def slug_price_change_map() do
+    from(p in Project,
+      where: not is_nil(p.coinmarketcap_id),
+      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+      select: {p.coinmarketcap_id, latest_cmc}
+    )
+    |> Repo.all()
+    |> Enum.map(fn {slug, lcd} -> {slug, lcd} end)
+    |> Map.new()
+  end
+
   def projects_count() do
     projects_query()
     |> select([p], fragment("count(*)"))

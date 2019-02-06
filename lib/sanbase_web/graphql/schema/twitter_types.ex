@@ -6,5 +6,6 @@ defmodule SanbaseWeb.Graphql.TwitterTypes do
     field(:twitter_name, :string)
     field(:followers_count, :integer)
     field(:ticker, :string)
+    field(:slug, :string)
   end
 end

@@ -274,14 +274,16 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch the current data for a Twitter account (currently includes only Twitter followers)."
     field :twitter_data, :twitter_data do
-      arg(:ticker, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      arg(:slug, :string)
 
       cache_resolve(&TwitterResolver.twitter_data/3)
     end
 
     @desc "Fetch historical data for a Twitter account (currently includes only Twitter followers)."
     field :history_twitter_data, list_of(:twitter_data) do
-      arg(:ticker, non_null(:string))
+      arg(:ticker, :string, deprecate: "Use slug instead of ticker")
+      arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, :datetime, default_value: DateTime.utc_now())
       arg(:interval, :string, default_value: "")

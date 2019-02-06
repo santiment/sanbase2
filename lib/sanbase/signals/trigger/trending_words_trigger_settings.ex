@@ -22,7 +22,6 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%TrendingWordsTriggerSettings{} = trigger) do
-
       with true <- time_to_signal?(trigger),
            {:ok, payload} <- trigger_payload() do
         %TrendingWordsTriggerSettings{

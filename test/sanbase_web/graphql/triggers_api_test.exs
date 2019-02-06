@@ -278,6 +278,39 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert result |> hd() |> Map.get("settings") == trigger_settings
   end
 
+  test "create trending words trigger", %{conn: conn} do
+    trigger_settings = %{
+      "type" => "trending_words",
+      "channel" => "telegram",
+      "trigger_time_iso_utc" => "12:00:00"
+    }
+
+    trigger_settings_json = trigger_settings |> Jason.encode!()
+
+    query =
+      ~s|
+    mutation {
+      createTrigger(
+        settings: '#{trigger_settings_json}'
+      ) {
+        id
+        settings
+      }
+    }
+    |
+      |> format_interpolated_json()
+      |> IO.inspect()
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => query})
+
+    created_trigger = json_response(result, 200)["data"]["createTrigger"]
+
+    assert created_trigger |> Map.get("settings") == trigger_settings
+    assert created_trigger |> Map.get("id") != nil
+  end
+
   defp format_interpolated_json(string) do
     string
     |> String.replace(~r|\"|, ~S|\\"|)

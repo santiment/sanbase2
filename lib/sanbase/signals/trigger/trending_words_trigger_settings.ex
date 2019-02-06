@@ -22,7 +22,6 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%TrendingWordsTriggerSettings{} = trigger) do
-      IO.inspect(trigger)
 
       with true <- time_to_signal?(trigger),
            {:ok, payload} <- trigger_payload() do
@@ -105,11 +104,10 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
     defp trigger_payload() do
       get_today_top_words()
-      |> IO.inspect()
       |> case do
         {:ok, top_words} ->
           max_len = get_max_len(top_words)
-          {:ok, build_payload(top_words, max_len) |> IO.inspect()}
+          {:ok, build_payload(top_words, max_len)}
 
         _ ->
           :error

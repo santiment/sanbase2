@@ -34,6 +34,8 @@ defmodule Sanbase.Clickhouse.Common do
   end
 
   defp fill_intervals_with_balance(intervals, balances) do
+    {_, last_balance} = balances |> List.last()
+
     for int <- intervals,
         {dt, balance} <- balances do
       if int >= dt do
@@ -43,6 +45,7 @@ defmodule Sanbase.Clickhouse.Common do
       end
     end
     |> Enum.filter(fn {_, v} -> v != nil end)
+    |> List.update_at(-1, fn {k, _} -> {k, last_balance} end)
     |> Enum.into(%{})
   end
 

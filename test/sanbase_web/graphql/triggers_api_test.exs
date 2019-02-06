@@ -299,7 +299,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
     |
       |> format_interpolated_json()
-      |> IO.inspect()
 
     result =
       conn

@@ -40,7 +40,7 @@ defmodule Sanbase.Parallel do
   def pmap_concurrent(collection, func, opts \\ []) when is_function(func, 1) do
     max_concurrency = Keyword.get(opts, :max_concurrency) || System.schedulers_online()
     ordered = Keyword.get(opts, :ordered) || true
-    timeout = Keyword.get(opts, :timeout) || 5_000
+    timeout = Keyword.get(opts, :timeout) || 15_000
     on_timeout = Keyword.get(opts, :on_timeout) || :exit
     map_type = Keyword.get(opts, :map_type) || :map
 

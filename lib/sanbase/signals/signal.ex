@@ -17,7 +17,10 @@ defimpl Sanbase.Signal, for: Any do
         user: %Sanbase.Auth.User{user_settings: nil} = user,
         trigger: %{settings: %{channel: "telegram"}}
       }) do
-    Logger.warn("User #{user.id} does not have a telegram linked, so a signal cannot be sent.")
+    Logger.warn(
+      "User with id #{user.id} does not have a telegram linked, so a signal cannot be sent."
+    )
+
     {:error, "No telegram linked for #{user.id}"}
   end
 

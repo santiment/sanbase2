@@ -59,12 +59,12 @@ config :sanbase, Sanbase.Scheduler,
       schedule: "1-59/5 * * * *",
       task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
     ],
-    daa_sonar_signal: [
+    daily_active_addresses_sonar_signal: [
       schedule: "2-59/5 * * * *",
-      task: {Sanbase.Signals.Scheduler, :run_daa_signals, []}
+      task: {Sanbase.Signals.Scheduler, :run_daily_activer_addresses_signals, []}
     ],
-    price_sonar_singal: [
+    price_percent_change_sonar_singal: [
       schedule: "3-59/5 * * * *",
-      task: {Sanbase.Signals.Scheduler, :run_price_signals, []}
+      task: {Sanbase.Signals.Scheduler, :run_price_percent_change_signals, []}
     ]
   ]

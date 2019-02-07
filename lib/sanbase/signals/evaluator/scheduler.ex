@@ -1,5 +1,10 @@
 defmodule Sanbase.Signals.Scheduler do
-  alias Sanbase.Signals.Trigger.{DailyActiveAddressesSettings, PricePercentChangeSettings}
+  alias Sanbase.Signals.Trigger.{
+    DailyActiveAddressesSettings,
+    PricePercentChangeSettings,
+    PriceAbsoluteChangeSettings
+  }
+
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signal
@@ -7,26 +12,29 @@ defmodule Sanbase.Signals.Scheduler do
   require Logger
 
   def run_price_percent_change_signals() do
-    type = PricePercentChangeSettings.type()
+    PricePercentChangeSettings.type()
+    |> run()
+  end
 
-    type
-    |> UserTrigger.get_triggers_by_type()
-    |> Evaluator.run()
-    |> send_and_mark_as_sent()
-    |> log_sent_messages_stats(type)
+  def run_price_absolute_change_signals() do
+    PriceAbsoluteChangeSettings.type()
+    |> run
   end
 
   def run_daily_active_addresses_signals() do
-    type = DailyActiveAddressesSettings.type()
+    DailyActiveAddressesSettings.type()
+    |> run
+  end
 
+  # Private functions
+
+  defp run(type) do
     type
     |> UserTrigger.get_triggers_by_type()
     |> Evaluator.run()
     |> send_and_mark_as_sent()
     |> log_sent_messages_stats(type)
   end
-
-  # Private functions
 
   defp send_and_mark_as_sent(triggers) do
     triggers

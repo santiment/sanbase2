@@ -160,7 +160,7 @@ defmodule Sanbase.Influxdb.Store do
         Transforms the `datetime` parammeter to the internally used datetime format
         which is timestamp in nanoseconds
       """
-      def influx_time(datetime, from_type \\ nil)
+      def influx_time(datetime, from_type \\ :nanosecond)
 
       def influx_time(datetime, :second) when is_integer(datetime) do
         datetime * 1_000_000_000
@@ -170,7 +170,7 @@ defmodule Sanbase.Influxdb.Store do
         datetime * 1_000_000
       end
 
-      def influx_time(%DateTime{} = datetime, _from_type) do
+      def influx_time(%DateTime{} = datetime, :nanosecond) do
         DateTime.to_unix(datetime, :nanosecond)
       end
 

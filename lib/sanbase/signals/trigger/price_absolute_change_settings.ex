@@ -1,4 +1,9 @@
 defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
+  @moduledoc ~s"""
+  PriceAbsoluteChangeSettings configures the settings for a signal that is fired
+  when the price of `target` goes higher than `above` or lower than `below`
+  """
+
   @derive Jason.Encoder
   @trigger_type "price_absolute_change"
   @enforce_keys [:type, :target, :channel, :time_window]
@@ -11,6 +16,20 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
             repeating: false,
             triggered?: false,
             payload: nil
+
+  alias Sanbase.Signals.Type
+
+  @type t :: %__MODULE__{
+          type: Type.trigger_type(),
+          target: Type.target(),
+          channel: Type.channel(),
+          time_window: Type.time_window(),
+          above: number(),
+          below: number(),
+          repeating: boolean(),
+          triggered?: boolean(),
+          payload: Type.payload()
+        }
 
   alias __MODULE__
   alias Sanbase.Model.Project

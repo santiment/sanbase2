@@ -33,11 +33,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
             to
           )
 
-        if first_usd_price >= 0.0000001 do
-          (last_usd_price - first_usd_price) / first_usd_price * 100
-        else
-          0
-        end
+        Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)
       end
     )
   end

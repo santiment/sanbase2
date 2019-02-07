@@ -70,6 +70,11 @@ defmodule SanbaseWeb.Endpoint do
     Config.get(:website_url)
   end
 
+  def user_account_url() do
+    Config.get(:website_url)
+    |> Path.join("account")
+  end
+
   def frontend_url() do
     Config.get(:frontend_url)
   end

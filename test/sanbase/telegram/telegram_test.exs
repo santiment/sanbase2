@@ -8,11 +8,16 @@ defmodule Sanbase.TelegramTest do
   alias Sanbase.Auth.{User, Settings, UserSettings}
   alias Sanbase.Telegram
   @bot_username Config.module_get(Sanbase.Telegram, :bot_username)
-  @token Config.module_get(Sanbase.Telegram, :token)
+
   @telegram_endpoint Config.module_get(Sanbase.Telegram, :telegram_endpoint)
   @telegram_chat_id 12315
 
   setup do
+    Tesla.Mock.mock(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
     user =
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()

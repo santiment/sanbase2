@@ -75,8 +75,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
         trigger.type,
         trigger.target,
         trigger.time_window,
-        trigger.above,
-        trigger.below
+        trigger.percent_threshold
       ]
 
       :crypto.hash(:sha256, data)

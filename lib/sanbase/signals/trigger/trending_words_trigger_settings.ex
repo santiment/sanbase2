@@ -1,4 +1,8 @@
 defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
+  @moduledoc ~s"""
+  Trigger settings for daily trending words signal
+  """
+
   @derive [Jason.Encoder]
   @trigger_type "trending_words"
   @trending_words_size 10
@@ -17,7 +21,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   import Sanbase.Signals.Utils
   alias __MODULE__
 
-  validates(:channel, inclusion: available_channels)
+  validates(:channel, inclusion: notification_channels)
   validates(:trigger_time, &__MODULE__.valid_trigger_time?/1)
 
   def type(), do: @trigger_type
@@ -27,8 +31,6 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
     if trigger_time.hour == Timex.now().hour do
       get_today_top_words()
-    else
-      :error
     end
   end
 
@@ -105,7 +107,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
     end
 
     def cache_key(%TrendingWordsTriggerSettings{} = settings) do
-      Sanbase.Signals.Utils.calculate_cache_key([settings.trigger_time])
+      construct_cache_key([settings.trigger_time])
     end
 
     defp payload(top_words) do

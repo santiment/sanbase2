@@ -133,6 +133,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
   defp is_valid?(trigger) do
     with {:ok, trigger_struct} <- load_in_struct(trigger),
+         true <- Vex.valid?(trigger_struct),
          {:ok, _trigger_map} <- map_from_struct(trigger_struct) do
       true
     else

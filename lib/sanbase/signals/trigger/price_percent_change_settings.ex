@@ -29,10 +29,14 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
           triggered?: boolean(),
           payload: Type.payload()
         }
+  use Vex.Struct
+  import Sanbase.Signals.Utils
 
   alias __MODULE__
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
+
+  validates(:channel, inclusion: notification_channels)
 
   def type(), do: @trigger_type
 

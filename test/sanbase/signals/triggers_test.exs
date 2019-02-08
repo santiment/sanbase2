@@ -178,11 +178,11 @@ defmodule Sanbase.Signals.TriggersTest do
     ut = UserTrigger.triggers_for(user)
     trigger_id = ut |> hd |> Map.get(:id)
 
-    UserTrigger.update_user_trigger(user, %{id: trigger_id, is_public: true, cooldown: 3600})
+    UserTrigger.update_user_trigger(user, %{id: trigger_id, is_public: true, cooldown: "1h"})
     user_triggers = UserTrigger.triggers_for(user)
 
     trigger = user_triggers |> hd()
     assert trigger.is_public == true
-    assert trigger.cooldown == 3600
+    assert trigger.cooldown == "1h"
   end
 end

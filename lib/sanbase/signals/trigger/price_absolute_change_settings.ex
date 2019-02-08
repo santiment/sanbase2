@@ -6,11 +6,10 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   @derive Jason.Encoder
   @trigger_type "price_absolute_change"
-  @enforce_keys [:type, :target, :channel, :time_window]
+  @enforce_keys [:type, :target, :channel]
   defstruct type: @trigger_type,
             target: nil,
             channel: nil,
-            time_window: nil,
             above: nil,
             below: nil,
             repeating: false,
@@ -23,7 +22,6 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
           type: Type.trigger_type(),
           target: Type.target(),
           channel: Type.channel(),
-          time_window: Type.time_window(),
           above: number(),
           below: number(),
           repeating: boolean(),
@@ -39,14 +37,15 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   def get_data(settings) do
     Cache.get_or_store(
-      "#{settings.trigger}_last_price",
+      "#{settings.target}_last_price",
       fn ->
-        {:ok, [[_dt, _mcap, price_usd, _price_btc, _vol]]} =
-          Project.by_slug(settings.trigger)
-          |> Sanbase.Influxdb.Measurement.name_from()
-          |> Sanbase.Prices.Store.last_record()
-
-        price_usd
+        Project.by_slug(settings.target)
+        |> Sanbase.Influxdb.Measurement.name_from()
+        |> Sanbase.Prices.Store.last_record()
+        |> case do
+          {:ok, [[_dt, _mcap, _price_btc, price_usd, _vol]]} -> price_usd
+          _ -> 0
+        end
       end
     )
   end
@@ -80,14 +79,15 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     Parameters like `repeating` and `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
-    def cache_key(%PriceAbsoluteChangeSettings{} = trigger) do
-      data = [
-        trigger.type,
-        trigger.target,
-        trigger.time_window,
-        trigger.above,
-        trigger.below
-      ]
+    def cache_key(%PriceAbsoluteChangeSettings{} = settings) do
+      data =
+        [
+          settings.type,
+          settings.target,
+          settings.above,
+          settings.below
+        ]
+        |> Jason.encode!()
 
       :crypto.hash(:sha256, data)
       |> Base.encode16()

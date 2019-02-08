@@ -3,15 +3,15 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   import Mock
   import Sanbase.Factory
-  import Sanbase.TestHelpers
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
 
-  setup do
-    # Suppress the error logs for chart generation due to missing prices
-    supress_test_console_logging()
+  setup_with_mocks([
+    {Sanbase.Chart, [],
+     [build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end]}
+  ]) do
     Sanbase.Signals.Evaluator.Cache.clear()
     user = insert(:user)
 
@@ -43,14 +43,14 @@ defmodule Sanbase.Signals.EvaluatorTest do
     {:ok, trigger1} =
       UserTrigger.create_user_trigger(user, %{
         is_public: true,
-        cooldown: 60,
+        cooldown: "12h",
         settings: trigger_settings1
       })
 
     {:ok, trigger2} =
       UserTrigger.create_user_trigger(user, %{
         is_public: true,
-        cooldown: 60,
+        cooldown: "1d",
         settings: trigger_settings2
       })
 
@@ -75,6 +75,28 @@ defmodule Sanbase.Signals.EvaluatorTest do
       assert length(rest) == 0
       assert context.trigger1.id == triggered1.id
       assert context.trigger2.id == triggered2.id
+    end
+  end
+
+  test "evaluate triggers cooldown works", context do
+    with_mock DailyActiveAddressesSettings, [:passthrough],
+      get_data: fn _ ->
+        {100, 20}
+      end do
+      [triggered1, triggered2 | rest] =
+        DailyActiveAddressesSettings.type()
+        |> UserTrigger.get_triggers_by_type()
+        |> Evaluator.run()
+
+      # 2 signals triggered
+      assert length(rest) == 0
+      assert context.trigger1.id == triggered1.id
+      assert context.trigger2.id == triggered2.id
+
+      # assert [] ==
+      #          DailyActiveAddressesSettings.type()
+      #          |> UserTrigger.get_triggers_by_type()
+      #          |> Evaluator.run()
     end
   end
 

@@ -20,6 +20,7 @@ defmodule Sanbase.Signals.UserTrigger do
   alias Sanbase.Signals.Trigger.{
     DailyActiveAddressesSettings,
     PricePercentChangeSettings,
+    PriceAbsoluteChangeSettings,
     PriceVolumeTriggerSettings,
     TrendingWordsTriggerSettings
   }
@@ -164,12 +165,18 @@ defmodule Sanbase.Signals.UserTrigger do
   defp struct_from_map(%{type: "price_percent_change"} = trigger_settings),
     do: {:ok, struct!(PricePercentChangeSettings, trigger_settings)}
 
+  defp struct_from_map(%{type: "price_absolute_change"} = trigger_settings),
+    do: {:ok, struct!(PriceAbsoluteChangeSettings, trigger_settings)}
+
   defp struct_from_map(_), do: :error
 
   defp map_from_struct(%DailyActiveAddressesSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
   defp map_from_struct(%PricePercentChangeSettings{} = trigger_settings),
+    do: {:ok, Map.from_struct(trigger_settings)}
+
+  defp map_from_struct(%PriceAbsoluteChangeSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
   defp map_from_struct(%PriceVolumeTriggerSettings{} = trigger_settings),

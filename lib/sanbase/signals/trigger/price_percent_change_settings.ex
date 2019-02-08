@@ -38,21 +38,25 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
 
   def get_data(settings) do
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-    project = Project.by_slug(settings.trigger)
+    project = Project.by_slug(settings.target)
     to = Timex.now()
     from = Timex.shift(to, seconds: -time_window_sec)
 
     Cache.get_or_store(
       cache_key_datetimes(project, from, to),
       fn ->
-        {:ok, [[_dt, first_usd_price, last_usd_price]]} =
-          Sanbase.Prices.Store.first_last_price(
-            Sanbase.Influxdb.Measurement.name_from(project),
-            from,
-            to
-          )
+        Sanbase.Prices.Store.first_last_price(
+          Sanbase.Influxdb.Measurement.name_from(project),
+          from,
+          to
+        )
+        |> case do
+          {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
+            Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)
 
-        Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)
+          _ ->
+            0
+        end
       end
     )
   end
@@ -89,13 +93,15 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
     Parameters like `repeating` and `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
-    def cache_key(%PricePercentChangeSettings{} = trigger) do
-      data = [
-        trigger.type,
-        trigger.target,
-        trigger.time_window,
-        trigger.percent_threshold
-      ]
+    def cache_key(%PricePercentChangeSettings{} = settings) do
+      data =
+        [
+          settings.type,
+          settings.target,
+          settings.time_window,
+          settings.percent_threshold
+        ]
+        |> Jason.encode!()
 
       :crypto.hash(:sha256, data)
       |> Base.encode16()

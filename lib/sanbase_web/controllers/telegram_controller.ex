@@ -21,7 +21,7 @@ defmodule SanbaseWeb.TelegramController do
 
   defp welcome_message() do
     ~s"""
-    Beep boop! I’m a Santiment Telegram bot :robot:
+    Beep boop! I’m a Santiment Telegram bot \u{1F916}
 
     This is where you’ll receive notifications for all your preset Santiment signals.
 

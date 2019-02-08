@@ -1,124 +1,121 @@
 defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   @derive [Jason.Encoder]
   @trigger_type "trending_words"
-  @enforce_keys [:type, :channel, :trigger_time_iso_utc]
+  @trending_words_size 10
+  @trending_words_hours [1, 8, 14]
+  @enforce_keys [:type, :channel, :trigger_time]
 
   defstruct type: @trigger_type,
             channel: nil,
             # ISO8601 string time in UTC
-            trigger_time_iso_utc: nil,
+            trigger_time: nil,
             triggered?: false,
             payload: nil
 
+  use Vex.Struct
   import Sanbase.Utils.Math, only: [to_integer: 1]
+  import Sanbase.Signals.Utils
   alias __MODULE__
+
+  validates(:channel, inclusion: available_channels)
+  validates(:trigger_time, &__MODULE__.valid_trigger_time?/1)
 
   def type(), do: @trigger_type
 
-  defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
-    @trending_words_size 10
-    @trending_words_hours [1, 8, 14]
+  def get_data(%TrendingWordsTriggerSettings{trigger_time: trigger_time}) do
+    trigger_time = Time.from_iso8601!(trigger_time)
 
+    if trigger_time.hour == Timex.now().hour do
+      get_today_top_words()
+    else
+      :error
+    end
+  end
+
+  def valid_trigger_time?(trigger_time) when is_binary(trigger_time) do
+    case Time.from_iso8601(trigger_time) do
+      {:ok, _time} ->
+        :ok
+
+      _ ->
+        {:error, "#{trigger_time} isn't a valid iso time"}
+    end
+  end
+
+  def valid_trigger_time?(_), do: :error
+
+  # private functions
+
+  defp get_today_top_words() do
+    {from, to, hour} = get_trending_word_query_params()
+
+    Sanbase.SocialData.trending_words(
+      :all,
+      @trending_words_size,
+      hour,
+      from,
+      to
+    )
+    |> case do
+      {:ok, [%{top_words: top_words}]} ->
+        {:ok, top_words}
+
+      error ->
+        :error
+    end
+  end
+
+  defp get_trending_word_query_params() do
+    now = Timex.now()
+
+    @trending_words_hours
+    |> Enum.filter(&(&1 < now.hour))
+    |> case do
+      [] ->
+        {
+          Timex.beginning_of_day(Timex.shift(now, days: -1)),
+          Timex.end_of_day(Timex.shift(now, days: -1)),
+          @trending_words_hours |> Enum.max()
+        }
+
+      hours ->
+        {
+          Timex.beginning_of_day(now),
+          Timex.end_of_day(now),
+          hours |> Enum.max()
+        }
+    end
+  end
+
+  defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%TrendingWordsTriggerSettings{} = trigger) do
-      with true <- time_to_signal?(trigger),
-           {:ok, payload} <- trigger_payload() do
-        %TrendingWordsTriggerSettings{
-          trigger
-          | triggered?: true,
-            payload: payload
-        }
-      else
-        error ->
-          %TrendingWordsTriggerSettings{trigger | triggered?: false}
-      end
-    end
-
-    def cache_key(%TrendingWordsTriggerSettings{} = trigger) do
-      data =
-        [trigger.trigger_time_iso_utc]
-        |> Jason.encode!()
-
-      :crypto.hash(:sha256, data)
-      |> Base.encode16()
-    end
-
-    defp time_to_signal?(%TrendingWordsTriggerSettings{trigger_time_iso_utc: trigger_time}) do
-      case Time.from_iso8601(trigger_time) do
-        {:ok, time} ->
-          time.hour == Timex.now().hour
-
-        _ ->
-          false
-      end
-    end
-
-    defp get_trending_word_query_params() do
-      now = Timex.now()
-
-      @trending_words_hours
-      |> Enum.filter(&(&1 < now.hour))
-      |> case do
-        [] ->
-          {
-            Timex.beginning_of_day(Timex.shift(now, days: -1)),
-            Timex.end_of_day(Timex.shift(now, days: -1)),
-            @trending_words_hours |> Enum.max()
-          }
-
-        hours ->
-          {
-            Timex.beginning_of_day(now),
-            Timex.end_of_day(now),
-            hours |> Enum.max()
-          }
-      end
-    end
-
-    defp get_today_top_words() do
-      {from, to, hour} = get_trending_word_query_params()
-
-      Sanbase.SocialData.trending_words(
-        :all,
-        @trending_words_size,
-        hour,
-        from,
-        to
-      )
-      |> case do
-        {:ok, [%{top_words: top_words}]} ->
-          {:ok, top_words}
-
-        error ->
-          :error
-      end
-    end
-
-    defp get_max_len(top_words) do
-      top_words
-      |> Enum.map(fn tw -> String.length(tw.word) end)
-      |> Enum.max()
-    end
-
-    defp trigger_payload() do
-      get_today_top_words()
-      |> case do
+    def evaluate(%TrendingWordsTriggerSettings{} = settings) do
+      case TrendingWordsTriggerSettings.get_data(settings) do
         {:ok, top_words} ->
-          max_len = get_max_len(top_words)
-          {:ok, build_payload(top_words, max_len)}
+          %TrendingWordsTriggerSettings{
+            settings
+            | triggered?: true,
+              payload: payload(top_words)
+          }
 
         _ ->
-          :error
+          %TrendingWordsTriggerSettings{settings | triggered?: false}
       end
     end
 
-    defp build_payload(top_words, max_len) do
+    def cache_key(%TrendingWordsTriggerSettings{} = settings) do
+      Sanbase.Signals.Utils.calculate_cache_key([settings.trigger_time])
+    end
+
+    defp payload(top_words) do
+      max_len = get_max_len(top_words)
+
       top_words_strings =
         top_words
         |> Enum.sort_by(fn tw -> tw.score end, &>=/2)
         |> Enum.map(fn tw ->
-          ~s(#{String.pad_trailing(tw.word, max_len)} | #{to_integer(tw.score)})
+          ~s/#{String.pad_trailing(tw.word, max_len)} | #{to_integer(tw.score)}/
         end)
 
       top_words_table = Enum.join(top_words_strings, "\n")
@@ -133,6 +130,12 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
       ```
       More info: https://app.santiment.net/sonar
       """
+    end
+
+    defp get_max_len(top_words) do
+      top_words
+      |> Enum.map(fn tw -> String.length(tw.word) end)
+      |> Enum.max()
     end
   end
 end

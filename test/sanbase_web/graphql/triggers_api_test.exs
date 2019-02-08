@@ -282,7 +282,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_settings = %{
       "type" => "trending_words",
       "channel" => "telegram",
-      "trigger_time_iso_utc" => "12:00:00"
+      "trigger_time" => "12:00:00"
     }
 
     trigger_settings_json = trigger_settings |> Jason.encode!()

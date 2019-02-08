@@ -32,21 +32,19 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
 
   use Vex.Struct
   import Sanbase.Signals.Utils
+  import Sanbase.Signals.Validation
 
   alias __MODULE__
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
   alias Sanbase.Signals.Evaluator.Cache
 
-  validates(:channel, inclusion: notification_channels)
-  validates(:time_window, format: ~r/^\d+[mhdw]$/)
-  validates(:percent_threshold, &__MODULE__.valid_percent?/1)
+  validates(:channel, inclusion: valid_notification_channels)
+  validates(:time_window, &valid_time_window?/1)
+  validates(:percent_threshold, &valid_percent?/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type
-
-  def valid_percent?(percent) when is_float(percent), do: percent > 0
-  def valid_percent?(_), do: false
 
   def get_data(settings) do
     {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target)

@@ -19,9 +19,10 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   use Vex.Struct
   import Sanbase.Utils.Math, only: [to_integer: 1]
   import Sanbase.Signals.Utils
+  import Sanbase.Signals.Validation
   alias __MODULE__
 
-  validates(:channel, inclusion: notification_channels)
+  validates(:channel, inclusion: valid_notification_channels)
   validates(:trigger_time, &__MODULE__.valid_trigger_time?/1)
 
   def type(), do: @trigger_type

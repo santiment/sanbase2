@@ -3,6 +3,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   import Mock
   import Sanbase.Factory
+  import ExUnit.CaptureLog
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
@@ -10,10 +11,15 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   setup_with_mocks([
     {Sanbase.Chart, [],
-     [build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end]}
+     [
+       build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
+       build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
+     ]}
   ]) do
     Sanbase.Signals.Evaluator.Cache.clear()
+
     user = insert(:user)
+    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     Sanbase.Factory.insert(:project, %{
       name: "Santiment",
@@ -78,25 +84,25 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "evaluate triggers cooldown works", context do
+  test "setting cooldown works", context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        {100, 20}
+        {100, 30}
       end do
-      [triggered1, triggered2 | rest] =
-        DailyActiveAddressesSettings.type()
-        |> UserTrigger.get_triggers_by_type()
-        |> Evaluator.run()
+      Tesla.Mock.mock_global(fn
+        %{method: :post} ->
+          %Tesla.Env{status: 200, body: "ok"}
+      end)
 
-      # 2 signals triggered
-      assert length(rest) == 0
-      assert context.trigger1.id == triggered1.id
-      assert context.trigger2.id == triggered2.id
+      Logger.configure(level: :info)
 
-      # assert [] ==
-      #          DailyActiveAddressesSettings.type()
-      #          |> UserTrigger.get_triggers_by_type()
-      #          |> Evaluator.run()
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_daily_active_addresses_signals()
+             end) =~ "signals were sent successfully"
+
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_daily_active_addresses_signals()
+             end) =~ "There were no signals triggered of type"
     end
   end
 
@@ -130,4 +136,6 @@ defmodule Sanbase.Signals.EvaluatorTest do
       assert length(triggered) == 0
     end
   end
+
+  # Private functions
 end

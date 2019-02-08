@@ -53,9 +53,9 @@ defmodule Sanbase.Signals.Trigger do
   def has_cooldown?(%Trigger{last_triggered: nil}), do: false
   def has_cooldown?(%Trigger{cooldown: nil}), do: false
 
-  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: %DateTime{} = lt}) do
+  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt}) do
     Timex.compare(
-      Timex.shift(lt, seconds: -Sanbase.DateTimeUtils.compound_duration_to_seconds(cd)),
+      Timex.shift(lt, seconds: Sanbase.DateTimeUtils.compound_duration_to_seconds(cd)),
       Timex.now()
     ) == 1
   end

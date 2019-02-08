@@ -56,7 +56,7 @@ defmodule Sanbase.Signals.Scheduler do
   end
 
   defp log_sent_messages_stats([], type) do
-    Logger.info("There were no #{type} signals triggered")
+    Logger.info("There were no signals triggered of type #{type}")
   end
 
   defp log_sent_messages_stats(list, type) do

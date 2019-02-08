@@ -67,7 +67,6 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     assert length(rest) == 0
     assert context.trigger2.id == triggered.id
-    # assert Trigger.triggered?(triggered.trigger) == true
   end
 
   defp populate_influxdb() do

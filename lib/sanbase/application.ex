@@ -110,7 +110,15 @@ defmodule Sanbase.Application do
       Sanbase.Prices.Store.child_spec(),
 
       # Start the Task Supervisor
-      {Task.Supervisor, [name: Sanbase.TaskSupervisor]}
+      {Task.Supervisor, [name: Sanbase.TaskSupervisor]},
+
+      # Start telegram rate limiter. Used both in web and signals
+      Sanbase.ExternalServices.RateLimiting.Server.child_spec(
+        :telegram_bot_rate_limiting_server,
+        scale: 1000,
+        limit: 30,
+        time_between_requests: 10
+      )
     ]
   end
 

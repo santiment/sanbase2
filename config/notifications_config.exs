@@ -66,5 +66,9 @@ config :sanbase, Sanbase.Scheduler,
     price_percent_change_sonar_singal: [
       schedule: "3-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_price_percent_change_signals, []}
+    ],
+    price_absolute_change_sonar_singal: [
+      schedule: "4-59/5 * * * *",
+      task: {Sanbase.Signals.Scheduler, :run_price_absolute_change_signals, []}
     ]
   ]

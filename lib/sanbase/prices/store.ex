@@ -158,6 +158,15 @@ defmodule Sanbase.Prices.Store do
     |> filter_volume_over_threshold(threshold)
   end
 
+  def first_last_price(measurement, from, to) do
+    ~s/SELECT first(price_usd) as open, last(price_usd) as close
+    FROM "#{measurement}"
+    WHERE time >= #{influx_time(from)}
+    AND time <= #{influx_time(to)}/
+    |> Store.query()
+    |> parse_time_series()
+  end
+
   def all_with_data_after_datetime(datetime) do
     datetime_unix_ns = DateTime.to_unix(datetime, :nanosecond)
 

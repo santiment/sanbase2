@@ -1,4 +1,10 @@
 defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
+  @moduledoc ~s"""
+  PricePercentChangeSettings configures the settings for a signal that is fired
+  when the price of `target` changes by more than `percent_threshold` percent for the
+  specified `time_window` time.
+  """
+
   @derive Jason.Encoder
   @trigger_type "price_percent_change"
   @enforce_keys [:type, :target, :channel, :time_window]
@@ -11,24 +17,64 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
             triggered?: false,
             payload: nil
 
+  alias Sanbase.Signals.Type
+
+  @type t :: %__MODULE__{
+          type: Type.trigger_type(),
+          target: Type.target(),
+          channel: Type.channel(),
+          time_window: Type.time_window(),
+          percent_threshold: number(),
+          repeating: boolean(),
+          triggered?: boolean(),
+          payload: Type.payload()
+        }
+
   alias __MODULE__
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
 
   def type(), do: @trigger_type
 
-  defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
-    @seconds_in_hour 3600
-    @seconds_in_day 3600 * 24
-    @seconds_in_week 3600 * 24 * 7
+  def get_data(settings) do
+    time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+    project = Project.by_slug(settings.target)
+    to = Timex.now()
+    from = Timex.shift(to, seconds: -time_window_sec)
 
+    Cache.get_or_store(
+      cache_key_datetimes(project, from, to),
+      fn ->
+        Sanbase.Prices.Store.first_last_price(
+          Sanbase.Influxdb.Measurement.name_from(project),
+          from,
+          to
+        )
+        |> case do
+          {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
+            {:ok, Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)}
+
+          error ->
+            {:error, error}
+        end
+      end
+    )
+  end
+
+  defp cache_key_datetimes(project, from, to) do
+    # prices are present at 5 minute intervals
+    from_rounded = div(DateTime.to_unix(from, :second), 300) * 300
+    to_rounded = div(DateTime.to_unix(to, :second), 300) * 300
+
+    "first_last_#{project.id}_#{from_rounded}_#{to_rounded}"
+  end
+
+  defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PricePercentChangeSettings{} = settings) do
-      percent_change = get_data(settings)
-
-      case percent_change >= settings.percent_threshold do
-        true ->
+    def evaluate(%PricePercentChangeSettings{percent_threshold: percent_threshold} = settings) do
+      case PricePercentChangeSettings.get_data(settings) do
+        {:ok, percent_change} when percent_change >= percent_threshold ->
           %PricePercentChangeSettings{
             settings
             | triggered?: true,
@@ -40,45 +86,20 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       end
     end
 
-    def get_data(settings) do
-      price_change_map =
-        Cache.get_or_store(
-          "price_change_map",
-          &Sanbase.Model.Project.List.slug_price_change_map/0
-        )
-
-      target_data = Map.get(price_change_map, settings.target)
-
-      time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-
-      case time_window_sec do
-        @seconds_in_hour ->
-          target_data.percent_change_1h || 0
-
-        @seconds_in_day ->
-          target_data.percent_change_24h || 0
-
-        @seconds_in_week ->
-          target_data.percent_change_7d || 0
-
-        _ ->
-          0
-      end
-    end
-
     @doc ~s"""
     Construct a cache key only out of the parameters that determine the outcome.
     Parameters like `repeating` and `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
-    def cache_key(%PricePercentChangeSettings{} = trigger) do
-      data = [
-        trigger.type,
-        trigger.target,
-        trigger.time_window,
-        trigger.percent_threshold,
-        trigger.absolute_threshold
-      ]
+    def cache_key(%PricePercentChangeSettings{} = settings) do
+      data =
+        [
+          settings.type,
+          settings.target,
+          settings.time_window,
+          settings.percent_threshold
+        ]
+        |> Jason.encode!()
 
       :crypto.hash(:sha256, data)
       |> Base.encode16()

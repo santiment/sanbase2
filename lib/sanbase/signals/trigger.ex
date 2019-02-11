@@ -28,7 +28,7 @@ defmodule Sanbase.Signals.Trigger do
     field(:settings, :map)
     field(:is_public, :boolean, default: false)
     field(:last_triggered, :naive_datetime)
-    field(:cooldown, :integer)
+    field(:cooldown, :string)
   end
 
   @doc false
@@ -53,9 +53,9 @@ defmodule Sanbase.Signals.Trigger do
   def has_cooldown?(%Trigger{last_triggered: nil}), do: false
   def has_cooldown?(%Trigger{cooldown: nil}), do: false
 
-  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: %DateTime{} = lt}) do
+  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt}) do
     Timex.compare(
-      Timex.shift(lt, minutes: cd),
+      Timex.shift(lt, seconds: Sanbase.DateTimeUtils.compound_duration_to_seconds(cd)),
       Timex.now()
     ) == 1
   end

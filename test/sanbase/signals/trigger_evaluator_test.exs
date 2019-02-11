@@ -3,17 +3,23 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   import Mock
   import Sanbase.Factory
-  import Sanbase.TestHelpers
+  import ExUnit.CaptureLog
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
 
-  setup do
-    # Suppress the error logs for chart generation due to missing prices
-    supress_test_console_logging()
+  setup_with_mocks([
+    {Sanbase.Chart, [],
+     [
+       build_embedded_chart: fn _, _, _, _ -> [%{image: %{url: "somelink"}}] end,
+       build_embedded_chart: fn _, _, _ -> [%{image: %{url: "somelink"}}] end
+     ]}
+  ]) do
     Sanbase.Signals.Evaluator.Cache.clear()
+
     user = insert(:user)
+    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     Sanbase.Factory.insert(:project, %{
       name: "Santiment",
@@ -43,14 +49,14 @@ defmodule Sanbase.Signals.EvaluatorTest do
     {:ok, trigger1} =
       UserTrigger.create_user_trigger(user, %{
         is_public: true,
-        cooldown: 60,
+        cooldown: "12h",
         settings: trigger_settings1
       })
 
     {:ok, trigger2} =
       UserTrigger.create_user_trigger(user, %{
         is_public: true,
-        cooldown: 60,
+        cooldown: "1d",
         settings: trigger_settings2
       })
 
@@ -61,7 +67,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     ]
   end
 
-  test "evaluate triggers all criteria match", context do
+  test "all of daily active addresses signals triggered", context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 20}
@@ -78,7 +84,29 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "evaluate triggers some criteria match", context do
+  test "signal setting cooldown works", context do
+    with_mock DailyActiveAddressesSettings, [:passthrough],
+      get_data: fn _ ->
+        {100, 30}
+      end do
+      Tesla.Mock.mock_global(fn
+        %{method: :post} ->
+          %Tesla.Env{status: 200, body: "ok"}
+      end)
+
+      Logger.configure(level: :info)
+
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_daily_active_addresses_signals()
+             end) =~ "signals were sent successfully"
+
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_daily_active_addresses_signals()
+             end) =~ "There were no signals triggered of type"
+    end
+  end
+
+  test "only some of daily active addresses signals triggered", context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 30}
@@ -94,7 +122,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "evaluate triggers no criteria match", _context do
+  test "none of daily active addresses signals triggered", _context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 100}
@@ -108,4 +136,6 @@ defmodule Sanbase.Signals.EvaluatorTest do
       assert length(triggered) == 0
     end
   end
+
+  # Private functions
 end

@@ -1,5 +1,11 @@
 defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
-  @derive [Jason.Encoder]
+  @moduledoc ~s"""
+  DailyActiveAddressesSettings configures the settings for a signal that is fired
+  when the number of daily active addresses for today exceeds the average for the
+  `time_window` period of time.
+  """
+
+  @derive Jason.Encoder
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :time_window, :percent_threshold]
   defstruct type: @trigger_type,
@@ -10,6 +16,19 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
             repeating: false,
             triggered?: false,
             payload: nil
+
+  alias Sanbase.Signals.Type
+
+  @type t :: %__MODULE__{
+          type: Type.trigger_type(),
+          target: Type.target(),
+          channel: Type.channel(),
+          time_window: Type.time_window(),
+          percent_threshold: number(),
+          repeating: boolean(),
+          triggered?: boolean(),
+          payload: Type.payload()
+        }
 
   import Sanbase.Signals.Utils
 

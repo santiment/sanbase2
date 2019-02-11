@@ -67,7 +67,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     ]
   end
 
-  test "evaluate triggers all criteria match", context do
+  test "all of daily active addresses signals triggered", context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 20}
@@ -84,7 +84,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "setting cooldown works", context do
+  test "signal setting cooldown works", context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 30}
@@ -106,7 +106,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "evaluate triggers some criteria match", context do
+  test "only some of daily active addresses signals triggered", context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 30}
@@ -122,7 +122,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "evaluate triggers no criteria match", _context do
+  test "none of daily active addresses signals triggered", _context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
         {100, 100}

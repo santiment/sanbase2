@@ -48,7 +48,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
     ]
   end
 
-  test "evaluate triggers percent change some triggered", context do
+  test "only some of price percent change signals triggered", context do
     [triggered | rest] =
       PricePercentChangeSettings.type()
       |> UserTrigger.get_triggers_by_type()
@@ -59,7 +59,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
     assert Trigger.triggered?(triggered.trigger) == true
   end
 
-  test "evaluate triggers absolute change some triggered", context do
+  test "only some of price absolute change signals triggered", context do
     [triggered | rest] =
       PriceAbsoluteChangeSettings.type()
       |> UserTrigger.get_triggers_by_type()

@@ -324,7 +324,7 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   defp eth_spent_over_time_query(wallets, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
-    span = div(to_datetime_unix - from_datetime_unix, interval)
+    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
     SELECT SUM(value), time

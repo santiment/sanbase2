@@ -25,7 +25,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   end
 
   def current_user(_root, _args, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
+        context: %{auth: %{current_user: user}}
       }) do
     {:ok, user}
   end

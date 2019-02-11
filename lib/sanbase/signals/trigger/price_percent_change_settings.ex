@@ -52,10 +52,10 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
         )
         |> case do
           {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
-            Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)
+            {:ok, Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)}
 
-          _ ->
-            0
+          error ->
+            {:error, error}
         end
       end
     )
@@ -72,11 +72,9 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PricePercentChangeSettings{} = settings) do
-      percent_change = PricePercentChangeSettings.get_data(settings)
-
-      case percent_change >= settings.percent_threshold do
-        true ->
+    def evaluate(%PricePercentChangeSettings{percent_threshold: percent_threshold} = settings) do
+      case PricePercentChangeSettings.get_data(settings) do
+        {:ok, percent_change} when percent_change >= percent_threshold ->
           %PricePercentChangeSettings{
             settings
             | triggered?: true,

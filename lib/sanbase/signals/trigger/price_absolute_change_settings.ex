@@ -43,8 +43,8 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
         |> Sanbase.Influxdb.Measurement.name_from()
         |> Sanbase.Prices.Store.last_record()
         |> case do
-          {:ok, [[_dt, _mcap, _price_btc, price_usd, _vol]]} -> price_usd
-          _ -> 0
+          {:ok, [[_dt, _mcap, _price_btc, price_usd, _vol]]} -> {:ok, price_usd}
+          error -> {:error, error}
         end
       end
     )
@@ -55,14 +55,14 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
     def evaluate(%PriceAbsoluteChangeSettings{above: above, below: below} = settings) do
       case PriceAbsoluteChangeSettings.get_data(settings) do
-        last_price_usd when last_price_usd >= above ->
+        {:ok, last_price_usd} when last_price_usd >= above ->
           %PriceAbsoluteChangeSettings{
             settings
             | triggered?: true,
               payload: payload(settings, last_price_usd, "above $#{above}")
           }
 
-        last_price_usd when last_price_usd <= below ->
+        {:ok, last_price_usd} when last_price_usd <= below ->
           %PriceAbsoluteChangeSettings{
             settings
             | triggered?: true,

@@ -45,7 +45,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     FROM (
       SELECT contract, toStartOfDay(dt) as dt, toFloat64(anyLast(total_addresses)) as total_addresses
       FROM erc20_daily_active_addresses
-      WHERE
+      PREWHERE
       contract IN (?3) AND
       dt < toDateTime(today()) AND
       dt >= toDateTime(?1) AND
@@ -58,7 +58,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
       today_coefficient
     })) as total_addresses
       FROM erc20_daily_active_addresses_list
-      WHERE contract IN (?3) and dt >= toDateTime(today()) AND
+      PREWHERE contract IN (?3) and dt >= toDateTime(today()) AND
       dt >= toDateTime(?1) AND
       dt <= toDateTime(?2)
       GROUP BY contract, dt
@@ -85,7 +85,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     query = """
     SELECT contract, coalesce(uniq(address), 0) as active_addresses
     FROM erc20_daily_active_addresses_list
-    WHERE contract IN (?1) and dt >= toDateTime(today())
+    PREWHERE contract IN (?1) and dt >= toDateTime(today())
     GROUP BY contract, dt
     """
 
@@ -125,7 +125,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
       FROM (
         SELECT toStartOfDay(dt) as dt, anyLast(total_addresses) as total_addresses
         FROM erc20_daily_active_addresses
-        WHERE contract = ?3 AND
+        PREWHERE contract = ?3 AND
         dt < toDateTime(today()) AND
         dt >= toDateTime(?4) AND
         dt <= toDateTime(?5)
@@ -135,7 +135,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
         SELECT toStartOfDay(dt) as dt, uniq(address) as total_addresses
         FROM erc20_daily_active_addresses_list
-        WHERE
+        PREWHERE
         contract = ?3 AND
         dt >= toDateTime(today()) AND
         dt >= toDateTime(?4) AND

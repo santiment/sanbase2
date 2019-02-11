@@ -8,6 +8,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   alias Sanbase.Repo
   alias Ecto.Multi
 
+  def permissions(
+        %User{} = user,
+        _args,
+        _resolution
+      ) do
+    User.permissions(user)
+  end
+
   @spec san_balance(Sanbase.Auth.User.t(), map(), Absinthe.Resolution.t()) :: {:ok, float()}
   def san_balance(
         %User{} = user,
@@ -25,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
   end
 
   def current_user(_root, _args, %{
-        context: %{auth: %{auth_method: :user_token, current_user: user}}
+        context: %{auth: %{current_user: user}}
       }) do
     {:ok, user}
   end

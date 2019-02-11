@@ -18,6 +18,10 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:privacy_policy_accepted, :boolean)
     field(:marketing_accepted, :boolean)
 
+    field :permissions, :access_level do
+      resolve(&AccountResolver.permissions/3)
+    end
+
     field :san_balance, :float do
       resolve(&AccountResolver.san_balance/3)
     end
@@ -61,5 +65,11 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
 
   object :email_login_request do
     field(:success, non_null(:boolean))
+  end
+
+  object :access_level do
+    field(:historical_data, non_null(:boolean))
+    field(:realtime_data, non_null(:boolean))
+    field(:spreadsheet, non_null(:boolean))
   end
 end

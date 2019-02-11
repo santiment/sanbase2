@@ -232,7 +232,7 @@ defmodule SanbaseWeb.ApiExamplesView do
   end
 
   defp required_san_stake_full_access() do
-    Config.module_get(ApiTimeframeRestriction, :required_san_stake_full_access)
+    Config.module_get(Sanbase, :required_san_stake_full_access)
     |> String.to_integer()
   end
 end

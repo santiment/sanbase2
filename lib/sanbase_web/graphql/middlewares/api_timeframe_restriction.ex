@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction do
   end
 
   defp required_san_stake_full_access() do
-    Config.get(:required_san_stake_full_access) |> String.to_integer()
+    Config.module_get(Sanbase, :required_san_stake_full_access) |> String.to_integer()
   end
 
   defp restrict_to_in_days() do

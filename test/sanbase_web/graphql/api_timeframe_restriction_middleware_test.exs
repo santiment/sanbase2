@@ -230,7 +230,7 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
   defp before_restricted_from(), do: Timex.shift(Timex.now(), days: restrict_from_in_days() - 2)
 
   defp required_san_stake_full_access() do
-    Config.module_get(ApiTimeframeRestriction, :required_san_stake_full_access)
+    Config.module_get(Sanbase, :required_san_stake_full_access)
     |> String.to_integer()
   end
 

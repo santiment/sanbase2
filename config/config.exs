@@ -10,7 +10,9 @@ config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
 config :ecto, json_library: Jason
 
-config :sanbase, Sanbase, environment: "#{Mix.env()}"
+config :sanbase, Sanbase,
+  environment: "#{Mix.env()}",
+  required_san_stake_full_access: {:system, "REQUIRED_SAN_STAKE_FULL_ACCESS", "1000"}
 
 config :sanbase, Sanbase.ClickhouseRepo, adapter: Ecto.Adapters.Postgres
 
@@ -119,8 +121,7 @@ config :sanbase, SanbaseWeb.Graphql.PlugAttack,
 
 config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},
-  restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"},
-  required_san_stake_full_access: {:system, "REQUIRED_SAN_STAKE_FULL_ACCESS", "1000"}
+  restrict_from_in_days: {:system, "RESTRICT_FROM_IN_MONTHS", "90"}
 
 config :sanbase, Sanbase.Discourse,
   url: {:system, "DISCOURSE_URL", "https://discourse.stage.internal.santiment.net/"},

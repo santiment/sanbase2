@@ -168,7 +168,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
   defp struct_from_map(%{type: "price_absolute_change"} = trigger_settings),
     do: {:ok, struct!(PriceAbsoluteChangeSettings, trigger_settings)}
-  
+
   defp struct_from_map(%{type: "trending_words"} = trigger_settings),
     do: {:ok, struct!(TrendingWordsTriggerSettings, trigger_settings)}
 

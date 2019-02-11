@@ -29,6 +29,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
           payload: Type.payload()
         }
 
+  use Vex.Struct
   alias __MODULE__
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache

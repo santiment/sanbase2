@@ -17,6 +17,8 @@ defmodule Sanbase.Auth.User do
   alias Sanbase.Repo
   alias Sanbase.Telegram
 
+  require Sanbase.Utils.Config, as: Config
+
   @login_email_template "login"
   @verification_email_template "verify email"
 
@@ -100,6 +102,26 @@ defmodule Sanbase.Auth.User do
     |> validate_change(:email_candidate, &validate_email_candidate_change/2)
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+  end
+
+  def permissions(%__MODULE__{} = user) do
+    with {:ok, san_balance} <- san_balance(user) do
+      san_balance = san_balance |> Decimal.to_float()
+
+      required_san_tokens =
+        Config.module_get(Sanbase, :required_san_stake_full_access)
+        |> Sanbase.Utils.Math.to_float()
+
+      case san_balance >= required_san_tokens do
+        true ->
+          {:ok, %{historical_data: true, realtime_data: true, spreadsheet: true}}
+
+        _ ->
+          {:ok, %{historical_data: false, realtime_data: false, spreadsheet: false}}
+      end
+    else
+      _ -> {:ok, %{historical_data: false, realtime_data: false, spreadsheet: false}}
+    end
   end
 
   def ascii_username?(nil), do: true

@@ -22,7 +22,7 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     query = """
     {
       currentUser {
-        id,
+        id
         sanBalance
       }
     }
@@ -31,8 +31,65 @@ defmodule SanbaseWeb.Graphql.AccountTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> json_response(200)
 
-    assert json_response(result, 200)["data"]["currentUser"]["sanBalance"] == 0.0
+    assert result["data"]["currentUser"]["sanBalance"] == 0.0
+  end
+
+  test "user with san balance of 0 does not have any permissions", context do
+    query = """
+    {
+      currentUser {
+        id
+        permissions{
+          historicalData
+          realtimeData
+          spreadsheet
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> json_response(200)
+
+    assert result["data"]["currentUser"]["permissions"] == %{
+             "historicalData" => false,
+             "realtimeData" => false,
+             "spreadsheet" => false
+           }
+  end
+
+  test "user with san balance of 1000 has all permisions", context do
+    context.user
+    |> User.changeset(%{test_san_balance: 1000})
+    |> Repo.update!()
+
+    query = """
+    {
+      currentUser {
+        id
+        permissions{
+          historicalData
+          realtimeData
+          spreadsheet
+        }
+      }
+    }
+    """
+
+    result =
+      context.conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> json_response(200)
+
+    assert result["data"]["currentUser"]["permissions"] == %{
+             "historicalData" => true,
+             "realtimeData" => true,
+             "spreadsheet" => true
+           }
   end
 
   test "change email of current user", %{conn: conn, user: user} do

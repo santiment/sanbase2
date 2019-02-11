@@ -14,7 +14,7 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
         }
 
   @doc ~s"""
-  Returns the average value of the daily active addresses 
+  Returns the average value of the daily active addresses
   for Ethereum in a given interval [form, to].
   The last day is included in the AVG multiplied by coefficient (24 / current_hour)
   """
@@ -39,9 +39,9 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
       dt >= toDateTime(?1) AND
       dt <= toDateTime(?2)
       GROUP BY dt
-      
+
       UNION ALL
-      
+
       SELECT dt, (toFloat64(uniq(address)) * toFloat64(#{today_coefficient})) as total_addresses
       FROM eth_daily_active_addresses_list
       WHERE dt >= toDateTime(today()) AND
@@ -76,7 +76,7 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
     interval = DateTimeUtils.compound_duration_to_seconds(interval)
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
-    span = div(to_datetime_unix - from_datetime_unix, interval)
+    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
     SELECT toUnixTimestamp(time) as dt, SUM(value) as active_addresses
@@ -97,9 +97,9 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
         dt >= toDateTime(?3) AND
         dt <= toDateTime(?4)
         GROUP BY dt
-        
+
         UNION ALL
-        
+
         SELECT toStartOfDay(dt) as dt, uniq(address) as total_addresses
         FROM eth_daily_active_addresses_list
         WHERE dt >= toDateTime(today()) AND

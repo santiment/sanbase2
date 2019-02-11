@@ -21,7 +21,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
         }
 
   @doc ~s"""
-  Returns the average value of the daily active addresses 
+  Returns the average value of the daily active addresses
   for every contract in a given interval [form, to].
   The last day is included in the AVG multiplied by coefficient (24 / current_hour)
   Returns a list of tuples {contract, active_addresses}
@@ -109,7 +109,7 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
     interval = DateTimeUtils.compound_duration_to_seconds(interval)
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
-    span = div(to_datetime_unix - from_datetime_unix, interval)
+    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
     SELECT toUnixTimestamp(time) as dt, SUM(value) as active_addresses
@@ -130,12 +130,12 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
         dt >= toDateTime(?4) AND
         dt <= toDateTime(?5)
         GROUP BY contract, dt
-        
+
         UNION ALL
-        
+
         SELECT toStartOfDay(dt) as dt, uniq(address) as total_addresses
         FROM erc20_daily_active_addresses_list
-        WHERE 
+        WHERE
         contract = ?3 AND
         dt >= toDateTime(today()) AND
         dt >= toDateTime(?4) AND

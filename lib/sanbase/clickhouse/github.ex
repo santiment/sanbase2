@@ -174,8 +174,7 @@ defmodule Sanbase.Clickhouse.Github do
   defp dev_activity_query(organization, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
-    span = div(to_datetime_unix - from_datetime_unix, interval)
-    span = Enum.max([span, 1])
+    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
     SELECT time, SUM(events) as events_count
@@ -218,8 +217,7 @@ defmodule Sanbase.Clickhouse.Github do
   defp github_activity_query(organization, from_datetime, to_datetime, interval) do
     from_datetime_unix = DateTime.to_unix(from_datetime)
     to_datetime_unix = DateTime.to_unix(to_datetime)
-    span = div(to_datetime_unix - from_datetime_unix, interval)
-    span = Enum.max([span, 1])
+    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
     SELECT time, SUM(events) as events_count

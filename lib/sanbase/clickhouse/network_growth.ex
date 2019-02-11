@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.NetworkGrowth do
   def network_growth(contract, from, to, interval) do
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
-    span = div(to_datetime_unix - from_datetime_unix, interval)
+    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
     SELECT toUnixTimestamp(time) as dt, SUM(value) as new_addresses

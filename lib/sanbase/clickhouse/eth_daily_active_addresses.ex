@@ -14,11 +14,31 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
         }
 
   @doc ~s"""
+  Gets the current value for active addresses for today.
+  Returns an tuple {:ok, float}
+  """
+  @spec realtime_active_addresses() :: {:ok, float()}
+  def realtime_active_addresses() do
+    query = """
+    SELECT coalesce(uniq(address), 0) as active_addresses
+    FROM eth_daily_active_addresses_list
+    PREWHERE dt >= toDateTime(today())
+    """
+
+    {:ok, result} =
+      ClickhouseRepo.query_transform(query, [], fn
+        active_addresses ->
+          active_addresses |> to_integer
+      end)
+
+    {:ok, result |> List.first()}
+  end
+
+  @doc ~s"""
   Returns the average value of the daily active addresses
   for Ethereum in a given interval [form, to].
   The last day is included in the AVG multiplied by coefficient (24 / current_hour)
   """
-
   @spec average_active_addresses(
           %DateTime{},
           %DateTime{}
@@ -66,7 +86,6 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
   Returns the active addresses for Ethereum chunked in intervals between [from, to]
   If last day is included in the [from, to] the value is the realtime value in the current moment
   """
-
   @spec average_active_addresses(
           %DateTime{},
           %DateTime{},

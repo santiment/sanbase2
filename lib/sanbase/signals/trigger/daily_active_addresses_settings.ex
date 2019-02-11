@@ -25,13 +25,19 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
     {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target)
 
     current_daa =
-      Cache.get_or_store("daa_#{contract}_current", fn ->
-        average_daily_active_addresses(
-          contract,
-          Timex.shift(Timex.now(), days: -1),
-          Timex.now()
-        )
-      end)
+      case contract do
+        "ETH" ->
+          Cache.get_or_store("daa_#{contract}_current", fn ->
+            {:ok, result} = EthDailyActiveAddresses.realtime_active_addresses()
+            result
+          end)
+
+        _ ->
+          Cache.get_or_store("daa_#{contract}_current", fn ->
+            {:ok, [{_, result}]} = Erc20DailyActiveAddresses.realtime_active_addresses(contract)
+            result
+          end)
+      end
 
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
 

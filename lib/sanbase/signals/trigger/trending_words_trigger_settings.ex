@@ -41,7 +41,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   # Validations
   validates(:channel, inclusion: valid_notification_channels)
-  validates(:trigger_time, &__MODULE__.valid_trigger_time?/1)
+  validates(:trigger_time, &valid_iso8601_datetime_string?/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type
@@ -50,23 +50,12 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   def get_data(%TrendingWordsTriggerSettings{trigger_time: trigger_time}) do
     now = Timex.now()
     trigger_time = Time.from_iso8601!(trigger_time)
+    now_time = DateTime.to_time(now)
 
-    if trigger_time.hour == now.hour do
+    if Time.compare(now_time, trigger_time) in [:gt, :eq] do
       get_today_top_words(now)
     end
   end
-
-  def valid_trigger_time?(trigger_time) when is_binary(trigger_time) do
-    case Time.from_iso8601(trigger_time) do
-      {:ok, _time} ->
-        :ok
-
-      _ ->
-        {:error, "#{trigger_time} isn't a valid iso time"}
-    end
-  end
-
-  def valid_trigger_time?(_), do: :error
 
   # private functions
 

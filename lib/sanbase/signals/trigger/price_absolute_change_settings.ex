@@ -13,13 +13,13 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
-  alias Sanbase.UserLists.UserList
 
   @derive Jason.Encoder
   @trigger_type "price_absolute_change"
   @enforce_keys [:type, :target, :channel]
   defstruct type: @trigger_type,
             target: nil,
+            filtered_target_list: [],
             channel: nil,
             above: nil,
             below: nil,
@@ -62,23 +62,8 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     )
   end
 
-  def get_data(%__MODULE__{target: target}) when is_binary(target) do
-    [{target, get_data_by_slug(target)}]
-  end
-
-  def get_data(%__MODULE__{target: target_list}) when is_list(target_list) do
+  def get_data(%__MODULE__{filtered_target_list: target_list}) when is_list(target_list) do
     target_list
-    |> Enum.map(fn slug ->
-      {slug, get_data_by_slug(slug)}
-    end)
-  end
-
-  def get_data(%__MODULE__{target: %{user_list: user_list_id}}) do
-    %UserList{list_items: list_items} = UserList.by_id(user_list_id)
-
-    list_items
-    |> Enum.map(fn %{project_id: id} -> id end)
-    |> Project.List.slugs_by_ids()
     |> Enum.map(fn slug ->
       {slug, get_data_by_slug(slug)}
     end)
@@ -88,17 +73,10 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     @spec triggered?(Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings.t()) :: boolean()
     def triggered?(%PriceAbsoluteChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PriceAbsoluteChangeSettings{target: target} = settings)
-        when is_binary(target) do
+    def evaluate(settings: %PriceAbsoluteChangeSettings{} = settings) do
       case PriceAbsoluteChangeSettings.get_data(settings) do
-        list when list != [] ->
+        list when is_list(list) and list != [] ->
           build_result(list, settings)
-
-        [] ->
-          %PriceAbsoluteChangeSettings{
-            settings
-            | triggered?: false
-          }
 
         _ ->
           %PriceAbsoluteChangeSettings{settings | triggered?: false}
@@ -108,28 +86,21 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     defp build_result(list, %PriceAbsoluteChangeSettings{above: above, below: below} = settings) do
       payload =
         Enum.reduce(list, %{}, fn
-          slug_last_price, acc ->
-            case slug_last_price do
-              {slug, {:ok, price}} when price >= above ->
-                Map.put(acc, slug, payload(settings, price, "above $#{above}"))
+          {slug, {:ok, price}}, acc when price >= above ->
+            Map.put(acc, slug, payload(slug, price, "above $#{above}"))
 
-              {slug, {:ok, price}} when price <= below ->
-                Map.put(acc, slug, payload(settings, price, "below $#{below}"))
+          {slug, {:ok, price}}, acc when price <= below ->
+            Map.put(acc, slug, payload(slug, price, "below $#{below}"))
 
-              _ ->
-                acc
-            end
+          _, acc ->
+            acc
         end)
 
-      if payload != %{} do
-        %PriceAbsoluteChangeSettings{
-          settings
-          | triggered?: true,
-            payload: payload
-        }
-      else
+      %PriceAbsoluteChangeSettings{
         settings
-      end
+        | triggered?: payload == %{},
+          payload: payload
+      }
     end
 
     @doc ~s"""
@@ -158,8 +129,8 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
       end
     end
 
-    defp payload(settings, last_price_usd, message) do
-      project = Sanbase.Model.Project.by_slug(settings.target)
+    defp payload(slug, last_price_usd, message) do
+      project = Sanbase.Model.Project.by_slug(slug)
 
       """
       The price of **#{project.name}** is $#{last_price_usd} which is #{message}

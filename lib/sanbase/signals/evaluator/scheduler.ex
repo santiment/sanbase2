@@ -47,17 +47,35 @@ defmodule Sanbase.Signals.Scheduler do
     |> Sanbase.Parallel.pmap_concurrent(
       fn %UserTrigger{} = user_trigger ->
         case Signal.send(user_trigger) do
-          :ok ->
-            %{user: user, trigger: %{id: trigger_id}} = user_trigger
-            UserTrigger.update_user_trigger(user, %{id: trigger_id, last_triggered: Timex.now()})
-            :ok
+          list when is_list(list) ->
+            %{user: user, trigger: %{id: trigger_id, last_triggered: last_triggered}} =
+              user_trigger
 
-          error ->
-            error
+            now = Timex.now()
+
+            last_triggered =
+              Enum.reduce(list, last_triggered, fn
+                {slug, :ok}, acc ->
+                  Map.put(acc, slug, now)
+
+                _, acc ->
+                  acc
+              end)
+
+            UserTrigger.update_user_trigger(user, %{
+              id: trigger_id,
+              last_triggered: last_triggered
+            })
+
+            list
+
+          _ ->
+            []
         end
       end,
       max_concurrency: 20,
-      ordered: false
+      ordered: false,
+      map_type: :flat_map
     )
   end
 
@@ -66,7 +84,7 @@ defmodule Sanbase.Signals.Scheduler do
   end
 
   defp log_sent_messages_stats(list, type) do
-    successful_messages = list |> Enum.count(fn elem -> elem == :ok end)
+    successful_messages = list |> Enum.count(fn {_elem, status} -> status == :ok end)
 
     Logger.info(
       "In total #{successful_messages}/#{length(list)} #{type} signals were sent successfully"

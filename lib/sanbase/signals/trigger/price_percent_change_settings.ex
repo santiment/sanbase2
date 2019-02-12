@@ -17,6 +17,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   @enforce_keys [:type, :target, :channel, :time_window]
   defstruct type: @trigger_type,
             target: nil,
+            filtered_target_list: [],
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
@@ -44,12 +45,20 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def get_data(settings) do
+  @spec get_data(Sanbase.Signals.Trigger.PricePercentChangeSettings.t()) :: [
+          {Type.target(), any()}
+        ]
+  def get_data(%__MODULE__{filtered_target_list: target} = settings) when is_list(target) do
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-    project = Project.by_slug(settings.target)
+    projects = Project.by_slugs(target)
     to = Timex.now()
     from = Timex.shift(to, seconds: -time_window_sec)
 
+    projects
+    |> Enum.map(&price_percent_change(&1, from, to))
+  end
+
+  defp price_percent_change(project, from, to) do
     Cache.get_or_store(
       cache_key_datetimes(project, from, to),
       fn ->
@@ -60,10 +69,11 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
         )
         |> case do
           {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
-            {:ok, Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)}
+            {project.coinmarketcap_id,
+             {:ok, Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)}}
 
           error ->
-            {:error, error}
+            {project.coinmarketcap_id, {:error, error}}
         end
       end
     )
@@ -80,18 +90,34 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PricePercentChangeSettings{percent_threshold: percent_threshold} = settings) do
+    def evaluate(%PricePercentChangeSettings{} = settings) do
       case PricePercentChangeSettings.get_data(settings) do
-        {:ok, percent_change} when percent_change >= percent_threshold ->
-          %PricePercentChangeSettings{
-            settings
-            | triggered?: true,
-              payload: payload(settings, percent_change)
-          }
+        list when is_list(list) and list != [] ->
+          build_result(list, settings)
 
         _ ->
           %PricePercentChangeSettings{settings | triggered?: false}
       end
+    end
+
+    defp build_result(
+           list,
+           %PricePercentChangeSettings{percent_threshold: percent_threshold} = settings
+         ) do
+      payload =
+        Enum.reduce(list, %{}, fn
+          {slug, {:ok, percent_change}}, acc when percent_change >= percent_threshold ->
+            Map.put(acc, slug, payload(settings, percent_change))
+
+          _, acc ->
+            acc
+        end)
+
+      %PricePercentChangeSettings{
+        settings
+        | triggered?: payload == %{},
+          payload: payload
+      }
     end
 
     @doc ~s"""

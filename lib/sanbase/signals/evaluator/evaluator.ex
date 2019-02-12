@@ -12,7 +12,6 @@ defmodule Sanbase.Signals.Evaluator do
   @spec run(list()) :: list()
   def run(user_triggers) do
     user_triggers
-    |> remove_triggers_on_cooldown()
     |> Sanbase.Parallel.pmap_concurrent(
       &evaluate/1,
       ordered: false,
@@ -20,13 +19,6 @@ defmodule Sanbase.Signals.Evaluator do
       timeout: 30_000
     )
     |> Enum.filter(&triggered?/1)
-  end
-
-  defp remove_triggers_on_cooldown(triggers) do
-    triggers
-    |> Enum.reject(fn %{trigger: trigger} ->
-      Trigger.has_cooldown?(trigger)
-    end)
   end
 
   defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do

@@ -27,9 +27,13 @@ defimpl Sanbase.Signal, for: Any do
   def send(%{
         user: user,
         trigger: %{
-          settings: %{channel: "telegram", triggered?: true, payload: payload}
+          settings: %{channel: "telegram", triggered?: true, payload: payload_map}
         }
-      }) do
-    Sanbase.Telegram.send_message(user, payload)
+      })
+      when is_map(payload_map) do
+    payload_map
+    |> Enum.map(fn {slug, payload} ->
+      {slug, Sanbase.Telegram.send_message(user, payload)}
+    end)
   end
 end

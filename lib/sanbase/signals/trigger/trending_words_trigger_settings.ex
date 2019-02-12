@@ -7,6 +7,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   @trigger_type "trending_words"
   @trending_words_size 10
   @trending_words_hours [1, 8, 14]
+  @minutes_needed_for_trending_words_calculation 15
   @enforce_keys [:type, :channel, :trigger_time]
 
   defstruct type: @trigger_type,
@@ -17,21 +18,41 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
             payload: nil
 
   use Vex.Struct
+
   import Sanbase.Utils.Math, only: [to_integer: 1]
   import Sanbase.Signals.Utils
   import Sanbase.Signals.Validation
-  alias __MODULE__
 
+  alias __MODULE__
+  alias Sanbase.Signals.Type
+
+  @type t :: %__MODULE__{
+          type: Type.trigger_type(),
+          channel: Type.channel(),
+          trigger_time: String.t(),
+          triggered?: boolean(),
+          payload: Type.payload()
+        }
+
+  @type top_word_type :: %{
+          word: String.t(),
+          score: float()
+        }
+
+  # Validations
   validates(:channel, inclusion: valid_notification_channels)
   validates(:trigger_time, &__MODULE__.valid_trigger_time?/1)
 
+  @spec type() :: String.t()
   def type(), do: @trigger_type
 
+  @spec get_data(%TrendingWordsTriggerSettings{}) :: {:ok, list(top_word_type)} | :error
   def get_data(%TrendingWordsTriggerSettings{trigger_time: trigger_time}) do
+    now = Timex.now()
     trigger_time = Time.from_iso8601!(trigger_time)
 
-    if trigger_time.hour == Timex.now().hour do
-      get_today_top_words()
+    if trigger_time.hour == now.hour do
+      get_today_top_words(now)
     end
   end
 
@@ -49,8 +70,8 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   # private functions
 
-  defp get_today_top_words() do
-    {from, to, hour} = get_trending_word_query_params()
+  defp get_today_top_words(now) do
+    {from, to, hour} = get_trending_word_query_params(now)
 
     Sanbase.SocialData.trending_words(
       :all,
@@ -68,12 +89,16 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
     end
   end
 
-  defp get_trending_word_query_params() do
-    now = Timex.now()
-
+  defp get_trending_word_query_params(now) do
     @trending_words_hours
-    |> Enum.filter(&(&1 < now.hour))
+    |> Enum.map(fn hours ->
+      now
+      |> Timex.beginning_of_day()
+      |> Timex.shift(hours: hours, minutes: @minutes_needed_for_trending_words_calculation)
+    end)
+    |> Enum.filter(&(&1 < now))
     |> case do
+      # get last trending words from yesterday
       [] ->
         {
           Timex.beginning_of_day(Timex.shift(now, days: -1)),
@@ -81,11 +106,11 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
           @trending_words_hours |> Enum.max()
         }
 
-      hours ->
+      datetimes ->
         {
           Timex.beginning_of_day(now),
           Timex.end_of_day(now),
-          hours |> Enum.max()
+          datetimes |> Enum.map(& &1.hour) |> List.last()
         }
     end
   end

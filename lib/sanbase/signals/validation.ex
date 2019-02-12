@@ -4,16 +4,23 @@ defmodule Sanbase.Signals.Validation do
   def valid_notification_channels(), do: @notification_channels
 
   def valid_percent?(percent) when is_number(percent) and percent >= -100, do: true
-  def valid_percent?(_), do: false
+
+  def valid_percent?(percent),
+    do: {:error, "#{inspect(percent)} is not a valid percent"}
 
   def valid_price?(price) when is_number(price) and price >= 0, do: :ok
-  def valid_price?(_), do: :error
+  def valid_price?(price), do: {:error, "#{inspect(price)} is not a valid price"}
 
   def valid_time_window?(time_window) when is_binary(time_window) do
     Regex.match?(~r/^\d+[smhdw]$/, time_window)
+    |> case do
+      true -> :ok
+      false -> {:error, "#{inspect(time_window)} is not a valid time window"}
+    end
   end
 
-  def valid_time_window?(_), do: false
+  def valid_time_window?(time_window),
+    do: {:error, "#{inspect(time_window)} is not a valid time window"}
 
   def valid_iso8601_datetime_string?(time) when is_binary(time) do
     case Time.from_iso8601(time) do
@@ -25,10 +32,10 @@ defmodule Sanbase.Signals.Validation do
     end
   end
 
-  def valid_iso8601_datetime_string?(_), do: :error
+  def valid_iso8601_datetime_string?(_), do: {:error, "Not valid ISO8601 time"}
 
   def valid_target?(target) when is_binary(target), do: :ok
-  def valid_target?({:user_list, int}) when is_integer(int), do: :ok
+  def valid_target?(%{user_list: int}) when is_integer(int), do: :ok
 
   def valid_target?(list) when is_list(list) do
     Enum.find(list, fn elem -> not is_binary(elem) end)
@@ -38,5 +45,6 @@ defmodule Sanbase.Signals.Validation do
     end
   end
 
-  def valid_target?(_), do: :error
+  def valid_target?(target),
+    do: {:error, "#{inspect(target)} is not a valid target"}
 end

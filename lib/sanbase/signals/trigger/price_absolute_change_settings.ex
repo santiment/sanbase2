@@ -29,8 +29,6 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   validates(:target, &valid_target?/1)
   validates(:channel, inclusion: valid_notification_channels())
-  validates(:time_window, &valid_time_window?/1)
-  validates(:percent_threshold, &valid_percent?/1)
   validates(:above, &valid_price?/1)
   validates(:below, &valid_price?/1)
   validates(:repeating, &is_boolean/1)

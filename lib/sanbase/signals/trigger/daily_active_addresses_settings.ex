@@ -4,6 +4,15 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   when the number of daily active addresses for today exceeds the average for the
   `time_window` period of time.
   """
+  use Vex.Struct
+
+  import Sanbase.Signals.{Validation, Utils}
+
+  alias __MODULE__
+  alias Sanbase.Signals.Type
+  alias Sanbase.Model.Project
+  alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
+  alias Sanbase.Signals.Evaluator.Cache
 
   @derive Jason.Encoder
   @trigger_type "daily_active_addresses"
@@ -17,7 +26,11 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
             triggered?: false,
             payload: nil
 
-  alias Sanbase.Signals.Type
+  validates(:target, &valid_target?/1)
+  validates(:channel, inclusion: valid_notification_channels())
+  validates(:time_window, &valid_time_window?/1)
+  validates(:percent_threshold, &valid_percent?/1)
+  validates(:repeating, &is_boolean/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -29,19 +42,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
           triggered?: boolean(),
           payload: Type.payload()
         }
-
-  use Vex.Struct
-  import Sanbase.Signals.Utils
-  import Sanbase.Signals.Validation
-
-  alias __MODULE__
-  alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
-  alias Sanbase.Signals.Evaluator.Cache
-
-  validates(:channel, inclusion: valid_notification_channels())
-  validates(:time_window, &valid_time_window?/1)
-  validates(:percent_threshold, &valid_percent?/1)
 
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type

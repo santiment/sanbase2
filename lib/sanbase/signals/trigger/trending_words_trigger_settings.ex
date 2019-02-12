@@ -3,6 +3,15 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   Trigger settings for daily trending words signal
   """
 
+  use Vex.Struct
+
+  import Sanbase.Utils.Math, only: [to_integer: 1]
+  import Sanbase.Signals.Utils
+  import Sanbase.Signals.Validation
+
+  alias __MODULE__
+  alias Sanbase.Signals.Type
+
   @derive [Jason.Encoder]
   @trigger_type "trending_words"
   @trending_words_size 10
@@ -16,15 +25,6 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
             trigger_time: nil,
             triggered?: false,
             payload: nil
-
-  use Vex.Struct
-
-  import Sanbase.Utils.Math, only: [to_integer: 1]
-  import Sanbase.Signals.Utils
-  import Sanbase.Signals.Validation
-
-  alias __MODULE__
-  alias Sanbase.Signals.Type
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),

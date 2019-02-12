@@ -4,6 +4,13 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   when the price of `target` changes by more than `percent_threshold` percent for the
   specified `time_window` time.
   """
+  use Vex.Struct
+  import Sanbase.Signals.{Validation, Utils}
+
+  alias __MODULE__
+  alias Sanbase.Signals.Type
+  alias Sanbase.Model.Project
+  alias Sanbase.Signals.Evaluator.Cache
 
   @derive Jason.Encoder
   @trigger_type "price_percent_change"
@@ -17,8 +24,6 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
             triggered?: false,
             payload: nil
 
-  alias Sanbase.Signals.Type
-
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
@@ -29,14 +34,12 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
           triggered?: boolean(),
           payload: Type.payload()
         }
-  use Vex.Struct
-  import Sanbase.Signals.Utils
 
-  alias __MODULE__
-  alias Sanbase.Model.Project
-  alias Sanbase.Signals.Evaluator.Cache
-
-  validates(:channel, inclusion: notification_channels)
+  validates(:target, &valid_target?/1)
+  validates(:channel, inclusion: valid_notification_channels())
+  validates(:time_window, &valid_time_window?/1)
+  validates(:percent_threshold, &valid_percent?/1)
+  validates(:repeating, &is_boolean/1)
 
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type

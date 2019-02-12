@@ -4,6 +4,17 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
   when the price of `target` goes higher than `above` or lower than `below`
   """
 
+  use Vex.Struct
+
+  import Sanbase.Signals.{Utils, Validation}
+
+  alias __MODULE__
+  alias Sanbase.Signals.Type
+
+  alias Sanbase.Model.Project
+  alias Sanbase.Signals.Evaluator.Cache
+  alias Sanbase.UserLists.UserList
+
   @derive Jason.Encoder
   @trigger_type "price_absolute_change"
   @enforce_keys [:type, :target, :channel]
@@ -16,7 +27,13 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
             triggered?: false,
             payload: nil
 
-  alias Sanbase.Signals.Type
+  validates(:target, &valid_target?/1)
+  validates(:channel, inclusion: valid_notification_channels())
+  validates(:time_window, &valid_time_window?/1)
+  validates(:percent_threshold, &valid_percent?/1)
+  validates(:above, &valid_price?/1)
+  validates(:below, &valid_price?/1)
+  validates(:repeating, &is_boolean/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -28,13 +45,6 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
           triggered?: boolean(),
           payload: Type.payload()
         }
-
-  use Vex.Struct
-  import Sanbase.Signals.Utils
-  alias __MODULE__
-  alias Sanbase.Model.Project
-  alias Sanbase.Signals.Evaluator.Cache
-  alias Sanbase.UserLists.UserList
 
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type

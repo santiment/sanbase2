@@ -107,7 +107,8 @@ defmodule Sanbase.Mixfile do
       {:libcluster, "~> 3.0"},
       {:number, "~> 0.5.7"},
       {:remote_ip, "~> 0.1"},
-      {:cachex, "~> 3.1"}
+      {:cachex, "~> 3.1"},
+      {:vex, "~> 0.8.0", override: true}
     ]
   end
 
@@ -116,7 +117,8 @@ defmodule Sanbase.Mixfile do
       "ecto.setup": [
         "load_dotenv",
         "ecto.drop -r Sanbase.Repo",
-        "ecto.setup -r Sanbase.Repo"
+        "ecto.create -r Sanbase.Repo",
+        "ecto.load -r Sanbase.Repo"
       ],
       "ecto.migrate": [
         "load_dotenv",

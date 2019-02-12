@@ -34,7 +34,7 @@ defmodule Sanbase.Signals.TriggersTest do
   test "try creating user trigger with unknown type" do
     user = insert(:user)
 
-    trigger = %{
+    trigger_settings = %{
       type: "unknown",
       target: "santiment",
       channel: "telegram",
@@ -44,7 +44,27 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:error, message} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, trigger: trigger})
+      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
+
+    assert message == "Trigger structure is invalid"
+  end
+
+  test "try creating user trigger with unknown channel" do
+    user = insert(:user)
+
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: "santiment",
+      channel: "unknown",
+      time_window: "1d",
+      percent_threshold: 300.0,
+      repeating: false,
+      triggered?: false,
+      payload: nil
+    }
+
+    {:error, message} =
+      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
 
     assert message == "Trigger structure is invalid"
   end
@@ -52,7 +72,7 @@ defmodule Sanbase.Signals.TriggersTest do
   test "try creating user trigger with required field in struct" do
     user = insert(:user)
 
-    trigger = %{
+    settings = %{
       type: "daily_active_addresses",
       target: "santiment",
       time_window: "1d",
@@ -61,7 +81,7 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:error, message} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, trigger: trigger})
+      UserTrigger.create_user_trigger(user, %{is_public: true, settings: settings})
 
     assert message == "Trigger structure is invalid"
   end

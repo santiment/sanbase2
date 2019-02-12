@@ -29,10 +29,14 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
           triggered?: boolean(),
           payload: Type.payload()
         }
+  use Vex.Struct
+  import Sanbase.Signals.Utils
 
   alias __MODULE__
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
+
+  validates(:channel, inclusion: notification_channels)
 
   def type(), do: @trigger_type
 
@@ -92,17 +96,12 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
     so different triggers with the same parameter names can be distinguished
     """
     def cache_key(%PricePercentChangeSettings{} = settings) do
-      data =
-        [
-          settings.type,
-          settings.target,
-          settings.time_window,
-          settings.percent_threshold
-        ]
-        |> Jason.encode!()
-
-      :crypto.hash(:sha256, data)
-      |> Base.encode16()
+      construct_cache_key([
+        settings.type,
+        settings.target,
+        settings.time_window,
+        settings.percent_threshold
+      ])
     end
 
     defp chart_url(project) do

@@ -70,5 +70,9 @@ config :sanbase, Sanbase.Scheduler,
     price_absolute_change_sonar_singal: [
       schedule: "4-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_price_absolute_change_signals, []}
+    ],
+    trending_words_sonar_singal: [
+      schedule: "*/5 * * * *",
+      task: {Sanbase.Signals.Scheduler, :run_trending_words_signals, []}
     ]
   ]

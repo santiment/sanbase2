@@ -30,12 +30,18 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
           payload: Type.payload()
         }
 
+  use Vex.Struct
   import Sanbase.Signals.Utils
+  import Sanbase.Signals.Validation
 
   alias __MODULE__
   alias Sanbase.Model.Project
   alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
   alias Sanbase.Signals.Evaluator.Cache
+
+  validates(:channel, inclusion: valid_notification_channels)
+  validates(:time_window, &valid_time_window?/1)
+  validates(:percent_threshold, &valid_percent?/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type
@@ -106,12 +112,12 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
     end
 
     def cache_key(%DailyActiveAddressesSettings{} = settings) do
-      data =
-        [settings.type, settings.target, settings.time_window, settings.percent_threshold]
-        |> Jason.encode!()
-
-      :crypto.hash(:sha256, data)
-      |> Base.encode16()
+      construct_cache_key([
+        settings.type,
+        settings.target,
+        settings.time_window,
+        settings.percent_threshold
+      ])
     end
 
     defp chart_url(project) do

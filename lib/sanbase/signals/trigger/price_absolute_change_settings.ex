@@ -29,6 +29,8 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
           payload: Type.payload()
         }
 
+  use Vex.Struct
+  import Sanbase.Signals.Utils
   alias __MODULE__
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
@@ -80,17 +82,12 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     so different triggers with the same parameter names can be distinguished
     """
     def cache_key(%PriceAbsoluteChangeSettings{} = settings) do
-      data =
-        [
-          settings.type,
-          settings.target,
-          settings.above,
-          settings.below
-        ]
-        |> Jason.encode!()
-
-      :crypto.hash(:sha256, data)
-      |> Base.encode16()
+      construct_cache_key([
+        settings.type,
+        settings.target,
+        settings.above,
+        settings.below
+      ])
     end
 
     defp chart_url(project) do

@@ -133,6 +133,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
   defp is_valid?(trigger) do
     with {:ok, trigger_struct} <- load_in_struct(trigger),
+         true <- Vex.valid?(trigger_struct),
          {:ok, _trigger_map} <- map_from_struct(trigger_struct) do
       true
     else
@@ -167,6 +168,12 @@ defmodule Sanbase.Signals.UserTrigger do
 
   defp struct_from_map(%{type: "price_absolute_change"} = trigger_settings),
     do: {:ok, struct!(PriceAbsoluteChangeSettings, trigger_settings)}
+
+  defp struct_from_map(%{type: "trending_words"} = trigger_settings),
+    do: {:ok, struct!(TrendingWordsTriggerSettings, trigger_settings)}
+
+  defp struct_from_map(%{type: "price_volume"} = trigger_settings),
+    do: {:ok, struct!(PriceVolumeTriggerSettings, trigger_settings)}
 
   defp struct_from_map(_), do: :error
 

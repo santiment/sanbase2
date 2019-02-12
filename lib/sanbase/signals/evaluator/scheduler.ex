@@ -2,7 +2,8 @@ defmodule Sanbase.Signals.Scheduler do
   alias Sanbase.Signals.Trigger.{
     DailyActiveAddressesSettings,
     PricePercentChangeSettings,
-    PriceAbsoluteChangeSettings
+    PriceAbsoluteChangeSettings,
+    TrendingWordsTriggerSettings
   }
 
   alias Sanbase.Signals.UserTrigger
@@ -24,6 +25,11 @@ defmodule Sanbase.Signals.Scheduler do
   def run_daily_active_addresses_signals() do
     DailyActiveAddressesSettings.type()
     |> run
+  end
+
+  def run_trending_words_signals() do
+    TrendingWordsTriggerSettings.type()
+    |> run()
   end
 
   # Private functions

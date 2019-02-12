@@ -7,7 +7,11 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
-  alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
+
+  alias Sanbase.Signals.Trigger.{
+    DailyActiveAddressesSettings,
+    TrendingWordsTriggerSettings
+  }
 
   setup_with_mocks([
     {Sanbase.Chart, [],
@@ -46,6 +50,12 @@ defmodule Sanbase.Signals.EvaluatorTest do
       repeating: false
     }
 
+    trending_words_settings = %{
+      type: TrendingWordsTriggerSettings.type(),
+      channel: "telegram",
+      trigger_time: Time.to_iso8601(Time.utc_now())
+    }
+
     {:ok, trigger1} =
       UserTrigger.create_user_trigger(user, %{
         is_public: true,
@@ -60,10 +70,17 @@ defmodule Sanbase.Signals.EvaluatorTest do
         settings: trigger_settings2
       })
 
+    {:ok, trigger_trending_words} =
+      UserTrigger.create_user_trigger(user, %{
+        is_public: false,
+        settings: trending_words_settings
+      })
+
     [
       user: user,
       trigger1: trigger1,
-      trigger2: trigger2
+      trigger2: trigger2,
+      trigger_trending_words: trigger_trending_words
     ]
   end
 
@@ -137,5 +154,25 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  # Private functions
+  test "evaluate trending words triggers", context do
+    with_mock TrendingWordsTriggerSettings, [:passthrough],
+      get_data: fn _ ->
+        {:ok,
+         [
+           %{score: 1740.2647984845628, word: "bat"},
+           %{score: 792.9209638684719, word: "coinbase"},
+           %{score: 208.48182966076172, word: "mana"},
+           %{score: 721.8164660673655, word: "mth"},
+           %{score: 837.0034350090417, word: "xlm"}
+         ]}
+      end do
+      [triggered] =
+        TrendingWordsTriggerSettings.type()
+        |> UserTrigger.get_triggers_by_type()
+        |> Evaluator.run()
+
+      assert context.trigger_trending_words.id == triggered.id
+      assert String.contains?(triggered.trigger.settings.payload, "coinbase")
+    end
+  end
 end

@@ -21,7 +21,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
-          target: Type.target(),
+          target: Type.complex_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
           percent_threshold: number(),
@@ -39,11 +39,11 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
   alias Sanbase.Signals.Evaluator.Cache
 
-  validates(:channel, inclusion: valid_notification_channels)
+  validates(:channel, inclusion: valid_notification_channels())
   validates(:time_window, &valid_time_window?/1)
   validates(:percent_threshold, &valid_percent?/1)
 
-  @spec type() :: String.t()
+  @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
   def get_data(settings) do

@@ -40,7 +40,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
         }
 
   # Validations
-  validates(:channel, inclusion: valid_notification_channels)
+  validates(:channel, inclusion: valid_notification_channels())
   validates(:trigger_time, &valid_iso8601_datetime_string?/1)
 
   @spec type() :: String.t()
@@ -74,7 +74,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
         {:ok, top_words}
 
       error ->
-        :error
+        {:error, error}
     end
   end
 
@@ -137,7 +137,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
       top_words_table = Enum.join(top_words_strings, "\n")
 
-      payload = """
+      """
       Trending words for: `#{Date.to_string(DateTime.to_date(Timex.now()))}`
 
       ```

@@ -38,7 +38,7 @@ defmodule Sanbase.UserLists.UserList do
   end
 
   def by_id(id) do
-    Repo.get!(UserList, id)
+    from(ul in UserList, where: ul.id == ^id, preload: [:list_items]) |> Repo.one()
   end
 
   def create_user_list(%User{id: user_id} = _user, params \\ %{}) do

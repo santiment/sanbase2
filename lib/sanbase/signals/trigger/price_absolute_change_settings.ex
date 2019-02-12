@@ -20,7 +20,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
-          target: Type.target(),
+          target: Type.complex_target(),
           channel: Type.channel(),
           above: number(),
           below: number(),
@@ -34,14 +34,16 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
   alias __MODULE__
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
+  alias Sanbase.UserLists.UserList
 
+  @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def get_data(settings) do
+  defp get_data_by_slug(slug) when is_binary(slug) do
     Cache.get_or_store(
-      "#{settings.target}_last_price",
+      "#{slug}_last_price",
       fn ->
-        Project.by_slug(settings.target)
+        Project.by_slug(slug)
         |> Sanbase.Influxdb.Measurement.name_from()
         |> Sanbase.Prices.Store.last_record()
         |> case do
@@ -52,27 +54,73 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     )
   end
 
+  def get_data(%__MODULE__{target: target}) when is_binary(target) do
+    [{target, get_data_by_slug(target)}]
+  end
+
+  def get_data(%__MODULE__{target: target_list}) when is_list(target_list) do
+    target_list
+    |> Enum.map(fn slug ->
+      {slug, get_data_by_slug(slug)}
+    end)
+  end
+
+  def get_data(%__MODULE__{target: %{user_list: user_list_id}}) do
+    %UserList{list_items: list_items} = UserList.by_id(user_list_id)
+
+    list_items
+    |> Enum.map(fn %{project_id: id} -> id end)
+    |> Project.List.slugs_by_ids()
+    |> Enum.map(fn slug ->
+      {slug, get_data_by_slug(slug)}
+    end)
+  end
+
   defimpl Sanbase.Signals.Settings, for: PriceAbsoluteChangeSettings do
+    @spec triggered?(Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings.t()) :: boolean()
     def triggered?(%PriceAbsoluteChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PriceAbsoluteChangeSettings{above: above, below: below} = settings) do
+    def evaluate(%PriceAbsoluteChangeSettings{target: target} = settings)
+        when is_binary(target) do
       case PriceAbsoluteChangeSettings.get_data(settings) do
-        {:ok, last_price_usd} when last_price_usd >= above ->
-          %PriceAbsoluteChangeSettings{
-            settings
-            | triggered?: true,
-              payload: payload(settings, last_price_usd, "above $#{above}")
-          }
+        list when list != [] ->
+          build_result(list, settings)
 
-        {:ok, last_price_usd} when last_price_usd <= below ->
+        [] ->
           %PriceAbsoluteChangeSettings{
             settings
-            | triggered?: true,
-              payload: payload(settings, last_price_usd, "below $#{above}")
+            | triggered?: false
           }
 
         _ ->
           %PriceAbsoluteChangeSettings{settings | triggered?: false}
+      end
+    end
+
+    defp build_result(list, %PriceAbsoluteChangeSettings{above: above, below: below} = settings) do
+      payload =
+        Enum.reduce(list, %{}, fn
+          slug_last_price, acc ->
+            case slug_last_price do
+              {slug, {:ok, price}} when price >= above ->
+                Map.put(acc, slug, payload(settings, price, "above $#{above}"))
+
+              {slug, {:ok, price}} when price <= below ->
+                Map.put(acc, slug, payload(settings, price, "below $#{below}"))
+
+              _ ->
+                acc
+            end
+        end)
+
+      if payload != %{} do
+        %PriceAbsoluteChangeSettings{
+          settings
+          | triggered?: true,
+            payload: payload
+        }
+      else
+        settings
       end
     end
 

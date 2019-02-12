@@ -21,7 +21,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
-          target: Type.target(),
+          target: Type.complex_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
           percent_threshold: number(),
@@ -38,6 +38,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
 
   validates(:channel, inclusion: notification_channels)
 
+  @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
   def get_data(settings) do

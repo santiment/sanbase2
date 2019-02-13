@@ -331,6 +331,13 @@ defmodule Sanbase.Model.Project do
     Project.by_slug(slug) |> contract_info()
   end
 
+  def contract_address(%Project{} = project) do
+    case contract_info(project) do
+      {:ok, address, _} -> address
+      _ -> nil
+    end
+  end
+
   def contract_info(%Project{coinmarketcap_id: "ethereum"}) do
     # Internally when we have a table with blockchain related data
     # contract address is used to identify projects. In case of ethereum

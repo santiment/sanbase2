@@ -10,13 +10,8 @@ defmodule SanbaseWeb.Graphql.TimescaledbDataloader do
     args = Enum.to_list(args)
     [%{from: from, to: to} | _] = args
 
-    Enum.map(args, fn %{project: project} ->
-      case project do
-        %Project{coinmarketcap_id: "ethereum"} -> "ETH"
-        %Project{main_contract_address: contract_address} -> contract_address
-        _ -> nil
-      end
-    end)
+    args
+    |> Enum.map(fn %{project: project} -> Project.contract_address(project) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(200)
     |> Sanbase.Parallel.flat_pmap(fn contract_addresses ->

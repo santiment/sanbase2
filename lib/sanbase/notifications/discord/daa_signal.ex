@@ -75,8 +75,8 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     if Notification.has_cooldown?(project, notification_type, project_cooldown()) do
       nil
     else
-      avg_daa = get_daa_contract(project.main_contract_address, avg_daa_for_projects)
-      current_daa = get_daa_contract(project.main_contract_address, today_daa_for_projects)
+      avg_daa = get_daa_contract(Project.contract_address(project), avg_daa_for_projects)
+      current_daa = get_daa_contract(Project.contract_address(project), today_daa_for_projects)
       {last_triggered_daa, hours} = last_triggered_daa(project, notification_type)
 
       percent_change = percent_change(avg_daa, current_daa - last_triggered_daa)
@@ -151,7 +151,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp get_or_store_avg_daa(projects) do
     ConCache.get_or_store(:signals_cache, "daa_signal_#{today_str()}_averages", fn ->
       projects
-      |> Enum.map(& &1.main_contract_address)
+      |> Enum.map(&Project.contract_address/1)
       |> Enum.chunk_every(100)
       |> Enum.flat_map(fn contracts ->
         {:ok, daa_result} =
@@ -174,7 +174,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   defp all_projects_daa_for_today(projects) do
     projects
-    |> Enum.map(& &1.main_contract_address)
+    |> Enum.map(&Project.contract_address/1)
     |> Enum.chunk_every(100)
     |> Enum.flat_map(fn contracts ->
       {:ok, today_daa} = Erc20DailyActiveAddresses.realtime_active_addresses(contracts)

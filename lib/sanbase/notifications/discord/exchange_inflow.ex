@@ -26,16 +26,13 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
     projects =
       projects()
       |> Project.projects_over_volume_threshold(volume_threshold)
-      |> Enum.map(fn
-        %Project{coinmarketcap_id: "ethereum"} = project ->
-          %Project{project | main_contract_address: "ETH"}
-
-        data ->
-          data
+      |> Enum.map(fn project ->
+        # Downcase the contract address and transform it to "ETH" in case of Ethereum
+        %Project{project | main_contract_address: Project.contract_address(project)}
       end)
 
     projects
-    |> Enum.map(& &1.main_contract_address)
+    |> Enum.map(&Project.contract_address/1)
     |> Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(from, to)
     |> case do
       {:ok, list} ->
@@ -99,7 +96,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
 
     projects
     |> Enum.map(fn %Project{} = project ->
-      inflow = Map.get(contract_inflow_map, project.main_contract_address)
+      inflow = Map.get(contract_inflow_map, Project.contract_address(project))
 
       build_project_payload(project, notification_type, inflow)
     end)
@@ -135,7 +132,7 @@ defmodule Sanbase.Notifications.Discord.ExchangeInflow do
         {true, %DateTime{} = cooldown} ->
           with {:ok, [%{inflow: new_inflow}]} <-
                  Sanbase.Blockchain.ExchangeFundsFlow.transactions_in(
-                   [project.main_contract_address],
+                   [Project.contract_address(project)],
                    cooldown,
                    Timex.now()
                  ) do

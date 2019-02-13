@@ -180,6 +180,18 @@ defmodule Sanbase.Signals.UserTrigger do
       _ ->
         {:error, "Can't remove trigger wit id #{trigger_id}"}
     end
+  @spec historical_trigger_points(%Trigger{}) :: list(any)
+  def historical_trigger_points(%Trigger{} = trigger) do
+    Trigger.historical_trigger_points(trigger)
+  end
+
+  @spec historical_trigger_points(map()) :: list(any)
+  def historical_trigger_points(%{settings: settings, cooldown: cooldown} = params) do
+    {:ok, settings_struct} =
+      settings
+      |> load_in_struct()
+
+    Trigger.historical_trigger_points(%Trigger{settings: settings_struct, cooldown: cooldown})
   end
 
   # Private functions
@@ -215,8 +227,6 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
-<<<<<<< HEAD
-=======
   defp load_in_struct(trigger_settings) when is_map(trigger_settings) do
     trigger_settings =
       for {key, val} <- trigger_settings, into: %{} do

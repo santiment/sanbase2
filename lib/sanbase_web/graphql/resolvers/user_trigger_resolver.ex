@@ -60,6 +60,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     {:ok, UserTrigger.all_public_triggers() |> Enum.map(&transform_user_trigger/1)}
   end
 
+  def historical_trigger_points(_root, args, _) do
+    UserTrigger.historical_trigger_points(args)
+  end
+
   defp handle_result(result, operation) do
     case result do
       {:ok, ut} ->

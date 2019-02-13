@@ -36,7 +36,7 @@ defmodule Sanbase.Signals.Trigger do
   def changeset(schema, params) do
     schema
     |> cast(params, [:settings, :is_public, :cooldown, :last_triggered])
-    |> validate_required([:settings, :is_public, :cooldown])
+    |> validate_required([:settings])
   end
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do

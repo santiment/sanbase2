@@ -25,8 +25,7 @@ defmodule Sanbase.Signals.Evaluator do
     Cache.get_or_store(
       Trigger.cache_key(trigger),
       fn ->
-        res = %UserTrigger{user_trigger | trigger: Trigger.evaluate(trigger)}
-        res
+        %UserTrigger{user_trigger | trigger: Trigger.evaluate(trigger)}
       end
     )
   end

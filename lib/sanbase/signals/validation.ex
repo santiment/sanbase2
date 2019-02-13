@@ -3,6 +3,11 @@ defmodule Sanbase.Signals.Validation do
 
   def valid_notification_channels(), do: @notification_channels
 
+  def valid_notification_channel(channel) when channel in @notification_channels, do: :ok
+
+  def valid_notification_channel(channel),
+    do: {:error, "#{inspect(channel)} is not a valid notification channel"}
+
   def valid_percent?(percent) when is_number(percent) and percent >= -100, do: true
 
   def valid_percent?(percent),

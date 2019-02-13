@@ -19,12 +19,12 @@ defmodule Sanbase.Signals.Scheduler do
 
   def run_price_absolute_change_signals() do
     PriceAbsoluteChangeSettings.type()
-    |> run
+    |> run()
   end
 
   def run_daily_active_addresses_signals() do
     DailyActiveAddressesSettings.type()
-    |> run
+    |> run()
   end
 
   def run_trending_words_signals() do

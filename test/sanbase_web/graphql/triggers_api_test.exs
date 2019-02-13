@@ -134,6 +134,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_settings = %{
       "type" => "daily_active_addresses",
       "target" => "santiment",
+      "filtered_target_list" => [],
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
@@ -171,6 +172,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_settings = %{
       "type" => "daily_active_addresses",
       "target" => "santiment",
+      "filtered_target_list" => [],
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
@@ -207,6 +209,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_settings = %{
       "type" => "daily_active_addresses",
       "target" => "santiment",
+      "filtered_target_list" => [],
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
@@ -247,6 +250,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_settings = %{
       "type" => "daily_active_addresses",
       "target" => "santiment",
+      "filtered_target_list" => [],
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,

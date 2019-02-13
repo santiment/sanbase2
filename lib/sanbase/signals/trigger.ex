@@ -23,18 +23,20 @@ defmodule Sanbase.Signals.Trigger do
   import Ecto.Changeset
 
   alias __MODULE__
+  alias Sanbase.Model.Project
 
   embedded_schema do
     field(:settings, :map)
     field(:is_public, :boolean, default: false)
-    field(:last_triggered, :map)
-    field(:cooldown, :string)
+    field(:last_triggered, :map, default: %{})
+    field(:cooldown, :string, default: "24h")
   end
 
   @doc false
   def changeset(schema, params) do
     schema
     |> cast(params, [:settings, :is_public, :cooldown, :last_triggered])
+    |> validate_required([:settings, :is_public, :cooldown])
   end
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
@@ -42,6 +44,11 @@ defmodule Sanbase.Signals.Trigger do
       %{trigger_settings | filtered_target_list: remove_targets_on_cooldown(target, trigger)}
       |> Sanbase.Signals.Settings.evaluate()
 
+    %Trigger{trigger | settings: trigger_settings}
+  end
+
+  def evaluate(%Trigger{settings: trigger_settings} = trigger) do
+    trigger_settings = trigger_settings |> Sanbase.Signals.Settings.evaluate()
     %Trigger{trigger | settings: trigger_settings}
   end
 
@@ -53,17 +60,18 @@ defmodule Sanbase.Signals.Trigger do
     Sanbase.Signals.Settings.cache_key(trigger_settings)
   end
 
-  def has_cooldown?(%Trigger{last_triggered: nil}), do: false
-  def has_cooldown?(%Trigger{cooldown: nil}), do: false
+  def has_cooldown?(%Trigger{last_triggered: lt}, _target) when lt == %{}, do: false
 
   def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt}, target) when is_map(lt) do
     case Map.get(lt, target) do
       nil ->
         false
 
-      larget_last_triggered ->
+      target_last_triggered ->
+        target_last_triggered = target_last_triggered |> Sanbase.DateTimeUtils.from_iso8601!()
+
         Timex.compare(
-          Timex.shift(larget_last_triggered,
+          Timex.shift(target_last_triggered,
             seconds: Sanbase.DateTimeUtils.compound_duration_to_seconds(cd)
           ),
           Timex.now()

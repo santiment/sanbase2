@@ -73,7 +73,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     @spec triggered?(Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings.t()) :: boolean()
     def triggered?(%PriceAbsoluteChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(settings: %PriceAbsoluteChangeSettings{} = settings) do
+    def evaluate(%PriceAbsoluteChangeSettings{} = settings) do
       case PriceAbsoluteChangeSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)
@@ -98,7 +98,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
       %PriceAbsoluteChangeSettings{
         settings
-        | triggered?: payload == %{},
+        | triggered?: payload != %{},
           payload: payload
       }
     end

@@ -115,7 +115,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
 
       %PricePercentChangeSettings{
         settings
-        | triggered?: payload == %{},
+        | triggered?: payload != %{},
           payload: payload
       }
     end

@@ -40,3 +40,6 @@ npm-debug.log
 # Ignore some editor related folders
 /.vscode
 /.elixir_ls
+
+# test coverage
+/cover

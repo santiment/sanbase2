@@ -6,24 +6,27 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
   import Sanbase.DateTimeUtils
 
   alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Prices.Store
+  alias Sanbase.Influxdb.Measurement
 
   test "returns historical data with trigger points" do
+    daa_result = [
+      %{datetime: from_iso8601!("2018-11-17T00:00:00Z"), active_addresses: 23},
+      %{datetime: from_iso8601!("2018-11-18T00:00:00Z"), active_addresses: 25},
+      %{datetime: from_iso8601!("2018-11-19T00:00:00Z"), active_addresses: 60},
+      %{datetime: from_iso8601!("2018-11-20T00:00:00Z"), active_addresses: 30},
+      %{datetime: from_iso8601!("2018-11-21T00:00:00Z"), active_addresses: 20},
+      # this is trigger point
+      %{datetime: from_iso8601!("2018-11-22T00:00:00Z"), active_addresses: 76},
+      %{datetime: from_iso8601!("2018-11-23T00:00:00Z"), active_addresses: 20},
+      %{datetime: from_iso8601!("2018-11-24T00:00:00Z"), active_addresses: 50},
+      %{datetime: from_iso8601!("2018-11-25T00:00:00Z"), active_addresses: 60},
+      %{datetime: from_iso8601!("2018-11-26T00:00:00Z"), active_addresses: 70}
+    ]
+
     with_mock Sanbase.Clickhouse.Erc20DailyActiveAddresses,
       average_active_addresses: fn _, _, _, _ ->
-        {:ok,
-         [
-           %{datetime: from_iso8601!("2018-11-17T00:00:00Z"), active_addresses: 23},
-           %{datetime: from_iso8601!("2018-11-18T00:00:00Z"), active_addresses: 25},
-           %{datetime: from_iso8601!("2018-11-19T00:00:00Z"), active_addresses: 60},
-           %{datetime: from_iso8601!("2018-11-20T00:00:00Z"), active_addresses: 30},
-           %{datetime: from_iso8601!("2018-11-21T00:00:00Z"), active_addresses: 20},
-           # this is trigger point
-           %{datetime: from_iso8601!("2018-11-22T00:00:00Z"), active_addresses: 76},
-           %{datetime: from_iso8601!("2018-11-23T00:00:00Z"), active_addresses: 20},
-           %{datetime: from_iso8601!("2018-11-24T00:00:00Z"), active_addresses: 50},
-           %{datetime: from_iso8601!("2018-11-25T00:00:00Z"), active_addresses: 60},
-           %{datetime: from_iso8601!("2018-11-26T00:00:00Z"), active_addresses: 70}
-         ]}
+        {:ok, daa_result}
       end do
       trigger_settings = %{
         type: "daily_active_addresses",
@@ -34,10 +37,13 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       }
 
       insert(:project, %{
-        ticker: "Santiment",
+        ticker: "SAN",
         coinmarketcap_id: "santiment",
         main_contract_address: "0x123"
       })
+
+      datetimes = daa_result |> Enum.map(fn %{datetime: dt} -> dt end)
+      populate_influxdb(datetimes, "SAN_santiment")
 
       trigger = %{settings: trigger_settings}
       {:ok, points} = UserTrigger.historical_trigger_points(trigger)
@@ -65,5 +71,19 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       assert length(points) == 10
       assert triggered? == true
     end
+  end
+
+  defp populate_influxdb(datetimes, ticker_cmc_id) do
+    Store.drop_measurement(ticker_cmc_id)
+
+    datetimes
+    |> Enum.map(fn dt ->
+      %Measurement{
+        timestamp: dt |> DateTime.to_unix(:nanosecond),
+        fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
+        name: ticker_cmc_id
+      }
+    end)
+    |> Store.import()
   end
 end

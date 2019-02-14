@@ -162,4 +162,13 @@ defmodule Sanbase.Model.Project.List do
     )
     |> Repo.all()
   end
+
+  def slugs_by_ids(ids) do
+    from(
+      p in Project,
+      where: p.id in ^ids and not is_nil(p.coinmarketcap_id),
+      select: p.coinmarketcap_id
+    )
+    |> Repo.all()
+  end
 end

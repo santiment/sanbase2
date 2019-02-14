@@ -3,7 +3,6 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
@@ -87,7 +86,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
   test "all of daily active addresses signals triggered", context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        {100, 20}
+        [{"santiment", {100, 20}}]
       end do
       [triggered1, triggered2 | rest] =
         DailyActiveAddressesSettings.type()
@@ -101,32 +100,10 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "signal setting cooldown works", context do
-    with_mock DailyActiveAddressesSettings, [:passthrough],
-      get_data: fn _ ->
-        {100, 30}
-      end do
-      Tesla.Mock.mock_global(fn
-        %{method: :post} ->
-          %Tesla.Env{status: 200, body: "ok"}
-      end)
-
-      Logger.configure(level: :info)
-
-      assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_daily_active_addresses_signals()
-             end) =~ "signals were sent successfully"
-
-      assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_daily_active_addresses_signals()
-             end) =~ "There were no signals triggered of type"
-    end
-  end
-
   test "only some of daily active addresses signals triggered", context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        {100, 30}
+        [{"santiment", {100, 30}}]
       end do
       [triggered | rest] =
         DailyActiveAddressesSettings.type()
@@ -142,7 +119,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
   test "none of daily active addresses signals triggered", _context do
     with_mock DailyActiveAddressesSettings, [:passthrough],
       get_data: fn _ ->
-        {100, 100}
+        [{"santiment", {100, 100}}]
       end do
       triggered =
         DailyActiveAddressesSettings.type()

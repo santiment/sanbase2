@@ -2,6 +2,7 @@ defmodule Sanbase.Signals.TriggersTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
+  import ExUnit.CaptureLog
 
   alias Sanbase.Signals.UserTrigger
 
@@ -11,6 +12,7 @@ defmodule Sanbase.Signals.TriggersTest do
     trigger_settings = %{
       type: "daily_active_addresses",
       target: "santiment",
+      filtered_target_list: [],
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 300.0,
@@ -28,7 +30,8 @@ defmodule Sanbase.Signals.TriggersTest do
 
     got_trigger = UserTrigger.get_trigger_by_id(user, trigger_id)
 
-    assert got_trigger.settings |> Map.from_struct() == trigger_settings
+    assert got_trigger.settings |> Map.from_struct() ==
+             trigger_settings
   end
 
   test "try creating user trigger with unknown type" do
@@ -63,10 +66,16 @@ defmodule Sanbase.Signals.TriggersTest do
       payload: nil
     }
 
-    {:error, message} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
+    assert capture_log(fn ->
+             {:error, message} =
+               UserTrigger.create_user_trigger(user, %{
+                 is_public: true,
+                 settings: trigger_settings
+               })
 
-    assert message == "Trigger structure is invalid"
+             assert message =~ "Trigger structure is invalid"
+           end) =~
+             ~s/UserTrigger struct is not valid: [{:error, :channel, :by, \"\\\"unknown\\\" is not a valid notification channel"}]/
   end
 
   test "try creating user trigger with required field in struct" do
@@ -92,6 +101,7 @@ defmodule Sanbase.Signals.TriggersTest do
     trigger_settings = %{
       type: "price_percent_change",
       target: "santiment",
+      percent_threshold: 20,
       channel: "telegram",
       time_window: "1d",
       repeating: false
@@ -164,7 +174,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
+      percent_threshold: 200.0,
       repeating: true
     }
 
@@ -189,7 +199,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
+      percent_threshold: 200.0,
       repeating: false
     }
 

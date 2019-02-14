@@ -1,4 +1,8 @@
 defmodule Sanbase.DateTimeUtils do
+  def after_interval(interval, datetime \\ DateTime.utc_now()) when is_binary(interval) do
+    compound_duration_to_seconds(interval) |> seconds_after(datetime)
+  end
+
   def seconds_after(seconds, datetime \\ DateTime.utc_now()) do
     datetime
     |> Timex.shift(seconds: seconds)

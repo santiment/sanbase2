@@ -5,8 +5,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   alias Sanbase.UserLists.UserList
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Repo
-  alias Sanbase.UserLists.ListItem
-  alias Sanbase.Model.Project
 
   def create_user_list(_root, args, %{
         context: %{auth: %{current_user: current_user}}

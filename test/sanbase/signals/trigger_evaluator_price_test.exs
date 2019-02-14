@@ -3,6 +3,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
   import Mock
   import Sanbase.Factory
+  import ExUnit.CaptureLog
 
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
@@ -26,6 +27,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
     end)
 
     user = insert(:user)
+    Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
     Sanbase.Factory.insert(:project, %{
       name: "Santiment",
@@ -67,6 +69,23 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     assert length(rest) == 0
     assert context.trigger2.id == triggered.id
+  end
+
+  test "signal setting cooldown works" do
+    Tesla.Mock.mock_global(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
+    assert capture_log(fn ->
+             Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
+           end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
+
+    Sanbase.Signals.Evaluator.Cache.clear()
+
+    assert capture_log(fn ->
+             Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
+           end) =~ "There were no signals triggered of type"
   end
 
   defp populate_influxdb() do

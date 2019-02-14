@@ -320,6 +320,13 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
+  def by_slugs(slugs) when is_list(slugs) do
+    Project
+    |> where([p], p.coinmarketcap_id in ^slugs)
+    |> preload(^@preloads)
+    |> Repo.all()
+  end
+
   def by_id(id) when is_integer(id) or is_binary(id) do
     Project
     |> where([p], p.id == ^id)

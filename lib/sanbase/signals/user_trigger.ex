@@ -25,6 +25,8 @@ defmodule Sanbase.Signals.UserTrigger do
     TrendingWordsTriggerSettings
   }
 
+  require Logger
+
   @type trigger_struct :: %Trigger{}
 
   @derive Jason.Encoder
@@ -85,7 +87,7 @@ defmodule Sanbase.Signals.UserTrigger do
   @spec create_user_trigger(%User{}, map()) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}
   def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
-    if is_valid?(settings) do
+    if not is_nil(settings) and is_valid?(settings) do
       %UserTrigger{}
       |> changeset(%{user_id: user_id, trigger: params})
       |> Repo.insert()
@@ -137,7 +139,12 @@ defmodule Sanbase.Signals.UserTrigger do
          {:ok, _trigger_map} <- map_from_struct(trigger_struct) do
       true
     else
-      _error ->
+      false ->
+        {:ok, trigger_struct} = load_in_struct(trigger)
+        Logger.warn("UserTrigger struct is not valid: #{inspect(Vex.errors(trigger_struct))}")
+        false
+
+      _ ->
         false
     end
   end

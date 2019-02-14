@@ -23,22 +23,33 @@ defmodule Sanbase.Signals.Trigger do
   import Ecto.Changeset
 
   alias __MODULE__
+  alias Sanbase.Model.Project
+  alias Sanbase.DateTimeUtils
 
   embedded_schema do
     field(:settings, :map)
     field(:is_public, :boolean, default: false)
-    field(:last_triggered, :naive_datetime)
-    field(:cooldown, :string)
+    field(:last_triggered, :map, default: %{})
+    field(:cooldown, :string, default: "24h")
   end
 
   @doc false
   def changeset(schema, params) do
     schema
     |> cast(params, [:settings, :is_public, :cooldown, :last_triggered])
+    |> validate_required([:settings])
+  end
+
+  def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
+    trigger_settings =
+      %{trigger_settings | filtered_target_list: remove_targets_on_cooldown(target, trigger)}
+      |> Sanbase.Signals.Settings.evaluate()
+
+    %Trigger{trigger | settings: trigger_settings}
   end
 
   def evaluate(%Trigger{settings: trigger_settings} = trigger) do
-    trigger_settings = Sanbase.Signals.Settings.evaluate(trigger_settings)
+    trigger_settings = trigger_settings |> Sanbase.Signals.Settings.evaluate()
     %Trigger{trigger | settings: trigger_settings}
   end
 
@@ -50,13 +61,39 @@ defmodule Sanbase.Signals.Trigger do
     Sanbase.Signals.Settings.cache_key(trigger_settings)
   end
 
-  def has_cooldown?(%Trigger{last_triggered: nil}), do: false
-  def has_cooldown?(%Trigger{cooldown: nil}), do: false
+  def has_cooldown?(%Trigger{last_triggered: lt}, _target) when lt == %{}, do: false
 
-  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt}) do
-    Timex.compare(
-      Timex.shift(lt, seconds: Sanbase.DateTimeUtils.compound_duration_to_seconds(cd)),
-      Timex.now()
-    ) == 1
+  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt}, target) when is_map(lt) do
+    case Map.get(lt, target) do
+      nil ->
+        false
+
+      target_last_triggered ->
+        target_last_triggered = target_last_triggered |> DateTimeUtils.from_iso8601!()
+
+        Timex.compare(
+          DateTimeUtils.after_interval(cd, target_last_triggered),
+          Timex.now()
+        ) == 1
+    end
+  end
+
+  defp remove_targets_on_cooldown(target, trigger)
+       when is_binary(target) do
+    remove_targets_on_cooldown([target], trigger)
+  end
+
+  defp remove_targets_on_cooldown(%{user_list: user_list_id}, trigger) do
+    %{list_items: list_items} = Sanbase.UserLists.UserList.by_id(user_list_id)
+
+    list_items
+    |> Enum.map(fn %{project_id: id} -> id end)
+    |> Project.List.slugs_by_ids()
+    |> remove_targets_on_cooldown(trigger)
+  end
+
+  defp remove_targets_on_cooldown(target_list, trigger) when is_list(target_list) do
+    target_list
+    |> Enum.reject(&Sanbase.Signals.Trigger.has_cooldown?(trigger, &1))
   end
 end

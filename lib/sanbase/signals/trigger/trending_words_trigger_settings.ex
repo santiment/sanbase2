@@ -1,7 +1,20 @@
 defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   @moduledoc ~s"""
-  Trigger settings for daily trending words signal
+  Trigger settings for daily trending words signal.
+  The signal is sent at the configured `trigger_time` and sends the last set of
+  trending words that was calculated.
+  Currenly the trending words are calculated 3 times per day - at 01:00, 08:00
+  and 14:00 UTC time
   """
+
+  use Vex.Struct
+
+  import Sanbase.Utils.Math, only: [to_integer: 1]
+  import Sanbase.Signals.Utils
+  import Sanbase.Signals.Validation
+
+  alias __MODULE__
+  alias Sanbase.Signals.Type
 
   @derive [Jason.Encoder]
   @trigger_type "trending_words"
@@ -12,19 +25,9 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   defstruct type: @trigger_type,
             channel: nil,
-            # ISO8601 string time in UTC
             trigger_time: nil,
             triggered?: false,
             payload: nil
-
-  use Vex.Struct
-
-  import Sanbase.Utils.Math, only: [to_integer: 1]
-  import Sanbase.Signals.Utils
-  import Sanbase.Signals.Validation
-
-  alias __MODULE__
-  alias Sanbase.Signals.Type
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -40,7 +43,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
         }
 
   # Validations
-  validates(:channel, inclusion: valid_notification_channels)
+  validates(:channel, &valid_notification_channel/1)
   validates(:trigger_time, &valid_iso8601_datetime_string?/1)
 
   @spec type() :: String.t()
@@ -74,7 +77,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
         {:ok, top_words}
 
       error ->
-        :error
+        {:error, error}
     end
   end
 
@@ -137,7 +140,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
       top_words_table = Enum.join(top_words_strings, "\n")
 
-      payload = """
+      """
       Trending words for: `#{Date.to_string(DateTime.to_date(Timex.now()))}`
 
       ```

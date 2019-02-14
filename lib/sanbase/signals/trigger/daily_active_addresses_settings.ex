@@ -2,14 +2,24 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   @moduledoc ~s"""
   DailyActiveAddressesSettings configures the settings for a signal that is fired
   when the number of daily active addresses for today exceeds the average for the
-  `time_window` period of time.
+  `time_window` period of time by `percent_threshold`.
   """
+  use Vex.Struct
+
+  import Sanbase.Signals.{Validation, Utils}
+
+  alias __MODULE__
+  alias Sanbase.Signals.Type
+  alias Sanbase.Model.Project
+  alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
+  alias Sanbase.Signals.Evaluator.Cache
 
   @derive Jason.Encoder
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :time_window, :percent_threshold]
   defstruct type: @trigger_type,
             target: nil,
+            filtered_target_list: [],
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
@@ -17,11 +27,15 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
             triggered?: false,
             payload: nil
 
-  alias Sanbase.Signals.Type
+  validates(:target, &valid_target?/1)
+  validates(:channel, &valid_notification_channel/1)
+  validates(:time_window, &valid_time_window?/1)
+  validates(:percent_threshold, &valid_percent?/1)
+  validates(:repeating, &is_boolean/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
-          target: Type.target(),
+          target: Type.complex_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
           percent_threshold: number(),
@@ -30,52 +44,43 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
           payload: Type.payload()
         }
 
-  use Vex.Struct
-  import Sanbase.Signals.Utils
-  import Sanbase.Signals.Validation
-
-  alias __MODULE__
-  alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
-  alias Sanbase.Signals.Evaluator.Cache
-
-  validates(:channel, inclusion: valid_notification_channels)
-  validates(:time_window, &valid_time_window?/1)
-  validates(:percent_threshold, &valid_percent?/1)
-
-  @spec type() :: String.t()
+  @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def get_data(settings) do
-    {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target)
-
-    current_daa =
-      case contract do
-        "ETH" ->
-          Cache.get_or_store("daa_#{contract}_current", fn ->
-            {:ok, result} = EthDailyActiveAddresses.realtime_active_addresses()
-            result
-          end)
-
-        _ ->
-          Cache.get_or_store("daa_#{contract}_current", fn ->
-            {:ok, [{_, result}]} = Erc20DailyActiveAddresses.realtime_active_addresses(contract)
-            result
-          end)
-      end
-
+  def get_data(%__MODULE__{filtered_target_list: target_list} = settings)
+      when is_list(target_list) do
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
 
-    average_daa =
-      Cache.get_or_store("daa_#{contract}_prev_#{settings.time_window}", fn ->
-        average_daily_active_addresses(
-          contract,
-          Timex.shift(Timex.now(), seconds: -time_window_sec),
-          Timex.shift(Timex.now(), days: -1)
-        )
-      end)
+    target_list
+    |> Enum.map(fn slug ->
+      {:ok, contract, _token_decimals} = Project.contract_info_by_slug(slug)
 
-    {current_daa, average_daa}
+      current_daa =
+        case contract do
+          "ETH" ->
+            Cache.get_or_store("daa_#{contract}_current", fn ->
+              {:ok, result} = EthDailyActiveAddresses.realtime_active_addresses()
+              result
+            end)
+
+          _ ->
+            Cache.get_or_store("daa_#{contract}_current", fn ->
+              {:ok, [{_, result}]} = Erc20DailyActiveAddresses.realtime_active_addresses(contract)
+              result
+            end)
+        end
+
+      average_daa =
+        Cache.get_or_store("daa_#{contract}_prev_#{settings.time_window}", fn ->
+          average_daily_active_addresses(
+            contract,
+            Timex.shift(Timex.now(), seconds: -time_window_sec),
+            Timex.shift(Timex.now(), days: -1)
+          )
+        end)
+
+      {slug, {current_daa, average_daa}}
+    end)
   end
 
   defp average_daily_active_addresses("ethereum", from, to) do
@@ -96,19 +101,41 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%DailyActiveAddressesSettings{} = settings) do
-      {current_daa, average_daa} = DailyActiveAddressesSettings.get_data(settings)
-
-      case percent_change(average_daa, current_daa) >= settings.percent_threshold do
-        true ->
-          %DailyActiveAddressesSettings{
-            settings
-            | triggered?: true,
-              payload: payload(settings, current_daa, average_daa)
-          }
+      case DailyActiveAddressesSettings.get_data(settings) do
+        list when is_list(list) and list != [] ->
+          build_result(list, settings)
 
         _ ->
           %DailyActiveAddressesSettings{settings | triggered?: false}
       end
+    end
+
+    defp build_result(
+           list,
+           %DailyActiveAddressesSettings{
+             percent_threshold: percent_threshold,
+             time_window: time_window
+           } = settings
+         ) do
+      payload =
+        list
+        |> Enum.map(fn {slug, {current_daa, previous_daa}} ->
+          {slug, current_daa, previous_daa, percent_change(previous_daa, current_daa)}
+        end)
+        |> Enum.reduce(%{}, fn
+          {slug, current_daa, previous_daa, percent_change}, acc
+          when percent_change >= percent_threshold ->
+            Map.put(acc, slug, payload(slug, time_window, current_daa, previous_daa))
+
+          _, acc ->
+            acc
+        end)
+
+      %DailyActiveAddressesSettings{
+        settings
+        | triggered?: payload != %{},
+          payload: payload
+      }
     end
 
     def cache_key(%DailyActiveAddressesSettings{} = settings) do
@@ -133,15 +160,15 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
       end
     end
 
-    defp payload(settings, current_daa, average_daa) do
-      project = Project.by_slug(settings.target)
+    defp payload(slug, time_window, current_daa, average_daa) do
+      project = Project.by_slug(slug)
 
       """
       **#{project.name}** Daily Active Addresses has gone up by **#{
         percent_change(average_daa, current_daa)
       }%** for the last 1 day.
       Average Daily Active Addresses for last **#{
-        Sanbase.DateTimeUtils.compound_duration_to_text(settings.time_window)
+        Sanbase.DateTimeUtils.compound_duration_to_text(time_window)
       }**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
 

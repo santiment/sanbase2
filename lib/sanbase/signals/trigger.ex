@@ -20,6 +20,7 @@ defmodule Sanbase.Signals.Trigger do
   to easily process them.
   """
   use Ecto.Schema
+  use Vex.Struct
   import Ecto.Changeset
 
   alias __MODULE__
@@ -33,7 +34,7 @@ defmodule Sanbase.Signals.Trigger do
     field(:is_public, :boolean, default: false)
     field(:last_triggered, :map, default: %{})
     field(:cooldown, :string, default: "24h")
-    field(:icon_url, Sanbase.Ecto.Type.URI)
+    field(:icon_url, :string)
   end
 
   @doc false
@@ -51,11 +52,20 @@ defmodule Sanbase.Signals.Trigger do
     trigger
     |> cast(args, @fields)
     |> validate_required([:settings, :title])
+    |> validate_change(:icon_url, &validate_url/2)
   end
 
   def update_changeset(%__MODULE__{} = trigger, args \\ %{}) do
     trigger
     |> cast(args, @fields)
+    |> validate_change(:icon_url, &validate_url/2)
+  end
+
+  defp validate_url(_changeset, url) do
+    case Sanbase.Signals.Validation.valid_url?(url) do
+      :ok -> []
+      {:error, reason} -> [icon_url: reason]
+    end
   end
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do

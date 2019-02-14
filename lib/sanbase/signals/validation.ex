@@ -13,6 +13,7 @@ defmodule Sanbase.Signals.Validation do
   def valid_percent?(percent),
     do: {:error, "#{inspect(percent)} is not a valid percent"}
 
+  @spec valid_price?(any()) :: :ok | {:error, <<_::64, _::_*8>>}
   def valid_price?(price) when is_number(price) and price >= 0, do: :ok
   def valid_price?(price), do: {:error, "#{inspect(price)} is not a valid price"}
 
@@ -52,4 +53,13 @@ defmodule Sanbase.Signals.Validation do
 
   def valid_target?(target),
     do: {:error, "#{inspect(target)} is not a valid target"}
+
+  def valid_url?(url) do
+    case URI.parse(url) do
+      %URI{scheme: nil} -> {:error, "`#{url}` is missing scheme"}
+      %URI{host: nil} -> {:error, "`#{url}` is missing host"}
+      %URI{path: nil} -> {:error, "`#{url}` is missing path"}
+      _ -> :ok
+    end
+  end
 end

@@ -47,6 +47,7 @@ defmodule Sanbase.Signals.UserTrigger do
     |> validate_required([:user_id, :trigger])
   end
 
+<<<<<<< HEAD
   @doc false
   @spec update_changeset(%UserTrigger{}, map()) :: Ecto.Changeset.t()
   def update_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
@@ -63,6 +64,9 @@ defmodule Sanbase.Signals.UserTrigger do
   corresponding struct
   """
   @spec triggers_for(%User{}) :: list(Trigger.t())
+=======
+  @spec triggers_for(%User{}) :: list(trigger_struct)
+>>>>>>> Allow Trigger struct in historical_trigger_points
   def triggers_for(%User{id: user_id}) do
     user_id
     |> user_triggers_for()
@@ -182,11 +186,14 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   @spec historical_trigger_points(%Trigger{}) :: list(any)
   def historical_trigger_points(%Trigger{} = trigger) do
+    trigger = %{trigger | cooldown: Map.get(trigger, :cooldown, 0)}
     Trigger.historical_trigger_points(trigger)
   end
 
   @spec historical_trigger_points(map()) :: list(any)
-  def historical_trigger_points(%{settings: settings, cooldown: cooldown} = params) do
+  def historical_trigger_points(%{settings: settings} = params) do
+    cooldown = Map.get(params, :cooldown, 0)
+
     {:ok, settings_struct} =
       settings
       |> load_in_struct()

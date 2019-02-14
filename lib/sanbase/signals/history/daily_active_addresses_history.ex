@@ -67,11 +67,12 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
       case DateTime.compare(datetime, first_possible_trigger_date) do
         cmp when cmp in [:gt, :eq] ->
           avg_time_window =
-            calc_average_daa_for_interval(
+            filter_points_in_interval(
               daa_result,
               Timex.shift(datetime, days: -time_window_in_days),
               Timex.shift(datetime, days: -1)
             )
+            |> calc_average()
 
           percent_change(avg_time_window, active_addresses) >= settings.percent_threshold
 
@@ -102,33 +103,29 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
     end
 
     def time_window_in_days(time_window) do
-      time_window_in_seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(time_window)
-      one_day_in_seconds = 3600 * 24
+      case Sanbase.DateTimeUtils.compound_duration_to_days(time_window) do
+        0 ->
+          @minimal_time_window_in_days
 
-      if time_window_in_seconds <= @minimal_time_window_in_days * one_day_in_seconds do
-        @minimal_time_window_in_days
-      else
-        Sanbase.Utils.Math.to_integer(time_window_in_seconds / one_day_in_seconds)
+        days ->
+          days
       end
     end
 
-    defp calc_average_daa_for_interval(points, from, to) do
-      filtered_points =
-        points
-        |> Enum.filter(fn %{datetime: dt} ->
-          DateTime.to_unix(dt) >= DateTime.to_unix(from) &&
-            DateTime.to_unix(dt) <= DateTime.to_unix(to)
-        end)
+    defp filter_points_in_interval(points, from, to) do
+      points
+      |> Enum.filter(fn %{datetime: dt} ->
+        DateTime.to_unix(dt) >= DateTime.to_unix(from) &&
+          DateTime.to_unix(dt) <= DateTime.to_unix(to)
+      end)
+    end
 
-      sum =
-        filtered_points
-        |> Enum.reduce(0, fn %{active_addresses: daa}, acc -> acc + daa end)
+    defp calc_average(points) when length(points) == 0, do: 0
 
-      if length(filtered_points) > 0 do
-        Sanbase.Utils.Math.to_integer(sum / length(filtered_points))
-      else
-        0
-      end
+    defp calc_average(points) do
+      sum = Enum.reduce(points, 0, fn %{active_addresses: daa}, acc -> acc + daa end)
+
+      Sanbase.Utils.Math.to_integer(sum / length(points))
     end
   end
 end

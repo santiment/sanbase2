@@ -92,6 +92,17 @@ defmodule Sanbase.DateTimeUtils do
     end
   end
 
+  def compound_duration_to_days(interval) do
+    interval_in_seconds = compound_duration_to_seconds(interval)
+    one_day_in_seconds = 3600 * 24
+
+    if interval_in_seconds < one_day_in_seconds do
+      0
+    else
+      Sanbase.Utils.Math.to_integer(interval_in_seconds / one_day_in_seconds)
+    end
+  end
+
   def compound_duration_to_text(interval) do
     {int_interval, duration_index} = Integer.parse(interval)
 

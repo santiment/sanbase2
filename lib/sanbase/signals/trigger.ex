@@ -24,6 +24,7 @@ defmodule Sanbase.Signals.Trigger do
 
   alias __MODULE__
   alias Sanbase.Model.Project
+  alias Sanbase.DateTimeUtils
 
   embedded_schema do
     field(:settings, :map)
@@ -68,12 +69,10 @@ defmodule Sanbase.Signals.Trigger do
         false
 
       target_last_triggered ->
-        target_last_triggered = target_last_triggered |> Sanbase.DateTimeUtils.from_iso8601!()
+        target_last_triggered = target_last_triggered |> DateTimeUtils.from_iso8601!()
 
         Timex.compare(
-          Timex.shift(target_last_triggered,
-            seconds: Sanbase.DateTimeUtils.compound_duration_to_seconds(cd)
-          ),
+          DateTimeUtils.after_interval(cd, target_last_triggered),
           Timex.now()
         ) == 1
     end

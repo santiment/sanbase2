@@ -174,7 +174,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
+      percent_threshold: 200.0,
       repeating: true
     }
 
@@ -199,7 +199,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
+      percent_threshold: 200.0,
       repeating: false
     }
 

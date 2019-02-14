@@ -79,18 +79,6 @@ defmodule Sanbase.Signals.Trigger do
     end
   end
 
-  def set_last_triggered(
-        %Trigger{last_triggered: lt} = trigger,
-        target,
-        datetime \\ DateTime.utc_now()
-      )
-      when is_binary(target) do
-    %Trigger{
-      trigger
-      | last_triggered: Map.put(lt, target, datetime)
-    }
-  end
-
   defp remove_targets_on_cooldown(target, trigger)
        when is_binary(target) do
     remove_targets_on_cooldown([target], trigger)

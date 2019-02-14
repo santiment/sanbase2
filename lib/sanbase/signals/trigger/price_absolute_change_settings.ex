@@ -28,7 +28,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
             payload: nil
 
   validates(:target, &valid_target?/1)
-  validates(:channel, inclusion: valid_notification_channels())
+  validates(:channel, &valid_notification_channel/1)
   validates(:above, &valid_price?/1)
   validates(:below, &valid_price?/1)
   validates(:repeating, &is_boolean/1)

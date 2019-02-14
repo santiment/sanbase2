@@ -1,8 +1,4 @@
 defmodule Sanbase.Signals.Utils do
-  @notification_channels ["telegram", "email"]
-
-  def notification_channels(), do: @notification_channels
-
   def percent_change(0, _current_daa), do: 0
   def percent_change(nil, _current_daa), do: 0
 

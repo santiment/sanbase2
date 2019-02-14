@@ -2,7 +2,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   @moduledoc ~s"""
   DailyActiveAddressesSettings configures the settings for a signal that is fired
   when the number of daily active addresses for today exceeds the average for the
-  `time_window` period of time.
+  `time_window` period of time by `percent_threshold`.
   """
   use Vex.Struct
 

@@ -22,7 +22,7 @@ defmodule Sanbase.Application.Signals do
          [
            name: :signals_evaluator_cache,
            ttl_check_interval: :timer.minutes(1),
-           global_ttl: :timer.minutes(5),
+           global_ttl: :timer.minutes(3),
            acquire_lock_timeout: 30_000
          ]},
         id: :signals_evaluator_cache

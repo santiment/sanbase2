@@ -1,6 +1,6 @@
 defmodule Sanbase.Signals.Evaluator do
   @moduledoc ~s"""
-  A module that takes a list of triggers and returns the ones that must be triggered
+  A module that takes a list of triggers and returns the ones that are triggered.
   """
 
   alias Sanbase.Signals.Evaluator.Cache
@@ -15,7 +15,7 @@ defmodule Sanbase.Signals.Evaluator do
     |> Sanbase.Parallel.pmap_concurrent(
       &evaluate/1,
       ordered: false,
-      max_concurrency: 50,
+      max_concurrency: 100,
       timeout: 30_000
     )
     |> Enum.filter(&triggered?/1)

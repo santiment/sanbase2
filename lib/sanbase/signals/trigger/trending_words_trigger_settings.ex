@@ -1,6 +1,10 @@
 defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   @moduledoc ~s"""
-  Trigger settings for daily trending words signal
+  Trigger settings for daily trending words signal.
+  The signal is sent at the configured `trigger_time` and sends the last set of
+  trending words that was calculated.
+  Currenly the trending words are calculated 3 times per day - at 01:00, 08:00
+  and 14:00 UTC time
   """
 
   use Vex.Struct
@@ -21,7 +25,6 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   defstruct type: @trigger_type,
             channel: nil,
-            # ISO8601 string time in UTC
             trigger_time: nil,
             triggered?: false,
             payload: nil
@@ -40,7 +43,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
         }
 
   # Validations
-  validates(:channel, inclusion: valid_notification_channels())
+  validates(:channel, &valid_notification_channel/1)
   validates(:trigger_time, &valid_iso8601_datetime_string?/1)
 
   @spec type() :: String.t()

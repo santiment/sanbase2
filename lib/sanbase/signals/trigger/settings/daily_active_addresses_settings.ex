@@ -14,19 +14,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
   alias Sanbase.Signals.Evaluator.Cache
 
-  use Vex.Struct
-
-  import Sanbase.Signals.Utils
-  import Sanbase.Signals.Validation
-
-  alias __MODULE__
-  alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
-  alias Sanbase.Signals.Evaluator.Cache
-  alias Sanbase.DateTimeUtils
-  alias Sanbase.Signals.Type
-
-  @derive [Jason.Encoder]
+  @derive Jason.Encoder
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :time_window, :percent_threshold]
   defstruct type: @trigger_type,
@@ -56,38 +44,12 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
           payload: Type.payload()
         }
 
-<<<<<<< HEAD
   @spec type() :: Type.trigger_type()
-=======
-  @spec type() :: String.t()
->>>>>>> Add api endpoint
   def type(), do: @trigger_type
 
-<<<<<<< HEAD
   def get_data(%__MODULE__{filtered_target_list: target_list} = settings)
       when is_list(target_list) do
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-=======
-  def get_data(settings) do
-    {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target)
-
-    current_daa =
-      case contract do
-        "ETH" ->
-          Cache.get_or_store("daa_#{contract}_current", fn ->
-            {:ok, result} = EthDailyActiveAddresses.realtime_active_addresses()
-            result
-          end)
-
-        _ ->
-          Cache.get_or_store("daa_#{contract}_current", fn ->
-            {:ok, [{_, result}]} = Erc20DailyActiveAddresses.realtime_active_addresses(contract)
-            result
-          end)
-      end
-
-    time_window_sec = DateTimeUtils.compound_duration_to_seconds(settings.time_window)
->>>>>>> Create signal history protocol. Move history points in separate module
 
     target_list
     |> Enum.map(fn slug ->
@@ -120,8 +82,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
       {slug, {current_daa, average_daa}}
     end)
   end
-
-  # private functions
 
   defp average_daily_active_addresses("ethereum", from, to) do
     {:ok, result} = EthDailyActiveAddresses.average_active_addresses(from, to)
@@ -208,11 +168,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
         percent_change(average_daa, current_daa)
       }%** for the last 1 day.
       Average Daily Active Addresses for last **#{
-<<<<<<< HEAD
         Sanbase.DateTimeUtils.compound_duration_to_text(time_window)
-=======
-        DateTimeUtils.compound_duration_to_text(settings.time_window)
->>>>>>> Create signal history protocol. Move history points in separate module
       }**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
 

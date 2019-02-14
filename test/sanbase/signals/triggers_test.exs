@@ -16,7 +16,7 @@ defmodule Sanbase.Signals.TriggersTest do
       filtered_target_list: [],
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0,
+      percent_threshold: 300.0,
       repeating: false,
       triggered?: false,
       payload: nil

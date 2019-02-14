@@ -16,7 +16,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   alias __MODULE__
   alias Sanbase.Signals.Type
 
-  @derive [Jason.Encoder]
+  @derive Jason.Encoder
   @trigger_type "trending_words"
   @trending_words_size 10
   @trending_words_hours [1, 8, 14]

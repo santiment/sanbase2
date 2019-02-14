@@ -22,7 +22,11 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:ok, created_trigger} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings
+      })
 
     assert created_trigger.trigger.settings == trigger_settings
 
@@ -47,7 +51,11 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:error, message} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings
+      })
 
     assert message == "Trigger structure is invalid"
   end
@@ -69,6 +77,7 @@ defmodule Sanbase.Signals.TriggersTest do
     assert capture_log(fn ->
              {:error, message} =
                UserTrigger.create_user_trigger(user, %{
+                 title: "Generic title",
                  is_public: true,
                  settings: trigger_settings
                })
@@ -90,7 +99,11 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:error, message} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: settings})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: settings
+      })
 
     assert message == "Trigger structure is invalid"
   end
@@ -108,7 +121,11 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:ok, created_trigger} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings
+      })
 
     assert trigger_settings.target == created_trigger.trigger.settings |> Map.get(:target)
   end
@@ -125,7 +142,11 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings1})
+    insert(:user_triggers,
+      user: user,
+      trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
+    )
+
     assert length(UserTrigger.triggers_for(user)) == 1
 
     trigger_settings2 = %{
@@ -138,7 +159,11 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:ok, _} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings2})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings2
+      })
 
     assert length(UserTrigger.triggers_for(user)) == 2
   end
@@ -164,8 +189,15 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings1})
-    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings2})
+    insert(:user_triggers,
+      user: user,
+      trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
+    )
+
+    insert(:user_triggers,
+      user: user,
+      trigger: %{title: "Generic title", is_public: true, settings: trigger_settings2}
+    )
 
     trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
 
@@ -203,7 +235,10 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
+    insert(:user_triggers,
+      user: user,
+      trigger: %{title: "Generic title", is_public: false, settings: trigger_settings}
+    )
 
     ut = UserTrigger.triggers_for(user)
     trigger_id = ut |> hd |> Map.get(:id)

@@ -57,6 +57,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
     {:ok, trigger1} =
       UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
         is_public: true,
         cooldown: "12h",
         settings: trigger_settings1
@@ -64,6 +65,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
     {:ok, trigger2} =
       UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
         is_public: true,
         cooldown: "1d",
         settings: trigger_settings2
@@ -71,6 +73,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
     {:ok, trigger_trending_words} =
       UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
         is_public: false,
         settings: trending_words_settings
       })

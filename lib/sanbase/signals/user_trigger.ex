@@ -37,11 +37,18 @@ defmodule Sanbase.Signals.UserTrigger do
     timestamps()
   end
 
-  def changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
+  def create_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
     |> cast(attrs, [:user_id])
-    |> cast_embed(:trigger, required: true, with: &Trigger.changeset/2)
-    |> validate_required([:user_id])
+    |> cast_embed(:trigger, required: true, with: &Trigger.create_changeset/2)
+    |> validate_required([:user_id, :trigger])
+  end
+
+  def update_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
+    user_triggers
+    |> cast(attrs, [:user_id])
+    |> cast_embed(:trigger, required: true, with: &Trigger.update_changeset/2)
+    |> validate_required([:user_id, :trigger])
   end
 
   @spec triggers_for(%User{}) :: list(trigger_struct)
@@ -89,7 +96,7 @@ defmodule Sanbase.Signals.UserTrigger do
   def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
     if not is_nil(settings) and is_valid?(settings) do
       %UserTrigger{}
-      |> changeset(%{user_id: user_id, trigger: params})
+      |> create_changeset(%{user_id: user_id, trigger: params})
       |> Repo.insert()
     else
       {:error, "Trigger structure is invalid"}
@@ -107,7 +114,7 @@ defmodule Sanbase.Signals.UserTrigger do
       user_id
       |> user_triggers_for()
       |> find_user_trigger_by_trigger_id(id)
-      |> changeset(%{trigger: clean_params(params)})
+      |> update_changeset(%{trigger: clean_params(params)})
       |> Repo.update()
     else
       {:error, "Trigger structure is invalid"}

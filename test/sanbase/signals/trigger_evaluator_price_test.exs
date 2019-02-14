@@ -191,6 +191,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     {:ok, trigger1} =
       UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
         is_public: true,
         cooldown: "12h",
         settings: trigger_settings1
@@ -198,6 +199,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     {:ok, trigger2} =
       UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
         is_public: true,
         cooldown: "12h",
         settings: trigger_settings2
@@ -205,6 +207,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     {:ok, trigger3} =
       UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
         is_public: true,
         cooldown: "12h",
         settings: trigger_settings3
@@ -212,6 +215,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     {:ok, trigger4} =
       UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
         is_public: true,
         cooldown: "12h",
         settings: trigger_settings4

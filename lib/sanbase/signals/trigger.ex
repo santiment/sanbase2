@@ -28,16 +28,34 @@ defmodule Sanbase.Signals.Trigger do
 
   embedded_schema do
     field(:settings, :map)
+    field(:title, :string)
+    field(:description, :string)
     field(:is_public, :boolean, default: false)
     field(:last_triggered, :map, default: %{})
     field(:cooldown, :string, default: "24h")
+    field(:icon_url, Sanbase.Ecto.Type.URI)
   end
 
   @doc false
-  def changeset(schema, params) do
-    schema
-    |> cast(params, [:settings, :is_public, :cooldown, :last_triggered])
-    |> validate_required([:settings])
+  @fields [
+    :settings,
+    :is_public,
+    :cooldown,
+    :last_triggered,
+    :title,
+    :description,
+    :icon_url
+  ]
+
+  def create_changeset(%__MODULE__{} = trigger, args \\ %{}) do
+    trigger
+    |> cast(args, @fields)
+    |> validate_required([:settings, :title])
+  end
+
+  def update_changeset(%__MODULE__{} = trigger, args \\ %{}) do
+    trigger
+    |> cast(args, @fields)
   end
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do

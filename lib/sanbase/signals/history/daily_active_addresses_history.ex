@@ -19,36 +19,26 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
 
     @spec historical_trigger_points(%DailyActiveAddressesSettings{}) ::
             {:ok, list(historical_trigger_points_type)} | {:error, String.t()}
-    def historical_trigger_points(%DailyActiveAddressesSettings{target: target} = settings)
-        when is_binary(target) do
+    def historical_trigger_points(%DailyActiveAddressesSettings{target: target} = settings) do
       settings
       |> get_daily_active_addresses()
       |> case do
         {:ok, daa_result} when is_list(daa_result) and daa_result != [] ->
+          daa_result = Enum.map(daa_result, fn point -> Map.put(point, :triggered?, false) end)
           time_window_in_days = time_window_in_days(settings.time_window)
+          {:ok, sma} = sma(daa_result, time_window_in_days + 1)
 
-          first_possible_trigger_date =
-            first_possible_trigger_date(daa_result, time_window_in_days + 1)
-
-          result =
-            for %{datetime: datetime, active_addresses: active_addresses} <- daa_result do
+          sma =
+            sma
+            |> Enum.map(fn point ->
               triggered? =
-                point_triggered?(
-                  settings,
-                  {datetime, active_addresses},
-                  daa_result,
-                  first_possible_trigger_date,
-                  time_window_in_days
-                )
+                percent_change(point.average_daa, point.active_addresses) >=
+                  settings.percent_threshold
 
-              %{
-                datetime: datetime,
-                active_addresses: active_addresses,
-                triggered?: triggered?
-              }
-            end
+              Map.put(point, :triggered?, triggered?)
+            end)
 
-          {:ok, result}
+          {:ok, merge_daa_chunks_by_datetime(daa_result, sma)}
 
         _ ->
           {:error, "No data available to calculate historical trigger points"}
@@ -56,30 +46,6 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
     end
 
     def historical_trigger_points(_), do: {:error, "Not implemented"}
-
-    defp point_triggered?(
-           settings,
-           {datetime, active_addresses},
-           daa_result,
-           first_possible_trigger_date,
-           time_window_in_days
-         ) do
-      case DateTime.compare(datetime, first_possible_trigger_date) do
-        cmp when cmp in [:gt, :eq] ->
-          avg_time_window =
-            filter_points_in_interval(
-              daa_result,
-              Timex.shift(datetime, days: -time_window_in_days),
-              Timex.shift(datetime, days: -1)
-            )
-            |> calc_average()
-
-          percent_change(avg_time_window, active_addresses) >= settings.percent_threshold
-
-        _ ->
-          false
-      end
-    end
 
     defp get_daily_active_addresses(settings) do
       {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target)
@@ -95,14 +61,44 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
       end
     end
 
-    defp first_possible_trigger_date(daa_result, days_shift) do
-      daa_result
-      |> List.first()
-      |> Map.get(:datetime)
-      |> Timex.shift(days: days_shift)
+    defp sma(list, period) when is_list(list) and is_integer(period) and period > 0 do
+      result =
+        list
+        |> Enum.chunk_every(period, 1, :discard)
+        |> Enum.map(fn elems ->
+          active_addresses = elems |> List.last() |> Map.get(:active_addresses)
+          {datetime, average_daa} = average(elems)
+
+          %{
+            datetime: datetime,
+            active_addresses: active_addresses,
+            average_daa: average_daa
+          }
+        end)
+
+      {:ok, result}
     end
 
-    def time_window_in_days(time_window) do
+    defp average([]), do: 0
+
+    defp average(l) when is_list(l) do
+      values = Enum.map(l, fn %{active_addresses: daa} -> daa end) |> Enum.drop(-1)
+      %{datetime: datetime} = List.last(l)
+      average_daa = Sanbase.Utils.Math.to_integer(Enum.sum(values) / length(values))
+
+      {datetime, average_daa}
+    end
+
+    defp merge_daa_chunks_by_datetime(daa_result, sma) do
+      daa_result
+      |> Enum.map(fn point ->
+        Enum.find(sma, point, fn sma_point ->
+          DateTime.compare(sma_point.datetime, point.datetime) == :eq
+        end)
+      end)
+    end
+
+    defp time_window_in_days(time_window) do
       case Sanbase.DateTimeUtils.compound_duration_to_days(time_window) do
         0 ->
           @minimal_time_window_in_days
@@ -110,22 +106,6 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
         days ->
           days
       end
-    end
-
-    defp filter_points_in_interval(points, from, to) do
-      points
-      |> Enum.filter(fn %{datetime: dt} ->
-        DateTime.to_unix(dt) >= DateTime.to_unix(from) &&
-          DateTime.to_unix(dt) <= DateTime.to_unix(to)
-      end)
-    end
-
-    defp calc_average(points) when length(points) == 0, do: 0
-
-    defp calc_average(points) do
-      sum = Enum.reduce(points, 0, fn %{active_addresses: daa}, acc -> acc + daa end)
-
-      Sanbase.Utils.Math.to_integer(sum / length(points))
     end
   end
 end

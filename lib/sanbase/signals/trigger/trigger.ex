@@ -6,7 +6,9 @@ defprotocol Sanbase.Signals.Settings do
 
   @spec cache_key(struct()) :: String.t()
   def cache_key(trigger)
+end
 
+defprotocol Sanbase.Signals.History do
   @spec historical_trigger_points(struct()) :: list(any())
   def historical_trigger_points(trigger)
 end
@@ -90,7 +92,7 @@ defmodule Sanbase.Signals.Trigger do
   end
 
   def historical_trigger_points(%Trigger{settings: trigger_settings} = trigger) do
-    Sanbase.Signals.Settings.historical_trigger_points(trigger_settings)
+    Sanbase.Signals.History.historical_trigger_points(trigger_settings)
   end
 
   def evaluate(%Trigger{settings: trigger_settings} = trigger) do

@@ -55,11 +55,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
           triggered?: boolean(),
           payload: Type.payload()
         }
-  @type historical_trigger_points_type :: %{
-          datetime: %DateTime{},
-          active_addresses: non_neg_integer(),
-          triggered: boolean()
-        }
 
 <<<<<<< HEAD
   @spec type() :: Type.trigger_type()
@@ -68,9 +63,31 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
 >>>>>>> Add api endpoint
   def type(), do: @trigger_type
 
+<<<<<<< HEAD
   def get_data(%__MODULE__{filtered_target_list: target_list} = settings)
       when is_list(target_list) do
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+=======
+  def get_data(settings) do
+    {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target)
+
+    current_daa =
+      case contract do
+        "ETH" ->
+          Cache.get_or_store("daa_#{contract}_current", fn ->
+            {:ok, result} = EthDailyActiveAddresses.realtime_active_addresses()
+            result
+          end)
+
+        _ ->
+          Cache.get_or_store("daa_#{contract}_current", fn ->
+            {:ok, [{_, result}]} = Erc20DailyActiveAddresses.realtime_active_addresses(contract)
+            result
+          end)
+      end
+
+    time_window_sec = DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+>>>>>>> Create signal history protocol. Move history points in separate module
 
     target_list
     |> Enum.map(fn slug ->
@@ -121,11 +138,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   end
 
   defimpl Sanbase.Signals.Settings, for: DailyActiveAddressesSettings do
-    @historical_days_from 90
-    @historical_days_to 1
-    @historical_days_interval "1d"
-    @minimal_time_window_in_days 2
-
     def triggered?(%DailyActiveAddressesSettings{triggered?: triggered}), do: triggered
 
     def evaluate(%DailyActiveAddressesSettings{} = settings) do
@@ -175,120 +187,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
       ])
     end
 
-    # @spec historical_trigger_points(%DailyActiveAddressesSettings{}) ::
-    # {:ok, list(historical_trigger_points_type)} | {:error, String.t()}
-    def historical_trigger_points(%DailyActiveAddressesSettings{target: target} = settings)
-        when is_binary(target) do
-      settings
-      |> get_daily_active_addresses()
-      |> case do
-        {:ok, daa_result} when is_list(daa_result) and daa_result != [] ->
-          time_window_in_days = time_window_in_days(settings.time_window)
-
-          first_possible_trigger_date =
-            first_possible_trigger_date(daa_result, time_window_in_days + 1)
-
-          result =
-            for %{datetime: datetime, active_addresses: active_addresses} <- daa_result do
-              triggered =
-                point_triggered?(
-                  settings,
-                  {datetime, active_addresses},
-                  daa_result,
-                  first_possible_trigger_date,
-                  time_window_in_days
-                )
-
-              %{
-                datetime: datetime,
-                active_addresses: active_addresses,
-                triggered: triggered
-              }
-            end
-
-          {:ok, result}
-
-        _ ->
-          {:error, "No data available to calculate historical trigger points"}
-      end
-    end
-
-    def historical_trigger_points(_), do: {:error, "Not implemented"}
-
-    defp point_triggered?(
-           settings,
-           {datetime, active_addresses},
-           daa_result,
-           first_possible_trigger_date,
-           time_window_in_days
-         ) do
-      case DateTime.compare(datetime, first_possible_trigger_date) do
-        :lt ->
-          false
-
-        cmp when cmp in [:gt, :eq] ->
-          avg_time_window =
-            calc_average_daa_for_interval(
-              daa_result,
-              Timex.shift(datetime, days: -time_window_in_days),
-              Timex.shift(datetime, days: -1)
-            )
-
-          percent_change(avg_time_window, active_addresses) >= settings.percent_threshold
-      end
-    end
-
-    defp get_daily_active_addresses(settings) do
-      {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target)
-
-      from = Timex.shift(Timex.now(), days: -@historical_days_from)
-      to = Timex.shift(Timex.now(), days: -@historical_days_to)
-      interval = @historical_days_interval
-
-      if contract == "ETH" do
-        EthDailyActiveAddresses.average_active_addresses(from, to, interval)
-      else
-        Erc20DailyActiveAddresses.average_active_addresses(contract, from, to, interval)
-      end
-    end
-
-    defp first_possible_trigger_date(daa_result, days_shift) do
-      daa_result
-      |> List.first()
-      |> Map.get(:datetime)
-      |> Timex.shift(days: days_shift)
-    end
-
-    def time_window_in_days(time_window) do
-      time_window_in_seconds = Sanbase.DateTimeUtils.compound_duration_to_seconds(time_window)
-      one_day_in_seconds = 3600 * 24
-
-      if time_window_in_seconds <= @minimal_time_window_in_days * one_day_in_seconds do
-        @minimal_time_window_in_days
-      else
-        Sanbase.Utils.Math.to_integer(time_window_in_seconds / one_day_in_seconds)
-      end
-    end
-
-    defp calc_average_daa_for_interval(points, from, to) do
-      filtered_points =
-        points
-        |> Enum.filter(fn %{datetime: dt} ->
-          DateTime.to_unix(dt) >= DateTime.to_unix(from) &&
-            DateTime.to_unix(dt) <= DateTime.to_unix(from)
-        end)
-
-      sum =
-        filtered_points
-        |> Enum.reduce(0, fn %{active_addresses: daa}, acc -> acc + daa end)
-
-      if length(filtered_points) > 0 do
-        Sanbase.Utils.Math.to_integer(sum / length(filtered_points))
-      else
-        0
-      end
-    end
-
     defp chart_url(project) do
       Sanbase.Chart.build_embedded_chart(
         project,
@@ -310,7 +208,11 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
         percent_change(average_daa, current_daa)
       }%** for the last 1 day.
       Average Daily Active Addresses for last **#{
+<<<<<<< HEAD
         Sanbase.DateTimeUtils.compound_duration_to_text(time_window)
+=======
+        DateTimeUtils.compound_duration_to_text(settings.time_window)
+>>>>>>> Create signal history protocol. Move history points in separate module
       }**: **#{average_daa}**.
       More info here: #{Project.sanbase_link(project)}
 

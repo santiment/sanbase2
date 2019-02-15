@@ -8,13 +8,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   alias Sanbase.Model.{
     Project,
     LatestCoinmarketcapData,
-    MarketSegment,
-    Infrastructure,
-    ProjectTransparencyStatus,
     Ico
   }
 
-  alias Sanbase.Voting.{Post, Tag}
+  alias Sanbase.Tag
+  alias Sanbase.Voting.Post
 
   alias Sanbase.Prices
 

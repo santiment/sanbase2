@@ -16,6 +16,7 @@ defmodule Sanbase.Signals.UserTrigger do
   alias Sanbase.Auth.User
   alias Sanbase.Signals.Trigger
   alias Sanbase.Repo
+  alias Sanbase.Tag
 
   alias Sanbase.Signals.Trigger.{
     DailyActiveAddressesSettings,
@@ -34,12 +35,21 @@ defmodule Sanbase.Signals.UserTrigger do
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)
 
+    many_to_many(
+      :tags,
+      Tag,
+      join_through: "user_triggers_tags",
+      on_replace: :delete,
+      on_delete: :delete_all
+    )
+
     timestamps()
   end
 
   def create_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
     |> cast(attrs, [:user_id])
+    |> Tag.put_tags(attrs)
     |> cast_embed(:trigger, required: true, with: &Trigger.create_changeset/2)
     |> validate_required([:user_id, :trigger])
   end
@@ -47,6 +57,7 @@ defmodule Sanbase.Signals.UserTrigger do
   def update_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
     |> cast(attrs, [:user_id])
+    |> Tag.put_tags(attrs)
     |> cast_embed(:trigger, required: true, with: &Trigger.update_changeset/2)
     |> validate_required([:user_id, :trigger])
   end
@@ -72,12 +83,12 @@ defmodule Sanbase.Signals.UserTrigger do
     |> Repo.all()
   end
 
-  @spec get_trigger_by_id(%User{}, String.t()) :: trigger_struct
   def get_trigger_by_id(%User{id: user_id} = _user, trigger_id) do
-    user_triggers_for(user_id)
-    |> find_user_trigger_by_trigger_id(trigger_id)
-    |> Map.get(:trigger)
-    |> trigger_in_struct()
+    from(
+      ut in UserTrigger,
+      where: ut.user_id == ^user_id and trigger_by_id(trigger_id)
+    )
+    |> Repo.one()
   end
 
   @spec get_triggers_by_type(String.t()) :: list(%__MODULE__{})
@@ -130,8 +141,12 @@ defmodule Sanbase.Signals.UserTrigger do
     |> Repo.all()
   end
 
-  defp trigger_in_struct(trigger) do
-    {:ok, settings} = load_in_struct(trigger.settings)
+  defp trigger_in_struct(%__MODULE__{trigger: trigger} = user_trigger) do
+    %{user_trigger | trigger: trigger_in_struct(trigger)}
+  end
+
+  defp trigger_in_struct(%Trigger{settings: settings} = trigger) do
+    {:ok, settings} = load_in_struct(settings)
     %{trigger | settings: settings}
   end
 

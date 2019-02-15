@@ -3,11 +3,11 @@ defmodule Sanbase.ExAdmin.Model.Project do
 
   import Ecto.Query, warn: false
 
+  alias Sanbase.Tag
   alias Sanbase.Model.Project
   alias Sanbase.Model.Infrastructure
   alias Sanbase.Model.MarketSegment
   alias Sanbase.Model.ProjectTransparencyStatus
-  alias Sanbase.Voting.Tag
 
   alias Sanbase.Repo
 

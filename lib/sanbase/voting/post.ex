@@ -6,7 +6,8 @@ defmodule Sanbase.Voting.Post do
 
   use Timex.Ecto.Timestamps
 
-  alias Sanbase.Voting.{Poll, Post, Vote, PostImage, Tag}
+  alias Sanbase.Tag
+  alias Sanbase.Voting.{Poll, Post, Vote, PostImage}
   alias Sanbase.Auth.User
 
   alias Sanbase.Repo
@@ -51,7 +52,7 @@ defmodule Sanbase.Voting.Post do
   def create_changeset(%Post{} = post, attrs) do
     post
     |> cast(attrs, [:title, :short_desc, :link, :text])
-    |> tags_cast(attrs)
+    |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])
     |> validate_length(:title, max: 140)
@@ -61,7 +62,7 @@ defmodule Sanbase.Voting.Post do
   def update_changeset(%Post{} = post, attrs) do
     post
     |> cast(attrs, [:title, :short_desc, :link, :text, :moderation_comment, :state])
-    |> tags_cast(attrs)
+    |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])
     |> validate_length(:title, max: 140)
@@ -147,22 +148,6 @@ defmodule Sanbase.Voting.Post do
   end
 
   # Helper functions
-  defp tags_cast(changeset, %{tags: tags}) do
-    params =
-      tags
-      |> Enum.map(fn tag -> %{name: tag} end)
-
-    Repo.insert_all(Tag, params, on_conflict: :nothing)
-
-    tags =
-      from(t in Tag, where: t.name in ^tags)
-      |> Repo.all()
-
-    changeset
-    |> put_assoc(:tags, tags)
-  end
-
-  defp tags_cast(changeset, _), do: changeset
 
   defp images_cast(changeset, %{image_urls: image_urls}) do
     images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()

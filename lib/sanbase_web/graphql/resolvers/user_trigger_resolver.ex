@@ -16,6 +16,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     |> handle_result("create")
   end
 
+  @spec update_trigger(any(), map(), %{context: %{auth: %{current_user: map()}}}) ::
+          {:error, binary() | [{:details, map()} | {:message, <<_::64, _::_*8>>}, ...]}
+          | {:ok, Sanbase.Signals.UserTrigger.t()}
   def update_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
@@ -23,12 +26,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     |> handle_result("update")
   end
 
+  @spec get_trigger_by_id(any(), atom() | %{id: binary()}, %{
+          context: %{auth: %{current_user: map()}}
+        }) :: {:ok, Sanbase.Signals.Trigger.t()}
   def get_trigger_by_id(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    trigger = UserTrigger.get_trigger_by_id(current_user, args.id)
-
-    {:ok, trigger}
+    UserTrigger.get_trigger_by_id(current_user, args.id)
+    |> handle_result("get by id")
   end
 
   def public_triggers_for_user(_root, args, _resolution) do
@@ -42,7 +47,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   defp handle_result(result, operation) do
     case result do
       {:ok, ut} ->
-        {:ok, ut.trigger}
+        {:ok, ut}
 
       {:error, error_msg} when is_binary(error_msg) ->
         {:error, error_msg}

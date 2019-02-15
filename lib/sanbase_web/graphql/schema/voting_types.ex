@@ -11,10 +11,6 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:total_san_votes, non_null(:integer))
   end
 
-  object :tag do
-    field(:name, non_null(:string))
-  end
-
   object :poll do
     field(:start_at, non_null(:datetime))
     field(:end_at, non_null(:datetime))

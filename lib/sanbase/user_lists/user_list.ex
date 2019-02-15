@@ -24,6 +24,10 @@ defmodule Sanbase.UserLists.UserList do
     update_changeset(user_list, attrs)
   end
 
+  @spec create_changeset(
+          Sanbase.UserLists.UserList.t(),
+          :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
+        ) :: Ecto.Changeset.t()
   def create_changeset(%UserList{} = user_list, attrs \\ %{}) do
     user_list
     |> cast(attrs, [:user_id, :name, :is_public, :color])

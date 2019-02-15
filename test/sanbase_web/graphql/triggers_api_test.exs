@@ -35,8 +35,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         settings: '#{trigger_settings_json}'
         title: 'Generic title'
       ) {
-        id
-        settings
+        trigger{
+          id
+          settings
+        }
       }
     }
     |
@@ -46,7 +48,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       conn
       |> post("/graphql", %{"query" => query})
 
-    created_trigger = json_response(result, 200)["data"]["createTrigger"]
+    created_trigger = json_response(result, 200)["data"]["createTrigger"]["trigger"]
 
     assert created_trigger |> Map.get("settings") == trigger_settings
     assert created_trigger |> Map.get("id") != nil
@@ -73,8 +75,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         settings: '#{trigger_settings_json}'
         title: 'Generic title'
       ) {
-        id
-        settings
+        trigger{
+          id
+          settings
+        }
       }
     }
     |
@@ -115,8 +119,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         id: '#{trigger_id}'
         settings: '#{trigger_settings_json}'
       ) {
-        id
-        settings
+        trigger{
+          id
+          settings
+        }
       }
     }
     |
@@ -127,8 +133,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> post("/graphql", %{"query" => query})
       |> json_response(200)
 
-    assert result["data"]["updateTrigger"] |> Map.get("settings") == updated_trigger
-    assert result["data"]["updateTrigger"] |> Map.get("id") == trigger_id
+    assert result["data"]["updateTrigger"]["trigger"] |> Map.get("settings") == updated_trigger
+    assert result["data"]["updateTrigger"]["trigger"] |> Map.get("id") == trigger_id
   end
 
   test "get trigger by id", %{user: user, conn: conn} do
@@ -153,8 +159,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       getTriggerById(
         id: "#{trigger_id}"
       ) {
-        id
-        settings
+        trigger{
+          id
+          settings
+        }
       }
     }
     """
@@ -163,7 +171,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       conn
       |> post("/graphql", %{"query" => query})
 
-    result = json_response(result, 200)["data"]["getTriggerById"]
+    result = json_response(result, 200)["data"]["getTriggerById"]["trigger"]
 
     assert result |> Map.get("settings") == trigger_settings
     assert result |> Map.get("id") == trigger_id
@@ -268,8 +276,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     query = """
     {
       publicTriggersForUser(user_id: #{user.id}) {
-        id,
-        settings
+        trigger{
+          id
+          settings
+        }
       }
     }
     """
@@ -277,8 +287,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "publicTriggersForUser"))
+      |> json_response(200)
+      |> IO.inspect()
 
-    result = json_response(result, 200)["data"]["publicTriggersForUser"]
+    result = result["data"]["publicTriggersForUser"]["trigger"]
     assert length(result) == 1
     assert result |> hd() |> Map.get("settings") == trigger_settings
   end
@@ -291,6 +303,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
 
     trigger_settings_json = trigger_settings |> Jason.encode!()
+    tags = ["santiment", "SAN"]
 
     query =
       ~s|
@@ -298,9 +311,13 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       createTrigger(
         settings: '#{trigger_settings_json}'
         title: 'Generic title'
+        tags: ['SAN', 'santiment']
       ) {
-        id
-        settings
+        trigger{
+          id
+          settings
+        }
+        tags{ name }
       }
     }
     |
@@ -309,8 +326,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       conn
       |> post("/graphql", %{"query" => query})
+      |> json_response(200)
+      |> IO.inspect()
 
-    created_trigger = json_response(result, 200)["data"]["createTrigger"]
+    created_trigger = result["data"]["createTrigger"]["trigger"]
 
     assert created_trigger |> Map.get("settings") == trigger_settings
     assert created_trigger |> Map.get("id") != nil

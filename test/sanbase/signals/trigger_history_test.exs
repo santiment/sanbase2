@@ -9,7 +9,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
-  test "returns historical data with trigger points" do
+  test "returns historical daa data with trigger points" do
     daa_result = [
       %{datetime: from_iso8601!("2018-11-17T00:00:00Z"), active_addresses: 23},
       %{datetime: from_iso8601!("2018-11-18T00:00:00Z"), active_addresses: 25},
@@ -53,7 +53,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         |> Enum.find(fn %{datetime: dt} -> DateTime.to_iso8601(dt) == "2018-11-22T00:00:00Z" end)
         |> Map.get(:triggered?)
 
-      assert Enum.map(points, fn point -> Map.get(point, :average_daa) end) == [
+      assert Enum.map(points, fn point -> Map.get(point, :average) end) == [
                nil,
                nil,
                24,
@@ -73,6 +73,29 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
     end
   end
 
+  test "returns historical price data with trigger points" do
+    trigger_settings = %{
+      type: "price_percent_change",
+      target: "santiment",
+      channel: "telegram",
+      time_window: "1h",
+      percent_threshold: 0.05
+    }
+
+    insert(:project, %{
+      ticker: "SAN",
+      coinmarketcap_id: "santiment",
+      main_contract_address: "0x123"
+    })
+
+    populate_influxdb("SAN_santiment")
+
+    trigger = %{settings: trigger_settings}
+    {:ok, points} = UserTrigger.historical_trigger_points(trigger)
+    assert length(points) == 10
+    assert Enum.filter(points, fn point -> point.triggered? end) |> length() == 9
+  end
+
   defp populate_influxdb(datetimes, ticker_cmc_id) do
     Store.drop_measurement(ticker_cmc_id)
 
@@ -84,6 +107,27 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         name: ticker_cmc_id
       }
     end)
+    |> Store.import()
+  end
+
+  defp populate_influxdb(ticker_cmc_id) do
+    Store.drop_measurement(ticker_cmc_id)
+    now = Timex.now()
+    step = 3600
+    price_step = 0.01
+
+    for x <- 0..9 do
+      %Measurement{
+        timestamp: Timex.shift(now, seconds: -3600 * x) |> DateTime.to_unix(:nanosecond),
+        fields: %{
+          price_usd: 20 - 20 * 0.01 * x,
+          price_btc: 1000,
+          volume_usd: 200,
+          marketcap_usd: 500
+        },
+        name: ticker_cmc_id
+      }
+    end
     |> Store.import()
   end
 end

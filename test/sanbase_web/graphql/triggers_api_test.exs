@@ -33,6 +33,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     mutation {
       createTrigger(
         settings: '#{trigger_settings_json}'
+        title: 'Generic title'
       ) {
         id
         settings
@@ -70,6 +71,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     mutation {
       createTrigger(
         settings: '#{trigger_settings_json}'
+        title: 'Generic title'
       ) {
         id
         settings
@@ -123,11 +125,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       conn
       |> post("/graphql", %{"query" => query})
+      |> json_response(200)
 
-    result = json_response(result, 200)["data"]["updateTrigger"]
-
-    assert result |> Map.get("settings") == updated_trigger
-    assert result |> Map.get("id") == trigger_id
+    assert result["data"]["updateTrigger"] |> Map.get("settings") == updated_trigger
+    assert result["data"]["updateTrigger"] |> Map.get("id") == trigger_id
   end
 
   test "get trigger by id", %{user: user, conn: conn} do
@@ -296,6 +297,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     mutation {
       createTrigger(
         settings: '#{trigger_settings_json}'
+        title: 'Generic title'
       ) {
         id
         settings

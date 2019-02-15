@@ -46,7 +46,12 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     }
 
     {:ok, _trigger} =
-      UserTrigger.create_user_trigger(context.user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(context.user, %{
+        title: "Santiment Absolute price",
+        description: "The price goes above $300 or below $200",
+        is_public: true,
+        settings: trigger_settings
+      })
   end
 
   test "create trigger with a single non-string target fails", context do
@@ -62,6 +67,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     assert capture_log(fn ->
              assert {:error, "Trigger structure is invalid"} ==
                       UserTrigger.create_user_trigger(context.user, %{
+                        title: "Not a valid signal",
                         is_public: true,
                         settings: trigger_settings
                       })
@@ -80,7 +86,11 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     }
 
     {:ok, _trigger} =
-      UserTrigger.create_user_trigger(context.user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(context.user, %{
+        title: "Absolute price for a user list",
+        is_public: true,
+        settings: trigger_settings
+      })
   end
 
   test "create trigger with lists of slugs target", context do
@@ -94,7 +104,11 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     }
 
     {:ok, _trigger} =
-      UserTrigger.create_user_trigger(context.user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(context.user, %{
+        title: "Absolute price for a list of slugs",
+        is_public: true,
+        settings: trigger_settings
+      })
   end
 
   test "create trigger with lists of slugs that contain non-strings fails", context do
@@ -110,6 +124,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     capture_log(fn ->
       assert {:error, "Trigger structure is invalid"} ==
                UserTrigger.create_user_trigger(context.user, %{
+                 title: "Not a valid signal, too",
                  is_public: true,
                  settings: trigger_settings
                })
@@ -130,6 +145,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
     assert capture_log(fn ->
              assert {:error, "Trigger structure is invalid"} ==
                       UserTrigger.create_user_trigger(context.user, %{
+                        title: "Yet another not valid settings",
                         is_public: true,
                         settings: trigger_settings
                       })

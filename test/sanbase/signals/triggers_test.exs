@@ -3,6 +3,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
   import Sanbase.Factory
   import ExUnit.CaptureLog
+  import Sanbase.TestHelpers
 
   alias Sanbase.Signals.UserTrigger
 
@@ -22,7 +23,11 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:ok, created_trigger} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings
+      })
 
     assert created_trigger.trigger.settings == trigger_settings
 
@@ -47,9 +52,36 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:error, message} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings
+      })
 
     assert message == "Trigger structure is invalid"
+  end
+
+  test "try creating user trigger with not valid icon url" do
+    user = insert(:user)
+
+    trigger_settings = %{
+      type: "daily_active_addresses",
+      target: "santiment",
+      channel: "telegram",
+      time_window: "1d",
+      percent_threshold: 300.0,
+      repeating: false
+    }
+
+    {:error, changeset} =
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        icon_url: "not_a_url",
+        is_public: true,
+        settings: trigger_settings
+      })
+
+    assert error_details(changeset) == %{trigger: %{icon_url: ["`not_a_url` is missing scheme"]}}
   end
 
   test "try creating user trigger with unknown channel" do
@@ -69,6 +101,7 @@ defmodule Sanbase.Signals.TriggersTest do
     assert capture_log(fn ->
              {:error, message} =
                UserTrigger.create_user_trigger(user, %{
+                 title: "Generic title",
                  is_public: true,
                  settings: trigger_settings
                })
@@ -90,7 +123,11 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:error, message} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: settings})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: settings
+      })
 
     assert message == "Trigger structure is invalid"
   end
@@ -107,10 +144,50 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
+    title = "Some title"
+
     {:ok, created_trigger} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings})
+      UserTrigger.create_user_trigger(user, %{
+        title: title,
+        is_public: true,
+        settings: trigger_settings
+      })
 
     assert trigger_settings.target == created_trigger.trigger.settings |> Map.get(:target)
+    assert title = created_trigger.trigger.title
+  end
+
+  test "create trigger with icon and description" do
+    user = insert(:user)
+
+    trigger_settings = %{
+      type: "price_percent_change",
+      target: "santiment",
+      percent_threshold: 20,
+      channel: "telegram",
+      time_window: "1d",
+      repeating: false
+    }
+
+    title = "Generic title"
+    description = "Some generic description"
+
+    icon_url =
+      "http://stage-sanbase-images.s3.amazonaws.com/uploads/_empowr-coinHY5QG72SCGKYWMN4AEJQ2BRDLXNWXECT.png"
+
+    {:ok, created_trigger} =
+      UserTrigger.create_user_trigger(user, %{
+        title: title,
+        description: description,
+        icon_url: icon_url,
+        is_public: true,
+        settings: trigger_settings
+      })
+
+    assert trigger_settings.target == created_trigger.trigger.settings |> Map.get(:target)
+    assert title = created_trigger.trigger.title
+    assert description = created_trigger.trigger.description
+    assert icon_url = created_trigger.trigger.icon_url
   end
 
   test "create trigger when there is existing one" do
@@ -125,7 +202,11 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings1})
+    insert(:user_triggers,
+      user: user,
+      trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
+    )
+
     assert length(UserTrigger.triggers_for(user)) == 1
 
     trigger_settings2 = %{
@@ -138,7 +219,11 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     {:ok, _} =
-      UserTrigger.create_user_trigger(user, %{is_public: true, settings: trigger_settings2})
+      UserTrigger.create_user_trigger(user, %{
+        title: "Generic title",
+        is_public: true,
+        settings: trigger_settings2
+      })
 
     assert length(UserTrigger.triggers_for(user)) == 2
   end
@@ -164,8 +249,15 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings1})
-    insert(:user_triggers, user: user, trigger: %{is_public: true, settings: trigger_settings2})
+    insert(:user_triggers,
+      user: user,
+      trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
+    )
+
+    insert(:user_triggers,
+      user: user,
+      trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
+    )
 
     trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
 
@@ -178,17 +270,31 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: true
     }
 
+    new_title = "New title"
+    new_description = "New description"
+
+    new_icon_url =
+      "http://stage-sanbase-images.s3.amazonaws.com/uploads/_empowr-coinHY5QG72SCGKYWMN4AEJQ2BRDLXNWXECT.png"
+
     {:ok, _} =
       UserTrigger.update_user_trigger(user, %{
         id: trigger_id,
         settings: updated_trigger,
-        is_public: false
+        is_public: false,
+        title: new_title,
+        description: new_description,
+        icon_url: new_icon_url
       })
 
     triggers = UserTrigger.triggers_for(user)
 
     assert length(triggers) == 2
-    assert triggers |> hd |> Map.get(:settings) |> Map.get(:repeating) == true
+    trigger = Enum.find(triggers, fn trigger -> trigger.id == trigger_id end)
+
+    assert trigger |> Map.get(:settings) |> Map.get(:repeating) == true
+    assert trigger.title == new_title
+    assert trigger.description == new_description
+    assert trigger.icon_url == new_icon_url
   end
 
   test "update only common fields" do
@@ -203,7 +309,10 @@ defmodule Sanbase.Signals.TriggersTest do
       repeating: false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
+    insert(:user_triggers,
+      user: user,
+      trigger: %{title: "Generic title", is_public: false, settings: trigger_settings}
+    )
 
     ut = UserTrigger.triggers_for(user)
     trigger_id = ut |> hd |> Map.get(:id)

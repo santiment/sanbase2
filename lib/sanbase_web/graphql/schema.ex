@@ -1082,7 +1082,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns a list of all signal triggers for the current user.
     """
     field :create_trigger, :trigger do
-      arg(:settings, :json)
+      arg(:title, non_null(:string))
+      arg(:settings, non_null(:json))
+      arg(:description, :string)
+      arg(:icon_url, :string)
       arg(:is_public, :boolean)
       arg(:cooldown, :integer)
 
@@ -1097,6 +1100,9 @@ defmodule SanbaseWeb.Graphql.Schema do
     """
     field :update_trigger, :trigger do
       arg(:id, non_null(:string))
+      arg(:title, :string)
+      arg(:description, :string)
+      arg(:icon_url, :string)
       arg(:settings, :json)
       arg(:is_public, :boolean)
       arg(:cooldown, :integer)

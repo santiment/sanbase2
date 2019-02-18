@@ -108,9 +108,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
     updated_trigger = trigger_settings |> Map.put("percent_threshold", 400.0)
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
+    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
 
     trigger_settings_json = updated_trigger |> Jason.encode!()
+    tags = [%{"name" => "tag1"}, %{"name" => "tag2"}]
 
     query =
       ~s|
@@ -118,10 +119,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       updateTrigger(
         id: '#{trigger_id}'
         settings: '#{trigger_settings_json}'
+        tags: ['tag1', 'tag2']
       ) {
         trigger{
           id
           settings
+          tags{ name }
         }
       }
     }
@@ -133,8 +136,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> post("/graphql", %{"query" => query})
       |> json_response(200)
 
-    assert result["data"]["updateTrigger"]["trigger"] |> Map.get("settings") == updated_trigger
-    assert result["data"]["updateTrigger"]["trigger"] |> Map.get("id") == trigger_id
+    assert result["data"]["updateTrigger"]["trigger"]["settings"] == updated_trigger
+    assert result["data"]["updateTrigger"]["trigger"]["id"] == trigger_id
+    assert result["data"]["updateTrigger"]["trigger"]["tags"] == tags
   end
 
   test "get trigger by id", %{user: user, conn: conn} do
@@ -150,9 +154,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "triggered?" => false
     }
 
-    insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
+    insert(:user_triggers,
+      user: user,
+      trigger: %{is_public: false, settings: trigger_settings, title: "Some generic title"}
+    )
 
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
+    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
 
     query = """
     query {
@@ -207,8 +214,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> json_response(200)
 
-    result = json_response(result, 200)["data"]["currentUser"]["triggers"] |> hd()
+    result = result["data"]["currentUser"]["triggers"] |> hd()
 
     assert result |> Map.get("settings") == trigger_settings
     assert result |> Map.get("id") != nil
@@ -302,7 +310,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
 
     trigger_settings_json = trigger_settings |> Jason.encode!()
-    tags = ["santiment", "SAN"]
+    tags = [%{"name" => "SAN"}, %{"name" => "santiment"}]
 
     query =
       ~s|
@@ -329,8 +337,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     created_trigger = result["data"]["createTrigger"]["trigger"]
 
-    assert created_trigger |> Map.get("settings") == trigger_settings
-    assert created_trigger |> Map.get("id") != nil
+    assert created_trigger["settings"] == trigger_settings
+    assert created_trigger["id"] != nil
+    assert created_trigger["tags"] == tags
   end
 
   defp format_interpolated_json(string) do

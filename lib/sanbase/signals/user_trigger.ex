@@ -68,7 +68,6 @@ defmodule Sanbase.Signals.UserTrigger do
   def triggers_for(%User{id: user_id}) do
     user_id
     |> user_triggers_for()
-    |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
   end
 
   @doc ~s"""
@@ -80,7 +79,6 @@ defmodule Sanbase.Signals.UserTrigger do
   def public_triggers_for(user_id) do
     user_id
     |> public_user_triggers_for()
-    |> Enum.map(fn ut -> %{ut | trigger: trigger_in_struct(ut.trigger)} end)
   end
 
   @doc ~s"""
@@ -90,6 +88,7 @@ defmodule Sanbase.Signals.UserTrigger do
   def all_public_triggers() do
     from(ut in UserTrigger, where: trigger_is_public())
     |> Repo.all()
+    |> Enum.map(&trigger_in_struct/1)
   end
 
   @doc ~s"""
@@ -104,6 +103,13 @@ defmodule Sanbase.Signals.UserTrigger do
         preload: [:tags]
       )
       |> Repo.one()
+      |> case do
+        %UserTrigger{} = ut ->
+          ut |> trigger_in_struct()
+
+        nil ->
+          nil
+      end
 
     {:ok, result}
   end
@@ -120,7 +126,7 @@ defmodule Sanbase.Signals.UserTrigger do
       preload: [{:user, :user_settings}]
     )
     |> Repo.all()
-    |> Enum.map(fn ut -> %{ut | trigger: trigger_in_struct(ut.trigger)} end)
+    |> Enum.map(&trigger_in_struct/1)
   end
 
   @doc ~s"""
@@ -147,13 +153,13 @@ defmodule Sanbase.Signals.UserTrigger do
   """
   @spec update_user_trigger(%User{}, map()) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
-  def update_user_trigger(%User{id: user_id} = _user, %{id: trigger_id} = params) do
+  def update_user_trigger(%User{} = user, %{id: trigger_id} = params) do
     settings = Map.get(params, :settings)
 
     if is_nil(settings) or is_valid?(settings) do
-      user_id
-      |> user_triggers_for()
-      |> find_user_trigger_by_trigger_id(trigger_id)
+      {:ok, struct} = get_trigger_by_id(user, trigger_id)
+
+      struct
       |> update_changeset(%{trigger: clean_params(params)})
       |> Repo.update()
     else
@@ -168,6 +174,7 @@ defmodule Sanbase.Signals.UserTrigger do
   defp user_triggers_for(user_id) do
     from(ut in UserTrigger, where: ut.user_id == ^user_id, preload: [:tags])
     |> Repo.all()
+    |> Enum.map(&trigger_in_struct/1)
   end
 
   defp public_user_triggers_for(user_id) do
@@ -176,11 +183,7 @@ defmodule Sanbase.Signals.UserTrigger do
       preload: [:tags]
     )
     |> Repo.all()
-  end
-
-  defp find_user_trigger_by_trigger_id(user_triggers, trigger_id) do
-    user_triggers
-    |> Enum.find(fn ut -> ut.trigger.id == trigger_id end)
+    |> Enum.map(&trigger_in_struct/1)
   end
 
   defp is_valid?(trigger) do

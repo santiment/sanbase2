@@ -6,7 +6,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   def triggers(%User{} = user, _args, _resolution) do
-    {:ok, UserTrigger.triggers_for(user)}
+    {:ok, UserTrigger.triggers_for(user) |> Enum.map(& &1.trigger)}
   end
 
   def create_trigger(_root, args, %{
@@ -26,13 +26,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     |> handle_result("update")
   end
 
-  @spec get_trigger_by_id(any(), atom() | %{id: binary()}, %{
-          context: %{auth: %{current_user: map()}}
-        }) :: {:ok, Sanbase.Signals.Trigger.t()}
-  def get_trigger_by_id(_root, args, %{
+  def get_trigger_by_id(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do
-    UserTrigger.get_trigger_by_id(current_user, args.id)
+    UserTrigger.get_trigger_by_id(current_user, id)
     |> handle_result("get by id")
   end
 

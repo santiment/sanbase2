@@ -288,11 +288,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       conn
       |> post("/graphql", query_skeleton(query, "publicTriggersForUser"))
       |> json_response(200)
-      |> IO.inspect()
 
-    result = result["data"]["publicTriggersForUser"]["trigger"]
+    result = result["data"]["publicTriggersForUser"]
     assert length(result) == 1
-    assert result |> hd() |> Map.get("settings") == trigger_settings
+    assert result |> hd |> Map.get("trigger") |> Map.get("settings") == trigger_settings
   end
 
   test "create trending words trigger", %{conn: conn} do
@@ -316,8 +315,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         trigger{
           id
           settings
+          tags{ name }
         }
-        tags{ name }
       }
     }
     |
@@ -327,7 +326,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       conn
       |> post("/graphql", %{"query" => query})
       |> json_response(200)
-      |> IO.inspect()
 
     created_trigger = result["data"]["createTrigger"]["trigger"]
 

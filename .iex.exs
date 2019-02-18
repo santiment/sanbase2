@@ -26,11 +26,12 @@ alias Sanbase.Auth.{
   Settings
 }
 
+alias Sanbase.Tag
+
 alias Sanbase.Voting.{
   Post,
   Poll,
   Vote,
-  Tag,
   PostImage
 }
 

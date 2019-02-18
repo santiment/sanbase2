@@ -37,17 +37,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   end
 
   def public_triggers_for_user(_root, args, _resolution) do
-    {:ok, UserTrigger.public_triggers_for(args.user_id)}
+    {:ok, UserTrigger.public_triggers_for(args.user_id) |> Enum.map(&transform_user_trigger/1)}
   end
 
   def all_public_triggers(_root, _args, _resolution) do
-    {:ok, UserTrigger.all_public_triggers()}
+    {:ok, UserTrigger.all_public_triggers() |> Enum.map(&transform_user_trigger/1)}
   end
 
   defp handle_result(result, operation) do
     case result do
       {:ok, ut} ->
-        {:ok, ut}
+        {:ok, transform_user_trigger(ut)}
 
       {:error, error_msg} when is_binary(error_msg) ->
         {:error, error_msg}
@@ -58,5 +58,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
           message: "Cannot #{operation} trigger!", details: Utils.error_details(changeset)
         }
     end
+  end
+
+  # Hide the implementation details that `tags` are field of the UserTrigger module
+  # Present them as a field of the `trigger` GQL type instead of `user_trigger`
+  defp transform_user_trigger(%UserTrigger{trigger: trigger, tags: tags} = ut) do
+    ut = Map.from_struct(ut)
+    trigger = Map.from_struct(trigger)
+
+    %{
+      ut
+      | trigger: Map.put(trigger, :tags, tags)
+    }
   end
 end

@@ -1,12 +1,9 @@
 defmodule SanbaseWeb.Graphql.UserTriggerTypes do
   use Absinthe.Schema.Notation
-  import Absinthe.Resolution.Helpers
-  alias SanbaseWeb.Graphql.SanbaseRepo
 
   object :user_trigger do
     field(:user_id, :integer)
     field(:trigger, :trigger)
-    field(:tags, list_of(:tag), resolve: dataloader(SanbaseRepo))
   end
 
   object :trigger do
@@ -17,5 +14,6 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
     field(:settings, :json)
     field(:is_public, :boolean)
     field(:cooldown, :integer)
+    field(:tags, list_of(:tag))
   end
 end

@@ -44,7 +44,7 @@ defmodule Sanbase.Signals.UserTrigger do
   def create_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
     |> cast(attrs, [:user_id])
-    |> Tag.put_tags(attrs)
+    |> Tag.put_tags(Map.get(attrs, :trigger, %{}))
     |> cast_embed(:trigger, required: true, with: &Trigger.create_changeset/2)
     |> validate_required([:user_id, :trigger])
   end
@@ -54,7 +54,7 @@ defmodule Sanbase.Signals.UserTrigger do
   def update_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do
     user_triggers
     |> cast(attrs, [:user_id])
-    |> Tag.put_tags(attrs)
+    |> Tag.put_tags(Map.get(attrs, :trigger, %{}))
     |> cast_embed(:trigger, required: true, with: &Trigger.update_changeset/2)
     |> validate_required([:user_id, :trigger])
   end
@@ -80,7 +80,7 @@ defmodule Sanbase.Signals.UserTrigger do
   def public_triggers_for(user_id) do
     user_id
     |> public_user_triggers_for()
-    |> Enum.map(fn ut -> trigger_in_struct(ut.trigger) end)
+    |> Enum.map(fn ut -> %{ut | trigger: trigger_in_struct(ut.trigger)} end)
   end
 
   @doc ~s"""
@@ -97,12 +97,15 @@ defmodule Sanbase.Signals.UserTrigger do
   user with id `user_id`
   """
   def get_trigger_by_id(%User{id: user_id} = _user, trigger_id) do
-    from(
-      ut in UserTrigger,
-      where: ut.user_id == ^user_id and trigger_by_id(trigger_id),
-      preload: [:tags]
-    )
-    |> Repo.one()
+    result =
+      from(
+        ut in UserTrigger,
+        where: ut.user_id == ^user_id and trigger_by_id(trigger_id),
+        preload: [:tags]
+      )
+      |> Repo.one()
+
+    {:ok, result}
   end
 
   @doc ~s"""
@@ -163,12 +166,15 @@ defmodule Sanbase.Signals.UserTrigger do
   # Private functions
 
   defp user_triggers_for(user_id) do
-    from(ut in UserTrigger, where: ut.user_id == ^user_id)
+    from(ut in UserTrigger, where: ut.user_id == ^user_id, preload: [:tags])
     |> Repo.all()
   end
 
   defp public_user_triggers_for(user_id) do
-    from(ut in UserTrigger, where: ut.user_id == ^user_id and trigger_is_public())
+    from(ut in UserTrigger,
+      where: ut.user_id == ^user_id and trigger_is_public(),
+      preload: [:tags]
+    )
     |> Repo.all()
   end
 

@@ -110,7 +110,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     # TODO: 21.05.2018 Lyudmil Lesinksi
     # The real css selector shoul be "#ContentPlaceHolder1_divSummary > div:first-child  tr:first-child > td + td"
     # but for some reason Floki doesn't recognize that as the valid selector so we have to use Enum.at
-    Floki.find(html, ~s/#ContentPlaceHolder1_divSummary > div:first-child  tr > td + td/)
+    Floki.find(html, ~s/#ContentPlaceHolder1_divSummary > div:first-child  div > div + div/)
     |> Enum.at(0)
     |> case do
       nil ->
@@ -125,7 +125,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp main_contract_address(html) do
-    Floki.find(html, ~s/td:fl-contains('Contract') + td/)
+    Floki.find(html, ~s/div:fl-contains('Contract') + div/)
     |> List.first()
     |> case do
       nil -> nil
@@ -134,7 +134,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp token_decimals(html) do
-    Floki.find(html, ~s/td:fl-contains('Decimals') + td/)
+    Floki.find(html, ~s/div:fl-contains('Decimals') + div/)
     |> List.first()
     |> case do
       nil -> nil
@@ -157,7 +157,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> String.trim()
     |> String.replace(",", "")
     |> String.split()
-    |> List.first()
+    |> Enum.find(fn x -> String.starts_with?(x, "Supply") end)
+    |> (fn supply -> String.trim(supply, "Supply:") end).()
     |> D.new()
   end
 end

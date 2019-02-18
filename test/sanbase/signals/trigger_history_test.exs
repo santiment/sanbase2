@@ -6,8 +6,6 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
   import Sanbase.DateTimeUtils
 
   alias Sanbase.Signals.UserTrigger
-  alias Sanbase.Prices.Store
-  alias Sanbase.Influxdb.Measurement
 
   test "returns historical daa data with trigger points" do
     daa_result = [
@@ -24,10 +22,25 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       %{datetime: from_iso8601!("2018-11-26T00:00:00Z"), active_addresses: 70}
     ]
 
-    with_mock Sanbase.Clickhouse.Erc20DailyActiveAddresses,
-      average_active_addresses: fn _, _, _, _ ->
-        {:ok, daa_result}
-      end do
+    prices_result = [
+      [from_iso8601!("2018-11-17T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-18T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-19T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-20T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-21T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-22T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-23T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-24T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-25T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-26T00:00:00Z"), 20, 1000, 500, 200]
+    ]
+
+    with_mocks([
+      {Sanbase.Clickhouse.Erc20DailyActiveAddresses, [],
+       [average_active_addresses: fn _, _, _, _ -> {:ok, daa_result} end]},
+      {Sanbase.Prices.Store, [],
+       [fetch_prices_with_resolution: fn _, _, _, _ -> {:ok, prices_result} end]}
+    ]) do
       trigger_settings = %{
         type: "daily_active_addresses",
         target: "santiment",
@@ -41,9 +54,6 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         coinmarketcap_id: "santiment",
         main_contract_address: "0x123"
       })
-
-      datetimes = daa_result |> Enum.map(fn %{datetime: dt} -> dt end)
-      populate_influxdb(datetimes, "SAN_santiment")
 
       trigger = %{settings: trigger_settings}
       {:ok, points} = UserTrigger.historical_trigger_points(trigger)
@@ -74,60 +84,43 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
   end
 
   test "returns historical price data with trigger points" do
-    trigger_settings = %{
-      type: "price_percent_change",
-      target: "santiment",
-      channel: "telegram",
-      time_window: "1h",
-      percent_threshold: 0.05
-    }
+    prices_result = [
+      [from_iso8601!("2018-11-17T00:00:00Z"), 20, 1000, 500, 200],
+      # trigger point
+      [from_iso8601!("2018-11-18T00:00:00Z"), 25, 1000, 500, 200],
+      # trigger point
+      [from_iso8601!("2018-11-19T00:00:00Z"), 30, 1000, 500, 200],
+      [from_iso8601!("2018-11-20T00:00:00Z"), 25, 1000, 500, 200],
+      [from_iso8601!("2018-11-21T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-22T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-23T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-24T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-25T00:00:00Z"), 20, 1000, 500, 200],
+      [from_iso8601!("2018-11-26T00:00:00Z"), 20, 1000, 500, 200]
+    ]
 
-    insert(:project, %{
-      ticker: "SAN",
-      coinmarketcap_id: "santiment",
-      main_contract_address: "0x123"
-    })
-
-    populate_influxdb("SAN_santiment")
-
-    trigger = %{settings: trigger_settings}
-    {:ok, points} = UserTrigger.historical_trigger_points(trigger)
-    assert length(points) == 10
-    assert Enum.filter(points, fn point -> point.triggered? end) |> length() == 9
-  end
-
-  defp populate_influxdb(datetimes, ticker_cmc_id) do
-    Store.drop_measurement(ticker_cmc_id)
-
-    datetimes
-    |> Enum.map(fn dt ->
-      %Measurement{
-        timestamp: dt |> DateTime.to_unix(:nanosecond),
-        fields: %{price_usd: 20, price_btc: 1000, volume_usd: 200, marketcap_usd: 500},
-        name: ticker_cmc_id
+    with_mock Sanbase.Prices.Store,
+      fetch_prices_with_resolution: fn _, _, _, _ ->
+        {:ok, prices_result}
+      end do
+      trigger_settings = %{
+        type: "price_percent_change",
+        target: "santiment",
+        channel: "telegram",
+        time_window: "1h",
+        percent_threshold: 0.05
       }
-    end)
-    |> Store.import()
-  end
 
-  defp populate_influxdb(ticker_cmc_id) do
-    Store.drop_measurement(ticker_cmc_id)
-    now = Timex.now()
-    step = 3600
-    price_step = 0.01
+      insert(:project, %{
+        ticker: "SAN",
+        coinmarketcap_id: "santiment",
+        main_contract_address: "0x123"
+      })
 
-    for x <- 0..9 do
-      %Measurement{
-        timestamp: Timex.shift(now, seconds: -3600 * x) |> DateTime.to_unix(:nanosecond),
-        fields: %{
-          price_usd: 20 - 20 * 0.01 * x,
-          price_btc: 1000,
-          volume_usd: 200,
-          marketcap_usd: 500
-        },
-        name: ticker_cmc_id
-      }
+      trigger = %{settings: trigger_settings}
+      {:ok, points} = UserTrigger.historical_trigger_points(trigger)
+      assert length(points) == 10
+      assert Enum.filter(points, fn point -> point.triggered? end) |> length() == 2
     end
-    |> Store.import()
   end
 end

@@ -65,7 +65,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         total_supply: total_supply(html) || project_info.total_supply,
         main_contract_address: project_info.main_contract_address || main_contract_address(html),
         token_decimals: project_info.token_decimals || token_decimals(html),
-        website_link: project_info.website_link || official_link(html, "Website"),
+        website_link: project_info.website_link || website_link(html),
         email: project_info.email || official_link(html, "Email") |> email(),
         reddit_link: project_info.reddit_link || official_link(html, "Reddit"),
         twitter_link: project_info.twitter_link || official_link(html, "Twitter"),
@@ -77,6 +77,12 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
         facebook_link: project_info.facebook_link || official_link(html, "Facebook"),
         whitepaper_link: project_info.whitepaper_link || official_link(html, "Whitepaper")
     }
+  end
+
+  defp website_link(html) do
+    Floki.find(html, ~s/#ContentPlaceHolder1_tr_officialsite_1 > div > div.col-md-8 > a/)
+    |> Floki.attribute("href")
+    |> List.first()
   end
 
   defp official_link(html, media) do
@@ -92,7 +98,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp creation_transaction(html) do
-    Floki.find(html, ~s/a[title="Creator Transaction Hash"]/)
+    Floki.find(html, ~s/a[title="Creator TxHash"]/)
     |> List.first()
     |> case do
       nil -> nil
@@ -104,7 +110,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     # TODO: 21.05.2018 Lyudmil Lesinksi
     # The real css selector shoul be "#ContentPlaceHolder1_divSummary > div:first-child  tr:first-child > td + td"
     # but for some reason Floki doesn't recognize that as the valid selector so we have to use Enum.at
-    Floki.find(html, ~s/#ContentPlaceHolder1_divSummary > div:first-child  tr > td + td/)
+    Floki.find(html, ~s/#ContentPlaceHolder1_divSummary > div:first-child  div > div + div/)
     |> Enum.at(0)
     |> case do
       nil ->
@@ -119,7 +125,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp main_contract_address(html) do
-    Floki.find(html, ~s/td:fl-contains('Contract') + td/)
+    Floki.find(html, ~s/div:fl-contains('Contract') + div/)
     |> List.first()
     |> case do
       nil -> nil
@@ -128,7 +134,7 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
   end
 
   defp token_decimals(html) do
-    Floki.find(html, ~s/td:fl-contains('Decimals') + td/)
+    Floki.find(html, ~s/div:fl-contains('Decimals') + div/)
     |> List.first()
     |> case do
       nil -> nil
@@ -151,7 +157,8 @@ defmodule Sanbase.ExternalServices.Etherscan.Scraper do
     |> String.trim()
     |> String.replace(",", "")
     |> String.split()
-    |> List.first()
+    |> Enum.find(fn x -> String.starts_with?(x, "Supply") end)
+    |> (fn supply -> String.trim(supply, "Supply:") end).()
     |> D.new()
   end
 end

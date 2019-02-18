@@ -28,8 +28,6 @@ defmodule Sanbase.Tag do
   """
   @spec put_tags(Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
   def put_tags(%Ecto.Changeset{} = changeset, %{tags: tags}) do
-    IO.inspect("TAAAAAGS: #{inspect(tags)}")
-
     params =
       tags
       |> Enum.map(fn tag -> %{name: tag} end)

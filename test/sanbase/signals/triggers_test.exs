@@ -35,8 +35,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     got_trigger = UserTrigger.get_trigger_by_id(user, trigger_id)
 
-    assert got_trigger.settings |> Map.from_struct() ==
-             trigger_settings
+    assert got_trigger.settings |> Map.from_struct() == trigger_settings
   end
 
   test "try creating user trigger with unknown type" do

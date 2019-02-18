@@ -1,6 +1,6 @@
 defmodule Sanbase.Signals.History.Utils do
   def moving_average_excluding_last(list, period, key)
-      when is_list(list) and is_integer(period) and period > 0 do
+      when is_list(list) and is_integer(period) and period >= 2 do
     result =
       list
       |> Enum.chunk_every(period, 1, :discard)
@@ -18,6 +18,9 @@ defmodule Sanbase.Signals.History.Utils do
     {:ok, result}
   end
 
+  def moving_average_excluding_last(_, _, _),
+    do: {:error, "Cannot calculate moving average for these args"}
+
   def merge_chunks_by_datetime(initial_points, points_override) do
     initial_points
     |> Enum.map(fn initial_point ->
@@ -34,7 +37,7 @@ defmodule Sanbase.Signals.History.Utils do
   defp average(l, key) when is_list(l) do
     values = Enum.map(l, fn item -> Map.get(item, key) end) |> Enum.drop(-1)
     %{datetime: datetime} = List.last(l)
-    average = Enum.sum(values) / length(values)
+    average = Float.round(Enum.sum(values) / length(values), 2)
 
     {datetime, average}
   end

@@ -22,9 +22,12 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
             triggered?: boolean()
           }
 
-    @spec historical_trigger_points(%DailyActiveAddressesSettings{}) ::
+    @spec historical_trigger_points(%DailyActiveAddressesSettings{}, String.t()) ::
             {:ok, list(historical_trigger_points_type)} | {:error, String.t()}
-    def historical_trigger_points(%DailyActiveAddressesSettings{target: target} = settings) do
+    def historical_trigger_points(
+          %DailyActiveAddressesSettings{target: target} = settings,
+          cooldown
+        ) do
       with {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target),
            measurement when not is_nil(measurement) <-
              Measurement.name_from_slug(settings.target),

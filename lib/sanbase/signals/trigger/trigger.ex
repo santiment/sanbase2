@@ -9,8 +9,8 @@ defprotocol Sanbase.Signals.Settings do
 end
 
 defprotocol Sanbase.Signals.History do
-  @spec historical_trigger_points(struct()) :: list(any())
-  def historical_trigger_points(trigger)
+  @spec historical_trigger_points(struct(), String.t()) :: list(any())
+  def historical_trigger_points(trigger, cooldown)
 end
 
 defmodule Sanbase.Signals.Trigger do
@@ -91,8 +91,10 @@ defmodule Sanbase.Signals.Trigger do
     %Trigger{trigger | settings: trigger_settings}
   end
 
-  def historical_trigger_points(%Trigger{settings: trigger_settings} = trigger) do
-    Sanbase.Signals.History.historical_trigger_points(trigger_settings)
+  def historical_trigger_points(
+        %Trigger{settings: trigger_settings, cooldown: cooldown} = trigger
+      ) do
+    Sanbase.Signals.History.historical_trigger_points(trigger_settings, cooldown)
   end
 
   def evaluate(%Trigger{settings: trigger_settings} = trigger) do

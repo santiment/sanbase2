@@ -5,7 +5,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
   import Sanbase.Factory
   import Sanbase.DateTimeUtils
 
-  alias Sanbase.Signals.{UserTrigger, Trigger}
+  alias Sanbase.Signals.UserTrigger
 
   test "returns historical daa data with trigger points" do
     daa_result = [
@@ -55,7 +55,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         main_contract_address: "0x123"
       })
 
-      trigger = %{settings: trigger_settings}
+      trigger = %{settings: trigger_settings, cooldown: "1d"}
       {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
       triggered? =
@@ -118,7 +118,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       end do
       percent_threshold = 5.0
 
-      trigger = %Trigger{
+      trigger = %{
         cooldown: "4h",
         settings: %{
           type: "price_percent_change",
@@ -135,7 +135,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         main_contract_address: "0x123"
       })
 
-      points = Sanbase.Signals.History.PricesHistory.historical_trigger_points(trigger)
+      {:ok, points} = UserTrigger.historical_trigger_points(trigger)
       assert length(points) == 17
       trigger_points = Enum.filter(points, fn point -> point.triggered? end)
       assert length(trigger_points) == 3
@@ -191,13 +191,12 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       fetch_prices_with_resolution: fn _, _, _, _ ->
         {:ok, prices_result}
       end do
-      trigger = %Trigger{
+      trigger = %{
         cooldown: "4h",
         settings: %{
           type: "price_absolute_change",
           target: "santiment",
           channel: "telegram",
-          time_window: "4h",
           above: 21.0
         }
       }
@@ -208,7 +207,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         main_contract_address: "0x123"
       })
 
-      points = Sanbase.Signals.History.PricesHistory.absolute(trigger)
+      {:ok, points} = UserTrigger.historical_trigger_points(trigger)
       assert length(points) == 17
       trigger_points = Enum.filter(points, fn point -> point.triggered? end)
       assert length(trigger_points) == 3

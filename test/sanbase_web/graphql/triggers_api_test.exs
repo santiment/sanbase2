@@ -1,8 +1,8 @@
 defmodule SanbaseWeb.Graphql.TriggersApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import Sanbase.Factory
-
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Signals.UserTrigger
@@ -15,21 +15,26 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "create trigger", %{conn: conn} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
+    with_mock Sanbase.Telegram,
+      send_message: fn _user, text ->
+        send(self(), {:telegram_to_self, text})
+        :ok
+      end do
+      trigger_settings = %{
+        "type" => "daily_active_addresses",
+        "target" => "santiment",
+        "channel" => "telegram",
+        "time_window" => "1d",
+        "percent_threshold" => 300.0,
+        "repeating" => false,
+        "payload" => nil,
+        "triggered?" => false
+      }
 
-    trigger_settings_json = trigger_settings |> Jason.encode!()
+      trigger_settings_json = trigger_settings |> Jason.encode!()
 
-    query =
-      ~s|
+      query =
+        ~s|
     mutation {
       createTrigger(
         settings: '#{trigger_settings_json}'
@@ -42,16 +47,22 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       }
     }
     |
-      |> format_interpolated_json()
+        |> format_interpolated_json()
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
+      result =
+        conn
+        |> post("/graphql", %{"query" => query})
 
-    created_trigger = json_response(result, 200)["data"]["createTrigger"]["trigger"]
+      # Telegram notification is sent when creation sucessful
+      assert_receive(
+        {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
+      )
 
-    assert created_trigger["settings"] == trigger_settings
-    assert created_trigger["id"] != nil
+      created_trigger = json_response(result, 200)["data"]["createTrigger"]["trigger"]
+
+      assert created_trigger["settings"] == trigger_settings
+      assert created_trigger["id"] != nil
+    end
   end
 
   test "create trigger with unknown type", %{conn: conn} do
@@ -83,6 +94,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
     |
       |> format_interpolated_json()
+
+    # Telegram notification is not sent when creation is unsucessful
+    refute_receive(
+      {:telegram_to_self, "Successfully created a new signal of type: Daily Active Addresses"}
+    )
 
     result =
       conn

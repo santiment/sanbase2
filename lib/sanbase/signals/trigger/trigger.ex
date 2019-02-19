@@ -116,6 +116,14 @@ defmodule Sanbase.Signals.Trigger do
     end
   end
 
+  def human_readable_settings_type(type) do
+    type
+    |> String.replace("_", " ")
+    |> String.split()
+    |> Stream.map(&String.capitalize/1)
+    |> Enum.join(" ")
+  end
+
   defp remove_targets_on_cooldown(target, trigger)
        when is_binary(target) do
     remove_targets_on_cooldown([target], trigger)

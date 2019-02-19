@@ -288,12 +288,14 @@ defmodule Sanbase.Signals.TriggersTest do
     triggers = UserTrigger.triggers_for(user)
 
     assert length(triggers) == 2
-    trigger = Enum.find(triggers, fn trigger -> trigger.trigger.id == trigger_id end)
 
-    assert trigger.trigger |> Map.get(:settings) |> Map.get(:repeating) == true
-    assert trigger.trigger.title == new_title
-    assert trigger.trigger.description == new_description
-    assert trigger.trigger.icon_url == new_icon_url
+    %UserTrigger{trigger: trigger} =
+      Enum.find(triggers, fn %UserTrigger{trigger: trigger} -> trigger.id == trigger_id end)
+
+    assert trigger.settings.repeating == true
+    assert trigger.title == new_title
+    assert trigger.description == new_description
+    assert trigger.icon_url == new_icon_url
   end
 
   test "update only common fields" do
@@ -318,7 +320,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     UserTrigger.update_user_trigger(user, %{id: trigger_id, is_public: true, cooldown: "1h"})
     user_triggers = UserTrigger.triggers_for(user)
-
+    assert length(user_triggers) == 1
     trigger = user_triggers |> hd()
     assert trigger.trigger.is_public == true
     assert trigger.trigger.cooldown == "1h"

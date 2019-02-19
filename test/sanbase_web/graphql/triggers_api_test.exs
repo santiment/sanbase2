@@ -50,8 +50,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     created_trigger = json_response(result, 200)["data"]["createTrigger"]["trigger"]
 
-    assert created_trigger |> Map.get("settings") == trigger_settings
-    assert created_trigger |> Map.get("id") != nil
+    assert created_trigger["settings"] == trigger_settings
+    assert created_trigger["id"] != nil
   end
 
   test "create trigger with unknown type", %{conn: conn} do
@@ -87,8 +87,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       conn
       |> post("/graphql", %{"query" => query})
+      |> json_response(200)
 
-    [error] = json_response(result, 200)["errors"]
+    error = result["errors"] |> List.first()
 
     assert error["message"] == "Trigger structure is invalid"
   end
@@ -136,9 +137,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> post("/graphql", %{"query" => query})
       |> json_response(200)
 
-    assert result["data"]["updateTrigger"]["trigger"]["settings"] == updated_trigger
-    assert result["data"]["updateTrigger"]["trigger"]["id"] == trigger_id
-    assert result["data"]["updateTrigger"]["trigger"]["tags"] == tags
+    trigger = result["data"]["updateTrigger"]["trigger"]
+
+    assert trigger["settings"] == updated_trigger
+    assert trigger["id"] == trigger_id
+    assert trigger["tags"] == tags
   end
 
   test "get trigger by id", %{user: user, conn: conn} do
@@ -177,11 +180,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       conn
       |> post("/graphql", %{"query" => query})
+      |> json_response(200)
 
-    result = json_response(result, 200)["data"]["getTriggerById"]["trigger"]
+    trigger = result["data"]["getTriggerById"]["trigger"]
 
-    assert result |> Map.get("settings") == trigger_settings
-    assert result |> Map.get("id") == trigger_id
+    assert trigger["settings"] == trigger_settings
+    assert trigger["id"] == trigger_id
   end
 
   test "fetches triggers for current user", %{user: user, conn: conn} do
@@ -216,10 +220,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> post("/graphql", query_skeleton(query, "currentUser"))
       |> json_response(200)
 
-    result = result["data"]["currentUser"]["triggers"] |> hd()
+    trigger =
+      result["data"]["currentUser"]["triggers"]
+      |> hd()
 
-    assert result |> Map.get("settings") == trigger_settings
-    assert result |> Map.get("id") != nil
+    assert trigger["settings"] == trigger_settings
+    assert trigger["id"] != nil
   end
 
   test "fetches all public triggers", %{user: user, conn: conn} do
@@ -255,10 +261,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "allPublicTriggers"))
+      |> json_response(200)
 
-    result = json_response(result, 200)["data"]["allPublicTriggers"]
-    assert length(result) == 1
-    assert result |> hd() |> Map.get("trigger") |> Map.get("settings") == trigger_settings
+    triggers = result["data"]["allPublicTriggers"]
+    assert length(triggers) == 1
+    user_trigger = triggers |> List.first()
+    assert user_trigger["trigger"]["settings"] == trigger_settings
   end
 
   test "fetches public user triggers", %{conn: conn} do
@@ -297,9 +305,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> post("/graphql", query_skeleton(query, "publicTriggersForUser"))
       |> json_response(200)
 
-    result = result["data"]["publicTriggersForUser"]
-    assert length(result) == 1
-    assert result |> hd |> Map.get("trigger") |> Map.get("settings") == trigger_settings
+    triggers = result["data"]["publicTriggersForUser"]
+    assert length(triggers) == 1
+    trigger = triggers |> List.first()
+    assert trigger["trigger"]["settings"] == trigger_settings
   end
 
   test "create trending words trigger", %{conn: conn} do

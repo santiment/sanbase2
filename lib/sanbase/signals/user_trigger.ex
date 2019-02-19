@@ -22,8 +22,6 @@ defmodule Sanbase.Signals.UserTrigger do
 
   require Logger
 
-  @type trigger_struct :: %Trigger{}
-
   schema "user_triggers" do
     belongs_to(:user, User)
     embeds_one(:trigger, Trigger, on_replace: :update)
@@ -64,7 +62,7 @@ defmodule Sanbase.Signals.UserTrigger do
   The result is transformed so all trigger settings are loaded in their
   corresponding struct
   """
-  @spec triggers_for(%User{}) :: list(trigger_struct)
+  @spec triggers_for(%User{}) :: list(Trigger.t())
   def triggers_for(%User{id: user_id}) do
     user_id
     |> user_triggers_for()
@@ -75,7 +73,7 @@ defmodule Sanbase.Signals.UserTrigger do
   The result is transformed so all trigger settings are loaded in their
   corresponding struct
   """
-  @spec public_triggers_for(non_neg_integer()) :: list(trigger_struct)
+  @spec public_triggers_for(non_neg_integer()) :: list(Trigger.t())
   def public_triggers_for(user_id) do
     user_id
     |> public_user_triggers_for()

@@ -21,6 +21,14 @@ defmodule Sanbase.Signals.TriggerQuery do
     end
   end
 
+  defmacro trigger_is_public() do
+    quote do
+      fragment("""
+      trigger->>'is_public' = 'true'
+      """)
+    end
+  end
+
   defmacro trigger_id_one_of(ids) do
     quote do
       fragment(

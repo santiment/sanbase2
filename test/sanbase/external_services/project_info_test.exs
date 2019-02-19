@@ -6,7 +6,7 @@ defmodule Sanbase.ExternalServices.ProjectInfoTest do
   alias Sanbase.ExternalServices.ProjectInfo
   alias Sanbase.Model.{Project, Ico}
   alias Sanbase.Repo
-  alias Sanbase.Voting.Tag
+  alias Sanbase.Tag
 
   test "creating project info from a project" do
     project =

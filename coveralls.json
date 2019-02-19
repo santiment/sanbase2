@@ -5,5 +5,16 @@
 
   "terminal_options": {
     "file_column_width": 100
-  }
+  },
+  "skip_files": [
+    "lib/mix",
+    "lib/sanbase_web/admin",
+    "lib/sanbase_web/channels",
+    "lib/sanbase_web/templates",
+    "lib/sanbase_web/controllers",
+    "lib/sanbase_web/views",
+    "priv",
+    "rel",
+    "test/support"
+  ]
 }

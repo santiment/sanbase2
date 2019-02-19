@@ -33,9 +33,9 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_id = created_trigger.trigger.id
 
-    got_trigger = UserTrigger.get_trigger_by_id(user, trigger_id)
+    {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.get_trigger_by_id(user, trigger_id)
 
-    assert got_trigger.settings |> Map.from_struct() == trigger_settings
+    assert trigger.settings |> Map.from_struct() == trigger_settings
   end
 
   test "try creating user trigger with unknown type" do
@@ -258,7 +258,7 @@ defmodule Sanbase.Signals.TriggersTest do
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
 
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
+    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
 
     updated_trigger = %{
       type: "daily_active_addresses",
@@ -288,9 +288,11 @@ defmodule Sanbase.Signals.TriggersTest do
     triggers = UserTrigger.triggers_for(user)
 
     assert length(triggers) == 2
-    trigger = Enum.find(triggers, fn trigger -> trigger.id == trigger_id end)
 
-    assert trigger |> Map.get(:settings) |> Map.get(:repeating) == true
+    %UserTrigger{trigger: trigger} =
+      Enum.find(triggers, fn %UserTrigger{trigger: trigger} -> trigger.id == trigger_id end)
+
+    assert trigger.settings.repeating == true
     assert trigger.title == new_title
     assert trigger.description == new_description
     assert trigger.icon_url == new_icon_url
@@ -314,13 +316,13 @@ defmodule Sanbase.Signals.TriggersTest do
     )
 
     ut = UserTrigger.triggers_for(user)
-    trigger_id = ut |> hd |> Map.get(:id)
+    trigger_id = ut |> hd |> Map.get(:trigger) |> Map.get(:id)
 
     UserTrigger.update_user_trigger(user, %{id: trigger_id, is_public: true, cooldown: "1h"})
     user_triggers = UserTrigger.triggers_for(user)
-
+    assert length(user_triggers) == 1
     trigger = user_triggers |> hd()
-    assert trigger.is_public == true
-    assert trigger.cooldown == "1h"
+    assert trigger.trigger.is_public == true
+    assert trigger.trigger.cooldown == "1h"
   end
 end

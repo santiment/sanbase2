@@ -1,8 +1,9 @@
 defmodule Sanbase.Factory do
   use ExMachina.Ecto, repo: Sanbase.Repo
 
+  alias Sanbase.Tag
   alias Sanbase.Auth.{User, UserSettings}
-  alias Sanbase.Voting.{Post, Poll, Tag}
+  alias Sanbase.Voting.{Post, Poll}
   alias Sanbase.Model.{Project, ExchangeAddress}
   alias Sanbase.Signals.UserTrigger
 

@@ -2,7 +2,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
   use SanbaseWeb.ConnCase, async: false
   use Mockery
 
-  alias Sanbase.Voting.{Poll, Post, Vote, Tag}
+  alias Sanbase.Tag
+  alias Sanbase.Voting.{Poll, Post, Vote}
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Repo

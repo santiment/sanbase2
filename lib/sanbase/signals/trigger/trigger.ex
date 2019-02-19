@@ -37,6 +37,16 @@ defmodule Sanbase.Signals.Trigger do
     field(:icon_url, :string)
   end
 
+  @type t :: %__MODULE__{
+          settings: map() | struct(),
+          is_public: boolean(),
+          cooldown: String.t(),
+          last_triggered: map(),
+          title: String.t(),
+          description: String.t(),
+          icon_url: String.t()
+        }
+
   @doc false
   @fields [
     :settings,

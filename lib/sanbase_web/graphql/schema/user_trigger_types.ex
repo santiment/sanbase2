@@ -14,5 +14,6 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
     field(:settings, :json)
     field(:is_public, :boolean)
     field(:cooldown, :integer)
+    field(:tags, list_of(:tag))
   end
 end

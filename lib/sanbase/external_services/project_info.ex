@@ -39,7 +39,7 @@ defmodule Sanbase.ExternalServices.ProjectInfo do
   alias Sanbase.InternalServices.Parity
   alias Sanbase.Repo
   alias Sanbase.Model.{Project, Ico}
-  alias Sanbase.Voting.Tag
+  alias Sanbase.Tag
 
   require Logger
 

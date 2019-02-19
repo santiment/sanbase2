@@ -6,7 +6,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   import Ecto.Query
 
   alias Sanbase.Auth.User
-  alias Sanbase.Voting.{Post, Poll, Tag}
+  alias Sanbase.Tag
+  alias Sanbase.Voting.{Post, Poll}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Notifications

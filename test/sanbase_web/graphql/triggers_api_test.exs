@@ -144,6 +144,47 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert trigger["tags"] == tags
   end
 
+  test "remove trigger", %{user: user, conn: conn} do
+    trigger_settings = %{
+      "type" => "daily_active_addresses",
+      "target" => "santiment",
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "percent_threshold" => 300.0,
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
+    }
+
+    insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
+    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
+
+    query =
+      ~s|
+    mutation {
+      removeTrigger(
+        id: '#{trigger_id}'
+      ) {
+        trigger{
+          id
+          settings
+          tags{ name }
+        }
+      }
+    }
+    |
+      |> format_interpolated_json()
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => query})
+      |> json_response(200)
+
+    trigger = result["data"]["removeTrigger"]["trigger"]
+
+    assert UserTrigger.triggers_for(user) == []
+  end
+
   test "get trigger by id", %{user: user, conn: conn} do
     trigger_settings = %{
       "type" => "daily_active_addresses",

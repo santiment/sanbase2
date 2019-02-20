@@ -1080,7 +1080,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc """
     Create signal trigger described by `trigger` json field.
-    Returns a list of all signal triggers for the current user.
+    Returns the newly created trigger.
     """
     field :create_trigger, :user_trigger do
       arg(:title, non_null(:string))
@@ -1098,7 +1098,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc """
     Update signal trigger by its id.
-    Returns a list of all signal triggers for the current user.
+    Returns a the updated trigger.
     """
     field :update_trigger, :user_trigger do
       arg(:id, non_null(:string))
@@ -1113,6 +1113,18 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
 
       resolve(&UserTriggerResolver.update_trigger/3)
+    end
+
+    @desc """
+    Remove signal trigger by its id.
+    Returns the removed trigger on success.
+    """
+    field :remove_trigger, :user_trigger do
+      arg(:id, non_null(:string))
+
+      middleware(JWTAuth)
+
+      resolve(&UserTriggerResolver.remove_trigger/3)
     end
   end
 end

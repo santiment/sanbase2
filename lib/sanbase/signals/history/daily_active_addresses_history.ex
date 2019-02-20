@@ -28,7 +28,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
           %DailyActiveAddressesSettings{target: target} = settings,
           cooldown
         ) do
-      with {:ok, contract, _token_decimals} = Project.contract_info_by_slug(settings.target),
+      with {:ok, contract, _token_decimals} <- Project.contract_info_by_slug(settings.target),
            measurement when not is_nil(measurement) <-
              Measurement.name_from_slug(settings.target),
            {from, to, interval} <- get_timeseries_params(),
@@ -91,13 +91,8 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
     end
 
     defp time_window_in_days(time_window) do
-      case Sanbase.DateTimeUtils.compound_duration_to_days(time_window) do
-        0 ->
-          @minimal_time_window_in_days
-
-        days ->
-          days
-      end
+      Sanbase.DateTimeUtils.compound_duration_to_days(time_window)
+      |> max(@minimal_time_window_in_days)
     end
   end
 end

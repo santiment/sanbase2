@@ -55,7 +55,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         main_contract_address: "0x123"
       })
 
-      trigger = %{settings: trigger_settings, cooldown: "1d"}
+      trigger = %{settings: trigger_settings}
       {:ok, points} = UserTrigger.historical_trigger_points(trigger)
 
       triggered? =

@@ -13,7 +13,7 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
     field(:icon_url, :string)
     field(:settings, :json)
     field(:is_public, :boolean)
-    field(:cooldown, :integer)
+    field(:cooldown, :string)
     field(:tags, list_of(:tag))
   end
 end

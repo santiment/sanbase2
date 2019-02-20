@@ -230,22 +230,6 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
-  defp load_in_struct(trigger_settings) when is_map(trigger_settings) do
-    trigger_settings =
-      for {key, val} <- trigger_settings, into: %{} do
-        if is_atom(key) do
-          {key, val}
-        else
-          {String.to_existing_atom(key), val}
-        end
-      end
-
-    struct_from_map(trigger_settings)
-  rescue
-    _error in ArgumentError ->
-      {:error, "Trigger structure is invalid"}
-  end
-
   defp clean_params(params) do
     params
     |> Map.drop([:id])

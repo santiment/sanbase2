@@ -1,5 +1,4 @@
 defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
-  import Sanbase.Signals.Utils
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
@@ -27,7 +26,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
     def historical_trigger_points(
           %DailyActiveAddressesSettings{target: target} = settings,
           cooldown
-        ) do
+        ) when is_binary(target) do
       with {:ok, contract, _token_decimals} <- Project.contract_info_by_slug(settings.target),
            measurement when not is_nil(measurement) <-
              Measurement.name_from_slug(settings.target),
@@ -84,7 +83,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
       end
     end
 
-    def historical_trigger_points(_), do: {:error, "Not implemented"}
+    def historical_trigger_points(_, _), do: {:error, "Not implemented"}
 
     defp get_timeseries_params() do
       from = Timex.shift(Timex.now(), days: -@historical_days_from)

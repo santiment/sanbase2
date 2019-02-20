@@ -2,8 +2,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   require Logger
 
   alias Sanbase.Auth.User
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signals.{Trigger, UserTrigger}
   alias SanbaseWeb.Graphql.Helpers.Utils
+  alias Sanbase.Telegram
 
   def triggers(%User{} = user, _args, _resolution) do
     {:ok, UserTrigger.triggers_for(user) |> Enum.map(& &1.trigger)}
@@ -14,11 +15,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
       }) do
     UserTrigger.create_user_trigger(current_user, args)
     |> handle_result("create")
+    |> case do
+      {:ok, result} ->
+        Telegram.send_message(
+          current_user,
+          "Successfully created a new signal of type: #{
+            Trigger.human_readable_settings_type(args.settings["type"])
+          }"
+        )
+
+        {:ok, result}
+
+      error ->
+        error
+    end
   end
 
-  @spec update_trigger(any(), map(), %{context: %{auth: %{current_user: map()}}}) ::
-          {:error, binary() | [{:details, map()} | {:message, <<_::64, _::_*8>>}, ...]}
-          | {:ok, Sanbase.Signals.UserTrigger.t()}
   def update_trigger(_root, args, %{
         context: %{auth: %{current_user: current_user}}
       }) do

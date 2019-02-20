@@ -34,6 +34,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       createTrigger(
         settings: '#{trigger_settings_json}'
         title: 'Generic title'
+        cooldown: '23h'
       ) {
         trigger{
           id
@@ -121,6 +122,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         id: '#{trigger_id}'
         settings: '#{trigger_settings_json}'
         tags: ['tag1', 'tag2']
+        cooldown: '23h'
       ) {
         trigger{
           id

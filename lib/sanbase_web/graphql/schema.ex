@@ -1087,7 +1087,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:description, :string)
       arg(:icon_url, :string)
       arg(:is_public, :boolean)
-      arg(:cooldown, :integer)
+      arg(:cooldown, :string)
       arg(:tags, list_of(:string))
       arg(:settings, non_null(:json))
 
@@ -1106,7 +1106,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:description, :string)
       arg(:icon_url, :string)
       arg(:is_public, :boolean)
-      arg(:cooldown, :integer)
+      arg(:cooldown, :string)
       arg(:tags, list_of(:string))
       arg(:settings, :json)
 

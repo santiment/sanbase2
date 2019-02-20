@@ -8,12 +8,11 @@ defmodule Sanbase.Signals.History.Utils do
         percent_change(grouped_value, current)
       end)
       |> Enum.reduce({[], 0}, fn
+        percent_change, {accumulated_calculations, 0} when percent_change > percent_threshold ->
+          {[{percent_change, true} | accumulated_calculations], cooldown}
+
         percent_change, {accumulated_calculations, 0} ->
-          if percent_change > percent_threshold do
-            {[{percent_change, true} | accumulated_calculations], cooldown}
-          else
-            {[{percent_change, false} | accumulated_calculations], 0}
-          end
+          {[{percent_change, false} | accumulated_calculations], 0}
 
         percent_change, {accumulated_calculations, cooldown_left} ->
           {[{percent_change, false} | accumulated_calculations], cooldown_left - 1}

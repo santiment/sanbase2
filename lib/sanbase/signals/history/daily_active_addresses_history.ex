@@ -1,4 +1,9 @@
 defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
+  @moduledoc """
+  Implementation of historical_trigger_points for daily active addresses.
+  Currently it is bucketed in `1 day` intervals and goes 90 days back.
+  """
+
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
@@ -8,25 +13,31 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
   alias Sanbase.Prices.Store, as: PricesStore
   require Logger
 
+  @type historical_trigger_points_type :: %{
+          datetime: %DateTime{},
+          active_addresses: non_neg_integer(),
+          price: float(),
+          triggered?: boolean(),
+          percent_change: float()
+        }
+
   defimpl Sanbase.Signals.History, for: DailyActiveAddressesSettings do
     @historical_days_from 90
     @historical_days_to 1
     @historical_days_interval "1d"
+    # Minimal time window is 2 days. That is due to data being bucketed in `1 day` intervals.
     @minimal_time_window_in_days 2
 
-    @type historical_trigger_points_type :: %{
-            datetime: %DateTime{},
-            active_addresses: non_neg_integer(),
-            price: float(),
-            triggered?: boolean()
-          }
+    alias Sanbase.Signals.History.DailyActiveAddressesHistory
 
     @spec historical_trigger_points(%DailyActiveAddressesSettings{}, String.t()) ::
-            {:ok, list(historical_trigger_points_type)} | {:error, String.t()}
+            {:ok, list(DailyActiveAddressesHistory.historical_trigger_points_type())}
+            | {:error, String.t()}
     def historical_trigger_points(
           %DailyActiveAddressesSettings{target: target} = settings,
           cooldown
-        ) when is_binary(target) do
+        )
+        when is_binary(target) do
       with {:ok, contract, _token_decimals} <- Project.contract_info_by_slug(settings.target),
            measurement when not is_nil(measurement) <-
              Measurement.name_from_slug(settings.target),
@@ -61,19 +72,13 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
             cooldown_in_days
           )
 
-        empty_calculations = for _ <- 1..time_window_in_days, do: {0.0, false}
+        empty_calculations = Stream.cycle([{0.0, false}]) |> Enum.take(time_window_in_days)
 
         points =
-          Enum.zip(daa_result, empty_calculations ++ percent_change_calculations)
-          |> Enum.map(fn {point, {percent_change, triggered?}} ->
-            %{
-              datetime: point.datetime,
-              price: point.price,
-              active_addresses: point.active_addresses,
-              triggered?: triggered?,
-              percent_change: percent_change
-            }
-          end)
+          merge_percent_change_into_points(
+            daa_result,
+            empty_calculations ++ percent_change_calculations
+          )
 
         {:ok, points}
       else
@@ -83,7 +88,18 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
       end
     end
 
-    def historical_trigger_points(_, _), do: {:error, "Not implemented"}
+    defp merge_percent_change_into_points(daa_points, percent_change_calculations) do
+      Enum.zip(daa_points, percent_change_calculations)
+      |> Enum.map(fn {point, {percent_change, triggered?}} ->
+        %{
+          datetime: point.datetime,
+          price: point.price,
+          active_addresses: point.active_addresses,
+          triggered?: triggered?,
+          percent_change: percent_change
+        }
+      end)
+    end
 
     defp get_timeseries_params() do
       from = Timex.shift(Timex.now(), days: -@historical_days_from)

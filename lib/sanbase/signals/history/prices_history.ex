@@ -1,4 +1,10 @@
 defmodule Sanbase.Signals.History.PricesHistory do
+  @moduledoc """
+  Implementations of historical trigger points for price_percent_change and 
+  price_absolute_change triggers. Historical prices are bucketed at `1 hour` intervals and goes
+  `90 days` back.
+  """
+
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.{
@@ -8,6 +14,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
 
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Prices.Store, as: PricesStore
+
   require Logger
 
   @historical_days_from 90
@@ -32,6 +39,26 @@ defmodule Sanbase.Signals.History.PricesHistory do
     end
   end
 
+  def merge_change_calculations_into_points(datetimes, prices, change_calculations) do
+    Enum.zip([datetimes, prices, change_calculations])
+    |> Enum.map(fn
+      {dt, price, {percent_change, triggered?}} ->
+        %{
+          datetime: dt,
+          price: price,
+          triggered?: triggered?,
+          percent_change: percent_change
+        }
+
+      {dt, price, triggered?} ->
+        %{
+          datetime: dt,
+          price: price,
+          triggered?: triggered?
+        }
+    end)
+  end
+
   defp get_timeseries_params() do
     now = Timex.now()
     interval = @historical_days_interval
@@ -43,6 +70,10 @@ defmodule Sanbase.Signals.History.PricesHistory do
 
   defimpl Sanbase.Signals.History, for: PriceAbsoluteChangeSettings do
     alias Sanbase.Signals.History.PricesHistory
+
+    defguard is_outside_interval(value, low, high)
+             when is_number(value) and
+                    ((is_number(low) and value <= low) or (is_number(high) and value >= high))
 
     @spec historical_trigger_points(%PriceAbsoluteChangeSettings{}, String.t()) ::
             {:ok, list(PricesHistory.historical_trigger_points_type())} | {:error, String.t()}
@@ -59,12 +90,11 @@ defmodule Sanbase.Signals.History.PricesHistory do
       {absolute_price_calculations, _} =
         prices
         |> Enum.reduce({[], 0}, fn
-          price, {accumulated_calculations, 0} ->
-            if (is_number(above) and price >= above) or (is_number(below) and price <= below) do
-              {[true | accumulated_calculations], cooldown_in_hours}
-            else
-              {[false | accumulated_calculations], 0}
-            end
+          price, {accumulated_calculations, 0} when is_outside_interval(price, below, above) ->
+            {[true | accumulated_calculations], cooldown_in_hours}
+
+          _price, {accumulated_calculations, 0} ->
+            {[false | accumulated_calculations], 0}
 
           _price, {accumulated_calculations, cooldown_left} ->
             {[false | accumulated_calculations], cooldown_left - 1}
@@ -73,27 +103,24 @@ defmodule Sanbase.Signals.History.PricesHistory do
       absolute_price_calculations = absolute_price_calculations |> Enum.reverse()
 
       points =
-        Enum.zip([datetimes, prices, absolute_price_calculations])
-        |> Enum.map(fn {dt, price, triggered?} ->
-          %{
-            datetime: dt,
-            price: price,
-            triggered?: triggered?
-          }
-        end)
+        PricesHistory.merge_change_calculations_into_points(
+          datetimes,
+          prices,
+          absolute_price_calculations
+        )
 
       {:ok, points}
     end
-
-    def historical_trigger_points(_, _), do: {:error, "Not implemented"}
   end
 
   defimpl Sanbase.Signals.History, for: PricePercentChangeSettings do
     alias Sanbase.Signals.History.PricesHistory
 
+    # Minimal time window is set to 2 hours. That is due to interval buckets being 1 hour each. 
+    @minimal_time_window 2
+
     @spec historical_trigger_points(%PricePercentChangeSettings{}, String.t()) ::
             {:ok, list(PricesHistory.historical_trigger_points_type())} | {:error, String.t()}
-
     def historical_trigger_points(
           %PricePercentChangeSettings{target: target} = settings,
           cooldown
@@ -101,9 +128,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
         when is_binary(target) do
       {:ok, prices, datetimes} = PricesHistory.get_prices(settings)
 
-      time_window_in_hours =
-        max(2, Sanbase.DateTimeUtils.compound_duration_to_hours(settings.time_window))
-
+      time_window_in_hours = time_window_in_hours(settings.time_window)
       cooldown_in_hours = Sanbase.DateTimeUtils.compound_duration_to_hours(cooldown)
 
       percent_change_calculations =
@@ -115,22 +140,21 @@ defmodule Sanbase.Signals.History.PricesHistory do
           cooldown_in_hours
         )
 
-      empty_calculations = for _ <- 1..(time_window_in_hours - 1), do: {0.0, false}
+      empty_calculations = Stream.cycle([{0.0, false}]) |> Enum.take(time_window_in_hours - 1)
 
       points =
-        Enum.zip([datetimes, prices, empty_calculations ++ percent_change_calculations])
-        |> Enum.map(fn {dt, price, {percent_change, triggered?}} ->
-          %{
-            datetime: dt,
-            price: price,
-            triggered?: triggered?,
-            percent_change: percent_change
-          }
-        end)
+        PricesHistory.merge_change_calculations_into_points(
+          datetimes,
+          prices,
+          empty_calculations ++ percent_change_calculations
+        )
 
       {:ok, points}
     end
 
-    def historical_trigger_points(_, _), do: {:error, "Not implemented"}
+    defp time_window_in_hours(time_window) do
+      Sanbase.DateTimeUtils.compound_duration_to_hours(time_window)
+      |> max(@minimal_time_window)
+    end
   end
 end

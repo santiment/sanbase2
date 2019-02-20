@@ -1,5 +1,4 @@
 defmodule Sanbase.Signals.History.PricesHistory do
-  import Sanbase.Signals.Utils
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.{
@@ -7,7 +6,6 @@ defmodule Sanbase.Signals.History.PricesHistory do
     PricePercentChangeSettings
   }
 
-  alias Sanbase.Model.Project
   alias Sanbase.Influxdb.Measurement
   alias Sanbase.Prices.Store, as: PricesStore
   require Logger
@@ -23,7 +21,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
 
   def get_prices(settings) do
     with measurement when not is_nil(measurement) <- Measurement.name_from_slug(settings.target),
-         {from, to, interval} <- get_timeseries_params(settings),
+         {from, to, interval} <- get_timeseries_params(),
          {:ok, price_list} when is_list(price_list) and price_list != [] <-
            PricesStore.fetch_prices_with_resolution(measurement, from, to, interval) do
       prices = Enum.map(price_list, fn [_, price | _rest] -> price end)
@@ -34,7 +32,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
     end
   end
 
-  defp get_timeseries_params(settings) do
+  defp get_timeseries_params() do
     now = Timex.now()
     interval = @historical_days_interval
     from = Timex.shift(now, days: -@historical_days_from)
@@ -51,7 +49,8 @@ defmodule Sanbase.Signals.History.PricesHistory do
     def historical_trigger_points(
           %PriceAbsoluteChangeSettings{target: target} = settings,
           cooldown
-        ) do
+        )
+        when is_binary(target) do
       {:ok, prices, datetimes} = PricesHistory.get_prices(settings)
       above = Map.get(settings, :above)
       below = Map.get(settings, :below)
@@ -67,7 +66,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
               {[false | accumulated_calculations], 0}
             end
 
-          price, {accumulated_calculations, cooldown_left} ->
+          _price, {accumulated_calculations, cooldown_left} ->
             {[false | accumulated_calculations], cooldown_left - 1}
         end)
 
@@ -85,6 +84,8 @@ defmodule Sanbase.Signals.History.PricesHistory do
 
       {:ok, points}
     end
+
+    def historical_trigger_points(_, _), do: {:error, "Not implemented"}
   end
 
   defimpl Sanbase.Signals.History, for: PricePercentChangeSettings do
@@ -96,7 +97,8 @@ defmodule Sanbase.Signals.History.PricesHistory do
     def historical_trigger_points(
           %PricePercentChangeSettings{target: target} = settings,
           cooldown
-        ) do
+        )
+        when is_binary(target) do
       {:ok, prices, datetimes} = PricesHistory.get_prices(settings)
 
       time_window_in_hours =
@@ -104,24 +106,15 @@ defmodule Sanbase.Signals.History.PricesHistory do
 
       cooldown_in_hours = Sanbase.DateTimeUtils.compound_duration_to_hours(cooldown)
 
-      {percent_change_calculations, _} =
+      percent_change_calculations =
         prices
         |> Enum.chunk_every(time_window_in_hours, 1, :discard)
         |> Enum.map(fn chunk -> {List.first(chunk), List.last(chunk)} end)
-        |> Enum.map(fn {a, b} -> percent_change(a, b) end)
-        |> Enum.reduce({[], 0}, fn
-          percent_change, {accumulated_calculations, 0} ->
-            if percent_change > settings.percent_threshold do
-              {[{percent_change, true} | accumulated_calculations], cooldown_in_hours}
-            else
-              {[{percent_change, false} | accumulated_calculations], 0}
-            end
+        |> percent_change_calculations_with_cooldown(
+          settings.percent_threshold,
+          cooldown_in_hours
+        )
 
-          percent_change, {accumulated_calculations, cooldown_left} ->
-            {[{percent_change, false} | accumulated_calculations], cooldown_left - 1}
-        end)
-
-      percent_change_calculations = percent_change_calculations |> Enum.reverse()
       empty_calculations = for _ <- 1..(time_window_in_hours - 1), do: {0.0, false}
 
       points =
@@ -137,5 +130,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
 
       {:ok, points}
     end
+
+    def historical_trigger_points(_, _), do: {:error, "Not implemented"}
   end
 end

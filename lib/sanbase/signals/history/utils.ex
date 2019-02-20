@@ -1,44 +1,30 @@
 defmodule Sanbase.Signals.History.Utils do
-  def moving_average_excluding_last(list, period, key)
-      when is_list(list) and is_integer(period) and period >= 2 do
-    result =
-      list
-      |> Enum.chunk_every(period, 1, :discard)
-      |> Enum.map(fn elems ->
-        value = elems |> List.last() |> Map.get(key)
-        {datetime, average} = average(elems, key)
+  import Sanbase.Signals.Utils
 
-        %{
-          datetime: datetime,
-          average: average
-        }
-        |> Map.put(key, value)
+  def percent_change_calculations_with_cooldown(values, percent_threshold, cooldown) do
+    {percent_change_calculations, _} =
+      values
+      |> Enum.map(fn {grouped_value, current} ->
+        percent_change(grouped_value, current)
+      end)
+      |> Enum.reduce({[], 0}, fn
+        percent_change, {accumulated_calculations, 0} ->
+          if percent_change > percent_threshold do
+            {[{percent_change, true} | accumulated_calculations], cooldown}
+          else
+            {[{percent_change, false} | accumulated_calculations], 0}
+          end
+
+        percent_change, {accumulated_calculations, cooldown_left} ->
+          {[{percent_change, false} | accumulated_calculations], cooldown_left - 1}
       end)
 
-    {:ok, result}
+    percent_change_calculations |> Enum.reverse()
   end
 
-  def moving_average_excluding_last(_, _, _),
-    do: {:error, "Cannot calculate moving average for these args"}
+  def average([]), do: 0
 
-  def merge_chunks_by_datetime(initial_points, points_override) do
-    initial_points
-    |> Enum.map(fn initial_point ->
-      Enum.find(points_override, initial_point, fn po ->
-        DateTime.compare(initial_point.datetime, po.datetime) == :eq
-      end)
-    end)
-  end
-
-  # private functions
-
-  defp average([], _), do: 0
-
-  defp average(l, key) when is_list(l) do
-    values = Enum.map(l, fn item -> Map.get(item, key) end) |> Enum.drop(-1)
-    %{datetime: datetime} = List.last(l)
-    average = Float.round(Enum.sum(values) / length(values), 2)
-
-    {datetime, average}
+  def average(values) do
+    Float.round(Enum.sum(values) / length(values), 2)
   end
 end

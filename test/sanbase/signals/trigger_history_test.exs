@@ -16,7 +16,8 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       %{datetime: from_iso8601!("2018-11-21T00:00:00Z"), active_addresses: 20},
       # this is trigger point
       %{datetime: from_iso8601!("2018-11-22T00:00:00Z"), active_addresses: 76},
-      %{datetime: from_iso8601!("2018-11-23T00:00:00Z"), active_addresses: 20},
+      # cooldown
+      %{datetime: from_iso8601!("2018-11-23T00:00:00Z"), active_addresses: 180},
       %{datetime: from_iso8601!("2018-11-24T00:00:00Z"), active_addresses: 50},
       %{datetime: from_iso8601!("2018-11-25T00:00:00Z"), active_addresses: 60},
       %{datetime: from_iso8601!("2018-11-26T00:00:00Z"), active_addresses: 70}
@@ -62,19 +63,6 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         points
         |> Enum.find(fn %{datetime: dt} -> DateTime.to_iso8601(dt) == "2018-11-22T00:00:00Z" end)
         |> Map.get(:triggered?)
-
-      assert Enum.map(points, fn point -> Map.get(point, :average) end) == [
-               nil,
-               nil,
-               24,
-               43,
-               45,
-               25,
-               48,
-               48,
-               35,
-               55
-             ]
 
       assert Enum.filter(points, fn point -> point.triggered? end) |> length() == 1
       assert Enum.filter(points, fn point -> !point.triggered? end) |> length() == 9

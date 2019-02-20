@@ -41,7 +41,6 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
                to,
                interval
              ) do
-        daa_result = Enum.map(daa_result, fn point -> Map.put(point, :triggered?, false) end)
         prices = Enum.map(prices, fn [dt, price | _rest] -> %{datetime: dt, price: price} end)
 
         daa_result =
@@ -49,22 +48,35 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
           |> Enum.map(fn {daa_item, price_item} -> Map.merge(daa_item, price_item) end)
 
         time_window_in_days = time_window_in_days(settings.time_window)
+        cooldown_in_days = Sanbase.DateTimeUtils.compound_duration_to_days(cooldown)
 
-        {:ok, sma} =
-          moving_average_excluding_last(daa_result, time_window_in_days + 1, :active_addresses)
+        active_addresses =
+          daa_result |> Enum.map(fn %{active_addresses: active_addresses} -> active_addresses end)
 
-        sma =
-          sma
-          |> Enum.map(fn point ->
-            point = Map.put(point, :average, Sanbase.Utils.Math.to_integer(point.average))
+        percent_change_calculations =
+          active_addresses
+          |> Enum.chunk_every(time_window_in_days + 1, 1, :discard)
+          |> Enum.map(fn chunk -> {chunk |> Enum.drop(-1) |> average(), List.last(chunk)} end)
+          |> percent_change_calculations_with_cooldown(
+            settings.percent_threshold,
+            cooldown_in_days
+          )
 
-            triggered? =
-              percent_change(point.average, point.active_addresses) >= settings.percent_threshold
+        empty_calculations = for _ <- 1..time_window_in_days, do: {0.0, false}
 
-            Map.put(point, :triggered?, triggered?)
+        points =
+          Enum.zip(daa_result, empty_calculations ++ percent_change_calculations)
+          |> Enum.map(fn {point, {percent_change, triggered?}} ->
+            %{
+              datetime: point.datetime,
+              price: point.price,
+              active_addresses: point.active_addresses,
+              triggered?: triggered?,
+              percent_change: percent_change
+            }
           end)
 
-        {:ok, merge_chunks_by_datetime(daa_result, sma)}
+        {:ok, points}
       else
         error ->
           Logger.error("Can't calculate historical trigger points: #{inspect(error)}")

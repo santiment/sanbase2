@@ -39,5 +39,6 @@ $ ./bin/test.sh
 ```
 
 ## Setting up Hydra Oauth2 server locally
-[Setup Hydra locally] (docs/hydra-development-setup.md)
-[Grafana generic oauth setup] (docs/setup-generic-oauth-grafana.md)
+[Setup Hydra locally](docs/hydra-development-setup.md)
+
+[Grafana generic oauth setup](docs/setup-generic-oauth-grafana.md)

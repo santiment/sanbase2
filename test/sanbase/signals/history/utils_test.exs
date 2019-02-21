@@ -1,6 +1,5 @@
 defmodule Sanbase.Signals.TriggerHistoryTest do
   use Sanbase.DataCase, async: true
-  use ExUnitProperties
 
   alias Sanbase.Signals.History.Utils
 

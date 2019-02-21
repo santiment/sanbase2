@@ -1098,7 +1098,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc """
     Update signal trigger by its id.
-    Returns a the updated trigger.
+    Returns the updated trigger.
     """
     field :update_trigger, :user_trigger do
       arg(:id, non_null(:string))

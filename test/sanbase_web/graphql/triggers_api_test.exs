@@ -109,7 +109,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
     updated_trigger = trigger_settings |> Map.put("percent_threshold", 400.0)
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
+    user_trigger = UserTrigger.triggers_for(user) |> List.first()
+    trigger_id = user_trigger.trigger.id
 
     trigger_settings_json = updated_trigger |> Jason.encode!()
     tags = [%{"name" => "tag1"}, %{"name" => "tag2"}]
@@ -157,7 +158,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
 
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
+
+    user_trigger = UserTrigger.triggers_for(user) |> List.first()
+    trigger_id = user_trigger.trigger.id
 
     query =
       ~s|
@@ -175,12 +178,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     |
       |> format_interpolated_json()
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
-
-    trigger = result["data"]["removeTrigger"]["trigger"]
+    conn
+    |> post("/graphql", %{"query" => query})
+    |> json_response(200)
 
     assert UserTrigger.triggers_for(user) == []
   end
@@ -203,7 +203,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       trigger: %{is_public: false, settings: trigger_settings, title: "Some generic title"}
     )
 
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
+    user_trigger = UserTrigger.triggers_for(user) |> List.first()
+    trigger_id = user_trigger.trigger.id
 
     query = """
     query {

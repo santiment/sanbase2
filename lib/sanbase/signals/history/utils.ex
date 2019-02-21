@@ -1,6 +1,19 @@
 defmodule Sanbase.Signals.History.Utils do
   import Sanbase.Signals.Utils
 
+  @type percent_change_calculations :: {float(), boolean()}
+
+  @doc ~s"""
+  * Takes a list of tuples: {grouped_value, current}
+  * calculates the percent_change between grouped_value and current
+  * then calculates a list of tuples {percent_change, condition_met} where condition_met is 
+  the percent_change bigger than threshold param and not in cooldown
+  """
+  @spec percent_change_calculations_with_cooldown(
+          list({number(), number()}),
+          float(),
+          non_neg_integer()
+        ) :: list(percent_change_calculations)
   def percent_change_calculations_with_cooldown(values, percent_threshold, cooldown) do
     {percent_change_calculations, _} =
       values

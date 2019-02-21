@@ -25,7 +25,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
     @historical_days_from 90
     @historical_days_to 1
     @historical_days_interval "1d"
-    # Minimal time window is 2 days. That is due to data being bucketed in `1 day` intervals.
+    # Because the data is bucketed in daily intervals
     @minimal_time_window_in_days 2
 
     alias Sanbase.Signals.History.DailyActiveAddressesHistory
@@ -53,6 +53,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
              ) do
         prices = Enum.map(prices, fn [dt, price | _rest] -> %{datetime: dt, price: price} end)
 
+        # merge daily_active_addresses and prices for 90 days
         daa_result =
           Enum.zip(daa_result, prices)
           |> Enum.map(fn {daa_item, price_item} -> Map.merge(daa_item, price_item) end)
@@ -63,6 +64,9 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
         active_addresses =
           daa_result |> Enum.map(fn %{active_addresses: active_addresses} -> active_addresses end)
 
+        # chunk in time window days + 1 buckets, 
+        # calculate percent changes between average of all but last and last value
+        # calculate tuples {percent_change, is_trigger_point} where is_trigger_point considers cooldown
         percent_change_calculations =
           active_addresses
           |> Enum.chunk_every(time_window_in_days + 1, 1, :discard)
@@ -72,8 +76,10 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
             cooldown_in_days
           )
 
+        # for the first time_window days we don't check whether they are trigger points  
         empty_calculations = Stream.cycle([{0.0, false}]) |> Enum.take(time_window_in_days)
 
+        # add percent_change and boolean triggered? to the daily_active_addresses and prices
         points =
           merge_percent_change_into_points(
             daa_result,

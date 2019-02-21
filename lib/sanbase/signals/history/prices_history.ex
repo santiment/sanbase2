@@ -26,8 +26,8 @@ defmodule Sanbase.Signals.History.PricesHistory do
           triggered?: boolean()
         }
 
-  def get_prices(settings) do
-    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(settings.target),
+  def get_prices(%{target: target} = settings) when is_binary(target) do
+    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(target),
          {from, to, interval} <- get_timeseries_params(),
          {:ok, price_list} when is_list(price_list) and price_list != [] <-
            PricesStore.fetch_prices_with_resolution(measurement, from, to, interval) do

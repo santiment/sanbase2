@@ -116,7 +116,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
           %TrendingWordsTriggerSettings{
             settings
             | triggered?: true,
-              payload: payload(top_words)
+              payload: %{trending_words: payload(top_words)}
           }
 
         _ ->

@@ -108,7 +108,8 @@ defmodule Sanbase.Mixfile do
       {:number, "~> 0.5.7"},
       {:remote_ip, "~> 0.1"},
       {:cachex, "~> 3.1"},
-      {:vex, "~> 0.8.0", override: true}
+      {:vex, "~> 0.8.0", override: true},
+      {:stream_data, "~> 0.4.2", only: :test}
     ]
   end
 

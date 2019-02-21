@@ -1,42 +1,54 @@
 defmodule Sanbase.Signals.TriggerHistoryTest do
-  use Sanbase.DataCase, async: false
+  use Sanbase.DataCase, async: true
+  use ExUnitProperties
 
-  import Mock
-  import Sanbase.Factory
-  import Sanbase.DateTimeUtils
-
-  alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.History.Utils
 
-  test "#moving_average_excluding_last" do
-    daa_result = [
-      %{datetime: from_iso8601!("2018-11-17T00:00:00Z"), active_addresses: 23},
-      %{datetime: from_iso8601!("2018-11-18T00:00:00Z"), active_addresses: 25},
-      %{datetime: from_iso8601!("2018-11-19T00:00:00Z"), active_addresses: 60},
-      %{datetime: from_iso8601!("2018-11-20T00:00:00Z"), active_addresses: 30},
-      %{datetime: from_iso8601!("2018-11-21T00:00:00Z"), active_addresses: 20},
-      # this is trigger point
-      %{datetime: from_iso8601!("2018-11-22T00:00:00Z"), active_addresses: 76},
-      %{datetime: from_iso8601!("2018-11-23T00:00:00Z"), active_addresses: 20},
-      %{datetime: from_iso8601!("2018-11-24T00:00:00Z"), active_addresses: 50},
-      %{datetime: from_iso8601!("2018-11-25T00:00:00Z"), active_addresses: 60},
-      %{datetime: from_iso8601!("2018-11-26T00:00:00Z"), active_addresses: 70}
-    ]
+  test "#percent_change_calculations_with_cooldown" do
+    percent_changes = [{5, 6}, {10, 11}, {7, 8}, {3, 2}, {100, 105}, {4, 3}, {8, 10}, {9, 11}]
 
-    sma = Utils.moving_average_excluding_last(daa_result, 1, :active_addresses)
-    assert sma == {:error, "Cannot calculate moving average for these args"}
+    percent_threshold = 5.0
 
-    {:ok, sma} = Utils.moving_average_excluding_last(daa_result, 2, :active_addresses)
-    assert get_averages(sma) == [23.0, 25.0, 60.0, 30.0, 20.0, 76.0, 20.0, 50.0, 60.0]
+    percent_change_calculations =
+      Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 2)
 
-    {:ok, sma} = Utils.moving_average_excluding_last(daa_result, 3, :active_addresses)
-    assert get_averages(sma) == [24.0, 42.5, 45.0, 25.0, 48.0, 48.0, 35.0, 55.0]
+    assert percent_change_calculations |> length() == 8
+    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 2
 
-    {:ok, sma} = Utils.moving_average_excluding_last(daa_result, 4, :active_addresses)
-    assert get_averages(sma) == [36.0, 38.33, 36.67, 42.0, 38.67, 48.67, 43.33]
+    # no cooldown
+    percent_change_calculations =
+      Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 0)
+
+    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 5
   end
 
-  defp get_averages(sma_result) do
-    Enum.map(sma_result, fn point -> Map.get(point, :average) end)
+  defp filter_with_bigger_threshold(percent_change_calculations) do
+    Enum.filter(percent_change_calculations, fn {_percent_change, is_bigger_than_threshold?} ->
+      is_bigger_than_threshold?
+    end)
+  end
+
+  test "#average" do
+    assert Utils.average([4, 6, 8, 2]) == 5.0
+    assert Utils.average([]) == 0
+    assert Utils.average([0.126]) == 0.13
+  end
+
+  property "average is always between min and max when list of integers" do
+    check all list <- list_of(positive_integer(), min_length: 1) do
+      average = Utils.average(list)
+      min = Enum.min(list)
+      max = Enum.max(list)
+      assert average >= min and average <= max
+    end
+  end
+
+  property "average is always between min -1 and max + 1 when floats" do
+    check all list <- list_of(float(min: 0.00), min_length: 1) do
+      average = Utils.average(list)
+      min = Enum.min(list)
+      max = Enum.max(list)
+      assert average >= min - 1 and average <= max + 1
+    end
   end
 end

@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.TriggerHistoryTest do
+defmodule Sanbase.Signals.TriggerHistoryUtilsTest do
   use Sanbase.DataCase, async: true
 
   alias Sanbase.Signals.History.Utils

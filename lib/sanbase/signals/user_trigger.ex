@@ -167,6 +167,21 @@ defmodule Sanbase.Signals.UserTrigger do
 
   def update_user_trigger(_, _), do: {:error, "Trigger structure is invalid"}
 
+  @doc ~s"""
+  Remove an existing user trigger with a given UUID `trigger_id`.
+  """
+  @spec remove_user_trigger(%User{}, String.t()) ::
+          {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
+  def remove_user_trigger(%User{} = user, trigger_id) do
+    case get_trigger_by_id(user, trigger_id) do
+      {:ok, struct} ->
+        Repo.delete(struct)
+
+      _ ->
+        {:error, "Can't remove trigger wit id #{trigger_id}"}
+    end
+  end
+
   # Private functions
 
   defp user_triggers_for(user_id) do

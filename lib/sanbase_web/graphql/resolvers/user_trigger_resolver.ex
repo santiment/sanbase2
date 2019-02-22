@@ -38,6 +38,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
     |> handle_result("update")
   end
 
+  def remove_trigger(_root, args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserTrigger.remove_user_trigger(current_user, args.id)
+    |> handle_result("remove")
+  end
+
   def get_trigger_by_id(_root, %{id: id}, %{
         context: %{auth: %{current_user: current_user}}
       }) do

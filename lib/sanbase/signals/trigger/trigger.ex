@@ -91,15 +91,15 @@ defmodule Sanbase.Signals.Trigger do
     %Trigger{trigger | settings: trigger_settings}
   end
 
+  def evaluate(%Trigger{settings: trigger_settings} = trigger) do
+    trigger_settings = Sanbase.Signals.Settings.evaluate(trigger_settings)
+    %Trigger{trigger | settings: trigger_settings}
+  end
+
   def historical_trigger_points(
         %Trigger{settings: trigger_settings, cooldown: cooldown} = trigger
       ) do
     Sanbase.Signals.History.historical_trigger_points(trigger_settings, cooldown)
-  end
-
-  def evaluate(%Trigger{settings: trigger_settings} = trigger) do
-    trigger_settings = trigger_settings |> Sanbase.Signals.Settings.evaluate()
-    %Trigger{trigger | settings: trigger_settings}
   end
 
   def triggered?(%Trigger{settings: trigger_settings}) do
@@ -108,6 +108,14 @@ defmodule Sanbase.Signals.Trigger do
 
   def cache_key(%Trigger{settings: trigger_settings}) do
     Sanbase.Signals.Settings.cache_key(trigger_settings)
+  end
+
+  def has_cooldown?(%Trigger{last_triggered: nil}), do: false
+  def has_cooldown?(%Trigger{cooldown: nil}), do: false
+  def has_cooldown?(%Trigger{last_triggered: lt}) when lt == %{}, do: false
+
+  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt, settings: %{type: type}} = trigger) do
+    has_cooldown?(trigger, type)
   end
 
   def has_cooldown?(%Trigger{last_triggered: lt}, _target) when lt == %{}, do: false

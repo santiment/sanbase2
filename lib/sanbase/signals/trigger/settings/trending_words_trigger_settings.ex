@@ -110,13 +110,13 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%TrendingWordsTriggerSettings{} = settings) do
+    def evaluate(%TrendingWordsTriggerSettings{type: trigger_type} = settings) do
       case TrendingWordsTriggerSettings.get_data(settings) do
         {:ok, top_words} ->
           %TrendingWordsTriggerSettings{
             settings
             | triggered?: true,
-              payload: %{trending_words: payload(top_words)}
+              payload: %{trigger_type => payload(top_words)}
           }
 
         _ ->

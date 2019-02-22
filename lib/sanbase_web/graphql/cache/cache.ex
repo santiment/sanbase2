@@ -108,6 +108,10 @@ defmodule SanbaseWeb.Graphql.Cache do
   defp resolver(resolver_fn, name) do
     # Works only for top-level resolvers and fields with root object that has `id` field
     fn
+      # From cache. Value will be populated in another way
+      # _, _, %{context: %{big_cache_resolved: true}} ->
+      # {:ok, nil}
+
       %{id: id} = root, args, resolution ->
         fun = fn -> resolver_fn.(root, args, resolution) end
 

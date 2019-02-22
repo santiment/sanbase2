@@ -39,11 +39,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     ProjectPermissions,
     PostPermissions,
     ApiTimeframeRestriction,
-    ApiUsage
+    ApiUsage,
+    BigCache,
+    PutResult
   }
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
+  import_types(SanbaseWeb.Graphql.TagTypes)
   import_types(SanbaseWeb.Graphql.CustomTypes)
   import_types(SanbaseWeb.Graphql.AccountTypes)
   import_types(SanbaseWeb.Graphql.PriceTypes)
@@ -132,7 +135,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:page, :integer)
       arg(:page_size, :integer)
       middleware(ProjectPermissions)
+      middleware(PutResult)
+
       cache_resolve(&ProjectResolver.all_projects/3)
+
+      middleware(BigCache)
     end
 
     @desc "Fetch all ERC20 projects."
@@ -822,7 +829,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Get signal trigger by its id"
-    field :get_trigger_by_id, :trigger do
+    field :get_trigger_by_id, :user_trigger do
       arg(:id, non_null(:string))
 
       middleware(JWTAuth)
@@ -831,7 +838,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Get public signal triggers by user_id"
-    field :public_triggers_for_user, list_of(:trigger) do
+    field :public_triggers_for_user, list_of(:user_trigger) do
       arg(:user_id, non_null(:integer))
 
       resolve(&UserTriggerResolver.public_triggers_for_user/3)
@@ -1081,13 +1088,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     Create signal trigger described by `trigger` json field.
     Returns a list of all signal triggers for the current user.
     """
-    field :create_trigger, :trigger do
+    field :create_trigger, :user_trigger do
       arg(:title, non_null(:string))
-      arg(:settings, non_null(:json))
       arg(:description, :string)
       arg(:icon_url, :string)
       arg(:is_public, :boolean)
       arg(:cooldown, :integer)
+      arg(:tags, list_of(:string))
+      arg(:settings, non_null(:json))
 
       middleware(JWTAuth)
 
@@ -1098,14 +1106,15 @@ defmodule SanbaseWeb.Graphql.Schema do
     Update signal trigger by its id.
     Returns a list of all signal triggers for the current user.
     """
-    field :update_trigger, :trigger do
+    field :update_trigger, :user_trigger do
       arg(:id, non_null(:string))
       arg(:title, :string)
       arg(:description, :string)
       arg(:icon_url, :string)
-      arg(:settings, :json)
       arg(:is_public, :boolean)
       arg(:cooldown, :integer)
+      arg(:tags, list_of(:string))
+      arg(:settings, :json)
 
       middleware(JWTAuth)
 

@@ -3,8 +3,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   require Mockery.Macro
 
   alias Sanbase.Model.Project
-  alias Sanbase.InternalServices.TechIndicators
-  alias Sanbase.Notifications.{Notification, Type, Discord}
+  alias Sanbase.TechIndicators
+  alias Sanbase.Notifications.{Notification, Type}
 
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 

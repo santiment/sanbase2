@@ -62,4 +62,10 @@ defmodule Sanbase.Signals.Validation do
       _ -> :ok
     end
   end
+
+  def valid_sensitivity?(s) when is_number(s) and s >= 0 and s <= 1, do: :ok
+
+  def valid_sensitivity?(s) do
+    {:error, "#{inspect(s)} is not valid sensitivity. It must be a number in the interval [0;1]"}
+  end
 end

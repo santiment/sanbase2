@@ -1,10 +1,10 @@
-defmodule Sanbase.InternalServices.TechIndicatorsTest do
+defmodule Sanbase.TechIndicatorsTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mockery
   import ExUnit.CaptureLog
 
-  alias Sanbase.InternalServices.TechIndicators
+  alias Sanbase.TechIndicators
 
   test "fetch price_volume_diff", _context do
     mock(
@@ -19,8 +19,8 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
     )
 
     result =
-      TechIndicators.price_volume_diff_ma(
-        "XYZ",
+      TechIndicators.PriceVolumeDifference.price_volume_diff(
+        "XYZ_xyz",
         "USD",
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_752_000),

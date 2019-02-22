@@ -152,7 +152,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
         |> Evaluator.run()
 
       assert context.trigger_trending_words.id == triggered.id
-      assert String.contains?(triggered.trigger.settings.payload, "coinbase")
+      assert String.contains?(triggered.trigger.settings.payload.trending_words, "coinbase")
     end
   end
 end

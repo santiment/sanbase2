@@ -63,9 +63,9 @@ defmodule Sanbase.Signals.Validation do
     end
   end
 
-  def valid_sensitivity?(s) when is_number(s) and s >= 0 and s <= 1, do: :ok
+  def valid_threhsold?(t) when is_number(t) and t > 0, do: :ok
 
-  def valid_sensitivity?(s) do
-    {:error, "#{inspect(s)} is not valid sensitivity. It must be a number in the interval [0;1]"}
+  def valid_threhsold?(t) do
+    {:error, "#{inspect(t)} is not valid threhsold. It must be a number bigger than 0"}
   end
 end

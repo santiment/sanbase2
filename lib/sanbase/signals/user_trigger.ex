@@ -180,6 +180,8 @@ defmodule Sanbase.Signals.UserTrigger do
       _ ->
         {:error, "Can't remove trigger wit id #{trigger_id}"}
     end
+  end
+
   @spec historical_trigger_points(%Trigger{}) :: list(any)
   def historical_trigger_points(%Trigger{} = trigger) do
     Trigger.historical_trigger_points(trigger)

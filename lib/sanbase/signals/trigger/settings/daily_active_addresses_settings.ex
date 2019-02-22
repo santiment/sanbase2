@@ -23,7 +23,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            repeating: false,
             triggered?: false,
             payload: nil
 
@@ -31,7 +30,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   validates(:channel, &valid_notification_channel/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:percent_threshold, &valid_percent?/1)
-  validates(:repeating, &is_boolean/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -39,7 +37,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
           channel: Type.channel(),
           time_window: Type.time_window(),
           percent_threshold: number(),
-          repeating: boolean(),
           triggered?: boolean(),
           payload: Type.payload()
         }

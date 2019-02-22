@@ -21,7 +21,6 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            repeating: false,
             triggered?: false,
             payload: nil
 
@@ -31,7 +30,6 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
           channel: Type.channel(),
           time_window: Type.time_window(),
           percent_threshold: number(),
-          repeating: boolean(),
           triggered?: boolean(),
           payload: Type.payload()
         }
@@ -40,7 +38,6 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   validates(:channel, &valid_notification_channel/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:percent_threshold, &valid_percent?/1)
-  validates(:repeating, &is_boolean/1)
 
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
@@ -122,7 +119,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
 
     @doc ~s"""
     Construct a cache key only out of the parameters that determine the outcome.
-    Parameters like `repeating` and `channel` are discarded. The `type` is included
+    Parameter like `channel` is discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
     def cache_key(%PricePercentChangeSettings{} = settings) do

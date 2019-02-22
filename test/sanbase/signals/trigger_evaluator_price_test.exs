@@ -158,8 +158,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       target: "santiment",
       channel: "telegram",
       time_window: "6h",
-      percent_threshold: 15.0,
-      repeating: false
+      percent_threshold: 15.0
     }
 
     trigger_settings2 = %{
@@ -167,8 +166,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       target: "santiment",
       channel: "telegram",
       above: 60,
-      below: 50,
-      repeating: false
+      below: 50
     }
 
     trigger_settings3 = %{
@@ -176,8 +174,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       target: "santiment",
       channel: "telegram",
       time_window: "6h",
-      percent_threshold: 18.0,
-      repeating: false
+      percent_threshold: 18.0
     }
 
     trigger_settings4 = %{
@@ -185,8 +182,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       target: "santiment",
       channel: "telegram",
       above: 70,
-      below: 50,
-      repeating: false
+      below: 50
     }
 
     {:ok, trigger1} =

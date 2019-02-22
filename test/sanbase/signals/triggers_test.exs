@@ -17,7 +17,6 @@ defmodule Sanbase.Signals.TriggersTest do
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 300.0,
-      repeating: false,
       triggered?: false,
       payload: nil
     }
@@ -46,8 +45,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     {:error, message} =
@@ -68,8 +66,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     {:error, changeset} =
@@ -92,7 +89,6 @@ defmodule Sanbase.Signals.TriggersTest do
       channel: "unknown",
       time_window: "1d",
       percent_threshold: 300.0,
-      repeating: false,
       triggered?: false,
       payload: nil
     }
@@ -117,8 +113,7 @@ defmodule Sanbase.Signals.TriggersTest do
       type: "daily_active_addresses",
       target: "santiment",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     {:error, message} =
@@ -139,8 +134,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       percent_threshold: 20,
       channel: "telegram",
-      time_window: "1d",
-      repeating: false
+      time_window: "1d"
     }
 
     title = "Some title"
@@ -164,8 +158,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       percent_threshold: 20,
       channel: "telegram",
-      time_window: "1d",
-      repeating: false
+      time_window: "1d"
     }
 
     title = "Generic title"
@@ -197,8 +190,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     insert(:user_triggers,
@@ -213,8 +205,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "email",
       time_window: "1d",
-      percent_threshold: 10.0,
-      repeating: false
+      percent_threshold: 10.0
     }
 
     {:ok, _} =
@@ -235,8 +226,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     trigger_settings2 = %{
@@ -244,8 +234,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "email",
       time_window: "1d",
-      percent_threshold: 10.0,
-      repeating: false
+      percent_threshold: 10.0
     }
 
     insert(:user_triggers,
@@ -265,8 +254,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0,
-      repeating: true
+      percent_threshold: 200.0
     }
 
     new_title = "New title"
@@ -292,7 +280,6 @@ defmodule Sanbase.Signals.TriggersTest do
     %UserTrigger{trigger: trigger} =
       Enum.find(triggers, fn %UserTrigger{trigger: trigger} -> trigger.id == trigger_id end)
 
-    assert trigger.settings.repeating == true
     assert trigger.title == new_title
     assert trigger.description == new_description
     assert trigger.icon_url == new_icon_url
@@ -306,8 +293,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0,
-      repeating: false
+      percent_threshold: 200.0
     }
 
     insert(:user_triggers,

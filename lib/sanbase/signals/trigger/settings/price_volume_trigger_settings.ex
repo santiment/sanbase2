@@ -6,6 +6,5 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeTriggerSettings do
             target: nil,
             channel: nil,
             time_window: nil,
-            sensitivity: nil,
-            repeating: false
+            sensitivity: nil
 end

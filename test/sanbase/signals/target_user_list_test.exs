@@ -41,8 +41,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       target: "santiment",
       channel: "telegram",
       above: 300.0,
-      below: 200.0,
-      repeating: false
+      below: 200.0
     }
 
     {:ok, _trigger} =
@@ -60,8 +59,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       target: 12,
       channel: "telegram",
       above: 300.0,
-      below: 200.0,
-      repeating: false
+      below: 200.0
     }
 
     assert capture_log(fn ->
@@ -81,8 +79,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       target: %{user_list: context.user_list.id},
       channel: "telegram",
       above: 300.0,
-      below: 200.0,
-      repeating: false
+      below: 200.0
     }
 
     {:ok, _trigger} =
@@ -99,8 +96,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       target: ["santiment", "ethereum", "bitcoin"],
       channel: "telegram",
       above: 300.0,
-      below: 200.0,
-      repeating: false
+      below: 200.0
     }
 
     {:ok, _trigger} =
@@ -117,8 +113,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       target: ["santiment", "ethereum", "bitcoin", 12],
       channel: "telegram",
       above: 300.0,
-      below: 200.0,
-      repeating: false
+      below: 200.0
     }
 
     capture_log(fn ->
@@ -138,8 +133,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
       target: %{user_list: [1, 2, 3]},
       channel: "telegram",
       above: 300.0,
-      below: 200.0,
-      repeating: false
+      below: 200.0
     }
 
     assert capture_log(fn ->

@@ -182,6 +182,22 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
+  @spec historical_trigger_points(%Trigger{}) :: list(any)
+  def historical_trigger_points(%Trigger{} = trigger) do
+    Trigger.historical_trigger_points(trigger)
+  end
+
+  @spec historical_trigger_points(map()) :: list(any)
+  def historical_trigger_points(%{settings: settings} = params) do
+    {:ok, settings_struct} =
+      settings
+      |> load_in_struct()
+
+    trigger = struct!(Trigger, params)
+
+    Trigger.historical_trigger_points(%{trigger | settings: settings_struct})
+  end
+
   # Private functions
 
   defp user_triggers_for(user_id) do

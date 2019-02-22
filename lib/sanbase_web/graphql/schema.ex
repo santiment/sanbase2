@@ -842,6 +842,14 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_public_triggers, list_of(:user_trigger) do
       resolve(&UserTriggerResolver.all_public_triggers/3)
     end
+
+    @desc "Get historical trigger points"
+    field :historical_trigger_points, list_of(:json) do
+      arg(:cooldown, :string)
+      arg(:settings, :json)
+
+      resolve(&UserTriggerResolver.historical_trigger_points/3)
+    end
   end
 
   mutation do

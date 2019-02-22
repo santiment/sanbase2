@@ -8,6 +8,11 @@ defprotocol Sanbase.Signals.Settings do
   def cache_key(trigger)
 end
 
+defprotocol Sanbase.Signals.History do
+  @spec historical_trigger_points(struct(), String.t()) :: list(any())
+  def historical_trigger_points(trigger, cooldown)
+end
+
 defmodule Sanbase.Signals.Trigger do
   @moduledoc ~s"""
   Module that represents an embedded schema that is used in UserTrigger`s `jsonb`
@@ -84,6 +89,12 @@ defmodule Sanbase.Signals.Trigger do
       |> Sanbase.Signals.Settings.evaluate()
 
     %Trigger{trigger | settings: trigger_settings}
+  end
+
+  def historical_trigger_points(
+        %Trigger{settings: trigger_settings, cooldown: cooldown} = trigger
+      ) do
+    Sanbase.Signals.History.historical_trigger_points(trigger_settings, cooldown)
   end
 
   def evaluate(%Trigger{settings: trigger_settings} = trigger) do

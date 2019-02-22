@@ -92,6 +92,20 @@ defmodule Sanbase.DateTimeUtils do
     end
   end
 
+  def compound_duration_to_days(interval) do
+    interval_in_seconds = compound_duration_to_seconds(interval)
+    one_day_in_seconds = 3600 * 24
+
+    div(interval_in_seconds, one_day_in_seconds)
+  end
+
+  def compound_duration_to_hours(interval) do
+    interval_in_seconds = compound_duration_to_seconds(interval)
+    one_hour_in_seconds = 3600
+
+    div(interval_in_seconds, one_hour_in_seconds)
+  end
+
   def compound_duration_to_text(interval) do
     {int_interval, duration_index} = Integer.parse(interval)
 

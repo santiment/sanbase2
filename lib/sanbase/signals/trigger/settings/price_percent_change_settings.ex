@@ -107,7 +107,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       payload =
         Enum.reduce(list, %{}, fn
           {slug, {:ok, percent_change}}, acc when percent_change >= percent_threshold ->
-            Map.put(acc, slug, payload(settings, percent_change))
+            Map.put(acc, slug, payload(slug, settings, percent_change))
 
           _, acc ->
             acc
@@ -146,8 +146,8 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       end
     end
 
-    defp payload(settings, percent_change) do
-      project = Sanbase.Model.Project.by_slug(settings.target)
+    defp payload(slug, settings, percent_change) do
+      project = Sanbase.Model.Project.by_slug(slug)
 
       """
       The price of **#{project.name}** has changed by **#{percent_change}%** for the last #{

@@ -158,8 +158,9 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
     defp get_max_len(top_words) do
       top_words
-      |> Enum.map(fn tw -> String.length(tw.word) end)
-      |> Enum.max()
+      |> Enum.max_by(fn %{word: word} -> String.length(word) end)
+      |> Map.get(:word)
+      |> String.length()
     end
   end
 end

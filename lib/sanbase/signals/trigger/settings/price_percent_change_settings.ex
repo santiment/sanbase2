@@ -10,6 +10,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   alias __MODULE__
   alias Sanbase.Signals.Type
   alias Sanbase.Model.Project
+  alias Sanbase.DateTimeUtils
   alias Sanbase.Signals.Evaluator.Cache
 
   @derive Jason.Encoder
@@ -45,11 +46,9 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  @spec get_data(Sanbase.Signals.Trigger.PricePercentChangeSettings.t()) :: [
-          {Type.target(), any()}
-        ]
+  @spec get_data(__MODULE__.t()) :: list({Type.target(), any()})
   def get_data(%__MODULE__{filtered_target_list: target} = settings) when is_list(target) do
-    time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+    time_window_sec = DateTimeUtils.compound_duration_to_seconds(settings.time_window)
     projects = Project.by_slugs(target)
     to = Timex.now()
     from = Timex.shift(to, seconds: -time_window_sec)
@@ -71,8 +70,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
           {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
             {project.coinmarketcap_id,
              {:ok,
-              {Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price),
-               first_usd_price, last_usd_price}}}
+              {percent_change(first_usd_price, last_usd_price), first_usd_price, last_usd_price}}}
 
           error ->
             {project.coinmarketcap_id, {:error, error}}
@@ -110,7 +108,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
         Enum.reduce(list, %{}, fn
           {slug, {:ok, {percent_change, _, _} = price_data}}, acc
           when percent_change >= percent_threshold ->
-            Map.put(acc, slug, payload(settings, price_data))
+            Map.put(acc, slug, payload(slug, settings, price_data))
 
           _, acc ->
             acc
@@ -149,15 +147,13 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       end
     end
 
-    defp payload(slug, {percent_change, first_price, last_price}) do
+    defp payload(slug, settings, {percent_change, first_price, last_price}) do
       project = Sanbase.Model.Project.by_slug(slug)
 
       """
-      **#{project.name}**'s price has changed by **#{percent_change}%** from $#{
-        Float.round(first_price)
-      } to $#{Float.round(last_price)} for the last #{
-        Sanbase.DateTimeUtils.compound_duration_to_text(settings.time_window)
-      }.
+      **#{project.name}**'s price has changed by **#{percent_change}%** from $#{first_price} to $#{
+        last_price
+      } for the last #{DateTimeUtils.compound_duration_to_text(settings.time_window)}.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project)})
       """

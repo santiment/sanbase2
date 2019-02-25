@@ -91,11 +91,6 @@ defmodule Sanbase.Signals.Trigger do
     %Trigger{trigger | settings: trigger_settings}
   end
 
-  def evaluate(%Trigger{settings: trigger_settings} = trigger) do
-    trigger_settings = Sanbase.Signals.Settings.evaluate(trigger_settings)
-    %Trigger{trigger | settings: trigger_settings}
-  end
-
   def historical_trigger_points(
         %Trigger{settings: trigger_settings, cooldown: cooldown} = trigger
       ) do

@@ -52,10 +52,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   def type(), do: @trigger_type
 
   @spec get_data(%TrendingWordsTriggerSettings{}) :: {:ok, list(top_word_type)} | :error
-  def get_data(%TrendingWordsTriggerSettings{filtered_target_list: filtered_target_list})
-      when filtered_target_list == [] do
-    :error
-  end
+  def get_data(%TrendingWordsTriggerSettings{filtered_target_list: []}), do: :error
 
   def get_data(%TrendingWordsTriggerSettings{trigger_time: trigger_time}) do
     now = Timex.now()

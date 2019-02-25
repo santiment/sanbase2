@@ -16,7 +16,7 @@ defmodule Sanbase.Signals.Scheduler do
     TrendingWordsTriggerSettings
   }
 
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signals.{UserTrigger, UserSignal}
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signal
 
@@ -45,11 +45,37 @@ defmodule Sanbase.Signals.Scheduler do
   # Private functions
 
   defp run(type) do
-    type
-    |> UserTrigger.get_triggers_by_type()
-    |> Evaluator.run()
+    evaluated =
+      type
+      |> UserTrigger.get_triggers_by_type()
+      |> Evaluator.run()
+
+    evaluated
     |> send_and_mark_as_sent()
     |> log_sent_messages_stats(type)
+
+    evaluated
+    |> persist_signals()
+  end
+
+  defp persist_signals(triggers) do
+    triggers
+    |> Sanbase.Parallel.pmap_concurrent(
+      fn %UserTrigger{} = user_trigger ->
+        [
+          %UserSignal{}
+          |> UserSignal.changeset(%{
+            user_id: user_trigger.user_id,
+            user_trigger_id: user_trigger.id,
+            payload: user_trigger.trigger.settings.payload
+          })
+          |> Sanbase.Repo.insert!()
+        ]
+      end,
+      max_concurrency: 10,
+      ordered: false,
+      map_type: :flat_map
+    )
   end
 
   defp send_and_mark_as_sent(triggers) do

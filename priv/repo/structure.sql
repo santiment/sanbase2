@@ -1016,7 +1016,7 @@ ALTER SEQUENCE public.user_settings_id_seq OWNED BY public.user_settings.id;
 CREATE TABLE public.user_signals (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    trigger_id bigint NOT NULL,
+    user_trigger_id bigint NOT NULL,
     payload jsonb,
     inserted_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
@@ -2216,19 +2216,19 @@ ALTER TABLE ONLY public.user_settings
 
 
 --
--- Name: user_signals user_signals_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_signals
-    ADD CONSTRAINT user_signals_trigger_id_fkey FOREIGN KEY (trigger_id) REFERENCES public.users(id);
-
-
---
 -- Name: user_signals user_signals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_signals
     ADD CONSTRAINT user_signals_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: user_signals user_signals_user_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_signals
+    ADD CONSTRAINT user_signals_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
 
 
 --

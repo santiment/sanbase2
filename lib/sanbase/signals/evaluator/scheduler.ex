@@ -16,7 +16,7 @@ defmodule Sanbase.Signals.Scheduler do
     TrendingWordsTriggerSettings
   }
 
-  alias Sanbase.Signals.{UserTrigger, Trigger}
+  alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signal
 
@@ -47,22 +47,9 @@ defmodule Sanbase.Signals.Scheduler do
   defp run(type) do
     type
     |> UserTrigger.get_triggers_by_type()
-    |> remove_triggers_on_cooldown()
     |> Evaluator.run()
     |> send_and_mark_as_sent()
     |> log_sent_messages_stats(type)
-  end
-
-  # remove triggers that has no `target` and are in cooldown
-  defp remove_triggers_on_cooldown(triggers) do
-    triggers
-    |> Enum.reject(fn
-      %UserTrigger{trigger: %Trigger{settings: %{target: _}}} ->
-        false
-
-      %UserTrigger{trigger: trigger} ->
-        Trigger.has_cooldown?(trigger)
-    end)
   end
 
   defp send_and_mark_as_sent(triggers) do

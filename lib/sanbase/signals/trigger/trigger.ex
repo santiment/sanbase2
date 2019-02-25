@@ -110,14 +110,6 @@ defmodule Sanbase.Signals.Trigger do
     Sanbase.Signals.Settings.cache_key(trigger_settings)
   end
 
-  def has_cooldown?(%Trigger{last_triggered: nil}), do: false
-  def has_cooldown?(%Trigger{cooldown: nil}), do: false
-  def has_cooldown?(%Trigger{last_triggered: lt}) when lt == %{}, do: false
-
-  def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt, settings: %{type: type}} = trigger) do
-    has_cooldown?(trigger, type)
-  end
-
   def has_cooldown?(%Trigger{last_triggered: lt}, _target) when lt == %{}, do: false
 
   def has_cooldown?(%Trigger{cooldown: cd, last_triggered: lt}, target) when is_map(lt) do

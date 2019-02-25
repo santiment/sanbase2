@@ -163,14 +163,27 @@ defmodule Sanbase.Signals.EvaluatorTest do
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    assert capture_log(fn ->
-             Sanbase.Signals.Scheduler.run_trending_words_signals()
-           end) =~ "In total 1/1 trending_words signals were sent successfully"
+    top_words = [
+      %{score: 1740.2647984845628, word: "bat"},
+      %{score: 792.9209638684719, word: "coinbase"},
+      %{score: 208.48182966076172, word: "mana"},
+      %{score: 721.8164660673655, word: "mth"},
+      %{score: 837.0034350090417, word: "xlm"}
+    ]
 
-    Sanbase.Signals.Evaluator.Cache.clear()
+    with_mock Sanbase.SocialData, [:passthrough],
+      trending_words: fn _, _, _, _, _ ->
+        {:ok, [%{top_words: top_words}]}
+      end do
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_trending_words_signals()
+             end) =~ "In total 1/1 trending_words signals were sent successfully"
 
-    assert capture_log(fn ->
-             Sanbase.Signals.Scheduler.run_trending_words_signals()
-           end) =~ "There were no signals triggered of type"
+      Sanbase.Signals.Evaluator.Cache.clear()
+
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_trending_words_signals()
+             end) =~ "There were no signals triggered of type"
+    end
   end
 end

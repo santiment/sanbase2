@@ -27,7 +27,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
             channel: nil,
             trigger_time: nil,
             triggered?: false,
-            payload: nil,
+            payload: %{},
             target: "all",
             filtered_target_list: []
 
@@ -52,11 +52,11 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   def type(), do: @trigger_type
 
   @spec get_data(%TrendingWordsTriggerSettings{}) :: {:ok, list(top_word_type)} | :error
-  def get_data(%TrendingWordsTriggerSettings{filtered_target_list: ftl} = settings)
+  def get_data(%TrendingWordsTriggerSettings{filtered_target_list: ftl})
       when ftl == [],
       do: :error
 
-  def get_data(%TrendingWordsTriggerSettings{trigger_time: trigger_time} = settings) do
+  def get_data(%TrendingWordsTriggerSettings{trigger_time: trigger_time}) do
     now = Timex.now()
     trigger_time = Time.from_iso8601!(trigger_time)
     now_time = DateTime.to_time(now)

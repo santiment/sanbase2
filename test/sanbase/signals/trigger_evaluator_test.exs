@@ -3,6 +3,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   import Mock
   import Sanbase.Factory
+  import ExUnit.CaptureLog
 
   alias Sanbase.Signals.UserTrigger
   alias Sanbase.Signals.Evaluator
@@ -152,7 +153,37 @@ defmodule Sanbase.Signals.EvaluatorTest do
         |> Evaluator.run()
 
       assert context.trigger_trending_words.id == triggered.id
-      assert String.contains?(triggered.trigger.settings.payload.trending_words, "coinbase")
+      assert String.contains?(triggered.trigger.settings.payload["all"], "coinbase")
+    end
+  end
+
+  test "signal setting cooldown works for trending words" do
+    Tesla.Mock.mock_global(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
+    top_words = [
+      %{score: 1740.2647984845628, word: "bat"},
+      %{score: 792.9209638684719, word: "coinbase"},
+      %{score: 208.48182966076172, word: "mana"},
+      %{score: 721.8164660673655, word: "mth"},
+      %{score: 837.0034350090417, word: "xlm"}
+    ]
+
+    with_mock Sanbase.SocialData, [:passthrough],
+      trending_words: fn _, _, _, _, _ ->
+        {:ok, [%{top_words: top_words}]}
+      end do
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_trending_words_signals()
+             end) =~ "In total 1/1 trending_words signals were sent successfully"
+
+      Sanbase.Signals.Evaluator.Cache.clear()
+
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_trending_words_signals()
+             end) =~ "There were no signals triggered of type"
     end
   end
 end

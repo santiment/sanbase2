@@ -27,7 +27,9 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
             channel: nil,
             trigger_time: nil,
             triggered?: false,
-            payload: nil
+            payload: %{},
+            target: "all",
+            filtered_target_list: []
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -50,6 +52,8 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   def type(), do: @trigger_type
 
   @spec get_data(%TrendingWordsTriggerSettings{}) :: {:ok, list(top_word_type)} | :error
+  def get_data(%TrendingWordsTriggerSettings{filtered_target_list: []}), do: :error
+
   def get_data(%TrendingWordsTriggerSettings{trigger_time: trigger_time}) do
     now = Timex.now()
     trigger_time = Time.from_iso8601!(trigger_time)
@@ -110,13 +114,13 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
   defimpl Sanbase.Signals.Settings, for: TrendingWordsTriggerSettings do
     def triggered?(%TrendingWordsTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%TrendingWordsTriggerSettings{} = settings) do
+    def evaluate(%TrendingWordsTriggerSettings{target: target} = settings) do
       case TrendingWordsTriggerSettings.get_data(settings) do
         {:ok, top_words} ->
           %TrendingWordsTriggerSettings{
             settings
             | triggered?: true,
-              payload: %{trending_words: payload(top_words)}
+              payload: %{target => payload(top_words)}
           }
 
         _ ->

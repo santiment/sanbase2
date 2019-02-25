@@ -60,9 +60,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeTriggerSettings do
 
   def get_data(%{target: target} = settings) when is_list(target) do
     target
-    |> Enum.map(fn slug ->
-      PriceVolumeDifference.price_volume_diff(slug, settings)
-    end)
+    |> Enum.map(fn slug -> get_data_for_single_project(slug, settings) end)
   end
 
   defp get_data_for_single_project(slug, settings) do

@@ -5,8 +5,22 @@ defmodule Sanbase.TechIndicatorsTest do
   import ExUnit.CaptureLog
 
   alias Sanbase.TechIndicators
+  import Sanbase.Factory
 
-  test "fetch price_volume_diff", _context do
+  setup do
+    project =
+      insert(:project, %{
+        coinmarketcap_id: "santiment",
+        ticker: "SAN",
+        main_contract_address: "0x123"
+      })
+
+    [
+      project: project
+    ]
+  end
+
+  test "fetch price_volume_diff", context do
     mock(
       HTTPoison,
       :get,
@@ -20,7 +34,7 @@ defmodule Sanbase.TechIndicatorsTest do
 
     result =
       TechIndicators.PriceVolumeDifference.price_volume_diff(
-        "XYZ_xyz",
+        context.project,
         "USD",
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_752_000),
@@ -66,7 +80,7 @@ defmodule Sanbase.TechIndicatorsTest do
               ]}
   end
 
-  test "fetch twitter mention count", _context do
+  test "fetch twitter mention count", context do
     mock(
       HTTPoison,
       :get,
@@ -80,7 +94,7 @@ defmodule Sanbase.TechIndicatorsTest do
 
     result =
       TechIndicators.twitter_mention_count(
-        "XYZ",
+        context.project.ticker,
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_492_800),
         "1d"

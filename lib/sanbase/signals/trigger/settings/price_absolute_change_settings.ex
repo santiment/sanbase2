@@ -130,13 +130,11 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     end
 
     defp payload(slug, last_price_usd, message) do
-      project = Sanbase.Model.Project.by_slug(slug)
+      project = Project.by_slug(slug)
 
       """
       **#{project.name}**'s price has reached #{message} and is now $#{last_price_usd}
-      More information for the project you can find here: #{
-        Sanbase.Model.Project.sanbase_link(project)
-      }
+      More information for the project you can find here: #{Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project)})
       """
     end

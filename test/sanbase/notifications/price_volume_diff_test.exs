@@ -7,6 +7,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
+  @moduletag capture_log: true
+
   setup do
     Store.create_db()
 

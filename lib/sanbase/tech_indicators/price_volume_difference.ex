@@ -11,7 +11,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
 
   @recv_timeout 15_000
 
-  @type price_volume_diff_map :: %{
+  @type price_volume_diffp :: %{
           datetime: DateTime.t(),
           price_volume_diff: number(),
           price_change: number(),
@@ -28,7 +28,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
           String.t(),
           non_neg_integer(),
           non_neg_integer()
-        ) :: {:error, String.t()} | {:ok, [price_volume_diff_map()]}
+        ) :: {:error, String.t()} | {:ok, [price_volume_diffp()]}
   def price_volume_diff(
         %Project{ticker: ticker, coinmarketcap_id: slug} = project,
         currency,
@@ -63,7 +63,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
 
   defp handle_result({:ok, %HTTPoison.Response{status_code: 200, body: body}}, _project) do
     {:ok, result} = Jason.decode(body)
-    price_volume_diff_ma_result(result)
+    price_volume_diff_result(result)
   end
 
   defp handle_result({:ok, %HTTPoison.Response{status_code: status, body: body}}, project) do
@@ -80,7 +80,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
     )
   end
 
-  defp price_volume_diff_ma_result(result) do
+  defp price_volume_diff_result(result) do
     result =
       result
       |> Enum.map(fn %{

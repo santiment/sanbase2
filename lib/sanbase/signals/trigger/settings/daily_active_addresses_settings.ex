@@ -164,7 +164,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
       project = Project.by_slug(slug)
 
       """
-      **#{project.name}** Daily Active Addresses has gone up by **#{
+      **#{project.name}**'s Daily Active Addresses has gone up by **#{
         percent_change(average_daa, current_daa)
       }%** for the last 1 day.
       Average Daily Active Addresses for last **#{

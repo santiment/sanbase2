@@ -133,7 +133,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
       project = Sanbase.Model.Project.by_slug(slug)
 
       """
-      The price of **#{project.name}** is $#{last_price_usd} which is #{message}
+      **#{project.name}**'s price has reached #{message} and is now $#{last_price_usd}
       More information for the project you can find here: #{
         Sanbase.Model.Project.sanbase_link(project)
       }

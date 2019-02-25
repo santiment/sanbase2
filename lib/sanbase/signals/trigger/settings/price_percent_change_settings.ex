@@ -70,7 +70,9 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
         |> case do
           {:ok, [[_dt, first_usd_price, last_usd_price]]} ->
             {project.coinmarketcap_id,
-             {:ok, Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price)}}
+             {:ok,
+              {Sanbase.Signals.Utils.percent_change(first_usd_price, last_usd_price),
+               first_usd_price, last_usd_price}}}
 
           error ->
             {project.coinmarketcap_id, {:error, error}}
@@ -106,8 +108,9 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
          ) do
       payload =
         Enum.reduce(list, %{}, fn
-          {slug, {:ok, percent_change}}, acc when percent_change >= percent_threshold ->
-            Map.put(acc, slug, payload(slug, settings, percent_change))
+          {slug, {:ok, {percent_change, _, _} = price_data}}, acc
+          when percent_change >= percent_threshold ->
+            Map.put(acc, slug, payload(settings, price_data))
 
           _, acc ->
             acc
@@ -146,11 +149,13 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       end
     end
 
-    defp payload(slug, settings, percent_change) do
+    defp payload(slug, {percent_change, first_price, last_price}) do
       project = Sanbase.Model.Project.by_slug(slug)
 
       """
-      The price of **#{project.name}** has changed by **#{percent_change}%** for the last #{
+      **#{project.name}**'s price has changed by **#{percent_change}%** from $#{
+        Float.round(first_price)
+      } to $#{Float.round(last_price)} for the last #{
         Sanbase.DateTimeUtils.compound_duration_to_text(settings.time_window)
       }.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}

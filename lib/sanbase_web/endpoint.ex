@@ -70,6 +70,11 @@ defmodule SanbaseWeb.Endpoint do
     Config.get(:website_url)
   end
 
+  def sonar_url() do
+    website_url()
+    |> Path.join("sonar")
+  end
+
   def user_account_url() do
     Config.get(:website_url)
     |> Path.join("account")

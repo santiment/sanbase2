@@ -148,7 +148,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
       #{String.pad_trailing("-", max_len, "-")} | #{String.pad_trailing("-", max_len, "-")}
       #{top_words_table}
       ```
-      More info: https://app.santiment.net/sonar
+      More info: #{SanbaseWeb.Endpoint.sonar_url()}
       """
     end
 

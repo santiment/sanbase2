@@ -1,6 +1,6 @@
 defmodule Sanbase.Parallel do
   @doc ~s"""
-  Module implementing parallel and oncurrent versions of enumerable map and filter functions.
+  Module implementing parallel and concurrent versions of enumerable map and filter functions.
   """
 
   @default_timeout 15_000

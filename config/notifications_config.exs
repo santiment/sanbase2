@@ -59,6 +59,10 @@ config :sanbase, Sanbase.Scheduler,
       schedule: "1-59/5 * * * *",
       task: {Sanbase.Notifications.Discord.ExchangeInflow, :run, []}
     ],
+    price_volume_difference_sonar_signal: [
+      schedule: "1-59/5 * * * *",
+      task: {Sanbase.Signals.Scheduler, :run_price_volume_difference_signals}
+    ],
     daily_active_addresses_sonar_signal: [
       schedule: "2-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_daily_active_addresses_signals, []}
@@ -72,7 +76,7 @@ config :sanbase, Sanbase.Scheduler,
       task: {Sanbase.Signals.Scheduler, :run_price_absolute_change_signals, []}
     ],
     trending_words_sonar_singal: [
-      schedule: "*/5 * * * *",
+      schedule: "5-59/5 * * * *",
       task: {Sanbase.Signals.Scheduler, :run_trending_words_signals, []}
     ]
   ]

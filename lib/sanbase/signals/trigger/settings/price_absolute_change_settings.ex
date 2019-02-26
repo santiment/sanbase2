@@ -117,25 +117,13 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
       ])
     end
 
-    defp chart_url(project) do
-      Sanbase.Chart.build_embedded_chart(
-        project,
-        Timex.shift(Timex.now(), days: -90),
-        Timex.now()
-      )
-      |> case do
-        [%{image: %{url: chart_url}}] -> chart_url
-        _ -> nil
-      end
-    end
-
     defp payload(slug, last_price_usd, message) do
       project = Project.by_slug(slug)
 
       """
       **#{project.name}**'s price has reached #{message} and is now $#{last_price_usd}
       More information for the project you can find here: #{Project.sanbase_link(project)}
-      ![Price chart over the past 90 days](#{chart_url(project)})
+      ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """
     end
   end

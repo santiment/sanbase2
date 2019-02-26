@@ -15,4 +15,17 @@ defmodule Sanbase.Signals.Utils do
     :crypto.hash(:sha256, data)
     |> Base.encode16()
   end
+
+  def chart_url(project, type) do
+    Sanbase.Chart.build_embedded_chart(
+      project,
+      Timex.shift(Timex.now(), days: -90),
+      Timex.now(),
+      chart_type: type
+    )
+    |> case do
+      [%{image: %{url: chart_url}}] -> chart_url
+      _ -> nil
+    end
+  end
 end

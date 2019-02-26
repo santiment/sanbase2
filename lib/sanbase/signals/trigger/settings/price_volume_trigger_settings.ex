@@ -148,7 +148,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
         project,
         Timex.shift(Timex.now(), days: -90),
         Timex.now(),
-        chart_type: :price_volume
+        chart_type: :volume
       )
       |> case do
         [%{image: %{url: chart_url}}] -> chart_url

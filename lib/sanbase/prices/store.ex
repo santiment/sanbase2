@@ -67,6 +67,12 @@ defmodule Sanbase.Prices.Store do
     end
   end
 
+  def fetch_volume_with_resolution(measurement, from, to, resolution) do
+    fetch_volume_with_resolution_query(measurement, from, to, resolution)
+    |> Store.query()
+    |> parse_time_series()
+  end
+
   def fetch_mean_volume(measurements, from, to) when is_list(measurements) do
     %{results: [%{series: series}]} =
       fetch_mean_volume_query(measurements, from, to)
@@ -222,6 +228,14 @@ defmodule Sanbase.Prices.Store do
 
   defp fetch_prices_with_resolution_query(measurement, from, to, resolution) do
     ~s/SELECT MEAN(price_usd), MEAN(price_btc), MEAN(marketcap_usd), LAST(volume_usd)
+    FROM "#{measurement}"
+    WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
+    AND time <= #{DateTime.to_unix(to, :nanosecond)}
+    GROUP BY time(#{resolution}) fill(none)/
+  end
+
+  defp fetch_volume_with_resolution_query(measurement, from, to, resolution) do
+    ~s/SELECT MEAN(volume_usd) as volume
     FROM "#{measurement}"
     WHERE time >= #{DateTime.to_unix(from, :nanosecond)}
     AND time <= #{DateTime.to_unix(to, :nanosecond)}

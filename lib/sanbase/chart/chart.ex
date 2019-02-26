@@ -35,12 +35,12 @@ defmodule Sanbase.Chart do
   # value from `opts` and add an overlaying chart that represents a specific metric.
   # Currently supported such metrics are `:daily_active_addresses` and `:exchange_inflow`
   defp build_candlestick_image_url(
-         %Project{coinmarketcap_id: slug} = project,
+         %Project{} = project,
          from,
          to,
          opts
        ) do
-    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
+    with measurement when not is_nil(measurement) <- Measurement.name_from(project),
          {:ok, ohlc} when is_list(ohlc) <- PricesStore.fetch_ohlc(measurement, from, to, "1d"),
          number when number != 0 <- length(ohlc),
          {:ok, prices} <- candlestick_prices(ohlc),
@@ -115,6 +115,9 @@ defmodule Sanbase.Chart do
       :exchange_inflow ->
         chart_values(:exchange_inflow, project, from, to, size)
 
+      :volume ->
+        chart_values(:volume, project, from, to, size)
+
       _ ->
         empty_values(from, to)
     end
@@ -127,9 +130,7 @@ defmodule Sanbase.Chart do
          {:ok, daa} <-
            Erc20DailyActiveAddresses.average_active_addresses(contract, from, to, "1d") do
       daa_values = daa |> Enum.map(fn %{active_addresses: value} -> value end)
-      max = daa_values |> Enum.max()
-      min = daa_values |> Enum.min()
-
+      {min, max} = Math.min_max(daa_values)
       daa_values = daa_values |> Enum.join(",")
 
       %{
@@ -163,8 +164,7 @@ defmodule Sanbase.Chart do
       exchange_inflow_values =
         exchange_inflow |> Enum.map(fn %{inflow: value} -> value / supply end)
 
-      max = exchange_inflow_values |> Enum.max()
-      min = exchange_inflow_values |> Enum.min()
+      {min, max} = Math.min_max(exchange_inflow_values)
 
       exchange_inflow_values = exchange_inflow_values |> Enum.join(",")
 
@@ -183,6 +183,36 @@ defmodule Sanbase.Chart do
           "Cannot fetch Exchange Inflow for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
+        )
+
+        empty_values(from, to)
+    end
+  end
+
+  defp chart_values(:volume, %Project{} = project, _from, to, size) do
+    from = Timex.shift(to, days: -size + 1)
+
+    with measurement when not is_nil(measurement) <- Measurement.name_from(project),
+         {:ok, volumes} <- PricesStore.fetch_volume_with_resolution(measurement, from, to, "1d") do
+      volumes = volumes |> Enum.map(fn [_dt, volume] -> volume end)
+
+      {min, max} = Math.min_max(volumes)
+
+      volumes_str = volumes |> Enum.join(",")
+
+      %{
+        chtt: "#{project.name} - Trading Volume and OHCL Price" |> URI.encode(),
+        chxt: ",x,r",
+        chxl: "1:|#{datetime_values(from, to)}" |> URI.encode(),
+        chxr: "|2,#{min},#{max}",
+        chxs: "|2N*cUSDs*",
+        chds: "#{min},#{max},",
+        chd: "t1:#{volumes_str}"
+      }
+    else
+      error ->
+        Logger.error(
+          "Cannot fetch volume for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
         empty_values(from, to)

@@ -5,7 +5,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signals.{UserTrigger, UserSignal}
   alias Sanbase.Signals.Evaluator
 
   alias Sanbase.Signals.Trigger.{
@@ -138,14 +138,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
   test "evaluate trending words triggers", context do
     with_mock TrendingWordsTriggerSettings, [:passthrough],
       get_data: fn _ ->
-        {:ok,
-         [
-           %{score: 1740.2647984845628, word: "bat"},
-           %{score: 792.9209638684719, word: "coinbase"},
-           %{score: 208.48182966076172, word: "mana"},
-           %{score: 721.8164660673655, word: "mth"},
-           %{score: 837.0034350090417, word: "xlm"}
-         ]}
+        {:ok, top_words()}
       end do
       [triggered] =
         TrendingWordsTriggerSettings.type()
@@ -157,27 +150,24 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "signal setting cooldown works for trending words" do
+  test "signal setting cooldown works for trending words", context do
     Tesla.Mock.mock_global(fn
       %{method: :post} ->
         %Tesla.Env{status: 200, body: "ok"}
     end)
 
-    top_words = [
-      %{score: 1740.2647984845628, word: "bat"},
-      %{score: 792.9209638684719, word: "coinbase"},
-      %{score: 208.48182966076172, word: "mana"},
-      %{score: 721.8164660673655, word: "mth"},
-      %{score: 837.0034350090417, word: "xlm"}
-    ]
-
     with_mock Sanbase.SocialData, [:passthrough],
       trending_words: fn _, _, _, _, _ ->
-        {:ok, [%{top_words: top_words}]}
+        {:ok, [%{top_words: top_words()}]}
       end do
       assert capture_log(fn ->
                Sanbase.Signals.Scheduler.run_trending_words_signals()
              end) =~ "In total 1/1 trending_words signals were sent successfully"
+
+      alias Sanbase.Signals.UserSignal
+      user_signal = UserSignal |> Sanbase.Repo.all() |> List.first()
+      assert user_signal.user_id == context.user.id
+      assert String.contains?(user_signal.payload["all"], "coinbase")
 
       Sanbase.Signals.Evaluator.Cache.clear()
 
@@ -185,5 +175,35 @@ defmodule Sanbase.Signals.EvaluatorTest do
                Sanbase.Signals.Scheduler.run_trending_words_signals()
              end) =~ "There were no signals triggered of type"
     end
+  end
+
+  test "successfull signal is written in user_signals table", context do
+    Tesla.Mock.mock_global(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
+    with_mock Sanbase.SocialData, [:passthrough],
+      trending_words: fn _, _, _, _, _ ->
+        {:ok, [%{top_words: top_words()}]}
+      end do
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_trending_words_signals()
+             end) =~ "In total 1/1 trending_words signals were sent successfully"
+
+      user_signal = UserSignal |> Sanbase.Repo.all() |> List.first()
+      assert user_signal.user_id == context.user.id
+      assert String.contains?(user_signal.payload["all"], "coinbase")
+    end
+  end
+
+  defp top_words() do
+    [
+      %{score: 1740.2647984845628, word: "bat"},
+      %{score: 792.9209638684719, word: "coinbase"},
+      %{score: 208.48182966076172, word: "mana"},
+      %{score: 721.8164660673655, word: "mth"},
+      %{score: 837.0034350090417, word: "xlm"}
+    ]
   end
 end

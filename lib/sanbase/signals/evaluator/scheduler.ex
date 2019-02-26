@@ -73,7 +73,6 @@ defmodule Sanbase.Signals.Scheduler do
         ]
       end,
       max_concurrency: 10,
-      ordered: false,
       map_type: :flat_map
     )
   end

@@ -1,43 +1,9 @@
 defmodule Sanbase.Parallel do
   @doc ~s"""
-  Module implementing parallel and concurrent versions of enumerable map and filter functions.
+  Module implementing concurrent map and filter functions on enumerable under Sanbase.TaskSupervisor
   """
 
   @default_timeout 15_000
-
-  def preject(collection, func, opts) when is_function(func, 1) do
-    timeout = Keyword.get(opts, :timeout) || @default_timeout
-
-    collection
-    |> Enum.map(&Task.async(fn -> func.(&1) end))
-    |> Enum.map(&Task.await(&1, timeout))
-
-    collection
-    |> Stream.map(&Task.async(fn -> {func.(&1), &1} end))
-    |> Stream.map(&Task.await(&1, timeout))
-    |> Stream.reject(fn {bool, _item} -> bool === true end)
-    |> Enum.map(fn {_bool, item} -> item end)
-  end
-
-  def pfilter(collection, func, opts) when is_function(func, 1) do
-    preject(collection, &(not func.(&1)), opts)
-  end
-
-  def pmap(collection, func, opts \\ []) when is_function(func, 1) do
-    timeout = Keyword.get(opts, :timeout) || @default_timeout
-
-    collection
-    |> Enum.map(&Task.async(fn -> func.(&1) end))
-    |> Enum.map(&Task.await(&1, timeout))
-  end
-
-  def flat_pmap(collection, func, opts \\ []) when is_function(func, 1) do
-    timeout = Keyword.get(opts, :timeout) || @default_timeout
-
-    collection
-    |> Enum.map(&Task.async(fn -> func.(&1) end))
-    |> Enum.flat_map(&Task.await(&1, timeout))
-  end
 
   def pmap_concurrent(collection, func, opts \\ []) when is_function(func, 1) do
     max_concurrency = Keyword.get(opts, :max_concurrency) || System.schedulers_online()

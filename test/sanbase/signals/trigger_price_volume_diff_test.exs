@@ -2,12 +2,9 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
   use Sanbase.DataCase, async: false
 
   import Mock
-  import Mockery
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Prices.Store
-  alias Sanbase.Influxdb.Measurement
   alias Sanbase.Signals.{Trigger, UserTrigger, Evaluator}
   alias Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings
 
@@ -46,6 +43,36 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
     ]
   end
 
+  test "no triggers were defined", _context do
+    Sanbase.Repo.delete_all(UserTrigger)
+
+    triggered =
+      PriceVolumeDifferenceTriggerSettings.type()
+      |> UserTrigger.get_triggers_by_type()
+      |> Evaluator.run()
+
+    assert length(triggered) == 0
+  end
+
+  test "none of the price volume diff signals triggered", _context do
+    with_mock HTTPoison, [],
+      get: fn _, _, _ ->
+        {:ok,
+         %HTTPoison.Response{
+           body:
+             "[{\"price_volume_diff\": 0.0001, \"price_change\": 0.04, \"volume_change\": 0.03, \"timestamp\": 1516752000}]",
+           status_code: 200
+         }}
+      end do
+      triggered =
+        PriceVolumeDifferenceTriggerSettings.type()
+        |> UserTrigger.get_triggers_by_type()
+        |> Evaluator.run()
+
+      assert length(triggered) == 0
+    end
+  end
+
   test "only some of price volume diff signals triggered", context do
     with_mock HTTPoison, [],
       get: fn _, _, _ ->
@@ -64,6 +91,45 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       assert length(rest) == 0
       assert context.trigger1.id == triggered.id
       assert Trigger.triggered?(triggered.trigger) == true
+    end
+  end
+
+  test "tech indicators returns :ok tuple with internal error", _context do
+    with_mock HTTPoison, [],
+      get: fn _, _, _ ->
+        {:ok,
+         %HTTPoison.Response{
+           body: "Internal Server Error",
+           status_code: 500
+         }}
+      end do
+      assert capture_log(fn ->
+               triggered =
+                 PriceVolumeDifferenceTriggerSettings.type()
+                 |> UserTrigger.get_triggers_by_type()
+                 |> Evaluator.run()
+
+               assert triggered == []
+             end) =~ "Internal Server Error"
+    end
+  end
+
+  test "tech indicators return :error tuple", _context do
+    with_mock HTTPoison, [],
+      get: fn _, _, _ ->
+        {:error,
+         %HTTPoison.Error{
+           reason: :econnrefused
+         }}
+      end do
+      assert capture_log(fn ->
+               triggered =
+                 PriceVolumeDifferenceTriggerSettings.type()
+                 |> UserTrigger.get_triggers_by_type()
+                 |> Evaluator.run()
+
+               assert triggered == []
+             end) =~ "econnrefused"
     end
   end
 

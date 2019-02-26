@@ -1,10 +1,12 @@
 defmodule Sanbase.Parallel do
   @doc ~s"""
-
+  Module implementing parallel and oncurrent versions of enumerable map and filter functions.
   """
 
+  @default_timeout 15_000
+
   def preject(collection, func, opts) when is_function(func, 1) do
-    timeout = Keyword.get(opts, :timeout) || 15_000
+    timeout = Keyword.get(opts, :timeout) || @default_timeout
 
     collection
     |> Enum.map(&Task.async(fn -> func.(&1) end))
@@ -22,7 +24,7 @@ defmodule Sanbase.Parallel do
   end
 
   def pmap(collection, func, opts \\ []) when is_function(func, 1) do
-    timeout = Keyword.get(opts, :timeout) || 15_000
+    timeout = Keyword.get(opts, :timeout) || @default_timeout
 
     collection
     |> Enum.map(&Task.async(fn -> func.(&1) end))
@@ -30,7 +32,7 @@ defmodule Sanbase.Parallel do
   end
 
   def flat_pmap(collection, func, opts \\ []) when is_function(func, 1) do
-    timeout = Keyword.get(opts, :timeout) || 15_000
+    timeout = Keyword.get(opts, :timeout) || @default_timeout
 
     collection
     |> Enum.map(&Task.async(fn -> func.(&1) end))
@@ -40,7 +42,7 @@ defmodule Sanbase.Parallel do
   def pmap_concurrent(collection, func, opts \\ []) when is_function(func, 1) do
     max_concurrency = Keyword.get(opts, :max_concurrency) || System.schedulers_online()
     ordered = Keyword.get(opts, :ordered) || true
-    timeout = Keyword.get(opts, :timeout) || 15_000
+    timeout = Keyword.get(opts, :timeout) || @default_timeout
     on_timeout = Keyword.get(opts, :on_timeout) || :exit
     map_type = Keyword.get(opts, :map_type) || :map
 

@@ -175,7 +175,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     Sanbase.Chart.build_embedded_chart(
       project,
       Timex.shift(Timex.now(), days: -90),
-      Timex.shift(Timex.now(), days: -1)
+      Timex.shift(Timex.now(), days: -1),
+      chart_type: :volume
     )
   end
 

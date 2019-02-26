@@ -16,7 +16,7 @@ defmodule Sanbase.Signals.Scheduler do
     TrendingWordsTriggerSettings
   }
 
-  alias Sanbase.Signals.{UserTrigger, UserSignal}
+  alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signal
 
@@ -63,8 +63,8 @@ defmodule Sanbase.Signals.Scheduler do
     |> Sanbase.Parallel.pmap_concurrent(
       fn %UserTrigger{} = user_trigger ->
         [
-          %UserSignal{}
-          |> UserSignal.changeset(%{
+          %HistoricalActivity{}
+          |> HistoricalActivity.changeset(%{
             user_id: user_trigger.user_id,
             user_trigger_id: user_trigger.id,
             payload: user_trigger.trigger.settings.payload

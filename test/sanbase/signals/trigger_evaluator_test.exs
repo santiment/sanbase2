@@ -5,7 +5,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
 
-  alias Sanbase.Signals.{UserTrigger, UserSignal}
+  alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signals.Evaluator
 
   alias Sanbase.Signals.Trigger.{
@@ -164,8 +164,8 @@ defmodule Sanbase.Signals.EvaluatorTest do
                Sanbase.Signals.Scheduler.run_trending_words_signals()
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
-      alias Sanbase.Signals.UserSignal
-      user_signal = UserSignal |> Sanbase.Repo.all() |> List.first()
+      alias Sanbase.Signals.HistoricalActivity
+      user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
       assert user_signal.user_id == context.user.id
       assert String.contains?(user_signal.payload["all"], "coinbase")
 
@@ -177,7 +177,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
     end
   end
 
-  test "successfull signal is written in user_signals table", context do
+  test "successfull signal is written in signals_historical_activity table", context do
     Tesla.Mock.mock_global(fn
       %{method: :post} ->
         %Tesla.Env{status: 200, body: "ok"}
@@ -191,7 +191,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
                Sanbase.Signals.Scheduler.run_trending_words_signals()
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
-      user_signal = UserSignal |> Sanbase.Repo.all() |> List.first()
+      user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
       assert user_signal.user_id == context.user.id
       assert String.contains?(user_signal.payload["all"], "coinbase")
     end

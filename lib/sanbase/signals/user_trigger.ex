@@ -16,7 +16,7 @@ defmodule Sanbase.Signals.UserTrigger do
 
   alias __MODULE__
   alias Sanbase.Auth.User
-  alias Sanbase.Signals.{Trigger, UserSignal}
+  alias Sanbase.Signals.{Trigger, HistoricalActivity}
   alias Sanbase.Repo
   alias Sanbase.Tag
 
@@ -34,7 +34,7 @@ defmodule Sanbase.Signals.UserTrigger do
       on_delete: :delete_all
     )
 
-    has_many(:signals, UserSignal)
+    has_many(:signals_historical_activity, HistoricalActivity)
 
     timestamps()
   end

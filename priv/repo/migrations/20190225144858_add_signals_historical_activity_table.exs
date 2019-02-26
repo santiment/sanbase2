@@ -1,7 +1,7 @@
-defmodule Sanbase.Repo.Migrations.AddUserSignalsTable do
+defmodule Sanbase.Repo.Migrations.AddHistoricalActivitysTable do
   use Ecto.Migration
 
-  @table "user_signals"
+  @table "signals_historical_activity"
   def change do
     create table(@table) do
       add(:user_id, references("users"), null: false)

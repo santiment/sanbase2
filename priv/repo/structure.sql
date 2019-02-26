@@ -871,6 +871,39 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: signals_historical_activity; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.signals_historical_activity (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    user_trigger_id bigint NOT NULL,
+    payload jsonb,
+    inserted_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: signals_historical_activity_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.signals_historical_activity_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: signals_historical_activity_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.signals_historical_activity_id_seq OWNED BY public.signals_historical_activity.id;
+
+
+--
 -- Name: tags; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1007,39 +1040,6 @@ CREATE SEQUENCE public.user_settings_id_seq
 --
 
 ALTER SEQUENCE public.user_settings_id_seq OWNED BY public.user_settings.id;
-
-
---
--- Name: user_signals; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_signals (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    user_trigger_id bigint NOT NULL,
-    payload jsonb,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: user_signals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.user_signals_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_signals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_signals_id_seq OWNED BY public.user_signals.id;
 
 
 --
@@ -1345,6 +1345,13 @@ ALTER TABLE ONLY public.schedule_rescrape_prices ALTER COLUMN id SET DEFAULT nex
 
 
 --
+-- Name: signals_historical_activity id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signals_historical_activity ALTER COLUMN id SET DEFAULT nextval('public.signals_historical_activity_id_seq'::regclass);
+
+
+--
 -- Name: tags id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1370,13 +1377,6 @@ ALTER TABLE ONLY public.user_lists ALTER COLUMN id SET DEFAULT nextval('public.u
 --
 
 ALTER TABLE ONLY public.user_settings ALTER COLUMN id SET DEFAULT nextval('public.user_settings_id_seq'::regclass);
-
-
---
--- Name: user_signals id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_signals ALTER COLUMN id SET DEFAULT nextval('public.user_signals_id_seq'::regclass);
 
 
 --
@@ -1616,6 +1616,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: signals_historical_activity signals_historical_activity_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signals_historical_activity
+    ADD CONSTRAINT signals_historical_activity_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tags tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1653,14 +1661,6 @@ ALTER TABLE ONLY public.user_lists
 
 ALTER TABLE ONLY public.user_settings
     ADD CONSTRAINT user_settings_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_signals user_signals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_signals
-    ADD CONSTRAINT user_signals_pkey PRIMARY KEY (id);
 
 
 --
@@ -1892,6 +1892,13 @@ CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescra
 
 
 --
+-- Name: signals_historical_activity_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX signals_historical_activity_user_id_index ON public.signals_historical_activity USING btree (user_id);
+
+
+--
 -- Name: tags_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1924,13 +1931,6 @@ CREATE UNIQUE INDEX user_api_key_tokens_token_index ON public.user_api_key_token
 --
 
 CREATE UNIQUE INDEX user_settings_user_id_index ON public.user_settings USING btree (user_id);
-
-
---
--- Name: user_signals_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_signals_user_id_index ON public.user_signals USING btree (user_id);
 
 
 --
@@ -2184,6 +2184,22 @@ ALTER TABLE ONLY public.schedule_rescrape_prices
 
 
 --
+-- Name: signals_historical_activity signals_historical_activity_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signals_historical_activity
+    ADD CONSTRAINT signals_historical_activity_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: signals_historical_activity signals_historical_activity_user_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.signals_historical_activity
+    ADD CONSTRAINT signals_historical_activity_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
+
+
+--
 -- Name: telegram_user_tokens telegram_user_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2213,22 +2229,6 @@ ALTER TABLE ONLY public.user_lists
 
 ALTER TABLE ONLY public.user_settings
     ADD CONSTRAINT user_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: user_signals user_signals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_signals
-    ADD CONSTRAINT user_signals_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: user_signals user_signals_user_trigger_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_signals
-    ADD CONSTRAINT user_signals_user_trigger_id_fkey FOREIGN KEY (user_trigger_id) REFERENCES public.user_triggers(id);
 
 
 --

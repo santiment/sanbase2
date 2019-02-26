@@ -65,7 +65,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       {:ok,
        %HTTPoison.Response{
          body:
-           "[{\"price_volume_diff\": 0.0, \"price_change\": 0.04862261825993345, \"volume_change\": 0.030695260272520467, \"timestamp\": 1516752000}]",
+           "[{\"price_volume_diff\": 0.001, \"price_change\": 0.04, \"volume_change\": 0.03, \"timestamp\": 1516752000}]",
          status_code: 200
        }}
     )

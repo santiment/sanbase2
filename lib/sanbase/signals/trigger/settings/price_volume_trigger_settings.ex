@@ -4,16 +4,17 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   import Sanbase.Signals.{Validation, Utils}
 
   alias __MODULE__
+  alias Sanbase.Model.Project
   alias Sanbase.TechIndicators.PriceVolumeDifference
 
   @derive Jason.Encoder
-  @trigger_type "price_volume"
-  @enforce_keys [:type, :target, :channel, :time_window, :threshold]
+  @trigger_type "price_volume_difference"
+  @enforce_keys [:type, :target, :channel, :threshold]
 
   defstruct type: @trigger_type,
             target: nil,
+            filtered_target_list: [],
             channel: nil,
-            time_window: nil,
             threshold: 0.002,
             aggregate_interval: "1d",
             window_type: "bohman",
@@ -26,7 +27,6 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
   validates(:threshold, &valid_threshold?/1)
-  validates(:time_window, &valid_time_window?/1)
   validates(:repeating, &is_boolean/1)
 
   @typedoc ~s"""
@@ -45,7 +45,6 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
           type: Type.trigger_type(),
           target: Type.complex_target(),
           channel: Type.channel(),
-          time_window: Type.time_window(),
           threshold: Type.threshold(),
           aggregate_interval: Type.time(),
           window_type: nil,
@@ -58,27 +57,31 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def get_data(%{target: target} = settings) when is_list(target) do
+  def get_data(%{filtered_target_list: target} = settings) when is_list(target) do
     target
     |> Enum.map(fn slug -> get_data_for_single_project(slug, settings) end)
   end
 
   defp get_data_for_single_project(slug, settings) do
-    project = Projext.by_slug(slug)
+    project = Project.by_slug(slug)
 
+    # return only the last result
     result =
       PriceVolumeDifference.price_volume_diff(
         project,
         "USD",
-        Timex.shift(Timex.now(),
-          seconds: -Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-        ),
+        Timex.shift(Timex.now(), days: -14),
         Timex.now(),
         settings.aggregate_interval,
         settings.window_type,
         settings.approximation_window,
-        settings.comparison_window
+        settings.comparison_window,
+        1
       )
+      |> case do
+        {:ok, result} -> {:ok, result |> List.first()}
+        error -> error
+      end
 
     {slug, result}
   end
@@ -98,7 +101,6 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
 
     def cache_key(%PriceVolumeDifferenceTriggerSettings{} = settings) do
       construct_cache_key([
-        settings.time_window,
         settings.threshold,
         settings.aggregate_interval,
         settings.window_type,

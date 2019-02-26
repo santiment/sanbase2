@@ -51,7 +51,7 @@ defmodule Sanbase.Signals.StructMapTransformation do
   def struct_from_map(%{type: "trending_words"} = trigger_settings),
     do: {:ok, struct!(TrendingWordsTriggerSettings, trigger_settings)}
 
-  def struct_from_map(%{type: "price_volume"} = trigger_settings),
+  def struct_from_map(%{type: "price_volume_difference"} = trigger_settings),
     do: {:ok, struct!(PriceVolumeDifferenceTriggerSettings, trigger_settings)}
 
   def struct_from_map(_), do: :error

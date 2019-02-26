@@ -22,7 +22,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            repeating: false,
+            repeating: true,
             triggered?: false,
             payload: nil
 

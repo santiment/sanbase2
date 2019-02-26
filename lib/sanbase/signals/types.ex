@@ -5,5 +5,5 @@ defmodule Sanbase.Signals.Type do
   @type complex_target :: target | list(target) | map()
   @type time_window :: String.t()
   @type payload :: %{} | %{optional(String.t()) => String.t()}
-  @type threhsold :: number()
+  @type threshold :: number()
 end

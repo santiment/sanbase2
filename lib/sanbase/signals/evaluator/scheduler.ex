@@ -13,7 +13,8 @@ defmodule Sanbase.Signals.Scheduler do
     DailyActiveAddressesSettings,
     PricePercentChangeSettings,
     PriceAbsoluteChangeSettings,
-    TrendingWordsTriggerSettings
+    TrendingWordsTriggerSettings,
+    PriceVolumeDifferenceTriggerSettings
   }
 
   alias Sanbase.Signals.UserTrigger
@@ -39,6 +40,11 @@ defmodule Sanbase.Signals.Scheduler do
 
   def run_trending_words_signals() do
     TrendingWordsTriggerSettings.type()
+    |> run()
+  end
+
+  def run_price_volume_difference_signals() do
+    PriceVolumeDifferenceTriggerSettings.type()
     |> run()
   end
 

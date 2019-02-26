@@ -157,7 +157,7 @@ alias Sanbase.Signals.{UserTrigger, Trigger}
 alias Sanbase.Signals.Trigger.{
   DailyActiveAddressesSettings,
   PricePercentChangeSettings,
-  PriceVolumeTriggerSettings,
+  PriceVolumeDifferenceTriggerSettings,
   TrendingWordsTriggerSettings
 }
 

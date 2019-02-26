@@ -1,38 +1,38 @@
-defmodule Sanbase.Signals.Trigger.PriceVolumeTriggerSettings do
+defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   use Vex.Struct
 
-  import Sanbase.Signals.Validation
+  import Sanbase.Signals.{Validation, Utils}
 
   alias __MODULE__
-  alias Sanbase.Model.Project
   alias Sanbase.TechIndicators.PriceVolumeDifference
 
   @derive Jason.Encoder
   @trigger_type "price_volume"
-  @enforce_keys [:type, :target, :channel, :time_window, :threhsold]
+  @enforce_keys [:type, :target, :channel, :time_window, :threshold]
 
   defstruct type: @trigger_type,
             target: nil,
             channel: nil,
             time_window: nil,
-            threhsold: nil,
-            aggregate_interval: nil,
-            window_type: nil,
-            approximation_window: nil,
-            comparison_window: nil,
-            repeating: false,
+            threshold: 0.002,
+            aggregate_interval: "1d",
+            window_type: "bohman",
+            approximation_window: 14,
+            comparison_window: 7,
+            repeating: true,
             triggered?: false,
             payload: nil
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
-  validates(:threhsold, &valid_threhsold?/1)
+  validates(:threshold, &valid_threshold?/1)
   validates(:time_window, &valid_time_window?/1)
   validates(:repeating, &is_boolean/1)
 
   @typedoc ~s"""
-  threhsold -
-  aggregate_interval -
+  threshold - the sensitivity of the trigger. Defaults to 0.002
+  aggregate_interval - The interval at which the price and volume are aggregated.
+    Defaults to 1d
   window_type - Window type for calculating window weights.
     See https://docs.scipy.org/doc/scipy/reference/signal.html#window-functions
   approximation_window - Window for calculating the moving average for a point
@@ -46,7 +46,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeTriggerSettings do
           target: Type.complex_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
-          threhsold: Type.threhsold(),
+          threshold: Type.threshold(),
           aggregate_interval: Type.time(),
           window_type: nil,
           approximation_window: nil,
@@ -83,34 +83,45 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeTriggerSettings do
     {slug, result}
   end
 
-  defimpl Sanbase.Signals.Settings, for: PriceVolumeTriggerSettings do
-    def triggered?(%PriceVolumeTriggerSettings{triggered?: triggered}), do: triggered
+  defimpl Sanbase.Signals.Settings, for: PriceVolumeDifferenceTriggerSettings do
+    def triggered?(%PriceVolumeDifferenceTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PriceVolumeTriggerSettings{} = settings) do
-      case PriceVolumeTriggerSettings.get_data(settings) do
+    def evaluate(%PriceVolumeDifferenceTriggerSettings{} = settings) do
+      case PriceVolumeDifferenceTriggerSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)
 
         _ ->
-          %PriceVolumeTriggerSettings{settings | triggered?: false}
+          %PriceVolumeDifferenceTriggerSettings{settings | triggered?: false}
       end
+    end
+
+    def cache_key(%PriceVolumeDifferenceTriggerSettings{} = settings) do
+      construct_cache_key([
+        settings.time_window,
+        settings.threshold,
+        settings.aggregate_interval,
+        settings.window_type,
+        settings.approximation_window,
+        settings.comparison_window
+      ])
     end
 
     defp build_result(
            list,
-           %PriceVolumeTriggerSettings{threhsold: threhsold} = settings
+           %PriceVolumeDifferenceTriggerSettings{threshold: threshold} = settings
          ) do
       payload =
         Enum.reduce(list, %{}, fn
           {slug, {:ok, %{price_volume_diff: price_volume_diff}}}, acc
-          when price_volume_diff >= threhsold ->
+          when price_volume_diff >= threshold ->
             Map.put(acc, slug, payload(slug, settings, price_volume_diff))
 
           _, acc ->
             acc
         end)
 
-      %PriceVolumeTriggerSettings{
+      %PriceVolumeDifferenceTriggerSettings{
         settings
         | triggered?: payload != %{},
           payload: payload
@@ -122,7 +133,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeTriggerSettings do
 
       """
       The price and volume of **#{project.name}** have diverged over the threshold of #{
-        settings.threhsold
+        settings.threshold
       }. Current value: **#{price_volume_diff}**
 
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}

@@ -23,7 +23,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
             channel: nil,
             above: nil,
             below: nil,
-            repeating: false,
+            repeating: true,
             triggered?: false,
             payload: nil
 

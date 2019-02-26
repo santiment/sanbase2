@@ -5,7 +5,7 @@ defmodule Sanbase.Signals.StructMapTransformation do
     DailyActiveAddressesSettings,
     PricePercentChangeSettings,
     PriceAbsoluteChangeSettings,
-    PriceVolumeTriggerSettings,
+    PriceVolumeDifferenceTriggerSettings,
     TrendingWordsTriggerSettings
   }
 
@@ -52,7 +52,7 @@ defmodule Sanbase.Signals.StructMapTransformation do
     do: {:ok, struct!(TrendingWordsTriggerSettings, trigger_settings)}
 
   def struct_from_map(%{type: "price_volume"} = trigger_settings),
-    do: {:ok, struct!(PriceVolumeTriggerSettings, trigger_settings)}
+    do: {:ok, struct!(PriceVolumeDifferenceTriggerSettings, trigger_settings)}
 
   def struct_from_map(_), do: :error
 
@@ -65,7 +65,7 @@ defmodule Sanbase.Signals.StructMapTransformation do
   def map_from_struct(%PriceAbsoluteChangeSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
-  def map_from_struct(%PriceVolumeTriggerSettings{} = trigger_settings),
+  def map_from_struct(%PriceVolumeDifferenceTriggerSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}
 
   def map_from_struct(%TrendingWordsTriggerSettings{} = trigger_settings),

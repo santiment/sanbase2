@@ -411,6 +411,115 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert created_trigger["tags"] == tags
   end
 
+  test "fetches signals historical activity for current user", %{user: user, conn: conn} do
+    trigger_settings = %{
+      "type" => "daily_active_addresses",
+      "target" => "santiment",
+      "filtered_target_list" => [],
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "percent_threshold" => 300.0,
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
+    }
+
+    user_trigger =
+      insert(:user_triggers,
+        user: user,
+        trigger: %{
+          is_public: false,
+          settings: trigger_settings,
+          title: "alabala",
+          description: "portokala"
+        }
+      )
+
+    oldest =
+      insert(:signals_historical_activity,
+        user: user,
+        user_trigger: user_trigger,
+        payload: %{"all" => "oldest"}
+      )
+
+    sga1 =
+      insert(:signals_historical_activity,
+        user: user,
+        user_trigger: user_trigger,
+        payload: %{"all" => "test"}
+      )
+
+    sga2 =
+      insert(:signals_historical_activity,
+        user: user,
+        user_trigger: user_trigger,
+        payload: %{"all" => "test2"}
+      )
+
+    res = current_user_signals_activity(conn, "limit: 2")
+
+    assert res["signals_historical_activity"]["before"] ==
+             NaiveDateTime.to_iso8601(sga1.inserted_at)
+
+    assert res["signals_historical_activity"]["after"] ==
+             NaiveDateTime.to_iso8601(sga2.inserted_at)
+
+    assert res["signals_historical_activity"]["activity"] |> Enum.map(&Map.get(&1, "payload")) ==
+             [%{"all" => "test2"}, %{"all" => "test"}]
+
+    before_cursor = res["signals_historical_activity"]["before"]
+
+    before_cursor_res =
+      current_user_signals_activity(conn, "limit: 1, before: '#{before_cursor}Z'")
+
+    assert before_cursor_res["signals_historical_activity"]["activity"]
+           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "oldest"}]
+
+    latest =
+      insert(:signals_historical_activity,
+        user: user,
+        user_trigger: user_trigger,
+        payload: %{"all" => "latest"}
+      )
+
+    after_cursor = res["signals_historical_activity"]["after"]
+    after_cursor_res = current_user_signals_activity(conn, "limit: 1, after: '#{after_cursor}Z'")
+
+    assert after_cursor_res["signals_historical_activity"]["activity"]
+           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "latest"}]
+  end
+
+  defp current_user_signals_activity(conn, args_str) do
+    query =
+      ~s|
+    {
+      currentUser {
+        id,
+        signals_historical_activity(#{args_str}) {
+          after
+          before
+          activity {
+            payload
+            user_trigger {
+              trigger {
+                title,
+                description
+              }
+            }
+          }
+        }
+      }
+    }|
+      |> format_interpolated_json()
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> json_response(200)
+
+    result["data"]["currentUser"]
+  end
+
   defp format_interpolated_json(string) do
     string
     |> String.replace(~r|\"|, ~S|\\"|)

@@ -434,8 +434,11 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch a list of all posts/insights. The user must be logged in to access all fields for the post/insight."
     field :all_insights, list_of(:post) do
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 20)
+
       middleware(PostPermissions)
-      resolve(&PostResolver.all_insights/3)
+      cache_resolve(&PostResolver.all_insights/3)
     end
 
     @desc "Fetch a list of all posts for given user ID."

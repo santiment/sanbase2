@@ -134,6 +134,17 @@ defmodule Sanbase.Voting.Post do
     |> get_only_published_or_own_posts(user_id)
   end
 
+  def published_posts(page, page_size) do
+    from(
+      p in Post,
+      where: p.ready_state == ^@published,
+      order_by: [desc: p.updated_at],
+      limit: ^page_size,
+      offset: ^((page - 1) * page_size)
+    )
+    |> Repo.all()
+  end
+
   @doc """
     Change insights owner to be the fallback user
   """

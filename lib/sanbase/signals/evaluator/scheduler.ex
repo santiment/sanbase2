@@ -60,7 +60,7 @@ defmodule Sanbase.Signals.Scheduler do
 
   defp persist_signals(triggers) do
     triggers
-    |> Sanbase.Parallel.pmap_concurrent(
+    |> Sanbase.Parallel.pmap(
       fn %UserTrigger{} = user_trigger ->
         [
           %HistoricalActivity{}
@@ -79,7 +79,7 @@ defmodule Sanbase.Signals.Scheduler do
 
   defp send_and_mark_as_sent(triggers) do
     triggers
-    |> Sanbase.Parallel.pmap_concurrent(
+    |> Sanbase.Parallel.pmap(
       fn %UserTrigger{} = user_trigger ->
         case Signal.send(user_trigger) do
           [] ->

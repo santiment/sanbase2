@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     with projects when is_list(projects) <- Project.List.erc20_projects() do
       total_eth_spent =
         projects
-        |> Sanbase.Parallel.pmap_concurrent(&calculate_eth_spent_cached(&1, from, to).(),
+        |> Sanbase.Parallel.pmap(&calculate_eth_spent_cached(&1, from, to).(),
           timeout: 25_000
         )
         |> Enum.map(fn
@@ -102,7 +102,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
         _resolution
       ) do
     Project.List.erc20_projects()
-    |> Sanbase.Parallel.pmap_concurrent(
+    |> Sanbase.Parallel.pmap(
       &calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
       timeout: 25_000
     )

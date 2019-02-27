@@ -12,7 +12,7 @@ defmodule Sanbase.Signals.Evaluator do
   @spec run(list()) :: list()
   def run(user_triggers) do
     user_triggers
-    |> Sanbase.Parallel.pmap_concurrent(
+    |> Sanbase.Parallel.pmap(
       &evaluate/1,
       ordered: false,
       max_concurrency: 100,

@@ -198,7 +198,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
     assert "unauthorized" == error["message"]
   end
 
-  test "getting all posts as logged in user", %{user: user, conn: conn} do
+  test "all_insight returns no posts if there are none published", %{user: user, conn: conn} do
     poll = Poll.find_or_insert_current_poll!()
 
     post =
@@ -227,8 +227,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
       conn
       |> post("/graphql", query_skeleton(query, "allInsights"))
 
-    assert json_response(result, 200)["data"]["allInsights"] |> List.first() |> Map.get("text") ==
-             post.text
+    assert json_response(result, 200)["data"]["allInsights"] == []
   end
 
   test "get only published or own posts", %{conn: conn} do
@@ -378,7 +377,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
         text: "Example text, hoo",
         link: "http://www.google.com",
         state: Post.approved_state(),
-        ready_state: Post.published()
+        ready_state: Post.published(),
+        updated_at: Timex.now() |> Timex.shift(seconds: -10)
       }
       |> Repo.insert!()
 
@@ -416,6 +416,8 @@ defmodule SanbaseWeb.Graphql.PostTest do
     result =
       conn
       |> post("/graphql", query_skeleton(query, "allInsights"))
+
+    Repo.all(Post) |> IO.inspect()
 
     assert json_response(result, 200)["data"]["allInsights"] ==
              [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]

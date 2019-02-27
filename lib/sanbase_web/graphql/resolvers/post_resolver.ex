@@ -22,20 +22,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     end
   end
 
-  def all_insights(_root, _args, %{
-        context: %{auth: %{current_user: %User{id: user_id}}}
-      }) do
+  def all_insights(_root, %{page: page, page_size: page_size}, _resolution) do
     posts =
-      user_id
-      |> Post.ranked_published_or_own_posts()
-      |> Repo.preload(@preloaded_assoc)
-
-    {:ok, posts}
-  end
-
-  def all_insights(_root, _args, _context) do
-    posts =
-      Post.ranked_published_posts()
+      Post.published_posts(page, page_size)
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}

@@ -46,11 +46,12 @@ defmodule SanbaseWeb.Graphql.Complexity do
   defp calculate_complexity(%{from: from, to: to, interval: interval}, child_complexity) do
     from_unix = DateTime.to_unix(from, :second)
     to_unix = DateTime.to_unix(to, :second)
+    years_difference_weighted = Timex.diff(from, to, :years) |> abs |> Kernel.*(2) |> max(1)
     interval = if interval == "", do: "1d", else: interval
 
     interval_seconds = Sanbase.DateTimeUtils.str_to_sec(interval)
 
-    (child_complexity * ((to_unix - from_unix) / interval_seconds))
+    (child_complexity * ((to_unix - from_unix) / interval_seconds) * years_difference_weighted)
     |> Float.floor()
     |> Kernel.trunc()
   end

@@ -252,7 +252,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
-
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&GithubResolver.github_activity/3)
     end
 

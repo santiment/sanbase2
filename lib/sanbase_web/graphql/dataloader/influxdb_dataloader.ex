@@ -18,7 +18,7 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
 
     measurements
     |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.pmap(
+    |> Sanbase.Parallel.map(
       fn measurements ->
         volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
 

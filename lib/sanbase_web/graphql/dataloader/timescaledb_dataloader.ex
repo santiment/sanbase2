@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.TimescaledbDataloader do
     |> Enum.map(fn %{project: project} -> Project.contract_address(project) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(200)
-    |> Sanbase.Parallel.pmap(
+    |> Sanbase.Parallel.map(
       fn contract_addresses ->
         {:ok, daily_active_addresses} =
           DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)

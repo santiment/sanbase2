@@ -3,8 +3,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   require Mockery.Macro
 
   alias Sanbase.Model.Project
-  alias Sanbase.InternalServices.TechIndicators
-  alias Sanbase.Notifications.{Notification, Type, Discord}
+  alias Sanbase.TechIndicators
+  alias Sanbase.Notifications.{Notification, Type}
 
   defp http_client(), do: Mockery.Macro.mockable(HTTPoison)
 
@@ -26,7 +26,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       with {from_datetime, to_datetime} <- get_calculation_interval(),
            true <- volume_over_threshold?(project, currency, from_datetime, to_datetime),
            {indicator, notification_log} <-
-             get_indicator(project.ticker, currency, from_datetime, to_datetime),
+             get_indicator(project, currency, from_datetime, to_datetime),
            true <- check_notification(indicator) do
         send_notification(project, notification_type, currency, indicator, notification_log)
       end
@@ -52,10 +52,15 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     end
   end
 
-  defp get_indicator(ticker, currency, from_datetime, to_datetime) do
+  defp get_indicator(
+         %Project{} = project,
+         currency,
+         from_datetime,
+         to_datetime
+       ) do
     indicator =
-      TechIndicators.price_volume_diff_ma(
-        ticker,
+      TechIndicators.PriceVolumeDifference.price_volume_diff(
+        project,
         currency,
         from_datetime,
         to_datetime,
@@ -93,7 +98,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
 
     notification_log =
       get_notification_log(
-        ticker,
+        project,
         currency,
         from_datetime,
         to_datetime,
@@ -143,7 +148,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   end
 
   def notification_payload(
-        %Project{name: name, ticker: ticker, coinmarketcap_id: coinmarketcap_id} = project,
+        %Project{name: name, ticker: ticker} = project,
         currency,
         %{datetime: datetime, price_change: price_change, volume_change: volume_change},
         debug_info
@@ -159,7 +164,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
         "#{name}: #{ticker}/#{String.upcase(currency)} #{notification_emoji(price_change)} Price #{
           notification_emoji(volume_change)
         } Volume opposite trends (as of #{notification_date_string} UTC). #{
-          project_page(coinmarketcap_id)
+          Project.sanbase_link(project)
         } #{debug_info}",
       username: "Price-Volume Difference",
       embeds: notification_embeds(project)
@@ -170,7 +175,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     Sanbase.Chart.build_embedded_chart(
       project,
       Timex.shift(Timex.now(), days: -90),
-      Timex.shift(Timex.now(), days: -1)
+      Timex.shift(Timex.now(), days: -1),
+      chart_type: :volume
     )
   end
 
@@ -183,7 +189,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   end
 
   defp get_notification_log(
-         ticker,
+         %Project{ticker: ticker, coinmarketcap_id: slug},
          currency,
          from_datetime,
          to_datetime,
@@ -197,11 +203,11 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
     to_unix = DateTime.to_unix(to_datetime)
 
     notification_data =
-      "ticker=#{ticker}&currency=#{currency}&from_timestamp=#{from_unix}&to_timestamp=#{to_unix}&aggregate_interval=#{
-        aggregate_interval
-      }&window_type=#{window_type}&approximation_window=#{approximation_window}&comparison_window=#{
-        comparison_window
-      }&notification_threshold=#{notification_threshold}"
+      "ticker_slug=#{ticker <> "_" <> slug}&currency=#{currency}&from_timestamp=#{from_unix}&to_timestamp=#{
+        to_unix
+      }&aggregate_interval=#{aggregate_interval}&window_type=#{window_type}&approximation_window=#{
+        approximation_window
+      }&comparison_window=#{comparison_window}&notification_threshold=#{notification_threshold}"
 
     debug_info =
       case Config.get(:debug_url) do
@@ -220,13 +226,9 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
   defp nil_to_zero(nil), do: 0
   defp nil_to_zero(value), do: value
 
-  defp webhook_url() do
-    Config.get(:webhook_url)
-  end
+  defp webhook_url(), do: Config.get(:webhook_url)
 
-  defp window_type() do
-    Config.get(:window_type)
-  end
+  defp window_type(), do: Config.get(:window_type)
 
   defp approximation_window() do
     {res, _} =
@@ -266,9 +268,5 @@ defmodule Sanbase.Notifications.PriceVolumeDiff do
       |> Integer.parse()
 
     res
-  end
-
-  defp project_page(coinmarketcap_id) do
-    "https://app.santiment.net" <> "/projects/" <> coinmarketcap_id
   end
 end

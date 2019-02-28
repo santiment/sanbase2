@@ -68,4 +68,29 @@ defmodule Sanbase.Utils.Math do
     {num, _} = str |> Float.parse()
     num
   end
+
+  @doc ~s"""
+  Find the min and max in a list in a single pass. The result is returned
+  as a tuple `{min, max}` or `nil` if the list is empty
+
+  ## Examples
+      iex> Sanbase.Utils.Math.min_max([1,2,3,-1,2,1])
+      {-1, 3}
+
+      iex> Sanbase.Utils.Math.min_max([:a])
+      {:a, :a}
+
+      iex> Sanbase.Utils.Math.min_max([])
+      nil
+  """
+  def min_max([]), do: nil
+
+  def min_max([h | rest]) do
+    rest
+    |> Enum.reduce({h, h}, fn
+      elem, {min, max} when elem < min -> {elem, max}
+      elem, {min, max} when elem > max -> {min, elem}
+      _, acc -> acc
+    end)
+  end
 end

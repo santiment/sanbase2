@@ -23,7 +23,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            repeating: false,
+            repeating: true,
             triggered?: false,
             payload: nil
 
@@ -147,19 +147,6 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
       ])
     end
 
-    defp chart_url(project) do
-      Sanbase.Chart.build_embedded_chart(
-        project,
-        Timex.shift(Timex.now(), days: -90),
-        Timex.now(),
-        chart_type: :daily_active_addresses
-      )
-      |> case do
-        [%{image: %{url: chart_url}}] -> chart_url
-        _ -> nil
-      end
-    end
-
     defp payload(slug, time_window, current_daa, average_daa) do
       project = Project.by_slug(slug)
 
@@ -173,7 +160,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
       More info here: #{Project.sanbase_link(project)}
 
       ![Daily Active Addresses chart and OHCL price chart for the past 90 days](#{
-        chart_url(project)
+        chart_url(project, :daily_active_addresses)
       })
       """
     end

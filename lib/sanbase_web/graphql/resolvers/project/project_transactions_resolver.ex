@@ -8,8 +8,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
-  @max_concurrency 10
-
   def token_top_transactions(
         %Project{id: id} = project,
         %{from: from, to: to, limit: limit} = args,
@@ -107,7 +105,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     |> Sanbase.Parallel.pmap(
       &calculate_eth_spent_over_time_cached(&1, from, to, interval).(),
       timeout: 25_000,
-      max_concurrency: @max_concurrency
+      max_concurrency: 50
     )
     |> Clickhouse.EthTransfers.combine_eth_spent_by_all_projects()
   end

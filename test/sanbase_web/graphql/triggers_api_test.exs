@@ -435,7 +435,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         }
       )
 
-    oldest =
+    _oldest =
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
@@ -446,47 +446,103 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
-        payload: %{"all" => "test"}
+        payload: %{"all" => "first"}
       )
 
     sga2 =
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
-        payload: %{"all" => "test2"}
+        payload: %{"all" => "second"}
       )
 
-    res = current_user_signals_activity(conn, "limit: 2")
+    # fetch the last 2 signal activities  
+    latest_two = current_user_signals_activity(conn, "limit: 2")
 
-    assert res["signals_historical_activity"]["before"] ==
+    assert latest_two["signals_historical_activity"]["cursor"]["before"] ==
              NaiveDateTime.to_iso8601(sga1.inserted_at)
 
-    assert res["signals_historical_activity"]["after"] ==
+    assert latest_two["signals_historical_activity"]["cursor"]["after"] ==
              NaiveDateTime.to_iso8601(sga2.inserted_at)
 
-    assert res["signals_historical_activity"]["activity"] |> Enum.map(&Map.get(&1, "payload")) ==
-             [%{"all" => "test2"}, %{"all" => "test"}]
+    assert latest_two["signals_historical_activity"]["activity"]
+           |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "second"}, %{"all" => "first"}]
 
-    before_cursor = res["signals_historical_activity"]["before"]
+    before_cursor = latest_two["signals_historical_activity"]["cursor"]["before"]
 
+    # fetch one activity before previous last 2 fetched activities
     before_cursor_res =
       current_user_signals_activity(conn, "limit: 1, before: '#{before_cursor}Z'")
 
     assert before_cursor_res["signals_historical_activity"]["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "oldest"}]
 
-    latest =
+    # insert new latest activity and fetch it with after cursor
+    _latest =
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
         payload: %{"all" => "latest"}
       )
 
-    after_cursor = res["signals_historical_activity"]["after"]
+    after_cursor = latest_two["signals_historical_activity"]["cursor"]["after"]
     after_cursor_res = current_user_signals_activity(conn, "limit: 1, after: '#{after_cursor}Z'")
 
     assert after_cursor_res["signals_historical_activity"]["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "latest"}]
+  end
+
+  test "test fetching signal historical activities when there is none", %{conn: conn} do
+    result = current_user_signals_activity(conn, "limit: 2")
+    assert result["signals_historical_activity"]["activity"] == []
+    assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
+
+    result = current_user_signals_activity(conn, "limit: 1, before: '2019-01-20T00:00:00Z'")
+    assert result["signals_historical_activity"]["activity"] == []
+    assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
+
+    result = current_user_signals_activity(conn, "limit: 1, after: '2019-01-20T00:00:00Z'")
+    assert result["signals_historical_activity"]["activity"] == []
+    assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
+  end
+
+  test "test fetching signal historical activities with both cursors", %{conn: conn, user: user} do
+    trigger_settings = %{
+      "type" => "daily_active_addresses",
+      "target" => "santiment",
+      "filtered_target_list" => [],
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "percent_threshold" => 300.0,
+      "repeating" => false,
+      "payload" => nil,
+      "triggered?" => false
+    }
+
+    user_trigger =
+      insert(:user_triggers,
+        user: user,
+        trigger: %{
+          is_public: false,
+          settings: trigger_settings,
+          title: "alabala",
+          description: "portokala"
+        }
+      )
+
+    insert(:signals_historical_activity,
+      user: user,
+      user_trigger: user_trigger,
+      payload: %{"all" => "test"}
+    )
+
+    result =
+      current_user_signals_activity(
+        conn,
+        "limit: 1, before: '2019-01-20T00:00:00Z', after: '2019-01-20T00:00:00Z'"
+      )
+
+    assert result["signals_historical_activity"] == nil
   end
 
   defp current_user_signals_activity(conn, args_str) do
@@ -496,8 +552,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       currentUser {
         id,
         signals_historical_activity(#{args_str}) {
-          after
-          before
+          cursor {
+            after
+            before
+          }
           activity {
             payload
             user_trigger {

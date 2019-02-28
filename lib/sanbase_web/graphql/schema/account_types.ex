@@ -7,7 +7,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     AccountResolver,
     EthAccountResolver,
     UserSettingsResolver,
-    UserTriggerResolver
+    UserTriggerResolver,
+    SignalsHistoricalActivityResolver
   }
 
   object :user do
@@ -45,21 +46,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
       arg(:after, :datetime)
       arg(:limit, :integer, default_value: 25)
 
-      resolve(fn %Sanbase.Auth.User{} = user, args, _resolution ->
-        Sanbase.Signals.HistoricalActivity.signals_historical_activity(user, args)
-      end)
+      resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
     end
-  end
-
-  object :signal_historical_activity_paginated do
-    field(:activity, list_of(:signal_historical_activity))
-    field(:before, :naive_datetime)
-    field(:after, :naive_datetime)
-  end
-
-  object :signal_historical_activity do
-    field(:user_trigger, non_null(:user_trigger))
-    field(:payload, :json)
   end
 
   @desc ~s"""

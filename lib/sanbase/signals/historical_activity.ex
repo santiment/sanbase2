@@ -31,52 +31,44 @@ defmodule Sanbase.Signals.HistoricalActivity do
   @doc """
   Fetch signal historical activity for user with before and after cursors ordered by inserted_at descending
   * `before` cursor is pointed at the last record of the return list. 
-    It used for fetching messages `before` certain timestamp
-  * `after` cursor is pointed at newest message. It is used for fetching the latest signal activity
+    It is used for fetching messages `before` certain datetime
+  * `after` cursor is pointed at latest message. It is used for fetching the latest signal activity.
   """
 
-  def signals_historical_activity(
-        %User{id: user_id} = user,
-        %{limit: limit, before: before_datetime} = args
+  def fetch_historical_activity_for(_, %{before: before_datetime, after: after_datetime}) do
+    {:error, "Either before or after cursor should be used but not both"}
+  end
+
+  def fetch_historical_activity_for(
+        %User{id: user_id},
+        %{limit: limit, before: before_datetime}
       ) do
-    activity =
-      HistoricalActivity
-      |> user_historical_activity(user_id, limit)
-      |> before_datetime(before_datetime)
-      |> Repo.all()
-
-    {before_datetime, after_datetime} = get_cursors(activity)
-
-    {:ok, %{activity: activity, before: before_datetime, after: after_datetime}}
+    HistoricalActivity
+    |> user_historical_activity(user_id, limit)
+    |> before_datetime(before_datetime)
+    |> Repo.all()
+    |> activity_with_cursors()
   end
 
-  def signals_historical_activity(
-        %User{id: user_id} = user,
-        %{limit: limit, after: after_datetime} = args
+  def fetch_historical_activity_for(
+        %User{id: user_id},
+        %{limit: limit, after: after_datetime}
       ) do
-    activity =
-      HistoricalActivity
-      |> user_historical_activity(user_id, limit)
-      |> after_datetime(after_datetime)
-      |> Repo.all()
-
-    {new_before_datetime, new_before_datetime} = get_cursors(activity)
-
-    {:ok, %{activity: activity, before: new_before_datetime, after: new_before_datetime}}
+    HistoricalActivity
+    |> user_historical_activity(user_id, limit)
+    |> after_datetime(after_datetime)
+    |> Repo.all()
+    |> activity_with_cursors()
   end
 
-  def signals_historical_activity(%User{id: user_id} = user, %{limit: limit} = args) do
-    activity =
-      HistoricalActivity
-      |> user_historical_activity(user_id, limit)
-      |> Repo.all()
-
-    {before_datetime, after_datetime} = get_cursors(activity)
-
-    {:ok, %{activity: activity, before: before_datetime, after: after_datetime}}
+  def fetch_historical_activity_for(%User{id: user_id}, %{limit: limit}) do
+    HistoricalActivity
+    |> user_historical_activity(user_id, limit)
+    |> Repo.all()
+    |> activity_with_cursors()
   end
 
-  def signals_historical_activity(_, args), do: {:error, "Wrong arguments!"}
+  def fetch_historical_activity_for(_, _), do: {:error, "Bad arguments"}
 
   # private functions
 
@@ -104,9 +96,16 @@ defmodule Sanbase.Signals.HistoricalActivity do
     )
   end
 
-  defp get_cursors(activity) do
+  defp activity_with_cursors([]), do: {:ok, %{activity: [], cursor: %{}}}
+
+  defp activity_with_cursors(activity) do
     before_datetime = activity |> List.last() |> Map.get(:inserted_at)
     after_datetime = activity |> List.first() |> Map.get(:inserted_at)
-    {before_datetime, after_datetime}
+
+    {:ok,
+     %{
+       activity: activity,
+       cursor: %{before: before_datetime, after: after_datetime}
+     }}
   end
 end

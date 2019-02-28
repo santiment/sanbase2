@@ -23,7 +23,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ExchangeResolver,
     UserSettingsResolver,
     TelegramResolver,
-    UserTriggerResolver
+    UserTriggerResolver,
+    SignalsHistoricalActivityResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
@@ -65,6 +66,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.UserSettingsTypes)
   import_types(SanbaseWeb.Graphql.UserTriggerTypes)
   import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
+  import_types(SanbaseWeb.Graphql.PaginationTypes)
+  import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{

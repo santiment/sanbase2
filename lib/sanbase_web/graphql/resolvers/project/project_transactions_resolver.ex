@@ -80,7 +80,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
       total_eth_spent =
         projects
         |> Sanbase.Parallel.pmap(&calculate_eth_spent_cached(&1, from, to).(),
-          timeout: 25_000
+          timeout: 25_000,
+          max_concurrency: 50
         )
         |> Enum.map(fn
           {:ok, value} when not is_nil(value) -> value

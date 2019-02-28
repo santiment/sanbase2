@@ -472,7 +472,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     # fetch one activity before previous last 2 fetched activities
     before_cursor_res =
-      current_user_signals_activity(conn, "limit: 1, before: '#{before_cursor}Z'")
+      current_user_signals_activity(conn, "limit: 1, before: '#{before_cursor}'")
 
     assert before_cursor_res["signals_historical_activity"]["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "oldest"}]
@@ -486,7 +486,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       )
 
     after_cursor = latest_two["signals_historical_activity"]["cursor"]["after"]
-    after_cursor_res = current_user_signals_activity(conn, "limit: 1, after: '#{after_cursor}Z'")
+    after_cursor_res = current_user_signals_activity(conn, "limit: 1, after: '#{after_cursor}'")
 
     assert after_cursor_res["signals_historical_activity"]["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "latest"}]
@@ -497,11 +497,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert result["signals_historical_activity"]["activity"] == []
     assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
 
-    result = current_user_signals_activity(conn, "limit: 1, before: '2019-01-20T00:00:00Z'")
+    result = current_user_signals_activity(conn, "limit: 1, before: '2019-01-20T00:00:00'")
     assert result["signals_historical_activity"]["activity"] == []
     assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
 
-    result = current_user_signals_activity(conn, "limit: 1, after: '2019-01-20T00:00:00Z'")
+    result = current_user_signals_activity(conn, "limit: 1, after: '2019-01-20T00:00:00'")
     assert result["signals_historical_activity"]["activity"] == []
     assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
   end
@@ -539,7 +539,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       current_user_signals_activity(
         conn,
-        "limit: 1, before: '2019-01-20T00:00:00Z', after: '2019-01-20T00:00:00Z'"
+        "limit: 1, before: '2019-01-20T00:00:00', after: '2019-01-20T00:00:00'"
       )
 
     assert result["signals_historical_activity"] == nil

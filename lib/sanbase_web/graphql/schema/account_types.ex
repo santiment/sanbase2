@@ -42,8 +42,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     end
 
     field :signals_historical_activity, :signal_historical_activity_paginated do
-      arg(:before, :datetime)
-      arg(:after, :datetime)
+      arg(:before, :naive_datetime)
+      arg(:after, :naive_datetime)
       arg(:limit, :integer, default_value: 25)
 
       resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)

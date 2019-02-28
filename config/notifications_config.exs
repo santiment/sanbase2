@@ -61,7 +61,7 @@ config :sanbase, Sanbase.Scheduler,
     ],
     price_volume_difference_sonar_signal: [
       schedule: "1-59/5 * * * *",
-      task: {Sanbase.Signals.Scheduler, :run_price_volume_difference_signals}
+      task: {Sanbase.Signals.Scheduler, :run_price_volume_difference_signals, []}
     ],
     daily_active_addresses_sonar_signal: [
       schedule: "2-59/5 * * * *",

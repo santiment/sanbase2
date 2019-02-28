@@ -6,7 +6,7 @@ defmodule Sanbase.Parallel do
   @default_timeout 15_000
 
   def pmap(collection, func, opts \\ []) when is_function(func, 1) do
-    max_concurrency = Keyword.get(opts, :max_concurrency) || System.schedulers_online()
+    max_concurrency = Keyword.get(opts, :max_concurrency) || 2 * System.schedulers_online()
     ordered = Keyword.get(opts, :ordered) || true
     timeout = Keyword.get(opts, :timeout) || @default_timeout
     on_timeout = Keyword.get(opts, :on_timeout) || :exit

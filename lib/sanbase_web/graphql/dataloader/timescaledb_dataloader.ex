@@ -2,6 +2,8 @@ defmodule SanbaseWeb.Graphql.TimescaledbDataloader do
   alias Sanbase.Blockchain.DailyActiveAddresses
   alias Sanbase.Model.Project
 
+  @max_concurrency 15
+
   def data() do
     Dataloader.KV.new(&query/2)
   end
@@ -24,7 +26,8 @@ defmodule SanbaseWeb.Graphql.TimescaledbDataloader do
           {contract_address, addresses}
         end)
       end,
-      map_type: :flat_map
+      map_type: :flat_map,
+      max_concurrency: @max_concurrency
     )
     |> Map.new()
   end

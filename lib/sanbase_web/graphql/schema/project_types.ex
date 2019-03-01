@@ -230,7 +230,6 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
-      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&EtherbiResolver.average_daily_active_addresses/3)
     end
   end

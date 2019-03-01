@@ -61,6 +61,6 @@ defmodule SanbaseWeb.Graphql.Complexity do
   end
 
   defp years_difference_weighted(from, to) do
-    Timex.diff(from, to, :years) |> abs |> Kernel.*(2) |> max(1)
+    Timex.diff(from, to, :years) |> abs |> max(1)
   end
 end

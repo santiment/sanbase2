@@ -8,7 +8,7 @@ defmodule Sanbase.ClickhouseRepo do
   CLICKHOUSE_DATABASE_URL environment variable.
   """
   def init(_, opts) do
-    pool_size = Config.get(:pool_size) |> Sanbase.Utils.Math.to_integer()
+    pool_size = Config.get(:pool_size) |> Sanbase.Math.to_integer()
 
     opts =
       opts

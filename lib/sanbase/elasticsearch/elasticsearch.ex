@@ -14,7 +14,7 @@ defmodule Sanbase.Elasticsearch do
 
   require Sanbase.Utils.Config, as: Config
   alias Sanbase.Elasticsearch.Cluster
-  alias Sanbase.Utils.Math
+  alias Sanbase.Math
 
   @bytes_in_megabyte 1024 * 1024
   @indices Config.get(:indices)

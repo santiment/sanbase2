@@ -3,7 +3,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
-  alias Sanbase.Clickhouse.{HistoricalBalance, MVRV, NetworkGrowth}
+  alias SanbaseWeb.Graphql.Helpers.Utils
+  alias Sanbase.Clickhouse.{DailyActiveDeposits, HistoricalBalance, MVRV, NetworkGrowth}
+
+  @one_hour_seconds 3600
 
   def network_growth(_root, args, _resolution) do
     interval = DateTimeUtils.compound_duration_to_seconds(args.interval)
@@ -33,6 +36,35 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         )
 
         {:error, "Can't calculate MVRV ratio"}
+    end
+  end
+
+  def daily_active_deposits(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           Utils.calibrate_interval(
+             DailyActiveDeposits,
+             contract,
+             from,
+             to,
+             interval,
+             @one_hour_seconds,
+             50
+           ),
+         {:ok, active_deposits} <-
+           DailyActiveDeposits.active_deposits(contract, from, to, interval) do
+      {:ok, active_deposits}
+    else
+      {:error, error} ->
+        error_msg =
+          "Can't calculate daily active deposits for project with coinmarketcap_id: #{slug}."
+
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 

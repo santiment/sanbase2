@@ -428,6 +428,21 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
 
+    @desc ~s"""
+    Fetch daily active deposits for a project within a given time period.
+    Projects are referred to by a unique identifier (slug).
+    """
+    field :daily_active_deposits, list_of(:active_deposits) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
+    end
+
     @desc "Fetch the currently running poll."
     field :current_poll, :poll do
       cache_resolve(&VotingResolver.current_poll/3)

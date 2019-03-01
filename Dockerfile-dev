@@ -1,8 +1,13 @@
-FROM elixir:1.7.3
+FROM elixir:1.8.0
 
 # Install debian packages
-RUN apt-get update
-RUN apt-get install --yes build-essential inotify-tools postgresql-client
+RUN apt-get update \
+  && curl -sL https://deb.nodesource.com/setup_8.x | bash \
+  && apt-get install --yes build-essential \
+                           git \
+                           inotify-tools \
+                           postgresql-client \
+                           nodejs
 
 # Install Phoenix packages
 RUN mix local.hex --force

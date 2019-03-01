@@ -411,8 +411,7 @@ defmodule Sanbase.TechIndicatorsTest do
 
       result = fn -> TechIndicators.social_volume_projects() end
 
-      assert capture_log(result) =~
-               "Error status 404 fetching social volume projects"
+      assert capture_log(result) =~ "Error status 404 fetching social volume projects"
     end
 
     test "response: error" do

@@ -878,9 +878,8 @@ CREATE TABLE public.signals_historical_activity (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
     user_trigger_id bigint NOT NULL,
-    payload jsonb,
-    inserted_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    payload jsonb NOT NULL,
+    triggered_at timestamp without time zone NOT NULL
 );
 
 
@@ -1892,10 +1891,10 @@ CREATE INDEX schedule_rescrape_prices_project_id_index ON public.schedule_rescra
 
 
 --
--- Name: signals_historical_activity_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: signals_historical_activity_user_id_triggered_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX signals_historical_activity_user_id_index ON public.signals_historical_activity USING btree (user_id);
+CREATE INDEX signals_historical_activity_user_id_triggered_at_index ON public.signals_historical_activity USING btree (user_id, triggered_at);
 
 
 --

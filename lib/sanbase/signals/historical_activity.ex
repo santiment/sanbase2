@@ -16,13 +16,12 @@ defmodule Sanbase.Signals.HistoricalActivity do
     belongs_to(:user, User)
     belongs_to(:user_trigger, UserTrigger)
     field(:payload, :map)
-
-    timestamps()
+    field(:triggered_at, :naive_datetime)
   end
 
   def changeset(%HistoricalActivity{} = user_signal, attrs \\ %{}) do
     user_signal
-    |> cast(attrs, [:user_id, :user_trigger_id, :payload])
-    |> validate_required([:user_id, :user_trigger_id, :payload])
+    |> cast(attrs, [:user_id, :user_trigger_id, :payload, :triggered_at])
+    |> validate_required([:user_id, :user_trigger_id, :payload, :triggered_at])
   end
 end

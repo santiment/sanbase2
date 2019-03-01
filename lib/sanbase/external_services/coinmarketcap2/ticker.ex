@@ -32,7 +32,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker2 do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  import Sanbase.Utils.Math, only: [to_integer: 1, to_float: 1]
+  import Sanbase.Math, only: [to_integer: 1, to_float: 1]
 
   alias Sanbase.DateTimeUtils
   # TODO: Change after switching over to only this cmc

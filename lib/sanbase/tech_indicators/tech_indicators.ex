@@ -1,5 +1,5 @@
 defmodule Sanbase.TechIndicators do
-  import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
+  import Sanbase.Utils.ErrorHandling
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -112,7 +112,7 @@ defmodule Sanbase.TechIndicators do
         social_volume_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching social volume for project #{slug}: #{body}")
+        warn_result("Error status #{status} fetching social volume for project #{slug}")
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
@@ -129,7 +129,7 @@ defmodule Sanbase.TechIndicators do
         social_volume_projects_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching social volume projects: #{body}")
+        warn_result("Error status #{status} fetching social volume projects.")
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(

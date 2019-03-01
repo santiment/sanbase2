@@ -181,7 +181,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
       complexity(&Complexity.from_to_interval/3)
@@ -269,7 +269,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
-
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&GithubResolver.dev_activity/3)
     end
 
@@ -286,9 +286,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
 
@@ -533,7 +534,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       @desc "Currently supported currencies: USD, BTC"
       arg(:currency, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
@@ -547,7 +548,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :twitter_mention_count, list_of(:twitter_mention_count) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
@@ -561,7 +562,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     """
     field :emojis_sentiment, list_of(:emojis_sentiment) do
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
@@ -591,7 +592,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :social_volume, list_of(:social_volume) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
       arg(:social_volume_type, non_null(:social_volume_type))
 

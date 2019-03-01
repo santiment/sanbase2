@@ -186,30 +186,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     assert String.contains?(error["message"], "too complex")
   end
 
-  test "default arguments are correctly set", context do
-    query = """
-    {
-      historyPrice(
-        slug: "#{context.slug1}",
-        from: "#{context.datetime1}",
-        interval: "1h"){
-          priceUsd
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> put_req_header("authorization", "Basic " <> basic_auth())
-      |> post("/graphql", query_skeleton(query, "historyPrice"))
-
-    history_price = json_response(result, 200)["data"]["historyPrice"]
-
-    assert Enum.count(history_price) == 2
-    assert Enum.at(history_price, 0)["priceUsd"] == 20
-    assert Enum.at(history_price, 1)["priceUsd"] == 22
-  end
-
   test "complexity is 0 with basic authentication", context do
     query = """
     {
@@ -256,33 +232,6 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
       |> post("/graphql", query_skeleton(query, "historyPrice"))
 
     assert json_response(result, 200)["data"]["historyPrice"] == []
-  end
-
-  test "default arguments for total marketcap are correctly set", context do
-    query = """
-    {
-      historyPrice(
-        slug: "#{context.total_market_slug}",
-        from: "#{context.datetime1}",
-        interval: "1h"){
-        datetime
-        volume
-        marketcap
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> put_req_header("authorization", "Basic " <> basic_auth())
-      |> post("/graphql", query_skeleton(query, "historyPrice"))
-
-    history_price = json_response(result, 200)["data"]["historyPrice"]
-    assert Enum.count(history_price) == 2
-    assert Enum.at(history_price, 0)["volume"] == 1200
-    assert Enum.at(history_price, 0)["marketcap"] == 1500
-    assert Enum.at(history_price, 1)["volume"] == 1300
-    assert Enum.at(history_price, 1)["marketcap"] == 1800
   end
 
   test "the whole response is as it's expected to be", context do

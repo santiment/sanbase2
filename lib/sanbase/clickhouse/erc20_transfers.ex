@@ -49,7 +49,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
   @spec token_top_transfers(String.t(), %DateTime{}, %DateTime{}, String.t(), integer) ::
           {:ok, nil} | {:ok, list(t)} | {:error, String.t()}
   def token_top_transfers(contract, from_datetime, to_datetime, limit, token_decimals \\ 0) do
-    token_decimals = Sanbase.Utils.Math.ipow(10, token_decimals)
+    token_decimals = Sanbase.Math.ipow(10, token_decimals)
 
     {query, args} =
       token_top_transfers_query(contract, from_datetime, to_datetime, limit, token_decimals)
@@ -68,7 +68,7 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
         interval,
         token_decimals \\ 0
       ) do
-    token_decimals = Sanbase.Utils.Math.ipow(10, token_decimals)
+    token_decimals = Sanbase.Math.ipow(10, token_decimals)
 
     address = String.downcase(address)
     {query, args} = historical_balance_query(contract, address, interval, token_decimals)

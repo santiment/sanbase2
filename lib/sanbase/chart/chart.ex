@@ -9,7 +9,7 @@ defmodule Sanbase.Chart do
   alias Sanbase.Blockchain.ExchangeFundsFlow
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses
   alias Sanbase.FileStore
-  alias Sanbase.Utils.Math
+  alias Sanbase.Math
 
   require Logger
   require Mockery.Macro

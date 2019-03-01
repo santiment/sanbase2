@@ -9,7 +9,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Utils.Math, only: [to_integer: 1]
+  import Sanbase.Math, only: [to_integer: 1]
   import Sanbase.Signals.Utils
   import Sanbase.Signals.Validation
 

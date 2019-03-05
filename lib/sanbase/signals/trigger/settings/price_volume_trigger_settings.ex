@@ -130,7 +130,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
       }
     end
 
-    defp payload(slug, settings, price_volume_diff) do
+    defp payload(slug, _settings, _price_volume_diff) do
       project = Sanbase.Model.Project.by_slug(slug)
 
       """

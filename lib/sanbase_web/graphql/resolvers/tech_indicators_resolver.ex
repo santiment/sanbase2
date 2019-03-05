@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
           from: from,
           to: to,
           interval: interval,
-          result_size_tail: result_size_tail
+          size: result_size_tail
         },
         _resolution
       ) do

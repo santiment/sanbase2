@@ -87,8 +87,12 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       :get,
       {:ok,
        %HTTPoison.Response{
-         body:
-           "[{\"price_volume_diff\": 123.456, \"price_change\": 0.04862261825993345, \"volume_change\": -0.030695260272520467, \"timestamp\": 1516752000}]",
+         body: """
+          [
+            #{Sanbase.TechIndicatorsTestResponse.price_volume_diff_prepend_response()},
+            {"price_volume_diff": 123.456, "price_change": 0.04862261825993345, "volume_change": -0.030695260272520467, "timestamp": 1516752000}
+          ]
+         """,
          status_code: 200
        }}
     )

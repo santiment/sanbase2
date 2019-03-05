@@ -42,6 +42,17 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
       ) do
     url = "#{tech_indicators_url()}/indicator/pricevolumediff/ma"
 
+    # Workaround an issue with the usability of the tech_indicators api.
+    # The calculation needs to start from before the `from_datetime` so the
+    # moving average can be calculated for the specified time. Shift the datetime
+    # and drop the same number of points from the result
+    from_datetime =
+      Timex.shift(from_datetime,
+        seconds:
+          -Sanbase.DateTimeUtils.compound_duration_to_seconds(aggregate_interval) *
+            (approximation_window + comparison_window)
+      )
+
     options = [
       recv_timeout: @recv_timeout,
       params: [
@@ -59,6 +70,10 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
 
     http_client().get(url, [], options)
     |> handle_result(project)
+    |> case do
+      {:ok, result} -> {:ok, result |> Enum.drop(approximation_window + comparison_window)}
+      error -> error
+    end
   end
 
   defp handle_result({:ok, %HTTPoison.Response{status_code: 200, body: body}}, _project) do

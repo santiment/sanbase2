@@ -59,8 +59,12 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       get: fn _, _, _ ->
         {:ok,
          %HTTPoison.Response{
-           body:
-             "[{\"price_volume_diff\": 0.0001, \"price_change\": 0.04, \"volume_change\": 0.03, \"timestamp\": 1516752000}]",
+           body: """
+           [
+             #{Sanbase.TechIndicatorsTestResponse.price_volume_diff_prepend_response()},
+             {"price_volume_diff": 0.0001, "price_change": 0.04, "volume_change": 0.03, "timestamp": 1516752000}
+           ]
+           """,
            status_code: 200
          }}
       end do
@@ -78,8 +82,12 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       get: fn _, _, _ ->
         {:ok,
          %HTTPoison.Response{
-           body:
-             "[{\"price_volume_diff\": 0.01, \"price_change\": 0.04, \"volume_change\": 0.03, \"timestamp\": 1516752000}]",
+           body: """
+           [
+             #{Sanbase.TechIndicatorsTestResponse.price_volume_diff_prepend_response()},
+             {"price_volume_diff": 0.01, "price_change": 0.04, "volume_change": 0.03, "timestamp": 1516752000}
+           ]
+           """,
            status_code: 200
          }}
       end do

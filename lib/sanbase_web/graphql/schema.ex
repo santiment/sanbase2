@@ -536,7 +536,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
-      arg(:result_size_tail, :integer, default_value: 0)
+      arg(:size, :integer, default_value: 0)
 
       middleware(ApiTimeframeRestriction)
 

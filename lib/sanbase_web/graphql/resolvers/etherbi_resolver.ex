@@ -20,16 +20,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
-             Blockchain.TokenAgeConsumed,
-             contract_address,
-             from,
-             to,
-             interval,
-             60 * 60,
-             50
-           ),
          {:ok, token_age_consumed} <-
            Blockchain.TokenAgeConsumed.token_age_consumed(
              contract_address,
@@ -60,16 +50,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
-             Blockchain.TokenAgeConsumed,
-             contract_address,
-             from,
-             to,
-             interval,
-             60 * 60,
-             50
-           ),
          {:ok, token_age} <-
            Blockchain.TokenAgeConsumed.average_token_age_consumed_in_days(
              contract_address,
@@ -96,16 +76,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
-             Blockchain.TransactionVolume,
-             contract_address,
-             from,
-             to,
-             interval,
-             60 * 60,
-             50
-           ),
          {:ok, trx_volumes} <-
            Blockchain.TransactionVolume.transaction_volume(
              contract_address,
@@ -136,16 +106,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, contract_address, _token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
-             Blockchain.DailyActiveAddresses,
-             contract_address,
-             from,
-             to,
-             interval,
-             24 * 60 * 60,
-             50
-           ),
          {:ok, daily_active_addresses} <-
            Blockchain.DailyActiveAddresses.average_active_addresses(
              contract_address,
@@ -184,15 +144,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
-             Blockchain.ExchangeFundsFlow,
-             contract_address,
-             from,
-             to,
-             interval,
-             60 * 60
-           ),
          {:ok, exchange_funds_flow} <-
            Blockchain.ExchangeFundsFlow.transactions_in_out_difference(
              contract_address,
@@ -223,16 +174,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
-             Blockchain.TokenCirculation,
-             contract_address,
-             from,
-             to,
-             interval,
-             60 * 60 * 24,
-             90
-           ),
          {:ok, token_circulation} <-
            Blockchain.TokenCirculation.token_circulation(
              :less_than_a_day,
@@ -264,16 +205,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
         _resolution
       ) do
     with {:ok, contract_address, token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
-             Blockchain.TokenVelocity,
-             contract_address,
-             from,
-             to,
-             interval,
-             60 * 60 * 24,
-             90
-           ),
          {:ok, token_velocity} <-
            Blockchain.TokenVelocity.token_velocity(
              contract_address,

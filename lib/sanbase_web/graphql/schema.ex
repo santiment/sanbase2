@@ -39,7 +39,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ProjectPermissions,
     PostPermissions,
     ApiTimeframeRestriction,
-    ApiUsage
+    ApiUsage,
+    CalibrateInterval
   }
 
   import_types(Absinthe.Plug.Types)
@@ -253,6 +254,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       complexity(&Complexity.from_to_interval/3)
+
+      middleware(CalibrateInterval, %{
+        module: Sanbase.Clickhouse.Github,
+        min_interval_seconds: 3600,
+        data_points_count: 50
+      })
+
       cache_resolve(&GithubResolver.github_activity/3)
     end
 
@@ -311,6 +319,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+
+      middleware(CalibrateInterval, %{
+        module: Sanbase.Blockchain.TokenAgeConsumed,
+        min_interval_seconds: 300,
+        data_points_count: 50
+      })
+
       cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
@@ -322,6 +337,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+
+      middleware(CalibrateInterval, %{
+        module: Sanbase.Blockchain.TokenAgeConsumed,
+        min_interval_seconds: 300,
+        data_points_count: 50
+      })
+
       cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
@@ -341,6 +363,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+
+      middleware(CalibrateInterval, %{
+        module: Sanbase.Blockchain.TransactionVolume,
+        min_interval_seconds: 300,
+        data_points_count: 50
+      })
+
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
 
@@ -376,6 +405,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+
+      middleware(CalibrateInterval, %{
+        module: Sanbase.Blockchain.TokenCirculation,
+        min_interval_seconds: 300,
+        data_points_count: 50
+      })
+
       cache_resolve(&EtherbiResolver.token_circulation/3)
     end
 
@@ -392,6 +428,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+
       cache_resolve(&EtherbiResolver.token_velocity/3)
     end
 
@@ -414,6 +451,13 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       complexity(&Complexity.from_to_interval/3)
+
+      middleware(CalibrateInterval, %{
+        module: Sanbase.Blockchain.DailyActiveAddresses,
+        min_interval_seconds: 300,
+        data_points_count: 50
+      })
+
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
 

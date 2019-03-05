@@ -50,15 +50,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.GithubResolver do
         _resolution
       ) do
     with {:ok, github_organization} <- Project.github_organization(slug),
-         {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
-             Sanbase.Clickhouse.Github,
-             github_organization,
-             from,
-             to,
-             interval,
-             24 * 60 * 60
-           ),
          {:ok, result} <-
            Sanbase.Clickhouse.Github.github_activity(
              github_organization,

@@ -417,7 +417,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
       conn
       |> post("/graphql", query_skeleton(query, "allInsights"))
 
-    Repo.all(Post) |> IO.inspect()
+    Repo.all(Post)
 
     assert json_response(result, 200)["data"]["allInsights"] ==
              [%{"id" => "#{post2.id}"}, %{"id" => "#{post.id}"}]

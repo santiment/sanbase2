@@ -2,11 +2,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
   require Sanbase.Utils.Config, as: Config
 
   alias Sanbase.TechIndicators
+  alias Sanbase.Model.Project
 
   def price_volume_diff(
         _root,
         %{
-          ticker: ticker,
+          slug: slug,
           currency: currency,
           from: from,
           to: to,
@@ -16,7 +17,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
         _resolution
       ) do
     TechIndicators.PriceVolumeDifference.price_volume_diff(
-      ticker,
+      Project.by_slug(slug),
       currency,
       from,
       to,

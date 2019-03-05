@@ -530,7 +530,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     specifically when price goes up as volume goes down.
     """
     field :price_volume_diff, list_of(:price_volume_diff) do
-      arg(:ticker, non_null(:string))
+      arg(:slug, non_null(:string))
       @desc "Currently supported currencies: USD, BTC"
       arg(:currency, non_null(:string))
       arg(:from, non_null(:datetime))

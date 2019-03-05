@@ -1,5 +1,5 @@
 defmodule Sanbase.TechIndicators.PriceVolumeDifference do
-  import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
+  import Sanbase.Utils.ErrorHandling
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -67,7 +67,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
   end
 
   defp handle_result({:ok, %HTTPoison.Response{status_code: status, body: body}}, project) do
-    error_result(
+    warn_result(
       "Error status #{status} fetching price-volume diff for #{Project.describe(project)}: #{body}"
     )
   end

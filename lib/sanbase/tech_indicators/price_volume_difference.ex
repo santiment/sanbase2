@@ -42,6 +42,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
       ) do
     url = "#{tech_indicators_url()}/indicator/pricevolumediff/ma"
 
+    # Workaround an issue with the usability of the tech_indicators api.
     # The calculation needs to start from before the `from_datetime` so the
     # moving average can be calculated for the specified time. Shift the datetime
     # and drop the same number of points from the result

@@ -33,7 +33,6 @@ defmodule Sanbase.Clickhouse.EthTransfers do
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
   @table "eth_transfers"
   @eth_decimals 1_000_000_000_000_000_000

@@ -22,6 +22,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance do
             interval
           )
       end
+    else
+      {:error, error} -> {:error, inspect(error)}
     end
   end
 end

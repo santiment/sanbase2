@@ -1,14 +1,46 @@
 defmodule Sanbase.Parallel do
   @doc ~s"""
-  Module implementing concurrent map and filter functions on enumerable under Sanbase.TaskSupervisor
+
   """
 
-  @default_timeout 15_000
+  def preject(collection, func, opts) when is_function(func, 1) do
+    timeout = Keyword.get(opts, :timeout) || 15_000
 
-  def map(collection, func, opts \\ []) when is_function(func, 1) do
-    max_concurrency = Keyword.get(opts, :max_concurrency) || 2 * System.schedulers_online()
+    collection
+    |> Enum.map(&Task.async(fn -> func.(&1) end))
+    |> Enum.map(&Task.await(&1, timeout))
+
+    collection
+    |> Stream.map(&Task.async(fn -> {func.(&1), &1} end))
+    |> Stream.map(&Task.await(&1, timeout))
+    |> Stream.reject(fn {bool, _item} -> bool === true end)
+    |> Enum.map(fn {_bool, item} -> item end)
+  end
+
+  def pfilter(collection, func, opts) when is_function(func, 1) do
+    preject(collection, &(not func.(&1)), opts)
+  end
+
+  def pmap(collection, func, opts \\ []) when is_function(func, 1) do
+    timeout = Keyword.get(opts, :timeout) || 15_000
+
+    collection
+    |> Enum.map(&Task.async(fn -> func.(&1) end))
+    |> Enum.map(&Task.await(&1, timeout))
+  end
+
+  def flat_pmap(collection, func, opts \\ []) when is_function(func, 1) do
+    timeout = Keyword.get(opts, :timeout) || 15_000
+
+    collection
+    |> Enum.map(&Task.async(fn -> func.(&1) end))
+    |> Enum.flat_map(&Task.await(&1, timeout))
+  end
+
+  def pmap_concurrent(collection, func, opts \\ []) when is_function(func, 1) do
+    max_concurrency = Keyword.get(opts, :max_concurrency) || System.schedulers_online()
     ordered = Keyword.get(opts, :ordered) || true
-    timeout = Keyword.get(opts, :timeout) || @default_timeout
+    timeout = Keyword.get(opts, :timeout) || 15_000
     on_timeout = Keyword.get(opts, :on_timeout) || :exit
     map_type = Keyword.get(opts, :map_type) || :map
 
@@ -46,16 +78,16 @@ defmodule Sanbase.Parallel do
     end
   end
 
-  def filter(collection, func, opts \\ []) when is_function(func, 1) do
+  def pfilter_concurrent(collection, func, opts \\ []) when is_function(func, 1) do
     filter_func = fn x -> {func.(x), x} end
 
-    map(collection, filter_func, opts)
+    pmap_concurrent(collection, filter_func, opts)
     |> Enum.filter(fn {bool, _item} -> bool === true end)
     |> Enum.map(fn {_bool, item} -> item end)
   end
 
-  def reject(collection, func, opts \\ []) when is_function(func, 1) do
+  def preject_concurrent(collection, func, opts \\ []) when is_function(func, 1) do
     reject_func = fn x -> not func.(x) end
-    filter(collection, reject_func, opts)
+    pfilter_concurrent(collection, reject_func, opts)
   end
 end

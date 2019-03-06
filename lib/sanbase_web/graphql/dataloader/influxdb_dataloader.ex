@@ -3,8 +3,6 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
   alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
-  @max_concurrency 10
-
   def data() do
     Dataloader.KV.new(&query/2)
   end
@@ -18,25 +16,22 @@ defmodule SanbaseWeb.Graphql.InfluxdbDataloader do
 
     measurements
     |> Enum.chunk_every(100)
-    |> Sanbase.Parallel.map(
-      fn measurements ->
-        volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
+    |> Sanbase.Parallel.pmap(fn measurements ->
+      volumes_last_24h = Prices.Store.fetch_mean_volume(measurements, yesterday, now)
 
-        volumes_previous_24h_map =
-          Prices.Store.fetch_mean_volume(measurements, two_days_ago, yesterday) |> Map.new()
+      volumes_previous_24h_map =
+        Prices.Store.fetch_mean_volume(measurements, two_days_ago, yesterday) |> Map.new()
 
-        volumes_last_24h
-        |> Enum.map(fn {name, today_vol} ->
-          yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
+      volumes_last_24h
+      |> Enum.map(fn {name, today_vol} ->
+        yesterday_vol = Map.get(volumes_previous_24h_map, name, 0)
 
-          if yesterday_vol > 1 do
-            {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
-          end
-        end)
-        |> Enum.reject(&is_nil/1)
-      end,
-      max_concurrency: @max_concurrency
-    )
+        if yesterday_vol > 1 do
+          {name, (today_vol - yesterday_vol) * 100 / yesterday_vol}
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+    end)
     |> Enum.flat_map(& &1)
     |> Map.new()
   end

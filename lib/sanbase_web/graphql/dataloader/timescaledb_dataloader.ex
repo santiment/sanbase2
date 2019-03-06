@@ -2,8 +2,6 @@ defmodule SanbaseWeb.Graphql.TimescaledbDataloader do
   alias Sanbase.Blockchain.DailyActiveAddresses
   alias Sanbase.Model.Project
 
-  @max_concurrency 15
-
   def data() do
     Dataloader.KV.new(&query/2)
   end
@@ -16,19 +14,15 @@ defmodule SanbaseWeb.Graphql.TimescaledbDataloader do
     |> Enum.map(fn %{project: project} -> Project.contract_address(project) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(200)
-    |> Sanbase.Parallel.map(
-      fn contract_addresses ->
-        {:ok, daily_active_addresses} =
-          DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
+    |> Sanbase.Parallel.flat_pmap(fn contract_addresses ->
+      {:ok, daily_active_addresses} =
+        DailyActiveAddresses.average_active_addresses(contract_addresses, from, to)
 
-        daily_active_addresses
-        |> Enum.map(fn {contract_address, addresses} ->
-          {contract_address, addresses}
-        end)
-      end,
-      map_type: :flat_map,
-      max_concurrency: @max_concurrency
-    )
+      daily_active_addresses
+      |> Enum.map(fn {contract_address, addresses} ->
+        {contract_address, addresses}
+      end)
+    end)
     |> Map.new()
   end
 end

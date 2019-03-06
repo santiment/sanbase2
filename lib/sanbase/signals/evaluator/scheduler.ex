@@ -68,13 +68,10 @@ defmodule Sanbase.Signals.Scheduler do
     |> Enum.filter(fn
       %UserTrigger{
         trigger: %{
-          settings: %{triggered?: true, payload: _payload}
+          settings: %{triggered?: triggered?}
         }
       } ->
-        true
-
-      _ ->
-        false
+        triggered?
     end)
   end
 
@@ -156,10 +153,10 @@ defmodule Sanbase.Signals.Scheduler do
       _ ->
         nil
     end)
-    |> Enum.reject(fn persist_args -> persist_args == nil end)
+    |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(200)
     |> Enum.each(fn chunk ->
-      Sanbase.Repo.insert_all(HistoricalActivity, chunk, on_conflict: :nothing)
+      Sanbase.Repo.insert_all(HistoricalActivity, chunk)
     end)
   end
 

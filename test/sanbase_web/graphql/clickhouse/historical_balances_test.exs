@@ -112,7 +112,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
   end
 
   test "historical balances when query returns error", context do
-    with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:error, :invalid} end do
+    with_mock Sanbase.ClickhouseRepo,
+      query: fn _, _ -> {:error, "Some error description here"} end do
       query =
         historical_balances_query(
           "ethereum",
@@ -122,13 +123,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
           context.interval
         )
 
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "historicalBalance"))
-        |> json_response(200)
+      assert capture_log(fn ->
+               result =
+                 context.conn
+                 |> post("/graphql", query_skeleton(query, "historicalBalance"))
+                 |> json_response(200)
 
-      historical_balance = result["data"]["historicalBalance"]
-      assert historical_balance == nil
+               historical_balance = result["data"]["historicalBalance"]
+               assert historical_balance == nil
+             end) =~
+               ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id ethereum. Reason: "Some error description here"/
     end
   end
 
@@ -228,7 +232,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
              "{:missing_contract, \\\"Can't find contract address of project with coinmarketcap_id someid1\\\"}"
   end
 
-  test "clickhouse returns error", context do
+  test "historical balances when clickhouse returns error", context do
     with_mock Sanbase.ClickhouseRepo,
       query: fn _, _ ->
         {:error, "something bad happened"}
@@ -242,10 +246,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
           context.interval
         )
 
-      result =
-        context.conn
-        |> post("/graphql", query_skeleton(query, "historicalBalance"))
-        |> json_response(200)
+      assert capture_log(fn ->
+               result =
+                 context.conn
+                 |> post("/graphql", query_skeleton(query, "historicalBalance"))
+                 |> json_response(200)
+             end) =~
+               ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id someid2. Reason: "something bad happened"/
     end
   end
 

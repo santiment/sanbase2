@@ -5,6 +5,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
 
   use Ecto.Schema
 
+  import Sanbase.Clickhouse.HistoricalBalance.Utils
+
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
   @eth_decimals 1_000_000_000_000_000_000
@@ -41,20 +43,9 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     end)
     |> case do
       {:ok, result} ->
-        # Clickhouse fills empty buckets with 0 while we need it filled with the last
-        # seen value. As the balance changes happen only when a transfer occurs
-        # then we need to fetch the whole history of changes in order to find the balance
         result =
           result
-          |> Enum.reduce({0, []}, fn
-            %{sign: 1, balance: balance, datetime: dt}, {_last_seen, acc} ->
-              {balance, [%{balance: balance, datetime: dt} | acc]}
-
-            %{sign: 0, datetime: dt}, {last_seen, acc} ->
-              {last_seen, [%{balance: last_seen, datetime: dt} | acc]}
-          end)
-          |> elem(1)
-          |> Enum.reverse()
+          |> fill_gaps_last_seen_balance()
           |> Enum.drop_while(fn %{datetime: dt} -> DateTime.compare(dt, from) == :lt end)
 
         {:ok, result}
@@ -72,6 +63,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     to_unix = DateTime.to_unix(to)
     span = div(to_unix - @first_datetime, interval) |> max(1)
 
+    # The balances table is like a stack. For each balance change there is a record
+    # with sign = -1 that is the old balance and with sign = 1 which is the new balance
     query = """
     SELECT time, SUM(value), toInt32(SUM(sign))
       FROM (

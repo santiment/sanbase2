@@ -7,6 +7,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
   use Ecto.Schema
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
+  import Sanbase.Clickhouse.HistoricalBalance.Utils
 
   @type historical_balance :: %{
           datetime: non_neg_integer(),
@@ -32,8 +33,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
           non_neg_integer(),
           DateTime.t(),
           DateTime.t(),
-          non_neg_integer()
-        ) :: {:ok, list(historical_balance)}
+          String.t()
+        ) :: {:ok, list(historical_balance)} | {:error, String.t()}
   def historical_balance(address, contract, token_decimals, from, to, interval) do
     token_decimals = Sanbase.Math.ipow(10, token_decimals)
     address = String.downcase(address)
@@ -55,21 +56,13 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
         # then we need to fetch the whole history of changes in order to find the balance
         result =
           result
-          |> Enum.reduce({0, []}, fn
-            %{sign: 1, balance: balance, datetime: dt}, {_last_seen, acc} ->
-              {balance, [%{balance: balance, datetime: dt} | acc]}
-
-            %{sign: 0, datetime: dt}, {last_seen, acc} ->
-              {last_seen, [%{balance: last_seen, datetime: dt} | acc]}
-          end)
-          |> elem(1)
-          |> Enum.reverse()
+          |> fill_gaps_last_seen_balance()
           |> Enum.drop_while(fn %{datetime: dt} -> DateTime.compare(dt, from) == :lt end)
 
         {:ok, result}
 
-      error ->
-        error
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -81,6 +74,8 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     to_unix = DateTime.to_unix(to)
     span = div(to_unix - @first_datetime, interval) |> max(1)
 
+    # The balances table is like a stack. For each balance change there is a record
+    # with sign = -1 that is the old balance and with sign = 1 which is the new balance
     query = """
     SELECT time, SUM(value), toInt32(SUM(sign))
       FROM (

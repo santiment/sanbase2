@@ -80,26 +80,21 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     SELECT time, SUM(value), toInt32(SUM(sign))
       FROM (
         SELECT
-          toDateTime(intDiv(toUInt32(?4 + number * ?1), ?1) * ?1) as time,
+          toDateTime(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
           toFloat64(0) AS value,
-          toInt32(0) as sign
+          toInt32(0) AS sign
         FROM numbers(?2)
 
-        UNION ALL
+    UNION ALL
 
-    SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, argMax(value, dt), argMax(sign, dt)
-      FROM (
-        SELECT any(value) as value, dt, 1 as sign
-        FROM #{@table}
-        PREWHERE address = ?3
-        AND contract = ?4
-        AND sign = 1
-        AND dt >= toDateTime(?5)
-        AND dt <= toDateTime(?6)
-        GROUP BY address, dt
-      )
+    SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time, argMax(value, dt), toInt32(1) AS sign
+      FROM #{@table}
+      PREWHERE address = ?3
+      AND contract = ?4
+      AND sign = 1
+      AND dt >= toDateTime(?5)
+      AND dt <= toDateTime(?6)
       GROUP BY time
-      ORDER BY time
     )
     GROUP BY time
     ORDER BY time

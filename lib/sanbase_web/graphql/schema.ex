@@ -429,7 +429,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :post, :post do
       arg(:id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.post/3)
     end
 
@@ -438,7 +437,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:page, :integer, default_value: 1)
       arg(:page_size, :integer, default_value: 20)
 
-      middleware(PostPermissions)
       cache_resolve(&PostResolver.all_insights/3)
     end
 
@@ -446,7 +444,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights_for_user, list_of(:post) do
       arg(:user_id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_for_user/3)
     end
 
@@ -454,7 +451,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights_user_voted, list_of(:post) do
       arg(:user_id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_user_voted_for/3)
     end
 
@@ -465,7 +461,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights_by_tag, list_of(:post) do
       arg(:tag, non_null(:string))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_by_tag/3)
     end
 

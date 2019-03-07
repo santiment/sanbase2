@@ -76,7 +76,6 @@ defmodule Sanbase.Clickhouse.Erc20Transfers do
     balances =
       query
       |> ClickhouseRepo.query_transform(args, fn [dt, value] -> {dt, value} end)
-      |> ClickhouseCommon.convert_historical_balance_result(from_datetime, to_datetime, interval)
 
     {:ok, balances}
   end

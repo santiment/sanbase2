@@ -1,6 +1,6 @@
 defmodule Sanbase.Signals.History.PricesHistory do
   @moduledoc """
-  Implementations of historical trigger points for price_percent_change and 
+  Implementations of historical trigger points for price_percent_change and
   price_absolute_change triggers. Historical prices are bucketed at `1 hour` intervals and goes
   `90 days` back.
   """
@@ -26,7 +26,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
           triggered?: boolean()
         }
 
-  def get_prices(%{target: target} = settings) when is_binary(target) do
+  def get_prices(%{target: target}) when is_binary(target) do
     with measurement when not is_nil(measurement) <- Measurement.name_from_slug(target),
          {from, to, interval} <- get_timeseries_params(),
          {:ok, price_list} when is_list(price_list) and price_list != [] <-
@@ -116,7 +116,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
   defimpl Sanbase.Signals.History, for: PricePercentChangeSettings do
     alias Sanbase.Signals.History.PricesHistory
 
-    # Minimal time window is set to 2 hours. That is due to interval buckets being 1 hour each. 
+    # Minimal time window is set to 2 hours. That is due to interval buckets being 1 hour each.
     @minimal_time_window 2
 
     @spec historical_trigger_points(%PricePercentChangeSettings{}, String.t()) ::

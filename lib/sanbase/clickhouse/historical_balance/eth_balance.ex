@@ -62,11 +62,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
   @first_datetime ~N[2015-07-29 00:00:00]
                   |> DateTime.from_naive!("Etc/UTC")
                   |> DateTime.to_unix()
-  defp historical_balance_query(address, from, to, interval) do
+  defp historical_balance_query(address, _from, to, interval) do
     interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
-    from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    span = div(to_unix - @first_datetime, interval) |> max(1) |> IO.inspect(label: "SPAN")
+    span = div(to_unix - @first_datetime, interval) |> max(1)
 
     # The balances table is like a stack. For each balance change there is a record
     # with sign = -1 that is the old balance and with sign = 1 which is the new balance

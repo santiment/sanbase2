@@ -167,69 +167,6 @@ defmodule SanbaseWeb.Graphql.PostTest do
            ] == json_response(result, 200)["data"]["allInsights"]
   end
 
-  test "trying to get not allowed field from posts as anon user", %{user: user} do
-    poll = Poll.find_or_insert_current_poll!()
-
-    %Post{
-      poll_id: poll.id,
-      user_id: user.id,
-      title: "Awesome analysis",
-      short_desc: "Example analysis short description",
-      text: "Example text, hoo",
-      link: "http://www.google.com",
-      state: Post.approved_state(),
-      ready_state: Post.published()
-    }
-    |> Repo.insert!()
-
-    query = """
-    {
-      allInsights {
-        text,
-      }
-    }
-    """
-
-    result =
-      build_conn()
-      |> post("/graphql", query_skeleton(query, "allInsights"))
-
-    [error] = json_response(result, 200)["errors"]
-    assert "unauthorized" == error["message"]
-  end
-
-  test "all_insight returns no posts if there are none published", %{user: user, conn: conn} do
-    poll = Poll.find_or_insert_current_poll!()
-
-    post =
-      %Post{
-        poll_id: poll.id,
-        user_id: user.id,
-        title: "Awesome analysis",
-        short_desc: "Example analysis short description",
-        text: "Example text, hoo",
-        link: "http://www.google.com",
-        state: Post.approved_state()
-      }
-      |> Repo.insert!()
-
-    query = """
-    {
-      allInsights {
-        id,
-        text,
-        readyState
-      }
-    }
-    """
-
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "allInsights"))
-
-    assert json_response(result, 200)["data"]["allInsights"] == []
-  end
-
   test "get only published or own posts", %{conn: conn} do
     poll = Poll.find_or_insert_current_poll!()
 

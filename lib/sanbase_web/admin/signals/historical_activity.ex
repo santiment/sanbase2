@@ -7,6 +7,7 @@ defmodule Sanbase.ExAdmin.Signals.HistoricalActivity do
     index do
       column(:user)
       column(:user_trigger_id)
+      column(:triggered_at)
       column(:payload, &Jason.encode!(&1.payload))
     end
 
@@ -14,6 +15,7 @@ defmodule Sanbase.ExAdmin.Signals.HistoricalActivity do
       attributes_table do
         row(:user)
         row(:user_trigger_id)
+        row(:triggered_at)
         row("Payload", &Jason.encode!(&1.payload))
       end
     end

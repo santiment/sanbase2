@@ -66,7 +66,7 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     interval = Sanbase.DateTimeUtils.compound_duration_to_seconds(interval)
     from_unix = DateTime.to_unix(from)
     to_unix = DateTime.to_unix(to)
-    span = div(to_unix - @first_datetime, interval) |> max(1) |> IO.inspect(label: "SPAN")
+    span = div(to_unix - @first_datetime, interval) |> max(1)
 
     # The balances table is like a stack. For each balance change there is a record
     # with sign = -1 that is the old balance and with sign = 1 which is the new balance

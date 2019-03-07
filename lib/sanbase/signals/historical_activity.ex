@@ -28,7 +28,7 @@ defmodule Sanbase.Signals.HistoricalActivity do
   end
 
   @doc """
-  Fetch signal historical activity for user with before and after cursors ordered by inserted_at descending
+  Fetch signal historical activity for user with before and after cursors ordered by triggered_at descending
   * `before` cursor is pointed at the last record of the return list. 
     It is used for fetching messages `before` certain datetime
   * `after` cursor is pointed at latest message. It is used for fetching the latest signal activity.
@@ -75,7 +75,7 @@ defmodule Sanbase.Signals.HistoricalActivity do
     from(
       ha in query,
       where: ha.user_id == ^user_id,
-      order_by: [desc: ha.inserted_at],
+      order_by: [desc: ha.triggered_at],
       limit: ^limit,
       preload: :user_trigger
     )
@@ -84,22 +84,22 @@ defmodule Sanbase.Signals.HistoricalActivity do
   defp before_datetime(query, before_datetime) do
     from(
       ha in query,
-      where: ha.inserted_at < ^before_datetime
+      where: ha.triggered_at < ^before_datetime
     )
   end
 
   defp after_datetime(query, after_datetime) do
     from(
       ha in query,
-      where: ha.inserted_at > ^after_datetime
+      where: ha.triggered_at > ^after_datetime
     )
   end
 
   defp activity_with_cursors([]), do: {:ok, %{activity: [], cursor: %{}}}
 
   defp activity_with_cursors(activity) do
-    before_datetime = activity |> List.last() |> Map.get(:inserted_at)
-    after_datetime = activity |> List.first() |> Map.get(:inserted_at)
+    before_datetime = activity |> List.last() |> Map.get(:triggered_at)
+    after_datetime = activity |> List.first() |> Map.get(:triggered_at)
 
     {:ok,
      %{

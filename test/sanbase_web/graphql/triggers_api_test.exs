@@ -6,6 +6,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Signals.UserTrigger
+  alias Sanbase.DateTimeUtils
 
   setup do
     user = insert(:user, email: "test@example.com")
@@ -439,31 +440,42 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
-        payload: %{"all" => "oldest"}
+        payload: %{"all" => "oldest"},
+        triggered_at: NaiveDateTime.from_iso8601!("2019-01-20T00:00:00")
       )
 
     sga1 =
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
-        payload: %{"all" => "first"}
+        payload: %{"all" => "first"},
+        triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
       )
 
     sga2 =
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
-        payload: %{"all" => "second"}
+        payload: %{"all" => "second"},
+        triggered_at: NaiveDateTime.from_iso8601!("2019-01-22T00:00:00")
       )
 
     # fetch the last 2 signal activities  
     latest_two = current_user_signals_activity(conn, "limit: 2")
 
-    assert latest_two["signals_historical_activity"]["cursor"]["before"] ==
-             NaiveDateTime.to_iso8601(sga1.inserted_at)
+    assert NaiveDateTime.compare(
+             NaiveDateTime.from_iso8601!(
+               latest_two["signals_historical_activity"]["cursor"]["before"]
+             ),
+             sga1.triggered_at
+           ) == :eq
 
-    assert latest_two["signals_historical_activity"]["cursor"]["after"] ==
-             NaiveDateTime.to_iso8601(sga2.inserted_at)
+    assert NaiveDateTime.compare(
+             NaiveDateTime.from_iso8601!(
+               latest_two["signals_historical_activity"]["cursor"]["after"]
+             ),
+             sga2.triggered_at
+           ) == :eq
 
     assert latest_two["signals_historical_activity"]["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "second"}, %{"all" => "first"}]
@@ -482,7 +494,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
-        payload: %{"all" => "latest"}
+        payload: %{"all" => "latest"},
+        triggered_at: NaiveDateTime.from_iso8601!("2019-01-23T00:00:00")
       )
 
     after_cursor = latest_two["signals_historical_activity"]["cursor"]["after"]
@@ -533,7 +546,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     insert(:signals_historical_activity,
       user: user,
       user_trigger: user_trigger,
-      payload: %{"all" => "test"}
+      payload: %{"all" => "test"},
+      triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
     )
 
     result =
@@ -557,7 +571,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
             before
           }
           activity {
-            payload
+            payload,
+            triggered_at,
             user_trigger {
               trigger {
                 title,

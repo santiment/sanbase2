@@ -33,7 +33,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.Ticker do
 
   require Sanbase.Utils.Config, as: Config
 
-  import Sanbase.Utils.Math, only: [to_integer: 1, to_float: 1]
+  import Sanbase.Math, only: [to_integer: 1, to_float: 1]
 
   alias Sanbase.DateTimeUtils
   alias Sanbase.ExternalServices.Coinmarketcap.PricePoint

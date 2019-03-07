@@ -16,6 +16,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   }
 
   alias SanbaseWeb.Graphql.SanbaseRepo
+  alias SanbaseWeb.Graphql.Complexity
 
   # Includes all available fields
   @desc ~s"""
@@ -199,6 +200,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time/3)
     end
 
@@ -209,6 +211,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:transaction_type, :transaction_type, default_value: :all)
       arg(:limit, :integer, default_value: 10)
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&ProjectTransactionsResolver.eth_top_transactions/3)
     end
 
@@ -218,6 +221,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:to, non_null(:datetime))
       arg(:limit, :integer, default_value: 10)
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&ProjectTransactionsResolver.token_top_transactions/3)
     end
 

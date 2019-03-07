@@ -1,26 +1,73 @@
-defmodule Sanbase.InternalServices.TechIndicatorsTest do
+defmodule Sanbase.TechIndicatorsTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mockery
   import ExUnit.CaptureLog
 
-  alias Sanbase.InternalServices.TechIndicators
+  alias Sanbase.TechIndicators
+  import Sanbase.Factory
 
-  test "fetch price_volume_diff", _context do
+  setup do
+    project =
+      insert(:project, %{
+        coinmarketcap_id: "santiment",
+        ticker: "SAN",
+        main_contract_address: "0x123"
+      })
+
+    [
+      project: project
+    ]
+  end
+
+  test "fetch price_volume_diff", context do
     mock(
       HTTPoison,
       :get,
       {:ok,
        %HTTPoison.Response{
-         body:
-           "[{\"price_volume_diff\": 0.0, \"price_change\": 0.04862261825993345, \"volume_change\": 0.030695260272520467, \"timestamp\": 1516406400}, {\"price_volume_diff\": -0.014954423076923185, \"price_change\": 0.04862261825993345, \"volume_change\": 0.030695260272520467, \"timestamp\": 1516492800}, {\"price_volume_diff\": -0.02373337292856359, \"price_change\": 0.04862261825993345, \"volume_change\": 0.030695260272520467, \"timestamp\": 1516579200}, {\"price_volume_diff\": -0.030529013702074614, \"price_change\": 0.04862261825993345, \"volume_change\": 0.030695260272520467, \"timestamp\": 1516665600}, {\"price_volume_diff\": -0.0239400614928722, \"price_change\": 0.04862261825993345, \"volume_change\": 0.030695260272520467, \"timestamp\": 1516752000}]",
+         body: """
+         [
+           #{Sanbase.TechIndicatorsTestResponse.price_volume_diff_prepend_response()},
+           {
+             "price_volume_diff": 0,
+             "price_change": 0.04862261825993345,
+             "volume_change": 0.030695260272520467,
+             "timestamp": 1516406400
+           },
+           {
+             "price_volume_diff": -0.014954423076923185,
+             "price_change": 0.04862261825993345,
+             "volume_change": 0.030695260272520467,
+             "timestamp": 1516492800
+           },
+           {
+             "price_volume_diff": -0.02373337292856359,
+             "price_change": 0.04862261825993345,
+             "volume_change": 0.030695260272520467,
+             "timestamp": 1516579200
+           },
+           {
+             "price_volume_diff": -0.030529013702074614,
+             "price_change": 0.04862261825993345,
+             "volume_change": 0.030695260272520467,
+             "timestamp": 1516665600
+           },
+           {
+             "price_volume_diff": -0.0239400614928722,
+             "price_change": 0.04862261825993345,
+             "volume_change": 0.030695260272520467,
+             "timestamp": 1516752000
+           }
+         ]
+         """,
          status_code: 200
        }}
     )
 
     result =
-      TechIndicators.price_volume_diff_ma(
-        "XYZ",
+      TechIndicators.PriceVolumeDifference.price_volume_diff(
+        context.project,
         "USD",
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_752_000),
@@ -66,7 +113,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
               ]}
   end
 
-  test "fetch twitter mention count", _context do
+  test "fetch twitter mention count", context do
     mock(
       HTTPoison,
       :get,
@@ -80,7 +127,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
     result =
       TechIndicators.twitter_mention_count(
-        "XYZ",
+        context.project.ticker,
         DateTime.from_unix!(1_516_406_400),
         DateTime.from_unix!(1_516_492_800),
         "1d"
@@ -338,7 +385,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
       end
 
       assert capture_log(result) =~
-               "Error status 404 fetching social volume for project santiment: Some message\n"
+               "Error status 404 fetching social volume for project santiment"
     end
 
     test "response: error" do
@@ -397,8 +444,7 @@ defmodule Sanbase.InternalServices.TechIndicatorsTest do
 
       result = fn -> TechIndicators.social_volume_projects() end
 
-      assert capture_log(result) =~
-               "Error status 404 fetching social volume projects: Some message\n"
+      assert capture_log(result) =~ "Error status 404 fetching social volume projects"
     end
 
     test "response: error" do

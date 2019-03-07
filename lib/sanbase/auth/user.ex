@@ -112,7 +112,7 @@ defmodule Sanbase.Auth.User do
 
       required_san_tokens =
         Config.module_get(Sanbase, :required_san_stake_full_access)
-        |> Sanbase.Utils.Math.to_float()
+        |> Sanbase.Math.to_float()
 
       case san_balance >= required_san_tokens do
         true ->

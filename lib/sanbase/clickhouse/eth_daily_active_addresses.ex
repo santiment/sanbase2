@@ -4,7 +4,7 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
   """
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
-  import Sanbase.Utils.Math, only: [to_integer: 1]
+  import Sanbase.Math, only: [to_integer: 1]
 
   alias Sanbase.DateTimeUtils
 

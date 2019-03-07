@@ -167,7 +167,8 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
-  def update_user_trigger(_, _), do: {:error, "Trigger structure is invalid"}
+  def update_user_trigger(_, _),
+    do: {:error, "Trigger structure is invalid - id field is missing."}
 
   @doc ~s"""
   Remove an existing user trigger with a given UUID `trigger_id`.
@@ -218,17 +219,19 @@ defmodule Sanbase.Signals.UserTrigger do
   end
 
   defp is_valid?(trigger) do
-    with {:ok, trigger_struct} <- load_in_struct(trigger),
-         true <- Vex.valid?(trigger_struct),
-         {:ok, _trigger_map} <- map_from_struct(trigger_struct) do
+    with {:load_in_struct, {:ok, trigger_struct}} <- {:load_in_struct, load_in_struct(trigger)},
+         {:valid?, true} <- {:valid?, Vex.valid?(trigger_struct)},
+         {:map_from_struct, {:ok, _trigger_map}} <-
+           {:map_from_struct, map_from_struct(trigger_struct)} do
       true
     else
-      false ->
+      {:valid?, false} ->
         {:ok, trigger_struct} = load_in_struct(trigger)
         Logger.warn("UserTrigger struct is not valid: #{inspect(Vex.errors(trigger_struct))}")
         false
 
-      _ ->
+      error ->
+        Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
         false
     end
   end

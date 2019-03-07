@@ -43,15 +43,24 @@ defmodule SanbaseWeb.Graphql.Complexity do
 
   # Private functions
 
-  defp calculate_complexity(%{from: from, to: to, interval: interval}, child_complexity) do
-    from_unix = DateTime.to_unix(from, :second)
-    to_unix = DateTime.to_unix(to, :second)
-    interval = if interval == "", do: "1d", else: interval
+  defp calculate_complexity(%{from: from, to: to} = args, child_complexity) do
+    seconds_difference = Timex.diff(from, to, :seconds) |> abs
+    years_difference_weighted = years_difference_weighted(from, to)
+    interval_seconds = interval_seconds(args) |> max(60)
 
-    interval_seconds = Sanbase.DateTimeUtils.str_to_sec(interval)
+    (child_complexity * (seconds_difference / interval_seconds) * years_difference_weighted)
+    |> Sanbase.Math.to_integer()
+  end
 
-    (child_complexity * ((to_unix - from_unix) / interval_seconds))
-    |> Float.floor()
-    |> Kernel.trunc()
+  defp interval_seconds(args) do
+    case Map.get(args, :interval, "") do
+      "" -> "1d"
+      interval -> interval
+    end
+    |> Sanbase.DateTimeUtils.str_to_sec()
+  end
+
+  defp years_difference_weighted(from, to) do
+    Timex.diff(from, to, :years) |> abs |> max(1)
   end
 end

@@ -227,6 +227,6 @@ defmodule Sanbase.SocialData do
     unix_dt
     |> DateTime.from_unix!()
     |> Timex.beginning_of_day()
-    |> Timex.shift(hours: Sanbase.Utils.Math.to_integer(hour))
+    |> Timex.shift(hours: Sanbase.Math.to_integer(hour))
   end
 end

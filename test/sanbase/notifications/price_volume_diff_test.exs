@@ -7,6 +7,8 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
   alias Sanbase.Prices.Store
   alias Sanbase.Influxdb.Measurement
 
+  @moduletag capture_log: true
+
   setup do
     Store.create_db()
 
@@ -63,7 +65,7 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       {:ok,
        %HTTPoison.Response{
          body:
-           "[{\"price_volume_diff\": 0.0, \"price_change\": 0.04862261825993345, \"volume_change\": 0.030695260272520467, \"timestamp\": 1516752000}]",
+           "[{\"price_volume_diff\": 0.001, \"price_change\": 0.04, \"volume_change\": 0.03, \"timestamp\": 1516752000}]",
          status_code: 200
        }}
     )
@@ -85,8 +87,12 @@ defmodule Sanbase.Notifications.PriceVolumeDiffTest do
       :get,
       {:ok,
        %HTTPoison.Response{
-         body:
-           "[{\"price_volume_diff\": 123.456, \"price_change\": 0.04862261825993345, \"volume_change\": -0.030695260272520467, \"timestamp\": 1516752000}]",
+         body: """
+          [
+            #{Sanbase.TechIndicatorsTestResponse.price_volume_diff_prepend_response()},
+            {"price_volume_diff": 123.456, "price_change": 0.04862261825993345, "volume_change": -0.030695260272520467, "timestamp": 1516752000}
+          ]
+         """,
          status_code: 200
        }}
     )

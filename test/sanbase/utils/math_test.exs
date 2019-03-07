@@ -1,4 +1,4 @@
-defmodule Sanbase.Utils.MathTest do
+defmodule Sanbase.MathTest do
   use ExUnit.Case, async: true
-  doctest Sanbase.Utils.Math
+  doctest Sanbase.Math
 end

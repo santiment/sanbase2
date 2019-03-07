@@ -255,7 +255,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
-
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&GithubResolver.github_activity/3)
     end
 
@@ -272,7 +272,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
-
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&GithubResolver.dev_activity/3)
     end
 
@@ -289,9 +289,10 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&TwitterResolver.history_twitter_data/3)
     end
 
@@ -431,21 +432,21 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :post, :post do
       arg(:id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.post/3)
     end
 
     @desc "Fetch a list of all posts/insights. The user must be logged in to access all fields for the post/insight."
     field :all_insights, list_of(:post) do
-      middleware(PostPermissions)
-      resolve(&PostResolver.all_insights/3)
+      arg(:page, :integer, default_value: 1)
+      arg(:page_size, :integer, default_value: 20)
+
+      cache_resolve(&PostResolver.all_insights/3)
     end
 
     @desc "Fetch a list of all posts for given user ID."
     field :all_insights_for_user, list_of(:post) do
       arg(:user_id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_for_user/3)
     end
 
@@ -453,7 +454,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights_user_voted, list_of(:post) do
       arg(:user_id, non_null(:integer))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_user_voted_for/3)
     end
 
@@ -464,7 +464,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_insights_by_tag, list_of(:post) do
       arg(:tag, non_null(:string))
 
-      middleware(PostPermissions)
       resolve(&PostResolver.all_insights_by_tag/3)
     end
 
@@ -529,13 +528,13 @@ defmodule SanbaseWeb.Graphql.Schema do
     specifically when price goes up as volume goes down.
     """
     field :price_volume_diff, list_of(:price_volume_diff) do
-      arg(:ticker, non_null(:string))
+      arg(:slug, non_null(:string))
       @desc "Currently supported currencies: USD, BTC"
       arg(:currency, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
-      arg(:result_size_tail, :integer, default_value: 0)
+      arg(:size, :integer, default_value: 0)
 
       middleware(ApiTimeframeRestriction)
 
@@ -547,7 +546,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :twitter_mention_count, list_of(:twitter_mention_count) do
       arg(:ticker, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
@@ -561,7 +560,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     """
     field :emojis_sentiment, list_of(:emojis_sentiment) do
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
@@ -591,7 +590,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :social_volume, list_of(:social_volume) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
-      arg(:to, :datetime, default_value: DateTime.utc_now())
+      arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
       arg(:social_volume_type, non_null(:social_volume_type))
 

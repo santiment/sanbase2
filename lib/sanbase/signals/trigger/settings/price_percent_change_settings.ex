@@ -22,7 +22,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
-            repeating: false,
+            repeating: true,
             triggered?: false,
             payload: nil
 
@@ -135,18 +135,6 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       ])
     end
 
-    defp chart_url(project) do
-      Sanbase.Chart.build_embedded_chart(
-        project,
-        Timex.shift(Timex.now(), days: -90),
-        Timex.now()
-      )
-      |> case do
-        [%{image: %{url: chart_url}}] -> chart_url
-        _ -> nil
-      end
-    end
-
     defp payload(slug, settings, {percent_change, first_price, last_price}) do
       project = Sanbase.Model.Project.by_slug(slug)
 
@@ -155,7 +143,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
         last_price
       } for the last #{DateTimeUtils.compound_duration_to_text(settings.time_window)}.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
-      ![Price chart over the past 90 days](#{chart_url(project)})
+      ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """
     end
   end

@@ -1,5 +1,5 @@
-defmodule Sanbase.InternalServices.TechIndicators do
-  import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
+defmodule Sanbase.TechIndicators do
+  import Sanbase.Utils.ErrorHandling
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -10,48 +10,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000
-
-  def price_volume_diff_ma(
-        ticker,
-        currency,
-        from_datetime,
-        to_datetime,
-        aggregate_interval,
-        window_type,
-        approximation_window,
-        comparison_window,
-        result_size_tail \\ 0
-      ) do
-    price_volume_diff_ma_request(
-      ticker,
-      currency,
-      from_datetime,
-      to_datetime,
-      aggregate_interval,
-      window_type,
-      approximation_window,
-      comparison_window,
-      result_size_tail
-    )
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-
-        price_volume_diff_ma_result(result)
-
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result(
-          "Error status #{status} fetching price-volume diff for ticker #{ticker}: #{body}"
-        )
-
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch price-volume diff data for ticker #{ticker}: #{
-            HTTPoison.Error.message(error)
-          }"
-        )
-    end
-  end
 
   def twitter_mention_count(
         ticker,
@@ -154,7 +112,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         social_volume_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching social volume for project #{slug}: #{body}")
+        warn_result("Error status #{status} fetching social volume for project #{slug}")
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
@@ -171,7 +129,7 @@ defmodule Sanbase.InternalServices.TechIndicators do
         social_volume_projects_result(result)
 
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching social volume projects: #{body}")
+        warn_result("Error status #{status} fetching social volume projects.")
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
@@ -211,60 +169,6 @@ defmodule Sanbase.InternalServices.TechIndicators do
           }"
         )
     end
-  end
-
-  defp price_volume_diff_ma_request(
-         ticker,
-         currency,
-         from_datetime,
-         to_datetime,
-         aggregate_interval,
-         window_type,
-         approximation_window,
-         comparison_window,
-         result_size_tail
-       ) do
-    from_unix = DateTime.to_unix(from_datetime)
-    to_unix = DateTime.to_unix(to_datetime)
-
-    url = "#{tech_indicators_url()}/indicator/pricevolumediff/ma"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"ticker", ticker},
-        {"currency", currency},
-        {"from_timestamp", from_unix},
-        {"to_timestamp", to_unix},
-        {"aggregate_interval", aggregate_interval},
-        {"window_type", window_type},
-        {"approximation_window", approximation_window},
-        {"comparison_window", comparison_window},
-        {"result_size_tail", result_size_tail}
-      ]
-    ]
-
-    http_client().get(url, [], options)
-  end
-
-  defp price_volume_diff_ma_result(result) do
-    result =
-      result
-      |> Enum.map(fn %{
-                       "timestamp" => timestamp,
-                       "price_volume_diff" => price_volume_diff,
-                       "price_change" => price_change,
-                       "volume_change" => volume_change
-                     } ->
-        %{
-          datetime: DateTime.from_unix!(timestamp),
-          price_volume_diff: price_volume_diff,
-          price_change: price_change,
-          volume_change: volume_change
-        }
-      end)
-
-    {:ok, result}
   end
 
   defp twitter_mention_count_request(

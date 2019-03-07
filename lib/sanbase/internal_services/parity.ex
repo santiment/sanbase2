@@ -50,14 +50,20 @@ defmodule Sanbase.InternalServices.Parity do
     {:ok, %Tesla.Env{status: 200, body: body}} =
       post(client(), "/", batch, opts: [adapter: [recv_timeout: 15_000]])
 
-    addresses_map = Map.new(addresses)
+    case body do
+      "" ->
+        %{}
 
-    body
-    |> Enum.map(fn %{"id" => id, "result" => "0x" <> result} ->
-      {balance, ""} = Integer.parse(result, 16)
-      {Map.get(addresses_map, id), balance / @eth_decimals}
-    end)
-    |> Map.new()
+      body ->
+        addresses_map = Map.new(addresses)
+
+        body
+        |> Enum.map(fn %{"id" => id, "result" => "0x" <> result} ->
+          {balance, ""} = Integer.parse(result, 16)
+          {Map.get(addresses_map, id), balance / @eth_decimals}
+        end)
+        |> Map.new()
+    end
   end
 
   def get_eth_balance(address) do

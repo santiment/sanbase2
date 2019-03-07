@@ -9,7 +9,7 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Utils.Math, only: [to_integer: 1]
+  import Sanbase.Math, only: [to_integer: 1]
   import Sanbase.Signals.Utils
   import Sanbase.Signals.Validation
 
@@ -29,13 +29,15 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
             triggered?: false,
             payload: %{},
             target: "all",
-            filtered_target_list: []
+            filtered_target_list: [],
+            repeating: true
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           channel: Type.channel(),
           trigger_time: String.t(),
           triggered?: boolean(),
+          repeating: boolean(),
           payload: Type.payload()
         }
 
@@ -158,8 +160,9 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
 
     defp get_max_len(top_words) do
       top_words
-      |> Enum.map(fn tw -> String.length(tw.word) end)
-      |> Enum.max()
+      |> Enum.max_by(fn %{word: word} -> String.length(word) end)
+      |> Map.get(:word)
+      |> String.length()
     end
   end
 end

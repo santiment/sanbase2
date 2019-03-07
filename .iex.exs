@@ -73,8 +73,7 @@ alias Sanbase.{
 
 alias Sanbase.InternalServices.{
   Ethauth,
-  Parity,
-  TechIndicators
+  Parity
 }
 
 alias Sanbase.ExternalServices.Coinmarketcap.{
@@ -92,6 +91,8 @@ alias Sanbase.ExternalServices.Coinmarketcap2.{
   TickerFetcher2,
   Ticker2
 }
+
+alias Sanbase.TechIndicators
 
 alias Sanbase.ExternalServices.Etherscan.Requests, as: EtherscanRequests
 alias Sanbase.ExternalServices.Etherscan.Scraper, as: EtherscanScraper
@@ -156,7 +157,7 @@ alias Sanbase.Signals.{UserTrigger, Trigger, Scheduler}
 alias Sanbase.Signals.Trigger.{
   DailyActiveAddressesSettings,
   PricePercentChangeSettings,
-  PriceVolumeTriggerSettings,
+  PriceVolumeDifferenceTriggerSettings,
   TrendingWordsTriggerSettings
 }
 

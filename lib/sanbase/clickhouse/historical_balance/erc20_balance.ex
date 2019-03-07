@@ -42,11 +42,11 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
 
     {query, args} = historical_balance_query(address, contract, from, to, interval)
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, value, sign] ->
+    ClickhouseRepo.query_transform(query, args, fn [dt, value, has_changed] ->
       %{
         datetime: Sanbase.DateTimeUtils.from_erl!(dt),
         balance: value / token_decimals,
-        sign: sign
+        has_changed: has_changed
       }
     end)
     |> case do
@@ -77,17 +77,17 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     # The balances table is like a stack. For each balance change there is a record
     # with sign = -1 that is the old balance and with sign = 1 which is the new balance
     query = """
-    SELECT time, SUM(value), toInt32(SUM(sign))
+    SELECT time, SUM(value), toUInt8(SUM(has_changed))
       FROM (
         SELECT
           toDateTime(intDiv(toUInt32(?5 + number * ?1), ?1) * ?1) AS time,
           toFloat64(0) AS value,
-          toInt32(0) AS sign
+          toUInt8(0) AS has_changed
         FROM numbers(?2)
 
     UNION ALL
 
-    SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time, argMax(value, dt), toInt32(1) AS sign
+    SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time, argMax(value, dt), toUInt8(1) AS has_changed
       FROM #{@table}
       PREWHERE address = ?3
       AND contract = ?4

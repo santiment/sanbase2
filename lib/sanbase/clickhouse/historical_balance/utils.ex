@@ -19,10 +19,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Utils do
   def fill_gaps_last_seen_balance(values) do
     values
     |> Enum.reduce({[], 0}, fn
-      %{sign: 1, balance: balance, datetime: dt}, {acc, _last_seen} ->
+      %{has_changed: 1, balance: balance, datetime: dt}, {acc, _last_seen} ->
         {[%{balance: balance, datetime: dt} | acc], balance}
 
-      %{sign: 0, datetime: dt}, {acc, last_seen} ->
+      %{has_changed: 0, datetime: dt}, {acc, last_seen} ->
         {[%{balance: last_seen, datetime: dt} | acc], last_seen}
     end)
     |> elem(0)

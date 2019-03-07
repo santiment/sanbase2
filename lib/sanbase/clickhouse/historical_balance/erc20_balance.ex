@@ -92,7 +92,6 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
       PREWHERE address = ?3
       AND contract = ?4
       AND sign = 1
-      AND dt >= toDateTime(?5)
       AND dt <= toDateTime(?6)
       GROUP BY time
     )

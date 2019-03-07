@@ -17,11 +17,14 @@ defmodule Sanbase.Signals.Scheduler do
     PriceVolumeDifferenceTriggerSettings
   }
 
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
   alias Sanbase.Signals.Evaluator
   alias Sanbase.Signal
+  alias Sanbase.Parallel
 
   require Logger
+
+  defguard is_non_empty_map(map) when is_map(map) and map != %{}
 
   def run_price_percent_change_signals() do
     PricePercentChangeSettings.type()
@@ -51,34 +54,62 @@ defmodule Sanbase.Signals.Scheduler do
   # Private functions
 
   defp run(type) do
-    type
-    |> UserTrigger.get_triggers_by_type()
-    |> Evaluator.run()
-    |> send_and_mark_as_sent()
+    {updated_user_triggers, sent_list_results} =
+      type
+      |> UserTrigger.get_triggers_by_type()
+      |> Evaluator.run()
+      |> filter_triggered?()
+      |> send_and_mark_as_sent()
+
+    updated_user_triggers
+    |> persist_sent_signals()
+
+    sent_list_results
+    |> List.flatten()
     |> log_sent_messages_stats(type)
   end
 
+  defp filter_triggered?(triggers) do
+    triggers
+    |> Enum.filter(fn
+      %UserTrigger{
+        trigger: %{
+          settings: %{triggered?: triggered?}
+        }
+      } ->
+        triggered?
+    end)
+  end
+
+  # returns a tuple {updated_user_triggers, send_result_list}
   defp send_and_mark_as_sent(triggers) do
     triggers
-    |> Sanbase.Parallel.pmap_concurrent(
+    |> Parallel.pmap_concurrent(
       fn %UserTrigger{} = user_trigger ->
         case Signal.send(user_trigger) do
           [] ->
-            []
+            {user_trigger, []}
 
           {:error, _} ->
-            []
+            {user_trigger, []}
 
           list when is_list(list) ->
-            {:ok, _} = update_last_triggered(user_trigger, list)
+            {:ok, updated_user_trigger} = update_last_triggered(user_trigger, list)
 
-            list
+            user_trigger =
+              put_in(
+                user_trigger.trigger.last_triggered,
+                updated_user_trigger.trigger.last_triggered
+              )
+
+            {user_trigger, list}
         end
       end,
       max_concurrency: 20,
       ordered: false,
-      map_type: :flat_map
+      map_type: :map
     )
+    |> Enum.unzip()
   end
 
   defp update_last_triggered(
@@ -106,6 +137,35 @@ defmodule Sanbase.Signals.Scheduler do
     })
   end
 
+  defp persist_sent_signals(user_triggers) do
+    user_triggers
+    |> Enum.map(fn
+      %UserTrigger{
+        id: id,
+        user_id: user_id,
+        trigger: %{
+          settings: %{triggered?: true, payload: payload},
+          last_triggered: last_triggered
+        }
+      }
+      when is_non_empty_map(last_triggered) ->
+        %{
+          user_trigger_id: id,
+          user_id: user_id,
+          payload: payload,
+          triggered_at: max_last_triggered(last_triggered)
+        }
+
+      _ ->
+        nil
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.chunk_every(200)
+    |> Enum.each(fn chunk ->
+      Sanbase.Repo.insert_all(HistoricalActivity, chunk)
+    end)
+  end
+
   defp log_sent_messages_stats([], type) do
     Logger.info("There were no signals triggered of type #{type}")
   end
@@ -116,5 +176,11 @@ defmodule Sanbase.Signals.Scheduler do
     Logger.info(
       "In total #{successful_messages}/#{length(list)} #{type} signals were sent successfully"
     )
+  end
+
+  defp max_last_triggered(last_triggered) when is_non_empty_map(last_triggered) do
+    last_triggered
+    |> Map.values()
+    |> Enum.max_by(&DateTime.to_iso8601/1)
   end
 end

@@ -210,6 +210,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&PriceResolver.multiple_projects_stats/3)
     end
 
@@ -223,6 +224,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&ProjectResolver.combined_history_stats/3)
     end
 
@@ -268,8 +270,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
-      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       cache_resolve(&GithubResolver.dev_activity/3)
     end
 
@@ -309,8 +311,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
       cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
@@ -320,8 +322,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
       cache_resolve(&EtherbiResolver.token_age_consumed/3)
     end
 
@@ -339,8 +341,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
       cache_resolve(&EtherbiResolver.transaction_volume/3)
     end
 
@@ -357,9 +359,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
-
+      middleware(ApiTimeframeRestriction)
       cache_resolve(&EtherbiResolver.average_token_age_consumed_in_days/3)
     end
 
@@ -374,8 +375,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
       arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
       cache_resolve(&EtherbiResolver.token_circulation/3)
     end
 
@@ -390,8 +391,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       @desc "The interval should represent whole days, i.e. `1d`, `48h`, `1w`, etc."
       arg(:interval, :string, default_value: "1d")
 
-      middleware(ApiTimeframeRestriction)
       complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
       cache_resolve(&EtherbiResolver.token_velocity/3)
     end
 
@@ -412,8 +413,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
-      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
 
@@ -479,8 +480,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "")
 
+      complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
-
       cache_resolve(&EtherbiResolver.exchange_funds_flow/3)
     end
 
@@ -514,8 +515,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
+      complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
-
       cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
     end
 
@@ -535,7 +536,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       middleware(ApiTimeframeRestriction)
 
-      complexity(&TechIndicatorsComplexity.price_volume_diff/3)
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&TechIndicatorsResolver.price_volume_diff/3)
     end
 
@@ -547,7 +548,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, :string, default_value: "1d")
       arg(:result_size_tail, :integer, default_value: 0)
 
-      complexity(&TechIndicatorsComplexity.twitter_mention_count/3)
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&TechIndicatorsResolver.twitter_mention_count/3)
     end
 
@@ -566,7 +567,7 @@ defmodule SanbaseWeb.Graphql.Schema do
         {ApikeyAuth, san_tokens: 1000}
       ])
 
-      complexity(&TechIndicatorsComplexity.emojis_sentiment/3)
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&TechIndicatorsResolver.emojis_sentiment/3)
     end
 
@@ -591,9 +592,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:interval, non_null(:string), default_value: "1d")
       arg(:social_volume_type, non_null(:social_volume_type))
 
+      complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.social_volume/3)
       resolve(&TechIndicatorsResolver.social_volume/3)
     end
 
@@ -625,10 +625,9 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, :datetime)
       arg(:interval, non_null(:string), default_value: "1d")
 
+      complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
-
-      complexity(&TechIndicatorsComplexity.topic_search/3)
-      resolve(&TechIndicatorsResolver.topic_search/3)
+      cache_resolve(&TechIndicatorsResolver.topic_search/3)
     end
 
     @desc ~s"""
@@ -653,7 +652,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       middleware(ApiTimeframeRestriction)
-
       cache_resolve(&SocialDataResolver.trending_words/3)
     end
 
@@ -677,8 +675,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       middleware(ApiTimeframeRestriction)
-
-      resolve(&SocialDataResolver.word_trend_score/3)
+      cache_resolve(&SocialDataResolver.word_trend_score/3)
     end
 
     @desc ~s"""
@@ -703,7 +700,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
 
       middleware(ApiTimeframeRestriction)
-
       cache_resolve(&SocialDataResolver.word_context/3)
     end
 
@@ -719,6 +715,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&ProjectTransactionsResolver.eth_spent_by_erc20_projects/3)
     end
 
@@ -731,6 +728,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, :string, default_value: "1d")
 
+      complexity(&Complexity.from_to_interval/3)
       cache_resolve(&ProjectTransactionsResolver.eth_spent_over_time_by_erc20_projects/3)
     end
 
@@ -757,7 +755,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :user_list, :user_list do
       arg(:user_list_id, non_null(:id))
 
-      resolve(&UserListResolver.user_list/3)
+      cache_resolve(&UserListResolver.user_list/3)
     end
 
     @desc "Returns statistics for the data stored in elasticsearch"
@@ -805,8 +803,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
 
+      complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
-
       cache_resolve(&ClickhouseResolver.network_growth/3)
     end
 
@@ -826,7 +824,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:id, non_null(:string))
 
       middleware(JWTAuth)
-
       resolve(&UserTriggerResolver.get_trigger_by_id/3)
     end
 

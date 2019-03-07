@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.PostPermissions do
     "state",
     "readyState",
     "tags",
+    "votedAt",
     "__typename"
   ]
 

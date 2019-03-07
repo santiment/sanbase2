@@ -13,11 +13,6 @@ defmodule Sanbase.TelegramTest do
   @telegram_chat_id 12315
 
   setup do
-    Tesla.Mock.mock(fn
-      %{method: :post} ->
-        %Tesla.Env{status: 200, body: "ok"}
-    end)
-
     user =
       %User{salt: User.generate_salt(), privacy_policy_accepted: true}
       |> Repo.insert!()

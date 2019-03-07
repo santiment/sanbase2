@@ -158,11 +158,6 @@ defmodule Sanbase.Signals.EvaluatorTest do
   end
 
   test "signal setting cooldown works for trending words" do
-    Tesla.Mock.mock_global(fn
-      %{method: :post} ->
-        %Tesla.Env{status: 200, body: "ok"}
-    end)
-
     top_words = [
       %{score: 1740.2647984845628, word: "bat"},
       %{score: 792.9209638684719, word: "coinbase"},

@@ -74,6 +74,12 @@ defmodule SanbaseWeb.Router do
 
   get("/env.js", SanbaseWeb.RootController, :react_env)
 
+  if Mix.env() == :test do
+    scope "/test", SanbaseWeb do
+      post("/telegramtoken/sendMessage", TestTelegramController, :send_message)
+    end
+  end
+
   if Mix.env() == :dev do
     pipeline :nextjs do
       plug(:accepts, ["html"])

@@ -7,6 +7,7 @@ config :sanbase, Sanbase, url: {:system, "SANBASE_URL", ""}
 
 config :sanbase, SanbaseWeb.Endpoint,
   http: [port: 4001],
+  url: [host: "0.0.0.0"],
   server: true
 
 # Print only warnings and errors during test. Do not log JSON in tests.
@@ -67,6 +68,7 @@ config :sanbase, Sanbase.Elasticsearch, indices: "index1,index2,index3,index4"
 System.put_env("TELEGRAM_ENDPOINT_RANDOM_STRING", "random_string")
 
 config :sanbase, Sanbase.Telegram,
+  api_base_url: "http://0.0.0.0:4001/test/telegram",
   bot_username: "SantimentSignalsBotTest",
   telegram_endpoint: "random_string",
   token: "token"

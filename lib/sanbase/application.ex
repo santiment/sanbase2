@@ -9,7 +9,7 @@ defmodule Sanbase.Application do
       Envy.auto_load()
     end
 
-    container_type = System.get_env("CONTAINER_TYPE") || "all"
+    container_type = System.get_env("CONTAINER_TYPE") || "web"
 
     init(container_type)
 

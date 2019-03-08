@@ -135,7 +135,7 @@ defmodule Sanbase.Mixfile do
         "load_dotenv",
         "ecto.create -r Sanbase.Repo --quiet",
         "ecto.load -r Sanbase.Repo",
-        "test"
+        "CONTAINER_TYPE=all test"
       ],
 
       # Append `_all` so the Ecto commands apply to all repos.
@@ -170,7 +170,7 @@ defmodule Sanbase.Mixfile do
         "load_dotenv",
         "ecto.create --quiet",
         "ecto.load",
-        "test --include timescaledb"
+        "CONTAINER_TYPE=all test --include timescaledb"
       ]
     ]
   end

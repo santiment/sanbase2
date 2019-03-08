@@ -21,6 +21,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   end
 
   def mvrv_ratio(_root, args, _resolution) do
+    # TODO: Check if interval is a whole day as in token circulation
     with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(args.slug, args.from, args.to, args.interval) do
       {:ok, mvrv_ratio}
     else

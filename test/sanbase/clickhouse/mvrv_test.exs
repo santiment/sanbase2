@@ -25,9 +25,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MVRVTest do
         {:ok,
          %{
            rows: [
-             [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), nil],
-             [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 0.0],
-             [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), 0.1]
+             [from_iso8601_to_unix!("2019-01-01T00:00:00Z"), 0.1],
+             [from_iso8601_to_unix!("2019-01-02T00:00:00Z"), 0.2],
+             [from_iso8601_to_unix!("2019-01-03T00:00:00Z"), nil]
            ]
          }}
       end do
@@ -35,9 +35,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MVRVTest do
       ratios = parse_response(response)
 
       assert ratios == [
-               %{"ratio" => nil, "datetime" => "2019-01-01T00:00:00Z"},
-               %{"ratio" => 0.0, "datetime" => "2019-01-02T00:00:00Z"},
-               %{"ratio" => 0.1, "datetime" => "2019-01-03T00:00:00Z"}
+               %{"ratio" => 0.1, "datetime" => "2019-01-01T00:00:00Z"},
+               %{"ratio" => 0.2, "datetime" => "2019-01-02T00:00:00Z"},
+               %{"ratio" => nil, "datetime" => "2019-01-03T00:00:00Z"}
              ]
     end
   end

@@ -6,7 +6,7 @@ RUN apt-get update \
   && apt-get install --yes build-essential \
                            git \
                            inotify-tools \
-                           postgresql-client \
+                           postgresql-client-9.6\
                            nodejs
 
 # Install Phoenix packages

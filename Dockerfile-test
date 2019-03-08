@@ -1,7 +1,7 @@
 # Elixir and phoenix assets build image
 FROM elixir:1.8.0
 
-RUN apt-get update && apt-get install -y git postgresql-client
+RUN apt-get update && apt-get install -y git postgresql-client-9.6
 
 ENV MIX_ENV test
 

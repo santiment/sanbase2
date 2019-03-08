@@ -12,7 +12,7 @@ defmodule Sanbase.TechIndicatorsTestResponse do
         "price_volume_diff": 0,
         "price_change": 0.04862261825993345,
         "volume_change": 0.030695260272520467,
-        "timestamp": 1516406400
+        "timestamp": 1116406400
       }
     /
     |> List.wrap()

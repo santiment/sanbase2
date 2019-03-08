@@ -66,7 +66,6 @@ defmodule Sanbase.Model.Project do
     has_many(:icos, Ico)
   end
 
-  @doc false
   def changeset(%Project{} = project, attrs \\ %{}) do
     project
     |> cast(attrs, [

@@ -130,7 +130,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     trigger_id = user_trigger.trigger.id
 
     trigger_settings_json = updated_trigger |> Jason.encode!()
-    tags = [%{"name" => "tag1"}, %{"name" => "tag2"}]
 
     query =
       ~s|
@@ -160,7 +159,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     assert trigger["settings"] == updated_trigger
     assert trigger["id"] == trigger_id
-    assert trigger["tags"] == tags
+    assert trigger["tags"] == [%{"name" => "tag1"}, %{"name" => "tag2"}]
   end
 
   test "remove trigger", %{user: user, conn: conn} do
@@ -379,7 +378,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     }
 
     trigger_settings_json = trigger_settings |> Jason.encode!()
-    tags = [%{"name" => "SAN"}, %{"name" => "santiment"}]
 
     query =
       ~s|
@@ -408,7 +406,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     assert created_trigger["settings"] == trigger_settings
     assert created_trigger["id"] != nil
-    assert created_trigger["tags"] == tags
+    assert created_trigger["tags"] == [%{"name" => "SAN"}, %{"name" => "santiment"}]
   end
 
   defp format_interpolated_json(string) do

@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.CachexProviderTest do
     assert {:ok, value} == CacheProvider.get(@cache_name, key)
   end
 
-  test "value is actually cached and not precalculated", context do
+  test "value is actually cached and not precalculated" do
     key = "somekey"
     test_pid = self()
 

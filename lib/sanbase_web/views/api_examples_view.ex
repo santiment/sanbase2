@@ -4,8 +4,6 @@ defmodule SanbaseWeb.ApiExamplesView do
   require Logger
   require Sanbase.Utils.Config, as: Config
 
-  alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
-
   def render("apiexample_view.html", _assigns) do
     Phoenix.View.render_to_string(SanbaseWeb.ApiExamplesView, "examples.html", %{
       api_url: SanbaseWeb.Endpoint.api_url(),

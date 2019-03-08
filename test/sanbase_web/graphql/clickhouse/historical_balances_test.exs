@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
 
   import SanbaseWeb.Graphql.TestHelpers
   import Mock
-  import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]
+  import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
   import Sanbase.Factory
 
@@ -247,10 +247,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
         )
 
       assert capture_log(fn ->
-               result =
-                 context.conn
-                 |> post("/graphql", query_skeleton(query, "historicalBalance"))
-                 |> json_response(200)
+               context.conn
+               |> post("/graphql", query_skeleton(query, "historicalBalance"))
+               |> json_response(200)
              end) =~
                ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id someid2. Reason: "something bad happened"/
     end

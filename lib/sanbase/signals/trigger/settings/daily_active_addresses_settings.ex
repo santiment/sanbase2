@@ -11,7 +11,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   alias __MODULE__
   alias Sanbase.Signals.Type
   alias Sanbase.Model.Project
-  alias Sanbase.Clickhouse.{Erc20DailyActiveAddresses, EthDailyActiveAddresses}
+  alias Sanbase.Clickhouse.DailyActiveAddresses
   alias Sanbase.Signals.Evaluator.Cache
 
   @derive Jason.Encoder
@@ -50,50 +50,48 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   def get_data(%__MODULE__{filtered_target_list: target_list} = settings)
       when is_list(target_list) do
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
+    from = Timex.shift(Timex.now(), seconds: -time_window_sec)
+    to = Timex.shift(Timex.now(), days: -1)
 
     target_list
     |> Enum.map(fn slug ->
       {:ok, contract, _token_decimals} = Project.contract_info_by_slug(slug)
-
-      current_daa =
-        case contract do
-          "ETH" ->
-            Cache.get_or_store("daa_#{contract}_current", fn ->
-              {:ok, result} = EthDailyActiveAddresses.realtime_active_addresses()
-              result
-            end)
-
-          _ ->
-            Cache.get_or_store("daa_#{contract}_current", fn ->
-              {:ok, [{_, result}]} = Erc20DailyActiveAddresses.realtime_active_addresses(contract)
-              result
-            end)
-        end
-
-      average_daa =
-        Cache.get_or_store("daa_#{contract}_prev_#{settings.time_window}", fn ->
-          average_daily_active_addresses(
-            contract,
-            Timex.shift(Timex.now(), seconds: -time_window_sec),
-            Timex.shift(Timex.now(), days: -1)
-          )
-        end)
+      current_daa = realtime_active_addresses(contract)
+      average_daa = average_active_addresses(contract, from, to)
 
       {slug, {current_daa, average_daa}}
     end)
   end
 
-  defp average_daily_active_addresses("ethereum", from, to) do
-    {:ok, result} = EthDailyActiveAddresses.average_active_addresses(from, to)
-    result
+  defp realtime_active_addresses(contract) do
+    Cache.get_or_store("daa_#{contract}_current", fn ->
+      case DailyActiveAddresses.realtime_active_addresses(contract) do
+        {:ok, [{_, result}]} ->
+          result
+
+        _ ->
+          {:error, :nodata}
+      end
+    end)
+    |> case do
+      {:error, _} -> 0
+      result -> result
+    end
   end
 
-  defp average_daily_active_addresses(contract, from, to) do
-    {:ok, result} = Erc20DailyActiveAddresses.average_active_addresses(contract, from, to)
+  defp average_active_addresses(contract, from, to) do
+    Cache.get_or_store("daa_#{contract}_current", fn ->
+      case DailyActiveAddresses.average_active_addresses(contract, from, to) do
+        {:ok, [{_, result}]} ->
+          result
 
-    case result do
-      [{_, value}] -> value
-      _ -> 0
+        _ ->
+          {:error, :nodata}
+      end
+    end)
+    |> case do
+      {:error, _} -> 0
+      result -> result
     end
   end
 

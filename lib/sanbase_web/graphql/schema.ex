@@ -128,6 +128,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Returns the number of erc20 projects, currency projects and all projects"
     field :projects_count, :projects_count do
+      arg(:min_volume, :integer)
       cache_resolve(&ProjectResolver.projects_count/3)
     end
 
@@ -135,6 +136,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_projects, list_of(:project) do
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:min_volume, :integer)
+
       middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.all_projects/3)
     end
@@ -143,6 +146,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_erc20_projects, list_of(:project) do
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:min_volume, :integer)
+
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_erc20_projects/3)
@@ -152,6 +157,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     field :all_currency_projects, list_of(:project) do
       arg(:page, :integer)
       arg(:page_size, :integer)
+      arg(:min_volume, :integer)
+
       middleware(ProjectPermissions)
 
       cache_resolve(&ProjectResolver.all_currency_projects/3)

@@ -865,6 +865,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:after, :naive_datetime)
       arg(:limit, :integer, default_value: 25)
 
+      middleware(JWTAuth)
+
       resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
     end
   end

@@ -555,6 +555,13 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert result == nil
   end
 
+  test "fetch signal historical activities without logged in user" do
+    assert current_user_signals_activity(
+             build_conn,
+             "limit: 1"
+           ) == nil
+  end
+
   defp current_user_signals_activity(conn, args_str) do
     query =
       ~s|

@@ -33,6 +33,8 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.one()
   end
 
+  defp erc20_projects_query(min_volume \\ nil)
+
   defp erc20_projects_query(nil) do
     from(
       p in projects_query(nil),
@@ -42,12 +44,8 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp erc20_projects_query(min_volume) when is_valid_volume(min_volume) do
-    from(
-      p in erc20_projects_query(nil),
-      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      where: latest_cmc.volume_usd >= ^min_volume,
-      order_by: latest_cmc.rank
-    )
+    erc20_projects_query(nil)
+    |> order_by_rank_above_volume(min_volume)
   end
 
   @doc ~s"""
@@ -59,20 +57,14 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp erc20_projects_page_query(page, page_size, nil) do
-    from(
-      p in erc20_projects_query(nil),
-      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      order_by: latest_cmc.rank
-    )
+    erc20_projects_query()
+    |> order_by_rank()
     |> page(page, page_size)
   end
 
   defp erc20_projects_page_query(page, page_size, min_volume) when is_valid_volume(min_volume) do
-    from(
-      [_p, _inf, latest_cmc] in erc20_projects_query(min_volume),
-      where: latest_cmc.volume_usd >= ^min_volume,
-      order_by: latest_cmc.rank
-    )
+    erc20_projects_query()
+    |> order_by_rank_above_volume(min_volume)
     |> page(page, page_size)
   end
 
@@ -94,6 +86,8 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.one()
   end
 
+  defp currency_projects_query(min_volume \\ nil)
+
   defp currency_projects_query(nil) do
     from(
       p in projects_query(nil),
@@ -104,12 +98,8 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp currency_projects_query(min_volume) when is_valid_volume(min_volume) do
-    from(
-      p in currency_projects_query(nil),
-      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      where: latest_cmc.volume_usd >= ^min_volume,
-      order_by: latest_cmc.rank
-    )
+    currency_projects_query()
+    |> order_by_rank_above_volume(min_volume)
   end
 
   @doc ~s"""
@@ -122,21 +112,15 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp currency_projects_page_query(page, page_size, nil) do
-    from(
-      p in currency_projects_query(nil),
-      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      order_by: latest_cmc.rank
-    )
+    currency_projects_query()
+    |> order_by_rank()
     |> page(page, page_size)
   end
 
   defp currency_projects_page_query(page, page_size, min_volume)
        when is_valid_volume(min_volume) do
-    from(
-      [_p, _inf, latest_cmc] in currency_projects_query(min_volume),
-      where: latest_cmc.volume_usd >= ^min_volume,
-      order_by: latest_cmc.rank
-    )
+    currency_projects_query()
+    |> order_by_rank_above_volume(min_volume)
     |> page(page, page_size)
   end
 
@@ -157,6 +141,8 @@ defmodule Sanbase.Model.Project.List do
     |> Repo.one()
   end
 
+  defp projects_query(min_volume \\ nil)
+
   defp projects_query(nil) do
     from(
       p in Project,
@@ -166,11 +152,8 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp projects_query(min_volume) do
-    from(
-      p in projects_query(nil),
-      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      where: latest_cmc.volume_usd >= ^min_volume
-    )
+    projects_query()
+    |> order_by_rank_above_volume(min_volume)
   end
 
   @doc ~s"""
@@ -182,29 +165,38 @@ defmodule Sanbase.Model.Project.List do
   end
 
   defp projects_page_query(page, page_size, nil) do
-    from(
-      p in projects_query(nil),
-      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      order_by: latest_cmc.rank
-    )
+    projects_query()
+    |> order_by_rank()
     |> page(page, page_size)
   end
 
   defp projects_page_query(page, page_size, min_volume) when is_valid_volume(min_volume) do
-    from(
-      [_p, latest_cmc] in projects_query(min_volume),
-      where: latest_cmc.volume_usd >= ^min_volume,
-      order_by: latest_cmc.rank
-    )
+    projects_query()
+    |> order_by_rank_above_volume(min_volume)
     |> page(page, page_size)
   end
 
   defp page(query, page, page_size) do
-    offset = (page - 1) * page_size
-
     query
-    |> offset(^offset)
+    |> offset(^((page - 1) * page_size))
     |> limit(^page_size)
+  end
+
+  defp order_by_rank(query) do
+    from(
+      p in query,
+      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+      order_by: latest_cmc.rank
+    )
+  end
+
+  defp order_by_rank_above_volume(query, min_volume) do
+    from(
+      p in query,
+      join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
+      where: latest_cmc.volume_usd >= ^min_volume,
+      order_by: latest_cmc.rank
+    )
   end
 
   def projects_transparency() do

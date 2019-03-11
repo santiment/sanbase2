@@ -28,7 +28,8 @@ defmodule Sanbase.Signals.HistoricalActivity do
   end
 
   @doc """
-  Fetch signal historical activity for user with before and after cursors ordered by triggered_at descending
+  Fetch signal historical activity for user with cursor ordered by triggered_at descending.
+  Cursor is a map with `type` (one of `:before` and `:after`) and `datetime`. 
   * `before` cursor is pointed at the last record of the return list. 
     It is used for fetching messages `before` certain datetime
   * `after` cursor is pointed at latest message. It is used for fetching the latest signal activity.

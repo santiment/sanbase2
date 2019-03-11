@@ -854,10 +854,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc """
-    Get current_users's history of executed signals with cursor pagination.
-
-    * `before` cursor argument gives those executed before certain datetime 
-    * `after` cursor argument gives those executed after certain datetime
+    Get current user's history of executed signals with cursor pagination.
+    * `cursor` argument is an object with: type `BEFORE` or `AFTER` and `datetime`.
+      - `type: BEFORE` gives those executed before certain datetime 
+      - `type: AFTER` gives those executed after certain datetime
     * `limit` argument defines the size of the page. Default value is 25
     """
     field :signals_historical_activity, :signal_historical_activity_paginated do

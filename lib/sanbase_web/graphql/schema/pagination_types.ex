@@ -5,11 +5,11 @@ defmodule SanbaseWeb.Graphql.PaginationTypes do
 
   input_object :cursor_input do
     field(:type, non_null(:cursor_type))
-    field(:datetime, non_null(:naive_datetime))
+    field(:datetime, non_null(:datetime))
   end
 
   object :cursor do
-    field(:before, :naive_datetime)
-    field(:after, :naive_datetime)
+    field(:before, :datetime)
+    field(:after, :datetime)
   end
 end

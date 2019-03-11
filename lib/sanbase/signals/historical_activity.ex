@@ -43,14 +43,14 @@ defmodule Sanbase.Signals.HistoricalActivity do
     |> user_historical_activity(user_id, limit)
     |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
-    |> activity_with_cursors()
+    |> activity_with_cursor()
   end
 
   def fetch_historical_activity_for(%User{id: user_id}, %{limit: limit}) do
     HistoricalActivity
     |> user_historical_activity(user_id, limit)
     |> Repo.all()
-    |> activity_with_cursors()
+    |> activity_with_cursor()
   end
 
   def fetch_historical_activity_for(_, _), do: {:error, "Bad arguments"}
@@ -81,16 +81,26 @@ defmodule Sanbase.Signals.HistoricalActivity do
     )
   end
 
-  defp activity_with_cursors([]), do: {:ok, %{activity: [], cursor: %{}}}
+  defp activity_with_cursor([]), do: {:ok, %{activity: [], cursor: %{}}}
 
-  defp activity_with_cursors(activity) do
+  defp activity_with_cursor(activity) do
     before_datetime = activity |> List.last() |> Map.get(:triggered_at)
     after_datetime = activity |> List.first() |> Map.get(:triggered_at)
 
     {:ok,
      %{
-       activity: activity,
-       cursor: %{before: before_datetime, after: after_datetime}
+       activity: convert_activity_datetimes(activity),
+       cursor: %{
+         before: DateTime.from_naive!(before_datetime, "Etc/UTC"),
+         after: DateTime.from_naive!(after_datetime, "Etc/UTC")
+       }
      }}
+  end
+
+  defp convert_activity_datetimes(activity) do
+    activity
+    |> Enum.map(fn %HistoricalActivity{triggered_at: triggered_at} = ha ->
+      %{ha | triggered_at: DateTime.from_naive!(triggered_at, "Etc/UTC")}
+    end)
   end
 end

@@ -517,7 +517,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       current_user_signals_activity(
         conn,
-        "limit: 1, cursor: {type: BEFORE, datetime: '2019-01-20T00:00:00'}"
+        "limit: 1, cursor: {type: BEFORE, datetime: '2019-01-20T00:00:00Z'}"
       )
 
     assert result["activity"] == []
@@ -526,7 +526,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result =
       current_user_signals_activity(
         conn,
-        "limit: 1, cursor: {type: AFTER, datetime: '2019-01-20T00:00:00'}"
+        "limit: 1, cursor: {type: AFTER, datetime: '2019-01-20T00:00:00Z'}"
       )
 
     assert result["activity"] == []

@@ -8,7 +8,7 @@ defmodule SanbaseWeb.Graphql.SignalsHistoricalActivityTypes do
 
   object :signal_historical_activity do
     field(:user_trigger, non_null(:user_trigger))
-    field(:triggered_at, non_null(:naive_datetime))
+    field(:triggered_at, non_null(:datetime))
     field(:payload, non_null(:json))
   end
 end

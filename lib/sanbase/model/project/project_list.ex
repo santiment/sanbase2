@@ -1,9 +1,6 @@
 defmodule Sanbase.Model.Project.List do
   import Ecto.Query
 
-  require Sanbase.Model.ProjectQuery
-  import Sanbase.Model.ProjectQuery
-
   alias Sanbase.Repo
 
   alias Sanbase.Model.{Project, Infrastructure, LatestCoinmarketcapData}

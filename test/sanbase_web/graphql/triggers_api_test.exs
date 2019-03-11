@@ -444,7 +444,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         triggered_at: NaiveDateTime.from_iso8601!("2019-01-20T00:00:00")
       )
 
-    sga1 =
+    first_activity =
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
@@ -452,7 +452,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
       )
 
-    sga2 =
+    second_activity =
       insert(:signals_historical_activity,
         user: user,
         user_trigger: user_trigger,
@@ -465,12 +465,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     assert NaiveDateTime.compare(
              NaiveDateTime.from_iso8601!(latest_two["cursor"]["before"]),
-             sga1.triggered_at
+             first_activity.triggered_at
            ) == :eq
 
     assert NaiveDateTime.compare(
              NaiveDateTime.from_iso8601!(latest_two["cursor"]["after"]),
-             sga2.triggered_at
+             second_activity.triggered_at
            ) == :eq
 
     assert latest_two["activity"]

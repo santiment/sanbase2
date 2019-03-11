@@ -3,7 +3,7 @@ defmodule Sanbase.Model.Project.List do
 
   alias Sanbase.Repo
 
-  alias Sanbase.Model.{Project, Infrastructure, LatestCoinmarketcapData}
+  alias Sanbase.Model.Project
 
   @preloads [
     :eth_addresses,
@@ -34,14 +34,14 @@ defmodule Sanbase.Model.Project.List do
 
   defp erc20_projects_query(nil) do
     from(
-      p in projects_query(nil),
+      p in projects_query(),
       join: infr in assoc(p, :infrastructure),
       where: not is_nil(p.main_contract_address) and infr.code == "ETH"
     )
   end
 
   defp erc20_projects_query(min_volume) when is_valid_volume(min_volume) do
-    erc20_projects_query(nil)
+    erc20_projects_query()
     |> order_by_rank_above_volume(min_volume)
   end
 
@@ -196,7 +196,7 @@ defmodule Sanbase.Model.Project.List do
   end
 
   def projects_transparency() do
-    projects_query(nil)
+    projects_query()
     |> where([p], p.project_transparency)
     |> order_by([p], p.name)
     |> Repo.all()

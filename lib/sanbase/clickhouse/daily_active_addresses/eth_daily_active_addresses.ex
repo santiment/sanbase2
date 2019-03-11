@@ -26,9 +26,8 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
     """
 
     {:ok, result} =
-      ClickhouseRepo.query_transform(query, [], fn
-        active_addresses ->
-          active_addresses |> to_integer
+      ClickhouseRepo.query_transform(query, [], fn [active_addresses] ->
+        active_addresses |> to_integer
       end)
 
     {:ok, result |> List.first()}

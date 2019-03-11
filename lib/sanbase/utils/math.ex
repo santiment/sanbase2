@@ -69,7 +69,7 @@ defmodule Sanbase.Math do
   end
 
   def to_integer(str) when is_binary(str) do
-    String.to_integer(str)
+    String.trim(str) |> String.to_integer()
   end
 
   @doc ~S"""

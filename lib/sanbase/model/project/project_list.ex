@@ -14,7 +14,7 @@ defmodule Sanbase.Model.Project.List do
     icos: [ico_currencies: [:currency]]
   ]
 
-  defguard valid_volume(volume) when is_number(volume) and volume >= 0
+  defguard is_valid_volume(volume) when is_number(volume) and volume >= 0
 
   @doc ~s"""
   Return all erc20 projects
@@ -36,13 +36,12 @@ defmodule Sanbase.Model.Project.List do
   defp erc20_projects_query(nil) do
     from(
       p in projects_query(nil),
-      join: infr in Infrastructure,
-      on: p.infrastructure_id == infr.id,
+      join: infr in assoc(p, :infrastructure),
       where: not is_nil(p.main_contract_address) and infr.code == "ETH"
     )
   end
 
-  defp erc20_projects_query(min_volume) when valid_volume(min_volume) do
+  defp erc20_projects_query(min_volume) when is_valid_volume(min_volume) do
     from(
       p in erc20_projects_query(nil),
       join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
@@ -63,20 +62,18 @@ defmodule Sanbase.Model.Project.List do
     from(
       p in erc20_projects_query(nil),
       join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      limit: ^page_size,
-      offset: ^((page - 1) * page_size),
       order_by: latest_cmc.rank
     )
+    |> page(page, page_size)
   end
 
-  defp erc20_projects_page_query(page, page_size, min_volume) when valid_volume(min_volume) do
+  defp erc20_projects_page_query(page, page_size, min_volume) when is_valid_volume(min_volume) do
     from(
       [_p, _inf, latest_cmc] in erc20_projects_query(min_volume),
       where: latest_cmc.volume_usd >= ^min_volume,
-      limit: ^page_size,
-      offset: ^((page - 1) * page_size),
       order_by: latest_cmc.rank
     )
+    |> page(page, page_size)
   end
 
   @doc ~s"""
@@ -100,14 +97,13 @@ defmodule Sanbase.Model.Project.List do
   defp currency_projects_query(nil) do
     from(
       p in projects_query(nil),
-      join: infr in Infrastructure,
-      on: p.infrastructure_id == infr.id,
+      join: infr in assoc(p, :infrastructure),
       where:
         not is_nil(p.coinmarketcap_id) and (is_nil(p.main_contract_address) or infr.code != "ETH")
     )
   end
 
-  defp currency_projects_query(min_volume) when valid_volume(min_volume) do
+  defp currency_projects_query(min_volume) when is_valid_volume(min_volume) do
     from(
       p in currency_projects_query(nil),
       join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
@@ -129,19 +125,19 @@ defmodule Sanbase.Model.Project.List do
     from(
       p in currency_projects_query(nil),
       join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      limit: ^page_size,
-      offset: ^((page - 1) * page_size),
       order_by: latest_cmc.rank
     )
+    |> page(page, page_size)
   end
 
-  defp currency_projects_page_query(page, page_size, min_volume) when valid_volume(min_volume) do
+  defp currency_projects_page_query(page, page_size, min_volume)
+       when is_valid_volume(min_volume) do
     from(
       [_p, _inf, latest_cmc] in currency_projects_query(min_volume),
       where: latest_cmc.volume_usd >= ^min_volume,
-      limit: ^page_size,
-      offset: ^((page - 1) * page_size)
+      order_by: latest_cmc.rank
     )
+    |> page(page, page_size)
   end
 
   @doc ~s"""
@@ -189,20 +185,26 @@ defmodule Sanbase.Model.Project.List do
     from(
       p in projects_query(nil),
       join: latest_cmc in assoc(p, :latest_coinmarketcap_data),
-      limit: ^page_size,
-      offset: ^((page - 1) * page_size),
       order_by: latest_cmc.rank
     )
+    |> page(page, page_size)
   end
 
-  defp projects_page_query(page, page_size, min_volume) when valid_volume(min_volume) do
+  defp projects_page_query(page, page_size, min_volume) when is_valid_volume(min_volume) do
     from(
       [_p, latest_cmc] in projects_query(min_volume),
       where: latest_cmc.volume_usd >= ^min_volume,
-      limit: ^page_size,
-      offset: ^((page - 1) * page_size),
       order_by: latest_cmc.rank
     )
+    |> page(page, page_size)
+  end
+
+  defp page(query, page, page_size) do
+    offset = (page - 1) * page_size
+
+    query
+    |> offset(^offset)
+    |> limit(^page_size)
   end
 
   def projects_transparency() do

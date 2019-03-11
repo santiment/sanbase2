@@ -139,27 +139,6 @@ curl \
 
 ```
 
-### ERC20 Exchange Funds Flow
-
-<%= @erc20_exchange_funds_flow[:docs] %>
-
-
-<a href="<%= ~s|"#{@explorer_url}?variables=#{URI.encode(@erc20_exchange_funds_flow[:variables])}&query=#{URI.encode(@erc20_exchange_funds_flow[:query])}"| %>" target='_blank'>Run in explorer</a>
-
-```graphql
-<%= @erc20_exchange_funds_flow[:query] %>
-```
-
-Run in terminal
-
-```bash
-curl \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data '{ "query": <%= Jason.encode!(@erc20_exchange_funds_flow[:query]) %> }' \
-    <%= "  #{ @api_url }" %>
-
-```
 
 ### Social Volume
 

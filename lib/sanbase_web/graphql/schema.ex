@@ -486,41 +486,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc ~s"""
-    Fetch the exchange funds flow for all ERC20 projects in the given interval.
-
-    Arguments description:
-      * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-      * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-05-23T10:02:19Z"
-
-    Fields description:
-      * ticker - The ticker of the project
-      * contract - The contract identifier of the project
-      * exchangeIn - How many tokens were deposited in the given period
-      * exchangeOut - How many tokens were withdrawn in the given period
-      * exchangeDiff - The difference between the deposited and the withdrawn tokens: exchangeIn - exchangeOut
-      * exchangeInUsd - How many tokens were deposited in the given period converted to USD based on the daily average price of the token
-      * exchangeOutUsd - How many tokens were withdrawn in the given period converted to USD based on the daily average price of the token
-      * exchangeDiffUsd - The difference between the deposited and the withdrawn tokens in USD: exchangeInUsd - exchangeOutUsd
-      * percentDiffExchangeDiffUsd - The percent difference between exchangeDiffUsd for the current period minus the exchangeDiffUsd for the previous period based on exchangeDiffUsd for the current period: (exchangeDiffUsd for current period - exchangeDiffUsd for previous period) * 100 / abs(exchangeDiffUsd for current period)
-      * exchangeVolumeUsd - The volume of all tokens in and out for the given period in USD: exchangeInUsd + exchangeOutUsd
-      * percentDiffExchangeVolumeUsd - The percent difference between exchangeVolumeUsd for the current period minus the exchangeVolumeUsd for the previous period based on exchangeVolumeUsd for the current period: (exchangeVolumeUsd for current period - exchangeVolumeUsd for previous period) * 100 / abs(exchangeVolumeUsd for current period)
-      * exchangeInBtc - How many tokens were deposited in the given period converted to BTC based on the daily average price of the token
-      * exchangeOutBtc - How many tokens were withdrawn in the given period converted to BTC based on the daily average price of the token
-      * exchangeDiffBtc - The difference between the deposited and the withdrawn tokens in BTC: exchangeInBtc - exchangeOutBtc
-      * percentDiffExchangeDiffBtc - The percent difference between exchangeDiffBtc for the current period minus the exchangeDiffBtc for the previous period based on exchangeDiffBtc for the current period: (exchangeDiffBtc for current period - exchangeDiffBtc for previous period) * 100 / abs(exchangeDiffBtc for current period)
-      * exchangeVolumeBtc - The volume of all tokens in and out for the given period in BTC: exchangeInBtc + exchangeOutBtc
-      * percentDiffExchangeVolumeBtc - The percent difference between exchangeVolumeBtc for the current period minus the exchangeVolumeBtc for the previous period based on exchangeVolumeBtc for the current period: (exchangeVolumeBtc for current period - exchangeVolumeBtc for previous period) * 100 / abs(exchangeVolumeBtc for current period)
-    """
-    field :erc20_exchange_funds_flow, list_of(:erc20_exchange_funds_flow) do
-      arg(:from, non_null(:datetime))
-      arg(:to, non_null(:datetime))
-
-      complexity(&Complexity.from_to_interval/3)
-      middleware(ApiTimeframeRestriction)
-      cache_resolve(&TechIndicatorsResolver.erc20_exchange_funds_flow/3)
-    end
-
-    @desc ~s"""
     Fetch the price-volume difference technical indicator for a given ticker, display currency and time period.
     This indicator measures the difference in trend between price and volume,
     specifically when price goes up as volume goes down.

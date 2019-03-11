@@ -90,10 +90,9 @@ defmodule Sanbase.Model.Project.List do
 
   defp currency_projects_query(nil) do
     from(
-      p in projects_query(nil),
+      p in projects_query(),
       join: infr in assoc(p, :infrastructure),
-      where:
-        not is_nil(p.coinmarketcap_id) and (is_nil(p.main_contract_address) or infr.code != "ETH")
+      where: is_nil(p.main_contract_address) or infr.code != "ETH"
     )
   end
 

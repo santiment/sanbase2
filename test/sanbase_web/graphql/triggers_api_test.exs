@@ -464,29 +464,25 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     latest_two = current_user_signals_activity(conn, "limit: 2")
 
     assert NaiveDateTime.compare(
-             NaiveDateTime.from_iso8601!(
-               latest_two["signals_historical_activity"]["cursor"]["before"]
-             ),
+             NaiveDateTime.from_iso8601!(latest_two["cursor"]["before"]),
              sga1.triggered_at
            ) == :eq
 
     assert NaiveDateTime.compare(
-             NaiveDateTime.from_iso8601!(
-               latest_two["signals_historical_activity"]["cursor"]["after"]
-             ),
+             NaiveDateTime.from_iso8601!(latest_two["cursor"]["after"]),
              sga2.triggered_at
            ) == :eq
 
-    assert latest_two["signals_historical_activity"]["activity"]
+    assert latest_two["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "second"}, %{"all" => "first"}]
 
-    before_cursor = latest_two["signals_historical_activity"]["cursor"]["before"]
+    before_cursor = latest_two["cursor"]["before"]
 
     # fetch one activity before previous last 2 fetched activities
     before_cursor_res =
       current_user_signals_activity(conn, "limit: 1, before: '#{before_cursor}'")
 
-    assert before_cursor_res["signals_historical_activity"]["activity"]
+    assert before_cursor_res["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "oldest"}]
 
     # insert new latest activity and fetch it with after cursor
@@ -498,25 +494,25 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         triggered_at: NaiveDateTime.from_iso8601!("2019-01-23T00:00:00")
       )
 
-    after_cursor = latest_two["signals_historical_activity"]["cursor"]["after"]
+    after_cursor = latest_two["cursor"]["after"]
     after_cursor_res = current_user_signals_activity(conn, "limit: 1, after: '#{after_cursor}'")
 
-    assert after_cursor_res["signals_historical_activity"]["activity"]
+    assert after_cursor_res["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "latest"}]
   end
 
   test "test fetching signal historical activities when there is none", %{conn: conn} do
     result = current_user_signals_activity(conn, "limit: 2")
-    assert result["signals_historical_activity"]["activity"] == []
-    assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
+    assert result["activity"] == []
+    assert result["cursor"] == %{"after" => nil, "before" => nil}
 
     result = current_user_signals_activity(conn, "limit: 1, before: '2019-01-20T00:00:00'")
-    assert result["signals_historical_activity"]["activity"] == []
-    assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
+    assert result["activity"] == []
+    assert result["cursor"] == %{"after" => nil, "before" => nil}
 
     result = current_user_signals_activity(conn, "limit: 1, after: '2019-01-20T00:00:00'")
-    assert result["signals_historical_activity"]["activity"] == []
-    assert result["signals_historical_activity"]["cursor"] == %{"after" => nil, "before" => nil}
+    assert result["activity"] == []
+    assert result["cursor"] == %{"after" => nil, "before" => nil}
   end
 
   test "test fetching signal historical activities with both cursors", %{conn: conn, user: user} do
@@ -556,28 +552,25 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         "limit: 1, before: '2019-01-20T00:00:00', after: '2019-01-20T00:00:00'"
       )
 
-    assert result["signals_historical_activity"] == nil
+    assert result == nil
   end
 
   defp current_user_signals_activity(conn, args_str) do
     query =
       ~s|
     {
-      currentUser {
-        id,
-        signals_historical_activity(#{args_str}) {
-          cursor {
-            after
-            before
-          }
-          activity {
-            payload,
-            triggered_at,
-            user_trigger {
-              trigger {
-                title,
-                description
-              }
+      signalsHistoricalActivity(#{args_str}) {
+        cursor {
+          after
+          before
+        }
+        activity {
+          payload,
+          triggered_at,
+          userTrigger {
+            trigger {
+              title,
+              description
             }
           }
         }
@@ -587,10 +580,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     result =
       conn
-      |> post("/graphql", query_skeleton(query, "currentUser"))
+      |> post("/graphql", query_skeleton(query, "signalsHistoricalActivity"))
       |> json_response(200)
 
-    result["data"]["currentUser"]
+    result["data"]["signalsHistoricalActivity"]
   end
 
   defp format_interpolated_json(string) do

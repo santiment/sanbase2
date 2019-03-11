@@ -852,6 +852,21 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       resolve(&UserTriggerResolver.historical_trigger_points/3)
     end
+
+    @desc """
+    Get current_users's history of executed signals with cursor pagination.
+
+    * `before` cursor argument gives those executed before certain datetime 
+    * `after` cursor argument gives those executed after certain datetime
+    * `limit` argument defines the size of the page. Default value is 25
+    """
+    field :signals_historical_activity, :signal_historical_activity_paginated do
+      arg(:before, :naive_datetime)
+      arg(:after, :naive_datetime)
+      arg(:limit, :integer, default_value: 25)
+
+      resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
+    end
   end
 
   mutation do

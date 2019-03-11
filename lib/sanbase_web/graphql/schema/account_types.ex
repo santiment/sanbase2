@@ -40,14 +40,6 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field :triggers, list_of(:trigger) do
       resolve(&UserTriggerResolver.triggers/3)
     end
-
-    field :signals_historical_activity, :signal_historical_activity_paginated do
-      arg(:before, :naive_datetime)
-      arg(:after, :naive_datetime)
-      arg(:limit, :integer, default_value: 25)
-
-      resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
-    end
   end
 
   @desc ~s"""

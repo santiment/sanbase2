@@ -480,7 +480,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     # fetch one activity before previous last 2 fetched activities
     before_cursor_res =
-      current_user_signals_activity(conn, "limit: 1, before: '#{before_cursor}'")
+      current_user_signals_activity(
+        conn,
+        "limit: 1, cursor: {type: BEFORE, datetime: '#{before_cursor}'}"
+      )
 
     assert before_cursor_res["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "oldest"}]
@@ -495,7 +498,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       )
 
     after_cursor = latest_two["cursor"]["after"]
-    after_cursor_res = current_user_signals_activity(conn, "limit: 1, after: '#{after_cursor}'")
+
+    after_cursor_res =
+      current_user_signals_activity(
+        conn,
+        "limit: 1, cursor: {type: AFTER, datetime: '#{after_cursor}'}"
+      )
 
     assert after_cursor_res["activity"]
            |> Enum.map(&Map.get(&1, "payload")) == [%{"all" => "latest"}]
@@ -506,58 +514,28 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert result["activity"] == []
     assert result["cursor"] == %{"after" => nil, "before" => nil}
 
-    result = current_user_signals_activity(conn, "limit: 1, before: '2019-01-20T00:00:00'")
-    assert result["activity"] == []
-    assert result["cursor"] == %{"after" => nil, "before" => nil}
-
-    result = current_user_signals_activity(conn, "limit: 1, after: '2019-01-20T00:00:00'")
-    assert result["activity"] == []
-    assert result["cursor"] == %{"after" => nil, "before" => nil}
-  end
-
-  test "test fetching signal historical activities with both cursors", %{conn: conn, user: user} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "filtered_target_list" => [],
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
-
-    user_trigger =
-      insert(:user_triggers,
-        user: user,
-        trigger: %{
-          is_public: false,
-          settings: trigger_settings,
-          title: "alabala",
-          description: "portokala"
-        }
+    result =
+      current_user_signals_activity(
+        conn,
+        "limit: 1, cursor: {type: BEFORE, datetime: '2019-01-20T00:00:00'}"
       )
 
-    insert(:signals_historical_activity,
-      user: user,
-      user_trigger: user_trigger,
-      payload: %{"all" => "test"},
-      triggered_at: NaiveDateTime.from_iso8601!("2019-01-21T00:00:00")
-    )
+    assert result["activity"] == []
+    assert result["cursor"] == %{"after" => nil, "before" => nil}
 
     result =
       current_user_signals_activity(
         conn,
-        "limit: 1, before: '2019-01-20T00:00:00', after: '2019-01-20T00:00:00'"
+        "limit: 1, cursor: {type: AFTER, datetime: '2019-01-20T00:00:00'}"
       )
 
-    assert result == nil
+    assert result["activity"] == []
+    assert result["cursor"] == %{"after" => nil, "before" => nil}
   end
 
   test "fetch signal historical activities without logged in user" do
     assert current_user_signals_activity(
-             build_conn,
+             build_conn(),
              "limit: 1"
            ) == nil
   end

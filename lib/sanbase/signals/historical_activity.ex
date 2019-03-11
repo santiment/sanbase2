@@ -34,28 +34,13 @@ defmodule Sanbase.Signals.HistoricalActivity do
   * `after` cursor is pointed at latest message. It is used for fetching the latest signal activity.
   """
 
-  def fetch_historical_activity_for(_, %{before: before_datetime, after: after_datetime}) do
-    {:error, "Either before or after cursor should be used but not both"}
-  end
-
   def fetch_historical_activity_for(
         %User{id: user_id},
-        %{limit: limit, before: before_datetime}
+        %{limit: limit, cursor: %{type: cursor_type, datetime: cursor_datetime}}
       ) do
     HistoricalActivity
     |> user_historical_activity(user_id, limit)
-    |> before_datetime(before_datetime)
-    |> Repo.all()
-    |> activity_with_cursors()
-  end
-
-  def fetch_historical_activity_for(
-        %User{id: user_id},
-        %{limit: limit, after: after_datetime}
-      ) do
-    HistoricalActivity
-    |> user_historical_activity(user_id, limit)
-    |> after_datetime(after_datetime)
+    |> by_cursor(cursor_type, cursor_datetime)
     |> Repo.all()
     |> activity_with_cursors()
   end
@@ -81,17 +66,17 @@ defmodule Sanbase.Signals.HistoricalActivity do
     )
   end
 
-  defp before_datetime(query, before_datetime) do
+  defp by_cursor(query, :before, datetime) do
     from(
       ha in query,
-      where: ha.triggered_at < ^before_datetime
+      where: ha.triggered_at < ^datetime
     )
   end
 
-  defp after_datetime(query, after_datetime) do
+  defp by_cursor(query, :after, datetime) do
     from(
       ha in query,
-      where: ha.triggered_at > ^after_datetime
+      where: ha.triggered_at > ^datetime
     )
   end
 

@@ -861,8 +861,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     * `limit` argument defines the size of the page. Default value is 25
     """
     field :signals_historical_activity, :signal_historical_activity_paginated do
-      arg(:before, :naive_datetime)
-      arg(:after, :naive_datetime)
+      arg(:cursor, :cursor_input)
       arg(:limit, :integer, default_value: 25)
 
       middleware(JWTAuth)

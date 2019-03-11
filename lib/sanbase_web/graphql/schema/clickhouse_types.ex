@@ -20,4 +20,10 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:datetime, non_null(:datetime))
     field(:new_addresses, :integer)
   end
+
+  object :nvt_ratio do
+    field(:datetime, non_null(:datetime))
+    field(:nvt_ratio_circulation, :float)
+    field(:nvt_ratio_tx_volume, :float)
+  end
 end

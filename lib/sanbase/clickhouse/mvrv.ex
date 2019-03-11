@@ -58,14 +58,13 @@ defmodule Sanbase.Clickhouse.MVRV do
   end
 
   defp fill_last_seen({:ok, [%{ratio: ratio} | _] = result}) do
-    result
-    |> Enum.reduce({ratio, []}, &fill_element/2)
-    |> elem(1)
-    |> Enum.reverse()
+    filled_result =
+      result
+      |> Enum.reduce({ratio, []}, &fill_element/2)
+      |> elem(1)
+      |> Enum.reverse()
 
-    IO.inspect(result)
-
-    {:ok, result}
+    {:ok, filled_result}
   end
 
   defp fill_last_seen(data), do: data

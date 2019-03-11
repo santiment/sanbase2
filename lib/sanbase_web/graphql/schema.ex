@@ -781,7 +781,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, non_null(:string), default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)

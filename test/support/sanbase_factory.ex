@@ -5,7 +5,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.Voting.{Post, Poll}
   alias Sanbase.Model.{Project, ExchangeAddress}
-  alias Sanbase.Signals.UserTrigger
+  alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
 
   def user_factory do
     %User{
@@ -77,6 +77,12 @@ defmodule Sanbase.Factory do
   def user_triggers_factory() do
     %UserTrigger{
       trigger: %{}
+    }
+  end
+
+  def signals_historical_activity_factory() do
+    %HistoricalActivity{
+      user_trigger: %{}
     }
   end
 end

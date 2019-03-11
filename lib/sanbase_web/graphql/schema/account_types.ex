@@ -7,7 +7,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     AccountResolver,
     EthAccountResolver,
     UserSettingsResolver,
-    UserTriggerResolver
+    UserTriggerResolver,
+    SignalsHistoricalActivityResolver
   }
 
   object :user do

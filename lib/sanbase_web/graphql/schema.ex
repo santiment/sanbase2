@@ -23,7 +23,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     ExchangeResolver,
     UserSettingsResolver,
     TelegramResolver,
-    UserTriggerResolver
+    UserTriggerResolver,
+    SignalsHistoricalActivityResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
@@ -65,6 +66,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.UserSettingsTypes)
   import_types(SanbaseWeb.Graphql.UserTriggerTypes)
   import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
+  import_types(SanbaseWeb.Graphql.PaginationTypes)
+  import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -845,6 +848,22 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:settings, :json)
 
       resolve(&UserTriggerResolver.historical_trigger_points/3)
+    end
+
+    @desc """
+    Get current user's history of executed signals with cursor pagination.
+    * `cursor` argument is an object with: type `BEFORE` or `AFTER` and `datetime`.
+      - `type: BEFORE` gives those executed before certain datetime 
+      - `type: AFTER` gives those executed after certain datetime
+    * `limit` argument defines the size of the page. Default value is 25
+    """
+    field :signals_historical_activity, :signal_historical_activity_paginated do
+      arg(:cursor, :cursor_input)
+      arg(:limit, :integer, default_value: 25)
+
+      middleware(JWTAuth)
+
+      resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
     end
   end
 

@@ -3,6 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
+  alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Clickhouse.{HistoricalBalance, MVRV, NetworkGrowth}
 
   def network_growth(_root, args, _resolution) do
@@ -26,13 +27,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, mvrv_ratio}
     else
       {:error, error} ->
-        Logger.warn(
-          "Can't calculate MVRV ratio for project with coinmarketcap_id: #{args.slug}. Reason: #{
-            inspect(error)
-          }"
-        )
+        error_message = Utils.build_error_message("MVRV ratio", args.slug)
+        Utils.log_error(error, error_message)
 
-        {:error, "Can't calculate MVRV ratio"}
+        {:error, error_message}
     end
   end
 

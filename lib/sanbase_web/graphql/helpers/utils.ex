@@ -1,5 +1,6 @@
 defmodule SanbaseWeb.Graphql.Helpers.Utils do
   alias Sanbase.DateTimeUtils
+  require Logger
 
   def calibrate_interval(
         module,
@@ -74,6 +75,14 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
       )
 
     {:ok, from, to, interval, ma_interval}
+  end
+
+  def build_error_message(name, project) do
+    "Can't fetch #{name} for project: #{project}"
+  end
+
+  def log_error(error, message) do
+    Logger.warn(message <> ". Reason: #{inspect(error)}")
   end
 
   def error_details(changeset) do

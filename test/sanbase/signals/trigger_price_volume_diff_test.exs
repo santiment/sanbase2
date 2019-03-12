@@ -148,16 +148,14 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       type: "price_volume_difference",
       target: "santiment",
       channel: "telegram",
-      threshold: 0.002,
-      repeating: false
+      threshold: 0.002
     }
 
     trigger_settings2 = %{
       type: "price_volume_difference",
       target: "santiment",
       channel: "telegram",
-      threshold: 0.1,
-      repeating: false
+      threshold: 0.1
     }
 
     {:ok, trigger1} =

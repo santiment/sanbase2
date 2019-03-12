@@ -37,8 +37,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     trigger_settings2 = %{
@@ -46,8 +45,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0,
-      repeating: false
+      percent_threshold: 200.0
     }
 
     trending_words_settings = %{

@@ -65,7 +65,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false,
       "payload" => nil,
       "triggered?" => false
     }
@@ -564,7 +563,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false,
       "payload" => nil,
       "triggered?" => false
     }

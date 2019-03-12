@@ -31,7 +31,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     assert created_trigger.trigger.settings == trigger_settings
 
-    trigger_id = created_trigger.trigger.id
+    trigger_id = created_trigger.id
 
     {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.get_trigger_by_id(user, trigger_id)
 
@@ -258,7 +258,7 @@ defmodule Sanbase.Signals.TriggersTest do
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
 
-    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:trigger) |> Map.get(:id)
+    trigger_id = UserTrigger.triggers_for(user) |> hd |> Map.get(:id)
 
     updated_trigger = %{
       type: "daily_active_addresses",
@@ -290,7 +290,7 @@ defmodule Sanbase.Signals.TriggersTest do
     assert length(triggers) == 2
 
     %UserTrigger{trigger: trigger} =
-      Enum.find(triggers, fn %UserTrigger{trigger: trigger} -> trigger.id == trigger_id end)
+      Enum.find(triggers, fn %UserTrigger{id: id} -> id == trigger_id end)
 
     assert trigger.settings.repeating == true
     assert trigger.title == new_title
@@ -316,7 +316,7 @@ defmodule Sanbase.Signals.TriggersTest do
     )
 
     ut = UserTrigger.triggers_for(user)
-    trigger_id = ut |> hd |> Map.get(:trigger) |> Map.get(:id)
+    trigger_id = ut |> hd |> Map.get(:id)
 
     UserTrigger.update_user_trigger(user, %{id: trigger_id, is_public: true, cooldown: "1h"})
     user_triggers = UserTrigger.triggers_for(user)

@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
 
     %{
       ut
-      | trigger: Map.put(trigger, :tags, tags)
+      | trigger: trigger |> Map.put(:tags, tags) |> Map.put(:id, ut.id)
     }
   end
 end

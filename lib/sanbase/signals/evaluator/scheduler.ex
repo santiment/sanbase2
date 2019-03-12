@@ -115,7 +115,8 @@ defmodule Sanbase.Signals.Scheduler do
   defp update_last_triggered(
          %{
            user: user,
-           trigger: %{id: trigger_id, last_triggered: last_triggered}
+           id: trigger_id,
+           trigger: %{last_triggered: last_triggered}
          },
          send_results_list
        ) do

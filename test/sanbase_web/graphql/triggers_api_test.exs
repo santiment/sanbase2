@@ -472,7 +472,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       ~s|
     mutation {
       updateTrigger(
-        id: '#{ut.trigger.id}',
+        id: #{ut.id},
         active: false
       ) {
         trigger{
@@ -504,7 +504,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       ~s|
     mutation {
       updateTrigger(
-        id: '#{ut.trigger.id}',
+        id: #{ut.id},
         active: true
       ) {
         trigger{

@@ -199,7 +199,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
   test "Non active signals are filtered", context do
     UserTrigger.update_user_trigger(context.user, %{
-      id: context.trigger_trending_words.trigger.id,
+      id: context.trigger_trending_words.id,
       active: false
     })
 

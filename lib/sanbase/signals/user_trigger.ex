@@ -99,7 +99,7 @@ defmodule Sanbase.Signals.UserTrigger do
     result =
       from(
         ut in UserTrigger,
-        where: ut.user_id == ^user_id and trigger_by_id(trigger_id),
+        where: ut.user_id == ^user_id and ut.id == ^trigger_id,
         preload: [:tags]
       )
       |> Repo.one()
@@ -145,7 +145,8 @@ defmodule Sanbase.Signals.UserTrigger do
     end
   end
 
-  def create_user_trigger(_, _), do: {:error, "Trigger structure is invalid"}
+  def create_user_trigger(_, _),
+    do: {:error, "Trigger structure is invalid. Parameter 'settings' is missing"}
 
   @doc ~s"""
   Update an existing user trigger with a given UUID `trigger_id`.

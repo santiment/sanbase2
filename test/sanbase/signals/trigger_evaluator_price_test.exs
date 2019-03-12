@@ -79,7 +79,8 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     assert capture_log(fn ->
              Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
-           end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
+           end) =~
+             "In total 1/1 price_absolute_change signals were sent successfully"
 
     Sanbase.Signals.Evaluator.Cache.clear()
 

@@ -808,7 +808,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Get signal trigger by its id"
     field :get_trigger_by_id, :user_trigger do
-      arg(:id, non_null(:string))
+      arg(:id, non_null(:integer))
 
       middleware(JWTAuth)
       resolve(&UserTriggerResolver.get_trigger_by_id/3)
@@ -816,7 +816,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Get public signal triggers by user_id"
     field :public_triggers_for_user, list_of(:user_trigger) do
-      arg(:user_id, non_null(:integer))
+      arg(:user_id, non_null(:id))
 
       resolve(&UserTriggerResolver.public_triggers_for_user/3)
     end
@@ -837,7 +837,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc """
     Get current user's history of executed signals with cursor pagination.
     * `cursor` argument is an object with: type `BEFORE` or `AFTER` and `datetime`.
-      - `type: BEFORE` gives those executed before certain datetime 
+      - `type: BEFORE` gives those executed before certain datetime
       - `type: AFTER` gives those executed after certain datetime
     * `limit` argument defines the size of the page. Default value is 25
     """
@@ -1108,7 +1108,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns the updated trigger.
     """
     field :update_trigger, :user_trigger do
-      arg(:id, non_null(:string))
+      arg(:id, non_null(:integer))
       arg(:title, :string)
       arg(:description, :string)
       arg(:icon_url, :string)
@@ -1127,7 +1127,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     Returns the removed trigger on success.
     """
     field :remove_trigger, :user_trigger do
-      arg(:id, non_null(:string))
+      arg(:id, non_null(:integer))
 
       middleware(JWTAuth)
 

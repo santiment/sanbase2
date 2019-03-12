@@ -110,7 +110,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     updated_trigger = trigger_settings |> Map.put("percent_threshold", 400.0)
     user_trigger = UserTrigger.triggers_for(user) |> List.first()
-    trigger_id = user_trigger.trigger.id
+    trigger_id = user_trigger.id
 
     trigger_settings_json = updated_trigger |> Jason.encode!()
 
@@ -118,7 +118,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       ~s|
     mutation {
       updateTrigger(
-        id: '#{trigger_id}'
+        id: #{trigger_id}
         settings: '#{trigger_settings_json}'
         tags: ['tag1', 'tag2']
         cooldown: '23h'
@@ -151,13 +151,13 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
     user_trigger = UserTrigger.triggers_for(user) |> List.first()
-    trigger_id = user_trigger.trigger.id
+    trigger_id = user_trigger.id
 
     query =
       ~s|
     mutation {
       removeTrigger(
-        id: '#{trigger_id}'
+        id: #{trigger_id}
       ) {
         trigger{
           id
@@ -185,16 +185,16 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     )
 
     user_trigger = UserTrigger.triggers_for(user) |> List.first()
-    trigger_id = user_trigger.trigger.id
+    trigger_id = user_trigger.id
 
     query = """
     query {
       getTriggerById(
-        id: "#{trigger_id}"
-      ) {
-        trigger{
-          id
-          settings
+        id: #{trigger_id}
+        ) {
+          trigger{
+            id
+            settings
         }
       }
     }
@@ -254,7 +254,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       allPublicTriggers {
         user_id
         trigger {
-          id,
+          id
           settings
         }
       }
@@ -381,7 +381,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         triggered_at: NaiveDateTime.from_iso8601!("2019-01-22T00:00:00")
       )
 
-    # fetch the last 2 signal activities  
+    # fetch the last 2 signal activities
     latest_two = current_user_signals_activity(conn, "limit: 2")
 
     assert NaiveDateTime.compare(

@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
   end
 
   object :trigger do
-    field(:id, :string)
+    field(:id, :integer)
     field(:title, :string)
     field(:description, :string)
     field(:icon_url, :string)

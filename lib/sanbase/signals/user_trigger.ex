@@ -7,6 +7,8 @@ defmodule Sanbase.Signals.UserTrigger do
   """
   @derive [Sanbase.Signal, Jason.Encoder]
 
+  @type trigger_id :: non_neg_integer()
+
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -92,9 +94,10 @@ defmodule Sanbase.Signals.UserTrigger do
   end
 
   @doc ~s"""
-  Get the trigger that has UUID `trigger_id` if and only if it is owned by the
+  Get the trigger that has an id `trigger_id` if and only if it is owned by the
   user with id `user_id`
   """
+  @spec get_trigger_by_id(%User{}, trigger_id) :: {:ok, %UserTrigger{} | nil}
   def get_trigger_by_id(%User{id: user_id} = _user, trigger_id) do
     result =
       from(
@@ -174,7 +177,7 @@ defmodule Sanbase.Signals.UserTrigger do
   @doc ~s"""
   Remove an existing user trigger with a given UUID `trigger_id`.
   """
-  @spec remove_user_trigger(%User{}, String.t()) ::
+  @spec remove_user_trigger(%User{}, trigger_id) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def remove_user_trigger(%User{} = user, trigger_id) do
     case get_trigger_by_id(user, trigger_id) do

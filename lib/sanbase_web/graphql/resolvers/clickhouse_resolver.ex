@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
-  alias Sanbase.Clickhouse.{HistoricalBalance, NetworkGrowth}
+  alias Sanbase.Clickhouse.{HistoricalBalance, MVRV, NetworkGrowth}
 
   def network_growth(_root, args, _resolution) do
     interval = DateTimeUtils.compound_duration_to_seconds(args.interval)
@@ -17,6 +17,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         Logger.error("Can't calculate network growth. Reason: #{inspect(error)}")
 
         {:error, "Can't calculate network growth"}
+    end
+  end
+
+  def mvrv_ratio(_root, args, _resolution) do
+    # TODO: Check if interval is a whole day as in token circulation
+    with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(args.slug, args.from, args.to, args.interval) do
+      {:ok, mvrv_ratio}
+    else
+      {:error, error} ->
+        Logger.warn(
+          "Can't calculate MVRV ratio for project with coinmarketcap_id: #{args.slug}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:error, "Can't calculate MVRV ratio"}
     end
   end
 

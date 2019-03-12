@@ -10,4 +10,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:datetime, non_null(:datetime))
     field(:new_addresses, :integer)
   end
+
+  object :mvrv_ratio do
+    field(:datetime, non_null(:datetime))
+    field(:ratio, :float)
+  end
 end

@@ -56,7 +56,7 @@ defmodule Sanbase.Signals.Scheduler do
   defp run(type) do
     {updated_user_triggers, sent_list_results} =
       type
-      |> UserTrigger.get_triggers_by_type()
+      |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run()
       |> filter_triggered?()
       |> send_and_mark_as_sent()

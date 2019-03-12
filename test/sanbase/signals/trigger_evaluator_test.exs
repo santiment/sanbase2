@@ -94,7 +94,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       end do
       [triggered1, triggered2 | rest] =
         DailyActiveAddressesSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       # 2 signals triggered
@@ -111,7 +111,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       end do
       [triggered | rest] =
         DailyActiveAddressesSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       # 1 signal triggered
@@ -127,7 +127,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       end do
       triggered =
         DailyActiveAddressesSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       # 0 signals triggered
@@ -142,7 +142,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       end do
       [triggered] =
         TrendingWordsTriggerSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       assert context.trigger_trending_words.id == triggered.id
@@ -195,6 +195,17 @@ defmodule Sanbase.Signals.EvaluatorTest do
       assert user_signal.user_id == context.user.id
       assert String.contains?(user_signal.payload["all"], "coinbase")
     end
+  end
+
+  test "Non active signals are filtered", context do
+    UserTrigger.update_user_trigger(context.user, %{
+      id: context.trigger_trending_words.trigger.id,
+      active: false
+    })
+
+    assert capture_log(fn ->
+             Sanbase.Signals.Scheduler.run_trending_words_signals()
+           end) =~ "There were no signals triggered of type"
   end
 
   defp top_words() do

@@ -461,6 +461,70 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
            ) == nil
   end
 
+  test "deactivate signal", %{user: user, conn: conn} do
+    trigger_settings = default_trigger_settings()
+
+    ut = insert(:user_triggers, user: user, trigger: %{settings: trigger_settings})
+
+    assert ut.trigger.active
+
+    query =
+      ~s|
+    mutation {
+      updateTrigger(
+        id: '#{ut.trigger.id}',
+        active: false
+      ) {
+        trigger{
+          active
+        }
+      }
+    }
+    |
+      |> format_interpolated_json()
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => query})
+      |> json_response(200)
+
+    trigger = result["data"]["updateTrigger"]["trigger"]
+
+    assert trigger["active"] == false
+  end
+
+  test "activate signal", %{user: user, conn: conn} do
+    trigger_settings = default_trigger_settings()
+
+    ut = insert(:user_triggers, user: user, trigger: %{active: false, settings: trigger_settings})
+
+    refute ut.trigger.active
+
+    query =
+      ~s|
+    mutation {
+      updateTrigger(
+        id: '#{ut.trigger.id}',
+        active: true
+      ) {
+        trigger{
+          active
+        }
+      }
+    }
+    |
+      |> format_interpolated_json()
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => query})
+      |> json_response(200)
+
+    trigger = result["data"]["updateTrigger"]["trigger"]
+
+    assert trigger["active"] == true
+  end
+
   defp current_user_signals_activity(conn, args_str) do
     query =
       ~s|

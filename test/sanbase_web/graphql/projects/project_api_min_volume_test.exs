@@ -139,6 +139,13 @@ defmodule Sanbase.Graphql.ProjectApiMinVolumeQueriesTest do
         |> json_response(200)
 
       assert result["data"]["allProjects"] |> length == context.projects_with_volume_count
+
+      assert result["data"]["allProjects"] == [
+               %{"name" => "Project4"},
+               %{"name" => "Project3"},
+               %{"name" => "Project2"},
+               %{"name" => "Project1"}
+             ]
     end
 
     test "min_volume and fetch first page", context do
@@ -194,6 +201,12 @@ defmodule Sanbase.Graphql.ProjectApiMinVolumeQueriesTest do
         |> json_response(200)
 
       assert result["data"]["allErc20Projects"] |> length == context.erc20_projects_count
+
+      assert result["data"]["allErc20Projects"] == [
+               %{"name" => "Project1"},
+               %{"name" => "Project2"},
+               %{"name" => "Project5"}
+             ]
     end
 
     test "min_volume 0 specified fetches all projects with volume data", context do
@@ -267,6 +280,12 @@ defmodule Sanbase.Graphql.ProjectApiMinVolumeQueriesTest do
         |> json_response(200)
 
       assert result["data"]["allCurrencyProjects"] |> length == context.currency_projects_count
+
+      assert result["data"]["allCurrencyProjects"] == [
+               %{"name" => "Project3"},
+               %{"name" => "Project4"},
+               %{"name" => "Project6"}
+             ]
     end
 
     test "min_volume 0 specified fetches all projects with volume data", context do

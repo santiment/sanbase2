@@ -2,7 +2,7 @@ defmodule Sanbase.ExAdmin.Auth.User do
   use ExAdmin.Register
 
   alias Sanbase.Auth.EthAccount
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
 
   @environment Mix.env()
 

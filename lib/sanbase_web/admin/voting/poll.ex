@@ -1,6 +1,6 @@
-defmodule Sanbase.ExAdmin.Voting.Poll do
+defmodule Sanbase.ExAdmin.Insight.Poll do
   use ExAdmin.Register
 
-  register_resource Sanbase.Voting.Poll do
+  register_resource Sanbase.Insight.Poll do
   end
 end

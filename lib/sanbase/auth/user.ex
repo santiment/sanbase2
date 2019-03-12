@@ -12,7 +12,7 @@ defmodule Sanbase.Auth.User do
     UserSettings
   }
 
-  alias Sanbase.Voting.{Vote, Post}
+  alias Sanbase.Insight.{Vote, Post}
   alias Sanbase.UserLists.UserList
   alias Sanbase.Repo
   alias Sanbase.Telegram

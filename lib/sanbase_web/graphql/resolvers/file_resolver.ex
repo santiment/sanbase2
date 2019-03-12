@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.FileResolver do
   require Logger
 
   alias Sanbase.FileStore
-  alias Sanbase.Voting.PostImage
+  alias Sanbase.Insight.PostImage
 
   @hash_algorithm :sha256
 

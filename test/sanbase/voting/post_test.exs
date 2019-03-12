@@ -1,10 +1,10 @@
-defmodule Sanbase.Voting.PostTest do
+defmodule Sanbase.Insight.PostTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
   alias Sanbase.Repo
   alias Sanbase.Auth.User
-  alias Sanbase.Voting.{Poll, Post}
+  alias Sanbase.Insight.{Poll, Post}
 
   test "create_changeset does not allow to approve the post" do
     poll =

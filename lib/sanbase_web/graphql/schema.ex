@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     GithubResolver,
     TwitterResolver,
     EtherbiResolver,
-    VotingResolver,
+    InsightResolver,
     TechIndicatorsResolver,
     SocialDataResolver,
     FileResolver,
@@ -53,7 +53,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.GithubTypes)
   import_types(SanbaseWeb.Graphql.TwitterTypes)
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
-  import_types(SanbaseWeb.Graphql.VotingTypes)
+  import_types(SanbaseWeb.Graphql.InsightTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
@@ -445,7 +445,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch the currently running poll."
     field :current_poll, :poll do
-      cache_resolve(&VotingResolver.current_poll/3)
+      cache_resolve(&InsightResolver.current_poll/3)
     end
 
     @desc ~s"""
@@ -942,14 +942,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.vote/3)
+      resolve(&InsightResolver.vote/3)
     end
 
     field :unvote, :post do
       arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.unvote/3)
+      resolve(&InsightResolver.unvote/3)
     end
 
     @desc """

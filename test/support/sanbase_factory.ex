@@ -3,7 +3,7 @@ defmodule Sanbase.Factory do
 
   alias Sanbase.Tag
   alias Sanbase.Auth.{User, UserSettings}
-  alias Sanbase.Voting.{Post, Poll}
+  alias Sanbase.Insight.{Post, Poll}
   alias Sanbase.Model.{Project, ExchangeAddress}
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
 

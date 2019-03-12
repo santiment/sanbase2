@@ -28,7 +28,7 @@ alias Sanbase.Auth.{
 
 alias Sanbase.Tag
 
-alias Sanbase.Voting.{
+alias Sanbase.Insight.{
   Post,
   Poll,
   Vote,
@@ -140,7 +140,7 @@ alias SanbaseWeb.Graphql.Resolvers.{
   TechIndicatorsResolver,
   TwitterResolver,
   UserListResolver,
-  VotingResolver,
+  InsightResolver,
   ClickhouseResolver
 }
 

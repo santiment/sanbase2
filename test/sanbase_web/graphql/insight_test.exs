@@ -1,7 +1,7 @@
-defmodule SanbaseWeb.Graphql.VotingTest do
+defmodule SanbaseWeb.Graphql.InsightTest do
   use SanbaseWeb.ConnCase, async: false
 
-  alias Sanbase.Voting.{Poll, Post, Vote}
+  alias Sanbase.Insight.{Poll, Post, Vote}
   alias Sanbase.Auth.User
   alias Sanbase.Repo
 

@@ -1,10 +1,10 @@
-defmodule Sanbase.Voting.Poll do
+defmodule Sanbase.Insight.Poll do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
   use Timex.Ecto.Timestamps
 
-  alias Sanbase.Voting.{Poll, Post}
+  alias Sanbase.Insight.{Poll, Post}
   alias Sanbase.Repo
 
   @poll_length_days 7

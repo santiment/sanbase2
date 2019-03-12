@@ -1,9 +1,9 @@
-defmodule Sanbase.ExAdmin.Voting.Post do
+defmodule Sanbase.ExAdmin.Insight.Post do
   use ExAdmin.Register
 
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
 
-  register_resource Sanbase.Voting.Post do
+  register_resource Sanbase.Insight.Post do
     create_changeset(:create_changeset)
     update_changeset(:update_changeset)
     action_items(only: [:show, :edit, :delete])

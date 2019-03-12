@@ -1,7 +1,7 @@
-defmodule Sanbase.Voting.PollTest do
+defmodule Sanbase.Insight.PollTest do
   use Sanbase.DataCase, async: false
 
-  alias Sanbase.Voting.Poll
+  alias Sanbase.Insight.Poll
   alias Sanbase.Repo
 
   test "current_poll returns nil if there is no current poll" do

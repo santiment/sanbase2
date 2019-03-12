@@ -1,4 +1,4 @@
-defmodule Sanbase.Voting.Post do
+defmodule Sanbase.Insight.Post do
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -7,7 +7,7 @@ defmodule Sanbase.Voting.Post do
   use Timex.Ecto.Timestamps
 
   alias Sanbase.Tag
-  alias Sanbase.Voting.{Poll, Post, Vote, PostImage}
+  alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
   alias Sanbase.Auth.User
 
   alias Sanbase.Repo

@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   alias Sanbase.Auth.User
   alias Sanbase.Tag
-  alias Sanbase.Voting.{Post, Poll}
+  alias Sanbase.Insight.{Post, Poll}
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.Notifications

@@ -6,7 +6,7 @@ defmodule Sanbase.Tag do
 
   alias __MODULE__
   alias Sanbase.Repo
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
   alias Sanbase.Signals.UserTrigger
 
   schema "tags" do

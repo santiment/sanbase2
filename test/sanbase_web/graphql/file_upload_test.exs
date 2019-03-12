@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.FileUploadTest do
 
   alias Sanbase.Auth.User
   alias Sanbase.Repo
-  alias Sanbase.Voting.PostImage
+  alias Sanbase.Insight.PostImage
   alias Sanbase.InternalServices.Ethauth
 
   import SanbaseWeb.Graphql.TestHelpers

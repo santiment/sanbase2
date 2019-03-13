@@ -25,7 +25,7 @@ defmodule Sanbase.TechIndicators.PriceVolumeDifference do
           DateTime.t(),
           String.t(),
           String.t(),
-          String.t(),
+          non_neg_integer(),
           non_neg_integer(),
           non_neg_integer()
         ) :: {:error, String.t()} | {:ok, [price_volume_diffp()]}

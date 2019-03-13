@@ -97,6 +97,52 @@ defmodule Sanbase.SocialData do
     end
   end
 
+  def social_gainers_losers(%{
+        status: status,
+        from: from,
+        to: to,
+        interval: interval,
+        size: size
+      }) do
+    social_gainers_losers_request(status, from, to, interval, size)
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        Jason.decode!(body)
+
+      {:error, %HTTPoison.Error{} = error} ->
+        {:error, error}
+    end
+  end
+
+  defp social_gainers_losers_request(
+         status,
+         from_datetime,
+         to_datetime,
+         interval,
+         size
+       ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/social_gainers_losers"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"status", status |> Atom.to_string()},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"range", interval},
+        {"size", size}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
+  def social_gainers_losers_for_project() do
+  end
+
   defp trending_words_request(
          source,
          size,

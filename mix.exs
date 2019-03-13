@@ -6,7 +6,7 @@ defmodule Sanbase.Mixfile do
       app: :sanbase,
       name: "Sanbase",
       version: "0.0.1",
-      elixir: "~> 1.7",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,

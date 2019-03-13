@@ -6,7 +6,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Signals.UserTrigger
-  alias Sanbase.DateTimeUtils
 
   setup do
     user = insert(:user, email: "test@example.com")
@@ -467,29 +466,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     assert ut.trigger.active
 
-    query =
-      ~s|
-    mutation {
-      updateTrigger(
-        id: #{ut.id},
-        active: false
-      ) {
-        trigger{
-          active
-        }
-      }
-    }
-    |
-      |> format_interpolated_json()
+    updated_trigger = update_active_query(conn, ut.id, false)
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
-
-    trigger = result["data"]["updateTrigger"]["trigger"]
-
-    assert trigger["active"] == false
+    assert updated_trigger["active"] == false
   end
 
   test "activate signal", %{user: user, conn: conn} do
@@ -499,29 +478,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     refute ut.trigger.active
 
-    query =
-      ~s|
-    mutation {
-      updateTrigger(
-        id: #{ut.id},
-        active: true
-      ) {
-        trigger{
-          active
-        }
-      }
-    }
-    |
-      |> format_interpolated_json()
+    updated_trigger = update_active_query(conn, ut.id, true)
 
-    result =
-      conn
-      |> post("/graphql", %{"query" => query})
-      |> json_response(200)
-
-    trigger = result["data"]["updateTrigger"]["trigger"]
-
-    assert trigger["active"] == true
+    assert updated_trigger["active"] == true
   end
 
   defp current_user_signals_activity(conn, args_str) do
@@ -553,6 +512,28 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> json_response(200)
 
     result["data"]["signalsHistoricalActivity"]
+  end
+
+  defp update_active_query(conn, id, active) do
+    query = """
+      mutation {
+        updateTrigger(
+          id: #{id},
+          active: #{active}
+        ) {
+          trigger{
+            active
+          }
+        }
+      }
+    """
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => query})
+      |> json_response(200)
+
+    result["data"]["updateTrigger"]["trigger"]
   end
 
   defp default_trigger_settings do

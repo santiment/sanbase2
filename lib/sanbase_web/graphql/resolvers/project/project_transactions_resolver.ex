@@ -10,39 +10,50 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
 
   def token_top_transactions(
         %Project{id: id} = project,
-        %{from: from, to: to, limit: limit} = args,
+        args,
         _resolution
       ) do
-    with {:ok, contract_address, token_decimals} <- Project.contract_info(project) do
-      limit = Enum.min([limit, 100])
-
-      async(
-        Cache.func(
-          fn ->
-            {:ok, token_transactions} =
-              Clickhouse.Erc20Transfers.token_top_transfers(
-                contract_address,
-                from,
-                to,
-                limit,
-                token_decimals
-              )
-
-            result =
-              token_transactions
-              |> Clickhouse.MarkExchanges.mark_exchange_wallets()
-
-            {:ok, result}
-          end,
-          {:token_top_transfers, id},
-          args
-        )
+    async(
+      Cache.func(
+        fn -> calculate_token_top_transactions(project, args) end,
+        {:token_top_transactions, id},
+        args
       )
-    else
-      {:error, error} ->
-        Logger.info("Cannot get token top transfers. Reason: #{inspect(error)}")
+    )
+  end
 
+  defp calculate_token_top_transactions(%Project{} = project, %{
+         from: from,
+         to: to,
+         limit: limit
+       }) do
+    limit = Enum.min([limit, 100])
+
+    with {:contract, {:ok, contract_address, token_decimals}} <-
+           {:contract, Project.contract_info(project)},
+         {:ok, token_transactions} <-
+           Clickhouse.Erc20Transfers.token_top_transfers(
+             contract_address,
+             from,
+             to,
+             limit,
+             token_decimals
+           ),
+         {:ok, token_transactions} <-
+           Clickhouse.MarkExchanges.mark_exchange_wallets(token_transactions) do
+      {:ok, token_transactions}
+    else
+      {:contract, _} ->
         {:ok, []}
+
+      error ->
+        Logger.warn(
+          "Cannot fetch top token transactions for project with id #{project.id}. Reason: #{
+            inspect(error)
+          }"
+        )
+
+        {:nocache, {:ok, []}}
     end
   end
 
@@ -57,11 +68,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   def eth_spent_from_loader(loader, %Project{id: id}) do
-    eth_spent =
-      loader
-      |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
-
-    {:ok, eth_spent}
+    loader
+    |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
   end
 
   def eth_spent_over_time(
@@ -141,17 +149,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
           "Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}"
         )
 
-        {:ok, nil}
+        {:nocache, {:ok, nil}}
     end
-  rescue
-    e ->
-      Logger.error(
-        "Error raised while calculating ETH spent for #{Project.describe(project)}. Reason: #{
-          inspect(e)
-        }"
-      )
-
-      {:ok, nil}
   end
 
   defp calculate_eth_spent_over_time_cached(
@@ -167,7 +166,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     )
   end
 
-  defp calculate_eth_spent_over_time(%Project{id: id} = project, from, to, interval) do
+  defp calculate_eth_spent_over_time(%Project{} = project, from, to, interval) do
     with {:ok, eth_addresses} <- Project.eth_addresses(project),
          interval when is_integer(interval) <-
            Sanbase.DateTimeUtils.compound_duration_to_seconds(interval),
@@ -177,22 +176,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     else
       error ->
         Logger.warn(
-          "Cannot calculate ETH spent over time for project with id #{id}. Reason: #{
+          "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
         )
 
-        {:ok, []}
+        {:nocache, {:ok, []}}
     end
-  rescue
-    e ->
-      Logger.error(
-        "Exception raised while calculating ETH spent over time for #{Project.describe(project)}. Reason: #{
-          inspect(e)
-        }"
-      )
-
-      {:ok, []}
   end
 
   defp calculate_eth_top_transactions(%Project{} = project, %{
@@ -203,8 +193,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
        }) do
     limit = Enum.min([limit, 100])
 
-    with trx_type <- trx_type,
-         {:ok, project_addresses} <- Project.eth_addresses(project),
+    with {:ok, project_addresses} <- Project.eth_addresses(project),
          {:ok, eth_transactions} <-
            Clickhouse.EthTransfers.top_wallet_transfers(
              project_addresses,
@@ -212,21 +201,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
              to,
              limit,
              trx_type
-           ) do
-      result =
-        eth_transactions
-        |> Clickhouse.MarkExchanges.mark_exchange_wallets()
-
-      {:ok, result}
+           ),
+         {:ok, eth_transactions} <-
+           Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions) do
+      {:ok, eth_transactions}
     else
       error ->
         Logger.warn(
-          "Cannot fetch ETH transactions for project with id #{project.id}. Reason: #{
+          "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{
             inspect(error)
           }"
         )
 
-        {:ok, []}
+        {:nocache, {:ok, []}}
     end
   end
 end

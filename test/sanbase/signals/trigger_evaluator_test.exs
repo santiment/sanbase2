@@ -206,6 +206,30 @@ defmodule Sanbase.Signals.EvaluatorTest do
            end) =~ "There were no signals triggered of type"
   end
 
+  test "Non repeating signals are deactivated", context do
+    Tesla.Mock.mock_global(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
+    UserTrigger.update_user_trigger(context.user, %{
+      id: context.trigger_trending_words.id,
+      repeating: false
+    })
+
+    with_mock Sanbase.SocialData, [:passthrough],
+      trending_words: fn _, _, _, _, _ ->
+        {:ok, [%{top_words: top_words()}]}
+      end do
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_trending_words_signals()
+             end) =~ "In total 1/1 trending_words signals were sent successfully"
+
+      {:ok, ut} = UserTrigger.get_trigger_by_id(context.user, context.trigger_trending_words.id)
+      refute ut.trigger.active
+    end
+  end
+
   defp top_words() do
     [
       %{score: 1740.2647984845628, word: "bat"},

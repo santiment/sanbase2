@@ -64,6 +64,9 @@ defmodule Sanbase.Signals.Scheduler do
     updated_user_triggers
     |> persist_sent_signals()
 
+    updated_user_triggers
+    |> deactivate_non_repeating()
+
     sent_list_results
     |> List.flatten()
     |> log_sent_messages_stats(type)
@@ -78,6 +81,17 @@ defmodule Sanbase.Signals.Scheduler do
         }
       } ->
         triggered?
+    end)
+  end
+
+  defp deactivate_non_repeating(triggers) do
+    triggers
+    |> Enum.filter(fn ut -> !ut.trigger.repeating end)
+    |> Enum.map(fn %UserTrigger{id: id, user: user} ->
+      UserTrigger.update_user_trigger(user, %{
+        id: id,
+        active: false
+      })
     end)
   end
 

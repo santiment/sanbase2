@@ -809,6 +809,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ClickhouseResolver.mvrv_ratio/3)
     end
 
+    @desc "Returns Realized value - sum of the acquisition costs of an asset located in a wallet.
+    The realized value across the whole network is computed by summing the realized values
+    of all wallets holding tokens at the moment."
+    field :realized_value, list_of(:realized_value) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.realized_value/3)
+    end
+
     @desc """
     Returns NVT (Network-Value-to-Transactions-Ratio
     Daily Market Cap / Daily Transaction Volume

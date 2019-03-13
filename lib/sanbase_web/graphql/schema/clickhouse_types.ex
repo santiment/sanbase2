@@ -26,4 +26,10 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:nvt_ratio_circulation, :float)
     field(:nvt_ratio_tx_volume, :float)
   end
+
+  object :realized_value do
+    field(:datetime, non_null(:datetime))
+    field(:realized_value, :integer)
+    field(:non_exchange_realized_value, :integer)
+  end
 end

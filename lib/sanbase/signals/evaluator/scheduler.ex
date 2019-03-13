@@ -85,14 +85,12 @@ defmodule Sanbase.Signals.Scheduler do
   end
 
   defp deactivate_non_repeating(triggers) do
-    triggers
-    |> Enum.filter(fn ut -> !ut.trigger.repeating end)
-    |> Enum.map(fn %UserTrigger{id: id, user: user} ->
+    for %UserTrigger{id: id, user: user, trigger: %{repeating: false}} <- triggers do
       UserTrigger.update_user_trigger(user, %{
         id: id,
         active: false
       })
-    end)
+    end
   end
 
   # returns a tuple {updated_user_triggers, send_result_list}

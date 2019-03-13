@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
   end
 
   object :trigger do
-    field(:id, :integer)
+    field(:id, non_null(:integer))
     field(:title, :string)
     field(:description, :string)
     field(:icon_url, :string)
@@ -15,6 +15,6 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
     field(:is_public, :boolean)
     field(:cooldown, :string)
     field(:tags, list_of(:tag))
-    field(:active, :boolean)
+    field(:active, non_null(:boolean))
   end
 end

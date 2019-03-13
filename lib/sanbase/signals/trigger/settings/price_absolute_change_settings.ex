@@ -102,7 +102,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
     @doc ~s"""
     Construct a cache key only out of the parameters that determine the outcome.
-    Parameters like `channel` is discarded. The `type` is included
+    Parameters like `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
     def cache_key(%PriceAbsoluteChangeSettings{} = settings) do

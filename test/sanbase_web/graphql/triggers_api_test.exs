@@ -99,7 +99,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     error = result["errors"] |> List.first()
 
     assert error["message"] ==
-             "Trigger structure is invalid. Key `settings` is missing or not valid"
+             "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
   end
 
   test "update trigger", %{user: user, conn: conn} do

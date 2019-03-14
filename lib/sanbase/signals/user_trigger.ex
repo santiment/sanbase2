@@ -140,12 +140,18 @@ defmodule Sanbase.Signals.UserTrigger do
   @spec create_user_trigger(%User{}, map()) ::
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, %Ecto.Changeset{}}
   def create_user_trigger(%User{id: user_id} = _user, %{settings: settings} = params) do
-    if not is_nil(settings) and is_valid?(settings) do
+    with {:nil?, false} <- {:nil?, is_nil(settings)},
+         :ok <- valid?(settings) do
       %UserTrigger{}
       |> create_changeset(%{user_id: user_id, trigger: params})
       |> Repo.insert()
     else
-      {:error, "Trigger structure is invalid. Key `settings` is missing or not valid."}
+      {:nil?, true} ->
+        {:error, "Trigger structure is invalid. Key `settings` is empty."}
+
+      {:error, error} ->
+        {:error,
+         "Trigger structure is invalid. Key `settings` is not valid. Reason: #{inspect(error)}"}
     end
   end
 
@@ -161,14 +167,17 @@ defmodule Sanbase.Signals.UserTrigger do
   def update_user_trigger(%User{} = user, %{id: trigger_id} = params) do
     settings = Map.get(params, :settings)
 
-    if is_nil(settings) or is_valid?(settings) do
-      {:ok, struct} = get_trigger_by_id(user, trigger_id)
+    case valid_or_nil?(settings) do
+      :ok ->
+        {:ok, struct} = get_trigger_by_id(user, trigger_id)
 
-      struct
-      |> update_changeset(%{trigger: clean_params(params)})
-      |> Repo.update()
-    else
-      {:error, "Trigger structure is invalid. Settings are not valid."}
+        struct
+        |> update_changeset(%{trigger: clean_params(params)})
+        |> Repo.update()
+
+      {:error, error} ->
+        {:error,
+         "Trigger structure is invalid. Key `settings` is not valid. Reason: #{inspect(error)}"}
     end
   end
 
@@ -223,21 +232,34 @@ defmodule Sanbase.Signals.UserTrigger do
     |> Enum.map(&trigger_in_struct/1)
   end
 
-  defp is_valid?(trigger) do
+  defp valid_or_nil?(nil), do: :ok
+  defp valid_or_nil?(trigger), do: valid?(trigger)
+
+  defp valid?(trigger) do
     with {:load_in_struct, {:ok, trigger_struct}} <- {:load_in_struct, load_in_struct(trigger)},
          {:valid?, true} <- {:valid?, Vex.valid?(trigger_struct)},
          {:map_from_struct, {:ok, _trigger_map}} <-
            {:map_from_struct, map_from_struct(trigger_struct)} do
-      true
+      :ok
     else
       {:valid?, false} ->
         {:ok, trigger_struct} = load_in_struct(trigger)
-        Logger.warn("UserTrigger struct is not valid: #{inspect(Vex.errors(trigger_struct))}")
-        false
+        errors = Vex.errors(trigger_struct)
 
-      error ->
+        errors_text =
+          errors
+          |> Enum.map(fn {_, _, _, error} -> error end)
+
+        Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(errors_text)}")
+
+        {:error, errors_text}
+
+      {:load_in_struct, {:error, error}} ->
         Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
-        false
+        {:error, error}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

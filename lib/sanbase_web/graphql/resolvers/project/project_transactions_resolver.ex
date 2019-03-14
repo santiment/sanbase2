@@ -70,6 +70,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   def eth_spent_from_loader(loader, %Project{id: id}) do
     loader
     |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
+    |> case do
+      nil -> {:nocache, {:ok, 0}}
+      result -> result
+    end
   end
 
   def eth_spent_over_time(

@@ -132,7 +132,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                historical_balance = result["data"]["historicalBalance"]
                assert historical_balance == nil
              end) =~
-               ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id ethereum. Reason: "Some error description here"/
+               ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id: ethereum. Reason: "Some error description here"/
     end
   end
 
@@ -227,9 +227,9 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
              error = result["errors"] |> List.first()
 
              assert error["message"] ==
-                      ~s/Can't calculate historical balances for project with coinmarketcap_id someid1/
+                      ~s/Can't calculate historical balances for project with coinmarketcap_id: someid1./
            end) =~
-             "{:missing_contract, \\\"Can't find contract address of project with coinmarketcap_id someid1\\\"}"
+             "{:missing_contract, \\\"Can't find contract address of project with coinmarketcap_id: someid1\\\"}"
   end
 
   test "historical balances when clickhouse returns error", context do
@@ -251,7 +251,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.HistoricalBalancesTest do
                |> post("/graphql", query_skeleton(query, "historicalBalance"))
                |> json_response(200)
              end) =~
-               ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id someid2. Reason: "something bad happened"/
+               ~s/[warn] Can't calculate historical balances for project with coinmarketcap_id: someid2. Reason: "something bad happened"/
     end
   end
 

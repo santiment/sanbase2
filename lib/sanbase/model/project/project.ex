@@ -102,11 +102,11 @@ defmodule Sanbase.Model.Project do
   end
 
   def describe(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
-    "project with coinmarketcap_id #{cmc_id}"
+    "project with coinmarketcap_id: #{cmc_id}"
   end
 
   def describe(%Project{id: id}) do
-    "project with id #{id}"
+    "project with id: #{id}"
   end
 
   def sanbase_link(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do

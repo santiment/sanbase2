@@ -28,24 +28,25 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, gas_used}
 
       {:error, error} ->
-        error_msg = "Can't calculate Gas used."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = generate_error_message("gas used")
+        log_error(error_msg, error)
         {:error, error_msg}
     end
   end
 
-  def network_growth(_root, args, _resolution) do
-    interval = DateTimeUtils.compound_duration_to_seconds(args.interval)
-
-    with {:ok, contract, _} <- Project.contract_info_by_slug(args.slug),
-         {:ok, network_growth} <-
-           NetworkGrowth.network_growth(contract, args.from, args.to, interval) do
+  def network_growth(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
+         {:ok, network_growth} <- NetworkGrowth.network_growth(contract, from, to, interval) do
       {:ok, network_growth}
     else
-      error ->
-        Logger.error("Can't calculate network growth. Reason: #{inspect(error)}")
-
-        {:error, "Can't calculate network growth"}
+      {:error, error} ->
+        error_msg = generate_error_message_for_project("network growth", slug)
+        log_error(error_msg, error)
+        {:error, error_msg}
     end
   end
 
@@ -59,25 +60,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, distribution}
 
       {:error, error} ->
-        error_msg = "Can't calculate mining pools distribution."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = generate_error_message("mining pools distribution")
+        log_error(error_msg, error)
         {:error, error_msg}
     end
   end
 
-  def mvrv_ratio(_root, args, _resolution) do
+  def mvrv_ratio(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
     # TODO: Check if interval is a whole day as in token circulation
-    with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(args.slug, args.from, args.to, args.interval) do
-      {:ok, mvrv_ratio}
-    else
-      {:error, error} ->
-        Logger.warn(
-          "Can't calculate MVRV ratio for project with coinmarketcap_id: #{args.slug}. Reason: #{
-            inspect(error)
-          }"
-        )
+    case MVRV.mvrv_ratio(slug, from, to, interval) do
+      {:ok, mvrv_ratio} ->
+        {:ok, mvrv_ratio}
 
-        {:error, "Can't calculate MVRV ratio"}
+      {:error, error} ->
+        error_msg = generate_error_message_for_project("MVRV ratio", slug)
+        log_error(error_msg, error)
+        {:error, error_msg}
     end
   end
 
@@ -102,10 +104,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       {:ok, active_deposits}
     else
       {:error, error} ->
-        error_msg =
-          "Can't calculate daily active deposits for project with coinmarketcap_id: #{slug}."
-
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = generate_error_message_for_project("daily active deposits", slug)
+        log_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -120,8 +120,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, realized_value}
 
       {:error, error} ->
-        error_msg = "Can't calculate Realized Value for project with coinmarketcap_id: #{slug}."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = generate_error_message_for_project("realized value", slug)
+        log_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -131,12 +131,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: slug, from: from, to: to, interval: interval},
         _resolution
       ) do
-    with {:ok, nvt_ratio} <- NVT.nvt_ratio(slug, from, to, interval) do
-      {:ok, nvt_ratio}
-    else
+    case NVT.nvt_ratio(slug, from, to, interval) do
+      {:ok, nvt_ratio} ->
+        {:ok, nvt_ratio}
+
       {:error, error} ->
-        error_msg = "Can't calculate NVT ratio for project with coinmarketcap_id: #{slug}."
-        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        error_msg = generate_error_message_for_project("NVT ratio", slug)
+        log_error(error_msg, error)
         {:error, error_msg}
     end
   end
@@ -146,17 +147,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: slug, from: from, to: to, interval: interval, address: address},
         _resolution
       ) do
-    with {:ok, result} <- HistoricalBalance.historical_balance(address, slug, from, to, interval) do
-      {:ok, result}
-    else
-      {:error, error} ->
-        Logger.warn(
-          "Can't calculate historical balances for project with coinmarketcap_id #{slug}. Reason: #{
-            inspect(error)
-          }"
-        )
+    case HistoricalBalance.historical_balance(address, slug, from, to, interval) do
+      {:ok, result} ->
+        {:ok, result}
 
-        {:error, "Can't calculate historical balances for project with coinmarketcap_id #{slug}"}
+      {:error, error} ->
+        error_msg = generate_error_message_for_project("historical balances", slug)
+        log_error(error_msg, error)
+        {:error, error_msg}
     end
+  end
+
+  defp log_error(error_msg, error) do
+    Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+  end
+
+  defp generate_error_message(metric_name) do
+    "Can't calculate #{metric_name}."
+  end
+
+  defp generate_error_message_for_project(metric_name, slug) do
+    "Can't calculate #{metric_name} for project with coinmarketcap_id: #{slug}."
   end
 end

@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
                response = execute_query(context)
                result = parse_response(response)
                assert result == nil
-             end) =~ ~s/[warn] Can't calculate Gas used. Reason: "Some error description here"/
+             end) =~ ~s/[warn] Can't calculate gas used. Reason: "Some error description here"/
     end
   end
 

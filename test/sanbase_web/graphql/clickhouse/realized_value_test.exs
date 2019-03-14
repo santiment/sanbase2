@@ -80,7 +80,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.RealizedValueTest do
                values = parse_response(response)
                assert values == nil
              end) =~
-               ~s/[warn] Can't calculate Realized Value for project with coinmarketcap_id: santiment. Reason: "Some error description here"/
+               ~s/[warn] Can't calculate realized value for project with coinmarketcap_id: santiment. Reason: "Some error description here"/
     end
   end
 

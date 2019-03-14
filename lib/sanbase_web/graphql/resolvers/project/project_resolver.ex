@@ -308,11 +308,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
 
   def average_dev_activity_from_loader(loader, project) do
     with {:ok, organization} <- Project.github_organization(project) do
-      average_dev_activity =
-        loader
-        |> Dataloader.get(SanbaseDataloader, :average_dev_activity, organization)
-
-      {:ok, average_dev_activity}
+      loader
+      |> Dataloader.get(SanbaseDataloader, :average_dev_activity, organization)
+      |> case do
+        nil -> {:ok, 0}
+        result -> result
+      end
     else
       _ -> {:ok, nil}
     end

@@ -829,7 +829,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Get historical trigger points"
     field :historical_trigger_points, list_of(:json) do
       arg(:cooldown, :string)
-      arg(:settings, :json)
+      arg(:settings, non_null(:json))
 
       resolve(&UserTriggerResolver.historical_trigger_points/3)
     end
@@ -848,6 +848,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
 
       resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
+    end
+
+    @desc """
+    Top social gainers/losers for given range.
+    * `status` can be one of: `ALL`, `GAINERS`, `LOSERS`, `NEWCOMERS`
+    """
+    field :top_social_gainers_losers, list_of(:top_social_gainers_losers) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:status, non_null(:social_gainers_losers_status))
+      arg(:size, :integer, default_value: 10)
+      arg(:range, :string)
+
+      resolve(&SocialDataResolver.top_social_gainers_losers/3)
     end
   end
 

@@ -97,17 +97,40 @@ defmodule Sanbase.SocialData do
     end
   end
 
-  def social_gainers_losers(%{
+  def top_social_gainers_losers(%{
         status: status,
         from: from,
         to: to,
-        interval: interval,
+        range: range,
         size: size
       }) do
-    social_gainers_losers_request(status, from, to, interval, size)
+    social_gainers_losers_request(status, from, to, range, size)
     |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Jason.decode!(body)
+      {:ok, %HTTPoison.Response{status_code: 200, body: body} = resp} ->
+        IO.inspect(resp)
+        res = Jason.decode!(body)
+
+        res
+        |> Enum.sort_by(fn %{"timestamp" => timestamp} -> timestamp end)
+        |> Enum.map(fn %{
+                         "timestamp" => timestamp,
+                         "projects" => projects
+                       } ->
+          %{
+            datetime: DateTime.from_unix!(timestamp),
+            projects:
+              projects
+              |> Enum.map(fn %{"project" => project, "change" => change} = project_change ->
+                case Map.get(project_change, "status") do
+                  nil ->
+                    %{project: project, change: change}
+
+                  status ->
+                    %{project: project, change: change, status: String.to_existing_atom(status)}
+                end
+              end)
+          }
+        end)
 
       {:error, %HTTPoison.Error{} = error} ->
         {:error, error}
@@ -118,7 +141,7 @@ defmodule Sanbase.SocialData do
          status,
          from_datetime,
          to_datetime,
-         interval,
+         range,
          size
        ) do
     from_unix = DateTime.to_unix(from_datetime)
@@ -132,7 +155,7 @@ defmodule Sanbase.SocialData do
         {"status", status |> Atom.to_string()},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
-        {"range", interval},
+        {"range", range},
         {"size", size}
       ]
     ]

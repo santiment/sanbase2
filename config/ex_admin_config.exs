@@ -31,7 +31,8 @@ config :ex_admin,
     Sanbase.ExAdmin.UserLists.UserList,
     Sanbase.ExAdmin.Auth.UserSettings,
     Sanbase.ExAdmin.ScheduleRescrapePrice,
-    Sanbase.ExAdmin.Signals.HistoricalActivity
+    Sanbase.ExAdmin.Signals.HistoricalActivity,
+    Sanbase.ExAdmin.Signals.UserTrigger
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

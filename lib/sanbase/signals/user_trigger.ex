@@ -36,6 +36,7 @@ defmodule Sanbase.Signals.UserTrigger do
       on_delete: :delete_all
     )
 
+    has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:signals_historical_activity, HistoricalActivity)
 
     timestamps()
@@ -144,12 +145,12 @@ defmodule Sanbase.Signals.UserTrigger do
       |> create_changeset(%{user_id: user_id, trigger: params})
       |> Repo.insert()
     else
-      {:error, "Trigger structure is invalid"}
+      {:error, "Trigger structure is invalid. Settings are not valid."}
     end
   end
 
   def create_user_trigger(_, _),
-    do: {:error, "Trigger structure is invalid. Parameter 'settings' is missing"}
+    do: {:error, "Trigger structure is invalid. Key `settings` is missing."}
 
   @doc ~s"""
   Update an existing user trigger with a given UUID `trigger_id`.
@@ -167,12 +168,12 @@ defmodule Sanbase.Signals.UserTrigger do
       |> update_changeset(%{trigger: clean_params(params)})
       |> Repo.update()
     else
-      {:error, "Trigger structure is invalid"}
+      {:error, "Trigger structure is invalid. Settings are not valid."}
     end
   end
 
   def update_user_trigger(_, _),
-    do: {:error, "Trigger structure is invalid - id field is missing."}
+    do: {:error, "Trigger structure is invalid. Key `id` is missing."}
 
   @doc ~s"""
   Remove an existing user trigger with a given UUID `trigger_id`.
@@ -185,7 +186,7 @@ defmodule Sanbase.Signals.UserTrigger do
         Repo.delete(struct)
 
       _ ->
-        {:error, "Can't remove trigger wit id #{trigger_id}"}
+        {:error, "Can't remove trigger with id #{trigger_id}"}
     end
   end
 

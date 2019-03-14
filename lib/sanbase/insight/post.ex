@@ -32,6 +32,7 @@ defmodule Sanbase.Insight.Post do
     field(:discourse_topic_url, :string)
 
     has_many(:images, PostImage, on_delete: :delete_all)
+    has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
 
     many_to_many(
       :tags,

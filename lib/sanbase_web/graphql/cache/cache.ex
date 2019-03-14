@@ -25,24 +25,6 @@ defmodule SanbaseWeb.Graphql.Cache do
     quote do
       middleware(
         Absinthe.Resolution,
-        CacheMod.from(unquote(captured_mfa_ast))
-      )
-    end
-  end
-
-  @doc ~s"""
-  Macro that's used instead of Absinthe's `resolve`. The value of the resolver is
-  1. Get from a cache if it exists there
-  2. Calculated and stored in the cache if it does not exist
-  3. Handle middleware results
-
-
-  The function's name is not used but instead `fun_name` is used in the cache key
-  """
-  defmacro cache_resolve(captured_mfa_ast, fun_name) do
-    quote do
-      middleware(
-        Absinthe.Resolution,
         CacheMod.from(unquote(captured_mfa_ast), unquote(fun_name))
       )
     end
@@ -90,7 +72,7 @@ defmodule SanbaseWeb.Graphql.Cache do
   end
 
   @doc false
-  def from(captured_mfa) when is_function(captured_mfa) do
+  def from(captured_mfa, nil) when is_function(captured_mfa) do
     # Public so it can be used by the resolve macros. You should not use it.
     fun_name = captured_mfa |> captured_mfa_name()
 

@@ -33,14 +33,26 @@ defmodule Sanbase.FeaturedItem do
     |> cast(attrs, [:post_id, :user_list_id, :user_trigger_id])
   end
 
-  def featured_insights(),
-    do: insights_query() |> select([i], i.post_id) |> Repo.all()
+  def insights() do
+    insights_query()
+    |> join(:inner, [fi], fi in assoc(fi, :post))
+    |> select([_fi, post], post)
+    |> Repo.all()
+  end
 
-  def featured_watchlists(),
-    do: watchlists_query() |> select([i], i.user_list_id) |> Repo.all()
+  def watchlists() do
+    watchlists_query()
+    |> join(:inner, [fi], fi in assoc(fi, :user_list))
+    |> select([_fi, user_list], user_list)
+    |> Repo.all()
+  end
 
-  def featured_user_triggers(),
-    do: user_triggers_query() |> select([i], i.user_trigger_id) |> Repo.all()
+  def user_triggers() do
+    user_triggers_query()
+    |> join(:inner, [fi], fi in assoc(fi, :user_trigger))
+    |> select([_fi, trigger], trigger)
+    |> Repo.all()
+  end
 
   @doc ~s"""
   Mark the insight as featured or not.

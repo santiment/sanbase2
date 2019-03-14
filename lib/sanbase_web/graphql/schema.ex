@@ -24,7 +24,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     UserSettingsResolver,
     TelegramResolver,
     UserTriggerResolver,
-    SignalsHistoricalActivityResolver
+    SignalsHistoricalActivityResolver,
+    FeaturedItemResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
@@ -863,6 +864,18 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
 
       resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
+    end
+
+    field :featured_insights, list_of(:post) do
+      cache_resolve(&FeaturedItemResolver.insights/3)
+    end
+
+    field :featured_watchlists, list_of(:user_list) do
+      cache_resolve(&FeaturedItemResolver.watchlists/3)
+    end
+
+    field :featured_user_triggers, list_of(:user_trigger) do
+      cache_resolve(&FeaturedItemResolver.user_triggers/3)
     end
   end
 

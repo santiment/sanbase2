@@ -20,14 +20,12 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
             window_type: "bohman",
             approximation_window: 14,
             comparison_window: 7,
-            repeating: true,
             triggered?: false,
             payload: nil
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
   validates(:threshold, &valid_threshold?/1)
-  validates(:repeating, &is_boolean/1)
 
   @typedoc ~s"""
   threshold - the sensitivity of the trigger. Defaults to 0.002

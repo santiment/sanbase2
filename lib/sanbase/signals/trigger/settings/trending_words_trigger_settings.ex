@@ -29,15 +29,13 @@ defmodule Sanbase.Signals.Trigger.TrendingWordsTriggerSettings do
             triggered?: false,
             payload: %{},
             target: "all",
-            filtered_target_list: [],
-            repeating: true
+            filtered_target_list: []
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           channel: Type.channel(),
           trigger_time: String.t(),
           triggered?: boolean(),
-          repeating: boolean(),
           payload: Type.payload()
         }
 

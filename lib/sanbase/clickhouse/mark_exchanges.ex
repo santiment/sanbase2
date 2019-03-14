@@ -58,7 +58,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
   to a list of transactions where the `from_address` and `to_address` are compound
   fields with `address` string and `is_exchange` boolean fields
   """
-  @spec mark_exchange_wallets(list(input_transaction)) :: list(output_transaction)
+  @spec mark_exchange_wallets(list(input_transaction)) :: {:ok, list(output_transaction)}
   def mark_exchange_wallets(transactions) when is_list(transactions) do
     GenServer.call(@name, :update_state_if_staled)
     GenServer.call(@name, {:mark_exchange_wallets, transactions})
@@ -85,7 +85,7 @@ defmodule Sanbase.Clickhouse.MarkExchanges do
         }
       end)
 
-    {:reply, marked_exchange_transactions, state}
+    {:reply, {:ok, marked_exchange_transactions}, state}
   end
 
   def handle_call(:update_state_if_staled, _from, %{updated_at: updated_at} = state) do

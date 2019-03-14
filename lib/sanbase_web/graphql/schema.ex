@@ -1115,6 +1115,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:is_public, :boolean)
       arg(:cooldown, :string)
       arg(:tags, list_of(:string))
+      arg(:active, :boolean)
       arg(:settings, :json)
 
       middleware(JWTAuth)

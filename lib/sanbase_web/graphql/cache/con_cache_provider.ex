@@ -43,6 +43,9 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
                 # Decides on its behalf whether or not to put the value in the cache
                 {cache_modify_middleware.(cache, key, tuple), nil}
 
+              {:nocache, {:ok, _result} = value} ->
+                {value, nil}
+
               value ->
                 ConCache.put(cache, key, {:stored, value})
                 {value, nil}

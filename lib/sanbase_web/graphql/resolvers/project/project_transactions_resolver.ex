@@ -71,7 +71,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
     loader
     |> Dataloader.get(SanbaseDataloader, :eth_spent, id)
     |> case do
-      nil -> {:nocache, {:ok, 0}}
+      nil -> {:ok, 0}
       result -> result
     end
   end

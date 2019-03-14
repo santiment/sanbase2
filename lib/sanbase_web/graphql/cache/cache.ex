@@ -16,10 +16,14 @@ defmodule SanbaseWeb.Graphql.Cache do
   Macro that's used instead of Absinthe's `resolve`. This resolver can perform
   the following operations:
   1. Get the value from a cache if it is persisted. The resolver function is not
-  2. Calculate and store the value in the cache if it is not present in the cache
-  3. Handle middleware results
+  evaluated at all in this case
+  2. Evaluate the resolver function and store the value in the cache if it is
+  not present there
+  3. Handle the `Absinthe.Middlewar.Async` and `Absinthe.Middleware.Dataloader`
+  middlewares. In order to handle them, the functions that executes the actual
+  evaluation is wrapped in a function that handles the cache interactions
 
-  There are 2 options for the passed function.
+  There are 2 options for the passed function:
   1. It can be a captured named function because its name is extracted
   and used in the cache key.
   2. If the function is anonymous or a different name should be used, a second
@@ -31,7 +35,7 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   But `cache_resolve` knows how to handle a third type of response format. When
   `{:nocache, {:ok, value}}` is returned as the result the cache does **not** cache
-  the value and just returns `{:ok, value}`. This is particulary useful when
+  the value and just returns `{:ok, value}`. This is particularly useful when
   the result can't be constructed but returning an error will crash the whole query.
   In such cases a default/filling value can be passed (0, nil, "No data", etc.)
   and the next query will try to resolve it again

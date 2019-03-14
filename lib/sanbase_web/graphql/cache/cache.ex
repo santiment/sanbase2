@@ -13,15 +13,30 @@ defmodule SanbaseWeb.Graphql.Cache do
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
 
   @doc ~s"""
-  Macro that's used instead of Absinthe's `resolve`. The value of the resolver is
-  1. Get from a cache if it exists there
-  2. Calculated and stored in the cache if it does not exist
+  Macro that's used instead of Absinthe's `resolve`. This resolver can perform
+  the following operations:
+  1. Get the value from a cache if it is persisted. The resolver function is not
+  2. Calculate and store the value in the cache if it is not present in the cache
   3. Handle middleware results
 
-  The function MUST be a captured named function because its name is extracted
+  There are 2 options for the passed function.
+  1. It can be a captured named function because its name is extracted
   and used in the cache key.
+  2. If the function is anonymous or a different name should be used, a second
+  parameter with that name must be passed.
+
+  Just like `resolve` comming from Absinthe, `cache_resolve` supports the `{:ok, value}`
+  and `{:error, reason}` result tuples. The `:ok` tuples are cached while the `:error`
+  tuples are not.
+
+  But `cache_resolve` knows how to handle a third type of response format. When
+  `{:nocache, {:ok, value}}` is returned as the result the cache does **not** cache
+  the value and just returns `{:ok, value}`. This is particulary useful when
+  the result can't be constructed but returning an error will crash the whole query.
+  In such cases a default/filling value can be passed (0, nil, "No data", etc.)
+  and the next query will try to resolve it again
   """
-  defmacro cache_resolve(captured_mfa_ast) do
+  defmacro cache_resolve(captured_mfa_ast, fun_name \\ nil) do
     quote do
       middleware(
         Absinthe.Resolution,

@@ -48,7 +48,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
 
     triggered =
       PriceVolumeDifferenceTriggerSettings.type()
-      |> UserTrigger.get_triggers_by_type()
+      |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run()
 
     assert length(triggered) == 0
@@ -70,7 +70,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       end do
       triggered =
         PriceVolumeDifferenceTriggerSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       assert length(triggered) == 0
@@ -95,7 +95,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       end do
       [triggered | rest] =
         PriceVolumeDifferenceTriggerSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       assert length(rest) == 0
@@ -116,7 +116,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       assert capture_log(fn ->
                triggered =
                  PriceVolumeDifferenceTriggerSettings.type()
-                 |> UserTrigger.get_triggers_by_type()
+                 |> UserTrigger.get_active_triggers_by_type()
                  |> Evaluator.run()
 
                assert triggered == []
@@ -135,7 +135,7 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       assert capture_log(fn ->
                triggered =
                  PriceVolumeDifferenceTriggerSettings.type()
-                 |> UserTrigger.get_triggers_by_type()
+                 |> UserTrigger.get_active_triggers_by_type()
                  |> Evaluator.run()
 
                assert triggered == []
@@ -148,16 +148,14 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
       type: "price_volume_difference",
       target: "santiment",
       channel: "telegram",
-      threshold: 0.002,
-      repeating: false
+      threshold: 0.002
     }
 
     trigger_settings2 = %{
       type: "price_volume_difference",
       target: "santiment",
       channel: "telegram",
-      threshold: 0.1,
-      repeating: false
+      threshold: 0.1
     }
 
     {:ok, trigger1} =

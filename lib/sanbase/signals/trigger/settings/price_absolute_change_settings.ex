@@ -23,7 +23,6 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
             channel: nil,
             above: nil,
             below: nil,
-            repeating: true,
             triggered?: false,
             payload: nil
 
@@ -31,7 +30,6 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
   validates(:channel, &valid_notification_channel/1)
   validates(:above, &valid_price?/1)
   validates(:below, &valid_price?/1)
-  validates(:repeating, &is_boolean/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
@@ -39,7 +37,6 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
           channel: Type.channel(),
           above: number(),
           below: number(),
-          repeating: boolean(),
           triggered?: boolean(),
           payload: Type.payload()
         }
@@ -105,7 +102,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
     @doc ~s"""
     Construct a cache key only out of the parameters that determine the outcome.
-    Parameters like `repeating` and `channel` are discarded. The `type` is included
+    Parameters like `channel` are discarded. The `type` is included
     so different triggers with the same parameter names can be distinguished
     """
     def cache_key(%PriceAbsoluteChangeSettings{} = settings) do

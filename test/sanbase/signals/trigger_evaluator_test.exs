@@ -37,8 +37,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      repeating: false
+      percent_threshold: 300.0
     }
 
     trigger_settings2 = %{
@@ -46,8 +45,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       target: "santiment",
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 200.0,
-      repeating: false
+      percent_threshold: 200.0
     }
 
     trending_words_settings = %{
@@ -94,7 +92,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       end do
       [triggered1, triggered2 | rest] =
         DailyActiveAddressesSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       # 2 signals triggered
@@ -111,7 +109,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       end do
       [triggered | rest] =
         DailyActiveAddressesSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       # 1 signal triggered
@@ -127,7 +125,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       end do
       triggered =
         DailyActiveAddressesSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       # 0 signals triggered
@@ -142,7 +140,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
       end do
       [triggered] =
         TrendingWordsTriggerSettings.type()
-        |> UserTrigger.get_triggers_by_type()
+        |> UserTrigger.get_active_triggers_by_type()
         |> Evaluator.run()
 
       assert context.trigger_trending_words.id == triggered.id
@@ -194,6 +192,41 @@ defmodule Sanbase.Signals.EvaluatorTest do
       user_signal = HistoricalActivity |> Sanbase.Repo.all() |> List.first()
       assert user_signal.user_id == context.user.id
       assert String.contains?(user_signal.payload["all"], "coinbase")
+    end
+  end
+
+  test "Non active signals are filtered", context do
+    UserTrigger.update_user_trigger(context.user, %{
+      id: context.trigger_trending_words.id,
+      active: false
+    })
+
+    assert capture_log(fn ->
+             Sanbase.Signals.Scheduler.run_trending_words_signals()
+           end) =~ "There were no signals triggered of type"
+  end
+
+  test "Non repeating signals are deactivated", context do
+    Tesla.Mock.mock_global(fn
+      %{method: :post} ->
+        %Tesla.Env{status: 200, body: "ok"}
+    end)
+
+    UserTrigger.update_user_trigger(context.user, %{
+      id: context.trigger_trending_words.id,
+      repeating: false
+    })
+
+    with_mock Sanbase.SocialData, [:passthrough],
+      trending_words: fn _, _, _, _, _ ->
+        {:ok, [%{top_words: top_words()}]}
+      end do
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_trending_words_signals()
+             end) =~ "In total 1/1 trending_words signals were sent successfully"
+
+      {:ok, ut} = UserTrigger.get_trigger_by_id(context.user, context.trigger_trending_words.id)
+      refute ut.trigger.active
     end
   end
 

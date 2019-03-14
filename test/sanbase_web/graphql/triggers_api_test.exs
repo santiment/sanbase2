@@ -6,7 +6,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.Signals.UserTrigger
-  alias Sanbase.DateTimeUtils
 
   setup do
     user = insert(:user, email: "test@example.com")
@@ -21,16 +20,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         send(self(), {:telegram_to_self, text})
         :ok
       end do
-      trigger_settings = %{
-        "type" => "daily_active_addresses",
-        "target" => "santiment",
-        "channel" => "telegram",
-        "time_window" => "1d",
-        "percent_threshold" => 300.0,
-        "repeating" => false,
-        "payload" => nil,
-        "triggered?" => false
-      }
+      trigger_settings = default_trigger_settings()
 
       trigger_settings_json = trigger_settings |> Jason.encode!()
 
@@ -74,7 +64,6 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0,
-      "repeating" => false,
       "payload" => nil,
       "triggered?" => false
     }
@@ -113,16 +102,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "update trigger", %{user: user, conn: conn} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
+    trigger_settings = default_trigger_settings()
 
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
@@ -164,16 +144,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "remove trigger", %{user: user, conn: conn} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
+    trigger_settings = default_trigger_settings()
 
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
@@ -204,17 +175,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "get trigger by id", %{user: user, conn: conn} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "filtered_target_list" => [],
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
+    trigger_settings = default_trigger_settings()
 
     insert(:user_triggers,
       user: user,
@@ -249,17 +210,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "fetches triggers for current user", %{user: user, conn: conn} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "filtered_target_list" => [],
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
+    trigger_settings = default_trigger_settings()
 
     insert(:user_triggers, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
@@ -289,17 +240,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "fetches all public triggers", %{user: user, conn: conn} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "filtered_target_list" => [],
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
+    trigger_settings = default_trigger_settings()
 
     trigger_settings2 = Map.put(trigger_settings, "percent_threshold", 400.0)
 
@@ -332,17 +273,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   test "fetches public user triggers", %{conn: conn} do
     user = insert(:user, email: "alabala@example.com")
 
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "filtered_target_list" => [],
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
+    trigger_settings = default_trigger_settings()
 
     trigger_settings2 = Map.put(trigger_settings, "percent_threshold", 400.0)
 
@@ -411,17 +342,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "fetches signals historical activity for current user", %{user: user, conn: conn} do
-    trigger_settings = %{
-      "type" => "daily_active_addresses",
-      "target" => "santiment",
-      "filtered_target_list" => [],
-      "channel" => "telegram",
-      "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "repeating" => false,
-      "payload" => nil,
-      "triggered?" => false
-    }
+    trigger_settings = default_trigger_settings()
 
     user_trigger =
       insert(:user_triggers,
@@ -538,6 +459,30 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
            ) == nil
   end
 
+  test "deactivate signal", %{user: user, conn: conn} do
+    trigger_settings = default_trigger_settings()
+
+    ut = insert(:user_triggers, user: user, trigger: %{settings: trigger_settings})
+
+    assert ut.trigger.active
+
+    updated_trigger = update_active_query(conn, ut.id, false)
+
+    assert updated_trigger["active"] == false
+  end
+
+  test "activate signal", %{user: user, conn: conn} do
+    trigger_settings = default_trigger_settings()
+
+    ut = insert(:user_triggers, user: user, trigger: %{active: false, settings: trigger_settings})
+
+    refute ut.trigger.active
+
+    updated_trigger = update_active_query(conn, ut.id, true)
+
+    assert updated_trigger["active"] == true
+  end
+
   defp current_user_signals_activity(conn, args_str) do
     query =
       ~s|
@@ -567,6 +512,41 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> json_response(200)
 
     result["data"]["signalsHistoricalActivity"]
+  end
+
+  defp update_active_query(conn, id, active) do
+    query = """
+      mutation {
+        updateTrigger(
+          id: #{id},
+          active: #{active}
+        ) {
+          trigger{
+            active
+          }
+        }
+      }
+    """
+
+    result =
+      conn
+      |> post("/graphql", %{"query" => query})
+      |> json_response(200)
+
+    result["data"]["updateTrigger"]["trigger"]
+  end
+
+  defp default_trigger_settings do
+    %{
+      "type" => "daily_active_addresses",
+      "target" => "santiment",
+      "filtered_target_list" => [],
+      "channel" => "telegram",
+      "time_window" => "1d",
+      "percent_threshold" => 300.0,
+      "payload" => nil,
+      "triggered?" => false
+    }
   end
 
   defp format_interpolated_json(string) do

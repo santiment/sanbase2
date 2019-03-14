@@ -29,6 +29,14 @@ defmodule Sanbase.Signals.TriggerQuery do
     end
   end
 
+  defmacro trigger_is_active() do
+    quote do
+      fragment("""
+      trigger->>'active' = 'true'
+      """)
+    end
+  end
+
   defmacro trigger_id_one_of(ids) do
     quote do
       fragment(

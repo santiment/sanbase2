@@ -56,13 +56,16 @@ defmodule Sanbase.Signals.Scheduler do
   defp run(type) do
     {updated_user_triggers, sent_list_results} =
       type
-      |> UserTrigger.get_triggers_by_type()
+      |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run()
       |> filter_triggered?()
       |> send_and_mark_as_sent()
 
     updated_user_triggers
     |> persist_sent_signals()
+
+    updated_user_triggers
+    |> deactivate_non_repeating()
 
     sent_list_results
     |> List.flatten()
@@ -79,6 +82,15 @@ defmodule Sanbase.Signals.Scheduler do
       } ->
         triggered?
     end)
+  end
+
+  defp deactivate_non_repeating(triggers) do
+    for %UserTrigger{id: id, user: user, trigger: %{repeating: false}} <- triggers do
+      UserTrigger.update_user_trigger(user, %{
+        id: id,
+        active: false
+      })
+    end
   end
 
   # returns a tuple {updated_user_triggers, send_result_list}

@@ -53,7 +53,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
   test "only some of price percent change signals triggered", context do
     [triggered | rest] =
       PricePercentChangeSettings.type()
-      |> UserTrigger.get_triggers_by_type()
+      |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run()
 
     assert length(rest) == 0
@@ -64,7 +64,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
   test "only some of price absolute change signals triggered", context do
     [triggered | rest] =
       PriceAbsoluteChangeSettings.type()
-      |> UserTrigger.get_triggers_by_type()
+      |> UserTrigger.get_active_triggers_by_type()
       |> Evaluator.run()
 
     assert length(rest) == 0
@@ -79,8 +79,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     assert capture_log(fn ->
              Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
-           end) =~
-             "In total 1/1 price_absolute_change signals were sent successfully"
+           end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
 
     Sanbase.Signals.Evaluator.Cache.clear()
 
@@ -159,8 +158,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       target: "santiment",
       channel: "telegram",
       time_window: "6h",
-      percent_threshold: 15.0,
-      repeating: false
+      percent_threshold: 15.0
     }
 
     trigger_settings2 = %{
@@ -168,8 +166,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       target: "santiment",
       channel: "telegram",
       above: 60,
-      below: 50,
-      repeating: false
+      below: 50
     }
 
     trigger_settings3 = %{
@@ -177,8 +174,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       target: "santiment",
       channel: "telegram",
       time_window: "6h",
-      percent_threshold: 18.0,
-      repeating: false
+      percent_threshold: 18.0
     }
 
     trigger_settings4 = %{
@@ -186,8 +182,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       target: "santiment",
       channel: "telegram",
       above: 70,
-      below: 50,
-      repeating: false
+      below: 50
     }
 
     {:ok, trigger1} =

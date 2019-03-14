@@ -51,7 +51,10 @@ defmodule Sanbase.Signals.StructMapTransformation do
   def struct_from_map(%{type: "price_volume_difference"} = trigger_settings),
     do: {:ok, struct(PriceVolumeDifferenceTriggerSettings, trigger_settings)}
 
-  def struct_from_map(_), do: :error
+  def struct_from_map(%{type: type}),
+    do: {:error, "The trigger settings type '#{type}' is not a valid type."}
+
+  def struct_from_map(_), do: {:error, "The trigger settings are missing `type` key."}
 
   def map_from_struct(%DailyActiveAddressesSettings{} = trigger_settings),
     do: {:ok, Map.from_struct(trigger_settings)}

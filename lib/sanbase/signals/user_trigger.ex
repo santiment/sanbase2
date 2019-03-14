@@ -145,7 +145,7 @@ defmodule Sanbase.Signals.UserTrigger do
       |> create_changeset(%{user_id: user_id, trigger: params})
       |> Repo.insert()
     else
-      {:error, "Trigger structure is invalid. Settings are not valid."}
+      {:error, "Trigger structure is invalid. Key `settings` is missing or not valid."}
     end
   end
 

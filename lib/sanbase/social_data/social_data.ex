@@ -23,24 +23,7 @@ defmodule Sanbase.SocialData do
       from_datetime,
       to_datetime
     )
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-
-        trending_words_result(result)
-
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result(
-          "Error status #{status} fetching trending words for source: #{source}: #{body}"
-        )
-
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch trending words data for source #{source}: #{
-            HTTPoison.Error.message(error)
-          }"
-        )
-    end
+    |> handle_response(&trending_words_result/1, "trending words", "source: #{source}")
   end
 
   def word_context(
@@ -57,17 +40,7 @@ defmodule Sanbase.SocialData do
       from_datetime,
       to_datetime
     )
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        word_context_result(result)
-
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching context for word #{word}: #{body}")
-
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result("Cannot fetch context for word #{word}: #{HTTPoison.Error.message(error)}")
-    end
+    |> handle_response(&word_context_result/1, "word context", "word #{word}")
   end
 
   def word_trend_score(
@@ -82,19 +55,7 @@ defmodule Sanbase.SocialData do
       from_datetime,
       to_datetime
     )
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, result} = Jason.decode(body)
-        word_trend_score_result(result)
-
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        error_result("Error status #{status} fetching word_trend_score for word #{word}: #{body}")
-
-      {:error, %HTTPoison.Error{} = error} ->
-        error_result(
-          "Cannot fetch word_trend_score for word #{word}: #{HTTPoison.Error.message(error)}"
-        )
-    end
+    |> handle_response(&word_trend_score_result/1, "word trend score", "word #{word}")
   end
 
   def top_social_gainers_losers(%{
@@ -105,66 +66,17 @@ defmodule Sanbase.SocialData do
         size: size
       }) do
     social_gainers_losers_request(status, from, to, range, size)
-    |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body} = resp} ->
-        IO.inspect(resp)
-        res = Jason.decode!(body)
-
-        res
-        |> Enum.sort_by(fn %{"timestamp" => timestamp} -> timestamp end)
-        |> Enum.map(fn %{
-                         "timestamp" => timestamp,
-                         "projects" => projects
-                       } ->
-          %{
-            datetime: DateTime.from_unix!(timestamp),
-            projects:
-              projects
-              |> Enum.map(fn %{"project" => project, "change" => change} = project_change ->
-                case Map.get(project_change, "status") do
-                  nil ->
-                    %{project: project, change: change}
-
-                  status ->
-                    %{project: project, change: change, status: String.to_existing_atom(status)}
-                end
-              end)
-          }
-        end)
-
-      {:error, %HTTPoison.Error{} = error} ->
-        {:error, error}
-    end
-  end
-
-  defp social_gainers_losers_request(
-         status,
-         from_datetime,
-         to_datetime,
-         range,
-         size
-       ) do
-    from_unix = DateTime.to_unix(from_datetime)
-    to_unix = DateTime.to_unix(to_datetime)
-
-    url = "#{tech_indicators_url()}/indicator/social_gainers_losers"
-
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"status", status |> Atom.to_string()},
-        {"from_timestamp", from_unix},
-        {"to_timestamp", to_unix},
-        {"range", range},
-        {"size", size}
-      ]
-    ]
-
-    http_client().get(url, [], options)
+    |> handle_response(
+      &top_social_gainers_losers_result/1,
+      "top_social_gainers_losers",
+      "status: #{status}"
+    )
   end
 
   def social_gainers_losers_for_project() do
   end
+
+  # Private functions
 
   defp trending_words_request(
          source,
@@ -190,23 +102,6 @@ defmodule Sanbase.SocialData do
     ]
 
     http_client().get(url, [], options)
-  end
-
-  defp trending_words_result(result) do
-    result =
-      result
-      |> Enum.map(fn %{"timestamp" => timestamp, "top_words" => top_words} ->
-        %{
-          datetime: DateTime.from_unix!(timestamp),
-          top_words:
-            top_words
-            |> Enum.map(fn {k, v} ->
-              %{word: k, score: v}
-            end)
-        }
-      end)
-
-    {:ok, result}
   end
 
   defp word_context_request(
@@ -259,6 +154,49 @@ defmodule Sanbase.SocialData do
     http_client().get(url, [], options)
   end
 
+  defp social_gainers_losers_request(
+         status,
+         from_datetime,
+         to_datetime,
+         range,
+         size
+       ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/social_gainers_losers"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"status", status |> Atom.to_string()},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"range", range},
+        {"size", size}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
+  defp trending_words_result(result) do
+    result =
+      result
+      |> Enum.map(fn %{"timestamp" => timestamp, "top_words" => top_words} ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          top_words:
+            top_words
+            |> Enum.map(fn {k, v} ->
+              %{word: k, score: v}
+            end)
+        }
+      end)
+
+    {:ok, result}
+  end
+
   defp word_context_result(result) do
     result =
       result
@@ -286,6 +224,52 @@ defmodule Sanbase.SocialData do
       |> Enum.sort(&(&1.score >= &2.score))
 
     {:ok, result}
+  end
+
+  defp top_social_gainers_losers_result(result) do
+    result =
+      result
+      |> Enum.map(fn %{
+                       "timestamp" => timestamp,
+                       "projects" => projects
+                     } ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          projects: convert_projects_result(projects)
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  defp convert_projects_result(projects) do
+    projects
+    |> Enum.map(fn %{"project" => project, "change" => change} = project_change ->
+      case Map.get(project_change, "status") do
+        nil ->
+          %{project: project, change: change}
+
+        status ->
+          %{project: project, change: change, status: String.to_existing_atom(status)}
+      end
+    end)
+  end
+
+  defp handle_response(response, handle_callback, query_name_str, arg_str) do
+    response
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, result} = Jason.decode(body)
+        handle_callback.(result)
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        error_result("Error status #{status} fetching #{query_name_str} for #{arg_str}: #{body}")
+
+      {:error, %HTTPoison.Error{} = error} ->
+        error_result(
+          "Cannot fetch #{query_name_str} for #{arg_str}: #{HTTPoison.Error.message(error)}"
+        )
+    end
   end
 
   defp tech_indicators_url() do

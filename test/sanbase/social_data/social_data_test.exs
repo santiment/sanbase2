@@ -183,4 +183,70 @@ defmodule Sanbase.SocialDataTest do
                 }
               ]}
   end
+
+  test "successfully fetch top social gainers losers", _context do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body:
+           "[{\"timestamp\": 1552654800, \"range\": \"15d\", \"projects\": [{\"project\": \"qtum\", \"change\": 137.13186813186815, \"status\": \"gainer\"}, {\"project\": \"abbc-coin\", \"change\": -1.0, \"status\": \"loser\"}]}]",
+         status_code: 200
+       }}
+    )
+
+    args = %{
+      status: :all,
+      from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
+      to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
+      range: "15d",
+      size: 1
+    }
+
+    # As the HTTP call is mocked these arguemnts do no have much effect, though you should try to put the real ones that are used
+    result = SocialData.top_social_gainers_losers(args)
+
+    assert result ==
+             {:ok,
+              [
+                %{
+                  datetime: DateTime.from_naive!(~N[2019-03-15 13:00:00], "Etc/UTC"),
+                  projects: [
+                    %{change: 137.13186813186815, project: "qtum", status: :gainer},
+                    %{change: -1.0, project: "abbc-coin", status: :loser}
+                  ]
+                }
+              ]}
+  end
+
+  test "error fetching top social gainers losers", _context do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: "Internal Server Error",
+         status_code: 500
+       }}
+    )
+
+    args = %{
+      status: :all,
+      from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
+      to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
+      range: "15d",
+      size: 1
+    }
+
+    result_fn = fn ->
+      result = SocialData.top_social_gainers_losers(args)
+      {:error, error_message} = result
+
+      assert error_message =~ "Error executing query. See logs for details"
+    end
+
+    assert capture_log(result_fn) =~
+             "Error status 500 fetching top_social_gainers_losers for status: all: Internal Server Error"
+  end
 end

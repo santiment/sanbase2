@@ -216,7 +216,7 @@ defmodule Sanbase.SocialDataApiTest do
     end
 
     assert capture_log(result_fn) =~
-             "Error status 500 fetching context for word merry: Internal Server Error"
+             "Error status 500 fetching word context for word merry: Internal Server Error"
   end
 
   test "successfully fetch word trend score", %{conn: conn} do
@@ -307,6 +307,105 @@ defmodule Sanbase.SocialDataApiTest do
     end
 
     assert capture_log(result_fn) =~
-             "Error status 500 fetching word_trend_score for word merry: Internal Server Error"
+             "Error status 500 fetching word trend score for word merry: Internal Server Error"
+  end
+
+  test "successfully fetch top social gainers losers", %{conn: conn} do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body:
+           "[{\"timestamp\": 1552654800, \"range\": \"15d\", \"projects\": [{\"project\": \"qtum\", \"change\": 137.13186813186815, \"status\": \"gainer\"}, {\"project\": \"abbc-coin\", \"change\": -1.0, \"status\": \"loser\"}]}]",
+         status_code: 200
+       }}
+    )
+
+    query = """
+    {
+      topSocialGainersLosers(
+        status: ALL, 
+        from: "2018-01-09T00:00:00Z",
+        to:"2018-01-10T00:00:00Z",
+        range: "15d",
+        size: 1
+      ) {
+        datetime,
+        projects {
+          project,
+          change,
+          status
+        }
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "topSocialGainersLosers"))
+      |> json_response(200)
+
+    assert result == %{
+             "data" => %{
+               "topSocialGainersLosers" => [
+                 %{
+                   "datetime" => "2019-03-15T13:00:00Z",
+                   "projects" => [
+                     %{
+                       "change" => 137.13186813186815,
+                       "project" => "qtum",
+                       "status" => "GAINER"
+                     },
+                     %{
+                       "change" => -1.0,
+                       "project" => "abbc-coin",
+                       "status" => "LOSER"
+                     }
+                   ]
+                 }
+               ]
+             }
+           }
+  end
+
+  test "error 500 when fetch top social gainers losers from tech-indicators", %{conn: conn} do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: "Internal Server Error",
+         status_code: 500
+       }}
+    )
+
+    query = """
+    {
+      topSocialGainersLosers(
+        status: ALL, 
+        from: "2018-01-09T00:00:00Z",
+        to:"2018-01-10T00:00:00Z",
+        range: "15d",
+        size: 1
+      ) {
+        datetime,
+        projects {
+          project,
+          change,
+          status
+        }
+      }
+    }
+    """
+
+    result_fn = fn ->
+      conn
+      |> post("/graphql", query_skeleton(query, "topSocialGainersLosers"))
+      |> json_response(200)
+    end
+
+    assert capture_log(result_fn) =~
+             "Error status 500 fetching top_social_gainers_losers for status: all: Internal Server Error"
   end
 end

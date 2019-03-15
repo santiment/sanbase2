@@ -67,4 +67,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   def top_social_gainers_losers(_root, args, _resolution) do
     SocialData.top_social_gainers_losers(args)
   end
+
+  def social_gainers_losers_status(_root, args, _resolution) do
+    SocialData.social_gainers_losers_status(args)
+  end
 end

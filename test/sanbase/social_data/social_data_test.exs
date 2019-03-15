@@ -247,6 +247,68 @@ defmodule Sanbase.SocialDataTest do
     end
 
     assert capture_log(result_fn) =~
-             "Error status 500 fetching top_social_gainers_losers for status: all: Internal Server Error"
+             "Error status 500 fetching top social gainers losers for status: all: Internal Server Error"
+  end
+
+  test "successfully fetch social gainers losers status for slug", _context do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body:
+           "[{\"timestamp\": 1552662000, \"status\": \"gainer\", \"change\": 12.709016393442624}]",
+         status_code: 200
+       }}
+    )
+
+    args = %{
+      slug: "qtum",
+      from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
+      to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
+      range: "15d"
+    }
+
+    # As the HTTP call is mocked these arguemnts do no have much effect, though you should try to put the real ones that are used
+    result = SocialData.social_gainers_losers_status(args)
+
+    assert result ==
+             {:ok,
+              [
+                %{
+                  change: 12.709016393442624,
+                  datetime: DateTime.from_naive!(~N[2019-03-15 15:00:00], "Etc/UTC"),
+                  status: :gainer
+                }
+              ]}
+  end
+
+  test "error fetching social gainers losers status", _context do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: "Internal Server Error",
+         status_code: 500
+       }}
+    )
+
+    args = %{
+      slug: "qtum",
+      from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
+      to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
+      range: "15d"
+    }
+
+    result_fn = fn ->
+      result = SocialData.social_gainers_losers_status(args)
+      {:error, error_message} = result
+
+      assert error_message =~ "Error executing query. See logs for details"
+    end
+
+    assert capture_log(result_fn) =~
+             "Error status 500 fetching social gainers losers status for slug: qtum: Internal Server Error"
   end
 end

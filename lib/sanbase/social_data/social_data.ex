@@ -68,12 +68,23 @@ defmodule Sanbase.SocialData do
     social_gainers_losers_request(status, from, to, range, size)
     |> handle_response(
       &top_social_gainers_losers_result/1,
-      "top_social_gainers_losers",
+      "top social gainers losers",
       "status: #{status}"
     )
   end
 
-  def social_gainers_losers_for_project() do
+  def social_gainers_losers_status(%{
+        slug: slug,
+        from: from,
+        to: to,
+        range: range
+      }) do
+    social_gainers_losers_status_request(slug, from, to, range)
+    |> handle_response(
+      &social_gainers_losers_status_result/1,
+      "social gainers losers status",
+      "slug: #{slug}"
+    )
   end
 
   # Private functions
@@ -180,6 +191,30 @@ defmodule Sanbase.SocialData do
     http_client().get(url, [], options)
   end
 
+  defp social_gainers_losers_status_request(
+         slug,
+         from_datetime,
+         to_datetime,
+         range
+       ) do
+    from_unix = DateTime.to_unix(from_datetime)
+    to_unix = DateTime.to_unix(to_datetime)
+
+    url = "#{tech_indicators_url()}/indicator/social_gainers_losers_status"
+
+    options = [
+      recv_timeout: @recv_timeout,
+      params: [
+        {"project", slug},
+        {"from_timestamp", from_unix},
+        {"to_timestamp", to_unix},
+        {"range", range}
+      ]
+    ]
+
+    http_client().get(url, [], options)
+  end
+
   defp trending_words_result(result) do
     result =
       result
@@ -236,6 +271,24 @@ defmodule Sanbase.SocialData do
         %{
           datetime: DateTime.from_unix!(timestamp),
           projects: convert_projects_result(projects)
+        }
+      end)
+
+    {:ok, result}
+  end
+
+  defp social_gainers_losers_status_result(result) do
+    result =
+      result
+      |> Enum.map(fn %{
+                       "timestamp" => timestamp,
+                       "status" => status,
+                       "change" => change
+                     } ->
+        %{
+          datetime: DateTime.from_unix!(timestamp),
+          status: String.to_existing_atom(status),
+          change: change
         }
       end)
 

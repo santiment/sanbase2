@@ -852,16 +852,26 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc """
     Top social gainers/losers for given range.
-    * `status` can be one of: `ALL`, `GAINERS`, `LOSERS`, `NEWCOMERS`
+    * `status` can be one of: `ALL`, `GAINER`, `LOSER`, `NEWCOMER`
     """
     field :top_social_gainers_losers, list_of(:top_social_gainers_losers) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:status, non_null(:social_gainers_losers_status))
+      arg(:status, non_null(:social_gainers_losers_status_enum))
       arg(:size, :integer, default_value: 10)
-      arg(:range, :string)
+      arg(:range, non_null(:string))
 
-      resolve(&SocialDataResolver.top_social_gainers_losers/3)
+      cache_resolve(&SocialDataResolver.top_social_gainers_losers/3)
+    end
+
+    @desc "Social gainers/losers for given slug"
+    field :social_gainers_losers_status, list_of(:social_gainers_losers_status) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:range, non_null(:string))
+
+      cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
     end
   end
 

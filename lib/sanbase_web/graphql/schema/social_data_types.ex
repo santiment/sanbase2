@@ -11,7 +11,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:all)
   end
 
-  enum :social_gainers_losers_status do
+  enum :social_gainers_losers_status_enum do
     value(:gainer)
     value(:loser)
     value(:newcomer)
@@ -51,6 +51,12 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   object :projects_change do
     field(:project, non_null(:string))
     field(:change, non_null(:float))
-    field(:status, :social_gainers_losers_status)
+    field(:status, :social_gainers_losers_status_enum)
+  end
+
+  object :social_gainers_losers_status do
+    field(:datetime, non_null(:datetime))
+    field(:change, non_null(:float))
+    field(:status, :social_gainers_losers_status_enum)
   end
 end

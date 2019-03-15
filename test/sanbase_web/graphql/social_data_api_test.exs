@@ -406,6 +406,87 @@ defmodule Sanbase.SocialDataApiTest do
     end
 
     assert capture_log(result_fn) =~
-             "Error status 500 fetching top_social_gainers_losers for status: all: Internal Server Error"
+             "Error status 500 fetching top social gainers losers for status: all: Internal Server Error"
+  end
+
+  test "successfully fetch social gainers losers status for slug", %{conn: conn} do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body:
+           "[{\"timestamp\": 1552662000, \"status\": \"gainer\", \"change\": 12.709016393442624}]",
+         status_code: 200
+       }}
+    )
+
+    query = """
+    {
+      socialGainersLosersStatus(
+        slug: "qtum",
+        from: "2018-01-09T00:00:00Z",
+        to:"2018-01-10T00:00:00Z",
+        range: "15d",
+      ) {
+        datetime,
+        change,
+        status
+      }
+    }
+    """
+
+    result =
+      conn
+      |> post("/graphql", query_skeleton(query, "socialGainersLosersStatus"))
+      |> json_response(200)
+
+    assert result == %{
+             "data" => %{
+               "socialGainersLosersStatus" => [
+                 %{
+                   "change" => 12.709016393442624,
+                   "datetime" => "2019-03-15T15:00:00Z",
+                   "status" => "GAINER"
+                 }
+               ]
+             }
+           }
+  end
+
+  test "error 500 when fetch social gainers losers status from tech-indicators", %{conn: conn} do
+    mock(
+      HTTPoison,
+      :get,
+      {:ok,
+       %HTTPoison.Response{
+         body: "Internal Server Error",
+         status_code: 500
+       }}
+    )
+
+    query = """
+    {
+      socialGainersLosersStatus(
+        slug: "qtum",
+        from: "2018-01-09T00:00:00Z",
+        to:"2018-01-10T00:00:00Z",
+        range: "15d",
+      ) {
+        datetime,
+        change,
+        status
+      }
+    }
+    """
+
+    result_fn = fn ->
+      conn
+      |> post("/graphql", query_skeleton(query, "socialGainersLosersStatus"))
+      |> json_response(200)
+    end
+
+    assert capture_log(result_fn) =~
+             "Error status 500 fetching social gainers losers status for slug: qtum: Internal Server Error"
   end
 end

@@ -14,7 +14,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
 
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:filtered_target_list, :payload, :triggered?]}
   @trigger_type "price_absolute_change"
   @enforce_keys [:type, :target, :channel]
   defstruct type: @trigger_type,

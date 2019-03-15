@@ -7,7 +7,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   alias Sanbase.Model.Project
   alias Sanbase.TechIndicators.PriceVolumeDifference
 
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:filtered_target_list, :payload, :triggered?]}
   @trigger_type "price_volume_difference"
   @enforce_keys [:type, :target, :channel, :threshold]
 

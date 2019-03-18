@@ -2,19 +2,20 @@ defmodule Sanbase.Factory do
   use ExMachina.Ecto, repo: Sanbase.Repo
 
   alias Sanbase.Tag
+  alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.Insight.{Post, Poll}
   alias Sanbase.Model.{Project, ExchangeAddress}
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
 
-  def user_factory do
+  def user_factory() do
     %User{
       salt: User.generate_salt(),
       privacy_policy_accepted: true
     }
   end
 
-  def insights_fallback_user_factory do
+  def insights_fallback_user_factory() do
     %User{
       salt: User.generate_salt(),
       username: User.insights_fallback_username(),
@@ -22,7 +23,7 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def staked_user_factory do
+  def staked_user_factory() do
     %User{
       salt: User.generate_salt(),
       san_balance: Decimal.new(20000),
@@ -30,9 +31,17 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def post_factory do
+  def poll_factory() do
+    %Poll{
+      start_at: DateTime.from_naive!(~N[2017-05-13 00:00:00], "Etc/UTC"),
+      end_at: DateTime.from_naive!(~N[2030-05-13 00:00:00], "Etc/UTC")
+    }
+  end
+
+  def post_factory() do
     %Post{
-      user_id: build(:user),
+      user: build(:user),
+      poll: build(:poll),
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",
@@ -40,7 +49,16 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def tag_factory do
+  def post_no_default_user_factory() do
+    %Post{
+      title: "Awesome analysis",
+      link: "http://example.com",
+      text: "Text of the post",
+      state: Post.approved_state()
+    }
+  end
+
+  def tag_factory() do
     %Tag{
       name: "SAN"
     }
@@ -74,9 +92,12 @@ defmodule Sanbase.Factory do
     }
   end
 
-  def user_triggers_factory() do
+  def user_trigger_factory() do
     %UserTrigger{
-      trigger: %{}
+      user: build(:user),
+      trigger: %{
+        title: "Generic title"
+      }
     }
   end
 
@@ -84,5 +105,9 @@ defmodule Sanbase.Factory do
     %HistoricalActivity{
       user_trigger: %{}
     }
+  end
+
+  def watchlist_factory() do
+    %UserList{name: "Generic User List name", color: :red, user: build(:user)}
   end
 end

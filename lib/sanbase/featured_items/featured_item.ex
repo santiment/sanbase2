@@ -11,7 +11,7 @@ defmodule Sanbase.FeaturedItem do
 
   alias Sanbase.Repo
   alias Sanbase.Insight.Post
-  alias Sanbase.UserLists.UserList
+  alias Sanbase.UserList
   alias Sanbase.Signals.UserTrigger
 
   @table "featured_items"
@@ -38,6 +38,7 @@ defmodule Sanbase.FeaturedItem do
     |> join(:inner, [fi], fi in assoc(fi, :post))
     |> select([_fi, post], post)
     |> Repo.all()
+    |> Repo.preload([:user, :poll])
   end
 
   def watchlists() do
@@ -45,6 +46,7 @@ defmodule Sanbase.FeaturedItem do
     |> join(:inner, [fi], fi in assoc(fi, :user_list))
     |> select([_fi, user_list], user_list)
     |> Repo.all()
+    |> Repo.preload([:user])
   end
 
   def user_triggers() do
@@ -52,6 +54,7 @@ defmodule Sanbase.FeaturedItem do
     |> join(:inner, [fi], fi in assoc(fi, :user_trigger))
     |> select([_fi, trigger], trigger)
     |> Repo.all()
+    |> Repo.preload([:user])
   end
 
   @doc ~s"""

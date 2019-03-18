@@ -5,7 +5,7 @@ defmodule SanbaseWeb.Graphql.UserListTest do
   alias Sanbase.Model.Project
   alias Sanbase.Model.LatestCoinmarketcapData
   alias Sanbase.Repo
-  alias Sanbase.UserLists.UserList
+  alias Sanbase.UserList
 
   import SanbaseWeb.Graphql.TestHelpers
 

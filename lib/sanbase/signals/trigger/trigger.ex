@@ -140,7 +140,7 @@ defmodule Sanbase.Signals.Trigger do
   end
 
   defp remove_targets_on_cooldown(%{user_list: user_list_id}, trigger) do
-    %{list_items: list_items} = Sanbase.UserLists.UserList.by_id(user_list_id)
+    %{list_items: list_items} = Sanbase.UserList.by_id(user_list_id)
 
     list_items
     |> Enum.map(fn %{project_id: id} -> id end)

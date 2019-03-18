@@ -192,7 +192,7 @@ defmodule Sanbase.Signals.TriggersTest do
       percent_threshold: 300.0
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
     )
@@ -236,12 +236,12 @@ defmodule Sanbase.Signals.TriggersTest do
       percent_threshold: 10.0
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
     )
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
@@ -295,7 +295,7 @@ defmodule Sanbase.Signals.TriggersTest do
       percent_threshold: 200.0
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: false, settings: trigger_settings}
     )

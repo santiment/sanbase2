@@ -52,7 +52,7 @@ defmodule Sanbase.Insight.Post do
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :poll_id])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])

@@ -35,10 +35,8 @@ alias Sanbase.Insight.{
   PostImage
 }
 
-alias Sanbase.UserLists.{
-  UserList,
-  ListItem
-}
+alias Sanbase.UserList
+alias Sanbase.UserList.ListItem
 
 alias Sanbase.Blockchain.{
   BurnRate,

@@ -1,11 +1,11 @@
-defmodule Sanbase.UserLists.UserList do
+defmodule Sanbase.UserList do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
 
   alias __MODULE__
   alias Sanbase.Auth.User
-  alias Sanbase.UserLists.ListItem
+  alias Sanbase.UserList.ListItem
   alias Sanbase.Repo
 
   schema "user_lists" do

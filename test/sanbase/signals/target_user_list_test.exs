@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.TargetUserListTest do
   use Sanbase.DataCase, async: false
-  alias Sanbase.UserLists.UserList
+  alias Sanbase.UserList
   alias Sanbase.Signals.UserTrigger
 
   import Sanbase.Factory

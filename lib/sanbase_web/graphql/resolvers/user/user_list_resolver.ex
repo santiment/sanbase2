@@ -2,7 +2,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserListResolver do
   require Logger
 
   alias Sanbase.Auth.User
-  alias Sanbase.UserLists.UserList
+  alias Sanbase.UserList
   alias SanbaseWeb.Graphql.Helpers.Utils
   alias Sanbase.Repo
 

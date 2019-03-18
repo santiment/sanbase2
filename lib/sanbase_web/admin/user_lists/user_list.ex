@@ -1,9 +1,9 @@
-defmodule Sanbase.ExAdmin.UserLists.UserList do
+defmodule Sanbase.ExAdmin.UserList do
   use ExAdmin.Register
 
-  alias Sanbase.UserLists.UserList
+  alias Sanbase.UserList
 
-  register_resource Sanbase.UserLists.UserList do
+  register_resource Sanbase.UserList do
     update_changeset(:update_changeset)
     action_items(only: [:show, :edit, :delete])
 

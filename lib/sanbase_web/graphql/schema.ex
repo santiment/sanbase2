@@ -31,7 +31,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
     MultipleAuth,
@@ -39,7 +38,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     JWTAuth,
     ApikeyAuth,
     ProjectPermissions,
-    PostPermissions,
     ApiTimeframeRestriction,
     ApiUsage
   }

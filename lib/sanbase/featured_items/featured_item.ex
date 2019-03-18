@@ -86,11 +86,10 @@ defmodule Sanbase.FeaturedItem do
   end
 
   defp update_item(type, id, true) do
-    from(fi in __MODULE__, where: ^[{type, id}])
-    |> Repo.get_by([])
+    Repo.get_by(__MODULE__, [{type, id}])
     |> case do
       nil -> %__MODULE__{} |> changeset(%{type => id}) |> Repo.insert()
-      result -> :ok
+      _result -> :ok
     end
   end
 

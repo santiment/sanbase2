@@ -22,7 +22,7 @@ defmodule Sanbase.ExAdmin.UserList do
 
         input(
           user_list,
-          :featured,
+          :is_featured,
           collection: ~w(true false)
         )
       end

@@ -1,6 +1,8 @@
 defmodule Sanbase.SocialData do
   import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
 
+  alias Sanbase.DateTimeUtils
+
   require Logger
   require Sanbase.Utils.Config, as: Config
 
@@ -65,12 +67,19 @@ defmodule Sanbase.SocialData do
         range: range,
         size: size
       }) do
-    social_gainers_losers_request(status, from, to, range, size)
-    |> handle_response(
-      &top_social_gainers_losers_result/1,
-      "top social gainers losers",
-      "status: #{status}"
-    )
+    case validate_range(range) do
+      {:ok, range_in_days_str} ->
+        social_gainers_losers_request(status, from, to, range_in_days_str, size)
+        |> handle_response(
+          &top_social_gainers_losers_result/1,
+          "top social gainers losers",
+          "status: #{status}"
+        )
+
+      {:error, error} ->
+        Logger.error(error)
+        {:error, error}
+    end
   end
 
   def social_gainers_losers_status(%{
@@ -79,12 +88,19 @@ defmodule Sanbase.SocialData do
         to: to,
         range: range
       }) do
-    social_gainers_losers_status_request(slug, from, to, range)
-    |> handle_response(
-      &social_gainers_losers_status_result/1,
-      "social gainers losers status",
-      "slug: #{slug}"
-    )
+    case validate_range(range) do
+      {:ok, range_in_days_str} ->
+        social_gainers_losers_status_request(slug, from, to, range)
+        |> handle_response(
+          &social_gainers_losers_status_result/1,
+          "social gainers losers status",
+          "slug: #{slug}"
+        )
+
+      {:error, error} ->
+        Logger.error("Invalid argument in top_social_gainers_losers: #{inspect(error)}")
+        {:error, error}
+    end
   end
 
   # Private functions
@@ -322,6 +338,23 @@ defmodule Sanbase.SocialData do
         error_result(
           "Cannot fetch #{query_name_str} for #{arg_str}: #{HTTPoison.Error.message(error)}"
         )
+    end
+  end
+
+  defp validate_range(range) do
+    with {:valid_compound_duration?, true} <-
+           {:valid_compound_duration?, DateTimeUtils.valid_compound_duration?(range)},
+         range_in_days = DateTimeUtils.compound_duration_to_days(range),
+         {:valid_range?, true} <- {:valid_range?, range_in_days >= 2 and range_in_days <= 30} do
+      {:ok, "#{range_in_days}d"}
+    else
+      {:valid_compound_duration?, false} ->
+        {:error,
+         "Invalid string format for range. Valid values can be - for ex: `2d`, `5d`, `1w`"}
+
+      {:valid_range?, false} ->
+        {:error,
+         "Invalid `range` argument. Range should be between 2 and 30 days - for ex: `2d`, `5d`, `1w`"}
     end
   end
 

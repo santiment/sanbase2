@@ -6,14 +6,37 @@ defmodule Sanbase.SocialDataTest do
 
   alias Sanbase.SocialData
 
-  test "successfully fetch social data", _context do
+  test "successfully fetch social data" do
     mock(
       HTTPoison,
       :get,
       {:ok,
        %HTTPoison.Response{
-         body:
-           "[{\"timestamp\": 1541808000, \"top_words\": {\"bat\": 367.77770422285084, \"pele\": 167.74716011726295, \"people\": 137.61557511242117, \"arn\": 137.14962816454351, \"chimeracryptoinsider\": 118.17637249353709}}, {\"timestamp\": 1541721600, \"top_words\": {\"bat\": 1740.2647984845628, \"xlm\": 837.0034350090417, \"coinbase\": 792.9209638684719, \"mth\": 721.8164660673655, \"mana\": 208.48182966076172}}, {\"timestamp\": 1541980800, \"top_words\": {\"xlm\": 769.8008634834883, \"bch\": 522.9358622900285, \"fork\": 340.17719444024317, \"mda\": 213.57227498303558, \"abc\": 177.6092706156777}}, {\"timestamp\": 1541894400, \"top_words\": {\"mana\": 475.8978759407794, \"mth\": 411.73069246798326, \"fork\": 321.11991967479867, \"bch\": 185.35627662699594, \"imgur\": 181.45123778369867}}]",
+         body: "[
+             {\"timestamp\": 1541808000, 
+             \"top_words\": {
+               \"bat\": 367.77770422285084, \"pele\": 167.74716011726295, 
+               \"people\": 137.61557511242117, \"arn\": 137.14962816454351, 
+               \"chimeracryptoinsider\": 118.17637249353709}
+              }, 
+             {\"timestamp\": 1541721600, 
+             \"top_words\": {
+               \"bat\": 1740.2647984845628, \"xlm\": 837.0034350090417,
+               \"coinbase\": 792.9209638684719, \"mth\": 721.8164660673655,
+               \"mana\": 208.48182966076172}
+              }, 
+              {\"timestamp\": 1541980800, 
+               \"top_words\": {
+                 \"xlm\": 769.8008634834883, \"bch\": 522.9358622900285,
+                 \"fork\": 340.17719444024317, \"mda\": 213.57227498303558,
+                 \"abc\": 177.6092706156777}
+              }, 
+              {\"timestamp\": 1541894400, 
+               \"top_words\": {
+                 \"mana\": 475.8978759407794, \"mth\": 411.73069246798326,
+                 \"fork\": 321.11991967479867, \"bch\": 185.35627662699594, 
+                 \"imgur\": 181.45123778369867}}
+            ]",
          status_code: 200
        }}
     )
@@ -74,7 +97,7 @@ defmodule Sanbase.SocialDataTest do
               ]}
   end
 
-  test "error fetching social data", _context do
+  test "error fetching social data" do
     mock(
       HTTPoison,
       :get,
@@ -86,7 +109,7 @@ defmodule Sanbase.SocialDataTest do
     )
 
     result_fn = fn ->
-      result =
+      {:error, error_message} =
         SocialData.trending_words(
           :telegram,
           5,
@@ -95,8 +118,6 @@ defmodule Sanbase.SocialDataTest do
           DateTime.from_naive!(~N[2018-11-12 00:00:00], "Etc/UTC")
         )
 
-      {:error, error_message} = result
-
       assert error_message =~ "Error executing query. See logs for details"
     end
 
@@ -104,7 +125,7 @@ defmodule Sanbase.SocialDataTest do
              "Error status 500 fetching trending words for source: telegram: Internal Server Error"
   end
 
-  test "successfully fetch word context", _context do
+  test "successfully fetch word context" do
     body =
       %{
         "christ" => %{"score" => 0.7688603531300161},
@@ -123,7 +144,8 @@ defmodule Sanbase.SocialDataTest do
        }}
     )
 
-    # As the HTTP call is mocked these arguemnts do no have much effect, though you should try to put the real ones that are used
+    # As the HTTP call is mocked these arguemnts do no have much effect, 
+    # though you should try to put the real ones that are used
     result =
       SocialData.word_context(
         "merry",
@@ -142,7 +164,7 @@ defmodule Sanbase.SocialDataTest do
               ]}
   end
 
-  test "successfully fetch word trend score", _context do
+  test "successfully fetch word trend score" do
     body =
       [
         %{
@@ -164,7 +186,8 @@ defmodule Sanbase.SocialDataTest do
        }}
     )
 
-    # As the HTTP call is mocked these arguemnts do no have much effect, though you should try to put the real ones that are used
+    # As the HTTP call is mocked these arguemnts do no have much effect,
+    # though you should try to put the real ones that are used
     result =
       SocialData.word_trend_score(
         "trx",
@@ -190,8 +213,13 @@ defmodule Sanbase.SocialDataTest do
       :get,
       {:ok,
        %HTTPoison.Response{
-         body:
-           "[{\"timestamp\": 1552654800, \"range\": \"15d\", \"projects\": [{\"project\": \"qtum\", \"change\": 137.13186813186815, \"status\": \"gainer\"}, {\"project\": \"abbc-coin\", \"change\": -1.0, \"status\": \"loser\"}]}]",
+         body: "[{
+             \"timestamp\": 1552654800, \"range\": \"15d\", \"projects\": 
+            [
+              {\"project\": \"qtum\", \"change\": 137.13186813186815, \"status\": \"gainer\"}, 
+              {\"project\": \"abbc-coin\", \"change\": -1.0, \"status\": \"loser\"}
+            ]
+           }]",
          status_code: 200
        }}
     )
@@ -204,7 +232,8 @@ defmodule Sanbase.SocialDataTest do
       size: 1
     }
 
-    # As the HTTP call is mocked these arguemnts do no have much effect, though you should try to put the real ones that are used
+    # As the HTTP call is mocked these arguments do no have much effect, 
+    # though you should try to put the real ones that are used
     result = SocialData.top_social_gainers_losers(args)
 
     assert result ==
@@ -220,7 +249,7 @@ defmodule Sanbase.SocialDataTest do
               ]}
   end
 
-  test "error fetching top social gainers losers", _context do
+  test "error fetching top social gainers losers" do
     mock(
       HTTPoison,
       :get,
@@ -240,8 +269,7 @@ defmodule Sanbase.SocialDataTest do
     }
 
     result_fn = fn ->
-      result = SocialData.top_social_gainers_losers(args)
-      {:error, error_message} = result
+      {:error, error_message} = SocialData.top_social_gainers_losers(args)
 
       assert error_message =~ "Error executing query. See logs for details"
     end
@@ -250,7 +278,7 @@ defmodule Sanbase.SocialDataTest do
              "Error status 500 fetching top social gainers losers for status: all: Internal Server Error"
   end
 
-  test "successfully fetch social gainers losers status for slug", _context do
+  test "successfully fetch social gainers losers status for slug" do
     mock(
       HTTPoison,
       :get,
@@ -269,7 +297,8 @@ defmodule Sanbase.SocialDataTest do
       range: "15d"
     }
 
-    # As the HTTP call is mocked these arguemnts do no have much effect, though you should try to put the real ones that are used
+    # As the HTTP call is mocked these arguments do no have much effect, 
+    # though you should try to put the real ones that are used
     result = SocialData.social_gainers_losers_status(args)
 
     assert result ==
@@ -283,7 +312,7 @@ defmodule Sanbase.SocialDataTest do
               ]}
   end
 
-  test "error fetching social gainers losers status", _context do
+  test "error fetching social gainers losers status" do
     mock(
       HTTPoison,
       :get,
@@ -302,13 +331,50 @@ defmodule Sanbase.SocialDataTest do
     }
 
     result_fn = fn ->
-      result = SocialData.social_gainers_losers_status(args)
-      {:error, error_message} = result
+      {:error, error_message} = SocialData.social_gainers_losers_status(args)
 
       assert error_message =~ "Error executing query. See logs for details"
     end
 
     assert capture_log(result_fn) =~
              "Error status 500 fetching social gainers losers status for slug: qtum: Internal Server Error"
+  end
+
+  test "top_social_gainers_losers: error with invalid range" do
+    args = %{
+      status: :all,
+      from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
+      to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
+      range: "invalid",
+      size: 1
+    }
+
+    result_fn = fn ->
+      {:error, error_message} = SocialData.top_social_gainers_losers(args)
+
+      assert error_message =~
+               "Invalid string format for range. Valid values can be - for ex: `2d`, `5d`, `1w`"
+    end
+
+    capture_log(result_fn)
+  end
+
+  test "top_social_gainers_losers: error with out of bounds range" do
+    args = %{
+      status: :all,
+      from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
+      to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
+      range: "1d",
+      size: 1
+    }
+
+    result_fn = fn ->
+      {:error, error_message} = SocialData.top_social_gainers_losers(args)
+
+      assert error_message =~
+               "Invalid `range` argument. Range should be between 2 and 30 days - for ex: `2d`, `5d`, `1w`"
+    end
+
+    capture_log(result_fn)
   end
 end

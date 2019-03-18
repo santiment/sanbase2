@@ -851,8 +851,13 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc """
-    Top social gainers/losers for given range.
+    Top social gainers/losers returns the social volume changes of all crypto projects.
+
+    * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     * `status` can be one of: `ALL`, `GAINER`, `LOSER`, `NEWCOMER`
+    * `size` - count of returned projects for status
+    * `range` - the `change` range in days. Should be between `2d` and `30d`.
     """
     field :top_social_gainers_losers, list_of(:top_social_gainers_losers) do
       arg(:from, non_null(:datetime))
@@ -864,7 +869,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&SocialDataResolver.top_social_gainers_losers/3)
     end
 
-    @desc "Social gainers/losers for given slug"
+    @desc """
+    Returns the social gainers/losers `status` and `change` for given slug.
+    Returned `status` can be one of: `GAINER`, `LOSER`, `NEWCOMER.`
+
+    * `slug` - a string uniquely identifying a project
+    * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `range` - the `change` range in days. Should be between `2d` and `30d`.
+    """
     field :social_gainers_losers_status, list_of(:social_gainers_losers_status) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))

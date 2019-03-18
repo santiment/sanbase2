@@ -13,7 +13,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   alias Sanbase.DateTimeUtils
   alias Sanbase.Signals.Evaluator.Cache
 
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:filtered_target_list, :payload, :triggered?]}
   @trigger_type "price_percent_change"
   @enforce_keys [:type, :target, :channel, :time_window]
   defstruct type: @trigger_type,

@@ -540,12 +540,9 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     %{
       "type" => "daily_active_addresses",
       "target" => "santiment",
-      "filtered_target_list" => [],
       "channel" => "telegram",
       "time_window" => "1d",
-      "percent_threshold" => 300.0,
-      "payload" => nil,
-      "triggered?" => false
+      "percent_threshold" => 300.0
     }
   end
 

@@ -28,7 +28,6 @@ defmodule SanbaseWeb.Router do
 
   scope "/admin", ExAdmin do
     pipe_through([:browser, :basic_auth])
-    put("/models/:id", SanbaseWeb.ExAdmin.UserTriggerController, :mark_featured)
     admin_routes()
   end
 

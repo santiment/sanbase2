@@ -18,5 +18,9 @@ defmodule Sanbase.ExAdmin.Insight.Post do
         input(post, :moderation_comment)
       end
     end
+
+    controller do
+      after_filter(:set_featured, only: [:update])
+    end
   end
 end

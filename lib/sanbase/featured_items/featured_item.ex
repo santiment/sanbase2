@@ -55,52 +55,34 @@ defmodule Sanbase.FeaturedItem do
   end
 
   @doc ~s"""
-  Mark the insight as featured or not.
+  Mark the insight, watchlist or user trigger as featured or not.
 
   Update the record for the insight. If it the second argument is `false` any
   present record will be deleted. If the second argument is `true` a new record
   will be created if it does not exist
   """
-  @spec update_insight(%Post{}, boolean) ::
+  @spec update_item(%Post{} | %UserList{} | %UserTrigger{}, boolean) ::
           :ok | {:error, Ecto.Changeset.t()}
-  def update_insight(%Post{id: id}, featured?) do
-    update_element(:post_id, id, featured?)
+  def update_item(%Post{id: id}, featured?) do
+    update_item(:post_id, id, featured?)
   end
 
-  @doc ~s"""
-  Mark the watchlist as featured or not.
-
-  Update the record for the watchlist. If it the second argument is `false` any
-  present record will be deleted. If the second argument is `true` a new record
-  will be created if it does not exist
-  """
-  @spec update_watchlist(%UserList{}, boolean) ::
-          :ok | {:error, Ecto.Changeset.t()}
-  def update_watchlist(%UserList{id: id}, featured?) do
-    update_element(:user_list_id, id, featured?)
+  def update_item(%UserList{id: id}, featured?) do
+    update_item(:user_list_id, id, featured?)
   end
 
-  @doc ~s"""
-  Mark the user_trigger as featured or not.
-
-  Update the record for the user_trigger. If it the second argument is `false` any
-  present record will be deleted. If the second argument is `true` a new record
-  will be created if it does not exist
-  """
-  @spec update_user_trigger(%UserTrigger{}, boolean) ::
-          :ok | {:error, Ecto.Changeset.t()}
-  def update_user_trigger(%UserTrigger{id: id}, featured?) do
-    update_element(:user_trigger_id, id, featured?)
+  def update_item(%UserTrigger{id: id}, featured?) do
+    update_item(:user_trigger_id, id, featured?)
   end
 
   # Private functions
 
-  defp update_element(type, id, false) do
+  defp update_item(type, id, false) do
     from(fi in __MODULE__) |> where(^[{type, id}]) |> Repo.delete_all()
     :ok
   end
 
-  defp update_element(type, id, true) do
+  defp update_item(type, id, true) do
     from(fi in __MODULE__, where: ^[{type, id}])
     |> Repo.get_by([])
     |> case do

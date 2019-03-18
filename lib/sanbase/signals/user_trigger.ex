@@ -42,6 +42,10 @@ defmodule Sanbase.Signals.UserTrigger do
     timestamps()
   end
 
+  def changeset(ut, attrs \\ %{}) do
+    ut |> cast(attrs, [])
+  end
+
   @doc false
   @spec create_changeset(%UserTrigger{}, map()) :: Ecto.Changeset.t()
   def create_changeset(%UserTrigger{} = user_triggers, attrs \\ %{}) do

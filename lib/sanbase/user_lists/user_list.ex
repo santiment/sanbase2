@@ -14,6 +14,7 @@ defmodule Sanbase.UserLists.UserList do
     field(:color, ColorEnum, default: :none)
 
     belongs_to(:user, User)
+    has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
 
     timestamps()

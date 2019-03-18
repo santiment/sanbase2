@@ -1777,6 +1777,27 @@ CREATE UNIQUE INDEX exchange_addresses_address_idx ON public.exchange_addresses 
 
 
 --
+-- Name: featured_items_post_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_post_id_index ON public.featured_items USING btree (post_id);
+
+
+--
+-- Name: featured_items_user_list_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_user_list_id_index ON public.featured_items USING btree (user_list_id);
+
+
+--
+-- Name: featured_items_user_trigger_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX featured_items_user_trigger_id_index ON public.featured_items USING btree (user_trigger_id);
+
+
+--
 -- Name: ico_currencies_currency_id_index; Type: INDEX; Schema: public; Owner: -
 --
 

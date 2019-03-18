@@ -16,5 +16,8 @@ defmodule Sanbase.Repo.Migrations.AddFeaturedItemsTable do
     """
 
     create(constraint(:featured_items, :only_one_fk, check: fk_check))
+    create(unique_index(:featured_items, [:post_id]))
+    create(unique_index(:featured_items, [:user_list_id]))
+    create(unique_index(:featured_items, [:user_trigger_id]))
   end
 end

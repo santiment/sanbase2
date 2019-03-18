@@ -10,14 +10,16 @@ defmodule Sanbase.ExAdmin.Signals.UserTrigger do
 
     index do
       column(:id)
-      column(:user)
+      column(:title, & &1.trigger.title)
       column(:is_featured, &is_featured(&1))
       column(:trigger, &Jason.encode!(&1.trigger |> Map.from_struct()))
+      column(:user)
     end
 
     show user_trigger do
       attributes_table do
         row(:id)
+        row(:title, & &1.trigger.title)
         row(:user, link: true)
         row(:trigger, &Jason.encode!(&1.trigger |> Map.from_struct()))
         row(:is_featured, &is_featured(&1))

@@ -31,6 +31,7 @@ defmodule Sanbase.ExAdmin.UserLists.UserList do
     show user_list do
       attributes_table do
         row(:id)
+        row(:name)
         row(:is_public)
         row(:is_featured, &is_featured(&1))
         row(:color)

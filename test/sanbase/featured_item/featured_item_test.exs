@@ -39,7 +39,7 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking watchlists as featured" do
-      watchlist = insert(:watchlist)
+      watchlist = insert(:watchlist) |> Sanbase.Repo.preload([:list_items])
       FeaturedItem.update_item(watchlist, true)
       assert FeaturedItem.watchlists() == [watchlist]
     end
@@ -52,7 +52,7 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking watchlist as featured is idempotent" do
-      watchlist = insert(:watchlist)
+      watchlist = insert(:watchlist) |> Sanbase.Repo.preload([:list_items])
       FeaturedItem.update_item(watchlist, true)
       FeaturedItem.update_item(watchlist, true)
       FeaturedItem.update_item(watchlist, true)

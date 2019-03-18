@@ -46,7 +46,7 @@ defmodule Sanbase.FeaturedItem do
     |> join(:inner, [fi], fi in assoc(fi, :user_list))
     |> select([_fi, user_list], user_list)
     |> Repo.all()
-    |> Repo.preload([:user])
+    |> Repo.preload([:user, :list_items])
   end
 
   def user_triggers() do

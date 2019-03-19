@@ -28,7 +28,7 @@ defmodule Sanbase.Mixfile do
     [
       mod: {Sanbase.Application, []},
       extra_applications: [:logger, :runtime_tools, :sasl, :clickhousex],
-      included_applications: [:faktory_worker_ex, :oauther]
+      included_applications: [:oauther]
     ]
   end
 
@@ -65,7 +65,7 @@ defmodule Sanbase.Mixfile do
       {:temp, "~> 0.4"},
       {:httpoison, "~> 1.2", override: true},
       {:floki, "~> 0.20"},
-      {:sentry, "~> 6.0.4"},
+      {:sentry, "~> 7.0"},
       {:extwitter, "~> 0.9.0"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:ex_aws, "~> 2.0"},
@@ -97,7 +97,7 @@ defmodule Sanbase.Mixfile do
       {:prometheus_process_collector, "~> 1.4"},
       {:absinthe_metrics, "~> 1.0"},
       {:libcluster, "~> 3.0"},
-      {:number, "~> 0.5.7"},
+      {:number, "~> 1.0"},
       {:remote_ip, "~> 0.1"},
       {:vex, "~> 0.8.0", override: true},
       {:stream_data, "~> 0.4.2", only: :test}

@@ -42,3 +42,5 @@ $ ./bin/test.sh
 [Setup Hydra locally](docs/hydra-development-setup.md)
 
 [Grafana generic oauth setup](docs/setup-generic-oauth-grafana.md)
+
+[Triggers API](docs/user-triggers-api.md)

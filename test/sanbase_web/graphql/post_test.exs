@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
   use Mockery
 
   alias Sanbase.Tag
-  alias Sanbase.Voting.{Poll, Post, Vote}
+  alias Sanbase.Insight.{Poll, Post, Vote}
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Repo

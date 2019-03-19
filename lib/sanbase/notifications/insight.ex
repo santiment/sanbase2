@@ -3,7 +3,7 @@ defmodule Sanbase.Notifications.Insight do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
 
   def publish_in_discord(post) do
     post

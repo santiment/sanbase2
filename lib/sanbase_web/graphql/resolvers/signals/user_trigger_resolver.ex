@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   require Logger
 
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [transform_user_trigger: 1]
   alias Sanbase.Auth.User
   alias Sanbase.Signals.{Trigger, UserTrigger}
   alias SanbaseWeb.Graphql.Helpers.Utils
@@ -78,17 +79,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
           message: "Cannot #{operation} trigger!", details: Utils.error_details(changeset)
         }
     end
-  end
-
-  # Hide the implementation details that `tags` are field of the UserTrigger module
-  # Present them as a field of the `trigger` GQL type instead of `user_trigger`
-  defp transform_user_trigger(%UserTrigger{trigger: trigger, tags: tags} = ut) do
-    ut = Map.from_struct(ut)
-    trigger = Map.from_struct(trigger)
-
-    %{
-      ut
-      | trigger: trigger |> Map.put(:tags, tags) |> Map.put(:id, ut.id)
-    }
   end
 end

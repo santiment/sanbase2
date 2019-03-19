@@ -90,7 +90,7 @@ defmodule Sanbase.SocialData do
       }) do
     case validate_range(range) do
       {:ok, range_in_days_str} ->
-        social_gainers_losers_status_request(slug, from, to, range)
+        social_gainers_losers_status_request(slug, from, to, range_in_days_str)
         |> handle_response(
           &social_gainers_losers_status_result/1,
           "social gainers losers status",

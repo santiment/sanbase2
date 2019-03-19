@@ -1,10 +1,10 @@
-defmodule Sanbase.Voting.PostTest do
+defmodule Sanbase.Insight.PostTest do
   use Sanbase.DataCase, async: false
 
   import Sanbase.Factory
   alias Sanbase.Repo
   alias Sanbase.Auth.User
-  alias Sanbase.Voting.{Poll, Post}
+  alias Sanbase.Insight.{Poll, Post}
 
   test "create_changeset does not allow to approve the post" do
     poll =
@@ -31,7 +31,7 @@ defmodule Sanbase.Voting.PostTest do
     poll = Poll.find_or_insert_current_poll!()
     insights_user = insert(:insights_fallback_user)
     user = insert(:user)
-    post = insert(:post, poll_id: poll.id, user_id: user.id)
+    post = insert(:post_no_default_user, poll_id: poll.id, user_id: user.id)
 
     Post.change_owner_to_anonymous(user.id)
 

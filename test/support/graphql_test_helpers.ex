@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
 
   alias SanbaseWeb.Graphql.ContextPlug
 
-  def query_skeleton(query, query_name, variable_defs \\ "", variables \\ "{}") do
+  def query_skeleton(query, query_name \\ "", variable_defs \\ "", variables \\ "{}") do
     %{
       "operationName" => "#{query_name}",
       "query" => "query #{query_name}#{variable_defs} #{query}",
@@ -11,10 +11,10 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     }
   end
 
-  def mutation_skeleton(query) do
+  def mutation_skeleton(mutation, mutation_name \\ "") do
     %{
-      "operationName" => "",
-      "query" => "#{query}",
+      "operationName" => "#{mutation_name}",
+      "query" => "#{mutation}",
       "variables" => ""
     }
   end

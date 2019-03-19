@@ -14,7 +14,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   alias Sanbase.Clickhouse.DailyActiveAddresses
   alias Sanbase.Signals.Evaluator.Cache
 
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:filtered_target_list, :payload, :triggered?]}
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :time_window, :percent_threshold]
   defstruct type: @trigger_type,

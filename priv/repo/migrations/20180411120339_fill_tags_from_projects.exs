@@ -7,7 +7,7 @@ defmodule Sanbase.Repo.Migrations.FillTagsFromProjects do
 
   alias Sanbase.Repo
   alias Sanbase.Model.Project
-  alias Sanbase.Voting.Tag
+  alias Sanbase.Insight.Tag
 
   def up do
     Repo.insert!(%Tag{name: @crypto_market_tag})

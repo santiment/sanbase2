@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     GithubResolver,
     TwitterResolver,
     EtherbiResolver,
-    VotingResolver,
+    InsightResolver,
     TechIndicatorsResolver,
     SocialDataResolver,
     FileResolver,
@@ -24,13 +24,13 @@ defmodule SanbaseWeb.Graphql.Schema do
     UserSettingsResolver,
     TelegramResolver,
     UserTriggerResolver,
-    SignalsHistoricalActivityResolver
+    SignalsHistoricalActivityResolver,
+    FeaturedItemResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
     MultipleAuth,
@@ -38,7 +38,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     JWTAuth,
     ApikeyAuth,
     ProjectPermissions,
-    PostPermissions,
     ApiTimeframeRestriction,
     ApiUsage
   }
@@ -53,7 +52,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.GithubTypes)
   import_types(SanbaseWeb.Graphql.TwitterTypes)
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
-  import_types(SanbaseWeb.Graphql.VotingTypes)
+  import_types(SanbaseWeb.Graphql.InsightTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
@@ -428,9 +427,24 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&EtherbiResolver.daily_active_addresses/3)
     end
 
+    @desc ~s"""
+    Fetch daily active deposits for a project within a given time period.
+    Projects are referred to by a unique identifier (slug).
+    """
+    field :daily_active_deposits, list_of(:active_deposits) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
+    end
+
     @desc "Fetch the currently running poll."
     field :current_poll, :poll do
-      cache_resolve(&VotingResolver.current_poll/3)
+      cache_resolve(&InsightResolver.current_poll/3)
     end
 
     @desc ~s"""
@@ -796,6 +810,27 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc """
+    Returns NVT (Network-Value-to-Transactions-Ratio
+    Daily Market Cap / Daily Transaction Volume
+    Since Daily Transaction Volume gets rather noisy and often includes duplicate transactions,
+    it’s not an ideal measure of a network’s economic activity.
+    That’s why we calculate NVT using Daily Trx Volume,
+    but also by using Daily Token Circulation instead,
+    which filters out excess transactions and provides a cleaner overview of
+    a blockchain’s daily transaction throughput.
+    """
+    field :nvt_ratio, list_of(:nvt_ratio) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.nvt_ratio/3)
+    end
+
+    @desc """
     Get a URL for deep-linking sanbase and telegram accounts. It carries a unique
     random token that is associated with the user. The link leads to a telegram chat
     with Santiment's notification bot. When the `Start` button is pressed, telegram
@@ -886,6 +921,18 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
     end
+
+    field :featured_insights, list_of(:post) do
+      cache_resolve(&FeaturedItemResolver.insights/3)
+    end
+
+    field :featured_watchlists, list_of(:user_list) do
+      cache_resolve(&FeaturedItemResolver.watchlists/3)
+    end
+
+    field :featured_user_triggers, list_of(:user_trigger) do
+      cache_resolve(&FeaturedItemResolver.user_triggers/3)
+    end
   end
 
   mutation do
@@ -964,14 +1011,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.vote/3)
+      resolve(&InsightResolver.vote/3)
     end
 
     field :unvote, :post do
       arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.unvote/3)
+      resolve(&InsightResolver.unvote/3)
     end
 
     @desc """

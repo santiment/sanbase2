@@ -8,7 +8,7 @@ defmodule Sanbase.Graphql.ProjectApiGetQueriesTest do
   }
 
   alias Sanbase.Tag
-  alias Sanbase.Voting.{Poll, Post}
+  alias Sanbase.Insight.{Poll, Post}
   alias Sanbase.Auth.User
 
   alias Sanbase.Repo

@@ -1,11 +1,11 @@
-defmodule Sanbase.UserLists.UserList do
+defmodule Sanbase.UserList do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
 
   alias __MODULE__
   alias Sanbase.Auth.User
-  alias Sanbase.UserLists.ListItem
+  alias Sanbase.UserList.ListItem
   alias Sanbase.Repo
 
   schema "user_lists" do
@@ -14,6 +14,7 @@ defmodule Sanbase.UserLists.UserList do
     field(:color, ColorEnum, default: :none)
 
     belongs_to(:user, User)
+    has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
     has_many(:list_items, ListItem, on_delete: :delete_all, on_replace: :delete)
 
     timestamps()

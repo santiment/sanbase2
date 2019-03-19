@@ -55,7 +55,8 @@ defmodule Sanbase.Signals.TriggersTest do
         settings: trigger_settings
       })
 
-    assert message == "Trigger structure is invalid"
+    assert message ==
+             "Trigger structure is invalid. Key `settings` is not valid. Reason: \"The trigger settings type 'unknown' is not a valid type.\""
   end
 
   test "try creating user trigger with not valid icon url" do
@@ -94,16 +95,15 @@ defmodule Sanbase.Signals.TriggersTest do
     }
 
     assert capture_log(fn ->
-             {:error, message} =
-               UserTrigger.create_user_trigger(user, %{
-                 title: "Generic title",
-                 is_public: true,
-                 settings: trigger_settings
-               })
-
-             assert message =~ "Trigger structure is invalid"
+             assert UserTrigger.create_user_trigger(user, %{
+                      title: "Generic title",
+                      is_public: true,
+                      settings: trigger_settings
+                    }) ==
+                      {:error,
+                       "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"\\\"unknown\\\" is not a valid notification channel\"]"}
            end) =~
-             ~s/UserTrigger struct is not valid: [{:error, :channel, :by, \"\\\"unknown\\\" is not a valid notification channel"}]/
+             "UserTrigger struct is not valid. Reason: [\"\\\"unknown\\\" is not a valid notification channel\"]"
   end
 
   test "try creating user trigger with required field in struct" do
@@ -116,14 +116,13 @@ defmodule Sanbase.Signals.TriggersTest do
       percent_threshold: 300.0
     }
 
-    {:error, message} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        settings: settings
-      })
-
-    assert message == "Trigger structure is invalid"
+    assert UserTrigger.create_user_trigger(user, %{
+             title: "Generic title",
+             is_public: true,
+             settings: settings
+           }) ==
+             {:error,
+              "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"nil is not a valid notification channel\"]"}
   end
 
   test "create user trigger with optional field missing" do
@@ -193,7 +192,7 @@ defmodule Sanbase.Signals.TriggersTest do
       percent_threshold: 300.0
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
     )
@@ -237,12 +236,12 @@ defmodule Sanbase.Signals.TriggersTest do
       percent_threshold: 10.0
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: true, settings: trigger_settings1}
     )
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title2", is_public: true, settings: trigger_settings2}
     )
@@ -296,7 +295,7 @@ defmodule Sanbase.Signals.TriggersTest do
       percent_threshold: 200.0
     }
 
-    insert(:user_triggers,
+    insert(:user_trigger,
       user: user,
       trigger: %{title: "Generic title", is_public: false, settings: trigger_settings}
     )

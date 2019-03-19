@@ -1,8 +1,8 @@
-defmodule SanbaseWeb.Graphql.Resolvers.VotingResolver do
+defmodule SanbaseWeb.Graphql.Resolvers.InsightResolver do
   require Logger
 
   alias Sanbase.Auth.User
-  alias Sanbase.Voting.{Poll, Post, Vote}
+  alias Sanbase.Insight.{Poll, Post, Vote}
   alias Sanbase.Repo
   alias SanbaseWeb.Graphql.Helpers.Utils
 

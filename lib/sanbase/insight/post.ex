@@ -1,4 +1,4 @@
-defmodule Sanbase.Voting.Post do
+defmodule Sanbase.Insight.Post do
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -7,7 +7,7 @@ defmodule Sanbase.Voting.Post do
   use Timex.Ecto.Timestamps
 
   alias Sanbase.Tag
-  alias Sanbase.Voting.{Poll, Post, Vote, PostImage}
+  alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
   alias Sanbase.Auth.User
 
   alias Sanbase.Repo
@@ -32,6 +32,7 @@ defmodule Sanbase.Voting.Post do
     field(:discourse_topic_url, :string)
 
     has_many(:images, PostImage, on_delete: :delete_all)
+    has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
 
     many_to_many(
       :tags,
@@ -51,7 +52,7 @@ defmodule Sanbase.Voting.Post do
 
   def create_changeset(%Post{} = post, attrs) do
     post
-    |> cast(attrs, [:title, :short_desc, :link, :text])
+    |> cast(attrs, [:title, :short_desc, :link, :text, :user_id, :poll_id])
     |> Tag.put_tags(attrs)
     |> images_cast(attrs)
     |> validate_required([:poll_id, :user_id, :title])

@@ -810,6 +810,27 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc """
+    Returns NVT (Network-Value-to-Transactions-Ratio
+    Daily Market Cap / Daily Transaction Volume
+    Since Daily Transaction Volume gets rather noisy and often includes duplicate transactions,
+    it’s not an ideal measure of a network’s economic activity.
+    That’s why we calculate NVT using Daily Trx Volume,
+    but also by using Daily Token Circulation instead,
+    which filters out excess transactions and provides a cleaner overview of
+    a blockchain’s daily transaction throughput.
+    """
+    field :nvt_ratio, list_of(:nvt_ratio) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.nvt_ratio/3)
+    end
+
+    @desc """
     Get a URL for deep-linking sanbase and telegram accounts. It carries a unique
     random token that is associated with the user. The link leads to a telegram chat
     with Santiment's notification bot. When the `Start` button is pressed, telegram

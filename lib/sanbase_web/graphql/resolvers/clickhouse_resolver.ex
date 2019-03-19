@@ -4,7 +4,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
   alias SanbaseWeb.Graphql.Helpers.Utils
-  alias Sanbase.Clickhouse.{DailyActiveDeposits, HistoricalBalance, MVRV, NetworkGrowth}
+
+  alias Sanbase.Clickhouse.{
+    DailyActiveDeposits,
+    HistoricalBalance,
+    MVRV,
+    NetworkGrowth,
+    NVT
+  }
 
   @one_hour_seconds 3600
 
@@ -63,6 +70,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         error_msg =
           "Can't calculate daily active deposits for project with coinmarketcap_id: #{slug}."
 
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  def nvt_ratio(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, nvt_ratio} <- NVT.nvt_ratio(slug, from, to, interval) do
+      {:ok, nvt_ratio}
+    else
+      {:error, error} ->
+        error_msg = "Can't calculate NVT ratio for project with coinmarketcap_id: #{slug}."
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}
     end

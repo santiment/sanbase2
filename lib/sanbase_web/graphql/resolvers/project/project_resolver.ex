@@ -12,7 +12,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   }
 
   alias Sanbase.Tag
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
 
   alias Sanbase.Prices
 

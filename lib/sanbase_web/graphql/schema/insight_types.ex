@@ -1,9 +1,9 @@
-defmodule SanbaseWeb.Graphql.VotingTypes do
+defmodule SanbaseWeb.Graphql.InsightTypes do
   use Absinthe.Schema.Notation
 
   import Absinthe.Resolution.Helpers
 
-  alias SanbaseWeb.Graphql.Resolvers.{VotingResolver, PostResolver}
+  alias SanbaseWeb.Graphql.Resolvers.{InsightResolver, PostResolver}
   alias SanbaseWeb.Graphql.SanbaseRepo
 
   object :vote do
@@ -45,11 +45,11 @@ defmodule SanbaseWeb.Graphql.VotingTypes do
     field(:updated_at, non_null(:datetime))
 
     field :voted_at, :datetime do
-      resolve(&VotingResolver.voted_at/3)
+      resolve(&InsightResolver.voted_at/3)
     end
 
     field :votes, :vote do
-      resolve(&VotingResolver.votes/3)
+      resolve(&InsightResolver.votes/3)
     end
   end
 end

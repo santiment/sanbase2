@@ -1,8 +1,8 @@
-defmodule Sanbase.Voting.PostImage do
+defmodule Sanbase.Insight.PostImage do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Sanbase.Voting.Post
+  alias Sanbase.Insight.Post
   alias __MODULE__
 
   schema "post_images" do

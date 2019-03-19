@@ -1,9 +1,9 @@
-defmodule Sanbase.Voting.Vote do
+defmodule Sanbase.Insight.Vote do
   use Ecto.Schema
   import Ecto.Changeset
   use Timex.Ecto.Timestamps
 
-  alias Sanbase.Voting.{Post, Vote}
+  alias Sanbase.Insight.{Post, Vote}
   alias Sanbase.Auth.User
 
   schema "votes" do

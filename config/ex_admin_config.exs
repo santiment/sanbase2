@@ -26,12 +26,14 @@ config :ex_admin,
     Sanbase.ExAdmin.Notifications.Notification,
     Sanbase.ExAdmin.Auth.User,
     Sanbase.ExAdmin.Auth.EthAccount,
-    Sanbase.ExAdmin.Voting.Poll,
-    Sanbase.ExAdmin.Voting.Post,
-    Sanbase.ExAdmin.UserLists.UserList,
+    Sanbase.ExAdmin.Insight.Poll,
+    Sanbase.ExAdmin.Insight.Post,
+    Sanbase.ExAdmin.UserList,
     Sanbase.ExAdmin.Auth.UserSettings,
     Sanbase.ExAdmin.ScheduleRescrapePrice,
-    Sanbase.ExAdmin.Signals.HistoricalActivity
+    Sanbase.ExAdmin.Signals.HistoricalActivity,
+    Sanbase.ExAdmin.Signals.UserTrigger,
+    Sanbase.ExAdmin.FeaturedItem
   ],
   basic_auth: [
     username: {:system, "ADMIN_BASIC_AUTH_USERNAME"},

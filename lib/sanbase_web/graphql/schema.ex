@@ -10,7 +10,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     GithubResolver,
     TwitterResolver,
     EtherbiResolver,
-    VotingResolver,
+    InsightResolver,
     TechIndicatorsResolver,
     SocialDataResolver,
     FileResolver,
@@ -24,13 +24,13 @@ defmodule SanbaseWeb.Graphql.Schema do
     UserSettingsResolver,
     TelegramResolver,
     UserTriggerResolver,
-    SignalsHistoricalActivityResolver
+    SignalsHistoricalActivityResolver,
+    FeaturedItemResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Complexity
-  alias SanbaseWeb.Graphql.Complexity.TechIndicatorsComplexity
 
   alias SanbaseWeb.Graphql.Middlewares.{
     MultipleAuth,
@@ -38,7 +38,6 @@ defmodule SanbaseWeb.Graphql.Schema do
     JWTAuth,
     ApikeyAuth,
     ProjectPermissions,
-    PostPermissions,
     ApiTimeframeRestriction,
     ApiUsage
   }
@@ -53,7 +52,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.GithubTypes)
   import_types(SanbaseWeb.Graphql.TwitterTypes)
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
-  import_types(SanbaseWeb.Graphql.VotingTypes)
+  import_types(SanbaseWeb.Graphql.InsightTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
   import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
@@ -445,7 +444,7 @@ defmodule SanbaseWeb.Graphql.Schema do
 
     @desc "Fetch the currently running poll."
     field :current_poll, :poll do
-      cache_resolve(&VotingResolver.current_poll/3)
+      cache_resolve(&InsightResolver.current_poll/3)
     end
 
     @desc ~s"""
@@ -864,6 +863,18 @@ defmodule SanbaseWeb.Graphql.Schema do
 
       resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
     end
+
+    field :featured_insights, list_of(:post) do
+      cache_resolve(&FeaturedItemResolver.insights/3)
+    end
+
+    field :featured_watchlists, list_of(:user_list) do
+      cache_resolve(&FeaturedItemResolver.watchlists/3)
+    end
+
+    field :featured_user_triggers, list_of(:user_trigger) do
+      cache_resolve(&FeaturedItemResolver.user_triggers/3)
+    end
   end
 
   mutation do
@@ -942,14 +953,14 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.vote/3)
+      resolve(&InsightResolver.vote/3)
     end
 
     field :unvote, :post do
       arg(:post_id, non_null(:integer))
 
       middleware(JWTAuth)
-      resolve(&VotingResolver.unvote/3)
+      resolve(&InsightResolver.unvote/3)
     end
 
     @desc """

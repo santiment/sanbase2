@@ -1,8 +1,8 @@
-defmodule Sanbase.UserLists.ListItem do
+defmodule Sanbase.UserList.ListItem do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Sanbase.UserLists.UserList
+  alias Sanbase.UserList
   alias Sanbase.Model.Project
 
   @primary_key false

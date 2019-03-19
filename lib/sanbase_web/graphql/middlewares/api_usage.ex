@@ -40,7 +40,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
       }, Complexity: #{definition.complexity}"
     )
 
-    Logger.reset_metadata(metadata)
+    Logger.reset_metadata([{:query, definition.name} | metadata])
 
     resolution
   end
@@ -69,7 +69,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
       }"
     )
 
-    Logger.reset_metadata(metadata)
+    Logger.reset_metadata([{:query, definition.name} | metadata])
 
     resolution
   end
@@ -90,7 +90,7 @@ defmodule SanbaseWeb.Graphql.Middlewares.ApiUsage do
       }"
     )
 
-    Logger.reset_metadata(metadata)
+    Logger.reset_metadata([{:query, definition.name} | metadata])
     resolution
   end
 end

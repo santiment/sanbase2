@@ -146,7 +146,6 @@ alias SanbaseWeb.Graphql.Cache
 alias SanbaseWeb.Graphql.Helpers.Utils, as: GraphUtils
 alias Sanbase.Prices.Store, as: PricesStore
 alias Sanbase.Prices.Utils, as: PricesUtils
-alias Sanbase.Clickhouse.Common, as: ClickhouseCommon
 
 alias Sanbase.SocialData
 

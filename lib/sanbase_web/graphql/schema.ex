@@ -866,7 +866,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:cooldown, :string)
       arg(:settings, :json)
 
-      resolve(&UserTriggerResolver.historical_trigger_points/3)
+      cache_resolve(&UserTriggerResolver.historical_trigger_points/3)
     end
 
     @desc """

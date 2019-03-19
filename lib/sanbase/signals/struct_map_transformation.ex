@@ -32,27 +32,24 @@ defmodule Sanbase.Signals.StructMapTransformation do
       end
 
     struct_from_map(trigger_settings)
-  rescue
-    _error in ArgumentError ->
-      {:error, "Trigger structure is invalid"}
   end
 
   def load_in_struct(_), do: :error
 
   def struct_from_map(%{type: "daily_active_addresses"} = trigger_settings),
-    do: {:ok, struct!(DailyActiveAddressesSettings, trigger_settings)}
+    do: {:ok, struct(DailyActiveAddressesSettings, trigger_settings)}
 
   def struct_from_map(%{type: "price_percent_change"} = trigger_settings),
-    do: {:ok, struct!(PricePercentChangeSettings, trigger_settings)}
+    do: {:ok, struct(PricePercentChangeSettings, trigger_settings)}
 
   def struct_from_map(%{type: "price_absolute_change"} = trigger_settings),
-    do: {:ok, struct!(PriceAbsoluteChangeSettings, trigger_settings)}
+    do: {:ok, struct(PriceAbsoluteChangeSettings, trigger_settings)}
 
   def struct_from_map(%{type: "trending_words"} = trigger_settings),
-    do: {:ok, struct!(TrendingWordsTriggerSettings, trigger_settings)}
+    do: {:ok, struct(TrendingWordsTriggerSettings, trigger_settings)}
 
   def struct_from_map(%{type: "price_volume_difference"} = trigger_settings),
-    do: {:ok, struct!(PriceVolumeDifferenceTriggerSettings, trigger_settings)}
+    do: {:ok, struct(PriceVolumeDifferenceTriggerSettings, trigger_settings)}
 
   def struct_from_map(_), do: :error
 

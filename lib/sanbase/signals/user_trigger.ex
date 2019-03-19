@@ -93,7 +93,7 @@ defmodule Sanbase.Signals.UserTrigger do
   """
   @spec all_public_triggers() :: list(%__MODULE__{})
   def all_public_triggers() do
-    from(ut in UserTrigger, where: trigger_is_public())
+    from(ut in UserTrigger, where: trigger_is_public(), preload: [:tags])
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)
   end
@@ -131,7 +131,7 @@ defmodule Sanbase.Signals.UserTrigger do
     from(
       ut in UserTrigger,
       where: trigger_type_is(type) and trigger_is_active(),
-      preload: [{:user, :user_settings}]
+      preload: [{:user, :user_settings}, :tags]
     )
     |> Repo.all()
     |> Enum.map(&trigger_in_struct/1)

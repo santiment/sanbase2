@@ -67,7 +67,7 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking user_triggers as featured" do
-      user_trigger = insert(:user_trigger)
+      user_trigger = insert(:user_trigger) |> Sanbase.Repo.preload([:tags])
       FeaturedItem.update_item(user_trigger, true)
       assert FeaturedItem.user_triggers() == [user_trigger]
     end
@@ -80,7 +80,7 @@ defmodule Sanbase.FeaturedItemTest do
     end
 
     test "marking user_trigger as featured is idempotent" do
-      user_trigger = insert(:user_trigger)
+      user_trigger = insert(:user_trigger) |> Sanbase.Repo.preload([:tags])
       FeaturedItem.update_item(user_trigger, true)
       FeaturedItem.update_item(user_trigger, true)
       FeaturedItem.update_item(user_trigger, true)

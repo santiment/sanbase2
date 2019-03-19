@@ -57,7 +57,7 @@ defmodule Sanbase.FeaturedItem do
     |> join(:inner, [fi], fi in assoc(fi, :user_trigger))
     |> select([_fi, trigger], trigger)
     |> Repo.all()
-    |> Repo.preload([:user])
+    |> Repo.preload([:user, :tags])
   end
 
   @doc ~s"""

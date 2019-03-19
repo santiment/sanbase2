@@ -8,7 +8,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserTriggerResolver do
   alias Sanbase.Telegram
 
   def triggers(%User{} = user, _args, _resolution) do
-    {:ok, UserTrigger.triggers_for(user) |> Enum.map(& &1.trigger)}
+    {:ok,
+     UserTrigger.triggers_for(user)
+     |> Enum.map(&transform_user_trigger/1)
+     |> Enum.map(& &1.trigger)}
   end
 
   def create_trigger(_root, args, %{

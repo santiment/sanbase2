@@ -213,7 +213,8 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   test "fetches triggers for current user", %{user: user, conn: conn} do
     trigger_settings = default_trigger_settings()
 
-    insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
+    %{id: id} =
+      insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
     query = """
     {
@@ -237,7 +238,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       |> hd()
 
     assert trigger["settings"] == trigger_settings
-    assert trigger["id"] != nil
+    assert trigger["id"] == id
   end
 
   test "fetches all public triggers", %{user: user, conn: conn} do

@@ -41,7 +41,6 @@ defmodule Sanbase.ExAdmin.UserList do
       panel "List items" do
         table_for Sanbase.Repo.preload(user_list.list_items, [:project]) do
           column(:project, link: true)
-          column(:is_featured, &is_featured(&1))
         end
       end
     end

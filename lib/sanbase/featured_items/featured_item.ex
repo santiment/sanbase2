@@ -31,6 +31,9 @@ defmodule Sanbase.FeaturedItem do
   def changeset(%__MODULE__{} = featured_items, attrs \\ %{}) do
     featured_items
     |> cast(attrs, [:post_id, :user_list_id, :user_trigger_id])
+    |> unique_constraint(:post_id)
+    |> unique_constraint(:user_list_id)
+    |> unique_constraint(:user_trigger_id)
   end
 
   def insights() do

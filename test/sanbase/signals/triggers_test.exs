@@ -122,7 +122,7 @@ defmodule Sanbase.Signals.TriggersTest do
              settings: settings
            }) ==
              {:error,
-              "Trigger structure is invalid. Key `settings` is not valid. Reason: \"Trigger structure is invalid: the following keys must also be given when building struct Sanbase.Signals.Trigger.DailyActiveAddressesSettings: [:channel]\""}
+              "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"nil is not a valid notification channel\"]"}
   end
 
   test "create user trigger with optional field missing" do

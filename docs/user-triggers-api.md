@@ -178,6 +178,18 @@ mutation {
 }
 ```
 
+### Remove trigger by id
+
+```graphql
+mutation {
+  removeTrigger(id: 9) {
+  	trigger {
+      id
+    }
+  }
+}
+```
+
 ### Getting trigger by id
 
 ```graphql

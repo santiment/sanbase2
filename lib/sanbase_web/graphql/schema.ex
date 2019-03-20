@@ -892,15 +892,17 @@ defmodule SanbaseWeb.Graphql.Schema do
     * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     * `status` can be one of: `ALL`, `GAINER`, `LOSER`, `NEWCOMER`
     * `size` - count of returned projects for status
-    * `range` - the `change` range in days. Should be between `2d` and `30d`.
+    * `time_window` - the `change` time window in days. Should be between `2d` and `30d`.
     """
     field :top_social_gainers_losers, list_of(:top_social_gainers_losers) do
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:status, non_null(:social_gainers_losers_status_enum))
       arg(:size, :integer, default_value: 10)
-      arg(:range, non_null(:string))
+      arg(:time_window, non_null(:string))
 
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
       cache_resolve(&SocialDataResolver.top_social_gainers_losers/3)
     end
 
@@ -911,14 +913,16 @@ defmodule SanbaseWeb.Graphql.Schema do
     * `slug` - a string uniquely identifying a project
     * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
     * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-    * `range` - the `change` range in days. Should be between `2d` and `30d`.
+    * `time_window` - the `change` time window in days. Should be between `2d` and `30d`.
     """
     field :social_gainers_losers_status, list_of(:social_gainers_losers_status) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:range, non_null(:string))
+      arg(:time_window, non_null(:string))
 
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
       cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
     end
 

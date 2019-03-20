@@ -214,7 +214,7 @@ defmodule Sanbase.SocialDataTest do
       {:ok,
        %HTTPoison.Response{
          body: "[{
-             \"timestamp\": 1552654800, \"range\": \"15d\", \"projects\": 
+             \"timestamp\": 1552654800, \"time_window\": \"15d\", \"projects\": 
             [
               {\"project\": \"qtum\", \"change\": 137.13186813186815, \"status\": \"gainer\"}, 
               {\"project\": \"abbc-coin\", \"change\": -1.0, \"status\": \"loser\"}
@@ -228,7 +228,7 @@ defmodule Sanbase.SocialDataTest do
       status: :all,
       from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
       to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
-      range: "15d",
+      time_window: "15d",
       size: 1
     }
 
@@ -264,7 +264,7 @@ defmodule Sanbase.SocialDataTest do
       status: :all,
       from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
       to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
-      range: "15d",
+      time_window: "15d",
       size: 1
     }
 
@@ -294,7 +294,7 @@ defmodule Sanbase.SocialDataTest do
       slug: "qtum",
       from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
       to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
-      range: "15d"
+      time_window: "15d"
     }
 
     # As the HTTP call is mocked these arguments do no have much effect, 
@@ -327,7 +327,7 @@ defmodule Sanbase.SocialDataTest do
       slug: "qtum",
       from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
       to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
-      range: "15d"
+      time_window: "15d"
     }
 
     result_fn = fn ->
@@ -340,12 +340,12 @@ defmodule Sanbase.SocialDataTest do
              "Error status 500 fetching social gainers losers status for slug: qtum: Internal Server Error"
   end
 
-  test "top_social_gainers_losers: error with invalid range" do
+  test "top_social_gainers_losers: error with invalid time_window" do
     args = %{
       status: :all,
       from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
       to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
-      range: "invalid",
+      time_window: "invalid",
       size: 1
     }
 
@@ -353,18 +353,18 @@ defmodule Sanbase.SocialDataTest do
       {:error, error_message} = SocialData.top_social_gainers_losers(args)
 
       assert error_message =~
-               "Invalid string format for range. Valid values can be - for ex: `2d`, `5d`, `1w`"
+               "Invalid string format for time_window. Valid values can be - for ex: `2d`, `5d`, `1w`"
     end
 
     capture_log(result_fn)
   end
 
-  test "top_social_gainers_losers: error with out of bounds range" do
+  test "top_social_gainers_losers: error with out of bounds time_window" do
     args = %{
       status: :all,
       from: DateTime.from_naive!(~N[2019-03-15 12:57:28], "Etc/UTC"),
       to: DateTime.from_naive!(~N[2019-03-15 13:57:28], "Etc/UTC"),
-      range: "1d",
+      time_window: "1d",
       size: 1
     }
 
@@ -372,7 +372,7 @@ defmodule Sanbase.SocialDataTest do
       {:error, error_message} = SocialData.top_social_gainers_losers(args)
 
       assert error_message =~
-               "Invalid `range` argument. Range should be between 2 and 30 days - for ex: `2d`, `5d`, `1w`"
+               "Invalid `time_window` argument. time_window should be between 2 and 30 days - for ex: `2d`, `5d`, `1w`"
     end
 
     capture_log(result_fn)

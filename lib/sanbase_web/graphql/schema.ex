@@ -847,7 +847,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc """
     Returns distribution of miners between mining pools.
     What part of the miners are using top3, top10 and all the other pools.
-    Currently only ETH is supported. 
+    Currently only ETH is supported.
     """
     field :mining_pools_distribution, list_of(:mining_pools_distribution) do
       arg(:from, non_null(:datetime))
@@ -857,6 +857,21 @@ defmodule SanbaseWeb.Graphql.Schema do
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
       cache_resolve(&ClickhouseResolver.mining_pools_distribution/3)
+    end
+
+    @desc """
+    Returns used Gas by a blockchain.
+    When you send tokens, interact with a contract or do anything else on the blockchain,
+    you must pay for that computation. That payment is calculated in Gas.
+    """
+    field :gas_used, list_of(:gas_used) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.gas_used/3)
     end
 
     @desc """

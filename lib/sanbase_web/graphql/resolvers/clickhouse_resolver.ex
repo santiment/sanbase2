@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Clickhouse.{
     DailyActiveDeposits,
+    GasUsed,
     HistoricalBalance,
     MiningPoolsDistribution,
     MVRV,
@@ -16,6 +17,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   }
 
   @one_hour_seconds 3600
+
+  def gas_used(
+        _root,
+        %{from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    case GasUsed.gas_used(from, to, interval) do
+      {:ok, gas_used} ->
+        {:ok, gas_used}
+
+      {:error, error} ->
+        error_msg = "Can't calculate Gas used."
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
 
   def network_growth(_root, args, _resolution) do
     interval = DateTimeUtils.compound_duration_to_seconds(args.interval)

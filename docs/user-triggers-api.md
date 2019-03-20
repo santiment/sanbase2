@@ -7,13 +7,13 @@ These are the fields describing a trigger.
     field(:title, :string) # Trigger title
     field(:description, :string) # Trigger description
     field(:is_public, :boolean, default: false) # Whether trigger is public or private 
-    field(:cooldown, :string, default: "24h") # Cooldown fro trigger. By default - `24h`
+    field(:cooldown, :string, default: "24h") # After a signal is fired it can be again fired after `cooldown` time has passed. By default - `24h`
     field(:icon_url, :string) # Url of icon for the trigger
-    field(:active, :boolean, default: true) # Whether is active. By default - yes
-    field(:repeating, :boolean, default: true) # Whether trigger will be executed after first time. By default - yes
+    field(:active, :boolean, default: true) # Whether trigger is active. By default - yes
+    field(:repeating, :boolean, default: true) # Whether the signal will fire just one time or it will be working until manually turned off. By default - working until turned off.
 ```
 
-#### settings fields
+### Settings fields
 
 - **type** Defines the type of the trigger. Can be one of: `["daily_active_addresses", "price_absolute_change", "price_percent_change", "trending_words", "price_volume_difference"]`
 - **target**:  slug or list of slugs or watchlist - `"naga" | ["ethereum", "santiment"] | {"user_list": user_list_id}`
@@ -21,8 +21,10 @@ These are the fields describing a trigger.
 - **time_window**: `1d`, `4w`, `1h` - time string we use throughout the API for `interval`
 - **above** and **below** - used in `price_absolute_change` to indicate when the price is `More than` or `Less than` - should be used both!
 - **percent_threshold** - used in `daily_active_addresses` and `price_percent_change` to indicated percent change >= threshold.
+- **threshold** - float threshold used in `price_volume_difference`
+- **trigger_time** - ISO8601 UTC time used only in `trending_words`, ex: `"12:00:00"`
 
-### example settings structure for `price_absolute_change`
+### Example settings structure for `price_absolute_change`
 ```json
 {
   "type": "price_absolute_change",
@@ -34,7 +36,7 @@ These are the fields describing a trigger.
 ```
 
 
-### example settings structure for `price_percent_change`
+### Example settings structure for `price_percent_change`
 
 ```json
 {
@@ -46,7 +48,7 @@ These are the fields describing a trigger.
 }
 ```
 
-#### example settings structure for `daily_active_addresses`
+#### Example settings structure for `daily_active_addresses`
 
 ```json
 {
@@ -57,6 +59,29 @@ These are the fields describing a trigger.
   "percent_threshold": 5.0
 }
 ```
+
+#### Example settings structure for `trending_words`
+
+```json
+{
+  "type": "trending_words",
+  "channel": "telegram",
+  "trigger_time": "12:00:00"
+}
+```
+
+#### Example settings structure for `price_volume_difference`
+
+```json
+{
+  "type": "price_volume_difference",
+  "channel": "telegram",
+  "target": "santiment",
+  "threshold": 0.002
+}
+```
+
+### Create a trigger
 
 
 ``` graphql
@@ -80,7 +105,157 @@ mutation {
 }
 ```
 
-### API for signals historical activity a.k.a user signals timeline
+### Get all triggers for current user
+
+```graphql
+    {
+      currentUser {
+        id,
+        triggers {
+          id
+          title
+          description
+          isPublic
+          cooldown
+          iconUrl
+          active
+          repeating
+          settings
+        }
+      }
+    }
+```
+
+### Update trigger by id
+
+* If `settings` is updated all fields in settings must be provided.
+* Trigger top-level ields can be updated - for ex: `isPublic`.
+
+Update `settings` and `isPublic`.
+
+```graphql
+mutation {
+  updateTrigger(
+    id: 16
+    isPublic: true
+    settings: "{\"channel\":\"telegram\",\"percent_threshold\":250.0,\"target\":\"santiment\",\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
+  ) {
+    trigger {
+      id
+      title
+      description
+      isPublic
+      cooldown
+      iconUrl
+      active
+      repeating
+      settings
+    }
+  }
+}
+```
+
+Update only trigger top-level field `isPublic`.
+
+```graphql
+mutation {
+  updateTrigger(
+    id: 16
+    isPublic: true
+  ) {
+    trigger {
+      id
+      title
+      description
+      isPublic
+      cooldown
+      iconUrl
+      active
+      repeating
+      settings
+    }
+  }
+}
+```
+
+### Getting trigger by id
+
+```graphql
+{
+  getTriggerById(
+    id: 16
+  ) {
+    trigger {
+      id
+      title
+      description
+      isPublic
+      cooldown
+      iconUrl
+      active
+      repeating
+      settings
+    }
+  }
+}
+```
+
+### Getting all public triggers
+
+```graphql
+{
+  allPublicTriggers {
+    userId
+    trigger {
+      id
+      title
+      description
+      isPublic
+      cooldown
+      iconUrl
+      active
+      repeating
+      settings
+    }
+  }
+}
+```
+
+### Getting all public triggers for given user
+
+```graphql
+{
+  publicTriggersForUser(userId: 31) {
+    userId
+    trigger {
+      id
+      title
+      description
+      isPublic
+      cooldown
+      iconUrl
+      active
+      repeating
+      settings
+    }
+  }
+}
+```
+
+### Featured user triggers
+
+```graphql
+{
+  featuredUserTriggers{
+    trigger{
+      title
+      settings 
+    }
+  }
+}
+```
+
+### API for signals historical activity (user signals timeline)
 
 #### Historical activity request
 
@@ -126,7 +301,8 @@ mutation {
           "userTrigger": {
             "trigger": {
               "description": null,
-              "title": "alabala"
+              "title": "alabala",
+              ...
             }
           }
         }
@@ -139,6 +315,9 @@ mutation {
   }
 }
 ```
+
+- `payload` is a json with key `slug` | `all` (when there is no specific slug) and value markdown message.
+
 #### Take activities newer than certain datetime
 
 ```graphql
@@ -164,8 +343,7 @@ mutation {
 ```
 
 ### Historical trigger points
-
-Currently we have it only
+Takes currently filled settings and a chosen cooldown and calculates historical trigger points that can be used in a preview chart.
 
 ```graphql
  {

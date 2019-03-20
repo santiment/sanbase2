@@ -62,11 +62,20 @@ These are the fields describing a trigger.
 ``` graphql
 mutation {
   createTrigger(
-    settings: "{\"channel\":\"email\",\"percent_threshold\":400.0,\"repeating\":false,\"target\":\"santiment\",\"time_window\":\"1d\",\"type\":\"daily_active_addresses\"}"
+    title:"test ceco"
+    settings: "{\"channel\":\"telegram\",\"percent_threshold\":200.0,\"target\":\"santiment\",\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   ) {
-    id
-    settings
-    isPublic
+    trigger {
+      id
+      title
+      description
+      isPublic
+      cooldown
+      iconUrl
+      active
+      repeating
+      settings
+    }
   }
 }
 ```

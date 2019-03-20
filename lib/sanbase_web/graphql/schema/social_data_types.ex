@@ -4,6 +4,20 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
+  enum :trending_words_sources do
+    value(:telegram)
+    value(:professional_traders_chat)
+    value(:reddit)
+    value(:all)
+  end
+
+  enum :social_gainers_losers_status_enum do
+    value(:gainer)
+    value(:loser)
+    value(:newcomer)
+    value(:all)
+  end
+
   object :trending_words do
     field(:datetime, non_null(:datetime))
     field(:top_words, list_of(:word_with_context))
@@ -18,13 +32,6 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     field(:word, :string)
   end
 
-  enum :trending_words_sources do
-    value(:telegram)
-    value(:professional_traders_chat)
-    value(:reddit)
-    value(:all)
-  end
-
   object :word_trend_score do
     field(:datetime, non_null(:datetime))
     field(:score, non_null(:float))
@@ -34,5 +41,22 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   object :word_context do
     field(:word, non_null(:string))
     field(:score, non_null(:float))
+  end
+
+  object :top_social_gainers_losers do
+    field(:datetime, non_null(:datetime))
+    field(:projects, list_of(:projects_change))
+  end
+
+  object :projects_change do
+    field(:project, non_null(:string))
+    field(:change, non_null(:float))
+    field(:status, :social_gainers_losers_status_enum)
+  end
+
+  object :social_gainers_losers_status do
+    field(:datetime, non_null(:datetime))
+    field(:change, non_null(:float))
+    field(:status, :social_gainers_losers_status_enum)
   end
 end

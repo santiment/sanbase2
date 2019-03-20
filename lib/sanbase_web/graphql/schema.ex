@@ -864,7 +864,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Get historical trigger points"
     field :historical_trigger_points, list_of(:json) do
       arg(:cooldown, :string)
-      arg(:settings, :json)
+      arg(:settings, non_null(:json))
 
       resolve(&UserTriggerResolver.historical_trigger_points/3)
     end
@@ -883,6 +883,43 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
 
       resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
+    end
+
+    @desc """
+    Top social gainers/losers returns the social volume changes of all crypto projects.
+
+    * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `status` can be one of: `ALL`, `GAINER`, `LOSER`, `NEWCOMER`
+    * `size` - count of returned projects for status
+    * `range` - the `change` range in days. Should be between `2d` and `30d`.
+    """
+    field :top_social_gainers_losers, list_of(:top_social_gainers_losers) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:status, non_null(:social_gainers_losers_status_enum))
+      arg(:size, :integer, default_value: 10)
+      arg(:range, non_null(:string))
+
+      cache_resolve(&SocialDataResolver.top_social_gainers_losers/3)
+    end
+
+    @desc """
+    Returns the social gainers/losers `status` and `change` for given slug.
+    Returned `status` can be one of: `GAINER`, `LOSER`, `NEWCOMER.`
+
+    * `slug` - a string uniquely identifying a project
+    * `from` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `to` - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * `range` - the `change` range in days. Should be between `2d` and `30d`.
+    """
+    field :social_gainers_losers_status, list_of(:social_gainers_losers_status) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:range, non_null(:string))
+
+      cache_resolve(&SocialDataResolver.social_gainers_losers_status/3)
     end
 
     field :featured_insights, list_of(:post) do

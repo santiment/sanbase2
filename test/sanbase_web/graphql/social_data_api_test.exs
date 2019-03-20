@@ -1,297 +1,357 @@
 defmodule Sanbase.SocialDataApiTest do
   use SanbaseWeb.ConnCase, async: false
 
+  import Mock
   import Mockery
   import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
-  test "successfully fetch social data", %{conn: conn} do
-    mock(
-      HTTPoison,
-      :get,
-      {:ok,
-       %HTTPoison.Response{
-         body:
-           "[{\"timestamp\": 1541808000, \"top_words\": {\"bat\": 367.77770422285084, \"pele\": 167.74716011726295, \"people\": 137.61557511242117, \"arn\": 137.14962816454351, \"chimeracryptoinsider\": 118.17637249353709}}, {\"timestamp\": 1541721600, \"top_words\": {\"bat\": 1740.2647984845628, \"xlm\": 837.0034350090417, \"coinbase\": 792.9209638684719, \"mth\": 721.8164660673655, \"mana\": 208.48182966076172}}, {\"timestamp\": 1541980800, \"top_words\": {\"xlm\": 769.8008634834883, \"bch\": 522.9358622900285, \"fork\": 340.17719444024317, \"mda\": 213.57227498303558, \"abc\": 177.6092706156777}}, {\"timestamp\": 1541894400, \"top_words\": {\"mana\": 475.8978759407794, \"mth\": 411.73069246798326, \"fork\": 321.11991967479867, \"bch\": 185.35627662699594, \"imgur\": 181.45123778369867}}]",
-         status_code: 200
-       }}
-    )
+  alias Sanbase.SocialData
+  alias Sanbase.DateTimeUtils
 
-    query = """
-    {
-      trendingWords(
-        source: TELEGRAM,
-        size: 5,
-        hour: 8,
-        from: "2018-11-05T00:00:00Z",
-        to: "2018-11-12T00:00:00Z"){
-          datetime
-          topWords{
-            word
-            score
-          }
-        }
+  @error_response "Error executing query. See logs for details."
+
+  test "successfully fetch trending words", %{conn: conn} do
+    success_response = [
+      %{
+        datetime: DateTimeUtils.from_iso8601!("2018-11-10T00:00:00Z"),
+        top_words: [
+          %{score: 167.74716011726295, word: "pele"},
+          %{score: 137.61557511242117, word: "people"}
+        ]
       }
-    """
+    ]
 
-    # As the HTTP call is mocked these arguemnts do no have much effect, though you should try to put the real ones that are used
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "trendingWords"))
-      |> json_response(200)
+    with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:ok, success_response} end do
+      args = %{
+        source: "TELEGRAM",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        size: 1,
+        hour: 8
+      }
 
-    assert result == %{
-             "data" => %{
-               "trendingWords" => [
-                 %{
-                   "datetime" => "2018-11-10T00:00:00Z",
-                   "topWords" => [
-                     %{"score" => 137.14962816454351, "word" => "arn"},
-                     %{"score" => 367.77770422285084, "word" => "bat"},
-                     %{
-                       "score" => 118.17637249353709,
-                       "word" => "chimeracryptoinsider"
-                     },
-                     %{"score" => 167.74716011726295, "word" => "pele"},
-                     %{"score" => 137.61557511242117, "word" => "people"}
-                   ]
-                 },
-                 %{
-                   "datetime" => "2018-11-09T00:00:00Z",
-                   "topWords" => [
-                     %{"score" => 1740.2647984845628, "word" => "bat"},
-                     %{"score" => 792.9209638684719, "word" => "coinbase"},
-                     %{"score" => 208.48182966076172, "word" => "mana"},
-                     %{"score" => 721.8164660673655, "word" => "mth"},
-                     %{"score" => 837.0034350090417, "word" => "xlm"}
-                   ]
-                 },
-                 %{
-                   "datetime" => "2018-11-12T00:00:00Z",
-                   "topWords" => [
-                     %{"score" => 177.6092706156777, "word" => "abc"},
-                     %{"score" => 522.9358622900285, "word" => "bch"},
-                     %{"score" => 340.17719444024317, "word" => "fork"},
-                     %{"score" => 213.57227498303558, "word" => "mda"},
-                     %{"score" => 769.8008634834883, "word" => "xlm"}
-                   ]
-                 },
-                 %{
-                   "datetime" => "2018-11-11T00:00:00Z",
-                   "topWords" => [
-                     %{"score" => 185.35627662699594, "word" => "bch"},
-                     %{"score" => 321.11991967479867, "word" => "fork"},
-                     %{"score" => 181.45123778369867, "word" => "imgur"},
-                     %{"score" => 475.8978759407794, "word" => "mana"},
-                     %{"score" => 411.73069246798326, "word" => "mth"}
-                   ]
-                 }
-               ]
+      query = trending_words_query(args)
+      result = execute_and_parse_success_response(conn, query, "trendingWords")
+
+      assert result == %{
+               "data" => %{
+                 "trendingWords" => [
+                   %{
+                     "datetime" => "2018-11-10T00:00:00Z",
+                     "topWords" => [
+                       %{"score" => 167.74716011726295, "word" => "pele"},
+                       %{"score" => 137.61557511242117, "word" => "people"}
+                     ]
+                   }
+                 ]
+               }
              }
-           }
+    end
   end
 
-  test "error fetching social data", %{conn: conn} do
-    mock(
-      HTTPoison,
-      :get,
-      {:ok,
-       %HTTPoison.Response{
-         body: "Internal Server Error",
-         status_code: 500
-       }}
-    )
-
-    query = """
-    {
-      trendingWords(
-        source: TELEGRAM,
-        size: 5,
-        hour: 8,
-        from: "2018-11-05T00:00:00Z",
-        to: "2018-11-12T00:00:00Z"){
-          datetime
-          topWords{
-            word
-            score
-          }
-        }
+  test "fetch trending words - proper error is returned", %{conn: conn} do
+    with_mock SocialData, trending_words: fn _, _, _, _, _ -> {:error, @error_response} end do
+      args = %{
+        source: "TELEGRAM",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        size: 1,
+        hour: 8
       }
-    """
 
-    result_fn = fn ->
-      result =
-        conn
-        |> post("/graphql", query_skeleton(query, "trendingWords"))
-        |> json_response(200)
-
-      error = result["errors"] |> List.first()
-      assert error["message"] =~ "Error executing query. See logs for details."
+      query = trending_words_query(args)
+      error = execute_and_parse_error_response(conn, query, "trendingWords")
+      assert error =~ @error_response
     end
-
-    assert capture_log(result_fn) =~
-             "Error status 500 fetching trending words for source: telegram: Internal Server Error"
   end
 
   test "successfully fetch word context", %{conn: conn} do
-    body =
-      %{
-        "christ" => %{"score" => 0.7688603531300161},
-        "christmas" => %{"score" => 0.7592295345104334},
-        "mas" => %{"score" => 1.0}
+    success_response = [
+      %{score: 1.0, word: "mas"},
+      %{score: 0.7688603531300161, word: "christ"},
+      %{score: 0.7592295345104334, word: "christmas"}
+    ]
+
+    with_mock SocialData, word_context: fn _, _, _, _, _ -> {:ok, success_response} end do
+      args = %{
+        word: "merry",
+        source: "TELEGRAM",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        size: 1
       }
-      |> Jason.encode!()
 
-    mock(
-      HTTPoison,
-      :get,
-      {:ok,
-       %HTTPoison.Response{
-         body: body,
-         status_code: 200
-       }}
-    )
+      query = word_context_query(args)
+      result = execute_and_parse_success_response(conn, query, "wordContext")
 
-    query = """
-    {
-      wordContext(
-        word: "merry", 
-        source: TELEGRAM,
-        size: 3,
-        from: "2018-12-22T00:00:00Z",
-        to:"2018-12-27T00:00:00Z"
-      ) {
-        word
-        score
-      }
-    }
-    """
-
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "wordContext"))
-      |> json_response(200)
-
-    assert result == %{
-             "data" => %{
-               "wordContext" => [
-                 %{"score" => 1.0, "word" => "mas"},
-                 %{"score" => 0.7688603531300161, "word" => "christ"},
-                 %{"score" => 0.7592295345104334, "word" => "christmas"}
-               ]
+      assert result == %{
+               "data" => %{
+                 "wordContext" => [
+                   %{"score" => 1.0, "word" => "mas"},
+                   %{"score" => 0.7688603531300161, "word" => "christ"},
+                   %{"score" => 0.7592295345104334, "word" => "christmas"}
+                 ]
+               }
              }
-           }
+    end
   end
 
-  test "error 500 when fetch word context from tech-indicators", %{conn: conn} do
-    mock(
-      HTTPoison,
-      :get,
-      {:ok,
-       %HTTPoison.Response{
-         body: "Internal Server Error",
-         status_code: 500
-       }}
-    )
-
-    query = """
-    {
-      wordContext(
-        word: "merry", 
-        source: TELEGRAM,
-        size: 3,
-        from: "2018-12-22T00:00:00Z",
-        to:"2018-12-27T00:00:00Z"
-      ) {
-        word
-        score
+  test "fetch word context - proper error is returned", %{conn: conn} do
+    with_mock SocialData, word_context: fn _, _, _, _, _ -> {:error, @error_response} end do
+      args = %{
+        word: "merry",
+        source: "TELEGRAM",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        size: 1
       }
-    }
-    """
 
-    result_fn = fn ->
-      conn
-      |> post("/graphql", query_skeleton(query, "wordTrendScore"))
-      |> json_response(200)
+      query = word_context_query(args)
+      error = execute_and_parse_error_response(conn, query, "wordContext")
+      assert error =~ @error_response
     end
-
-    assert capture_log(result_fn) =~
-             "Error status 500 fetching context for word merry: Internal Server Error"
   end
 
   test "successfully fetch word trend score", %{conn: conn} do
-    body =
-      [
-        %{
-          "hour" => 8.0,
-          "score" => 3725.6617392595313,
-          "source" => "telegram",
-          "timestamp" => 1_547_078_400
-        }
-      ]
-      |> Jason.encode!()
-
-    mock(
-      HTTPoison,
-      :get,
-      {:ok,
-       %HTTPoison.Response{
-         body: body,
-         status_code: 200
-       }}
-    )
-
-    query = """
-    {
-      wordTrendScore(
-        word: "merry", 
-        source: TELEGRAM,
-        from: "2018-01-09T00:00:00Z",
-        to:"2018-01-10T00:00:00Z"
-      ) {
-        datetime,
-        score,
-        source
+    success_response = [
+      %{
+        score: 3725.6617392595313,
+        source: :telegram,
+        datetime: DateTimeUtils.from_iso8601!("2019-01-10T08:00:00Z")
       }
-    }
-    """
+    ]
 
-    result =
-      conn
-      |> post("/graphql", query_skeleton(query, "wordTrendScore"))
-      |> json_response(200)
+    with_mock SocialData, word_trend_score: fn _, _, _, _ -> {:ok, success_response} end do
+      args = %{
+        word: "qtum",
+        source: "TELEGRAM",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z"
+      }
 
-    assert result == %{
-             "data" => %{
-               "wordTrendScore" => [
-                 %{
-                   "score" => 3725.6617392595313,
-                   "source" => "TELEGRAM",
-                   "datetime" => "2019-01-10T08:00:00Z"
-                 }
-               ]
+      query = word_trend_score_query(args)
+      result = execute_and_parse_success_response(conn, query, "wordTrendScore")
+
+      assert result == %{
+               "data" => %{
+                 "wordTrendScore" => [
+                   %{
+                     "score" => 3725.6617392595313,
+                     "source" => "TELEGRAM",
+                     "datetime" => "2019-01-10T08:00:00Z"
+                   }
+                 ]
+               }
              }
-           }
+    end
   end
 
-  test "error 500 when fetch word trend score from tech-indicators", %{conn: conn} do
-    mock(
-      HTTPoison,
-      :get,
-      {:ok,
-       %HTTPoison.Response{
-         body: "Internal Server Error",
-         status_code: 500
-       }}
-    )
+  test "fetching word trend score - proper error message is returned", %{conn: conn} do
+    error_response =
+      "Error status 500 fetching word trend score for word merry: Internal Server Error"
 
-    query = """
+    with_mock SocialData, word_trend_score: fn _, _, _, _ -> {:error, error_response} end do
+      args = %{
+        word: "merry",
+        source: "TELEGRAM",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z"
+      }
+
+      query = word_trend_score_query(args)
+      error = execute_and_parse_error_response(conn, query, "wordTrendScore")
+      assert error == error_response
+    end
+  end
+
+  test "successfully fetch top social gainers losers", %{conn: conn} do
+    success_response = [
+      %{
+        datetime: DateTimeUtils.from_iso8601!("2019-03-15T13:00:00Z"),
+        projects: [
+          %{
+            change: 137.13186813186815,
+            project: "qtum",
+            status: :gainer
+          },
+          %{
+            change: -1.0,
+            project: "abbc-coin",
+            status: :loser
+          }
+        ]
+      }
+    ]
+
+    with_mock SocialData, top_social_gainers_losers: fn _ -> {:ok, success_response} end do
+      args = %{
+        status: "ALL",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        range: "15d",
+        size: 1
+      }
+
+      query = top_social_gainers_losers_query(args)
+      result = execute_and_parse_success_response(conn, query, "topSocialGainersLosers")
+
+      func_args = %{
+        args
+        | status: args.status |> String.downcase() |> String.to_existing_atom(),
+          from: DateTimeUtils.from_iso8601!(args.from),
+          to: DateTimeUtils.from_iso8601!(args.to)
+      }
+
+      assert_called(SocialData.top_social_gainers_losers(func_args))
+
+      assert result == %{
+               "data" => %{
+                 "topSocialGainersLosers" => [
+                   %{
+                     "datetime" => "2019-03-15T13:00:00Z",
+                     "projects" => [
+                       %{
+                         "change" => 137.13186813186815,
+                         "project" => "qtum",
+                         "status" => "GAINER"
+                       },
+                       %{
+                         "change" => -1.0,
+                         "project" => "abbc-coin",
+                         "status" => "LOSER"
+                       }
+                     ]
+                   }
+                 ]
+               }
+             }
+    end
+  end
+
+  test "fetch top social gainers losers - proper error is returned", %{conn: conn} do
+    with_mock SocialData, top_social_gainers_losers: fn _ -> {:error, @error_response} end do
+      args = %{
+        status: "ALL",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        range: "15d",
+        size: 1
+      }
+
+      query = top_social_gainers_losers_query(args)
+      error = execute_and_parse_error_response(conn, query, "topSocialGainersLosers")
+      assert error =~ @error_response
+    end
+  end
+
+  test "successfully fetch social gainers losers status for slug", %{conn: conn} do
+    success_response = [
+      %{
+        change: 12.709016393442624,
+        datetime: DateTimeUtils.from_iso8601!("2019-03-15T15:00:00Z"),
+        status: :gainer
+      }
+    ]
+
+    with_mock SocialData, social_gainers_losers_status: fn _ -> {:ok, success_response} end do
+      args = %{
+        slug: "qtum",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        range: "15d"
+      }
+
+      query = social_gainers_losers_status_query(args)
+      result = execute_and_parse_success_response(conn, query, "socialGainersLosersStatus")
+
+      func_args = %{
+        args
+        | from: DateTimeUtils.from_iso8601!(args.from),
+          to: DateTimeUtils.from_iso8601!(args.to)
+      }
+
+      assert_called(SocialData.social_gainers_losers_status(func_args))
+
+      assert result == %{
+               "data" => %{
+                 "socialGainersLosersStatus" => [
+                   %{
+                     "change" => 12.709016393442624,
+                     "datetime" => "2019-03-15T15:00:00Z",
+                     "status" => "GAINER"
+                   }
+                 ]
+               }
+             }
+    end
+  end
+
+  test "fetching social gainers losers status - proper error message is returned", %{conn: conn} do
+    error_response =
+      "Error status 500 fetching social gainers losers status for slug: qtum: Internal Server Error"
+
+    with_mock SocialData, social_gainers_losers_status: fn _ -> {:error, @error_response} end do
+      args = %{
+        slug: "qtum",
+        from: "2018-01-09T00:00:00Z",
+        to: "2018-01-10T00:00:00Z",
+        range: "15d"
+      }
+
+      query = social_gainers_losers_status_query(args)
+      error = execute_and_parse_error_response(conn, query, "topSocialGainersLosers")
+      assert error =~ @error_response
+    end
+  end
+
+  # private functions
+
+  defp trending_words_query(args) do
+    """
+    {
+      trendingWords(
+        source: #{args.source},
+        from: "#{args.from}",
+        to: "#{args.to}",
+        size: 5,
+        hour: 8
+        ){
+          datetime
+          topWords{
+            word
+            score
+          }
+        }
+      }
+    """
+  end
+
+  defp word_context_query(args) do
+    """
+    {
+      wordContext(
+        word: "#{args.word}", 
+        source: #{args.source},
+        from: "#{args.from}",
+        to: "#{args.to}",
+        size: #{args.size}
+      ) {
+        word
+        score
+      }
+    }
+    """
+  end
+
+  defp word_trend_score_query(args) do
+    """
     {
       wordTrendScore(
-        word: "merry", 
-        source: TELEGRAM,
-        from: "2018-01-09T00:00:00Z",
-        to:"2018-01-10T00:00:00Z"
+        word: "#{args.word}", 
+        source: #{args.source},
+        from: "#{args.from}",
+        to: "#{args.to}"
       ) {
         datetime,
         score,
@@ -299,14 +359,58 @@ defmodule Sanbase.SocialDataApiTest do
       }
     }
     """
+  end
 
-    result_fn = fn ->
-      conn
-      |> post("/graphql", query_skeleton(query, "wordTrendScore"))
-      |> json_response(200)
-    end
+  defp top_social_gainers_losers_query(args) do
+    """
+    {
+      topSocialGainersLosers(
+        status: #{args.status}, 
+        from: "#{args.from}",
+        to: "#{args.to}",
+        range: "#{args.range}",
+        size: #{args.size}
+      ) {
+        datetime,
+        projects {
+          project,
+          change,
+          status
+        }
+      }
+    }
+    """
+  end
 
-    assert capture_log(result_fn) =~
-             "Error status 500 fetching word_trend_score for word merry: Internal Server Error"
+  defp social_gainers_losers_status_query(args) do
+    """
+    {
+      socialGainersLosersStatus(
+        slug: "#{args.slug}",
+        from: "#{args.from}",
+        to: "#{args.to}",
+        range: "#{args.range}"
+      ) {
+        datetime,
+        change,
+        status
+      }
+    }
+    """
+  end
+
+  defp execute_and_parse_success_response(conn, query, query_name) do
+    conn
+    |> post("/graphql", query_skeleton(query, query_name))
+    |> json_response(200)
+  end
+
+  defp execute_and_parse_error_response(conn, query, query_name) do
+    conn
+    |> post("/graphql", query_skeleton(query, query_name))
+    |> json_response(200)
+    |> Map.get("errors")
+    |> hd()
+    |> Map.get("message")
   end
 end

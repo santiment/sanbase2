@@ -72,8 +72,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
 
              assert message =~
                       "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"12 is not a valid target\"]"
-           end) =~
-             "UserTrigger struct is not valid. Reason: [\"12 is not a valid target\"]"
+           end) =~ "UserTrigger struct is not valid. Reason: [\"12 is not a valid target\"]"
   end
 
   test "create trigger with user_list target", context do

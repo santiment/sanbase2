@@ -60,7 +60,7 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
     |> Enum.map(fn slug -> get_data_for_single_project(slug, settings) end)
   end
 
-  defp get_data_for_single_project(slug, settings) do
+  def get_data_for_single_project(slug, settings) when is_binary(slug) do
     project = Project.by_slug(slug)
 
     # return only the last result

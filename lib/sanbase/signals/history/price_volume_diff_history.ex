@@ -1,8 +1,7 @@
 defmodule Sanbase.Signals.History.PriceVolumeDifferenceHistory do
   @moduledoc """
-  Implementations of historical trigger points for price_percent_change and
-  price_absolute_change triggers. Historical prices are bucketed at `1 hour` intervals and goes
-  `90 days` back.
+  Implementations of historical trigger points for price_volume_difference.
+  The history goes 180 days back.
   """
 
   import Sanbase.Signals.History.Utils
@@ -11,8 +10,7 @@ defmodule Sanbase.Signals.History.PriceVolumeDifferenceHistory do
 
   require Logger
 
-  @historical_days_from 90
-  @historical_days_interval "1h"
+  @historical_days_from 180
 
   @type historical_trigger_points_type :: %{
           datetime: %DateTime{},

@@ -368,7 +368,7 @@ defmodule Sanbase.SocialDataApiTest do
         status: #{args.status}, 
         from: "#{args.from}",
         to: "#{args.to}",
-        time_window: "#{args.time_window}",
+        timeWindow: "#{args.time_window}",
         size: #{args.size}
       ) {
         datetime,
@@ -389,7 +389,7 @@ defmodule Sanbase.SocialDataApiTest do
         slug: "#{args.slug}",
         from: "#{args.from}",
         to: "#{args.to}",
-        time_window: "#{args.time_window}"
+        timeWindow: "#{args.time_window}"
       ) {
         datetime,
         change,

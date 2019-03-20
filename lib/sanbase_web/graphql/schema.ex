@@ -845,6 +845,21 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc """
+    Returns distribution of miners between mining pools.
+    What part of the miners are using top3, top10 and all the other pools.
+    Currently only ETH is supported. 
+    """
+    field :mining_pools_distribution, list_of(:mining_pools_distribution) do
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.mining_pools_distribution/3)
+    end
+
+    @desc """
     Get a URL for deep-linking sanbase and telegram accounts. It carries a unique
     random token that is associated with the user. The link leads to a telegram chat
     with Santiment's notification bot. When the `Start` button is pressed, telegram

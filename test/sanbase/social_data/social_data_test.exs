@@ -214,7 +214,7 @@ defmodule Sanbase.SocialDataTest do
       {:ok,
        %HTTPoison.Response{
          body: "[{
-             \"timestamp\": 1552654800, \"time_window\": \"15d\", \"projects\": 
+             \"timestamp\": 1552654800, \"range\": \"15d\", \"projects\": 
             [
               {\"project\": \"qtum\", \"change\": 137.13186813186815, \"status\": \"gainer\"}, 
               {\"project\": \"abbc-coin\", \"change\": -1.0, \"status\": \"loser\"}

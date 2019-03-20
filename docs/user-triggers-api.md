@@ -15,29 +15,38 @@ These are the fields describing a trigger.
 
 #### settings fields
 
-* `type` Defines the type of the trigger. Can be one of:
-```
-["daily_active_addresses", "price_absolute_change", "price_percent_change", "trending_words", "price_volume_difference"]
-```
+- **type** Defines the type of the trigger. Can be one of: `["daily_active_addresses", "price_absolute_change", "price_percent_change", "trending_words", "price_volume_difference"]`
+- **target**:  slug or list of slugs or watchlist - `"naga" | ["ethereum", "santiment"] | {"user_list": user_list_id}`
+- **channel**: `"telegram" | "email"` - currently only telegram is supported
+- **time_window**: `1d`, `4w`, `1h` - time string we use throughout the API for `interval`
+- **above** and **below** - used in `price_absolute_change` to indicate when the price is `More than` or `Less than` - should be used both!
+- **percent_threshold** - used in `daily_active_addresses` and `price_percent_change` to indicated percent change >= threshold.
 
-* `target` can be `slug`, `list of slugs`, `watchlist`
-
-```
-"target": "naga" | ["ethereum", "santiment"] | {"user_list": user_list_id}
-```
-
-* `channel`: 
-```
-"telegram" | "email" - currently only telegram is supported
-```
-
-* `time_window`
-```
-`1d`, `4w`, `1h` - time string we use throughout the API for `interval` 
+### example settings structure for `price_absolute_change`
+```json
+{
+  "type": "price_absolute_change",
+  "target": "santiment",
+  "channel": "telegram",
+  "above": 0.51,
+  "below": 0.50
+}
 ```
 
 
-#### example settings structure fo `daily_active_addresses`
+### example settings structure for `price_percent_change`
+
+```json
+{
+  "type": "price_percent_change",
+  "target": "santiment",
+  "channel": "telegram",
+  "time_window": "1d",
+  "percent_threshold": 1.0
+}
+```
+
+#### example settings structure for `daily_active_addresses`
 
 ```json
 {

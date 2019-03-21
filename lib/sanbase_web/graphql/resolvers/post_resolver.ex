@@ -33,7 +33,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   def all_insights_for_user(_root, %{user_id: user_id}, _context) do
     posts =
       user_id
-      |> Post.all_insights_for_user()
+      |> Post.user_published_insights()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}

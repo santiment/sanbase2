@@ -27,7 +27,8 @@ config :sanbase, Sanbase.Notifications.Discord.DaaSignal,
   trading_volume_threshold: {:system, "DAA_SIGNAL_TRADING_VOLUME_THRESHOLD", "100000"},
   timeframe_from: {:system, "DAA_SIGNAL_TIMEFRAME_FROM", "31"},
   timeframe_to: {:system, "DAA_SIGNAL_TIMEFRAME_TO", "1"},
-  change: {:system, "DAA_SIGNAL_CHANGE", "3"},
+  trigger_percent: {:system, "DAA_SIGNAL_TRIGER_PERCENT", "2"},
+  ethereum_trigger_percent: {:system, "DAA_SIGNAL_ETHEREUM_TRIGER_PERCENT", "0.4"},
   # cooldown for 6 hours for project
   project_cooldown: {:system, "DAA_SIGNAL_PROJECT_COOLDOWN", "21600"}
 

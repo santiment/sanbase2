@@ -68,19 +68,19 @@ defmodule Sanbase.Signals.StructMapTransformation do
 
   # Private functions
 
-  # NOTE: This is temporally forcing that atom to exist as there are some trigger
-  # settings that still have this in them and `String.to_existing_atom/1` is
-  # failing. Will be removed in the near future
-  @force_existence :filtered_target_list
   defp atomize_keys(map) when is_map(map) do
     for {key, val} <- map, into: %{} do
       if is_atom(key) do
         {key, atomize_keys(val)}
       else
-        {String.to_existing_atom(key), atomize_keys(val)}
+        {atomize(key), atomize_keys(val)}
       end
     end
   end
 
   defp atomize_keys(data), do: data
+
+  @compile {:inline, atomize: 1}
+  defp atomize("filtered_target_list"), do: :filtered_target_list
+  defp atomize(str) when is_binary(str), do: String.to_existing_atom(str)
 end

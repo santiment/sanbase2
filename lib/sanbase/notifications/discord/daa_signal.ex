@@ -13,7 +13,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   alias Sanbase.Model.Project
   alias Sanbase.Repo
-  alias Sanbase.Clickhouse.Erc20DailyActiveAddresses
+  alias Sanbase.Clickhouse.DailyActiveAddresses
 
   alias Sanbase.Notifications.{Discord, Notification, Type}
 
@@ -199,7 +199,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
     |> Enum.map(fn contracts ->
-      Erc20DailyActiveAddresses.average_active_addresses(
+      DailyActiveAddresses.average_active_addresses(
         contracts,
         timeframe_from(),
         timeframe_to()
@@ -220,12 +220,9 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
     |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
     |> Enum.map(fn contracts ->
-      Erc20DailyActiveAddresses.realtime_active_addresses(contracts)
+      DailyActiveAddresses.realtime_active_addresses(contracts)
     end)
     |> handle_errors()
-  end
-
-  defp get_projects_contracts(projects) do
   end
 
   defp handle_errors(daa_for_projects) do

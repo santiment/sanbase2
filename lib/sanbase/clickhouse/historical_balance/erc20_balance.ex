@@ -66,6 +66,25 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.Erc20Balance do
     end
   end
 
+  def balance_change(address, contract, token_decimals, from, to) do
+    token_decimals = Sanbase.Math.ipow(10, token_decimals)
+
+    query = """
+    SELECT
+    argMaxIf(value, dt, dt<=?3 AND sign = 1) as start_balance,
+    argMaxIf(value, dt, dt<=?4 AND sign = 1) as end_balance,
+    end_balance - start_balance as diff
+    FROM #{@table}
+    PREWHERE address = ?1 AND contract = ?2
+    """
+
+    args = [address |> String.downcase(), contract, from, to]
+
+    ClickhouseRepo.query_transform(query, args, fn [s, e, value] ->
+      {s / token_decimals, e / token_decimals, value / token_decimals}
+    end)
+  end
+
   @first_datetime ~N[2015-10-29 00:00:00]
                   |> DateTime.from_naive!("Etc/UTC")
                   |> DateTime.to_unix()

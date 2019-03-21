@@ -181,8 +181,9 @@ defmodule SanbaseWeb.Graphql.PricesApiTest do
     result =
       context.conn
       |> post("/graphql", query_skeleton(query, "historyPrice"))
+      |> json_response(200)
 
-    [error | _] = json_response(result, 400)["errors"]
+    error = result["errors"] |> List.first()
     assert String.contains?(error["message"], "too complex")
   end
 

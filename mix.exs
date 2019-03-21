@@ -6,7 +6,7 @@ defmodule Sanbase.Mixfile do
       app: :sanbase,
       name: "Sanbase",
       version: "0.0.1",
-      elixir: "~> 1.7",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -24,25 +24,18 @@ defmodule Sanbase.Mixfile do
     ]
   end
 
-  # Configuration for the OTP application.
-  #
-  # Type `mix help compile.app` for more information.
   def application do
     [
       mod: {Sanbase.Application, []},
       extra_applications: [:logger, :runtime_tools, :sasl, :clickhousex],
-      included_applications: [:faktory_worker_ex, :oauther]
+      included_applications: [:oauther]
     ]
   end
 
-  # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  # Specifies your project dependencies.
-  #
-  # Type `mix help deps` for examples and options.
-  defp deps do
+  defp deps() do
     [
       {:phoenix, "~> 1.3.0"},
       {:phoenix_pubsub, "~> 1.0"},
@@ -56,7 +49,7 @@ defmodule Sanbase.Mixfile do
       {:tesla, "~> 1.0"},
       {:poison, ">= 1.0.0"},
       {:instream, "~> 0.16"},
-      {:hammer, "~> 5.0"},
+      {:hammer, "~> 6.0"},
       {:ex_admin, github: "santiment/ex_admin", branch: "master"},
       {:basic_auth, "~> 2.2"},
       {:mock, "~> 0.3"},
@@ -69,11 +62,10 @@ defmodule Sanbase.Mixfile do
       {:absinthe, "~> 1.4"},
       {:absinthe_ecto, "~> 0.1.0"},
       {:absinthe_plug, "~> 1.4.0"},
-      {:faktory_worker_ex, git: "https://github.com/santiment/faktory_worker_ex"},
       {:temp, "~> 0.4"},
       {:httpoison, "~> 1.2", override: true},
       {:floki, "~> 0.20"},
-      {:sentry, "~> 6.0.4"},
+      {:sentry, "~> 7.0"},
       {:extwitter, "~> 0.9.0"},
       {:envy, "~> 1.1.1", only: [:dev, :test]},
       {:ex_aws, "~> 2.0"},
@@ -103,9 +95,9 @@ defmodule Sanbase.Mixfile do
       {:prometheus_ecto, "~> 1.3"},
       {:prometheus_plugs, "~> 1.0"},
       {:prometheus_process_collector, "~> 1.4"},
-      {:absinthe_metrics, "~> 0.9"},
+      {:absinthe_metrics, "~> 1.0"},
       {:libcluster, "~> 3.0"},
-      {:number, "~> 0.5.7"},
+      {:number, "~> 1.0"},
       {:remote_ip, "~> 0.1"},
       {:vex, "~> 0.8.0", override: true},
       {:stream_data, "~> 0.4.2", only: :test}

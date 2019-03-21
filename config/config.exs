@@ -61,6 +61,7 @@ config :logger, :console,
 
 # Error tracking
 config :sentry,
+  json_library: Jason,
   included_environments: [:prod],
   environment_name: Mix.env()
 

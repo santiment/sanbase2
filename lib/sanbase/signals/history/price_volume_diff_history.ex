@@ -10,8 +10,6 @@ defmodule Sanbase.Signals.History.PriceVolumeDifferenceHistory do
 
   require Logger
 
-  @historical_days_from 180
-
   @type historical_trigger_points_type :: %{
           datetime: %DateTime{},
           price_volume_diff: float(),
@@ -19,17 +17,19 @@ defmodule Sanbase.Signals.History.PriceVolumeDifferenceHistory do
         }
 
   defimpl Sanbase.Signals.History, for: PriceVolumeDifferenceTriggerSettings do
+    @historical_days_from 180
+
     alias Sanbase.Signals.History.PriceVolumeDifferenceHistory
 
     @spec historical_trigger_points(%PriceVolumeDifferenceTriggerSettings{}, String.t()) ::
-            {:ok, list(PriceVolumeDiffHistory.historical_trigger_points_type())}
+            {:ok, list(PriceVolumeDifferenceHistory.historical_trigger_points_type())}
             | {:error, String.t()}
     def historical_trigger_points(
-          %PriceVolumeDifferenceTriggerSettings{target: target} = settings,
+          %PriceVolumeDifferenceTriggerSettings{target: %{slug: target}} = settings,
           cooldown
         )
         when is_binary(target) do
-      case get_price_volume_data(settings, cooldown) do
+      case get_price_volume_data(settings) do
         {:ok, result} ->
           result = result |> add_triggered_marks(cooldown, settings)
           {:ok, result}
@@ -39,11 +39,11 @@ defmodule Sanbase.Signals.History.PriceVolumeDifferenceHistory do
       end
     end
 
-    defp get_price_volume_data(settings, cooldown) do
+    defp get_price_volume_data(settings) do
       Sanbase.TechIndicators.PriceVolumeDifference.price_volume_diff(
-        Sanbase.Model.Project.by_slug(settings.target),
+        Sanbase.Model.Project.by_slug(settings.target.slug),
         "USD",
-        Timex.shift(Timex.now(), days: -90),
+        Timex.shift(Timex.now(), days: -@historical_days_from),
         Timex.now(),
         settings.aggregate_interval,
         settings.window_type,

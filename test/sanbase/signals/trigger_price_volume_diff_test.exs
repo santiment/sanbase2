@@ -146,14 +146,14 @@ defmodule Sanbase.Signals.PriceVolumeDiffTest do
   defp setup_triggers(user) do
     trigger_settings1 = %{
       type: "price_volume_difference",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       threshold: 0.002
     }
 
     trigger_settings2 = %{
       type: "price_volume_difference",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       threshold: 0.1
     }

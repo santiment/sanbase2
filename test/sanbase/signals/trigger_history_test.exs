@@ -44,7 +44,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
     ]) do
       trigger_settings = %{
         type: "daily_active_addresses",
-        target: "santiment",
+        target: %{slug: "santiment"},
         channel: "telegram",
         time_window: "2d",
         percent_threshold: 200.0
@@ -86,7 +86,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       [from_iso8601!("2018-11-26T00:00:00Z"), 21, 1000, 500, 200],
       # trigger point
       [from_iso8601!("2018-11-27T00:00:00Z"), 22, 1000, 500, 200],
-      # cooldown      
+      # cooldown
       [from_iso8601!("2018-11-28T00:00:00Z"), 25, 1000, 500, 200],
       # cooldown
       [from_iso8601!("2018-11-29T00:00:00Z"), 28, 1000, 500, 200],
@@ -110,7 +110,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         cooldown: "4h",
         settings: %{
           type: "price_percent_change",
-          target: "santiment",
+          target: %{slug: "santiment"},
           channel: "telegram",
           time_window: "4h",
           percent_threshold: percent_threshold
@@ -157,11 +157,11 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       [from_iso8601!("2018-11-23T00:00:00Z"), 20, 1000, 500, 200],
       [from_iso8601!("2018-11-24T00:00:00Z"), 20, 1000, 500, 200],
       [from_iso8601!("2018-11-25T00:00:00Z"), 20, 1000, 500, 200],
-      # trigger point      
+      # trigger point
       [from_iso8601!("2018-11-26T00:00:00Z"), 21, 1000, 500, 200],
       # cooldown
       [from_iso8601!("2018-11-27T00:00:00Z"), 22, 1000, 500, 200],
-      # cooldown      
+      # cooldown
       [from_iso8601!("2018-11-28T00:00:00Z"), 25, 1000, 500, 200],
       # cooldown
       [from_iso8601!("2018-11-29T00:00:00Z"), 28, 1000, 500, 200],
@@ -183,7 +183,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
         cooldown: "4h",
         settings: %{
           type: "price_absolute_change",
-          target: "santiment",
+          target: %{slug: "santiment"},
           channel: "telegram",
           above: 21.0
         }

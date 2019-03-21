@@ -14,12 +14,12 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   alias Sanbase.Clickhouse.DailyActiveAddresses
   alias Sanbase.Signals.Evaluator.Cache
 
-  @derive {Jason.Encoder, except: [:filtered_target_list, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "daily_active_addresses"
   @enforce_keys [:type, :target, :channel, :time_window, :percent_threshold]
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target_list: [],
+            filtered_target: %{list: []},
             channel: nil,
             time_window: nil,
             percent_threshold: nil,
@@ -44,7 +44,7 @@ defmodule Sanbase.Signals.Trigger.DailyActiveAddressesSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def get_data(%__MODULE__{filtered_target_list: target_list} = settings)
+  def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
     time_window_sec = Sanbase.DateTimeUtils.compound_duration_to_seconds(settings.time_window)
     from = Timex.shift(Timex.now(), seconds: -time_window_sec)

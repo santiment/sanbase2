@@ -155,7 +155,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
   defp setup_triggers(user) do
     trigger_settings1 = %{
       type: "price_percent_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "6h",
       percent_threshold: 15.0
@@ -163,7 +163,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     trigger_settings2 = %{
       type: "price_absolute_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       above: 60,
       below: 50
@@ -171,7 +171,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     trigger_settings3 = %{
       type: "price_percent_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "6h",
       percent_threshold: 18.0
@@ -179,7 +179,7 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
 
     trigger_settings4 = %{
       type: "price_absolute_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       above: 70,
       below: 50

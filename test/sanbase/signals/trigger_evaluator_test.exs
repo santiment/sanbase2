@@ -34,7 +34,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
     trigger_settings1 = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 300.0
@@ -42,7 +42,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
     trigger_settings2 = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 200.0

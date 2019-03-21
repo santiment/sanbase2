@@ -14,12 +14,12 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
   alias Sanbase.Model.Project
   alias Sanbase.Signals.Evaluator.Cache
 
-  @derive {Jason.Encoder, except: [:filtered_target_list, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "price_absolute_change"
   @enforce_keys [:type, :target, :channel]
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target_list: [],
+            filtered_target: %{list: []},
             channel: nil,
             above: nil,
             below: nil,
@@ -59,7 +59,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     )
   end
 
-  def get_data(%__MODULE__{filtered_target_list: target_list}) when is_list(target_list) do
+  def get_data(%__MODULE__{filtered_target: %{list: target_list}}) when is_list(target_list) do
     target_list
     |> Enum.map(fn slug ->
       {slug, get_data_by_slug(slug)}

@@ -135,6 +135,17 @@ defmodule Sanbase.Insight.Post do
     |> get_only_published_or_own_posts(user_id)
   end
 
+  @doc """
+  All published insights for given user_id
+  """
+  def user_published_insights(user_id) do
+    from(
+      p in Post,
+      where: p.user_id == ^user_id and p.ready_state == ^@published
+    )
+    |> Repo.all()
+  end
+
   def published_posts(page, page_size) do
     from(
       p in Post,

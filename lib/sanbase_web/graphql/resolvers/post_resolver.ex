@@ -31,15 +31,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   end
 
   def all_insights_for_user(_root, %{user_id: user_id}, _context) do
-    query =
-      from(
-        p in Post,
-        where: p.user_id == ^user_id
-      )
-
     posts =
-      query
-      |> Repo.all()
+      user_id
+      |> Post.user_published_insights()
       |> Repo.preload(@preloaded_assoc)
 
     {:ok, posts}

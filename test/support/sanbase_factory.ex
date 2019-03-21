@@ -27,7 +27,8 @@ defmodule Sanbase.Factory do
     %User{
       salt: User.generate_salt(),
       san_balance: Decimal.new(20000),
-      san_balance_updated_at: Timex.now()
+      san_balance_updated_at: Timex.now(),
+      privacy_policy_accepted: true
     }
   end
 

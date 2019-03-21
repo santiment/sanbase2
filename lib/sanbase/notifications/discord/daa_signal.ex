@@ -17,6 +17,8 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   alias Sanbase.Notifications.{Discord, Notification, Type}
 
+  @cache_id :signals_cache
+
   @impl true
   def run() do
     projects = projects_over_threshold()
@@ -49,7 +51,6 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
 
   @impl true
   def publish(payload, "discord") do
-    Logger.info("Sending Discord notification for Daily Active Addresses: #{payload}")
     Discord.send_notification(webhook_url(), "DAA Signal", payload)
   end
 
@@ -172,16 +173,15 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   end
 
   defp get_or_store_avg_daa(projects) do
-    cache_id = :signals_cache
     cache_key = "daa_signal_#{today_str()}_averages"
 
-    ConCache.get(cache_id, cache_key)
+    ConCache.get(@cache_id, cache_key)
     |> case do
       nil ->
         get_avg_daa(projects)
         |> case do
           {:ok, avg_daa} ->
-            :ok = ConCache.put(cache_id, cache_key, avg_daa)
+            :ok = ConCache.put(@cache_id, cache_key, avg_daa)
             {:ok, avg_daa}
 
           {:error, error} ->
@@ -196,6 +196,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp get_avg_daa(projects) do
     projects
     |> Enum.map(&Project.contract_address/1)
+    |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
     |> Enum.map(fn contracts ->
       Erc20DailyActiveAddresses.average_active_addresses(
@@ -204,7 +205,7 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
         timeframe_to()
       )
     end)
-    |> catch_errors()
+    |> handle_errors()
   end
 
   defp get_daa_contract(contract, all_projects_daa) do
@@ -216,14 +217,18 @@ defmodule Sanbase.Notifications.Discord.DaaSignal do
   defp all_projects_daa_for_today(projects) do
     projects
     |> Enum.map(&Project.contract_address/1)
+    |> Enum.reject(&is_nil/1)
     |> Enum.chunk_every(100)
     |> Enum.map(fn contracts ->
       Erc20DailyActiveAddresses.realtime_active_addresses(contracts)
     end)
-    |> catch_errors()
+    |> handle_errors()
   end
 
-  defp catch_errors(daa_for_projects) do
+  defp get_projects_contracts(projects) do
+  end
+
+  defp handle_errors(daa_for_projects) do
     daa_for_projects
     |> Enum.find(&match?({:error, _}, &1))
     |> case do

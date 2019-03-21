@@ -826,7 +826,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc """
     Returns NVT (Network-Value-to-Transactions-Ratio
     Daily Market Cap / Daily Transaction Volume
-    Since Daily Transaction Volume gets rather noisy and often includes duplicate transactions,
+    Since Daily Transaction Volume gets rather noisy and easy to manipulate
+    by transferring the same tokens through couple of addresses over and over again,
     it’s not an ideal measure of a network’s economic activity.
     That’s why we calculate NVT using Daily Trx Volume,
     but also by using Daily Token Circulation instead,

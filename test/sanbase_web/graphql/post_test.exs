@@ -2,14 +2,15 @@ defmodule SanbaseWeb.Graphql.PostTest do
   use SanbaseWeb.ConnCase, async: false
   use Mockery
 
+  import SanbaseWeb.Graphql.TestHelpers
+  import Sanbase.Factory
+
   alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post, Vote}
   alias Sanbase.Auth.User
   alias Sanbase.Model.Project
   alias Sanbase.Repo
   alias Sanbase.InternalServices.Ethauth
-
-  import SanbaseWeb.Graphql.TestHelpers
 
   setup do
     user =
@@ -206,28 +207,9 @@ defmodule SanbaseWeb.Graphql.PostTest do
   test "getting all posts for given user", %{user: user, user2: user2, conn: conn} do
     poll = Poll.find_or_insert_current_poll!()
 
-    post =
-      %Post{
-        poll_id: poll.id,
-        user_id: user.id,
-        title: "Awesome analysis",
-        short_desc: "Example analysis short description",
-        text: "Example text, hoo",
-        link: "http://www.google.com",
-        state: Post.approved_state()
-      }
-      |> Repo.insert!()
-
-    %Post{
-      poll_id: poll.id,
-      user_id: user2.id,
-      title: "Awesome analysis",
-      short_desc: "Example analysis short description",
-      text: "Example text, hoo",
-      link: "http://www.google.com",
-      state: Post.approved_state()
-    }
-    |> Repo.insert!()
+    post = insert(:post, poll: poll, user: user, ready_state: Post.published())
+    insert(:post, poll: poll, user: user, ready_state: Post.draft())
+    insert(:post, poll: poll, user: user2, ready_state: Post.published())
 
     query = """
     {
@@ -238,15 +220,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
     }
     """
 
-    result =
+    all_insights_for_user =
       conn
       |> post("/graphql", query_skeleton(query, "allInsightsForUser"))
+      |> json_response(200)
+      |> get_in(["data", "allInsightsForUser"])
 
-    assert json_response(result, 200)["data"]["allInsightsForUser"] |> Enum.count() == 1
-
-    assert json_response(result, 200)["data"]["allInsightsForUser"]
-           |> List.first()
-           |> Map.get("text") == post.text
+    assert all_insights_for_user |> Enum.count() == 1
+    assert all_insights_for_user |> hd() |> Map.get("text") == post.text
   end
 
   test "getting all posts user has voted for", %{user: user, user2: user2, conn: conn} do

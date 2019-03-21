@@ -43,3 +43,6 @@ npm-debug.log
 
 # test coverage
 /cover
+
+# asdf
+.tool-versions

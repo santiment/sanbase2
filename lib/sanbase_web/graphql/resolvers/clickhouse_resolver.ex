@@ -8,6 +8,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   alias Sanbase.Clickhouse.{
     DailyActiveDeposits,
     HistoricalBalance,
+    MiningPoolsDistribution,
     MVRV,
     NetworkGrowth,
     NVT,
@@ -28,6 +29,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         Logger.error("Can't calculate network growth. Reason: #{inspect(error)}")
 
         {:error, "Can't calculate network growth"}
+    end
+  end
+
+  def mining_pools_distribution(
+        _root,
+        %{from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    case MiningPoolsDistribution.distribution(from, to, interval) do
+      {:ok, distribution} ->
+        {:ok, distribution}
+
+      {:error, error} ->
+        error_msg = "Can't calculate mining pools distribution."
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 

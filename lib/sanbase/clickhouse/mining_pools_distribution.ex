@@ -1,7 +1,7 @@
 defmodule Sanbase.Clickhouse.MiningPoolsDistribution do
   @moduledoc ~s"""
   Uses ClickHouse to calculate distribution of miners between mining pools.
-  Currently only ETH is supported. 
+  Currently only ETH is supported.
   """
 
   alias Sanbase.DateTimeUtils
@@ -52,7 +52,7 @@ defmodule Sanbase.Clickhouse.MiningPoolsDistribution do
       date >= toDate(?2) AND
       date <= toDate(?3) AND
       id IN (5,6,7)
-    GROUP BY time, date
+    GROUP BY time
     ORDER BY time ASC
     """
 

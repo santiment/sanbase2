@@ -10,7 +10,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     HistoricalBalance,
     MVRV,
     NetworkGrowth,
-    NVT
+    NVT,
+    RealizedValue
   }
 
   @one_hour_seconds 3600
@@ -70,6 +71,22 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         error_msg =
           "Can't calculate daily active deposits for project with coinmarketcap_id: #{slug}."
 
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  def realized_value(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    case RealizedValue.realized_value(slug, from, to, interval) do
+      {:ok, realized_value} ->
+        {:ok, realized_value}
+
+      {:error, error} ->
+        error_msg = "Can't calculate Realized Value for project with coinmarketcap_id: #{slug}."
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}
     end

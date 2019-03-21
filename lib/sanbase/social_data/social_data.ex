@@ -64,12 +64,12 @@ defmodule Sanbase.SocialData do
         status: status,
         from: from,
         to: to,
-        range: range,
+        time_window: time_window,
         size: size
       }) do
-    case validate_range(range) do
-      {:ok, range_in_days_str} ->
-        social_gainers_losers_request(status, from, to, range_in_days_str, size)
+    case validate_time_window(time_window) do
+      {:ok, time_window_in_days_str} ->
+        social_gainers_losers_request(status, from, to, time_window_in_days_str, size)
         |> handle_response(
           &top_social_gainers_losers_result/1,
           "top social gainers losers",
@@ -86,11 +86,11 @@ defmodule Sanbase.SocialData do
         slug: slug,
         from: from,
         to: to,
-        range: range
+        time_window: time_window
       }) do
-    case validate_range(range) do
-      {:ok, range_in_days_str} ->
-        social_gainers_losers_status_request(slug, from, to, range_in_days_str)
+    case validate_time_window(time_window) do
+      {:ok, time_window_in_days_str} ->
+        social_gainers_losers_status_request(slug, from, to, time_window_in_days_str)
         |> handle_response(
           &social_gainers_losers_status_result/1,
           "social gainers losers status",
@@ -185,7 +185,7 @@ defmodule Sanbase.SocialData do
          status,
          from_datetime,
          to_datetime,
-         range,
+         time_window,
          size
        ) do
     from_unix = DateTime.to_unix(from_datetime)
@@ -199,7 +199,7 @@ defmodule Sanbase.SocialData do
         {"status", status |> Atom.to_string()},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
-        {"range", range},
+        {"range", time_window},
         {"size", size}
       ]
     ]
@@ -211,7 +211,7 @@ defmodule Sanbase.SocialData do
          slug,
          from_datetime,
          to_datetime,
-         range
+         time_window
        ) do
     from_unix = DateTime.to_unix(from_datetime)
     to_unix = DateTime.to_unix(to_datetime)
@@ -224,7 +224,7 @@ defmodule Sanbase.SocialData do
         {"project", slug},
         {"from_timestamp", from_unix},
         {"to_timestamp", to_unix},
-        {"range", range}
+        {"range", time_window}
       ]
     ]
 
@@ -341,20 +341,21 @@ defmodule Sanbase.SocialData do
     end
   end
 
-  defp validate_range(range) do
+  defp validate_time_window(time_window) do
     with {:valid_compound_duration?, true} <-
-           {:valid_compound_duration?, DateTimeUtils.valid_compound_duration?(range)},
-         range_in_days = DateTimeUtils.compound_duration_to_days(range),
-         {:valid_range?, true} <- {:valid_range?, range_in_days >= 2 and range_in_days <= 30} do
-      {:ok, "#{range_in_days}d"}
+           {:valid_compound_duration?, DateTimeUtils.valid_compound_duration?(time_window)},
+         time_window_in_days = DateTimeUtils.compound_duration_to_days(time_window),
+         {:valid_time_window?, true} <-
+           {:valid_time_window?, time_window_in_days >= 2 and time_window_in_days <= 30} do
+      {:ok, "#{time_window_in_days}d"}
     else
       {:valid_compound_duration?, false} ->
         {:error,
-         "Invalid string format for range. Valid values can be - for ex: `2d`, `5d`, `1w`"}
+         "Invalid string format for time_window. Valid values can be - for ex: `2d`, `5d`, `1w`"}
 
-      {:valid_range?, false} ->
+      {:valid_time_window?, false} ->
         {:error,
-         "Invalid `range` argument. Range should be between 2 and 30 days - for ex: `2d`, `5d`, `1w`"}
+         "Invalid `time_window` argument. time_window should be between 2 and 30 days - for ex: `2d`, `5d`, `1w`"}
     end
   end
 

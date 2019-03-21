@@ -6,6 +6,11 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:active_deposits, non_null(:integer))
   end
 
+  object :gas_used do
+    field(:datetime, non_null(:datetime))
+    field(:eth_gas_used, :integer)
+  end
+
   object :historical_balance do
     field(:datetime, non_null(:datetime))
     field(:balance, :float)

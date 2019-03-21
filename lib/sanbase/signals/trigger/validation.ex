@@ -40,11 +40,11 @@ defmodule Sanbase.Signals.Validation do
 
   def valid_iso8601_datetime_string?(_), do: {:error, "Not valid ISO8601 time"}
 
-  def valid_target?(target) when is_binary(target), do: :ok
   def valid_target?(%{user_list: int}) when is_integer(int), do: :ok
+  def valid_target?(%{slug: slug}) when is_binary(slug), do: :ok
 
-  def valid_target?(list) when is_list(list) do
-    Enum.find(list, fn elem -> not is_binary(elem) end)
+  def valid_target?(%{slug: slugs}) when is_list(slugs) do
+    Enum.find(slugs, fn slug -> not is_binary(slug) end)
     |> case do
       nil -> :ok
       _ -> {:error, "The target list contains elements that are not string"}
@@ -52,6 +52,23 @@ defmodule Sanbase.Signals.Validation do
   end
 
   def valid_target?(target),
+    do: {:error, "#{inspect(target)} is not a valid target"}
+
+  def valid_eth_wallet_target?(%{eth_address: address})
+      when is_binary(address) or is_list(address) do
+    address
+    |> List.wrap()
+    |> Enum.find(fn elem -> not is_binary(elem) end)
+    |> case do
+      nil -> :ok
+      _ -> {:error, "The target list contains elements that are not string"}
+    end
+  end
+
+  def valid_eth_wallet_target?(%{project: slug}) when is_binary(slug), do: :ok
+  def valid_eth_wallet_target?(%{user_list: int}) when is_integer(int), do: :ok
+
+  def valid_eth_wallet_target?(target),
     do: {:error, "#{inspect(target)} is not a valid target"}
 
   def valid_url?(url) do

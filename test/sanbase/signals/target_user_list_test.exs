@@ -38,7 +38,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
   test "create trigger with a single target", context do
     trigger_settings = %{
       type: "price_absolute_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       above: 300.0,
       below: 200.0
@@ -95,7 +95,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
   test "create trigger with lists of slugs target", context do
     trigger_settings = %{
       type: "price_absolute_change",
-      target: ["santiment", "ethereum", "bitcoin"],
+      target: %{slug: ["santiment", "ethereum", "bitcoin"]},
       channel: "telegram",
       above: 300.0,
       below: 200.0
@@ -125,7 +125,7 @@ defmodule SanbaseWeb.Graphql.TargetUserListTest do
                settings: trigger_settings
              }) ==
                {:error,
-                "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"The target list contains elements that are not string\"]"}
+                "Trigger structure is invalid. Key `settings` is not valid. Reason: [\"[\\\"santiment\\\", \\\"ethereum\\\", \\\"bitcoin\\\", 12] is not a valid target\"]"}
     end) =~
       ~s/UserTrigger struct is not valid: [{:error, :target, :by, "The target list contains elements that are not string"}]/
   end

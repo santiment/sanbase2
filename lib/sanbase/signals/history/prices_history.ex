@@ -26,8 +26,8 @@ defmodule Sanbase.Signals.History.PricesHistory do
           triggered?: boolean()
         }
 
-  def get_prices(%{target: target}) when is_binary(target) do
-    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(target),
+  def get_prices(%{target: %{slug: slug}}) when is_binary(slug) do
+    with measurement when not is_nil(measurement) <- Measurement.name_from_slug(slug),
          {from, to, interval} <- get_timeseries_params(),
          {:ok, price_list} when is_list(price_list) and price_list != [] <-
            PricesStore.fetch_prices_with_resolution(measurement, from, to, interval) do
@@ -78,7 +78,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
     @spec historical_trigger_points(%PriceAbsoluteChangeSettings{}, String.t()) ::
             {:ok, list(PricesHistory.historical_trigger_points_type())} | {:error, String.t()}
     def historical_trigger_points(
-          %PriceAbsoluteChangeSettings{target: target} = settings,
+          %PriceAbsoluteChangeSettings{target: %{slug: target}} = settings,
           cooldown
         )
         when is_binary(target) do
@@ -122,7 +122,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
     @spec historical_trigger_points(%PricePercentChangeSettings{}, String.t()) ::
             {:ok, list(PricesHistory.historical_trigger_points_type())} | {:error, String.t()}
     def historical_trigger_points(
-          %PricePercentChangeSettings{target: target} = settings,
+          %PricePercentChangeSettings{target: %{slug: target}} = settings,
           cooldown
         )
         when is_binary(target) do

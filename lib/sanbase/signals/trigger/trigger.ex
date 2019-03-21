@@ -91,7 +91,7 @@ defmodule Sanbase.Signals.Trigger do
 
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
     trigger_settings =
-      %{trigger_settings | filtered_target_list: remove_targets_on_cooldown(target, trigger)}
+      %{trigger_settings | filtered_target: remove_targets_on_cooldown(target, trigger)}
       |> Sanbase.Signals.Settings.evaluate()
 
     %Trigger{trigger | settings: trigger_settings}
@@ -134,9 +134,10 @@ defmodule Sanbase.Signals.Trigger do
     |> Enum.join(" ")
   end
 
-  defp remove_targets_on_cooldown(target, trigger)
-       when is_binary(target) do
-    remove_targets_on_cooldown([target], trigger)
+  defp remove_targets_on_cooldown(target, trigger) when is_binary(target) or is_list(target) do
+    target
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :slug)
   end
 
   defp remove_targets_on_cooldown(%{user_list: user_list_id}, trigger) do
@@ -145,11 +146,28 @@ defmodule Sanbase.Signals.Trigger do
     list_items
     |> Enum.map(fn %{project_id: id} -> id end)
     |> Project.List.slugs_by_ids()
-    |> remove_targets_on_cooldown(trigger)
+    |> remove_targets_on_cooldown(trigger, :slug)
   end
 
-  defp remove_targets_on_cooldown(target_list, trigger) when is_list(target_list) do
-    target_list
-    |> Enum.reject(&Sanbase.Signals.Trigger.has_cooldown?(trigger, &1))
+  defp remove_targets_on_cooldown(%{slug: slug}, trigger)
+       when is_binary(slug) or is_list(slug) do
+    slug
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :slug)
+  end
+
+  defp remove_targets_on_cooldown(%{eth_address: address}, trigger)
+       when is_binary(address) or is_list(address) do
+    address
+    |> List.wrap()
+    |> remove_targets_on_cooldown(trigger, :eth_address)
+  end
+
+  defp remove_targets_on_cooldown(target_list, trigger, type) when is_list(target_list) do
+    target_list =
+      target_list
+      |> Enum.reject(&Sanbase.Signals.Trigger.has_cooldown?(trigger, &1))
+
+    %{list: target_list, type: type}
   end
 end

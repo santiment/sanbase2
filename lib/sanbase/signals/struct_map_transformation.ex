@@ -21,17 +21,10 @@ defmodule Sanbase.Signals.StructMapTransformation do
     %{trigger | settings: settings}
   end
 
-  def load_in_struct(trigger_settings) when is_map(trigger_settings) do
-    trigger_settings =
-      for {key, val} <- trigger_settings, into: %{} do
-        if is_atom(key) do
-          {key, val}
-        else
-          {String.to_existing_atom(key), val}
-        end
-      end
-
-    struct_from_map(trigger_settings)
+  def load_in_struct(map) when is_map(map) do
+    map
+    |> atomize_keys()
+    |> struct_from_map()
   end
 
   def load_in_struct(_), do: :error
@@ -72,4 +65,18 @@ defmodule Sanbase.Signals.StructMapTransformation do
     do: {:ok, Map.from_struct(trigger_settings)}
 
   def map_from_struct(_), do: :error
+
+  # Private functions
+
+  defp atomize_keys(map) when is_map(map) do
+    for {key, val} <- map, into: %{} do
+      if is_atom(key) do
+        {key, atomize_keys(val)}
+      else
+        {String.to_existing_atom(key), atomize_keys(val)}
+      end
+    end
+  end
+
+  defp atomize_keys(data), do: data
 end

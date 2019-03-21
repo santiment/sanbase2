@@ -20,8 +20,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         send(self(), {:telegram_to_self, text})
         :ok
       end do
-      trigger_settings = default_trigger_settings()
-
+      trigger_settings = default_trigger_settings_string_keys()
       trigger_settings_json = trigger_settings |> Jason.encode!()
 
       query =
@@ -103,7 +102,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "update trigger", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
@@ -145,7 +144,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "remove trigger", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
 
@@ -176,7 +175,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "get trigger by id", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     insert(:user_trigger,
       user: user,
@@ -211,7 +210,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "fetches triggers for current user", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     %{id: id} =
       insert(:user_trigger, user: user, trigger: %{is_public: false, settings: trigger_settings})
@@ -242,7 +241,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "fetches all public triggers", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     trigger_settings2 = Map.put(trigger_settings, "percent_threshold", 400.0)
 
@@ -275,7 +274,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   test "fetches public user triggers", %{conn: conn} do
     user = insert(:user, email: "alabala@example.com")
 
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     trigger_settings2 = Map.put(trigger_settings, "percent_threshold", 400.0)
 
@@ -344,7 +343,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "fetches signals historical activity for current user", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     user_trigger =
       insert(:user_trigger,
@@ -462,7 +461,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "deactivate signal", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     ut = insert(:user_trigger, user: user, trigger: %{settings: trigger_settings})
 
@@ -474,7 +473,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
   end
 
   test "activate signal", %{user: user, conn: conn} do
-    trigger_settings = default_trigger_settings()
+    trigger_settings = default_trigger_settings_string_keys()
 
     ut = insert(:user_trigger, user: user, trigger: %{active: false, settings: trigger_settings})
 
@@ -538,10 +537,10 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result["data"]["updateTrigger"]["trigger"]
   end
 
-  defp default_trigger_settings do
+  defp default_trigger_settings_string_keys() do
     %{
       "type" => "daily_active_addresses",
-      "target" => "santiment",
+      "target" => %{"slug" => "santiment"},
       "channel" => "telegram",
       "time_window" => "1d",
       "percent_threshold" => 300.0

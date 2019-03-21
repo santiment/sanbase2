@@ -7,13 +7,13 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   alias Sanbase.Model.Project
   alias Sanbase.TechIndicators.PriceVolumeDifference
 
-  @derive {Jason.Encoder, except: [:filtered_target_list, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "price_volume_difference"
   @enforce_keys [:type, :target, :channel, :threshold]
 
   defstruct type: @trigger_type,
             target: nil,
-            filtered_target_list: [],
+            filtered_target: %{list: []},
             channel: nil,
             threshold: 0.002,
             aggregate_interval: "1d",
@@ -55,8 +55,9 @@ defmodule Sanbase.Signals.Trigger.PriceVolumeDifferenceTriggerSettings do
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
 
-  def get_data(%{filtered_target_list: target} = settings) when is_list(target) do
-    target
+  def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
+      when is_list(target_list) do
+    target_list
     |> Enum.map(fn slug -> get_data_for_single_project(slug, settings) end)
   end
 

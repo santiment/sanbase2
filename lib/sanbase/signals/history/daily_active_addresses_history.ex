@@ -34,13 +34,13 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
             {:ok, list(DailyActiveAddressesHistory.historical_trigger_points_type())}
             | {:error, String.t()}
     def historical_trigger_points(
-          %DailyActiveAddressesSettings{target: target} = settings,
+          %DailyActiveAddressesSettings{target: %{slug: slug}} = settings,
           cooldown
         )
-        when is_binary(target) do
-      with {:ok, contract, _token_decimals} <- Project.contract_info_by_slug(settings.target),
+        when is_binary(slug) do
+      with {:ok, contract, _token_decimals} <- Project.contract_info_by_slug(slug),
            measurement when not is_nil(measurement) <-
-             Measurement.name_from_slug(settings.target),
+             Measurement.name_from_slug(slug),
            {from, to, interval} <- get_timeseries_params(),
            {:ok, daa_result} when is_list(daa_result) and daa_result != [] <-
              get_daily_active_addresses(contract, from, to, interval),
@@ -64,7 +64,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
         active_addresses =
           daa_result |> Enum.map(fn %{active_addresses: active_addresses} -> active_addresses end)
 
-        # chunk in time window days + 1 buckets, 
+        # chunk in time window days + 1 buckets,
         # calculate percent changes between average of all but last and last value
         # calculate tuples {percent_change, is_trigger_point} where is_trigger_point considers cooldown
         percent_change_calculations =
@@ -76,7 +76,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
             cooldown_in_days
           )
 
-        # for the first time_window days we don't check whether they are trigger points  
+        # for the first time_window days we don't check whether they are trigger points
         empty_calculations = Stream.cycle([{0.0, false}]) |> Enum.take(time_window_in_days)
 
         # add percent_change and boolean triggered? to the daily_active_addresses and prices

@@ -4,6 +4,7 @@ defmodule Sanbase.Signals.TriggersTest do
   import Sanbase.Factory
   import ExUnit.CaptureLog
   import Sanbase.TestHelpers
+  import Sanbase.MapUtils
 
   alias Sanbase.Signals.UserTrigger
 
@@ -12,13 +13,10 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
-      filtered_target_list: [],
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0,
-      triggered?: false,
-      payload: nil
+      percent_threshold: 300.0
     }
 
     {:ok, created_trigger} =
@@ -34,7 +32,8 @@ defmodule Sanbase.Signals.TriggersTest do
 
     {:ok, %UserTrigger{trigger: trigger}} = UserTrigger.get_trigger_by_id(user, trigger_id)
 
-    assert trigger.settings |> Map.from_struct() == trigger_settings
+    settings = trigger.settings |> Map.from_struct()
+    assert drop_diff_keys(settings, trigger_settings) == trigger_settings
   end
 
   test "try creating user trigger with unknown type" do
@@ -42,7 +41,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "unknown",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 300.0
@@ -64,7 +63,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 300.0
@@ -86,7 +85,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "unknown",
       time_window: "1d",
       percent_threshold: 300.0,
@@ -111,7 +110,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       time_window: "1d",
       percent_threshold: 300.0
     }
@@ -130,7 +129,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "price_percent_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       percent_threshold: 20,
       channel: "telegram",
       time_window: "1d"
@@ -154,7 +153,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "price_percent_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       percent_threshold: 20,
       channel: "telegram",
       time_window: "1d"
@@ -186,7 +185,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings1 = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 300.0
@@ -201,7 +200,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings2 = %{
       type: "price_percent_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",
       percent_threshold: 10.0
@@ -222,7 +221,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings1 = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 300.0
@@ -230,7 +229,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings2 = %{
       type: "price_percent_change",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",
       percent_threshold: 10.0
@@ -250,7 +249,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     updated_trigger = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 200.0
@@ -289,7 +288,7 @@ defmodule Sanbase.Signals.TriggersTest do
 
     trigger_settings = %{
       type: "daily_active_addresses",
-      target: "santiment",
+      target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
       percent_threshold: 200.0

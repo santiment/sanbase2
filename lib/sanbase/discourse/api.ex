@@ -19,11 +19,11 @@ defmodule Sanbase.Discourse.Api do
         Logger.info("Successfully created a topic '#{title}' in Discourse")
         Jason.decode(body)
 
-      {:ok, %HTTPoison.Response{status_code: status_code}} ->
+      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
         err_msg =
           "Error creating a topic '#{title}' in Discourse: HTTP status code: #{
             inspect(status_code)
-          }."
+          }. Body: #{inspect(body)}."
 
         Logger.error(err_msg)
         {:error, err_msg}

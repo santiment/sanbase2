@@ -244,7 +244,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     |> Repo.update()
   end
 
-  defp posts_url(id), do: "#{sanbase_url()}/insights/#{id}"
+  defp posts_url(id), do: "#{sanbase_url()}/insights/read/#{id}"
   defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
   defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
   defp notifiy_insight(), do: Mockery.Macro.mockable(Notifications.Insight)

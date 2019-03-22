@@ -25,7 +25,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     TelegramResolver,
     UserTriggerResolver,
     SignalsHistoricalActivityResolver,
-    FeaturedItemResolver
+    FeaturedItemResolver,
+    UserFollowerResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
@@ -1265,6 +1266,18 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
 
       resolve(&UserTriggerResolver.remove_trigger/3)
+    end
+
+    @desc "Follow chosen user"
+    field :follow, :boolean do
+      arg(:follower_id, non_null(:id))
+      resolve(&UserFollowerResolver.follow/3)
+    end
+
+    @desc "Unfollow chosen user"
+    field :unfollow, :boolean do
+      arg(:follower_id, non_null(:id))
+      resolve(&UserFollowerResolver.unfollow/3)
     end
   end
 end

@@ -20,14 +20,22 @@ defmodule Sanbase.Following.UserFollower do
     |> unique_constraint(:user_id_follower_id, name: :user_followers_user_id_follower_id_index)
   end
 
-  def follow(user_id, follower_id) do
+  def follow(user_id, follower_id) when user_id != follower_id do
     %__MODULE__{}
     |> changeset(%{user_id: user_id, follower_id: follower_id})
     |> Repo.insert()
   end
 
-  def unfollow(user_id, follower_id) do
+  def follow(_, _), do: {:error, "User can't follow oneself"}
+
+  def unfollow(user_id, follower_id) when user_id != follower_id do
     from(uf in __MODULE__, where: uf.user_id == ^user_id and uf.follower_id == ^follower_id)
     |> Repo.delete_all()
+    |> case do
+      {1, _} -> {:ok, "User successfully unfollowed"}
+      _ -> {:error, "Error trying to unfollow user"}
+    end
   end
+
+  def unfollow(_, _), do: {:error, "User can't unfollow oneself"}
 end

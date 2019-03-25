@@ -1269,14 +1269,20 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Follow chosen user"
-    field :follow, :boolean do
-      arg(:follower_id, non_null(:id))
+    field :follow, :user do
+      arg(:user_id, non_null(:id))
+
+      middleware(JWTAuth)
+
       resolve(&UserFollowerResolver.follow/3)
     end
 
     @desc "Unfollow chosen user"
-    field :unfollow, :boolean do
-      arg(:follower_id, non_null(:id))
+    field :unfollow, :user do
+      arg(:user_id, non_null(:id))
+
+      middleware(JWTAuth)
+
       resolve(&UserFollowerResolver.unfollow/3)
     end
   end

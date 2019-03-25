@@ -8,7 +8,8 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     EthAccountResolver,
     UserSettingsResolver,
     UserTriggerResolver,
-    SignalsHistoricalActivityResolver
+    SignalsHistoricalActivityResolver,
+    PostResolver
   }
 
   object :user do
@@ -43,6 +44,10 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
 
     field(:following, list_of(:user_follower), resolve: assoc(:following))
     field(:followers, list_of(:user_follower), resolve: assoc(:followers))
+
+    field :insights, list_of(:post) do
+      resolve(&PostResolver.insights/3)
+    end
   end
 
   @desc ~s"""

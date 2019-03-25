@@ -15,6 +15,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
 
   @preloaded_assoc [:votes, :user, :images, :tags]
 
+  def insights(%User{} = user, _args, _resolution) do
+    posts =
+      user.id
+      |> Post.user_insights()
+      |> Repo.preload(@preloaded_assoc)
+
+    {:ok, posts}
+  end
+
   def post(_root, %{id: post_id}, _resolution) do
     case Repo.get(Post, post_id) do
       nil -> {:error, "There is no post with id #{post_id}"}

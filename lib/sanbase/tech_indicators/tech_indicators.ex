@@ -319,8 +319,8 @@ defmodule Sanbase.TechIndicators do
   end
 
   defp topic_search_result(%{"messages" => messages, "chart_data" => chart_data}) do
-    messages = parse_topic_search_data(messages, "text")
-    chart_data = parse_topic_search_data(chart_data, "mentions_count")
+    messages = parse_topic_search_data(messages, :text)
+    chart_data = parse_topic_search_data(chart_data, :mentions_count)
 
     result = %{messages: messages, chart_data: chart_data}
 
@@ -332,7 +332,7 @@ defmodule Sanbase.TechIndicators do
     |> Enum.map(fn result ->
       %{
         :datetime => Map.get(result, "timestamp") |> DateTime.from_unix!(),
-        String.to_atom(key) => Map.get(result, key)
+        key => Map.get(result, to_string(key))
       }
     end)
   end

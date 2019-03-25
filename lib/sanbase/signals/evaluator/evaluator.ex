@@ -22,12 +22,13 @@ defmodule Sanbase.Signals.Evaluator do
   end
 
   defp evaluate(%UserTrigger{trigger: trigger} = user_trigger) do
-    Cache.get_or_store(
-      Trigger.cache_key(trigger),
-      fn ->
-        %UserTrigger{user_trigger | trigger: Trigger.evaluate(trigger)}
-      end
-    )
+    trigger =
+      Cache.get_or_store(
+        Trigger.cache_key(trigger),
+        fn -> Trigger.evaluate(trigger) end
+      )
+
+    %UserTrigger{user_trigger | trigger: trigger}
   end
 
   defp triggered?(%UserTrigger{trigger: trigger}) do

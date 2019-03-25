@@ -32,6 +32,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           operation: map(),
           triggered?: boolean(),
@@ -80,7 +81,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     @spec triggered?(Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings.t()) :: boolean()
     def triggered?(%PriceAbsoluteChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PriceAbsoluteChangeSettings{} = settings) do
+    def evaluate(%PriceAbsoluteChangeSettings{} = settings, _trigger) do
       case PriceAbsoluteChangeSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)

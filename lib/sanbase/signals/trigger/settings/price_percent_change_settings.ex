@@ -28,6 +28,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
           operation: map(),
@@ -88,7 +89,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   defimpl Sanbase.Signals.Settings, for: PricePercentChangeSettings do
     def triggered?(%PricePercentChangeSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%PricePercentChangeSettings{} = settings) do
+    def evaluate(%PricePercentChangeSettings{} = settings, _trigger) do
       case PricePercentChangeSettings.get_data(settings) do
         list when is_list(list) and list != [] ->
           build_result(list, settings)

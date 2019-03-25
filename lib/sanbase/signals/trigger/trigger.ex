@@ -1,5 +1,5 @@
 defprotocol Sanbase.Signals.Settings do
-  def evaluate(trigger)
+  def evaluate(trigger_settings, trigger)
 
   @spec triggered?(struct()) :: boolean()
   def triggered?(trigger)
@@ -92,7 +92,7 @@ defmodule Sanbase.Signals.Trigger do
   def evaluate(%Trigger{settings: %{target: target} = trigger_settings} = trigger) do
     trigger_settings =
       %{trigger_settings | filtered_target: remove_targets_on_cooldown(target, trigger)}
-      |> Sanbase.Signals.Settings.evaluate()
+      |> Sanbase.Signals.Settings.evaluate(trigger)
 
     %Trigger{trigger | settings: trigger_settings}
   end

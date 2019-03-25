@@ -12,7 +12,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
   alias __MODULE__
   alias Sanbase.Signals.Type
 
-  @derive {Jason.Encoder, except: [:_list, :payload, :triggered?]}
+  @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "eth_wallet"
 
   @enforce_keys [:type, :channel, :trigger_time]
@@ -27,11 +27,12 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           channel: Type.channel(),
+          target: Type.complex_target(),
+          filtered_target: Type.filtered_target(),
           triggered?: boolean(),
           payload: Type.payload()
         }
 
-  # Validations
   validates(:channel, &valid_notification_channel/1)
   validates(:target, &valid_eth_wallet_target?/1)
   validates(:threshold, &valid_threshold?/1)
@@ -53,7 +54,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
   defimpl Sanbase.Signals.Settings, for: EthWalletTriggerSettings do
     def triggered?(%EthWalletTriggerSettings{triggered?: triggered}), do: triggered
 
-    def evaluate(%EthWalletTriggerSettings{target: target} = settings) do
+    def evaluate(%EthWalletTriggerSettings{target: target} = settings, _trigger) do
     end
 
     def cache_key(%EthWalletTriggerSettings{} = settings) do

@@ -20,6 +20,53 @@ defmodule SanbaseWeb.Graphql.PostTest do
     {:ok, conn: conn, user: user, user2: user2, poll: poll}
   end
 
+  test "getting all inisghts for currentUser", %{conn: conn, user: user, poll: poll} do
+    published =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.published()
+      )
+
+    draft =
+      insert(:post,
+        poll: poll,
+        user: user,
+        state: Post.approved_state(),
+        ready_state: Post.draft()
+      )
+
+    query = """
+    {
+      currentUser {
+        insights {
+          id,
+          text,
+          readyState
+        }
+      }
+    }
+    """
+
+    result = conn |> post("/graphql", query_skeleton(query, "currentUser"))
+
+    assert json_response(result, 200)["data"]["currentUser"] == %{
+             "insights" => [
+               %{
+                 "id" => "#{published.id}",
+                 "readyState" => "#{published.ready_state}",
+                 "text" => "#{published.text}"
+               },
+               %{
+                 "id" => "#{draft.id}",
+                 "readyState" => "#{draft.ready_state}",
+                 "text" => "#{draft.text}"
+               }
+             ]
+           }
+  end
+
   test "getting a post by id", %{conn: conn, user: user, poll: poll} do
     post = insert(:post, poll: poll, user: user, state: Post.approved_state())
 
@@ -117,7 +164,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
            ] == json_response(result, 200)["data"]["allInsights"]
   end
 
-  test "get draft and published own posts and published ", %{
+  test "excluding draft posts from allInsights", %{
     conn: conn,
     poll: poll,
     user: user,

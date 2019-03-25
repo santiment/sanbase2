@@ -136,6 +136,17 @@ defmodule Sanbase.Insight.Post do
   end
 
   @doc """
+  All insights for given user_id
+  """
+  def user_insights(user_id) do
+    from(
+      p in Post,
+      where: p.user_id == ^user_id
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   All published insights for given user_id
   """
   def user_published_insights(user_id) do

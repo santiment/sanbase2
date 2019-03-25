@@ -16,7 +16,7 @@ These are the fields describing a trigger.
 ### Settings fields
 
 - **type** Defines the type of the trigger. Can be one of: `["daily_active_addresses", "price_absolute_change", "price_percent_change", "trending_words", "price_volume_difference"]`
-- **target**:  slug or list of slugs or watchlist - `"naga" | ["ethereum", "santiment"] | {"user_list": user_list_id}`
+- **target**:  slug or list of slugs or watchlist - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"user_list": user_list_id}`
 - **channel**: `"telegram" | "email"` - currently only telegram is supported
 - **time_window**: `1d`, `4w`, `1h` - time string we use throughout the API for `interval`
 - **above** and **below** - used in `price_absolute_change` to indicate when the price is `More than` or `Less than` - should be used both!
@@ -28,7 +28,7 @@ These are the fields describing a trigger.
 ```json
 {
   "type": "price_absolute_change",
-  "target": "santiment",
+  "target": {"slug": "santiment"},
   "channel": "telegram",
   "above": 0.51,
   "below": 0.50
@@ -41,7 +41,7 @@ These are the fields describing a trigger.
 ```json
 {
   "type": "price_percent_change",
-  "target": "santiment",
+  "target": {"slug": "santiment"},
   "channel": "telegram",
   "time_window": "1d",
   "percent_threshold": 1.0
@@ -76,7 +76,7 @@ These are the fields describing a trigger.
 {
   "type": "price_volume_difference",
   "channel": "telegram",
-  "target": "santiment",
+  "target": {"slug": "santiment"},
   "threshold": 0.002
 }
 ```
@@ -88,7 +88,7 @@ These are the fields describing a trigger.
 mutation {
   createTrigger(
     title:"test ceco"
-    settings: "{\"channel\":\"telegram\",\"percent_threshold\":200.0,\"target\":\"santiment\",\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
+    settings: "{\"channel\":\"telegram\",\"percent_threshold\":200.0,\"target\":{\"slug\": \"santiment\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   ) {
     trigger {
       id
@@ -138,7 +138,7 @@ mutation {
   updateTrigger(
     id: 16
     isPublic: true
-    settings: "{\"channel\":\"telegram\",\"percent_threshold\":250.0,\"target\":\"santiment\",\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
+    settings: "{\"channel\":\"telegram\",\"percent_threshold\":250.0,\"target\":{\"slug\": \"santiment\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   ) {
     trigger {
       id
@@ -357,11 +357,15 @@ mutation {
 ### Historical trigger points
 Takes currently filled settings and a chosen cooldown and calculates historical trigger points that can be used in a preview chart.
 
+- Daily Active Addresses - 90 days of historical data. Minimal `time_window` is 2 days because intervals are 1 day each.
+- Price - percent and absolute - 90 days of data. Minimal `time_window` is 2 hours because intervals are 1 hour each.
+- PriceVolumeDifference - 180 days of data.
+
 ```graphql
  {
   historicalTriggerPoints(
     cooldown:"2d"
-    settings: "{\"percent_threshold\":200.0,\"target\":\"naga\",\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
+    settings: "{\"percent_threshold\":200.0,\"target\":{\"slug\": \"naga\"},\"time_window\":\"30d\",\"type\":\"daily_active_addresses\"}"
   )
 }
 ```

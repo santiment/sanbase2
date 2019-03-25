@@ -3,10 +3,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
 
   import Sanbase.Factory
   import SanbaseWeb.Graphql.TestHelpers
-  import ExUnit.CaptureLog
 
-  alias Sanbase.Auth.User
-  alias Sanbase.Repo
   alias Sanbase.Following.UserFollower
 
   setup do
@@ -18,7 +15,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
   end
 
   describe "current user following/followers" do
-    test "no followers/following", %{conn: conn, current_user: current_user} do
+    test "no followers/following", %{conn: conn} do
       result =
         current_user_query()
         |> execute_and_handle_success("currentUser", conn)
@@ -56,7 +53,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
   end
 
   describe "follow" do
-    test "follow user", %{conn: conn, current_user: current_user} do
+    test "follow user", %{conn: conn} do
       user_to_follow = insert(:user)
 
       result =
@@ -98,7 +95,7 @@ defmodule SanbaseWeb.Graphql.User.FollowingApiTest do
       assert result == %{"followers" => [], "following" => []}
     end
 
-    test "unfollow not followed", %{conn: conn, current_user: current_user} do
+    test "unfollow not followed", %{conn: conn} do
       user_to_follow = insert(:user)
 
       result =

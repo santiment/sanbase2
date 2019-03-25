@@ -3,7 +3,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
 
   alias Sanbase.Following.UserFollower
   alias SanbaseWeb.Graphql.Helpers.Utils
-  alias Sanbase.Auth.User
 
   def follow(_root, args, %{
         context: %{auth: %{auth_method: :user_token, current_user: current_user}}
@@ -30,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
   defp handle_result(result, operation, current_user) do
     case result do
       {:ok, _} ->
-        {:ok, current_user |> Sanbase.Repo.preload([:following, :followers])}
+        {:ok, current_user}
 
       {:error, error_msg} when is_binary(error_msg) ->
         {:error, error_msg}

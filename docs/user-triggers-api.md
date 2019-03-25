@@ -16,7 +16,7 @@ These are the fields describing a trigger.
 ### Settings fields
 
 - **type** Defines the type of the trigger. Can be one of: `["daily_active_addresses", "price_absolute_change", "price_percent_change", "trending_words", "price_volume_difference"]`
-- **target**:  slug or list of slugs or watchlist - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"user_list": user_list_id}`
+- **target**:  slug or list of slugs or watchlist - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"user_list": user_list_id}` Also for `eth_wallet` signal we're supporting these:  `{"eth_address": "address"} | {"eth_address": ["address1", "address2"]}`
 - **channel**: `"telegram" | "email"` - currently only telegram is supported
 - **time_window**: `1d`, `4w`, `1h` - time string we use throughout the API for `interval`
 - **above** and **below** - used in `price_absolute_change` to indicate when the price is `More than` or `Less than` - should be used both!

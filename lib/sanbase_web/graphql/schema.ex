@@ -472,6 +472,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&PostResolver.all_insights_for_user/3)
     end
 
+    @desc "Fetch a list of all posts for the currently logged in user"
+    field :all_draft_insights_for_user, list_of(:post) do
+      resolve(&PostResolver.all_draft_insights_for_user/3)
+    end
+
     @desc "Fetch a list of all posts for which a user has voted."
     field :all_insights_user_voted, list_of(:post) do
       arg(:user_id, non_null(:integer))

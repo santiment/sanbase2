@@ -39,6 +39,10 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
+  def all_draft_insights_for_user(_root, _args, _resolution) do
+    {:ok, "On logged in users can call this method"}
+  end
+
   def all_insights_user_voted_for(_root, %{user_id: user_id}, _context) do
     query =
       from(

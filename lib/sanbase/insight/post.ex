@@ -146,6 +146,17 @@ defmodule Sanbase.Insight.Post do
     |> Repo.all()
   end
 
+  @doc """
+  All draft insights for given user_id
+  """
+  def user_draft_insights(user_id) do
+    from(
+      p in Post,
+      where: p.user_id == ^user_id and p.ready_state == ^@draft
+    )
+    |> Repo.all()
+  end
+
   def published_posts(page, page_size) do
     from(
       p in Post,

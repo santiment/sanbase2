@@ -6,8 +6,22 @@ defmodule SanbaseWeb.Graphql.Cache do
   """
   require Logger
 
-  @ttl :timer.minutes(5)
+  @ttl 300
+  @max_ttl_offset 120
   @cache_name :graphql_cache
+
+  @compile :inline_list_funcs
+  @compile {:inline,
+            func: 2,
+            func: 3,
+            from: 2,
+            resolver: 2,
+            get_or_store: 2,
+            get_or_store: 3,
+            cache_modify_middleware: 3,
+            cache_key: 2,
+            convert_values: 2,
+            captured_mfa_name: 1}
 
   alias __MODULE__, as: CacheMod
   alias SanbaseWeb.Graphql.ConCacheProvider, as: CacheProvider
@@ -180,32 +194,33 @@ defmodule SanbaseWeb.Graphql.Cache do
   # Helper functions
 
   defp cache_key(name, args) do
+    slug = Map.get(args, :slug, "")
+    ttl = @ttl + ("#{inspect(name)}#{slug}" |> :erlang.phash2(@max_ttl_offset))
+
     args_hash =
       args
-      |> convert_values()
-      |> Jason.encode!()
-      |> sha256()
+      |> convert_values(ttl)
+      |> Jason.encode_to_iodata!()
 
-    {name, args_hash}
+    cache_key =
+      [name, args_hash]
+      |> :erlang.phash2()
+
+    {cache_key, ttl}
   end
 
   # Convert the values for using in the cache. A special treatement is done for
   # `%DateTime{}` so all datetimes in a @ttl sized window are treated the same
-  defp convert_values(args) do
+  defp convert_values(args, ttl) do
     args
     |> Enum.map(fn
       {k, %DateTime{} = v} ->
-        {k, div(DateTime.to_unix(v, :millisecond), @ttl)}
+        {k, div(DateTime.to_unix(v, :millisecond), ttl)}
 
       pair ->
         pair
     end)
     |> Map.new()
-  end
-
-  defp sha256(data) do
-    :crypto.hash(:sha256, data)
-    |> Base.encode16()
   end
 
   defp captured_mfa_name(captured_mfa) do

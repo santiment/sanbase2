@@ -33,6 +33,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
       ) {
         trigger{
           id
+          cooldown
           settings
         }
       }
@@ -53,6 +54,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
       assert created_trigger["settings"] == trigger_settings
       assert created_trigger["id"] != nil
+      assert created_trigger["cooldown"] == "23h"
     end
   end
 
@@ -119,10 +121,11 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         id: #{trigger_id}
         settings: '#{trigger_settings_json}'
         tags: ['tag1', 'tag2']
-        cooldown: '23h'
+        cooldown: '123h'
       ) {
         trigger{
           id
+          cooldown
           settings
           tags{ name }
         }
@@ -140,6 +143,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     assert trigger["settings"] == updated_trigger
     assert trigger["id"] == trigger_id
+    assert trigger["cooldown"] == "123h"
     assert trigger["tags"] == [%{"name" => "tag1"}, %{"name" => "tag2"}]
   end
 

@@ -192,31 +192,45 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
   def publish_insight(_root, %{id: post_id}, %{
         context: %{auth: %{current_user: %User{id: user_id}}}
       }) do
-    case Repo.get(Post, post_id) do
-      %Post{user_id: ^user_id} = post ->
-        post
-        |> Post.publish_changeset(%{ready_state: Post.published()})
-        |> Repo.update()
-        |> case do
-          {:ok, post} ->
-            {:ok, post} = create_discourse_topic(post)
+    Post.publish(post_id, user_id)
+    |> case do
+      {:ok, post} ->
+        {:ok, post}
 
-            notifiy_insight().publish_in_discord(post)
-
-            {:ok, post}
-
-          {:error, changeset} ->
-            {
-              :error,
-              message: "Can't publish post with id #{post_id}",
-              details: Utils.error_details(changeset)
-            }
-        end
-
-      _post ->
-        {:error, "Cannot change ready_state of other user's post with id: #{post_id}"}
+      {:error, changeset} ->
+        {
+          :error,
+          message: "Can't publish post with id #{post_id}",
+          details: Utils.error_details(changeset)
+        }
     end
   end
+
+  #   case Repo.get(Post, post_id) do
+  #     %Post{user_id: ^user_id} = post ->
+  #       post
+  #       |> Post.publish_changeset(%{ready_state: Post.published()})
+  #       |> Repo.update()
+  #       |> case do
+  #         {:ok, post} ->
+  #           {:ok, post} = create_discourse_topic(post)
+
+  #           notifiy_insight().publish_in_discord(post)
+
+  #           {:ok, post}
+
+  #         {:error, changeset} ->
+  #           {
+  #             :error,
+  #             message: "Can't publish post with id #{post_id}",
+  #             details: Utils.error_details(changeset)
+  #           }
+  #       end
+
+  #     _post ->
+  #       {:error, "Cannot change ready_state of other user's post with id: #{post_id}"}
+  #   end
+  # end
 
   # Helper functions
 
@@ -238,35 +252,4 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
       tag in Enum.map(post.tags, & &1.name)
     end)
   end
-
-  defp create_discourse_topic(%Post{id: id, title: title, inserted_at: inserted_at} = post) do
-    link = posts_url(id)
-
-    text = ~s"""
-      This topic hosts the discussion about [#{link}](#{link})
-    """
-
-    title = "##{id} | #{title} | #{DateTime.to_naive(inserted_at) |> to_string}"
-
-    {:ok,
-     %{
-       "topic_id" => topic_id,
-       "topic_slug" => topic_slug
-     }} = discourse_api().publish(title, text)
-
-    discourse_topic_url =
-      discourse_url()
-      |> URI.parse()
-      |> URI.merge("/t/#{topic_slug}/#{topic_id}")
-      |> URI.to_string()
-
-    Post.publish_changeset(post, %{discourse_topic_url: discourse_topic_url})
-    |> Repo.update()
-  end
-
-  defp posts_url(id), do: "#{sanbase_url()}/insights/read/#{id}"
-  defp sanbase_url(), do: Config.module_get(SanbaseWeb.Endpoint, :frontend_url)
-  defp discourse_url(), do: Config.module_get(Sanbase.Discourse, :url)
-  defp notifiy_insight(), do: Mockery.Macro.mockable(Notifications.Insight)
-  defp discourse_api(), do: Mockery.Macro.mockable(Sanbase.Discourse.Api)
 end

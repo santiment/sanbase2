@@ -11,6 +11,9 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Auth.User
   alias Sanbase.Following.UserFollower
   alias Sanbase.Repo
+  alias Ecto.Multi
+
+  require Mockery.Macro
 
   @approved "approved"
   @declined "declined"
@@ -80,6 +83,29 @@ defmodule Sanbase.Insight.Post do
 
   def published(), do: @published
   def draft(), do: @draft
+
+  def publish(post_id, user_id) do
+    post = Repo.get(Post, post_id)
+
+    Multi.new()
+    |> Multi.run(:discourse_topic_url, fn _ ->
+      Sanbase.Discourse.Insight.create_discourse_topic(post)
+    end)
+    |> Multi.run(:post, fn %{discourse_topic_url: discourse_topic_url} ->
+      publish_changeset(post, %{
+        discourse_topic_url: discourse_topic_url,
+        ready_state: Post.published()
+      })
+      |> Repo.update()
+    end)
+    |> Multi.run(:publish_in_discord, fn %{post: post} ->
+      {notifiy_insight().publish_in_discord(post), "Success publish in discord!"}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{post: post}} -> {:ok, post}
+    end
+  end
 
   @doc """
     Returns all posts ranked by HN ranking algorithm: https://news.ycombinator.com/item?id=1781013
@@ -231,4 +257,6 @@ defmodule Sanbase.Insight.Post do
       post.user_id == user_id || post.ready_state == published()
     end)
   end
+
+  defp notifiy_insight(), do: Mockery.Macro.mockable(Sanbase.Notifications.Insight)
 end

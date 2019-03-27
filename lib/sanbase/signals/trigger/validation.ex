@@ -86,15 +86,11 @@ defmodule Sanbase.Signals.Validation do
     |> Enum.find(fn elem -> not is_binary(elem) end)
     |> case do
       nil -> :ok
-      _ -> {:error, "The target list contains elements that are not string"}
+      _ -> {:error, "The target list of ethereum addresses contains elements that are not string"}
     end
   end
 
-  def valid_eth_wallet_target?(%{project: slug}) when is_binary(slug), do: :ok
-  def valid_eth_wallet_target?(%{user_list: int}) when is_integer(int), do: :ok
-
-  def valid_eth_wallet_target?(target),
-    do: {:error, "#{inspect(target)} is not a valid target"}
+  def valid_eth_wallet_target?(target), do: valid_target?(target)
 
   def valid_url?(url) do
     case URI.parse(url) do

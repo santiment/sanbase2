@@ -5,7 +5,7 @@ defmodule Sanbase.Factory do
   alias Sanbase.UserList
   alias Sanbase.Auth.{User, UserSettings}
   alias Sanbase.Insight.{Post, Poll}
-  alias Sanbase.Model.{Project, ExchangeAddress}
+  alias Sanbase.Model.{Project, ExchangeAddress, ProjectEthAddress}
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
 
   def user_factory() do
@@ -73,7 +73,16 @@ defmodule Sanbase.Factory do
       token_decimals: 18,
       total_supply: 83_000_000,
       github_link: "https://github.com/santiment",
-      infrastructure: nil
+      infrastructure: nil,
+      eth_addresses: [build(:project_eth_address)]
+    }
+  end
+
+  def project_eth_address_factory() do
+    %ProjectEthAddress{
+      address: "0x" <> (:crypto.strong_rand_bytes(16) |> Base.encode16()),
+      source: "",
+      comments: ""
     }
   end
 

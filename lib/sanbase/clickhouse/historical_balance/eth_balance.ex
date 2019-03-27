@@ -74,6 +74,10 @@ defmodule Sanbase.Clickhouse.HistoricalBalance.EthBalance do
     ClickhouseRepo.query_transform(query, args, fn [s, e, value] ->
       {s / @eth_decimals, e / @eth_decimals, value / @eth_decimals}
     end)
+    |> case do
+      {:ok, [result]} -> {:ok, result}
+      error -> error
+    end
   end
 
   @first_datetime ~N[2015-07-29 00:00:00]

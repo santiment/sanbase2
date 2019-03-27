@@ -322,7 +322,7 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
-  def by_slugs(slugs) when is_list(slugs) do
+  def by_slug(slugs) when is_list(slugs) do
     Project
     |> where([p], p.coinmarketcap_id in ^slugs)
     |> preload(^@preloads)

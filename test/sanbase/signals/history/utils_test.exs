@@ -42,12 +42,15 @@ defmodule Sanbase.Signals.TriggerHistoryUtilsTest do
     end
   end
 
-  property "average is always between min -1 and max + 1 when floats" do
+  property "average is always between min minus epsilon and max plus epsilon when floats" do
+    # The average rounds after 2 digits
+    epsilon = 0.01
+
     check all list <- list_of(float(min: 0.00), min_length: 1) do
       average = Utils.average(list)
       min = Enum.min(list)
       max = Enum.max(list)
-      assert average >= min - 1 and average <= max + 1
+      assert average >= min - epsilon and average <= max + epsilon
     end
   end
 

@@ -245,6 +245,10 @@ defmodule Sanbase.Signals.UserTrigger do
            {:map_from_struct, map_from_struct(trigger_struct)} do
       :ok
     else
+      {:load_in_struct, {:error, error}} ->
+        Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
+        {:error, error}
+
       {:valid?, false} ->
         {:ok, trigger_struct} = load_in_struct(trigger)
         errors = Vex.errors(trigger_struct)
@@ -257,9 +261,8 @@ defmodule Sanbase.Signals.UserTrigger do
 
         {:error, errors_text}
 
-      {:load_in_struct, {:error, error}} ->
+      {:map_from_struct, {:error, error}} ->
         Logger.warn("UserTrigger struct is not valid. Reason: #{inspect(error)}")
-        {:error, error}
 
       {:error, error} ->
         {:error, error}

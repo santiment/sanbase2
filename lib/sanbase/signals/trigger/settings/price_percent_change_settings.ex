@@ -48,7 +48,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   def get_data(%__MODULE__{filtered_target: %{list: target_list}} = settings)
       when is_list(target_list) do
     time_window_sec = DateTimeUtils.compound_duration_to_seconds(settings.time_window)
-    projects = Project.by_slugs(target_list)
+    projects = Project.by_slug(target_list)
     to = Timex.now()
     from = Timex.shift(to, seconds: -time_window_sec)
 

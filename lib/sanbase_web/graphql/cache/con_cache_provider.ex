@@ -1,6 +1,9 @@
 defmodule SanbaseWeb.Graphql.ConCacheProvider do
   @behaviour SanbaseWeb.Graphql.CacheProvider
 
+  @compile :inline_list_funcs
+  @compile {:inline, get: 2, store: 3, get_or_store: 4, cache_item: 3}
+
   def size(cache, :megabytes) do
     bytes_size = :ets.info(ConCache.ets(cache), :memory) * :erlang.system_info(:wordsize)
     (bytes_size / (1024 * 1024)) |> Float.round(2)
@@ -21,7 +24,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
   end
 
   def store(cache, key, value) do
-    ConCache.put(cache, key, {:stored, value}) == :ok
+    cache_item(cache, key, {:stored, value}) == :ok
   end
 
   def get_or_store(cache, key, func, cache_modify_middleware) do
@@ -47,7 +50,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
                 {value, nil}
 
               value ->
-                ConCache.put(cache, key, {:stored, value})
+                cache_item(cache, key, {:stored, value})
                 {value, nil}
             end
           end
@@ -60,5 +63,9 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     else
       result
     end
+  end
+
+  defp cache_item(cache, {_, ttl} = key, value) do
+    ConCache.put(cache, key, %ConCache.Item{value: value, ttl: :timer.seconds(ttl)})
   end
 end

@@ -60,7 +60,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
     |> events_by_followed_users(user_id, limit)
     |> Repo.all()
     |> events_with_cursor()
-    |> IO.inspect()
   end
 
   def events(_, _), do: {:error, "Bad arguments"}

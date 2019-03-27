@@ -5,6 +5,10 @@
 # is restricted to this project.
 use Mix.Config
 
+# Latest version of timezone data (2019a) distributed by IANA has an error
+# Disable the autoupdate until it is fixed
+config :tzdata, :autoupdate, :disabled
+
 # General application configuration
 config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 

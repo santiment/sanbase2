@@ -198,7 +198,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
   test "Non active signals are filtered", context do
     UserTrigger.update_user_trigger(context.user, %{
       id: context.trigger_trending_words.id,
-      active: false
+      is_active: false
     })
 
     assert capture_log(fn ->
@@ -214,7 +214,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
 
     UserTrigger.update_user_trigger(context.user, %{
       id: context.trigger_trending_words.id,
-      repeating: false
+      is_repeating: false
     })
 
     with_mock Sanbase.SocialData, [:passthrough],
@@ -226,7 +226,7 @@ defmodule Sanbase.Signals.EvaluatorTest do
              end) =~ "In total 1/1 trending_words signals were sent successfully"
 
       {:ok, ut} = UserTrigger.get_trigger_by_id(context.user, context.trigger_trending_words.id)
-      refute ut.trigger.active
+      refute ut.trigger.is_active
     end
   end
 

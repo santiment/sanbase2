@@ -1245,12 +1245,13 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:id, non_null(:integer))
       arg(:title, :string)
       arg(:description, :string)
-      arg(:icon_url, :string)
-      arg(:is_public, :boolean)
-      arg(:cooldown, :string)
-      arg(:tags, list_of(:string))
-      arg(:active, :boolean)
       arg(:settings, :json)
+      arg(:icon_url, :string)
+      arg(:cooldown, :string)
+      arg(:is_active, :boolean)
+      arg(:is_public, :boolean)
+      arg(:is_repeating, :boolean)
+      arg(:tags, list_of(:string))
 
       middleware(JWTAuth)
 

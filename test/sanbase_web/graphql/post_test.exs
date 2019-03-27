@@ -658,14 +658,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
   describe "publish post" do
     @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
-    test "publish post", %{user: user, conn: conn, poll: poll} do
+    test "succeeds", %{user: user, conn: conn, poll: poll} do
       mock(
         Sanbase.Discourse.Api,
         :publish,
         @discourse_response_file |> File.read!() |> Jason.decode()
       )
 
-      mock(Sanbase.Notifications.Insight, :publish_in_discord, :ok)
+      mock(Sanbase.Notifications.Insight, :publish_in_discord, {:ok, "Success"})
 
       post =
         insert(:post,
@@ -675,28 +675,18 @@ defmodule SanbaseWeb.Graphql.PostTest do
           ready_state: Post.draft()
         )
 
-      query = """
-      mutation {
-        publishInsight(id: #{post.id}) {
-          id,
-          readyState,
-          discourseTopicUrl
-        }
-      }
-      """
-
       result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+        post
+        |> publish_insight_mutation()
+        |> execute_mutation_with_success("publishInsight", conn)
 
-      data = json_response(result, 200)["data"]
-      assert data["publishInsight"]["readyState"] == Post.published()
+      assert result["readyState"] == Post.published()
 
-      assert data["publishInsight"]["discourseTopicUrl"] ==
+      assert result["discourseTopicUrl"] ==
                "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
     end
 
-    test "publish post returns error when user is not author", %{
+    test "returns error when user is not author", %{
       conn: conn,
       poll: poll,
       user2: user2
@@ -709,20 +699,33 @@ defmodule SanbaseWeb.Graphql.PostTest do
           ready_state: Post.draft()
         )
 
-      query = """
-      mutation {
-        publishInsight(id: #{post.id}) {
-          id,
-          ready_state
-        }
-      }
-      """
+      result =
+        post
+        |> publish_insight_mutation()
+        |> execute_mutation_with_errors(conn)
+
+      assert String.contains?(result["message"], "Can't publish not own post")
+    end
+
+    test "returns error when insight is already published", %{
+      conn: conn,
+      poll: poll,
+      user: user
+    } do
+      post =
+        insert(:post,
+          poll: poll,
+          user: user,
+          state: Post.approved_state(),
+          ready_state: Post.published()
+        )
 
       result =
-        conn
-        |> post("/graphql", mutation_skeleton(query))
+        post
+        |> publish_insight_mutation()
+        |> execute_mutation_with_errors(conn)
 
-      assert json_response(result, 200)["errors"]
+      assert String.contains?(result["message"], "Can't publish already published post")
     end
   end
 
@@ -747,6 +750,33 @@ defmodule SanbaseWeb.Graphql.PostTest do
   end
 
   # Helper functions
+
+  defp publish_insight_mutation(post) do
+    """
+    mutation {
+      publishInsight(id: #{post.id}) {
+        id,
+        readyState,
+        discourseTopicUrl
+      }
+    }
+    """
+  end
+
+  defp execute_mutation_with_success(query, query_name, conn) do
+    conn
+    |> post("/graphql", mutation_skeleton(query))
+    |> json_response(200)
+    |> get_in(["data", query_name])
+  end
+
+  defp execute_mutation_with_errors(query, conn) do
+    conn
+    |> post("/graphql", mutation_skeleton(query))
+    |> json_response(200)
+    |> Map.get("errors")
+    |> hd()
+  end
 
   @test_file_path "#{File.cwd!()}/test/sanbase_web/graphql/assets/image.png"
   defp upload_image(conn) do

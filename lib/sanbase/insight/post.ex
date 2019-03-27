@@ -14,6 +14,7 @@ defmodule Sanbase.Insight.Post do
   alias Ecto.Multi
 
   require Mockery.Macro
+  require Logger
 
   @approved "approved"
   @declined "declined"
@@ -86,24 +87,23 @@ defmodule Sanbase.Insight.Post do
 
   def publish(post_id, user_id) do
     post = Repo.get(Post, post_id)
+    draft = draft()
 
-    Multi.new()
-    |> Multi.run(:discourse_topic_url, fn _ ->
-      Sanbase.Discourse.Insight.create_discourse_topic(post)
-    end)
-    |> Multi.run(:post, fn %{discourse_topic_url: discourse_topic_url} ->
-      publish_changeset(post, %{
-        discourse_topic_url: discourse_topic_url,
-        ready_state: Post.published()
-      })
-      |> Repo.update()
-    end)
-    |> Multi.run(:publish_in_discord, fn %{post: post} ->
-      {notifiy_insight().publish_in_discord(post), "Success publish in discord!"}
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{post: post}} -> {:ok, post}
+    with {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
+         {:draft?, %Post{ready_state: ^draft}} <- {:draft?, post},
+         {:ok, %{post: post}} <- publish_post(post) do
+      {:ok, post}
+    else
+      {:error, error} ->
+        error_message = "Can't publish post with id #{post_id}"
+        Logger.error("#{error_message}, inspect(error)")
+        {:error, error_message}
+
+      {:draft?, _} ->
+        {:error, "Can't publish already published post with id: #{post_id}"}
+
+      {:own_post?, _} ->
+        {:error, "Can't publish not own post with id: #{post_id}"}
     end
   end
 
@@ -208,6 +208,24 @@ defmodule Sanbase.Insight.Post do
   end
 
   # Helper functions
+
+  defp publish_post(post) do
+    Multi.new()
+    |> Multi.run(:discourse_topic_url, fn _ ->
+      Sanbase.Discourse.Insight.create_discourse_topic(post)
+    end)
+    |> Multi.run(:post, fn %{discourse_topic_url: discourse_topic_url} ->
+      publish_changeset(post, %{
+        discourse_topic_url: discourse_topic_url,
+        ready_state: Post.published()
+      })
+      |> Repo.update()
+    end)
+    |> Multi.run(:publish_in_discord, fn %{post: post} ->
+      notifiy_insight().publish_in_discord(post)
+    end)
+    |> Repo.transaction()
+  end
 
   defp images_cast(changeset, %{image_urls: image_urls}) do
     images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()

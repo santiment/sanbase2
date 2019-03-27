@@ -182,44 +182,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
         context: %{auth: %{current_user: %User{id: user_id}}}
       }) do
     Post.publish(post_id, user_id)
-    |> case do
-      {:ok, post} ->
-        {:ok, post}
-
-      {:error, changeset} ->
-        {
-          :error,
-          message: "Can't publish post with id #{post_id}",
-          details: Utils.error_details(changeset)
-        }
-    end
   end
-
-  #   case Repo.get(Post, post_id) do
-  #     %Post{user_id: ^user_id} = post ->
-  #       post
-  #       |> Post.publish_changeset(%{ready_state: Post.published()})
-  #       |> Repo.update()
-  #       |> case do
-  #         {:ok, post} ->
-  #           {:ok, post} = create_discourse_topic(post)
-
-  #           notifiy_insight().publish_in_discord(post)
-
-  #           {:ok, post}
-
-  #         {:error, changeset} ->
-  #           {
-  #             :error,
-  #             message: "Can't publish post with id #{post_id}",
-  #             details: Utils.error_details(changeset)
-  #           }
-  #       end
-
-  #     _post ->
-  #       {:error, "Cannot change ready_state of other user's post with id: #{post_id}"}
-  #   end
-  # end
 
   # Helper functions
 

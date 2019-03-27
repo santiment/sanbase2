@@ -40,8 +40,8 @@ defmodule Sanbase.Signals.Trigger do
     field(:last_triggered, :map, default: %{})
     field(:cooldown, :string, default: "24h")
     field(:icon_url, :string)
-    field(:active, :boolean, default: true)
-    field(:repeating, :boolean, default: true)
+    field(:is_active, :boolean, default: true)
+    field(:is_repeating, :boolean, default: true)
   end
 
   @type t :: %__MODULE__{
@@ -52,8 +52,8 @@ defmodule Sanbase.Signals.Trigger do
           title: String.t(),
           description: String.t(),
           icon_url: String.t(),
-          active: boolean(),
-          repeating: boolean()
+          is_active: boolean(),
+          is_repeating: boolean()
         }
 
   @doc false
@@ -65,8 +65,8 @@ defmodule Sanbase.Signals.Trigger do
     :title,
     :description,
     :icon_url,
-    :active,
-    :repeating
+    :is_active,
+    :is_repeating
   ]
 
   def create_changeset(%__MODULE__{} = trigger, args \\ %{}) do

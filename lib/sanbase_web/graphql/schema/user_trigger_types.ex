@@ -11,11 +11,11 @@ defmodule SanbaseWeb.Graphql.UserTriggerTypes do
     field(:title, non_null(:string))
     field(:description, :string)
     field(:icon_url, :string)
-    field(:settings, non_null(:json))
-    field(:is_public, :boolean)
-    field(:cooldown, :string)
     field(:tags, list_of(:tag))
-    field(:active, non_null(:boolean))
-    field(:repeating, non_null(:boolean))
+    field(:settings, non_null(:json))
+    field(:cooldown, non_null(:string))
+    field(:is_public, non_null(:boolean))
+    field(:is_active, non_null(:boolean))
+    field(:is_repeating, non_null(:boolean))
   end
 end

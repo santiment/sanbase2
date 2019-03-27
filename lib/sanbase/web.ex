@@ -28,7 +28,7 @@ defmodule Sanbase.Application.Web do
       {ConCache,
        [
          name: :graphql_cache,
-         ttl_check_interval: :timer.minutes(1),
+         ttl_check_interval: :timer.seconds(30),
          global_ttl: :timer.minutes(5),
          acquire_lock_timeout: 30_000
        ]},

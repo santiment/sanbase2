@@ -26,7 +26,8 @@ defmodule SanbaseWeb.Graphql.Schema do
     UserTriggerResolver,
     SignalsHistoricalActivityResolver,
     FeaturedItemResolver,
-    UserFollowerResolver
+    UserFollowerResolver,
+    TimelineEventResolver
   }
 
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
@@ -68,6 +69,7 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
   import_types(SanbaseWeb.Graphql.PaginationTypes)
   import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
+  import_types(SanbaseWeb.Graphql.TimelineEventTypes)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -929,6 +931,15 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(JWTAuth)
 
       resolve(&SignalsHistoricalActivityResolver.fetch_historical_activity_for/3)
+    end
+
+    field :timeline_events, list_of(:timeline_events_paginated) do
+      arg(:cursor, :cursor_input)
+      arg(:limit, :integer, default_value: 25)
+
+      middleware(JWTAuth)
+
+      resolve(&TimelineEventResolver.timeline_events/3)
     end
 
     @desc """

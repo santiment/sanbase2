@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
   import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
+  import ExUnit.CaptureLog
 
   alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post, Vote}
@@ -704,12 +705,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
             ready_state: Post.draft()
           )
 
-        result =
-          post
-          |> publish_insight_mutation()
-          |> execute_mutation_with_errors(conn)
+        capture_log(fn ->
+          result =
+            post
+            |> publish_insight_mutation()
+            |> execute_mutation_with_errors(conn)
 
-        assert String.contains?(result["message"], "Can't publish post")
+          assert String.contains?(result["message"], "Can't publish post")
+        end)
       end
     end
 
@@ -729,12 +732,14 @@ defmodule SanbaseWeb.Graphql.PostTest do
             ready_state: Post.draft()
           )
 
-        result =
-          post
-          |> publish_insight_mutation()
-          |> execute_mutation_with_errors(conn)
+        capture_log(fn ->
+          result =
+            post
+            |> publish_insight_mutation()
+            |> execute_mutation_with_errors(conn)
 
-        assert String.contains?(result["message"], "Can't publish post")
+          assert String.contains?(result["message"], "Can't publish post")
+        end)
       end
     end
 

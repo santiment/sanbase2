@@ -94,13 +94,10 @@ defmodule Sanbase.Insight.Post do
          {:ok, %{post: post}} <- publish_post(post, user_id) do
       {:ok, post}
     else
-      {:error, error} ->
+      {:error, _, error, _} ->
         error_message = "Can't publish post with id #{post_id}"
         Logger.error("#{error_message}, #{inspect(error)}")
         {:error, error_message}
-
-      {:error, _, _, _} ->
-        {:error, "Can't publish post with id: #{post_id}"}
 
       {:draft?, _} ->
         {:error, "Can't publish already published post with id: #{post_id}"}

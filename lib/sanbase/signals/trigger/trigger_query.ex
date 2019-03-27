@@ -32,7 +32,7 @@ defmodule Sanbase.Signals.TriggerQuery do
   defmacro trigger_is_active() do
     quote do
       fragment("""
-      trigger->>'active' = 'true'
+      trigger->>'is_active' = 'true'
       """)
     end
   end

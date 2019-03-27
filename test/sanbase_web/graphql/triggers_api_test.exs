@@ -122,10 +122,12 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
         settings: '#{trigger_settings_json}'
         tags: ['tag1', 'tag2']
         cooldown: '123h'
+        isRepeating: false
       ) {
         trigger{
           id
           cooldown
+          isRepeating
           settings
           tags{ name }
         }
@@ -144,6 +146,7 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     assert trigger["settings"] == updated_trigger
     assert trigger["id"] == trigger_id
     assert trigger["cooldown"] == "123h"
+    assert trigger["isRepeating"] == false
     assert trigger["tags"] == [%{"name" => "tag1"}, %{"name" => "tag2"}]
   end
 
@@ -469,23 +472,24 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
 
     ut = insert(:user_trigger, user: user, trigger: %{settings: trigger_settings})
 
-    assert ut.trigger.active
+    assert ut.trigger.is_active
 
     updated_trigger = update_active_query(conn, ut.id, false)
 
-    assert updated_trigger["active"] == false
+    assert updated_trigger["isActive"] == false
   end
 
   test "activate signal", %{user: user, conn: conn} do
     trigger_settings = default_trigger_settings_string_keys()
 
-    ut = insert(:user_trigger, user: user, trigger: %{active: false, settings: trigger_settings})
+    ut =
+      insert(:user_trigger, user: user, trigger: %{is_active: false, settings: trigger_settings})
 
-    refute ut.trigger.active
+    refute ut.trigger.is_active
 
     updated_trigger = update_active_query(conn, ut.id, true)
 
-    assert updated_trigger["active"] == true
+    assert updated_trigger["isActive"] == true
   end
 
   defp current_user_signals_activity(conn, args_str) do
@@ -519,15 +523,15 @@ defmodule SanbaseWeb.Graphql.TriggersApiTest do
     result["data"]["signalsHistoricalActivity"]
   end
 
-  defp update_active_query(conn, id, active) do
+  defp update_active_query(conn, id, is_active) do
     query = """
       mutation {
         updateTrigger(
           id: #{id},
-          active: #{active}
+          isActive: #{is_active}
         ) {
           trigger{
-            active
+            isActive
           }
         }
       }

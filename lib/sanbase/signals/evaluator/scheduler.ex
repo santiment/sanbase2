@@ -85,10 +85,10 @@ defmodule Sanbase.Signals.Scheduler do
   end
 
   defp deactivate_non_repeating(triggers) do
-    for %UserTrigger{id: id, user: user, trigger: %{repeating: false}} <- triggers do
+    for %UserTrigger{id: id, user: user, trigger: %{is_repeating: false}} <- triggers do
       UserTrigger.update_user_trigger(user, %{
         id: id,
-        active: false
+        is_active: false
       })
     end
   end

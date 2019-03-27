@@ -14,8 +14,10 @@ defmodule Sanbase.Timeline.TimelineEvent do
   alias Sanbase.UserList
   alias Sanbase.Signals.UserTrigger
 
-  @event_types ["create", "update"]
   # "publish_insight", "create/update user_trigger", "create/update public watchlist"
+  @publish_insight "publish_insight"
+  @event_types [@publish_insight]
+
   @table "timeline_events"
   schema @table do
     field(:event_type, :string)
@@ -27,11 +29,13 @@ defmodule Sanbase.Timeline.TimelineEvent do
     field(:created_at, :utc_datetime)
   end
 
-  def changeset(%__MODULE__{} = timeline_events, attrs \\ %{}) do
+  def publish_insight(), do: @publish_insight
+
+  def create_changeset(%__MODULE__{} = timeline_events, attrs \\ %{}) do
     attrs = Map.put(attrs, :created_at, Timex.now())
 
     timeline_events
-    |> cast(attrs, [:event_type, :user_id, :post_id, :user_list_id, :user_trigger_id])
+    |> cast(attrs, [:event_type, :user_id, :post_id, :user_list_id, :user_trigger_id, :created_at])
     |> unique_constraint(:post_id)
     |> unique_constraint(:user_list_id)
     |> unique_constraint(:user_trigger_id)
@@ -50,6 +54,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
   end
 
   defp create_event(type, id, params) do
-    %__MODULE__{} |> changeset(Map.put(params, type, id)) |> IO.inspect() |> Repo.insert()
+    %__MODULE__{} |> create_changeset(Map.put(params, type, id)) |> Repo.insert()
   end
 end

@@ -658,7 +658,11 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
   describe "publish post" do
     @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
-    test "succeeds", %{user: user, conn: conn, poll: poll} do
+    test "succeeds, publish discourse, publish discord, create timeline event", %{
+      user: user,
+      conn: conn,
+      poll: poll
+    } do
       with_mocks([
         {Sanbase.Discourse.Api, [],
          [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
@@ -681,6 +685,56 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
         assert result["discourseTopicUrl"] ==
                  "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
+
+        assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
+      end
+    end
+
+    test "returns error when discourse publish fails", %{user: user, conn: conn, poll: poll} do
+      with_mocks([
+        {Sanbase.Discourse.Api, [],
+         [publish: fn _, _ -> {:error, "Cannot publish to discourse"} end]},
+        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> {:ok, "Success"} end]}
+      ]) do
+        post =
+          insert(:post,
+            poll: poll,
+            user: user,
+            state: Post.approved_state(),
+            ready_state: Post.draft()
+          )
+
+        result =
+          post
+          |> publish_insight_mutation()
+          |> execute_mutation_with_errors(conn)
+
+        assert String.contains?(result["message"], "Can't publish post")
+      end
+    end
+
+    @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
+    test "returns error when discord publish fails", %{user: user, conn: conn, poll: poll} do
+      with_mocks([
+        {Sanbase.Discourse.Api, [],
+         [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
+        {Sanbase.Notifications.Insight, [],
+         [publish_in_discord: fn _ -> {:error, "Error publishing in discord"} end]}
+      ]) do
+        post =
+          insert(:post,
+            poll: poll,
+            user: user,
+            state: Post.approved_state(),
+            ready_state: Post.draft()
+          )
+
+        result =
+          post
+          |> publish_insight_mutation()
+          |> execute_mutation_with_errors(conn)
+
+        assert String.contains?(result["message"], "Can't publish post")
       end
     end
 

@@ -9,6 +9,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
   alias Sanbase.Auth.User
+  alias Sanbase.Timeline.TimelineEvent
 
   alias Sanbase.Repo
   alias Ecto.Multi
@@ -90,13 +91,16 @@ defmodule Sanbase.Insight.Post do
 
     with {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
          {:draft?, %Post{ready_state: ^draft}} <- {:draft?, post},
-         {:ok, %{post: post}} <- publish_post(post) do
+         {:ok, %{post: post}} <- publish_post(post, user_id) do
       {:ok, post}
     else
       {:error, error} ->
         error_message = "Can't publish post with id #{post_id}"
-        Logger.error("#{error_message}, inspect(error)")
+        Logger.error("#{error_message}, #{inspect(error)}")
         {:error, error_message}
+
+      {:error, _, _, _} ->
+        {:error, "Can't publish post with id: #{post_id}"}
 
       {:draft?, _} ->
         {:error, "Can't publish already published post with id: #{post_id}"}
@@ -208,7 +212,7 @@ defmodule Sanbase.Insight.Post do
 
   # Helper functions
 
-  defp publish_post(post) do
+  defp publish_post(post, user_id) do
     Multi.new()
     |> Multi.run(:discourse_topic_url, fn _ ->
       Sanbase.Discourse.Insight.create_discourse_topic(post)
@@ -222,6 +226,12 @@ defmodule Sanbase.Insight.Post do
     end)
     |> Multi.run(:publish_in_discord, fn %{post: post} ->
       Sanbase.Notifications.Insight.publish_in_discord(post)
+    end)
+    |> Multi.run(:create_timeline_event, fn %{post: post} ->
+      TimelineEvent.create_event(post, %{
+        event_type: TimelineEvent.publish_insight(),
+        user_id: user_id
+      })
     end)
     |> Repo.transaction()
   end

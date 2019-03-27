@@ -164,49 +164,6 @@ defmodule SanbaseWeb.Graphql.PostTest do
            ] == json_response(result, 200)["data"]["allInsights"]
   end
 
-  test "all insights by followed", %{
-    conn: conn,
-    poll: poll,
-    user: user,
-    user2: user2
-  } do
-    user3 = insert(:user)
-
-    insert(:post,
-      poll: poll,
-      user: user2,
-      state: Post.approved_state(),
-      ready_state: Post.published()
-    )
-
-    insert(:post,
-      poll: poll,
-      user: user3,
-      state: Post.approved_state(),
-      ready_state: Post.published()
-    )
-
-    insert(:user_follower, user_id: user2.id, follower_id: user.id)
-    insert(:user_follower, user_id: user3.id, follower_id: user.id)
-
-    query = """
-    {
-      allInsightsByFollowedAuthors {
-        id,
-        text,
-        readyState,
-        user {
-          id
-        }
-      }
-    }
-    """
-
-    result = conn |> post("/graphql", query_skeleton(query, "allInsightsByFollowedAuthors"))
-
-    assert length(json_response(result, 200)["data"]["allInsightsByFollowedAuthors"]) == 2
-  end
-
   test "excluding draft posts from allInsights", %{
     conn: conn,
     poll: poll,

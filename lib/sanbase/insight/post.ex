@@ -9,7 +9,7 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
   alias Sanbase.Auth.User
-  alias Sanbase.Following.UserFollower
+
   alias Sanbase.Repo
   alias Ecto.Multi
 
@@ -184,17 +184,13 @@ defmodule Sanbase.Insight.Post do
   end
 
   def published_posts(page, page_size) do
-    published_posts()
-    |> page(page, page_size)
-    |> Repo.all()
-  end
-
-  def by_followed_authors(user_id, page, page_size) do
-    authors = UserFollower.get_following_user_ids(user_id)
-
-    published_posts()
-    |> page(page, page_size)
-    |> by_authors(authors)
+    from(
+      p in Post,
+      where: p.ready_state == ^@published,
+      order_by: [desc: p.updated_at],
+      limit: ^page_size,
+      offset: ^((page - 1) * page_size)
+    )
     |> Repo.all()
   end
 
@@ -212,27 +208,6 @@ defmodule Sanbase.Insight.Post do
   end
 
   # Helper functions
-
-  defp page(query, page, page_size) do
-    query
-    |> offset(^((page - 1) * page_size))
-    |> limit(^page_size)
-  end
-
-  defp by_authors(query, authors) do
-    from(
-      p in query,
-      where: p.user_id in ^authors
-    )
-  end
-
-  defp published_posts() do
-    from(
-      p in Post,
-      where: p.ready_state == ^@published,
-      order_by: [desc: p.updated_at]
-    )
-  end
 
   defp images_cast(changeset, %{image_urls: image_urls}) do
     images = PostImage |> where([i], i.image_url in ^image_urls) |> Repo.all()

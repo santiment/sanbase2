@@ -38,26 +38,4 @@ defmodule Sanbase.Following.UserFollower do
   end
 
   def unfollow(_, _), do: {:error, "User can't unfollow oneself"}
-
-  def get_following_user_ids(user_id) do
-    user_id
-    |> load_user()
-    |> Map.get(:following)
-    |> Enum.map(&Map.get(&1, :user_id))
-  end
-
-  def get_followers_user_ids(user_id) do
-    user_id
-    |> load_user()
-    |> Map.get(:followers)
-    |> Enum.map(&Map.get(&1, :follower_id))
-  end
-
-  # Private functions
-
-  defp load_user(user_id) do
-    User
-    |> Repo.get(user_id)
-    |> Repo.preload([:following, :followers])
-  end
 end

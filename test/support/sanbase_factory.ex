@@ -7,7 +7,6 @@ defmodule Sanbase.Factory do
   alias Sanbase.Insight.{Post, Poll}
   alias Sanbase.Model.{Project, ExchangeAddress}
   alias Sanbase.Signals.{UserTrigger, HistoricalActivity}
-  alias Sanbase.Following.UserFollower
 
   def user_factory() do
     %User{
@@ -111,9 +110,5 @@ defmodule Sanbase.Factory do
 
   def watchlist_factory() do
     %UserList{name: "Generic User List name", color: :red, user: build(:user)}
-  end
-
-  def user_follower_factory() do
-    %UserFollower{}
   end
 end

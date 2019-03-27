@@ -24,17 +24,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.PostResolver do
     {:ok, posts}
   end
 
-  def all_insights_by_followed_authors(_root, %{page: page, page_size: page_size}, %{
-        context: %{auth: %{current_user: %User{id: user_id}}}
-      }) do
-    posts =
-      user_id
-      |> Post.by_followed_authors(page, page_size)
-      |> Repo.preload(@preloaded_assoc)
-
-    {:ok, posts}
-  end
-
   def post(_root, %{id: post_id}, _resolution) do
     case Repo.get(Post, post_id) do
       nil -> {:error, "There is no post with id #{post_id}"}

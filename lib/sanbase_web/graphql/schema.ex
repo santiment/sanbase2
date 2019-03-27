@@ -466,16 +466,6 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&PostResolver.all_insights/3)
     end
 
-    @desc "Fetch a list of posts/insights from authors that user follows.The user must be logged in to access all fields for the post/insight."
-    field :all_insights_by_followed_authors, list_of(:post) do
-      arg(:page, :integer, default_value: 1)
-      arg(:page_size, :integer, default_value: 10)
-
-      middleware(JWTAuth)
-
-      resolve(&PostResolver.all_insights_by_followed_authors/3)
-    end
-
     @desc "Fetch a list of all posts for given user ID."
     field :all_insights_for_user, list_of(:post) do
       arg(:user_id, non_null(:integer))

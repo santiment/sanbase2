@@ -1,10 +1,10 @@
 defmodule Sanbase.Insight.Post do
   use Ecto.Schema
 
+  use Timex.Ecto.Timestamps
+
   import Ecto.Changeset
   import Ecto.Query
-
-  use Timex.Ecto.Timestamps
 
   alias Sanbase.Tag
   alias Sanbase.Insight.{Poll, Post, Vote, PostImage}
@@ -13,7 +13,6 @@ defmodule Sanbase.Insight.Post do
   alias Sanbase.Repo
   alias Ecto.Multi
 
-  require Mockery.Macro
   require Logger
 
   @approved "approved"
@@ -222,7 +221,7 @@ defmodule Sanbase.Insight.Post do
       |> Repo.update()
     end)
     |> Multi.run(:publish_in_discord, fn %{post: post} ->
-      notifiy_insight().publish_in_discord(post)
+      Sanbase.Notifications.Insight.publish_in_discord(post)
     end)
     |> Repo.transaction()
   end
@@ -250,6 +249,4 @@ defmodule Sanbase.Insight.Post do
       post.user_id == user_id || post.ready_state == published()
     end)
   end
-
-  defp notifiy_insight(), do: Mockery.Macro.mockable(Sanbase.Notifications.Insight)
 end

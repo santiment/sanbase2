@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.PostTest do
   use SanbaseWeb.ConnCase, async: false
-  use Mockery
 
+  import Mock
   import SanbaseWeb.Graphql.TestHelpers
   import Sanbase.Factory
 
@@ -659,31 +659,29 @@ defmodule SanbaseWeb.Graphql.PostTest do
   describe "publish post" do
     @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
     test "succeeds", %{user: user, conn: conn, poll: poll} do
-      mock(
-        Sanbase.Discourse.Api,
-        :publish,
-        @discourse_response_file |> File.read!() |> Jason.decode()
-      )
+      with_mocks([
+        {Sanbase.Discourse.Api, [],
+         [publish: fn _, _ -> @discourse_response_file |> File.read!() |> Jason.decode() end]},
+        {Sanbase.Notifications.Insight, [], [publish_in_discord: fn _ -> {:ok, "Success"} end]}
+      ]) do
+        post =
+          insert(:post,
+            poll: poll,
+            user: user,
+            state: Post.approved_state(),
+            ready_state: Post.draft()
+          )
 
-      mock(Sanbase.Notifications.Insight, :publish_in_discord, {:ok, "Success"})
+        result =
+          post
+          |> publish_insight_mutation()
+          |> execute_mutation_with_success("publishInsight", conn)
 
-      post =
-        insert(:post,
-          poll: poll,
-          user: user,
-          state: Post.approved_state(),
-          ready_state: Post.draft()
-        )
+        assert result["readyState"] == Post.published()
 
-      result =
-        post
-        |> publish_insight_mutation()
-        |> execute_mutation_with_success("publishInsight", conn)
-
-      assert result["readyState"] == Post.published()
-
-      assert result["discourseTopicUrl"] ==
-               "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
+        assert result["discourseTopicUrl"] ==
+                 "https://discourse.stage.internal.santiment.net/t/first-test-from-api2/234"
+      end
     end
 
     test "returns error when user is not author", %{

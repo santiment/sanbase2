@@ -1230,6 +1230,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:cooldown, :string)
       arg(:tags, list_of(:string))
       arg(:settings, non_null(:json))
+      arg(:is_repeating, :boolean)
 
       middleware(JWTAuth)
 

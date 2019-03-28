@@ -1,4 +1,4 @@
-defmodule Sanbase.Signals.EthWalletSignalTest do
+defmodule Sanbase.Signals.EthWalletTriggerTest do
   use Sanbase.DataCase, async: false
 
   import Mock
@@ -121,6 +121,26 @@ defmodule Sanbase.Signals.EthWalletSignalTest do
 
       assert message =~
                "The ethereum balance of the address #{context.eth_address} has changed by 280"
+    end
+  end
+
+  test "behavior is correct in case of database error" do
+    test_pid = self()
+
+    with_mocks [
+      {Sanbase.Telegram, [:passthrough],
+       send_message: fn _user, text ->
+         send(test_pid, {:telegram_to_self, text})
+         :ok
+       end},
+      {HistoricalBalance, [:passthrough],
+       balance_change: fn _, _, _, _ ->
+         {:error, "Something bad happened"}
+       end}
+    ] do
+      Scheduler.run_signal(EthWalletTriggerSettings)
+
+      refute_receive({:telegram_to_self, message})
     end
   end
 end

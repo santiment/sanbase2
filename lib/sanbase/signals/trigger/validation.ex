@@ -90,7 +90,18 @@ defmodule Sanbase.Signals.Validation do
     end
   end
 
+  def valid_eth_wallet_target?(%{user_list: _}) do
+    {:error, "Watchlists are not valid eth wallet target"}
+  end
+
   def valid_eth_wallet_target?(target), do: valid_target?(target)
+
+  def valid_slug?(%{slug: slug}) when is_binary(slug), do: :ok
+
+  def valid_slug?(slug) do
+    {:error,
+     "#{inspect(slug)} is not a valid slug. A valid slug is a map with a single slug key and string value"}
+  end
 
   def valid_url?(url) do
     case URI.parse(url) do

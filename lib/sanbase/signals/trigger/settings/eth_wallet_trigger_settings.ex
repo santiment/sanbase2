@@ -16,7 +16,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
   @derive {Jason.Encoder, except: [:filtered_target, :payload, :triggered?]}
   @trigger_type "eth_wallet"
 
-  @enforce_keys [:type, :channel, :asset]
+  @enforce_keys [:type, :channel, :target, :asset]
   defstruct type: @trigger_type,
             channel: nil,
             target: nil,
@@ -40,6 +40,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
   validates(:channel, &valid_notification_channel/1)
   validates(:target, &valid_eth_wallet_target?/1)
+  validates(:asset, &valid_slug?/1)
   validates(:threshold, &valid_threshold?/1)
 
   @spec type() :: String.t()
@@ -54,7 +55,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
     target_list
     |> Enum.map(fn addr ->
       from = Trigger.last_triggered(trigger, addr) || settings.created_at
-      address_balance_change = balance_change(addr, settings.asset, from, now)
+      address_balance_change = balance_change(addr, settings.asset.slug, from, now)
       {:eth_address, addr, address_balance_change}
     end)
   end
@@ -73,7 +74,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
       project_balance_change =
         eth_addresses
         |> Enum.reduce(0, fn %{address: addr}, balance ->
-          balance + balance_change(addr, settings.asset, from, now)
+          balance + balance_change(addr, settings.asset.slug, from, now)
         end)
 
       {:project, project, project_balance_change}
@@ -150,7 +151,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
            trigger
          ) do
       """
-      The #{settings.asset} balance of #{name} wallets has changed by #{balance_change} since #{
+      The #{settings.asset.slug} balance of #{name} wallets has changed by #{balance_change} since #{
         Trigger.last_triggered(trigger, slug) || settings.created_at
       }
 
@@ -160,9 +161,9 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
     defp payload(address, settings, balance_change, trigger) do
       """
-      The #{settings.asset} balance of the address #{address} has changed by #{balance_change} since #{
-        Trigger.last_triggered(trigger, address) || settings.created_at
-      }
+      The #{settings.asset.slug} balance of the address #{address} has changed by #{
+        balance_change
+      } since #{Trigger.last_triggered(trigger, address) || settings.created_at}
       """
     end
   end

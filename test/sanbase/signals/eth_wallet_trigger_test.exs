@@ -39,7 +39,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     trigger_settings1 = %{
       type: "eth_wallet",
       target: %{slug: "santiment"},
-      asset: "ethereum",
+      asset: %{slug: "ethereum"},
       channel: "telegram",
       threshold: 25.0
     }
@@ -47,7 +47,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     trigger_settings2 = %{
       type: "eth_wallet",
       target: %{eth_address: eth_address},
-      asset: "ethereum",
+      asset: %{slug: "ethereum"},
       channel: "telegram",
       time_window: "1d",
       threshold: 200.0

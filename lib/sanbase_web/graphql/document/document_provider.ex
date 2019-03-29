@@ -38,12 +38,23 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   defp cached_result(%{params: params}) do
     query = Map.get(params, "query")
 
-    # TODO: Datetime variables are still strings
+    # TODO: Should check the types in the schema
     variables =
       case Map.get(params, "variables") do
         x when x in [nil, ""] -> %{}
         vars -> vars |> Jason.decode!()
       end
+      |> Enum.map(fn
+        {key, value} when is_binary(value) ->
+          case DateTime.from_iso8601(value) do
+            {:ok, datetime, _} -> {key, datetime}
+            _ -> {key, value}
+          end
+
+        pair ->
+          pair
+      end)
+      |> Map.new()
 
     Cache.cache_key(query, variables)
     |> Cache.get()

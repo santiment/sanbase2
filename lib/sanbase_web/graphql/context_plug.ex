@@ -47,12 +47,23 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
        }) do
     query = Map.get(params, "query")
 
-    # TODO: Datetime variables are still strings
+    # TODO: Should check the types in the schema
     variables =
       case Map.get(params, "variables") do
         x when x in [nil, ""] -> %{}
         vars -> vars |> IO.inspect(label: "VAAAAARSRRSSS") |> Jason.decode!()
       end
+      |> Enum.map(fn
+        {key, value} when is_binary(value) ->
+          case DateTime.from_iso8601(value) do
+            {:ok, datetime, _} -> {key, datetime}
+            _ -> {key, value}
+          end
+
+        pair ->
+          pair
+      end)
+      |> Map.new()
 
     cache_key = SanbaseWeb.Graphql.Cache.cache_key(query, variables)
     Map.put(context, :query_cache_key, cache_key)

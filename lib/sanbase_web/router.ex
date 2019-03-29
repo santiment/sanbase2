@@ -40,7 +40,8 @@ defmodule SanbaseWeb.Router do
       schema: SanbaseWeb.Graphql.Schema,
       analyze_complexity: true,
       max_complexity: 10000,
-      log_level: :info
+      log_level: :info,
+      before_send: {SanbaseWeb.Graphql.Absinthe, :before_send}
     )
 
     forward(
@@ -48,9 +49,14 @@ defmodule SanbaseWeb.Router do
       Absinthe.Plug.GraphiQL,
       json_codec: Jason,
       schema: SanbaseWeb.Graphql.Schema,
+      document_providers: [
+        SanbaseWeb.Graphql.DocumentProvider,
+        Absinthe.Plug.DocumentProvider.Default
+      ],
       analyze_complexity: true,
       max_complexity: 10000,
-      interface: :simple
+      interface: :simple,
+      before_send: {SanbaseWeb.Graphql.Absinthe, :before_send}
     )
   end
 

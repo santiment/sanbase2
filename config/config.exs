@@ -5,6 +5,10 @@
 # is restricted to this project.
 use Mix.Config
 
+# Latest version of timezone data (2019a) distributed by IANA has an error
+# Disable the autoupdate until it is fixed
+config :tzdata, :autoupdate, :disabled
+
 # General application configuration
 config :sanbase, ecto_repos: [Sanbase.Repo, Sanbase.TimescaleRepo]
 
@@ -115,10 +119,6 @@ config :sanbase, Sanbase.Oauth2.Hydra,
   client_secret: {:system, "HYDRA_CLIENT_SECRET", "consent-secret"},
   clients_that_require_san_tokens:
     {:system, "CLIENTS_THAT_REQUIRE_SAN_TOKENS", "{\"grafana\": 100}"}
-
-config :sanbase, SanbaseWeb.Graphql.PlugAttack,
-  rate_limit_period: {:system, "RATE_LIMIT_PERIOD", "10000"},
-  rate_limit_max_requests: {:system, "RATE_LIMIT_MAX_REQUESTS", "40"}
 
 config :sanbase, SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction,
   restrict_to_in_days: {:system, "RESTRICT_TO_IN_DAYS", "1"},

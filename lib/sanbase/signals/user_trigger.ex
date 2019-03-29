@@ -37,7 +37,7 @@ defmodule Sanbase.Signals.UserTrigger do
     )
 
     has_one(:featured_item, Sanbase.FeaturedItem, on_delete: :delete_all)
-    has_many(:signals_historical_activity, HistoricalActivity)
+    has_many(:signals_historical_activity, HistoricalActivity, on_delete: :delete_all)
 
     timestamps()
   end

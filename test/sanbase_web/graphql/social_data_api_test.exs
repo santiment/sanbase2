@@ -1,9 +1,7 @@
-defmodule Sanbase.SocialDataApiTest do
+defmodule SanbaseWeb.Graphql.SocialDataApiTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock
-  import Mockery
-  import ExUnit.CaptureLog
   import SanbaseWeb.Graphql.TestHelpers
 
   alias Sanbase.SocialData
@@ -196,15 +194,6 @@ defmodule Sanbase.SocialDataApiTest do
       query = top_social_gainers_losers_query(args)
       result = execute_and_parse_success_response(conn, query, "topSocialGainersLosers")
 
-      func_args = %{
-        args
-        | status: args.status |> String.downcase() |> String.to_existing_atom(),
-          from: DateTimeUtils.from_iso8601!(args.from),
-          to: DateTimeUtils.from_iso8601!(args.to)
-      }
-
-      # assert_called(SocialData.top_social_gainers_losers(func_args))
-
       assert result == %{
                "data" => %{
                  "topSocialGainersLosers" => [
@@ -288,9 +277,6 @@ defmodule Sanbase.SocialDataApiTest do
   end
 
   test "fetching social gainers losers status - proper error message is returned", %{conn: conn} do
-    error_response =
-      "Error status 500 fetching social gainers losers status for slug: qtum: Internal Server Error"
-
     with_mock SocialData, social_gainers_losers_status: fn _ -> {:error, @error_response} end do
       args = %{
         slug: "qtum",
@@ -304,8 +290,6 @@ defmodule Sanbase.SocialDataApiTest do
       assert error =~ @error_response
     end
   end
-
-  # private functions
 
   defp trending_words_query(args) do
     """
@@ -331,7 +315,7 @@ defmodule Sanbase.SocialDataApiTest do
     """
     {
       wordContext(
-        word: "#{args.word}", 
+        word: "#{args.word}",
         source: #{args.source},
         from: "#{args.from}",
         to: "#{args.to}",
@@ -348,7 +332,7 @@ defmodule Sanbase.SocialDataApiTest do
     """
     {
       wordTrendScore(
-        word: "#{args.word}", 
+        word: "#{args.word}",
         source: #{args.source},
         from: "#{args.from}",
         to: "#{args.to}"
@@ -365,7 +349,7 @@ defmodule Sanbase.SocialDataApiTest do
     """
     {
       topSocialGainersLosers(
-        status: #{args.status}, 
+        status: #{args.status},
         from: "#{args.from}",
         to: "#{args.to}",
         timeWindow: "#{args.time_window}",

@@ -1,9 +1,12 @@
 defmodule SanbaseWeb.Graphql.Absinthe do
+  alias SanbaseWeb.Graphql.Cache
+
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
-    # Currently only printing - could be put into cache somehow and retrieved
-    IO.inspect("============================================================")
-    IO.inspect(blueprint.result, limit: :infinity)
-    IO.inspect("============================================================")
+    Cache.get_or_store(
+      blueprint.execution.context.query_cache_key,
+      fn -> blueprint.result end
+    )
+
     conn
   end
 end

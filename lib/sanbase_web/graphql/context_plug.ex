@@ -24,8 +24,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def init(opts), do: opts
 
   def call(conn, _) do
-    context = build_context(conn, @auth_methods)
-    put_private(conn, :absinthe, %{context: context |> Map.put(:remote_ip, conn.remote_ip)})
+    context =
+      build_context(conn, @auth_methods)
+      |> add_query_cache_key(conn)
+      |> Map.put(:remote_ip, conn.remote_ip)
+
+    put_private(conn, :absinthe, %{context: context})
   end
 
   defp build_context(conn, [auth_method | rest]) do
@@ -36,7 +40,25 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp build_context(_conn, []), do: %{}
+  defp build_context(_conn, []), do: %{super_duper_mega_key: 123_123_123_123}
+
+  defp add_query_cache_key(context, %Plug.Conn{
+         params: params
+       }) do
+    query = Map.get(params, "query")
+
+    # TODO: Datetime variables are still strings
+    variables =
+      case Map.get(params, "variables") do
+        x when x in [nil, ""] -> %{}
+        vars -> vars |> IO.inspect(label: "VAAAAARSRRSSS") |> Jason.decode!()
+      end
+
+    cache_key = SanbaseWeb.Graphql.Cache.cache_key(query, variables)
+    Map.put(context, :query_cache_key, cache_key)
+  end
+
+  defp add_query_cache_key(context, _), do: context
 
   def bearer_authentication(%Plug.Conn{} = conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),

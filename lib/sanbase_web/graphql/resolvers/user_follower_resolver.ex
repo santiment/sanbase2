@@ -11,19 +11,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserFollowerResolver do
     |> handle_result("follow", current_user)
   end
 
-  def follow(_root, _args, _resolution) do
-    {:error, "Only logged in users can call this method"}
-  end
-
   def unfollow(_root, args, %{
         context: %{auth: %{auth_method: :user_token, current_user: current_user}}
       }) do
     UserFollower.unfollow(to_string(args.user_id), to_string(current_user.id))
     |> handle_result("unfollow", current_user)
-  end
-
-  def unfollow(_root, _args, _resolution) do
-    {:error, "Only logged in users can call this method"}
   end
 
   defp handle_result(result, operation, current_user) do

@@ -1,12 +1,23 @@
 defmodule Sanbase.Clickhouse.DailyActiveDeposits do
   @moduledoc ~s"""
-  Uses ClickHouse to calculate daily active deposits
+  Uses ClickHouse to calculate daily active deposits.
+  The number of unique deposit addresses that have been active
   """
+
+  use Ecto.Schema
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
   import Sanbase.Math, only: [to_integer: 1]
 
   alias Sanbase.DateTimeUtils
+
+  @table "daily_active_deposits"
+  schema @table do
+    field(:dt, :utc_datetime)
+    field(:contract, :string)
+    field(:exchange, :string)
+    field(:total_addresses, :integer)
+  end
 
   @type active_deposits :: %{
           datetime: DateTime.t(),
@@ -52,7 +63,7 @@ defmodule Sanbase.Clickhouse.DailyActiveDeposits do
       SELECT
         toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time,
         SUM(total_addresses) AS value
-      FROM daily_active_deposits
+      FROM #{@table}
       PREWHERE
         contract = ?3 AND
         dt >= toDateTime(?4) AND

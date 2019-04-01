@@ -1,6 +1,6 @@
 defmodule Sanbase.Timeline.TimelineEvent do
   @moduledoc ~s"""
-  Module for insertting events when create/update insights, watchlists and triggers
+  Persisting events on create/update insights, watchlists and triggers
   """
 
   use Ecto.Schema

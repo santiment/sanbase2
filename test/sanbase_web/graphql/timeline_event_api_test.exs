@@ -30,11 +30,12 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         ready_state: Post.published()
       )
 
-    insert(:timeline_event,
-      post: post,
-      user: user_to_follow,
-      event_type: TimelineEvent.publish_insight()
-    )
+    event1 =
+      insert(:timeline_event,
+        post: post,
+        user: user_to_follow,
+        event_type: TimelineEvent.publish_insight()
+      )
 
     {:ok, user_list} =
       UserList.create_user_list(user_to_follow, %{name: "My Test List", is_public: true})
@@ -56,14 +57,21 @@ defmodule SanbaseWeb.Graphql.TimelineEventApiTest do
         }
       )
 
-    insert(:timeline_event,
-      user_trigger: user_trigger,
-      user: user_to_follow,
-      event_type: TimelineEvent.create_public_trigger()
-    )
+    event3 =
+      insert(:timeline_event,
+        user_trigger: user_trigger,
+        user: user_to_follow,
+        event_type: TimelineEvent.create_public_trigger()
+      )
 
     result = timeline_events_query(conn, "limit: 3")
+
     assert result |> hd() |> Map.get("events") |> length() == 3
+
+    assert result |> hd() |> Map.get("cursor") == %{
+             "after" => DateTime.to_iso8601(event3.created_at),
+             "before" => DateTime.to_iso8601(event1.created_at)
+           }
   end
 
   defp timeline_events_query(conn, args_str) do

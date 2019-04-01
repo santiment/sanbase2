@@ -3,34 +3,22 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
 
   alias Absinthe.Resolution
 
-  def call(%Resolution{context: %{auth: %{auth_method: :basic}}} = resolution, _) do
-    resolution
-  end
-
-  def call(%Resolution{context: %{auth: %{auth_method: method}}} = resolution, config)
-      when method in [:user_token, :apikey] do
-    all_projects? = Keyword.get(config, :all_projects?, false)
-
-    if all_projects? and has_not_allowed_fields?(resolution) do
-      resolution
-      |> Resolution.put_result({:error, :unauthorized})
-    else
-      resolution
-    end
-  end
-
   def call(resolution, _) do
-    if has_not_allowed_fields?(resolution) do
-      resolution
-      |> Resolution.put_result({:error, :unauthorized})
-    else
-      resolution
+    case not_allowed_fields(resolution) do
+      [] ->
+        resolution
+
+      fields ->
+        resolution
+        |> Resolution.put_result(
+          {:error, "Cannot query #{inspect(fields)} on a query that returns more than 1 project."}
+        )
     end
   end
 
   # Helper functions
 
-  defp has_not_allowed_fields?(resolution) do
+  defp not_allowed_fields(resolution) do
     not_allowed_fields = [
       "icos",
       "initial_ico",
@@ -45,8 +33,11 @@ defmodule SanbaseWeb.Graphql.Middlewares.ProjectPermissions do
 
     requested_fields = requested_fields(resolution)
 
-    Enum.any?(not_allowed_fields, fn field ->
-      Map.has_key?(requested_fields, field)
+    Enum.reduce(requested_fields, [], fn {key, _}, acc ->
+      case Enum.member?(not_allowed_fields, key |> Macro.underscore()) do
+        true -> [key | acc]
+        false -> acc
+      end
     end)
   end
 

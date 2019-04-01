@@ -82,7 +82,6 @@ defmodule Sanbase.Mixfile do
       {:con_cache, "~> 0.13"},
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
       {:observer_cli, "~> 1.3"},
-      {:plug_attack, "~> 0.4"},
       {:earmark, "~> 1.2"},
       {:ecto_enum, "~> 1.1"},
       {:ex_machina, "~> 2.2", only: :test},
@@ -100,8 +99,7 @@ defmodule Sanbase.Mixfile do
       {:number, "~> 1.0"},
       {:remote_ip, "~> 0.1"},
       {:vex, "~> 0.8.0", override: true},
-      {:stream_data, "~> 0.4.2", only: :test},
-      {:tzdata, "~> 0.5"}
+      {:stream_data, "~> 0.4.2", only: :test}
     ]
   end
 

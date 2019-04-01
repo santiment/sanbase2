@@ -33,13 +33,6 @@ defmodule Sanbase.Application.Web do
          acquire_lock_timeout: 30_000
        ]},
 
-      # Rate limit API calls
-      {PlugAttack.Storage.Ets,
-       [
-         name: SanbaseWeb.Graphql.PlugAttack.Storage,
-         clean_period: 60_000
-       ]},
-
       # Time sereies TwitterData DB connection
       Sanbase.ExternalServices.TwitterData.Store.child_spec(),
 

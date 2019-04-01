@@ -8,6 +8,7 @@ defmodule Sanbase.Following.UserFollower do
   alias Sanbase.Repo
 
   @primary_key false
+  @timestamps_opts [updated_at: false]
   schema "user_followers" do
     belongs_to(:user, User, foreign_key: :user_id, primary_key: true)
     belongs_to(:follower, User, foreign_key: :follower_id, primary_key: true)

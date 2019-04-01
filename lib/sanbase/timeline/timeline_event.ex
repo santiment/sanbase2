@@ -22,7 +22,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @create_public_trigger "create_public_trigger"
   @event_types [@publish_insight, @create_watchlist, @create_public_trigger]
 
-  @timestamps_opts [inserted_at: :created_at, updated_at: false]
+  @timestamps_opts [inserted_at: :created_at, updated_at: false, type: :utc_datetime]
   @table "timeline_events"
   schema @table do
     field(:event_type, :string)
@@ -39,8 +39,6 @@ defmodule Sanbase.Timeline.TimelineEvent do
   def create_public_trigger(), do: @create_public_trigger
 
   def create_changeset(%__MODULE__{} = timeline_events, attrs \\ %{}) do
-    attrs = Map.put(attrs, :created_at, Timex.now())
-
     timeline_events
     |> cast(attrs, [:event_type, :user_id, :post_id, :user_list_id, :user_trigger_id, :created_at])
   end

@@ -114,6 +114,6 @@ defmodule Sanbase.Factory do
   end
 
   def timeline_event_factory() do
-    %TimelineEvent{created_at: Timex.now()}
+    %TimelineEvent{}
   end
 end

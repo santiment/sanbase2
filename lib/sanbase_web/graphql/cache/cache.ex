@@ -197,9 +197,12 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   # Helper functions
 
-  def cache_key(name, args) do
+  def cache_key(name, args, opts \\ []) do
+    base_ttl = Keyword.get(opts, :ttl, @ttl)
+    max_ttl_offset = Keyword.get(opts, :max_ttl_offset, @max_ttl_offset)
     slug = Map.get(args, :slug, "")
-    ttl = @ttl + ("#{inspect(name)}#{slug}" |> :erlang.phash2(@max_ttl_offset))
+
+    ttl = base_ttl + ({name, slug} |> :erlang.phash2(max_ttl_offset))
 
     args_hash =
       args

@@ -1,6 +1,8 @@
 defmodule SanbaseWeb.Graphql.DocumentProvider do
   @behaviour Absinthe.Plug.DocumentProvider
 
+  import SanbaseWeb.Graphql.DocumentProvider.Utils, only: [cache_key_from_params: 1]
+
   alias SanbaseWeb.Graphql.Cache
 
   @cache_dict_key :graphql_cache_result
@@ -36,27 +38,7 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
     do: {:halt, query}
 
   defp cached_result(%{params: params}) do
-    query = Map.get(params, "query")
-
-    # TODO: Should check the types in the schema
-    variables =
-      case Map.get(params, "variables") do
-        x when x in [nil, ""] -> %{}
-        vars -> vars |> Jason.decode!()
-      end
-      |> Enum.map(fn
-        {key, value} when is_binary(value) ->
-          case DateTime.from_iso8601(value) do
-            {:ok, datetime, _} -> {key, datetime}
-            _ -> {key, value}
-          end
-
-        pair ->
-          pair
-      end)
-      |> Map.new()
-
-    Cache.cache_key(query, variables)
+    cache_key_from_params(params)
     |> Cache.get()
   end
 end

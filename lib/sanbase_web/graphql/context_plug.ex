@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   @behaviour Plug
 
   import Plug.Conn
+  import SanbaseWeb.Graphql.DocumentProvider.Utils, only: [cache_key_from_params: 1]
 
   require Sanbase.Utils.Config, as: Config
 
@@ -40,32 +41,12 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp build_context(_conn, []), do: %{super_duper_mega_key: 123_123_123_123}
+  defp build_context(_conn, []), do: %{}
 
   defp add_query_cache_key(context, %Plug.Conn{
          params: params
        }) do
-    query = Map.get(params, "query")
-
-    # TODO: Should check the types in the schema
-    variables =
-      case Map.get(params, "variables") do
-        x when x in [nil, ""] -> %{}
-        vars -> vars |> IO.inspect(label: "VAAAAARSRRSSS") |> Jason.decode!()
-      end
-      |> Enum.map(fn
-        {key, value} when is_binary(value) ->
-          case DateTime.from_iso8601(value) do
-            {:ok, datetime, _} -> {key, datetime}
-            _ -> {key, value}
-          end
-
-        pair ->
-          pair
-      end)
-      |> Map.new()
-
-    cache_key = SanbaseWeb.Graphql.Cache.cache_key(query, variables)
+    cache_key = cache_key_from_params(params)
     Map.put(context, :query_cache_key, cache_key)
   end
 

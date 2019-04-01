@@ -1,6 +1,6 @@
 defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
   @compile :inline_list_funcs
-  @compile {:iline, get_query_and_variables: 1}
+  @compile {:inline, cache_key_from_params: 2}
 
   @datetime_field_names ["from", "to"]
 
@@ -13,8 +13,8 @@ defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
   The other param types are not cast as they would be used the same way in both
   places where the cache key is calculated.
   """
-  @spec cache_key_from_params(map()) :: {String.t(), map()}
-  def cache_key_from_params(params) do
+  @spec cache_key_from_params(map(), map()) :: any()
+  def cache_key_from_params(params, permissions) do
     query = Map.get(params, "query", "")
 
     variables =
@@ -36,6 +36,9 @@ defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
       |> Map.new()
 
     # Cache for between 30 seconds and 90 seconds
-    SanbaseWeb.Graphql.Cache.cache_key(query, variables, ttl: 30, max_ttl_offset: 60)
+    SanbaseWeb.Graphql.Cache.cache_key({query, permissions}, variables,
+      ttl: 30,
+      max_ttl_offset: 60
+    )
   end
 end

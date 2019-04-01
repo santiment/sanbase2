@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.DocumentProvider do
   @behaviour Absinthe.Plug.DocumentProvider
 
-  import SanbaseWeb.Graphql.DocumentProvider.Utils, only: [cache_key_from_params: 1]
+  import SanbaseWeb.Graphql.DocumentProvider.Utils, only: [cache_key_from_params: 2]
 
   alias SanbaseWeb.Graphql.Cache
 
@@ -37,8 +37,8 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   def process(%{document: _} = query, _),
     do: {:halt, query}
 
-  defp cached_result(%{params: params}) do
-    cache_key_from_params(params)
+  defp cached_result(%{params: params, context: %{permissions: permissions}}) do
+    cache_key_from_params(params, permissions)
     |> Cache.get()
   end
 end

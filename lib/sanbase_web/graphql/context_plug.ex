@@ -7,7 +7,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   @behaviour Plug
 
   import Plug.Conn
-  import SanbaseWeb.Graphql.DocumentProvider.Utils, only: [cache_key_from_params: 1]
+  import SanbaseWeb.Graphql.DocumentProvider.Utils, only: [cache_key_from_params: 2]
 
   require Sanbase.Utils.Config, as: Config
 
@@ -37,16 +37,16 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     auth_method.(conn)
     |> case do
       :skip -> build_context(conn, rest)
-      auth -> %{auth: auth}
+      auth -> %{auth: auth, permissions: User.permissions!(auth.current_user)}
     end
   end
 
-  defp build_context(_conn, []), do: %{}
+  defp build_context(_conn, []), do: %{permissions: %{}}
 
-  defp add_query_cache_key(context, %Plug.Conn{
+  defp add_query_cache_key(%{permissions: permissions} = context, %Plug.Conn{
          params: params
        }) do
-    cache_key = cache_key_from_params(params)
+    cache_key = cache_key_from_params(params, permissions)
     Map.put(context, :query_cache_key, cache_key)
   end
 
@@ -55,7 +55,10 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def bearer_authentication(%Plug.Conn{} = conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
          {:ok, current_user} <- bearer_authorize(token) do
-      %{auth_method: :user_token, current_user: current_user}
+      %{
+        auth_method: :user_token,
+        current_user: current_user
+      }
     else
       _ -> :skip
     end

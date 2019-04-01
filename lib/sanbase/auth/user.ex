@@ -129,6 +129,13 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def permissions!(%__MODULE__{} = user) do
+    case permissions(user) do
+      {:ok, permissions} -> permissions
+      {:error, error} -> raise(error)
+    end
+  end
+
   def ascii_username?(nil), do: true
 
   def ascii_username?(username) do

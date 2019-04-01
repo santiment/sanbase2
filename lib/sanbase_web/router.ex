@@ -55,7 +55,7 @@ defmodule SanbaseWeb.Router do
       ],
       analyze_complexity: true,
       max_complexity: 10000,
-      interface: :simple,
+      # interface: :simple,
       before_send: {SanbaseWeb.Graphql.Absinthe, :before_send}
     )
   end

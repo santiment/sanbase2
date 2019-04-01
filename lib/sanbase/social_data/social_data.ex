@@ -280,6 +280,7 @@ defmodule Sanbase.SocialData do
   defp top_social_gainers_losers_result(result) do
     result =
       result
+      |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
       |> Enum.map(fn %{
                        "timestamp" => timestamp,
                        "projects" => projects
@@ -296,6 +297,7 @@ defmodule Sanbase.SocialData do
   defp social_gainers_losers_status_result(result) do
     result =
       result
+      |> Enum.sort(&(&1["timestamp"] <= &2["timestamp"]))
       |> Enum.map(fn %{
                        "timestamp" => timestamp,
                        "status" => status,

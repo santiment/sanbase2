@@ -114,7 +114,17 @@ defmodule Sanbase.Graphql.ProjectApiTokenTopTransactionsTest do
       |> post("/graphql", query_skeleton(query, "allErc20Projects"))
       |> json_response(200)
 
-    assert %{"data" => %{"allErc20Projects" => []}} = result
+    assert result == %{
+             "data" => %{"allErc20Projects" => nil},
+             "errors" => [
+               %{
+                 "locations" => [%{"column" => 0, "line" => 2}],
+                 "message" =>
+                   "Cannot query [\"tokenTopTransactions\"] on a query that returns more than 1 project.",
+                 "path" => ["allErc20Projects"]
+               }
+             ]
+           }
   end
 
   # Private functions

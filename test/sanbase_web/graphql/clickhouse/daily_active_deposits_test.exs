@@ -20,8 +20,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveDepositsTest do
     [
       contract: project.main_contract_address,
       slug: project.coinmarketcap_id,
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z"),
+      from: allowed_free_user_from(),
+      to: allowed_free_user_to(),
       interval: "1d"
     ]
   end
@@ -31,8 +31,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveDepositsTest do
       active_deposits: fn _, _, _, _ ->
         {:ok,
          [
-           %{active_deposits: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-           %{active_deposits: 200, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
+           %{active_deposits: 100, datetime: allowed_free_user_from()},
+           %{active_deposits: 200, datetime: Timex.shift(allowed_free_user_from(), days: 1)}
          ]}
       end do
       response = execute_query(context)
@@ -48,8 +48,14 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveDepositsTest do
       )
 
       assert deposits == [
-               %{"activeDeposits" => 100, "datetime" => "2019-01-01T00:00:00Z"},
-               %{"activeDeposits" => 200, "datetime" => "2019-01-02T00:00:00Z"}
+               %{
+                 "activeDeposits" => 100,
+                 "datetime" => DateTime.to_iso8601(allowed_free_user_from())
+               },
+               %{
+                 "activeDeposits" => 200,
+                 "datetime" => DateTime.to_iso8601(Timex.shift(allowed_free_user_from(), days: 1))
+               }
              ]
     end
   end

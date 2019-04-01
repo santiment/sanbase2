@@ -14,8 +14,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
 
     [
       slug: project.coinmarketcap_id,
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z"),
+      from: allowed_free_user_from(),
+      to: allowed_free_user_to(),
       interval: "1d"
     ]
   end
@@ -28,12 +28,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
            %{
              nvt_ratio_circulation: 0.1,
              nvt_ratio_tx_volume: 0.11,
-             datetime: from_iso8601!("2019-01-01T00:00:00Z")
+             datetime: allowed_free_user_from()
            },
            %{
              nvt_ratio_circulation: 0.2,
              nvt_ratio_tx_volume: 0.22,
-             datetime: from_iso8601!("2019-01-02T00:00:00Z")
+             datetime: Timex.shift(allowed_free_user_from(), days: 1)
            }
          ]}
       end do
@@ -46,12 +46,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
                %{
                  "nvtRatioCirculation" => 0.1,
                  "nvtRatioTxVolume" => 0.11,
-                 "datetime" => "2019-01-01T00:00:00Z"
+                 "datetime" => DateTime.to_iso8601(allowed_free_user_from())
                },
                %{
                  "nvtRatioCirculation" => 0.2,
                  "nvtRatioTxVolume" => 0.22,
-                 "datetime" => "2019-01-02T00:00:00Z"
+                 "datetime" => DateTime.to_iso8601(Timex.shift(allowed_free_user_from(), days: 1))
                }
              ]
     end

@@ -5,10 +5,8 @@
 # Inside the script, you can read and write to any of your
 # repositories directly:
 #
-#     Sanbase.Repo.insert!(%Sanbase.SomeSchema{})
+#     Sanbase.Repo.insert(%Sanbase.SomeSchema{})
 #
-# We recommend using the bang functions (`insert!`, `update!`
-# and so on) as they will fail if something goes wrong.
 
 alias Sanbase.Model.Project
 alias Sanbase.Model.ProjectEthAddress
@@ -19,7 +17,12 @@ alias Sanbase.Auth.{User, EthAccount}
 
 infrastructure_eth = Infrastructure.get_or_insert("ETH")
 
-make_project = fn {name, ticker, logo_url, coinmarkecap_id, infrastructure_code} ->
+insert_on_conflict_nothing = fn item ->
+  Repo.insert(item, on_conflict: :nothing)
+end
+
+make_project = fn {name, ticker, logo_url, coinmarkecap_id, infrastructure_code, contract,
+                   token_decimals} ->
   infrastructure =
     case infrastructure_code do
       "ETH" -> infrastructure_eth
@@ -32,7 +35,9 @@ make_project = fn {name, ticker, logo_url, coinmarkecap_id, infrastructure_code}
     ticker: ticker,
     logo_url: logo_url,
     coinmarketcap_id: coinmarkecap_id,
-    infrastructure: infrastructure
+    infrastructure: infrastructure,
+    main_contract_address: contract,
+    token_decimals: token_decimals
   }
 end
 
@@ -64,38 +69,41 @@ end
 # Old Sanbase projects
 ########################################
 [
-  {"EOS", "EOS", "eos.png", "eos", "ETH"},
-  {"Golem", "GNT", "golem.png", "golem-network-tokens", "ETH"},
-  {"Iconomi", "ICN", "iconomi.png", "iconomi", "ETH"},
-  {"Gnosis", "GNO", "gnosis.png", "gnosis-gno", "ETH"},
-  {"Status", "SNT", "status.png", "status", "ETH"},
-  {"TenX", "PAY", "tenx.png", "tenx", "ETH"},
-  {"Basic Attention Token", "BAT", "basic-attention-token.png", "basic-attention-token", "ETH"},
-  {"Populous", "PPT", "populous.png", "populous", "ETH"},
-  {"DigixDAO", "DGD", "digixdao.png", "digixdao", "ETH"},
-  {"Bancor", "BNT", "bancor.png", "bancor", "ETH"},
-  {"MobileGo", "MGO", "mobilego.png", "mobilego", "ETH"},
-  {"Aeternity", "AE", "aeternity.png", "aeternity", "ETH"},
-  {"SingularDTV", "SNGLS", "singulardtv.png", "singulardtv", "ETH"},
-  {"Civic", "CVC", "civic.png", "civic", "ETH"},
-  {"Aragon", "ANT", "aragon.png", "aragon", "ETH"},
-  {"FirstBlood", "1ST", "firstblood.png", "firstblood", "ETH"},
-  {"Etheroll", "DICE", "etheroll.png", "etheroll", "ETH"},
-  {"Melon", "MLN", "melon.png", "melon", "ETH"},
-  {"iExec RLC", "RLC", "rlc.png", "rlc", "ETH"},
-  {"Stox", "STX", "stox.png", "stox", "ETH"},
-  {"Humaniq", "HMQ", "humaniq.png", "humaniq", "ETH"},
-  {"Polybius", "PLBT", "polybius.png", "polybius", "ETH"},
-  {"Santiment", "SAN", "santiment.png", "santiment", "ETH"},
-  {"district0x", "DNT", "district0x.png", "district0x", "ETH"},
-  {"DAO.Casino", "BET", "dao-casino.png", "dao-casino", "ETH"},
-  {"Centra", "CTR", "centra.png", "centra", "ETH"},
-  {"Tierion", "TNT", "tierion.png", "tierion", "ETH"},
-  {"Matchpool", "GUP", "guppy.png", "guppy", "ETH"},
-  {"Nebulas", "NAS", "nebulas.png", "nebulas-token", "ETH"}
+  {"EOS", "EOS", "eos.png", "eos", "ETH", nil, 18},
+  {"Golem", "GNT", "golem.png", "golem-network-tokens", "ETH", nil, 18},
+  {"Iconomi", "ICN", "iconomi.png", "iconomi", "ETH", nil, 18},
+  {"Gnosis", "GNO", "gnosis.png", "gnosis-gno", "ETH", nil, 18},
+  {"Status", "SNT", "status.png", "status", "ETH", nil, 18},
+  {"TenX", "PAY", "tenx.png", "tenx", "ETH", nil, 18},
+  {"Basic Attention Token", "BAT", "basic-attention-token.png", "basic-attention-token", "ETH",
+   nil, 18},
+  {"Populous", "PPT", "populous.png", "populous", "ETH", nil, 18},
+  {"DigixDAO", "DGD", "digixdao.png", "digixdao", "ETH", nil, 18},
+  {"Bancor", "BNT", "bancor.png", "bancor", "ETH", nil, 18},
+  {"MobileGo", "MGO", "mobilego.png", "mobilego", "ETH", nil, 18},
+  {"Aeternity", "AE", "aeternity.png", "aeternity", "ETH", nil, 18},
+  {"SingularDTV", "SNGLS", "singulardtv.png", "singulardtv", "ETH", nil, 18},
+  {"Civic", "CVC", "civic.png", "civic", "ETH", nil, 18},
+  {"Aragon", "ANT", "aragon.png", "aragon", "ETH", nil, 18},
+  {"FirstBlood", "1ST", "firstblood.png", "firstblood", "ETH", nil, 18},
+  {"Etheroll", "DICE", "etheroll.png", "etheroll", "ETH", nil, 18},
+  {"Melon", "MLN", "melon.png", "melon", "ETH", nil, 18},
+  {"iExec RLC", "RLC", "rlc.png", "rlc", "ETH", nil, 18},
+  {"Stox", "STX", "stox.png", "stox", "ETH", nil, 18},
+  {"Humaniq", "HMQ", "humaniq.png", "humaniq", "ETH", nil, 18},
+  {"Polybius", "PLBT", "polybius.png", "polybius", "ETH", nil, 18},
+  {"Santiment", "SAN", "santiment.png", "santiment", "ETH",
+   "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098", 18},
+  {"district0x", "DNT", "district0x.png", "district0x", "ETH", nil, 18},
+  {"DAO.Casino", "BET", "dao-casino.png", "dao-casino", "ETH", nil, 18},
+  {"Centra", "CTR", "centra.png", "centra", "ETH", nil, 18},
+  {"Tierion", "TNT", "tierion.png", "tierion", "ETH", nil, 18},
+  {"Matchpool", "GUP", "guppy.png", "guppy", "ETH", nil, 18},
+  {"Nebulas", "NAS", "nebulas.png", "nebulas-token", "ETH", nil, 18},
+  {"Ethereum", "ETH", "ethereum.png", "ethereum", "ETH", nil, 18}
 ]
 |> Enum.map(make_project)
-|> Enum.each(&Repo.insert!/1)
+|> Enum.each(insert_on_conflict_nothing)
 
 [
   {"EOS", "0x10F0c9112b255507701df1b1be5D8dcd9A82bb5e"},
@@ -129,32 +137,27 @@ end
   {"Nebulas", "0x5d65D971895Edc438f465c17DB6992698a52318D"}
 ]
 |> Enum.flat_map(make_eth_address)
-|> Enum.each(&Repo.insert!/1)
+|> Enum.each(insert_on_conflict_nothing)
 
 #######################################
 # Projecttransparency projects
 #######################################
 
 [
-  {"CFI", "Cofound.it", "cofound-it.png", "cofound-it", "ETH"},
-  {"Dappbase", "DAP", nil, nil, "ETH"},
-  {"Encrypgen", "DNA", nil, "encrypgen", "ETH"},
-  {"Etherisc", "RSC", nil, nil, "ETH"},
-  {"Expanse/Tokenlab", "EXP/LAB", "expanse.png", "expanse", "ETH"},
-  {"Gatcoin.ioCFI", "GAT", nil, nil, "ETH"},
-  {"Hshare", "HSR", "hshare.png", "hshare", "ETH"},
-  {"Indorse", "IND", "indorse-token.png", "indorse-token", "ETH"},
-  {"Lykke", "LKK", "lykke.png", "lykke", "ETH"},
-  {"Maecenas", "ART", "maecenas.png", "maecenas", "ETH"},
-  {"Musiconomi", "MCI", "musiconomi.png", "musiconomi", "ETH"},
-  {"Virgil Capital", "VIC", nil, nil, "ETH"}
+  {"CFI", "Cofound.it", "cofound-it.png", "cofound-it", "ETH", nil, 18},
+  {"Encrypgen", "DNA", nil, "encrypgen", "ETH", nil, 18},
+  {"Expanse/Tokenlab", "EXP/LAB", "expanse.png", "expanse", "ETH", nil, 18},
+  {"Hshare", "HSR", "hshare.png", "hshare", "ETH", nil, 18},
+  {"Indorse", "IND", "indorse-token.png", "indorse-token", "ETH", nil, 18},
+  {"Lykke", "LKK", "lykke.png", "lykke", "ETH", nil, 18},
+  {"Maecenas", "ART", "maecenas.png", "maecenas", "ETH", nil, 18},
+  {"Musiconomi", "MCI", "musiconomi.png", "musiconomi", "ETH", nil, 18}
 ]
 |> Enum.map(make_project)
-|> Enum.each(&Repo.insert!/1)
+|> Enum.each(insert_on_conflict_nothing)
 
 [
   {"Encrypgen", "0x683a0aafa039406c104d814b9f244eea721445a7"},
-  {"Etherisc", "0x35792029777427920ce7aDecccE9e645465e9C72"},
   {"Expanse/Tokenlab", "0xd1ea8853619aaad66f3f6c14ca22430ce6954476"},
   {"Expanse/Tokenlab", "0xf83fd4b62ccb4b5c4213278b6b506eb2f19988d0"},
   {"Indorse", "0x1c82ee5b828455F870eb2998f2c9b6Cc2d52a5F6"},
@@ -164,39 +167,39 @@ end
   {"Musiconomi", "0xc7CD9d874F93F2409F39A95987b3E3C738313925"}
 ]
 |> Enum.flat_map(make_eth_address)
-|> Enum.each(&Repo.insert!/1)
+|> Enum.each(insert_on_conflict_nothing)
 
 [
   {"Encrypgen", "13MoQt2n9cHNzbpt8PfeVYp2cehgzRgj6v"},
   {"Encrypgen", "16bv1XAqh1YadAWHgDWgxKuhhns7T2EywG"}
 ]
 |> Enum.flat_map(make_btc_address)
-|> Enum.each(&Repo.insert!/1)
+|> Enum.each(insert_on_conflict_nothing)
 
-user =
-  %User{
-    email: "john.d@santiment.net",
-    username: "John Dow",
-    salt: "LgcwR3e98PR/gvgV7Ph1+ZXnw4yhTz25k08QLi/39qdCt/V0XOGlJRiL938NtJk0"
-  }
-  |> Repo.insert!()
+defmodule InsertUser do
+  def run({email, username, eth_address}) do
+    {:ok, user} =
+      %User{
+        email: email,
+        username: username,
+        salt:
+          :crypto.strong_rand_bytes(64)
+          |> Base.encode32(case: :lower)
+      }
+      |> Sanbase.Repo.insert(on_conflict: :nothing)
 
-%EthAccount{
-  address: "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a",
-  user_id: user.id
-}
-|> Repo.insert!()
+    %EthAccount{address: eth_address, user_id: user.id}
+    |> Sanbase.Repo.insert(on_conflict: :nothing)
+  end
+end
 
-#########
-# Exchange addresses
-#########
 defmodule InsertExchangeAddresses do
   alias Sanbase.Model.ExchangeAddress
 
   def run do
     address_data()
     |> Enum.map(&update_or_create_eth_address/1)
-    |> Enum.each(&Repo.insert_or_update!/1)
+    |> Enum.each(&Sanbase.Repo.insert(&1, on_conflict: :nothing))
   end
 
   defp update_or_create_eth_address({name, address, comments, infrastructure_id}) do
@@ -271,3 +274,4 @@ defmodule InsertExchangeAddresses do
 end
 
 InsertExchangeAddresses.run()
+InsertUser.run({"John Doe", "john.d@santiment.net", "0x6dD5A9F47cfbC44C04a0a4452F0bA792ebfBcC9a"})

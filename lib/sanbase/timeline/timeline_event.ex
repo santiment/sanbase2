@@ -22,6 +22,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
   @create_public_trigger "create_public_trigger"
   @event_types [@publish_insight, @create_watchlist, @create_public_trigger]
 
+  @timestamps_opts [inserted_at: :created_at, updated_at: false]
   @table "timeline_events"
   schema @table do
     field(:event_type, :string)
@@ -30,7 +31,7 @@ defmodule Sanbase.Timeline.TimelineEvent do
     belongs_to(:user_list, UserList)
     belongs_to(:user_trigger, UserTrigger)
 
-    field(:created_at, :utc_datetime)
+    timestamps()
   end
 
   def publish_insight(), do: @publish_insight

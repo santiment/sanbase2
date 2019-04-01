@@ -9,7 +9,7 @@ defmodule Sanbase.Repo.Migrations.AddTimelineEventsTable do
       add(:post_id, references(:posts))
       add(:user_list_id, references(:user_lists))
       add(:user_trigger_id, references(:user_triggers))
-      add(:created_at, :utc_datetime)
+      timestamps(inserted_at: :created_at, updated_at: false)
     end
 
     fk_check = """
@@ -19,5 +19,6 @@ defmodule Sanbase.Repo.Migrations.AddTimelineEventsTable do
     """
 
     create(constraint(@table, :only_one_fk, check: fk_check))
+    create(index(@table, [:user_id, :created_at]))
   end
 end

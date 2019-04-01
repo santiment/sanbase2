@@ -659,7 +659,7 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
   describe "publish post" do
     @discourse_response_file "#{File.cwd!()}/test/sanbase_web/graphql/assets/discourse_publish_response.json"
-    test "succeeds, publish discourse, publish discord, create timeline event", %{
+    test "successfully publishes in Discourse and Discord and creates timeline event", %{
       user: user,
       conn: conn,
       poll: poll
@@ -689,6 +689,15 @@ defmodule SanbaseWeb.Graphql.PostTest do
 
         assert Sanbase.Timeline.TimelineEvent |> Repo.all() |> length() == 1
       end
+    end
+
+    test "returns error when post does not exist with the provided post_id", %{conn: conn} do
+      result =
+        %{id: 1000}
+        |> publish_insight_mutation()
+        |> execute_mutation_with_errors(conn)
+
+      assert String.contains?(result["message"], "Can't publish post")
     end
 
     test "returns error when discourse publish fails", %{user: user, conn: conn, poll: poll} do

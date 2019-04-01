@@ -45,6 +45,5 @@ defmodule Sanbase.Following.UserFollower do
     |> Repo.preload(:following)
     |> Map.get(:following)
     |> Enum.map(&Map.get(&1, :user_id))
-    |> IO.inspect()
   end
 end

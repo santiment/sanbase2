@@ -86,24 +86,29 @@ defmodule Sanbase.Insight.Post do
   def draft(), do: @draft
 
   def publish(post_id, user_id) do
+    post_id = String.to_integer(post_id)
     post = Repo.get(Post, post_id)
     draft = draft()
 
-    with {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
+    with {:nil?, %Post{id: ^post_id}} <- {:nil?, post},
+         {:own_post?, %Post{user_id: ^user_id}} <- {:own_post?, post},
          {:draft?, %Post{ready_state: ^draft}} <- {:draft?, post},
          {:ok, %{post: post}} <- publish_post(post, user_id) do
       {:ok, post}
     else
-      {:error, _, error, _} ->
-        error_message = "Can't publish post with id #{post_id}"
-        Logger.error("#{error_message}, #{inspect(error)}")
-        {:error, error_message}
+      {:nil?, nil} ->
+        {:error, "Can't publish post with id #{post_id}"}
 
       {:draft?, _} ->
         {:error, "Can't publish already published post with id: #{post_id}"}
 
       {:own_post?, _} ->
         {:error, "Can't publish not own post with id: #{post_id}"}
+
+      {:error, _, error, _} ->
+        error_message = "Can't publish post with id #{post_id}"
+        Logger.error("#{error_message}, #{inspect(error)}")
+        {:error, error_message}
     end
   end
 

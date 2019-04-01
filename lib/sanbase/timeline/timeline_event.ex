@@ -87,9 +87,9 @@ defmodule Sanbase.Timeline.TimelineEvent do
     following = UserFollower.following(user_id)
 
     from(
-      te in query,
-      where: te.user_id in ^following,
-      order_by: [desc: te.created_at],
+      event in query,
+      where: event.user_id in ^following,
+      order_by: [desc: event.created_at],
       limit: ^limit,
       preload: [:user_trigger, :post, :user_list, :user]
     )
@@ -97,15 +97,15 @@ defmodule Sanbase.Timeline.TimelineEvent do
 
   defp by_cursor(query, :before, datetime) do
     from(
-      te in query,
-      where: te.created_at < ^datetime
+      event in query,
+      where: event.created_at < ^datetime
     )
   end
 
   defp by_cursor(query, :after, datetime) do
     from(
-      te in query,
-      where: te.created_at > ^datetime
+      event in query,
+      where: event.created_at > ^datetime
     )
   end
 

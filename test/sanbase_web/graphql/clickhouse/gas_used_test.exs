@@ -10,8 +10,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
 
   setup do
     [
-      from: from_iso8601!("2019-01-01T00:00:00Z"),
-      to: from_iso8601!("2019-01-03T00:00:00Z"),
+      from: allowed_free_user_from(),
+      to: allowed_free_user_to(),
       interval: "1d"
     ]
   end
@@ -23,11 +23,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
          [
            %{
              eth_gas_used: 100,
-             datetime: from_iso8601!("2019-01-01T00:00:00Z")
+             datetime: allowed_free_user_from()
            },
            %{
              eth_gas_used: 200,
-             datetime: from_iso8601!("2019-01-02T00:00:00Z")
+             datetime: Timex.shift(allowed_free_user_from(), days: 1)
            }
          ]}
       end do
@@ -39,11 +39,11 @@ defmodule SanbaseWeb.Graphql.Clickhouse.GasUsedTest do
       assert result == [
                %{
                  "ethGasUsed" => 100,
-                 "datetime" => "2019-01-01T00:00:00Z"
+                 "datetime" => DateTime.to_iso8601(allowed_free_user_from())
                },
                %{
                  "ethGasUsed" => 200,
-                 "datetime" => "2019-01-02T00:00:00Z"
+                 "datetime" => DateTime.to_iso8601(Timex.shift(allowed_free_user_from(), days: 1))
                }
              ]
     end

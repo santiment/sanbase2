@@ -52,6 +52,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
                 {cache_modify_middleware.(cache, key, tuple), nil}
 
               {:nocache, {:ok, _result} = value} ->
+                Process.put(:has_nocache_field, true)
                 {value, nil}
 
               value ->

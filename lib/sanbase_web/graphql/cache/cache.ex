@@ -147,6 +147,10 @@ defmodule SanbaseWeb.Graphql.Cache do
     end
   end
 
+  def store(cache_name \\ @cache_name, cache_key, value) do
+    CacheProvider.store(cache_name, cache_key, value)
+  end
+
   def get_or_store(cache_name \\ @cache_name, cache_key, resolver_fn) do
     CacheProvider.get_or_store(
       cache_name,

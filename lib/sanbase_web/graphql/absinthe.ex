@@ -13,17 +13,18 @@ defmodule SanbaseWeb.Graphql.Absinthe do
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
     queries =
       blueprint.operations
-      |> Enum.map(fn %{selections: selections} ->
+      |> Enum.flat_map(fn %{selections: selections} ->
         selections
         |> Enum.map(fn %{name: name} -> name end)
       end)
 
-    should_cache? = Enum.all?(queries, &Enum.member?(&1, @cached_queries))
+    all_queries_cachable? = Enum.all?(queries, &Enum.member?(@cached_queries, &1))
+    has_nocache_field? = Process.get(:has_nocache_field)
 
-    if should_cache? do
-      Cache.get_or_store(
+    if all_queries_cachable? && !has_nocache_field? do
+      Cache.store(
         blueprint.execution.context.query_cache_key,
-        fn -> blueprint.result end
+        blueprint.result
       )
     end
 

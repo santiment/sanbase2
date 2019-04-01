@@ -175,14 +175,12 @@ defmodule SanbaseWeb.Graphql.Schema do
     @desc "Fetch a project by its ID."
     field :project, :project do
       arg(:id, non_null(:id))
-      middleware(ProjectPermissions)
       resolve(&ProjectResolver.project/3)
     end
 
     @desc "Fetch a project by a unique identifier."
     field :project_by_slug, :project do
       arg(:slug, non_null(:string))
-      middleware(ProjectPermissions)
       cache_resolve(&ProjectResolver.project_by_slug/3)
     end
 

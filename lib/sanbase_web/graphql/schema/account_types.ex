@@ -42,6 +42,9 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
       resolve(&UserTriggerResolver.triggers/3)
     end
 
+    field(:following, list_of(:user_follower), resolve: assoc(:following))
+    field(:followers, list_of(:user_follower), resolve: assoc(:followers))
+
     field :insights, list_of(:post) do
       resolve(&PostResolver.insights/3)
     end
@@ -77,5 +80,10 @@ defmodule SanbaseWeb.Graphql.AccountTypes do
     field(:historical_data, non_null(:boolean))
     field(:realtime_data, non_null(:boolean))
     field(:spreadsheet, non_null(:boolean))
+  end
+
+  object :user_follower do
+    field(:user_id, non_null(:id))
+    field(:follower_id, non_null(:id))
   end
 end

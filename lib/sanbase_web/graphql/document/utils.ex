@@ -7,8 +7,9 @@ defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
   @doc ~s"""
   Extract the query and variables from the params map and genenrate a cache key from them
   The query is fetched as is.
-  The variables that are valid datetime types (have the `from` or `to` name and valid vaule)
-  are concerted to Elixir DateTime type before being used.
+  The variables that are valid datetime types (have the `from` or `to` name and valid value)
+  are converted to Elixir DateTime type before being used. This is done because
+  the datetimes are rounded so all datetimes in a N minute buckets have the same cache key
 
   The other param types are not cast as they would be used the same way in both
   places where the cache key is calculated.
@@ -35,10 +36,9 @@ defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
       end)
       |> Map.new()
 
-    # Cache for between 30 seconds and 90 seconds
     SanbaseWeb.Graphql.Cache.cache_key({query, permissions}, variables,
-      ttl: 30,
-      max_ttl_offset: 60
+      ttl: 120,
+      max_ttl_offset: 90
     )
   end
 end

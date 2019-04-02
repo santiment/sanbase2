@@ -23,12 +23,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
     assert conn_context.auth == %{auth_method: :user_token, current_user: user}
     assert conn_context.remote_ip == {127, 0, 0, 1}
-
-    assert conn_context.permissions == %{
-             historical_data: true,
-             realtime_data: true,
-             spreadsheet: true
-           }
+    assert conn_context.permissions == User.full_permissions()
   end
 
   test "verifying the user's salt when loading", %{conn: conn} do
@@ -48,7 +43,7 @@ defmodule SanbaseWeb.Graphql.ContextPlugTest do
 
         conn_context = conn.private.absinthe.context
         assert conn_context.remote_ip == {127, 0, 0, 1}
-        assert conn_context.permissions == %{}
+        assert conn_context.permissions == User.no_permissions()
         assert Map.has_key?(conn_context, :query_cache_key)
       end)
 

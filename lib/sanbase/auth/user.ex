@@ -119,13 +119,13 @@ defmodule Sanbase.Auth.User do
 
       case san_balance >= required_san_tokens do
         true ->
-          {:ok, %{historical_data: true, realtime_data: true, spreadsheet: true}}
+          {:ok, full_permissions()}
 
         _ ->
-          {:ok, %{historical_data: false, realtime_data: false, spreadsheet: false}}
+          {:ok, no_permissions()}
       end
     else
-      _ -> {:ok, %{historical_data: false, realtime_data: false, spreadsheet: false}}
+      _ -> {:ok, no_permissions()}
     end
   end
 
@@ -138,6 +138,10 @@ defmodule Sanbase.Auth.User do
 
   def full_permissions() do
     %{historical_data: true, realtime_data: true, spreadsheet: true}
+  end
+
+  def no_permissions() do
+    %{historical_data: false, realtime_data: false, spreadsheet: false}
   end
 
   def ascii_username?(nil), do: true

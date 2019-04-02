@@ -1,7 +1,13 @@
 defmodule SanbaseWeb.Graphql.ContextPlug do
   @moduledoc ~s"""
-  Plug that builds the Graphql context.
-  Currently only checks the `authorization` header and verifies the credentials
+  Plug that builds the GraphQL context.
+
+  It performs the following operations:
+  - Check the `Authorization` header and verifies the credentials. Basic auth,
+  JSON Web Token (JWT) and apikey are the supported credential mechanisms.
+  - Inject the permissions for the logged in or anonymous user. The permissions
+  are a simple map that marks if the user has access to historical and realtime data
+  - Inject the cache key for the query in the context.
   """
 
   @behaviour Plug
@@ -44,7 +50,7 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
     end
   end
 
-  defp build_context(_conn, []), do: %{permissions: %{}}
+  defp build_context(_conn, []), do: %{permissions: User.no_permissions()}
 
   defp add_query_cache_key(%{permissions: permissions} = context, %Plug.Conn{
          params: params

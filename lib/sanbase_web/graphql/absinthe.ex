@@ -1,6 +1,7 @@
 defmodule SanbaseWeb.Graphql.Absinthe do
   alias SanbaseWeb.Graphql.Cache
 
+  @compile inline: [has_errors?: 1]
   @cached_queries [
     "allProjects",
     "allErc20Projects",
@@ -21,7 +22,7 @@ defmodule SanbaseWeb.Graphql.Absinthe do
     all_queries_cachable? = Enum.all?(queries, &Enum.member?(@cached_queries, &1))
     has_nocache_field? = Process.get(:has_nocache_field)
 
-    if all_queries_cachable? && !has_nocache_field? do
+    if !has_errors?(blueprint.result) && all_queries_cachable? && !has_nocache_field? do
       Cache.store(
         blueprint.execution.context.query_cache_key,
         blueprint.result
@@ -30,4 +31,7 @@ defmodule SanbaseWeb.Graphql.Absinthe do
 
     conn
   end
+
+  defp has_errors?(%{errors: _}), do: true
+  defp has_errors?(_), do: false
 end

@@ -40,12 +40,4 @@ defmodule SanbaseWeb.Graphql.TestHelpers do
     |> put_req_header("authorization", "Basic " <> token)
     |> ContextPlug.call(%{})
   end
-
-  def allowed_free_user_from() do
-    Timex.beginning_of_day(Timex.shift(Timex.now(), days: -40))
-  end
-
-  def allowed_free_user_to() do
-    Timex.beginning_of_day(Timex.shift(Timex.now(), days: -20))
-  end
 end

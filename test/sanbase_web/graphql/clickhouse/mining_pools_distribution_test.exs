@@ -5,13 +5,18 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
+  import Sanbase.Factory
 
   alias Sanbase.Clickhouse.MiningPoolsDistribution
 
   setup do
+    user = insert(:staked_user)
+    conn = setup_jwt_auth(build_conn(), user)
+
     [
-      from: allowed_free_user_from(),
-      to: allowed_free_user_to(),
+      conn: conn,
+      from: from_iso8601!("2019-01-01T00:00:00Z"),
+      to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"
     ]
   end
@@ -25,13 +30,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
              top3: 0.1,
              top10: 0.4,
              other: 0.5,
-             datetime: allowed_free_user_from()
+             datetime: from_iso8601!("2019-01-01T00:00:00Z")
            },
            %{
              top3: 0.2,
              top10: 0.3,
              other: 0.5,
-             datetime: Timex.shift(allowed_free_user_from(), days: 1)
+             datetime: from_iso8601!("2019-01-02T00:00:00Z")
            }
          ]}
       end do
@@ -47,13 +52,13 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
                  "top3" => 0.1,
                  "top10" => 0.4,
                  "other" => 0.5,
-                 "datetime" => DateTime.to_iso8601(allowed_free_user_from())
+                 "datetime" => "2019-01-01T00:00:00Z"
                },
                %{
                  "top3" => 0.2,
                  "top10" => 0.3,
                  "other" => 0.5,
-                 "datetime" => DateTime.to_iso8601(Timex.shift(allowed_free_user_from(), days: 1))
+                 "datetime" => "2019-01-02T00:00:00Z"
                }
              ]
     end

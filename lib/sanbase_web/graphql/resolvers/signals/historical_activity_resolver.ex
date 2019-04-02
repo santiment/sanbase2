@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.SignalsHistoricalActivityResolver do
   require Logger
 
-  alias Sanbase.Auth.User
   alias Sanbase.Signals.HistoricalActivity
 
   def fetch_historical_activity_for(_root, args, %{

@@ -53,7 +53,7 @@ defmodule Sanbase.ExternalServices.Coinmarketcap.GraphData2 do
     end
   end
 
-  @spec fetch_and_store_prices(Sanbase.Model.Project.t(), any()) :: :ok
+  @spec fetch_and_store_prices(%Project{}, any()) :: :ok
   def fetch_and_store_prices(%Project{coinmarketcap_id: coinmarketcap_id}, nil) do
     Logger.warn(
       "[CMC] Trying to fetch and store prices for project with coinmarketcap_id #{

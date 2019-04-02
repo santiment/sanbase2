@@ -88,7 +88,7 @@ defmodule Sanbase.TechIndicators do
         {:ok, result} = Jason.decode(body)
         social_volume_result(result)
 
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result("Error status #{status} fetching social volume for project #{slug}")
 
       {:error, %HTTPoison.Error{} = error} ->
@@ -105,7 +105,7 @@ defmodule Sanbase.TechIndicators do
         {:ok, result} = Jason.decode(body)
         social_volume_projects_result(result)
 
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result("Error status #{status} fetching social volume projects.")
 
       {:error, %HTTPoison.Error{} = error} ->

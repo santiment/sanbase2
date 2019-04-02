@@ -2,8 +2,6 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   @moduledoc ~s"""
   Dispatch the calculations of the daily active addresses to the correct module
   """
-  alias Sanbase.Model.Project
-
   alias Sanbase.Clickhouse.Erc20DailyActiveAddresses, as: Erc20
   alias Sanbase.Clickhouse.EthDailyActiveAddresses, as: Eth
 

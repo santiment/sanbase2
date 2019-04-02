@@ -101,6 +101,7 @@ defmodule Sanbase.Model.Project do
     |> unique_constraint(:coinmarketcap_id)
   end
 
+  @spec describe(%Project{}) :: String.t()
   def describe(%Project{coinmarketcap_id: cmc_id}) when not is_nil(cmc_id) do
     "project with coinmarketcap_id #{cmc_id}"
   end

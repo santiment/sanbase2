@@ -143,11 +143,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent(%Project{} = project, from_datetime, to_datetime) do
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
+    with {:eth_addresses, {:ok, eth_addresses}} <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent} <-
            Clickhouse.EthTransfers.eth_spent(eth_addresses, from_datetime, to_datetime) do
       {:ok, eth_spent}
     else
+      {:eth_addresses, _} ->
+        {:ok, nil}
+
       error ->
         Logger.warn(
           "Cannot calculate ETH spent for #{Project.describe(project)}. Reason: #{inspect(error)}"
@@ -171,13 +175,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent_over_time(%Project{} = project, from, to, interval) do
-    with {:ok, eth_addresses} <- Project.eth_addresses(project),
-         interval when is_integer(interval) <-
-           Sanbase.DateTimeUtils.compound_duration_to_seconds(interval),
+    with {:eth_addresses, {:ok, eth_addresses}} <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent_over_time} <-
            Clickhouse.EthTransfers.eth_spent_over_time(eth_addresses, from, to, interval) do
       {:ok, eth_spent_over_time}
     else
+      {:eth_addresses, _} ->
+        {:ok, []}
+
       error ->
         Logger.warn(
           "Cannot calculate ETH spent over time for for #{Project.describe(project)}. Reason: #{

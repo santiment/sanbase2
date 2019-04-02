@@ -16,7 +16,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.AccountResolver do
     User.permissions(user)
   end
 
-  @spec san_balance(Sanbase.Auth.User.t(), map(), Absinthe.Resolution.t()) :: {:ok, float()}
+  @spec san_balance(%User{}, map(), Absinthe.Resolution.t()) :: {:ok, float()}
   def san_balance(
         %User{} = user,
         _args,

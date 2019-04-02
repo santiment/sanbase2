@@ -13,28 +13,28 @@ defmodule Sanbase.SocialDataTest do
       {:ok,
        %HTTPoison.Response{
          body: "[
-             {\"timestamp\": 1541808000, 
+             {\"timestamp\": 1541808000,
              \"top_words\": {
-               \"bat\": 367.77770422285084, \"pele\": 167.74716011726295, 
-               \"people\": 137.61557511242117, \"arn\": 137.14962816454351, 
+               \"bat\": 367.77770422285084, \"pele\": 167.74716011726295,
+               \"people\": 137.61557511242117, \"arn\": 137.14962816454351,
                \"chimeracryptoinsider\": 118.17637249353709}
-              }, 
-             {\"timestamp\": 1541721600, 
+              },
+             {\"timestamp\": 1541721600,
              \"top_words\": {
                \"bat\": 1740.2647984845628, \"xlm\": 837.0034350090417,
                \"coinbase\": 792.9209638684719, \"mth\": 721.8164660673655,
                \"mana\": 208.48182966076172}
-              }, 
-              {\"timestamp\": 1541980800, 
+              },
+              {\"timestamp\": 1541980800,
                \"top_words\": {
                  \"xlm\": 769.8008634834883, \"bch\": 522.9358622900285,
                  \"fork\": 340.17719444024317, \"mda\": 213.57227498303558,
                  \"abc\": 177.6092706156777}
-              }, 
-              {\"timestamp\": 1541894400, 
+              },
+              {\"timestamp\": 1541894400,
                \"top_words\": {
                  \"mana\": 475.8978759407794, \"mth\": 411.73069246798326,
-                 \"fork\": 321.11991967479867, \"bch\": 185.35627662699594, 
+                 \"fork\": 321.11991967479867, \"bch\": 185.35627662699594,
                  \"imgur\": 181.45123778369867}}
             ]",
          status_code: 200
@@ -144,7 +144,7 @@ defmodule Sanbase.SocialDataTest do
        }}
     )
 
-    # As the HTTP call is mocked these arguemnts do no have much effect, 
+    # As the HTTP call is mocked these arguemnts do no have much effect,
     # though you should try to put the real ones that are used
     result =
       SocialData.word_context(
@@ -214,9 +214,9 @@ defmodule Sanbase.SocialDataTest do
       {:ok,
        %HTTPoison.Response{
          body: "[{
-             \"timestamp\": 1552654800, \"range\": \"15d\", \"projects\": 
+             \"timestamp\": 1552654800, \"range\": \"15d\", \"projects\":
             [
-              {\"project\": \"qtum\", \"change\": 137.13186813186815, \"status\": \"gainer\"}, 
+              {\"project\": \"qtum\", \"change\": 137.13186813186815, \"status\": \"gainer\"},
               {\"project\": \"abbc-coin\", \"change\": -1.0, \"status\": \"loser\"}
             ]
            }]",
@@ -232,7 +232,7 @@ defmodule Sanbase.SocialDataTest do
       size: 1
     }
 
-    # As the HTTP call is mocked these arguments do no have much effect, 
+    # As the HTTP call is mocked these arguments do no have much effect,
     # though you should try to put the real ones that are used
     result = SocialData.top_social_gainers_losers(args)
 
@@ -242,8 +242,8 @@ defmodule Sanbase.SocialDataTest do
                 %{
                   datetime: DateTime.from_naive!(~N[2019-03-15 13:00:00], "Etc/UTC"),
                   projects: [
-                    %{change: 137.13186813186815, project: "qtum", status: :gainer},
-                    %{change: -1.0, project: "abbc-coin", status: :loser}
+                    %{change: 137.13186813186815, slug: "qtum", status: :gainer},
+                    %{change: -1.0, slug: "abbc-coin", status: :loser}
                   ]
                 }
               ]}
@@ -297,7 +297,7 @@ defmodule Sanbase.SocialDataTest do
       time_window: "15d"
     }
 
-    # As the HTTP call is mocked these arguments do no have much effect, 
+    # As the HTTP call is mocked these arguments do no have much effect,
     # though you should try to put the real ones that are used
     result = SocialData.social_gainers_losers_status(args)
 

@@ -1,6 +1,7 @@
 defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
   @moduledoc ~s"""
-
+  The EthWallet signal is triggered when the balance of a wallet changes by
+  a predefined amount. 
   """
 
   use Vex.Struct

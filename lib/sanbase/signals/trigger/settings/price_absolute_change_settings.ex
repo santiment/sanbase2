@@ -118,7 +118,9 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
       project = Project.by_slug(slug)
 
       """
-      **#{project.name}**'s price has reached #{message} and is now $#{last_price_usd}
+      **#{project.name}**'s price has reached #{message} and is now $#{
+        round_price(last_price_usd)
+      }
       More information for the project you can find here: #{Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """

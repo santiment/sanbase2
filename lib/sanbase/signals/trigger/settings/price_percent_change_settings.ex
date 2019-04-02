@@ -137,9 +137,11 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       project = Sanbase.Model.Project.by_slug(slug)
 
       """
-      **#{project.name}**'s price has changed by **#{percent_change}%** from $#{first_price} to $#{
-        last_price
-      } for the last #{DateTimeUtils.compound_duration_to_text(settings.time_window)}.
+      **#{project.name}**'s price has changed by **#{percent_change}%** from $#{
+        round_price(first_price)
+      } to $#{round_price(last_price)} for the last #{
+        DateTimeUtils.compound_duration_to_text(settings.time_window)
+      }.
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """

@@ -30,7 +30,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
   @impl true
   def store(cache, key, value) do
     case value do
-      {:error, _} = error ->
+      {:error, _} ->
         :ok
 
       {:nocache, _} ->

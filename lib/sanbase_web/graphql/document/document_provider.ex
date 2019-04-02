@@ -26,8 +26,6 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   """
   @behaviour Absinthe.Plug.DocumentProvider
 
-  import SanbaseWeb.Graphql.DocumentProvider.Utils, only: [cache_key_from_params: 2]
-
   alias SanbaseWeb.Graphql.Cache
 
   @cache_dict_key :graphql_cache_result
@@ -62,7 +60,7 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   def process(%{document: _} = query, _),
     do: {:halt, query}
 
-  defp cached_result(%{context: %{permissions: permissions, query_cache_key: cache_key}}) do
+  defp cached_result(%{context: %{query_cache_key: cache_key}}) do
     cache_key
     |> Cache.get()
   end
@@ -76,7 +74,7 @@ defmodule SanbseWeb.Graphql.Phase.Document.Execution.Resolution do
   @cache_dict_key :graphql_cache_result
 
   @spec run(Blueprint.t(), Keyword.t()) :: Phase.result_t()
-  def run(bp_root, options \\ []) do
+  def run(bp_root, _) do
     # Will be fetched from cache - that's what's saved by SanbaseWeb.Graphql.Absinthe.before_send
     result = Process.get(@cache_dict_key)
 

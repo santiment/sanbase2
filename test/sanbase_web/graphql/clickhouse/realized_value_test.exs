@@ -14,8 +14,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.RealizedValueTest do
 
     [
       slug: project.coinmarketcap_id,
-      from: allowed_free_user_from(),
-      to: allowed_free_user_to(),
+      from: from_iso8601!("2019-01-01T00:00:00Z"),
+      to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"
     ]
   end
@@ -28,12 +28,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.RealizedValueTest do
            %{
              realized_value: 100_000,
              non_exchange_realized_value: 10_000,
-             datetime: allowed_free_user_from()
+             datetime: from_iso8601!("2019-01-01T00:00:00Z")
            },
            %{
              realized_value: 200_000,
              non_exchange_realized_value: 20_000,
-             datetime: Timex.shift(allowed_free_user_from(), days: 1)
+             datetime: from_iso8601!("2019-01-02T00:00:00Z")
            }
          ]}
       end do
@@ -48,12 +48,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.RealizedValueTest do
                %{
                  "realizedValue" => 100_000,
                  "nonExchangeRealizedValue" => 10_000,
-                 "datetime" => DateTime.to_iso8601(allowed_free_user_from())
+                 "datetime" => "2019-01-01T00:00:00Z"
                },
                %{
                  "realizedValue" => 200_000,
                  "nonExchangeRealizedValue" => 20_000,
-                 "datetime" => DateTime.to_iso8601(Timex.shift(allowed_free_user_from(), days: 1))
+                 "datetime" => "2019-01-02T00:00:00Z"
                }
              ]
     end

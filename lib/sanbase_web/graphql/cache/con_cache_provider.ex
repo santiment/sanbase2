@@ -4,6 +4,7 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
   @compile :inline_list_funcs
   @compile {:inline, get: 2, store: 3, get_or_store: 4, cache_item: 3}
 
+  @max_cache_ttl 30 * 60
   @impl true
   def size(cache, :megabytes) do
     bytes_size = :ets.info(ConCache.ets(cache), :memory) * :erlang.system_info(:wordsize)
@@ -81,7 +82,11 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
     end
   end
 
-  defp cache_item(cache, {_, ttl} = key, value) do
+  defp cache_item(cache, {_, ttl} = key, value) when is_integer(ttl) and ttl <= @max_cache_ttl do
     ConCache.put(cache, key, %ConCache.Item{value: value, ttl: :timer.seconds(ttl)})
+  end
+
+  defp cache_item(cache, key, value) do
+    ConCache.put(cache, key, value)
   end
 end

@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   Custom Absinthe DocumentProvider for more effective caching.
 
   The `ContextPlug` runs before this DocumentProvider. In this plug the context is
-  created. It checks the Authorization header and adds the user, permissins and cache key
+  created. It checks the Authorization header and adds the user, permissions and cache key
   to the context. The cahce key is calculated from the  `params` (the full `query`
   and `variables`).
 

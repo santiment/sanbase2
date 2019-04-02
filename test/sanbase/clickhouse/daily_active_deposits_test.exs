@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Clickhouse.DailyActiveDepositsTest do
+defmodule Sanbase.Clickhouse.DailyActiveDepositsTest do
   use Sanbase.DataCase
   import Mock
   import Sanbase.Factory

@@ -3,30 +3,23 @@ defmodule Sanbase.Signals.PriceVolumeDiffHistoryTest do
 
   import Mock
   import Sanbase.Factory
-  import ExUnit.CaptureLog
-
   alias Sanbase.Signals.UserTrigger
-  alias Sanbase.Signals.History.PriceVolumeDifferenceHistory
 
-  @ticker "SAN"
-  @cmc_id "santiment"
   @moduletag capture_log: true
 
   setup do
     Sanbase.Signals.Evaluator.Cache.clear()
 
-    Sanbase.Factory.insert(:project, %{
-      name: "Santiment",
-      ticker: @ticker,
-      coinmarketcap_id: @cmc_id,
-      main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
-    })
+    project =
+      insert(:project, %{
+        main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
+      })
 
     trigger = %{
       cooldown: "2h",
       settings: %{
         type: "price_volume_difference",
-        target: %{slug: "santiment"},
+        target: %{slug: project.coinmarketcap_id},
         channel: "telegram",
         threshold: 0.015
       }

@@ -4,7 +4,7 @@ defmodule SanbaseWeb.Graphql.CacheProvider do
   """
 
   @type hash :: String.t()
-  @type key :: hash | {atom, hash}
+  @type key :: hash | {atom, hash} | {non_neg_integer(), non_neg_integer()}
   @type error :: String.t()
   @type stored_value :: any()
   @type cache :: atom()

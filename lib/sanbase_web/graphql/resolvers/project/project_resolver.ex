@@ -162,7 +162,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
       do: {:ok, nil}
 
   def project_transparency_status(
-        %Project{project_transparency_status_id: ptsi} = project,
+        %Project{project_transparency_status_id: ptsi},
         _args,
         %{context: %{loader: loader}}
       ) do

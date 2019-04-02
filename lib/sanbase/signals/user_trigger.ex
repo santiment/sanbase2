@@ -195,20 +195,19 @@ defmodule Sanbase.Signals.UserTrigger do
           {:ok, %__MODULE__{}} | {:error, String.t()} | {:error, Ecto.Changeset.t()}
   def remove_user_trigger(%User{} = user, trigger_id) do
     case get_trigger_by_id(user, trigger_id) do
+      {:ok, nil} ->
+        {:error, "Can't remove trigger with id #{trigger_id}"}
+
       {:ok, struct} ->
         Repo.delete(struct)
-
-      _ ->
-        {:error, "Can't remove trigger with id #{trigger_id}"}
     end
   end
 
-  @spec historical_trigger_points(%Trigger{}) :: list(any)
+  @spec historical_trigger_points(%Trigger{} | map()) :: list(any)
   def historical_trigger_points(%Trigger{} = trigger) do
     Trigger.historical_trigger_points(trigger)
   end
 
-  @spec historical_trigger_points(map()) :: list(any)
   def historical_trigger_points(%{settings: settings} = params) do
     {:ok, settings_struct} =
       settings

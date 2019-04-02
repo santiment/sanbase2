@@ -9,7 +9,7 @@ defprotocol Sanbase.Signals.Settings do
 end
 
 defprotocol Sanbase.Signals.History do
-  @spec historical_trigger_points(struct(), String.t()) :: list(any())
+  @spec historical_trigger_points(struct(), String.t()) :: {:ok, list(any())} | {:error, any()}
   def historical_trigger_points(trigger, cooldown)
 end
 

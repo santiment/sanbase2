@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Graphql.Clickhouse.NVTTest do
+defmodule Sanbase.Clickhouse.NVTTest do
   use SanbaseWeb.ConnCase, async: false
 
   import Mock

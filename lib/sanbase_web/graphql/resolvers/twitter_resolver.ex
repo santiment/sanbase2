@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.Resolvers.TwitterResolver do
   alias Sanbase.Model.Project
   alias Sanbase.ExternalServices.TwitterData.Store
-  alias SanbaseWeb.Graphql.Cache
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   import SanbaseWeb.Graphql.Helpers.Async

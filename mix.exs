@@ -78,7 +78,7 @@ defmodule Sanbase.Mixfile do
       {:arc, git: "https://github.com/marinho10/arc"},
       {:uuid, "~> 1.1"},
       {:phoenix_live_reload, "~> 1.1", only: :dev},
-      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.5", only: [:dev], runtime: false},
       {:con_cache, "~> 0.13"},
       {:excoveralls, "~> 0.8", optional: true, only: [:dev, :test]},
       {:observer_cli, "~> 1.3"},

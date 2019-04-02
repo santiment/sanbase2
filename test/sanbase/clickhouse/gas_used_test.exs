@@ -1,4 +1,4 @@
-defmodule SanbaseWeb.Clickhouse.GasUsedTest do
+defmodule Sanbase.Clickhouse.GasUsedTest do
   use Sanbase.DataCase
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601_to_unix!: 1, from_iso8601!: 1]

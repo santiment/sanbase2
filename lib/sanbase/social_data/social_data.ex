@@ -318,10 +318,10 @@ defmodule Sanbase.SocialData do
     |> Enum.map(fn %{"project" => project, "change" => change} = project_change ->
       case Map.get(project_change, "status") do
         nil ->
-          %{project: project, change: change}
+          %{slug: project, change: change}
 
         status ->
-          %{project: project, change: change, status: String.to_existing_atom(status)}
+          %{slug: project, change: change, status: String.to_existing_atom(status)}
       end
     end)
   end

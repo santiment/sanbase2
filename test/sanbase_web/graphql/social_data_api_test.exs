@@ -170,12 +170,12 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
         projects: [
           %{
             change: 137.13186813186815,
-            project: "qtum",
+            slug: "qtum",
             status: :gainer
           },
           %{
             change: -1.0,
-            project: "abbc-coin",
+            slug: "abbc-coin",
             status: :loser
           }
         ]
@@ -202,12 +202,12 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
                      "projects" => [
                        %{
                          "change" => 137.13186813186815,
-                         "project" => "qtum",
+                         "slug" => "qtum",
                          "status" => "GAINER"
                        },
                        %{
                          "change" => -1.0,
-                         "project" => "abbc-coin",
+                         "slug" => "abbc-coin",
                          "status" => "LOSER"
                        }
                      ]
@@ -357,7 +357,7 @@ defmodule SanbaseWeb.Graphql.SocialDataApiTest do
       ) {
         datetime,
         projects {
-          project,
+          slug,
           change,
           status
         }

@@ -49,7 +49,7 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
   end
 
   object :projects_change do
-    field(:project, non_null(:string))
+    field(:slug, non_null(:string))
     field(:change, non_null(:float))
     field(:status, :social_gainers_losers_status_enum)
   end

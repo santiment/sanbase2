@@ -5,11 +5,16 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MiningPoolsDistributionTest do
   import Mock
   import Sanbase.DateTimeUtils, only: [from_iso8601!: 1]
   import ExUnit.CaptureLog
+  import Sanbase.Factory
 
   alias Sanbase.Clickhouse.MiningPoolsDistribution
 
   setup do
+    user = insert(:staked_user)
+    conn = setup_jwt_auth(build_conn(), user)
+
     [
+      conn: conn,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),
       interval: "1d"

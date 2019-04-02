@@ -10,9 +10,12 @@ defmodule SanbaseWeb.Graphql.Clickhouse.MVRVTest do
   alias Sanbase.Clickhouse.MVRV
 
   setup do
+    user = insert(:staked_user)
+    conn = setup_jwt_auth(build_conn(), user)
     project = insert(:project, %{coinmarketcap_id: "ethereum", ticker: "ETH"})
 
     [
+      conn: conn,
       slug: project.coinmarketcap_id,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z"),

@@ -16,6 +16,8 @@ defmodule SanbaseWeb.Graphql.Cache do
             func: 3,
             from: 2,
             resolver: 2,
+            store: 2,
+            store: 3,
             get_or_store: 2,
             get_or_store: 3,
             cache_modify_middleware: 3,

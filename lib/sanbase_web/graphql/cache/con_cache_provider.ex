@@ -28,7 +28,17 @@ defmodule SanbaseWeb.Graphql.ConCacheProvider do
 
   @impl true
   def store(cache, key, value) do
-    cache_item(cache, key, {:stored, value}) == :ok
+    case value do
+      {:error, _} = error ->
+        :ok
+
+      {:nocache, _} ->
+        Process.put(:has_nocache_field, true)
+        :ok
+
+      value ->
+        cache_item(cache, key, {:stored, value})
+    end
   end
 
   @impl true

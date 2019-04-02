@@ -136,6 +136,10 @@ defmodule Sanbase.Auth.User do
     end
   end
 
+  def full_permissions() do
+    %{historical_data: true, realtime_data: true, spreadsheet: true}
+  end
+
   def ascii_username?(nil), do: true
 
   def ascii_username?(username) do

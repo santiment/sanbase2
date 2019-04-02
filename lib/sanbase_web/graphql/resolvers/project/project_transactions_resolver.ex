@@ -203,7 +203,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
        }) do
     limit = Enum.min([limit, 100])
 
-    with {:ok, project_addresses} <- Project.eth_addresses(project),
+    with {:eth_addresses, {:ok, project_addresses}} <-
+           {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_transactions} <-
            Clickhouse.EthTransfers.top_wallet_transfers(
              project_addresses,
@@ -216,6 +217,9 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
            Clickhouse.MarkExchanges.mark_exchange_wallets(eth_transactions) do
       {:ok, eth_transactions}
     else
+      {:eth_addresses, _} ->
+        {:ok, []}
+
       error ->
         Logger.warn(
           "Cannot fetch top ETH transactions for #{Project.describe(project)}. Reason: #{

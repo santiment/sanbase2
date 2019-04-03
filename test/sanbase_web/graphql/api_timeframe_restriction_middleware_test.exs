@@ -54,24 +54,6 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
       token_age_consumed: 7000
     })
 
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: hour_ago(),
-      active_addresses: 100
-    })
-
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: week_ago(),
-      active_addresses: 200
-    })
-
-    insert(:daily_active_addresses, %{
-      contract_address: contract_address,
-      timestamp: restricted_from(),
-      active_addresses: 300
-    })
-
     staked_user =
       %User{
         salt: User.generate_salt(),
@@ -178,24 +160,6 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
     assert %{"tokenAgeConsumed" => 7000.0} in token_age_consumed
   end
 
-  test "shows historical data but not realtime for DAA", context do
-    result =
-      build_conn()
-      |> post(
-        "/graphql",
-        query_skeleton(
-          dailyActiveAddressesQuery(context.not_santiment_slug),
-          "dailyActiveAddresses"
-        )
-      )
-
-    daas = json_response(result, 200)["data"]["dailyActiveAddresses"]
-
-    refute %{"activeAddresses" => 100} in daas
-    assert %{"activeAddresses" => 200} in daas
-    assert %{"activeAddresses" => 300} in daas
-  end
-
   defp tokenAgeConsumedQuery(slug) do
     """
     {
@@ -205,19 +169,6 @@ defmodule SanbaseWeb.Graphql.ApiTimeframeRestrictionMiddlewareTest do
         to: "#{now()}"
         interval: "30m") {
           tokenAgeConsumed
-      }
-    }
-    """
-  end
-
-  defp dailyActiveAddressesQuery(slug) do
-    """
-    {
-      dailyActiveAddresses(
-        slug: "#{slug}",
-        from: "#{before_restricted_from()}",
-        to: "#{now()}") {
-          activeAddresses
       }
     }
     """

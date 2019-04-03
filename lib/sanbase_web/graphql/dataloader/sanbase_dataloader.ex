@@ -1,7 +1,6 @@
 defmodule SanbaseWeb.Graphql.SanbaseDataloader do
   alias SanbaseWeb.Graphql.ClickhouseDataloader
   alias SanbaseWeb.Graphql.InfluxdbDataloader
-  alias SanbaseWeb.Graphql.TimescaledbDataloader
   alias SanbaseWeb.Graphql.ParityDataloader
   alias SanbaseWeb.Graphql.PostgresDataloader
 
@@ -24,7 +23,7 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
         ) :: {:error, <<_::64, _::_*8>>} | {:ok, float()} | map()
   def query(queryable, args) do
     case queryable do
-      x when x in [:average_dev_activity, :eth_spent] ->
+      x when x in [:average_dev_activity, :average_daily_active_addresses, :eth_spent] ->
         ClickhouseDataloader.query(queryable, args)
 
       :volume_change_24h ->
@@ -32,9 +31,6 @@ defmodule SanbaseWeb.Graphql.SanbaseDataloader do
 
       {:price, _} ->
         InfluxdbDataloader.query(queryable, args)
-
-      :average_daily_active_addresses ->
-        TimescaledbDataloader.query(queryable, args)
 
       :eth_balance ->
         ParityDataloader.query(queryable, args)

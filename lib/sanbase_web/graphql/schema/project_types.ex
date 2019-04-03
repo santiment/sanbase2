@@ -7,6 +7,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
   import SanbaseWeb.Graphql.Cache, only: [cache_resolve: 1]
 
   alias SanbaseWeb.Graphql.Resolvers.{
+    ClickhouseResolver,
     ProjectResolver,
     ProjectBalanceResolver,
     ProjectTransactionsResolver,
@@ -230,7 +231,7 @@ defmodule SanbaseWeb.Graphql.ProjectTypes do
       arg(:from, :datetime)
       arg(:to, :datetime)
 
-      cache_resolve(&EtherbiResolver.average_daily_active_addresses/3)
+      cache_resolve(&ClickhouseResolver.average_daily_active_addresses/3)
     end
   end
 

@@ -419,11 +419,11 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
-      cache_resolve(&EtherbiResolver.daily_active_addresses/3)
+      cache_resolve(&ClickhouseResolver.daily_active_addresses/3)
     end
 
     @desc ~s"""

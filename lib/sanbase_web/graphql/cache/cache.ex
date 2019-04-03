@@ -16,6 +16,8 @@ defmodule SanbaseWeb.Graphql.Cache do
             func: 3,
             from: 2,
             resolver: 2,
+            store: 2,
+            store: 3,
             get_or_store: 2,
             get_or_store: 3,
             cache_modify_middleware: 3,
@@ -104,6 +106,10 @@ defmodule SanbaseWeb.Graphql.Cache do
     CacheProvider.size(@cache_name, :megabytes)
   end
 
+  def get(key) do
+    CacheProvider.get(@cache_name, key)
+  end
+
   @doc false
   def from(captured_mfa, nil) when is_function(captured_mfa) do
     # Public so it can be used by the resolve macros. You should not use it.
@@ -143,7 +149,11 @@ defmodule SanbaseWeb.Graphql.Cache do
     end
   end
 
-  defp get_or_store(cache_name \\ @cache_name, cache_key, resolver_fn) do
+  def store(cache_name \\ @cache_name, cache_key, value) do
+    CacheProvider.store(cache_name, cache_key, value)
+  end
+
+  def get_or_store(cache_name \\ @cache_name, cache_key, resolver_fn) do
     CacheProvider.get_or_store(
       cache_name,
       cache_key,
@@ -193,9 +203,12 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   # Helper functions
 
-  defp cache_key(name, args) do
+  def cache_key(name, args, opts \\ []) do
+    base_ttl = Keyword.get(opts, :ttl, @ttl)
+    max_ttl_offset = Keyword.get(opts, :max_ttl_offset, @max_ttl_offset)
     slug = Map.get(args, :slug, "")
-    ttl = @ttl + ("#{inspect(name)}#{slug}" |> :erlang.phash2(@max_ttl_offset))
+
+    ttl = base_ttl + ({name, slug} |> :erlang.phash2(max_ttl_offset))
 
     args_hash =
       args

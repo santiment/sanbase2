@@ -334,8 +334,25 @@ defmodule Sanbase.Model.Project do
     |> Repo.one()
   end
 
+  def contract_info_by_slug("ethereum") do
+    {:ok, "ETH", 18}
+  end
+
   def contract_info_by_slug(slug) do
-    Project.by_slug(slug) |> contract_info()
+    from(p in Project,
+      where: p.coinmarketcap_id == ^slug,
+      select: {p.main_contract_address, p.token_decimals}
+    )
+    |> Repo.one()
+    |> case do
+      {contract, token_decimals} when is_binary(contract) ->
+        {:ok, String.downcase(contract), token_decimals || 0}
+
+      _ ->
+        {:error,
+         {:missing_contract,
+          "Can't find contract address of project with coinmarketcap_id #{slug}"}}
+    end
   end
 
   def contract_address(%Project{} = project) do

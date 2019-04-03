@@ -125,50 +125,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   end
 
   @doc ~S"""
-  Return the number of daily active addresses for a given slug
-  """
-  def daily_active_addresses(
-        _root,
-        %{slug: "bitcoin", from: from, to: to, interval: interval},
-        _resolution
-      ) do
-    with {:ok, from, to, interval} <-
-           calibrate_interval(Bitcoin, "bitcoin", from, to, interval, 86400, @datapoints) do
-      Bitcoin.daily_active_addresses(from, to, interval)
-    end
-  end
-
-  def daily_active_addresses(
-        _root,
-        %{slug: slug, from: from, to: to, interval: interval} = args,
-        _resolution
-      ) do
-    with {:ok, contract, _token_decimals} <- Project.contract_info_by_slug(slug),
-         {:ok, from, to, interval} <-
-           calibrate_interval(
-             DailyActiveAddresses,
-             contract,
-             from,
-             to,
-             interval,
-             86400,
-             @datapoints
-           ),
-         {:ok, daily_active_addresses} <-
-           DailyActiveAddresses.average_active_addresses(contract, from, to, interval) do
-      {:ok, daily_active_addresses |> fit_from_datetime(args)}
-    else
-      {:error, {:missing_contract, error_msg}} ->
-        {:error, error_msg}
-
-      {:error, error} ->
-        error_msg = "Can't fetch daily active addresses for #{slug}"
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
-        {:error, error_msg}
-    end
-  end
-
-  @doc ~S"""
   Return the amount of tokens that were transacted in or out of an exchange wallet for a given slug
   and time period
   """
@@ -277,48 +233,5 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
 
   def exchange_wallets(_root, _args, _resolution) do
     {:ok, ExchangeAddress |> Repo.all() |> Repo.preload(:infrastructure)}
-  end
-
-  @doc ~S"""
-  Return the average number of daily active addresses for a given slug and period of time
-  """
-  def average_daily_active_addresses(
-        %Project{} = project,
-        args,
-        %{context: %{loader: loader}}
-      ) do
-    to = Map.get(args, :to, Timex.now())
-    from = Map.get(args, :from, Timex.shift(to, days: -30))
-
-    loader
-    |> Dataloader.load(SanbaseDataloader, :average_daily_active_addresses, %{
-      project: project,
-      from: from,
-      to: to
-    })
-    |> on_load(&average_daily_active_addresses_on_load(&1, project))
-  end
-
-  def average_daily_active_addresses_on_load(loader, project) do
-    with {:ok, contract, _token_decimals} <- Project.contract_info(project) do
-      average_daily_active_addresses =
-        loader
-        |> Dataloader.get(
-          SanbaseDataloader,
-          :average_daily_active_addresses,
-          contract
-        )
-
-      {:ok, average_daily_active_addresses || 0}
-    else
-      {:error, {:missing_contract, _}} ->
-        {:ok, 0}
-
-      {:error, error} ->
-        error_msg = "Can't fetch average daily active addresses for #{Project.describe(project)}"
-        Logger.warn(error_msg <> "Reason: #{inspect(error)}")
-
-        {:ok, 0}
-    end
   end
 end

@@ -77,6 +77,7 @@ defmodule SanbseWeb.Graphql.Phase.Document.Execution.Resolution do
   def run(bp_root, _) do
     # Will be fetched from cache - that's what's saved by SanbaseWeb.Graphql.Absinthe.before_send
     result = Process.get(@cache_dict_key)
+    Process.put(:do_not_cache_query, true)
 
     {:ok, %{bp_root | result: result}}
   end

@@ -19,7 +19,7 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
   """
   alias SanbaseWeb.Graphql.Cache
 
-  @compile inline: [has_errors?: 1]
+  @compile inline: [cache_result: 2]
   @cached_queries [
     "all_projects",
     "all_erc20_projects",
@@ -29,7 +29,21 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
     "projects_list_stats"
   ]
 
+  def before_send(conn, %Absinthe.Blueprint{result: %{errors: _}}), do: conn
+
   def before_send(conn, %Absinthe.Blueprint{} = blueprint) do
+    # Do not cache in case of:
+    # -`:nocache` returend from a resolver
+    # - result is taken from the cache and should not be stored again. Storing
+    # it again `touch`es it and the TTL timer is restarted. This can lead
+    # to infinite storing the same value if there are enough requests
+    should_cache? = !Process.get(:do_not_cache_query)
+    cache_result(should_cache?, blueprint)
+
+    conn
+  end
+
+  defp cache_result(true, blueprint) do
     requested_queries =
       blueprint.operations
       |> Enum.flat_map(fn %{selections: selections} ->
@@ -41,18 +55,13 @@ defmodule SanbaseWeb.Graphql.AbsintheBeforeSend do
       requested_queries
       |> Enum.all?(&Enum.member?(@cached_queries, Macro.underscore(&1)))
 
-    has_nocache_field? = Process.get(:has_nocache_field)
-
-    if !has_errors?(blueprint.result) && all_queries_cachable? && !has_nocache_field? do
+    if all_queries_cachable? do
       Cache.store(
         blueprint.execution.context.query_cache_key,
         blueprint.result
       )
     end
-
-    conn
   end
 
-  defp has_errors?(%{errors: _}), do: true
-  defp has_errors?(_), do: false
+  defp cache_result(_, _), do: :ok
 end

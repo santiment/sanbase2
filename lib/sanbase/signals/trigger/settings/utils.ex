@@ -1,4 +1,6 @@
 defmodule Sanbase.Signals.Utils do
+  alias Sanbase.Math
+
   def percent_change(0, _current_daa), do: 0
   def percent_change(nil, _current_daa), do: 0
 
@@ -27,5 +29,17 @@ defmodule Sanbase.Signals.Utils do
       [%{image: %{url: chart_url}}] -> chart_url
       _ -> nil
     end
+  end
+
+  defguard is_between_exclusive(value, low, high)
+           when is_number(value) and is_number(low) and is_number(high) and value > low and
+                  value < high
+
+  def round_price(price) when is_between_exclusive(price, 0, 1) do
+    Math.to_float(price) |> Float.round(6)
+  end
+
+  def round_price(price) when is_number(price) and price >= 1 do
+    Math.to_float(price) |> Float.round(2)
   end
 end

@@ -1,6 +1,11 @@
 defmodule SanbaseWeb.Graphql.ClickhouseTypes do
   use Absinthe.Schema.Notation
 
+  object :active_addresses do
+    field(:datetime, non_null(:datetime))
+    field(:active_addresses, non_null(:integer))
+  end
+
   object :active_deposits do
     field(:datetime, non_null(:datetime))
     field(:active_deposits, non_null(:integer))

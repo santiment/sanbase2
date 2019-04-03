@@ -2,8 +2,6 @@ defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
   @compile :inline_list_funcs
   @compile {:inline, cache_key_from_params: 2}
 
-  @datetime_field_names ["from", "to"]
-
   @doc ~s"""
   Extract the query and variables from the params map and genenrate a cache key from them
   The query is fetched as is.
@@ -25,7 +23,7 @@ defmodule SanbaseWeb.Graphql.DocumentProvider.Utils do
         _ -> %{}
       end
       |> Enum.map(fn
-        {key, value} when key in @datetime_field_names and is_binary(value) ->
+        {key, value} when is_binary(value) ->
           case DateTime.from_iso8601(value) do
             {:ok, datetime, _} -> {key, datetime}
             _ -> {key, value}

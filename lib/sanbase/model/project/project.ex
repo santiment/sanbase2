@@ -45,6 +45,7 @@ defmodule Sanbase.Model.Project do
     field(:token_decimals, :integer)
     field(:total_supply, :decimal)
     field(:description, :string)
+    field(:long_description, :string)
     field(:project_transparency, :boolean, default: false)
     field(:main_contract_address, :string)
     belongs_to(:project_transparency_status, ProjectTransparencyStatus, on_replace: :nilify)

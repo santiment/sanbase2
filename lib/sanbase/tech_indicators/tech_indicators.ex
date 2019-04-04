@@ -1,5 +1,6 @@
 defmodule Sanbase.TechIndicators do
   import Sanbase.Utils.ErrorHandling
+  import Sanbase.TechIndicators.SocialDominance
 
   require Logger
   require Sanbase.Utils.Config, as: Config

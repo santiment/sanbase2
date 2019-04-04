@@ -18,6 +18,23 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:all)
   end
 
+  enum :social_volume_type do
+    value(:professional_traders_chat_overview)
+    value(:telegram_chats_overview)
+    value(:telegram_discussion_overview)
+    value(:discord_discussion_overview)
+  end
+
+  object :social_volume do
+    field(:datetime, non_null(:datetime))
+    field(:mentions_count, :integer)
+  end
+
+  object :social_dominance do
+    field(:datetime, non_null(:datetime))
+    field(:dominance, :float)
+  end
+
   object :trending_words do
     field(:datetime, non_null(:datetime))
     field(:top_words, list_of(:word_with_context))

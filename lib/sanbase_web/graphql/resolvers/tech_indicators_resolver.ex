@@ -87,6 +87,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver do
     )
   end
 
+  def social_dominance(
+        _root,
+        %{
+          slug: slug,
+          from: from,
+          to: to,
+          interval: interval,
+          social_volume_type: social_volume_type
+        },
+        _resolution
+      ) do
+    TechIndicators.social_dominance(
+      slug,
+      from,
+      to,
+      interval,
+      social_volume_type
+    )
+  end
+
   def social_volume_projects(
         _root,
         %{},

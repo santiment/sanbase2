@@ -14,10 +14,10 @@ defmodule Sanbase.Repo.Migrations.ImportProjectLongDescriptionsFromCSV do
     |> CSV.decode()
     |> Stream.drop(1)
     |> Enum.map(fn {:ok, line} ->
-      [_, ticker, name, long_desc] = line |> Enum.map(&String.trim/1)
+      [_, _, _, _, slug, long_desc] = line |> Enum.map(&String.trim/1)
 
       Project
-      |> where([p], p.ticker == ^ticker)
+      |> where([p], p.coinmarketcap_id == ^slug)
       |> Repo.update_all(set: [long_description: long_desc])
     end)
   end

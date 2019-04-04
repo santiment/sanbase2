@@ -228,7 +228,7 @@ defmodule SanbaseWeb.Graphql.Cache do
     args
     |> Enum.map(fn
       {k, %DateTime{} = v} ->
-        {k, div(DateTime.to_unix(v, :millisecond), ttl)}
+        {k, div(DateTime.to_unix(v, :second), ttl)}
 
       pair ->
         pair

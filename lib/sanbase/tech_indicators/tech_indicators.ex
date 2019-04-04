@@ -1,6 +1,6 @@
 defmodule Sanbase.TechIndicators do
   import Sanbase.Utils.ErrorHandling
-  import Sanbase.TechIndicators.SocialDominance
+  alias Sanbase.TechIndicators.SocialDominance
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -11,6 +11,13 @@ defmodule Sanbase.TechIndicators do
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000
+
+  defdelegate social_dominance(
+        slug,
+        datetime_from,
+        datetime_to,
+        interval,
+        social_volume_type), to: SocialDominance
 
   def twitter_mention_count(
         ticker,

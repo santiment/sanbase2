@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.TechIndicators
+  alias SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
 

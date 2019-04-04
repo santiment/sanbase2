@@ -1,8 +1,12 @@
 defmodule Sanbase.TechIndicators.SocialDominance do
   import Sanbase.Utils.ErrorHandling
 
+  alias Sanbase.Model.Project
+
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
+
+  require Sanbase.Utils.Config, as: Config
 
   @recv_timeout 15_000
 

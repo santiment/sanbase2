@@ -91,10 +91,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         {:error, "Project with id '#{id}' not found."}
 
       project ->
-        project =
-          project
-          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
-
         {:ok, project}
     end
   end
@@ -107,10 +103,6 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
         {:error, "Project with slug '#{slug}' not found."}
 
       project ->
-        project =
-          project
-          |> Repo.preload([:latest_coinmarketcap_data, icos: [ico_currencies: [:currency]]])
-
         {:ok, project}
     end
   end
@@ -417,11 +409,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectResolver do
   end
 
   def initial_ico(%Project{} = project, _args, _resolution) do
-    ico =
-      Project.initial_ico(project)
-      |> Repo.preload(ico_currencies: [:currency])
-
-    {:ok, ico}
+    {:ok, Project.initial_ico(project)}
   end
 
   @doc """

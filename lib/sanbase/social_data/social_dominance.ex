@@ -1,4 +1,4 @@
-defmodule Sanbase.TechIndicators.SocialDominance do
+defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
 
   alias Sanbase.Model.Project

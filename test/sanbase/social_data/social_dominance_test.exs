@@ -4,7 +4,7 @@ defmodule Sanbase.SocialDominanceTest do
   import Mockery
   import ExUnit.CaptureLog
 
-  alias Sanbase.TechIndicators
+  alias Sanbase.SocialData
   import Sanbase.Factory
 
   setup do
@@ -37,7 +37,7 @@ defmodule Sanbase.SocialDominanceTest do
       )
 
       result =
-        TechIndicators.social_dominance(
+        SocialData.social_dominance(
           "santiment",
           DateTime.from_unix!(from),
           DateTime.from_unix!(to),
@@ -71,7 +71,7 @@ defmodule Sanbase.SocialDominanceTest do
       )
 
       result = fn ->
-        TechIndicators.social_dominance(
+        SocialData.social_dominance(
           "santiment",
           DateTime.from_unix!(1_523_876_400),
           DateTime.from_unix!(1_523_880_000),
@@ -95,7 +95,7 @@ defmodule Sanbase.SocialDominanceTest do
       )
 
       result = fn ->
-        TechIndicators.social_dominance(
+        SocialData.social_dominance(
           "santiment",
           DateTime.from_unix!(1_523_876_400),
           DateTime.from_unix!(1_523_880_000),

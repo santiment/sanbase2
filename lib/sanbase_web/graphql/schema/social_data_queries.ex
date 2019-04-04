@@ -1,7 +1,7 @@
 defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
   use Absinthe.Schema.Notation
 
-  alias SanbaseWeb.Graphql.Resolvers.TechIndicatorsResolver
+  alias SanbaseWeb.Graphql.Resolvers.SocialDataResolver
   alias SanbaseWeb.Graphql.Complexity
   alias SanbaseWeb.Graphql.Middlewares.ApiTimeframeRestriction
 
@@ -31,7 +31,7 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
-      resolve(&TechIndicatorsResolver.social_dominance/3)
+      resolve(&SocialDataResolver.social_dominance/3)
     end
   end
 end

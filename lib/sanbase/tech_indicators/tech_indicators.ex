@@ -12,13 +12,6 @@ defmodule Sanbase.TechIndicators do
 
   @recv_timeout 15_000
 
-  defdelegate social_dominance(
-        slug,
-        datetime_from,
-        datetime_to,
-        interval,
-        social_volume_type), to: SocialDominance
-
   def twitter_mention_count(
         ticker,
         from_datetime,

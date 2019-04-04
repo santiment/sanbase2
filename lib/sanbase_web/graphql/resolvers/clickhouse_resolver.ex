@@ -13,6 +13,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     MVRV,
     NetworkGrowth,
     NVT,
+    PercentOfTokenSupplyOnExchanges,
     RealizedValue
   }
 
@@ -157,6 +158,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         )
 
         {:error, "Can't calculate historical balances for project with coinmarketcap_id #{slug}"}
+    end
+  end
+
+  def percent_of_token_supply_on_exchanges(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    case PercentOfTokenSupplyOnExchanges.percent_on_exchanges(slug, from, to, interval) do
+      {:ok, percent_tokens_on_exchanges} ->
+        {:ok, percent_tokens_on_exchanges}
+
+      {:error, error} ->
+        error_msg =
+          "Can't calculate Percent of Token Supply on Exchanges for project with coinmarketcap_id: #{
+            slug
+          }."
+
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
     end
   end
 end

@@ -44,4 +44,9 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:realized_value, :integer)
     field(:non_exchange_realized_value, :integer)
   end
+
+  object :percent_of_token_supply_on_exchanges do
+    field(:datetime, non_null(:datetime))
+    field(:percent_on_exchanges, :float)
+  end
 end

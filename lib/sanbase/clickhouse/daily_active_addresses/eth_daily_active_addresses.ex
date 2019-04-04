@@ -10,7 +10,9 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
 
   @type active_addresses :: %{
           datetime: %DateTime{},
-          active_addresses: non_neg_integer()
+          active_addresses: non_neg_integer(),
+          active_deposits: non_neg_integer(),
+          share_of_deposits: number()
         }
 
   @doc ~s"""
@@ -97,45 +99,85 @@ defmodule Sanbase.Clickhouse.EthDailyActiveAddresses do
     span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
 
     query = """
-    SELECT toUnixTimestamp(time) as dt, SUM(value) as active_addresses
+    SELECT
+      toUnixTimestamp(time) AS dt,
+      SUM(addresses) AS active_addresses,
+      SUM(deposits) AS active_deposits,
+      if(SUM(addresses) != 0, SUM(deposits)/SUM(addresses), 0) * 100 AS share_of_deposits
     FROM (
       SELECT
-        toDateTime(intDiv(toUInt32(?3 + (number + 1) * ?1), ?1) * ?1) as time,
-        toUInt32(0) AS value
+        toDateTime(intDiv(toUInt32(?3 + (number + 1) * ?1), ?1) * ?1) AS time,
+        toUInt32(0) AS addresses,
+        toUInt32(0) AS deposits
       FROM numbers(?2)
 
       UNION ALL
 
-      SELECT toDateTime(intDiv(toUInt32(dt), ?1) * ?1) as time, total_addresses as value
+      SELECT
+        toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        total_addresses AS addresses,
+        deposits AS deposits
       FROM (
-        SELECT toStartOfDay(dt) as dt, anyLast(total_addresses) as total_addresses
+        SELECT
+          toStartOfDay(dt) AS dt,
+          anyLast(total_addresses) AS total_addresses
         FROM eth_daily_active_addresses
-        WHERE
-        dt < toDateTime(today()) AND
-        dt >= toDateTime(?3) AND
-        dt <= toDateTime(?4)
+        PREWHERE
+          dt < toDateTime(today()) AND
+          dt >= toDateTime(?3) AND
+          dt <= toDateTime(?4)
         GROUP BY dt
 
         UNION ALL
 
-        SELECT toStartOfDay(dt) as dt, uniq(address) as total_addresses
+        SELECT
+          toStartOfDay(dt) AS dt,
+          uniq(address) AS total_addresses
         FROM eth_daily_active_addresses_list
-        WHERE dt >= toDateTime(today()) AND
-        dt >= toDateTime(?3) AND
-        dt <= toDateTime(?4)
+        PREWHERE
+          dt >= toDateTime(today()) AND
+          dt >= toDateTime(?3) AND
+          dt <= toDateTime(?4)
         GROUP BY dt
       )
+
+      ANY LEFT JOIN(
+        SELECT
+          sum(total_addresses) AS deposits,
+          dt
+        FROM(
+          SELECT DISTINCT
+            exchange,
+            dt,
+            contract,
+            total_addresses
+          FROM daily_active_deposits
+          PREWHERE
+            dt < toDateTime(today()) AND
+            dt >= toDateTime(?3) AND
+            dt <= toDateTime(?4)
+        )
+        GROUP BY dt
+      ) USING(dt)
+
     )
-    group by dt
-    order by dt
+    GROUP BY dt
+    ORDER BY dt
     """
 
     args = [interval, span, from_datetime_unix, to_datetime_unix]
 
-    ClickhouseRepo.query_transform(query, args, fn [dt, active_addresses] ->
+    ClickhouseRepo.query_transform(query, args, fn [
+                                                     dt,
+                                                     active_addresses,
+                                                     active_deposits,
+                                                     share_of_deposits
+                                                   ] ->
       %{
         datetime: DateTime.from_unix!(dt),
-        active_addresses: active_addresses |> to_integer()
+        active_addresses: active_addresses |> to_integer(),
+        active_deposits: active_deposits |> to_integer(),
+        share_of_deposits: share_of_deposits
       }
     end)
   end

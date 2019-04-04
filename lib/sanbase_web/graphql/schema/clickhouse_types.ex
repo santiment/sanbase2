@@ -4,6 +4,8 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
   object :active_addresses do
     field(:datetime, non_null(:datetime))
     field(:active_addresses, non_null(:integer))
+    field(:active_deposits, non_null(:integer))
+    field(:share_of_deposits, :float)
   end
 
   object :active_deposits do

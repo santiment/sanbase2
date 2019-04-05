@@ -38,8 +38,6 @@ defmodule Sanbase.Auth.Hmac do
   require Sanbase.Utils.Config, as: Config
   require Logger
 
-  alias Sanbase.Auth.UserApikeyToken
-
   @rand_bytes_length 64
   @apikey_length 32
 

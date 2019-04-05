@@ -29,7 +29,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         {:ok, percent_of_total_supply}
 
       {:error, error} ->
-        error_msg = "Can't calculate Top holders - percent of total supply."
+        error_msg = "Can't calculate top holders - percent of total supply for slug: #{slug}."
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}
     end

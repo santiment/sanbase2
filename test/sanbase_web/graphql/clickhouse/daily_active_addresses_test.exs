@@ -134,7 +134,7 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
       active_addresses =
         json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
 
-      assert active_addresses == 300
+      assert active_addresses == 150
     end
   end
 

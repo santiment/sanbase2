@@ -1,13 +1,13 @@
 defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   require Logger
 
+  import Absinthe.Resolution.Helpers
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7, requested_fields: 1]
+
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
-  alias SanbaseWeb.Graphql.Helpers.Utils
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
-
-  import Absinthe.Resolution.Helpers
 
   alias Sanbase.Clickhouse.{
     DailyActiveAddresses,
@@ -93,7 +93,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       ) do
     with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
+           calibrate_interval(
              DailyActiveDeposits,
              contract,
              from,
@@ -118,11 +118,12 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
   def daily_active_addresses(
         _root,
         %{slug: slug, from: from, to: to, interval: interval},
-        _resolution
+        resolution
       ) do
     with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
+         {:ok, requested_fields} <- requested_fields(resolution),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
+           calibrate_interval(
              DailyActiveAddresses,
              contract,
              from,
@@ -132,12 +133,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
              50
            ),
          {:ok, daily_active_addresses} <-
-           DailyActiveAddresses.average_active_addresses(
-             contract,
-             from,
-             to,
-             interval
-           ) do
+           average_active_addresses_over_time([contract, from, to, interval], requested_fields) do
       {:ok, daily_active_addresses}
     else
       {:error, {:missing_contract, error_msg}} ->
@@ -150,6 +146,19 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}
     end
+  end
+
+  defp average_active_addresses_over_time(args, requested_fields) do
+    fun =
+      Enum.any?(requested_fields, fn field ->
+        field == "active_deposits" || field == "share_of_deposits"
+      end)
+      |> case do
+        true -> :average_active_addresses_with_deposits
+        false -> :average_active_addresses
+      end
+
+    apply(DailyActiveAddresses, fun, args)
   end
 
   @doc ~S"""

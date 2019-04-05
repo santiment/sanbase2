@@ -123,6 +123,14 @@ defmodule SanbaseWeb.Graphql.Helpers.Utils do
     }
   end
 
+  def requested_fields(resolution) do
+    fields =
+      resolution.definition.selections
+      |> Enum.map(fn field -> Map.get(field, :name) |> Macro.underscore() end)
+
+    {:ok, fields}
+  end
+
   # Private functions
 
   @spec format_error(Ecto.Changeset.error()) :: String.t()

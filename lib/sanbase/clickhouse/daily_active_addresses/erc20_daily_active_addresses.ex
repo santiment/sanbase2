@@ -17,10 +17,39 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
   @type active_addresses :: %{
           datetime: %DateTime{},
+          active_addresses: non_neg_integer()
+        }
+
+  @type active_addresses_with_deposits :: %{
+          datetime: %DateTime{},
           active_addresses: non_neg_integer(),
           active_deposits: non_neg_integer(),
           share_of_deposits: number()
         }
+
+  @doc ~s"""
+  Gets the current value for active addresses for today.
+  Returns a list of tuples {contract, active_addresses}
+  """
+  @spec realtime_active_addresses(contracts) ::
+          {:ok, list(contract_daa_tuple)} | {:error, String.t()}
+  def realtime_active_addresses(contracts) do
+    contracts = List.wrap(contracts)
+
+    args = [contracts]
+
+    query = """
+    SELECT contract, coalesce(uniq(address), 0) as active_addresses
+    FROM erc20_daily_active_addresses_list
+    PREWHERE contract IN (?1) and dt >= toDateTime(today())
+    GROUP BY contract, dt
+    """
+
+    ClickhouseRepo.query_transform(query, args, fn
+      [contract, active_addresses] ->
+        {contract, active_addresses |> to_integer()}
+    end)
+  end
 
   @doc ~s"""
   Returns the average value of the daily active addresses
@@ -74,26 +103,30 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
   end
 
   @doc ~s"""
-  Gets the current value for active addresses for today.
-  Returns a list of tuples {contract, active_addresses}
+  Returns the active addresses and deposits share for a contract chunked in intervals between [from, to]
+  If last day is included in the [from, to] the value is the realtime value in the current moment
   """
-  @spec realtime_active_addresses(contracts) ::
-          {:ok, list(contract_daa_tuple)} | {:error, String.t()}
-  def realtime_active_addresses(contracts) do
-    contracts = List.wrap(contracts)
+  @spec average_active_addresses_with_deposits(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t()
+        ) :: {:ok, list(active_addresses_with_deposits)} | {:error, String.t()}
+  def average_active_addresses_with_deposits(contract, from, to, interval) do
+    {query, args} = average_active_addresses_with_deposits_query(contract, from, to, interval)
 
-    args = [contracts]
-
-    query = """
-    SELECT contract, coalesce(uniq(address), 0) as active_addresses
-    FROM erc20_daily_active_addresses_list
-    PREWHERE contract IN (?1) and dt >= toDateTime(today())
-    GROUP BY contract, dt
-    """
-
-    ClickhouseRepo.query_transform(query, args, fn
-      [contract, active_addresses] ->
-        {contract, active_addresses |> to_integer()}
+    ClickhouseRepo.query_transform(query, args, fn [
+                                                     dt,
+                                                     active_addresses,
+                                                     active_deposits,
+                                                     share_of_deposits
+                                                   ] ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        active_addresses: active_addresses |> to_integer(),
+        active_deposits: active_deposits |> to_integer(),
+        share_of_deposits: share_of_deposits
+      }
     end)
   end
 
@@ -108,6 +141,82 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
           String.t()
         ) :: {:ok, list(active_addresses)} | {:error, String.t()}
   def average_active_addresses(contract, from, to, interval) do
+    {query, args} = average_active_addresses_query(contract, from, to, interval)
+
+    ClickhouseRepo.query_transform(query, args, fn [dt, active_addresses] ->
+      %{
+        datetime: DateTime.from_unix!(dt),
+        active_addresses: active_addresses |> to_integer()
+      }
+    end)
+  end
+
+  @spec average_active_addresses!(
+          String.t(),
+          %DateTime{},
+          %DateTime{},
+          String.t()
+        ) :: list(active_addresses)
+  def average_active_addresses!(contract, from, to, interval) do
+    case average_active_addresses(contract, from, to, interval) do
+      {:ok, result} -> result
+      {:error, error} -> raise(error)
+    end
+  end
+
+  defp average_active_addresses_query(contract, from, to, interval) do
+    interval = DateTimeUtils.compound_duration_to_seconds(interval)
+    from_datetime_unix = DateTime.to_unix(from)
+    to_datetime_unix = DateTime.to_unix(to)
+    span = div(to_datetime_unix - from_datetime_unix, interval) |> max(1)
+
+    query = """
+    SELECT
+      toUnixTimestamp(time) AS dt,
+      SUM(value) AS active_addresses
+    FROM (
+      SELECT
+        toDateTime(intDiv(toUInt32(?4 + (number + 1) * ?1), ?1) * ?1) AS time,
+        toUInt32(0) AS value
+      FROM numbers(?2)
+      UNION ALL
+      SELECT
+        toDateTime(intDiv(toUInt32(dt), ?1) * ?1) AS time,
+        total_addresses AS value
+      FROM (
+        SELECT
+          toStartOfDay(dt) AS dt,
+          anyLast(total_addresses) AS total_addresses
+        FROM erc20_daily_active_addresses
+        PREWHERE
+          contract = ?3 AND
+          dt < toDateTime(today()) AND
+          dt >= toDateTime(?4) AND
+          dt <= toDateTime(?5)
+        GROUP BY contract, dt
+        UNION ALL
+        SELECT
+          toStartOfDay(dt) AS dt,
+          uniq(address) AS total_addresses
+        FROM erc20_daily_active_addresses_list
+        PREWHERE
+          contract = ?3 AND
+          dt >= toDateTime(today()) AND
+          dt >= toDateTime(?4) AND
+          dt <= toDateTime(?5)
+        GROUP BY dt
+      )
+    )
+    GROUP BY dt
+    ORDER BY dt
+    """
+
+    args = [interval, span, contract, from_datetime_unix, to_datetime_unix]
+
+    {query, args}
+  end
+
+  defp average_active_addresses_with_deposits_query(contract, from, to, interval) do
     interval = DateTimeUtils.compound_duration_to_seconds(interval)
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
@@ -185,31 +294,6 @@ defmodule Sanbase.Clickhouse.Erc20DailyActiveAddresses do
 
     args = [interval, span, contract, from_datetime_unix, to_datetime_unix]
 
-    ClickhouseRepo.query_transform(query, args, fn [
-                                                     dt,
-                                                     active_addresses,
-                                                     active_deposits,
-                                                     share_of_deposits
-                                                   ] ->
-      %{
-        datetime: DateTime.from_unix!(dt),
-        active_addresses: active_addresses |> to_integer(),
-        active_deposits: active_deposits |> to_integer(),
-        share_of_deposits: share_of_deposits
-      }
-    end)
-  end
-
-  @spec average_active_addresses!(
-          String.t(),
-          %DateTime{},
-          %DateTime{},
-          String.t()
-        ) :: list(active_addresses)
-  def average_active_addresses!(contract, from, to, interval) do
-    case average_active_addresses(contract, from, to, interval) do
-      {:ok, result} -> result
-      {:error, error} -> raise(error)
-    end
+    {query, args}
   end
 end

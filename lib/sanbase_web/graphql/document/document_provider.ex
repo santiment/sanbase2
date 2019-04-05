@@ -82,6 +82,10 @@ defmodule SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument do
         {:ok, bp_root}
 
       result ->
+        # Storing it again `touch`es it and the TTL timer is restarted.
+        # This can lead to infinite storing the same value
+        Process.put(:do_not_cache_query, true)
+
         {:jump, %{bp_root | result: result},
          SanbseWeb.Graphql.Phase.Document.Execution.Idempotent}
     end

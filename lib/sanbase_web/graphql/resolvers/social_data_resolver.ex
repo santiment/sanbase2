@@ -79,7 +79,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
           from: from,
           to: to,
           interval: interval,
-          social_volume_type: social_volume_type
+          source: source
         },
         _resolution
       ) do
@@ -88,7 +88,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
       from,
       to,
       interval,
-      social_volume_type
+      source
     )
   end
 end

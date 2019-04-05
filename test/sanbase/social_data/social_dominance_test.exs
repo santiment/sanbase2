@@ -10,9 +10,8 @@ defmodule Sanbase.SocialDominanceTest do
   setup do
     project =
       insert(:project, %{
-        coinmarketcap_id: "santiment",
-        ticker: "SAN",
-        main_contract_address: "0x123"
+        coinmarketcap_id: "ethereum",
+        ticker: "ETH"
       })
 
     [
@@ -31,29 +30,67 @@ defmodule Sanbase.SocialDominanceTest do
         {:ok,
          %HTTPoison.Response{
            body:
-             "[{\"mentions_count\": 5, \"timestamp\": 1523876400}, {\"mentions_count\": 15, \"timestamp\": 1523880000}]",
+             "[{\"BTC_bitcoin\": 5, \"EOS_eos\": 15, \"ETH_ethereum\": 5, \"datetime\": 1523876400}, {\"BTC_bitcoin\": 15, \"EOS_eos\": 5, \"ETH_ethereum\": 10, \"datetime\": 1523880000}]",
            status_code: 200
          }}
       )
 
       result =
         SocialData.social_dominance(
-          "santiment",
+          "ethereum",
           DateTime.from_unix!(from),
           DateTime.from_unix!(to),
           "1h",
-          :telegram_discussion_overview
+          :telegram
         )
 
       assert result ==
                {:ok,
                 [
                   %{
-                    dominance: 5,
+                    dominance: 5 * 100 / 25,
                     datetime: DateTime.from_unix!(from)
                   },
                   %{
-                    dominance: 15,
+                    dominance: 10 * 100 / 30,
+                    datetime: DateTime.from_unix!(to)
+                  }
+                ]}
+    end
+
+    test "when there are no mentions for any project" do
+      from = 1_523_876_400
+      to = 1_523_880_000
+
+      mock(
+        HTTPoison,
+        :get,
+        {:ok,
+         %HTTPoison.Response{
+           body:
+             "[{\"BTC_bitcoin\": 0, \"EOS_eos\": 0, \"ETH_ethereum\": 0, \"datetime\": 1523876400}, {\"BTC_bitcoin\": 0, \"EOS_eos\": 0, \"ETH_ethereum\": 0, \"datetime\": 1523880000}]",
+           status_code: 200
+         }}
+      )
+
+      result =
+        SocialData.social_dominance(
+          "ethereum",
+          DateTime.from_unix!(from),
+          DateTime.from_unix!(to),
+          "1h",
+          :telegram
+        )
+
+      assert result ==
+               {:ok,
+                [
+                  %{
+                    dominance: 0,
+                    datetime: DateTime.from_unix!(from)
+                  },
+                  %{
+                    dominance: 0,
                     datetime: DateTime.from_unix!(to)
                   }
                 ]}
@@ -76,7 +113,7 @@ defmodule Sanbase.SocialDominanceTest do
           DateTime.from_unix!(1_523_876_400),
           DateTime.from_unix!(1_523_880_000),
           "1h",
-          :telegram_discussion_overview
+          :telegram
         )
       end
 
@@ -100,7 +137,7 @@ defmodule Sanbase.SocialDominanceTest do
           DateTime.from_unix!(1_523_876_400),
           DateTime.from_unix!(1_523_880_000),
           "1h",
-          :telegram_discussion_overview
+          :telegram
         )
       end
 

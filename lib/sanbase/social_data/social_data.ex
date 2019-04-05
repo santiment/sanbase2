@@ -17,7 +17,7 @@ defmodule Sanbase.SocialData do
         datetime_from,
         datetime_to,
         interval,
-        social_volume_type), to: SocialDominance
+        source), to: SocialDominance
 
   def trending_words(
         source,

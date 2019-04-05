@@ -11,6 +11,13 @@ defmodule SanbaseWeb.Graphql.SocialDataTypes do
     value(:all)
   end
 
+  enum :social_dominance_sources do
+    value(:telegram)
+    value(:professional_traders_chat)
+    value(:reddit)
+    value(:discord)
+  end
+
   enum :social_gainers_losers_status_enum do
     value(:gainer)
     value(:loser)

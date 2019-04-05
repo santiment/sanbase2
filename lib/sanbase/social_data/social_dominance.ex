@@ -2,6 +2,7 @@ defmodule Sanbase.SocialData.SocialDominance do
   import Sanbase.Utils.ErrorHandling
 
   alias Sanbase.Model.Project
+  alias SanbaseWeb.Graphql.Cache
 
   require Mockery.Macro
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
@@ -15,19 +16,21 @@ defmodule Sanbase.SocialData.SocialDominance do
         datetime_from,
         datetime_to,
         interval,
-        social_volume_type
+        source
       ) do
+    ticker = Project.ticker_by_slug(slug)
+    ticker_slug = "#{ticker}_#{slug}"
+
     social_dominance_request(
-      slug,
       datetime_from,
       datetime_to,
       interval,
-      social_volume_type
+      source
     )
     |> case do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, result} = Jason.decode(body)
-        parse_result(result)
+        parse_result(result, ticker_slug)
 
       {:ok, %HTTPoison.Response{status_code: status}} ->
         warn_result("Error status #{status} fetching social dominance for project #{slug}")
@@ -40,46 +43,58 @@ defmodule Sanbase.SocialData.SocialDominance do
   end
 
   defp social_dominance_request(
-         slug,
          datetime_from,
          datetime_to,
          interval,
-         social_volume_type
+         source
        ) do
-    from_unix = DateTime.to_unix(datetime_from)
-    to_unix = DateTime.to_unix(datetime_to)
-    ticker = Project.ticker_by_slug(slug)
-    ticker_slug = "#{ticker}_#{slug}"
+    cache_key = Cache.cache_key(:api_request, %{
+      from: datetime_from,
+      to: datetime_to,
+      interval: interval,
+      source: source
+    })
 
-    url = "#{tech_indicators_url()}/indicator/#{social_volume_type}"
+    Cache.get_or_store(cache_key, fn ->
+      from_unix = DateTime.to_unix(datetime_from)
+      to_unix = DateTime.to_unix(datetime_to)
 
-    options = [
-      recv_timeout: @recv_timeout,
-      params: [
-        {"project", ticker_slug},
-        {"datetime_from", from_unix},
-        {"datetime_to", to_unix},
-        {"interval", interval}
+      url = "#{tech_indicators_url()}/indicator/social_dominance_#{source}"
+
+      options = [
+        recv_timeout: @recv_timeout,
+        params: [
+          {"from_timestamp", from_unix},
+          {"to_timestamp", to_unix},
+          {"interval", interval}
+        ]
       ]
-    ]
 
-    http_client().get(url, [], options)
+      http_client().get(url, [], options)
+    end)
   end
 
-  defp parse_result(result) do
+  defp parse_result(result, ticker_slug) do
     result =
       result
       |> Enum.map(fn %{
-                       "timestamp" => timestamp,
-                       "mentions_count" => mentions_count
-                     } ->
+                       "datetime" => datetime
+                     } = datapoint ->
         %{
-          datetime: DateTime.from_unix!(timestamp),
-          dominance: mentions_count
+          datetime: DateTime.from_unix!(datetime),
+          dominance: Map.get(datapoint, ticker_slug, 0) * 100 / total_mentions(datapoint)
         }
       end)
 
     {:ok, result}
+  end
+
+  defp total_mentions(datapoint) do
+    datapoint
+    |> Enum.reject(fn {key, _} -> key == "datetime" end)
+    |> Enum.map(fn {_, value} -> value end)
+    |> Enum.sum()
+    |> max(1.0)
   end
 
   defp tech_indicators_url() do

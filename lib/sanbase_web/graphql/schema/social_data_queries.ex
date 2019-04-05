@@ -16,18 +16,18 @@ defmodule SanbaseWeb.Graphql.Schema.SocialDataQueries do
       * interval - an integer followed by one of: `m`, `h`, `d`, `w`
       * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
       * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
-      * socialVolumeType - the source of mention counts, one of the following:
-        1. "PROFESSIONAL_TRADERS_CHAT_OVERVIEW" - shows how many times the given project has been mentioned in the professional traders chat
-        2. "TELEGRAM_CHATS_OVERVIEW" - shows how many times the given project has been mentioned across all telegram chats, except the project's own community chat (if there is one)
-        3. "TELEGRAM_DISCUSSION_OVERVIEW" - the general volume of messages in the project's community chat (if there is one)
-        4. "DISCORD_DISCUSSION_OVERVIEW" - shows how many times the given project has been mentioned in the discord channels
+      * source - the source of mention counts, one of the following:
+        1. "PROFESSIONAL_TRADERS_CHAT" - shows the relative social dominance of this project on the web chats where trades talk
+        2. "TELEGRAM" - shows the relative social dominance of this project in the telegram crypto channels
+        3. "DISCORD" - shows the relative social dominance of this project on discord crypto communities
+        4. "REDDIT" - shows the relative social dominance of this project on crypto subreddits
     """
     field :social_dominance, list_of(:social_dominance) do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
       arg(:interval, non_null(:string), default_value: "1d")
-      arg(:social_volume_type, non_null(:social_volume_type))
+      arg(:source, non_null(:social_dominance_sources))
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)

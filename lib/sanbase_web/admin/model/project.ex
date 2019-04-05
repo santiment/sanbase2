@@ -120,6 +120,7 @@ defmodule Sanbase.ExAdmin.Model.Project do
         input(project, :token_decimals)
         input(project, :token_supply)
         input(project, :description)
+        input(project, :long_description, type: :text)
       end
     end
 

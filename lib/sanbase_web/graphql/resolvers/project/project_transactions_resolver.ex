@@ -143,7 +143,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent(%Project{} = project, from_datetime, to_datetime) do
-    with {:eth_addresses, {:ok, eth_addresses}} <-
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent} <-
            Clickhouse.EthTransfers.eth_spent(eth_addresses, from_datetime, to_datetime) do
@@ -175,7 +175,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
   end
 
   defp calculate_eth_spent_over_time(%Project{} = project, from, to, interval) do
-    with {:eth_addresses, {:ok, eth_addresses}} <-
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_spent_over_time} <-
            Clickhouse.EthTransfers.eth_spent_over_time(eth_addresses, from, to, interval) do
@@ -203,11 +203,11 @@ defmodule SanbaseWeb.Graphql.Resolvers.ProjectTransactionsResolver do
        }) do
     limit = Enum.min([limit, 100])
 
-    with {:eth_addresses, {:ok, project_addresses}} <-
+    with {:eth_addresses, {:ok, eth_addresses}} when eth_addresses != [] <-
            {:eth_addresses, Project.eth_addresses(project)},
          {:ok, eth_transactions} <-
            Clickhouse.EthTransfers.top_wallet_transfers(
-             project_addresses,
+             eth_addresses,
              from,
              to,
              limit,

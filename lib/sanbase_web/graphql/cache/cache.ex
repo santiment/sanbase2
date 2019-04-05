@@ -210,13 +210,12 @@ defmodule SanbaseWeb.Graphql.Cache do
 
     ttl = base_ttl + ({name, slug} |> :erlang.phash2(max_ttl_offset))
 
-    args_hash =
+    args =
       args
       |> convert_values(ttl)
-      |> Jason.encode_to_iodata!()
 
     cache_key =
-      [name, args_hash]
+      [name, args]
       |> :erlang.phash2()
 
     {cache_key, ttl}
@@ -224,17 +223,24 @@ defmodule SanbaseWeb.Graphql.Cache do
 
   # Convert the values for using in the cache. A special treatement is done for
   # `%DateTime{}` so all datetimes in a @ttl sized window are treated the same
-  defp convert_values(args, ttl) do
+  defp convert_values(%DateTime{} = v, ttl) do
+    div(DateTime.to_unix(v, :second), ttl)
+  end
+
+  defp convert_values(%_{} = v, _), do: Map.from_struct(v)
+
+  defp convert_values(args, ttl) when is_list(args) or is_map(args) do
     args
     |> Enum.map(fn
-      {k, %DateTime{} = v} ->
-        {k, div(DateTime.to_unix(v, :millisecond), ttl)}
+      {k, v} ->
+        [k, convert_values(v, ttl)]
 
-      pair ->
-        pair
+      data ->
+        convert_values(data, ttl)
     end)
-    |> Map.new()
   end
+
+  defp convert_values(v, _), do: v
 
   defp captured_mfa_name(captured_mfa) do
     captured_mfa

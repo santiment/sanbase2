@@ -887,6 +887,26 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc """
+    Returns the top holders' percent of total supply - in exchanges, outside exchanges and combined.
+
+    Arguments description:
+    * slug - a string uniquely identifying a project
+    * number_of_holders - take top `number_of_holders` into account when calculating.
+    * from - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    * to - a string representation of datetime value according to the iso8601 standard, e.g. "2018-04-16T10:02:19Z"
+    """
+    field :top_holders_percent_of_total_supply, list_of(:top_holders_percent_of_total_supply) do
+      arg(:slug, non_null(:string))
+      arg(:number_of_holders, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.top_holders_percent_of_total_supply/3)
+    end
+
+    @desc """
     Get a URL for deep-linking sanbase and telegram accounts. It carries a unique
     random token that is associated with the user. The link leads to a telegram chat
     with Santiment's notification bot. When the `Start` button is pressed, telegram

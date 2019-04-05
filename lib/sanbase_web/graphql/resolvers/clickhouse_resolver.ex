@@ -14,10 +14,26 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     NetworkGrowth,
     NVT,
     PercentOfTokenSupplyOnExchanges,
-    RealizedValue
+    TopHolders
   }
 
   @one_hour_seconds 3600
+
+  def top_holders_percent_of_total_supply(
+        _root,
+        %{slug: slug, number_of_holders: number_of_holders, from: from, to: to},
+        _resolution
+      ) do
+    case TopHolders.percent_of_total_supply(slug, number_of_holders, from, to) do
+      {:ok, percent_of_total_supply} ->
+        {:ok, percent_of_total_supply}
+
+      {:error, error} ->
+        error_msg = "Can't calculate top holders - percent of total supply for slug: #{slug}."
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
 
   def gas_used(
         _root,

@@ -49,4 +49,11 @@ defmodule SanbaseWeb.Graphql.ClickhouseTypes do
     field(:datetime, non_null(:datetime))
     field(:percent_on_exchanges, :float)
   end
+
+  object :top_holders_percent_of_total_supply do
+    field(:datetime, non_null(:datetime))
+    field(:in_exchanges, :float)
+    field(:outside_exchanges, :float)
+    field(:in_top_holders_total, :float)
+  end
 end

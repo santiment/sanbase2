@@ -28,7 +28,7 @@ defmodule Sanbase.Clickhouse.DailyActiveAddresses do
   end
 
   def average_active_addresses(contract, from, to, interval) do
-    Erc20.average_active_addresses_with_deposits(contract, from, to, interval)
+    Erc20.average_active_addresses(contract, from, to, interval)
   end
 
   def average_active_addresses_with_deposits(eth, from, to, interval) when eth in @ethereum do

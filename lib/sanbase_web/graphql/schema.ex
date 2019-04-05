@@ -55,7 +55,6 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.EtherbiTypes)
   import_types(SanbaseWeb.Graphql.InsightTypes)
   import_types(SanbaseWeb.Graphql.TechIndicatorsTypes)
-  import_types(SanbaseWeb.Graphql.SocialDataTypes)
   import_types(SanbaseWeb.Graphql.TransactionTypes)
   import_types(SanbaseWeb.Graphql.FileTypes)
   import_types(SanbaseWeb.Graphql.UserListTypes)
@@ -68,6 +67,8 @@ defmodule SanbaseWeb.Graphql.Schema do
   import_types(SanbaseWeb.Graphql.CustomTypes.JSON)
   import_types(SanbaseWeb.Graphql.PaginationTypes)
   import_types(SanbaseWeb.Graphql.SignalsHistoricalActivityTypes)
+
+  import_types(SanbaseWeb.Graphql.Schema.SocialDataQueries)
 
   def dataloader() do
     alias SanbaseWeb.Graphql.{
@@ -584,6 +585,8 @@ defmodule SanbaseWeb.Graphql.Schema do
       middleware(ApiTimeframeRestriction)
       resolve(&TechIndicatorsResolver.social_volume/3)
     end
+
+    import_fields(:social_data_queries)
 
     @desc ~s"""
     Returns a list of slugs for which there is social volume data.

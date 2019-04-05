@@ -2,6 +2,7 @@ defmodule Sanbase.SocialData do
   import Sanbase.Utils.ErrorHandling, only: [error_result: 1]
 
   alias Sanbase.DateTimeUtils
+  alias Sanbase.SocialData.SocialDominance
 
   require Logger
   require Sanbase.Utils.Config, as: Config
@@ -10,6 +11,15 @@ defmodule Sanbase.SocialData do
   defp http_client, do: Mockery.Macro.mockable(HTTPoison)
 
   @recv_timeout 15_000
+
+  defdelegate social_dominance(
+                slug,
+                datetime_from,
+                datetime_to,
+                interval,
+                source
+              ),
+              to: SocialDominance
 
   def trending_words(
         source,

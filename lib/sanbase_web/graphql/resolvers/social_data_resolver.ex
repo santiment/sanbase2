@@ -71,4 +71,24 @@ defmodule SanbaseWeb.Graphql.Resolvers.SocialDataResolver do
   def social_gainers_losers_status(_root, args, _resolution) do
     SocialData.social_gainers_losers_status(args)
   end
+
+  def social_dominance(
+        _root,
+        %{
+          slug: slug,
+          from: from,
+          to: to,
+          interval: interval,
+          source: source
+        },
+        _resolution
+      ) do
+    SocialData.social_dominance(
+      slug,
+      from,
+      to,
+      interval,
+      source
+    )
+  end
 end

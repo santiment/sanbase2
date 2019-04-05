@@ -134,27 +134,6 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
     end
   end
 
-  test "fetches average daily active addresses returns 0 if there is no activity", context do
-    query = """
-    {
-      projectBySlug(slug: "santiment") {
-        averageDailyActiveAddresses(
-          from: "2018-03-17T18:47:00.000000Z",
-          to: "2018-04-12T18:47:00.000000Z")
-      }
-    }
-    """
-
-    result =
-      context.conn
-      |> post("/graphql", query_skeleton(query, "projectBySlug"))
-
-    active_addresses =
-      json_response(result, 200)["data"]["projectBySlug"]["averageDailyActiveAddresses"]
-
-    assert active_addresses == 0
-  end
-
   defp parse_response(response) do
     json_response(response, 200)["data"]["dailyActiveAddresses"]
   end

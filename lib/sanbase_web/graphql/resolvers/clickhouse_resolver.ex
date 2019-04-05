@@ -14,6 +14,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     NetworkGrowth,
     NVT,
     PercentOfTokenSupplyOnExchanges,
+    RealizedValue,
     TopHolders
   }
 

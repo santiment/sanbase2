@@ -92,6 +92,7 @@ defmodule Sanbase.Model.Project do
       :main_contract_address,
       :team_token_wallet,
       :description,
+      :long_description,
       :project_transparency,
       :project_transparency_status_id,
       :project_transparency_description,

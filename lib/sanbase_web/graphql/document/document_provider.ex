@@ -72,7 +72,9 @@ defmodule SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument do
     cache_key =
       SanbaseWeb.Graphql.Cache.cache_key(
         {"bp_root", permissions},
-        santize_blueprint(bp_root)
+        santize_blueprint(bp_root),
+        ttl: 120,
+        max_ttl_offset: 90
       )
 
     bp_root = add_cache_key_to_blueprint(bp_root, cache_key)

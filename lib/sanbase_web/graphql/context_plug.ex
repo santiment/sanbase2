@@ -13,8 +13,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   @behaviour Plug
 
   import Plug.Conn
-  import SanbaseWeb.Graphql.DocumentProvider.Utils, only: [cache_key_from_params: 2]
-
   require Sanbase.Utils.Config, as: Config
 
   alias SanbaseWeb.Graphql.ContextPlug
@@ -33,7 +31,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   def call(conn, _) do
     context =
       build_context(conn, @auth_methods)
-      |> add_query_cache_key(conn)
       |> Map.put(:remote_ip, conn.remote_ip)
 
     put_private(conn, :absinthe, %{context: context})
@@ -51,15 +48,6 @@ defmodule SanbaseWeb.Graphql.ContextPlug do
   end
 
   defp build_context(_conn, []), do: %{permissions: User.no_permissions()}
-
-  defp add_query_cache_key(%{permissions: permissions} = context, %Plug.Conn{
-         params: params
-       }) do
-    cache_key = cache_key_from_params(params, permissions)
-    Map.put(context, :query_cache_key, cache_key)
-  end
-
-  defp add_query_cache_key(context, _), do: context
 
   def bearer_authentication(%Plug.Conn{} = conn) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),

@@ -2,83 +2,130 @@ defmodule SanbaseWeb.Graphql.DocumentProvider do
   @moduledoc ~s"""
   Custom Absinthe DocumentProvider for more effective caching.
 
-  The `ContextPlug` runs before this DocumentProvider. In this plug the context is
-  created. It checks the Authorization header and adds the user, permissions and cache key
-  to the context. The cahce key is calculated from the  `params` (the full `query`
-  and `variables`).
-
   Absinthe phases have one main difference compared to plugs - all phases must run
-  and cannot be halted. Therefore to be able to skip some phases, the pipeline
-  definition must exclude this. This is exactly how this document provider works.
-  If the value is present in the cache, then from the pipeline the `Resolution` and
-  `Result` phases are deleted in favor of a custom phase that puts the result in the
-  Blueprint.
-  If the value is not present in the cache, the pipeline is not modified and the
-  `Resolution` and `Result` phases run as expected. After that a `before_send` hook
-  persists the result in the cache.
+  and cannot be halted. But phases can be jumped over by returning
+  `{:jump, result, destination_phase}`
 
-  If the value is present in the cache it is copied to the Process dictionary.
-  Copying the value to the Process dictionary avoids issues when the cache expires
-  after it is checked but before the value is retrieved when sending it.
+  This module makes use of 2 new phases - a `CacheDocument` phase and `Idempotent`
+  phase.
 
-  The whole Absinthe request is executed in a single process so all phases can use
-  the same Process dictionary.
+  If the value is present in the cache it is put in the blueprint and the execution
+  jumps to the Idempotent phase, effectively skipping the Absinthe's Resolution
+  and Result phases. Result is the last phase in the pipeline so the Idempotent
+  phase is inserted after it.
+
+  If the value is not present in the cache, the Absinthe's default Resolution and
+  Result phases are being executed and the new DocumentCache and Idempotent phases
+  are doing nothing.
+
+  In the end there's a `before_send` hook that adds the result into the cache.
   """
   @behaviour Absinthe.Plug.DocumentProvider
 
   alias SanbaseWeb.Graphql.Cache
 
-  @cache_dict_key :graphql_cache_result
-
   @doc false
   @spec pipeline(Absinthe.Plug.Request.t()) :: Absinthe.Pipeline.t()
-  def pipeline(%{pipeline: pipeline} = query) do
-    case cached_result(query) do
-      nil ->
-        pipeline
-
-      result ->
-        # Store it in the process dictionary as the cache key could expire
-        # before the phase that get's it from the cache is reached
-        Process.put(@cache_dict_key, result)
-
-        pipeline
-        |> Absinthe.Pipeline.replace(
-          Absinthe.Phase.Document.Execution.Resolution,
-          SanbseWeb.Graphql.Phase.Document.Execution.Resolution
-        )
-        |> Absinthe.Pipeline.without(Absinthe.Phase.Document.Result)
-    end
+  def pipeline(%{pipeline: pipeline}) do
+    pipeline
+    |> Absinthe.Pipeline.insert_before(
+      Absinthe.Phase.Document.Execution.Resolution,
+      SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument
+    )
+    |> Absinthe.Pipeline.insert_after(
+      Absinthe.Phase.Document.Result,
+      SanbseWeb.Graphql.Phase.Document.Execution.Idempotent
+    )
   end
 
   @doc false
   @spec process(Absinthe.Plug.Request.Query.t(), Keyword.t()) ::
           Absinthe.DocumentProvider.result()
-  def process(%{document: nil} = query, _),
-    do: {:cont, query}
-
-  def process(%{document: _} = query, _),
-    do: {:halt, query}
-
-  defp cached_result(%{context: %{query_cache_key: cache_key}}) do
-    cache_key
-    |> Cache.get()
-  end
+  def process(%{document: nil} = query, _), do: {:cont, query}
+  def process(%{document: _} = query, _), do: {:halt, query}
 end
 
-defmodule SanbseWeb.Graphql.Phase.Document.Execution.Resolution do
+defmodule SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument do
+  @moduledoc ~s"""
+  Custom phase for obtaining the result from cache.
+  In case the value is not present in the cache, the default Resolution and Result
+  phases are ran. Otherwise the custom Resolution phase is ran and Result is jumped
+  over.
+
+  When calculating the cache key only some of the fields in the whole blueprint are
+  taken into account. They are defined in the module attribute @cache_fields
+  The only values that are converted to something else during constructing
+  of the cache key are:
+  - DateTime - It is rounded by TTL so all datetiems in a range yield the same cache key
+  - Struct - All structs are converted to plain maps
+  """
   use Absinthe.Phase
 
-  alias Absinthe.{Blueprint, Phase}
+  alias SanbaseWeb.Graphql.Cache
 
-  @cache_dict_key :graphql_cache_result
+  @compile inline: [add_cache_key_to_blueprint: 2]
 
-  @spec run(Blueprint.t(), Keyword.t()) :: Phase.result_t()
+  @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
   def run(bp_root, _) do
-    # Will be fetched from cache - that's what's saved by SanbaseWeb.Graphql.Absinthe.before_send
-    result = Process.get(@cache_dict_key)
-    Process.put(:do_not_cache_query, true)
+    permissions = bp_root.execution.context.permissions
 
-    {:ok, %{bp_root | result: result}}
+    cache_key =
+      SanbaseWeb.Graphql.Cache.cache_key(
+        {"bp_root", permissions},
+        santize_blueprint(bp_root)
+      )
+
+    bp_root = add_cache_key_to_blueprint(bp_root, cache_key)
+
+    case Cache.get(cache_key) do
+      nil ->
+        {:ok, bp_root}
+
+      result ->
+        {:jump, %{bp_root | result: result},
+         SanbseWeb.Graphql.Phase.Document.Execution.Idempotent}
+    end
   end
+
+  defp add_cache_key_to_blueprint(
+         %{execution: %{context: context} = execution} = blueprint,
+         cache_key
+       ) do
+    %{
+      blueprint
+      | execution: %{execution | context: Map.put(context, :query_cache_key, cache_key)}
+    }
+  end
+
+  # Leave only the fields that are needed to generate the cache key
+  # This let's us cache with values that are interpolated into the query string itself
+  # The datetimes are rounded so all datetimes in a bucket generate the same
+  # cache key
+  defp santize_blueprint(%DateTime{} = dt), do: dt
+  defp santize_blueprint({:argument_data, _} = tuple), do: tuple
+  defp santize_blueprint({a, b}), do: {a, santize_blueprint(b)}
+
+  @cache_fields [:name, :argument_data, :selection_set, :selections, :fragments, :operations]
+  defp santize_blueprint(map) when is_map(map) do
+    Map.take(map, @cache_fields)
+    |> Enum.map(&santize_blueprint/1)
+    |> Map.new()
+  end
+
+  defp santize_blueprint(list) when is_list(list) do
+    Enum.map(list, &santize_blueprint/1)
+  end
+
+  defp santize_blueprint(data), do: data
+end
+
+defmodule SanbseWeb.Graphql.Phase.Document.Execution.Idempotent do
+  @moduledoc ~s"""
+  A phase that does nothing and is inserted after the Absinthe's Result phase.
+  `CacheDocument` phase jumps to this `Idempotent` phase if it finds the needed
+  value in the cache so the Absinthe's Resolution and Result phases are skipped.
+  """
+  use Absinthe.Phase
+  @spec run(Absinthe.Blueprint.t(), Keyword.t()) :: Absinthe.Phase.result_t()
+  def run(bp_root, _), do: {:ok, bp_root}
 end

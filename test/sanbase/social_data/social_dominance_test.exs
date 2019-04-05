@@ -21,8 +21,8 @@ defmodule Sanbase.SocialDominanceTest do
 
   describe "social_dominance/5" do
     test "response: success" do
-      from = 1_523_876_400
-      to = 1_523_880_000
+      from = DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC")
+      to = DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC")
 
       mock(
         HTTPoison,
@@ -38,8 +38,8 @@ defmodule Sanbase.SocialDominanceTest do
       result =
         SocialData.social_dominance(
           "ethereum",
-          DateTime.from_unix!(from),
-          DateTime.from_unix!(to),
+          from,
+          to,
           "1h",
           :telegram
         )
@@ -49,18 +49,18 @@ defmodule Sanbase.SocialDominanceTest do
                 [
                   %{
                     dominance: 5 * 100 / 25,
-                    datetime: DateTime.from_unix!(from)
+                    datetime: from
                   },
                   %{
                     dominance: 10 * 100 / 30,
-                    datetime: DateTime.from_unix!(to)
+                    datetime: to
                   }
                 ]}
     end
 
     test "when there are no mentions for any project" do
-      from = 1_523_876_400
-      to = 1_523_880_000
+      from = DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC")
+      to = DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC")
 
       mock(
         HTTPoison,
@@ -76,8 +76,8 @@ defmodule Sanbase.SocialDominanceTest do
       result =
         SocialData.social_dominance(
           "ethereum",
-          DateTime.from_unix!(from),
-          DateTime.from_unix!(to),
+          from,
+          to,
           "1h",
           :telegram
         )
@@ -87,11 +87,11 @@ defmodule Sanbase.SocialDominanceTest do
                 [
                   %{
                     dominance: 0,
-                    datetime: DateTime.from_unix!(from)
+                    datetime: from
                   },
                   %{
                     dominance: 0,
-                    datetime: DateTime.from_unix!(to)
+                    datetime: to
                   }
                 ]}
     end
@@ -110,8 +110,8 @@ defmodule Sanbase.SocialDominanceTest do
       result = fn ->
         SocialData.social_dominance(
           "santiment",
-          DateTime.from_unix!(1_523_876_400),
-          DateTime.from_unix!(1_523_880_000),
+          DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC"),
+          DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC"),
           "1h",
           :telegram
         )
@@ -134,8 +134,8 @@ defmodule Sanbase.SocialDominanceTest do
       result = fn ->
         SocialData.social_dominance(
           "santiment",
-          DateTime.from_unix!(1_523_876_400),
-          DateTime.from_unix!(1_523_880_000),
+          DateTime.from_naive!(~N[2018-04-16 10:00:00], "Etc/UTC"),
+          DateTime.from_naive!(~N[2018-04-16 22:00:00], "Etc/UTC"),
           "1h",
           :telegram
         )

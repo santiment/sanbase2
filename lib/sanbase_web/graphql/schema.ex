@@ -586,7 +586,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&TechIndicatorsResolver.social_volume/3)
     end
 
-    import_fields :social_data_queries
+    import_fields(:social_data_queries)
 
     @desc ~s"""
     Returns a list of slugs for which there is social volume data.

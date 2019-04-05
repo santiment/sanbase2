@@ -13,11 +13,13 @@ defmodule Sanbase.SocialData do
   @recv_timeout 15_000
 
   defdelegate social_dominance(
-        slug,
-        datetime_from,
-        datetime_to,
-        interval,
-        source), to: SocialDominance
+                slug,
+                datetime_from,
+                datetime_to,
+                interval,
+                source
+              ),
+              to: SocialDominance
 
   def trending_words(
         source,

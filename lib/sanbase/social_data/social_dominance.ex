@@ -37,7 +37,9 @@ defmodule Sanbase.SocialData.SocialDominance do
 
       {:error, %HTTPoison.Error{} = error} ->
         error_result(
-          "Cannot fetch social dominance data for project #{slug}: #{HTTPoison.Error.message(error)}"
+          "Cannot fetch social dominance data for project #{slug}: #{
+            HTTPoison.Error.message(error)
+          }"
         )
     end
   end
@@ -48,12 +50,13 @@ defmodule Sanbase.SocialData.SocialDominance do
          interval,
          source
        ) do
-    cache_key = Cache.cache_key(:social_dominance_api_request, %{
-      from: datetime_from,
-      to: datetime_to,
-      interval: interval,
-      source: source
-    })
+    cache_key =
+      Cache.cache_key(:social_dominance_api_request, %{
+        from: datetime_from,
+        to: datetime_to,
+        interval: interval,
+        source: source
+      })
 
     Cache.get_or_store(cache_key, fn ->
       from_unix = DateTime.to_unix(datetime_from)

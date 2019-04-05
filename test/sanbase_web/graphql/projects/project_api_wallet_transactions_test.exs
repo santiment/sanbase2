@@ -269,7 +269,7 @@ defmodule SanbaseWeb.Graphql.ProjectApiWalletTransactionsTest do
     end
   end
 
-  test "project without wallets does won't log warnings", context do
+  test "project without wallets does not log warnings", context do
     project = insert(:project, %{name: "Bitcoin", ticker: "BTC", coinmarketcap_id: "bitcoin"})
 
     query = """

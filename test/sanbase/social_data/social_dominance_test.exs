@@ -30,7 +30,7 @@ defmodule Sanbase.SocialDominanceTest do
         {:ok,
          %HTTPoison.Response{
            body:
-             "[{\"BTC_bitcoin\": 5, \"EOS_eos\": 15, \"ETH_ethereum\": 5, \"datetime\": 1523876400}, {\"BTC_bitcoin\": 15, \"EOS_eos\": 5, \"ETH_ethereum\": 10, \"datetime\": 1523880000}]",
+             "[{\"BTC_bitcoin\": 5, \"EOS_eos\": 15, \"ETH_ethereum\": 5, \"datetime\": 1523872800}, {\"BTC_bitcoin\": 15, \"EOS_eos\": 5, \"ETH_ethereum\": 10, \"datetime\": 1523916000}]",
            status_code: 200
          }}
       )
@@ -68,7 +68,7 @@ defmodule Sanbase.SocialDominanceTest do
         {:ok,
          %HTTPoison.Response{
            body:
-             "[{\"BTC_bitcoin\": 0, \"EOS_eos\": 0, \"ETH_ethereum\": 0, \"datetime\": 1523876400}, {\"BTC_bitcoin\": 0, \"EOS_eos\": 0, \"ETH_ethereum\": 0, \"datetime\": 1523880000}]",
+             "[{\"BTC_bitcoin\": 0, \"EOS_eos\": 0, \"ETH_ethereum\": 0, \"datetime\": 1523872800}, {\"BTC_bitcoin\": 0, \"EOS_eos\": 0, \"ETH_ethereum\": 0, \"datetime\": 1523916000}]",
            status_code: 200
          }}
       )

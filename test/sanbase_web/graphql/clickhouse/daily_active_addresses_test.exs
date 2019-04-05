@@ -110,12 +110,8 @@ defmodule SanbaseWeb.Graphql.Clickhouse.DailyActiveAddressesTest do
 
   test "fetches average daily active addresses", context do
     with_mock DailyActiveAddresses,
-      average_active_addresses: fn _, _, _, _ ->
-        {:ok,
-         [
-           %{active_addresses: 100, datetime: from_iso8601!("2019-01-01T00:00:00Z")},
-           %{active_addresses: 200, datetime: from_iso8601!("2019-01-02T00:00:00Z")}
-         ]}
+      average_active_addresses: fn _, _, _ ->
+        {:ok, [{"0x123", 150}]}
       end do
       query = """
       {

@@ -42,13 +42,14 @@ defmodule Sanbase.Clickhouse.TopHolders do
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
     {:ok, contract, token_decimals} = Project.contract_info_by_slug(slug)
+    interval = DateTimeUtils.compound_duration_to_seconds("1d")
 
     query = """
     SELECT
-      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), 86400) * 86400) AS time,
+      toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), ?6) * ?6) AS time,
       sumIf(partOfTotal, isExchange = 1) * 100 AS in_exchanges,
       sumIf(partOfTotal, isExchange = 0) * 100 AS outside_exchanges,
-      sum(partOfTotal) * 100 AS in_top_holders_total
+      in_exchanges + outside_exchanges AS in_top_holders_total
     FROM
     (
       SELECT
@@ -114,7 +115,14 @@ defmodule Sanbase.Clickhouse.TopHolders do
     ORDER BY dt ASC
     """
 
-    args = [token_decimals, contract, number_of_holders, from_datetime_unix, to_datetime_unix]
+    args = [
+      token_decimals,
+      contract,
+      number_of_holders,
+      from_datetime_unix,
+      to_datetime_unix,
+      interval
+    ]
 
     {query, args}
   end

@@ -48,7 +48,7 @@ defmodule Sanbase.SocialData.SocialDominance do
          interval,
          source
        ) do
-    cache_key = Cache.cache_key(:api_request, %{
+    cache_key = Cache.cache_key(:social_dominance_api_request, %{
       from: datetime_from,
       to: datetime_to,
       interval: interval,

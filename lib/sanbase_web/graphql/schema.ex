@@ -822,6 +822,18 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ClickhouseResolver.realized_value/3)
     end
 
+    @desc "Returns what percent of token supply is on exchanges"
+    field :percent_of_token_supply_on_exchanges, list_of(:percent_of_token_supply_on_exchanges) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.percent_of_token_supply_on_exchanges/3)
+    end
+
     @desc """
     Returns NVT (Network-Value-to-Transactions-Ratio
     Daily Market Cap / Daily Transaction Volume

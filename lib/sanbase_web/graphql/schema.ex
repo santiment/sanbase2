@@ -860,9 +860,7 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc """
-    Returns used Gas by a blockchain.
-    When you send tokens, interact with a contract or do anything else on the blockchain,
-    you must pay for that computation. That payment is calculated in Gas.
+    Returns the top holders' percent of total supply - in exchanges, outside exchanges and combined.
     """
     field :gas_used, list_of(:gas_used) do
       arg(:from, non_null(:datetime))
@@ -872,6 +870,17 @@ defmodule SanbaseWeb.Graphql.Schema do
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
       cache_resolve(&ClickhouseResolver.gas_used/3)
+    end
+
+    field :top_holders_percent_of_total_supply, list_of(:top_holders_percent_of_total_supply) do
+      arg(:slug, non_null(:string))
+      arg(:number_of_holders, non_null(:integer))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.top_holders_percent_of_total_supply/3)
     end
 
     @desc """

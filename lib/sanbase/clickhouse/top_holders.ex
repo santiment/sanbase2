@@ -1,30 +1,28 @@
 defmodule Sanbase.Clickhouse.TopHolders do
   @moduledoc ~s"""
-  Uses ClickHouse to calculate the supply in exchanges
+  Uses ClickHouse to calculate the percent supply in exchanges, non exchanges and combined
   """
-
-  import Sanbase.Math, only: [to_integer: 1]
 
   alias Sanbase.DateTimeUtils
   alias Sanbase.Model.Project
 
   require Sanbase.ClickhouseRepo, as: ClickhouseRepo
 
-  @type top_holders :: %{
+  @type percent_of_total_supply :: %{
           datetime: DateTime.t(),
-          percent_total_supply_in_exchanges: float(),
-          percent_total_supply_outside_exchange: float(),
-          percent_total_supply_in_holders: float()
+          in_exchanges: number(),
+          outside_exchanges: number(),
+          in_top_holders_total: number()
         }
 
-  @spec top_holders(
+  @spec percent_of_total_supply(
           String.t(),
           non_neg_integer(),
           DateTime.t(),
           DateTime.t()
-        ) :: {:ok, list(top_holders)} | {:error, String.t()}
-  def top_holders(slug, number_of_holders, from, to) do
-    {query, args} = top_holders_query(slug, number_of_holders, from, to)
+        ) :: {:ok, list(percent_of_total_supply)} | {:error, String.t()}
+  def percent_of_total_supply(slug, number_of_holders, from, to) do
+    {query, args} = percent_of_total_supply_query(slug, number_of_holders, from, to)
 
     ClickhouseRepo.query_transform(
       query,
@@ -32,15 +30,15 @@ defmodule Sanbase.Clickhouse.TopHolders do
       fn [dt, in_exchanges, outside_exchanges, in_holders] ->
         %{
           datetime: DateTime.from_unix!(dt),
-          percent_total_supply_in_exchanges: in_exchanges,
-          percent_total_supply_outside_exchange: outside_exchanges,
-          percent_total_supply_in_holders: in_holders
+          in_exchanges: in_exchanges,
+          outside_exchanges: outside_exchanges,
+          in_top_holders_total: in_holders
         }
       end
     )
   end
 
-  defp top_holders_query(slug, number_of_holders, from, to) do
+  defp percent_of_total_supply_query(slug, number_of_holders, from, to) do
     from_datetime_unix = DateTime.to_unix(from)
     to_datetime_unix = DateTime.to_unix(to)
     {:ok, contract, token_decimals} = Project.contract_info_by_slug(slug)
@@ -48,9 +46,9 @@ defmodule Sanbase.Clickhouse.TopHolders do
     query = """
     SELECT
       toUnixTimestamp(intDiv(toUInt32(toDateTime(dt)), 86400) * 86400) AS time,
-      sumIf(partOfTotal, isExchange = 1) * 100 AS tse,
-      sumIf(partOfTotal, isExchange = 0) * 100 AS tsne,
-      sum(partOfTotal) * 100 AS tsth
+      sumIf(partOfTotal, isExchange = 1) * 100 AS in_exchanges,
+      sumIf(partOfTotal, isExchange = 0) * 100 AS outside_exchanges,
+      sum(partOfTotal) * 100 AS in_top_holders_total
     FROM
     (
       SELECT

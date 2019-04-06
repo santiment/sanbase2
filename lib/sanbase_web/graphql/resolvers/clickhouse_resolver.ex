@@ -3,7 +3,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
 
   alias Sanbase.Model.Project
   alias Sanbase.DateTimeUtils
-  alias SanbaseWeb.Graphql.Helpers.Utils
+  import SanbaseWeb.Graphql.Helpers.Utils, only: [calibrate_interval: 7]
 
   alias Sanbase.Clickhouse.{
     DailyActiveDeposits,
@@ -15,7 +15,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     NVT,
     PercentOfTokenSupplyOnExchanges,
     RealizedValue,
-    TopHolders
+    TopHolders,
+    ShareOfDeposits
   }
 
   @one_hour_seconds 3600
@@ -106,7 +107,7 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
       ) do
     with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
          {:ok, from, to, interval} <-
-           Utils.calibrate_interval(
+           calibrate_interval(
              DailyActiveDeposits,
              contract,
              from,
@@ -192,6 +193,38 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
           "Can't calculate Percent of Token Supply on Exchanges for project with coinmarketcap_id: #{
             slug
           }."
+
+        Logger.warn(error_msg <> " Reason: #{inspect(error)}")
+        {:error, error_msg}
+    end
+  end
+
+  def share_of_deposits(
+        _root,
+        %{slug: slug, from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    with {:ok, contract, _} <- Project.contract_info_by_slug(slug),
+         {:ok, from, to, interval} <-
+           calibrate_interval(
+             ShareOfDeposits,
+             contract,
+             from,
+             to,
+             interval,
+             @one_hour_seconds,
+             50
+           ),
+         {:ok, share_of_deposits} <-
+           ShareOfDeposits.share_of_deposits(contract, from, to, interval) do
+      {:ok, share_of_deposits}
+    else
+      {:error, {:missing_contract, error_msg}} ->
+        {:error, error_msg}
+
+      {:error, error} ->
+        error_msg =
+          "Can't calculate Share of Deposits for project with coinmarketcap_id: #{slug}."
 
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")
         {:error, error_msg}

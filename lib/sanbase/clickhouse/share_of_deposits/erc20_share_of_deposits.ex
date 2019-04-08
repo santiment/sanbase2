@@ -106,7 +106,7 @@ defmodule Sanbase.Clickhouse.Erc20ShareOfDeposits do
           FROM daily_active_deposits
           PREWHERE
             contract = ?3 AND
-            dt < toDateTime(today()) AND
+            dt <= toDateTime(today()) AND
             dt >= toDateTime(?4) AND
             dt <= toDateTime(?5)
         )

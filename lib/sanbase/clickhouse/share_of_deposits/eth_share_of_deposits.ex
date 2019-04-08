@@ -98,7 +98,7 @@ defmodule Sanbase.Clickhouse.EthShareOfDeposits do
             total_addresses
           FROM daily_active_deposits
           PREWHERE
-            dt < toDateTime(today()) AND
+            dt <= toDateTime(today()) AND
             dt >= toDateTime(?3) AND
             dt <= toDateTime(?4)
         )

@@ -21,28 +21,32 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
             target: nil,
             filtered_target: %{list: []},
             channel: nil,
-            above: nil,
-            below: nil,
+            operation: %{},
             triggered?: false,
             payload: nil
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
-  validates(:above, &valid_price?/1)
-  validates(:below, &valid_price?/1)
+  validates(:operation, &valid_operation?/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),
           target: Type.complex_target(),
           channel: Type.channel(),
-          above: number(),
-          below: number(),
+          operation: map(),
           triggered?: boolean(),
           payload: Type.payload()
         }
 
   @spec type() :: Type.trigger_type()
   def type(), do: @trigger_type
+
+  def get_data(%__MODULE__{filtered_target: %{list: target_list}}) when is_list(target_list) do
+    target_list
+    |> Enum.map(fn slug ->
+      {slug, get_data_by_slug(slug)}
+    end)
+  end
 
   defp get_data_by_slug(slug) when is_binary(slug) do
     Cache.get_or_store(
@@ -59,14 +63,20 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     )
   end
 
-  def get_data(%__MODULE__{filtered_target: %{list: target_list}}) when is_list(target_list) do
-    target_list
-    |> Enum.map(fn slug ->
-      {slug, get_data_by_slug(slug)}
-    end)
-  end
-
   defimpl Sanbase.Signals.Settings, for: PriceAbsoluteChangeSettings do
+    @doc ~s"""
+    Construct a cache key only out of the parameters that determine the outcome.
+    Parameters like `channel` are discarded. The `type` is included
+    so different triggers with the same parameter names can be distinguished
+    """
+    def cache_key(%PriceAbsoluteChangeSettings{} = settings) do
+      construct_cache_key([
+        settings.type,
+        settings.target,
+        settings.operation
+      ])
+    end
+
     @spec triggered?(Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings.t()) :: boolean()
     def triggered?(%PriceAbsoluteChangeSettings{triggered?: triggered}), do: triggered
 
@@ -80,17 +90,14 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
       end
     end
 
-    defp build_result(list, %PriceAbsoluteChangeSettings{above: above, below: below} = settings) do
+    defp build_result(list, %PriceAbsoluteChangeSettings{operation: operation} = settings) do
       payload =
-        Enum.reduce(list, %{}, fn
-          {slug, {:ok, price}}, acc when price >= above ->
-            Map.put(acc, slug, payload(slug, price, "above $#{above}"))
-
-          {slug, {:ok, price}}, acc when price <= below ->
-            Map.put(acc, slug, payload(slug, price, "below $#{below}"))
-
-          _, acc ->
+        Enum.reduce(list, %{}, fn {slug, {:ok, price}}, acc ->
+          if evaluate_operation(price, operation) do
+            Map.put(acc, slug, payload(slug, price, operation_text(operation)))
+          else
             acc
+          end
         end)
 
       %PriceAbsoluteChangeSettings{
@@ -98,20 +105,6 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
         | triggered?: payload != %{},
           payload: payload
       }
-    end
-
-    @doc ~s"""
-    Construct a cache key only out of the parameters that determine the outcome.
-    Parameters like `channel` are discarded. The `type` is included
-    so different triggers with the same parameter names can be distinguished
-    """
-    def cache_key(%PriceAbsoluteChangeSettings{} = settings) do
-      construct_cache_key([
-        settings.type,
-        settings.target,
-        settings.above,
-        settings.below
-      ])
     end
 
     defp payload(slug, last_price_usd, message) do
@@ -124,6 +117,19 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
       More information for the project you can find here: #{Project.sanbase_link(project)}
       ![Price chart over the past 90 days](#{chart_url(project, :volume)})
       """
+    end
+
+    defp operation_text(%{above: above}), do: "above $#{above}"
+    defp operation_text(%{below: below}), do: "below $#{below}"
+
+    defp operation_text(%{inside_channel: inside_channel}) do
+      [lower, upper] = inside_channel
+      "between $#{lower} and $#{upper}"
+    end
+
+    defp operation_text(%{outside_channel: outside_channel}) do
+      [lower, upper] = outside_channel
+      "below $#{lower} or above >= $#{upper}"
     end
   end
 end

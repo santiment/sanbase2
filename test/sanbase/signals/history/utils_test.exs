@@ -12,13 +12,19 @@ defmodule Sanbase.Signals.TriggerHistoryUtilsTest do
       Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 2)
 
     assert percent_change_calculations |> length() == 8
-    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 2
+    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 3
 
     # no cooldown
     percent_change_calculations =
       Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 0)
 
-    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 5
+    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 6
+
+    percent_change_calculations =
+      Utils.percent_change_calculations_with_cooldown(percent_changes, %{percent_up: 5.0}, 2)
+
+    assert percent_change_calculations |> length() == 8
+    assert filter_with_bigger_threshold(percent_change_calculations) |> length() == 3
   end
 
   test "#average" do

@@ -44,7 +44,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: %{slug: "santiment"},
       channel: "telegram",
       time_window: "1d",
-      percent_threshold: 300.0
+      operation: %{percent_up: 300.0}
     }
 
     {:error, message} =
@@ -130,7 +130,7 @@ defmodule Sanbase.Signals.TriggersTest do
     trigger_settings = %{
       type: "price_percent_change",
       target: %{slug: "santiment"},
-      percent_threshold: 20,
+      operation: %{percent_up: 20},
       channel: "telegram",
       time_window: "1d"
     }
@@ -154,7 +154,7 @@ defmodule Sanbase.Signals.TriggersTest do
     trigger_settings = %{
       type: "price_percent_change",
       target: %{slug: "santiment"},
-      percent_threshold: 20,
+      operation: %{percent_up: 20},
       channel: "telegram",
       time_window: "1d"
     }
@@ -203,7 +203,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",
-      percent_threshold: 10.0
+      operation: %{percent_up: 10.0}
     }
 
     {:ok, _} =
@@ -232,7 +232,7 @@ defmodule Sanbase.Signals.TriggersTest do
       target: %{slug: "santiment"},
       channel: "email",
       time_window: "1d",
-      percent_threshold: 10.0
+      operation: %{percent_up: 10.0}
     }
 
     insert(:user_trigger,

@@ -5,5 +5,6 @@ defmodule SanbaseWeb.Graphql.UserSettingsTypes do
     field(:has_telegram_connected, :boolean)
     field(:signal_notify_telegram, :boolean)
     field(:signal_notify_email, :boolean)
+    field(:subscribed_to_newsletter, :boolean)
   end
 end

@@ -1235,11 +1235,19 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&UserListResolver.remove_user_list/3)
     end
 
+    @desc "Allow/Dissallow to receive notifications in email/telegram channel"
     field :settings_toggle_channel, :user_settings do
       arg(:signal_notify_telegram, :boolean)
       arg(:signal_notify_email, :boolean)
       middleware(JWTAuth)
       resolve(&UserSettingsResolver.settings_toggle_channel/3)
+    end
+
+    @desc "Subscribe/unsibscribe to Santiment newsletter"
+    field :toggle_newsletter_subscription, :user_settings do
+      arg(:subscribed_to_newsletter, :boolean)
+      middleware(JWTAuth)
+      resolve(&UserSettingsResolver.toggle_newsletter_subscription/3)
     end
 
     @desc """

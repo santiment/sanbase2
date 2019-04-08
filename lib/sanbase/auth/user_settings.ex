@@ -40,6 +40,10 @@ defmodule Sanbase.Auth.UserSettings do
     settings_update(user_id, %{telegram_chat_id: chat_id})
   end
 
+  def toggle_newsletter_subscription(%User{id: user_id}, params) do
+    settings_update(user_id, params)
+  end
+
   defp settings_update(user_id, params) do
     Repo.get_by(UserSettings, user_id: user_id)
     |> case do

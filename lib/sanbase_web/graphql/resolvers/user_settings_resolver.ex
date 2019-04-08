@@ -15,6 +15,13 @@ defmodule SanbaseWeb.Graphql.Resolvers.UserSettingsResolver do
     |> handle_toggle_result()
   end
 
+  def toggle_newsletter_subscription(_root, args, %{
+        context: %{auth: %{current_user: current_user}}
+      }) do
+    UserSettings.toggle_newsletter_subscription(current_user, args)
+    |> handle_toggle_result()
+  end
+
   defp handle_toggle_result(result) do
     case result do
       {:ok, us} ->

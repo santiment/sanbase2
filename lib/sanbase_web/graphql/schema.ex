@@ -442,6 +442,20 @@ defmodule SanbaseWeb.Graphql.Schema do
       cache_resolve(&ClickhouseResolver.daily_active_deposits/3)
     end
 
+    @desc ~s"""
+    Fetch share of deposits from Daily Active Addresses.
+    """
+    field :share_of_deposits, list_of(:share_of_deposits) do
+      arg(:slug, non_null(:string))
+      arg(:from, non_null(:datetime))
+      arg(:to, non_null(:datetime))
+      arg(:interval, :string, default_value: "1d")
+
+      complexity(&Complexity.from_to_interval/3)
+      middleware(ApiTimeframeRestriction)
+      cache_resolve(&ClickhouseResolver.share_of_deposits/3)
+    end
+
     @desc "Fetch the currently running poll."
     field :current_poll, :poll do
       cache_resolve(&InsightResolver.current_poll/3)

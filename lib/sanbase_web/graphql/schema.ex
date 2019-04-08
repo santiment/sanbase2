@@ -1244,10 +1244,10 @@ defmodule SanbaseWeb.Graphql.Schema do
     end
 
     @desc "Subscribe/unsibscribe to Santiment newsletter"
-    field :toggle_newsletter_subscription, :user_settings do
-      arg(:subscribed_to_newsletter, :boolean)
+    field :change_newsletter_subscription, :user_settings do
+      arg(:newsletter_subscription, :boolean)
       middleware(JWTAuth)
-      resolve(&UserSettingsResolver.toggle_newsletter_subscription/3)
+      resolve(&UserSettingsResolver.change_newsletter_subscription/3)
     end
 
     @desc """

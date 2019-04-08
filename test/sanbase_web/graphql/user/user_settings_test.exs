@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert result["settings"] == %{
              "signalNotifyEmail" => false,
              "signalNotifyTelegram" => true,
-             "subscribedToNewsletter" => false
+             "newsletterSubscription" => "WEEKLY"
            }
   end
 
@@ -77,18 +77,24 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert result["settings"] == nil
   end
 
-  test "subscribe/unsibscribe newsletter", %{conn: conn, user: user} do
-    query = toggle_newsletter_subscription_query(true)
-    result = conn |> execute(query, "toggleNewsletterSubscription")
+  test "change newsletter subscription", %{conn: conn, user: user} do
+    query = change_newsletter_subscription_query("DAILY")
+    result = conn |> execute(query, "changeNewsletterSubscription")
 
-    assert result["subscribedToNewsletter"] == true
-    assert UserSettings.settings_for(user) |> Map.get(:subscribed_to_newsletter) == true
+    assert result["newsletterSubscription"] == "DAILY"
+    assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == "DAILY"
 
-    query = toggle_newsletter_subscription_query(false)
-    result = conn |> execute(query, "toggleNewsletterSubscription")
+    query = change_newsletter_subscription_query("OFF")
+    result = conn |> execute(query, "changeNewsletterSubscription")
 
-    assert result["subscribedToNewsletter"] == false
-    assert UserSettings.settings_for(user) |> Map.get(:subscribed_to_newsletter) == false
+    assert result["newsletterSubscription"] == "OFF"
+    assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == "OFF"
+
+    query = change_newsletter_subscription_query("UNKNOWN")
+    result = conn |> execute(query, "changeNewsletterSubscription")
+
+    assert result["newsletterSubscription"] == nil
+    assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == "OFF"
   end
 
   defp current_user_query() do
@@ -99,7 +105,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
         settings {
           signalNotifyEmail
           signalNotifyTelegram
-          subscribedToNewsletter
+          newsletterSubscription
         }
       }
     }
@@ -126,11 +132,11 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     """
   end
 
-  defp toggle_newsletter_subscription_query(subscribe?) do
+  defp change_newsletter_subscription_query(type) do
     """
     mutation {
-      toggleNewsletterSubscription(subscribedToNewsletter: #{subscribe?}) {
-        subscribedToNewsletter
+      changeNewsletterSubscription(newsletterSubscription: #{type}) {
+        newsletterSubscription
       }
     }
     """

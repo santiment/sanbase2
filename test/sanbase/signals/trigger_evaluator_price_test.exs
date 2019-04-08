@@ -179,13 +179,13 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       end)
 
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
+               Sanbase.Signals.Scheduler.run_signal(PriceAbsoluteChangeSettings)
              end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
 
       Sanbase.Signals.Evaluator.Cache.clear()
 
       assert capture_log(fn ->
-               Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
+               Sanbase.Signals.Scheduler.run_signal(PriceAbsoluteChangeSettings)
              end) =~ "There were no signals triggered of type"
     end
   end

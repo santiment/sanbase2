@@ -26,11 +26,11 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     user = insert(:user)
     Sanbase.Auth.UserSettings.set_telegram_chat_id(user.id, 123_123_123_123)
 
+    slug = "santiment"
+
     project =
       Sanbase.Factory.insert(:project, %{
-        name: "Santiment",
-        ticker: "SAN",
-        coinmarketcap_id: "santiment",
+        coinmarketcap_id: slug,
         main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
       })
 
@@ -38,7 +38,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
 
     trigger_settings1 = %{
       type: "eth_wallet",
-      target: %{slug: "santiment"},
+      target: %{slug: slug},
       asset: %{slug: "ethereum"},
       channel: "telegram",
       threshold: 25.0
@@ -77,7 +77,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     ]
   end
 
-  test "eth wallet signal slug triggered", _context do
+  test "triggers eth wallet signal", _context do
     test_pid = self()
 
     with_mocks [
@@ -98,7 +98,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     end
   end
 
-  test "eth wallet signal slug and address triggered", context do
+  test "triggers both eth wallet and address signals", context do
     test_pid = self()
 
     with_mocks [

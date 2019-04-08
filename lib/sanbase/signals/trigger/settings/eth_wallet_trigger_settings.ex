@@ -1,7 +1,12 @@
 defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
   @moduledoc ~s"""
-  The EthWallet signal is triggered when the balance of a wallet changes by
-  a predefined amount. 
+  The EthWallet signal is triggered when the balance of a wallet or set of wallets
+  changes by a predefined amount for a specified asset (Ethereum, SAN tokens, etc.)
+
+  The signal can follow a single ethereum address, a list of ethereum addresses
+  or a project. When a list of addresses or a project is followed, all the addresses
+  are considered to be owned by a single entity and the transfers between them
+  are excluded.
   """
 
   use Vex.Struct
@@ -57,7 +62,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
     |> Enum.map(fn addr ->
       from = Trigger.last_triggered(trigger, addr) || settings.created_at
       address_balance_change = balance_change(addr, settings.asset.slug, from, now)
-      {:eth_address, addr, address_balance_change}
+      {:eth_address, addr, address_balance_change, from}
     end)
   end
 
@@ -78,16 +83,13 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
           balance + balance_change(addr, settings.asset.slug, from, now)
         end)
 
-      {:project, project, project_balance_change}
+      {:project, project, project_balance_change, from}
     end)
   end
 
   defp balance_change(address, slug, from, to) do
-    from_rounded = div(DateTime.to_unix(from, :second), 300) * 300
-    to_rounded = div(DateTime.to_unix(to, :second), 300) * 300
-
     Cache.get_or_store(
-      "balance_change_#{address}_#{slug}_#{from_rounded}_#{to_rounded}",
+      "balance_change_#{address}_#{slug}_#{bucket_datetime(from)}_#{bucket_datetime(to)}",
       fn ->
         HistoricalBalance.balance_change(address, slug, from, to)
         |> case do
@@ -96,6 +98,12 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
         end
       end
     )
+  end
+
+  # All datetimes in 5 minute time intervals will generate the same result
+  # to be used in cache keys
+  defp bucket_datetime(%DateTime{} = dt) do
+    div(DateTime.to_unix(dt, :second), 300)
   end
 
   alias __MODULE__
@@ -124,17 +132,19 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
       payload =
         Enum.reduce(list, %{}, fn
-          {:project, project, balance_change}, payload when abs(balance_change) >= threshold ->
+          {:project, project, balance_change, from}, payload
+          when abs(balance_change) >= threshold ->
             Map.put(
               payload,
               project.coinmarketcap_id,
-              payload(project, settings, balance_change, trigger)
+              payload(project, settings, balance_change, from)
             )
 
-          {:eth_address, address, balance_change}, payload when balance_change >= threshold ->
-            Map.put(payload, address, payload(address, settings, balance_change, trigger))
+          {:eth_address, address, balance_change, from}, payload
+          when balance_change >= threshold ->
+            Map.put(payload, address, payload(address, settings, balance_change, from))
 
-          _, payload ->
+          data, payload ->
             payload
         end)
 
@@ -149,22 +159,22 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
            %Project{name: name, coinmarketcap_id: slug} = project,
            settings,
            balance_change,
-           trigger
+           from
          ) do
       """
       The #{settings.asset.slug} balance of #{name} wallets has changed by #{balance_change} since #{
-        Trigger.last_triggered(trigger, slug) || settings.created_at
+        from
       }
 
       More info here: #{Sanbase.Model.Project.sanbase_link(project)}
       """
     end
 
-    defp payload(address, settings, balance_change, trigger) do
+    defp payload(address, settings, balance_change, from) do
       """
       The #{settings.asset.slug} balance of the address #{address} has changed by #{
         balance_change
-      } since #{Trigger.last_triggered(trigger, address) || settings.created_at}
+      } since #{from}
       """
     end
   end

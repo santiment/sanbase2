@@ -36,56 +36,158 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
       main_contract_address: "0x7c5a0ce9267ed19b22f8cae653f198e3e8daf098"
     })
 
-    # trigger 1: 10% change last 6 hours
-    # trigger 2: above 60 or below 50
-    {trigger1, trigger2, trigger3, trigger4} = setup_triggers(user)
     populate_influxdb()
 
     [
-      user: user,
-      trigger1: trigger1,
-      trigger2: trigger2,
-      trigger3: trigger3,
-      trigger4: trigger4
+      user: user
     ]
   end
 
-  test "only some of price percent change signals triggered", context do
-    [triggered | rest] =
-      PricePercentChangeSettings.type()
-      |> UserTrigger.get_active_triggers_by_type()
-      |> Evaluator.run()
+  describe "price percent change" do
+    test "moving up - only some triggered", context do
+      trigger_settings1 = price_percent_change_settings(%{operation: %{percent_up: 18.0}})
+      # should trigger signal
+      trigger_settings2 = price_percent_change_settings(%{operation: %{percent_up: 15.0}})
 
-    assert length(rest) == 0
-    assert context.trigger1.id == triggered.id
-    assert Trigger.triggered?(triggered.trigger) == true
+      {:ok, _} = create_trigger(context.user, trigger_settings1)
+      {:ok, trigger2} = create_trigger(context.user, trigger_settings2)
+
+      [triggered | rest] =
+        PricePercentChangeSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
+
+      assert length(rest) == 0
+      assert trigger2.id == triggered.id
+      assert Trigger.triggered?(triggered.trigger) == true
+    end
+
+    test "moving down - only some triggered", context do
+      ticker_cmc_id = "#{@ticker}_#{@cmc_id}"
+
+      Store.import([
+        %Measurement{
+          timestamp: Timex.now() |> DateTime.to_unix(:nanosecond),
+          fields: %{price_usd: 40, price_btc: 1, volume_usd: 5, marketcap_usd: 500},
+          name: ticker_cmc_id
+        }
+      ])
+
+      # should trigger signal
+      trigger_settings1 = price_percent_change_settings(%{operation: %{percent_down: 20.0}})
+      trigger_settings2 = price_percent_change_settings(%{operation: %{percent_up: 40.0}})
+
+      {:ok, trigger1} = create_trigger(context.user, trigger_settings1)
+      {:ok, _} = create_trigger(context.user, trigger_settings2)
+
+      [triggered | rest] =
+        PricePercentChangeSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
+
+      assert length(rest) == 0
+      assert trigger1.id == triggered.id
+      assert Trigger.triggered?(triggered.trigger) == true
+    end
   end
 
-  test "only some of price absolute change signals triggered", context do
-    [triggered | rest] =
-      PriceAbsoluteChangeSettings.type()
-      |> UserTrigger.get_active_triggers_by_type()
-      |> Evaluator.run()
+  describe "price absolute change" do
+    test "only some of price absolute change signals triggered", context do
+      # should trigger
+      trigger_settings1 = price_absolute_change_settings(%{operation: %{above: 60}})
+      trigger_settings2 = price_absolute_change_settings(%{operation: %{above: 70}})
 
-    assert length(rest) == 0
-    assert context.trigger2.id == triggered.id
-  end
+      {:ok, trigger1} = create_trigger(context.user, trigger_settings1)
+      {:ok, _} = create_trigger(context.user, trigger_settings2)
 
-  test "signal setting cooldown works" do
-    Tesla.Mock.mock_global(fn
-      %{method: :post} ->
-        %Tesla.Env{status: 200, body: "ok"}
-    end)
+      [triggered | rest] =
+        PriceAbsoluteChangeSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
 
-    assert capture_log(fn ->
-             Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
-           end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
+      assert length(rest) == 0
+      assert trigger1.id == triggered.id
+    end
 
-    Sanbase.Signals.Evaluator.Cache.clear()
+    test "all operations trigger signal", context do
+      trigger_settings1 = price_absolute_change_settings(%{operation: %{below: 80}})
 
-    assert capture_log(fn ->
-             Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
-           end) =~ "There were no signals triggered of type"
+      trigger_settings2 =
+        price_absolute_change_settings(%{operation: %{inside_channel: [59, 65]}})
+
+      trigger_settings3 =
+        price_absolute_change_settings(%{operation: %{outside_channel: [80, 90]}})
+
+      {:ok, _} = create_trigger(context.user, trigger_settings1)
+      {:ok, _} = create_trigger(context.user, trigger_settings2)
+      {:ok, _} = create_trigger(context.user, trigger_settings3)
+
+      triggered =
+        PriceAbsoluteChangeSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
+
+      assert length(triggered) == 3
+
+      payload_list = triggered |> Enum.map(fn ut -> ut.trigger.settings.payload["santiment"] end)
+
+      expected_payload = [
+        "**Santiment**'s price has reached below $80 and is now $62.0",
+        "**Santiment**'s price has reached between $59 and $65 and is now $62.0",
+        "**Santiment**'s price has reached below $80 or above >= $90 and is now $62.0"
+      ]
+
+      all_expectd_payload_present? =
+        Enum.all?(expected_payload, fn expected ->
+          Enum.any?(payload_list, fn payload -> String.contains?(payload, expected) end)
+        end)
+
+      assert all_expectd_payload_present?
+    end
+
+    test "none of these operations trigger signal", context do
+      trigger_settings1 = price_absolute_change_settings(%{operation: %{below: 50}})
+
+      trigger_settings2 =
+        price_absolute_change_settings(%{operation: %{inside_channel: [40, 50]}})
+
+      trigger_settings3 =
+        price_absolute_change_settings(%{operation: %{outside_channel: [30, 90]}})
+
+      {:ok, _} = create_trigger(context.user, trigger_settings1)
+      {:ok, _} = create_trigger(context.user, trigger_settings2)
+      {:ok, _} = create_trigger(context.user, trigger_settings3)
+
+      triggered =
+        PriceAbsoluteChangeSettings.type()
+        |> UserTrigger.get_active_triggers_by_type()
+        |> Evaluator.run()
+
+      assert length(triggered) == 0
+    end
+
+    test "signal setting cooldown works", context do
+      trigger_settings1 = price_absolute_change_settings(%{operation: %{above: 60}})
+      trigger_settings2 = price_absolute_change_settings(%{operation: %{above: 70}})
+
+      create_trigger(context.user, trigger_settings1)
+      create_trigger(context.user, trigger_settings2)
+
+      Tesla.Mock.mock_global(fn
+        %{method: :post} ->
+          %Tesla.Env{status: 200, body: "ok"}
+      end)
+
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
+             end) =~ "In total 1/1 price_absolute_change signals were sent successfully"
+
+      Sanbase.Signals.Evaluator.Cache.clear()
+
+      assert capture_log(fn ->
+               Sanbase.Signals.Scheduler.run_price_absolute_change_signals()
+             end) =~ "There were no signals triggered of type"
+    end
   end
 
   defp populate_influxdb() do
@@ -152,71 +254,35 @@ defmodule Sanbase.Signals.EvaluatorPriceTest do
     ])
   end
 
-  defp setup_triggers(user) do
-    trigger_settings1 = %{
-      type: "price_percent_change",
-      target: %{slug: "santiment"},
-      channel: "telegram",
-      time_window: "6h",
-      percent_threshold: 15.0
-    }
+  defp create_trigger(user, settings) do
+    UserTrigger.create_user_trigger(user, %{
+      title: "Generic title",
+      is_public: true,
+      cooldown: "12h",
+      settings: settings
+    })
+  end
 
-    trigger_settings2 = %{
-      type: "price_absolute_change",
-      target: %{slug: "santiment"},
-      channel: "telegram",
-      above: 60,
-      below: 50
-    }
+  defp price_absolute_change_settings(price_opts) do
+    Map.merge(
+      %{
+        type: "price_absolute_change",
+        target: %{slug: "santiment"},
+        channel: "telegram"
+      },
+      price_opts
+    )
+  end
 
-    trigger_settings3 = %{
-      type: "price_percent_change",
-      target: %{slug: "santiment"},
-      channel: "telegram",
-      time_window: "6h",
-      percent_threshold: 18.0
-    }
-
-    trigger_settings4 = %{
-      type: "price_absolute_change",
-      target: %{slug: "santiment"},
-      channel: "telegram",
-      above: 70,
-      below: 50
-    }
-
-    {:ok, trigger1} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings1
-      })
-
-    {:ok, trigger2} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings2
-      })
-
-    {:ok, trigger3} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings3
-      })
-
-    {:ok, trigger4} =
-      UserTrigger.create_user_trigger(user, %{
-        title: "Generic title",
-        is_public: true,
-        cooldown: "12h",
-        settings: trigger_settings4
-      })
-
-    {trigger1, trigger2, trigger3, trigger4}
+  defp price_percent_change_settings(price_opts) do
+    Map.merge(
+      %{
+        type: "price_percent_change",
+        target: %{slug: "santiment"},
+        channel: "telegram",
+        time_window: "6h"
+      },
+      price_opts
+    )
   end
 end

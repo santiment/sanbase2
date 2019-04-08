@@ -1,12 +1,30 @@
+## Table of contents
+
+- [Trigger structure](#Trigger-structure)
+- [Settings fields](#Settings-fields)
+- [Examples](#Examples)
+  - [price_absolute_change](#Example-settings-structure-for-price_absolute_change)
+  - [price_percent_change](#Example-settings-structure-for-price_percent_change)
+  - [daily_active_addresses](#Example-settings-structure-for-daily_active_addresses)
+- [Create trigger](#Create-trigger)
+- [Get all triggers for current user](#Get-all-triggers-for-current-user)
+- [Update trigger by id](#Update-trigger-by-id)
+- [Remove trigger by id](#Remove-trigger-by-id)
+- [Getting trigger by id](#Getting-trigger-by-id)
+- [Getting all public triggers](#Getting-all-public-triggers)
+- [Featured user triggers](#Featured-user-triggers)
+- [API for signals historical activity (user signals timeline)](#API-for-signals-historical-activity-user-signals-timeline)
+- [Historical trigger points](#Historical-trigger-points)
+
 ### Trigger structure
 
-These are the fields describing a trigger. 
+These are the fields describing a trigger.
 
 ```elixir
     field(:settings, :map) # Each different trigger type has different settings. Described below.
     field(:title, :string) # Trigger title
     field(:description, :string) # Trigger description
-    field(:is_public, :boolean, default: false) # Whether trigger is public or private 
+    field(:is_public, :boolean, default: false) # Whether trigger is public or private
     field(:cooldown, :string, default: "24h") # After a signal is fired it can be again fired after `cooldown` time has passed. By default - `24h`
     field(:icon_url, :string) # Url of icon for the trigger
     field(:active, :boolean, default: true) # Whether trigger is active. By default - yes
@@ -19,24 +37,56 @@ These are the fields describing a trigger.
 - **target**:  slug or list of slugs or watchlist - `{"slug": "naga"} | {"slug": ["ethereum", "santiment"]} | {"user_list": user_list_id}` Also for `eth_wallet` signal we're supporting these:  `{"eth_address": "address"} | {"eth_address": ["address1", "address2"]}`
 - **channel**: `"telegram" | "email"` - currently only telegram is supported
 - **time_window**: `1d`, `4w`, `1h` - time string we use throughout the API for `interval`
-- **above** and **below** - used in `price_absolute_change` to indicate when the price is `More than` or `Less than` - should be used both!
-- **percent_threshold** - used in `daily_active_addresses` and `price_percent_change` to indicated percent change >= threshold.
+- **operation** - in `price_absolute_change`, [examples](#Example-settings-structure-for-price_absolute_change)
+- **percent_threshold** - used in `daily_active_addresses` to indicated percent change >= threshold.
 - **threshold** - float threshold used in `price_volume_difference`
 - **trigger_time** - ISO8601 UTC time used only in `trending_words`, ex: `"12:00:00"`
 
-### Example settings structure for `price_absolute_change`
+### Examples
+
+#### Example settings structure for `price_absolute_change`
+
 ```json
+//price >= 0.51
 {
   "type": "price_absolute_change",
   "target": {"slug": "santiment"},
   "channel": "telegram",
-  "above": 0.51,
-  "below": 0.50
+  "operation": {"above": 0.51}
 }
 ```
 
+```json
+// price <= 0.50
+{
+  "type": "price_absolute_change",
+  "target": {"slug": "santiment"},
+  "channel": "telegram",
+  "operation": {"below": 0.50}
+}
+```
 
-### Example settings structure for `price_percent_change`
+```json
+// price >= 0.49 and price <= 0.51
+{
+  "type": "price_absolute_change",
+  "target": {"slug": "santiment"},
+  "channel": "telegram",
+  "operation": {"inside_channel": [0.49, 0.51]}
+}
+```
+
+```json
+// price <= 0.49 and price >= 0.51
+{
+  "type": "price_absolute_change",
+  "target": {"slug": "santiment"},
+  "channel": "telegram",
+  "operation": {"outside_channel": [0.49, 0.51]}
+}
+```
+
+#### Example settings structure for `price_percent_change`
 
 ```json
 {
@@ -44,7 +94,17 @@ These are the fields describing a trigger.
   "target": {"slug": "santiment"},
   "channel": "telegram",
   "time_window": "1d",
-  "percent_threshold": 1.0
+  "operation": {"percent_up": 1.0}
+}
+```
+
+```json
+{
+  "type": "price_percent_change",
+  "target": {"slug": "santiment"},
+  "channel": "telegram",
+  "time_window": "1d",
+  "operation": {"percent_down": 1.0}
 }
 ```
 
@@ -81,7 +141,7 @@ These are the fields describing a trigger.
 }
 ```
 
-### Create a trigger
+### Create trigger
 
 
 ``` graphql
@@ -261,7 +321,7 @@ mutation {
   featuredUserTriggers{
     trigger{
       title
-      settings 
+      settings
     }
   }
 }

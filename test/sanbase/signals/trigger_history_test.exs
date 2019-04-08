@@ -83,8 +83,8 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       [from_iso8601!("2018-11-23T00:00:00Z"), 20, 1000, 500, 200],
       [from_iso8601!("2018-11-24T00:00:00Z"), 20, 1000, 500, 200],
       [from_iso8601!("2018-11-25T00:00:00Z"), 20, 1000, 500, 200],
-      [from_iso8601!("2018-11-26T00:00:00Z"), 21, 1000, 500, 200],
       # trigger point
+      [from_iso8601!("2018-11-26T00:00:00Z"), 21, 1000, 500, 200],
       [from_iso8601!("2018-11-27T00:00:00Z"), 22, 1000, 500, 200],
       # cooldown
       [from_iso8601!("2018-11-28T00:00:00Z"), 25, 1000, 500, 200],
@@ -92,9 +92,9 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       [from_iso8601!("2018-11-29T00:00:00Z"), 28, 1000, 500, 200],
       # cooldown
       [from_iso8601!("2018-11-30T00:00:00Z"), 45, 1000, 500, 200],
-      # cooldown
-      [from_iso8601!("2018-12-01T00:00:00Z"), 47, 1000, 500, 200],
       # trigger point
+      [from_iso8601!("2018-12-01T00:00:00Z"), 47, 1000, 500, 200],
+      # cooldown
       [from_iso8601!("2018-12-02T00:00:00Z"), 50, 1000, 500, 200],
       # cooldown
       [from_iso8601!("2018-12-03T00:00:00Z"), 50, 1000, 500, 200]
@@ -113,7 +113,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
           target: %{slug: "santiment"},
           channel: "telegram",
           time_window: "4h",
-          percent_threshold: percent_threshold
+          operation: %{percent_up: percent_threshold}
         }
       }
 
@@ -131,15 +131,15 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
       assert trigger_points |> Enum.map(fn point -> point.datetime end) ==
                [
                  from_iso8601!("2018-11-20T00:00:00Z"),
-                 from_iso8601!("2018-11-27T00:00:00Z"),
-                 from_iso8601!("2018-12-02T00:00:00Z")
+                 from_iso8601!("2018-11-26T00:00:00Z"),
+                 from_iso8601!("2018-12-01T00:00:00Z")
                ]
 
       # cooldowns
       assert Enum.filter(points, fn point ->
                !point.triggered? and point.percent_change > percent_threshold
              end)
-             |> length() == 5
+             |> length() == 6
     end
   end
 
@@ -185,7 +185,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
           type: "price_absolute_change",
           target: %{slug: "santiment"},
           channel: "telegram",
-          above: 21.0
+          operation: %{above: 21.0}
         }
       }
 
@@ -209,7 +209,7 @@ defmodule Sanbase.Signals.TriggerHistoryTest do
 
       # cooldowns
       assert Enum.filter(points, fn point ->
-               !point.triggered? and point.price > trigger.settings.above
+               !point.triggered? and point.price > trigger.settings.operation.above
              end)
              |> length() == 8
     end

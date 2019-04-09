@@ -27,7 +27,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   validates(:target, &valid_target?/1)
   validates(:channel, &valid_notification_channel/1)
-  validates(:operation, &valid_operation?/1)
+  validates(:operation, &valid_absolute_value_operation?/1)
 
   @type t :: %__MODULE__{
           type: Type.trigger_type(),

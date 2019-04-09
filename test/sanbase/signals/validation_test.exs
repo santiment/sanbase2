@@ -3,7 +3,7 @@ defmodule Sanbase.Signals.ValidationTest do
 
   alias Sanbase.Signals.Validation
 
-  describe "#valid_operation?" do
+  describe "#valid_absolute_value_operation?" do
     test "with valid cases returns :ok" do
       valid_cases = [
         %{above: 10},
@@ -15,7 +15,9 @@ defmodule Sanbase.Signals.ValidationTest do
 
       all_true? =
         valid_cases
-        |> Enum.all?(fn operation -> Validation.valid_operation?(operation) == :ok end)
+        |> Enum.all?(fn operation ->
+          Validation.valid_absolute_value_operation?(operation) == :ok
+        end)
 
       assert all_true?
     end
@@ -34,15 +36,15 @@ defmodule Sanbase.Signals.ValidationTest do
       all_errors? =
         error_cases
         |> Enum.all?(fn operation ->
-          Validation.valid_operation?(operation) ==
-            {:error, "#{inspect(operation)} is not a valid operation"}
+          Validation.valid_absolute_value_operation?(operation) ==
+            {:error, "#{inspect(operation)} is not a valid absolute value operation"}
         end)
 
       assert all_errors?
     end
   end
 
-  describe "#valid_percent_operation?" do
+  describe "#valid_percent_change_operation?" do
     test "with valid cases returns :ok" do
       valid_cases = [
         %{percent_up: 10},
@@ -52,7 +54,9 @@ defmodule Sanbase.Signals.ValidationTest do
 
       all_true? =
         valid_cases
-        |> Enum.all?(fn operation -> Validation.valid_percent_operation?(operation) == :ok end)
+        |> Enum.all?(fn operation ->
+          Validation.valid_percent_change_operation?(operation) == :ok
+        end)
 
       assert all_true?
     end
@@ -69,8 +73,8 @@ defmodule Sanbase.Signals.ValidationTest do
       all_errors? =
         error_cases
         |> Enum.all?(fn operation ->
-          Validation.valid_percent_operation?(operation) ==
-            {:error, "#{inspect(operation)} is not a valid percent operation"}
+          Validation.valid_percent_change_operation?(operation) ==
+            {:error, "#{inspect(operation)} is not a valid percent change operation"}
         end)
 
       assert all_errors?

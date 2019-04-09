@@ -20,27 +20,35 @@ defmodule Sanbase.Signals.Validation do
   def valid_percent?(percent),
     do: {:error, "#{inspect(percent)} is not a valid percent"}
 
-  def valid_percent_operation?(%{percent_up: percent})
+  def valid_percent_change_operation?(%{percent_up: percent})
       when is_valid_percent_change(percent),
       do: :ok
 
-  def valid_percent_operation?(%{percent_down: percent})
+  def valid_percent_change_operation?(%{percent_down: percent})
       when is_valid_percent_change(percent),
       do: :ok
 
-  def valid_percent_operation?(operation),
-    do: {:error, "#{inspect(operation)} is not a valid percent operation"}
+  def valid_percent_change_operation?(operation),
+    do: {:error, "#{inspect(operation)} is not a valid percent change operation"}
 
-  def valid_operation?(%{above: above}) when is_valid_price(above), do: :ok
-  def valid_operation?(%{below: below}) when is_valid_price(below), do: :ok
+  def valid_absolute_value_operation?(%{above: above}) when is_valid_price(above), do: :ok
+  def valid_absolute_value_operation?(%{below: below}) when is_valid_price(below), do: :ok
 
-  def valid_operation?(%{inside_channel: [min, max]} = operation),
-    do: valid_operation?(operation, [min, max])
+  def valid_absolute_value_operation?(%{inside_channel: [min, max]} = operation),
+    do: do_valid_absolute_value_operation?(operation, [min, max])
 
-  def valid_operation?(%{outside_channel: [min, max]} = operation),
-    do: valid_operation?(operation, [min, max])
+  def valid_absolute_value_operation?(%{outside_channel: [min, max]} = operation),
+    do: do_valid_absolute_value_operation?(operation, [min, max])
 
-  def valid_operation?(operation), do: {:error, "#{inspect(operation)} is not a valid operation"}
+  def valid_absolute_value_operation?(operation),
+    do: {:error, "#{inspect(operation)} is not a valid absolute value operation"}
+
+  def valid_absolute_change_operation?(%{amount_up: value}) when is_number(value), do: :ok
+  def valid_absolute_change_operation?(%{amount_down: value}) when is_number(value), do: :ok
+  def valid_absolute_change_operation?(%{amount: value}) when is_number(value), do: :ok
+
+  def valid_absolute_change_operation?(operation),
+    do: {:error, "#{inspect(operation)} is not a valid absolute change operation"}
 
   def valid_time_window?(time_window) when is_binary(time_window) do
     Regex.match?(~r/^\d+[smhdw]$/, time_window)
@@ -119,8 +127,9 @@ defmodule Sanbase.Signals.Validation do
   end
 
   # private functions
-  defp valid_operation?(_, [min, max]) when is_valid_min_max_price(min, max), do: :ok
+  defp do_valid_absolute_value_operation?(_, [min, max]) when is_valid_min_max_price(min, max),
+    do: :ok
 
-  defp valid_operation?(operation, _),
-    do: {:error, "#{inspect(operation)} is not a valid operation"}
+  defp do_valid_absolute_value_operation?(operation, _),
+    do: {:error, "#{inspect(operation)} is not a valid absolute value operation"}
 end

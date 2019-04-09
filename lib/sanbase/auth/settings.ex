@@ -9,7 +9,7 @@ defmodule Sanbase.Auth.Settings do
     field(:signal_notify_telegram, :boolean, default: false)
     field(:telegram_chat_id, :integer)
     field(:has_telegram_connected, :boolean, virtual: true)
-    field(:newsletter_subscription, :string, default: "WEEKLY")
+    field(:newsletter_subscription, :string, default: "OFF")
   end
 
   def changeset(schema, params) do

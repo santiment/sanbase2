@@ -66,7 +66,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert result["settings"] == %{
              "signalNotifyEmail" => false,
              "signalNotifyTelegram" => true,
-             "newsletterSubscription" => "WEEKLY"
+             "newsletterSubscription" => "OFF"
            }
   end
 
@@ -75,7 +75,7 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     result = conn |> execute(query, "currentUser")
 
     assert result["settings"] == %{
-             "newsletterSubscription" => "WEEKLY",
+             "newsletterSubscription" => "OFF",
              "signalNotifyEmail" => false,
              "signalNotifyTelegram" => false
            }

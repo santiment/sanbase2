@@ -89,7 +89,7 @@ defmodule Sanbase.Factory do
       settings: %{
         signal_notify_telegram: false,
         signal_notify_email: false,
-        newsletter_subscription: "WEEKLY"
+        newsletter_subscription: "OFF"
       }
     }
   end

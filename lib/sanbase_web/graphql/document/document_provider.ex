@@ -109,7 +109,15 @@ defmodule SanbseWeb.Graphql.Phase.Document.Execution.CacheDocument do
   defp santize_blueprint({:argument_data, _} = tuple), do: tuple
   defp santize_blueprint({a, b}), do: {a, santize_blueprint(b)}
 
-  @cache_fields [:name, :argument_data, :selection_set, :selections, :fragments, :operations]
+  @cache_fields [
+    :name,
+    :argument_data,
+    :selection_set,
+    :selections,
+    :fragments,
+    :operations,
+    :alias
+  ]
   defp santize_blueprint(map) when is_map(map) do
     Map.take(map, @cache_fields)
     |> Enum.map(&santize_blueprint/1)

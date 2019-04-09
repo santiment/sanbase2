@@ -4,6 +4,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
   Currently it is bucketed in `1 day` intervals and goes 90 days back.
   """
 
+  # TODO: Change `%{percent_up: settings.percent_threshold}`  with `operation` when implemented
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.DailyActiveAddressesSettings
@@ -72,7 +73,7 @@ defmodule Sanbase.Signals.History.DailyActiveAddressesHistory do
           |> Enum.chunk_every(time_window_in_days + 1, 1, :discard)
           |> Enum.map(fn chunk -> {chunk |> Enum.drop(-1) |> average(), List.last(chunk)} end)
           |> percent_change_calculations_with_cooldown(
-            settings.percent_threshold,
+            %{percent_up: settings.percent_threshold},
             cooldown_in_days
           )
 

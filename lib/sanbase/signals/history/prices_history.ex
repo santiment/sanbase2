@@ -5,7 +5,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
   `90 days` back.
   """
 
-  import Sanbase.Signals.Utils
+  import Sanbase.Signals.{Utils, OperationEvaluation}
   import Sanbase.Signals.History.Utils
 
   alias Sanbase.Signals.Trigger.{
@@ -44,19 +44,10 @@ defmodule Sanbase.Signals.History.PricesHistory do
     Enum.zip([datetimes, prices, change_calculations])
     |> Enum.map(fn
       {dt, price, {percent_change, triggered?}} ->
-        %{
-          datetime: dt,
-          price: price,
-          triggered?: triggered?,
-          percent_change: percent_change
-        }
+        %{datetime: dt, price: price, triggered?: triggered?, percent_change: percent_change}
 
       {dt, price, triggered?} ->
-        %{
-          datetime: dt,
-          price: price,
-          triggered?: triggered?
-        }
+        %{datetime: dt, price: price, triggered?: triggered?}
     end)
   end
 
@@ -86,7 +77,7 @@ defmodule Sanbase.Signals.History.PricesHistory do
         prices
         |> Enum.reduce({[], 0}, fn
           price, {accumulated_calculations, 0} ->
-            if evaluate_operation(price, settings.operation) do
+            if operation_triggered?(price, settings.operation) do
               {[true | accumulated_calculations], cooldown_in_hours}
             else
               {[false | accumulated_calculations], 0}

@@ -6,7 +6,7 @@ defmodule Sanbase.Signals.TriggerHistoryUtilsTest do
   test "#percent_change_calculations_with_cooldown" do
     percent_changes = [{5, 6}, {10, 11}, {7, 8}, {3, 2}, {100, 105}, {4, 3}, {8, 10}, {9, 11}]
 
-    percent_threshold = 5.0
+    percent_threshold = %{percent_up: 5.0}
 
     percent_change_calculations =
       Utils.percent_change_calculations_with_cooldown(percent_changes, percent_threshold, 2)

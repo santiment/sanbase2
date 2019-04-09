@@ -6,7 +6,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signals.{Utils, Validation}
+  import Sanbase.Signals.{Utils, Validation, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signals.Type
@@ -34,7 +34,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
           target: Type.complex_target(),
           filtered_target: Type.filtered_target(),
           channel: Type.channel(),
-          operation: map(),
+          operation: Type.operation(),
           triggered?: boolean(),
           payload: Type.payload()
         }
@@ -94,7 +94,7 @@ defmodule Sanbase.Signals.Trigger.PriceAbsoluteChangeSettings do
     defp build_result(list, %PriceAbsoluteChangeSettings{operation: operation} = settings) do
       payload =
         Enum.reduce(list, %{}, fn {slug, {:ok, price}}, acc ->
-          if evaluate_operation(price, operation) do
+          if operation_triggered?(price, operation) do
             Map.put(acc, slug, payload(slug, price, operation_text(operation)))
           else
             acc

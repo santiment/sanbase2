@@ -11,7 +11,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
   use Vex.Struct
 
-  import Sanbase.Signals.Validation
+  import Sanbase.Signals.{Validation, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signals.{Type, Trigger}
@@ -27,8 +27,8 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
             channel: nil,
             target: nil,
             asset: nil,
+            operation: nil,
             filtered_target: %{list: []},
-            threshold: nil,
             payload: %{},
             triggered?: false,
             created_at: DateTime.utc_now()
@@ -38,6 +38,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
           channel: Type.channel(),
           target: Type.complex_target(),
           asset: Type.asset(),
+          operation: Type.operation(),
           filtered_target: Type.filtered_target(),
           triggered?: boolean(),
           payload: Type.payload(),
@@ -47,7 +48,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
   validates(:channel, &valid_notification_channel/1)
   validates(:target, &valid_eth_wallet_target?/1)
   validates(:asset, &valid_slug?/1)
-  validates(:threshold, &valid_threshold?/1)
+  validates(:operation, &valid_absolute_change_operation?/1)
 
   @spec type() :: String.t()
   def type(), do: @trigger_type
@@ -102,9 +103,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
 
   # All datetimes in 5 minute time intervals will generate the same result
   # to be used in cache keys
-  defp bucket_datetime(%DateTime{} = dt) do
-    div(DateTime.to_unix(dt, :second), 300)
-  end
+  defp bucket_datetime(%DateTime{} = dt), do: div(DateTime.to_unix(dt, :second), 300)
 
   alias __MODULE__
 
@@ -114,7 +113,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
     def evaluate(%EthWalletTriggerSettings{} = settings, trigger) do
       case EthWalletTriggerSettings.get_data(settings, trigger) do
         list when is_list(list) and list != [] ->
-          build_result(list, settings, trigger)
+          build_result(list, settings)
 
         _ ->
           %EthWalletTriggerSettings{
@@ -127,25 +126,21 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
     # The result heavily depends on `last_triggered`, so just the settings are not enough
     def cache_key(%EthWalletTriggerSettings{}), do: :nocache
 
-    defp build_result(list, settings, trigger) do
-      threshold = settings.threshold
-
+    defp build_result(list, settings) do
       payload =
         Enum.reduce(list, %{}, fn
-          {:project, project, balance_change, from}, payload
-          when abs(balance_change) >= threshold ->
-            Map.put(
-              payload,
-              project.coinmarketcap_id,
-              payload(project, settings, balance_change, from)
-            )
+          {_, _, balance_change, _} = elem, payload ->
+            if operation_triggered?(balance_change, settings.operation) do
+              case elem do
+                {:project, %Project{coinmarketcap_id: slug} = project, balance_change, from} ->
+                  Map.put(payload, slug, payload(project, settings, balance_change, from))
 
-          {:eth_address, address, balance_change, from}, payload
-          when balance_change >= threshold ->
-            Map.put(payload, address, payload(address, settings, balance_change, from))
-
-          data, payload ->
-            payload
+                {:eth_address, address, balance_change, from} ->
+                  Map.put(payload, address, payload(address, settings, balance_change, from))
+              end
+            else
+              payload
+            end
         end)
 
       %EthWalletTriggerSettings{
@@ -156,7 +151,7 @@ defmodule Sanbase.Signals.Trigger.EthWalletTriggerSettings do
     end
 
     defp payload(
-           %Project{name: name, coinmarketcap_id: slug} = project,
+           %Project{name: name} = project,
            settings,
            balance_change,
            from

@@ -5,7 +5,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
   specified `time_window` time.
   """
   use Vex.Struct
-  import Sanbase.Signals.{Validation, Utils}
+  import Sanbase.Signals.{Validation, Utils, OperationEvaluation}
 
   alias __MODULE__
   alias Sanbase.Signals.Type
@@ -31,7 +31,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
           filtered_target: Type.filtered_target(),
           channel: Type.channel(),
           time_window: Type.time_window(),
-          operation: map(),
+          operation: Type.operation(),
           triggered?: boolean(),
           payload: Type.payload()
         }
@@ -106,7 +106,7 @@ defmodule Sanbase.Signals.Trigger.PricePercentChangeSettings do
       payload =
         Enum.reduce(list, %{}, fn
           {slug, {:ok, {percent_change, _, _} = price_data}}, acc ->
-            if percent_operation_triggered?(percent_change, operation) do
+            if operation_triggered?(percent_change, operation) do
               Map.put(acc, slug, payload(slug, settings, price_data))
             else
               acc

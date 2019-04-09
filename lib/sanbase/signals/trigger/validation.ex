@@ -21,12 +21,14 @@ defmodule Sanbase.Signals.Validation do
     do: {:error, "#{inspect(percent)} is not a valid percent"}
 
   def valid_percent_change_operation?(%{percent_up: percent})
-      when is_valid_percent_change(percent),
-      do: :ok
+      when is_valid_percent_change(percent) do
+    :ok
+  end
 
   def valid_percent_change_operation?(%{percent_down: percent})
-      when is_valid_percent_change(percent),
-      do: :ok
+      when is_valid_percent_change(percent) do
+    :ok
+  end
 
   def valid_percent_change_operation?(operation),
     do: {:error, "#{inspect(operation)} is not a valid percent change operation"}

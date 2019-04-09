@@ -41,7 +41,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       target: %{slug: slug},
       asset: %{slug: "ethereum"},
       channel: "telegram",
-      threshold: 25.0
+      operation: %{amount_up: 25.0}
     }
 
     trigger_settings2 = %{
@@ -50,7 +50,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
       asset: %{slug: "ethereum"},
       channel: "telegram",
       time_window: "1d",
-      threshold: 200.0
+      operation: %{amount_up: 200.0}
     }
 
     {:ok, trigger1} =
@@ -140,7 +140,7 @@ defmodule Sanbase.Signals.EthWalletTriggerTest do
     ] do
       Scheduler.run_signal(EthWalletTriggerSettings)
 
-      refute_receive({:telegram_to_self, message})
+      refute_receive({:telegram_to_self, _})
     end
   end
 end

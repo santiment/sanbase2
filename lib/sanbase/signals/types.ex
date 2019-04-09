@@ -9,4 +9,5 @@ defmodule Sanbase.Signals.Type do
   @type payload :: %{} | %{optional(String.t()) => String.t()}
   @type threshold :: number()
   @type percent_threshold :: number()
+  @type operation :: map()
 end

@@ -1243,7 +1243,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       resolve(&UserSettingsResolver.settings_toggle_channel/3)
     end
 
-    @desc "Subscribe/unsibscribe to Santiment newsletter"
+    @desc "Change subscription to Santiment newsletter"
     field :change_newsletter_subscription, :user_settings do
       arg(:newsletter_subscription, :newsletter_subscription_type)
       middleware(JWTAuth)

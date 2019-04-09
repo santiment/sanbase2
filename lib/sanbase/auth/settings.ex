@@ -17,21 +17,32 @@ defmodule Sanbase.Auth.Settings do
     |> cast(params, [
       :signal_notify_email,
       :signal_notify_telegram,
-      :telegram_chat_id,
-      :newsletter_subscription
+      :telegram_chat_id
     ])
-    |> validate_change(:newsletter_subscription, &validate_subscription_type/2)
-    |> put_change(
+    |> normalize_newsletter_subscription(
       :newsletter_subscription,
-      params[:newsletter_subscription] |> Atom.to_string() |> String.upcase()
+      params[:newsletter_subscription]
+    )
+    |> validate_change(:newsletter_subscription, &validate_subscription_type/2)
+  end
+
+  defp normalize_newsletter_subscription(changeset, field, nil), do: changeset
+
+  defp normalize_newsletter_subscription(changeset, field, value) do
+    put_change(
+      changeset,
+      field,
+      value |> Atom.to_string() |> String.upcase()
     )
   end
 
-  defp validate_subscription_type(_, type) when type in @newsletter_subscription_types, do: :ok
+  defp validate_subscription_type(_, nil), do: []
+  defp validate_subscription_type(_, type) when type in @newsletter_subscription_types, do: []
 
-  defp validate_subscription_type(_, type),
-    do: [
+  defp validate_subscription_type(_, type) do
+    [
       newsletter_subscription:
         "Type not in allowed types: #{inspect(@newsletter_subscription_types)}"
     ]
+  end
 end

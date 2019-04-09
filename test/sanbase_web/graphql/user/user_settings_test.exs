@@ -77,24 +77,42 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
     assert result["settings"] == nil
   end
 
-  test "change newsletter subscription", %{conn: conn, user: user} do
-    query = change_newsletter_subscription_query("DAILY")
-    result = conn |> execute(query, "changeNewsletterSubscription")
+  describe "newsletter subscription" do
+    test "changes subscription to daily", %{conn: conn, user: user} do
+      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
+      query = change_newsletter_subscription_query("DAILY")
+      result = conn |> execute(query, "changeNewsletterSubscription")
 
-    assert result["newsletterSubscription"] == "DAILY"
-    assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == "DAILY"
+      assert result["newsletterSubscription"] == "DAILY"
+      assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == :daily
+    end
 
-    query = change_newsletter_subscription_query("OFF")
-    result = conn |> execute(query, "changeNewsletterSubscription")
+    test "changes subscription to weekly", %{conn: conn, user: user} do
+      insert(:user_settings, user: user, settings: %{newsletter_subscription: "DAILY"})
+      query = change_newsletter_subscription_query("WEEKLY")
+      result = conn |> execute(query, "changeNewsletterSubscription")
 
-    assert result["newsletterSubscription"] == "OFF"
-    assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == "OFF"
+      assert result["newsletterSubscription"] == "WEEKLY"
+      assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == :weekly
+    end
 
-    query = change_newsletter_subscription_query("UNKNOWN")
-    result = conn |> execute(query, "changeNewsletterSubscription")
+    test "can turn off subscription", %{conn: conn, user: user} do
+      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
+      query = change_newsletter_subscription_query("OFF")
+      result = conn |> execute(query, "changeNewsletterSubscription")
 
-    assert result["newsletterSubscription"] == nil
-    assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == "OFF"
+      assert result["newsletterSubscription"] == "OFF"
+      assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == :off
+    end
+
+    test "can handle unknown subscription types", %{conn: conn, user: user} do
+      insert(:user_settings, user: user, settings: %{newsletter_subscription: "WEEKLY"})
+      query = change_newsletter_subscription_query("UNKNOWN")
+      result = conn |> execute(query, "changeNewsletterSubscription")
+
+      assert result["newsletterSubscription"] == nil
+      assert UserSettings.settings_for(user) |> Map.get(:newsletter_subscription) == :weekly
+    end
   end
 
   defp current_user_query() do

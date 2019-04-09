@@ -46,7 +46,7 @@ defmodule Sanbase.Factory do
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",
-      state: Post.approved_state()
+      state: Post.awaiting_approval_state()
     }
   end
 
@@ -55,7 +55,7 @@ defmodule Sanbase.Factory do
       title: "Awesome analysis",
       link: "http://example.com",
       text: "Text of the post",
-      state: Post.approved_state()
+      state: Post.awaiting_approval_state()
     }
   end
 

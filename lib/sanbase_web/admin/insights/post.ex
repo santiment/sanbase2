@@ -39,10 +39,18 @@ defmodule Sanbase.ExAdmin.Insight.Post do
         input(
           post,
           :is_featured,
-          collection: ~w[true false]
+          collection: ~w[true false],
+          selected: true
         )
 
-        input(post, :state, collection: [Post.approved_state(), Post.declined_state()])
+        input(post, :state,
+          collection: [
+            Post.awaiting_approval_state(),
+            Post.approved_state(),
+            Post.declined_state()
+          ]
+        )
+
         input(post, :moderation_comment)
       end
     end

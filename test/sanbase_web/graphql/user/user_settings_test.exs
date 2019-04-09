@@ -70,11 +70,15 @@ defmodule SanbaseWeb.Graphql.UserSettingsTest do
            }
   end
 
-  test "returns empty settings if user hasn't any", %{conn: conn} do
+  test "returns default values if user has'nt any user_settings", %{conn: conn} do
     query = current_user_query()
     result = conn |> execute(query, "currentUser")
 
-    assert result["settings"] == nil
+    assert result["settings"] == %{
+             "newsletterSubscription" => "WEEKLY",
+             "signalNotifyEmail" => false,
+             "signalNotifyTelegram" => false
+           }
   end
 
   describe "newsletter subscription" do

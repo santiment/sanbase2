@@ -25,7 +25,9 @@ defmodule Sanbase.Auth.UserSettings do
     Repo.get_by(UserSettings, user_id: user_id)
     |> case do
       nil ->
-        nil
+        changeset(%UserSettings{}, %{user_id: user_id, settings: %{}})
+        |> Repo.insert!()
+        |> modify_settings()
 
       %UserSettings{} = us ->
         modify_settings(us)

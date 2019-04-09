@@ -41,7 +41,7 @@ defmodule Sanbase.TelegramTest do
     %Telegram.UserToken{token: user_token} = Telegram.UserToken.by_user_id(context.user.id)
 
     # There are no settings before
-    assert nil == UserSettings.settings_for(context.user)
+    assert nil == UserSettings.settings_for(context.user).telegram_chat_id
 
     simulate_telegram_deep_link_follow(context, user_token)
 
@@ -69,7 +69,7 @@ defmodule Sanbase.TelegramTest do
     # Simulate a call after the revoke
     simulate_telegram_deep_link_follow(context, user_token)
     # There is no telegram chat id
-    assert nil == UserSettings.settings_for(context.user)
+    assert nil == UserSettings.settings_for(context.user).telegram_chat_id
   end
 
   test "following the telegram deep link sets the `hasTelegramConnected` setting", context do

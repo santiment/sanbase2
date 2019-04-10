@@ -16,7 +16,8 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     PercentOfTokenSupplyOnExchanges,
     RealizedValue,
     TopHolders,
-    ShareOfDeposits
+    ShareOfDeposits,
+    Bitcoin
   }
 
   @one_hour_seconds 3600
@@ -91,14 +92,18 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
     end
   end
 
-  def mvrv_ratio(_root, args, _resolution) do
+  def mvrv_ratio(_root, %{slug: "bitcoin", from: from, to: to, interval: interval}, _resolution) do
+    Bitcoin.mvrv_ratio(from, to, interval)
+  end
+
+  def mvrv_ratio(_root, %{slug: slug, from: from, to: to, interval: interval}, _resolution) do
     # TODO: Check if interval is a whole day as in token circulation
-    with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(args.slug, args.from, args.to, args.interval) do
+    with {:ok, mvrv_ratio} <- MVRV.mvrv_ratio(slug, from, to, interval) do
       {:ok, mvrv_ratio}
     else
       {:error, error} ->
         Logger.warn(
-          "Can't calculate MVRV ratio for project with coinmarketcap_id: #{args.slug}. Reason: #{
+          "Can't calculate MVRV ratio for project with coinmarketcap_id: #{slug}. Reason: #{
             inspect(error)
           }"
         )

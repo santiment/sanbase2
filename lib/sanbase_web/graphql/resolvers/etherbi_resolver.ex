@@ -8,12 +8,21 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   alias SanbaseWeb.Graphql.Helpers.Utils
 
   alias Sanbase.Blockchain
+  alias Sanbase.Clickhouse.Bitcoin
 
   alias SanbaseWeb.Graphql.SanbaseDataloader
 
   @doc ~S"""
   Return the token age consumed for the given slug and time period.
   """
+  def token_age_consumed(
+        _root,
+        %{slug: "bitcoin", from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Bitcoin.token_age_consumed(from, to, interval)
+  end
+
   def token_age_consumed(
         _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
@@ -92,6 +101,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   """
   def transaction_volume(
         _root,
+        %{slug: "bitcoin", from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Bitcoin.transaction_volume(from, to, interval)
+  end
+
+  def transaction_volume(
+        _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
@@ -130,6 +147,15 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   @doc ~S"""
   Return the number of daily active addresses for a given slug
   """
+
+  def daily_active_addresses(
+        _root,
+        %{slug: "bitcoin", from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Bitcoin.daily_active_addresses(from, to, interval)
+  end
+
   def daily_active_addresses(
         _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
@@ -219,6 +245,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   """
   def token_circulation(
         _root,
+        %{slug: "bitcoin", from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Bitcoin.token_circulation(from, to, interval)
+  end
+
+  def token_circulation(
+        _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,
         _resolution
       ) do
@@ -258,6 +292,14 @@ defmodule SanbaseWeb.Graphql.Resolvers.EtherbiResolver do
   @doc ~s"""
   Returns the token velocity for a given slug and time period.
   """
+  def token_velocity(
+        _root,
+        %{slug: "bitcoin", from: from, to: to, interval: interval},
+        _resolution
+      ) do
+    Bitcoin.token_velocity(from, to, interval)
+  end
+
   def token_velocity(
         _root,
         %{slug: slug, from: from, to: to, interval: interval} = args,

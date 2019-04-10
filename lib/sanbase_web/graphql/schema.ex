@@ -191,7 +191,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:ticker, :string, deprecate: "Use slug instead of ticker")
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       cache_resolve(&PriceResolver.history_price/3)
@@ -258,7 +258,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
       arg(:transform, :string, default_value: "None")
       arg(:moving_average_interval_base, :integer, default_value: 7)
 
@@ -298,7 +298,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, :string)
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       cache_resolve(&TwitterResolver.history_twitter_data/3)
@@ -318,7 +318,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
@@ -329,7 +329,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
@@ -348,7 +348,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)
@@ -420,7 +420,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction, %{allow_historical_data: true})
@@ -516,7 +516,7 @@ defmodule SanbaseWeb.Graphql.Schema do
       arg(:slug, non_null(:string))
       arg(:from, non_null(:datetime))
       arg(:to, non_null(:datetime))
-      arg(:interval, :string, default_value: "")
+      arg(:interval, :string, default_value: "1d")
 
       complexity(&Complexity.from_to_interval/3)
       middleware(ApiTimeframeRestriction)

@@ -26,10 +26,17 @@ defmodule SanbaseWeb.Graphql.Resolvers.ClickhouseResolver do
         %{slug: slug, number_of_holders: number_of_holders, from: from, to: to},
         _resolution
       ) do
-    case TopHolders.percent_of_total_supply(slug, number_of_holders, from, to) do
-      {:ok, percent_of_total_supply} ->
-        {:ok, percent_of_total_supply}
-
+    with {:ok, contract, token_decimals} <- Project.contract_info_by_slug(slug),
+         {:ok, percent_of_total_supply} <-
+           TopHolders.percent_of_total_supply(
+             contract,
+             token_decimals,
+             number_of_holders,
+             from,
+             to
+           ) do
+      {:ok, percent_of_total_supply}
+    else
       {:error, error} ->
         error_msg = "Can't calculate top holders - percent of total supply for slug: #{slug}."
         Logger.warn(error_msg <> " Reason: #{inspect(error)}")

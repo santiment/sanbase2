@@ -11,6 +11,8 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
 
     [
       slug: project.coinmarketcap_id,
+      contract: "ETH",
+      token_decimals: 18,
       number_of_holders: 10,
       from: from_iso8601!("2019-01-01T00:00:00Z"),
       to: from_iso8601!("2019-01-03T00:00:00Z")
@@ -30,7 +32,8 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
       end do
       result =
         TopHolders.percent_of_total_supply(
-          context.slug,
+          context.contract,
+          context.token_decimals,
           context.number_of_holders,
           context.from,
           context.to
@@ -59,7 +62,8 @@ defmodule Sanbase.Clickhouse.TopHoldersTest do
     with_mock Sanbase.ClickhouseRepo, query: fn _, _ -> {:ok, %{rows: []}} end do
       result =
         TopHolders.percent_of_total_supply(
-          context.slug,
+          context.contract,
+          context.token_decimals,
           context.number_of_holders,
           context.from,
           context.to

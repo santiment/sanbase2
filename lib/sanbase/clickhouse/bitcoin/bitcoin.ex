@@ -70,7 +70,7 @@ defmodule Sanbase.Clickhouse.Bitcoin do
       args,
       fn [dt, value] ->
         %{
-          mvrv_ratio: value,
+          ratio: value,
           datetime: DateTime.from_unix!(dt)
         }
       end
